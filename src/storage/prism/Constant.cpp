@@ -27,7 +27,7 @@ namespace storm {
         }
         
         Constant Constant::substitute(std::map<std::string, storm::expressions::Expression> const& substitution) const {
-            return Constant(this->getType(), this->getName(), this->getExpression().substitute<std::map>(substitution), this->getFilename(), this->getLineNumber());
+            return Constant(this->getType(), this->getName(), this->getExpression().substitute(substitution), this->getFilename(), this->getLineNumber());
         }
         
         std::ostream& operator<<(std::ostream& stream, Constant const& constant) {

@@ -8,7 +8,7 @@
 
 namespace storm {
     namespace expressions {
-        template<template<typename... Arguments> class MapType>
+        template<typename MapType>
         class SubstitutionVisitor : public ExpressionVisitor {
         public:
             /*!
@@ -16,7 +16,7 @@ namespace storm {
              *
              * @param identifierToExpressionMap A mapping from identifiers to expressions.
              */
-            SubstitutionVisitor(MapType<std::string, Expression> const& identifierToExpressionMap);
+            SubstitutionVisitor(MapType const& identifierToExpressionMap);
             
             /*!
              * Substitutes the identifiers in the given expression according to the previously given map and returns the
@@ -47,7 +47,7 @@ namespace storm {
             std::stack<std::shared_ptr<BaseExpression const>> expressionStack;
             
             // A mapping of identifier names to expressions with which they shall be replaced.
-            MapType<std::string, Expression> const& identifierToExpressionMap;
+            MapType const& identifierToExpressionMap;
         };
     }
 }

@@ -306,7 +306,7 @@ TEST(Expression, SubstitutionTest) {
 
     std::map<std::string, storm::expressions::Expression> substution = { std::make_pair("y", doubleConstExpression), std::make_pair("x", storm::expressions::Expression::createTrue()), std::make_pair("a", storm::expressions::Expression::createTrue()) };
     storm::expressions::Expression substitutedExpression;
-    ASSERT_NO_THROW(substitutedExpression = tempExpression.substitute<std::map>(substution));
+    ASSERT_NO_THROW(substitutedExpression = tempExpression.substitute(substution));
     EXPECT_TRUE(substitutedExpression.simplify().isTrue());
 }
 

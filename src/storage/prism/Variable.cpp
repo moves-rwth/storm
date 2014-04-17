@@ -8,7 +8,7 @@ namespace storm {
             // Nothing to do here.
         }
         
-        Variable::Variable(Variable const& oldVariable, std::string const& newName, std::map<std::string, std::string> const& renaming, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), name(newName), initialValueExpression(oldVariable.getInitialValueExpression().substitute<std::map>(renaming)), defaultInitialValue(oldVariable.hasDefaultInitialValue()) {
+        Variable::Variable(Variable const& oldVariable, std::string const& newName, std::map<std::string, std::string> const& renaming, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), name(newName), initialValueExpression(oldVariable.getInitialValueExpression().substitute(renaming)), defaultInitialValue(oldVariable.hasDefaultInitialValue()) {
             // Intentionally left empty.
         }
         

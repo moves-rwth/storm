@@ -585,7 +585,7 @@ namespace storm {
                     auto const& renamingPair = renaming.find(variable.getName());
                     LOG_THROW(renamingPair != renaming.end(), storm::exceptions::WrongFormatException, "Boolean variable '" << variable.getName() << " was not renamed.");
                     
-                    booleanVariables.push_back(storm::prism::BooleanVariable(renamingPair->second, variable.getInitialValueExpression().substitute<std::map>(expressionRenaming), this->getFilename(), get_line(qi::_1)));
+                    booleanVariables.push_back(storm::prism::BooleanVariable(renamingPair->second, variable.getInitialValueExpression().substitute(expressionRenaming), this->getFilename(), get_line(qi::_1)));
                 }
                 
                 // Rename the integer variables.
@@ -594,7 +594,7 @@ namespace storm {
                     auto const& renamingPair = renaming.find(variable.getName());
                     LOG_THROW(renamingPair != renaming.end(), storm::exceptions::WrongFormatException, "Integer variable '" << variable.getName() << " was not renamed.");
                     
-                    integerVariables.push_back(storm::prism::IntegerVariable(renamingPair->second, variable.getLowerBoundExpression().substitute<std::map>(expressionRenaming), variable.getUpperBoundExpression().substitute<std::map>(expressionRenaming), variable.getInitialValueExpression().substitute<std::map>(expressionRenaming), this->getFilename(), get_line(qi::_1)));
+                    integerVariables.push_back(storm::prism::IntegerVariable(renamingPair->second, variable.getLowerBoundExpression().substitute(expressionRenaming), variable.getUpperBoundExpression().substitute(expressionRenaming), variable.getInitialValueExpression().substitute(expressionRenaming), this->getFilename(), get_line(qi::_1)));
                 }
                 
                 // Rename commands.
@@ -606,12 +606,12 @@ namespace storm {
                         for (auto const& assignment : update.getAssignments()) {
                             auto const& renamingPair = renaming.find(assignment.getVariableName());
                             if (renamingPair != renaming.end()) {
-                                assignments.emplace_back(renamingPair->second, assignment.getExpression().substitute<std::map>(expressionRenaming), this->getFilename(), get_line(qi::_1));
+                                assignments.emplace_back(renamingPair->second, assignment.getExpression().substitute(expressionRenaming), this->getFilename(), get_line(qi::_1));
                             } else {
-                                assignments.emplace_back(assignment.getVariableName(), assignment.getExpression().substitute<std::map>(expressionRenaming), this->getFilename(), get_line(qi::_1));
+                                assignments.emplace_back(assignment.getVariableName(), assignment.getExpression().substitute(expressionRenaming), this->getFilename(), get_line(qi::_1));
                             }
                         }
-                        updates.emplace_back(globalProgramInformation.currentUpdateIndex, update.getLikelihoodExpression().substitute<std::map>(expressionRenaming), assignments, this->getFilename(), get_line(qi::_1));
+                        updates.emplace_back(globalProgramInformation.currentUpdateIndex, update.getLikelihoodExpression().substitute(expressionRenaming), assignments, this->getFilename(), get_line(qi::_1));
                         ++globalProgramInformation.currentUpdateIndex;
                     }
                     
@@ -621,7 +621,7 @@ namespace storm {
                         newActionName = renamingPair->second;
                     }
                     
-                    commands.emplace_back(globalProgramInformation.currentCommandIndex, newActionName, command.getGuardExpression().substitute<std::map>(expressionRenaming), updates, this->getFilename(), get_line(qi::_1));
+                    commands.emplace_back(globalProgramInformation.currentCommandIndex, newActionName, command.getGuardExpression().substitute(expressionRenaming), updates, this->getFilename(), get_line(qi::_1));
                     ++globalProgramInformation.currentCommandIndex;
                 }
                 

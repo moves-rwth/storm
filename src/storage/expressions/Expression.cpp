@@ -27,15 +27,21 @@ namespace storm {
             // Intentionally left empty.
         }
         
-        template<template<typename... Arguments> class MapType>
-        Expression Expression::substitute(MapType<std::string, Expression> const& identifierToExpressionMap) const {
-            return SubstitutionVisitor<MapType>(identifierToExpressionMap).substitute(this->getBaseExpressionPointer().get());
+		Expression Expression::substitute(std::map<std::string, Expression> const& identifierToExpressionMap) const {
+            return SubstitutionVisitor< std::map<std::string, Expression> >(identifierToExpressionMap).substitute(this->getBaseExpressionPointer().get());
         }
+
+		Expression Expression::substitute(std::unordered_map<std::string, Expression> const& identifierToExpressionMap) const {
+			return SubstitutionVisitor< std::unordered_map<std::string, Expression> >(identifierToExpressionMap).substitute(this->getBaseExpressionPointer().get());
+		}
         
-        template<template<typename... Arguments> class MapType>
-        Expression Expression::substitute(MapType<std::string, std::string> const& identifierToIdentifierMap) const {
-            return IdentifierSubstitutionVisitor<MapType>(identifierToIdentifierMap).substitute(this->getBaseExpressionPointer().get());
+		Expression Expression::substitute(std::map<std::string, std::string> const& identifierToIdentifierMap) const {
+			return IdentifierSubstitutionVisitor< std::map<std::string, std::string> >(identifierToIdentifierMap).substitute(this->getBaseExpressionPointer().get());
         }
+
+		Expression Expression::substitute(std::unordered_map<std::string, std::string> const& identifierToIdentifierMap) const {
+			return IdentifierSubstitutionVisitor< std::unordered_map<std::string, std::string> >(identifierToIdentifierMap).substitute(this->getBaseExpressionPointer().get());
+		}
         
         bool Expression::evaluateAsBool(Valuation const* valuation) const {
             return this->getBaseExpression().evaluateAsBool(valuation);
@@ -246,11 +252,6 @@ namespace storm {
             LOG_THROW(this->hasNumericalReturnType(), storm::exceptions::InvalidTypeException, "Operator 'ceil' requires numerical operand.");
             return Expression(std::shared_ptr<BaseExpression>(new UnaryNumericalFunctionExpression(ExpressionReturnType::Int, this->getBaseExpressionPointer(), UnaryNumericalFunctionExpression::OperatorType::Ceil)));
         }
-        
-        template Expression Expression::substitute<std::map>(std::map<std::string, storm::expressions::Expression> const&) const;
-        template Expression Expression::substitute<std::unordered_map>(std::unordered_map<std::string, storm::expressions::Expression> const&) const;
-        template Expression Expression::substitute<std::map>(std::map<std::string, std::string> const&) const;
-        template Expression Expression::substitute<std::unordered_map>(std::unordered_map<std::string, std::string> const&) const;
         
         std::ostream& operator<<(std::ostream& stream, Expression const& expression) {
             stream << expression.getBaseExpression();

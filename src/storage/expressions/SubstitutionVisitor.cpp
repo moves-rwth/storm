@@ -1,5 +1,6 @@
 #include <map>
 #include <unordered_map>
+#include <string>
 
 #include "src/storage/expressions/SubstitutionVisitor.h"
 
@@ -19,18 +20,18 @@
 
 namespace storm {
     namespace expressions  {
-        template<template<typename... Arguments> class MapType>
-        SubstitutionVisitor<MapType>::SubstitutionVisitor(MapType<std::string, Expression> const& identifierToExpressionMap) : identifierToExpressionMap(identifierToExpressionMap) {
+        template<typename MapType>
+        SubstitutionVisitor<MapType>::SubstitutionVisitor(MapType const& identifierToExpressionMap) : identifierToExpressionMap(identifierToExpressionMap) {
             // Intentionally left empty.
         }
 
-        template<template<typename... Arguments> class MapType>
+		template<typename MapType>
         Expression SubstitutionVisitor<MapType>::substitute(BaseExpression const* expression) {
             expression->accept(this);
             return Expression(this->expressionStack.top());
         }
         
-        template<template<typename... Arguments> class MapType>
+		template<typename MapType>
         void SubstitutionVisitor<MapType>::visit(IfThenElseExpression const* expression) {
             expression->getCondition()->accept(this);
             std::shared_ptr<BaseExpression const> conditionExpression = expressionStack.top();
@@ -52,7 +53,7 @@ namespace storm {
             }
         }
         
-        template<template<typename... Arguments> class MapType>
+		template<typename MapType>
         void SubstitutionVisitor<MapType>::visit(BinaryBooleanFunctionExpression const* expression) {
             expression->getFirstOperand()->accept(this);
             std::shared_ptr<BaseExpression const> firstExpression = expressionStack.top();
@@ -70,7 +71,7 @@ namespace storm {
             }
         }
         
-        template<template<typename... Arguments> class MapType>
+		template<typename MapType>
         void SubstitutionVisitor<MapType>::visit(BinaryNumericalFunctionExpression const* expression) {
             expression->getFirstOperand()->accept(this);
             std::shared_ptr<BaseExpression const> firstExpression = expressionStack.top();
@@ -88,7 +89,7 @@ namespace storm {
             }
         }
         
-        template<template<typename... Arguments> class MapType>
+		template<typename MapType>
         void SubstitutionVisitor<MapType>::visit(BinaryRelationExpression const* expression) {
             expression->getFirstOperand()->accept(this);
             std::shared_ptr<BaseExpression const> firstExpression = expressionStack.top();
@@ -106,7 +107,7 @@ namespace storm {
             }
         }
         
-        template<template<typename... Arguments> class MapType>
+		template<typename MapType>
         void SubstitutionVisitor<MapType>::visit(BooleanConstantExpression const* expression) {
             // If the boolean constant is in the key set of the substitution, we need to replace it.
             auto const& nameExpressionPair = this->identifierToExpressionMap.find(expression->getConstantName());
@@ -117,7 +118,7 @@ namespace storm {
             }
         }
         
-        template<template<typename... Arguments> class MapType>
+		template<typename MapType>
         void SubstitutionVisitor<MapType>::visit(DoubleConstantExpression const* expression) {
             // If the double constant is in the key set of the substitution, we need to replace it.
             auto const& nameExpressionPair = this->identifierToExpressionMap.find(expression->getConstantName());
@@ -128,7 +129,7 @@ namespace storm {
             }
         }
         
-        template<template<typename... Arguments> class MapType>
+		template<typename MapType>
         void SubstitutionVisitor<MapType>::visit(IntegerConstantExpression const* expression) {
             // If the integer constant is in the key set of the substitution, we need to replace it.
             auto const& nameExpressionPair = this->identifierToExpressionMap.find(expression->getConstantName());
@@ -139,7 +140,7 @@ namespace storm {
             }
         }
         
-        template<template<typename... Arguments> class MapType>
+		template<typename MapType>
         void SubstitutionVisitor<MapType>::visit(VariableExpression const* expression) {
             // If the variable is in the key set of the substitution, we need to replace it.
             auto const& nameExpressionPair = this->identifierToExpressionMap.find(expression->getVariableName());
@@ -150,7 +151,7 @@ namespace storm {
             }
         }
         
-        template<template<typename... Arguments> class MapType>
+		template<typename MapType>
         void SubstitutionVisitor<MapType>::visit(UnaryBooleanFunctionExpression const* expression) {
             expression->getOperand()->accept(this);
             std::shared_ptr<BaseExpression const> operandExpression = expressionStack.top();
@@ -164,7 +165,7 @@ namespace storm {
             }
         }
         
-        template<template<typename... Arguments> class MapType>
+		template<typename MapType>
         void SubstitutionVisitor<MapType>::visit(UnaryNumericalFunctionExpression const* expression) {
             expression->getOperand()->accept(this);
             std::shared_ptr<BaseExpression const> operandExpression = expressionStack.top();
@@ -178,23 +179,23 @@ namespace storm {
             }
         }
         
-        template<template<typename... Arguments> class MapType>
+		template<typename MapType>
         void SubstitutionVisitor<MapType>::visit(BooleanLiteralExpression const* expression) {
             this->expressionStack.push(expression->getSharedPointer());
         }
         
-        template<template<typename... Arguments> class MapType>
+		template<typename MapType>
         void SubstitutionVisitor<MapType>::visit(IntegerLiteralExpression const* expression) {
             this->expressionStack.push(expression->getSharedPointer());
         }
         
-        template<template<typename... Arguments> class MapType>
+		template<typename MapType>
         void SubstitutionVisitor<MapType>::visit(DoubleLiteralExpression const* expression) {
             this->expressionStack.push(expression->getSharedPointer());
         }
         
         // Explicitly instantiate the class with map and unordered_map.
-        template class SubstitutionVisitor<std::map>;
-        template class SubstitutionVisitor<std::unordered_map>;
+		template class SubstitutionVisitor< std::map<std::string, Expression> >;
+		template class SubstitutionVisitor< std::unordered_map<std::string, Expression> >;
     }
 }

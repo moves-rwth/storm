@@ -37,7 +37,7 @@ namespace storm {
                 newUpdates.emplace_back(update.substitute(substitution));
             }
             
-            return Command(this->getGlobalIndex(), this->getActionName(), this->getGuardExpression().substitute<std::map>(substitution), newUpdates, this->getFilename(), this->getLineNumber());
+            return Command(this->getGlobalIndex(), this->getActionName(), this->getGuardExpression().substitute(substitution), newUpdates, this->getFilename(), this->getLineNumber());
         }
         
         std::ostream& operator<<(std::ostream& stream, Command const& command) {

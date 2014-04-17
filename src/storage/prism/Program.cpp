@@ -229,7 +229,7 @@ namespace storm {
                     LOG_THROW(constantDefinitions.find(constant.getName()) == constantDefinitions.end(), storm::exceptions::InvalidArgumentException, "Illegally defining already defined constant '" << constant.getName() << "'.");
                     
                     // Now replace the occurrences of undefined constants in its defining expression.
-                    newConstants.emplace_back(constant.getType(), constant.getName(), constant.getExpression().substitute<std::map>(constantDefinitions), constant.getFilename(), constant.getLineNumber());
+                    newConstants.emplace_back(constant.getType(), constant.getName(), constant.getExpression().substitute(constantDefinitions), constant.getFilename(), constant.getLineNumber());
                 } else {
                     auto const& variableExpressionPair = constantDefinitions.find(constant.getName());
                     
@@ -306,7 +306,7 @@ namespace storm {
                 newRewardModels.emplace_back(rewardModel.substitute(constantSubstitution));
             }
             
-            storm::expressions::Expression newInitialStateExpression = this->getInitialStatesExpression().substitute<std::map>(constantSubstitution);
+            storm::expressions::Expression newInitialStateExpression = this->getInitialStatesExpression().substitute(constantSubstitution);
             
             std::vector<Label> newLabels;
             newLabels.reserve(this->getNumberOfLabels());
