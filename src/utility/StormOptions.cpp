@@ -36,7 +36,10 @@ bool storm::utility::StormOptions::optionsRegistered = storm::settings::Settings
     
     settings->addOption(storm::settings::OptionBuilder("StoRM Main", "timeout", "t", "If specified, computation will abort after the given number of seconds.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("seconds", "The number of seconds after which to timeout.").setDefaultValueUnsignedInteger(0).build()).build());
     
-	std::vector<std::string> linearEquationSolver;
+    settings->addOption(storm::settings::OptionBuilder("StoRM Main", "parameters", "", "Enable parameters.").build());
+	
+    settings->addOption(storm::settings::OptionBuilder("StoRM Main", "reachability", "", "Export reachability problem.").build());
+    std::vector<std::string> linearEquationSolver;
 	linearEquationSolver.push_back("gmm++");
 	linearEquationSolver.push_back("native");
 	settings->addOption(storm::settings::OptionBuilder("StoRM Main", "linsolver", "", "Sets which solver is preferred for solving systems of linear equations.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the solver to prefer. Available are: gmm++ and native.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(linearEquationSolver)).setDefaultValueString("gmm++").build()).build());
@@ -50,6 +53,11 @@ bool storm::utility::StormOptions::optionsRegistered = storm::settings::Settings
 	lpSolvers.push_back("gurobi");
 	lpSolvers.push_back("glpk");
 	settings->addOption(storm::settings::OptionBuilder("StoRM Main", "lpsolver", "", "Sets which LP solver is preferred.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("LP solver name", "The name of an available LP solver. Valid values are gurobi and glpk.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(lpSolvers)).setDefaultValueString("glpk").build()).build());
+    
+    std::vector<std::string> exportReachabilityProblem;
+	exportReachabilityProblem.push_back("smt2");
+	settings->addOption(storm::settings::OptionBuilder("StoRM Main", "encoding", "", "Sets how to export reachability problem.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of format to prefer. Available are: smt2").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(exportReachabilityProblem)).setDefaultValueString("smt2").build()).build());
+
     
 	return true;
 });
