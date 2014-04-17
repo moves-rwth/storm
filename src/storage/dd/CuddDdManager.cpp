@@ -192,7 +192,7 @@ namespace storm {
             }
             
             // Then, we sort this list according to the indices of the ADDs.
-            std::sort(variableNamePairs.begin(), variableNamePairs.end(), [](std::pair<ADD, std::string> const& a, std::pair<ADD, std::string> const& b) { return a.first.getNode()->index < b.first.getNode()->index; });
+            std::sort(variableNamePairs.begin(), variableNamePairs.end(), [](std::pair<ADD, std::string> const& a, std::pair<ADD, std::string> const& b) { return a.first.NodeReadIndex() < b.first.NodeReadIndex(); });
             
             // Now, we project the sorted vector to its second component.
             std::vector<std::string> result;
