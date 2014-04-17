@@ -5277,14 +5277,14 @@ ABDD::FirstCube(
 
 
 int
-NextCube(
+ABDD::NextCube(
   DdGen * gen,
   int ** cube,
-  CUDD_VALUE_TYPE * value)
+  CUDD_VALUE_TYPE * value) const
 {
     return Cudd_NextCube(gen, cube, value);
 
-} // NextCube
+} // ABDD::NextCube
 
 
 BDD

@@ -20,7 +20,7 @@ namespace storm {
         template<>
         class Dd<DdType::CUDD> {
         public:
-            // Declare the DdManager class as friend so it can access the internals of a DD.
+            // Declare the DdManager and DdIterator class as friend so it can access the internals of a DD.
             friend class DdManager<DdType::CUDD>;
             
             // Instantiate all copy/move constructors/assignments with the default implementation.
