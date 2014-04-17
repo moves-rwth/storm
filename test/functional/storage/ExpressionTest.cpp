@@ -264,6 +264,12 @@ TEST(Expression, OperatorTest) {
     ASSERT_NO_THROW(tempExpression = boolVarExpression.iff(boolConstExpression));
     EXPECT_TRUE(tempExpression.getReturnType() == storm::expressions::ExpressionReturnType::Bool);
     
+    ASSERT_THROW(tempExpression = trueExpression ^ piExpression, storm::exceptions::InvalidTypeException);
+    ASSERT_NO_THROW(tempExpression = trueExpression ^ falseExpression);
+    EXPECT_TRUE(tempExpression.getReturnType() == storm::expressions::ExpressionReturnType::Bool);
+    ASSERT_NO_THROW(tempExpression = boolVarExpression ^ boolConstExpression);
+    EXPECT_TRUE(tempExpression.getReturnType() == storm::expressions::ExpressionReturnType::Bool);
+    
     ASSERT_THROW(tempExpression = trueExpression.floor(), storm::exceptions::InvalidTypeException);
     ASSERT_NO_THROW(tempExpression = threeExpression.floor());
     EXPECT_TRUE(tempExpression.getReturnType() == storm::expressions::ExpressionReturnType::Int);

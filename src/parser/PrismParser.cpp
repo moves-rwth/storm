@@ -91,10 +91,10 @@ namespace storm {
             relativeExpression = (plusExpression >> qi::lit(">=") >> plusExpression)[qi::_val = phoenix::bind(&PrismParser::createGreaterOrEqualExpression, phoenix::ref(*this), qi::_1, qi::_2)] | (plusExpression >> qi::lit(">") >> plusExpression)[qi::_val = phoenix::bind(&PrismParser::createGreaterExpression, phoenix::ref(*this), qi::_1, qi::_2)] | (plusExpression >> qi::lit("<=") >> plusExpression)[qi::_val = phoenix::bind(&PrismParser::createLessOrEqualExpression, phoenix::ref(*this), qi::_1, qi::_2)] | (plusExpression >> qi::lit("<") >> plusExpression)[qi::_val = phoenix::bind(&PrismParser::createLessExpression, phoenix::ref(*this), qi::_1, qi::_2)] | (plusExpression >> qi::lit("=") >> plusExpression)[qi::_val = phoenix::bind(&PrismParser::createEqualsExpression, phoenix::ref(*this), qi::_1, qi::_2)] | (plusExpression >> qi::lit("!=") >> plusExpression)[qi::_val = phoenix::bind(&PrismParser::createNotEqualsExpression, phoenix::ref(*this), qi::_1, qi::_2)] | plusExpression[qi::_val = qi::_1];
             relativeExpression.name("relative expression");
             
-            andExpression = relativeExpression[qi::_val = qi::_1] >> *(qi::lit("&") >> relativeExpression)[qi::_val = phoenix::bind(&PrismParser::createAndExpression, phoenix::ref(*this), qi::_val, qi::_1)];
+            andExpression = relativeExpression[qi::_val = qi::_1] >> *((qi::lit("&")[qi::_a = storm::expressions::BinaryBooleanFunctionExpression::OperatorType::And] | qi::lit("<=>")[qi::_a = storm::expressions::BinaryBooleanFunctionExpression::OperatorType::Iff] | qi::lit("^")[qi::_a = storm::expressions::BinaryBooleanFunctionExpression::OperatorType::Xor]) >> relativeExpression)[phoenix::if_(qi::_a == storm::expressions::BinaryBooleanFunctionExpression::OperatorType::And) [ qi::_val = phoenix::bind(&PrismParser::createAndExpression, phoenix::ref(*this), qi::_val, qi::_1)] .else_ [ phoenix::if_(qi::_a == storm::expressions::BinaryBooleanFunctionExpression::OperatorType::Iff) [ qi::_val = phoenix::bind(&PrismParser::createIffExpression, phoenix::ref(*this), qi::_val, qi::_1) ] .else_ [ qi::_val = phoenix::bind(&PrismParser::createXorExpression, phoenix::ref(*this), qi::_val, qi::_1) ] ] ];
             andExpression.name("and expression");
             
-            orExpression = andExpression[qi::_val = qi::_1] >> *(qi::lit("|") >> andExpression)[qi::_val = phoenix::bind(&PrismParser::createOrExpression, phoenix::ref(*this), qi::_val, qi::_1)];
+            orExpression = andExpression[qi::_val = qi::_1] >> *((qi::lit("|")[qi::_a = true] | qi::lit("=>")[qi::_a = false]) >> andExpression)[phoenix::if_(qi::_a) [qi::_val = phoenix::bind(&PrismParser::createOrExpression, phoenix::ref(*this), qi::_val, qi::_1)] .else_ [qi::_val = phoenix::bind(&PrismParser::createImpliesExpression, phoenix::ref(*this), qi::_val, qi::_1)] ];
             orExpression.name("or expression");
             
             iteExpression = orExpression[qi::_val = qi::_1] >> -(qi::lit("?") > orExpression > qi::lit(":") > orExpression)[qi::_val = phoenix::bind(&PrismParser::createIteExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)];
@@ -271,6 +271,14 @@ namespace storm {
             }
         }
         
+        storm::expressions::Expression PrismParser::createImpliesExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const {
+            if (!this->secondRun) {
+                return storm::expressions::Expression::createFalse();
+            } else {
+                return e1.implies(e2);
+            }
+        }
+        
         storm::expressions::Expression PrismParser::createOrExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const {
             if (!this->secondRun) {
                 return storm::expressions::Expression::createFalse();
@@ -316,6 +324,22 @@ namespace storm {
                 return storm::expressions::Expression::createFalse();
             } else {
                 return e1 <= e2;
+            }
+        }
+        
+        storm::expressions::Expression PrismParser::createIffExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const {
+            if (!this->secondRun) {
+                return storm::expressions::Expression::createFalse();
+            } else {
+                return e1.iff(e2);
+            }
+        }
+        
+        storm::expressions::Expression PrismParser::createXorExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const {
+            if (!this->secondRun) {
+                return storm::expressions::Expression::createFalse();
+            } else {
+                return e1 ^ e2;
             }
         }
         

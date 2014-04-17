@@ -47,6 +47,7 @@ namespace storm {
             Expression operator-() const;
             Expression operator*(Expression const& other) const;
             Expression operator/(Expression const& other) const;
+            Expression operator^(Expression const& other) const;
             Expression operator&&(Expression const& other) const;
             Expression operator||(Expression const& other) const;
             Expression operator!() const;
