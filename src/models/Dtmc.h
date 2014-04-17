@@ -46,8 +46,8 @@ public:
 	 * @param optionalChoiceLabeling A vector that represents the labels associated with the choices of each state.
 	 */
 	Dtmc(storm::storage::SparseMatrix<T> const& probabilityMatrix, storm::models::AtomicPropositionsLabeling const& stateLabeling,
-				boost::optional<std::vector<T>> const& optionalStateRewardVector, boost::optional<storm::storage::SparseMatrix<T>> const& optionalTransitionRewardMatrix,
-                boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> const& optionalChoiceLabeling)
+				boost::optional<std::vector<T>> const& optionalStateRewardVector = {}, boost::optional<storm::storage::SparseMatrix<T>> const& optionalTransitionRewardMatrix = {},
+                boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> const& optionalChoiceLabeling = {})
 			: AbstractDeterministicModel<T>(probabilityMatrix, stateLabeling, optionalStateRewardVector, optionalTransitionRewardMatrix, optionalChoiceLabeling) {
 		if (!this->checkValidityOfProbabilityMatrix()) {
 			LOG4CPLUS_ERROR(logger, "Probability matrix is invalid.");
@@ -190,11 +190,11 @@ public:
 
 		// The number of transitions of the new Dtmc is the number of transitions transfered
 		// from the old one plus one transition for each state to s_b.
-		storm::storage::SparseMatrixBuilder<T> newMatBuilder(newStateCount, subSysTransitionCount + newStateCount);
+		storm::storage::SparseMatrixBuilder<T> newMatBuilder(newStateCount,newStateCount,subSysTransitionCount + newStateCount);
 
 		// Now fill the matrix.
 		newRow = 0;
-		T rest = 0;
+		T rest = utility::constantZero<T>();
 		for(uint_fast64_t row = 0; row < origMat.getRowCount(); ++row) {
 			if(subSysStates.get(row)){
 				// Transfer transitions
@@ -299,8 +299,7 @@ private:
 	 */
 	bool checkValidityOfProbabilityMatrix() {
 		// Get the settings object to customize linear solving.
-		storm::settings::Settings* s = storm::settings::Settings::getInstance();
-		double precision = s->getOptionByLongName("precision").getArgument(0).getValueAsDouble();
+
 
 		if (this->getTransitionMatrix().getRowCount() != this->getTransitionMatrix().getColumnCount()) {
 			// not square
@@ -308,19 +307,27 @@ private:
 			return false;
 		}
 		for (uint_fast64_t row = 0; row < this->getTransitionMatrix().getRowCount(); ++row) {
-			T sum = this->getTransitionMatrix().getRowSum(row);
-                        
-			if (sum == 0) {
+			T sum = this->getTransitionMatrix().getRowSum(row); 
+			
+			if (sum == T(0)) {
+				
+				LOG4CPLUS_ERROR(logger, "Row " << row << " is a deadlock (sum == " <<  sum << ").");
 				return false;
 			}
-			if (std::abs(sum - 1) > precision) {
+			if (storm::utility::isOne(sum)) {
 				LOG4CPLUS_ERROR(logger, "Row " << row << " has sum " << sum << ".");
 				return false;
 			}
 		}
 		return true;
 	}
+	
+	
+	
+	
 };
+
+
 
 } // namespace models
 

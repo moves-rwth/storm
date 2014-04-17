@@ -21,6 +21,7 @@
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/storage/BitVector.h"
 #include "src/storage/LabeledValues.h"
+#include "src/settings/Settings.h"
 
 namespace storm {
 
@@ -201,6 +202,21 @@ inline storm::storage::LabeledValues<double> constantInfinity() {
 }
     
 /*! @endcond */
+
+template<typename T>
+inline bool isOne(T sum)
+{
+	return (sum-T(1)).isZero();
+}
+
+template<>
+inline bool isOne(double sum)
+{
+	storm::settings::Settings* s = storm::settings::Settings::getInstance();
+	double precision = s->getOptionByLongName("precision").getArgument(0).getValueAsDouble();
+	return std::abs(sum - 1) < precision;
+}
+
 
 } //namespace utility
 

@@ -30,10 +30,11 @@
 #include "src/settings/Settings.h"
 #include "src/exceptions/ExceptionMacros.h"
 #include "src/exceptions/WrongFormatException.h"
+#include "src/storage/expressions/ExpressionEvaluation.h"
 
 namespace storm {
     namespace adapters {
-        
+		
         using namespace storm::utility::prism;
                 
         template<typename ValueType>
@@ -321,7 +322,7 @@ namespace storm {
                 return result;
             }
                         
-            static std::list<Choice<ValueType>> getUnlabeledTransitions(storm::prism::Program const& program, StateInformation& stateInformation, VariableInformation const& variableInformation, uint_fast64_t stateIndex, std::queue<uint_fast64_t>& stateQueue) {
+            static std::list<Choice<ValueType>> getUnlabeledTransitions(storm::prism::Program const& program, StateInformation& stateInformation, VariableInformation const& variableInformation, uint_fast64_t stateIndex, std::queue<uint_fast64_t>& stateQueue, expressions::ExpressionEvaluation<ValueType>& eval) {
                 std::list<Choice<ValueType>> result;
                 
                 StateType const* currentState = stateInformation.reachableStates[stateIndex];
@@ -346,7 +347,7 @@ namespace storm {
                         Choice<ValueType>& choice = result.back();
                         choice.addChoiceLabel(command.getGlobalIndex());
                         
-                        double probabilitySum = 0;
+                        ValueType probabilitySum = utility::constantZero<ValueType>();
                         // Iterate over all updates of the current command.
                         for (uint_fast64_t k = 0; k < command.getNumberOfUpdates(); ++k) {
                             storm::prism::Update const& update = command.getUpdate(k);
@@ -360,7 +361,7 @@ namespace storm {
                             }
                             
                             // Update the choice by adding the probability/target state to it.
-                            double probabilityToAdd = update.getLikelihoodExpression().evaluateAsDouble(currentState);
+                            ValueType probabilityToAdd = eval.evaluate(update.getLikelihoodExpression(),currentState);
                             probabilitySum += probabilityToAdd;
                             boost::container::flat_set<uint_fast64_t> labels;
 							labels.insert(update.getGlobalIndex());
@@ -368,14 +369,14 @@ namespace storm {
                         }
                         
                         // Check that the resulting distribution is in fact a distribution.
-                        LOG_THROW(std::abs(1 - probabilitySum) < storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble(), storm::exceptions::WrongFormatException, "Probabilities do not sum to one for command '" << command << "'.");
+                        LOG_THROW(!storm::utility::isOne(probabilitySum), storm::exceptions::WrongFormatException, "Probabilities do not sum to one for command '" << command << "'.");
                     }
                 }
                 
                 return result;
             }
             
-            static std::list<Choice<ValueType>> getLabeledTransitions(storm::prism::Program const& program, StateInformation& stateInformation, VariableInformation const& variableInformation, uint_fast64_t stateIndex, std::queue<uint_fast64_t>& stateQueue) {
+            static std::list<Choice<ValueType>> getLabeledTransitions(storm::prism::Program const& program, StateInformation& stateInformation, VariableInformation const& variableInformation, uint_fast64_t stateIndex, std::queue<uint_fast64_t>& stateQueue, expressions::ExpressionEvaluation<ValueType>& eval) {
                 std::list<Choice<ValueType>> result;
                 
                 for (std::string const& action : program.getActions()) {
@@ -395,9 +396,9 @@ namespace storm {
                         // As long as there is one feasible combination of commands, keep on expanding it.
                         bool done = false;
                         while (!done) {
-                            std::unordered_map<StateType*, storm::storage::LabeledValues<double>, StateHash, StateCompare>* currentTargetStates = new std::unordered_map<StateType*, storm::storage::LabeledValues<double>, StateHash, StateCompare>();
-                            std::unordered_map<StateType*, storm::storage::LabeledValues<double>, StateHash, StateCompare>* newTargetStates = new std::unordered_map<StateType*, storm::storage::LabeledValues<double>, StateHash, StateCompare>();
-                            (*currentTargetStates)[new StateType(*currentState)] = storm::storage::LabeledValues<double>(1.0);
+                            std::unordered_map<StateType*, storm::storage::LabeledValues<ValueType>, StateHash, StateCompare>* currentTargetStates = new std::unordered_map<StateType*, storm::storage::LabeledValues<ValueType>, StateHash, StateCompare>();
+                            std::unordered_map<StateType*, storm::storage::LabeledValues<ValueType>, StateHash, StateCompare>* newTargetStates = new std::unordered_map<StateType*, storm::storage::LabeledValues<ValueType>, StateHash, StateCompare>();
+                            (*currentTargetStates)[new StateType(*currentState)] = storm::storage::LabeledValues<ValueType>(ValueType(1));
                             
                             // FIXME: This does not check whether a global variable is written multiple times. While the
                             // behaviour for this is undefined anyway, a warning should be issued in that case.
@@ -410,9 +411,9 @@ namespace storm {
                                     for (auto const& stateProbabilityPair : *currentTargetStates) {
                                         StateType* newTargetState = applyUpdate(variableInformation, stateProbabilityPair.first, currentState, update);
 
-                                        storm::storage::LabeledValues<double> newProbability;
+                                        storm::storage::LabeledValues<ValueType> newProbability;
                                         
-                                        double updateProbability = update.getLikelihoodExpression().evaluateAsDouble(currentState);
+                                        ValueType updateProbability = eval.evaluate(update.getLikelihoodExpression(),currentState);
                                         for (auto const& valueLabelSetPair : stateProbabilityPair.second) {
                                             // Copy the label set, so we can modify it.
                                             boost::container::flat_set<uint_fast64_t> newLabelSet = valueLabelSetPair.second;
@@ -441,7 +442,7 @@ namespace storm {
                                     
                                     delete currentTargetStates;
                                     currentTargetStates = newTargetStates;
-                                    newTargetStates = new std::unordered_map<StateType*, storm::storage::LabeledValues<double>, StateHash, StateCompare>();
+                                    newTargetStates = new std::unordered_map<StateType*, storm::storage::LabeledValues<ValueType>, StateHash, StateCompare>();
                                 }
                             }
                             
@@ -458,7 +459,7 @@ namespace storm {
                                 choice.addChoiceLabel(iteratorList[i]->getGlobalIndex());
                             }
                             
-                            double probabilitySum = 0;
+                            ValueType probabilitySum = utility::constantZero<ValueType>();
                             for (auto const& stateProbabilityPair : *newTargetStates) {
                                 std::pair<bool, uint_fast64_t> flagTargetStateIndexPair = getOrAddStateIndex(stateProbabilityPair.first, stateInformation);
 
@@ -474,7 +475,7 @@ namespace storm {
                             }
                             
                             // Check that the resulting distribution is in fact a distribution.
-                            if (std::abs(1 - probabilitySum) > storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble()) {
+                            if (!storm::utility::isOne(probabilitySum)) {
                                 LOG4CPLUS_ERROR(logger, "Sum of update probabilities do not some to one for some command.");
                                 throw storm::exceptions::WrongFormatException() << "Sum of update probabilities do not some to one for some command.";
                             }
@@ -519,7 +520,7 @@ namespace storm {
              * @return A tuple containing a vector with all rows at which the nondeterministic choices of each state begin
              * and a vector containing the labels associated with each choice.
              */
-            static std::vector<boost::container::flat_set<uint_fast64_t>> buildMatrices(storm::prism::Program const& program, VariableInformation const& variableInformation, std::vector<storm::prism::TransitionReward> const& transitionRewards, StateInformation& stateInformation, bool deterministicModel, storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, storm::storage::SparseMatrixBuilder<ValueType>& transitionRewardMatrixBuilder) {
+            static std::vector<boost::container::flat_set<uint_fast64_t>> buildMatrices(storm::prism::Program const& program, VariableInformation const& variableInformation, std::vector<storm::prism::TransitionReward> const& transitionRewards, StateInformation& stateInformation, bool deterministicModel, storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, storm::storage::SparseMatrixBuilder<ValueType>& transitionRewardMatrixBuilder, expressions::ExpressionEvaluation<ValueType>& eval) {
                 std::vector<boost::container::flat_set<uint_fast64_t>> choiceLabels;
                 
                 // Initialize a queue and insert the initial state.
@@ -550,8 +551,8 @@ namespace storm {
                     uint_fast64_t currentState = stateQueue.front();
             
                     // Retrieve all choices for the current state.
-                    std::list<Choice<ValueType>> allUnlabeledChoices = getUnlabeledTransitions(program, stateInformation, variableInformation, currentState, stateQueue);
-                    std::list<Choice<ValueType>> allLabeledChoices = getLabeledTransitions(program, stateInformation, variableInformation, currentState, stateQueue);
+                    std::list<Choice<ValueType>> allUnlabeledChoices = getUnlabeledTransitions(program, stateInformation, variableInformation, currentState, stateQueue, eval);
+                    std::list<Choice<ValueType>> allLabeledChoices = getLabeledTransitions(program, stateInformation, variableInformation, currentState, stateQueue, eval);
                     
                     uint_fast64_t totalNumberOfChoices = allUnlabeledChoices.size() + allLabeledChoices.size();
                     
@@ -582,7 +583,7 @@ namespace storm {
                                     // Now add all rewards that match this choice.
                                     for (auto const& transitionReward : transitionRewards) {
                                         if (transitionReward.getActionName() == "" && transitionReward.getStatePredicateExpression().evaluateAsBool(stateInformation.reachableStates.at(currentState))) {
-                                            stateToRewardMap[stateProbabilityPair.first] += ValueType(transitionReward.getRewardValueExpression().evaluateAsDouble(stateInformation.reachableStates.at(currentState)));
+                                            stateToRewardMap[stateProbabilityPair.first] += eval.evaluate(transitionReward.getRewardValueExpression(),stateInformation.reachableStates.at(currentState));
                                         }
                                     }
                                 }
@@ -595,7 +596,7 @@ namespace storm {
                                     // Now add all rewards that match this choice.
                                     for (auto const& transitionReward : transitionRewards) {
                                         if (transitionReward.getActionName() == choice.getActionLabel() && transitionReward.getStatePredicateExpression().evaluateAsBool(stateInformation.reachableStates.at(currentState))) {
-                                            stateToRewardMap[stateProbabilityPair.first] += ValueType(transitionReward.getRewardValueExpression().evaluateAsDouble(stateInformation.reachableStates.at(currentState)));
+                                            stateToRewardMap[stateProbabilityPair.first] += eval.evaluate(transitionReward.getRewardValueExpression(),stateInformation.reachableStates.at(currentState));
                                         }
                                     }
                                 }
@@ -633,7 +634,7 @@ namespace storm {
                                     // Now add all rewards that match this choice.
                                     for (auto const& transitionReward : transitionRewards) {
                                         if (transitionReward.getActionName() == "" && transitionReward.getStatePredicateExpression().evaluateAsBool(stateInformation.reachableStates.at(currentState))) {
-                                            stateToRewardMap[stateProbabilityPair.first] += ValueType(transitionReward.getRewardValueExpression().evaluateAsDouble(stateInformation.reachableStates.at(currentState)));
+                                            stateToRewardMap[stateProbabilityPair.first] += eval.evaluate(transitionReward.getRewardValueExpression(),stateInformation.reachableStates.at(currentState));
                                         }
                                     }
 
@@ -660,7 +661,7 @@ namespace storm {
                                     // Now add all rewards that match this choice.
                                     for (auto const& transitionReward : transitionRewards) {
                                         if (transitionReward.getActionName() == choice.getActionLabel() && transitionReward.getStatePredicateExpression().evaluateAsBool(stateInformation.reachableStates.at(currentState))) {
-                                            stateToRewardMap[stateProbabilityPair.first] += ValueType(transitionReward.getRewardValueExpression().evaluateAsDouble(stateInformation.reachableStates.at(currentState)));
+                                            stateToRewardMap[stateProbabilityPair.first] += eval.evaluate(transitionReward.getRewardValueExpression(),stateInformation.reachableStates.at(currentState));
                                         }
                                     }
 
@@ -694,6 +695,7 @@ namespace storm {
              */
             static ModelComponents buildModelComponents(storm::prism::Program const& program, std::string const& rewardModelName) {
                 ModelComponents modelComponents;
+				expressions::ExpressionEvaluation<ValueType> eval;
                 
                 VariableInformation variableInformation;
                 for (auto const& integerVariable : program.getGlobalIntegerVariables()) {
@@ -718,7 +720,7 @@ namespace storm {
                 // Build the transition and reward matrices.
                 storm::storage::SparseMatrixBuilder<ValueType> transitionMatrixBuilder(0, 0, 0, !deterministicModel, 0);
                 storm::storage::SparseMatrixBuilder<ValueType> transitionRewardMatrixBuilder(0, 0, 0, !deterministicModel, 0);
-                modelComponents.choiceLabeling = buildMatrices(program, variableInformation, rewardModel.getTransitionRewards(), stateInformation, deterministicModel, transitionMatrixBuilder, transitionRewardMatrixBuilder);
+                modelComponents.choiceLabeling = buildMatrices(program, variableInformation, rewardModel.getTransitionRewards(), stateInformation, deterministicModel, transitionMatrixBuilder, transitionRewardMatrixBuilder, eval);
                 
                 // Finalize the resulting matrices.
                 modelComponents.transitionMatrix = transitionMatrixBuilder.build();
@@ -728,7 +730,7 @@ namespace storm {
                 modelComponents.stateLabeling = buildStateLabeling(program, variableInformation, stateInformation);
                 
                 // Finally, construct the state rewards.
-                modelComponents.stateRewards = buildStateRewards(rewardModel.getStateRewards(), stateInformation);
+                modelComponents.stateRewards = buildStateRewards(rewardModel.getStateRewards(), stateInformation, eval);
                 
                 // After everything has been created, we can delete the states.
                 for (auto state : stateInformation.reachableStates) {
@@ -780,20 +782,22 @@ namespace storm {
              * @param stateInformation Information about the state space.
              * @return A vector containing the state rewards for the state space.
              */
-            static std::vector<ValueType> buildStateRewards(std::vector<storm::prism::StateReward> const& rewards, StateInformation const& stateInformation) {
+            static std::vector<ValueType> buildStateRewards(std::vector<storm::prism::StateReward> const& rewards, StateInformation const& stateInformation, expressions::ExpressionEvaluation<ValueType>& eval) {
                 std::vector<ValueType> result(stateInformation.reachableStates.size());
                 for (uint_fast64_t index = 0; index < stateInformation.reachableStates.size(); index++) {
                     result[index] = ValueType(0);
                     for (auto const& reward : rewards) {
                         // Add this reward to the state if the state is included in the state reward.
                         if (reward.getStatePredicateExpression().evaluateAsBool(stateInformation.reachableStates[index])) {
-                            result[index] += ValueType(reward.getRewardValueExpression().evaluateAsDouble(stateInformation.reachableStates[index]));
+                            result[index] += eval.evaluate(reward.getRewardValueExpression(),stateInformation.reachableStates[index]);
                         }
                     }
                 }
                 return result;
             }
         };
+		
+		
         
     } // namespace adapters
 } // namespace storm
