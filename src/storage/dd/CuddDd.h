@@ -49,6 +49,20 @@ namespace storm {
             bool operator!=(Dd<DdType::CUDD> const& other) const;
             
             /*!
+             * Performs a logical or of the current and the given DD.
+             *
+             * @return The logical or of the operands.
+             */
+            Dd<DdType::CUDD> operator||(Dd<DdType::CUDD> const& other) const;
+            
+            /*!
+             * Performs a logical and of the current and the given DD.
+             *
+             * @return The logical and of the operands.
+             */
+            Dd<DdType::CUDD> operator&&(Dd<DdType::CUDD> const& other) const;
+            
+            /*!
              * Adds the two DDs.
              *
              * @param other The DD to add to the current one.
@@ -125,14 +139,7 @@ namespace storm {
              *
              * @return The logical complement of the current DD.
              */
-            Dd<DdType::CUDD> operator~() const;
-
-            /*!
-             * Performs a logical or of the current and the given DD.
-             *
-             * @return The logical or of the operands.
-             */
-            Dd<DdType::CUDD> logicalOr(Dd<DdType::CUDD> const& other) const;
+            Dd<DdType::CUDD> operator!() const;
             
             /*!
              * Logically complements the current DD. The result will map all encodings with a value
@@ -221,6 +228,17 @@ namespace storm {
              * @param metaVariableNames The names of all meta variables from which to abstract.
              */
             void maxAbstract(std::set<std::string> const& metaVariableNames);
+            
+            /*!
+             * Checks whether the current and the given DD represent the same function modulo some given precision.
+             *
+             * @param other The DD with which to compare.
+             * @param precision An upper bound on the maximal difference between any two function values that is to be
+             * tolerated.
+             * @param relative If set to true, not the absolute values have to be within the precision, but the relative
+             * values.
+             */
+            bool equalModuloPrecision(Dd<DdType::CUDD> const& other, double precision, bool relative = true) const;
             
             /*!
              * Swaps the given pairs of meta variables in the DD. The pairs of meta variables must be guaranteed to have

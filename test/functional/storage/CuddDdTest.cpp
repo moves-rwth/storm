@@ -130,9 +130,12 @@ TEST(CuddDd, OperatorTest) {
     dd3 += manager->getZero();
     EXPECT_TRUE(dd3 == manager->getConstant(2));
     
+    dd3 = dd1 && manager->getConstant(3);
+    EXPECT_TRUE(dd1 == manager->getOne());
+
     dd3 = dd1 * manager->getConstant(3);
     EXPECT_TRUE(dd3 == manager->getConstant(3));
-    
+
     dd3 *= manager->getConstant(2);
     EXPECT_TRUE(dd3 == manager->getConstant(6));
     
@@ -148,10 +151,10 @@ TEST(CuddDd, OperatorTest) {
     dd3.complement();
     EXPECT_TRUE(dd3 == manager->getZero());
     
-    dd1 = ~dd3;
+    dd1 = !dd3;
     EXPECT_TRUE(dd1 == manager->getOne());
 
-    dd3 = dd1.logicalOr(dd2);
+    dd3 = dd1 || dd2;
     EXPECT_TRUE(dd3 == manager->getOne());
     
     dd1 = manager->getIdentity("x");
@@ -161,7 +164,7 @@ TEST(CuddDd, OperatorTest) {
     EXPECT_EQ(1, dd3.getNonZeroCount());
     
     storm::dd::Dd<storm::dd::DdType::CUDD> dd4 = dd1.notEquals(dd2);
-    EXPECT_TRUE(dd4 == ~dd3);
+    EXPECT_TRUE(dd4 == !dd3);
     
     dd3 = dd1.less(dd2);
     EXPECT_EQ(11, dd3.getNonZeroCount());
@@ -174,6 +177,11 @@ TEST(CuddDd, OperatorTest) {
 
     dd3 = dd1.greaterOrEqual(dd2);
     EXPECT_EQ(5, dd3.getNonZeroCount());
+    
+    dd1 = manager->getConstant(0.01);
+    dd2 = manager->getConstant(0.01 + 1e-6);
+    EXPECT_TRUE(dd1.equalModuloPrecision(dd2, 1e-6, false));
+    EXPECT_FALSE(dd1.equalModuloPrecision(dd2, 1e-6));
 }
 
 TEST(CuddDd, AbstractionTest) {

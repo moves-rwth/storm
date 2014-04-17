@@ -45,14 +45,14 @@ namespace storm {
             if (value & (1ull << (ddVariables.size() - 1))) {
                 result = ddVariables[0];
             } else {
-                result = ~ddVariables[0];
+                result = !ddVariables[0];
             }
             
             for (std::size_t i = 1; i < ddVariables.size(); ++i) {
                 if (value & (1ull << (ddVariables.size() - i - 1))) {
                     result *= ddVariables[i];
                 } else {
-                    result *= ~ddVariables[i];
+                    result *= !ddVariables[i];
                 }
             }
                         

@@ -964,6 +964,7 @@ extern DdNode * Cudd_Increasing (DdManager *dd, DdNode *f, int i);
 extern int Cudd_EquivDC (DdManager *dd, DdNode *F, DdNode *G, DdNode *D);
 extern int Cudd_bddLeqUnless (DdManager *dd, DdNode *f, DdNode *g, DdNode *D);
 extern int Cudd_EqualSupNorm (DdManager *dd, DdNode *f, DdNode *g, CUDD_VALUE_TYPE tolerance, int pr);
+extern int Cudd_EqualSupNormRel (DdManager *dd, DdNode *f, DdNode *g, CUDD_VALUE_TYPE tolerance, int pr);
 extern DdNode * Cudd_bddMakePrime (DdManager *dd, DdNode *cube, DdNode *f);
 extern DdNode * Cudd_bddMaximallyExpand(DdManager *dd, DdNode *lb, DdNode *ub, DdNode *f);
 extern DdNode * Cudd_bddLargestPrimeUnate(DdManager *dd , DdNode *f, DdNode *phaseBdd);

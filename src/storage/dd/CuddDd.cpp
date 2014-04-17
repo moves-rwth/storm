@@ -83,13 +83,21 @@ namespace storm {
             return *this;
         }
         
-        Dd<DdType::CUDD> Dd<DdType::CUDD>::operator~() const {
+        Dd<DdType::CUDD> Dd<DdType::CUDD>::operator!() const {
             Dd<DdType::CUDD> result(*this);
             result.complement();
             return result;
         }
+
+        Dd<DdType::CUDD> Dd<DdType::CUDD>::operator&&(Dd<DdType::CUDD> const& other) const {
+            std::set<std::string> metaVariableNames(this->getContainedMetaVariableNames());
+            metaVariableNames.insert(other.getContainedMetaVariableNames().begin(), other.getContainedMetaVariableNames().end());
+            
+            // Rewrite a and b to not((not a) or (not b)). 
+            return Dd<DdType::CUDD>(this->getDdManager(), ~(~this->getCuddAdd()).Or(~other.getCuddAdd()), metaVariableNames);
+        }
         
-        Dd<DdType::CUDD> Dd<DdType::CUDD>::logicalOr(Dd<DdType::CUDD> const& other) const {
+        Dd<DdType::CUDD> Dd<DdType::CUDD>::operator||(Dd<DdType::CUDD> const& other) const {
             std::set<std::string> metaVariableNames(this->getContainedMetaVariableNames());
             metaVariableNames.insert(other.getContainedMetaVariableNames().begin(), other.getContainedMetaVariableNames().end());
             return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddAdd().Or(other.getCuddAdd()), metaVariableNames);
@@ -202,6 +210,14 @@ namespace storm {
             }
             
             this->cuddAdd = this->cuddAdd.MaxAbstract(cubeDd.getCuddAdd());
+        }
+        
+        bool Dd<DdType::CUDD>::equalModuloPrecision(Dd<DdType::CUDD> const& other, double precision, bool relative) const {
+            if (relative) {
+                return this->getCuddAdd().EqualSupNormRel(other.getCuddAdd(), precision);
+            } else {
+                return this->getCuddAdd().EqualSupNorm(other.getCuddAdd(), precision);
+            }
         }
         
         void Dd<DdType::CUDD>::swapVariables(std::vector<std::pair<std::string, std::string>> const& metaVariablePairs) {
