@@ -1,6 +1,7 @@
-#include "src/storage/expressions/SimpleValuation.h"
-
 #include <boost/functional/hash.hpp>
+#include "src/storage/expressions/SimpleValuation.h"
+#include "src/exceptions/ExceptionMacros.h"
+#include "src/exceptions/InvalidArgumentException.h"
 
 namespace storm {
     namespace expressions {
@@ -13,16 +14,22 @@ namespace storm {
         }
         
         void SimpleValuation::addBooleanIdentifier(std::string const& name, bool initialValue) {
+            LOG_THROW(this->booleanIdentifierToIndexMap->find(name) == this->booleanIdentifierToIndexMap->end(), storm::exceptions::InvalidArgumentException, "Boolean identifier '" << name << "' already registered.");
+            
             this->booleanIdentifierToIndexMap->emplace(name, this->booleanValues.size());
             this->booleanValues.push_back(false);
         }
         
         void SimpleValuation::addIntegerIdentifier(std::string const& name, int_fast64_t initialValue) {
+            LOG_THROW(this->booleanIdentifierToIndexMap->find(name) == this->booleanIdentifierToIndexMap->end(), storm::exceptions::InvalidArgumentException, "Integer identifier '" << name << "' already registered.");
+
             this->integerIdentifierToIndexMap->emplace(name, this->integerValues.size());
             this->integerValues.push_back(initialValue);
         }
         
         void SimpleValuation::addDoubleIdentifier(std::string const& name, double initialValue) {
+            LOG_THROW(this->booleanIdentifierToIndexMap->find(name) == this->booleanIdentifierToIndexMap->end(), storm::exceptions::InvalidArgumentException, "Double identifier '" << name << "' already registered.");
+
             this->doubleIdentifierToIndexMap->emplace(name, this->doubleValues.size());
             this->doubleValues.push_back(initialValue);
         }

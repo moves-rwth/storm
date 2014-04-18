@@ -7,6 +7,7 @@
 #include <iostream>
 
 #include "src/storage/dd/Dd.h"
+#include "src/storage/dd/CuddDdForwardIterator.h"
 #include "src/utility/OsDetection.h"
 
 // Include the C++-interface of CUDD.
@@ -22,6 +23,7 @@ namespace storm {
         public:
             // Declare the DdManager and DdIterator class as friend so it can access the internals of a DD.
             friend class DdManager<DdType::CUDD>;
+            friend class DdForwardIterator<DdType::CUDD>;
             
             // Instantiate all copy/move constructors/assignments with the default implementation.
             Dd() = default;
@@ -404,6 +406,20 @@ namespace storm {
              * A pointer to the manager that is responsible for this DD.
              */
             std::shared_ptr<DdManager<DdType::CUDD>> getDdManager() const;
+            
+            /*!
+             * Retrieves an iterator that points to the first meta variable assignment with a non-zero function value.
+             *
+             * @return An iterator that points to the first meta variable assignment with a non-zero function value.
+             */
+            DdForwardIterator<DdType::CUDD> begin() const;
+            
+            /*!
+             * Retrieves an iterator that points past the end of the container.
+             *
+             * @return An iterator that points past the end of the container.
+             */
+            DdForwardIterator<DdType::CUDD> end() const;
             
             friend std::ostream & operator<<(std::ostream& out, const Dd<DdType::CUDD>& dd);
         private:

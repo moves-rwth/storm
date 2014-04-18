@@ -434,6 +434,17 @@ namespace storm {
             return this->ddManager;
         }
         
+        DdForwardIterator<DdType::CUDD> Dd<DdType::CUDD>::begin() const {
+            int* cube;
+            double value;
+            DdGen* generator = this->getCuddAdd().FirstCube(&cube, &value);
+            return DdForwardIterator<DdType::CUDD>(this->getDdManager(), generator, cube, value, Cudd_IsGenEmpty(generator), &this->getContainedMetaVariableNames());
+        }
+        
+        DdForwardIterator<DdType::CUDD> Dd<DdType::CUDD>::end() const {
+            return DdForwardIterator<DdType::CUDD>(this->getDdManager(), nullptr, nullptr, 0, true, nullptr);
+        }
+        
         std::ostream & operator<<(std::ostream& out, const Dd<DdType::CUDD>& dd) {
             dd.exportToDot();
             return out;

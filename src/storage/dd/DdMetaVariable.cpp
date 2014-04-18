@@ -4,7 +4,15 @@
 namespace storm {
     namespace dd {
         template<DdType Type>
-        DdMetaVariable<Type>::DdMetaVariable(std::string const& name, int_fast64_t low, int_fast64_t high, std::vector<Dd<Type>> const& ddVariables, std::shared_ptr<DdManager<Type>> manager) : name(name), low(low), high(high), ddVariables(ddVariables), cube(manager->getOne()), manager(manager) {
+        DdMetaVariable<Type>::DdMetaVariable(std::string const& name, int_fast64_t low, int_fast64_t high, std::vector<Dd<Type>> const& ddVariables, std::shared_ptr<DdManager<Type>> manager) : name(name), type(MetaVariableType::Int), low(low), high(high), ddVariables(ddVariables), cube(manager->getOne()), manager(manager) {
+            // Create the cube of all variables of this meta variable.
+            for (auto const& ddVariable : this->ddVariables) {
+                this->cube *= ddVariable;
+            }
+        }
+        
+        template<DdType Type>
+        DdMetaVariable<Type>::DdMetaVariable(std::string const& name, std::vector<Dd<Type>> const& ddVariables, std::shared_ptr<DdManager<Type>> manager) : name(name), type(MetaVariableType::Bool), ddVariables(ddVariables), cube(manager->getOne()), manager(manager) {
             // Create the cube of all variables of this meta variable.
             for (auto const& ddVariable : this->ddVariables) {
                 this->cube *= ddVariable;
@@ -14,6 +22,11 @@ namespace storm {
         template<DdType Type>
         std::string const& DdMetaVariable<Type>::getName() const {
             return this->name;
+        }
+        
+        template<DdType Type>
+        typename DdMetaVariable<Type>::MetaVariableType DdMetaVariable<Type>::getType() const {
+            return this->type;
         }
         
         template<DdType Type>

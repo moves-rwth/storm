@@ -273,3 +273,24 @@ TEST(CuddDd, GetSetValueTest) {
     metaVariableToValueMap.emplace("x", 4);
     EXPECT_EQ(2, dd1.getValue(metaVariableToValueMap));
 }
+
+TEST(CuddDd, ForwardIteratorTest) {
+    std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::CUDD>> manager(new storm::dd::DdManager<storm::dd::DdType::CUDD>());
+    manager->addMetaVariable("x", 1, 9);
+    manager->addMetaVariable("y", 0, 3);
+    
+    storm::dd::Dd<storm::dd::DdType::CUDD> dd;
+    ASSERT_NO_THROW(dd = manager->getRange("x"));
+    
+    storm::dd::DdForwardIterator<storm::dd::DdType::CUDD> it, ite;
+    ASSERT_NO_THROW(it = dd.begin());
+    ASSERT_NO_THROW(ite = dd.end());
+    std::pair<storm::expressions::SimpleValuation, double> valuationValuePair;
+    uint_fast64_t numberOfValuations = 0;
+    while (it != ite) {
+        ASSERT_NO_THROW(valuationValuePair = *it);
+        ASSERT_NO_THROW(++it);
+        ++numberOfValuations;
+    }
+    EXPECT_EQ(9, numberOfValuations);
+}

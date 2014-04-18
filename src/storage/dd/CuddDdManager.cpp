@@ -111,6 +111,18 @@ namespace storm {
             metaVariableMap.emplace(name, DdMetaVariable<DdType::CUDD>(name, low, high, variables, this->shared_from_this()));
         }
         
+        void DdManager<DdType::CUDD>::addMetaVariable(std::string const& name) {
+            // Check whether a meta variable already exists.
+            if (this->hasMetaVariable(name)) {
+                throw storm::exceptions::InvalidArgumentException() << "A meta variable '" << name << "' already exists.";
+            }
+            
+            std::vector<Dd<DdType::CUDD>> variables;
+            variables.emplace_back(Dd<DdType::CUDD>(this->shared_from_this(), cuddManager.addVar(), {name}));
+            
+            metaVariableMap.emplace(name, DdMetaVariable<DdType::CUDD>(name, variables, this->shared_from_this()));
+        }
+        
         void DdManager<DdType::CUDD>::addMetaVariablesInterleaved(std::vector<std::string> const& names, int_fast64_t low, int_fast64_t high) {
             // Make sure that at least one meta variable is added.
             if (names.size() == 0) {

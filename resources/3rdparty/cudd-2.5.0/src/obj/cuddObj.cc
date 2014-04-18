@@ -5280,7 +5280,7 @@ int
 ABDD::NextCube(
   DdGen * gen,
   int ** cube,
-  CUDD_VALUE_TYPE * value) const
+  CUDD_VALUE_TYPE * value) 
 {
     return Cudd_NextCube(gen, cube, value);
 

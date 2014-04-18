@@ -192,7 +192,7 @@ public:
 	const;
     int CountLeaves() const;
     DdGen * FirstCube(int ** cube, CUDD_VALUE_TYPE * value) const;
-    int NextCube(DdGen * gen, int ** cube, CUDD_VALUE_TYPE * value) const;
+    static int NextCube(DdGen * gen, int ** cube, CUDD_VALUE_TYPE * value);
     double Density(int nvars) const;
 
 }; // ABDD
