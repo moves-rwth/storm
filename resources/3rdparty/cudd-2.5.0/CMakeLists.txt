@@ -25,5 +25,14 @@ if(MSVC)
 	add_definitions(/D_SCL_SECURE_NO_DEPRECATE /D_CRT_SECURE_NO_WARNINGS)
 endif()
 
+# Since we do not target Alphas, this symbol is always set
+add_definitions(-DHAVE_IEEE_754)
+
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+	message(STATUS "CUDD: Targeting 64bit architecture")
+	add_definitions(-DSIZEOF_VOID_P=8)
+	add_definitions(-DSIZEOF_LONG=8)
+endif()
+
 # Add the library
 add_library(cudd ${CUDD_SOURCES} ${CUDD_HEADERS} ${CUDD_HEADERS_CXX} ${CUDD_SOURCES_CXX})
