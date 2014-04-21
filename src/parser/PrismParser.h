@@ -33,7 +33,7 @@ namespace storm {
         class GlobalProgramInformation {
         public:
             // Default construct the header information.
-            GlobalProgramInformation() = default;
+			GlobalProgramInformation() : hasInitialStatesExpression(false), currentCommandIndex(0), currentUpdateIndex(0) {}
             
             // Members for all essential information that needs to be collected.
             storm::prism::Program::ModelType modelType;
