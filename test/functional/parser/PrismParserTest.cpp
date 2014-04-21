@@ -47,7 +47,7 @@ TEST(PrismParser, SimpleFullTest) {
     R"(dtmc
     module mod1
         b : bool;
-        [a] true -> 1: (b'=true);
+        [a] true -> 1: (b'=true ^ false <=> b => false);
     endmodule)";
     
     storm::prism::Program result;

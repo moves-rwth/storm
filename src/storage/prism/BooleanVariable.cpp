@@ -11,7 +11,7 @@ namespace storm {
         }
         
         BooleanVariable BooleanVariable::substitute(std::map<std::string, storm::expressions::Expression> const& substitution) const {
-            return BooleanVariable(this->getName(), this->getInitialValueExpression().substitute<std::map>(substitution), this->getFilename(), this->getLineNumber());
+            return BooleanVariable(this->getName(), this->getInitialValueExpression().substitute(substitution), this->getFilename(), this->getLineNumber());
         }
         
         std::ostream& operator<<(std::ostream& stream, BooleanVariable const& variable) {

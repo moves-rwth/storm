@@ -2,6 +2,7 @@
 #define STORM_STORAGE_PRISM_LOCATEDINFORMATION_H_
 
 #include <string>
+#include <cstdint>
 
 #include "src/utility/OsDetection.h"
 

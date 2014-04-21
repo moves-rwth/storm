@@ -122,6 +122,9 @@ elseif(MSVC)
 	# Windows.h breaks GMM in gmm_except.h because of its macro definition for min and max
 	add_definitions(/DNOMINMAX)
 	
+	# since nobody cares at the moment
+	add_definitions(/wd4250)
+	
 	if(ENABLE_Z3)
 		set(Z3_LIB_NAME "libz3")
 	endif()

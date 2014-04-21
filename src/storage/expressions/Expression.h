@@ -2,6 +2,8 @@
 #define STORM_STORAGE_EXPRESSIONS_EXPRESSION_H_
 
 #include <memory>
+#include <map>
+#include <unordered_map>
 
 #include "src/storage/expressions/BaseExpression.h"
 #include "src/utility/OsDetection.h"
@@ -47,6 +49,7 @@ namespace storm {
             Expression operator-() const;
             Expression operator*(Expression const& other) const;
             Expression operator/(Expression const& other) const;
+            Expression operator^(Expression const& other) const;
             Expression operator&&(Expression const& other) const;
             Expression operator||(Expression const& other) const;
             Expression operator!() const;
@@ -76,8 +79,18 @@ namespace storm {
              * @return An expression in which all identifiers in the key set of the mapping are replaced by the
              * expression they are mapped to.
              */
-            template<template<typename... Arguments> class MapType>
-            Expression substitute(MapType<std::string, Expression> const& identifierToExpressionMap) const;
+			Expression substitute(std::map<std::string, Expression> const& identifierToExpressionMap) const;
+
+			/*!
+			* Substitutes all occurrences of identifiers according to the given map. Note that this substitution is
+			* done simultaneously, i.e., identifiers appearing in the expressions that were "plugged in" are not
+			* substituted.
+			*
+			* @param identifierToExpressionMap A mapping from identifiers to the expression they are substituted with.
+			* @return An expression in which all identifiers in the key set of the mapping are replaced by the
+			* expression they are mapped to.
+			*/
+			Expression substitute(std::unordered_map<std::string, Expression> const& identifierToExpressionMap) const;
             
             /*!
              * Substitutes all occurrences of identifiers with different names given by a mapping.
@@ -86,8 +99,16 @@ namespace storm {
              * @return An expression in which all identifiers in the key set of the mapping are replaced by the
              * identifiers they are mapped to.
              */
-            template<template<typename... Arguments> class MapType>
-            Expression substitute(MapType<std::string, std::string> const& identifierToIdentifierMap) const;
+			Expression substitute(std::map<std::string, std::string> const& identifierToIdentifierMap) const;
+
+			/*!
+			* Substitutes all occurrences of identifiers with different names given by a mapping.
+			*
+			* @param identifierToIdentifierMap A mapping from identifiers to identifiers they are substituted with.
+			* @return An expression in which all identifiers in the key set of the mapping are replaced by the
+			* identifiers they are mapped to.
+			*/
+			Expression substitute(std::unordered_map<std::string, std::string> const& identifierToIdentifierMap) const;
             
             /*!
              * Evaluates the expression under the valuation of unknowns (variables and constants) given by the
