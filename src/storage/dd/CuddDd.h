@@ -51,6 +51,13 @@ namespace storm {
             bool operator!=(Dd<DdType::CUDD> const& other) const;
             
             /*!
+             * Performs an if-then-else with the given operands, i.e. maps all valuations that are mapped to a non-zero
+             * function value to the function values specified by the first DD and all others to the function values
+             * specified by the second DD.
+             */
+            Dd<DdType::CUDD> ite(Dd<DdType::CUDD> const& thenDd, Dd<DdType::CUDD> const& elseDd) const;
+            
+            /*!
              * Performs a logical or of the current and the given DD.
              *
              * @return The logical or of the operands.

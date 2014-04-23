@@ -20,6 +20,14 @@ namespace storm {
             return this->cuddAdd != other.getCuddAdd();
         }
         
+        Dd<DdType::CUDD> Dd<DdType::CUDD>::ite(Dd<DdType::CUDD> const& thenDd, Dd<DdType::CUDD> const& elseDd) const {
+            std::set<std::string> metaVariableNames(this->getContainedMetaVariableNames());
+            metaVariableNames.insert(thenDd.getContainedMetaVariableNames().begin(), thenDd.getContainedMetaVariableNames().end());
+            metaVariableNames.insert(elseDd.getContainedMetaVariableNames().begin(), elseDd.getContainedMetaVariableNames().end());
+            
+            return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddAdd().Ite(thenDd.getCuddAdd(), elseDd.getCuddAdd()));
+        }
+        
         Dd<DdType::CUDD> Dd<DdType::CUDD>::operator+(Dd<DdType::CUDD> const& other) const {
             Dd<DdType::CUDD> result(*this);
             result += other;
