@@ -17,7 +17,7 @@ namespace storm {
             LOG_THROW(this->booleanIdentifierToIndexMap->find(name) == this->booleanIdentifierToIndexMap->end(), storm::exceptions::InvalidArgumentException, "Boolean identifier '" << name << "' already registered.");
             
             this->booleanIdentifierToIndexMap->emplace(name, this->booleanValues.size());
-            this->booleanValues.push_back(false);
+            this->booleanValues.push_back(initialValue);
         }
         
         void SimpleValuation::addIntegerIdentifier(std::string const& name, int_fast64_t initialValue) {
