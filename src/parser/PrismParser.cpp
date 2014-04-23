@@ -88,10 +88,13 @@ namespace storm {
             plusExpression = multiplicationExpression[qi::_val = qi::_1] >> *((qi::lit("+")[qi::_a = true] | qi::lit("-")[qi::_a = false]) >> multiplicationExpression)[phoenix::if_(qi::_a) [qi::_val = phoenix::bind(&PrismParser::createPlusExpression, phoenix::ref(*this), qi::_val, qi::_1)] .else_ [qi::_val = phoenix::bind(&PrismParser::createMinusExpression, phoenix::ref(*this), qi::_val, qi::_1)]];
             plusExpression.name("plus expression");
             
-            relativeExpression = (plusExpression >> qi::lit(">=") >> plusExpression)[qi::_val = phoenix::bind(&PrismParser::createGreaterOrEqualExpression, phoenix::ref(*this), qi::_1, qi::_2)] | (plusExpression >> qi::lit(">") >> plusExpression)[qi::_val = phoenix::bind(&PrismParser::createGreaterExpression, phoenix::ref(*this), qi::_1, qi::_2)] | (plusExpression >> qi::lit("<=") >> plusExpression)[qi::_val = phoenix::bind(&PrismParser::createLessOrEqualExpression, phoenix::ref(*this), qi::_1, qi::_2)] | (plusExpression >> qi::lit("<") >> plusExpression)[qi::_val = phoenix::bind(&PrismParser::createLessExpression, phoenix::ref(*this), qi::_1, qi::_2)] | (plusExpression >> qi::lit("=") >> plusExpression)[qi::_val = phoenix::bind(&PrismParser::createEqualsExpression, phoenix::ref(*this), qi::_1, qi::_2)] | (plusExpression >> qi::lit("!=") >> plusExpression)[qi::_val = phoenix::bind(&PrismParser::createNotEqualsExpression, phoenix::ref(*this), qi::_1, qi::_2)] | plusExpression[qi::_val = qi::_1];
+            relativeExpression = (plusExpression >> qi::lit(">=") >> plusExpression)[qi::_val = phoenix::bind(&PrismParser::createGreaterOrEqualExpression, phoenix::ref(*this), qi::_1, qi::_2)] | (plusExpression >> qi::lit(">") >> plusExpression)[qi::_val = phoenix::bind(&PrismParser::createGreaterExpression, phoenix::ref(*this), qi::_1, qi::_2)] | (plusExpression >> qi::lit("<=") >> plusExpression)[qi::_val = phoenix::bind(&PrismParser::createLessOrEqualExpression, phoenix::ref(*this), qi::_1, qi::_2)] | (plusExpression >> qi::lit("<") >> plusExpression)[qi::_val = phoenix::bind(&PrismParser::createLessExpression, phoenix::ref(*this), qi::_1, qi::_2)] | plusExpression[qi::_val = qi::_1];
             relativeExpression.name("relative expression");
             
-            andExpression = relativeExpression[qi::_val = qi::_1] >> *((qi::lit("&")[qi::_a = storm::expressions::BinaryBooleanFunctionExpression::OperatorType::And] | qi::lit("<=>")[qi::_a = storm::expressions::BinaryBooleanFunctionExpression::OperatorType::Iff] | qi::lit("^")[qi::_a = storm::expressions::BinaryBooleanFunctionExpression::OperatorType::Xor]) >> relativeExpression)[phoenix::if_(qi::_a == storm::expressions::BinaryBooleanFunctionExpression::OperatorType::And) [ qi::_val = phoenix::bind(&PrismParser::createAndExpression, phoenix::ref(*this), qi::_val, qi::_1)] .else_ [ phoenix::if_(qi::_a == storm::expressions::BinaryBooleanFunctionExpression::OperatorType::Iff) [ qi::_val = phoenix::bind(&PrismParser::createIffExpression, phoenix::ref(*this), qi::_val, qi::_1) ] .else_ [ qi::_val = phoenix::bind(&PrismParser::createXorExpression, phoenix::ref(*this), qi::_val, qi::_1) ] ] ];
+            equalityExpression = relativeExpression[qi::_val = qi::_1] >> *((qi::lit("=")[qi::_a = true] | qi::lit("!=")[qi::_a = false]) >> relativeExpression)[phoenix::if_(qi::_a) [ qi::_val = phoenix::bind(&PrismParser::createEqualsExpression, phoenix::ref(*this), qi::_val, qi::_1) ] .else_ [ qi::_val = phoenix::bind(&PrismParser::createNotEqualsExpression, phoenix::ref(*this), qi::_val, qi::_1) ] ];
+            equalityExpression.name("equality expression");
+            
+            andExpression = equalityExpression[qi::_val = qi::_1] >> *(qi::lit("&") >> equalityExpression)[qi::_val = phoenix::bind(&PrismParser::createAndExpression, phoenix::ref(*this), qi::_val, qi::_1)];
             andExpression.name("and expression");
             
             orExpression = andExpression[qi::_val = qi::_1] >> *((qi::lit("|")[qi::_a = true] | qi::lit("=>")[qi::_a = false]) >> andExpression)[phoenix::if_(qi::_a) [qi::_val = phoenix::bind(&PrismParser::createOrExpression, phoenix::ref(*this), qi::_val, qi::_1)] .else_ [qi::_val = phoenix::bind(&PrismParser::createImpliesExpression, phoenix::ref(*this), qi::_val, qi::_1)] ];
@@ -204,6 +207,7 @@ namespace storm {
             qi::on_error<qi::fail>(iteExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
             qi::on_error<qi::fail>(orExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
             qi::on_error<qi::fail>(andExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+            qi::on_error<qi::fail>(equalityExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
             qi::on_error<qi::fail>(relativeExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
             qi::on_error<qi::fail>(plusExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
             qi::on_error<qi::fail>(multiplicationExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
@@ -327,27 +331,15 @@ namespace storm {
             }
         }
         
-        storm::expressions::Expression PrismParser::createIffExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const {
-            if (!this->secondRun) {
-                return storm::expressions::Expression::createFalse();
-            } else {
-                return e1.iff(e2);
-            }
-        }
-        
-        storm::expressions::Expression PrismParser::createXorExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const {
-            if (!this->secondRun) {
-                return storm::expressions::Expression::createFalse();
-            } else {
-                return e1 ^ e2;
-            }
-        }
-        
         storm::expressions::Expression PrismParser::createEqualsExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const {
             if (!this->secondRun) {
                 return storm::expressions::Expression::createFalse();
             } else {
-                return e1 == e2;
+                if (e1.hasBooleanReturnType() && e2.hasBooleanReturnType()) {
+                    return e1.iff(e2);
+                } else {
+                    return e1 == e2;
+                }
             }
         }
         
@@ -355,7 +347,11 @@ namespace storm {
             if (!this->secondRun) {
                 return storm::expressions::Expression::createFalse();
             } else {
-                return e1 != e2;
+                if (e1.hasBooleanReturnType() && e2.hasBooleanReturnType()) {
+                    return e1 ^ e2;
+                } else {
+                    return e1 != e2;
+                }
             }
         }
         
