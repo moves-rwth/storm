@@ -4747,6 +4747,16 @@ ADD::EqualSupNorm(
 
 } // ADD::EqualSupNorm
 
+bool
+ADD::EqualSupNormRel(
+  const ADD& g,
+  CUDD_VALUE_TYPE tolerance,
+  int pr) const
+{
+    DdManager *mgr = checkSameManager(g);
+    return Cudd_EqualSupNormRel(mgr, node, g.node, tolerance, pr) != 0;
+    
+} // ADD::EqualSupNormRel
 
 BDD
 BDD::MakePrime(
@@ -5267,14 +5277,14 @@ ABDD::FirstCube(
 
 
 int
-NextCube(
+ABDD::NextCube(
   DdGen * gen,
   int ** cube,
-  CUDD_VALUE_TYPE * value)
+  CUDD_VALUE_TYPE * value) 
 {
     return Cudd_NextCube(gen, cube, value);
 
-} // NextCube
+} // ABDD::NextCube
 
 
 BDD

@@ -1,4 +1,6 @@
 #include "src/storage/prism/Constant.h"
+#include "src/exceptions/ExceptionMacros.h"
+#include "src/exceptions/IllegalFunctionCallException.h"
 
 namespace storm {
     namespace prism {
@@ -23,11 +25,12 @@ namespace storm {
         }
         
         storm::expressions::Expression const& Constant::getExpression() const {
+            LOG_THROW(this->isDefined(), storm::exceptions::IllegalFunctionCallException, "Unable to retrieve defining expression for undefined constant.");
             return this->expression;
         }
         
         Constant Constant::substitute(std::map<std::string, storm::expressions::Expression> const& substitution) const {
-            return Constant(this->getType(), this->getName(), this->getExpression().substitute<std::map>(substitution), this->getFilename(), this->getLineNumber());
+            return Constant(this->getType(), this->getName(), this->getExpression().substitute(substitution), this->getFilename(), this->getLineNumber());
         }
         
         std::ostream& operator<<(std::ostream& stream, Constant const& constant) {

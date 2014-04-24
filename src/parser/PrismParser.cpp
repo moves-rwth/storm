@@ -88,13 +88,16 @@ namespace storm {
             plusExpression = multiplicationExpression[qi::_val = qi::_1] >> *((qi::lit("+")[qi::_a = true] | qi::lit("-")[qi::_a = false]) >> multiplicationExpression)[phoenix::if_(qi::_a) [qi::_val = phoenix::bind(&PrismParser::createPlusExpression, phoenix::ref(*this), qi::_val, qi::_1)] .else_ [qi::_val = phoenix::bind(&PrismParser::createMinusExpression, phoenix::ref(*this), qi::_val, qi::_1)]];
             plusExpression.name("plus expression");
             
-            relativeExpression = (plusExpression >> qi::lit(">=") >> plusExpression)[qi::_val = phoenix::bind(&PrismParser::createGreaterOrEqualExpression, phoenix::ref(*this), qi::_1, qi::_2)] | (plusExpression >> qi::lit(">") >> plusExpression)[qi::_val = phoenix::bind(&PrismParser::createGreaterExpression, phoenix::ref(*this), qi::_1, qi::_2)] | (plusExpression >> qi::lit("<=") >> plusExpression)[qi::_val = phoenix::bind(&PrismParser::createLessOrEqualExpression, phoenix::ref(*this), qi::_1, qi::_2)] | (plusExpression >> qi::lit("<") >> plusExpression)[qi::_val = phoenix::bind(&PrismParser::createLessExpression, phoenix::ref(*this), qi::_1, qi::_2)] | (plusExpression >> qi::lit("=") >> plusExpression)[qi::_val = phoenix::bind(&PrismParser::createEqualsExpression, phoenix::ref(*this), qi::_1, qi::_2)] | (plusExpression >> qi::lit("!=") >> plusExpression)[qi::_val = phoenix::bind(&PrismParser::createNotEqualsExpression, phoenix::ref(*this), qi::_1, qi::_2)] | plusExpression[qi::_val = qi::_1];
+            relativeExpression = (plusExpression >> qi::lit(">=") >> plusExpression)[qi::_val = phoenix::bind(&PrismParser::createGreaterOrEqualExpression, phoenix::ref(*this), qi::_1, qi::_2)] | (plusExpression >> qi::lit(">") >> plusExpression)[qi::_val = phoenix::bind(&PrismParser::createGreaterExpression, phoenix::ref(*this), qi::_1, qi::_2)] | (plusExpression >> qi::lit("<=") >> plusExpression)[qi::_val = phoenix::bind(&PrismParser::createLessOrEqualExpression, phoenix::ref(*this), qi::_1, qi::_2)] | (plusExpression >> qi::lit("<") >> plusExpression)[qi::_val = phoenix::bind(&PrismParser::createLessExpression, phoenix::ref(*this), qi::_1, qi::_2)] | plusExpression[qi::_val = qi::_1];
             relativeExpression.name("relative expression");
             
-            andExpression = relativeExpression[qi::_val = qi::_1] >> *(qi::lit("&") >> relativeExpression)[qi::_val = phoenix::bind(&PrismParser::createAndExpression, phoenix::ref(*this), qi::_val, qi::_1)];
+            equalityExpression = relativeExpression[qi::_val = qi::_1] >> *((qi::lit("=")[qi::_a = true] | qi::lit("!=")[qi::_a = false]) >> relativeExpression)[phoenix::if_(qi::_a) [ qi::_val = phoenix::bind(&PrismParser::createEqualsExpression, phoenix::ref(*this), qi::_val, qi::_1) ] .else_ [ qi::_val = phoenix::bind(&PrismParser::createNotEqualsExpression, phoenix::ref(*this), qi::_val, qi::_1) ] ];
+            equalityExpression.name("equality expression");
+            
+            andExpression = equalityExpression[qi::_val = qi::_1] >> *(qi::lit("&") >> equalityExpression)[qi::_val = phoenix::bind(&PrismParser::createAndExpression, phoenix::ref(*this), qi::_val, qi::_1)];
             andExpression.name("and expression");
             
-            orExpression = andExpression[qi::_val = qi::_1] >> *(qi::lit("|") >> andExpression)[qi::_val = phoenix::bind(&PrismParser::createOrExpression, phoenix::ref(*this), qi::_val, qi::_1)];
+            orExpression = andExpression[qi::_val = qi::_1] >> *((qi::lit("|")[qi::_a = true] | qi::lit("=>")[qi::_a = false]) >> andExpression)[phoenix::if_(qi::_a) [qi::_val = phoenix::bind(&PrismParser::createOrExpression, phoenix::ref(*this), qi::_val, qi::_1)] .else_ [qi::_val = phoenix::bind(&PrismParser::createImpliesExpression, phoenix::ref(*this), qi::_val, qi::_1)] ];
             orExpression.name("or expression");
             
             iteExpression = orExpression[qi::_val = qi::_1] >> -(qi::lit("?") > orExpression > qi::lit(":") > orExpression)[qi::_val = phoenix::bind(&PrismParser::createIteExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)];
@@ -204,6 +207,7 @@ namespace storm {
             qi::on_error<qi::fail>(iteExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
             qi::on_error<qi::fail>(orExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
             qi::on_error<qi::fail>(andExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+            qi::on_error<qi::fail>(equalityExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
             qi::on_error<qi::fail>(relativeExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
             qi::on_error<qi::fail>(plusExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
             qi::on_error<qi::fail>(multiplicationExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
@@ -271,6 +275,14 @@ namespace storm {
             }
         }
         
+        storm::expressions::Expression PrismParser::createImpliesExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const {
+            if (!this->secondRun) {
+                return storm::expressions::Expression::createFalse();
+            } else {
+                return e1.implies(e2);
+            }
+        }
+        
         storm::expressions::Expression PrismParser::createOrExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const {
             if (!this->secondRun) {
                 return storm::expressions::Expression::createFalse();
@@ -323,7 +335,11 @@ namespace storm {
             if (!this->secondRun) {
                 return storm::expressions::Expression::createFalse();
             } else {
-                return e1 == e2;
+                if (e1.hasBooleanReturnType() && e2.hasBooleanReturnType()) {
+                    return e1.iff(e2);
+                } else {
+                    return e1 == e2;
+                }
             }
         }
         
@@ -331,7 +347,11 @@ namespace storm {
             if (!this->secondRun) {
                 return storm::expressions::Expression::createFalse();
             } else {
-                return e1 != e2;
+                if (e1.hasBooleanReturnType() && e2.hasBooleanReturnType()) {
+                    return e1 ^ e2;
+                } else {
+                    return e1 != e2;
+                }
             }
         }
         
@@ -585,7 +605,7 @@ namespace storm {
                     auto const& renamingPair = renaming.find(variable.getName());
                     LOG_THROW(renamingPair != renaming.end(), storm::exceptions::WrongFormatException, "Boolean variable '" << variable.getName() << " was not renamed.");
                     
-                    booleanVariables.push_back(storm::prism::BooleanVariable(renamingPair->second, variable.getInitialValueExpression().substitute<std::map>(expressionRenaming), this->getFilename(), get_line(qi::_1)));
+                    booleanVariables.push_back(storm::prism::BooleanVariable(renamingPair->second, variable.getInitialValueExpression().substitute(expressionRenaming), this->getFilename(), get_line(qi::_1)));
                 }
                 
                 // Rename the integer variables.
@@ -594,7 +614,7 @@ namespace storm {
                     auto const& renamingPair = renaming.find(variable.getName());
                     LOG_THROW(renamingPair != renaming.end(), storm::exceptions::WrongFormatException, "Integer variable '" << variable.getName() << " was not renamed.");
                     
-                    integerVariables.push_back(storm::prism::IntegerVariable(renamingPair->second, variable.getLowerBoundExpression().substitute<std::map>(expressionRenaming), variable.getUpperBoundExpression().substitute<std::map>(expressionRenaming), variable.getInitialValueExpression().substitute<std::map>(expressionRenaming), this->getFilename(), get_line(qi::_1)));
+                    integerVariables.push_back(storm::prism::IntegerVariable(renamingPair->second, variable.getLowerBoundExpression().substitute(expressionRenaming), variable.getUpperBoundExpression().substitute(expressionRenaming), variable.getInitialValueExpression().substitute(expressionRenaming), this->getFilename(), get_line(qi::_1)));
                 }
                 
                 // Rename commands.
@@ -606,12 +626,12 @@ namespace storm {
                         for (auto const& assignment : update.getAssignments()) {
                             auto const& renamingPair = renaming.find(assignment.getVariableName());
                             if (renamingPair != renaming.end()) {
-                                assignments.emplace_back(renamingPair->second, assignment.getExpression().substitute<std::map>(expressionRenaming), this->getFilename(), get_line(qi::_1));
+                                assignments.emplace_back(renamingPair->second, assignment.getExpression().substitute(expressionRenaming), this->getFilename(), get_line(qi::_1));
                             } else {
-                                assignments.emplace_back(assignment.getVariableName(), assignment.getExpression().substitute<std::map>(expressionRenaming), this->getFilename(), get_line(qi::_1));
+                                assignments.emplace_back(assignment.getVariableName(), assignment.getExpression().substitute(expressionRenaming), this->getFilename(), get_line(qi::_1));
                             }
                         }
-                        updates.emplace_back(globalProgramInformation.currentUpdateIndex, update.getLikelihoodExpression().substitute<std::map>(expressionRenaming), assignments, this->getFilename(), get_line(qi::_1));
+                        updates.emplace_back(globalProgramInformation.currentUpdateIndex, update.getLikelihoodExpression().substitute(expressionRenaming), assignments, this->getFilename(), get_line(qi::_1));
                         ++globalProgramInformation.currentUpdateIndex;
                     }
                     
@@ -621,7 +641,7 @@ namespace storm {
                         newActionName = renamingPair->second;
                     }
                     
-                    commands.emplace_back(globalProgramInformation.currentCommandIndex, newActionName, command.getGuardExpression().substitute<std::map>(expressionRenaming), updates, this->getFilename(), get_line(qi::_1));
+                    commands.emplace_back(globalProgramInformation.currentCommandIndex, newActionName, command.getGuardExpression().substitute(expressionRenaming), updates, this->getFilename(), get_line(qi::_1));
                     ++globalProgramInformation.currentCommandIndex;
                 }
                 

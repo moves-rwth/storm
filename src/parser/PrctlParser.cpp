@@ -140,7 +140,7 @@ struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, storm::property::prctl:
 		reachabilityReward = (qi::lit("F") > stateFormula)[qi::_val =
 				phoenix::new_<storm::property::prctl::ReachabilityReward<double>>(qi::_1)];
 		reachabilityReward.name("path formula (for reward operator)");
-		instantaneousReward = (qi::lit("I") > qi::lit("=") > qi::double_)
+		instantaneousReward = (qi::lit("I") > qi::lit("=") > qi::uint_)
 						[qi::_val = phoenix::new_<storm::property::prctl::InstantaneousReward<double>>(qi::_1)];
 		instantaneousReward.name("path formula (for reward operator)");
 		steadyStateReward = (qi::lit("S"))[qi::_val = phoenix::new_<storm::property::prctl::SteadyStateReward<double>>()];

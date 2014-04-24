@@ -192,6 +192,7 @@ public:
 	const;
     int CountLeaves() const;
     DdGen * FirstCube(int ** cube, CUDD_VALUE_TYPE * value) const;
+    static int NextCube(DdGen * gen, int ** cube, CUDD_VALUE_TYPE * value);
     double Density(int nvars) const;
 
 }; // ABDD
@@ -426,8 +427,8 @@ public:
     ADD TimesPlus(const ADD& B, std::vector<ADD> z) const;
     ADD Triangle(const ADD& g, std::vector<ADD> z) const;
     ADD Eval(int * inputs) const;
-    bool EqualSupNorm(const ADD& g, CUDD_VALUE_TYPE tolerance, int pr) const;
-
+    bool EqualSupNorm(const ADD& g, CUDD_VALUE_TYPE tolerance, int pr = 0) const;
+    bool EqualSupNormRel(const ADD& g, CUDD_VALUE_TYPE tolerance, int pr = 0) const;
 }; // ADD
 
 

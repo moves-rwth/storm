@@ -8,6 +8,7 @@
 
 #include "utility/OsDetection.h"
 #include "src/storage/dd/CuddDd.h"
+#include "src/storage/expressions/Expression.h"
 
 namespace storm {
     namespace dd {
@@ -20,9 +21,13 @@ namespace storm {
             // Declare the DdManager class as friend so it can access the internals of a meta variable.
             friend class DdManager<Type>;
             friend class Dd<Type>;
+            friend class DdForwardIterator<Type>;
+            
+            // An enumeration for all legal types of meta variables.
+            enum class MetaVariableType { Bool, Int };
             
             /*!
-             * Creates a meta variable with the given name, range bounds.
+             * Creates an integer meta variable with the given name and range bounds.
              *
              * @param name The name of the meta variable.
              * @param low The lowest value of the range of the variable.
@@ -31,6 +36,14 @@ namespace storm {
              * @param manager A pointer to the manager that is responsible for this meta variable.
              */
             DdMetaVariable(std::string const& name, int_fast64_t low, int_fast64_t high, std::vector<Dd<Type>> const& ddVariables, std::shared_ptr<DdManager<Type>> manager);
+            
+            /*!
+             * Creates a boolean meta variable with the given name.
+             * @param name The name of the meta variable.
+             * @param ddVariables The vector of variables used to encode this variable.
+             * @param manager A pointer to the manager that is responsible for this meta variable.
+             */
+            DdMetaVariable(std::string const& name, std::vector<Dd<Type>> const& ddVariables, std::shared_ptr<DdManager<Type>> manager);
             
             // Explictly generate all default versions of copy/move constructors/assignments.
             DdMetaVariable(DdMetaVariable const& other) = default;
@@ -46,6 +59,13 @@ namespace storm {
              * @return The name of the variable.
              */
             std::string const& getName() const;
+            
+            /*!
+             * Retrieves the type of the meta variable.
+             *
+             * @return The type of the meta variable.
+             */
+            MetaVariableType getType() const;
             
             /*!
              * Retrieves the lowest value of the range of the variable.
@@ -92,6 +112,9 @@ namespace storm {
             
             // The name of the meta variable.
             std::string name;
+            
+            // The type of the variable.
+            MetaVariableType type;
             
             // The lowest value of the range of the variable.
             int_fast64_t low;

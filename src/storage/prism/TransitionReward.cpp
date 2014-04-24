@@ -19,7 +19,7 @@ namespace storm {
         }
         
         TransitionReward TransitionReward::substitute(std::map<std::string, storm::expressions::Expression> const& substitution) const {
-            return TransitionReward(this->getActionName(), this->getStatePredicateExpression().substitute<std::map>(substitution), this->getRewardValueExpression().substitute<std::map>(substitution), this->getFilename(), this->getLineNumber());
+            return TransitionReward(this->getActionName(), this->getStatePredicateExpression().substitute(substitution), this->getRewardValueExpression().substitute(substitution), this->getFilename(), this->getLineNumber());
         }
         
         std::ostream& operator<<(std::ostream& stream, TransitionReward const& transitionReward) {

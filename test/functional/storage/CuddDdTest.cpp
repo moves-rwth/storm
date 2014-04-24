@@ -130,9 +130,12 @@ TEST(CuddDd, OperatorTest) {
     dd3 += manager->getZero();
     EXPECT_TRUE(dd3 == manager->getConstant(2));
     
+    dd3 = dd1 && manager->getConstant(3);
+    EXPECT_TRUE(dd1 == manager->getOne());
+
     dd3 = dd1 * manager->getConstant(3);
     EXPECT_TRUE(dd3 == manager->getConstant(3));
-    
+
     dd3 *= manager->getConstant(2);
     EXPECT_TRUE(dd3 == manager->getConstant(6));
     
@@ -148,8 +151,11 @@ TEST(CuddDd, OperatorTest) {
     dd3.complement();
     EXPECT_TRUE(dd3 == manager->getZero());
     
-    dd1 = ~dd3;
+    dd1 = !dd3;
     EXPECT_TRUE(dd1 == manager->getOne());
+
+    dd3 = dd1 || dd2;
+    EXPECT_TRUE(dd3 == manager->getOne());
     
     dd1 = manager->getIdentity("x");
     dd2 = manager->getConstant(5);
@@ -158,7 +164,7 @@ TEST(CuddDd, OperatorTest) {
     EXPECT_EQ(1, dd3.getNonZeroCount());
     
     storm::dd::Dd<storm::dd::DdType::CUDD> dd4 = dd1.notEquals(dd2);
-    EXPECT_TRUE(dd4 == ~dd3);
+    EXPECT_TRUE(dd4 == !dd3);
     
     dd3 = dd1.less(dd2);
     EXPECT_EQ(11, dd3.getNonZeroCount());
@@ -171,6 +177,11 @@ TEST(CuddDd, OperatorTest) {
 
     dd3 = dd1.greaterOrEqual(dd2);
     EXPECT_EQ(5, dd3.getNonZeroCount());
+    
+    dd1 = manager->getConstant(0.01);
+    dd2 = manager->getConstant(0.01 + 1e-6);
+    EXPECT_TRUE(dd1.equalModuloPrecision(dd2, 1e-6, false));
+    EXPECT_FALSE(dd1.equalModuloPrecision(dd2, 1e-6));
 }
 
 TEST(CuddDd, AbstractionTest) {
@@ -253,7 +264,6 @@ TEST(CuddDd, GetSetValueTest) {
     storm::dd::Dd<storm::dd::DdType::CUDD> dd1 = manager->getOne();
     ASSERT_NO_THROW(dd1.setValue("x", 4, 2));
     EXPECT_EQ(2, dd1.getLeafCount());
-    dd1.exportToDot("dd1.dot");
     
     std::map<std::string, int_fast64_t> metaVariableToValueMap;
     metaVariableToValueMap.emplace("x", 1);
@@ -262,4 +272,25 @@ TEST(CuddDd, GetSetValueTest) {
     metaVariableToValueMap.clear();
     metaVariableToValueMap.emplace("x", 4);
     EXPECT_EQ(2, dd1.getValue(metaVariableToValueMap));
+}
+
+TEST(CuddDd, ForwardIteratorTest) {
+    std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::CUDD>> manager(new storm::dd::DdManager<storm::dd::DdType::CUDD>());
+    manager->addMetaVariable("x", 1, 9);
+    manager->addMetaVariable("y", 0, 3);
+    
+    storm::dd::Dd<storm::dd::DdType::CUDD> dd;
+    ASSERT_NO_THROW(dd = manager->getRange("x"));
+    
+    storm::dd::DdForwardIterator<storm::dd::DdType::CUDD> it, ite;
+    ASSERT_NO_THROW(it = dd.begin());
+    ASSERT_NO_THROW(ite = dd.end());
+    std::pair<storm::expressions::SimpleValuation, double> valuationValuePair;
+    uint_fast64_t numberOfValuations = 0;
+    while (it != ite) {
+        ASSERT_NO_THROW(valuationValuePair = *it);
+        ASSERT_NO_THROW(++it);
+        ++numberOfValuations;
+    }
+    EXPECT_EQ(9, numberOfValuations);
 }

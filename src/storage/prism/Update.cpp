@@ -44,7 +44,7 @@ namespace storm {
                 newAssignments.emplace_back(assignment.substitute(substitution));
             }
             
-            return Update(this->getGlobalIndex(), this->getLikelihoodExpression().substitute<std::map>(substitution), newAssignments, this->getFilename(), this->getLineNumber());
+            return Update(this->getGlobalIndex(), this->getLikelihoodExpression().substitute(substitution), newAssignments, this->getFilename(), this->getLineNumber());
         }
         
         std::ostream& operator<<(std::ostream& stream, Update const& update) {

@@ -5,7 +5,6 @@
 
 #include "src/storage/dd/DdManager.h"
 #include "src/storage/dd/DdMetaVariable.h"
-#include "src/storage/dd/CuddDd.h"
 #include "src/utility/OsDetection.h"
 
 // Include the C++-interface of CUDD.
@@ -16,7 +15,6 @@ namespace storm {
         template<>
         class DdManager<DdType::CUDD> : public std::enable_shared_from_this<DdManager<DdType::CUDD>> {
         public:
-            // To break the cylic dependencies, we need to forward-declare the other DD-related classes.
             friend class Dd<DdType::CUDD>;
             
             /*!
@@ -83,7 +81,7 @@ namespace storm {
             Dd<DdType::CUDD> getIdentity(std::string const& metaVariableName);
             
             /*!
-             * Adds a meta variable with the given name and range.
+             * Adds an integer meta variable with the given name and range.
              *
              * @param name The name of the meta variable.
              * @param low The lowest value of the range of the variable.
@@ -92,7 +90,15 @@ namespace storm {
             void addMetaVariable(std::string const& name, int_fast64_t low, int_fast64_t high);
             
             /*!
-             * Adds meta variables with the given names and (equal) range and arranges the DD variables in an interleaved order.
+             * Adds a boolean meta variable with the given name.
+             *
+             * @param name The name of the meta variable.
+             */
+            void addMetaVariable(std::string const& name);
+            
+            /*!
+             * Adds integer meta variables with the given names and (equal) range and arranges the DD variables in an
+             * interleaved order.
              *
              * @param names The names of the variables.
              * @param low The lowest value of the ranges of the variables.
@@ -131,6 +137,13 @@ namespace storm {
             bool hasMetaVariable(std::string const& metaVariableName) const;
             
         private:
+            /*!
+             * Retrieves a list of names of the DD variables in the order of their index.
+             *
+             * @return A list of DD variable names.
+             */
+            std::vector<std::string> getDdVariableNames() const;
+            
             /*!
              * Retrieves the underlying CUDD manager.
              *

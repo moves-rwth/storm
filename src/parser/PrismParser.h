@@ -25,6 +25,7 @@ typedef BOOST_TYPEOF(qi::lit("//") >> *(qi::char_ - qi::eol) >> qi::eol | boost:
 
 #include "src/storage/prism/Program.h"
 #include "src/storage/expressions/Expression.h"
+#include "src/storage/expressions/Expressions.h"
 #include "src/exceptions/ExceptionMacros.h"
 
 namespace storm {
@@ -32,7 +33,7 @@ namespace storm {
         class GlobalProgramInformation {
         public:
             // Default construct the header information.
-            GlobalProgramInformation() = default;
+			GlobalProgramInformation() : hasInitialStatesExpression(false), currentCommandIndex(0), currentUpdateIndex(0) {}
             
             // Members for all essential information that needs to be collected.
             storm::prism::Program::ModelType modelType;
@@ -85,7 +86,7 @@ namespace storm {
                 }
             };
             
-            struct keywordsStruct : qi::symbols<char, bool> {
+            struct keywordsStruct : qi::symbols<char, uint_fast64_t> {
                 keywordsStruct() {
                     add
                     ("dtmc", 1)
@@ -244,9 +245,10 @@ namespace storm {
             // Rules for parsing a composed expression.
             qi::rule<Iterator, storm::expressions::Expression(), Skipper> expression;
             qi::rule<Iterator, storm::expressions::Expression(), Skipper> iteExpression;
-            qi::rule<Iterator, storm::expressions::Expression(), Skipper> orExpression;
+            qi::rule<Iterator, storm::expressions::Expression(), qi::locals<bool>, Skipper> orExpression;
             qi::rule<Iterator, storm::expressions::Expression(), Skipper> andExpression;
             qi::rule<Iterator, storm::expressions::Expression(), Skipper> relativeExpression;
+            qi::rule<Iterator, storm::expressions::Expression(), qi::locals<bool>, Skipper> equalityExpression;
             qi::rule<Iterator, storm::expressions::Expression(), qi::locals<bool>, Skipper> plusExpression;
             qi::rule<Iterator, storm::expressions::Expression(), qi::locals<bool>, Skipper> multiplicationExpression;
             qi::rule<Iterator, storm::expressions::Expression(), Skipper> unaryExpression;
@@ -269,6 +271,7 @@ namespace storm {
             bool addInitialStatesExpression(storm::expressions::Expression initialStatesExpression, GlobalProgramInformation& globalProgramInformation);
             
             storm::expressions::Expression createIteExpression(storm::expressions::Expression e1, storm::expressions::Expression e2, storm::expressions::Expression e3) const;
+            storm::expressions::Expression createImpliesExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
             storm::expressions::Expression createOrExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
             storm::expressions::Expression createAndExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
             storm::expressions::Expression createGreaterExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;

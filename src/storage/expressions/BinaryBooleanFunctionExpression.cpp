@@ -23,6 +23,7 @@ namespace storm {
             switch (this->getOperatorType()) {
                 case OperatorType::And: result = firstOperandEvaluation && secondOperandEvaluation; break;
                 case OperatorType::Or: result = firstOperandEvaluation || secondOperandEvaluation; break;
+                case OperatorType::Xor: result = firstOperandEvaluation ^ secondOperandEvaluation; break;
                 case OperatorType::Implies: result = !firstOperandEvaluation || secondOperandEvaluation; break;
                 case OperatorType::Iff: result = (firstOperandEvaluation && secondOperandEvaluation) || (!firstOperandEvaluation && !secondOperandEvaluation); break;
             }
@@ -55,6 +56,7 @@ namespace storm {
                     return firstOperandSimplified;
                 }
                 break;
+                case OperatorType::Xor: break;
                 case OperatorType::Implies: if (firstOperandSimplified->isTrue()) {
                     return secondOperandSimplified;
                 } else if (firstOperandSimplified->isFalse()) {
@@ -88,8 +90,9 @@ namespace storm {
             switch (this->getOperatorType()) {
                 case OperatorType::And: stream << " & "; break;
                 case OperatorType::Or: stream << " | "; break;
+                case OperatorType::Xor: stream << " != "; break;
                 case OperatorType::Implies: stream << " => "; break;
-                case OperatorType::Iff: stream << " <=> "; break;
+                case OperatorType::Iff: stream << " = "; break;
             }
             stream << *this->getSecondOperand() << ")";
         }
