@@ -264,14 +264,18 @@ namespace storm {
             std::vector<Constant> newConstants(this->getConstants());
             for (uint_fast64_t constantIndex = 0; constantIndex < newConstants.size(); ++constantIndex) {
                 auto const& constant = newConstants[constantIndex];
-                LOG_THROW(constant.isDefined(), storm::exceptions::InvalidArgumentException, "Cannot substitute constants in program that contains undefined constants.");
+                //LOG_THROW(constant.isDefined(), storm::exceptions::InvalidArgumentException, "Cannot substitute constants in program that contains undefined constants.");
                 
                 // Put the corresponding expression in the substitution.
-                constantSubstitution.emplace(constant.getName(), constant.getExpression());
+                if(constant.isDefined())
+                {
+                    constantSubstitution.emplace(constant.getName(), constant.getExpression());
                 
-                // If there is at least one more constant to come, we substitute the costants we have so far.
-                if (constantIndex + 1 < newConstants.size()) {
-                    newConstants[constantIndex + 1] = newConstants[constantIndex + 1].substitute(constantSubstitution);
+                
+                    // If there is at least one more constant to come, we substitute the costants we have so far.
+                    if (constantIndex + 1 < newConstants.size()) {
+                        newConstants[constantIndex + 1] = newConstants[constantIndex + 1].substitute(constantSubstitution);
+                    }
                 }
             }
             

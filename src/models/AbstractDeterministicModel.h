@@ -116,6 +116,12 @@ class AbstractDeterministicModel: public AbstractModel<T> {
 
 			this->choiceLabeling.reset(newChoiceLabeling);
 		}
+		
+		virtual void makeAbsorbing(storage::BitVector states) 
+		{
+			assert(states.size() == this->getNumberOfStates());
+			this->transitionMatrix.makeRowsAbsorbing(states);
+		}
 };
 
 } // namespace models

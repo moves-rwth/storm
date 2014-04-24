@@ -13,8 +13,12 @@
 #include "IfThenElseExpression.h"
 #include "DoubleConstantExpression.h"
 #include "DoubleLiteralExpression.h"
+#include "BinaryNumericalFunctionExpression.h"
 
+#include "carl/numbers/DecimalStringToRational.h"
 #include "src/storage/parameters.h"
+#include "IntegerLiteralExpression.h"
+#include "BinaryExpression.h"
 
 namespace storm {
 namespace expressions {
@@ -28,7 +32,13 @@ namespace expressions {
 	template<>
 	struct StateType<Polynomial>
 	{
-		typedef carl::Variable type;
+		typedef std::map<std::string, carl::Variable> type;
+	};
+	
+	template<>
+	struct StateType<RationalFunction>
+	{
+		typedef std::map<std::string, carl::Variable> type;
 	};
 		
 	template<typename T, typename S>
@@ -45,57 +55,93 @@ namespace expressions {
 			
 			virtual void visit(IfThenElseExpression const* expression) 
 			{
-				bool condititionValue = expression->getCondition()->evaluateAsBool();
+				std::cout << "ite" << std::endl;
 				
 			}
 		
             virtual void visit(BinaryBooleanFunctionExpression const* expression) 
 			{
-				
+				std::cout << "bbf" << std::endl;
 			}
             virtual void visit(BinaryNumericalFunctionExpression const* expression) 
 			{
+				ExpressionEvaluationVisitor* visitor = new ExpressionEvaluationVisitor(mSharedState);
+				expression->getFirstOperand()->accept(visitor);
+				mValue = visitor->value();
+				expression->getSecondOperand()->accept(visitor);				
+				switch(expression->getOperatorType())
+				{
+					case BinaryNumericalFunctionExpression::OperatorType::Plus:
+						mValue += visitor->value();
+						break;
+					case BinaryNumericalFunctionExpression::OperatorType::Minus:
+						mValue -= visitor->value();
+						break;
+					case BinaryNumericalFunctionExpression::OperatorType::Times:
+						mValue *= visitor->value();
+						break;
+					case BinaryNumericalFunctionExpression::OperatorType::Divide:
+						mValue /= visitor->value();
+						break;
+					default:
+						// TODO exception.
+						assert(false);
+				}
 				
+				delete visitor;
 			}
             virtual void visit(BinaryRelationExpression const* expression) 
 			{
-				
+				std::cout << "br" << std::endl;
 			}
             virtual void visit(BooleanConstantExpression const* expression) 
 			{
-				
+				std::cout << "bc" << std::endl;
 			}
             virtual void visit(DoubleConstantExpression const* expression) 
 			{
-				
+				auto it =  mSharedState->find(expression->getConstantName());
+				if(it != mSharedState->end())
+				{
+					mValue = T(it->second);
+				}
+				else
+				{
+					carl::Variable nVar = carl::VariablePool::getInstance().getFreshVariable(expression->getConstantName());
+					mSharedState->emplace(expression->getConstantName(),nVar);
+					mValue = T(nVar);
+				}
 			}
             virtual void visit(IntegerConstantExpression const* expression) 
 			{
-				
+				std::cout << "ic" << std::endl;
 			}
             virtual void visit(VariableExpression const* expression) 
 			{
-				
+				std::cout << "ve" << std::endl;
 			}
             virtual void visit(UnaryBooleanFunctionExpression const* expression) 
 			{
-				
+				std::cout << "ubf" << std::endl;
 			}
             virtual void visit(UnaryNumericalFunctionExpression const* expression) 
 			{
-				
+				std::cout << "unf" << std::endl;
 			}
             virtual void visit(BooleanLiteralExpression const* expression) 
 			{
-				
+				std::cout << "bl" << std::endl;
 			}
             virtual void visit(IntegerLiteralExpression const* expression) 
 			{
-				
+				mValue = T(expression->getValue());
 			}
             virtual void visit(DoubleLiteralExpression const* expression) 
 			{
-				
+				std::stringstream str;
+				str << std::fixed << std::setprecision( 3 ) << expression->getValue();
+				carl::DecimalStringToRational<typename T::CoeffType> transform;
+				mValue = T(transform(str.str()));
 			}
 
 		const T& value() const
@@ -121,8 +167,12 @@ namespace expressions {
 		T evaluate(Expression const& expr, storm::expressions::SimpleValuation const* val)
 		{
 			ExpressionEvaluationVisitor<T, typename StateType<T>::type>*  visitor = new ExpressionEvaluationVisitor<T, typename StateType<T>::type>(&mState);
-			//expr.getBaseExpression().accept(visitor);
-			T result = T(mpq_class(expr.evaluateAsDouble(val)));
+			std::cout << expr;
+			std::cout.flush();
+			expr.getBaseExpression().accept(visitor);
+			T result = visitor->value();
+			result.simplify();
+			std::cout << " -> " << result << std::endl;
 			delete visitor;
 			return result;
 		}

@@ -158,18 +158,18 @@ namespace storm {
              * @return The explicit model that was given by the probabilistic program.
              */
             static std::unique_ptr<storm::models::AbstractModel<ValueType>> translateProgram(storm::prism::Program program, std::string const& constantDefinitionString = "", std::string const& rewardModelName = "") {
-                // Start by defining the undefined constants in the model.
+				// Start by defining the undefined constants in the model.
                 // First, we need to parse the constant definition string.
                 std::map<std::string, storm::expressions::Expression> constantDefinitions = parseConstantDefinitionString(program, constantDefinitionString);
                 
                 storm::prism::Program preparedProgram = program.defineUndefinedConstants(constantDefinitions);
-                LOG_THROW(!preparedProgram.hasUndefinedConstants(), storm::exceptions::InvalidArgumentException, "Program still contains undefined constants.");
+                LOG_THROW((std::is_same<ValueType, RationalFunction>::value || !preparedProgram.hasUndefinedConstants()), storm::exceptions::InvalidArgumentException, "Program still contains undefined constants.");
                 
                 // Now that we have defined all the constants in the program, we need to substitute their appearances in
                 // all expressions in the program so we can then evaluate them without having to store the values of the
                 // constants in the state (i.e., valuation).
                 preparedProgram = preparedProgram.substituteConstants();
-                
+                std::cout << preparedProgram << std::endl;
                 ModelComponents modelComponents = buildModelComponents(preparedProgram, rewardModelName);
                 
                 std::unique_ptr<storm::models::AbstractModel<ValueType>> result;
@@ -534,12 +534,15 @@ namespace storm {
                 }
                 for (auto const& module : program.getModules()) {
                     for (auto const& booleanVariable : module.getBooleanVariables()) {
+						std::cout << booleanVariable.getName() << " <-- " << booleanVariable.getInitialValueExpression() << "(= " << booleanVariable.getInitialValueExpression().evaluateAsBool() << " )" << std::endl;
                         initialState->addBooleanIdentifier(booleanVariable.getName(), booleanVariable.getInitialValueExpression().evaluateAsBool());
                     }
                     for (auto const& integerVariable : module.getIntegerVariables()) {
                         initialState->addIntegerIdentifier(integerVariable.getName(), integerVariable.getInitialValueExpression().evaluateAsInt());
                     }
                 }
+				std::cout << "INITIAL STATE:" << std::endl;
+				std::cout << *initialState << std::endl;
         
                 std::pair<bool, uint_fast64_t> addIndexPair = getOrAddStateIndex(initialState, stateInformation);
                 stateInformation.initialStateIndices.push_back(addIndexPair.second);
@@ -696,6 +699,7 @@ namespace storm {
             static ModelComponents buildModelComponents(storm::prism::Program const& program, std::string const& rewardModelName) {
                 ModelComponents modelComponents;
 				expressions::ExpressionEvaluation<ValueType> eval;
+				
                 
                 VariableInformation variableInformation;
                 for (auto const& integerVariable : program.getGlobalIntegerVariables()) {

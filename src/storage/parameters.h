@@ -12,6 +12,7 @@ namespace storm
 {
 	typedef carl::MultivariatePolynomial<mpq_class> Polynomial;
 	//typedef Parameter  carl::Variable							;
+	typedef carl::RationalFunction<Polynomial> RationalFunction;
 }
 #endif
 

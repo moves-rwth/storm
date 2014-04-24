@@ -38,7 +38,7 @@ bool storm::utility::StormOptions::optionsRegistered = storm::settings::Settings
     
     settings->addOption(storm::settings::OptionBuilder("StoRM Main", "parameters", "", "Enable parameters.").build());
 	
-    settings->addOption(storm::settings::OptionBuilder("StoRM Main", "reachability", "", "Export reachability problem.").build());
+    settings->addOption(storm::settings::OptionBuilder("StoRM Main", "reachability", "", "Export reachability problem.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("label", "The labelling for the reachability state set").build()).build());
     std::vector<std::string> linearEquationSolver;
 	linearEquationSolver.push_back("gmm++");
 	linearEquationSolver.push_back("native");

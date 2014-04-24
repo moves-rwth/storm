@@ -201,7 +201,7 @@ private:
 		for (uint_fast64_t row = 0; row < this->getTransitionMatrix().getRowCount(); row++) {
 			T sum = this->getTransitionMatrix().getRowSum(row);
                         
-			if (sum == 0) continue;
+			if (sum == T(0)) continue;
 			if (!storm::utility::isOne(sum))  {
 				return false;
 			}

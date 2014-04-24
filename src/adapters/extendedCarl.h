@@ -9,6 +9,7 @@
 #define STORM_ADAPTERS_EXTENDEDCARL_H_
 
 #include <carl/core/MultivariatePolynomial.h>
+#include <carl/core/RationalFunction.h>
 
 namespace carl
 {
@@ -18,6 +19,13 @@ inline size_t hash_value(carl::MultivariatePolynomial<C,O,P> const& p)
 	std::hash<carl::MultivariatePolynomial<C,O,P>> h;
 	return h(p);
 }
+template<typename Pol>
+inline size_t hash_value(carl::RationalFunction<Pol> const& f)
+{
+	std::hash<Pol> h;
+	return h(f.nominator()) ^ h(f.denominator());
+}
+
 }
 
 #endif

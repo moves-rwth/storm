@@ -14,7 +14,7 @@ namespace storm {
         
         void SimpleValuation::addBooleanIdentifier(std::string const& name, bool initialValue) {
             this->booleanIdentifierToIndexMap->emplace(name, this->booleanValues.size());
-            this->booleanValues.push_back(false);
+            this->booleanValues.push_back(initialValue);
         }
         
         void SimpleValuation::addIntegerIdentifier(std::string const& name, int_fast64_t initialValue) {

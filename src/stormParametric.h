@@ -13,7 +13,7 @@ namespace storm
 	private:
 		std::string const& mConstants;
 		storm::prism::Program const& mProgram;
-		std::shared_ptr<storm::models::AbstractModel<Polynomial>> mModel;
+		std::shared_ptr<storm::models::AbstractModel<RationalFunction>> mModel;
 	public:
 		ParametricStormEntryPoint(std::string const& constants, storm::prism::Program const& program) :
 		mConstants(constants),
@@ -23,6 +23,7 @@ namespace storm
 		}
 		
 		void createModel();
+		std::string reachabilityToSmt2(std::string const&);
 		
 		virtual ~ParametricStormEntryPoint() {}
 		
