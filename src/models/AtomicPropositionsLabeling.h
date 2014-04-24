@@ -139,20 +139,38 @@ public:
 	 * @return The index of the new proposition.
 	 */
 	uint_fast64_t addAtomicProposition(std::string const& ap) {
+		return addAtomicProposition(ap, storage::BitVector(stateCount));
+	}
+	
+	/**
+	 * Creates a new atomic proposition and attaches the given states with the label.
+     * @param ap
+     * @param states
+     * @return 
+     */
+	uint_fast64_t addAtomicProposition(std::string const& ap, storage::BitVector const& states)
+	{
 		if (nameToLabelingMap.count(ap) != 0) {
 			LOG4CPLUS_ERROR(logger, "Atomic Proposition already exists.");
 			throw storm::exceptions::OutOfRangeException("Atomic Proposition already exists.");
 		}
+		if(states.size() != stateCount)
+		{
+			LOG4CPLUS_ERROR(logger, "State vector has invalid size.");
+			throw storm::exceptions::OutOfRangeException("State vector has invalid size.");
+		}
+		
 		if (apsCurrent >= apCountMax) {
 			apCountMax++;
 			singleLabelings.reserve(apCountMax);
 		}
 		nameToLabelingMap.emplace(ap, apsCurrent);
-        singleLabelings.emplace_back(stateCount);
+        singleLabelings.push_back(states);
 
 		uint_fast64_t returnValue = apsCurrent++;
 		return returnValue;
 	}
+	
 
 	/*!
 	 * Checks whether the name of an atomic proposition is registered within this labeling.
