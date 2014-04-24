@@ -178,6 +178,20 @@ TEST(CuddDd, OperatorTest) {
     dd3 = dd1.greaterOrEqual(dd2);
     EXPECT_EQ(5, dd3.getNonZeroCount());
     
+    dd3 = (manager->getEncoding("x", 2)).ite(dd2, dd1);
+    dd4 = dd3.less(dd2);
+    EXPECT_EQ(10, dd4.getNonZeroCount());
+    
+    dd4 = dd3.minimum(dd1);
+    dd4 *= manager->getEncoding("x", 2);
+    dd4.sumAbstract({"x"});
+    EXPECT_EQ(2, dd4.getValue());
+
+    dd4 = dd3.maximum(dd1);
+    dd4 *= manager->getEncoding("x", 2);
+    dd4.sumAbstract({"x"});
+    EXPECT_EQ(5, dd4.getValue());
+
     dd1 = manager->getConstant(0.01);
     dd2 = manager->getConstant(0.01 + 1e-6);
     EXPECT_TRUE(dd1.equalModuloPrecision(dd2, 1e-6, false));
