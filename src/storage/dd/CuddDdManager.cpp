@@ -8,7 +8,8 @@
 namespace storm {
     namespace dd {
         DdManager<DdType::CUDD>::DdManager() : metaVariableMap(), cuddManager() {
-            // Intentionally left empty.
+            
+            this->cuddManager.SetEpsilon(1.0e-15);
         }
         
         Dd<DdType::CUDD> DdManager<DdType::CUDD>::getOne() {
