@@ -211,6 +211,22 @@ namespace storm {
             Dd<DdType::CUDD> greaterOrEqual(Dd<DdType::CUDD> const& other) const;
             
             /*!
+             * Retrieves the function that maps all evaluations to the minimum of the function values of the two DDs.
+             *
+             * @param other The DD with which to perform the operation.
+             * @return The resulting function represented as a DD.
+             */
+            Dd<DdType::CUDD> minimum(Dd<DdType::CUDD> const& other) const;
+
+            /*!
+             * Retrieves the function that maps all evaluations to the maximum of the function values of the two DDs.
+             *
+             * @param other The DD with which to perform the operation.
+             * @return The resulting function represented as a DD.
+             */
+            Dd<DdType::CUDD> maximum(Dd<DdType::CUDD> const& other) const;
+
+            /*!
              * Existentially abstracts from the given meta variables.
              *
              * @param metaVariableNames The names of all meta variables from which to abstract.
