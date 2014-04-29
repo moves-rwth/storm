@@ -272,7 +272,7 @@ namespace storm {
                     constantSubstitution.emplace(constant.getName(), constant.getExpression());
                 
                 
-                    // If there is at least one more constant to come, we substitute the costants we have so far.
+                    // If there is at least one more constant to come, we substitute the constants we have so far.
                     if (constantIndex + 1 < newConstants.size()) {
                         newConstants[constantIndex + 1] = newConstants[constantIndex + 1].substitute(constantSubstitution);
                     }

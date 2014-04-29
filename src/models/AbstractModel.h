@@ -303,6 +303,10 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 		storm::models::AtomicPropositionsLabeling const& getStateLabeling() const {
 			return stateLabeling;
 		}
+		
+		storm::models::AtomicPropositionsLabeling & getStateLabeling() {
+			return stateLabeling;
+		}
 
 		/*!
 		 * Retrieves whether this model has a state reward model.

@@ -25,7 +25,8 @@ namespace storm {
         }
         
         storm::expressions::Expression const& Constant::getExpression() const {
-            LOG_THROW(this->isDefined(), storm::exceptions::IllegalFunctionCallException, "Unable to retrieve defining expression for undefined constant.");
+            assert(this->isDefined());
+            LOG_THROW(this->isDefined(), storm::exceptions::IllegalFunctionCallException, "Unable to retrieve defining expression for undefined constant: " + this->getName());
             return this->expression;
         }
         

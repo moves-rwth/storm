@@ -272,7 +272,7 @@ public:
 
 			// Get the choice label sets and move the needed values to the front.
 			std::vector<boost::container::flat_set<uint_fast64_t>> newChoice(this->getChoiceLabeling());
-			storm::utility::vector::selectVectorValues(newChoice, subSysStates, newChoice);
+			storm::utility::vector::selectVectorValues(newChoice, subSysStates, this->getChoiceLabeling());
 
 			// Throw away all values after the last state and set the choice label set for s_b as empty.
 			newChoice.resize(newStateCount);

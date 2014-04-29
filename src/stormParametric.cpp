@@ -32,31 +32,33 @@ std::string ParametricStormEntryPoint::reachabilityToSmt2(std::string const& lab
     dtmc->makeAbsorbing(targetStates);
     // 2. throw away anything which does not add to the reachability probability.
     // 2a. remove non productive states
-    storm::storage::BitVector productive = utility::graph::performProbGreater0(*dtmc, dtmc->getBackwardTransitions(), phiStates, targetStates);
-    // 2b. throw away non reachable states
-    storm::storage::BitVector reachable = utility::graph::performProbGreater0(*dtmc, dtmc->getTransitionMatrix(), phiStates, initStates);
-    storm::storage::BitVector bv = productive & reachable;
+    storm::storage::BitVector productiveStates = utility::graph::performProbGreater0(*dtmc, dtmc->getBackwardTransitions(), phiStates, targetStates);
+    // 2b. calculate set of states wich 
+    storm::storage::BitVector almostSurelyReachingTargetStates = ~utility::graph::performProbGreater0(*dtmc, dtmc->getBackwardTransitions(), phiStates, ~productiveStates);
+    // 2c. Make such states also target states.
+    dtmc->makeAbsorbing(almostSurelyReachingTargetStates);
+    // 2d. throw away non reachable states 
+    storm::storage::BitVector reachableStates = utility::graph::performProbGreater0(*dtmc, dtmc->getTransitionMatrix(), phiStates, initStates);
+    storm::storage::BitVector bv = productiveStates & reachableStates;
+    dtmc->getStateLabeling().addAtomicProposition("__targets__", targetStates | almostSurelyReachingTargetStates);
     models::Dtmc<RationalFunction> subdtmc = dtmc->getSubDtmc(bv);
     
     phiStates = storm::storage::BitVector(subdtmc.getNumberOfStates(), true);
     initStates = subdtmc.getInitialStates();
-    targetStates = subdtmc.getLabeledStates(label);
+    targetStates = subdtmc.getLabeledStates("__targets__");
     storm::storage::BitVector deadlockStates(phiStates);
     deadlockStates.set(subdtmc.getNumberOfStates()-1,false);
-    // Calculate whether there are states which surely lead into the target.
-    storm::storage::BitVector potentialIntoDeadlock = utility::graph::performProbGreater0(subdtmc, subdtmc.getBackwardTransitions(), phiStates, deadlockStates);
-    storm::storage::BitVector extraTargets = ~potentialIntoDeadlock & ~targetStates;
-    if(extraTargets.empty())
-    {
-        // TODO implement this if necessary.
-        std::cout << "Extra targets exist. Please implement!" << std::endl;
-    }
+    
     // Search for states with only one non-deadlock successor.
     std::map<StateId, storage::DeterministicTransition<RationalFunction>> chainedStates;
     StateId nrStates = subdtmc.getNumberOfStates();
     StateId deadlockState = nrStates - 1;
-    for(StateId source = 0; source < nrStates; ++source)
+    for(StateId source = 0; source < nrStates - 1; ++source)
     {
+        if(targetStates[source])
+        {
+            continue;
+        }
         storage::DeterministicTransition<RationalFunction> productiveTransition(nrStates);
         for(auto const& transition : subdtmc.getRows(source))
         {
@@ -79,16 +81,37 @@ std::string ParametricStormEntryPoint::reachabilityToSmt2(std::string const& lab
         {
             chainedStates.emplace(source, productiveTransition);
         }
-        for(auto chainedState : chainedStates)
+    }
+    storage::BitVector eliminatedStates(nrStates, false);
+    for(auto & chainedState : chainedStates)
+    {
+        assert(chainedState.first != chainedState.second.targetState());
+        auto it = chainedStates.find(chainedState.second.targetState());
+        if(it != chainedStates.end())
         {
-            auto it = chainedStates.find(chainedState.second.targetState());
-            if(it != chainedStates.end())
-            {
-                chainedState.second.targetState() = it->second.targetState();
-                chainedState.second.probability() *= it->second.probability();
-            }
+            //std::cout << "----------------------------" << std::endl;
+            //std::cout << chainedState.first << " -- " << chainedState.second.probability() << " --> " << chainedState.second.targetState() << std::endl;
+            //std::cout << it->first << " -- " << it->second.probability() << " --> " << it->second.targetState() << std::endl;
+            chainedState.second.targetState() = it->second.targetState();
+            chainedState.second.probability() *= it->second.probability();
+            //std::cout << chainedState.first << " -- " << chainedState.second.probability() << " --> " << chainedState.second.targetState() << std::endl;
+            //std::cout << "----------------------------" << std::endl;
+            chainedStates.erase(it);
+            eliminatedStates.set(it->first, true);
         }
     }
+    
+    
+    for(auto chainedState : chainedStates)
+    {
+        if(!eliminatedStates[chainedState.first])
+        {
+            std::cout << chainedState.first << " -- " << chainedState.second.probability() << " --> " << chainedState.second.targetState() << std::endl;
+        }
+    }
+    
+    storage::StronglyConnectedComponentDecomposition<RationalFunction> sccs(subdtmc);
+    std::cout << sccs << std::endl;
 
     modelchecker::reachability::DirectEncoding dec;
     std::vector<carl::Variable> parameters;
@@ -102,7 +125,7 @@ std::string ParametricStormEntryPoint::reachabilityToSmt2(std::string const& lab
             parameters.push_back(p);
         }
     }
-    return dec.encodeAsSmt2(subdtmc, parameters, subdtmc.getLabeledStates("init"), subdtmc.getLabeledStates(label), mpq_class(1,2));
+    return dec.encodeAsSmt2(subdtmc, parameters, subdtmc.getLabeledStates("init"), subdtmc.getLabeledStates("__targets__"), mpq_class(1,2));
     
 }
 

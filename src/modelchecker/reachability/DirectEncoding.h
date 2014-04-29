@@ -28,7 +28,7 @@ namespace storm
 					std::vector<carl::Variable> stateVars;
 					for(carl::Variable p : parameters)
 					{
-						smt2 << carl::io::smt2flag::ASSERT;
+						smt2 << ("parameter_bound_" + vpool.getName(p));
 						smt2 << carl::io::smt2node::AND;
 						smt2 << carl::Constraint<Polynomial>(Polynomial(p), carl::CompareRelation::GT);
 						smt2 << carl::Constraint<Polynomial>(Polynomial(p) - Polynomial(1), carl::CompareRelation::LT);
@@ -41,16 +41,15 @@ namespace storm
 						stateVars.push_back(stateVar);
 						if(!finalStates[state])
 						{
-							smt2 << carl::io::smt2flag::ASSERT;
+							smt2 << ("state_bound_" + std::to_string(state));
 							smt2 << carl::io::smt2node::AND;
-							smt2 << carl::Constraint<Polynomial>(Polynomial(stateVar), carl::CompareRelation::GE);
-							smt2 << carl::Constraint<Polynomial>(Polynomial(stateVar) - Polynomial(1), carl::CompareRelation::LE);
+							smt2 << carl::Constraint<Polynomial>(Polynomial(stateVar), carl::CompareRelation::GT);
+							smt2 << carl::Constraint<Polynomial>(Polynomial(stateVar) - Polynomial(1), carl::CompareRelation::LT);
 							smt2 << carl::io::smt2node::CLOSENODE;
 						}
 						
 					}
-					smt2 << carl::io::smt2flag::ASSERT;
-					smt2 << carl::io::smt2node::AND;
+					
 					smt2.setAutomaticLineBreaks(true);
 					Polynomial initStateReachSum;
 					for(uint_fast64_t state = 0; state < nrStates-1; ++state)
@@ -82,16 +81,20 @@ namespace storm
 								}
 								
 							}
+							smt2 << ("transition_" + std::to_string(state));
 							smt2 << carl::Constraint<T>(reachpropPol - stateVars[state], carl::CompareRelation::EQ);
 						}
 					}
 					//smt2 << carl::Constraint<Polynomial>(Polynomial(stateVars[nrStates-1]), carl::CompareRelation::EQ);
-					smt2 << carl::io::smt2node::CLOSENODE;
-					smt2 << carl::io::smt2flag::ASSERT;
+					
+					
+					smt2 << ("reachability");
 					
 					carl::CompareRelation thresholdRelation = lessequal ? carl::CompareRelation::LE : carl::CompareRelation::GE;
 					smt2 <<  carl::Constraint<Polynomial>(initStateReachSum - threshold, thresholdRelation);
 					smt2 << carl::io::smt2flag::CHECKSAT;
+					smt2 << carl::io::smt2flag::MODEL;
+					smt2 << carl::io::smt2flag::UNSAT_CORE;
 					std::stringstream strm;
 					strm << smt2;
 					return strm.str();
