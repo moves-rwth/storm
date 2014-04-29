@@ -559,6 +559,8 @@ namespace storm {
                     // requested and issue an error otherwise.
                     if (totalNumberOfChoices == 0) {
                         if (storm::settings::Settings::getInstance()->isSet("fixDeadlocks")) {
+                            // Insert empty choice labeling for added self-loop transitions.
+                            choiceLabels.push_back(boost::container::flat_set<uint_fast64_t>());
                             transitionMatrixBuilder.addNextValue(currentRow, currentState, storm::utility::constantOne<ValueType>());
                             ++currentRow;
                         } else {
