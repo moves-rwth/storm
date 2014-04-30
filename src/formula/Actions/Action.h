@@ -31,17 +31,26 @@ public:
 	/*!
 	 *
 	 */
-	virtual std::vector<T> evaluate(std::vector<T> input) const = 0;
+	virtual std::vector<T> evaluate(std::vector<T> input) const {
+		return input;
+	}
 
 	/*!
 	 *
 	 */
-	virtual storm::storage::BitVector<T> evaluate(storm::storage::BitVector<T> input) const = 0;
+	virtual storm::storage::BitVector<T> evaluate(storm::storage::BitVector<T> input) const {
+		return input;
+	}
 
 	/*!
 	 *
 	 */
 	virtual std::string toString() const = 0;
+
+	/*!
+	 *
+	 */
+	virtual std::string toFormulaString() const = 0;
 };
 
 } //namespace action

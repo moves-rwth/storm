@@ -56,31 +56,20 @@ namespace storm {
                 }
                 
                 /*!
+				 * Virtual destructor. Needs to be virtual, because this class has virtual methods.
+				 */
+                virtual ~SparseMdpPrctlModelChecker() {
+                	// Intentionally left empty.
+                }
+
+                /*!
                  * Returns a constant reference to the MDP associated with this model checker.
                  * @returns A constant reference to the MDP associated with this model checker.
                  */
                 storm::models::Mdp<Type> const& getModel() const {
                     return AbstractModelChecker<Type>::template getModel<storm::models::Mdp<Type>>();
                 }
-                
-                /*!
-                 * Checks the given formula that is a P/R operator without a bound.
-                 *
-                 * @param formula The formula to check.
-                 * @returns The set of states satisfying the formula represented by a bit vector.
-                 */
-                virtual std::vector<Type> checkNoBoundOperator(const storm::property::prctl::AbstractNoBoundOperator<Type>& formula) const {
-                    // Check if the operator was an non-optimality operator and report an error in that case.
-                    if (!formula.isOptimalityOperator()) {
-                        LOG4CPLUS_ERROR(logger, "Formula does not specify neither min nor max optimality, which is not meaningful over nondeterministic models.");
-                        throw storm::exceptions::InvalidArgumentException() << "Formula does not specify neither min nor max optimality, which is not meaningful over nondeterministic models.";
-                    }
-                    minimumOperatorStack.push(formula.isMinimumOperator());
-                    std::vector<Type> result = formula.check(*this, false);
-                    minimumOperatorStack.pop();
-                    return result;
-                }
-                
+
                 /*!
                  * Computes the probability to satisfy phi until psi within a limited number of steps for each state.
                  *
@@ -95,7 +84,13 @@ namespace storm {
                  * If the qualitative flag is set, exact probabilities might not be computed.
                  */
                 std::vector<Type> checkBoundedUntil(storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, uint_fast64_t stepBound, bool qualitative) const {
-                    std::vector<Type> result(this->getModel().getNumberOfStates());
+                    // First test if it is specified if the minimum or maximum probabilities are to be computed.
+                	if(this->minimumOperatorStack.empty()) {
+						LOG4CPLUS_ERROR(logger, "Formula does not specify neither min nor max optimality, which is not meaningful over nondeterministic models.");
+						throw storm::exceptions::InvalidArgumentException() << "Formula does not specify neither min nor max optimality, which is not meaningful over nondeterministic models.";
+                	}
+
+                	std::vector<Type> result(this->getModel().getNumberOfStates());
 
                     // Determine the states that have 0 probability of reaching the target states.
                     storm::storage::BitVector statesWithProbabilityGreater0;
@@ -166,6 +161,12 @@ namespace storm {
                  * qualitative flag is set, exact probabilities might not be computed.
                  */
                 virtual std::vector<Type> checkNext(storm::storage::BitVector const& nextStates, bool qualitative) const {
+                	// First test if it is specified if the minimum or maximum probabilities are to be computed.
+					if(this->minimumOperatorStack.empty()) {
+						LOG4CPLUS_ERROR(logger, "Formula does not specify neither min nor max optimality, which is not meaningful over nondeterministic models.");
+						throw storm::exceptions::InvalidArgumentException() << "Formula does not specify neither min nor max optimality, which is not meaningful over nondeterministic models.";
+					}
+
                     // Create the vector with which to multiply and initialize it correctly.
                     std::vector<Type> result(this->getModel().getNumberOfStates());
                     storm::utility::vector::setVectorValues(result, nextStates, storm::utility::constantOne<Type>());
@@ -260,6 +261,12 @@ namespace storm {
                  * checker. If the qualitative flag is set, exact probabilities might not be computed.
                  */
                 virtual std::vector<Type> checkUntil(const storm::property::prctl::Until<Type>& formula, bool qualitative) const {
+                	// First test if it is specified if the minimum or maximum probabilities are to be computed.
+					if(this->minimumOperatorStack.empty()) {
+						LOG4CPLUS_ERROR(logger, "Formula does not specify neither min nor max optimality, which is not meaningful over nondeterministic models.");
+						throw storm::exceptions::InvalidArgumentException() << "Formula does not specify neither min nor max optimality, which is not meaningful over nondeterministic models.";
+					}
+
                     return this->checkUntil(this->minimumOperatorStack.top(), formula.getLeft().check(*this), formula.getRight().check(*this), qualitative).first;
                 }
                 
@@ -365,6 +372,12 @@ namespace storm {
                         throw storm::exceptions::InvalidPropertyException() << "Missing (state-based) reward model for formula.";
                     }
                     
+                    // Now test whether it is specified if the minimum or maximum probabilities are to be computed.
+					if(this->minimumOperatorStack.empty()) {
+						LOG4CPLUS_ERROR(logger, "Formula does not specify neither min nor max optimality, which is not meaningful over nondeterministic models.");
+						throw storm::exceptions::InvalidArgumentException() << "Formula does not specify neither min nor max optimality, which is not meaningful over nondeterministic models.";
+					}
+
                     // Initialize result to state rewards of the model.
                     std::vector<Type> result(this->getModel().getStateRewardVector());
                     
@@ -391,6 +404,12 @@ namespace storm {
                         throw storm::exceptions::InvalidPropertyException() << "Missing reward model for formula.";
                     }
                     
+                    // Now test whether it is specified if the minimum or maximum probabilities are to be computed.
+					if(this->minimumOperatorStack.empty()) {
+						LOG4CPLUS_ERROR(logger, "Formula does not specify neither min nor max optimality, which is not meaningful over nondeterministic models.");
+						throw storm::exceptions::InvalidArgumentException() << "Formula does not specify neither min nor max optimality, which is not meaningful over nondeterministic models.";
+					}
+
                     // Compute the reward vector to add in each step based on the available reward models.
                     std::vector<Type> totalRewardVector;
                     if (this->getModel().hasTransitionRewards()) {
@@ -427,6 +446,12 @@ namespace storm {
                  * checker. If the qualitative flag is set, exact values might not be computed.
                  */
                 virtual std::vector<Type> checkReachabilityReward(const storm::property::prctl::ReachabilityReward<Type>& formula, bool qualitative) const {
+                	// First test whether it is specified if the minimum or maximum probabilities are to be computed.
+					if(this->minimumOperatorStack.empty()) {
+						LOG4CPLUS_ERROR(logger, "Formula does not specify neither min nor max optimality, which is not meaningful over nondeterministic models.");
+						throw storm::exceptions::InvalidArgumentException() << "Formula does not specify neither min nor max optimality, which is not meaningful over nondeterministic models.";
+					}
+
                     return this->checkReachabilityReward(this->minimumOperatorStack.top(), formula.getChild().check(*this), qualitative).first;
                 }
                 
@@ -452,6 +477,12 @@ namespace storm {
                         throw storm::exceptions::InvalidPropertyException() << "Missing reward model for formula.";
                     }
                     
+                    // Also test whether it is specified if the minimum or maximum probabilities are to be computed.
+					if(this->minimumOperatorStack.empty()) {
+						LOG4CPLUS_ERROR(logger, "Formula does not specify neither min nor max optimality, which is not meaningful over nondeterministic models.");
+						throw storm::exceptions::InvalidArgumentException() << "Formula does not specify neither min nor max optimality, which is not meaningful over nondeterministic models.";
+					}
+
                     // Determine which states have a reward of infinity by definition.
                     storm::storage::BitVector infinityStates;
                     storm::storage::BitVector trueStates(this->getModel().getNumberOfStates(), true);
@@ -570,13 +601,7 @@ namespace storm {
 
                     return storm::storage::TotalScheduler(choices);
                 }
-                
-                /*!
-                 * A stack used for storing whether we are currently computing min or max probabilities or rewards, respectively.
-                 * The topmost element is true if and only if we are currently computing minimum probabilities or rewards.
-                 */
-                mutable std::stack<bool> minimumOperatorStack;
-                
+
                 /*!
                  * A solver that is used for solving systems of linear equations that are the result of nondeterministic choices.
                  */

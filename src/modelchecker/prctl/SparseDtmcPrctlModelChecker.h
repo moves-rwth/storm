@@ -61,21 +61,6 @@ public:
 	}
 
 	/*!
-	 * Checks the given formula that is a P/R operator without a bound.
-	 *
-	 * @param formula The formula to check.
-	 * @returns The set of states satisfying the formula represented by a bit vector.
-	 */
-	std::vector<Type> checkNoBoundOperator(storm::property::prctl::AbstractNoBoundOperator<Type> const& formula) const {
-		// Check if the operator was an optimality operator and report a warning in that case.
-		if (formula.isOptimalityOperator()) {
-			LOG4CPLUS_WARN(logger, "Formula contains min/max operator, which is not meaningful over deterministic models.");
-		}
-		return formula.check(*this, false);
-	}
-
-
-	/*!
 	 * Checks the given formula that is a bounded-until formula.
 	 *
 	 * @param formula The formula to check.
@@ -493,6 +478,42 @@ public:
 		// Set values of resulting vector that are known exactly.
 		storm::utility::vector::setVectorValues(result, targetStates, storm::utility::constantZero<Type>());
 		storm::utility::vector::setVectorValues(result, infinityStates, storm::utility::constantInfinity<Type>());
+
+		return result;
+	}
+
+	/*!
+	 * Checks the given formula.
+	 * @note This methods overrides the method of the base class to give an additional warning that declaring that minimal or maximal probabilities
+	 *       should be computed for the formula makes no sense in the context of a deterministic model.
+	 *
+	 * @param formula The formula to check.
+	 * @param minimumOperator True iff minimum probabilities/rewards are to be computed.
+	 * @returns The probabilities to satisfy the formula or the rewards accumulated by it, represented by a vector.
+	 */
+	virtual std::vector<Type> checkMinMaxOperator(storm::property::prctl::AbstractPathFormula<Type> const & formula, bool minimumOperator) const override {
+
+		LOG4CPLUS_WARN(logger, "Formula contains min/max operator, which is not meaningful over deterministic models.");
+
+		std::vector<Type> result = formula.check(*this, false);
+
+		return result;
+	}
+
+	/*!
+	 * Checks the given formula and determines whether minimum or maximum probabilities or rewards are to be computed for the formula.
+	 * @note This methods overrides the method of the base class to give an additional warning that declaring that minimal or maximal probabilities
+	 *       should be computed for the formula makes no sense in the context of a deterministic model.
+	 *
+	 * @param formula The formula to check.
+	 * @param minimumOperator True iff minimum probabilities/rewards are to be computed.
+	 * @returns The set of states satisfying the formula represented by a bit vector.
+	 */
+	virtual std::vector<Type> checkMinMaxOperator(storm::property::prctl::AbstractStateFormula<Type> const & formula, bool minimumOperator) const override {
+
+		LOG4CPLUS_WARN(logger, "Formula contains min/max operator, which is not meaningful over deterministic models.");
+
+		std::vector<Type> result = formula.check(*this);
 
 		return result;
 	}

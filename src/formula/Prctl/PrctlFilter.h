@@ -43,21 +43,77 @@ public:
 		delete child;
 	}
 
-	void check(AbstractModelChecker& modelchecker) const {
+	void check(AbstractModelChecker const & modelchecker) const {
+
+		// Write out the formula to be checked.
+		std::cout << std::endl;
+		LOG4CPLUS_INFO(logger, "Model checking formula\t" << this->toFormulaString());
+		std::cout << "Model checking formula:\t" << this->toFormulaString() << std::endl;
 
 		// Do a dynamic cast to test for the actual formula type and call the correct evaluation function.
 		if(dynamic_cast<AbstractStateFormula<T>*>(child) != nullptr) {
+
 			// Check the formula and apply the filter actions.
-			storm::storage::BitVector result = evaluate(modelchecker, static_cast<AbstractStateFormula<T>*>(child));
+			storm::storage::BitVector result;
+
+			try {
+				result = evaluate(modelchecker, static_cast<AbstractStateFormula<T>*>(child));
+			} catch (std::exception& e) {
+				std::cout << "Error during computation: " << e.what() << "Skipping property." << std::endl;
+				LOG4CPLUS_ERROR(logger, "Error during computation: " << e.what() << "Skipping property.");
+				std::cout << std::endl << "-------------------------------------------" << std::endl;
+
+				return;
+			}
 
 			// Now write out the result.
+
+			if(actions.empty()) {
+
+				// There is no filter action given. So provide legacy support:
+				// Return the results for all states labeled with "init".
+				LOG4CPLUS_INFO(logger, "Result for initial states:");
+				std::cout << "Result for initial states:" << std::endl;
+				for (auto initialState : modelchecker.getModel<storm::models::AbstractModel<T>>().getInitialStates()) {
+					LOG4CPLUS_INFO(logger, "\t" << initialState << ": " << (result.get(initialState) ? "satisfied" : "not satisfied"));
+					std::cout << "\t" << initialState << ": " << result.get(initialState) << std::endl;
+				}
+			}
+
+			std::cout << std::endl << "-------------------------------------------" << std::endl;
 
 		}
 		else if (dynamic_cast<AbstractPathFormula<T>*>(child) != nullptr) {
+
 			// Check the formula and apply the filter actions.
-			std::vector<T> result = evaluate(modelchecker, static_cast<AbstractPathFormula<T>*>(child));
+			std::vector<T> result;
+
+			try {
+				result = evaluate(modelchecker, static_cast<AbstractPathFormula<T>*>(child));
+			} catch (std::exception& e) {
+				std::cout << "Error during computation: " << e.what() << "Skipping property." << std::endl;
+				LOG4CPLUS_ERROR(logger, "Error during computation: " << e.what() << "Skipping property.");
+				std::cout << std::endl << "-------------------------------------------" << std::endl;
+
+				return;
+			}
 
 			// Now write out the result.
+
+			if(actions.empty()) {
+
+				// There is no filter action given. So provide legacy support:
+				// Return the results for all states labeled with "init".
+				LOG4CPLUS_INFO(logger, "Result for initial states:");
+				std::cout << "Result for initial states:" << std::endl;
+				for (auto initialState : modelchecker.getModel<storm::models::AbstractModel<T>>().getInitialStates()) {
+					LOG4CPLUS_INFO(logger, "\t" << initialState << ": " << result[initialState]);
+					std::cout << "\t" << initialState << ": " << result[initialState] << std::endl;
+				}
+			}
+
+			std::cout << std::endl << "-------------------------------------------" << std::endl;
+
 		}
 		else {
 			// This branch should be unreachable. If you ended up here, something strange has happened.
@@ -108,9 +164,17 @@ public:
 
 private:
 
-	BitVector<T> evaluate(AbstractModelChecker& modelchecker, AbstractStateFormula<T>* formula) const {
+	BitVector<T> evaluate(AbstractModelChecker const & modelchecker, AbstractStateFormula<T>* formula) const {
 		// First, get the model checking result.
-		BitVector result = formula->check(modelchecker);
+		BitVector result = modelchecker.checkMinMaxOperator(formula);
+
+		if(getActionCount() != 0 &&  dynamic_cast<MinMaxAction<T>*>(getAction(0)) != nullptr) {
+			// If there is an action specifying that min/max probabilities should be computed, call the appropriate method of the model checker.
+			result = modelchecker.checkMinMaxOperator(formula, static_cast<MinMaxAction<T>*>(getAction(0))->getMinimize());
+		} else {
+			result = formula->check(modelchecker);
+		}
+
 
 		// Now apply all filter actions and return the result.
 		for(auto action : actions) {
@@ -119,9 +183,16 @@ private:
 		return result;
 	}
 
-	std::vector<T> evaluate(AbstractModelChecker& modelchecker, AbstractPathFormula<T>* formula) const {
+	std::vector<T> evaluate(AbstractModelChecker const & modelchecker, AbstractPathFormula<T>* formula) const {
 		// First, get the model checking result.
-		std::vector<T> result = formula->check(modelchecker);
+		std::vector<T> result;
+
+		if(getActionCount() != 0 &&  dynamic_cast<MinMaxAction<T>*>(getAction(0)) != nullptr) {
+			// If there is an action specifying that min/max probabilities should be computed, call the appropriate method of the model checker.
+			result = modelchecker.checkMinMaxOperator(formula, static_cast<MinMaxAction<T>*>(getAction(0))->getMinimize());
+		} else {
+			result = formula->check(modelchecker, false);
+		}
 
 		// Now apply all filter actions and return the result.
 		for(auto action : actions) {

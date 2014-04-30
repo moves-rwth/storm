@@ -61,6 +61,13 @@ public:
 		return "range, " + from + ", " + to;
 	}
 
+	/*!
+	 *
+	 */
+	virtual std::string toFormulaString() const override {
+		return "\"range\", " + from + ", " + to;
+	}
+
 private:
 	uint_fast64_t from;
 	uint_fast64_t to;
