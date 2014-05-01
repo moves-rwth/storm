@@ -27,9 +27,11 @@ typedef BOOST_TYPEOF(qi::lit("//") >> *(qi::char_ - qi::eol) >> qi::eol | boost:
 #include "src/storage/expressions/Expression.h"
 #include "src/storage/expressions/Expressions.h"
 #include "src/exceptions/ExceptionMacros.h"
+#include "src/exceptions/WrongFormatException.h"
 
 namespace storm {
     namespace parser {
+        // A class that stores information about the parsed program.
         class GlobalProgramInformation {
         public:
             // Default construct the header information.
@@ -117,13 +119,7 @@ namespace storm {
                 
                 template<typename T1, typename T2, typename T3, typename T4>
                 qi::error_handler_result operator()(T1 b, T2 e, T3 where, T4 const& what) const {
-                    //                    LOG4CPLUS_ERROR(logger, "Error: expecting " << what << " in line " << get_line(where) << " at column " << get_column(b, where, 4) << ".");
-                    std::cerr << "Error: expecting " << what << " in line " << get_line(where) << "." << std::endl;
-                    T3 end(where);
-                    while (end != e && *end != '\r' && *end != '\n') {
-                        ++end;
-                    }
-                    std::cerr << "Error: expecting " << what << " in line " << get_line(where) << ": \n" << std::string(get_line_start(b, where), end) << " ... \n" << std::setw(std::distance(b, where)) << '^' << "---- here\n";
+                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(where) << ": " << " expecting " << what << ".");
                     return qi::fail;
                 }
             };
