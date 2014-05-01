@@ -189,7 +189,7 @@ namespace storm {
             qi::rule<Iterator, storm::prism::Program::ModelType(), Skipper> modelTypeDefinition;
             
             // Rules for parsing the program header.
-            qi::rule<Iterator, qi::unused_type(GlobalProgramInformation&), Skipper> programHeader;
+
             qi::rule<Iterator, storm::prism::Constant(), Skipper> undefinedConstantDefinition;
             qi::rule<Iterator, storm::prism::Constant(), Skipper> undefinedBooleanConstantDefinition;
             qi::rule<Iterator, storm::prism::Constant(), Skipper> undefinedIntegerConstantDefinition;

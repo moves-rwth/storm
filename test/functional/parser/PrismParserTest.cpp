@@ -54,6 +54,21 @@ TEST(PrismParser, SimpleFullTest) {
     EXPECT_NO_THROW(result = storm::parser::PrismParser::parseFromString(testInput, "testfile", true));
     EXPECT_EQ(1, result.getNumberOfModules());
     EXPECT_EQ(storm::prism::Program::ModelType::DTMC, result.getModelType());
+    
+    testInput =
+    R"(mdp
+    
+    module main
+        x : [1..5] init 1;
+        [] x=1 -> 1:(x'=2);
+        [] x=2 -> 1:(x'=3);
+        [] x=3 -> 1:(x'=1);
+        [] x=3 -> 1:(x'=4);
+        [] x=4 -> 1:(x'=5);
+    endmodule)";
+    EXPECT_NO_THROW(result = storm::parser::PrismParser::parseFromString(testInput, "testfile", true));
+    EXPECT_EQ(1, result.getNumberOfModules());
+    EXPECT_EQ(storm::prism::Program::ModelType::MDP, result.getModelType());
 }
 
 TEST(PrismParser, ComplexFullTest) {
@@ -167,4 +182,68 @@ TEST(PrismParser, ComplexParsingTest) {
     EXPECT_EQ(2, result.getNumberOfRewardModels());
     EXPECT_EQ(1, result.getNumberOfLabels());
     EXPECT_TRUE(result.definesInitialStatesExpression());
+}
+
+TEST(PrismParser, IllegalInputTest) {
+    std::string testInput =
+    R"(ctmc
+
+    const int a;
+    const bool a = true;
+    
+    module mod1
+        c : [0 .. 8] init 1;
+        [] c < 3 -> 2: (c' = c+1); 
+    endmodule
+    )";
+    
+    storm::prism::Program result;
+    EXPECT_THROW(result = storm::parser::PrismParser::parseFromString(testInput, "testfile", false), storm::exceptions::WrongFormatException);
+    
+    testInput =
+    R"(dtmc
+    
+    const int a;
+    
+    module mod1
+        a : [0 .. 8] init 1;
+        [] a < 3 -> 1: (a' = a+1); 
+    endmodule)";
+    
+    EXPECT_THROW(result = storm::parser::PrismParser::parseFromString(testInput, "testfile", false), storm::exceptions::WrongFormatException);
+    
+    testInput =
+    R"(dtmc
+    
+    const int a = 2;
+    formula a = 41;
+    
+    module mod1
+        c : [0 .. 8] init 1;
+        [] c < 3 -> 1: (c' = c+1); 
+    endmodule)";
+    
+    EXPECT_THROW(result = storm::parser::PrismParser::parseFromString(testInput, "testfile", false), storm::exceptions::WrongFormatException);
+    
+    testInput =
+    R"(dtmc
+    
+    const int a = 2;
+    
+    init
+        c > 3
+    endinit
+    
+    module mod1
+        c : [0 .. 8] init 1;
+        [] c < 3 -> 1: (c' = c+1); 
+    endmodule
+        
+    init
+        c > 3
+    endinit
+
+    )";
+    
+    EXPECT_THROW(result = storm::parser::PrismParser::parseFromString(testInput, "testfile", false), storm::exceptions::WrongFormatException);
 }

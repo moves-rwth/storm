@@ -147,13 +147,7 @@ namespace storm {
             
             globalVariableDefinition = (qi::lit("global") > (booleanVariableDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::globalBooleanVariables, qi::_r1), qi::_1)] | integerVariableDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::globalIntegerVariables, qi::_r1), qi::_1)]));
             globalVariableDefinition.name("global variable declaration list");
-            
-            programHeader = modelTypeDefinition[phoenix::bind(&GlobalProgramInformation::modelType, qi::_r1) = qi::_1]
-            >   *(definedConstantDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::constants, qi::_r1), qi::_1)] | undefinedConstantDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::constants, qi::_r1), qi::_1)])
-            >   *(formulaDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::formulas, qi::_r1), qi::_1)])
-            >   *(globalVariableDefinition(qi::_r1));
-            programHeader.name("program header");
-            
+                        
             stateRewardDefinition = (expression > qi::lit(":") > plusExpression >> qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createStateReward, phoenix::ref(*this), qi::_1, qi::_2)];
             stateRewardDefinition.name("state reward definition");
             
@@ -199,7 +193,19 @@ namespace storm {
             moduleDefinitionList %= +(moduleRenaming(qi::_r1) | moduleDefinition(qi::_r1))[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::modules, qi::_r1), qi::_1)];
             moduleDefinitionList.name("module list");
             
-            start = (qi::eps > programHeader(qi::_a) > moduleDefinitionList(qi::_a) > *(initialStatesConstruct(qi::_a) | rewardModelDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::rewardModels, qi::_a), qi::_1)] | labelDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::labels, qi::_a), qi::_1)] | formulaDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::formulas, qi::_a), qi::_1)]) > qi::eoi)[qi::_val = phoenix::bind(&PrismParser::createProgram, phoenix::ref(*this), qi::_a)];
+            start = (qi::eps
+                     > modelTypeDefinition[phoenix::bind(&GlobalProgramInformation::modelType, qi::_a) = qi::_1]
+                     > *(definedConstantDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::constants, qi::_a), qi::_1)] 
+                         | undefinedConstantDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::constants, qi::_a), qi::_1)]
+                         | formulaDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::formulas, qi::_a), qi::_1)]
+                         | globalVariableDefinition(qi::_a)
+                         | (moduleRenaming(qi::_a) | moduleDefinition(qi::_a))[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::modules, qi::_a), qi::_1)]
+                         | initialStatesConstruct(qi::_a)
+                         | rewardModelDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::rewardModels, qi::_a), qi::_1)] 
+                         | labelDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::labels, qi::_a), qi::_1)] 
+                         | formulaDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::formulas, qi::_a), qi::_1)]
+                     )
+                     > qi::eoi)[qi::_val = phoenix::bind(&PrismParser::createProgram, phoenix::ref(*this), qi::_a)];
             start.name("probabilistic program");
             
             // Enable error reporting.
@@ -258,7 +264,7 @@ namespace storm {
         }
         
         bool PrismParser::addInitialStatesExpression(storm::expressions::Expression initialStatesExpression, GlobalProgramInformation& globalProgramInformation) {
-            LOG_THROW(!globalProgramInformation.hasInitialStatesExpression, storm::exceptions::InvalidArgumentException, "Program must not define two initial constructs.");
+            LOG_THROW(!globalProgramInformation.hasInitialStatesExpression, storm::exceptions::WrongFormatException, "Program must not define two initial constructs.");
             if (globalProgramInformation.hasInitialStatesExpression) {
                 return false;
             }
@@ -483,37 +489,56 @@ namespace storm {
         }
         
         storm::prism::Constant PrismParser::createUndefinedBooleanConstant(std::string const& newConstant) const {
-            this->identifiers_.add(newConstant, storm::expressions::Expression::createBooleanConstant(newConstant));
+            if (!this->secondRun) {
+                LOG_THROW(this->identifiers_.find(newConstant) == nullptr, storm::exceptions::WrongFormatException, "Duplicate identifier '" << newConstant << "'.");
+                this->identifiers_.add(newConstant, storm::expressions::Expression::createBooleanConstant(newConstant));
+            }
             return storm::prism::Constant(storm::expressions::ExpressionReturnType::Bool, newConstant, this->getFilename());
         }
         
         storm::prism::Constant PrismParser::createUndefinedIntegerConstant(std::string const& newConstant) const {
-            this->identifiers_.add(newConstant, storm::expressions::Expression::createIntegerConstant(newConstant));
+            if (!this->secondRun) {
+                LOG_THROW(this->identifiers_.find(newConstant) == nullptr, storm::exceptions::WrongFormatException, "Duplicate identifier '" << newConstant << "'.");
+                this->identifiers_.add(newConstant, storm::expressions::Expression::createIntegerConstant(newConstant));
+            }
             return storm::prism::Constant(storm::expressions::ExpressionReturnType::Int, newConstant, this->getFilename());
         }
         
         storm::prism::Constant PrismParser::createUndefinedDoubleConstant(std::string const& newConstant) const {
-            this->identifiers_.add(newConstant, storm::expressions::Expression::createDoubleConstant(newConstant));
+            if (!this->secondRun) {
+                LOG_THROW(this->identifiers_.find(newConstant) == nullptr, storm::exceptions::WrongFormatException, "Duplicate identifier '" << newConstant << "'.");
+                this->identifiers_.add(newConstant, storm::expressions::Expression::createDoubleConstant(newConstant));
+            }
             return storm::prism::Constant(storm::expressions::ExpressionReturnType::Double, newConstant, this->getFilename());
         }
         
         storm::prism::Constant PrismParser::createDefinedBooleanConstant(std::string const& newConstant, storm::expressions::Expression expression) const {
-            this->identifiers_.add(newConstant, storm::expressions::Expression::createBooleanConstant(newConstant));
+            if (!this->secondRun) {
+                LOG_THROW(this->identifiers_.find(newConstant) == nullptr, storm::exceptions::WrongFormatException, "Duplicate identifier '" << newConstant << "'.");
+                this->identifiers_.add(newConstant, storm::expressions::Expression::createBooleanConstant(newConstant));
+            }
             return storm::prism::Constant(storm::expressions::ExpressionReturnType::Bool, newConstant, expression, this->getFilename());
         }
         
         storm::prism::Constant PrismParser::createDefinedIntegerConstant(std::string const& newConstant, storm::expressions::Expression expression) const {
-            this->identifiers_.add(newConstant, storm::expressions::Expression::createIntegerConstant(newConstant));
+            if (!this->secondRun) {
+                LOG_THROW(this->identifiers_.find(newConstant) == nullptr, storm::exceptions::WrongFormatException, "Duplicate identifier '" << newConstant << "'.");
+                this->identifiers_.add(newConstant, storm::expressions::Expression::createIntegerConstant(newConstant));
+            }
             return storm::prism::Constant(storm::expressions::ExpressionReturnType::Int, newConstant, expression, this->getFilename());
         }
         
         storm::prism::Constant PrismParser::createDefinedDoubleConstant(std::string const& newConstant, storm::expressions::Expression expression) const {
-            this->identifiers_.add(newConstant, storm::expressions::Expression::createDoubleConstant(newConstant));
+            if (!this->secondRun) {
+                LOG_THROW(this->identifiers_.find(newConstant) == nullptr, storm::exceptions::WrongFormatException, "Duplicate identifier '" << newConstant << "'.");
+                this->identifiers_.add(newConstant, storm::expressions::Expression::createDoubleConstant(newConstant));
+            }
             return storm::prism::Constant(storm::expressions::ExpressionReturnType::Double, newConstant, expression, this->getFilename());
         }
         
         storm::prism::Formula PrismParser::createFormula(std::string const& formulaName, storm::expressions::Expression expression) const {
-            if (this->secondRun) {
+            if (!this->secondRun) {
+                LOG_THROW(this->identifiers_.find(formulaName) == nullptr, storm::exceptions::WrongFormatException, "Duplicate identifier '" << formulaName << "'.");
                 this->identifiers_.add(formulaName, expression);
             }
             return storm::prism::Formula(formulaName, expression, this->getFilename());
@@ -550,12 +575,18 @@ namespace storm {
         }
         
         storm::prism::BooleanVariable PrismParser::createBooleanVariable(std::string const& variableName, storm::expressions::Expression initialValueExpression) const {
-            this->identifiers_.add(variableName, storm::expressions::Expression::createBooleanVariable(variableName));
+            if (!this->secondRun) {
+                LOG_THROW(this->identifiers_.find(variableName) == nullptr, storm::exceptions::WrongFormatException, "Duplicate identifier '" << variableName << "'.");
+                this->identifiers_.add(variableName, storm::expressions::Expression::createBooleanVariable(variableName));
+            }
             return storm::prism::BooleanVariable(variableName, initialValueExpression, this->getFilename());
         }
         
         storm::prism::IntegerVariable PrismParser::createIntegerVariable(std::string const& variableName, storm::expressions::Expression lowerBoundExpression, storm::expressions::Expression upperBoundExpression, storm::expressions::Expression initialValueExpression) const {
-            this->identifiers_.add(variableName, storm::expressions::Expression::createIntegerVariable(variableName));
+            if (!this->secondRun) {
+                LOG_THROW(this->identifiers_.find(variableName) == nullptr, storm::exceptions::WrongFormatException, "Duplicate identifier '" << variableName << "'.");
+                this->identifiers_.add(variableName, storm::expressions::Expression::createIntegerVariable(variableName));
+            }
             return storm::prism::IntegerVariable(variableName, lowerBoundExpression, upperBoundExpression, initialValueExpression, this->getFilename());
         }
         
