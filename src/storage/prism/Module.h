@@ -2,6 +2,7 @@
 #define STORM_STORAGE_PRISM_MODULE_H_
 
 #include <set>
+#include <map>
 #include <string>
 #include <vector>
 #include <memory>
@@ -28,7 +29,22 @@ namespace storm {
              * @param lineNumber The line number in which the module is defined.
              */
             Module(std::string const& moduleName, std::vector<storm::prism::BooleanVariable> const& booleanVariables, std::vector<storm::prism::IntegerVariable> const& integerVariables, std::vector<storm::prism::Command> const& commands, std::string const& filename = "", uint_fast64_t lineNumber = 0);
-            
+
+            /*!
+             * Creates a module with the given name, variables and commands that is marked as being renamed from the
+             * given module with the given renaming.
+             *
+             * @param moduleName The name of the module.
+             * @param booleanVariables The boolean variables defined by the module.
+             * @param integerVariables The integer variables defined by the module.
+             * @param commands The commands of the module.
+             * @param renamedFromModule The name of the module from which this module was renamed.
+             * @param renaming The renaming of identifiers used to create this module.
+             * @param filename The filename in which the module is defined.
+             * @param lineNumber The line number in which the module is defined.
+             */
+            Module(std::string const& moduleName, std::vector<storm::prism::BooleanVariable> const& booleanVariables, std::vector<storm::prism::IntegerVariable> const& integerVariables, std::vector<storm::prism::Command> const& commands, std::string const& renamedFromModule, std::map<std::string, std::string> const& renaming, std::string const& filename = "", uint_fast64_t lineNumber = 0);
+
             // Create default implementations of constructors/assignment.
             Module() = default;
             Module(Module const& other) = default;
@@ -134,6 +150,29 @@ namespace storm {
             bool hasAction(std::string const& action) const;
             
             /*!
+             * Retrieves whether this module was created from another module via renaming.
+             *
+             * @return True iff the module was created via renaming.
+             */
+            bool isRenamedFromModule() const;
+            
+            /*!
+             * If the module was created via renaming, this method retrieves the name of the module that was used as the
+             * in the base in the renaming process.
+             *
+             * @return The name of the module from which this module was created via renaming.
+             */
+            std::string const& getBaseModule() const;
+            
+            /*!
+             * If the module was created via renaming, this method returns the applied renaming of identifiers used for
+             * the renaming process.
+             *
+             * @return A mapping of identifiers to new identifiers that was used in the renaming process.
+             */
+            std::map<std::string, std::string> const& getRenaming() const;
+            
+            /*!
              * Retrieves the indices of all commands within this module that are labelled by the given action.
              *
              * @param action The action with which the commands have to be labelled.
@@ -188,6 +227,12 @@ namespace storm {
             
             // A map of actions to the set of commands labeled with this action.
             std::map<std::string, std::set<uint_fast64_t>> actionsToCommandIndexMap;
+            
+            // This string indicates whether and from what module this module was created via renaming.
+            std::string renamedFromModule;
+            
+            // If the module was created by renaming, this mapping contains the provided renaming of identifiers.
+            std::map<std::string, std::string> renaming;
         };
         
     } // namespace prism

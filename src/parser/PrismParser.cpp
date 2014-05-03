@@ -1,5 +1,6 @@
 #include "src/parser/PrismParser.h"
 #include "src/exceptions/InvalidArgumentException.h"
+#include "src/exceptions/InvalidTypeException.h"
 #include "src/exceptions/WrongFormatException.h"
 
 namespace storm {
@@ -7,7 +8,7 @@ namespace storm {
         storm::prism::Program PrismParser::parse(std::string const& filename, bool typeCheck) {
             // Open file and initialize result.
             std::ifstream inputFileStream(filename, std::ios::in);
-            LOG_THROW(inputFileStream.good(), storm::exceptions::WrongFormatException, "Unable to read from file " << filename << ".");
+            LOG_THROW(inputFileStream.good(), storm::exceptions::WrongFormatException, "Unable to read from file '" << filename << "'.");
             
             storm::prism::Program result;
             
@@ -264,7 +265,7 @@ namespace storm {
         }
         
         bool PrismParser::addInitialStatesExpression(storm::expressions::Expression initialStatesExpression, GlobalProgramInformation& globalProgramInformation) {
-            LOG_THROW(!globalProgramInformation.hasInitialStatesExpression, storm::exceptions::WrongFormatException, "Program must not define two initial constructs.");
+            LOG_THROW(!globalProgramInformation.hasInitialStatesExpression, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": Program must not define two initial constructs.");
             if (globalProgramInformation.hasInitialStatesExpression) {
                 return false;
             }
@@ -277,7 +278,11 @@ namespace storm {
             if (!this->secondRun) {
                 return storm::expressions::Expression::createFalse();
             } else {
-                return e1.ite(e2, e3);
+                try {
+                    return e1.ite(e2, e3);
+                } catch (storm::exceptions::InvalidTypeException const& e) {
+                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": " << e.what() << ".");
+                }
             }
         }
         
@@ -285,7 +290,11 @@ namespace storm {
             if (!this->secondRun) {
                 return storm::expressions::Expression::createFalse();
             } else {
-                return e1.implies(e2);
+                try {
+                    return e1.implies(e2);
+                } catch (storm::exceptions::InvalidTypeException const& e) {
+                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": " << e.what() << ".");
+                }
             }
         }
         
@@ -293,7 +302,11 @@ namespace storm {
             if (!this->secondRun) {
                 return storm::expressions::Expression::createFalse();
             } else {
-                return e1 || e2;
+                try {
+                    return e1 || e2;
+                } catch (storm::exceptions::InvalidTypeException const& e) {
+                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": " << e.what() << ".");
+                }
             }
         }
         
@@ -301,7 +314,11 @@ namespace storm {
             if (!this->secondRun) {
                 return storm::expressions::Expression::createFalse();
             } else {
-                return e1 && e2;
+                try{
+                    return e1 && e2;
+                } catch (storm::exceptions::InvalidTypeException const& e) {
+                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": " << e.what() << ".");
+                }
             }
         }
         
@@ -309,7 +326,11 @@ namespace storm {
             if (!this->secondRun) {
                 return storm::expressions::Expression::createFalse();
             } else {
-                return e1 > e2;
+                try {
+                    return e1 > e2;
+                } catch (storm::exceptions::InvalidTypeException const& e) {
+                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": " << e.what() << ".");
+                }
             }
         }
         
@@ -317,7 +338,11 @@ namespace storm {
             if (!this->secondRun) {
                 return storm::expressions::Expression::createFalse();
             } else {
-                return e1 >= e2;
+                try {
+                    return e1 >= e2;
+                } catch (storm::exceptions::InvalidTypeException const& e) {
+                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": " << e.what() << ".");
+                }
             }
         }
         
@@ -325,7 +350,11 @@ namespace storm {
             if (!this->secondRun) {
                 return storm::expressions::Expression::createFalse();
             } else {
-                return e1 < e2;
+                try {
+                    return e1 < e2;
+                } catch (storm::exceptions::InvalidTypeException const& e) {
+                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": " << e.what() << ".");
+                }
             }
         }
         
@@ -333,7 +362,11 @@ namespace storm {
             if (!this->secondRun) {
                 return storm::expressions::Expression::createFalse();
             } else {
-                return e1 <= e2;
+                try {
+                    return e1 <= e2;
+                } catch (storm::exceptions::InvalidTypeException const& e) {
+                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": " << e.what() << ".");
+                }
             }
         }
         
@@ -341,10 +374,14 @@ namespace storm {
             if (!this->secondRun) {
                 return storm::expressions::Expression::createFalse();
             } else {
-                if (e1.hasBooleanReturnType() && e2.hasBooleanReturnType()) {
-                    return e1.iff(e2);
-                } else {
-                    return e1 == e2;
+                try {
+                    if (e1.hasBooleanReturnType() && e2.hasBooleanReturnType()) {
+                        return e1.iff(e2);
+                    } else {
+                        return e1 == e2;
+                    }
+                } catch (storm::exceptions::InvalidTypeException const& e) {
+                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": " << e.what() << ".");
                 }
             }
         }
@@ -353,10 +390,14 @@ namespace storm {
             if (!this->secondRun) {
                 return storm::expressions::Expression::createFalse();
             } else {
-                if (e1.hasBooleanReturnType() && e2.hasBooleanReturnType()) {
-                    return e1 ^ e2;
-                } else {
-                    return e1 != e2;
+                try {
+                    if (e1.hasBooleanReturnType() && e2.hasBooleanReturnType()) {
+                        return e1 ^ e2;
+                    } else {
+                        return e1 != e2;
+                    }
+                } catch (storm::exceptions::InvalidTypeException const& e) {
+                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": " << e.what() << ".");
                 }
             }
         }
@@ -365,7 +406,11 @@ namespace storm {
             if (!this->secondRun) {
                 return storm::expressions::Expression::createFalse();
             } else {
-                return e1 + e2;
+                try {
+                    return e1 + e2;
+                } catch (storm::exceptions::InvalidTypeException const& e) {
+                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": " << e.what() << ".");
+                }
             }
         }
         
@@ -373,7 +418,11 @@ namespace storm {
             if (!this->secondRun) {
                 return storm::expressions::Expression::createFalse();
             } else {
-                return e1 - e2;
+                try {
+                    return e1 - e2;
+                } catch (storm::exceptions::InvalidTypeException const& e) {
+                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": " << e.what() << ".");
+                }
             }
         }
         
@@ -381,7 +430,11 @@ namespace storm {
             if (!this->secondRun) {
                 return storm::expressions::Expression::createFalse();
             } else {
-                return e1 * e2;
+                try {
+                    return e1 * e2;
+                } catch (storm::exceptions::InvalidTypeException const& e) {
+                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": " << e.what() << ".");
+                }
             }
         }
         
@@ -389,7 +442,11 @@ namespace storm {
             if (!this->secondRun) {
                 return storm::expressions::Expression::createFalse();
             } else {
-                return e1 / e2;
+                try {
+                    return e1 / e2;
+                } catch (storm::exceptions::InvalidTypeException const& e) {
+                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": " << e.what() << ".");
+                }
             }
         }
         
@@ -397,7 +454,11 @@ namespace storm {
             if (!this->secondRun) {
                 return storm::expressions::Expression::createFalse();
             } else {
-                return !e1;
+                try {
+                    return !e1;
+                } catch (storm::exceptions::InvalidTypeException const& e) {
+                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": " << e.what() << ".");
+                }
             }
         }
         
@@ -405,7 +466,11 @@ namespace storm {
             if (!this->secondRun) {
                 return storm::expressions::Expression::createFalse();
             } else {
-                return -e1;
+                try {
+                    return -e1;
+                } catch (storm::exceptions::InvalidTypeException const& e) {
+                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": " << e.what() << ".");
+                }
             }
         }
         
@@ -450,7 +515,11 @@ namespace storm {
             if (!this->secondRun) {
                 return storm::expressions::Expression::createFalse();
             } else {
-                return storm::expressions::Expression::minimum(e1, e2);
+                try {
+                    return storm::expressions::Expression::minimum(e1, e2);
+                } catch (storm::exceptions::InvalidTypeException const& e) {
+                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": " << e.what() << ".");
+                }
             }
         }
         
@@ -458,7 +527,11 @@ namespace storm {
             if (!this->secondRun) {
                 return storm::expressions::Expression::createFalse();
             } else {
-                return storm::expressions::Expression::maximum(e1, e2);
+                try {
+                    return storm::expressions::Expression::maximum(e1, e2);
+                } catch (storm::exceptions::InvalidTypeException const& e) {
+                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": " << e.what() << ".");
+                }
             }
         }
         
@@ -466,7 +539,11 @@ namespace storm {
             if (!this->secondRun) {
                 return storm::expressions::Expression::createFalse();
             } else {
-                return e1.floor();
+                try {
+                    return e1.floor();
+                } catch (storm::exceptions::InvalidTypeException const& e) {
+                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": " << e.what() << ".");
+                }
             }
         }
         
@@ -474,7 +551,11 @@ namespace storm {
             if (!this->secondRun) {
                 return storm::expressions::Expression::createFalse();
             } else {
-                return e1.ceil();
+                try {
+                    return e1.ceil();
+                } catch (storm::exceptions::InvalidTypeException const& e) {
+                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": " << e.what() << ".");
+                }
             }
         }
         
@@ -483,14 +564,14 @@ namespace storm {
                 return storm::expressions::Expression::createFalse();
             } else {
                 storm::expressions::Expression const* expression = this->identifiers_.find(identifier);
-                LOG_THROW(expression != nullptr, storm::exceptions::WrongFormatException, "Undeclared identifier '" << identifier << "'.");
+                LOG_THROW(expression != nullptr, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": Undeclared identifier '" << identifier << "'.");
                 return *expression;
             }
         }
         
         storm::prism::Constant PrismParser::createUndefinedBooleanConstant(std::string const& newConstant) const {
             if (!this->secondRun) {
-                LOG_THROW(this->identifiers_.find(newConstant) == nullptr, storm::exceptions::WrongFormatException, "Duplicate identifier '" << newConstant << "'.");
+                LOG_THROW(this->identifiers_.find(newConstant) == nullptr, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": Duplicate identifier '" << newConstant << "'.");
                 this->identifiers_.add(newConstant, storm::expressions::Expression::createBooleanConstant(newConstant));
             }
             return storm::prism::Constant(storm::expressions::ExpressionReturnType::Bool, newConstant, this->getFilename());
@@ -498,7 +579,7 @@ namespace storm {
         
         storm::prism::Constant PrismParser::createUndefinedIntegerConstant(std::string const& newConstant) const {
             if (!this->secondRun) {
-                LOG_THROW(this->identifiers_.find(newConstant) == nullptr, storm::exceptions::WrongFormatException, "Duplicate identifier '" << newConstant << "'.");
+                LOG_THROW(this->identifiers_.find(newConstant) == nullptr, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": Duplicate identifier '" << newConstant << "'.");
                 this->identifiers_.add(newConstant, storm::expressions::Expression::createIntegerConstant(newConstant));
             }
             return storm::prism::Constant(storm::expressions::ExpressionReturnType::Int, newConstant, this->getFilename());
@@ -506,7 +587,7 @@ namespace storm {
         
         storm::prism::Constant PrismParser::createUndefinedDoubleConstant(std::string const& newConstant) const {
             if (!this->secondRun) {
-                LOG_THROW(this->identifiers_.find(newConstant) == nullptr, storm::exceptions::WrongFormatException, "Duplicate identifier '" << newConstant << "'.");
+                LOG_THROW(this->identifiers_.find(newConstant) == nullptr, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": Duplicate identifier '" << newConstant << "'.");
                 this->identifiers_.add(newConstant, storm::expressions::Expression::createDoubleConstant(newConstant));
             }
             return storm::prism::Constant(storm::expressions::ExpressionReturnType::Double, newConstant, this->getFilename());
@@ -514,7 +595,7 @@ namespace storm {
         
         storm::prism::Constant PrismParser::createDefinedBooleanConstant(std::string const& newConstant, storm::expressions::Expression expression) const {
             if (!this->secondRun) {
-                LOG_THROW(this->identifiers_.find(newConstant) == nullptr, storm::exceptions::WrongFormatException, "Duplicate identifier '" << newConstant << "'.");
+                LOG_THROW(this->identifiers_.find(newConstant) == nullptr, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": Duplicate identifier '" << newConstant << "'.");
                 this->identifiers_.add(newConstant, storm::expressions::Expression::createBooleanConstant(newConstant));
             }
             return storm::prism::Constant(storm::expressions::ExpressionReturnType::Bool, newConstant, expression, this->getFilename());
@@ -522,7 +603,7 @@ namespace storm {
         
         storm::prism::Constant PrismParser::createDefinedIntegerConstant(std::string const& newConstant, storm::expressions::Expression expression) const {
             if (!this->secondRun) {
-                LOG_THROW(this->identifiers_.find(newConstant) == nullptr, storm::exceptions::WrongFormatException, "Duplicate identifier '" << newConstant << "'.");
+                LOG_THROW(this->identifiers_.find(newConstant) == nullptr, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": Duplicate identifier '" << newConstant << "'.");
                 this->identifiers_.add(newConstant, storm::expressions::Expression::createIntegerConstant(newConstant));
             }
             return storm::prism::Constant(storm::expressions::ExpressionReturnType::Int, newConstant, expression, this->getFilename());
@@ -530,7 +611,7 @@ namespace storm {
         
         storm::prism::Constant PrismParser::createDefinedDoubleConstant(std::string const& newConstant, storm::expressions::Expression expression) const {
             if (!this->secondRun) {
-                LOG_THROW(this->identifiers_.find(newConstant) == nullptr, storm::exceptions::WrongFormatException, "Duplicate identifier '" << newConstant << "'.");
+                LOG_THROW(this->identifiers_.find(newConstant) == nullptr, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": Duplicate identifier '" << newConstant << "'.");
                 this->identifiers_.add(newConstant, storm::expressions::Expression::createDoubleConstant(newConstant));
             }
             return storm::prism::Constant(storm::expressions::ExpressionReturnType::Double, newConstant, expression, this->getFilename());
@@ -538,7 +619,7 @@ namespace storm {
         
         storm::prism::Formula PrismParser::createFormula(std::string const& formulaName, storm::expressions::Expression expression) const {
             if (!this->secondRun) {
-                LOG_THROW(this->identifiers_.find(formulaName) == nullptr, storm::exceptions::WrongFormatException, "Duplicate identifier '" << formulaName << "'.");
+                LOG_THROW(this->identifiers_.find(formulaName) == nullptr, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": Duplicate identifier '" << formulaName << "'.");
                 this->identifiers_.add(formulaName, expression);
             }
             return storm::prism::Formula(formulaName, expression, this->getFilename());
@@ -576,7 +657,7 @@ namespace storm {
         
         storm::prism::BooleanVariable PrismParser::createBooleanVariable(std::string const& variableName, storm::expressions::Expression initialValueExpression) const {
             if (!this->secondRun) {
-                LOG_THROW(this->identifiers_.find(variableName) == nullptr, storm::exceptions::WrongFormatException, "Duplicate identifier '" << variableName << "'.");
+                LOG_THROW(this->identifiers_.find(variableName) == nullptr, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": Duplicate identifier '" << variableName << "'.");
                 this->identifiers_.add(variableName, storm::expressions::Expression::createBooleanVariable(variableName));
             }
             return storm::prism::BooleanVariable(variableName, initialValueExpression, this->getFilename());
@@ -584,7 +665,7 @@ namespace storm {
         
         storm::prism::IntegerVariable PrismParser::createIntegerVariable(std::string const& variableName, storm::expressions::Expression lowerBoundExpression, storm::expressions::Expression upperBoundExpression, storm::expressions::Expression initialValueExpression) const {
             if (!this->secondRun) {
-                LOG_THROW(this->identifiers_.find(variableName) == nullptr, storm::exceptions::WrongFormatException, "Duplicate identifier '" << variableName << "'.");
+                LOG_THROW(this->identifiers_.find(variableName) == nullptr, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": Duplicate identifier '" << variableName << "'.");
                 this->identifiers_.add(variableName, storm::expressions::Expression::createIntegerVariable(variableName));
             }
             return storm::prism::IntegerVariable(variableName, lowerBoundExpression, upperBoundExpression, initialValueExpression, this->getFilename());
@@ -598,19 +679,19 @@ namespace storm {
         storm::prism::Module PrismParser::createRenamedModule(std::string const& newModuleName, std::string const& oldModuleName, std::map<std::string, std::string> const& renaming, GlobalProgramInformation& globalProgramInformation) const {
             // Check whether the module to rename actually exists.
             auto const& moduleIndexPair = globalProgramInformation.moduleToIndexMap.find(oldModuleName);
-            LOG_THROW(moduleIndexPair != globalProgramInformation.moduleToIndexMap.end(), storm::exceptions::WrongFormatException, "No module named '" << oldModuleName << "' to rename.");
+            LOG_THROW(moduleIndexPair != globalProgramInformation.moduleToIndexMap.end(), storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": No module named '" << oldModuleName << "' to rename.");
             storm::prism::Module const& moduleToRename = globalProgramInformation.modules[moduleIndexPair->second];
             
             if (!this->secondRun) {
                 // Register all (renamed) variables for later use.
                 for (auto const& variable : moduleToRename.getBooleanVariables()) {
                     auto const& renamingPair = renaming.find(variable.getName());
-                    LOG_THROW(renamingPair != renaming.end(), storm::exceptions::WrongFormatException, "Boolean variable '" << variable.getName() << " was not renamed.");
+                    LOG_THROW(renamingPair != renaming.end(), storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": Boolean variable '" << variable.getName() << " was not renamed.");
                     this->identifiers_.add(renamingPair->second, storm::expressions::Expression::createBooleanVariable(renamingPair->second));
                 }
                 for (auto const& variable : moduleToRename.getIntegerVariables()) {
                     auto const& renamingPair = renaming.find(variable.getName());
-                    LOG_THROW(renamingPair != renaming.end(), storm::exceptions::WrongFormatException, "Integer variable '" << variable.getName() << " was not renamed.");
+                    LOG_THROW(renamingPair != renaming.end(), storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": Integer variable '" << variable.getName() << " was not renamed.");
                     this->identifiers_.add(renamingPair->second, storm::expressions::Expression::createIntegerVariable(renamingPair->second));
                 }
                 
@@ -634,7 +715,7 @@ namespace storm {
                 std::vector<storm::prism::BooleanVariable> booleanVariables;
                 for (auto const& variable : moduleToRename.getBooleanVariables()) {
                     auto const& renamingPair = renaming.find(variable.getName());
-                    LOG_THROW(renamingPair != renaming.end(), storm::exceptions::WrongFormatException, "Boolean variable '" << variable.getName() << " was not renamed.");
+                    LOG_THROW(renamingPair != renaming.end(), storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": Boolean variable '" << variable.getName() << " was not renamed.");
                     
                     booleanVariables.push_back(storm::prism::BooleanVariable(renamingPair->second, variable.getInitialValueExpression().substitute(expressionRenaming), this->getFilename(), get_line(qi::_1)));
                 }
@@ -643,7 +724,7 @@ namespace storm {
                 std::vector<storm::prism::IntegerVariable> integerVariables;
                 for (auto const& variable : moduleToRename.getIntegerVariables()) {
                     auto const& renamingPair = renaming.find(variable.getName());
-                    LOG_THROW(renamingPair != renaming.end(), storm::exceptions::WrongFormatException, "Integer variable '" << variable.getName() << " was not renamed.");
+                    LOG_THROW(renamingPair != renaming.end(), storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": Integer variable '" << variable.getName() << " was not renamed.");
                     
                     integerVariables.push_back(storm::prism::IntegerVariable(renamingPair->second, variable.getLowerBoundExpression().substitute(expressionRenaming), variable.getUpperBoundExpression().substitute(expressionRenaming), variable.getInitialValueExpression().substitute(expressionRenaming), this->getFilename(), get_line(qi::_1)));
                 }
@@ -676,7 +757,7 @@ namespace storm {
                     ++globalProgramInformation.currentCommandIndex;
                 }
                 
-                return storm::prism::Module(newModuleName, booleanVariables, integerVariables, commands, this->getFilename());
+                return storm::prism::Module(newModuleName, booleanVariables, integerVariables, commands, oldModuleName, renaming);
             }
         }
         
