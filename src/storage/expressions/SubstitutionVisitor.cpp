@@ -3,20 +3,7 @@
 #include <string>
 
 #include "src/storage/expressions/SubstitutionVisitor.h"
-
-#include "src/storage/expressions/IfThenElseExpression.h"
-#include "src/storage/expressions/BinaryBooleanFunctionExpression.h"
-#include "src/storage/expressions/BinaryNumericalFunctionExpression.h"
-#include "src/storage/expressions/BinaryRelationExpression.h"
-#include "src/storage/expressions/BooleanConstantExpression.h"
-#include "src/storage/expressions/IntegerConstantExpression.h"
-#include "src/storage/expressions/DoubleConstantExpression.h"
-#include "src/storage/expressions/BooleanLiteralExpression.h"
-#include "src/storage/expressions/IntegerLiteralExpression.h"
-#include "src/storage/expressions/DoubleLiteralExpression.h"
-#include "src/storage/expressions/VariableExpression.h"
-#include "src/storage/expressions/UnaryBooleanFunctionExpression.h"
-#include "src/storage/expressions/UnaryNumericalFunctionExpression.h"
+#include "src/storage/expressions/Expressions.h"
 
 namespace storm {
     namespace expressions  {

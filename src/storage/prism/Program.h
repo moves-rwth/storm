@@ -285,6 +285,12 @@ namespace storm {
              */
             Program substituteConstants() const;
             
+            /*!
+             * Checks the validity of the program. If the program is not valid, an exception is thrown with a message
+             * that indicates the source of the problem.
+             */
+            void checkValidity() const;
+            
             friend std::ostream& operator<<(std::ostream& stream, Program const& program);
             
         private:

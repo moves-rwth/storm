@@ -1,7 +1,11 @@
 #include "src/storage/prism/Program.h"
+
+#include <algorithm>
+
 #include "src/exceptions/ExceptionMacros.h"
 #include "exceptions/InvalidArgumentException.h"
 #include "src/exceptions/OutOfRangeException.h"
+#include "src/exceptions/WrongFormatException.h"
 
 namespace storm {
     namespace prism {
@@ -315,6 +319,183 @@ namespace storm {
             }
             
             return Program(this->getModelType(), newConstants, newBooleanVariables, newIntegerVariables, newFormulas, newModules, newRewardModels, this->definesInitialStatesExpression(), newInitialStateExpression, newLabels);
+        }
+        
+        void Program::checkValidity() const {
+            // We need to construct a mapping from identifiers to their types, so we can type-check the expressions later.
+            std::map<std::string, storm::expressions::ExpressionReturnType> identifierToTypeMap;
+            
+            // Start by checking the constant declarations.
+            std::set<std::string> allIdentifiers;
+            std::set<std::string> constantNames;
+            for (auto const& constant : this->getConstants()) {
+                // Check for duplicate identifiers.
+                LOG_THROW(allIdentifiers.find(constant.getName()) == allIdentifiers.end(), storm::exceptions::WrongFormatException, "Error in " << constant.getFilename() << ", line " << constant.getLineNumber() << ": duplicate identifier '" << constant.getName() << "'.");
+                
+                // Check defining expressions of defined constants.
+                if (constant.isDefined()) {
+                    LOG_THROW(constant.getExpression().getVariables().empty(), storm::exceptions::WrongFormatException, "Error in " << constant.getFilename() << ", line " << constant.getLineNumber() << ": definition of constant " << constant.getName() << " must not refer to variables.");
+                    
+                    std::set<std::string> containedConstantNames = constant.getExpression().getConstants();
+                    bool isValid = std::includes(constantNames.begin(), constantNames.end(), containedConstantNames.begin(), containedConstantNames.end());
+                    LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << constant.getFilename() << ", line " << constant.getLineNumber() << ": defining expression refers to unknown constants.");
+                    
+                    // Now check that the constants appear with the right types (this throws an exception if this is not
+                    // the case).
+                    constant.getExpression().check(identifierToTypeMap);
+                }
+                
+                // Finally, register the type of the constant for later type checks.
+                identifierToTypeMap.emplace(constant.getName(), constant.getType());
+                
+                // Record the new identifier for future checks.
+                constantNames.insert(constant.getName());
+                allIdentifiers.insert(constant.getName());
+            }
+            
+            // Now we check the variable declarations. We start with the global variables.
+            std::set<std::string> variableNames;
+            for (auto const& variable : this->getGlobalBooleanVariables()) {
+                // Check for duplicate identifiers.
+                LOG_THROW(allIdentifiers.find(variable.getName()) == allIdentifiers.end(), storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": duplicate identifier '" << variable.getName() << "'.");
+                
+                // Check the initial value of the variable.
+                LOG_THROW(variable.getInitialValueExpression().getVariables().empty(), storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": initial value expression must not refer to variables.");
+                std::set<std::string> containedConstants = variable.getInitialValueExpression().getConstants();
+                bool isValid = std::includes(constantNames.begin(), constantNames.end(), containedConstants.begin(), containedConstants.end());
+                LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": initial value expression refers to unknown constants.");
+                variable.getInitialValueExpression().check(identifierToTypeMap);
+
+                // Register the type of the constant for later type checks.
+                identifierToTypeMap.emplace(variable.getName(), storm::expressions::ExpressionReturnType::Bool);
+                
+                // Record the new identifier for future checks.
+                variableNames.insert(variable.getName());
+                allIdentifiers.insert(variable.getName());
+            }
+            for (auto const& variable : this->getGlobalIntegerVariables()) {
+                // Check for duplicate identifiers.
+                LOG_THROW(allIdentifiers.find(variable.getName()) == allIdentifiers.end(), storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": duplicate identifier '" << variable.getName() << "'.");
+                
+                // Check that bound expressions of the range.
+                LOG_THROW(variable.getLowerBoundExpression().getVariables().empty(), storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": lower bound expression must not refer to variables.");
+                std::set<std::string> containedConstants = variable.getLowerBoundExpression().getConstants();
+                bool isValid = std::includes(constantNames.begin(), constantNames.end(), containedConstants.begin(), containedConstants.end());
+                LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": lower bound expression refers to unknown constants.");
+                variable.getLowerBoundExpression().check(identifierToTypeMap);
+                LOG_THROW(variable.getUpperBoundExpression().getVariables().empty(), storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": upper bound expression must not refer to variables.");
+                containedConstants = variable.getLowerBoundExpression().getConstants();
+                isValid = std::includes(constantNames.begin(), constantNames.end(), containedConstants.begin(), containedConstants.end());
+                LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": upper bound expression refers to unknown constants.");
+                variable.getUpperBoundExpression().check(identifierToTypeMap);
+                
+                // Check the initial value of the variable.
+                LOG_THROW(variable.getInitialValueExpression().getVariables().empty(), storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": initial value expression must not refer to variables.");
+                containedConstants = variable.getInitialValueExpression().getConstants();
+                isValid = std::includes(constantNames.begin(), constantNames.end(), containedConstants.begin(), containedConstants.end());
+                LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": initial value expression refers to unknown constants.");
+                variable.getInitialValueExpression().check(identifierToTypeMap);
+                
+                // Register the type of the constant for later type checks.
+                identifierToTypeMap.emplace(variable.getName(), storm::expressions::ExpressionReturnType::Int);
+
+                // Record the new identifier for future checks.
+                variableNames.insert(variable.getName());
+                allIdentifiers.insert(variable.getName());
+            }
+
+            // Now go through the variables of the modules.
+            for (auto const& module : this->getModules()) {
+                for (auto const& variable : module.getBooleanVariables()) {
+                    // Check for duplicate identifiers.
+                    LOG_THROW(allIdentifiers.find(variable.getName()) == allIdentifiers.end(), storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": duplicate identifier '" << variable.getName() << "'.");
+                    
+                    // Check the initial value of the variable.
+                    LOG_THROW(variable.getInitialValueExpression().getVariables().empty(), storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": initial value expression must not refer to variables.");
+                    std::set<std::string> containedConstants = variable.getInitialValueExpression().getConstants();
+                    bool isValid = std::includes(constantNames.begin(), constantNames.end(), containedConstants.begin(), containedConstants.end());
+                    LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": initial value expression refers to unknown constants.");
+                    variable.getInitialValueExpression().check(identifierToTypeMap);
+                    
+                    // Register the type of the constant for later type checks.
+                    identifierToTypeMap.emplace(variable.getName(), storm::expressions::ExpressionReturnType::Bool);
+                    
+                    // Record the new identifier for future checks.
+                    variableNames.insert(variable.getName());
+                    allIdentifiers.insert(variable.getName());
+                }
+                for (auto const& variable : module.getIntegerVariables()) {
+                    // Check for duplicate identifiers.
+                    LOG_THROW(allIdentifiers.find(variable.getName()) == allIdentifiers.end(), storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": duplicate identifier '" << variable.getName() << "'.");
+                    
+                    // Register the type of the constant for later type checks.
+                    identifierToTypeMap.emplace(variable.getName(), storm::expressions::ExpressionReturnType::Int);
+                    
+                    // Check that bound expressions of the range.
+                    LOG_THROW(variable.getLowerBoundExpression().getVariables().empty(), storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": lower bound expression must not refer to variables.");
+                    std::set<std::string> containedConstants = variable.getLowerBoundExpression().getConstants();
+                    bool isValid = std::includes(constantNames.begin(), constantNames.end(), containedConstants.begin(), containedConstants.end());
+                    LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": lower bound expression refers to unknown constants.");
+                    variable.getLowerBoundExpression().check(identifierToTypeMap);
+                    LOG_THROW(variable.getUpperBoundExpression().getVariables().empty(), storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": upper bound expression must not refer to variables.");
+                    containedConstants = variable.getLowerBoundExpression().getConstants();
+                    isValid = std::includes(constantNames.begin(), constantNames.end(), containedConstants.begin(), containedConstants.end());
+                    LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": upper bound expression refers to unknown constants.");
+                    variable.getUpperBoundExpression().check(identifierToTypeMap);
+                    
+                    // Check the initial value of the variable.
+                    LOG_THROW(variable.getInitialValueExpression().getVariables().empty(), storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": initial value expression must not refer to variables.");
+                    containedConstants = variable.getInitialValueExpression().getConstants();
+                    isValid = std::includes(constantNames.begin(), constantNames.end(), containedConstants.begin(), containedConstants.end());
+                    LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": initial value expression refers to unknown constants.");
+                    variable.getInitialValueExpression().check(identifierToTypeMap);
+                    
+                    // Record the new identifier for future checks.
+                    variableNames.insert(variable.getName());
+                    allIdentifiers.insert(variable.getName());
+                }
+            }
+            
+            // Create the set of valid identifiers for future checks.
+            std::set<std::string> variablesAndConstants;
+            std::set_union(variableNames.begin(), variableNames.end(), constantNames.begin(), constantNames.end(), std::inserter(variablesAndConstants, variablesAndConstants.begin()));
+            
+            // TODO: check commands.
+            
+            // TODO: check reward models.
+            
+            // Check the initial states expression (if the program defines it).
+            if (this->hasInitialStatesExpression) {
+                std::set<std::string> containedIdentifiers = this->initialStatesExpression.getIdentifiers();
+                bool isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedIdentifiers.begin(), containedIdentifiers.end());
+                LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << this->getFilename() << ", line " << this->getLineNumber() << ": initial expression refers to unknown identifiers.");
+                this->initialStatesExpression.check(identifierToTypeMap);
+            }
+            
+            // Check the labels.
+            for (auto const& label : this->getLabels()) {
+                // Check for duplicate identifiers.
+                LOG_THROW(allIdentifiers.find(label.getName()) == allIdentifiers.end(), storm::exceptions::WrongFormatException, "Error in " << label.getFilename() << ", line " << label.getLineNumber() << ": duplicate identifier '" << label.getName() << "'.");
+                
+                std::set<std::string> containedIdentifiers = label.getStatePredicateExpression().getIdentifiers();
+                bool isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedIdentifiers.begin(), containedIdentifiers.end());
+                LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << label.getFilename() << ", line " << label.getLineNumber() << ": label expression refers to unknown identifiers.");
+                label.getStatePredicateExpression().check(identifierToTypeMap);
+            }
+            
+            // Check the formulas.
+            for (auto const& formula : this->getFormulas()) {
+                // Check for duplicate identifiers.
+                LOG_THROW(allIdentifiers.find(formula.getName()) == allIdentifiers.end(), storm::exceptions::WrongFormatException, "Error in " << formula.getFilename() << ", line " << formula.getLineNumber() << ": duplicate identifier '" << formula.getName() << "'.");
+                
+                std::set<std::string> containedIdentifiers = formula.getExpression().getIdentifiers();
+                bool isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedIdentifiers.begin(), containedIdentifiers.end());
+                LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << formula.getFilename() << ", line " << formula.getLineNumber() << ": formula expression refers to unknown identifiers.");
+                formula.getExpression().check(identifierToTypeMap);
+                
+                // Record the new identifier for future checks.
+                allIdentifiers.insert(formula.getName());
+            }
         }
         
         std::ostream& operator<<(std::ostream& stream, Program const& program) {

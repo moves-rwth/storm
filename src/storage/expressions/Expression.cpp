@@ -4,6 +4,7 @@
 #include "src/storage/expressions/Expression.h"
 #include "src/storage/expressions/SubstitutionVisitor.h"
 #include "src/storage/expressions/IdentifierSubstitutionVisitor.h"
+#include "src/storage/expressions/TypeCheckVisitor.h"
 #include "src/exceptions/InvalidTypeException.h"
 #include "src/exceptions/ExceptionMacros.h"
 
@@ -28,21 +29,29 @@ namespace storm {
         }
         
 		Expression Expression::substitute(std::map<std::string, Expression> const& identifierToExpressionMap) const {
-            return SubstitutionVisitor< std::map<std::string, Expression> >(identifierToExpressionMap).substitute(this->getBaseExpressionPointer().get());
+            return SubstitutionVisitor<std::map<std::string, Expression>>(identifierToExpressionMap).substitute(this->getBaseExpressionPointer().get());
         }
 
 		Expression Expression::substitute(std::unordered_map<std::string, Expression> const& identifierToExpressionMap) const {
-			return SubstitutionVisitor< std::unordered_map<std::string, Expression> >(identifierToExpressionMap).substitute(this->getBaseExpressionPointer().get());
+			return SubstitutionVisitor<std::unordered_map<std::string, Expression>>(identifierToExpressionMap).substitute(this->getBaseExpressionPointer().get());
 		}
         
 		Expression Expression::substitute(std::map<std::string, std::string> const& identifierToIdentifierMap) const {
-			return IdentifierSubstitutionVisitor< std::map<std::string, std::string> >(identifierToIdentifierMap).substitute(this->getBaseExpressionPointer().get());
+			return IdentifierSubstitutionVisitor<std::map<std::string, std::string>>(identifierToIdentifierMap).substitute(this->getBaseExpressionPointer().get());
         }
 
 		Expression Expression::substitute(std::unordered_map<std::string, std::string> const& identifierToIdentifierMap) const {
-			return IdentifierSubstitutionVisitor< std::unordered_map<std::string, std::string> >(identifierToIdentifierMap).substitute(this->getBaseExpressionPointer().get());
+			return IdentifierSubstitutionVisitor<std::unordered_map<std::string, std::string>>(identifierToIdentifierMap).substitute(this->getBaseExpressionPointer().get());
 		}
         
+        void Expression::check(std::map<std::string, storm::expressions::ExpressionReturnType> const& identifierToTypeMap) const {
+            return TypeCheckVisitor<std::map<std::string, storm::expressions::ExpressionReturnType>>(identifierToTypeMap).check(this->getBaseExpressionPointer().get());
+        }
+
+        void Expression::check(std::unordered_map<std::string, storm::expressions::ExpressionReturnType> const& identifierToTypeMap) const {
+            return TypeCheckVisitor<std::unordered_map<std::string, storm::expressions::ExpressionReturnType>>(identifierToTypeMap).check(this->getBaseExpressionPointer().get());
+        }
+
         bool Expression::evaluateAsBool(Valuation const* valuation) const {
             return this->getBaseExpression().evaluateAsBool(valuation);
         }
@@ -77,6 +86,13 @@ namespace storm {
         
         std::set<std::string> Expression::getConstants() const {
             return this->getBaseExpression().getConstants();
+        }
+        
+        std::set<std::string> Expression::getIdentifiers() const {
+            std::set<std::string> result = this->getConstants();
+            std::set<std::string> variables = this->getVariables();
+            result.insert(variables.begin(), variables.end());
+            return result;
         }
         
         BaseExpression const& Expression::getBaseExpression() const {
