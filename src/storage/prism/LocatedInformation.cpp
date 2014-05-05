@@ -21,5 +21,5 @@ namespace storm {
         void LocatedInformation::setLineNumber(uint_fast64_t lineNumber) {
             this->lineNumber = lineNumber;
         }
-    }
-}
+    } // namespace prism
+} // namespace storm

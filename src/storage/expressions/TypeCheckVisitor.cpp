@@ -45,28 +45,28 @@ namespace storm {
         void TypeCheckVisitor<MapType>::visit(BooleanConstantExpression const* expression) {
             auto identifierTypePair = this->identifierToTypeMap.find(expression->getConstantName());
             LOG_THROW(identifierTypePair != this->identifierToTypeMap.end(), storm::exceptions::InvalidArgumentException, "No type available for identifier '" << expression->getConstantName() << "'.");
-            LOG_THROW(identifierTypePair->second == ExpressionReturnType::Bool, storm::exceptions::InvalidTypeException, "Type mismatch for constant '" << expression->getConstantName() << "': expected bool, but found " << expression->getReturnType() << ".");
+            LOG_THROW(identifierTypePair->second == ExpressionReturnType::Bool, storm::exceptions::InvalidTypeException, "Type mismatch for constant '" << expression->getConstantName() << "': expected 'bool', but found '" << expression->getReturnType() << "'.");
         }
         
         template<typename MapType>
         void TypeCheckVisitor<MapType>::visit(DoubleConstantExpression const* expression) {
             auto identifierTypePair = this->identifierToTypeMap.find(expression->getConstantName());
             LOG_THROW(identifierTypePair != this->identifierToTypeMap.end(), storm::exceptions::InvalidArgumentException, "No type available for identifier '" << expression->getConstantName() << "'.");
-            LOG_THROW(identifierTypePair->second == ExpressionReturnType::Bool, storm::exceptions::InvalidTypeException, "Type mismatch for constant '" << expression->getConstantName() << "': expected double, but found " << expression->getReturnType() << ".");
+            LOG_THROW(identifierTypePair->second == ExpressionReturnType::Double, storm::exceptions::InvalidTypeException, "Type mismatch for constant '" << expression->getConstantName() << "': expected 'double', but found '" << expression->getReturnType() << "'.");
         }
         
         template<typename MapType>
         void TypeCheckVisitor<MapType>::visit(IntegerConstantExpression const* expression) {
             auto identifierTypePair = this->identifierToTypeMap.find(expression->getConstantName());
             LOG_THROW(identifierTypePair != this->identifierToTypeMap.end(), storm::exceptions::InvalidArgumentException, "No type available for identifier '" << expression->getConstantName() << "'.");
-            LOG_THROW(identifierTypePair->second == ExpressionReturnType::Bool, storm::exceptions::InvalidTypeException, "Type mismatch for constant '" << expression->getConstantName() << "': expected int, but found " << expression->getReturnType() << ".");
+            LOG_THROW(identifierTypePair->second == ExpressionReturnType::Int, storm::exceptions::InvalidTypeException, "Type mismatch for constant '" << expression->getConstantName() << "': expected 'int', but found '" << expression->getReturnType() << "'.");
         }
         
         template<typename MapType>
         void TypeCheckVisitor<MapType>::visit(VariableExpression const* expression) {
             auto identifierTypePair = this->identifierToTypeMap.find(expression->getVariableName());
             LOG_THROW(identifierTypePair != this->identifierToTypeMap.end(), storm::exceptions::InvalidArgumentException, "No type available for identifier '" << expression->getVariableName() << "'.");
-            LOG_THROW(identifierTypePair->second == ExpressionReturnType::Bool, storm::exceptions::InvalidTypeException, "Type mismatch for variable '" << expression->getVariableName() << "': expected " << identifierTypePair->first << ", but found " << expression->getReturnType() << ".");
+            LOG_THROW(identifierTypePair->second == expression->getReturnType(), storm::exceptions::InvalidTypeException, "Type mismatch for variable '" << expression->getVariableName() << "': expected '" << identifierTypePair->first << "', but found '" << expression->getReturnType() << "'.");
         }
         
         template<typename MapType>
@@ -93,5 +93,9 @@ namespace storm {
         void TypeCheckVisitor<MapType>::visit(DoubleLiteralExpression const* expression) {
             // Intentionally left empty.
         }
+        
+        // Explicitly instantiate the class with map and unordered_map.
+		template class TypeCheckVisitor<std::map<std::string, ExpressionReturnType>>;
+		template class TypeCheckVisitor<std::unordered_map<std::string, ExpressionReturnType>>;
     }
 }

@@ -182,7 +182,7 @@ namespace storm {
         }
         
         // Explicitly instantiate the class with map and unordered_map.
-		template class SubstitutionVisitor< std::map<std::string, Expression> >;
-		template class SubstitutionVisitor< std::unordered_map<std::string, Expression> >;
+		template class SubstitutionVisitor<std::map<std::string, Expression>>;
+		template class SubstitutionVisitor<std::unordered_map<std::string, Expression>>;
     }
 }

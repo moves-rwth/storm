@@ -51,5 +51,5 @@ namespace storm {
             stream << ";";
             return stream;
         }
-    } // namespace ir
+    } // namespace prism
 } // namespace storm

@@ -22,5 +22,5 @@ namespace storm {
             stream << "label \"" << label.getName() << "\" = " << label.getStatePredicateExpression() << ";";
             return stream;
         }
-    }
-}
+    } // namespace prism
+} // namespace storm

@@ -5,7 +5,7 @@
 
 namespace storm {
     namespace parser {
-        storm::prism::Program PrismParser::parse(std::string const& filename, bool typeCheck) {
+        storm::prism::Program PrismParser::parse(std::string const& filename) {
             // Open file and initialize result.
             std::ifstream inputFileStream(filename, std::ios::in);
             LOG_THROW(inputFileStream.good(), storm::exceptions::WrongFormatException, "Unable to read from file '" << filename << "'.");
@@ -15,7 +15,7 @@ namespace storm {
             // Now try to parse the contents of the file.
             try {
                 std::string fileContent((std::istreambuf_iterator<char>(inputFileStream)), (std::istreambuf_iterator<char>()));
-                result = parseFromString(fileContent, filename, typeCheck);
+                result = parseFromString(fileContent, filename);
             } catch(std::exception& e) {
                 // In case of an exception properly close the file before passing exception.
                 inputFileStream.close();
@@ -27,7 +27,7 @@ namespace storm {
             return result;
         }
         
-        storm::prism::Program PrismParser::parseFromString(std::string const& input, std::string const& filename, bool typeCheck) {
+        storm::prism::Program PrismParser::parseFromString(std::string const& input, std::string const& filename) {
             PositionIteratorType first(input.begin());
             PositionIteratorType iter = first;
             PositionIteratorType last(input.end());
@@ -38,17 +38,17 @@ namespace storm {
             // Create grammar.
             storm::parser::PrismParser grammar(filename, first);
             try {
-                // Now parse the content using phrase_parse in order to be able to supply a skipping parser.
+                // Start first run.
                 bool succeeded = qi::phrase_parse(iter, last, grammar, boost::spirit::ascii::space | qi::lit("//") >> *(qi::char_ - qi::eol) >> qi::eol, result);
                 LOG_THROW(succeeded,  storm::exceptions::WrongFormatException, "Parsing failed in first pass.");
-                if (typeCheck) {
-                    first = PositionIteratorType(input.begin());
-                    iter = first;
-                    last = PositionIteratorType(input.end());
-                    grammar.moveToSecondRun();
-                    succeeded = qi::phrase_parse(iter, last, grammar, boost::spirit::ascii::space | qi::lit("//") >> *(qi::char_ - qi::eol) >> qi::eol, result);
-                    LOG_THROW(succeeded,  storm::exceptions::WrongFormatException, "Parsing failed in second pass.");
-                }
+                
+                // Start second run.
+                first = PositionIteratorType(input.begin());
+                iter = first;
+                last = PositionIteratorType(input.end());
+                grammar.moveToSecondRun();
+                succeeded = qi::phrase_parse(iter, last, grammar, boost::spirit::ascii::space | qi::lit("//") >> *(qi::char_ - qi::eol) >> qi::eol, result);
+                LOG_THROW(succeeded,  storm::exceptions::WrongFormatException, "Parsing failed in second pass.");
             } catch (qi::expectation_failure<PositionIteratorType> const& e) {
                 // If the parser expected content different than the one provided, display information about the location of the error.
                 std::size_t lineNumber = boost::spirit::get_line(e.first);
@@ -162,7 +162,7 @@ namespace storm {
                                      >> qi::lit("endrewards"))[qi::_val = phoenix::bind(&PrismParser::createRewardModel, phoenix::ref(*this), qi::_a, qi::_b, qi::_c)];
             rewardModelDefinition.name("reward model definition");
             
-            initialStatesConstruct = (qi::lit("init") > expression > qi::lit("endinit"))[qi::_pass = phoenix::bind(&PrismParser::addInitialStatesExpression, phoenix::ref(*this), qi::_1, qi::_r1)];
+            initialStatesConstruct = (qi::lit("init") > expression > qi::lit("endinit"))[qi::_pass = phoenix::bind(&PrismParser::addInitialStatesConstruct, phoenix::ref(*this), qi::_1, qi::_r1)];
             initialStatesConstruct.name("initial construct");
             
             labelDefinition = (qi::lit("label") > -qi::lit("\"") > identifier > -qi::lit("\"") > qi::lit("=") > expression >> qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createLabel, phoenix::ref(*this), qi::_1, qi::_2)];
@@ -264,13 +264,13 @@ namespace storm {
             return true;
         }
         
-        bool PrismParser::addInitialStatesExpression(storm::expressions::Expression initialStatesExpression, GlobalProgramInformation& globalProgramInformation) {
-            LOG_THROW(!globalProgramInformation.hasInitialStatesExpression, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": Program must not define two initial constructs.");
-            if (globalProgramInformation.hasInitialStatesExpression) {
+        bool PrismParser::addInitialStatesConstruct(storm::expressions::Expression initialStatesExpression, GlobalProgramInformation& globalProgramInformation) {
+            LOG_THROW(!globalProgramInformation.hasInitialConstruct, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": Program must not define two initial constructs.");
+            if (globalProgramInformation.hasInitialConstruct) {
                 return false;
             }
-            globalProgramInformation.hasInitialStatesExpression = true;
-            globalProgramInformation.initialStatesExpression = initialStatesExpression;
+            globalProgramInformation.hasInitialConstruct = true;
+            globalProgramInformation.initialConstruct = storm::prism::InitialConstruct(initialStatesExpression, this->getFilename(), get_line(qi::_3));
             return true;
         }
         
@@ -762,7 +762,7 @@ namespace storm {
         }
         
         storm::prism::Program PrismParser::createProgram(GlobalProgramInformation const& globalProgramInformation) const {
-            return storm::prism::Program(globalProgramInformation.modelType, globalProgramInformation.constants, globalProgramInformation.globalBooleanVariables, globalProgramInformation.globalIntegerVariables, globalProgramInformation.formulas, globalProgramInformation.modules, globalProgramInformation.rewardModels, globalProgramInformation.hasInitialStatesExpression, globalProgramInformation.initialStatesExpression, globalProgramInformation.labels, this->getFilename());
+            return storm::prism::Program(globalProgramInformation.modelType, globalProgramInformation.constants, globalProgramInformation.globalBooleanVariables, globalProgramInformation.globalIntegerVariables, globalProgramInformation.formulas, globalProgramInformation.modules, globalProgramInformation.rewardModels, this->secondRun && !globalProgramInformation.hasInitialConstruct, globalProgramInformation.initialConstruct, globalProgramInformation.labels, this->getFilename(), 1, this->secondRun);
         }
     } // namespace parser
 } // namespace storm

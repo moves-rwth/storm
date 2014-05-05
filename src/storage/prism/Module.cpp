@@ -182,7 +182,6 @@ namespace storm {
             stream << "endmodule" << std::endl;
             return stream;
         }
-
         
-    } // namespace ir
+    } // namespace prism
 } // namespace storm
