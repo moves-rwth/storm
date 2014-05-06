@@ -59,29 +59,29 @@ namespace storm {
 			//! assert an expression in the solver
 			//! @param e the asserted expression, the return type has to be bool
 			//! @throws IllegalArgumentTypeException if the return type of the expression is not bool
-			virtual void assert(storm::expressions::Expression &e) = 0;
+			virtual void assertExpression(storm::expressions::Expression &e) = 0;
 			//! assert a set of expressions in the solver
 			//! @param es the asserted expressions
 			//! @see assert(storm::expressions::Expression &e)
-			virtual void assert(std::set<storm::expressions::Expression> &es) {
+			virtual void assertExpression(std::set<storm::expressions::Expression> &es) {
 				for (storm::expressions::Expression e : es) {
-					this->assert(e);
+					this->assertExpression(e);
 				}
 			}
 			//! assert a set of expressions in the solver
 			//! @param es the asserted expressions
 			//! @see assert(storm::expressions::Expression &e)
-			virtual void assert(std::unordered_set<storm::expressions::Expression> &es) {
+			virtual void assertExpression(std::unordered_set<storm::expressions::Expression> &es) {
 				for (storm::expressions::Expression e : es) {
-					this->assert(e);
+					this->assertExpression(e);
 				}
 			}
 			//! assert a set of expressions in the solver
 			//! @param es the asserted expressions
 			//! @see assert(storm::expressions::Expression &e)
-			virtual void assert(std::initializer_list<storm::expressions::Expression> &es) {
+			virtual void assertExpression(std::initializer_list<storm::expressions::Expression> &es) {
 				for (storm::expressions::Expression e : es) {
-					this->assert(e);
+					this->assertExpression(e);
 				}
 			}
 
