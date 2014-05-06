@@ -4,12 +4,36 @@
 
 #include "src/storage/dd/CuddDdManager.h"
 #include "src/exceptions/InvalidArgumentException.h"
+#include "src/settings/Settings.h"
+
+bool CuddOptionsRegistered = storm::settings::Settings::registerNewModule([] (storm::settings::Settings* instance) -> bool {
+    // Set up option for reordering.
+    std::vector<std::string> reorderingTechniques;
+    reorderingTechniques.push_back("none");
+    reorderingTechniques.push_back("sift");
+    reorderingTechniques.push_back("ssift");
+    reorderingTechniques.push_back("gsift");
+    reorderingTechniques.push_back("win2");
+    reorderingTechniques.push_back("win3");
+    reorderingTechniques.push_back("win4");
+    reorderingTechniques.push_back("annealing");
+    reorderingTechniques.push_back("genetic");
+    reorderingTechniques.push_back("exact");
+	instance->addOption(storm::settings::OptionBuilder("Cudd", "reorder", "", "Sets the reordering technique used by Cudd.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("method", "Sets which technique is used by Cudd's reordering routines. Must be in {\"none\", \"sift\", \"ssift\", \"gsift\", \"win2\", \"win3\", \"win4\", \"annealing\", \"genetic\", \"exact\"}.").setDefaultValueString("gsift").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(reorderingTechniques)).build()).build());
+    
+    // Set up options for precision and maximal memory available to Cudd.
+    instance->addOption(storm::settings::OptionBuilder("Cudd", "cuddprec", "", "Sets the precision used by Cudd.").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision up to which to constants are considered to be different.").setDefaultValueDouble(1e-15).addValidationFunctionDouble(storm::settings::ArgumentValidators::doubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
+    
+    instance->addOption(storm::settings::OptionBuilder("Cudd", "maxmem", "", "Sets the upper bound of memory available to Cudd in MB.").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("mb", "The memory available to Cudd (0 means unlimited).").setDefaultValueUnsignedInteger(2048).build()).build());
+    
+    return true;
+});
 
 namespace storm {
     namespace dd {
         DdManager<DdType::CUDD>::DdManager() : metaVariableMap(), cuddManager() {
-            
-            this->cuddManager.SetEpsilon(1.0e-15);
+            this->cuddManager.SetMaxMemory(storm::settings::Settings::getInstance()->getOptionByLongName("maxmem").getArgument(0).getValueAsUnsignedInteger() * 1024);
+            this->cuddManager.SetEpsilon(storm::settings::Settings::getInstance()->getOptionByLongName("cuddprec").getArgument(0).getValueAsDouble());
         }
         
         Dd<DdType::CUDD> DdManager<DdType::CUDD>::getOne() {
@@ -124,7 +148,7 @@ namespace storm {
             metaVariableMap.emplace(name, DdMetaVariable<DdType::CUDD>(name, variables, this->shared_from_this()));
         }
         
-        void DdManager<DdType::CUDD>::addMetaVariablesInterleaved(std::vector<std::string> const& names, int_fast64_t low, int_fast64_t high) {
+        void DdManager<DdType::CUDD>::addMetaVariablesInterleaved(std::vector<std::string> const& names, int_fast64_t low, int_fast64_t high, bool fixedGroup) {
             // Make sure that at least one meta variable is added.
             if (names.size() == 0) {
                 throw storm::exceptions::InvalidArgumentException() << "Illegal to add zero meta variables.";
@@ -155,6 +179,13 @@ namespace storm {
             for (uint_fast64_t bit = 0; bit < numberOfBits; ++bit) {
                 for (uint_fast64_t i = 0; i < names.size(); ++i) {
                     variables[i].emplace_back(Dd<DdType::CUDD>(this->shared_from_this(), cuddManager.addVar(), {names[i]}));
+                }
+            }
+            
+            // If required, we group the bits on the same layer of the interleaved meta variables.
+            if (fixedGroup) {
+                for (uint_fast64_t i = 0; i < names.size(); ++i) {
+                    this->getCuddManager().MakeTreeNode(variables[i].front().getCuddAdd().NodeReadIndex(), names.size(), MTR_FIXED);
                 }
             }
             

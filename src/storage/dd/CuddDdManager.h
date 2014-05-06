@@ -103,8 +103,10 @@ namespace storm {
              * @param names The names of the variables.
              * @param low The lowest value of the ranges of the variables.
              * @param high The highest value of the ranges of the variables.
+             * @param fixedGroup If set to true, the interleaved bits of the meta variable are always kept together as
+             * a group during a potential reordering.
              */
-            void addMetaVariablesInterleaved(std::vector<std::string> const& names, int_fast64_t low, int_fast64_t high);
+            void addMetaVariablesInterleaved(std::vector<std::string> const& names, int_fast64_t low, int_fast64_t high, bool fixedGroup = true);
             
             /*!
              * Retrieves the meta variable with the given name if it exists.
