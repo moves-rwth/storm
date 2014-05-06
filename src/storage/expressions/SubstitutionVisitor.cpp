@@ -95,39 +95,6 @@ namespace storm {
         }
         
 		template<typename MapType>
-        void SubstitutionVisitor<MapType>::visit(BooleanConstantExpression const* expression) {
-            // If the boolean constant is in the key set of the substitution, we need to replace it.
-            auto const& nameExpressionPair = this->identifierToExpressionMap.find(expression->getConstantName());
-            if (nameExpressionPair != this->identifierToExpressionMap.end()) {
-                this->expressionStack.push(nameExpressionPair->second.getBaseExpressionPointer());
-            } else {
-                this->expressionStack.push(expression->getSharedPointer());
-            }
-        }
-        
-		template<typename MapType>
-        void SubstitutionVisitor<MapType>::visit(DoubleConstantExpression const* expression) {
-            // If the double constant is in the key set of the substitution, we need to replace it.
-            auto const& nameExpressionPair = this->identifierToExpressionMap.find(expression->getConstantName());
-            if (nameExpressionPair != this->identifierToExpressionMap.end()) {
-                this->expressionStack.push(nameExpressionPair->second.getBaseExpressionPointer());
-            } else {
-                this->expressionStack.push(expression->getSharedPointer());
-            }
-        }
-        
-		template<typename MapType>
-        void SubstitutionVisitor<MapType>::visit(IntegerConstantExpression const* expression) {
-            // If the integer constant is in the key set of the substitution, we need to replace it.
-            auto const& nameExpressionPair = this->identifierToExpressionMap.find(expression->getConstantName());
-            if (nameExpressionPair != this->identifierToExpressionMap.end()) {
-                this->expressionStack.push(nameExpressionPair->second.getBaseExpressionPointer());
-            } else {
-                this->expressionStack.push(expression->getSharedPointer());
-            }
-        }
-        
-		template<typename MapType>
         void SubstitutionVisitor<MapType>::visit(VariableExpression const* expression) {
             // If the variable is in the key set of the substitution, we need to replace it.
             auto const& nameExpressionPair = this->identifierToExpressionMap.find(expression->getVariableName());

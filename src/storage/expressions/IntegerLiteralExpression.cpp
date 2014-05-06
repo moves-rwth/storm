@@ -14,15 +14,11 @@ namespace storm {
             return static_cast<double>(this->evaluateAsInt(valuation));
         }
         
-        bool IntegerLiteralExpression::isConstant() const {
+        bool IntegerLiteralExpression::isLiteral() const {
             return true;
         }
         
         std::set<std::string> IntegerLiteralExpression::getVariables() const {
-            return std::set<std::string>();
-        }
-        
-        std::set<std::string> IntegerLiteralExpression::getConstants() const {
             return std::set<std::string>();
         }
         

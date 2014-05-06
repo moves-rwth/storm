@@ -74,11 +74,48 @@ namespace storm {
             virtual double evaluateAsDouble(Valuation const* valuation = nullptr) const;
 
             /*!
-             * Retrieves whether the expression is constant, i.e., contains no variables or undefined constants.
+             * Returns the arity of the expression.
              *
-             * @return True iff the expression is constant.
+             * @return The arity of the expression.
              */
-            virtual bool isConstant() const;
+            virtual uint_fast64_t getArity() const;
+            
+            /*!
+             * Retrieves the given operand from the expression.
+             *
+             * @param operandIndex The index of the operand to retrieve. This must be lower than the arity of the expression.
+             * @return The operand at the given index.
+             */
+            virtual std::shared_ptr<BaseExpression const> getOperand(uint_fast64_t operandIndex) const;
+            
+            /*!
+             * Retrieves the identifier associated with this expression. This is only legal to call if the expression
+             * is a variable.
+             *
+             * @return The identifier associated with this expression.
+             */
+            virtual std::string const& getIdentifier() const;
+            
+            /*!
+             * Retrieves whether the expression contains a variable.
+             *
+             * @return True iff the expression contains a variable.
+             */
+            virtual bool containsVariables() const;
+            
+            /*!
+             * Retrieves whether the expression is a literal.
+             *
+             * @return True iff the expression is a literal.
+             */
+            virtual bool isLiteral() const;
+            
+            /*!
+             * Retrieves whether the expression is a variable.
+             *
+             * @return True iff the expression is a variable.
+             */
+            virtual bool isVariable() const;
             
             /*!
              * Checks if the expression is equal to the boolean literal true.
@@ -100,13 +137,6 @@ namespace storm {
              * @return The set of all variables that appear in the expression.
              */
             virtual std::set<std::string> getVariables() const = 0;
-            
-            /*!
-             * Retrieves the set of all constants that appear in the expression.
-             *
-             * @return The set of all constants that appear in the expression.
-             */
-            virtual std::set<std::string> getConstants() const = 0;
             
             /*!
              * Simplifies the expression according to some simple rules.

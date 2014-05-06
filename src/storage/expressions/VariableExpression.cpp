@@ -41,12 +41,16 @@ namespace storm {
             return 0;
         }
         
-        std::set<std::string> VariableExpression::getVariables() const {
-            return {this->getVariableName()};
+        std::string const& VariableExpression::getIdentifier() const {
+            return this->getVariableName();
         }
         
-        std::set<std::string> VariableExpression::getConstants() const {
-            return std::set<std::string>();
+        bool VariableExpression::containsVariables() const {
+            return true;
+        }
+        
+        std::set<std::string> VariableExpression::getVariables() const {
+            return {this->getVariableName()};
         }
         
         std::shared_ptr<BaseExpression const> VariableExpression::simplify() const {

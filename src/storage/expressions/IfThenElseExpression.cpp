@@ -33,24 +33,11 @@ namespace storm {
             }
         }
         
-        bool IfThenElseExpression::isConstant() const {
-            return this->condition->isConstant() && this->thenExpression->isConstant() && this->elseExpression->isConstant();
-        }
-        
         std::set<std::string> IfThenElseExpression::getVariables() const {
             std::set<std::string> result = this->condition->getVariables();
             std::set<std::string> tmp = this->thenExpression->getVariables();
             result.insert(tmp.begin(), tmp.end());
             tmp = this->elseExpression->getVariables();
-            result.insert(tmp.begin(), tmp.end());
-            return result;
-        }
-        
-        std::set<std::string> IfThenElseExpression::getConstants() const {
-            std::set<std::string> result = this->condition->getConstants();
-            std::set<std::string> tmp = this->thenExpression->getConstants();
-            result.insert(tmp.begin(), tmp.end());
-            tmp = this->elseExpression->getConstants();
             result.insert(tmp.begin(), tmp.end());
             return result;
         }
