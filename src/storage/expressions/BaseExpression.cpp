@@ -1,6 +1,7 @@
 #include "src/storage/expressions/BaseExpression.h"
 #include "src/exceptions/ExceptionMacros.h"
 #include "src/exceptions/InvalidTypeException.h"
+#include "src/exceptions/InvalidAccessException.h"
 
 namespace storm {
     namespace expressions {        
@@ -36,10 +37,38 @@ namespace storm {
             LOG_THROW(false, storm::exceptions::InvalidTypeException, "Unable to evaluate expression as double.");
         }
         
+        uint_fast64_t BaseExpression::getArity() const {
+            return 0;
+        }
+        
+        std::shared_ptr<BaseExpression const> BaseExpression::getOperand(uint_fast64_t operandIndex) const {
+            LOG_THROW(false, storm::exceptions::InvalidAccessException, "Unable to access operand " << operandIndex << " in expression of arity 0.");
+        }
+        
+        std::string const& BaseExpression::getIdentifier() const {
+            LOG_THROW(false, storm::exceptions::InvalidAccessException, "Unable to access identifier of non-constant, non-variable expression.");
+        }
+        
+        bool BaseExpression::containsVariables() const {
+            return false;
+        }
+        
+        bool BaseExpression::hasConstantValue() const {
+            return false;
+        }
+        
+        bool BaseExpression::isLiteral() const {
+            return false;
+        }
+        
         bool BaseExpression::isConstant() const {
             return false;
         }
-
+        
+        bool BaseExpression::isVariable() const {
+            return false;
+        }
+        
         bool BaseExpression::isTrue() const {
             return false;
         }

@@ -44,70 +44,70 @@ TEST(Expression, AccessorTest) {
     ASSERT_NO_THROW(doubleConstExpression = storm::expressions::Expression::createDoubleConstant("c"));
     
     EXPECT_TRUE(trueExpression.getReturnType() == storm::expressions::ExpressionReturnType::Bool);
-    EXPECT_TRUE(trueExpression.isConstant());
+    EXPECT_TRUE(trueExpression.hasConstantValue());
     EXPECT_TRUE(trueExpression.isTrue());
     EXPECT_FALSE(trueExpression.isFalse());
     EXPECT_TRUE(trueExpression.getVariables() == std::set<std::string>());
     EXPECT_TRUE(trueExpression.getConstants() == std::set<std::string>());
     
     EXPECT_TRUE(falseExpression.getReturnType() == storm::expressions::ExpressionReturnType::Bool);
-    EXPECT_TRUE(falseExpression.isConstant());
+    EXPECT_TRUE(falseExpression.hasConstantValue());
     EXPECT_FALSE(falseExpression.isTrue());
     EXPECT_TRUE(falseExpression.isFalse());
     EXPECT_TRUE(falseExpression.getVariables() == std::set<std::string>());
     EXPECT_TRUE(falseExpression.getConstants() == std::set<std::string>());
 
     EXPECT_TRUE(threeExpression.getReturnType() == storm::expressions::ExpressionReturnType::Int);
-    EXPECT_TRUE(threeExpression.isConstant());
+    EXPECT_TRUE(threeExpression.hasConstantValue());
     EXPECT_FALSE(threeExpression.isTrue());
     EXPECT_FALSE(threeExpression.isFalse());
     EXPECT_TRUE(threeExpression.getVariables() == std::set<std::string>());
     EXPECT_TRUE(threeExpression.getConstants() == std::set<std::string>());
     
     EXPECT_TRUE(piExpression.getReturnType() == storm::expressions::ExpressionReturnType::Double);
-    EXPECT_TRUE(piExpression.isConstant());
+    EXPECT_TRUE(piExpression.hasConstantValue());
     EXPECT_FALSE(piExpression.isTrue());
     EXPECT_FALSE(piExpression.isFalse());
     EXPECT_TRUE(piExpression.getVariables() == std::set<std::string>());
     EXPECT_TRUE(piExpression.getConstants() == std::set<std::string>());
     
     EXPECT_TRUE(boolVarExpression.getReturnType() == storm::expressions::ExpressionReturnType::Bool);
-    EXPECT_FALSE(boolVarExpression.isConstant());
+    EXPECT_FALSE(boolVarExpression.hasConstantValue());
     EXPECT_FALSE(boolVarExpression.isTrue());
     EXPECT_FALSE(boolVarExpression.isFalse());
     EXPECT_TRUE(boolVarExpression.getVariables() == std::set<std::string>({"x"}));
     EXPECT_TRUE(boolVarExpression.getConstants() == std::set<std::string>());
 
     EXPECT_TRUE(intVarExpression.getReturnType() == storm::expressions::ExpressionReturnType::Int);
-    EXPECT_FALSE(intVarExpression.isConstant());
+    EXPECT_FALSE(intVarExpression.hasConstantValue());
     EXPECT_FALSE(intVarExpression.isTrue());
     EXPECT_FALSE(intVarExpression.isFalse());
     EXPECT_TRUE(intVarExpression.getVariables() == std::set<std::string>({"y"}));
     EXPECT_TRUE(intVarExpression.getConstants() == std::set<std::string>());
 
     EXPECT_TRUE(doubleVarExpression.getReturnType() == storm::expressions::ExpressionReturnType::Double);
-    EXPECT_FALSE(doubleVarExpression.isConstant());
+    EXPECT_FALSE(doubleVarExpression.hasConstantValue());
     EXPECT_FALSE(doubleVarExpression.isTrue());
     EXPECT_FALSE(doubleVarExpression.isFalse());
     EXPECT_TRUE(doubleVarExpression.getVariables() == std::set<std::string>({"z"}));
     EXPECT_TRUE(doubleVarExpression.getConstants() == std::set<std::string>());
 
     EXPECT_TRUE(boolConstExpression.getReturnType() == storm::expressions::ExpressionReturnType::Bool);
-    EXPECT_FALSE(boolConstExpression.isConstant());
+    EXPECT_FALSE(boolConstExpression.hasConstantValue());
     EXPECT_FALSE(boolConstExpression.isTrue());
     EXPECT_FALSE(boolConstExpression.isFalse());
     EXPECT_TRUE(boolConstExpression.getVariables() == std::set<std::string>());
     EXPECT_TRUE(boolConstExpression.getConstants() == std::set<std::string>({"a"}));
     
     EXPECT_TRUE(intConstExpression.getReturnType() == storm::expressions::ExpressionReturnType::Int);
-    EXPECT_FALSE(intConstExpression.isConstant());
+    EXPECT_FALSE(intConstExpression.hasConstantValue());
     EXPECT_FALSE(intConstExpression.isTrue());
     EXPECT_FALSE(intConstExpression.isFalse());
     EXPECT_TRUE(intConstExpression.getVariables() == std::set<std::string>());
     EXPECT_TRUE(intConstExpression.getConstants() == std::set<std::string>({"b"}));
 
     EXPECT_TRUE(doubleConstExpression.getReturnType() == storm::expressions::ExpressionReturnType::Double);
-    EXPECT_FALSE(doubleConstExpression.isConstant());
+    EXPECT_FALSE(doubleConstExpression.hasConstantValue());
     EXPECT_FALSE(doubleConstExpression.isTrue());
     EXPECT_FALSE(doubleConstExpression.isFalse());
     EXPECT_TRUE(doubleConstExpression.getVariables() == std::set<std::string>());

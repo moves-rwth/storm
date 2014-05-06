@@ -30,7 +30,7 @@ namespace storm {
             
             return result;
         }
-        
+                
         std::shared_ptr<BaseExpression const> BinaryBooleanFunctionExpression::simplify() const {
             std::shared_ptr<BaseExpression const> firstOperandSimplified = this->getFirstOperand()->simplify();
             std::shared_ptr<BaseExpression const> secondOperandSimplified = this->getSecondOperand()->simplify();

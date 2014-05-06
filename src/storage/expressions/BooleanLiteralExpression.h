@@ -26,7 +26,8 @@ namespace storm {
 
             // Override base class methods.
             virtual bool evaluateAsBool(Valuation const* valuation = nullptr) const override;
-            virtual bool isConstant() const override;
+            virtual bool isLiteral() const override;
+            virtual bool hasConstantValue() const override;
             virtual bool isTrue() const override;
             virtual bool isFalse() const override;
             virtual std::set<std::string> getVariables() const override;

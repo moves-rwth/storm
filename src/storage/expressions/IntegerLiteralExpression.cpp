@@ -14,7 +14,11 @@ namespace storm {
             return static_cast<double>(this->evaluateAsInt(valuation));
         }
         
-        bool IntegerLiteralExpression::isConstant() const {
+        bool IntegerLiteralExpression::isLiteral() const {
+            return true;
+        }
+        
+        bool IntegerLiteralExpression::hasConstantValue() const {
             return true;
         }
         

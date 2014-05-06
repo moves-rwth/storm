@@ -26,6 +26,9 @@ namespace storm {
             virtual ~ConstantExpression() = default;
             
             // Override base class methods.
+            virtual bool isConstant() const override;
+            virtual bool hasConstantValue() const override;
+            virtual std::string const& getIdentifier() const override;
             virtual std::set<std::string> getVariables() const override;
             virtual std::set<std::string> getConstants() const override;
             

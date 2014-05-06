@@ -18,6 +18,18 @@ namespace storm {
             return this->constantName;
         }
         
+        bool ConstantExpression::isConstant() const {
+            return true;
+        }
+        
+        bool ConstantExpression::hasConstantValue() const {
+            return false;
+        }
+        
+        std::string const& ConstantExpression::getIdentifier() const {
+            return this->getConstantName();
+        }
+        
         void ConstantExpression::printToStream(std::ostream& stream) const {
             stream << this->getConstantName();
         }

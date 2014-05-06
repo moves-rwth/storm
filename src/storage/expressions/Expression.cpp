@@ -68,8 +68,36 @@ namespace storm {
             return Expression(this->getBaseExpression().simplify());
         }
         
+        uint_fast64_t Expression::getArity() const {
+            return this->getBaseExpression().getArity();
+        }
+        
+        Expression Expression::getOperand(uint_fast64_t operandIndex) const {
+            return Expression(this->getBaseExpression().getOperand(operandIndex));
+        }
+        
+        std::string const& Expression::getIdentifier() const {
+            return this->getBaseExpression().getIdentifier();
+        }
+        
+        bool Expression::hasConstantValue() const {
+            return this->getBaseExpression().hasConstantValue();
+        }
+        
+        bool Expression::containsVariables() const {
+            return this->getBaseExpression().containsVariables();
+        }
+        
+        bool Expression::isLiteral() const {
+            return this->isLiteral();
+        }
+        
         bool Expression::isConstant() const {
             return this->getBaseExpression().isConstant();
+        }
+        
+        bool Expression::isVariable() const {
+            return this->getBaseExpression().isVariable();
         }
         
         bool Expression::isTrue() const {

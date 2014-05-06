@@ -10,7 +10,11 @@ namespace storm {
             return this->getValue();
         }
         
-        bool DoubleLiteralExpression::isConstant() const {
+        bool DoubleLiteralExpression::isLiteral() const {
+            return true;
+        }
+
+        bool DoubleLiteralExpression::hasConstantValue() const {
             return true;
         }
         
