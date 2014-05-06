@@ -32,7 +32,7 @@ bool CuddOptionsRegistered = storm::settings::Settings::registerNewModule([] (st
 namespace storm {
     namespace dd {
         DdManager<DdType::CUDD>::DdManager() : metaVariableMap(), cuddManager() {
-            this->cuddManager.SetMaxMemory(storm::settings::Settings::getInstance()->getOptionByLongName("cuddmaxmem").getArgument(0).getValueAsUnsignedInteger() * 1024);
+            this->cuddManager.SetMaxMemory(storm::settings::Settings::getInstance()->getOptionByLongName("cuddmaxmem").getArgument(0).getValueAsUnsignedInteger() * 1024 * 1024);
             this->cuddManager.SetEpsilon(storm::settings::Settings::getInstance()->getOptionByLongName("cuddprec").getArgument(0).getValueAsDouble());
         }
         
