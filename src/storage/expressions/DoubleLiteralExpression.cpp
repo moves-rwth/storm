@@ -16,7 +16,11 @@ namespace storm {
         
         std::set<std::string> DoubleLiteralExpression::getVariables() const {
             return std::set<std::string>();
-        }
+		}
+
+		std::map<std::string, ExpressionReturnType> DoubleLiteralExpression::getVariablesAndTypes() const {
+			return std::map<std::string, ExpressionReturnType>();
+		}
         
         std::shared_ptr<BaseExpression const> DoubleLiteralExpression::simplify() const {
             return this->shared_from_this();

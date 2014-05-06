@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <memory>
 #include <set>
+#include <map>
 #include <iostream>
 
 #include "src/storage/expressions/Valuation.h"
@@ -137,7 +138,14 @@ namespace storm {
              * @return The set of all variables that appear in the expression.
              */
             virtual std::set<std::string> getVariables() const = 0;
-            
+
+			/*!
+			* Retrieves the mapping of all variables that appear in the expression to their return type.
+			*
+			* @return The mapping of all variables that appear in the expression to their return type.
+			*/
+			virtual std::map<std::string, ExpressionReturnType> getVariablesAndTypes() const = 0;
+
             /*!
              * Simplifies the expression according to some simple rules.
              *

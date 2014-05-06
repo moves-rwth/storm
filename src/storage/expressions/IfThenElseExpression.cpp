@@ -31,16 +31,25 @@ namespace storm {
             } else {
                 return this->elseExpression->evaluateAsDouble(valuation);
             }
-        }
-        
-        std::set<std::string> IfThenElseExpression::getVariables() const {
-            std::set<std::string> result = this->condition->getVariables();
-            std::set<std::string> tmp = this->thenExpression->getVariables();
-            result.insert(tmp.begin(), tmp.end());
-            tmp = this->elseExpression->getVariables();
-            result.insert(tmp.begin(), tmp.end());
-            return result;
-        }
+		}
+
+		std::set<std::string> IfThenElseExpression::getVariables() const {
+			std::set<std::string> result = this->condition->getVariables();
+			std::set<std::string> tmp = this->thenExpression->getVariables();
+			result.insert(tmp.begin(), tmp.end());
+			tmp = this->elseExpression->getVariables();
+			result.insert(tmp.begin(), tmp.end());
+			return result;
+		}
+
+		std::map<std::string, ExpressionReturnType> IfThenElseExpression::getVariablesAndTypes() const {
+			std::map<std::string, ExpressionReturnType>  result = this->condition->getVariablesAndTypes();
+			std::map<std::string, ExpressionReturnType>  tmp = this->thenExpression->getVariablesAndTypes();
+			result.insert(tmp.begin(), tmp.end());
+			tmp = this->elseExpression->getVariablesAndTypes();
+			result.insert(tmp.begin(), tmp.end());
+			return result;
+		}
         
         std::shared_ptr<BaseExpression const> IfThenElseExpression::simplify() const {
             std::shared_ptr<BaseExpression const> conditionSimplified;

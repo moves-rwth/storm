@@ -53,6 +53,10 @@ namespace storm {
             return {this->getVariableName()};
         }
         
+		std::map<std::string, ExpressionReturnType> VariableExpression::getVariablesAndTypes() const {
+			return{ std::make_pair(this->getVariableName(), this->getReturnType()) };
+		}
+
         std::shared_ptr<BaseExpression const> VariableExpression::simplify() const {
             return this->shared_from_this();
         }

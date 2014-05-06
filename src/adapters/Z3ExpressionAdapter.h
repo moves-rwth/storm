@@ -14,7 +14,9 @@
 #include "z3.h"
 
 #include "src/storage/expressions/Expressions.h"
+#include "src/exceptions/ExceptionMacros.h"
 #include "src/exceptions/ExpressionEvaluationException.h"
+#include "src/exceptions/InvalidTypeException.h"
 #include "src/exceptions/NotImplementedException.h"
 
 namespace storm {
@@ -24,6 +26,9 @@ namespace storm {
         public:
             /*!
              * Creates a Z3ExpressionAdapter over the given Z3 context.
+			 *
+			 * @remark The adapter internally creates helper variables prefixed with `__z3adapter_`. Avoid having variables with
+			 *         this prefix in the variableToExpressionMap, as this might lead to unexpected results.
              *
              * @param context A reference to the Z3 context over which to build the expressions. Be careful to guarantee
              * the lifetime of the context as long as the instance of this adapter is used.
@@ -40,11 +45,48 @@ namespace storm {
             
             /*!
              * Translates the given expression to an equivalent expression for Z3.
-             *
+			 *
+			 * @remark The adapter internally creates helper variables prefixed with `__z3adapter_`. Avoid having variables with
+			 *         this prefix in the expression, as this might lead to unexpected results.
+			 *
              * @param expression The expression to translate.
+			 * @param createZ3Variables If set to true a solver variable is created for each variable in expression that is not
+			 *                          yet known to the adapter. (i.e. values from the variableToExpressionMap passed to the constructor
+			 *                          are not overwritten)
              * @return An equivalent expression for Z3.
              */
-            z3::expr translateExpression(storm::expressions::Expression const& expression) {
+            z3::expr translateExpression(storm::expressions::Expression const& expression, bool createZ3Variables = false) {
+				if (createZ3Variables) {
+					std::map<std::string, storm::expressions::ExpressionReturnType> variables;
+
+					try	{
+						variables = expression.getVariablesAndTypes();
+					}
+					catch (storm::exceptions::InvalidTypeException* e) {
+						LOG_THROW(true, storm::exceptions::InvalidTypeException, "Encountered variable with ambigious type while trying to autocreate solver variables: " << e);
+					}
+
+					for (auto variableAndType : variables) {
+						if (this->variableToExpressionMap.find(variableAndType.first) == this->variableToExpressionMap.end()) {
+							switch (variableAndType.second)
+							{
+								case storm::expressions::ExpressionReturnType::Bool:
+									this->variableToExpressionMap.insert(std::make_pair(variableAndType.first, context.bool_const(variableAndType.first.c_str())));
+									break;
+								case storm::expressions::ExpressionReturnType::Int:
+									this->variableToExpressionMap.insert(std::make_pair(variableAndType.first, context.int_const(variableAndType.first.c_str())));
+									break;
+								case storm::expressions::ExpressionReturnType::Double:
+									this->variableToExpressionMap.insert(std::make_pair(variableAndType.first, context.real_const(variableAndType.first.c_str())));
+									break;
+								default:
+									LOG_THROW(true, storm::exceptions::InvalidTypeException, "Encountered variable with unknown type while trying to autocreate solver variables: " << variableAndType.first);
+									break;
+							}
+						}
+					}
+				}
+
                 expression.getBaseExpression().accept(this);
                 z3::expr result = stack.top();
                 stack.pop();
@@ -154,26 +196,14 @@ namespace storm {
                 }    
             }
             
-			virtual void visit(storm::expressions::BooleanConstantExpression const* expression) override {
-				throw storm::exceptions::NotImplementedException() << "BooleanConstantExpression is not supported by Z3ExpressionAdapter.";  
-            }
-            
 			virtual void visit(storm::expressions::BooleanLiteralExpression const* expression) override {
                 stack.push(context.bool_val(expression->evaluateAsBool()));
-            }
-            
-			virtual void visit(storm::expressions::DoubleConstantExpression const* expression) override {
-				throw storm::exceptions::NotImplementedException() << "DoubleConstantExpression is not supported by Z3ExpressionAdapter.";
             }
             
 			virtual void visit(storm::expressions::DoubleLiteralExpression const* expression) override {
                 std::stringstream fractionStream;
                 fractionStream << expression->evaluateAsDouble();
                 stack.push(context.real_val(fractionStream.str().c_str()));
-            }
-            
-			virtual void visit(storm::expressions::IntegerConstantExpression const* expression) override {
-				throw storm::exceptions::NotImplementedException() << "IntegerConstantExpression is not supported by Z3ExpressionAdapter.";
             }
             
 			virtual void visit(storm::expressions::IntegerLiteralExpression const* expression) override {
@@ -206,13 +236,13 @@ namespace storm {
                         stack.push(0 - childResult);
 						break;
 					case storm::expressions::UnaryNumericalFunctionExpression::OperatorType::Floor: {
-						z3::expr floorVariable = context.int_const(("__floor_" + std::to_string(additionalVariableCounter++)).c_str());
+						z3::expr floorVariable = context.int_const(("__z3adapter_floor_" + std::to_string(additionalVariableCounter++)).c_str());
 						additionalAssertions.push(z3::expr(context, Z3_mk_int2real(context, floorVariable)) <= childResult < (z3::expr(context, Z3_mk_int2real(context, floorVariable)) + 1));
 						throw storm::exceptions::NotImplementedException() << "Unary numerical function 'floor' is not supported by Z3ExpressionAdapter.";
 						break;
 					}
 					case storm::expressions::UnaryNumericalFunctionExpression::OperatorType::Ceil:{
-						z3::expr ceilVariable = context.int_const(("__floor_" + std::to_string(additionalVariableCounter++)).c_str());
+						z3::expr ceilVariable = context.int_const(("__z3adapter_ceil_" + std::to_string(additionalVariableCounter++)).c_str());
 						additionalAssertions.push(z3::expr(context, Z3_mk_int2real(context, ceilVariable)) - 1 <= childResult < z3::expr(context, Z3_mk_int2real(context, ceilVariable)));
 						throw storm::exceptions::NotImplementedException() << "Unary numerical function 'floor' is not supported by Z3ExpressionAdapter.";
 						break;

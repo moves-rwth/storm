@@ -222,6 +222,19 @@ namespace storm {
              */
             std::set<std::string> getVariables() const;
             
+			/*!
+			* Retrieves the mapping of all variables that appear in the expression to their return type.
+			*
+			* @param validate If this parameter is true, check() is called with the returnvalue before 
+			*                 it is returned.
+			*
+			* @throws storm::exceptions::InvalidTypeException If a variables with the same name but different
+			*                                                 types occur somewhere withing the expression.
+			*
+			* @return The mapping of all variables that appear in the expression to their return type.
+			*/
+			std::map<std::string, ExpressionReturnType> getVariablesAndTypes(bool validate = true) const;
+
             /*!
              * Retrieves the base expression underlying this expression object. Note that prior to calling this, the
              * expression object must be properly initialized.
