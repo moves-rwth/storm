@@ -31,7 +31,7 @@ namespace storm {
 				InterpolantComputation = 0x04
 			};
 			//! possible check results
-			enum class CheckResult {SAT, UNSAT, UNKNOWN};
+			enum class CheckResult { SAT, UNSAT, UNKNOWN };
 		public:
 			/*!
 			* Constructs a new smt solver with the given options.
@@ -41,6 +41,9 @@ namespace storm {
 			*/
 			SmtSolver(Options options = Options::ModelGeneration) {};
 			virtual ~SmtSolver() {};
+
+			SmtSolver(const SmtSolver&) = delete;
+			SmtSolver(const SmtSolver&&) {};
 
 			//! pushes a backtrackingpoint in the solver
 			virtual void push() = 0;
