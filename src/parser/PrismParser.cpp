@@ -572,7 +572,7 @@ namespace storm {
         storm::prism::Constant PrismParser::createUndefinedBooleanConstant(std::string const& newConstant) const {
             if (!this->secondRun) {
                 LOG_THROW(this->identifiers_.find(newConstant) == nullptr, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": Duplicate identifier '" << newConstant << "'.");
-                this->identifiers_.add(newConstant, storm::expressions::Expression::createBooleanConstant(newConstant));
+                this->identifiers_.add(newConstant, storm::expressions::Expression::createBooleanVariable(newConstant));
             }
             return storm::prism::Constant(storm::expressions::ExpressionReturnType::Bool, newConstant, this->getFilename());
         }
@@ -580,7 +580,7 @@ namespace storm {
         storm::prism::Constant PrismParser::createUndefinedIntegerConstant(std::string const& newConstant) const {
             if (!this->secondRun) {
                 LOG_THROW(this->identifiers_.find(newConstant) == nullptr, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": Duplicate identifier '" << newConstant << "'.");
-                this->identifiers_.add(newConstant, storm::expressions::Expression::createIntegerConstant(newConstant));
+                this->identifiers_.add(newConstant, storm::expressions::Expression::createIntegerVariable(newConstant));
             }
             return storm::prism::Constant(storm::expressions::ExpressionReturnType::Int, newConstant, this->getFilename());
         }
@@ -588,7 +588,7 @@ namespace storm {
         storm::prism::Constant PrismParser::createUndefinedDoubleConstant(std::string const& newConstant) const {
             if (!this->secondRun) {
                 LOG_THROW(this->identifiers_.find(newConstant) == nullptr, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": Duplicate identifier '" << newConstant << "'.");
-                this->identifiers_.add(newConstant, storm::expressions::Expression::createDoubleConstant(newConstant));
+                this->identifiers_.add(newConstant, storm::expressions::Expression::createDoubleVariable(newConstant));
             }
             return storm::prism::Constant(storm::expressions::ExpressionReturnType::Double, newConstant, this->getFilename());
         }
@@ -596,7 +596,7 @@ namespace storm {
         storm::prism::Constant PrismParser::createDefinedBooleanConstant(std::string const& newConstant, storm::expressions::Expression expression) const {
             if (!this->secondRun) {
                 LOG_THROW(this->identifiers_.find(newConstant) == nullptr, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": Duplicate identifier '" << newConstant << "'.");
-                this->identifiers_.add(newConstant, storm::expressions::Expression::createBooleanConstant(newConstant));
+                this->identifiers_.add(newConstant, storm::expressions::Expression::createBooleanVariable(newConstant));
             }
             return storm::prism::Constant(storm::expressions::ExpressionReturnType::Bool, newConstant, expression, this->getFilename());
         }
@@ -604,7 +604,7 @@ namespace storm {
         storm::prism::Constant PrismParser::createDefinedIntegerConstant(std::string const& newConstant, storm::expressions::Expression expression) const {
             if (!this->secondRun) {
                 LOG_THROW(this->identifiers_.find(newConstant) == nullptr, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": Duplicate identifier '" << newConstant << "'.");
-                this->identifiers_.add(newConstant, storm::expressions::Expression::createIntegerConstant(newConstant));
+                this->identifiers_.add(newConstant, storm::expressions::Expression::createIntegerVariable(newConstant));
             }
             return storm::prism::Constant(storm::expressions::ExpressionReturnType::Int, newConstant, expression, this->getFilename());
         }
@@ -612,7 +612,7 @@ namespace storm {
         storm::prism::Constant PrismParser::createDefinedDoubleConstant(std::string const& newConstant, storm::expressions::Expression expression) const {
             if (!this->secondRun) {
                 LOG_THROW(this->identifiers_.find(newConstant) == nullptr, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": Duplicate identifier '" << newConstant << "'.");
-                this->identifiers_.add(newConstant, storm::expressions::Expression::createDoubleConstant(newConstant));
+                this->identifiers_.add(newConstant, storm::expressions::Expression::createDoubleVariable(newConstant));
             }
             return storm::prism::Constant(storm::expressions::ExpressionReturnType::Double, newConstant, expression, this->getFilename());
         }

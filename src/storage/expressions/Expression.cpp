@@ -5,22 +5,9 @@
 #include "src/storage/expressions/SubstitutionVisitor.h"
 #include "src/storage/expressions/IdentifierSubstitutionVisitor.h"
 #include "src/storage/expressions/TypeCheckVisitor.h"
+#include "src/storage/expressions/Expressions.h"
 #include "src/exceptions/InvalidTypeException.h"
 #include "src/exceptions/ExceptionMacros.h"
-
-#include "src/storage/expressions/IfThenElseExpression.h"
-#include "src/storage/expressions/BinaryBooleanFunctionExpression.h"
-#include "src/storage/expressions/BinaryNumericalFunctionExpression.h"
-#include "src/storage/expressions/BinaryRelationExpression.h"
-#include "src/storage/expressions/BooleanConstantExpression.h"
-#include "src/storage/expressions/IntegerConstantExpression.h"
-#include "src/storage/expressions/DoubleConstantExpression.h"
-#include "src/storage/expressions/BooleanLiteralExpression.h"
-#include "src/storage/expressions/IntegerLiteralExpression.h"
-#include "src/storage/expressions/DoubleLiteralExpression.h"
-#include "src/storage/expressions/VariableExpression.h"
-#include "src/storage/expressions/UnaryBooleanFunctionExpression.h"
-#include "src/storage/expressions/UnaryNumericalFunctionExpression.h"
 
 namespace storm {
     namespace expressions {
@@ -80,20 +67,12 @@ namespace storm {
             return this->getBaseExpression().getIdentifier();
         }
         
-        bool Expression::hasConstantValue() const {
-            return this->getBaseExpression().hasConstantValue();
-        }
-        
         bool Expression::containsVariables() const {
             return this->getBaseExpression().containsVariables();
         }
         
         bool Expression::isLiteral() const {
-            return this->isLiteral();
-        }
-        
-        bool Expression::isConstant() const {
-            return this->getBaseExpression().isConstant();
+            return this->getBaseExpression().isLiteral();
         }
         
         bool Expression::isVariable() const {
@@ -110,17 +89,6 @@ namespace storm {
         
         std::set<std::string> Expression::getVariables() const {
             return this->getBaseExpression().getVariables();
-        }
-        
-        std::set<std::string> Expression::getConstants() const {
-            return this->getBaseExpression().getConstants();
-        }
-        
-        std::set<std::string> Expression::getIdentifiers() const {
-            std::set<std::string> result = this->getConstants();
-            std::set<std::string> variables = this->getVariables();
-            result.insert(variables.begin(), variables.end());
-            return result;
         }
         
         BaseExpression const& Expression::getBaseExpression() const {
@@ -177,18 +145,6 @@ namespace storm {
         
         Expression Expression::createUndefinedVariable(std::string const& variableName) {
             return Expression(std::shared_ptr<BaseExpression>(new VariableExpression(ExpressionReturnType::Undefined, variableName)));
-        }
-        
-        Expression Expression::createBooleanConstant(std::string const& constantName) {
-            return Expression(std::shared_ptr<BaseExpression>(new BooleanConstantExpression(constantName)));
-        }
-        
-        Expression Expression::createIntegerConstant(std::string const& constantName) {
-            return Expression(std::shared_ptr<BaseExpression>(new IntegerConstantExpression(constantName)));
-        }
-        
-        Expression Expression::createDoubleConstant(std::string const& constantName) {
-            return Expression(std::shared_ptr<BaseExpression>(new DoubleConstantExpression(constantName)));
         }
         
         Expression Expression::operator+(Expression const& other) const {

@@ -53,15 +53,7 @@ namespace storm {
             return false;
         }
         
-        bool BaseExpression::hasConstantValue() const {
-            return false;
-        }
-        
         bool BaseExpression::isLiteral() const {
-            return false;
-        }
-        
-        bool BaseExpression::isConstant() const {
             return false;
         }
         

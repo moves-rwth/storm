@@ -13,16 +13,8 @@ namespace storm {
         bool DoubleLiteralExpression::isLiteral() const {
             return true;
         }
-
-        bool DoubleLiteralExpression::hasConstantValue() const {
-            return true;
-        }
         
         std::set<std::string> DoubleLiteralExpression::getVariables() const {
-            return std::set<std::string>();
-        }
-        
-        std::set<std::string> DoubleLiteralExpression::getConstants() const {
             return std::set<std::string>();
         }
         

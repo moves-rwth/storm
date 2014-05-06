@@ -14,10 +14,6 @@ namespace storm {
             return true;
         }
         
-        bool BooleanLiteralExpression::hasConstantValue() const {
-            return true;
-        }
-        
         bool BooleanLiteralExpression::isTrue() const {
             return this->getValue() == true;
         }
@@ -27,10 +23,6 @@ namespace storm {
         }
         
         std::set<std::string> BooleanLiteralExpression::getVariables() const {
-            return std::set<std::string>();
-        }
-        
-        std::set<std::string> BooleanLiteralExpression::getConstants() const {
             return std::set<std::string>();
         }
         

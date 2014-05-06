@@ -32,7 +32,6 @@ namespace storm {
             virtual std::string const& getIdentifier() const override;
             virtual bool containsVariables() const override;
             virtual std::set<std::string> getVariables() const override;
-            virtual std::set<std::string> getConstants() const override;
             virtual std::shared_ptr<BaseExpression const> simplify() const override;
             virtual void accept(ExpressionVisitor* visitor) const override;
 

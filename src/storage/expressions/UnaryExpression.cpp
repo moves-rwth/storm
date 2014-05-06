@@ -13,15 +13,7 @@ namespace storm {
             return this->getOperand()->containsVariables();
         }
         
-        bool UnaryExpression::hasConstantValue() const {
-            return this->getOperand()->hasConstantValue();
-        }
-        
         std::set<std::string> UnaryExpression::getVariables() const {
-            return this->getOperand()->getVariables();
-        }
-        
-        std::set<std::string> UnaryExpression::getConstants() const {
             return this->getOperand()->getVariables();
         }
         

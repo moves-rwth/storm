@@ -30,9 +30,6 @@ namespace storm {
             virtual void visit(BinaryBooleanFunctionExpression const* expression) override;
             virtual void visit(BinaryNumericalFunctionExpression const* expression) override;
             virtual void visit(BinaryRelationExpression const* expression) override;
-            virtual void visit(BooleanConstantExpression const* expression) override;
-            virtual void visit(DoubleConstantExpression const* expression) override;
-            virtual void visit(IntegerConstantExpression const* expression) override;
             virtual void visit(VariableExpression const* expression) override;
             virtual void visit(UnaryBooleanFunctionExpression const* expression) override;
             virtual void visit(UnaryNumericalFunctionExpression const* expression) override;

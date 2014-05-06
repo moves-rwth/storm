@@ -39,9 +39,6 @@ namespace storm {
             static Expression createIntegerVariable(std::string const& variableName);
             static Expression createDoubleVariable(std::string const& variableName);
             static Expression createUndefinedVariable(std::string const& variableName);
-            static Expression createBooleanConstant(std::string const& constantName);
-            static Expression createIntegerConstant(std::string const& constantName);
-            static Expression createDoubleConstant(std::string const& constantName);
             
             // Provide operator overloads to conveniently construct new expressions from other expressions.
             Expression operator+(Expression const& other) const;
@@ -127,9 +124,8 @@ namespace storm {
             void check(std::unordered_map<std::string, storm::expressions::ExpressionReturnType> const& identifierToTypeMap) const;
             
             /*!
-             * Evaluates the expression under the valuation of unknowns (variables and constants) given by the
-             * valuation and returns the resulting boolean value. If the return type of the expression is not a boolean
-             * an exception is thrown.
+             * Evaluates the expression under the valuation of variables given by the valuation and returns the
+             * resulting boolean value. If the return type of the expression is not a boolean an exception is thrown.
              *
              * @param valuation The valuation of unknowns under which to evaluate the expression.
              * @return The boolean value of the expression under the given valuation.
@@ -137,9 +133,8 @@ namespace storm {
             bool evaluateAsBool(Valuation const* valuation = nullptr) const;
             
             /*!
-             * Evaluates the expression under the valuation of unknowns (variables and constants) given by the
-             * valuation and returns the resulting integer value. If the return type of the expression is not an integer
-             * an exception is thrown.
+             * Evaluates the expression under the valuation of variables given by the valuation and returns the
+             * resulting integer value. If the return type of the expression is not an integer an exception is thrown.
              *
              * @param valuation The valuation of unknowns under which to evaluate the expression.
              * @return The integer value of the expression under the given valuation.
@@ -147,9 +142,8 @@ namespace storm {
             int_fast64_t evaluateAsInt(Valuation const* valuation = nullptr) const;
             
             /*!
-             * Evaluates the expression under the valuation of unknowns (variables and constants) given by the
-             * valuation and returns the resulting double value. If the return type of the expression is not a double
-             * an exception is thrown.
+             * Evaluates the expression under the valuation of variables given by the valuation and returns the
+             * resulting double value. If the return type of the expression is not a double an exception is thrown.
              *
              * @param valuation The valuation of unknowns under which to evaluate the expression.
              * @return The double value of the expression under the given valuation.
@@ -180,18 +174,11 @@ namespace storm {
             
             /*!
              * Retrieves the identifier associated with this expression. This is only legal to call if the expression
-             * is either a constant or a variable.
+             * is a variable.
              *
              * @return The identifier associated with this expression.
              */
             virtual std::string const& getIdentifier() const;
-            
-            /*!
-             * Retrieves whether the expression has a constant value, i.e., does not involve variables.
-             *
-             * @return True iff the expression has a constant value.
-             */
-            virtual bool hasConstantValue() const;
             
             /*!
              * Retrieves whether the expression contains a variable.
@@ -206,13 +193,6 @@ namespace storm {
              * @return True iff the expression is a literal.
              */
             virtual bool isLiteral() const;
-            
-            /*!
-             * Retrieves whether the expression is a constant.
-             *
-             * @return True iff the expression is a constant.
-             */
-            virtual bool isConstant() const;
             
             /*!
              * Retrieves whether the expression is a variable.
@@ -241,20 +221,6 @@ namespace storm {
              * @return The set of all variables that appear in the expression.
              */
             std::set<std::string> getVariables() const;
-            
-            /*!
-             * Retrieves the set of all constants that appear in the expression.
-             *
-             * @return The set of all constants that appear in the expression.
-             */
-            std::set<std::string> getConstants() const;
-            
-            /*!
-             * Retrieves the set of all identifiers (constants and variables) that appear in the expression.
-             *
-             * @return The est of all identifiers that appear in the expression.
-             */
-            std::set<std::string> getIdentifiers() const;
             
             /*!
              * Retrieves the base expression underlying this expression object. Note that prior to calling this, the

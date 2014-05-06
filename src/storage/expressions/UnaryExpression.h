@@ -27,11 +27,9 @@ namespace storm {
             
             // Override base class methods.
             virtual bool containsVariables() const override;
-            virtual bool hasConstantValue() const override;
             virtual uint_fast64_t getArity() const override;
             virtual std::shared_ptr<BaseExpression const> getOperand(uint_fast64_t operandIndex) const override;
             virtual std::set<std::string> getVariables() const override;
-            virtual std::set<std::string> getConstants() const override;
             
             /*!
              * Retrieves the operand of the unary expression.

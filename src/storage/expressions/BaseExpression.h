@@ -90,18 +90,11 @@ namespace storm {
             
             /*!
              * Retrieves the identifier associated with this expression. This is only legal to call if the expression
-             * is either a constant or a variable.
+             * is a variable.
              *
              * @return The identifier associated with this expression.
              */
             virtual std::string const& getIdentifier() const;
-            
-            /*!
-             * Retrieves whether the expression has a constant value, i.e., does not involve variables or constants.
-             *
-             * @return True iff the expression has a constant value.
-             */
-            virtual bool hasConstantValue() const;
             
             /*!
              * Retrieves whether the expression contains a variable.
@@ -116,13 +109,6 @@ namespace storm {
              * @return True iff the expression is a literal.
              */
             virtual bool isLiteral() const;
-            
-            /*!
-             * Retrieves whether the expression is a constant.
-             *
-             * @return True iff the expression is a constant.
-             */
-            virtual bool isConstant() const;
             
             /*!
              * Retrieves whether the expression is a variable.
@@ -151,13 +137,6 @@ namespace storm {
              * @return The set of all variables that appear in the expression.
              */
             virtual std::set<std::string> getVariables() const = 0;
-            
-            /*!
-             * Retrieves the set of all constants that appear in the expression.
-             *
-             * @return The set of all constants that appear in the expression.
-             */
-            virtual std::set<std::string> getConstants() const = 0;
             
             /*!
              * Simplifies the expression according to some simple rules.

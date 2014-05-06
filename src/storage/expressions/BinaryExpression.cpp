@@ -13,22 +13,11 @@ namespace storm {
             return this->getFirstOperand()->containsVariables() || this->getSecondOperand()->containsVariables();
         }
         
-        bool BinaryExpression::hasConstantValue() const {
-            return this->getFirstOperand()->hasConstantValue() && this->getSecondOperand()->hasConstantValue();
-        }
-        
         std::set<std::string> BinaryExpression::getVariables() const {
             std::set<std::string> firstVariableSet = this->getFirstOperand()->getVariables();
             std::set<std::string> secondVariableSet = this->getSecondOperand()->getVariables();
             firstVariableSet.insert(secondVariableSet.begin(), secondVariableSet.end());
             return firstVariableSet;
-        }
-        
-        std::set<std::string> BinaryExpression::getConstants() const {
-            std::set<std::string> firstConstantSet = this->getFirstOperand()->getVariables();
-            std::set<std::string> secondConstantSet = this->getSecondOperand()->getVariables();
-            firstConstantSet.insert(secondConstantSet.begin(), secondConstantSet.end());
-            return firstConstantSet;
         }
         
         std::shared_ptr<BaseExpression const> const& BinaryExpression::getFirstOperand() const {
