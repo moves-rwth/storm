@@ -138,6 +138,25 @@ namespace storm {
              */
             bool hasMetaVariable(std::string const& metaVariableName) const;
             
+            /*!
+             * Sets whether or not dynamic reordering is allowed for the DDs managed by this manager.
+             *
+             * @param value If set to true, dynamic reordering is allowed and forbidden otherwise.
+             */
+            void allowDynamicReordering(bool value);
+            
+            /*!
+             * Retrieves whether dynamic reordering is currently allowed.
+             *
+             * @return True iff dynamic reordering is currently allowed.
+             */
+            bool isDynamicReorderingAllowed() const;
+            
+            /*!
+             * Triggers a reordering of the DDs managed by this manager.
+             */
+            void triggerReordering();
+            
         private:
             /*!
              * Retrieves a list of names of the DD variables in the order of their index.
@@ -152,6 +171,13 @@ namespace storm {
              * @return The underlying CUDD manager.
              */
             Cudd& getCuddManager();
+            
+            /*!
+             * Retrieves the underlying CUDD manager.
+             *
+             * @return The underlying CUDD manager.
+             */
+            Cudd const& getCuddManager() const;
             
             // A mapping from variable names to the meta variable information.
             std::unordered_map<std::string, DdMetaVariable<DdType::CUDD>> metaVariableMap;
