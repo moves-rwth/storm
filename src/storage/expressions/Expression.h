@@ -178,28 +178,28 @@ namespace storm {
              *
              * @return The identifier associated with this expression.
              */
-            virtual std::string const& getIdentifier() const;
+            std::string const& getIdentifier() const;
             
             /*!
              * Retrieves whether the expression contains a variable.
              *
              * @return True iff the expression contains a variable.
              */
-            virtual bool containsVariables() const;
+            bool containsVariables() const;
             
             /*!
              * Retrieves whether the expression is a literal.
              *
              * @return True iff the expression is a literal.
              */
-            virtual bool isLiteral() const;
+            bool isLiteral() const;
             
             /*!
              * Retrieves whether the expression is a variable.
              *
              * @return True iff the expression is a variable.
              */
-            virtual bool isVariable() const;
+            bool isVariable() const;
             
             /*!
              * Checks if the expression is equal to the boolean literal true.
