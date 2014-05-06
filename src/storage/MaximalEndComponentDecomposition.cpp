@@ -88,7 +88,7 @@ namespace storm {
                             for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
                                 bool choiceContainedInMEC = true;
                                 for (auto const& entry : transitionMatrix.getRow(choice)) {
-                                    if (scc.find(entry.first) == scc.end()) {
+                                    if (scc.find(entry.getColumn()) == scc.end()) {
                                         choiceContainedInMEC = false;
                                         break;
                                     }
@@ -116,8 +116,8 @@ namespace storm {
                         statesToCheck.clear();
                         for (auto state : statesToRemove) {
                             for (auto const& entry : backwardTransitions.getRow(state)) {
-                                if (scc.find(entry.first) != scc.end()) {
-                                    statesToCheck.set(entry.first);
+                                if (scc.find(entry.getColumn()) != scc.end()) {
+                                    statesToCheck.set(entry.getColumn());
                                 }
                             }
                         }
@@ -154,7 +154,7 @@ namespace storm {
                     for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
                         bool choiceContained = true;
                         for (auto const& entry : transitionMatrix.getRow(choice)) {
-                            if (mecStateSet.find(entry.first) == mecStateSet.end()) {
+                            if (mecStateSet.find(entry.getColumn()) == mecStateSet.end()) {
                                 choiceContained = false;
                                 break;
                             }

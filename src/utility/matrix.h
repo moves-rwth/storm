@@ -32,7 +32,7 @@ namespace storm {
                         // If a valid choice for this state is defined, we copy over the corresponding entries.
                         typename storm::storage::SparseMatrix<T>::const_rows selectedRow = transitionMatrix.getRow(choice);
                         for (auto const& entry : selectedRow) {
-                            matrixBuilder.addNextValue(state, entry.first, entry.second);
+                            matrixBuilder.addNextValue(state, entry.getColumn(), entry.getValue());
                         }
                     } else {
                         // If no valid choice for the state is defined, we insert a self-loop.

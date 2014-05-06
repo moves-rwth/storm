@@ -103,10 +103,10 @@ namespace storm {
                     for (auto state : markovianNonGoalStates) {
                         for (auto& element : aMarkovian.getRow(rowIndex)) {
                             ValueType eTerm = std::exp(-exitRates[state] * delta);
-                            if (element.first == rowIndex) {
-                                element.second = (storm::utility::constantOne<ValueType>() - eTerm) * element.second + eTerm;
+                            if (element.getColumn() == rowIndex) {
+                                element.getValue() = (storm::utility::constantOne<ValueType>() - eTerm) * element.getValue() + eTerm;
                             } else {
-                                element.second = (storm::utility::constantOne<ValueType>() - eTerm) * element.second;
+                                element.getValue() = (storm::utility::constantOne<ValueType>() - eTerm) * element.getValue();
                             }
                         }
                         ++rowIndex;
@@ -116,7 +116,7 @@ namespace storm {
                     rowIndex = 0;
                     for (auto state : markovianNonGoalStates) {
                         for (auto& element : aMarkovianToProbabilistic.getRow(rowIndex)) {
-                            element.second = (1 - std::exp(-exitRates[state] * delta)) * element.second;
+                            element.getValue() = (1 - std::exp(-exitRates[state] * delta)) * element.getValue();
                         }
                         ++rowIndex;
                     }
@@ -133,8 +133,8 @@ namespace storm {
                         bMarkovianFixed.push_back(storm::utility::constantZero<ValueType>());
                         
                         for (auto& element : transitionMatrix.getRowGroup(state)) {
-                            if (goalStates.get(element.first)) {
-                                bMarkovianFixed.back() += (1 - std::exp(-exitRates[state] * delta)) * element.second;
+                            if (goalStates.get(element.getColumn())) {
+                                bMarkovianFixed.back() += (1 - std::exp(-exitRates[state] * delta)) * element.getValue();
                             }
                         }
                     }
@@ -314,13 +314,13 @@ namespace storm {
                             b.push_back(storm::utility::constantZero<ValueType>());
                             
                             for (auto element : transitionMatrix.getRow(choice)) {
-                                if (statesNotContainedInAnyMec.get(element.first)) {
+                                if (statesNotContainedInAnyMec.get(element.getColumn())) {
                                     // If the target state is not contained in an MEC, we can copy over the entry.
-                                    sspMatrixBuilder.addNextValue(currentChoice, statesNotInMecsBeforeIndex[element.first], element.second);
+                                    sspMatrixBuilder.addNextValue(currentChoice, statesNotInMecsBeforeIndex[element.getColumn()], element.getValue());
                                 } else {
                                     // If the target state is contained in MEC i, we need to add the probability to the corresponding field in the vector
                                     // so that we are able to write the cumulative probability to the MEC into the matrix.
-                                    auxiliaryStateToProbabilityMap[stateToMecIndexMap[element.first]] += element.second;
+                                    auxiliaryStateToProbabilityMap[stateToMecIndexMap[element.getColumn()]] += element.getValue();
                                 }
                             }
                             
@@ -350,13 +350,13 @@ namespace storm {
                                     b.push_back(storm::utility::constantZero<ValueType>());
 
                                     for (auto element : transitionMatrix.getRow(choice)) {
-                                        if (statesNotContainedInAnyMec.get(element.first)) {
+                                        if (statesNotContainedInAnyMec.get(element.getColumn())) {
                                             // If the target state is not contained in an MEC, we can copy over the entry.
-                                            sspMatrixBuilder.addNextValue(currentChoice, statesNotInMecsBeforeIndex[element.first], element.second);
+                                            sspMatrixBuilder.addNextValue(currentChoice, statesNotInMecsBeforeIndex[element.getColumn()], element.getValue());
                                         } else {
                                             // If the target state is contained in MEC i, we need to add the probability to the corresponding field in the vector
                                             // so that we are able to write the cumulative probability to the MEC into the matrix.
-                                            auxiliaryStateToProbabilityMap[stateToMecIndexMap[element.first]] += element.second;
+                                            auxiliaryStateToProbabilityMap[stateToMecIndexMap[element.getColumn()]] += element.getValue();
                                         }
                                     }
                                     
@@ -453,8 +453,8 @@ namespace storm {
                             coefficients.push_back(1);
                             
                             for (auto element : transitionMatrix.getRow(nondeterministicChoiceIndices[state])) {
-                                variables.push_back(stateToVariableIndexMap.at(element.first));
-                                coefficients.push_back(-element.second);
+                                variables.push_back(stateToVariableIndexMap.at(element.getColumn()));
+                                coefficients.push_back(-element.getValue());
                             }
                             
                             variables.push_back(lraValueVariableIndex);
@@ -472,8 +472,8 @@ namespace storm {
                                 coefficients.push_back(1);
                                 
                                 for (auto element : transitionMatrix.getRow(choice)) {
-                                    variables.push_back(stateToVariableIndexMap.at(element.first));
-                                    coefficients.push_back(-element.second);
+                                    variables.push_back(stateToVariableIndexMap.at(element.getColumn()));
+                                    coefficients.push_back(-element.getValue());
                                 }
                                 
                                 solver->addConstraint("state" + std::to_string(state), variables, coefficients, min ? storm::solver::LpSolver::LESS_EQUAL : storm::solver::LpSolver::GREATER_EQUAL, storm::utility::constantZero<ValueType>());

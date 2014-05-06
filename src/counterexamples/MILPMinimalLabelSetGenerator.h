@@ -130,7 +130,7 @@ namespace storm {
                         bool allSuccessorsProblematic = true;
                         for (auto const& successorEntry : transitionMatrix.getRow(row)) {
                             // If there is a relevant successor, we need to add the labels of the current choice.
-                            if (stateInformation.relevantStates.get(successorEntry.first) || psiStates.get(successorEntry.first)) {
+                            if (stateInformation.relevantStates.get(successorEntry.getColumn()) || psiStates.get(successorEntry.getColumn())) {
                                 for (auto const& label : choiceLabeling[row]) {
                                     result.allRelevantLabels.insert(label);
                                 }
@@ -139,7 +139,7 @@ namespace storm {
                                     result.relevantChoicesForRelevantStates[state].push_back(row);
                                 }
                             }
-                            if (!stateInformation.problematicStates.get(successorEntry.first)) {
+                            if (!stateInformation.problematicStates.get(successorEntry.getColumn())) {
                                 allSuccessorsProblematic = false;
                             }
                         }
@@ -297,11 +297,11 @@ namespace storm {
                     std::list<uint_fast64_t> const& relevantChoicesForState = choiceInformation.relevantChoicesForRelevantStates.at(state);
                     for (uint_fast64_t row : relevantChoicesForState) {
                         for (auto const& successorEntry : labeledMdp.getTransitionMatrix().getRow(row)) {
-                            if (stateInformation.relevantStates.get(successorEntry.first)) {
-                                if (resultingMap.find(successorEntry.first) == resultingMap.end()) {
+                            if (stateInformation.relevantStates.get(successorEntry.getColumn())) {
+                                if (resultingMap.find(successorEntry.getColumn()) == resultingMap.end()) {
                                     variableNameBuffer.str("");
                                     variableNameBuffer.clear();
-                                    variableNameBuffer << "r" << successorEntry.first;
+                                    variableNameBuffer << "r" << successorEntry.getColumn();
                                     resultingMap[state] = solver.createContinuousVariable(variableNameBuffer.str(), storm::solver::LpSolver::BOUNDED, 0, 1, 0);
                                     ++numberOfVariablesCreated;
                                 }
@@ -330,11 +330,11 @@ namespace storm {
                     std::list<uint_fast64_t> const& relevantChoicesForState = choiceInformation.relevantChoicesForRelevantStates.at(state);
                     for (uint_fast64_t row : relevantChoicesForState) {
                         for (auto const& successorEntry : labeledMdp.getTransitionMatrix().getRow(row)) {
-                            if (stateInformation.relevantStates.get(successorEntry.first)) {
+                            if (stateInformation.relevantStates.get(successorEntry.getColumn())) {
                                 variableNameBuffer.str("");
                                 variableNameBuffer.clear();
-                                variableNameBuffer << "t" << state << "to" << successorEntry.first;
-                                resultingMap[std::make_pair(state, successorEntry.first)] = solver.createBinaryVariable(variableNameBuffer.str(), 0);
+                                variableNameBuffer << "t" << state << "to" << successorEntry.getColumn();
+                                resultingMap[std::make_pair(state, successorEntry.getColumn())] = solver.createBinaryVariable(variableNameBuffer.str(), 0);
                                 ++numberOfVariablesCreated;
                             }
                         }
@@ -544,11 +544,11 @@ namespace storm {
                         
                         double rightHandSide = 1;
                         for (auto const& successorEntry : labeledMdp.getTransitionMatrix().getRow(choice)) {
-                            if (stateInformation.relevantStates.get(successorEntry.first)) {
-                                variables.push_back(static_cast<int>(variableInformation.stateToProbabilityVariableIndexMap.at(successorEntry.first)));
-                                coefficients.push_back(-successorEntry.second);
-                            } else if (psiStates.get(successorEntry.first)) {
-                                rightHandSide += successorEntry.second;
+                            if (stateInformation.relevantStates.get(successorEntry.getColumn())) {
+                                variables.push_back(static_cast<int>(variableInformation.stateToProbabilityVariableIndexMap.at(successorEntry.getColumn())));
+                                coefficients.push_back(-successorEntry.getValue());
+                            } else if (psiStates.get(successorEntry.getColumn())) {
+                                rightHandSide += successorEntry.getValue();
                             }
                         }
                         
@@ -602,7 +602,7 @@ namespace storm {
                         coefficients.push_back(1);
                         
                         for (auto const& successorEntry : labeledMdp.getTransitionMatrix().getRow(problematicChoice)) {
-                            variables.push_back(variableInformation.problematicTransitionToVariableIndexMap.at(std::make_pair(stateListPair.first, successorEntry.first)));
+                            variables.push_back(variableInformation.problematicTransitionToVariableIndexMap.at(std::make_pair(stateListPair.first, successorEntry.getColumn())));
                             coefficients.push_back(-1);
                         }
                         
@@ -619,9 +619,9 @@ namespace storm {
                             
                             variables.push_back(variableInformation.problematicStateToVariableIndexMap.at(state));
                             coefficients.push_back(1);
-                            variables.push_back(variableInformation.problematicStateToVariableIndexMap.at(successorEntry.first));
+                            variables.push_back(variableInformation.problematicStateToVariableIndexMap.at(successorEntry.getColumn()));
                             coefficients.push_back(-1);
-                            variables.push_back(variableInformation.problematicTransitionToVariableIndexMap.at(std::make_pair(state, successorEntry.first)));
+                            variables.push_back(variableInformation.problematicTransitionToVariableIndexMap.at(std::make_pair(state, successorEntry.getColumn())));
                             coefficients.push_back(1);
                             
                             solver.addConstraint("UnproblematicStateReachable" + std::to_string(numberOfConstraintsCreated), variables, coefficients, storm::solver::LpSolver::LESS, 1);
@@ -677,7 +677,7 @@ namespace storm {
                     for (auto choice : choiceInformation.relevantChoicesForRelevantStates.at(state)) {
                         bool psiStateReachableInOneStep = false;
                         for (auto const& successorEntry : labeledMdp.getTransitionMatrix().getRow(choice)) {
-                            if (psiStates.get(successorEntry.first)) {
+                            if (psiStates.get(successorEntry.getColumn())) {
                                 psiStateReachableInOneStep = true;
                             }
                         }
@@ -690,8 +690,8 @@ namespace storm {
                             coefficients.push_back(1);
                             
                             for (auto const& successorEntry : labeledMdp.getTransitionMatrix().getRow(choice)) {
-                                if (state != successorEntry.first && stateInformation.relevantStates.get(successorEntry.first)) {
-                                    std::list<uint_fast64_t> const& successorChoiceVariableIndices = variableInformation.stateToChoiceVariablesIndexMap.at(successorEntry.first);
+                                if (state != successorEntry.getColumn() && stateInformation.relevantStates.get(successorEntry.getColumn())) {
+                                    std::list<uint_fast64_t> const& successorChoiceVariableIndices = variableInformation.stateToChoiceVariablesIndexMap.at(successorEntry.getColumn());
                                     
                                     for (auto choiceVariableIndex : successorChoiceVariableIndices) {
                                         variables.push_back(choiceVariableIndex);
@@ -720,8 +720,8 @@ namespace storm {
                     // Compute the set of predecessors.
                     std::unordered_set<uint_fast64_t> predecessors;
                     for (auto const& predecessorEntry : backwardTransitions.getRow(state)) {
-                        if (state != predecessorEntry.first) {
-                            predecessors.insert(predecessorEntry.first);
+                        if (state != predecessorEntry.getColumn()) {
+                            predecessors.insert(predecessorEntry.getColumn());
                         }
                     }
                     
@@ -737,7 +737,7 @@ namespace storm {
                             
                             // Check if the current choice targets the current state.
                             for (auto const& successorEntry : labeledMdp.getTransitionMatrix().getRow(relevantChoice)) {
-                                if (state == successorEntry.first) {
+                                if (state == successorEntry.getColumn()) {
                                     choiceTargetsCurrentState = true;
                                     break;
                                 }
@@ -782,8 +782,8 @@ namespace storm {
                 for (auto psiState : psiStates) {
                     // Compute the set of predecessors.
                     for (auto const& predecessorEntry : backwardTransitions.getRow(psiState)) {
-                        if (psiState != predecessorEntry.first) {
-                            predecessors.insert(predecessorEntry.first);
+                        if (psiState != predecessorEntry.getColumn()) {
+                            predecessors.insert(predecessorEntry.getColumn());
                         }
                     }
                 }
@@ -800,7 +800,7 @@ namespace storm {
                         
                         // Check if the current choice targets the current state.
                         for (auto const& successorEntry : labeledMdp.getTransitionMatrix().getRow(relevantChoice)) {
-                            if (psiStates.get(successorEntry.first)) {
+                            if (psiStates.get(successorEntry.getColumn())) {
                                 choiceTargetsPsiState = true;
                                 break;
                             }
