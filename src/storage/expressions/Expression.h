@@ -111,6 +111,22 @@ namespace storm {
 			Expression substitute(std::unordered_map<std::string, std::string> const& identifierToIdentifierMap) const;
             
             /*!
+             * Checks that all identifiers appearing in the expression have the types given by the map. An exception
+             * is thrown in case a violation is found.
+             *
+             * @param identifierToTypeMap A mapping from identifiers to the types that are supposed to have.
+             */
+            void check(std::map<std::string, storm::expressions::ExpressionReturnType> const& identifierToTypeMap) const;
+            
+            /*!
+             * Checks that all identifiers appearing in the expression have the types given by the map. An exception
+             * is thrown in case a violation is found.
+             *
+             * @param identifierToTypeMap A mapping from identifiers to the types that are supposed to have.
+             */
+            void check(std::unordered_map<std::string, storm::expressions::ExpressionReturnType> const& identifierToTypeMap) const;
+            
+            /*!
              * Evaluates the expression under the valuation of unknowns (variables and constants) given by the
              * valuation and returns the resulting boolean value. If the return type of the expression is not a boolean
              * an exception is thrown.
@@ -181,6 +197,13 @@ namespace storm {
              * @return The set of all constants that appear in the expression.
              */
             std::set<std::string> getConstants() const;
+            
+            /*!
+             * Retrieves the set of all identifiers (constants and variables) that appear in the expression.
+             *
+             * @return The est of all identifiers that appear in the expression.
+             */
+            std::set<std::string> getIdentifiers() const;
             
             /*!
              * Retrieves the base expression underlying this expression object. Note that prior to calling this, the

@@ -27,13 +27,17 @@ typedef BOOST_TYPEOF(qi::lit("//") >> *(qi::char_ - qi::eol) >> qi::eol | boost:
 #include "src/storage/expressions/Expression.h"
 #include "src/storage/expressions/Expressions.h"
 #include "src/exceptions/ExceptionMacros.h"
+#include "src/exceptions/WrongFormatException.h"
 
 namespace storm {
     namespace parser {
+        // A class that stores information about the parsed program.
         class GlobalProgramInformation {
         public:
             // Default construct the header information.
-			GlobalProgramInformation() : hasInitialStatesExpression(false), currentCommandIndex(0), currentUpdateIndex(0) {}
+			GlobalProgramInformation() : modelType(), constants(), formulas(), globalBooleanVariables(), globalIntegerVariables(), moduleToIndexMap(), modules(), rewardModels(), labels(),hasInitialConstruct(false), initialConstruct(storm::expressions::Expression::createFalse()), currentCommandIndex(0), currentUpdateIndex(0) {
+                // Intentionally left empty.
+            }
             
             // Members for all essential information that needs to be collected.
             storm::prism::Program::ModelType modelType;
@@ -45,8 +49,8 @@ namespace storm {
             std::vector<storm::prism::Module> modules;
             std::vector<storm::prism::RewardModel> rewardModels;
             std::vector<storm::prism::Label> labels;
-            storm::expressions::Expression initialStatesExpression;
-            bool hasInitialStatesExpression;
+            bool hasInitialConstruct;
+            storm::prism::InitialConstruct initialConstruct;
             
             // Counters to provide unique indexing for commands and updates.
             uint_fast64_t currentCommandIndex;
@@ -59,20 +63,18 @@ namespace storm {
              * Parses the given file into the PRISM storage classes assuming it complies with the PRISM syntax.
              *
              * @param filename the name of the file to parse.
-             * @param typeCheck Sets whether the expressions are generated and therefore typechecked.
              * @return The resulting PRISM program.
              */
-            static storm::prism::Program parse(std::string const& filename, bool typeCheck = true);
+            static storm::prism::Program parse(std::string const& filename);
             
             /*!
              * Parses the given input stream into the PRISM storage classes assuming it complies with the PRISM syntax.
              *
              * @param input The input string to parse.
              * @param filename The name of the file from which the input was read.
-             * @param typeCheck Sets whether the expressions are generated and therefore typechecked.
              * @return The resulting PRISM program.
              */
-            static storm::prism::Program parseFromString(std::string const& input, std::string const& filename, bool typeCheck = true);
+            static storm::prism::Program parseFromString(std::string const& input, std::string const& filename);
             
         private:
             struct modelTypeStruct : qi::symbols<char, storm::prism::Program::ModelType> {
@@ -117,13 +119,7 @@ namespace storm {
                 
                 template<typename T1, typename T2, typename T3, typename T4>
                 qi::error_handler_result operator()(T1 b, T2 e, T3 where, T4 const& what) const {
-                    //                    LOG4CPLUS_ERROR(logger, "Error: expecting " << what << " in line " << get_line(where) << " at column " << get_column(b, where, 4) << ".");
-                    std::cerr << "Error: expecting " << what << " in line " << get_line(where) << "." << std::endl;
-                    T3 end(where);
-                    while (end != e && *end != '\r' && *end != '\n') {
-                        ++end;
-                    }
-                    std::cerr << "Error: expecting " << what << " in line " << get_line(where) << ": \n" << std::string(get_line_start(b, where), end) << " ... \n" << std::setw(std::distance(b, where)) << '^' << "---- here\n";
+                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(where) << ": " << " expecting " << what << ".");
                     return qi::fail;
                 }
             };
@@ -193,7 +189,6 @@ namespace storm {
             qi::rule<Iterator, storm::prism::Program::ModelType(), Skipper> modelTypeDefinition;
             
             // Rules for parsing the program header.
-            qi::rule<Iterator, qi::unused_type(GlobalProgramInformation&), Skipper> programHeader;
             qi::rule<Iterator, storm::prism::Constant(), Skipper> undefinedConstantDefinition;
             qi::rule<Iterator, storm::prism::Constant(), Skipper> undefinedBooleanConstantDefinition;
             qi::rule<Iterator, storm::prism::Constant(), Skipper> undefinedIntegerConstantDefinition;
@@ -268,7 +263,7 @@ namespace storm {
             
             // Helper methods used in the grammar.
             bool isValidIdentifier(std::string const& identifier);
-            bool addInitialStatesExpression(storm::expressions::Expression initialStatesExpression, GlobalProgramInformation& globalProgramInformation);
+            bool addInitialStatesConstruct(storm::expressions::Expression initialStatesExpression, GlobalProgramInformation& globalProgramInformation);
             
             storm::expressions::Expression createIteExpression(storm::expressions::Expression e1, storm::expressions::Expression e2, storm::expressions::Expression e3) const;
             storm::expressions::Expression createImpliesExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;

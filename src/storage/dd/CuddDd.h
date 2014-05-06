@@ -234,6 +234,13 @@ namespace storm {
             void existsAbstract(std::set<std::string> const& metaVariableNames);
             
             /*!
+             * Universally abstracts from the given meta variables.
+             *
+             * @param metaVariableNames The names of all meta variables from which to abstract.
+             */
+            void universalAbstract(std::set<std::string> const& metaVariableNames);
+            
+            /*!
              * Sum-abstracts from the given meta variables.
              *
              * @param metaVariableNames The names of all meta variables from which to abstract.

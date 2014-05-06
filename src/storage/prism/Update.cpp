@@ -60,5 +60,5 @@ namespace storm {
             return stream;
         }
         
-    } // namespace ir
+    } // namespace prism
 } // namespace storm

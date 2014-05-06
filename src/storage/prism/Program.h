@@ -12,6 +12,7 @@
 #include "src/storage/prism/Label.h"
 #include "src/storage/prism/Module.h"
 #include "src/storage/prism/RewardModel.h"
+#include "src/storage/prism/InitialConstruct.h"
 #include "src/utility/OsDetection.h"
 
 namespace storm {
@@ -33,17 +34,18 @@ namespace storm {
              * @param globalIntegerVariables The global integer variables of the program.
              * @param formulas The formulas defined in the program.
              * @param modules The modules of the program.
-             * @param hasInitialStatesExpression A flag indicating whether the program specifies its initial states via
-             * an explicit initial construct.
-             * @param initialStatesExpression If the model specifies an explicit initial construct, this
-             * expression defines its initial states. Otherwise it is irrelevant and may be set to an arbitrary (but
-             * valid) expression, e.g. false.
+             * @param fixInitialConstruct A flag that indicates whether the given initial construct is to be ignored and
+             * replaced by a new one created from the initial values of the variables.
+             * @param initialConstruct The initial construct of the program. If the initial construct specifies "false"
+             * as the initial condition, the default values of the variables are used to construct a legal initial
+             * condition.
              * @param rewardModels The reward models of the program.
              * @param labels The labels defined for this program.
              * @param filename The filename in which the program is defined.
              * @param lineNumber The line number in which the program is defined.
+             * @param checkValidity If set to true, the program is checked for validity.
              */
-            Program(ModelType modelType, std::vector<Constant> const& constants, std::vector<BooleanVariable> const& globalBooleanVariables, std::vector<IntegerVariable> const& globalIntegerVariables, std::vector<Formula> const& formulas, std::vector<Module> const& modules, std::vector<RewardModel> const& rewardModels, bool hasInitialStatesExpression, storm::expressions::Expression const& initialStatesExpression, std::vector<Label> const& labels, std::string const& filename = "", uint_fast64_t lineNumber = 0);
+            Program(ModelType modelType, std::vector<Constant> const& constants, std::vector<BooleanVariable> const& globalBooleanVariables, std::vector<IntegerVariable> const& globalIntegerVariables, std::vector<Formula> const& formulas, std::vector<Module> const& modules, std::vector<RewardModel> const& rewardModels, bool fixInitialConstruct, storm::prism::InitialConstruct const& initialConstruct, std::vector<Label> const& labels, std::string const& filename = "", uint_fast64_t lineNumber = 0, bool checkValidity = true);
             
             // Provide default implementations for constructors and assignments.
             Program() = default;
@@ -187,18 +189,11 @@ namespace storm {
             std::vector<Module> const& getModules() const;
             
             /*!
-             * Retrieves whether the program explicitly specifies an expression characterizing the initial states.
+             * Retrieves the initial construct of the program.
              *
-             * @return True iff the program specifies an expression defining the initial states.
+             * @return The initial construct of the program.
              */
-            bool definesInitialStatesExpression() const;
-            
-            /*!
-             * Retrieves an expression characterizing the initial states of the program.
-             *
-             * @return An expression characterizing the initial states.
-             */
-            storm::expressions::Expression getInitialStatesExpression() const;
+            storm::prism::InitialConstruct const& getInitialConstruct() const;
             
             /*!
              * Retrieves the set of actions present in the program.
@@ -285,6 +280,12 @@ namespace storm {
              */
             Program substituteConstants() const;
             
+            /*!
+             * Checks the validity of the program. If the program is not valid, an exception is thrown with a message
+             * that indicates the source of the problem.
+             */
+            void checkValidity() const;
+            
             friend std::ostream& operator<<(std::ostream& stream, Program const& program);
             
         private:
@@ -330,12 +331,8 @@ namespace storm {
             // A mapping of reward models to their indices.
             std::map<std::string, uint_fast64_t> rewardModelToIndexMap;
             
-            // A flag that indicates whether the initial states of the program were given explicitly (in the form of an
-            // initial construct) or implicitly (attached to the variable declarations).
-            bool hasInitialStatesExpression;
-            
-            // The expression contained in the initial construct (if any).
-            storm::expressions::Expression initialStatesExpression;
+            // The initial construct of the program.
+            storm::prism::InitialConstruct initialConstruct;
             
             // The labels that are defined for this model.
             std::vector<Label> labels;

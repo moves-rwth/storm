@@ -184,6 +184,23 @@ namespace storm {
             this->cuddAdd = this->cuddAdd.OrAbstract(cubeDd.getCuddAdd());
         }
         
+        void Dd<DdType::CUDD>::universalAbstract(std::set<std::string> const& metaVariableNames) {
+            Dd<DdType::CUDD> cubeDd(this->getDdManager()->getOne());
+            
+            for (auto const& metaVariableName : metaVariableNames) {
+                // First check whether the DD contains the meta variable and erase it, if this is the case.
+                if (!this->containsMetaVariable(metaVariableName)) {
+                    throw storm::exceptions::InvalidArgumentException() << "Cannot abstract from meta variable that is not present in the DD.";
+                }
+                this->getContainedMetaVariableNames().erase(metaVariableName);
+                
+                DdMetaVariable<DdType::CUDD> const& metaVariable = this->getDdManager()->getMetaVariable(metaVariableName);
+                cubeDd *= metaVariable.getCube();
+            }
+            
+            this->cuddAdd = this->cuddAdd.UnivAbstract(cubeDd.getCuddAdd());
+        }
+        
         void Dd<DdType::CUDD>::sumAbstract(std::set<std::string> const& metaVariableNames) {
             Dd<DdType::CUDD> cubeDd(this->getDdManager()->getOne());
             

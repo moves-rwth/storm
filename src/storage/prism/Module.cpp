@@ -2,10 +2,15 @@
 #include "src/exceptions/ExceptionMacros.h"
 #include "src/exceptions/OutOfRangeException.h"
 #include "src/exceptions/InvalidArgumentException.h"
+#include "src/exceptions/InvalidAccessException.h"
 
 namespace storm {
     namespace prism {
-        Module::Module(std::string const& moduleName, std::vector<storm::prism::BooleanVariable> const& booleanVariables, std::vector<storm::prism::IntegerVariable> const& integerVariables, std::vector<storm::prism::Command> const& commands, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), moduleName(moduleName), booleanVariables(booleanVariables), booleanVariableToIndexMap(), integerVariables(integerVariables), integerVariableToIndexMap(), commands(commands), actions(), actionsToCommandIndexMap() {
+        Module::Module(std::string const& moduleName, std::vector<storm::prism::BooleanVariable> const& booleanVariables, std::vector<storm::prism::IntegerVariable> const& integerVariables, std::vector<storm::prism::Command> const& commands, std::string const& filename, uint_fast64_t lineNumber) : Module(moduleName, booleanVariables, integerVariables, commands, "", std::map<std::string, std::string>(), filename, lineNumber) {
+            // Intentionally left empty.
+        }
+        
+        Module::Module(std::string const& moduleName, std::vector<storm::prism::BooleanVariable> const& booleanVariables, std::vector<storm::prism::IntegerVariable> const& integerVariables, std::vector<storm::prism::Command> const& commands, std::string const& renamedFromModule, std::map<std::string, std::string> const& renaming, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), moduleName(moduleName), booleanVariables(booleanVariables), booleanVariableToIndexMap(), integerVariables(integerVariables), integerVariableToIndexMap(), commands(commands), actions(), actionsToCommandIndexMap(), renamedFromModule(renamedFromModule), renaming(renaming) {
             // Initialize the internal mappings for fast information retrieval.
             this->createMappings();
         }
@@ -69,6 +74,20 @@ namespace storm {
         bool Module::hasAction(std::string const& action) const {
             auto const& actionEntry = this->actions.find(action);
             return actionEntry != this->actions.end();
+        }
+        
+        bool Module::isRenamedFromModule() const {
+            return this->renamedFromModule != "";
+        }
+        
+        std::string const& Module::getBaseModule() const {
+            LOG_THROW(this->isRenamedFromModule(), storm::exceptions::InvalidAccessException, "Unable to retrieve base module of module that was not created by renaming.");
+            return this->renamedFromModule;
+        }
+        
+        std::map<std::string, std::string> const& Module::getRenaming() const {
+            LOG_THROW(this->isRenamedFromModule(), storm::exceptions::InvalidAccessException, "Unable to retrieve renaming of module that was not created by renaming.");
+            return this->renaming;
         }
         
         std::set<uint_fast64_t> const& Module::getCommandIndicesByAction(std::string const& action) const {
@@ -163,7 +182,6 @@ namespace storm {
             stream << "endmodule" << std::endl;
             return stream;
         }
-
         
-    } // namespace ir
+    } // namespace prism
 } // namespace storm
