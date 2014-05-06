@@ -55,6 +55,14 @@ namespace storm {
             return Expression(this->getBaseExpression().simplify());
         }
         
+        OperatorType Expression::getOperator() const {
+            return this->getBaseExpression().getOperator();
+        }
+        
+        bool Expression::isFunctionApplication() const {
+            return this->getBaseExpression().isFunctionApplication();
+        }
+        
         uint_fast64_t Expression::getArity() const {
             return this->getBaseExpression().getArity();
         }

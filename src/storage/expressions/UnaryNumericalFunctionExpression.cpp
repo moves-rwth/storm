@@ -14,6 +14,14 @@ namespace storm {
             return this->operatorType;
         }
         
+        storm::expressions::OperatorType UnaryNumericalFunctionExpression::getOperator() const {
+            switch (this->getOperatorType()) {
+                case OperatorType::Minus: return storm::expressions::OperatorType::Minus; break;
+                case OperatorType::Floor: return storm::expressions::OperatorType::Floor; break;
+                case OperatorType::Ceil: return storm::expressions::OperatorType::Ceil; break;
+            }
+        }
+        
         int_fast64_t UnaryNumericalFunctionExpression::evaluateAsInt(Valuation const* valuation) const {
             LOG_THROW(this->hasIntegralReturnType(), storm::exceptions::InvalidTypeException, "Unable to evaluate expression as integer.");
 

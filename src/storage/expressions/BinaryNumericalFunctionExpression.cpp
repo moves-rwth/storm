@@ -14,6 +14,17 @@ namespace storm {
             return this->operatorType;
         }
         
+        storm::expressions::OperatorType BinaryNumericalFunctionExpression::getOperator() const {
+            switch (this->getOperatorType()) {
+                case OperatorType::Plus: return storm::expressions::OperatorType::Plus; break;
+                case OperatorType::Minus: return storm::expressions::OperatorType::Minus; break;
+                case OperatorType::Times: return storm::expressions::OperatorType::Times; break;
+                case OperatorType::Divide: return storm::expressions::OperatorType::Divide; break;
+                case OperatorType::Min: return storm::expressions::OperatorType::Min; break;
+                case OperatorType::Max: return storm::expressions::OperatorType::Max; break;
+            }
+        }
+        
         int_fast64_t BinaryNumericalFunctionExpression::evaluateAsInt(Valuation const* valuation) const {
             LOG_THROW(this->hasIntegralReturnType(), storm::exceptions::InvalidTypeException, "Unable to evaluate expression as integer.");
             

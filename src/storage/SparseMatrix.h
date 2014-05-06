@@ -340,6 +340,13 @@ namespace storm {
             uint_fast64_t getEntryCount() const;
             
             /*!
+             * Returns the number of nonzero entries in the matrix.
+             *
+             * @return The number of nonzero entries in the matrix.
+             */
+            uint_fast64_t getNonzeroEntryCount() const;
+            
+            /*!
              * Returns the number of row groups in the matrix.
              *
              * @return The number of row groups in the matrix.
@@ -650,6 +657,9 @@ namespace storm {
             
             // The number of entries in the matrix.
             uint_fast64_t entryCount;
+            
+            // The number of nonzero entries in the matrix.
+            uint_fast64_t nonzeroEntryCount;
             
             // The storage for the columns and values of all entries in the matrix.
             std::vector<std::pair<uint_fast64_t, T>> columnsAndValues;

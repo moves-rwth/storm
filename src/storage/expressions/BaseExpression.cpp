@@ -49,6 +49,10 @@ namespace storm {
             LOG_THROW(false, storm::exceptions::InvalidAccessException, "Unable to access identifier of non-constant, non-variable expression.");
         }
         
+        OperatorType BaseExpression::getOperator() const {
+            LOG_THROW(false, storm::exceptions::InvalidAccessException, "Unable to access operator of non-function application expression.");
+        }
+        
         bool BaseExpression::containsVariables() const {
             return false;
         }
@@ -66,6 +70,10 @@ namespace storm {
         }
 
         bool BaseExpression::isFalse() const {
+            return false;
+        }
+        
+        bool BaseExpression::isFunctionApplication() const {
             return false;
         }
         

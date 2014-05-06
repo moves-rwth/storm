@@ -158,6 +158,21 @@ namespace storm {
             Expression simplify();
             
             /*!
+             * Retrieves the operator of a function application. This is only legal to call if the expression is
+             * function application.
+             *
+             * @return The operator associated with the function application.
+             */
+            OperatorType getOperator() const;
+            
+            /*!
+             * Checks if the expression is a function application (of any sort).
+             *
+             * @return True iff the expression is a function application.
+             */
+            bool isFunctionApplication() const;
+            
+            /*!
              * Retrieves the arity of the expression.
              *
              * @return The arity of the expression.

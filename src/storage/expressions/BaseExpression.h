@@ -8,6 +8,7 @@
 
 #include "src/storage/expressions/Valuation.h"
 #include "src/storage/expressions/ExpressionVisitor.h"
+#include "src/storage/expressions/OperatorType.h"
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/utility/OsDetection.h"
 
@@ -97,6 +98,14 @@ namespace storm {
             virtual std::string const& getIdentifier() const;
             
             /*!
+             * Retrieves the operator of a function application. This is only legal to call if the expression is
+             * function application.
+             *
+             * @return The operator associated with the function application.
+             */
+            virtual OperatorType getOperator() const;
+            
+            /*!
              * Retrieves whether the expression contains a variable.
              *
              * @return True iff the expression contains a variable.
@@ -130,6 +139,13 @@ namespace storm {
              * @return True iff the expression is equal to the boolean literal false.
              */
             virtual bool isFalse() const;
+            
+            /*!
+             * Checks if the expression is a function application (of any sort).
+             *
+             * @return True iff the expression is a function application.
+             */
+            virtual bool isFunctionApplication() const;
             
             /*!
              * Retrieves the set of all variables that appear in the expression.

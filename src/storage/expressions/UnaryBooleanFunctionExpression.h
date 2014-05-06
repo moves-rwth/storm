@@ -32,6 +32,7 @@ namespace storm {
             virtual ~UnaryBooleanFunctionExpression() = default;
             
             // Override base class methods.
+            virtual storm::expressions::OperatorType getOperator() const override;
             virtual bool evaluateAsBool(Valuation const* valuation = nullptr) const override;
             virtual std::shared_ptr<BaseExpression const> simplify() const override;
             virtual void accept(ExpressionVisitor* visitor) const override;

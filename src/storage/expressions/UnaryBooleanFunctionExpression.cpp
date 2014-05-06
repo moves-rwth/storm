@@ -13,6 +13,12 @@ namespace storm {
             return this->operatorType;
         }
         
+        storm::expressions::OperatorType UnaryBooleanFunctionExpression::getOperator() const {
+            switch (this->getOperatorType()) {
+                case OperatorType::Not: return storm::expressions::OperatorType::Not;
+            }
+        }
+        
         bool UnaryBooleanFunctionExpression::evaluateAsBool(Valuation const* valuation) const {
             LOG_THROW(this->hasBooleanReturnType(), storm::exceptions::InvalidTypeException, "Unable to evaluate expression as boolean.");
 
