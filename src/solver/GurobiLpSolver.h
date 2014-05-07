@@ -60,23 +60,40 @@ namespace storm {
              */
             virtual ~GurobiLpSolver();
             
-            virtual uint_fast64_t createContinuousVariable(std::string const& name, VariableType const& variableType, double lowerBound, double upperBound, double objectiveFunctionCoefficient) override;
-            virtual uint_fast64_t createIntegerVariable(std::string const& name, VariableType const& variableType, double lowerBound, double upperBound, double objectiveFunctionCoefficient) override;
-            virtual uint_fast64_t createBinaryVariable(std::string const& name, double objectiveFunctionCoefficient) override;
-            virtual void update() const override;
-
-            virtual void addConstraint(std::string const& name, std::vector<uint_fast64_t> const& variables, std::vector<double> const& coefficients, BoundType const& boundType, double rightHandSideValue) override;
+            // Methods to add continuous variables.
+            virtual void addBoundedContinuousVariable(std::string const& name, double lowerBound, double upperBound, double objectiveFunctionCoefficient = 0) override;
+            virtual void addLowerBoundedContinuousVariable(std::string const& name, double lowerBound, double objectiveFunctionCoefficient = 0) override;
+            virtual void addUpperBoundedContinuousVariable(std::string const& name, double upperBound, double objectiveFunctionCoefficient = 0) override;
+            virtual void addUnboundedContinuousVariable(std::string const& name, double objectiveFunctionCoefficient = 0) override;
             
+            // Methods to add integer variables.
+            virtual void addBoundedIntegerVariable(std::string const& name, double lowerBound, double upperBound, double objectiveFunctionCoefficient = 0) override;
+            virtual void addLowerBoundedIntegerVariable(std::string const& name, double lowerBound, double objectiveFunctionCoefficient = 0) override;
+            virtual void addUpperBoundedIntegerVariable(std::string const& name, double upperBound, double objectiveFunctionCoefficient = 0) override;
+            virtual void addUnboundedIntegerVariable(std::string const& name, double objectiveFunctionCoefficient = 0) override;
+            
+            // Methods to add binary variables.
+            virtual void addBinaryVariable(std::string const& name, double objectiveFunctionCoefficient) override;
+            
+            // Methods to incorporate recent changes.
+            virtual void update() const override;
+            
+            // Methods to add constraints
+            virtual void addConstraint(std::string const& name, storm::expressions::Expression const& constraint) override;
+            
+            // Methods to optimize and retrieve optimality status.
             virtual void optimize() const override;
             virtual bool isInfeasible() const override;
             virtual bool isUnbounded() const override;
             virtual bool isOptimal() const override;
-
-            virtual int_fast64_t getIntegerValue(uint_fast64_t variableIndex) const override;
-            virtual bool getBinaryValue(uint_fast64_t variableIndex) const override;
-            virtual double getContinuousValue(uint_fast64_t variableIndex) const override;
+            
+            // Methods to retrieve values of variables and the objective function in the optimal solutions.
+            virtual double getContinuousValue(std::string const& name) const override;
+            virtual int_fast64_t getIntegerValue(std::string const& name) const override;
+            virtual bool getBinaryValue(std::string const& name) const override;
             virtual double getObjectiveValue() const override;
-
+            
+            // Methods to print the LP problem to a file.
             virtual void writeModelToFile(std::string const& filename) const override;
             
         private:
@@ -91,8 +108,8 @@ namespace storm {
             // The Gurobi model.
             GRBmodel* model;
             
-            // A counter that keeps track of the next free variable index.
-            uint_fast64_t nextVariableIndex;
+            // A mapping from variable names to their indices.
+            std::map<std::string, uint_fast64_t> variableNameToIndexMap;
         };
 #else
         // If Gurobi is not available, we provide a stub implementation that emits an error if any of its methods is called.
@@ -114,15 +131,38 @@ namespace storm {
                 throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
             }
             
-            virtual uint_fast64_t createContinuousVariable(std::string const& name, VariableType const& variableType, double lowerBound, double upperBound, double objectiveFunctionCoefficient) override {
+            virtual void addBoundedContinuousVariable(std::string const& name, double lowerBound, double upperBound, double objectiveFunctionCoefficient = 0) override {
                 throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
             }
             
-            virtual uint_fast64_t createIntegerVariable(std::string const& name, VariableType const& variableType, double lowerBound, double upperBound, double objectiveFunctionCoefficient) override {
+            virtual void addLowerBoundedContinuousVariable(std::string const& name, double lowerBound, double objectiveFunctionCoefficient = 0) override {
+                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";            }
+            
+            virtual void addUpperBoundedContinuousVariable(std::string const& name, double upperBound, double objectiveFunctionCoefficient = 0) override {
                 throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
             }
             
-            virtual uint_fast64_t createBinaryVariable(std::string const& name, double objectiveFunctionCoefficient) override {
+            virtual void addUnboundedContinuousVariable(std::string const& name, double objectiveFunctionCoefficient = 0) override {
+                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
+            }
+            
+            virtual void addBoundedIntegerVariable(std::string const& name, double lowerBound, double upperBound, double objectiveFunctionCoefficient = 0) override {
+                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
+            }
+            
+            virtual void addLowerBoundedIntegerVariable(std::string const& name, double lowerBound, double objectiveFunctionCoefficient = 0) override {
+                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
+            }
+            
+            virtual void addUpperBoundedIntegerVariable(std::string const& name, double upperBound, double objectiveFunctionCoefficient = 0) override {
+                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
+            }
+            
+            virtual void addUnboundedIntegerVariable(std::string const& name, double objectiveFunctionCoefficient = 0) override {
+                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
+            }
+            
+            virtual uint_fast64_t addBinaryVariable(std::string const& name, double objectiveFunctionCoefficient) override {
                 throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
             }
             
@@ -130,11 +170,7 @@ namespace storm {
                 throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
             }
             
-            virtual void addConstraint(std::string const& name, std::vector<uint_fast64_t> const& variables, std::vector<double> const& coefficients, BoundType const& boundType, double rightHandSideValue) override {
-                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
-            }
-            
-            virtual void setModelSense(ModelSense const& modelSense) {
+            virtual void addConstraint(std::string const& name, storm::expressions::Expression const& constraint) override {
                 throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
             }
             
@@ -154,15 +190,15 @@ namespace storm {
                 throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
             }
             
-            virtual int_fast64_t getIntegerValue(uint_fast64_t variableIndex) const override {
+            virtual double getContinuousValue(std::string const& name) const override {
                 throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
             }
             
-            virtual bool getBinaryValue(uint_fast64_t variableIndex) const override {
+            virtual int_fast64_t getIntegerValue(std::string const& name) const override {
                 throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
             }
             
-            virtual double getContinuousValue(uint_fast64_t variableIndex) const override {
+            virtual bool getBinaryValue(std::string const& name) const override {
                 throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
             }
             
@@ -175,7 +211,7 @@ namespace storm {
             }
         };
 #endif
-    
+
     }
 }
 

@@ -95,6 +95,16 @@ namespace storm {
             return this->getBaseExpression().isFalse();
         }
         
+        bool Expression::isRelationalExpression() const {
+            if (!this->isFunctionApplication()) {
+                return false;
+            }
+            
+            return this->getOperator() == OperatorType::Equal || this->getOperator() == OperatorType::NotEqual
+            || this->getOperator() == OperatorType::Less || this->getOperator() == OperatorType::LessOrEqual
+            || this->getOperator() == OperatorType::Greater || this->getOperator() == OperatorType::GreaterOrEqual;
+        }
+        
         std::set<std::string> Expression::getVariables() const {
             return this->getBaseExpression().getVariables();
         }

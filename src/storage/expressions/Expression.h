@@ -231,6 +231,14 @@ namespace storm {
             bool isFalse() const;
             
             /*!
+             * Retrieves whether this expression is a relation expression, i.e., an expression that has a relation
+             * (equal, not equal, less, less or equal, etc.) as its top-level operator.
+             *
+             * @return True iff the expression is a relation expression.
+             */
+            bool isRelationalExpression() const;
+            
+            /*!
              * Retrieves the set of all variables that appear in the expression.
              *
              * @return The set of all variables that appear in the expression.
