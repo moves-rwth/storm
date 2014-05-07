@@ -105,32 +105,6 @@ public:
 	}
 
 	/*!
-	 * Checks the given state formula on the model and prints the result (true/false) for all initial states, i.e.
-	 * states that carry the atomic proposition "init".
-	 *
-	 * @param stateFormula The formula to be checked.
-	 */
-	void check(storm::property::ltl::AbstractLtlFormula<Type> const& ltlFormula) const {
-		std::cout << std::endl;
-		LOG4CPLUS_INFO(logger, "Model checking formula\t" << ltlFormula.toString());
-		std::cout << "Model checking formula:\t" << ltlFormula.toString() << std::endl;
-		storm::storage::BitVector result;
-		try {
-			result = ltlFormula.check(*this);
-			LOG4CPLUS_INFO(logger, "Result for initial states:");
-			std::cout << "Result for initial states:" << std::endl;
-			for (auto initialState : model.getInitialStates()) {
-				LOG4CPLUS_INFO(logger, "\t" << initialState << ": " << (result.get(initialState) ? "satisfied" : "not satisfied"));
-				std::cout << "\t" << initialState << ": " << result.get(initialState) << std::endl;
-			}
-		} catch (std::exception& e) {
-			std::cout << "Error during computation: " << e.what() << "Skipping property." << std::endl;
-			LOG4CPLUS_ERROR(logger, "Error during computation: " << e.what() << "Skipping property.");
-		}
-		std::cout << std::endl << "-------------------------------------------" << std::endl;
-	}
-
-	/*!
 	 * Checks the given formula consisting of a single atomic proposition.
 	 *
 	 * @param formula The formula to be checked.

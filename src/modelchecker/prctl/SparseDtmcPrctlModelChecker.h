@@ -509,11 +509,11 @@ public:
 	 * @param minimumOperator True iff minimum probabilities/rewards are to be computed.
 	 * @returns The set of states satisfying the formula represented by a bit vector.
 	 */
-	virtual std::vector<Type> checkMinMaxOperator(storm::property::prctl::AbstractStateFormula<Type> const & formula, bool minimumOperator) const override {
+	virtual storm::storage::BitVector checkMinMaxOperator(storm::property::prctl::AbstractStateFormula<Type> const & formula, bool minimumOperator) const override {
 
 		LOG4CPLUS_WARN(logger, "Formula contains min/max operator, which is not meaningful over deterministic models.");
 
-		std::vector<Type> result = formula.check(*this);
+		storm::storage::BitVector result = formula.check(*this);
 
 		return result;
 	}

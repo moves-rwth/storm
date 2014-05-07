@@ -67,14 +67,14 @@ public:
 	/*!
 	 * Constructs an AbstractModelChecker with the given model.
 	 */
-	explicit AbstractModelChecker(storm::models::AbstractModel<Type> const& model) : model(model){
+	explicit AbstractModelChecker(storm::models::AbstractModel<Type> const& model) : minimumOperatorStack(), model(model) {
 		// Intentionally left empty.
 	}
 	/*!
 	 * Copy constructs an AbstractModelChecker from the given model checker. In particular, this means that the newly
 	 * constructed model checker will have the model of the given model checker as its associated model.
 	 */
-	explicit AbstractModelChecker(AbstractModelChecker<Type> const& modelchecker) : model(modelchecker.model) {
+	explicit AbstractModelChecker(AbstractModelChecker<Type> const& modelchecker) : minimumOperatorStack(), model(modelchecker.model) {
 		// Intentionally left empty.
 	}
 	
@@ -250,9 +250,9 @@ public:
 	 * @param minimumOperator True iff minimum probabilities/rewards are to be computed.
 	 * @returns The set of states satisfying the formula represented by a bit vector.
 	 */
-	virtual std::vector<Type> checkMinMaxOperator(storm::property::prctl::AbstractStateFormula<Type> const & formula, bool minimumOperator) const {
+	virtual storm::storage::BitVector checkMinMaxOperator(storm::property::prctl::AbstractStateFormula<Type> const & formula, bool minimumOperator) const {
 		minimumOperatorStack.push(minimumOperator);
-		std::vector<Type> result = formula.check(*this);
+		storm::storage::BitVector result = formula.check(*this);
 		minimumOperatorStack.pop();
 		return result;
 	}

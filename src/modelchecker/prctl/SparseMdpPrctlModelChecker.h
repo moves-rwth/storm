@@ -9,7 +9,6 @@
 #define STORM_MODELCHECKER_PRCTL_SPARSEMDPPRCTLMODELCHECKER_H_
 
 #include <vector>
-#include <stack>
 #include <fstream>
 
 #include "src/modelchecker/prctl/AbstractModelChecker.h"
@@ -38,11 +37,11 @@ namespace storm {
                  *
                  * @param model The MDP to be checked.
                  */
-				explicit SparseMdpPrctlModelChecker(storm::models::Mdp<Type> const& model) : AbstractModelChecker<Type>(model), minimumOperatorStack(), nondeterministicLinearEquationSolver(storm::utility::solver::getNondeterministicLinearEquationSolver<Type>()) {
+				explicit SparseMdpPrctlModelChecker(storm::models::Mdp<Type> const& model) : AbstractModelChecker<Type>(model), nondeterministicLinearEquationSolver(storm::utility::solver::getNondeterministicLinearEquationSolver<Type>()) {
                     // Intentionally left empty.
                 }
                 
-				explicit SparseMdpPrctlModelChecker(storm::models::Mdp<Type> const& model, std::shared_ptr<storm::solver::NondeterministicLinearEquationSolver<Type>> nondeterministicLinearEquationSolver) : AbstractModelChecker<Type>(model), minimumOperatorStack(), nondeterministicLinearEquationSolver(nondeterministicLinearEquationSolver) {
+				explicit SparseMdpPrctlModelChecker(storm::models::Mdp<Type> const& model, std::shared_ptr<storm::solver::NondeterministicLinearEquationSolver<Type>> nondeterministicLinearEquationSolver) : AbstractModelChecker<Type>(model), nondeterministicLinearEquationSolver(nondeterministicLinearEquationSolver) {
 					// Intentionally left empty.
 				}
 
@@ -51,7 +50,7 @@ namespace storm {
                  * constructed model checker will have the model of the given model checker as its associated model.
                  */
                 explicit SparseMdpPrctlModelChecker(storm::modelchecker::prctl::SparseMdpPrctlModelChecker<Type> const& modelchecker)
-                : AbstractModelChecker<Type>(modelchecker),  minimumOperatorStack(), nondeterministicLinearEquationSolver(storm::utility::solver::getNondeterministicLinearEquationSolver<Type>()) {
+                : AbstractModelChecker<Type>(modelchecker), nondeterministicLinearEquationSolver(storm::utility::solver::getNondeterministicLinearEquationSolver<Type>()) {
                     // Intentionally left empty.
                 }
                 

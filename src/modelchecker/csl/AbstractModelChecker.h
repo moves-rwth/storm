@@ -8,6 +8,7 @@
 #ifndef STORM_MODELCHECKER_CSL_ABSTRACTMODELCHECKER_H_
 #define STORM_MODELCHECKER_CSL_ABSTRACTMODELCHECKER_H_
 
+#include <stack>
 #include "src/exceptions/InvalidPropertyException.h"
 #include "src/formula/Csl.h"
 #include "src/storage/BitVector.h"
@@ -52,14 +53,14 @@ public:
 	/*!
 	 * Constructs an AbstractModelChecker with the given model.
 	 */
-	explicit AbstractModelChecker(storm::models::AbstractModel<Type> const& model) : model(model) {
+	explicit AbstractModelChecker(storm::models::AbstractModel<Type> const& model) : minimumOperatorStack(), model(model) {
 		// Intentionally left empty.
 	}
 	/*!
 	 * Copy constructs an AbstractModelChecker from the given model checker. In particular, this means that the newly
 	 * constructed model checker will have the model of the given model checker as its associated model.
 	 */
-	explicit AbstractModelChecker(AbstractModelChecker<Type> const& modelchecker) : model(modelchecker.model) {
+	explicit AbstractModelChecker(AbstractModelChecker<Type> const& modelchecker) : minimumOperatorStack(), model(modelchecker.model) {
 		// Intentionally left empty.
 	}
 	
@@ -103,71 +104,6 @@ public:
 			LOG4CPLUS_ERROR(logger, "Bad cast: tried to cast " << typeid(this->model).name() << " to " << typeid(Model).name() << ".");
 			throw bc;
 		}
-	}
-
-	/*!
-	 * Checks the given abstract prctl formula on the model and prints the result (depending on the actual type of the formula)
-	 * for all initial states, i.e. states that carry the atomic proposition "init".
-	 *
-	 * @param formula The formula to be checked.
-	 */
-	void check(storm::property::csl::AbstractCslFormula<Type> const& formula) const {
-		if (dynamic_cast<storm::property::csl::AbstractStateFormula<Type> const*>(&formula) != nullptr) {
-			this->check(static_cast<storm::property::csl::AbstractStateFormula<Type> const&>(formula));
-		} else if (dynamic_cast<storm::property::csl::AbstractNoBoundOperator<Type> const*>(&formula) != nullptr) {
-			this->check(static_cast<storm::property::csl::AbstractNoBoundOperator<Type> const&>(formula));
-		}
-	}
-
-	/*!
-	 * Checks the given state formula on the model and prints the result (true/false) for all initial states, i.e.
-	 * states that carry the atomic proposition "init".
-	 *
-	 * @param stateFormula The formula to be checked.
-	 */
-	void check(storm::property::csl::AbstractStateFormula<Type> const& stateFormula) const {
-		std::cout << std::endl;
-		LOG4CPLUS_INFO(logger, "Model checking formula\t" << stateFormula.toString());
-		std::cout << "Model checking formula:\t" << stateFormula.toString() << std::endl;
-		storm::storage::BitVector result;
-		try {
-			result = stateFormula.check(*this);
-			LOG4CPLUS_INFO(logger, "Result for initial states:");
-			std::cout << "Result for initial states:" << std::endl;
-			for (auto initialState : model.getInitialStates()) {
-				LOG4CPLUS_INFO(logger, "\t" << initialState << ": " << (result.get(initialState) ? "satisfied" : "not satisfied"));
-				std::cout << "\t" << initialState << ": " << result.get(initialState) << std::endl;
-			}
-		} catch (std::exception& e) {
-			std::cout << "Error during computation: " << e.what() << "Skipping property." << std::endl;
-			LOG4CPLUS_ERROR(logger, "Error during computation: " << e.what() << "Skipping property.");
-		}
-		std::cout << std::endl << "-------------------------------------------" << std::endl;
-	}
-
-	/*!
-	 * Checks the given formula (with no bound) on the model and prints the result (probability/rewards) for all
-	 * initial states, i.e. states that carry the atomic proposition "init".
-	 *
-	 * @param noBoundFormula The formula to be checked.
-	 */
-	void check(storm::property::csl::AbstractNoBoundOperator<Type> const& noBoundFormula) const {
-		std::cout << std::endl;
-		LOG4CPLUS_INFO(logger, "Model checking formula\t" << noBoundFormula.toString());
-		std::cout << "Model checking formula:\t" << noBoundFormula.toString() << std::endl;
-		std::vector<Type> result;
-		try {
-			result = this->checkNoBoundOperator(noBoundFormula);
-			LOG4CPLUS_INFO(logger, "Result for initial states:");
-			std::cout << "Result for initial states:" << std::endl;
-			for (auto initialState : model.getInitialStates()) {
-				LOG4CPLUS_INFO(logger, "\t" << initialState << ": " << (*result)[initialState]);
-				std::cout << "\t" << initialState << ": " << (*result)[initialState] << std::endl;
-			}
-		} catch (std::exception& e) {
-			std::cout << "Error during computation: " << e.what() << " Skipping property." << std::endl;
-		}
-		std::cout << std::endl << "-------------------------------------------" << std::endl;
 	}
 
 	/*!
@@ -254,6 +190,42 @@ public:
 		return result;
 	}
 
+	/*!
+	 * Checks the given formula and determines whether minimum or maximum probabilities or rewards are to be computed for the formula.
+	 *
+	 * @param formula The formula to check.
+	 * @param minimumOperator True iff minimum probabilities/rewards are to be computed.
+	 * @returns The probabilities to satisfy the formula or the rewards accumulated by it, represented by a vector.
+	 */
+	virtual std::vector<Type> checkMinMaxOperator(storm::property::csl::AbstractPathFormula<Type> const & formula, bool minimumOperator) const {
+		minimumOperatorStack.push(minimumOperator);
+		std::vector<Type> result = formula.check(*this, false);
+		minimumOperatorStack.pop();
+		return result;
+	}
+
+	/*!
+	 * Checks the given formula and determines whether minimum or maximum probabilities or rewards are to be computed for the formula.
+	 *
+	 * @param formula The formula to check.
+	 * @param minimumOperator True iff minimum probabilities/rewards are to be computed.
+	 * @returns The set of states satisfying the formula represented by a bit vector.
+	 */
+	virtual storm::storage::BitVector checkMinMaxOperator(storm::property::csl::AbstractStateFormula<Type> const & formula, bool minimumOperator) const {
+		minimumOperatorStack.push(minimumOperator);
+		storm::storage::BitVector result = formula.check(*this);
+		minimumOperatorStack.pop();
+		return result;
+	}
+
+protected:
+
+	/*!
+	 * A stack used for storing whether we are currently computing min or max probabilities or rewards, respectively.
+	 * The topmost element is true if and only if we are currently computing minimum probabilities or rewards.
+	 */
+	mutable std::stack<bool> minimumOperatorStack;
+
 private:
 
 	/*!
@@ -269,4 +241,4 @@ private:
 } // namespace modelchecker
 } // namespace storm
 
-#endif /* STORM_MODELCHECKER_CSL_DTMCPRCTLMODELCHECKER_H_ */
+#endif /* STORM_MODELCHECKER_CSL_ABSTRACTMODELCHECKER_H_ */

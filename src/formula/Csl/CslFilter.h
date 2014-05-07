@@ -1,44 +1,44 @@
 /*
- * PrctlFilter.h
+ * CslFilter.h
  *
- *  Created on: Apr 26, 2014
+ *  Created on: May 7, 2014
  *      Author: Manuel Sascha Weiand
  */
 
-#ifndef STORM_FORMULA_PRCTL_PRCTLFILTER_H_
-#define STORM_FORMULA_PRCTL_PRCTLFILTER_H_
+#ifndef STORM_FORMULA_PRCTL_CSLFILTER_H_
+#define STORM_FORMULA_PRCTL_CSLFILTER_H_
 
 #include "src/formula/AbstractFilter.h"
-#include "src/formula/Prctl/AbstractPrctlFormula.h"
-#include "src/formula/Prctl/AbstractPathFormula.h"
-#include "src/formula/Prctl/AbstractStateFormula.h"
+#include "src/formula/Csl/AbstractCslFormula.h"
+#include "src/formula/Csl/AbstractPathFormula.h"
+#include "src/formula/Csl/AbstractStateFormula.h"
 
 namespace storm {
 namespace property {
-namespace prctl {
+namespace csl {
 
 template <class T>
-class PrctlFilter : storm::property::AbstractFilter<T> {
+class CslFilter : storm::property::AbstractFilter<T> {
 
 public:
 
-	PrctlFilter() : child(nullptr) {
+	CslFilter() : child(nullptr) {
 		// Intentionally left empty.
 	}
 
-	PrctlFilter(AbstractPrctlFormula* child) : child(child) {
+	CslFilter(AbstractCslFormula* child) : child(child) {
 		// Intentionally left empty.
 	}
 
-	PrctlFilter(AbstractPrctlFormula* child, action::Action<T>* action) : child(child) {
+	CslFilter(AbstractCslFormula* child, action::Action<T>* action) : child(child) {
 		actions.push_back(action);
 	}
 
-	PrctlFilter(AbstractPrctlFormula* child, std::vector<action::Action<T>*> actions) : child(child), actions(actions) {
+	CslFilter(AbstractCslFormula* child, std::vector<action::Action<T>*> actions) : child(child), actions(actions) {
 		// Intentionally left empty.
 	}
 
-	virtual ~PrctlFilter() {
+	virtual ~CslFilter() {
 		actions.clear();
 		delete child;
 	}
@@ -154,7 +154,7 @@ public:
 		return desc;
 	}
 
-	void setChild(AbstractPrctlFormula* child) {
+	void setChild(AbstractCslFormula* child) {
 		this->child = child;
 	}
 
@@ -201,13 +201,11 @@ private:
 		return result;
 	}
 
-	AbstractPrctlFormula* child;
+	AbstractCslFormula* child;
 };
 
-} //namespace prctl
+} //namespace csl
 } //namespace property
 } //namespace storm
 
-
-
-#endif /* STORM_FORMULA_PRCTL_PRCTLFILTER_H_ */
+#endif /* STORM_FORMULA_CSL_CSLFILTER_H_ */
