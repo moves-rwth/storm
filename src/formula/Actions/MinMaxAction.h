@@ -8,14 +8,14 @@
 #ifndef STORM_FORMULA_ACTION_MINMAXACTION_H_
 #define STORM_FORMULA_ACTION_MINMAXACTION_H_
 
-#include "src/formula/Actions/Action.h"
+#include "src/formula/Actions/AbstractAction.h"
 
 namespace storm {
 namespace property {
 namespace action {
 
 template <class T>
-class MinMaxAction : Action<T> {
+class MinMaxAction : AbstractAction<T> {
 
 public:
 
@@ -25,6 +25,14 @@ public:
 
 	explicit MinMaxAction(bool minimize) : minimize(minimize) {
 		//Intentionally left empty.
+	}
+
+	/*!
+	 * Virtual destructor
+	 * To ensure that the right destructor is called
+	 */
+	virtual ~MinMaxAction() {
+		//Intentionally left empty
 	}
 
 	/*!

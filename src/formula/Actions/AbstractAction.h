@@ -1,12 +1,12 @@
 /*
- * Action.h
+ * AbstractAction.h
  *
  *  Created on: Apr 26, 2014
  *      Author: Manuel Sascha Weiand
  */
 
-#ifndef STORM_FORMULA_ACTION_ACTION_H_
-#define STORM_FORMULA_ACTION_ACTION_H_
+#ifndef STORM_FORMULA_ACTION_ABSTRACTACTION_H_
+#define STORM_FORMULA_ACTION_ABSTRACTACTION_H_
 
 #include <vector>
 #include "src/storage/BitVector.h"
@@ -16,7 +16,7 @@ namespace property {
 namespace action {
 
 template <class T>
-class Action {
+class AbstractAction {
 
 public:
 
@@ -24,7 +24,7 @@ public:
 	 * Virtual destructor
 	 * To ensure that the right destructor is called
 	 */
-	virtual ~Action() {
+	virtual ~AbstractAction() {
 		//Intentionally left empty
 	}
 
@@ -58,4 +58,4 @@ public:
 } //namespace storm
 
 
-#endif /* STORM_FORMULA_ACTION_ACTION_H_ */
+#endif /* STORM_FORMULA_ACTION_ABSTRACTACTION_H_ */

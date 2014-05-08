@@ -8,14 +8,14 @@
 #ifndef STORM_FORMULA_ACTION_RANGEACTION_H_
 #define STORM_FORMULA_ACTION_RANGEACTION_H_
 
-#include "src/formula/Actions/Action.h"
+#include "src/formula/Actions/AbstractAction.h"
 
 namespace storm {
 namespace property {
 namespace action {
 
 template <class T>
-class RangeAction : Action<T> {
+class RangeAction : AbstractAction<T> {
 
 public:
 
