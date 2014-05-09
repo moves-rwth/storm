@@ -5,6 +5,10 @@
 
 namespace storm {
     namespace dd {
+        DdForwardIterator<DdType::CUDD>::DdForwardIterator() : ddManager(), generator(), cube(), value(), isAtEnd(), metaVariables(), cubeCounter(), relevantDontCareDdVariables(), currentValuation() {
+            // Intentionally left empty.
+        }
+        
         DdForwardIterator<DdType::CUDD>::DdForwardIterator(std::shared_ptr<DdManager<DdType::CUDD>> ddManager, DdGen* generator, int* cube, double value, bool isAtEnd, std::set<std::string> const* metaVariables) : ddManager(ddManager), generator(generator), cube(cube), value(value), isAtEnd(isAtEnd), metaVariables(metaVariables), cubeCounter(), relevantDontCareDdVariables(), currentValuation() {
             // If the given generator is not yet at its end, we need to create the current valuation from the cube from
             // scratch.
@@ -49,6 +53,7 @@ namespace storm {
         }
         
         DdForwardIterator<DdType::CUDD>::~DdForwardIterator() {
+            // We free the pointers sind Cudd allocates them using malloc rather than new/delete.
             if (this->cube != nullptr) {
                 free(this->cube);
             }

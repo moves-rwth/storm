@@ -1,9 +1,8 @@
 #ifndef STORM_STORAGE_EXPRESSIONS_SIMPLEVALUATION_H_
 #define STORM_STORAGE_EXPRESSIONS_SIMPLEVALUATION_H_
 
-#include <memory>
-#include <vector>
-#include <unordered_map>
+#include <boost/container/flat_map.hpp>
+#include <boost/variant.hpp>
 #include <iostream>
 
 #include "src/storage/expressions/Valuation.h"
@@ -16,12 +15,8 @@ namespace storm {
             friend class SimpleValuationPointerHash;
             friend class SimpleValuationPointerLess;
             
-            /*!
-             * Creates a simple valuation without any identifiers.
-            */
-            SimpleValuation();
-
             // Instantiate some constructors and assignments with their default implementations.
+            SimpleValuation() = default;
             SimpleValuation(SimpleValuation const&) = default;
             SimpleValuation& operator=(SimpleValuation const&) = default;
 #ifndef WINDOWS            
@@ -92,22 +87,7 @@ namespace storm {
 
         private:
             // A mapping of boolean identifiers to their local indices in the value container.
-            std::shared_ptr<std::unordered_map<std::string, uint_fast64_t>> booleanIdentifierToIndexMap;
-            
-            // A mapping of integer identifiers to their local indices in the value container.
-            std::shared_ptr<std::unordered_map<std::string, uint_fast64_t>> integerIdentifierToIndexMap;
-            
-            // A mapping of double identifiers to their local indices in the value container.
-            std::shared_ptr<std::unordered_map<std::string, uint_fast64_t>> doubleIdentifierToIndexMap;
-            
-            // The value container for all boolean identifiers.
-            std::vector<bool> booleanValues;
-            
-            // The value container for all integer identifiers.
-            std::vector<int_fast64_t> integerValues;
-            
-            // The value container for all double identifiers.
-            std::vector<double> doubleValues;
+            boost::container::flat_map<std::string, boost::variant<bool, int_fast64_t, double>> identifierToValueMap;
         };
         
         /*!

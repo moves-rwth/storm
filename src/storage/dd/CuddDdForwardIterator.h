@@ -25,7 +25,7 @@ namespace storm {
             friend class Dd<DdType::CUDD>;
 
             // Default-instantiate the constructor.
-            DdForwardIterator() = default;
+            DdForwardIterator();
             
             // Forbid copy-construction and copy assignment, because ownership of the internal pointer is unclear then.
             DdForwardIterator(DdForwardIterator<DdType::CUDD> const& other) = delete;
