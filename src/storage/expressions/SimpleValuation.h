@@ -78,7 +78,17 @@ namespace storm {
              */
             void setDoubleValue(std::string const& name, double value);
             
+            /*!
+             * Removes the given identifier from this valuation.
+             *
+             * @param name The name of the identifier that is to be removed.
+             */
+            void removeIdentifier(std::string const& name);
+            
             // Override base class methods.
+            virtual bool containsBooleanIdentifier(std::string const& name) const override;
+            virtual bool containsIntegerIdentifier(std::string const& name) const override;
+            virtual bool containsDoubleIdentifier(std::string const& name) const override;
             virtual bool getBooleanValue(std::string const& name) const override;
             virtual int_fast64_t getIntegerValue(std::string const& name) const override;
             virtual double getDoubleValue(std::string const& name) const override;

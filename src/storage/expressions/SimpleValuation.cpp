@@ -37,6 +37,36 @@ namespace storm {
             this->identifierToValueMap[name] = value;
         }
         
+        void SimpleValuation::removeIdentifier(std::string const& name) {
+            auto nameValuePair = this->identifierToValueMap.find(name);
+            LOG_THROW(nameValuePair != this->identifierToValueMap.end(), storm::exceptions::InvalidArgumentException, "Deleting unknown identifier '" << name << "'.");
+            this->identifierToValueMap.erase(nameValuePair);
+        }
+        
+        bool SimpleValuation::containsBooleanIdentifier(std::string const& name) const {
+            auto nameValuePair = this->identifierToValueMap.find(name);
+            if (nameValuePair == this->identifierToValueMap.end()) {
+                return false;
+            }
+            return nameValuePair->second.type() == typeid(bool);
+        }
+        
+        bool SimpleValuation::containsIntegerIdentifier(std::string const& name) const {
+            auto nameValuePair = this->identifierToValueMap.find(name);
+            if (nameValuePair == this->identifierToValueMap.end()) {
+                return false;
+            }
+            return nameValuePair->second.type() == typeid(int_fast64_t);
+        }
+        
+        bool SimpleValuation::containsDoubleIdentifier(std::string const& name) const {
+            auto nameValuePair = this->identifierToValueMap.find(name);
+            if (nameValuePair == this->identifierToValueMap.end()) {
+                return false;
+            }
+            return nameValuePair->second.type() == typeid(double);
+        }
+        
         bool SimpleValuation::getBooleanValue(std::string const& name) const {
             auto nameValuePair = this->identifierToValueMap.find(name);
             LOG_THROW(nameValuePair != this->identifierToValueMap.end(), storm::exceptions::InvalidAccessException, "Access to unkown identifier '" << name << "'.");

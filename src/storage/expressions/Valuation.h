@@ -34,6 +34,31 @@ namespace storm {
              * @return The value of the double identifier.
              */
             virtual double getDoubleValue(std::string const& name) const = 0;
+            
+            /*!
+             * Retrieves whether there exists a boolean identifier with the given name in the valuation.
+             *
+             * @param name The name of the boolean identifier to query.
+             * @return True iff the identifier exists and is of boolean type.
+             */
+            virtual bool containsBooleanIdentifier(std::string const& name) const = 0;
+            
+            /*!
+             * Retrieves whether there exists a integer identifier with the given name in the valuation.
+             *
+             * @param name The name of the integer identifier to query.
+             * @return True iff the identifier exists and is of boolean type.
+             */
+            virtual bool containsIntegerIdentifier(std::string const& name) const = 0;
+            
+            /*!
+             * Retrieves whether there exists a double identifier with the given name in the valuation.
+             *
+             * @param name The name of the double identifier to query.
+             * @return True iff the identifier exists and is of boolean type.
+             */
+            virtual bool containsDoubleIdentifier(std::string const& name) const = 0;
+
         };
     }
 }
