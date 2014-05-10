@@ -6,6 +6,7 @@
 #include <set>
 #include <iostream>
 
+#include "src/storage/expressions/ExpressionReturnType.h"
 #include "src/storage/expressions/Valuation.h"
 #include "src/storage/expressions/ExpressionVisitor.h"
 #include "src/storage/expressions/OperatorType.h"
@@ -13,14 +14,7 @@
 #include "src/utility/OsDetection.h"
 
 namespace storm {
-    namespace expressions {
-        /*!
-         * Each node in an expression tree has a uniquely defined type from this enum.
-         */
-        enum class ExpressionReturnType {Undefined, Bool, Int, Double};
-        
-        std::ostream& operator<<(std::ostream& stream, ExpressionReturnType const& enumValue);
-        
+    namespace expressions {        
         /*!
          * The base class of all expression classes.
          */

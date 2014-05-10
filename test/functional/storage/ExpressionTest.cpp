@@ -3,6 +3,7 @@
 
 #include "gtest/gtest.h"
 #include "src/storage/expressions/Expression.h"
+#include "src/storage/expressions/LinearityCheckVisitor.h"
 #include "src/storage/expressions/SimpleValuation.h"
 #include "src/exceptions/InvalidTypeException.h"
 
@@ -332,4 +333,20 @@ TEST(Expression, SimpleEvaluationTest) {
     ASSERT_THROW(tempExpression.evaluateAsDouble(&valuation), storm::exceptions::InvalidTypeException);
     ASSERT_THROW(tempExpression.evaluateAsInt(&valuation), storm::exceptions::InvalidTypeException);
     EXPECT_FALSE(tempExpression.evaluateAsBool(&valuation));
+}
+
+TEST(Expression, VisitorTest) {
+    storm::expressions::Expression threeExpression;
+    storm::expressions::Expression piExpression;
+    storm::expressions::Expression intVarExpression;
+    storm::expressions::Expression doubleVarExpression;
+    
+    ASSERT_NO_THROW(threeExpression = storm::expressions::Expression::createIntegerLiteral(3));
+    ASSERT_NO_THROW(piExpression = storm::expressions::Expression::createDoubleLiteral(3.14));
+    ASSERT_NO_THROW(intVarExpression = storm::expressions::Expression::createIntegerVariable("y"));
+    ASSERT_NO_THROW(doubleVarExpression = storm::expressions::Expression::createDoubleVariable("z"));
+    
+    storm::expressions::Expression tempExpression = intVarExpression + doubleVarExpression * threeExpression;
+    storm::expressions::LinearityCheckVisitor visitor;
+    EXPECT_TRUE(visitor.check(tempExpression));
 }

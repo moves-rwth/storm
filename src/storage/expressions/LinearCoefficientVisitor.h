@@ -1,30 +1,30 @@
-#ifndef STORM_STORAGE_EXPRESSIONS_TYPECHECKVISITOR_H_
-#define STORM_STORAGE_EXPRESSIONS_TYPECHECKVISITOR_H_
+#ifndef STORM_STORAGE_EXPRESSIONS_LINEARCOEFFICIENTVISITOR_H_
+#define STORM_STORAGE_EXPRESSIONS_LINEARCOEFFICIENTVISITOR_H_
 
 #include <stack>
 
 #include "src/storage/expressions/Expression.h"
 #include "src/storage/expressions/ExpressionVisitor.h"
+#include "src/storage/expressions/SimpleValuation.h"
 
 namespace storm {
     namespace expressions {
-        template<typename MapType>
-        class TypeCheckVisitor : public ExpressionVisitor {
+        class LinearCoefficientVisitor : public ExpressionVisitor {
         public:
             /*!
-             * Creates a new type check visitor that uses the given map to check the types of variables and constants.
-             *
-             * @param identifierToTypeMap A mapping from identifiers to expressions.
+             * Creates a linear coefficient visitor.
              */
-            TypeCheckVisitor(MapType const& identifierToTypeMap);
+            LinearCoefficientVisitor() = default;
             
             /*!
-             * Checks that the types of the identifiers in the given expression match the ones in the previously given
-             * map.
+             * Computes the (double) coefficients of all identifiers appearing in the expression if the expression
+             * was rewritten as a sum of atoms.. If the expression is not linear, an exception is thrown.
              *
-             * @param expression The expression in which to check the types.
+             * @param expression The expression for which to compute the coefficients.
+             * @return A pair consisting of a mapping from identifiers to their coefficients and the coefficient of
+             * the constant atom.
              */
-            void check(Expression const& expression);
+            std::pair<SimpleValuation, double> getLinearCoefficients(Expression const& expression);
             
             virtual void visit(IfThenElseExpression const* expression) override;
             virtual void visit(BinaryBooleanFunctionExpression const* expression) override;
@@ -37,11 +37,10 @@ namespace storm {
             virtual void visit(IntegerLiteralExpression const* expression) override;
             virtual void visit(DoubleLiteralExpression const* expression) override;
             
-        private:            
-            // A mapping of identifier names to expressions with which they shall be replaced.
-            MapType const& identifierToTypeMap;
+        private:
+            std::stack<std::pair<SimpleValuation, double>> resultStack;
         };
     }
 }
 
-#endif /* STORM_STORAGE_EXPRESSIONS_TYPECHECKVISITOR_H_ */
+#endif /* STORM_STORAGE_EXPRESSIONS_LINEARCOEFFICIENTVISITOR_H_ */

@@ -1,5 +1,8 @@
-#include <boost/functional/hash.hpp>
 #include "src/storage/expressions/SimpleValuation.h"
+
+#include <set>
+
+#include <boost/functional/hash.hpp>
 #include "src/exceptions/ExceptionMacros.h"
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/exceptions/InvalidAccessException.h"
@@ -43,6 +46,18 @@ namespace storm {
             this->identifierToValueMap.erase(nameValuePair);
         }
         
+        ExpressionReturnType SimpleValuation::getIdentifierType(std::string const& name) const {
+            auto nameValuePair = this->identifierToValueMap.find(name);
+            LOG_THROW(nameValuePair != this->identifierToValueMap.end(), storm::exceptions::InvalidAccessException, "Access to unkown identifier '" << name << "'.");
+            if (nameValuePair->second.type() == typeid(bool)) {
+                return ExpressionReturnType::Bool;
+            } else if (nameValuePair->second.type() == typeid(int_fast64_t)) {
+                return ExpressionReturnType::Int;
+            } else {
+                return ExpressionReturnType::Double;
+            }
+        }
+        
         bool SimpleValuation::containsBooleanIdentifier(std::string const& name) const {
             auto nameValuePair = this->identifierToValueMap.find(name);
             if (nameValuePair == this->identifierToValueMap.end()) {
@@ -83,6 +98,48 @@ namespace storm {
             auto nameValuePair = this->identifierToValueMap.find(name);
             LOG_THROW(nameValuePair != this->identifierToValueMap.end(), storm::exceptions::InvalidAccessException, "Access to unkown identifier '" << name << "'.");
             return boost::get<double>(nameValuePair->second);
+        }
+        
+        std::size_t SimpleValuation::getNumberOfIdentifiers() const {
+            return this->identifierToValueMap.size();
+        }
+        
+        std::set<std::string> SimpleValuation::getIdentifiers() const {
+            std::set<std::string> result;
+            for (auto const& nameValuePair : this->identifierToValueMap) {
+                result.insert(nameValuePair.first);
+            }
+            return result;
+        }
+        
+        std::set<std::string> SimpleValuation::getBooleanIdentifiers() const {
+            std::set<std::string> result;
+            for (auto const& nameValuePair : this->identifierToValueMap) {
+                if (nameValuePair.second.type() == typeid(bool)) {
+                    result.insert(nameValuePair.first);
+                }
+            }
+            return result;
+        }
+        
+        std::set<std::string> SimpleValuation::getIntegerIdentifiers() const {
+            std::set<std::string> result;
+            for (auto const& nameValuePair : this->identifierToValueMap) {
+                if (nameValuePair.second.type() == typeid(int_fast64_t)) {
+                    result.insert(nameValuePair.first);
+                }
+            }
+            return result;
+        }
+        
+        std::set<std::string> SimpleValuation::getDoubleIdentifiers() const {
+            std::set<std::string> result;
+            for (auto const& nameValuePair : this->identifierToValueMap) {
+                if (nameValuePair.second.type() == typeid(double)) {
+                    result.insert(nameValuePair.first);
+                }
+            }
+            return result;
         }
         
         std::ostream& operator<<(std::ostream& stream, SimpleValuation const& valuation) {

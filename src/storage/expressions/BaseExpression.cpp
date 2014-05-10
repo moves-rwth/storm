@@ -81,16 +81,6 @@ namespace storm {
             return this->shared_from_this();
         }
         
-        std::ostream& operator<<(std::ostream& stream, ExpressionReturnType const& enumValue) {
-            switch (enumValue) {
-                case ExpressionReturnType::Undefined: stream << "undefined"; break;
-                case ExpressionReturnType::Bool: stream << "bool"; break;
-                case ExpressionReturnType::Int: stream << "int"; break;
-                case ExpressionReturnType::Double: stream << "double"; break;
-            }
-            return stream;
-        }
-        
         std::ostream& operator<<(std::ostream& stream, BaseExpression const& expression) {
             expression.printToStream(stream);
             return stream;

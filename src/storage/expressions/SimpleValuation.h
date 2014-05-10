@@ -6,6 +6,7 @@
 #include <iostream>
 
 #include "src/storage/expressions/Valuation.h"
+#include "src/storage/expressions/ExpressionReturnType.h"
 #include "src/utility/OsDetection.h"
 
 namespace storm {
@@ -84,11 +85,24 @@ namespace storm {
              * @param name The name of the identifier that is to be removed.
              */
             void removeIdentifier(std::string const& name);
+
+            /*!
+             * Retrieves the type of the identifier with the given name.
+             *
+             * @param name The name of the identifier whose type to retrieve.
+             * @return The type of the identifier with the given name.
+             */
+            ExpressionReturnType getIdentifierType(std::string const& name) const;
             
             // Override base class methods.
             virtual bool containsBooleanIdentifier(std::string const& name) const override;
             virtual bool containsIntegerIdentifier(std::string const& name) const override;
             virtual bool containsDoubleIdentifier(std::string const& name) const override;
+            virtual std::size_t getNumberOfIdentifiers() const override;
+            virtual std::set<std::string> getIdentifiers() const override;
+            virtual std::set<std::string> getBooleanIdentifiers() const override;
+            virtual std::set<std::string> getIntegerIdentifiers() const override;
+            virtual std::set<std::string> getDoubleIdentifiers() const override;
             virtual bool getBooleanValue(std::string const& name) const override;
             virtual int_fast64_t getIntegerValue(std::string const& name) const override;
             virtual double getDoubleValue(std::string const& name) const override;

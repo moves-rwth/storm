@@ -6,6 +6,7 @@
 #include <unordered_map>
 
 #include "src/storage/expressions/BaseExpression.h"
+#include "src/storage/expressions/ExpressionVisitor.h"
 #include "src/utility/OsDetection.h"
 
 namespace storm {
@@ -239,6 +240,13 @@ namespace storm {
             bool isRelationalExpression() const;
             
             /*!
+             * Retrieves whether this expression is a linear expression.
+             *
+             * @return True iff the expression is linear.
+             */
+            bool isLinear() const;
+            
+            /*!
              * Retrieves the set of all variables that appear in the expression.
              *
              * @return The set of all variables that appear in the expression.
@@ -280,6 +288,13 @@ namespace storm {
              * @return True iff the expression has a boolean return type.
              */
             bool hasBooleanReturnType() const;
+            
+            /*!
+             * Accepts the given visitor.
+             *
+             * @param visitor The visitor to accept.
+             */
+            void accept(ExpressionVisitor* visitor) const;
             
             friend std::ostream& operator<<(std::ostream& stream, Expression const& expression);
 

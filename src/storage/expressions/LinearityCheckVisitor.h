@@ -13,12 +13,14 @@ namespace storm {
             /*!
              * Creates a linearity check visitor.
              */
-            LinearityCheckVisitor() = default;
+            LinearityCheckVisitor();
             
             /*!
              * Checks that the given expression is linear.
+             *
+             * @param expression The expression to check for linearity.
              */
-            bool check(BaseExpression const* expression);
+            bool check(Expression const& expression);
             
             virtual void visit(IfThenElseExpression const* expression) override;
             virtual void visit(BinaryBooleanFunctionExpression const* expression) override;
@@ -32,8 +34,10 @@ namespace storm {
             virtual void visit(DoubleLiteralExpression const* expression) override;
             
         private:
+            enum class LinearityStatus { NonLinear, LinearContainsVariables, LinearWithoutVariables };
+            
             // A stack for communicating the results of the subexpressions.
-            std::stack<bool> resultStack;
+            std::stack<LinearityStatus> resultStack;
         };
     }
 }

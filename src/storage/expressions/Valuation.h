@@ -58,6 +58,42 @@ namespace storm {
              * @return True iff the identifier exists and is of boolean type.
              */
             virtual bool containsDoubleIdentifier(std::string const& name) const = 0;
+            
+            /*!
+             * Retrieves the number of identifiers in this valuation.
+             *
+             * @return The number of identifiers in this valuation.
+             */
+            virtual std::size_t getNumberOfIdentifiers() const = 0;
+            
+            /*!
+             * Retrieves the set of all identifiers contained in this valuation.
+             *
+             * @return The set of all identifiers contained in this valuation.
+             */
+            virtual std::set<std::string> getIdentifiers() const = 0;
+            
+            /*!
+             * Retrieves the set of boolean identifiers contained in this valuation.
+             *
+             * @return The set of boolean identifiers contained in this valuation.
+             */
+            virtual std::set<std::string> getBooleanIdentifiers() const = 0;
+
+            /*!
+             * Retrieves the set of integer identifiers contained in this valuation.
+             *
+             * @return The set of integer identifiers contained in this valuation.
+             */
+            virtual std::set<std::string> getIntegerIdentifiers() const = 0;
+
+            /*!
+             * Retrieves the set of double identifiers contained in this valuation.
+             *
+             * @return The set of double identifiers contained in this valuation.
+             */
+            virtual std::set<std::string> getDoubleIdentifiers() const = 0;
+
 
         };
     }
