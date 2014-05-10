@@ -307,4 +307,26 @@ TEST(CuddDd, ForwardIteratorTest) {
         ++numberOfValuations;
     }
     EXPECT_EQ(9, numberOfValuations);
+
+    dd = manager->getRange("x");
+    dd = dd.ite(manager->getOne(), manager->getOne());
+    ASSERT_NO_THROW(it = dd.begin());
+    ASSERT_NO_THROW(ite = dd.end());
+    numberOfValuations = 0;
+    while (it != ite) {
+        ASSERT_NO_THROW(valuationValuePair = *it);
+        ASSERT_NO_THROW(++it);
+        ++numberOfValuations;
+    }
+    EXPECT_EQ(16, numberOfValuations);
+    
+    ASSERT_NO_THROW(it = dd.begin(false));
+    ASSERT_NO_THROW(ite = dd.end());
+    numberOfValuations = 0;
+    while (it != ite) {
+        ASSERT_NO_THROW(valuationValuePair = *it);
+        ASSERT_NO_THROW(++it);
+        ++numberOfValuations;
+    }
+    EXPECT_EQ(1, numberOfValuations);
 }
