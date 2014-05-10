@@ -77,24 +77,7 @@ namespace storm {
         }
         
         void LinearityCheckVisitor::visit(BinaryRelationExpression const* expression) {
-            LinearityStatus leftResult;
-            LinearityStatus rightResult;
-            expression->getFirstOperand()->accept(this);
-            leftResult = resultStack.top();
-            
-            if (leftResult == LinearityStatus::NonLinear) {
-                return;
-            } else {
-                resultStack.pop();
-                expression->getSecondOperand()->accept(this);
-                rightResult = resultStack.top();
-                if (rightResult == LinearityStatus::NonLinear) {
-                    return;
-                }
-                resultStack.pop();
-            }
-            
-            resultStack.push(leftResult == LinearityStatus::LinearContainsVariables || rightResult == LinearityStatus::LinearContainsVariables ? LinearityStatus::LinearContainsVariables : LinearityStatus::LinearWithoutVariables);
+            resultStack.push(LinearityStatus::NonLinear);
         }
         
         void LinearityCheckVisitor::visit(VariableExpression const* expression) {

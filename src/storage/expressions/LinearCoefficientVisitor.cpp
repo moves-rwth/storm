@@ -16,15 +16,96 @@ namespace storm {
         }
         
         void LinearCoefficientVisitor::visit(BinaryBooleanFunctionExpression const* expression) {
-            
+            LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression is non-linear.");
         }
         
         void LinearCoefficientVisitor::visit(BinaryNumericalFunctionExpression const* expression) {
-            
+            if (expression->getOperatorType() == BinaryNumericalFunctionExpression::OperatorType::Plus) {
+                expression->getFirstOperand()->accept(this);
+                std::pair<SimpleValuation, double> leftResult = resultStack.top();
+                resultStack.pop();
+                expression->getSecondOperand()->accept(this);
+                std::pair<SimpleValuation, double>& rightResult = resultStack.top();
+                
+                // Now add the left result to the right result.
+                for (auto const& identifier : leftResult.first.Valuation::getDoubleIdentifiers()) {
+                    if (rightResult.first.containsDoubleIdentifier(identifier)) {
+                        rightResult.first.setDoubleValue(identifier, leftResult.first.getDoubleValue(identifier) + rightResult.first.getDoubleValue(identifier));
+                    } else {
+                        rightResult.first.setDoubleValue(identifier, leftResult.first.getDoubleValue(identifier));
+                    }
+                }
+                rightResult.second += leftResult.second;
+                return;
+            } else if (expression->getOperatorType() == BinaryNumericalFunctionExpression::OperatorType::Minus) {
+                expression->getFirstOperand()->accept(this);
+                std::pair<SimpleValuation, double> leftResult = resultStack.top();
+                resultStack.pop();
+                expression->getSecondOperand()->accept(this);
+                std::pair<SimpleValuation, double>& rightResult = resultStack.top();
+                
+                // Now subtract the right result from the left result.
+                for (auto const& identifier : leftResult.first.getDoubleIdentifiers()) {
+                    if (rightResult.first.containsDoubleIdentifier(identifier)) {
+                        rightResult.first.setDoubleValue(identifier, leftResult.first.getDoubleValue(identifier) - rightResult.first.getDoubleValue(identifier));
+                    } else {
+                        rightResult.first.setDoubleValue(identifier, leftResult.first.getDoubleValue(identifier));
+                    }
+                }
+                for (auto const& identifier : rightResult.first.Valuation::getDoubleIdentifiers()) {
+                    if (!leftResult.first.containsDoubleIdentifier(identifier)) {
+                        rightResult.first.setDoubleValue(identifier, -rightResult.first.getDoubleValue(identifier));
+                    }
+                }
+                rightResult.second = leftResult.second - rightResult.second;
+                return;
+            } else if (expression->getOperatorType() == BinaryNumericalFunctionExpression::OperatorType::Times) {
+                expression->getFirstOperand()->accept(this);
+                std::pair<SimpleValuation, double> leftResult = resultStack.top();
+                resultStack.pop();
+                expression->getSecondOperand()->accept(this);
+                std::pair<SimpleValuation, double>& rightResult = resultStack.top();
+                
+                // If the expression is linear, either the left or the right side must not contain variables.
+                LOG_THROW(leftResult.first.getNumberOfIdentifiers() == 0 || rightResult.first.getNumberOfIdentifiers() == 0, storm::exceptions::InvalidArgumentException, "Expression is non-linear.");
+                if (leftResult.first.getNumberOfIdentifiers() == 0) {
+                    for (auto const& identifier : rightResult.first.getDoubleIdentifiers()) {
+                        rightResult.first.setDoubleValue(identifier, leftResult.second * rightResult.first.getDoubleValue(identifier));
+                    }
+                } else {
+                    for (auto const& identifier : leftResult.first.getDoubleIdentifiers()) {
+                        rightResult.first.addDoubleIdentifier(identifier, rightResult.second * leftResult.first.getDoubleValue(identifier));
+                    }
+                }
+                rightResult.second *= leftResult.second;
+                return;
+            } else if (expression->getOperatorType() == BinaryNumericalFunctionExpression::OperatorType::Divide) {
+                expression->getFirstOperand()->accept(this);
+                std::pair<SimpleValuation, double> leftResult = resultStack.top();
+                resultStack.pop();
+                expression->getSecondOperand()->accept(this);
+                std::pair<SimpleValuation, double>& rightResult = resultStack.top();
+                
+                // If the expression is linear, either the left or the right side must not contain variables.
+                LOG_THROW(leftResult.first.getNumberOfIdentifiers() == 0 || rightResult.first.getNumberOfIdentifiers() == 0, storm::exceptions::InvalidArgumentException, "Expression is non-linear.");
+                if (leftResult.first.getNumberOfIdentifiers() == 0) {
+                    for (auto const& identifier : rightResult.first.getDoubleIdentifiers()) {
+                        rightResult.first.setDoubleValue(identifier, leftResult.second / rightResult.first.getDoubleValue(identifier));
+                    }
+                } else {
+                    for (auto const& identifier : leftResult.first.getDoubleIdentifiers()) {
+                        rightResult.first.addDoubleIdentifier(identifier, leftResult.first.getDoubleValue(identifier) / rightResult.second);
+                    }
+                }
+                rightResult.second = leftResult.second / leftResult.second;
+                return;
+            } else {
+                LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression is non-linear.");
+            }
         }
         
         void LinearCoefficientVisitor::visit(BinaryRelationExpression const* expression) {
-            
+            LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression is non-linear.");
         }
         
         void LinearCoefficientVisitor::visit(VariableExpression const* expression) {

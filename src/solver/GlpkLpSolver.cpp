@@ -4,6 +4,8 @@
 
 #include <iostream>
 
+#include "src/storage/expressions/LinearCoefficientVisitor.h"
+
 #include "src/settings/Settings.h"
 #include "src/exceptions/ExceptionMacros.h"
 #include "src/exceptions/InvalidAccessException.h"
@@ -160,26 +162,46 @@ namespace storm {
             LOG_THROW(constraint.isRelationalExpression(), storm::exceptions::InvalidArgumentException, "Illegal constraint is not a relational expression.");
             LOG_THROW(constraint.getOperator() != storm::expressions::OperatorType::NotEqual, storm::exceptions::InvalidArgumentException, "Illegal constraint uses inequality operator.");
             
-            // TODO: get variable/coefficients vector from constraint.
+            std::pair<storm::expressions::SimpleValuation, double> leftCoefficients = storm::expressions::LinearCoefficientVisitor().getLinearCoefficients(constraint.getOperand(0));
+            std::pair<storm::expressions::SimpleValuation, double> rightCoefficients = storm::expressions::LinearCoefficientVisitor().getLinearCoefficients(constraint.getOperand(1));
+            for (auto const& identifier : rightCoefficients.first.getDoubleIdentifiers()) {
+                if (leftCoefficients.first.containsDoubleIdentifier(identifier)) {
+                    leftCoefficients.first.setDoubleValue(identifier, leftCoefficients.first.getDoubleValue(identifier) - rightCoefficients.first.getDoubleValue(identifier));
+                } else {
+                    leftCoefficients.first.addDoubleIdentifier(identifier, -rightCoefficients.first.getDoubleValue(identifier));
+                }
+            }
+            rightCoefficients.second -= leftCoefficients.second;
             
+            // Now we need to transform the coefficients to the vector representation.
+            std::vector<int> variables;
+            std::vector<double> coefficients;
+            for (auto const& identifier : leftCoefficients.first.getDoubleIdentifiers()) {
+                auto identifierIndexPair = this->variableNameToIndexMap.find(identifier);
+                LOG_THROW(identifierIndexPair != this->variableNameToIndexMap.end(), storm::exceptions::InvalidArgumentException, "Constraint contains illegal identifier '" << identifier << "'.");
+                variables.push_back(identifierIndexPair->second);
+                coefficients.push_back(leftCoefficients.first.getDoubleValue(identifier));
+            }
             
             // Determine the type of the constraint and add it properly.
             switch (constraint.getOperator()) {
                 case storm::expressions::OperatorType::Less:
-                    glp_set_row_bnds(this->lp, nextConstraintIndex, GLP_UP, 0, rightHandSideValue - storm::settings::Settings::getInstance()->getOptionByLongName("glpkinttol").getArgument(0).getValueAsDouble());
+                    glp_set_row_bnds(this->lp, nextConstraintIndex, GLP_UP, 0, rightCoefficients.second - storm::settings::Settings::getInstance()->getOptionByLongName("glpkinttol").getArgument(0).getValueAsDouble());
                     break;
-                case LESS_EQUAL:
-                    glp_set_row_bnds(this->lp, nextConstraintIndex, GLP_UP, 0, rightHandSideValue);
+                case storm::expressions::OperatorType::LessOrEqual:
+                    glp_set_row_bnds(this->lp, nextConstraintIndex, GLP_UP, 0, rightCoefficients.second);
                     break;
-                case GREATER:
-                    glp_set_row_bnds(this->lp, nextConstraintIndex, GLP_LO, rightHandSideValue + storm::settings::Settings::getInstance()->getOptionByLongName("glpkinttol").getArgument(0).getValueAsDouble(), 0);
+                case storm::expressions::OperatorType::Greater:
+                    glp_set_row_bnds(this->lp, nextConstraintIndex, GLP_LO, rightCoefficients.second + storm::settings::Settings::getInstance()->getOptionByLongName("glpkinttol").getArgument(0).getValueAsDouble(), 0);
                     break;
-                case GREATER_EQUAL:
-                    glp_set_row_bnds(this->lp, nextConstraintIndex, GLP_LO, rightHandSideValue, 0);
+                case storm::expressions::OperatorType::GreaterOrEqual:
+                    glp_set_row_bnds(this->lp, nextConstraintIndex, GLP_LO, rightCoefficients.second, 0);
                     break;
-                case EQUAL:
-                    glp_set_row_bnds(this->lp, nextConstraintIndex, GLP_FX, rightHandSideValue, rightHandSideValue);
+                case storm::expressions::OperatorType::Equal:
+                    glp_set_row_bnds(this->lp, nextConstraintIndex, GLP_FX, rightCoefficients.second, rightCoefficients.second);
                     break;
+                default:
+                    LOG_ASSERT(false, "Illegal operator in LP solver constraint.");
             }
             
             // Record the variables and coefficients in the coefficient matrix.
