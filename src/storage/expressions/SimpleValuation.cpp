@@ -86,9 +86,14 @@ namespace storm {
         }
         
         std::ostream& operator<<(std::ostream& stream, SimpleValuation const& valuation) {
-            stream << "valuation { ";
+            stream << "{ ";
+            uint_fast64_t elementIndex = 0;
             for (auto const& nameValuePair : valuation.identifierToValueMap) {
-                stream << nameValuePair.first << ": " << nameValuePair.second << std::endl;
+                stream << nameValuePair.first << " -> " << nameValuePair.second << " ";
+                ++elementIndex;
+                if (elementIndex < valuation.identifierToValueMap.size()) {
+                    stream << ", ";
+                }
             }
             stream << "}";
             
