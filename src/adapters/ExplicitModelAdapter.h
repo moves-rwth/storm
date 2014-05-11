@@ -169,7 +169,6 @@ namespace storm {
                 // all expressions in the program so we can then evaluate them without having to store the values of the
                 // constants in the state (i.e., valuation).
                 preparedProgram = preparedProgram.substituteConstants();
-                std::cout << preparedProgram << std::endl;
                 ModelComponents modelComponents = buildModelComponents(preparedProgram, rewardModelName);
                 
                 std::unique_ptr<storm::models::AbstractModel<ValueType>> result;
@@ -534,16 +533,13 @@ namespace storm {
                 }
                 for (auto const& module : program.getModules()) {
                     for (auto const& booleanVariable : module.getBooleanVariables()) {
-						std::cout << booleanVariable.getName() << " <-- " << booleanVariable.getInitialValueExpression() << "(= " << booleanVariable.getInitialValueExpression().evaluateAsBool() << " )" << std::endl;
-                        initialState->addBooleanIdentifier(booleanVariable.getName(), booleanVariable.getInitialValueExpression().evaluateAsBool());
+			            initialState->addBooleanIdentifier(booleanVariable.getName(), booleanVariable.getInitialValueExpression().evaluateAsBool());
                     }
                     for (auto const& integerVariable : module.getIntegerVariables()) {
                         initialState->addIntegerIdentifier(integerVariable.getName(), integerVariable.getInitialValueExpression().evaluateAsInt());
                     }
                 }
-				std::cout << "INITIAL STATE:" << std::endl;
-				std::cout << *initialState << std::endl;
-        
+			
                 std::pair<bool, uint_fast64_t> addIndexPair = getOrAddStateIndex(initialState, stateInformation);
                 stateInformation.initialStateIndices.push_back(addIndexPair.second);
                 stateQueue.push(stateInformation.stateToIndexMap[initialState]);
