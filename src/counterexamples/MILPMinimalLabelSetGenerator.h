@@ -65,13 +65,13 @@ namespace storm {
              * A helper struct capturing information about the variables of the MILP formulation.
              */
             struct VariableInformation {
-                std::unordered_map<uint_fast64_t, uint_fast64_t> labelToVariableIndexMap;
-                std::unordered_map<uint_fast64_t, std::list<uint_fast64_t>> stateToChoiceVariablesIndexMap;
-                std::unordered_map<uint_fast64_t, uint_fast64_t> initialStateToChoiceVariableIndexMap;
-                std::unordered_map<uint_fast64_t, uint_fast64_t> stateToProbabilityVariableIndexMap;
-                uint_fast64_t virtualInitialStateVariableIndex;
-                std::unordered_map<uint_fast64_t, uint_fast64_t> problematicStateToVariableIndexMap;
-                std::unordered_map<std::pair<uint_fast64_t, uint_fast64_t>, uint_fast64_t, PairHash> problematicTransitionToVariableIndexMap;
+                std::unordered_map<uint_fast64_t, std::string> labelToVariableMap;
+                std::unordered_map<uint_fast64_t, std::list<std::string>> stateToChoiceVariablesMap;
+                std::unordered_map<uint_fast64_t, std::string> initialStateToChoiceVariableMap;
+                std::unordered_map<uint_fast64_t, std::string> stateToProbabilityVariableMap;
+                std::string virtualInitialStateVariable;
+                std::unordered_map<uint_fast64_t, std::string> problematicStateToVariableMap;
+                std::unordered_map<std::pair<uint_fast64_t, uint_fast64_t>, std::string, PairHash> problematicTransitionToVariableMap;
                 uint_fast64_t numberOfVariables;
 
 				VariableInformation() : numberOfVariables(0) {}
@@ -167,14 +167,15 @@ namespace storm {
              * @param relevantLabels The set of relevant labels of the model.
              * @return A mapping from labels to variable indices.
              */
-            static std::pair<std::unordered_map<uint_fast64_t, uint_fast64_t>, uint_fast64_t> createLabelVariables(storm::solver::LpSolver& solver, boost::container::flat_set<uint_fast64_t> const& relevantLabels) {
+            static std::pair<std::unordered_map<uint_fast64_t, std::string>, uint_fast64_t> createLabelVariables(storm::solver::LpSolver& solver, boost::container::flat_set<uint_fast64_t> const& relevantLabels) {
                 std::stringstream variableNameBuffer;
-                std::unordered_map<uint_fast64_t, uint_fast64_t> resultingMap;
+                std::unordered_map<uint_fast64_t, std::string> resultingMap;
                 for (auto const& label : relevantLabels) {
                     variableNameBuffer.str("");
                     variableNameBuffer.clear();
                     variableNameBuffer << "label" << label;
-                    resultingMap[label] = solver.createBinaryVariable(variableNameBuffer.str(), 1);
+                    resultingMap[label] = variableNameBuffer.str();
+                    solver.addBinaryVariable(resultingMap[label], 1);
                 }
                 return std::make_pair(resultingMap, relevantLabels.size());
             }
@@ -187,10 +188,10 @@ namespace storm {
              * @param choiceInformation The information about the choices of the model.
              * @return A mapping from states to a list of choice variable indices.
              */
-            static std::pair<std::unordered_map<uint_fast64_t, std::list<uint_fast64_t>>, uint_fast64_t> createSchedulerVariables(storm::solver::LpSolver& solver, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation) {
+            static std::pair<std::unordered_map<uint_fast64_t, std::list<std::string>>, uint_fast64_t> createSchedulerVariables(storm::solver::LpSolver& solver, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation) {
                 std::stringstream variableNameBuffer;
                 uint_fast64_t numberOfVariablesCreated = 0;
-                std::unordered_map<uint_fast64_t, std::list<uint_fast64_t>> resultingMap;
+                std::unordered_map<uint_fast64_t, std::list<std::string>> resultingMap;
                 
                 for (auto state : stateInformation.relevantStates) {
                     resultingMap.emplace(state, std::list<uint_fast64_t>());
@@ -199,7 +200,8 @@ namespace storm {
                         variableNameBuffer.str("");
                         variableNameBuffer.clear();
                         variableNameBuffer << "choice" << row << "in" << state;
-                        resultingMap[state].push_back(solver.createBinaryVariable(variableNameBuffer.str(), 0));
+                        resultingMap[state].push_back(variableNameBuffer.str());
+                        solver.addBinaryVariable(resultingMap[state].back());
                         ++numberOfVariablesCreated;
                     }
                 }
@@ -215,10 +217,10 @@ namespace storm {
              * @param stateInformation The information about the states of the model.
              * @return A mapping from initial states to choice variable indices.
              */
-            static std::pair<std::unordered_map<uint_fast64_t, uint_fast64_t>, uint_fast64_t> createInitialChoiceVariables(storm::solver::LpSolver& solver, storm::models::Mdp<T> const& labeledMdp, StateInformation const& stateInformation) {
+            static std::pair<std::unordered_map<uint_fast64_t, std::string>, uint_fast64_t> createInitialChoiceVariables(storm::solver::LpSolver& solver, storm::models::Mdp<T> const& labeledMdp, StateInformation const& stateInformation) {
                 std::stringstream variableNameBuffer;
                 uint_fast64_t numberOfVariablesCreated = 0;
-                std::unordered_map<uint_fast64_t, uint_fast64_t> resultingMap;
+                std::unordered_map<uint_fast64_t, std::string> resultingMap;
                 
                 for (auto initialState : labeledMdp.getLabeledStates("init")) {
                     // Only consider this initial state if it is relevant.
@@ -226,7 +228,8 @@ namespace storm {
                         variableNameBuffer.str("");
                         variableNameBuffer.clear();
                         variableNameBuffer << "init" << initialState;
-                        resultingMap[initialState] = solver.createBinaryVariable(variableNameBuffer.str(), 0);
+                        resultingMap[initialState] = variableNameBuffer.str();
+                        solver.addBinaryVariable(resultingMap[initialState]);
                         ++numberOfVariablesCreated;
                     }
                 }
@@ -240,16 +243,17 @@ namespace storm {
              * @param stateInformation The information about the states in the model.
              * @return A mapping from states to the index of the corresponding probability variables.
              */
-            static std::pair<std::unordered_map<uint_fast64_t, uint_fast64_t>, uint_fast64_t> createProbabilityVariables(storm::solver::LpSolver& solver, StateInformation const& stateInformation) {
+            static std::pair<std::unordered_map<uint_fast64_t, std::string>, uint_fast64_t> createProbabilityVariables(storm::solver::LpSolver& solver, StateInformation const& stateInformation) {
                 std::stringstream variableNameBuffer;
                 uint_fast64_t numberOfVariablesCreated = 0;
-                std::unordered_map<uint_fast64_t, uint_fast64_t> resultingMap;
+                std::unordered_map<uint_fast64_t, std::string> resultingMap;
                 
                 for (auto state : stateInformation.relevantStates) {
                     variableNameBuffer.str("");
                     variableNameBuffer.clear();
                     variableNameBuffer << "p" << state;
-                    resultingMap[state] = solver.createContinuousVariable(variableNameBuffer.str(), storm::solver::LpSolver::BOUNDED, 0, 1, 0);
+                    resultingMap[state] = variableNameBuffer.str();
+                    solver.addBoundedContinuousVariable(resultingMap[state], 0, 1);
                     ++numberOfVariablesCreated;
                 }
                 return std::make_pair(resultingMap, numberOfVariablesCreated);
@@ -263,11 +267,12 @@ namespace storm {
              * label-minimal subsystem of maximal probability is computed.
              * @return The index of the variable for the probability of the virtual initial state.
              */
-            static std::pair<uint_fast64_t, uint_fast64_t> createVirtualInitialStateVariable(storm::solver::LpSolver& solver, bool maximizeProbability = false) {
+            static std::pair<std::string, uint_fast64_t> createVirtualInitialStateVariable(storm::solver::LpSolver& solver, bool maximizeProbability = false) {
                 std::stringstream variableNameBuffer;
                 variableNameBuffer << "pinit";
-                
-                return std::make_pair(solver.createContinuousVariable(variableNameBuffer.str(), storm::solver::LpSolver::BOUNDED, 0, 1, 0), 1);
+                std::string variableName = variableNameBuffer.str();
+                solver.addBoundedContinuousVariable(variableName, 0, 1);
+                return std::make_pair(variableName, 1);
             }
             
             /*!
@@ -278,10 +283,10 @@ namespace storm {
              * @param stateInformation The information about the states in the model.
              * @return A mapping from problematic states to the index of the corresponding variables.
              */
-            static std::pair<std::unordered_map<uint_fast64_t, uint_fast64_t>, uint_fast64_t> createProblematicStateVariables(storm::solver::LpSolver& solver, storm::models::Mdp<T> const& labeledMdp, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation) {
+            static std::pair<std::unordered_map<uint_fast64_t, std::string>, uint_fast64_t> createProblematicStateVariables(storm::solver::LpSolver& solver, storm::models::Mdp<T> const& labeledMdp, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation) {
                 std::stringstream variableNameBuffer;
                 uint_fast64_t numberOfVariablesCreated = 0;
-                std::unordered_map<uint_fast64_t, uint_fast64_t> resultingMap;
+                std::unordered_map<uint_fast64_t, std::string> resultingMap;
                 
                 for (auto state : stateInformation.problematicStates) {
                     // First check whether there is not already a variable for this state and advance to the next state
@@ -290,7 +295,8 @@ namespace storm {
                         variableNameBuffer.str("");
                         variableNameBuffer.clear();
                         variableNameBuffer << "r" << state;
-                        resultingMap[state] = solver.createContinuousVariable(variableNameBuffer.str(), storm::solver::LpSolver::BOUNDED, 0, 1, 0);
+                        resultingMap[state] = variableNameBuffer.str();
+                        solver.addBoundedContinuousVariable(resultingMap[state], 0, 1);
                         ++numberOfVariablesCreated;
                     }
                     
@@ -302,7 +308,8 @@ namespace storm {
                                     variableNameBuffer.str("");
                                     variableNameBuffer.clear();
                                     variableNameBuffer << "r" << successorEntry.getColumn();
-                                    resultingMap[state] = solver.createContinuousVariable(variableNameBuffer.str(), storm::solver::LpSolver::BOUNDED, 0, 1, 0);
+                                    resultingMap[state] = variableNameBuffer.str();
+                                    solver.addBoundedContinuousVariable(resultingMap[state], 0, 1);
                                     ++numberOfVariablesCreated;
                                 }
                             }
@@ -321,10 +328,10 @@ namespace storm {
              * @param choiceInformation The information about the choices in the model.
              * @return A mapping from problematic choices to the index of the corresponding variables.
              */
-            static std::pair<std::unordered_map<std::pair<uint_fast64_t, uint_fast64_t>, uint_fast64_t, PairHash>, uint_fast64_t> createProblematicChoiceVariables(storm::solver::LpSolver& solver, storm::models::Mdp<T> const& labeledMdp, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation) {
+            static std::pair<std::unordered_map<std::pair<uint_fast64_t, std::string>, uint_fast64_t, PairHash>, uint_fast64_t> createProblematicChoiceVariables(storm::solver::LpSolver& solver, storm::models::Mdp<T> const& labeledMdp, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation) {
                 std::stringstream variableNameBuffer;
                 uint_fast64_t numberOfVariablesCreated = 0;
-                std::unordered_map<std::pair<uint_fast64_t, uint_fast64_t>, uint_fast64_t, PairHash> resultingMap;
+                std::unordered_map<std::pair<uint_fast64_t, std::string>, uint_fast64_t, PairHash> resultingMap;
                 
                 for (auto state : stateInformation.problematicStates) {
                     std::list<uint_fast64_t> const& relevantChoicesForState = choiceInformation.relevantChoicesForRelevantStates.at(state);
@@ -334,7 +341,8 @@ namespace storm {
                                 variableNameBuffer.str("");
                                 variableNameBuffer.clear();
                                 variableNameBuffer << "t" << state << "to" << successorEntry.getColumn();
-                                resultingMap[std::make_pair(state, successorEntry.getColumn())] = solver.createBinaryVariable(variableNameBuffer.str(), 0);
+                                resultingMap[std::make_pair(state, successorEntry.getColumn())] = variableNameBuffer.str();
+                                solver.addBinaryVariable(resultingMap[std::make_pair(state, successorEntry.getColumn())]);
                                 ++numberOfVariablesCreated;
                             }
                         }
@@ -382,7 +390,7 @@ namespace storm {
                 LOG4CPLUS_DEBUG(logger, "Created variables for the reachability probabilities.");
 
                 // Create a probability variable for a virtual initial state that nondeterministically chooses one of the system's real initial states as its target state.
-                std::pair<uint_fast64_t, uint_fast64_t> virtualInitialStateVariableResult = createVirtualInitialStateVariable(solver);
+                std::pair<std::string, uint_fast64_t> virtualInitialStateVariableResult = createVirtualInitialStateVariable(solver);
                 result.virtualInitialStateVariableIndex = virtualInitialStateVariableResult.first;
                 result.numberOfVariables += virtualInitialStateVariableResult.second;
                 LOG4CPLUS_DEBUG(logger, "Created variables for the virtual initial state.");
@@ -419,7 +427,13 @@ namespace storm {
              * @return The total number of constraints that were created.
              */
             static uint_fast64_t assertProbabilityGreaterThanThreshold(storm::solver::LpSolver& solver, storm::models::Mdp<T> const& labeledMdp, VariableInformation const& variableInformation, double probabilityThreshold, bool strictBound) {
-                solver.addConstraint("ProbGreaterThreshold", {variableInformation.virtualInitialStateVariableIndex}, {1}, strictBound ? storm::solver::LpSolver::GREATER : storm::solver::LpSolver::GREATER_EQUAL, probabilityThreshold);
+                storm::expressions::Expression constraint;
+                if (strictBound) {
+                    constraint = storm::expressions::Expression::createDoubleVariable(variableInformation.virtualInitialStateVariable) > storm::expressions::Expression::createDoubleLiteral(probabilityThreshold);
+                } else {
+                    constraint = storm::expressions::Expression::createDoubleVariable(variableInformation.virtualInitialStateVariable) >= storm::expressions::Expression::createDoubleLiteral(probabilityThreshold);
+                }
+                solver.addConstraint("ProbGreaterThreshold", constraint);
                 return 1;
             }
             
@@ -435,28 +449,28 @@ namespace storm {
                 // Assert that the policy chooses at most one action in each state of the system.
                 uint_fast64_t numberOfConstraintsCreated = 0;
                 for (auto state : stateInformation.relevantStates) {
-                    std::list<uint_fast64_t> const& choiceVariableIndices = variableInformation.stateToChoiceVariablesIndexMap.at(state);
-                    std::vector<uint_fast64_t> variables;
-                    std::vector<double> coefficients(choiceVariableIndices.size(), 1);
-                    variables.reserve(choiceVariableIndices.size());
-                    for (auto choiceVariableIndex : choiceVariableIndices) {
-                        variables.push_back(choiceVariableIndex);
+                    std::list<std::string> const& choiceVariableIndices = variableInformation.stateToChoiceVariablesMap.at(state);
+                    storm::expressions::Expression constraint = storm::expressions::Expression::createDoubleLiteral(0);
+
+                    for (auto const& choiceVariable : choiceVariableIndices) {
+                        constraint = constraint + storm::expressions::Expression::createDoubleVariable(choiceVariable);
                     }
                     
-                    solver.addConstraint("ValidPolicy" + std::to_string(numberOfConstraintsCreated), variables, coefficients, storm::solver::LpSolver::LESS_EQUAL, 1);
+                    constraint = constraint <= storm::expressions::Expression::createDoubleLiteral(1);
+                    
+                    solver.addConstraint("ValidPolicy" + std::to_string(numberOfConstraintsCreated), constraint);
                     ++numberOfConstraintsCreated;
                 }
                 
                 // Now assert that the virtual initial state picks exactly one initial state from the system as its
                 // successor state.
-                std::vector<uint_fast64_t> variables;
-                variables.reserve(variableInformation.initialStateToChoiceVariableIndexMap.size());
-                std::vector<double> coefficients(variableInformation.initialStateToChoiceVariableIndexMap.size(), 1);
-                for (auto initialStateVariableIndexPair : variableInformation.initialStateToChoiceVariableIndexMap) {
-                    variables.push_back(initialStateVariableIndexPair.second);
+                storm::expressions::Expression constraint = storm::expressions::Expression::createDoubleLiteral(0);
+                for (auto const& initialStateVariablePair : variableInformation.initialStateToChoiceVariableMap) {
+                    constraint = constraint + storm::expressions::Expression::createDoubleVariable(initialStateVariablePair.second);
                 }
+                constraint = constraint <= storm::expressions::Expression::createDoubleLiteral(1);
                 
-                solver.addConstraint("VirtualInitialStateChoosesOneInitialState", variables, coefficients, storm::solver::LpSolver::EQUAL, 1);
+                solver.addConstraint("VirtualInitialStateChoosesOneInitialState", constraint);
                 ++numberOfConstraintsCreated;
                 
                 return numberOfConstraintsCreated;
@@ -478,13 +492,14 @@ namespace storm {
 
                 std::vector<boost::container::flat_set<uint_fast64_t>> const& choiceLabeling = labeledMdp.getChoiceLabeling();
                 for (auto state : stateInformation.relevantStates) {
-                    std::list<uint_fast64_t>::const_iterator choiceVariableIndicesIterator = variableInformation.stateToChoiceVariablesIndexMap.at(state).begin();
+                    std::list<std::string>::const_iterator choiceVariableIterator = variableInformation.stateToChoiceVariablesIndexMap.at(state).begin();
                     for (auto choice : choiceInformation.relevantChoicesForRelevantStates.at(state)) {
                         for (auto label : choiceLabeling[choice]) {
-                            solver.addConstraint("ChoicesImplyLabels" + std::to_string(numberOfConstraintsCreated), {variableInformation.labelToVariableIndexMap.at(label), *choiceVariableIndicesIterator}, {1, -1}, storm::solver::LpSolver::GREATER_EQUAL, 0);
+                            storm::expressions::Expression constraint = storm::expressions::Expression::createIntegerVariable(variableInformation.labelToVariableMap.at(label)) - storm::expressions::Expression::createIntegerVariable(*choiceVariableIterator) >= storm::expressions::Expression::createDoubleLiteral(0);
+                            solver.addConstraint("ChoicesImplyLabels" + std::to_string(numberOfConstraintsCreated), constraint);
                             ++numberOfConstraintsCreated;
                         }
-                        ++choiceVariableIndicesIterator;
+                        ++choiceVariableIterator;
                     }
                 }
                 return numberOfConstraintsCreated;
@@ -503,16 +518,12 @@ namespace storm {
             static uint_fast64_t assertZeroProbabilityWithoutChoice(storm::solver::LpSolver& solver, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation, VariableInformation const& variableInformation) {
                 uint_fast64_t numberOfConstraintsCreated = 0;
                 for (auto state : stateInformation.relevantStates) {
-                    std::list<uint_fast64_t> const& choiceVariableIndices = variableInformation.stateToChoiceVariablesIndexMap.at(state);
-
-                    std::vector<double> coefficients(choiceVariableIndices.size() + 1, -1);
-                    coefficients[0] = 1;
-                    std::vector<uint_fast64_t> variables;
-                    variables.reserve(variableInformation.stateToChoiceVariablesIndexMap.at(state).size() + 1);
-                    variables.push_back(variableInformation.stateToProbabilityVariableIndexMap.at(state));
-                    variables.insert(variables.end(), choiceVariableIndices.begin(), choiceVariableIndices.end());
-                    
-                    solver.addConstraint("ProbabilityIsZeroIfNoAction" + std::to_string(numberOfConstraintsCreated), variables, coefficients, storm::solver::LpSolver::LESS_EQUAL, 0);
+                    storm::expressions::Expression constraint = storm::expressions::Expression::createDoubleVariable(variableInformation.stateToProbabilityVariableMap.at(state));
+                    for (auto const& choiceVariable : variableInformation.stateToChoiceVariablesMap.at(state)) {
+                        constraint = constraint - storm::expressions::Expression::createDoubleVariable(choiceVariable);
+                    }
+                    constraint = constraint <= storm::expressions::Expression::createDoubleLiteral(0);
+                    solver.addConstraint("ProbabilityIsZeroIfNoAction" + std::to_string(numberOfConstraintsCreated), constraint);
                     ++numberOfConstraintsCreated;
                 }
                 return numberOfConstraintsCreated;
@@ -532,40 +543,32 @@ namespace storm {
             static uint_fast64_t assertReachabilityProbabilities(storm::solver::LpSolver& solver, storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& psiStates, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation, VariableInformation const& variableInformation) {
                 uint_fast64_t numberOfConstraintsCreated = 0;
                 for (auto state : stateInformation.relevantStates) {
-                    std::vector<double> coefficients;
-                    std::vector<uint_fast64_t> variables;
-                    
-                    std::list<uint_fast64_t>::const_iterator choiceVariableIndicesIterator = variableInformation.stateToChoiceVariablesIndexMap.at(state).begin();
+                    std::list<std::string>::const_iterator choiceVariableIterator = variableInformation.stateToChoiceVariablesMap.at(state).begin();
                     for (auto choice : choiceInformation.relevantChoicesForRelevantStates.at(state)) {
-                        variables.clear();
-                        coefficients.clear();
-                        variables.push_back(variableInformation.stateToProbabilityVariableIndexMap.at(state));
-                        coefficients.push_back(1.0);
+                        storm::expressions::Expression constraint = storm::expressions::Expression::createDoubleVariable(variableInformation.stateToProbabilityVariableMap.at(state));
                         
                         double rightHandSide = 1;
                         for (auto const& successorEntry : labeledMdp.getTransitionMatrix().getRow(choice)) {
                             if (stateInformation.relevantStates.get(successorEntry.getColumn())) {
-                                variables.push_back(static_cast<int>(variableInformation.stateToProbabilityVariableIndexMap.at(successorEntry.getColumn())));
-                                coefficients.push_back(-successorEntry.getValue());
+                                constraint = constraint - storm::expressions::Expression::createDoubleLiteral(successorEntry.getValue()) * storm::expressions::Expression::createDoubleVariable(variableInformation.stateToProbabilityVariableMap.at(successorEntry.getColumn()));
                             } else if (psiStates.get(successorEntry.getColumn())) {
                                 rightHandSide += successorEntry.getValue();
                             }
                         }
                         
-                        coefficients.push_back(1);
-                        variables.push_back(*choiceVariableIndicesIterator);
-                        
-                        solver.addConstraint("ReachabilityProbabilities" + std::to_string(numberOfConstraintsCreated), variables, coefficients, storm::solver::LpSolver::LESS_EQUAL, rightHandSide);
+                        constraint = constraint + storm::expressions::Expression::createDoubleVariable(*choiceVariableIterator) <= storm::expressions::Expression::createDoubleLiteral(rightHandSide);
+                        solver.addConstraint("ReachabilityProbabilities" + std::to_string(numberOfConstraintsCreated), constraint);
                         
                         ++numberOfConstraintsCreated;
-                        ++choiceVariableIndicesIterator;
+                        ++choiceVariableIterator;
                     }
                 }
                 
                 // Make sure that the virtual initial state is being assigned the probability from the initial state
                 // that it selected as a successor state.
-                for (auto initialStateVariableIndexPair : variableInformation.initialStateToChoiceVariableIndexMap) {
-                    solver.addConstraint("VirtualInitialStateHasCorrectProbability" + std::to_string(numberOfConstraintsCreated), {variableInformation.virtualInitialStateVariableIndex, variableInformation.stateToProbabilityVariableIndexMap.at(initialStateVariableIndexPair.first), initialStateVariableIndexPair.second}, {1, -1, 1}, storm::solver::LpSolver::LESS_EQUAL, 1);
+                for (auto const& initialStateVariableIndexPair : variableInformation.initialStateToChoiceVariableIndexMap) {
+                    storm::expressions::Expression constraint = storm::expressions::Expression::createDoubleVariable(variableInformation.virtualInitialStateVariable) - storm::expressions::Expression::createDoubleVariable(variableInformation.stateToProbabilityVariableMap.at(initialStateVariableIndexPair.first)) + storm::expressions::Expression::createDoubleVariable(initialStateVariableIndexPair.second) <= storm::expressions::Expression::createDoubleLiteral(1);
+                    solver.addConstraint("VirtualInitialStateHasCorrectProbability" + std::to_string(numberOfConstraintsCreated), constraint);
                     ++numberOfConstraintsCreated;
                 }
                 
