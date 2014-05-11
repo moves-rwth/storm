@@ -92,17 +92,29 @@ namespace storm {
             virtual void writeModelToFile(std::string const& filename) const override;
             
         private:
+            /*!
+             * Adds a variable with the given name, type, lower and upper bound and objective function coefficient.
+             *
+             * @param name The name of the variable.
+             * @param variableType The type of the variable in terms of glpk's constants.
+             * @param boundType A glpk flag indicating which bounds apply to the variable.
+             * @param lowerBound The lower bound of the range of the variable.
+             * @param upperBound The upper bound of the range of the variable.
+             * @param objectiveFunctionCoefficient The coefficient of the variable in the objective function.
+             */
+            void addVariable(std::string const& name, int variableType, int boundType, double lowerBound, double upperBound, double objectiveFunctionCoefficient);
+            
             // The glpk LP problem.
             glp_prob* lp;
             
             // A mapping from variable names to their indices.
-            std::map<std::string, uint_fast64_t> variableNameToIndexMap;
+            std::map<std::string, int> variableNameToIndexMap;
             
             // A counter used for getting the next variable index.
-            uint_fast64_t nextVariableIndex;
+            int nextVariableIndex;
             
             // A counter used for getting the next constraint index.
-            uint_fast64_t nextConstraintIndex;
+            int nextConstraintIndex;
             
             // A flag storing whether the model is an LP or an MILP.
             bool modelContainsIntegerVariables;

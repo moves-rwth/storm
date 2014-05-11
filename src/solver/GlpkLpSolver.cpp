@@ -21,7 +21,7 @@ bool GlpkLpSolverOptionsRegistered = storm::settings::Settings::registerNewModul
 
 namespace storm {
     namespace solver {
-        GlpkLpSolver::GlpkLpSolver(std::string const& name, ModelSense const& modelSense) : LpSolver(modelSense), lp(nullptr), variableNameToIndexMap(), nextVariableIndex(0), nextConstraintIndex(0), modelContainsIntegerVariables(false), isInfeasibleFlag(false), isUnboundedFlag(false), rowIndices(), columnIndices(), coefficientValues() {
+        GlpkLpSolver::GlpkLpSolver(std::string const& name, ModelSense const& modelSense) : LpSolver(modelSense), lp(nullptr), variableNameToIndexMap(), nextVariableIndex(1), nextConstraintIndex(1), modelContainsIntegerVariables(false), isInfeasibleFlag(false), isUnboundedFlag(false), rowIndices(), columnIndices(), coefficientValues() {
             // Create the LP problem for glpk.
             lp = glp_create_prob();
             
@@ -37,11 +37,11 @@ namespace storm {
             coefficientValues.push_back(0);
         }
         
-        GlpkLpSolver::GlpkLpSolver(std::string const& name) : GlpkLpSolver(name, ModelSense::MINIMIZE) {
+        GlpkLpSolver::GlpkLpSolver(std::string const& name) : GlpkLpSolver(name, ModelSense::Minimize) {
             // Intentionally left empty.
         }
         
-        GlpkLpSolver::GlpkLpSolver() : GlpkLpSolver("", ModelSense::MINIMIZE) {
+        GlpkLpSolver::GlpkLpSolver() : GlpkLpSolver("", ModelSense::Minimize) {
             // Intentionally left empty.
         }
         
@@ -56,98 +56,65 @@ namespace storm {
         }
         
         void GlpkLpSolver::addBoundedContinuousVariable(std::string const& name, double lowerBound, double upperBound, double objectiveFunctionCoefficient) {
-            glp_add_cols(this->lp, 1);
-            glp_set_col_name(this->lp, nextVariableIndex, name.c_str());
-            glp_set_col_bnds(lp, nextVariableIndex, GLP_DB, lowerBound, upperBound);
-            glp_set_col_kind(this->lp, nextVariableIndex, GLP_CV);
-            glp_set_obj_coef(this->lp, nextVariableIndex, objectiveFunctionCoefficient);
-            this->variableNameToIndexMap.emplace(name, this->nextVariableIndex);
-            ++this->nextVariableIndex;
+            this->addVariable(name, GLP_CV, GLP_DB, lowerBound, upperBound, objectiveFunctionCoefficient);
         }
         
         void GlpkLpSolver::addLowerBoundedContinuousVariable(std::string const& name, double lowerBound, double objectiveFunctionCoefficient) {
-            glp_add_cols(this->lp, 1);
-            glp_set_col_name(this->lp, nextVariableIndex, name.c_str());
-            glp_set_col_bnds(lp, nextVariableIndex, GLP_LO, lowerBound, 0);
-            glp_set_col_kind(this->lp, nextVariableIndex, GLP_CV);
-            glp_set_obj_coef(this->lp, nextVariableIndex, objectiveFunctionCoefficient);
-            this->variableNameToIndexMap.emplace(name, this->nextVariableIndex);
-            ++this->nextVariableIndex;
+            this->addVariable(name, GLP_CV, GLP_LO, lowerBound, 0, objectiveFunctionCoefficient);
         }
         
         void GlpkLpSolver::addUpperBoundedContinuousVariable(std::string const& name, double upperBound, double objectiveFunctionCoefficient) {
-            glp_add_cols(this->lp, 1);
-            glp_set_col_name(this->lp, nextVariableIndex, name.c_str());
-            glp_set_col_bnds(lp, nextVariableIndex, GLP_UP, 0, upperBound);
-            glp_set_col_kind(this->lp, nextVariableIndex, GLP_CV);
-            glp_set_obj_coef(this->lp, nextVariableIndex, objectiveFunctionCoefficient);
-            this->variableNameToIndexMap.emplace(name, this->nextVariableIndex);
-            ++this->nextVariableIndex;
+            this->addVariable(name, GLP_CV, GLP_UP, 0, upperBound, objectiveFunctionCoefficient);
         }
         
         void GlpkLpSolver::addUnboundedContinuousVariable(std::string const& name, double objectiveFunctionCoefficient) {
-            glp_add_cols(this->lp, 1);
-            glp_set_col_name(this->lp, nextVariableIndex, name.c_str());
-            glp_set_col_bnds(lp, nextVariableIndex, GLP_FR, 0, 0);
-            glp_set_col_kind(this->lp, nextVariableIndex, GLP_CV);
-            glp_set_obj_coef(this->lp, nextVariableIndex, objectiveFunctionCoefficient);
-            this->variableNameToIndexMap.emplace(name, this->nextVariableIndex);
-            ++this->nextVariableIndex;
+            this->addVariable(name, GLP_CV, GLP_FR, 0, 0, objectiveFunctionCoefficient);
         }
         
         void GlpkLpSolver::addBoundedIntegerVariable(std::string const& name, double lowerBound, double upperBound, double objectiveFunctionCoefficient) {
-            glp_add_cols(this->lp, 1);
-            glp_set_col_name(this->lp, nextVariableIndex, name.c_str());
-            glp_set_col_bnds(lp, nextVariableIndex, GLP_DB, lowerBound, upperBound);
-            glp_set_col_kind(this->lp, nextVariableIndex, GLP_IV);
-            glp_set_obj_coef(this->lp, nextVariableIndex, objectiveFunctionCoefficient);
-            this->variableNameToIndexMap.emplace(name, this->nextVariableIndex);
-            ++this->nextVariableIndex;
+            this->addVariable(name, GLP_IV, GLP_DB, lowerBound, upperBound, objectiveFunctionCoefficient);
             this->modelContainsIntegerVariables = true;
         }
         
         void GlpkLpSolver::addLowerBoundedIntegerVariable(std::string const& name, double lowerBound, double objectiveFunctionCoefficient) {
-            glp_add_cols(this->lp, 1);
-            glp_set_col_name(this->lp, nextVariableIndex, name.c_str());
-            glp_set_col_bnds(lp, nextVariableIndex, GLP_LO, lowerBound, 0);
-            glp_set_col_kind(this->lp, nextVariableIndex, GLP_IV);
-            glp_set_obj_coef(this->lp, nextVariableIndex, objectiveFunctionCoefficient);
-            this->variableNameToIndexMap.emplace(name, this->nextVariableIndex);
-            ++this->nextVariableIndex;
+            this->addVariable(name, GLP_IV, GLP_LO, lowerBound, 0, objectiveFunctionCoefficient);
             this->modelContainsIntegerVariables = true;
         }
 
         void GlpkLpSolver::addUpperBoundedIntegerVariable(std::string const& name, double upperBound, double objectiveFunctionCoefficient) {
-            glp_add_cols(this->lp, 1);
-            glp_set_col_name(this->lp, nextVariableIndex, name.c_str());
-            glp_set_col_bnds(lp, nextVariableIndex, GLP_UP, 0, upperBound);
-            glp_set_col_kind(this->lp, nextVariableIndex, GLP_IV);
-            glp_set_obj_coef(this->lp, nextVariableIndex, objectiveFunctionCoefficient);
-            this->variableNameToIndexMap.emplace(name, this->nextVariableIndex);
-            ++this->nextVariableIndex;
+            this->addVariable(name, GLP_IV, GLP_UP, 0, upperBound, objectiveFunctionCoefficient);
             this->modelContainsIntegerVariables = true;
         }
         
         void GlpkLpSolver::addUnboundedIntegerVariable(std::string const& name, double objectiveFunctionCoefficient) {
-            glp_add_cols(this->lp, 1);
-            glp_set_col_name(this->lp, nextVariableIndex, name.c_str());
-            glp_set_col_bnds(lp, nextVariableIndex, GLP_FR, 0, 0);
-            glp_set_col_kind(this->lp, nextVariableIndex, GLP_IV);
-            glp_set_obj_coef(this->lp, nextVariableIndex, objectiveFunctionCoefficient);
-            this->variableNameToIndexMap.emplace(name, this->nextVariableIndex);
-            ++this->nextVariableIndex;
+            this->addVariable(name, GLP_IV, GLP_FR, 0, 0, objectiveFunctionCoefficient);
             this->modelContainsIntegerVariables = true;
         }
         
         void GlpkLpSolver::addBinaryVariable(std::string const& name, double objectiveFunctionCoefficient) {
+            this->addVariable(name, GLP_BV, GLP_FR, 0, 0, objectiveFunctionCoefficient);
+            this->modelContainsIntegerVariables = true;
+        }
+        
+        void GlpkLpSolver::addVariable(std::string const& name, int variableType, int boundType, double lowerBound, double upperBound, double objectiveFunctionCoefficient) {
+            // Check whether variable already exists.
+            auto nameIndexPair = this->variableNameToIndexMap.find(name);
+            LOG_THROW(nameIndexPair == this->variableNameToIndexMap.end(), storm::exceptions::InvalidArgumentException, "Variable '" << nameIndexPair->first << "' already exists.");
+            
+            // Check for valid variable type.
+            LOG_ASSERT(variableType == GLP_CV || variableType == GLP_IV || variableType == GLP_BV, "Illegal type '" << variableType << "' for glpk variable.");
+            
+            // Check for valid bound type.
+            LOG_ASSERT(boundType == GLP_FR || boundType == GLP_UP || boundType == GLP_LO || boundType == GLP_DB, "Illegal bound type for variable '" << name << "'.");
+            
+            // Finally, create the actual variable.
             glp_add_cols(this->lp, 1);
             glp_set_col_name(this->lp, nextVariableIndex, name.c_str());
-            glp_set_col_bnds(lp, nextVariableIndex, GLP_FR, 0, 0);
-            glp_set_col_kind(this->lp, nextVariableIndex, GLP_BV);
+            glp_set_col_bnds(lp, nextVariableIndex, boundType, lowerBound, upperBound);
+            glp_set_col_kind(this->lp, nextVariableIndex, variableType);
             glp_set_obj_coef(this->lp, nextVariableIndex, objectiveFunctionCoefficient);
             this->variableNameToIndexMap.emplace(name, this->nextVariableIndex);
             ++this->nextVariableIndex;
-            this->modelContainsIntegerVariables = true;
         }
         
         void GlpkLpSolver::update() const {
@@ -219,7 +186,7 @@ namespace storm {
             this->isUnboundedFlag = false;
             
             // Start by setting the model sense.
-            glp_set_obj_dir(this->lp, this->getModelSense() == LpSolver::ModelSense::MINIMIZE ? GLP_MIN : GLP_MAX);
+            glp_set_obj_dir(this->lp, this->getModelSense() == LpSolver::ModelSense::Minimize ? GLP_MIN : GLP_MAX);
             
             glp_load_matrix(this->lp, rowIndices.size() - 1, rowIndices.data(), columnIndices.data(), coefficientValues.data());
             

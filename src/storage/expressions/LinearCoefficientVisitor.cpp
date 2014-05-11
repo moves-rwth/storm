@@ -28,7 +28,7 @@ namespace storm {
                 std::pair<SimpleValuation, double>& rightResult = resultStack.top();
                 
                 // Now add the left result to the right result.
-                for (auto const& identifier : leftResult.first.Valuation::getDoubleIdentifiers()) {
+                for (auto const& identifier : leftResult.first.getDoubleIdentifiers()) {
                     if (rightResult.first.containsDoubleIdentifier(identifier)) {
                         rightResult.first.setDoubleValue(identifier, leftResult.first.getDoubleValue(identifier) + rightResult.first.getDoubleValue(identifier));
                     } else {
@@ -52,7 +52,7 @@ namespace storm {
                         rightResult.first.setDoubleValue(identifier, leftResult.first.getDoubleValue(identifier));
                     }
                 }
-                for (auto const& identifier : rightResult.first.Valuation::getDoubleIdentifiers()) {
+                for (auto const& identifier : rightResult.first.getDoubleIdentifiers()) {
                     if (!leftResult.first.containsDoubleIdentifier(identifier)) {
                         rightResult.first.setDoubleValue(identifier, -rightResult.first.getDoubleValue(identifier));
                     }

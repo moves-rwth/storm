@@ -102,14 +102,28 @@ namespace storm {
              */
             void setGurobiEnvironmentProperties() const;
             
+            /*!
+             * Adds a variable with the given name, type, lower and upper bound and objective function coefficient.
+             *
+             * @param name The name of the variable.
+             * @param variableType The type of the variable in terms of Gurobi's constants.
+             * @param lowerBound The lower bound of the range of the variable.
+             * @param upperBound The upper bound of the range of the variable.
+             * @param objectiveFunctionCoefficient The coefficient of the variable in the objective function.
+             */
+            void addVariable(std::string const& name, char variableType, double lowerBound, double upperBound, double objectiveFunctionCoefficient);
+            
             // The Gurobi environment.
             GRBenv* env;
             
             // The Gurobi model.
             GRBmodel* model;
             
+            // The index of the next variable.
+            int nextVariableIndex;
+            
             // A mapping from variable names to their indices.
-            std::map<std::string, uint_fast64_t> variableNameToIndexMap;
+            std::map<std::string, int> variableNameToIndexMap;
         };
 #else
         // If Gurobi is not available, we provide a stub implementation that emits an error if any of its methods is called.

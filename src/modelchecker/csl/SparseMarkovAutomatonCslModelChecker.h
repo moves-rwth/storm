@@ -428,7 +428,7 @@ namespace storm {
                  */
                 static ValueType computeLraForMaximalEndComponent(bool min, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::BitVector const& markovianStates, std::vector<ValueType> const& exitRates, storm::storage::BitVector const& goalStates, storm::storage::MaximalEndComponent const& mec, uint_fast64_t mecIndex = 0) {
                     std::shared_ptr<storm::solver::LpSolver> solver = storm::utility::solver::getLpSolver("LRA for MEC");
-                    solver->setModelSense(min ? storm::solver::LpSolver::MAXIMIZE : storm::solver::LpSolver::MINIMIZE);
+                    solver->setModelSense(min ? storm::solver::LpSolver::ModelSense::Maximize : storm::solver::LpSolver::ModelSense::Minimize);
                     
                     // First, we need to create the variables for the problem.
                     std::map<uint_fast64_t, uint_fast64_t> stateToVariableIndexMap;

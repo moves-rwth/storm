@@ -94,7 +94,6 @@ namespace storm {
              */
             virtual std::set<std::string> getDoubleIdentifiers() const = 0;
 
-
         };
     }
 }

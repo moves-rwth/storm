@@ -16,14 +16,14 @@ namespace storm {
         public:
             // An enumeration to represent whether the objective function is to be minimized or maximized.
             enum class ModelSense {
-                MINIMIZE,
-                MAXIMIZE
+                Minimize,
+                Maximize
             };
             
             /*!
              * Creates an empty LP solver. By default the objective function is assumed to be minimized.
              */
-            LpSolver() : currentModelHasBeenOptimized(false), modelSense(ModelSense::MINIMIZE) {
+            LpSolver() : currentModelHasBeenOptimized(false), modelSense(ModelSense::Minimize) {
                 // Intentionally left empty.
             }
             

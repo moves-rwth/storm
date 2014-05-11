@@ -17,27 +17,27 @@ namespace storm {
         }
         
 		Expression Expression::substitute(std::map<std::string, Expression> const& identifierToExpressionMap) const {
-            return SubstitutionVisitor<std::map<std::string, Expression>>(identifierToExpressionMap).substitute(this);
+            return SubstitutionVisitor<std::map<std::string, Expression>>(identifierToExpressionMap).substitute(*this);
         }
 
 		Expression Expression::substitute(std::unordered_map<std::string, Expression> const& identifierToExpressionMap) const {
-			return SubstitutionVisitor<std::unordered_map<std::string, Expression>>(identifierToExpressionMap).substitute(this);
+			return SubstitutionVisitor<std::unordered_map<std::string, Expression>>(identifierToExpressionMap).substitute(*this);
 		}
         
 		Expression Expression::substitute(std::map<std::string, std::string> const& identifierToIdentifierMap) const {
-			return IdentifierSubstitutionVisitor<std::map<std::string, std::string>>(identifierToIdentifierMap).substitute(this);
+			return IdentifierSubstitutionVisitor<std::map<std::string, std::string>>(identifierToIdentifierMap).substitute(*this);
         }
 
 		Expression Expression::substitute(std::unordered_map<std::string, std::string> const& identifierToIdentifierMap) const {
-			return IdentifierSubstitutionVisitor<std::unordered_map<std::string, std::string>>(identifierToIdentifierMap).substitute(this);
+			return IdentifierSubstitutionVisitor<std::unordered_map<std::string, std::string>>(identifierToIdentifierMap).substitute(*this);
 		}
         
         void Expression::check(std::map<std::string, storm::expressions::ExpressionReturnType> const& identifierToTypeMap) const {
-            return TypeCheckVisitor<std::map<std::string, storm::expressions::ExpressionReturnType>>(identifierToTypeMap).check(this);
+            return TypeCheckVisitor<std::map<std::string, storm::expressions::ExpressionReturnType>>(identifierToTypeMap).check(*this);
         }
 
         void Expression::check(std::unordered_map<std::string, storm::expressions::ExpressionReturnType> const& identifierToTypeMap) const {
-            return TypeCheckVisitor<std::unordered_map<std::string, storm::expressions::ExpressionReturnType>>(identifierToTypeMap).check(this);
+            return TypeCheckVisitor<std::unordered_map<std::string, storm::expressions::ExpressionReturnType>>(identifierToTypeMap).check(*this);
         }
 
         bool Expression::evaluateAsBool(Valuation const* valuation) const {
