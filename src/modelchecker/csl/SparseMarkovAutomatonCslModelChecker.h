@@ -431,58 +431,58 @@ namespace storm {
                     solver->setModelSense(min ? storm::solver::LpSolver::ModelSense::Maximize : storm::solver::LpSolver::ModelSense::Minimize);
                     
                     // First, we need to create the variables for the problem.
-                    std::map<uint_fast64_t, uint_fast64_t> stateToVariableIndexMap;
+                    std::map<uint_fast64_t, std::string> stateToVariableNameMap;
                     for (auto const& stateChoicesPair : mec) {
-                        stateToVariableIndexMap[stateChoicesPair.first] = solver->createContinuousVariable("x" + std::to_string(stateChoicesPair.first), storm::solver::LpSolver::UNBOUNDED, 0, 0, 0);
+                        std::string variableName = "x" + std::to_string(stateChoicesPair.first);
+                        stateToVariableNameMap[stateChoicesPair.first] = variableName;
+                        solver->addUnboundedContinuousVariable(variableName);
                     }
-                    uint_fast64_t lraValueVariableIndex = solver->createContinuousVariable("k", storm::solver::LpSolver::UNBOUNDED, 0, 0, 1);
+                    solver->addUnboundedContinuousVariable("k", 1);
                     solver->update();
                     
                     // Now we encode the problem as constraints.
-                    std::vector<uint_fast64_t> variables;
-                    std::vector<double> coefficients;
                     for (auto const& stateChoicesPair : mec) {
                         uint_fast64_t state = stateChoicesPair.first;
                         
                         // Now, based on the type of the state, create a suitable constraint.
                         if (markovianStates.get(state)) {
-                            variables.clear();
-                            coefficients.clear();
-                            
-                            variables.push_back(stateToVariableIndexMap.at(state));
-                            coefficients.push_back(1);
+                            storm::expressions::Expression constraint = storm::expressions::Expression::createDoubleVariable(stateToVariableNameMap.at(state));
                             
                             for (auto element : transitionMatrix.getRow(nondeterministicChoiceIndices[state])) {
-                                variables.push_back(stateToVariableIndexMap.at(element.getColumn()));
-                                coefficients.push_back(-element.getValue());
+                                constraint = constraint - storm::expressions::Expression::createDoubleVariable(stateToVariableNameMap.at(element.getColumn()));
                             }
                             
-                            variables.push_back(lraValueVariableIndex);
-                            coefficients.push_back(storm::utility::constantOne<ValueType>() / exitRates[state]);
-                            
-                            solver->addConstraint("state" + std::to_string(state), variables, coefficients, min ? storm::solver::LpSolver::LESS_EQUAL : storm::solver::LpSolver::GREATER_EQUAL, goalStates.get(state) ? storm::utility::constantOne<ValueType>() / exitRates[state] : storm::utility::constantZero<ValueType>());
+                            constraint = constraint + storm::expressions::Expression::createDoubleLiteral(storm::utility::constantOne<ValueType>() / exitRates[state]) * storm::expressions::Expression::createDoubleVariable("k");
+                            storm::expressions::Expression rightHandSide = goalStates.get(state) ? storm::expressions::Expression::createDoubleLiteral(storm::utility::constantOne<ValueType>() / exitRates[state]) : storm::expressions::Expression::createDoubleLiteral(storm::utility::constantZero<ValueType>());
+                            if (min) {
+                                constraint = constraint <= rightHandSide;
+                            } else {
+                                constraint = constraint >= rightHandSide;
+                            }
+                            solver->addConstraint("state" + std::to_string(state), constraint);
                         } else {
                             // For probabilistic states, we want to add the constraint x_s <= sum P(s, a, s') * x_s' where a is the current action
                             // and the sum ranges over all states s'.
                             for (auto choice : stateChoicesPair.second) {
-                                variables.clear();
-                                coefficients.clear();
-                                
-                                variables.push_back(stateToVariableIndexMap.at(state));
-                                coefficients.push_back(1);
-                                
+                                storm::expressions::Expression constraint = storm::expressions::Expression::createDoubleVariable(stateToVariableNameMap.at(state));
+
                                 for (auto element : transitionMatrix.getRow(choice)) {
-                                    variables.push_back(stateToVariableIndexMap.at(element.getColumn()));
-                                    coefficients.push_back(-element.getValue());
+                                    constraint = constraint - storm::expressions::Expression::createDoubleVariable(stateToVariableNameMap.at(element.getColumn()));
                                 }
                                 
-                                solver->addConstraint("state" + std::to_string(state), variables, coefficients, min ? storm::solver::LpSolver::LESS_EQUAL : storm::solver::LpSolver::GREATER_EQUAL, storm::utility::constantZero<ValueType>());
+                                storm::expressions::Expression rightHandSide = storm::expressions::Expression::createDoubleLiteral(storm::utility::constantZero<ValueType>());
+                                if (min) {
+                                    constraint = constraint <= rightHandSide;
+                                } else {
+                                    constraint = constraint >= rightHandSide;
+                                }
+                                solver->addConstraint("state" + std::to_string(state), constraint);
                             }
                         }
                     }
                     
                     solver->optimize();
-                    return solver->getContinuousValue(lraValueVariableIndex);
+                    return solver->getContinuousValue("k");
                 }
                 
                 /*!
