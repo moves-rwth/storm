@@ -2,6 +2,7 @@
 #define STORM_STORAGE_EXPRESSIONS_VALUATION_H_
 
 #include <string>
+#include <set>
 
 namespace storm {
     namespace expressions {
