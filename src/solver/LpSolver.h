@@ -130,7 +130,7 @@ namespace storm {
              * @param objectiveFunctionCoefficient The coefficient with which the variable appears in the objective
              * function. If omitted (or set to zero), the variable is irrelevant for the objective value.
              */
-            virtual void addBinaryVariable(std::string const& name, double objectiveFunctionCoefficient) = 0;
+            virtual void addBinaryVariable(std::string const& name, double objectiveFunctionCoefficient = 0) = 0;
             
             /*!
              * Updates the model to make the variables that have been declared since the last call to <code>update</code>

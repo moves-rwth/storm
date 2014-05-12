@@ -73,7 +73,7 @@ namespace storm {
             virtual void addUnboundedIntegerVariable(std::string const& name, double objectiveFunctionCoefficient = 0) override;
             
             // Methods to add binary variables.
-            virtual void addBinaryVariable(std::string const& name, double objectiveFunctionCoefficient) override;
+            virtual void addBinaryVariable(std::string const& name, double objectiveFunctionCoefficient = 0) override;
             
             // Methods to incorporate recent changes.
             virtual void update() const override;
@@ -176,7 +176,7 @@ namespace storm {
                 throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
             }
             
-            virtual uint_fast64_t addBinaryVariable(std::string const& name, double objectiveFunctionCoefficient) override {
+            virtual uint_fast64_t addBinaryVariable(std::string const& name, double objectiveFunctionCoefficient = 0) override {
                 throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
             }
             
