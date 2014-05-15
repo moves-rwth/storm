@@ -79,29 +79,29 @@ TEST(MarkovAutomatonSparseTransitionParserTest, BasicParsing) {
 	// Finally, test the transition matrix itself.
 	storm::storage::SparseMatrix<double>::const_iterator cIter = transitionMatrix.begin(0);
 
-	ASSERT_EQ(2, cIter->second);
+	ASSERT_EQ(2, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(1, cIter->second);
+	ASSERT_EQ(1, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(1, cIter->second);
+	ASSERT_EQ(1, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(2, cIter->second);
+	ASSERT_EQ(2, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(4, cIter->second);
+	ASSERT_EQ(4, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(8, cIter->second);
+	ASSERT_EQ(8, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(0.5, cIter->second);
+	ASSERT_EQ(0.5, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(0.5, cIter->second);
+	ASSERT_EQ(0.5, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(1, cIter->second);
+	ASSERT_EQ(1, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(0.5, cIter->second);
+	ASSERT_EQ(0.5, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(0.5, cIter->second);
+	ASSERT_EQ(0.5, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(1, cIter->second);
+	ASSERT_EQ(1, cIter->getValue());
 	cIter++;
 	ASSERT_EQ(transitionMatrix.end(), cIter);
 }
@@ -157,29 +157,29 @@ TEST(MarkovAutomatonSparseTransitionParserTest, Whitespaces) {
 	// Finally, test the transition matrix itself.
 	storm::storage::SparseMatrix<double>::const_iterator cIter = transitionMatrix.begin(0);
 
-	ASSERT_EQ(2, cIter->second);
+	ASSERT_EQ(2, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(1, cIter->second);
+	ASSERT_EQ(1, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(1, cIter->second);
+	ASSERT_EQ(1, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(2, cIter->second);
+	ASSERT_EQ(2, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(4, cIter->second);
+	ASSERT_EQ(4, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(8, cIter->second);
+	ASSERT_EQ(8, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(0.5, cIter->second);
+	ASSERT_EQ(0.5, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(0.5, cIter->second);
+	ASSERT_EQ(0.5, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(1, cIter->second);
+	ASSERT_EQ(1, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(0.5, cIter->second);
+	ASSERT_EQ(0.5, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(0.5, cIter->second);
+	ASSERT_EQ(0.5, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(1, cIter->second);
+	ASSERT_EQ(1, cIter->getValue());
 	cIter++;
 	ASSERT_EQ(transitionMatrix.end(), cIter);
 }

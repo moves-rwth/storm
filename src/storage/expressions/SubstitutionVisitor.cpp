@@ -13,8 +13,8 @@ namespace storm {
         }
 
 		template<typename MapType>
-        Expression SubstitutionVisitor<MapType>::substitute(BaseExpression const* expression) {
-            expression->accept(this);
+        Expression SubstitutionVisitor<MapType>::substitute(Expression const& expression) {
+            expression.getBaseExpression().accept(this);
             return Expression(this->expressionStack.top());
         }
         

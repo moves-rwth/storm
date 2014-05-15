@@ -220,7 +220,7 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 		 * @return The number of (non-zero) transitions of the model.
 		 */
 		virtual uint_fast64_t getNumberOfTransitions() const {
-			return this->getTransitionMatrix().getEntryCount();
+			return this->getTransitionMatrix().getNonzeroEntryCount();
 		}
 
         /*!

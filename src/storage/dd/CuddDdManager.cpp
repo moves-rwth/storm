@@ -32,7 +32,7 @@ bool CuddOptionsRegistered = storm::settings::Settings::registerNewModule([] (st
 namespace storm {
     namespace dd {
         DdManager<DdType::CUDD>::DdManager() : metaVariableMap(), cuddManager() {
-            this->cuddManager.SetMaxMemory(storm::settings::Settings::getInstance()->getOptionByLongName("cuddmaxmem").getArgument(0).getValueAsUnsignedInteger() * 1024);
+            this->cuddManager.SetMaxMemory(storm::settings::Settings::getInstance()->getOptionByLongName("cuddmaxmem").getArgument(0).getValueAsUnsignedInteger() * 1024 * 1024);
             this->cuddManager.SetEpsilon(storm::settings::Settings::getInstance()->getOptionByLongName("cuddprec").getArgument(0).getValueAsDouble());
         }
         
@@ -224,6 +224,10 @@ namespace storm {
         Cudd& DdManager<DdType::CUDD>::getCuddManager() {
             return this->cuddManager;
         }
+
+        Cudd const& DdManager<DdType::CUDD>::getCuddManager() const {
+            return this->cuddManager;
+        }
         
         std::vector<std::string> DdManager<DdType::CUDD>::getDdVariableNames() const {
             // First, we initialize a list DD variables and their names.
@@ -245,6 +249,23 @@ namespace storm {
             }
             
             return result;
+        }
+        
+        void DdManager<DdType::CUDD>::allowDynamicReordering(bool value) {
+            if (value) {
+                this->getCuddManager().AutodynEnable(CUDD_REORDER_GROUP_SIFT_CONV);
+            } else {
+                this->getCuddManager().AutodynDisable();
+            }
+        }
+        
+        bool DdManager<DdType::CUDD>::isDynamicReorderingAllowed() const {
+            Cudd_ReorderingType type;
+            return this->getCuddManager().ReorderingStatus(&type);
+        }
+        
+        void DdManager<DdType::CUDD>::triggerReordering() {
+            this->getCuddManager().ReduceHeap(CUDD_REORDER_GROUP_SIFT_CONV, 0);
         }
     }
 }

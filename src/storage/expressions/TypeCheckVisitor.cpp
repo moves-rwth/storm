@@ -12,8 +12,8 @@ namespace storm {
         }
         
         template<typename MapType>
-        void TypeCheckVisitor<MapType>::check(BaseExpression const* expression) {
-            expression->accept(this);
+        void TypeCheckVisitor<MapType>::check(Expression const& expression) {
+            expression.getBaseExpression().accept(this);
         }
         
         template<typename MapType>

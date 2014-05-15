@@ -103,10 +103,10 @@ namespace storm {
                     for (auto state : markovianNonGoalStates) {
                         for (auto& element : aMarkovian.getRow(rowIndex)) {
                             ValueType eTerm = std::exp(-exitRates[state] * delta);
-                            if (element.first == rowIndex) {
-                                element.second = (storm::utility::constantOne<ValueType>() - eTerm) * element.second + eTerm;
+                            if (element.getColumn() == rowIndex) {
+                                element.getValue() = (storm::utility::constantOne<ValueType>() - eTerm) * element.getValue() + eTerm;
                             } else {
-                                element.second = (storm::utility::constantOne<ValueType>() - eTerm) * element.second;
+                                element.getValue() = (storm::utility::constantOne<ValueType>() - eTerm) * element.getValue();
                             }
                         }
                         ++rowIndex;
@@ -116,7 +116,7 @@ namespace storm {
                     rowIndex = 0;
                     for (auto state : markovianNonGoalStates) {
                         for (auto& element : aMarkovianToProbabilistic.getRow(rowIndex)) {
-                            element.second = (1 - std::exp(-exitRates[state] * delta)) * element.second;
+                            element.getValue() = (1 - std::exp(-exitRates[state] * delta)) * element.getValue();
                         }
                         ++rowIndex;
                     }
@@ -133,8 +133,8 @@ namespace storm {
                         bMarkovianFixed.push_back(storm::utility::constantZero<ValueType>());
                         
                         for (auto& element : transitionMatrix.getRowGroup(state)) {
-                            if (goalStates.get(element.first)) {
-                                bMarkovianFixed.back() += (1 - std::exp(-exitRates[state] * delta)) * element.second;
+                            if (goalStates.get(element.getColumn())) {
+                                bMarkovianFixed.back() += (1 - std::exp(-exitRates[state] * delta)) * element.getValue();
                             }
                         }
                     }
@@ -314,13 +314,13 @@ namespace storm {
                             b.push_back(storm::utility::constantZero<ValueType>());
                             
                             for (auto element : transitionMatrix.getRow(choice)) {
-                                if (statesNotContainedInAnyMec.get(element.first)) {
+                                if (statesNotContainedInAnyMec.get(element.getColumn())) {
                                     // If the target state is not contained in an MEC, we can copy over the entry.
-                                    sspMatrixBuilder.addNextValue(currentChoice, statesNotInMecsBeforeIndex[element.first], element.second);
+                                    sspMatrixBuilder.addNextValue(currentChoice, statesNotInMecsBeforeIndex[element.getColumn()], element.getValue());
                                 } else {
                                     // If the target state is contained in MEC i, we need to add the probability to the corresponding field in the vector
                                     // so that we are able to write the cumulative probability to the MEC into the matrix.
-                                    auxiliaryStateToProbabilityMap[stateToMecIndexMap[element.first]] += element.second;
+                                    auxiliaryStateToProbabilityMap[stateToMecIndexMap[element.getColumn()]] += element.getValue();
                                 }
                             }
                             
@@ -350,13 +350,13 @@ namespace storm {
                                     b.push_back(storm::utility::constantZero<ValueType>());
 
                                     for (auto element : transitionMatrix.getRow(choice)) {
-                                        if (statesNotContainedInAnyMec.get(element.first)) {
+                                        if (statesNotContainedInAnyMec.get(element.getColumn())) {
                                             // If the target state is not contained in an MEC, we can copy over the entry.
-                                            sspMatrixBuilder.addNextValue(currentChoice, statesNotInMecsBeforeIndex[element.first], element.second);
+                                            sspMatrixBuilder.addNextValue(currentChoice, statesNotInMecsBeforeIndex[element.getColumn()], element.getValue());
                                         } else {
                                             // If the target state is contained in MEC i, we need to add the probability to the corresponding field in the vector
                                             // so that we are able to write the cumulative probability to the MEC into the matrix.
-                                            auxiliaryStateToProbabilityMap[stateToMecIndexMap[element.first]] += element.second;
+                                            auxiliaryStateToProbabilityMap[stateToMecIndexMap[element.getColumn()]] += element.getValue();
                                         }
                                     }
                                     
@@ -428,61 +428,61 @@ namespace storm {
                  */
                 static ValueType computeLraForMaximalEndComponent(bool min, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::BitVector const& markovianStates, std::vector<ValueType> const& exitRates, storm::storage::BitVector const& goalStates, storm::storage::MaximalEndComponent const& mec, uint_fast64_t mecIndex = 0) {
                     std::shared_ptr<storm::solver::LpSolver> solver = storm::utility::solver::getLpSolver("LRA for MEC");
-                    solver->setModelSense(min ? storm::solver::LpSolver::MAXIMIZE : storm::solver::LpSolver::MINIMIZE);
+                    solver->setModelSense(min ? storm::solver::LpSolver::ModelSense::Maximize : storm::solver::LpSolver::ModelSense::Minimize);
                     
                     // First, we need to create the variables for the problem.
-                    std::map<uint_fast64_t, uint_fast64_t> stateToVariableIndexMap;
+                    std::map<uint_fast64_t, std::string> stateToVariableNameMap;
                     for (auto const& stateChoicesPair : mec) {
-                        stateToVariableIndexMap[stateChoicesPair.first] = solver->createContinuousVariable("x" + std::to_string(stateChoicesPair.first), storm::solver::LpSolver::UNBOUNDED, 0, 0, 0);
+                        std::string variableName = "x" + std::to_string(stateChoicesPair.first);
+                        stateToVariableNameMap[stateChoicesPair.first] = variableName;
+                        solver->addUnboundedContinuousVariable(variableName);
                     }
-                    uint_fast64_t lraValueVariableIndex = solver->createContinuousVariable("k", storm::solver::LpSolver::UNBOUNDED, 0, 0, 1);
+                    solver->addUnboundedContinuousVariable("k", 1);
                     solver->update();
                     
                     // Now we encode the problem as constraints.
-                    std::vector<uint_fast64_t> variables;
-                    std::vector<double> coefficients;
                     for (auto const& stateChoicesPair : mec) {
                         uint_fast64_t state = stateChoicesPair.first;
                         
                         // Now, based on the type of the state, create a suitable constraint.
                         if (markovianStates.get(state)) {
-                            variables.clear();
-                            coefficients.clear();
-                            
-                            variables.push_back(stateToVariableIndexMap.at(state));
-                            coefficients.push_back(1);
+                            storm::expressions::Expression constraint = storm::expressions::Expression::createDoubleVariable(stateToVariableNameMap.at(state));
                             
                             for (auto element : transitionMatrix.getRow(nondeterministicChoiceIndices[state])) {
-                                variables.push_back(stateToVariableIndexMap.at(element.first));
-                                coefficients.push_back(-element.second);
+                                constraint = constraint - storm::expressions::Expression::createDoubleVariable(stateToVariableNameMap.at(element.getColumn()));
                             }
                             
-                            variables.push_back(lraValueVariableIndex);
-                            coefficients.push_back(storm::utility::constantOne<ValueType>() / exitRates[state]);
-                            
-                            solver->addConstraint("state" + std::to_string(state), variables, coefficients, min ? storm::solver::LpSolver::LESS_EQUAL : storm::solver::LpSolver::GREATER_EQUAL, goalStates.get(state) ? storm::utility::constantOne<ValueType>() / exitRates[state] : storm::utility::constantZero<ValueType>());
+                            constraint = constraint + storm::expressions::Expression::createDoubleLiteral(storm::utility::constantOne<ValueType>() / exitRates[state]) * storm::expressions::Expression::createDoubleVariable("k");
+                            storm::expressions::Expression rightHandSide = goalStates.get(state) ? storm::expressions::Expression::createDoubleLiteral(storm::utility::constantOne<ValueType>() / exitRates[state]) : storm::expressions::Expression::createDoubleLiteral(storm::utility::constantZero<ValueType>());
+                            if (min) {
+                                constraint = constraint <= rightHandSide;
+                            } else {
+                                constraint = constraint >= rightHandSide;
+                            }
+                            solver->addConstraint("state" + std::to_string(state), constraint);
                         } else {
                             // For probabilistic states, we want to add the constraint x_s <= sum P(s, a, s') * x_s' where a is the current action
                             // and the sum ranges over all states s'.
                             for (auto choice : stateChoicesPair.second) {
-                                variables.clear();
-                                coefficients.clear();
-                                
-                                variables.push_back(stateToVariableIndexMap.at(state));
-                                coefficients.push_back(1);
-                                
+                                storm::expressions::Expression constraint = storm::expressions::Expression::createDoubleVariable(stateToVariableNameMap.at(state));
+
                                 for (auto element : transitionMatrix.getRow(choice)) {
-                                    variables.push_back(stateToVariableIndexMap.at(element.first));
-                                    coefficients.push_back(-element.second);
+                                    constraint = constraint - storm::expressions::Expression::createDoubleVariable(stateToVariableNameMap.at(element.getColumn()));
                                 }
                                 
-                                solver->addConstraint("state" + std::to_string(state), variables, coefficients, min ? storm::solver::LpSolver::LESS_EQUAL : storm::solver::LpSolver::GREATER_EQUAL, storm::utility::constantZero<ValueType>());
+                                storm::expressions::Expression rightHandSide = storm::expressions::Expression::createDoubleLiteral(storm::utility::constantZero<ValueType>());
+                                if (min) {
+                                    constraint = constraint <= rightHandSide;
+                                } else {
+                                    constraint = constraint >= rightHandSide;
+                                }
+                                solver->addConstraint("state" + std::to_string(state), constraint);
                             }
                         }
                     }
                     
                     solver->optimize();
-                    return solver->getContinuousValue(lraValueVariableIndex);
+                    return solver->getContinuousValue("k");
                 }
                 
                 /*!

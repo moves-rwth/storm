@@ -17,7 +17,7 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, Crowds) {
 	std::shared_ptr<storm::models::Dtmc<double>> dtmc = abstractModel->as<storm::models::Dtmc<double>>();
 
 	ASSERT_EQ(dtmc->getNumberOfStates(), 2036647ull);
-	ASSERT_EQ(dtmc->getNumberOfTransitions(), 8973900ull);
+	ASSERT_EQ(dtmc->getNumberOfTransitions(), 7362293ull);
 
 	storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double> mc(*dtmc, new storm::solver::GmmxxLinearEquationSolver<double>());
 
@@ -71,7 +71,7 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, SynchronousLeader) {
 	std::shared_ptr<storm::models::Dtmc<double>> dtmc = abstractModel->as<storm::models::Dtmc<double>>();
 
 	ASSERT_EQ(dtmc->getNumberOfStates(), 1312334ull);
-	ASSERT_EQ(dtmc->getNumberOfTransitions(), 2886810ull);
+	ASSERT_EQ(dtmc->getNumberOfTransitions(), 1574477ull);
 
 	storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double> mc(*dtmc, new storm::solver::GmmxxLinearEquationSolver<double>());
 

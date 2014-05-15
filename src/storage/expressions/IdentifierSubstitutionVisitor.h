@@ -26,7 +26,7 @@ namespace storm {
              * @return The expression in which all identifiers in the key set of the previously given mapping are
              * substituted with the mapped-to expressions.
              */
-            Expression substitute(BaseExpression const* expression);
+            Expression substitute(Expression const& expression);
             
             virtual void visit(IfThenElseExpression const* expression) override;
             virtual void visit(BinaryBooleanFunctionExpression const* expression) override;

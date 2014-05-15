@@ -440,16 +440,20 @@ namespace storm {
             /*!
              * Retrieves an iterator that points to the first meta variable assignment with a non-zero function value.
              *
+             * @param enumerateDontCareMetaVariables If set to true, all meta variable assignments are enumerated, even
+             * if a meta variable does not at all influence the the function value.
              * @return An iterator that points to the first meta variable assignment with a non-zero function value.
              */
-            DdForwardIterator<DdType::CUDD> begin() const;
+            DdForwardIterator<DdType::CUDD> begin(bool enumerateDontCareMetaVariables = true) const;
             
             /*!
              * Retrieves an iterator that points past the end of the container.
              *
+             * @param enumerateDontCareMetaVariables If set to true, all meta variable assignments are enumerated, even
+             * if a meta variable does not at all influence the the function value.
              * @return An iterator that points past the end of the container.
              */
-            DdForwardIterator<DdType::CUDD> end() const;
+            DdForwardIterator<DdType::CUDD> end(bool enumerateDontCareMetaVariables = true) const;
             
             friend std::ostream & operator<<(std::ostream& out, const Dd<DdType::CUDD>& dd);
         private:

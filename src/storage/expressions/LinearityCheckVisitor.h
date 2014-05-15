@@ -1,5 +1,5 @@
-#ifndef STORM_STORAGE_EXPRESSIONS_TYPECHECKVISITOR_H_
-#define STORM_STORAGE_EXPRESSIONS_TYPECHECKVISITOR_H_
+#ifndef STORM_STORAGE_EXPRESSIONS_LINEARITYCHECKVISITOR_H_
+#define STORM_STORAGE_EXPRESSIONS_LINEARITYCHECKVISITOR_H_
 
 #include <stack>
 
@@ -8,23 +8,19 @@
 
 namespace storm {
     namespace expressions {
-        template<typename MapType>
-        class TypeCheckVisitor : public ExpressionVisitor {
+        class LinearityCheckVisitor : public ExpressionVisitor {
         public:
             /*!
-             * Creates a new type check visitor that uses the given map to check the types of variables and constants.
-             *
-             * @param identifierToTypeMap A mapping from identifiers to expressions.
+             * Creates a linearity check visitor.
              */
-            TypeCheckVisitor(MapType const& identifierToTypeMap);
+            LinearityCheckVisitor();
             
             /*!
-             * Checks that the types of the identifiers in the given expression match the ones in the previously given
-             * map.
+             * Checks that the given expression is linear.
              *
-             * @param expression The expression in which to check the types.
+             * @param expression The expression to check for linearity.
              */
-            void check(Expression const& expression);
+            bool check(Expression const& expression);
             
             virtual void visit(IfThenElseExpression const* expression) override;
             virtual void visit(BinaryBooleanFunctionExpression const* expression) override;
@@ -37,11 +33,13 @@ namespace storm {
             virtual void visit(IntegerLiteralExpression const* expression) override;
             virtual void visit(DoubleLiteralExpression const* expression) override;
             
-        private:            
-            // A mapping of identifier names to expressions with which they shall be replaced.
-            MapType const& identifierToTypeMap;
+        private:
+            enum class LinearityStatus { NonLinear, LinearContainsVariables, LinearWithoutVariables };
+            
+            // A stack for communicating the results of the subexpressions.
+            std::stack<LinearityStatus> resultStack;
         };
     }
 }
 
-#endif /* STORM_STORAGE_EXPRESSIONS_TYPECHECKVISITOR_H_ */
+#endif /* STORM_STORAGE_EXPRESSIONS_LINEARITYCHECKVISITOR_H_ */

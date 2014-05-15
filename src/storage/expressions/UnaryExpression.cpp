@@ -9,6 +9,10 @@ namespace storm {
             // Intentionally left empty.
         }
 
+        bool UnaryExpression::isFunctionApplication() const {
+            return true;
+        }
+        
         bool UnaryExpression::containsVariables() const {
             return this->getOperand()->containsVariables();
         }

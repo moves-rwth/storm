@@ -5,6 +5,7 @@
 #include "src/storage/expressions/SubstitutionVisitor.h"
 #include "src/storage/expressions/IdentifierSubstitutionVisitor.h"
 #include "src/storage/expressions/TypeCheckVisitor.h"
+#include "src/storage/expressions/LinearityCheckVisitor.h"
 #include "src/storage/expressions/Expressions.h"
 #include "src/exceptions/InvalidTypeException.h"
 #include "src/exceptions/ExceptionMacros.h"
@@ -16,27 +17,27 @@ namespace storm {
         }
         
 		Expression Expression::substitute(std::map<std::string, Expression> const& identifierToExpressionMap) const {
-            return SubstitutionVisitor<std::map<std::string, Expression>>(identifierToExpressionMap).substitute(this->getBaseExpressionPointer().get());
+            return SubstitutionVisitor<std::map<std::string, Expression>>(identifierToExpressionMap).substitute(*this);
         }
 
 		Expression Expression::substitute(std::unordered_map<std::string, Expression> const& identifierToExpressionMap) const {
-			return SubstitutionVisitor<std::unordered_map<std::string, Expression>>(identifierToExpressionMap).substitute(this->getBaseExpressionPointer().get());
+			return SubstitutionVisitor<std::unordered_map<std::string, Expression>>(identifierToExpressionMap).substitute(*this);
 		}
         
 		Expression Expression::substitute(std::map<std::string, std::string> const& identifierToIdentifierMap) const {
-			return IdentifierSubstitutionVisitor<std::map<std::string, std::string>>(identifierToIdentifierMap).substitute(this->getBaseExpressionPointer().get());
+			return IdentifierSubstitutionVisitor<std::map<std::string, std::string>>(identifierToIdentifierMap).substitute(*this);
         }
 
 		Expression Expression::substitute(std::unordered_map<std::string, std::string> const& identifierToIdentifierMap) const {
-			return IdentifierSubstitutionVisitor<std::unordered_map<std::string, std::string>>(identifierToIdentifierMap).substitute(this->getBaseExpressionPointer().get());
+			return IdentifierSubstitutionVisitor<std::unordered_map<std::string, std::string>>(identifierToIdentifierMap).substitute(*this);
 		}
         
         void Expression::check(std::map<std::string, storm::expressions::ExpressionReturnType> const& identifierToTypeMap) const {
-            return TypeCheckVisitor<std::map<std::string, storm::expressions::ExpressionReturnType>>(identifierToTypeMap).check(this->getBaseExpressionPointer().get());
+            return TypeCheckVisitor<std::map<std::string, storm::expressions::ExpressionReturnType>>(identifierToTypeMap).check(*this);
         }
 
         void Expression::check(std::unordered_map<std::string, storm::expressions::ExpressionReturnType> const& identifierToTypeMap) const {
-            return TypeCheckVisitor<std::unordered_map<std::string, storm::expressions::ExpressionReturnType>>(identifierToTypeMap).check(this->getBaseExpressionPointer().get());
+            return TypeCheckVisitor<std::unordered_map<std::string, storm::expressions::ExpressionReturnType>>(identifierToTypeMap).check(*this);
         }
 
         bool Expression::evaluateAsBool(Valuation const* valuation) const {
@@ -53,6 +54,14 @@ namespace storm {
         
         Expression Expression::simplify() {
             return Expression(this->getBaseExpression().simplify());
+        }
+        
+        OperatorType Expression::getOperator() const {
+            return this->getBaseExpression().getOperator();
+        }
+        
+        bool Expression::isFunctionApplication() const {
+            return this->getBaseExpression().isFunctionApplication();
         }
         
         uint_fast64_t Expression::getArity() const {
@@ -101,6 +110,24 @@ namespace storm {
 				return this->getBaseExpression().getVariablesAndTypes();
 			}
 		}
+        
+        bool Expression::isRelationalExpression() const {
+            if (!this->isFunctionApplication()) {
+                return false;
+            }
+            
+            return this->getOperator() == OperatorType::Equal || this->getOperator() == OperatorType::NotEqual
+            || this->getOperator() == OperatorType::Less || this->getOperator() == OperatorType::LessOrEqual
+            || this->getOperator() == OperatorType::Greater || this->getOperator() == OperatorType::GreaterOrEqual;
+        }
+        
+        bool Expression::isLinear() const {
+            return LinearityCheckVisitor().check(*this);
+        }
+        
+        std::set<std::string> Expression::getVariables() const {
+            return this->getBaseExpression().getVariables();
+        }
         
         BaseExpression const& Expression::getBaseExpression() const {
             return *this->expressionPtr;

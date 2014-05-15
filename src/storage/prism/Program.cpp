@@ -13,7 +13,7 @@ namespace storm {
         Program::Program(ModelType modelType, std::vector<Constant> const& constants, std::vector<BooleanVariable> const& globalBooleanVariables, std::vector<IntegerVariable> const& globalIntegerVariables, std::vector<Formula> const& formulas, std::vector<Module> const& modules, std::vector<RewardModel> const& rewardModels, bool fixInitialConstruct, storm::prism::InitialConstruct const& initialConstruct, std::vector<Label> const& labels, std::string const& filename, uint_fast64_t lineNumber, bool checkValidity) : LocatedInformation(filename, lineNumber), modelType(modelType), constants(constants), constantToIndexMap(), globalBooleanVariables(globalBooleanVariables), globalBooleanVariableToIndexMap(), globalIntegerVariables(globalIntegerVariables), globalIntegerVariableToIndexMap(), formulas(formulas), formulaToIndexMap(), modules(modules), moduleToIndexMap(), rewardModels(rewardModels), rewardModelToIndexMap(), initialConstruct(initialConstruct), labels(labels), labelToIndexMap(), actions(), actionsToModuleIndexMap(), variableToModuleIndexMap() {
             this->createMappings();
             
-            // Create a new initial construct if none was given explicitly.
+            // Create a new initial construct if the corresponding flag was set.
             if (fixInitialConstruct) {
                 if (this->getInitialConstruct().getInitialStatesExpression().isFalse()) {
                     storm::expressions::Expression newInitialExpression = storm::expressions::Expression::createTrue();

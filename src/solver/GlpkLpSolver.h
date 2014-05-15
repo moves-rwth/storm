@@ -14,7 +14,6 @@
 namespace storm {
     namespace solver {
 #ifdef STORM_HAVE_GLPK
-        
         /*!
          * A class that implements the LpSolver interface using glpk as the background solver.
          */
@@ -56,34 +55,66 @@ namespace storm {
              */
             virtual ~GlpkLpSolver();
             
-            virtual uint_fast64_t createContinuousVariable(std::string const& name, VariableType const& variableType, double lowerBound, double upperBound, double objectiveFunctionCoefficient) override;
-            virtual uint_fast64_t createIntegerVariable(std::string const& name, VariableType const& variableType, double lowerBound, double upperBound, double objectiveFunctionCoefficient) override;
-            virtual uint_fast64_t createBinaryVariable(std::string const& name, double objectiveFunctionCoefficient) override;
+            // Methods to add continuous variables.
+            virtual void addBoundedContinuousVariable(std::string const& name, double lowerBound, double upperBound, double objectiveFunctionCoefficient = 0) override;
+            virtual void addLowerBoundedContinuousVariable(std::string const& name, double lowerBound, double objectiveFunctionCoefficient = 0) override;
+            virtual void addUpperBoundedContinuousVariable(std::string const& name, double upperBound, double objectiveFunctionCoefficient = 0) override;
+            virtual void addUnboundedContinuousVariable(std::string const& name, double objectiveFunctionCoefficient = 0) override;
+            
+            // Methods to add integer variables.
+            virtual void addBoundedIntegerVariable(std::string const& name, double lowerBound, double upperBound, double objectiveFunctionCoefficient = 0) override;
+            virtual void addLowerBoundedIntegerVariable(std::string const& name, double lowerBound, double objectiveFunctionCoefficient = 0) override;
+            virtual void addUpperBoundedIntegerVariable(std::string const& name, double upperBound, double objectiveFunctionCoefficient = 0) override;
+            virtual void addUnboundedIntegerVariable(std::string const& name, double objectiveFunctionCoefficient = 0) override;
+
+            // Methods to add binary variables.
+            virtual void addBinaryVariable(std::string const& name, double objectiveFunctionCoefficient = 0) override;
+
+            // Methods to incorporate recent changes.
             virtual void update() const override;
             
-            virtual void addConstraint(std::string const& name, std::vector<uint_fast64_t> const& variables, std::vector<double> const& coefficients, BoundType const& boundType, double rightHandSideValue) override;
+            // Methods to add constraints
+            virtual void addConstraint(std::string const& name, storm::expressions::Expression const& constraint) override;
             
+            // Methods to optimize and retrieve optimality status.
             virtual void optimize() const override;
             virtual bool isInfeasible() const override;
             virtual bool isUnbounded() const override;
             virtual bool isOptimal() const override;
 
-            virtual int_fast64_t getIntegerValue(uint_fast64_t variableIndex) const override;
-            virtual bool getBinaryValue(uint_fast64_t variableIndex) const override;
-            virtual double getContinuousValue(uint_fast64_t variableIndex) const override;
+            // Methods to retrieve values of variables and the objective function in the optimal solutions.
+            virtual double getContinuousValue(std::string const& name) const override;
+            virtual int_fast64_t getIntegerValue(std::string const& name) const override;
+            virtual bool getBinaryValue(std::string const& name) const override;
             virtual double getObjectiveValue() const override;
 
+            // Methods to print the LP problem to a file.
             virtual void writeModelToFile(std::string const& filename) const override;
             
         private:
+            /*!
+             * Adds a variable with the given name, type, lower and upper bound and objective function coefficient.
+             *
+             * @param name The name of the variable.
+             * @param variableType The type of the variable in terms of glpk's constants.
+             * @param boundType A glpk flag indicating which bounds apply to the variable.
+             * @param lowerBound The lower bound of the range of the variable.
+             * @param upperBound The upper bound of the range of the variable.
+             * @param objectiveFunctionCoefficient The coefficient of the variable in the objective function.
+             */
+            void addVariable(std::string const& name, int variableType, int boundType, double lowerBound, double upperBound, double objectiveFunctionCoefficient);
+            
             // The glpk LP problem.
             glp_prob* lp;
             
-            // A counter that keeps track of the next free variable index.
-            uint_fast64_t nextVariableIndex;
+            // A mapping from variable names to their indices.
+            std::map<std::string, int> variableNameToIndexMap;
             
-            // A counter that keeps track of the next free constraint index.
-            uint_fast64_t nextConstraintIndex;
+            // A counter used for getting the next variable index.
+            int nextVariableIndex;
+            
+            // A counter used for getting the next constraint index.
+            int nextConstraintIndex;
             
             // A flag storing whether the model is an LP or an MILP.
             bool modelContainsIntegerVariables;
@@ -121,15 +152,39 @@ namespace storm {
                 throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
             }
             
-            virtual uint_fast64_t createContinuousVariable(std::string const& name, VariableType const& variableType, double lowerBound, double upperBound, double objectiveFunctionCoefficient) override {
+            virtual void addBoundedContinuousVariable(std::string const& name, double lowerBound, double upperBound, double objectiveFunctionCoefficient = 0) override {
                 throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
             }
             
-            virtual uint_fast64_t createIntegerVariable(std::string const& name, VariableType const& variableType, double lowerBound, double upperBound, double objectiveFunctionCoefficient) override {
+            virtual void addLowerBoundedContinuousVariable(std::string const& name, double lowerBound, double objectiveFunctionCoefficient = 0) override {
                 throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
             }
             
-            virtual uint_fast64_t createBinaryVariable(std::string const& name, double objectiveFunctionCoefficient) override {
+            virtual void addUpperBoundedContinuousVariable(std::string const& name, double upperBound, double objectiveFunctionCoefficient = 0) override {
+                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
+            }
+            
+            virtual void addUnboundedContinuousVariable(std::string const& name, double objectiveFunctionCoefficient = 0) override {
+                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
+            }
+            
+            virtual void addBoundedIntegerVariable(std::string const& name, double lowerBound, double upperBound, double objectiveFunctionCoefficient = 0) override {
+                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
+            }
+            
+            virtual void addLowerBoundedIntegerVariable(std::string const& name, double lowerBound, double objectiveFunctionCoefficient = 0) override {
+                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
+            }
+            
+            virtual void addUpperBoundedIntegerVariable(std::string const& name, double upperBound, double objectiveFunctionCoefficient = 0) override {
+                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
+            }
+            
+            virtual void addUnboundedIntegerVariable(std::string const& name, double objectiveFunctionCoefficient = 0) override {
+                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
+            }
+            
+            virtual uint_fast64_t addBinaryVariable(std::string const& name, double objectiveFunctionCoefficient = 0) override {
                 throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
             }
             
@@ -137,14 +192,14 @@ namespace storm {
                 throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
             }
             
-            virtual void addConstraint(std::string const& name, std::vector<uint_fast64_t> const& variables, std::vector<double> const& coefficients, BoundType const& boundType, double rightHandSideValue) override {
+            virtual void addConstraint(std::string const& name, storm::expressions::Expression const& constraint) override {
                 throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
             }
-                        
+            
             virtual void optimize() const override {
                 throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
             }
-
+            
             virtual bool isInfeasible() const override {
                 throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
             }
@@ -157,15 +212,15 @@ namespace storm {
                 throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
             }
             
-            virtual int_fast64_t getIntegerValue(uint_fast64_t variableIndex) const override {
+            virtual double getContinuousValue(std::string const& name) const override {
                 throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
             }
             
-            virtual bool getBinaryValue(uint_fast64_t variableIndex) const override {
+            virtual int_fast64_t getIntegerValue(std::string const& name) const override {
                 throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
             }
             
-            virtual double getContinuousValue(uint_fast64_t variableIndex) const override {
+            virtual bool getBinaryValue(std::string const& name) const override {
                 throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
             }
             

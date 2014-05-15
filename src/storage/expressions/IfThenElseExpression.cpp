@@ -1,9 +1,39 @@
 #include "src/storage/expressions/IfThenElseExpression.h"
 
+#include "src/exceptions/ExceptionMacros.h"
+#include "src/exceptions/InvalidAccessException.h"
+
 namespace storm {
     namespace expressions {
         IfThenElseExpression::IfThenElseExpression(ExpressionReturnType returnType, std::shared_ptr<BaseExpression const> const& condition, std::shared_ptr<BaseExpression const> const& thenExpression, std::shared_ptr<BaseExpression const> const& elseExpression) : BaseExpression(returnType), condition(condition), thenExpression(thenExpression), elseExpression(elseExpression) {
             // Intentionally left empty.
+        }
+        
+        std::shared_ptr<BaseExpression const> IfThenElseExpression::getOperand(uint_fast64_t operandIndex) const {
+            LOG_THROW(operandIndex < 3, storm::exceptions::InvalidAccessException, "Unable to access operand " << operandIndex << " in expression of arity 3.");
+            if (operandIndex == 0) {
+                return this->getCondition();
+            } else if (operandIndex == 1) {
+                return this->getThenExpression();
+            } else {
+                return this->getElseExpression();
+            }
+        }
+        
+        OperatorType IfThenElseExpression::getOperator() const {
+            return OperatorType::Ite;
+        }
+        
+        bool IfThenElseExpression::isFunctionApplication() const {
+            return true;
+        }
+        
+        bool IfThenElseExpression::containsVariables() const {
+            return this->getCondition()->containsVariables() || this->getThenExpression()->containsVariables() || this->getElseExpression()->containsVariables();
+        }
+        
+        uint_fast64_t IfThenElseExpression::getArity() const {
+            return 3;
         }
         
         bool IfThenElseExpression::evaluateAsBool(Valuation const* valuation) const {

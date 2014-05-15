@@ -6,6 +6,7 @@
 #include <unordered_map>
 
 #include "src/storage/expressions/BaseExpression.h"
+#include "src/storage/expressions/ExpressionVisitor.h"
 #include "src/utility/OsDetection.h"
 
 namespace storm {
@@ -158,6 +159,21 @@ namespace storm {
             Expression simplify();
             
             /*!
+             * Retrieves the operator of a function application. This is only legal to call if the expression is
+             * function application.
+             *
+             * @return The operator associated with the function application.
+             */
+            OperatorType getOperator() const;
+            
+            /*!
+             * Checks if the expression is a function application (of any sort).
+             *
+             * @return True iff the expression is a function application.
+             */
+            bool isFunctionApplication() const;
+            
+            /*!
              * Retrieves the arity of the expression.
              *
              * @return The arity of the expression.
@@ -216,6 +232,21 @@ namespace storm {
             bool isFalse() const;
             
             /*!
+             * Retrieves whether this expression is a relation expression, i.e., an expression that has a relation
+             * (equal, not equal, less, less or equal, etc.) as its top-level operator.
+             *
+             * @return True iff the expression is a relation expression.
+             */
+            bool isRelationalExpression() const;
+            
+            /*!
+             * Retrieves whether this expression is a linear expression.
+             *
+             * @return True iff the expression is linear.
+             */
+            bool isLinear() const;
+            
+            /*!
              * Retrieves the set of all variables that appear in the expression.
              *
              * @return The set of all variables that appear in the expression.
@@ -270,6 +301,13 @@ namespace storm {
              * @return True iff the expression has a boolean return type.
              */
             bool hasBooleanReturnType() const;
+            
+            /*!
+             * Accepts the given visitor.
+             *
+             * @param visitor The visitor to accept.
+             */
+            void accept(ExpressionVisitor* visitor) const;
             
             friend std::ostream& operator<<(std::ostream& stream, Expression const& expression);
 

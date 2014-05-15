@@ -49,6 +49,10 @@ namespace storm {
             LOG_THROW(false, storm::exceptions::InvalidAccessException, "Unable to access identifier of non-constant, non-variable expression.");
         }
         
+        OperatorType BaseExpression::getOperator() const {
+            LOG_THROW(false, storm::exceptions::InvalidAccessException, "Unable to access operator of non-function application expression.");
+        }
+        
         bool BaseExpression::containsVariables() const {
             return false;
         }
@@ -69,18 +73,12 @@ namespace storm {
             return false;
         }
         
-        std::shared_ptr<BaseExpression const> BaseExpression::getSharedPointer() const {
-            return this->shared_from_this();
+        bool BaseExpression::isFunctionApplication() const {
+            return false;
         }
         
-        std::ostream& operator<<(std::ostream& stream, ExpressionReturnType const& enumValue) {
-            switch (enumValue) {
-                case ExpressionReturnType::Undefined: stream << "undefined"; break;
-                case ExpressionReturnType::Bool: stream << "bool"; break;
-                case ExpressionReturnType::Int: stream << "int"; break;
-                case ExpressionReturnType::Double: stream << "double"; break;
-            }
-            return stream;
+        std::shared_ptr<BaseExpression const> BaseExpression::getSharedPointer() const {
+            return this->shared_from_this();
         }
         
         std::ostream& operator<<(std::ostream& stream, BaseExpression const& expression) {
