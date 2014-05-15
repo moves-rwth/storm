@@ -28,8 +28,6 @@ namespace storm {
 
 			virtual CheckResult checkWithAssumptions(std::set<storm::expressions::Expression> &assumptions);
 
-			virtual CheckResult checkWithAssumptions(std::unordered_set<storm::expressions::Expression> &assumptions);
-
 			virtual CheckResult checkWithAssumptions(std::initializer_list<storm::expressions::Expression> &assumptions);
 
 			virtual storm::expressions::SimpleValuation getModel();

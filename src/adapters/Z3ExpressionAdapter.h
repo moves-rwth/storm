@@ -99,6 +99,119 @@ namespace storm {
                 return result;
             }
             
+			storm::expressions::Expression translateExpression(z3::expr const& expr) {
+				if (expr.is_bool() && expr.is_const()) {
+					switch (Z3_get_bool_value(expr.ctx(), expr)) {
+						case Z3_L_FALSE:
+							return storm::expressions::Expression::createFalse();
+						case Z3_L_TRUE:
+							return storm::expressions::Expression::createTrue();
+							break;
+						default:
+							LOG_THROW(true, storm::exceptions::ExpressionEvaluationException, "Failed to convert Z3 expression. Expression is constant boolean, but value is undefined.");
+							break;
+					}
+				} else if (expr.is_int() && expr.is_const()) {
+					int_fast64_t value;
+					if (Z3_get_numeral_int64(expr.ctx(), expr, &value)) {
+						return storm::expressions::Expression::createIntegerLiteral(value);
+					} else {
+						LOG_THROW(true, storm::exceptions::ExpressionEvaluationException, "Failed to convert Z3 expression. Expression is constant integer and value does not fit into 64-bit integer.");
+					}
+				} else if (expr.is_real() && expr.is_const()) {
+					int_fast64_t num;
+					int_fast64_t den;
+					if (Z3_get_numeral_rational_int64(expr.ctx(), expr, &num, &den)) {
+						return storm::expressions::Expression::createDoubleLiteral(static_cast<double>(num) / static_cast<double>(den));
+					} else {
+						LOG_THROW(true, storm::exceptions::ExpressionEvaluationException, "Failed to convert Z3 expression. Expression is constant real and value does not fit into a fraction with 64-bit integer numerator and denominator.");
+					}
+				} else if (expr.is_app()) {
+					switch (expr.decl().decl_kind()) {
+						case Z3_OP_TRUE:
+							return storm::expressions::Expression::createTrue();
+						case Z3_OP_FALSE:
+							return storm::expressions::Expression::createFalse();
+						case Z3_OP_EQ:
+							return this->translateExpression(expr.arg(0)) == this->translateExpression(expr.arg(1));
+						case Z3_OP_ITE:
+							return this->translateExpression(expr.arg(0)).ite(this->translateExpression(expr.arg(1)), this->translateExpression(expr.arg(2)));
+						case Z3_OP_AND: {
+							unsigned args = expr.num_args();
+							LOG_THROW(args == 0, storm::exceptions::ExpressionEvaluationException, "Failed to convert Z3 expression. 0-ary AND is assumed to be an error.");
+							if (args == 1) {
+								return this->translateExpression(expr.arg(0));
+							} else {
+								storm::expressions::Expression retVal = this->translateExpression(expr.arg(0));
+								for (unsigned i = 1; i < args; i++) {
+									retVal = retVal && this->translateExpression(expr.arg(i));
+								}
+								return retVal;
+							}
+						}
+						case Z3_OP_OR: {
+							unsigned args = expr.num_args();
+							LOG_THROW(args == 0, storm::exceptions::ExpressionEvaluationException, "Failed to convert Z3 expression. 0-ary OR is assumed to be an error.");
+							if (args == 1) {
+								return this->translateExpression(expr.arg(0));
+							} else {
+								storm::expressions::Expression retVal = this->translateExpression(expr.arg(0));
+								for (unsigned i = 1; i < args; i++) {
+									retVal = retVal || this->translateExpression(expr.arg(i));
+								}
+								return retVal;
+							}
+						}
+						case Z3_OP_IFF:
+							return this->translateExpression(expr.arg(0)).iff(this->translateExpression(expr.arg(1)));
+						case Z3_OP_XOR:
+							return this->translateExpression(expr.arg(0)) ^ this->translateExpression(expr.arg(1));
+						case Z3_OP_NOT:
+							return !this->translateExpression(expr.arg(0));
+						case Z3_OP_IMPLIES:
+							return this->translateExpression(expr.arg(0)).implies(this->translateExpression(expr.arg(1)));
+						case Z3_OP_LE:
+							return this->translateExpression(expr.arg(0)) <= this->translateExpression(expr.arg(1));
+						case Z3_OP_GE:
+							return this->translateExpression(expr.arg(0)) >= this->translateExpression(expr.arg(1));
+						case Z3_OP_LT:
+							return this->translateExpression(expr.arg(0)) < this->translateExpression(expr.arg(1));
+						case Z3_OP_GT:
+							return this->translateExpression(expr.arg(0)) > this->translateExpression(expr.arg(1));
+						case Z3_OP_ADD:
+							return this->translateExpression(expr.arg(0)) + this->translateExpression(expr.arg(1));
+						case Z3_OP_SUB:
+							return this->translateExpression(expr.arg(0)) - this->translateExpression(expr.arg(1));
+						case Z3_OP_UMINUS:
+							return -this->translateExpression(expr.arg(0));
+						case Z3_OP_MUL:
+							return this->translateExpression(expr.arg(0)) * this->translateExpression(expr.arg(1));
+						case Z3_OP_DIV:
+							return this->translateExpression(expr.arg(0)) / this->translateExpression(expr.arg(1));
+						case Z3_OP_IDIV:
+							return this->translateExpression(expr.arg(0)) / this->translateExpression(expr.arg(1));
+						case Z3_OP_UNINTERPRETED:
+							//this should be a variable...
+							LOG_THROW(!expr.is_const(), storm::exceptions::ExpressionEvaluationException, "Failed to convert Z3 expression. Encountered non constant uninterpreted function.");
+							if (expr.is_bool()) {
+								return storm::expressions::Expression::createBooleanVariable(expr.decl().name().str());
+							} else if (expr.is_int()) {
+								return storm::expressions::Expression::createIntegerVariable(expr.decl().name().str());
+							} else if (expr.is_real()) {
+								return storm::expressions::Expression::createDoubleVariable(expr.decl().name().str());
+							} else {
+								LOG_THROW(true, storm::exceptions::ExpressionEvaluationException, "Failed to convert Z3 expression. Encountered constant uninterpreted function of unknown sort.");
+							}
+							
+						default:
+							LOG_THROW(true, storm::exceptions::ExpressionEvaluationException, "Failed to convert Z3 expression. Encountered unhandled Z3_decl_kind " << expr.decl().kind() <<".");
+							break;
+					}
+				} else {
+					LOG_THROW(true, storm::exceptions::ExpressionEvaluationException, "Failed to convert Z3 expression. Encountered unknown expression type.");
+				}
+			}
+
             virtual void visit(storm::expressions::BinaryBooleanFunctionExpression const* expression) override {
                 expression->getFirstOperand()->accept(this);
                 expression->getSecondOperand()->accept(this);
@@ -125,7 +238,7 @@ namespace storm {
 						stack.push(z3::expr(context, Z3_mk_iff(context, leftResult, rightResult)));
 						break;
                     default: throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "
-						<< "Unknown boolean binary operator: '" << expression->getOperatorType() << "' in expression " << expression << ".";
+						<< "Unknown boolean binary operator: '" << static_cast<int>(expression->getOperatorType()) << "' in expression " << expression << ".";
                 }
                 
             }
@@ -159,7 +272,7 @@ namespace storm {
                         stack.push(ite(leftResult >= rightResult, leftResult, rightResult));
                         break;
                     default: throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "
-						<< "Unknown numerical binary operator: '" << expression->getOperatorType() << "' in expression " << expression << ".";
+						<< "Unknown numerical binary operator: '" << static_cast<int>(expression->getOperatorType()) << "' in expression " << expression << ".";
                 }
             }
             
@@ -192,7 +305,7 @@ namespace storm {
                         stack.push(leftResult >= rightResult);
                         break;
                     default: throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "
-                        << "Unknown boolean binary operator: '" << expression->getRelationType() << "' in expression " << expression << ".";
+                        << "Unknown boolean binary operator: '" << static_cast<int>(expression->getRelationType()) << "' in expression " << expression << ".";
                 }    
             }
             
@@ -221,7 +334,7 @@ namespace storm {
                         stack.push(!childResult);
                         break;
                     default: throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "
-						<< "Unknown boolean binary operator: '" << expression->getOperatorType() << "' in expression " << expression << ".";
+						<< "Unknown boolean binary operator: '" << static_cast<int>(expression->getOperatorType()) << "' in expression " << expression << ".";
                 }    
             }
             
@@ -248,7 +361,7 @@ namespace storm {
 						break;
 					}
                     default: throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "
-                        << "Unknown numerical unary operator: '" << expression->getOperatorType() << "'.";
+                        << "Unknown numerical unary operator: '" << static_cast<int>(expression->getOperatorType()) << "'.";
                 }
             }
 

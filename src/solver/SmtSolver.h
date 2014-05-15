@@ -71,11 +71,12 @@ namespace storm {
 			//! assert a set of expressions in the solver
 			//! @param es the asserted expressions
 			//! @see assert(storm::expressions::Expression &e)
+			/* std::hash unavailable for expressions
 			virtual void assertExpression(std::unordered_set<storm::expressions::Expression> &es) {
 				for (storm::expressions::Expression e : es) {
 					this->assertExpression(e);
 				}
-			}
+			}*/
 			//! assert a set of expressions in the solver
 			//! @param es the asserted expressions
 			//! @see assert(storm::expressions::Expression &e)
@@ -102,7 +103,9 @@ namespace storm {
 			//! @param es the asserted expressions
 			//! @throws IllegalArgumentTypeException if the return type of one of the expressions is not bool
 			//! @see check()
+			/* std::hash unavailable for expressions
 			virtual CheckResult checkWithAssumptions(std::unordered_set<storm::expressions::Expression> &assumptions) = 0;
+			*/
 			//! check satisfiability of the conjunction of the currently asserted expressions and the provided assumptions
 			//! @param es the asserted expressions
 			//! @throws IllegalArgumentTypeException if the return type of one of the expressions is not bool

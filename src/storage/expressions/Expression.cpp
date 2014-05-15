@@ -100,7 +100,7 @@ namespace storm {
 			return this->getBaseExpression().getVariables();
 		}
 
-		std::map<std::string, ExpressionReturnType> Expression::getVariablesAndTypes(bool validate = true) const {
+		std::map<std::string, ExpressionReturnType> Expression::getVariablesAndTypes(bool validate) const {
 			if (validate) {
 				std::map<std::string, ExpressionReturnType> result = this->getBaseExpression().getVariablesAndTypes();
 				this->check(result);
@@ -123,10 +123,6 @@ namespace storm {
         
         bool Expression::isLinear() const {
             return LinearityCheckVisitor().check(*this);
-        }
-        
-        std::set<std::string> Expression::getVariables() const {
-            return this->getBaseExpression().getVariables();
         }
         
         BaseExpression const& Expression::getBaseExpression() const {

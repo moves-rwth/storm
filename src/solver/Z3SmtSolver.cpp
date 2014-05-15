@@ -23,7 +23,7 @@ namespace storm {
 
 		void Z3SmtSolver::pop(uint_fast64_t n)
 		{
-			this->m_solver.pop(n);
+			this->m_solver.pop((unsigned int)n);
 		}
 
 		void Z3SmtSolver::reset()
@@ -50,25 +50,6 @@ namespace storm {
 		}
 
 		SmtSolver::CheckResult Z3SmtSolver::checkWithAssumptions(std::set<storm::expressions::Expression> &assumptions)
-		{
-			z3::expr_vector z3Assumptions(this->m_context);
-
-			for (storm::expressions::Expression assumption : assumptions) {
-				z3Assumptions.push_back(this->m_adapter.translateExpression(assumption));
-			}
-
-			switch (this->m_solver.check(z3Assumptions))
-			{
-			case z3::sat:
-				return SmtSolver::CheckResult::SAT;
-			case z3::unsat:
-				return SmtSolver::CheckResult::UNSAT;
-			default:
-				break;
-			}
-		}
-
-		SmtSolver::CheckResult Z3SmtSolver::checkWithAssumptions(std::unordered_set<storm::expressions::Expression> &assumptions)
 		{
 			z3::expr_vector z3Assumptions(this->m_context);
 
