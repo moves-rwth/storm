@@ -15,7 +15,7 @@ namespace property {
 namespace action {
 
 template <class T>
-class MinMaxAction : AbstractAction<T> {
+class MinMaxAction : public AbstractAction<T> {
 
 public:
 

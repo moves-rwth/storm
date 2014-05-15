@@ -10,7 +10,7 @@
 
 #include <vector>
 #include "src/formula/AbstractFormula.h"
-#include "src/formula/Actions/Action.h"
+#include "src/formula/Actions/AbstractAction.h"
 
 namespace storm {
 namespace property {
@@ -24,11 +24,11 @@ public:
 		// Intentionally left empty.
 	}
 
-	AbstractFilter(action::Action<T>* action) {
+	AbstractFilter(action::AbstractAction<T>* action) {
 		actions.push_back(action);
 	}
 
-	AbstractFilter(std::vector<action::Action<T>*> actions) : actions(actions) {
+	AbstractFilter(std::vector<action::AbstractAction<T>*> actions) : actions(actions) {
 		// Intentionally left empty.
 	}
 
@@ -50,7 +50,7 @@ public:
 		return desc;
 	}
 
-	void addAction(action::Action<T>* action) {
+	void addAction(action::AbstractAction<T>* action) {
 		actions.push_back(action);
 	}
 
@@ -58,7 +58,7 @@ public:
 		actions.pop_back();
 	}
 
-	action::Action<T>* getAction(uint_fast64_t pos) const {
+	action::AbstractAction<T>* getAction(uint_fast64_t pos) const {
 		return actions[pos];
 	}
 
@@ -68,7 +68,7 @@ public:
 
 protected:
 
-	std::vector<action::Action<T>*> actions;
+	std::vector<action::AbstractAction<T>*> actions;
 };
 
 } //namespace property

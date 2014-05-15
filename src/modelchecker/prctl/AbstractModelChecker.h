@@ -187,7 +187,7 @@ public:
 	 * @param formula The formula to check.
 	 * @return The set of states satisfying the formula represented by a bit vector.
 	 */
-	storm::storage::BitVector checkProbabilisticBoundOperator(storm::property::prctl::ProbabilisticBoundOperator<Type> const& formula) const {
+	virtual storm::storage::BitVector checkProbabilisticBoundOperator(storm::property::prctl::ProbabilisticBoundOperator<Type> const& formula) const {
 		// First, we need to compute the probability for satisfying the path formula for each state.
 		std::vector<Type> quantitativeResult = formula.getPathFormula().check(*this, false);
 
@@ -211,7 +211,7 @@ public:
 	 * @param formula The formula to check.
 	 * @return The set of states satisfying the formula represented by a bit vector.
 	 */
-	storm::storage::BitVector checkRewardBoundOperator(const storm::property::prctl::RewardBoundOperator<Type>& formula) const {
+	virtual storm::storage::BitVector checkRewardBoundOperator(const storm::property::prctl::RewardBoundOperator<Type>& formula) const {
 		// First, we need to compute the probability for satisfying the path formula for each state.
 		std::vector<Type> quantitativeResult = formula.getPathFormula().check(*this, false);
 

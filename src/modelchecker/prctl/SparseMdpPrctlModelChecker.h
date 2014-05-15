@@ -69,6 +69,80 @@ namespace storm {
                     return AbstractModelChecker<Type>::template getModel<storm::models::Mdp<Type>>();
                 }
 
+            	/*!
+            	 * Checks the given formula that is a P operator over a path formula featuring a value bound.
+            	 *
+            	 * @param formula The formula to check.
+            	 * @return The set of states satisfying the formula represented by a bit vector.
+            	 */
+            	virtual storm::storage::BitVector checkProbabilisticBoundOperator(storm::property::prctl::ProbabilisticBoundOperator<Type> const& formula) const override {
+
+            		// For P< and P<= the MDP satisfies the formula iff the probability maximizing scheduler is used.
+            		// For P> and P>=                "              iff the probability minimizing         "        .
+					if(formula.getComparisonOperator() == storm::property::LESS || formula.getComparisonOperator() == storm::property::LESS_EQUAL) {
+						this->minimumOperatorStack.push(false);
+					}
+					else {
+						this->minimumOperatorStack.push(true);
+					}
+
+            		// First, we need to compute the probability for satisfying the path formula for each state.
+            		std::vector<Type> quantitativeResult = formula.getPathFormula().check(*this, false);
+
+            		//Remove the minimizing operator entry from the stack.
+            		this->minimumOperatorStack.pop();
+
+            		// Create resulting bit vector that will hold the yes/no-answer for every state.
+            		storm::storage::BitVector result(quantitativeResult.size());
+
+            		// Now, we can compute which states meet the bound specified in this operator and set the
+            		// corresponding bits to true in the resulting vector.
+            		for (uint_fast64_t i = 0; i < quantitativeResult.size(); ++i) {
+            			if (formula.meetsBound(quantitativeResult[i])) {
+            				result.set(i, true);
+            			}
+            		}
+
+            		return result;
+            	}
+
+            	/*!
+            	 * Checks the given formula that is an R operator over a reward formula featuring a value bound.
+            	 *
+            	 * @param formula The formula to check.
+            	 * @return The set of states satisfying the formula represented by a bit vector.
+            	 */
+            	virtual storm::storage::BitVector checkRewardBoundOperator(const storm::property::prctl::RewardBoundOperator<Type>& formula) const override {
+
+            		// For R< and R<= the MDP satisfies the formula iff the reward maximizing scheduler is used.
+					// For R> and R>=                "              iff the reward minimizing         "        .
+					if(formula.getComparisonOperator() == storm::property::LESS || formula.getComparisonOperator() == storm::property::LESS_EQUAL) {
+						this->minimumOperatorStack.push(false);
+					}
+					else {
+						this->minimumOperatorStack.push(true);
+					}
+
+            		// First, we need to compute the probability for satisfying the path formula for each state.
+            		std::vector<Type> quantitativeResult = formula.getPathFormula().check(*this, false);
+
+            		//Remove the minimizing operator entry from the stack.
+					this->minimumOperatorStack.pop();
+
+            		// Create resulting bit vector that will hold the yes/no-answer for every state.
+            		storm::storage::BitVector result(quantitativeResult.size());
+
+            		// Now, we can compute which states meet the bound specified in this operator and set the
+            		// corresponding bits to true in the resulting vector.
+            		for (uint_fast64_t i = 0; i < quantitativeResult.size(); ++i) {
+            			if (formula.meetsBound(quantitativeResult[i])) {
+            				result.set(i, true);
+            			}
+            		}
+
+            		return result;
+            	}
+
                 /*!
                  * Computes the probability to satisfy phi until psi within a limited number of steps for each state.
                  *

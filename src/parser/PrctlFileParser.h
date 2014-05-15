@@ -9,6 +9,7 @@
 #define STORM_PARSER_PRCTLFILEPARSER_H_
 
 #include "formula/Prctl.h"
+#include "src/formula/Prctl/PrctlFilter.h"
 
 #include <list>
 
@@ -21,7 +22,7 @@ namespace parser {
  * @param filename
  * @return The list of parsed formulas
  */
-std::list<storm::property::prctl::AbstractPrctlFormula<double>*> PrctlFileParser(std::string filename);
+std::list<storm::property::prctl::PrctlFilter<double>*> PrctlFileParser(std::string filename);
 
 } /* namespace parser */
 } /* namespace storm */

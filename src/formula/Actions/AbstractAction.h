@@ -38,7 +38,7 @@ public:
 	/*!
 	 *
 	 */
-	virtual storm::storage::BitVector<T> evaluate(storm::storage::BitVector<T> input) const {
+	virtual storm::storage::BitVector evaluate(storm::storage::BitVector input) const {
 		return input;
 	}
 

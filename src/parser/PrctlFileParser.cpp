@@ -14,7 +14,7 @@
 namespace storm {
 namespace parser {
 
-std::list<storm::property::prctl::AbstractPrctlFormula<double>*> PrctlFileParser(std::string filename) {
+std::list<storm::property::prctl::PrctlFilter<double>*> PrctlFileParser(std::string filename) {
 	// Open file
 	std::ifstream inputFileStream;
 	inputFileStream.open(filename, std::ios::in);
@@ -24,7 +24,7 @@ std::list<storm::property::prctl::AbstractPrctlFormula<double>*> PrctlFileParser
 		throw storm::exceptions::FileIoException() << message << filename;
 	}
 
-	std::list<storm::property::prctl::AbstractPrctlFormula<double>*> result;
+	std::list<storm::property::prctl::PrctlFilter<double>*> result;
 
 	std::string line;
 	//The while loop reads the input file line by line

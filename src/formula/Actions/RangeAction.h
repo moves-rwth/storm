@@ -10,12 +10,14 @@
 
 #include "src/formula/Actions/AbstractAction.h"
 
+#include <string>
+
 namespace storm {
 namespace property {
 namespace action {
 
 template <class T>
-class RangeAction : AbstractAction<T> {
+class RangeAction : public AbstractAction<T> {
 
 public:
 
@@ -49,8 +51,19 @@ public:
 	/*!
 	 *
 	 */
-	virtual storm::storage::BitVector<T> evaluate(storm::storage::BitVector<T> input) const override {
-		storm::storage::BitVector<T> out(to - from  + 1, input.begin() + from, input.begin() + to);
+	virtual storm::storage::BitVector evaluate(storm::storage::BitVector input) const override {
+		//Initialize the output vector.
+		storm::storage::BitVector out(to - from  + 1);
+
+		storm::storage::BitVector::const_iterator it = input.begin();
+
+		//Proceed the set index iterator to the first set bit within the range.
+		for(; *it < from; ++it);
+
+		//Fill the output vector.
+		for(; *it <= to; ++it) {
+			out.set(*it-from);
+		}
 		return out;
 	}
 
@@ -58,14 +71,22 @@ public:
 	 *
 	 */
 	virtual std::string toString() const override {
-		return "range, " + from + ", " + to;
+		std::string out = "range, ";
+		out += std::to_string(from);
+		out += ", ";
+		out += std::to_string(to);
+		return out;
 	}
 
 	/*!
 	 *
 	 */
 	virtual std::string toFormulaString() const override {
-		return "\"range\", " + from + ", " + to;
+		std::string out = "\"range\", ";
+		out += std::to_string(from);
+		out += ", ";
+		out += std::to_string(to);
+		return out;
 	}
 
 private:
