@@ -184,7 +184,7 @@ namespace storm {
                 throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
             }
             
-            virtual uint_fast64_t addBinaryVariable(std::string const& name, double objectiveFunctionCoefficient = 0) override {
+            virtual void addBinaryVariable(std::string const& name, double objectiveFunctionCoefficient = 0) override {
                 throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
             }
             
