@@ -8,8 +8,7 @@
 #ifndef STORM_FORMULA_PRCTL_CUMULATIVEREWARD_H_
 #define STORM_FORMULA_PRCTL_CUMULATIVEREWARD_H_
 
-#include "AbstractPathFormula.h"
-#include "AbstractStateFormula.h"
+#include "AbstractRewardPathFormula.h"
 #include "src/formula/AbstractFormulaChecker.h"
 #include <string>
 
@@ -48,7 +47,7 @@ class ICumulativeRewardModelChecker {
  * @see AbstractPrctlFormula
  */
 template <class T>
-class CumulativeReward : public AbstractPathFormula<T> {
+class CumulativeReward : public AbstractRewardPathFormula<T> {
 
 public:
 	/*!
@@ -81,7 +80,7 @@ public:
 	 *
 	 * @returns a new CumulativeReward-object that is identical the called object.
 	 */
-	virtual AbstractPathFormula<T>* clone() const override {
+	virtual AbstractRewardPathFormula<T>* clone() const override {
 		return new CumulativeReward(this->getBound());
 	}
 

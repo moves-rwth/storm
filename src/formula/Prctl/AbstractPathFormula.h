@@ -25,10 +25,11 @@ namespace prctl {
  *
  * @attention This class is abstract.
  * @note Formula classes do not have copy constructors. The parameters of the constructors are usually the subtrees, so
- * 	   the syntax conflicts with copy constructors for unary operators. To produce an identical object, use the method
- * 	   clone().
+ * 	     the syntax conflicts with copy constructors for unary operators. To produce an identical object, use the method
+ * 	      clone().
  *
- * @note This class is intentionally not derived from AbstractPrctlFormula, as path formulas are not complete PRCTL formulas.
+ * @note Differing from the formal definitions of PRCTL a path formula may be the root of a PRCTL formula.
+ *       The result of a modelchecking process on such a formula is a vector representing the satisfaction probabilities for each state of the model.
  */
 template <class T>
 class AbstractPathFormula : public virtual storm::property::prctl::AbstractPrctlFormula<T> {

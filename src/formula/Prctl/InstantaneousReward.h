@@ -8,8 +8,7 @@
 #ifndef STORM_FORMULA_PRCTL_INSTANTANEOUSREWARD_H_
 #define STORM_FORMULA_PRCTL_INSTANTANEOUSREWARD_H_
 
-#include "AbstractPathFormula.h"
-#include "AbstractStateFormula.h"
+#include "AbstractRewardPathFormula.h"
 #include "src/formula/AbstractFormulaChecker.h"
 #include <cstdint>
 #include <string>
@@ -49,7 +48,7 @@ class IInstantaneousRewardModelChecker {
  * @see AbstractPrctlFormula
  */
 template <class T>
-class InstantaneousReward : public AbstractPathFormula<T> {
+class InstantaneousReward : public AbstractRewardPathFormula<T> {
 
 public:
 
@@ -83,7 +82,7 @@ public:
 	 *
 	 * @returns a new InstantaneousReward-object that is identical the called object.
 	 */
-	virtual AbstractPathFormula<T>* clone() const override {
+	virtual AbstractRewardPathFormula<T>* clone() const override {
 		return new InstantaneousReward(this->getBound());
 	}
 

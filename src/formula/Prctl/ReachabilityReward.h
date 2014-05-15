@@ -8,7 +8,7 @@
 #ifndef STORM_FORMULA_PRCTL_REACHABILITYREWARD_H_
 #define STORM_FORMULA_PRCTL_REACHABILITYREWARD_H_
 
-#include "AbstractPathFormula.h"
+#include "AbstractRewardPathFormula.h"
 #include "AbstractStateFormula.h"
 #include "src/formula/AbstractFormulaChecker.h"
 
@@ -49,7 +49,7 @@ class IReachabilityRewardModelChecker {
  * @see AbstractPrctlFormula
  */
 template <class T>
-class ReachabilityReward : public AbstractPathFormula<T> {
+class ReachabilityReward : public AbstractRewardPathFormula<T> {
 
 public:
 	/*!
@@ -87,7 +87,7 @@ public:
 	 *
 	 * @returns a new ReachabilityReward-object that is identical the called object.
 	 */
-	virtual AbstractPathFormula<T>* clone() const override {
+	virtual AbstractRewardPathFormula<T>* clone() const override {
 		ReachabilityReward<T>* result = new ReachabilityReward<T>();
 		if (this->childIsSet()) {
 			result->setChild(this->getChild().clone());

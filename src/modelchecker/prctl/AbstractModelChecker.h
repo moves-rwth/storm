@@ -230,13 +230,27 @@ public:
 	}
 
 	/*!
-	 * Checks the given formula and determines whether minimum or maximum probabilities or rewards are to be computed for the formula.
+	 * Checks the given formula and determines whether minimum or maximum probabilities are to be computed for the formula.
 	 *
 	 * @param formula The formula to check.
-	 * @param minimumOperator True iff minimum probabilities/rewards are to be computed.
-	 * @returns The probabilities to satisfy the formula or the rewards accumulated by it, represented by a vector.
+	 * @param minimumOperator True iff minimum probabilities are to be computed.
+	 * @returns The probabilities to satisfy the formula, represented by a vector.
 	 */
 	virtual std::vector<Type> checkMinMaxOperator(storm::property::prctl::AbstractPathFormula<Type> const & formula, bool minimumOperator) const {
+		minimumOperatorStack.push(minimumOperator);
+		std::vector<Type> result = formula.check(*this, false);
+		minimumOperatorStack.pop();
+		return result;
+	}
+
+	/*!
+	 * Checks the given formula and determines whether minimum or maximum rewards are to be computed for the formula.
+	 *
+	 * @param formula The formula to check.
+	 * @param minimumOperator True iff minimum rewards are to be computed.
+	 * @returns The the rewards accumulated by the formula, represented by a vector.
+	 */
+	virtual std::vector<Type> checkMinMaxOperator(storm::property::prctl::AbstractRewardPathFormula<Type> const & formula, bool minimumOperator) const {
 		minimumOperatorStack.push(minimumOperator);
 		std::vector<Type> result = formula.check(*this, false);
 		minimumOperatorStack.pop();

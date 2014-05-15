@@ -201,7 +201,7 @@ struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, storm::property::prctl:
 	qi::rule<Iterator, storm::property::prctl::BoundedUntil<double>*(), qi::locals< std::shared_ptr<storm::property::prctl::AbstractStateFormula<double>>>, Skipper> boundedUntil;
 	qi::rule<Iterator, storm::property::prctl::Until<double>*(), qi::locals< std::shared_ptr<storm::property::prctl::AbstractStateFormula<double>>>, Skipper> until;
 
-	qi::rule<Iterator, storm::property::prctl::AbstractPathFormula<double>*(), Skipper> rewardPathFormula;
+	qi::rule<Iterator, storm::property::prctl::AbstractRewardPathFormula<double>*(), Skipper> rewardPathFormula;
 	qi::rule<Iterator, storm::property::prctl::CumulativeReward<double>*(), Skipper> cumulativeReward;
 	qi::rule<Iterator, storm::property::prctl::ReachabilityReward<double>*(), Skipper> reachabilityReward;
 	qi::rule<Iterator, storm::property::prctl::InstantaneousReward<double>*(), Skipper> instantaneousReward;

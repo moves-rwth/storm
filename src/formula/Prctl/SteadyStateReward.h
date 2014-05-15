@@ -8,8 +8,7 @@
 #ifndef STORM_FORMULA_PRCTL_STEADYSTATEREWARD_H_
 #define STORM_FORMULA_PRCTL_STEADYSTATEREWARD_H_
 
-#include "AbstractPathFormula.h"
-#include "AbstractStateFormula.h"
+#include "AbstractRewardPathFormula.h"
 #include "src/formula/AbstractFormulaChecker.h"
 #include <string>
 
@@ -45,7 +44,7 @@ class ISteadyStateRewardModelChecker {
  * @see AbstractPrctlFormula
  */
 template <class T>
-class SteadyStateReward: public AbstractPathFormula<T> {
+class SteadyStateReward: public AbstractRewardPathFormula<T> {
 public:
 	/*!
 	 * Empty constructor
@@ -65,7 +64,7 @@ public:
 	 *
 	 * @returns a new SteadyState-object that is identical the called object.
 	 */
-	virtual AbstractPathFormula<T>* clone() const override {
+	virtual AbstractRewardPathFormula<T>* clone() const override {
 		return new SteadyStateReward<T>();
 	}
 

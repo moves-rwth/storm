@@ -8,7 +8,7 @@
 #ifndef STORM_FORMULA_PRCTL_REWARDBOUNDOPERATOR_H_
 #define STORM_FORMULA_PRCTL_REWARDBOUNDOPERATOR_H_
 
-#include "AbstractPathFormula.h"
+#include "AbstractRewardPathFormula.h"
 #include "AbstractStateFormula.h"
 #include "utility/constants.h"
 #include "src/formula/ComparisonType.h"
@@ -69,7 +69,7 @@ public:
 	 * @param bound The bound for the probability
 	 * @param pathFormula The child node
 	 */
-	RewardBoundOperator(storm::property::ComparisonType comparisonOperator, T bound, AbstractPathFormula<T>* pathFormula)
+	RewardBoundOperator(storm::property::ComparisonType comparisonOperator, T bound, AbstractRewardPathFormula<T>* pathFormula)
 		: comparisonOperator(comparisonOperator), bound(bound), pathFormula(pathFormula) {
 		// Intentionally left empty
 	}
@@ -146,7 +146,7 @@ public:
 	/*!
 	 * @returns the child node (representation of a formula)
 	 */
-	const AbstractPathFormula<T>& getPathFormula () const {
+	const AbstractRewardPathFormula<T>& getPathFormula () const {
 		return *pathFormula;
 	}
 
@@ -155,7 +155,7 @@ public:
 	 *
 	 * @param pathFormula the path formula that becomes the new child node
 	 */
-	void setPathFormula(AbstractPathFormula<T>* pathFormula) {
+	void setPathFormula(AbstractRewardPathFormula<T>* pathFormula) {
 		this->pathFormula = pathFormula;
 	}
 
@@ -207,7 +207,7 @@ public:
 private:
 	storm::property::ComparisonType comparisonOperator;
 	T bound;
-	AbstractPathFormula<T>* pathFormula;
+	AbstractRewardPathFormula<T>* pathFormula;
 };
 
 } //namespace prctl

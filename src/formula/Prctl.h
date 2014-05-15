@@ -33,6 +33,7 @@
 #include "Prctl/AbstractPrctlFormula.h"
 #include "Prctl/AbstractStateFormula.h"
 #include "Prctl/AbstractPathFormula.h"
+#include "Prctl/AbstractRewardPathFormula.h"
 
 #include "modelchecker/prctl/AbstractModelChecker.h"
 

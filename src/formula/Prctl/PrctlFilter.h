@@ -121,6 +121,38 @@ public:
 			std::cout << std::endl << "-------------------------------------------" << std::endl;
 
 		}
+		else if (dynamic_cast<AbstractRewardPathFormula<T>*>(child) != nullptr) {
+
+			// Check the formula and apply the filter actions.
+			std::vector<T> result;
+
+			try {
+				result = evaluate(modelchecker, static_cast<AbstractRewardPathFormula<T>*>(child));
+			} catch (std::exception& e) {
+				std::cout << "Error during computation: " << e.what() << "Skipping property." << std::endl;
+				LOG4CPLUS_ERROR(logger, "Error during computation: " << e.what() << "Skipping property.");
+				std::cout << std::endl << "-------------------------------------------" << std::endl;
+
+				return;
+			}
+
+			// Now write out the result.
+
+			if(this->actions.empty()) {
+
+				// There is no filter action given. So provide legacy support:
+				// Return the results for all states labeled with "init".
+				LOG4CPLUS_INFO(logger, "Result for initial states:");
+				std::cout << "Result for initial states:" << std::endl;
+				for (auto initialState : modelchecker.getModel().getInitialStates()) {
+					LOG4CPLUS_INFO(logger, "\t" << initialState << ": " << result[initialState]);
+					std::cout << "\t" << initialState << ": " << result[initialState] << std::endl;
+				}
+			}
+
+			std::cout << std::endl << "-------------------------------------------" << std::endl;
+
+		}
 		else {
 			// This branch should be unreachable. If you ended up here, something strange has happened.
 			//TODO: Error here.
@@ -190,6 +222,24 @@ private:
 	}
 
 	std::vector<T> evaluate(storm::modelchecker::prctl::AbstractModelChecker<T> const & modelchecker, AbstractPathFormula<T>* formula) const {
+		// First, get the model checking result.
+		std::vector<T> result;
+
+		if(this->getActionCount() != 0 &&  dynamic_cast<storm::property::action::MinMaxAction<T>*>(this->getAction(0)) != nullptr) {
+			// If there is an action specifying that min/max probabilities should be computed, call the appropriate method of the model checker.
+			result = modelchecker.checkMinMaxOperator(formula, static_cast<storm::property::action::MinMaxAction<T>*>(this->getAction(0))->getMinimize());
+		} else {
+			result = formula->check(modelchecker, false);
+		}
+
+		// Now apply all filter actions and return the result.
+		for(auto action : this->actions) {
+			result = action->evaluate(result);
+		}
+		return result;
+	}
+
+	std::vector<T> evaluate(storm::modelchecker::prctl::AbstractModelChecker<T> const & modelchecker, AbstractRewardPathFormula<T>* formula) const {
 		// First, get the model checking result.
 		std::vector<T> result;
 
