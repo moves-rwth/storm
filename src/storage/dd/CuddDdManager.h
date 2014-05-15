@@ -4,7 +4,7 @@
 #include <unordered_map>
 
 #include "src/storage/dd/DdManager.h"
-#include "src/storage/dd/DdMetaVariable.h"
+#include "src/storage/dd/CuddDdMetaVariable.h"
 #include "src/utility/OsDetection.h"
 
 // Include the C++-interface of CUDD.
