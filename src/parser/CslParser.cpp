@@ -9,6 +9,11 @@
 #include "src/utility/OsDetection.h"
 #include "src/utility/constants.h"
 
+// The action class headers.
+#include "src/formula/Actions/AbstractAction.h"
+#include "src/formula/Actions/MinMaxAction.h"
+#include "src/formula/Actions/RangeAction.h"
+
 // If the parser fails due to ill-formed data, this exception is thrown.
 #include "src/exceptions/WrongFormatException.h"
 
@@ -38,7 +43,7 @@ namespace storm {
 namespace parser {
 
 template<typename Iterator, typename Skipper>
-struct CslGrammar : qi::grammar<Iterator, storm::property::csl::AbstractCslFormula<double>*(), Skipper > {
+struct CslGrammar : qi::grammar<Iterator, storm::property::csl::CslFilter<double>*(), Skipper > {
 	CslGrammar() : CslGrammar::base_type(start) {
 		//This block contains helper rules that may be used several times
 		freeIdentifierName = qi::lexeme[qi::alpha >> *(qi::alnum | qi::char_('_'))];
@@ -81,16 +86,6 @@ struct CslGrammar : qi::grammar<Iterator, storm::property::csl::AbstractCslFormu
 				);
 		steadyStateBoundOperator.name("state formula");
 
-		//This block defines rules for parsing formulas with noBoundOperators
-		noBoundOperator = (probabilisticNoBoundOperator | steadyStateNoBoundOperator);
-		noBoundOperator.name("no bound operator");
-		probabilisticNoBoundOperator = (qi::lit("P") >> qi::lit("=") >> qi::lit("?") >> qi::lit("[") >> pathFormula >> qi::lit("]"))[qi::_val =
-				phoenix::new_<storm::property::csl::ProbabilisticNoBoundOperator<double> >(qi::_1)];
-		probabilisticNoBoundOperator.name("no bound operator");
-		steadyStateNoBoundOperator = (qi::lit("S") >> qi::lit("=") >> qi::lit("?") >> qi::lit("[") >> stateFormula >> qi::lit("]"))[qi::_val =
-				phoenix::new_<storm::property::csl::SteadyStateNoBoundOperator<double> >(qi::_1)];
-		steadyStateNoBoundOperator.name("no bound operator");
-
 		//This block defines rules for parsing probabilistic path formulas
 		pathFormula = (timeBoundedEventually | eventually | globally | next | timeBoundedUntil | until);
 		pathFormula.name("path formula");
@@ -125,16 +120,61 @@ struct CslGrammar : qi::grammar<Iterator, storm::property::csl::AbstractCslFormu
 				phoenix::new_<storm::property::csl::Until<double>>(phoenix::bind(&storm::property::csl::AbstractStateFormula<double>::clone, phoenix::bind(&std::shared_ptr<storm::property::csl::AbstractStateFormula<double>>::get, qi::_a)), qi::_2)];
 		until.name("path formula (for probabilistic operator)");
 
-		formula = (noBoundOperator | stateFormula);
+		formula = (pathFormula | stateFormula);
 		formula.name("CSL formula");
 
-		start = (((formula) > (comment | qi::eps))[qi::_val = qi::_1] |
-				 comment
-				 ) > qi::eoi;
-		start.name("CSL formula");
+		//This block defines rules for parsing formulas with noBoundOperators
+		noBoundOperator = (probabilisticNoBoundOperator | steadyStateNoBoundOperator);
+		noBoundOperator.name("no bound operator");
+		probabilisticNoBoundOperator =
+				(qi::lit("P") >> qi::lit("min") >> qi::lit("=") >> qi::lit("?") >> qi::lit("[") >> pathFormula >> qi::lit("]"))[qi::_val =
+						phoenix::new_<storm::property::csl::CslFilter<double>>(qi::_1, true)];
+				(qi::lit("P") >> qi::lit("max") >> qi::lit("=") >> qi::lit("?") >> qi::lit("[") >> pathFormula >> qi::lit("]"))[qi::_val =
+						phoenix::new_<storm::property::csl::CslFilter<double>>(qi::_1, false)];
+				(qi::lit("P") >> qi::lit("=") >> qi::lit("?") >> qi::lit("[") >> pathFormula >> qi::lit("]"))[qi::_val =
+						phoenix::new_<storm::property::csl::CslFilter<double>>(qi::_1)];
+		probabilisticNoBoundOperator.name("no bound operator");
+		steadyStateNoBoundOperator = (qi::lit("S") >> qi::lit("=") >> qi::lit("?") >> qi::lit("[") >> stateFormula >> qi::lit("]"))[qi::_val =
+				phoenix::new_<storm::property::csl::CslFilter<double>>(qi::_1)];
+		steadyStateNoBoundOperator.name("no bound operator");
+
+		minMaxAction = qi::lit("minmax") >> qi::lit(",") >> (
+				qi::lit("min")[qi::_val =
+						phoenix::new_<storm::property::action::MinMaxAction<double>>(true)] |
+				qi::lit("min")[qi::_val =
+						phoenix::new_<storm::property::action::MinMaxAction<double>>(false)]);
+		minMaxAction.name("minmax action for the formula filter");
+
+		rangeAction = (qi::lit("range") >> qi::lit(",") >> qi::uint_ >> qi::lit(",") >> qi::uint_)[qi::_val =
+				phoenix::new_<storm::property::action::RangeAction<double>>(qi::_1, qi::_2)];
+		rangeAction.name("range action for the formula filter");
+
+		abstractAction = (rangeAction | minMaxAction) >> (qi::eps | qi::lit(","));
+		abstractAction.name("filter action");
+
+		filter = (qi::lit("filter") >> qi::lit("[") >> +abstractAction >> qi::lit("]") >> qi::lit("(") >> formula >> qi::lit(")"))[qi::_val =
+					phoenix::new_<storm::property::csl::CslFilter<double>>(qi::_2, qi::_1)] |
+				 (formula)[qi::_val =
+					phoenix::new_<storm::property::csl::CslFilter<double>>(qi::_1)] |
+				 (noBoundOperator)[qi::_val =
+					qi::_1];
+		filter.name("PRCTL formula filter");
+
+		start = (((filter) > (comment | qi::eps))[qi::_val = qi::_1] | comment ) > qi::eoi;
+		start.name("CSL formula filter");
 	}
 
-	qi::rule<Iterator, storm::property::csl::AbstractCslFormula<double>*(), Skipper> start;
+	qi::rule<Iterator, storm::property::csl::CslFilter<double>*(), Skipper> start;
+	qi::rule<Iterator, storm::property::csl::CslFilter<double>*(), Skipper> filter;
+
+	qi::rule<Iterator, storm::property::csl::CslFilter<double>*(), Skipper> noBoundOperator;
+	qi::rule<Iterator, storm::property::csl::CslFilter<double>*(), Skipper> probabilisticNoBoundOperator;
+	qi::rule<Iterator, storm::property::csl::CslFilter<double>*(), Skipper> steadyStateNoBoundOperator;
+
+	qi::rule<Iterator, storm::property::action::AbstractAction<double>*(), Skipper> abstractAction;
+	qi::rule<Iterator, storm::property::action::RangeAction<double>*(), Skipper> rangeAction;
+	qi::rule<Iterator, storm::property::action::MinMaxAction<double>*(), Skipper> minMaxAction;
+
 	qi::rule<Iterator, storm::property::csl::AbstractCslFormula<double>*(), Skipper> formula;
 	qi::rule<Iterator, storm::property::csl::AbstractCslFormula<double>*(), Skipper> comment;
 
@@ -147,10 +187,6 @@ struct CslGrammar : qi::grammar<Iterator, storm::property::csl::AbstractCslFormu
 	qi::rule<Iterator, storm::property::csl::AbstractStateFormula<double>*(), Skipper> notFormula;
 	qi::rule<Iterator, storm::property::csl::ProbabilisticBoundOperator<double>*(), Skipper> probabilisticBoundOperator;
 	qi::rule<Iterator, storm::property::csl::SteadyStateBoundOperator<double>*(), Skipper> steadyStateBoundOperator;
-
-	qi::rule<Iterator, storm::property::csl::AbstractNoBoundOperator<double>*(), Skipper> noBoundOperator;
-	qi::rule<Iterator, storm::property::csl::AbstractNoBoundOperator<double>*(), Skipper> probabilisticNoBoundOperator;
-	qi::rule<Iterator, storm::property::csl::AbstractNoBoundOperator<double>*(), Skipper> steadyStateNoBoundOperator;
 
 	qi::rule<Iterator, storm::property::csl::AbstractPathFormula<double>*(), Skipper> pathFormula;
 	qi::rule<Iterator, storm::property::csl::TimeBoundedEventually<double>*(), Skipper> timeBoundedEventually;
@@ -166,7 +202,7 @@ struct CslGrammar : qi::grammar<Iterator, storm::property::csl::AbstractCslFormu
 
 };
 
-storm::property::csl::AbstractCslFormula<double>* CslParser(std::string formulaString) {
+storm::property::csl::CslFilter<double>* CslParser(std::string formulaString) {
 	// Prepare iterators to input.
 	BaseIteratorType stringIteratorBegin = formulaString.begin();
 	BaseIteratorType stringIteratorEnd = formulaString.end();
@@ -175,7 +211,7 @@ storm::property::csl::AbstractCslFormula<double>* CslParser(std::string formulaS
 
 
 	// Prepare resulting intermediate representation of input.
-	storm::property::csl::AbstractCslFormula<double>* result_pointer = nullptr;
+	storm::property::csl::CslFilter<double>* result_pointer = nullptr;
 
 	CslGrammar<PositionIteratorType,  BOOST_TYPEOF(boost::spirit::ascii::space)> grammar;
 

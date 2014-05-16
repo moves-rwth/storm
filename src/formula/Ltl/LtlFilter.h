@@ -8,12 +8,15 @@
 #ifndef STORM_FORMULA_LTL_LTLFILTER_H_
 #define STORM_FORMULA_LTL_LTLFILTER_H_
 
+#include "src/formula/AbstractFilter.h"
+#include "src/modelchecker/ltl/AbstractModelChecker.h"
+
 namespace storm {
 namespace property {
 namespace ltl {
 
 template <class T>
-class LtlFilter : storm::property::AbstractFilter<T> {
+class LtlFilter : public storm::property::AbstractFilter<T> {
 
 public:
 
@@ -26,15 +29,15 @@ public:
 	}
 
 	LtlFilter(AbstractLtlFormula* child, action::Action<T>* action) : child(child) {
-		actions.push_back(action);
+		this->actions.push_back(action);
 	}
 
-	LtlFilter(AbstractLtlFormula* child, std::vector<action::Action<T>*> actions) : child(child), actions(actions) {
+	LtlFilter(AbstractLtlFormula* child, std::vector<action::Action<T>*> actions) : AbstractFilter<T>(actions), child(child) {
 		// Intentionally left empty.
 	}
 
 	virtual ~LtlFilter() {
-		actions.clear();
+		this->actions.clear();
 		delete child;
 	}
 
@@ -45,7 +48,7 @@ public:
 	 *
 	 * @param stateFormula The formula to be checked.
 	 */
-	void check(AbstractModelChecker const & modelchecker) const {
+	void check(storm::modelchecker::ltl::AbstractModelChecker<T> const & modelchecker) const {
 
 		// Write out the formula to be checked.
 		std::cout << std::endl;
@@ -68,7 +71,7 @@ public:
 
 		// Now write out the result.
 
-		if(actions.empty()) {
+		if(this->actions.empty()) {
 
 			// There is no filter action given. So provide legacy support:
 			// Return the results for all states labeled with "init".
@@ -99,35 +102,35 @@ public:
 	std::string toString() const {
 		std::string desc = "Filter: ";
 		desc += "\nActions:";
-		for(auto action : actions) {
+		for(auto action : this->actions) {
 			desc += "\n\t" + action.toString();
 		}
 		desc += "\nFormula:\n\t" + child->toString();
 		return desc;
 	}
 
-	void setChild(AbstractLtlFormula* child) {
+	void setChild(AbstractLtlFormula<T>* child) {
 		this->child = child;
 	}
 
-	AbstractFormula* getChild() const {
+	AbstractLtlFormula<T>* getChild() const {
 		return child;
 	}
 
 private:
 
-	storm::storage::BitVector evaluate(AbstractModelChecker const & modelchecker, AbstractLtlFormula<T>* formula) const {
+	storm::storage::BitVector evaluate(storm::modelchecker::ltl::AbstractModelChecker<T> const & modelchecker, AbstractLtlFormula<T>* formula) const {
 		// First, get the model checking result.
 		storm::storage::BitVector result = formula->check(modelchecker);
 
 		// Now apply all filter actions and return the result.
-		for(auto action : actions) {
+		for(auto action : this->actions) {
 			result = action->evaluate(result);
 		}
 		return result;
 	}
 
-	AbstractLtlFormula* child;
+	AbstractLtlFormula<T>* child;
 };
 
 

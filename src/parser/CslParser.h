@@ -9,6 +9,7 @@
 #define STORM_PARSER_CSLPARSER_H_
 
 #include "src/formula/Csl.h"
+#include "src/formula/Csl/CslFilter.h"
 #include <functional>
 
 namespace storm {
@@ -23,7 +24,7 @@ namespace parser {
  * @param formulaString The string representation of the formula
  * @throw wrongFormatException If the input could not be parsed successfully
  */
-storm::property::csl::AbstractCslFormula<double>* CslParser(std::string formulaString);
+storm::property::csl::CslFilter<double>* CslParser(std::string formulaString);
 
 /*!
  * Struct for the CSL grammar, that Boost::Spirit uses to parse the formulas.
