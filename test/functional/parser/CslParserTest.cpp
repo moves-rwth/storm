@@ -11,130 +11,153 @@
 #include "src/exceptions/WrongFormatException.h"
 
 TEST(CslParserTest, parseApOnlyTest) {
-	std::string formula = "ap";
-	storm::property::csl::AbstractCslFormula<double>* cslFormula = nullptr;
+	std::string input = "ap";
+	storm::property::csl::CslFilter<double>* formula = nullptr;
 	ASSERT_NO_THROW(
-		cslFormula = storm::parser::CslParser(formula);
+		formula = storm::parser::CslParser::parseCslFormula(input);
 	);
 
-	ASSERT_NE(cslFormula, nullptr);
-	ASSERT_EQ(cslFormula->toString(), formula);
+	// The parser did not falsely recognize the input as a comment.
+	ASSERT_NE(formula, nullptr);
 
-	delete cslFormula;
+	// The input was parsed correctly.
+	ASSERT_EQ(input, formula->toString());
+
+	delete formula;
 }
 
 TEST(CslParserTest, parsePropositionalFormulaTest) {
-	std::string formula = "!(a & b) | a & ! c";
-	storm::property::csl::AbstractCslFormula<double>* cslFormula = nullptr;
+	std::string input = "!(a & b) | a & ! c";
+	storm::property::csl::CslFilter<double>* formula = nullptr;
 	ASSERT_NO_THROW(
-		cslFormula = storm::parser::CslParser(formula);
+		formula = storm::parser::CslParser::parseCslFormula(input);
 	);
 
-	ASSERT_NE(cslFormula, nullptr);
-	ASSERT_EQ(cslFormula->toString(), "(!(a & b) | (a & !c))");
+	// The parser did not falsely recognize the input as a comment.
+	ASSERT_NE(formula, nullptr);
 
-	delete cslFormula;
+	// The input was parsed correctly.
+	ASSERT_EQ("(!(a & b) | (a & !c))", formula->toString());
+
+	delete formula;
 }
 
 TEST(CslParserTest, parseProbabilisticFormulaTest) {
-	std::string formula = "P > 0.5 [ F a ]";
-	storm::property::csl::AbstractCslFormula<double>* cslFormula = nullptr;
+	std::string input = "P > 0.5 [ F a ]";
+	storm::property::csl::CslFilter<double>* formula = nullptr;
 	ASSERT_NO_THROW(
-		cslFormula = storm::parser::CslParser(formula);
+		formula = storm::parser::CslParser::parseCslFormula(input);
 	);
 
-	ASSERT_NE(cslFormula, nullptr);
+	// The parser did not falsely recognize the input as a comment.
+	ASSERT_NE(formula, nullptr);
 
-	storm::property::csl::ProbabilisticBoundOperator<double>* op = static_cast<storm::property::csl::ProbabilisticBoundOperator<double>*>(cslFormula);
+	ASSERT_NE(dynamic_cast<storm::property::csl::ProbabilisticBoundOperator<double>*>(formula->getChild()), nullptr);
+	storm::property::csl::ProbabilisticBoundOperator<double>* op = static_cast<storm::property::csl::ProbabilisticBoundOperator<double>*>(formula->getChild());
 	ASSERT_EQ(storm::property::GREATER, op->getComparisonOperator());
 	ASSERT_EQ(0.5, op->getBound());
 
-	ASSERT_EQ(cslFormula->toString(), "P > 0.500000 [F a]");
+	// Test the string representation for the parsed formula.
+	ASSERT_EQ("P > 0.500000 [F a]", formula->toString());
 
-	delete cslFormula;
+	delete formula;
 }
 
 TEST(CslParserTest, parseSteadyStateBoundFormulaTest) {
-	std::string formula = "S >= 15 [ P < 0.2 [ a U<=3 b ] ]";
-	storm::property::csl::AbstractCslFormula<double>* cslFormula = nullptr;
+	std::string input = "S >= 15 [ P < 0.2 [ a U<=3 b ] ]";
+	storm::property::csl::CslFilter<double>* formula = nullptr;
 	ASSERT_NO_THROW(
-		cslFormula = storm::parser::CslParser(formula);
+		formula = storm::parser::CslParser::parseCslFormula(input);
 	);
 
-	ASSERT_NE(cslFormula, nullptr);
+	// The parser did not falsely recognize the input as a comment.
+	ASSERT_NE(formula, nullptr);
 
-	storm::property::csl::SteadyStateBoundOperator<double>* op = static_cast<storm::property::csl::SteadyStateBoundOperator<double>*>(cslFormula);
+	storm::property::csl::SteadyStateBoundOperator<double>* op = static_cast<storm::property::csl::SteadyStateBoundOperator<double>*>(formula->getChild());
 	ASSERT_EQ(storm::property::GREATER_EQUAL, op->getComparisonOperator());
 	ASSERT_EQ(15.0, op->getBound());
 
-	ASSERT_EQ(cslFormula->toString(), "S >= 15.000000 [P < 0.200000 [a U[0.000000,3.000000] b]]");
+	// Test the string representation for the parsed formula.
+	ASSERT_EQ("S >= 15.000000 [P < 0.200000 [a U[0.000000,3.000000] b]]", formula->toString());
 
-	delete cslFormula;
+	delete formula;
 }
 
 TEST(CslParserTest, parseSteadyStateNoBoundFormulaTest) {
-	std::string formula = "S = ? [ P <= 0.5 [ F<=3 a ] ]";
-	storm::property::csl::AbstractCslFormula<double>* cslFormula = nullptr;
+	std::string input = "S = ? [ P <= 0.5 [ F<=3 a ] ]";
+	storm::property::csl::CslFilter<double>* formula = nullptr;
 	ASSERT_NO_THROW(
-		cslFormula = storm::parser::CslParser(formula);
+		formula = storm::parser::CslParser::parseCslFormula(input);
 	);
 
-	ASSERT_NE(cslFormula, nullptr);
-	ASSERT_EQ(cslFormula->toString(), "S = ? [P <= 0.500000 [F[0.000000,3.000000] a]]");
+	// The parser did not falsely recognize the input as a comment.
+	ASSERT_NE(formula, nullptr);
 
-	delete cslFormula;
+	// The input was parsed correctly.
+	ASSERT_EQ("S = ? [P <= 0.500000 [F[0.000000,3.000000] a]]", formula->toString());
+
+	delete formula;
 }
 
 TEST(CslParserTest, parseProbabilisticNoBoundFormulaTest) {
-	std::string formula = "P = ? [ a U [3,4] b & (!c) ]";
-	storm::property::csl::AbstractCslFormula<double>* cslFormula = nullptr;
+	std::string input = "P = ? [ a U [3,4] b & (!c) ]";
+	storm::property::csl::CslFilter<double>* formula = nullptr;
 	ASSERT_NO_THROW(
-		cslFormula = storm::parser::CslParser(formula);
+		formula = storm::parser::CslParser::parseCslFormula(input);
 	);
 
-	ASSERT_NE(cslFormula, nullptr);
-	ASSERT_EQ(cslFormula->toString(), "P = ? [a U[3.000000,4.000000] (b & !c)]");
+	// The parser did not falsely recognize the input as a comment.
+	ASSERT_NE(formula, nullptr);
 
-	delete cslFormula;
+	// The input was parsed correctly.
+	ASSERT_EQ("P = ? [a U[3.000000,4.000000] (b & !c)]", formula->toString());
+
+	delete formula;
 }
 
 
 TEST(CslParserTest, parseComplexFormulaTest) {
-	std::string formula = "S<=0.5 [ P <= 0.5 [ a U c ] ] & (P > 0.5 [ G b] | !P < 0.4 [ G P>0.9 [F >=7 a & b] ])  //and a comment";
-	storm::property::csl::AbstractCslFormula<double>* cslFormula = nullptr;
+	std::string input = "S<=0.5 [ P <= 0.5 [ a U c ] ] & (P > 0.5 [ G b] | !P < 0.4 [ G P>0.9 [F >=7 a & b] ])  //and a comment";
+	storm::property::csl::CslFilter<double>* formula = nullptr;
 	ASSERT_NO_THROW(
-		cslFormula = storm::parser::CslParser(formula);
+		formula = storm::parser::CslParser::parseCslFormula(input);
 	);
 
-	ASSERT_NE(cslFormula, nullptr);
-	ASSERT_EQ(cslFormula->toString(), "(S <= 0.500000 [P <= 0.500000 [a U c]] & (P > 0.500000 [G b] | !P < 0.400000 [G P > 0.900000 [F>=7.000000 (a & b)]]))");
+	// The parser did not falsely recognize the input as a comment.
+	ASSERT_NE(formula, nullptr);
 
-	delete cslFormula;
+	// The input was parsed correctly.
+	ASSERT_EQ("(S <= 0.500000 [P <= 0.500000 [a U c]] & (P > 0.500000 [G b] | !P < 0.400000 [G P > 0.900000 [F>=7.000000 (a & b)]]))", formula->toString());
+
+	delete formula;
 }
 
 TEST(CslParserTest, wrongProbabilisticFormulaTest) {
-	std::string formula = "P > 0.5 [ a ]";
-	storm::property::csl::AbstractCslFormula<double>* cslFormula = nullptr;
+	std::string input = "P > 0.5 [ a ]";
+	storm::property::csl::CslFilter<double>* formula = nullptr;
 	ASSERT_THROW(
-		cslFormula = storm::parser::CslParser(formula),	
+		formula = storm::parser::CslParser::parseCslFormula(input),
 		storm::exceptions::WrongFormatException
 	);
+	delete formula;
 }
 
 TEST(CslParserTest, wrongFormulaTest) {
-	std::string formula = "(a | b) & +";
-	storm::property::csl::AbstractCslFormula<double>* cslFormula = nullptr;
+	std::string input = "(a | b) & +";
+	storm::property::csl::CslFilter<double>* formula = nullptr;
 	ASSERT_THROW(
-		cslFormula = storm::parser::CslParser(formula),	
+		formula = storm::parser::CslParser::parseCslFormula(input),
 		storm::exceptions::WrongFormatException
 	);
+	delete formula;
 }
 
 TEST(CslParserTest, wrongFormulaTest2) {
-	std::string formula = "P>0 [ F & a ]";
-	storm::property::csl::AbstractCslFormula<double>* cslFormula = nullptr;
+	std::string input = "P>0 [ F & a ]";
+	storm::property::csl::CslFilter<double>* formula = nullptr;
 	ASSERT_THROW(
-		cslFormula = storm::parser::CslParser(formula),	
+		formula = storm::parser::CslParser::parseCslFormula(input),
 		storm::exceptions::WrongFormatException
 	);
+	delete formula;
 }

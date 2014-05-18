@@ -63,7 +63,7 @@ public:
 			storm::storage::BitVector result;
 
 			try {
-				result = evaluate(modelchecker, static_cast<AbstractStateFormula<T>*>(child));
+				result = evaluate(modelchecker, dynamic_cast<AbstractStateFormula<T>*>(child));
 			} catch (std::exception& e) {
 				std::cout << "Error during computation: " << e.what() << "Skipping property." << std::endl;
 				LOG4CPLUS_ERROR(logger, "Error during computation: " << e.what() << "Skipping property.");
@@ -80,7 +80,7 @@ public:
 				// Return the results for all states labeled with "init".
 				LOG4CPLUS_INFO(logger, "Result for initial states:");
 				std::cout << "Result for initial states:" << std::endl;
-				for (auto initialState : modelchecker.getModel().getInitialStates()) {
+				for (auto initialState : modelchecker.template getModel<storm::models::AbstractModel<T>>().getInitialStates()) {
 					LOG4CPLUS_INFO(logger, "\t" << initialState << ": " << (result.get(initialState) ? "satisfied" : "not satisfied"));
 					std::cout << "\t" << initialState << ": " << result.get(initialState) << std::endl;
 				}
@@ -95,7 +95,7 @@ public:
 			std::vector<T> result;
 
 			try {
-				result = evaluate(modelchecker, static_cast<AbstractPathFormula<T>*>(child));
+				result = evaluate(modelchecker, dynamic_cast<AbstractPathFormula<T>*>(child));
 			} catch (std::exception& e) {
 				std::cout << "Error during computation: " << e.what() << "Skipping property." << std::endl;
 				LOG4CPLUS_ERROR(logger, "Error during computation: " << e.what() << "Skipping property.");
@@ -112,7 +112,7 @@ public:
 				// Return the results for all states labeled with "init".
 				LOG4CPLUS_INFO(logger, "Result for initial states:");
 				std::cout << "Result for initial states:" << std::endl;
-				for (auto initialState : modelchecker.getModel().getInitialStates()) {
+				for (auto initialState : modelchecker.template getModel<storm::models::AbstractModel<T>>().getInitialStates()) {
 					LOG4CPLUS_INFO(logger, "\t" << initialState << ": " << result[initialState]);
 					std::cout << "\t" << initialState << ": " << result[initialState] << std::endl;
 				}
@@ -127,7 +127,7 @@ public:
 			std::vector<T> result;
 
 			try {
-				result = evaluate(modelchecker, static_cast<AbstractRewardPathFormula<T>*>(child));
+				result = evaluate(modelchecker, dynamic_cast<AbstractRewardPathFormula<T>*>(child));
 			} catch (std::exception& e) {
 				std::cout << "Error during computation: " << e.what() << "Skipping property." << std::endl;
 				LOG4CPLUS_ERROR(logger, "Error during computation: " << e.what() << "Skipping property.");
@@ -144,7 +144,7 @@ public:
 				// Return the results for all states labeled with "init".
 				LOG4CPLUS_INFO(logger, "Result for initial states:");
 				std::cout << "Result for initial states:" << std::endl;
-				for (auto initialState : modelchecker.getModel().getInitialStates()) {
+				for (auto initialState : modelchecker.template getModel<storm::models::AbstractModel<T>>().getInitialStates()) {
 					LOG4CPLUS_INFO(logger, "\t" << initialState << ": " << result[initialState]);
 					std::cout << "\t" << initialState << ": " << result[initialState] << std::endl;
 				}
@@ -208,7 +208,7 @@ private:
 
 		if(this->getActionCount() != 0 &&  dynamic_cast<storm::property::action::MinMaxAction<T>*>(this->getAction(0)) != nullptr) {
 			// If there is an action specifying that min/max probabilities should be computed, call the appropriate method of the model checker.
-			result = modelchecker.checkMinMaxOperator(formula, static_cast<storm::property::action::MinMaxAction<T>*>(this->getAction(0))->getMinimize());
+			result = modelchecker.checkMinMaxOperator(*formula, static_cast<storm::property::action::MinMaxAction<T>*>(this->getAction(0))->getMinimize());
 		} else {
 			result = formula->check(modelchecker);
 		}
@@ -227,7 +227,7 @@ private:
 
 		if(this->getActionCount() != 0 &&  dynamic_cast<storm::property::action::MinMaxAction<T>*>(this->getAction(0)) != nullptr) {
 			// If there is an action specifying that min/max probabilities should be computed, call the appropriate method of the model checker.
-			result = modelchecker.checkMinMaxOperator(formula, static_cast<storm::property::action::MinMaxAction<T>*>(this->getAction(0))->getMinimize());
+			result = modelchecker.checkMinMaxOperator(*formula, dynamic_cast<storm::property::action::MinMaxAction<T>*>(this->getAction(0))->getMinimize());
 		} else {
 			result = formula->check(modelchecker, false);
 		}
@@ -245,7 +245,7 @@ private:
 
 		if(this->getActionCount() != 0 &&  dynamic_cast<storm::property::action::MinMaxAction<T>*>(this->getAction(0)) != nullptr) {
 			// If there is an action specifying that min/max probabilities should be computed, call the appropriate method of the model checker.
-			result = modelchecker.checkMinMaxOperator(formula, static_cast<storm::property::action::MinMaxAction<T>*>(this->getAction(0))->getMinimize());
+			result = modelchecker.checkMinMaxOperator(*formula, dynamic_cast<storm::property::action::MinMaxAction<T>*>(this->getAction(0))->getMinimize());
 		} else {
 			result = formula->check(modelchecker, false);
 		}

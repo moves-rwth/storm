@@ -14,7 +14,7 @@
 namespace storm {
 namespace parser {
 
-std::list<storm::property::prctl::PrctlFilter<double>*> PrctlFileParser(std::string filename) {
+std::list<storm::property::prctl::PrctlFilter<double>*> PrctlFileParser::parsePrctlFile(std::string filename) {
 	// Open file
 	std::ifstream inputFileStream;
 	inputFileStream.open(filename, std::ios::in);
@@ -29,11 +29,11 @@ std::list<storm::property::prctl::PrctlFilter<double>*> PrctlFileParser(std::str
 	std::string line;
 	//The while loop reads the input file line by line
 	while (std::getline(inputFileStream, line)) {
-		PrctlParser parser(line);
-		if (!parser.parsedComment()) {
+		storm::property::prctl::PrctlFilter<double>* formula = PrctlParser::parsePrctlFormula(line);
+		if (formula != nullptr) {
 			//lines containing comments will be skipped.
-			LOG4CPLUS_INFO(logger, "Parsed formula \"" + line + "\" into \"" + parser.getFormula()->toString() + "\"");
-			result.push_back(parser.getFormula());
+			LOG4CPLUS_INFO(logger, "Parsed formula \"" + line + "\" into \"" + formula->toString() + "\"");
+			result.push_back(formula);
 		}
 	}
 

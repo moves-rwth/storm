@@ -285,10 +285,10 @@ void checkPrctlFormulae(storm::modelchecker::prctl::AbstractModelChecker<double>
 	if (s->isSet("prctl")) {
 		std::string const chosenPrctlFile = s->getOptionByLongName("prctl").getArgument(0).getValueAsString();
 		LOG4CPLUS_INFO(logger, "Parsing prctl file: " << chosenPrctlFile << ".");
-		std::list<storm::property::prctl::AbstractPrctlFormula<double>*> formulaList = storm::parser::PrctlFileParser(chosenPrctlFile);
+		std::list<storm::property::prctl::PrctlFilter<double>*> formulaList = storm::parser::PrctlFileParser::parsePrctlFile(chosenPrctlFile);
         
         for (auto formula : formulaList) {
-        	modelchecker.check(*formula);
+        	formula->check(modelchecker);
             delete formula;
         }
 	}
@@ -339,7 +339,7 @@ void checkPrctlFormulae(storm::modelchecker::prctl::AbstractModelChecker<double>
 
 	std::string const chosenPrctlFile = s->getOptionByLongName("prctl").getArgument(0).getValueAsString();
 	LOG4CPLUS_INFO(logger, "Parsing prctl file: " << chosenPrctlFile << ".");
-	std::list<storm::property::prctl::AbstractPrctlFormula<double>*> formulaList = storm::parser::PrctlFileParser(chosenPrctlFile);
+	std::list<storm::property::prctl::PrctlFilter<double>*> formulaList = storm::parser::PrctlFileParser::parsePrctlFile(chosenPrctlFile);
 
 	// Test for each formula if a counterexample can be generated for it.
 	if(formulaList.size() == 0) {
@@ -369,13 +369,13 @@ void checkPrctlFormulae(storm::modelchecker::prctl::AbstractModelChecker<double>
 	for (auto formula : formulaList) {
 
 		// First check if it is a formula type for which a counterexample can be generated.
-		if (dynamic_cast<storm::property::prctl::AbstractStateFormula<double> const*>(formula) == nullptr) {
+		if (dynamic_cast<storm::property::prctl::AbstractStateFormula<double> const*>(formula->getChild()) == nullptr) {
 			LOG4CPLUS_ERROR(logger, "Unexpected kind of formula. Expected a state formula.");
 			delete formula;
 			continue;
 		}
 
-		storm::property::prctl::AbstractStateFormula<double> const& stateForm = static_cast<storm::property::prctl::AbstractStateFormula<double> const&>(*formula);
+		storm::property::prctl::AbstractStateFormula<double> const& stateForm = static_cast<storm::property::prctl::AbstractStateFormula<double> const&>(*(formula->getChild()));
 
 		// Do some output
 		std::cout << "Generating counterexample for formula " << fIndex << ":" << std::endl;
@@ -552,14 +552,14 @@ int main(const int argc, const char* argv[]) {
                 
                 // Now parse the property file and receive the list of parsed formulas.
                 std::string const& propertyFile = s->getOptionByLongName("mincmd").getArgumentByName("propertyFile").getValueAsString();
-                std::list<storm::property::prctl::AbstractPrctlFormula<double>*> formulaList = storm::parser::PrctlFileParser(propertyFile);
+                std::list<storm::property::prctl::PrctlFilter<double>*> formulaList = storm::parser::PrctlFileParser::parsePrctlFile(propertyFile);
 
                 // Now generate the counterexamples for each formula.
-                for (storm::property::prctl::AbstractPrctlFormula<double>* formulaPtr : formulaList) {
+                for (storm::property::prctl::PrctlFilter<double>* formulaPtr : formulaList) {
                     if (useMILP) {
-                        storm::counterexamples::MILPMinimalLabelSetGenerator<double>::computeCounterexample(program, *mdp, formulaPtr);
+                        storm::counterexamples::MILPMinimalLabelSetGenerator<double>::computeCounterexample(program, *mdp, formulaPtr->getChild());
                     } else {
-                        storm::counterexamples::SMTMinimalCommandSetGenerator<double>::computeCounterexample(program, constants, *mdp, formulaPtr);
+                        storm::counterexamples::SMTMinimalCommandSetGenerator<double>::computeCounterexample(program, constants, *mdp, formulaPtr->getChild());
                     }
                     
                     // Once we are done with the formula, delete it.

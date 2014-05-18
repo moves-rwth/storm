@@ -12,149 +12,158 @@
 #include "src/exceptions/WrongFormatException.h"
 
 TEST(PrctlParserTest, parseApOnlyTest) {
-	std::string ap = "ap";
-	storm::parser::PrctlParser* prctlParser = nullptr;
+	std::string input = "ap";
+	storm::property::prctl::PrctlFilter<double>* formula = nullptr;
 	ASSERT_NO_THROW(
-			prctlParser = new storm::parser::PrctlParser(ap);
+			formula = storm::parser::PrctlParser::parsePrctlFormula(input)
 	);
 
-	ASSERT_NE(prctlParser->getFormula(), nullptr);
+	// The parser did not falsely recognize the input as a comment.
+	ASSERT_NE(formula, nullptr);
 
+	// The input was parsed correctly.
+	ASSERT_EQ(input, formula->toString());
 
-	ASSERT_EQ(ap, prctlParser->getFormula()->toString());
-
-	delete prctlParser->getFormula();
-	delete prctlParser;
+	delete formula;
 
 }
 
 TEST(PrctlParserTest, parsePropositionalFormulaTest) {
-	storm::parser::PrctlParser* prctlParser = nullptr;
+	std::string input =  "!(a & b) | a & ! c";
+	storm::property::prctl::PrctlFilter<double>* formula = nullptr;
 	ASSERT_NO_THROW(
-			prctlParser = new storm::parser::PrctlParser("!(a & b) | a & ! c")
+				formula = storm::parser::PrctlParser::parsePrctlFormula(input)
 	);
 
-	ASSERT_NE(prctlParser->getFormula(), nullptr);
+	// The parser did not falsely recognize the input as a comment.
+	ASSERT_NE(formula, nullptr);
 
+	// The input was parsed correctly.
+	ASSERT_EQ("(!(a & b) | (a & !c))", formula->toString());
 
-	ASSERT_EQ(prctlParser->getFormula()->toString(), "(!(a & b) | (a & !c))");
-
-	delete prctlParser->getFormula();
-	delete prctlParser;
+	delete formula;
 
 }
 
 TEST(PrctlParserTest, parseProbabilisticFormulaTest) {
-	storm::parser::PrctlParser* prctlParser = nullptr;
+	std::string input =  "P > 0.5 [ F a ]";
+	storm::property::prctl::PrctlFilter<double>* formula = nullptr;
 	ASSERT_NO_THROW(
-			prctlParser = new storm::parser::PrctlParser("P > 0.5 [ F a ]")
+				formula = storm::parser::PrctlParser::parsePrctlFormula(input)
 	);
 
-	ASSERT_NE(prctlParser->getFormula(), nullptr);
+	// The parser did not falsely recognize the input as a comment.
+	ASSERT_NE(formula, nullptr);
 
-	storm::property::prctl::ProbabilisticBoundOperator<double>* op = static_cast<storm::property::prctl::ProbabilisticBoundOperator<double>*>(prctlParser->getFormula());
+
+	ASSERT_NE(dynamic_cast<storm::property::prctl::ProbabilisticBoundOperator<double>*>(formula->getChild()), nullptr);
+	storm::property::prctl::ProbabilisticBoundOperator<double>* op = static_cast<storm::property::prctl::ProbabilisticBoundOperator<double>*>(formula->getChild());
 
 	ASSERT_EQ(storm::property::GREATER, op->getComparisonOperator());
 	ASSERT_EQ(0.5, op->getBound());
 
-	ASSERT_EQ(prctlParser->getFormula()->toString(), "P > 0.500000 [F a]");
+	// Test the string representation for the parsed formula.
+	ASSERT_EQ("P > 0.500000 [F a]", formula->toString());
 
-	delete prctlParser->getFormula();
-	delete prctlParser;
+	delete formula;
 
 }
 
 TEST(PrctlParserTest, parseRewardFormulaTest) {
-	storm::parser::PrctlParser* prctlParser = nullptr;
+	std::string input =  "R >= 15 [ I=5 ]";
+	storm::property::prctl::PrctlFilter<double>* formula = nullptr;
 	ASSERT_NO_THROW(
-			prctlParser = new storm::parser::PrctlParser("R >= 15 [ I=5 ]")
+				formula = storm::parser::PrctlParser::parsePrctlFormula(input);
 	);
 
-	ASSERT_NE(prctlParser->getFormula(), nullptr);
+	// The parser did not falsely recognize the input as a comment.
+	ASSERT_NE(formula, nullptr);
 
-	storm::property::prctl::RewardBoundOperator<double>* op = static_cast<storm::property::prctl::RewardBoundOperator<double>*>(prctlParser->getFormula());
+	ASSERT_NE(dynamic_cast<storm::property::prctl::RewardBoundOperator<double>*>(formula->getChild()), nullptr);
+	storm::property::prctl::RewardBoundOperator<double>* op = static_cast<storm::property::prctl::RewardBoundOperator<double>*>(formula->getChild());
 
 	ASSERT_EQ(storm::property::GREATER_EQUAL, op->getComparisonOperator());
 	ASSERT_EQ(15.0, op->getBound());
 
-	ASSERT_EQ("R >= 15.000000 [I=5]", prctlParser->getFormula()->toString());
+	// Test the string representation for the parsed formula.
+	ASSERT_EQ("R >= 15.000000 [I=5]", formula->toString());
 
-	delete prctlParser->getFormula();
-	delete prctlParser;
+	delete formula;
 }
 
 TEST(PrctlParserTest, parseRewardNoBoundFormulaTest) {
-	storm::parser::PrctlParser* prctlParser = nullptr;
+	std::string input =  "R = ? [ F a ]";
+	storm::property::prctl::PrctlFilter<double>* formula = nullptr;
 	ASSERT_NO_THROW(
-			prctlParser = new storm::parser::PrctlParser("R = ? [ F a ]")
+				formula = storm::parser::PrctlParser::parsePrctlFormula(input)
 	);
 
-	ASSERT_NE(prctlParser->getFormula(), nullptr);
+	// The parser did not falsely recognize the input as a comment.
+	ASSERT_NE(formula, nullptr);
 
+	// The input was parsed correctly.
+	ASSERT_EQ("R = ? [F a]", formula->toString());
 
-	ASSERT_EQ(prctlParser->getFormula()->toString(), "R = ? [F a]");
-
-	delete prctlParser->getFormula();
-	delete prctlParser;
-
+	delete formula;
 }
 
 TEST(PrctlParserTest, parseProbabilisticNoBoundFormulaTest) {
-	storm::parser::PrctlParser* prctlParser = nullptr;
+	std::string input =  "P = ? [ a U <= 4 b & (!c) ]";
+	storm::property::prctl::PrctlFilter<double>* formula = nullptr;
 	ASSERT_NO_THROW(
-			prctlParser = new storm::parser::PrctlParser("P = ? [ a U <= 4 b & (!c) ]")
+				formula = storm::parser::PrctlParser::parsePrctlFormula(input)
 	);
 
-	ASSERT_NE(prctlParser->getFormula(), nullptr);
+	// The parser did not falsely recognize the input as a comment.
+	ASSERT_NE(formula, nullptr);
 
+	// The input was parsed correctly.
+	ASSERT_EQ("P = ? [a U<=4 (b & !c)]", formula->toString());
 
-	ASSERT_EQ(prctlParser->getFormula()->toString(), "P = ? [a U<=4 (b & !c)]");
-
-	delete prctlParser->getFormula();
-	delete prctlParser;
-
+	delete formula;
 }
 
 TEST(PrctlParserTest, parseComplexFormulaTest) {
-	storm::parser::PrctlParser* prctlParser = nullptr;
+	std::string input =  "R<=0.5 [ S ] & (R > 15 [ C<=0.5 ] | !P < 0.4 [ G P>0.9 [F<=7 a & b] ])";
+	storm::property::prctl::PrctlFilter<double>* formula = nullptr;
 	ASSERT_NO_THROW(
-			prctlParser = new storm::parser::PrctlParser("R<=0.5 [ S ] & (R > 15 [ C<=0.5 ] | !P < 0.4 [ G P>0.9 [F<=7 a & b] ])")
+				formula = storm::parser::PrctlParser::parsePrctlFormula(input)
 	);
 
-	ASSERT_NE(prctlParser->getFormula(), nullptr);
+	// The parser did not falsely recognize the input as a comment.
+	ASSERT_NE(formula, nullptr);
 
+	// The input was parsed correctly.
+	ASSERT_EQ("(R <= 0.500000 [S] & (R > 15.000000 [C <= 0.500000] | !P < 0.400000 [G P > 0.900000 [F<=7 (a & b)]]))", formula->toString());
 
-	ASSERT_EQ("(R <= 0.500000 [S] & (R > 15.000000 [C <= 0.500000] | !P < 0.400000 [G P > 0.900000 [F<=7 (a & b)]]))", prctlParser->getFormula()->toString());
-	delete prctlParser->getFormula();
-	delete prctlParser;
-
+	delete formula;
 }
 
 
 TEST(PrctlParserTest, wrongProbabilisticFormulaTest) {
-	storm::parser::PrctlParser* prctlParser = nullptr;
+	storm::property::prctl::PrctlFilter<double>* formula = nullptr;
 	ASSERT_THROW(
-			prctlParser = new storm::parser::PrctlParser("P > 0.5 [ a ]"),
+			formula = storm::parser::PrctlParser::parsePrctlFormula("P > 0.5 [ a ]"),
 			storm::exceptions::WrongFormatException
 	);
 
-	delete prctlParser;
+	delete formula;
 }
 
 TEST(PrctlParserTest, wrongFormulaTest) {
-	storm::parser::PrctlParser* prctlParser = nullptr;
+	storm::property::prctl::PrctlFilter<double>* formula = nullptr;
 	ASSERT_THROW(
-			prctlParser = new storm::parser::PrctlParser("(a | b) & +"),
+			formula = storm::parser::PrctlParser::parsePrctlFormula("(a | b) & +"),
 			storm::exceptions::WrongFormatException
 	);
-	delete prctlParser;
+	delete formula;
 }
 
 TEST(PrctlParserTest, wrongFormulaTest2) {
-	storm::parser::PrctlParser* prctlParser = nullptr;
+	storm::property::prctl::PrctlFilter<double>* formula = nullptr;
 	ASSERT_THROW(
-			prctlParser = new storm::parser::PrctlParser("P>0 [ F & a ]"),
+			formula = storm::parser::PrctlParser::parsePrctlFormula("P>0 [ F & a ]"),
 			storm::exceptions::WrongFormatException
 	);
-	delete prctlParser;
+	delete formula;
 }

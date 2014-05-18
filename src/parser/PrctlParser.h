@@ -17,43 +17,27 @@ namespace parser {
  * class PrctlParser). However, it will not delete this object.
  */
 class PrctlParser {
-	public:
-		/*!
-		 * Reads a PRCTL formula from its string representation and parses it into a formula tree, consisting of
-		 * classes in the namespace storm::property.
-		 *
-		 * If the string could not be parsed successfully, it will throw a wrongFormatException.
-		 *
-		 * @param formulaString The string representation of the formula
-		 * @throw wrongFormatException If the input could not be parsed successfully
-		 */
-		PrctlParser(std::string formulaString);
-		 
-		/*!
-		 *	@return a pointer to the parsed formula object
-		 */
-		storm::property::prctl::PrctlFilter<double>* getFormula() {
-			return this->formula;
-		}
+public:
 
-		/*!
-		 * Checks whether the line which was parsed was a comment line; also returns true if the line was empty (as the semantics are
-		 * the same)
-		 *
-		 * @return True if the parsed line consisted completely of a (valid) comment, false otherwise.
-		 */
-		bool parsedComment() {
-			return (formula == nullptr);
-		}
+	/*!
+	 * Reads a PRCTL formula from its string representation and parses it into a formula tree, consisting of
+	 * classes in the namespace storm::property.
+	 *
+	 * If the string could not be parsed successfully, it will throw a wrongFormatException.
+	 *
+	 * @param formulaString The string representation of the formula
+	 * @throw wrongFormatException If the input could not be parsed successfully
+	 * @return A pointer to the parsed Prctl formula. If the line just contained a comment a nullptr will be returned instead.
+	 */
+	static storm::property::prctl::PrctlFilter<double>* parsePrctlFormula(std::string formulaString);
 
-	private:
-		storm::property::prctl::PrctlFilter<double>* formula;
+private:
 
-		/*!
-		 * Struct for the Prctl grammar, that Boost::Spirit uses to parse the formulas.
-		 */
-		template<typename Iterator, typename Skipper>
-		struct PrctlGrammar;
+	/*!
+	 * Struct for the Prctl grammar, that Boost::Spirit uses to parse the formulas.
+	 */
+	template<typename Iterator, typename Skipper>
+	struct PrctlGrammar;
 
 };
 

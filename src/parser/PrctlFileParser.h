@@ -16,13 +16,18 @@
 namespace storm {
 namespace parser {
 
-/*!
- * Parses each line of a given file as prctl formula and returns a list containing the results of the parsing.
- *
- * @param filename
- * @return The list of parsed formulas
- */
-std::list<storm::property::prctl::PrctlFilter<double>*> PrctlFileParser(std::string filename);
+class PrctlFileParser {
+public:
+
+	/*!
+	 * Parses each line of a given file as prctl formula and returns a list containing the results of the parsing.
+	 *
+	 * @param filename
+	 * @return The list of parsed formulas
+	 */
+	static std::list<storm::property::prctl::PrctlFilter<double>*> parsePrctlFile(std::string filename);
+
+};
 
 } /* namespace parser */
 } /* namespace storm */

@@ -32,7 +32,6 @@ namespace qi = boost::spirit::qi;
 namespace phoenix = boost::phoenix;
 
 
-
 namespace storm {
 
 namespace parser {
@@ -165,7 +164,7 @@ struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, storm::property::prctl:
 					qi::_1];
 		filter.name("PRCTL formula filter");
 
-		start = (((filter) > (comment | qi::eps))[qi::_val = qi::_1] | comment) > qi::eoi;
+		start = (((filter) > (comment | qi::eps))[qi::_val = qi::_1] | comment[qi::_val = nullptr]) > qi::eoi;
 		start.name("PRCTL formula filter");
 	}
 
@@ -216,7 +215,7 @@ struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, storm::property::prctl:
 } //namespace storm
 } //namespace parser
 
-storm::parser::PrctlParser::PrctlParser(std::string formulaString) {
+storm::property::prctl::PrctlFilter<double>* storm::parser::PrctlParser::parsePrctlFormula(std::string formulaString) {
 	// Prepare iterators to input.
 	BaseIteratorType stringIteratorBegin = formulaString.begin();
 	BaseIteratorType stringIteratorEnd = formulaString.end();
@@ -259,5 +258,5 @@ storm::parser::PrctlParser::PrctlParser(std::string formulaString) {
 		throw storm::exceptions::WrongFormatException() << msg.str();
 	}
 
-	formula = result_pointer;
+	return result_pointer;
 }

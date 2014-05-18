@@ -154,7 +154,7 @@ public:
 		std::string desc = "Filter: ";
 		desc += "\nActions:";
 		for(auto action : this->actions) {
-			desc += "\n\t" + action.toString();
+			desc += "\n\t" + action->toString();
 		}
 		desc += "\nFormula:\n\t" + child->toString();
 		return desc;
