@@ -1,6 +1,7 @@
 #ifndef STORM_SOLVER_Z3SMTSOLVER
 #define STORM_SOLVER_Z3SMTSOLVER
 
+#include "storm-config.h"
 #include "src/solver/SmtSolver.h"
 #include "src/adapters/Z3ExpressionAdapter.h"
 
@@ -37,9 +38,12 @@ namespace storm {
 			virtual uint_fast64_t solveAndDiversify(std::set<storm::expressions::SimpleValuation> diversifyers, std::function<bool(storm::expressions::Valuation&) > callback);
 
 		private:
+
+#ifdef STORM_HAVE_Z3
 			z3::context m_context;
 			z3::solver m_solver;
 			storm::adapters::Z3ExpressionAdapter m_adapter;
+#endif
 		};
 	}
 }

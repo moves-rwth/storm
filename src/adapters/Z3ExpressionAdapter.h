@@ -13,6 +13,7 @@
 #include "z3++.h"
 #include "z3.h"
 
+#include "storm-config.h"
 #include "src/storage/expressions/Expressions.h"
 #include "src/exceptions/ExceptionMacros.h"
 #include "src/exceptions/ExpressionEvaluationException.h"
@@ -21,7 +22,8 @@
 
 namespace storm {
     namespace adapters {
-        
+
+#ifdef STORM_HAVE_Z3
         class Z3ExpressionAdapter : public storm::expressions::ExpressionVisitor {
         public:
             /*!
@@ -392,7 +394,7 @@ namespace storm {
 
             std::map<std::string, z3::expr> variableToExpressionMap;
         };
-        
+#endif
     } // namespace adapters
 } // namespace storm
 
