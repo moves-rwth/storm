@@ -110,7 +110,7 @@ namespace storm {
 			//! @param es the asserted expressions
 			//! @throws IllegalArgumentTypeException if the return type of one of the expressions is not bool
 			//! @see check()
-			virtual CheckResult checkWithAssumptions(std::initializer_list<storm::expressions::Expression> &assumptions) = 0;
+			virtual CheckResult checkWithAssumptions(std::initializer_list<storm::expressions::Expression> assumptions) = 0;
 
 			/*!
 			* Gets a model for the assertion stack (and possibly assumtions) for the last call to ::check or ::checkWithAssumptions if that call

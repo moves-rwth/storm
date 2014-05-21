@@ -352,14 +352,16 @@ namespace storm {
 						break;
 					case storm::expressions::UnaryNumericalFunctionExpression::OperatorType::Floor: {
 						z3::expr floorVariable = context.int_const(("__z3adapter_floor_" + std::to_string(additionalVariableCounter++)).c_str());
-						additionalAssertions.push(z3::expr(context, Z3_mk_int2real(context, floorVariable)) <= childResult < (z3::expr(context, Z3_mk_int2real(context, floorVariable)) + 1));
-						throw storm::exceptions::NotImplementedException() << "Unary numerical function 'floor' is not supported by Z3ExpressionAdapter.";
+						additionalAssertions.push(z3::expr(context, Z3_mk_int2real(context, floorVariable)) <= childResult && childResult < (z3::expr(context, Z3_mk_int2real(context, floorVariable)) + 1));
+						stack.push(floorVariable);
+						//throw storm::exceptions::NotImplementedException() << "Unary numerical function 'floor' is not supported by Z3ExpressionAdapter.";
 						break;
 					}
 					case storm::expressions::UnaryNumericalFunctionExpression::OperatorType::Ceil:{
 						z3::expr ceilVariable = context.int_const(("__z3adapter_ceil_" + std::to_string(additionalVariableCounter++)).c_str());
-						additionalAssertions.push(z3::expr(context, Z3_mk_int2real(context, ceilVariable)) - 1 <= childResult < z3::expr(context, Z3_mk_int2real(context, ceilVariable)));
-						throw storm::exceptions::NotImplementedException() << "Unary numerical function 'floor' is not supported by Z3ExpressionAdapter.";
+						additionalAssertions.push(z3::expr(context, Z3_mk_int2real(context, ceilVariable)) - 1 <= childResult && childResult < z3::expr(context, Z3_mk_int2real(context, ceilVariable)));
+						stack.push(ceilVariable);
+						//throw storm::exceptions::NotImplementedException() << "Unary numerical function 'floor' is not supported by Z3ExpressionAdapter.";
 						break;
 					}
                     default: throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "

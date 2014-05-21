@@ -101,7 +101,7 @@ namespace storm {
 #endif
 		}
 
-		SmtSolver::CheckResult Z3SmtSolver::checkWithAssumptions(std::initializer_list<storm::expressions::Expression> &assumptions)
+		SmtSolver::CheckResult Z3SmtSolver::checkWithAssumptions(std::initializer_list<storm::expressions::Expression> assumptions)
 		{
 #ifdef STORM_HAVE_Z3
 			z3::expr_vector z3Assumptions(this->m_context);
