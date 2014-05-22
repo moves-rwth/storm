@@ -38,26 +38,18 @@ TEST(CuddDdManager, Constants) {
 TEST(CuddDdManager, AddGetMetaVariableTest) {
     std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::CUDD>> manager(new storm::dd::DdManager<storm::dd::DdType::CUDD>());
     ASSERT_NO_THROW(manager->addMetaVariable("x", 1, 9));
-    EXPECT_EQ(1, manager->getNumberOfMetaVariables());
+    EXPECT_EQ(2, manager->getNumberOfMetaVariables());
     
-    std::vector<std::string> names = {"x", "x'"};
-    ASSERT_THROW(manager->addMetaVariablesInterleaved(names, 0, 3), storm::exceptions::InvalidArgumentException);
+    ASSERT_THROW(manager->addMetaVariable("x", 0, 3), storm::exceptions::InvalidArgumentException);
 
-    names = {"y", "y"};
-    ASSERT_THROW(manager->addMetaVariablesInterleaved(names, 0, 3), storm::exceptions::InvalidArgumentException);
+    ASSERT_NO_THROW(manager->addMetaVariable("y", 0, 3));
+    EXPECT_EQ(4, manager->getNumberOfMetaVariables());
     
-    names = {"y", "y'"};
-    ASSERT_NO_THROW(manager->addMetaVariablesInterleaved(names, 0, 3));
-    EXPECT_EQ(3, manager->getNumberOfMetaVariables());
-    
-    EXPECT_FALSE(manager->hasMetaVariable("x'"));
+    EXPECT_TRUE(manager->hasMetaVariable("x'"));
     EXPECT_TRUE(manager->hasMetaVariable("y'"));
     
-    std::set<std::string> metaVariableSet = {"x", "y", "y'"};
+    std::set<std::string> metaVariableSet = {"x", "x'", "y", "y'"};
     EXPECT_EQ(metaVariableSet, manager->getAllMetaVariableNames());
-    
-    ASSERT_THROW(storm::dd::DdMetaVariable<storm::dd::DdType::CUDD> const& metaVariableX = manager->getMetaVariable("x'"), storm::exceptions::InvalidArgumentException);
-    ASSERT_NO_THROW(storm::dd::DdMetaVariable<storm::dd::DdType::CUDD> const& metaVariableX = manager->getMetaVariable("x"));
 }
 
 TEST(CuddDdManager, EncodingTest) {
@@ -97,20 +89,6 @@ TEST(CuddDdManager, IdentityTest) {
     EXPECT_EQ(9, range.getNonZeroCount());
     EXPECT_EQ(10, range.getLeafCount());
     EXPECT_EQ(21, range.getNodeCount());
-}
-
-TEST(CuddDdMetaVariable, AccessorTest) {
-    std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::CUDD>> manager(new storm::dd::DdManager<storm::dd::DdType::CUDD>());
-    manager->addMetaVariable("x", 1, 9);
-    EXPECT_EQ(1, manager->getNumberOfMetaVariables());
-    ASSERT_NO_THROW(storm::dd::DdMetaVariable<storm::dd::DdType::CUDD> const& metaVariableX = manager->getMetaVariable("x"));
-    storm::dd::DdMetaVariable<storm::dd::DdType::CUDD> const& metaVariableX = manager->getMetaVariable("x");
-    
-    EXPECT_EQ(1, metaVariableX.getLow());
-    EXPECT_EQ(9, metaVariableX.getHigh());
-    EXPECT_EQ("x", metaVariableX.getName());
-    EXPECT_EQ(manager, metaVariableX.getDdManager());
-    EXPECT_EQ(4, metaVariableX.getNumberOfDdVariables());
 }
 
 TEST(CuddDd, OperatorTest) {
@@ -200,7 +178,7 @@ TEST(CuddDd, OperatorTest) {
 
 TEST(CuddDd, AbstractionTest) {
     std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::CUDD>> manager(new storm::dd::DdManager<storm::dd::DdType::CUDD>());
-    manager->addMetaVariablesInterleaved({"x", "x'"}, 1, 9);
+    manager->addMetaVariable("x", 1, 9);
     storm::dd::Dd<storm::dd::DdType::CUDD> dd1;
     storm::dd::Dd<storm::dd::DdType::CUDD> dd2;
     storm::dd::Dd<storm::dd::DdType::CUDD> dd3;
@@ -246,7 +224,7 @@ TEST(CuddDd, AbstractionTest) {
 TEST(CuddDd, SwapTest) {
     std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::CUDD>> manager(new storm::dd::DdManager<storm::dd::DdType::CUDD>());
     
-    manager->addMetaVariablesInterleaved({"x", "x'"}, 1, 9);
+    manager->addMetaVariable("x", 1, 9);
     manager->addMetaVariable("z", 2, 8);
     storm::dd::Dd<storm::dd::DdType::CUDD> dd1;
     storm::dd::Dd<storm::dd::DdType::CUDD> dd2;
@@ -259,7 +237,7 @@ TEST(CuddDd, SwapTest) {
 
 TEST(CuddDd, MultiplyMatrixTest) {
     std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::CUDD>> manager(new storm::dd::DdManager<storm::dd::DdType::CUDD>());
-    manager->addMetaVariablesInterleaved({"x", "x'"}, 1, 9);
+    manager->addMetaVariable("x", 1, 9);
     
     storm::dd::Dd<storm::dd::DdType::CUDD> dd1 = manager->getIdentity("x").equals(manager->getIdentity("x'"));
     storm::dd::Dd<storm::dd::DdType::CUDD> dd2 = manager->getRange("x'");
