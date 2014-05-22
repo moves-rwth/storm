@@ -43,6 +43,8 @@ namespace storm {
 			z3::context m_context;
 			z3::solver m_solver;
 			storm::adapters::Z3ExpressionAdapter m_adapter;
+
+			CheckResult lastResult;
 #endif
 		};
 	}

@@ -65,7 +65,7 @@ namespace storm {
 						variables = expression.getVariablesAndTypes();
 					}
 					catch (storm::exceptions::InvalidTypeException* e) {
-						LOG_THROW(true, storm::exceptions::InvalidTypeException, "Encountered variable with ambigious type while trying to autocreate solver variables: " << e);
+						LOG_THROW(false, storm::exceptions::InvalidTypeException, "Encountered variable with ambigious type while trying to autocreate solver variables: " << e);
 					}
 
 					for (auto variableAndType : variables) {
@@ -82,7 +82,7 @@ namespace storm {
 									this->variableToExpressionMap.insert(std::make_pair(variableAndType.first, context.real_const(variableAndType.first.c_str())));
 									break;
 								default:
-									LOG_THROW(true, storm::exceptions::InvalidTypeException, "Encountered variable with unknown type while trying to autocreate solver variables: " << variableAndType.first);
+									LOG_THROW(false, storm::exceptions::InvalidTypeException, "Encountered variable with unknown type while trying to autocreate solver variables: " << variableAndType.first);
 									break;
 							}
 						}
@@ -110,7 +110,7 @@ namespace storm {
 							return storm::expressions::Expression::createTrue();
 							break;
 						default:
-							LOG_THROW(true, storm::exceptions::ExpressionEvaluationException, "Failed to convert Z3 expression. Expression is constant boolean, but value is undefined.");
+							LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Failed to convert Z3 expression. Expression is constant boolean, but value is undefined.");
 							break;
 					}
 				} else if (expr.is_int() && expr.is_const()) {
@@ -118,7 +118,7 @@ namespace storm {
 					if (Z3_get_numeral_int64(expr.ctx(), expr, &value)) {
 						return storm::expressions::Expression::createIntegerLiteral(value);
 					} else {
-						LOG_THROW(true, storm::exceptions::ExpressionEvaluationException, "Failed to convert Z3 expression. Expression is constant integer and value does not fit into 64-bit integer.");
+						LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Failed to convert Z3 expression. Expression is constant integer and value does not fit into 64-bit integer.");
 					}
 				} else if (expr.is_real() && expr.is_const()) {
 					int_fast64_t num;
@@ -126,7 +126,7 @@ namespace storm {
 					if (Z3_get_numeral_rational_int64(expr.ctx(), expr, &num, &den)) {
 						return storm::expressions::Expression::createDoubleLiteral(static_cast<double>(num) / static_cast<double>(den));
 					} else {
-						LOG_THROW(true, storm::exceptions::ExpressionEvaluationException, "Failed to convert Z3 expression. Expression is constant real and value does not fit into a fraction with 64-bit integer numerator and denominator.");
+						LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Failed to convert Z3 expression. Expression is constant real and value does not fit into a fraction with 64-bit integer numerator and denominator.");
 					}
 				} else if (expr.is_app()) {
 					switch (expr.decl().decl_kind()) {
@@ -140,7 +140,7 @@ namespace storm {
 							return this->translateExpression(expr.arg(0)).ite(this->translateExpression(expr.arg(1)), this->translateExpression(expr.arg(2)));
 						case Z3_OP_AND: {
 							unsigned args = expr.num_args();
-							LOG_THROW(args == 0, storm::exceptions::ExpressionEvaluationException, "Failed to convert Z3 expression. 0-ary AND is assumed to be an error.");
+							LOG_THROW(args != 0, storm::exceptions::ExpressionEvaluationException, "Failed to convert Z3 expression. 0-ary AND is assumed to be an error.");
 							if (args == 1) {
 								return this->translateExpression(expr.arg(0));
 							} else {
@@ -153,7 +153,7 @@ namespace storm {
 						}
 						case Z3_OP_OR: {
 							unsigned args = expr.num_args();
-							LOG_THROW(args == 0, storm::exceptions::ExpressionEvaluationException, "Failed to convert Z3 expression. 0-ary OR is assumed to be an error.");
+							LOG_THROW(args != 0, storm::exceptions::ExpressionEvaluationException, "Failed to convert Z3 expression. 0-ary OR is assumed to be an error.");
 							if (args == 1) {
 								return this->translateExpression(expr.arg(0));
 							} else {
@@ -194,7 +194,7 @@ namespace storm {
 							return this->translateExpression(expr.arg(0)) / this->translateExpression(expr.arg(1));
 						case Z3_OP_UNINTERPRETED:
 							//this should be a variable...
-							LOG_THROW(!expr.is_const(), storm::exceptions::ExpressionEvaluationException, "Failed to convert Z3 expression. Encountered non constant uninterpreted function.");
+							LOG_THROW(expr.is_const(), storm::exceptions::ExpressionEvaluationException, "Failed to convert Z3 expression. Encountered non constant uninterpreted function.");
 							if (expr.is_bool()) {
 								return storm::expressions::Expression::createBooleanVariable(expr.decl().name().str());
 							} else if (expr.is_int()) {
@@ -202,15 +202,15 @@ namespace storm {
 							} else if (expr.is_real()) {
 								return storm::expressions::Expression::createDoubleVariable(expr.decl().name().str());
 							} else {
-								LOG_THROW(true, storm::exceptions::ExpressionEvaluationException, "Failed to convert Z3 expression. Encountered constant uninterpreted function of unknown sort.");
+								LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Failed to convert Z3 expression. Encountered constant uninterpreted function of unknown sort.");
 							}
 							
 						default:
-							LOG_THROW(true, storm::exceptions::ExpressionEvaluationException, "Failed to convert Z3 expression. Encountered unhandled Z3_decl_kind " << expr.decl().kind() <<".");
+							LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Failed to convert Z3 expression. Encountered unhandled Z3_decl_kind " << expr.decl().kind() <<".");
 							break;
 					}
 				} else {
-					LOG_THROW(true, storm::exceptions::ExpressionEvaluationException, "Failed to convert Z3 expression. Encountered unknown expression type.");
+					LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Failed to convert Z3 expression. Encountered unknown expression type.");
 				}
 			}
 
