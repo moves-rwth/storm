@@ -125,3 +125,38 @@ TEST(Z3SmtSolver, Backtracking) {
 	ASSERT_TRUE(false) << "StoRM built without Z3 support.";
 #endif
 }
+
+
+TEST(Z3SmtSolver, Assumptions) {
+#ifdef STORM_HAVE_Z3
+	storm::solver::Z3SmtSolver s;
+	storm::solver::Z3SmtSolver::CheckResult result;
+
+	storm::expressions::Expression a = storm::expressions::Expression::createIntegerVariable("a");
+	storm::expressions::Expression b = storm::expressions::Expression::createIntegerVariable("b");
+	storm::expressions::Expression c = storm::expressions::Expression::createIntegerVariable("c");
+	storm::expressions::Expression exprFormula = a >= storm::expressions::Expression::createIntegerLiteral(0)
+		&& a < storm::expressions::Expression::createIntegerLiteral(5)
+		&& b > storm::expressions::Expression::createIntegerLiteral(7)
+		&& c == (a * b)
+		&& b + a > c;
+	storm::expressions::Expression f2 = storm::expressions::Expression::createBooleanVariable("f2");
+	storm::expressions::Expression exprFormula2 = f2.implies(a >= storm::expressions::Expression::createIntegerLiteral(2));
+
+	ASSERT_NO_THROW(s.assertExpression(exprFormula));
+	ASSERT_NO_THROW(result = s.check());
+	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::SAT);
+	ASSERT_NO_THROW(s.assertExpression(exprFormula2));
+	ASSERT_NO_THROW(result = s.check());
+	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::SAT);
+	ASSERT_NO_THROW(result = s.checkWithAssumptions({f2}));
+	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::UNSAT);
+	ASSERT_NO_THROW(result = s.check());
+	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::SAT);
+	ASSERT_NO_THROW(result = s.checkWithAssumptions({ !f2 }));
+	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::SAT);
+
+#else
+	ASSERT_TRUE(false) << "StoRM built without Z3 support.";
+#endif
+}
