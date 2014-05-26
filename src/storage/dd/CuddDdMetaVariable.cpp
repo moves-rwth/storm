@@ -21,7 +21,7 @@ namespace storm {
             return this->name;
         }
         
-        typename DdMetaVariable<DdType::CUDD>::MetaVariableType DdMetaVariable<DdType::CUDD>::getType() const {
+        DdMetaVariable<DdType::CUDD>::MetaVariableType DdMetaVariable<DdType::CUDD>::getType() const {
             return this->type;
         }
         

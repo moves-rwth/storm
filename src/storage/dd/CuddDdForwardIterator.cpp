@@ -70,7 +70,7 @@ namespace storm {
             if (this->relevantDontCareDdVariables.empty() || this->cubeCounter >= std::pow(2, this->relevantDontCareDdVariables.size()) - 1) {
                 // Get the next cube and check for emptiness.
                 ABDD::NextCube(generator, &cube, &value);
-                this->isAtEnd = Cudd_IsGenEmpty(generator);
+                this->isAtEnd = static_cast<bool>(Cudd_IsGenEmpty(generator));
 
                 // In case we are not done yet, we get ready to treat the next cube.
                 if (!this->isAtEnd) {
