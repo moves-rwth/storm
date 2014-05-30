@@ -82,11 +82,11 @@ TEST(SparseMdpPrctlModelCheckerTest, Dice) {
 	apFormula = new storm::property::prctl::Ap<double>("done");
 	reachabilityRewardFormula = new storm::property::prctl::ReachabilityReward<double>(apFormula);
 
-	result = mc.checkOptimizingOperator(*reachabilityRewardFormula, true);
+	result = stateRewardModelChecker.checkOptimizingOperator(*reachabilityRewardFormula, true);
     
 	ASSERT_LT(std::abs(result[0] - 7.333329499), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
-	result = mc.checkOptimizingOperator(*reachabilityRewardFormula, false);
+	result = stateRewardModelChecker.checkOptimizingOperator(*reachabilityRewardFormula, false);
 
 	ASSERT_LT(std::abs(result[0] - 7.333329499), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
@@ -103,11 +103,11 @@ TEST(SparseMdpPrctlModelCheckerTest, Dice) {
 	apFormula = new storm::property::prctl::Ap<double>("done");
 	reachabilityRewardFormula = new storm::property::prctl::ReachabilityReward<double>(apFormula);
     
-	result = mc.checkOptimizingOperator(*reachabilityRewardFormula, true);
+	result = stateAndTransitionRewardModelChecker.checkOptimizingOperator(*reachabilityRewardFormula, true);
     
 	ASSERT_LT(std::abs(result[0] - 14.666658998), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
-	result = mc.checkOptimizingOperator(*reachabilityRewardFormula, false);
+	result = stateAndTransitionRewardModelChecker.checkOptimizingOperator(*reachabilityRewardFormula, false);
 
 	ASSERT_LT(std::abs(result[0] - 14.666658998), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
