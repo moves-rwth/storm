@@ -314,10 +314,18 @@ namespace storm {
             return Dd<DdType::CUDD>(this->getDdManager(), this->cuddAdd.MatrixMultiply(otherMatrix.getCuddAdd(), summationDdVariables), containedMetaVariableNames);
         }
         
-        Dd<DdType::CUDD> Dd<DdType::CUDD>::greaterZero() const {
-            return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddAdd().BddStrictThreshold(0).Add(), this->getContainedMetaVariableNames());
+        Dd<DdType::CUDD> Dd<DdType::CUDD>::greater(double value) const {
+            return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddAdd().BddStrictThreshold(value).Add(), this->getContainedMetaVariableNames());
         }
         
+        Dd<DdType::CUDD> Dd<DdType::CUDD>::greaterOrEqual(double value) const {
+            return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddAdd().BddThreshold(value).Add(), this->getContainedMetaVariableNames());
+        }
+
+        Dd<DdType::CUDD> Dd<DdType::CUDD>::notZero() const {
+            return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddAdd().BddPattern().Add(), this->getContainedMetaVariableNames());
+        }
+
         uint_fast64_t Dd<DdType::CUDD>::getNonZeroCount() const {
             std::size_t numberOfDdVariables = 0;
             for (auto const& metaVariableName : this->containedMetaVariableNames) {

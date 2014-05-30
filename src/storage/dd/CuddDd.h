@@ -293,11 +293,29 @@ namespace storm {
             
             /*!
              * Computes a DD that represents the function in which all assignments with a function value strictly larger
-             * than zero are mapped to one and all others to zero.
+             * than the given value are mapped to one and all others to zero.
+             *
+             * @param value The value used for the comparison.
+             * @return The resulting DD.
+             */
+            Dd<DdType::CUDD> greater(double value) const;
+
+            /*!
+             * Computes a DD that represents the function in which all assignments with a function value larger or equal
+             * to the given value are mapped to one and all others to zero.
+             *
+             * @param value The value used for the comparison.
+             * @return The resulting DD.
+             */
+            Dd<DdType::CUDD> greaterOrEqual(double value) const;
+            
+            /*!
+             * Computes a DD that represents the function in which all assignments with a function value unequal to zero
+             * are mapped to one and all others to zero.
              *
              * @return The resulting DD.
              */
-            Dd<DdType::CUDD> greaterZero() const;
+            Dd<DdType::CUDD> notZero() const;
             
             /*!
              * Retrieves the number of encodings that are mapped to a non-zero value.
