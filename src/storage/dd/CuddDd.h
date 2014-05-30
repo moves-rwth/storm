@@ -292,6 +292,14 @@ namespace storm {
             Dd<DdType::CUDD> multiplyMatrix(Dd<DdType::CUDD> const& otherMatrix, std::set<std::string> const& summationMetaVariableNames) const;
             
             /*!
+             * Computes a DD that represents the function in which all assignments with a function value strictly larger
+             * than zero are mapped to one and all others to zero.
+             *
+             * @return The resulting DD.
+             */
+            Dd<DdType::CUDD> greaterZero() const;
+            
+            /*!
              * Retrieves the number of encodings that are mapped to a non-zero value.
              *
              * @return The number of encodings that are mapped to a non-zero value.
