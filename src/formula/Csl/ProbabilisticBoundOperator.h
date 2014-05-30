@@ -139,9 +139,9 @@ public:
 		}
 		result += " ";
 		result += std::to_string(bound);
-		result += " [";
+		result += " (";
 		result += pathFormula->toString();
-		result += "]";
+		result += ")";
 		return result;
 	}
 

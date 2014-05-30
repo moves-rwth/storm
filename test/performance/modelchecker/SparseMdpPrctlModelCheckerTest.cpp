@@ -22,11 +22,11 @@ TEST(SparseMdpPrctlModelCheckerTest, AsynchronousLeader) {
 	storm::property::prctl::Ap<double>* apFormula = new storm::property::prctl::Ap<double>("elected");
 	storm::property::prctl::Eventually<double>* eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
 
-	std::vector<double> result = mc.checkMinMaxOperator(*eventuallyFormula, true);
+	std::vector<double> result = mc.checkOptimizingOperator(*eventuallyFormula, true);
 
 	ASSERT_LT(std::abs(result[0] - 1.0), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
-	result = mc.checkMinMaxOperator(*eventuallyFormula, false);
+	result = mc.checkOptimizingOperator(*eventuallyFormula, false);
 
 	ASSERT_LT(std::abs(result[0] - 1.0), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
@@ -35,11 +35,11 @@ TEST(SparseMdpPrctlModelCheckerTest, AsynchronousLeader) {
 	apFormula = new storm::property::prctl::Ap<double>("elected");
 	storm::property::prctl::BoundedEventually<double>* boundedEventuallyFormula = new storm::property::prctl::BoundedEventually<double>(apFormula, 25);
 
-	result = mc.checkMinMaxOperator(*boundedEventuallyFormula, true);
+	result = mc.checkOptimizingOperator(*boundedEventuallyFormula, true);
 
 	ASSERT_LT(std::abs(result[0] - 0.0), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
-	result = mc.checkMinMaxOperator(*boundedEventuallyFormula, false);
+	result = mc.checkOptimizingOperator(*boundedEventuallyFormula, false);
 
 	ASSERT_LT(std::abs(result[0] - 0.0), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
@@ -48,11 +48,11 @@ TEST(SparseMdpPrctlModelCheckerTest, AsynchronousLeader) {
 	apFormula = new storm::property::prctl::Ap<double>("elected");
 	storm::property::prctl::ReachabilityReward<double>* reachabilityRewardFormula = new storm::property::prctl::ReachabilityReward<double>(apFormula);
 
-	result = mc.checkMinMaxOperator(*reachabilityRewardFormula, true);
+	result = mc.checkOptimizingOperator(*reachabilityRewardFormula, true);
 
 	ASSERT_LT(std::abs(result[0] - 6.172433512), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
-	result = mc.checkMinMaxOperator(*reachabilityRewardFormula, false);
+	result = mc.checkOptimizingOperator(*reachabilityRewardFormula, false);
 
 	ASSERT_LT(std::abs(result[0] - 6.1724344), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
@@ -78,7 +78,7 @@ TEST(SparseMdpPrctlModelCheckerTest, Consensus) {
     storm::property::prctl::Ap<double>* apFormula = new storm::property::prctl::Ap<double>("finished");
 	storm::property::prctl::Eventually<double>* eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
     
-	std::vector<double> result = mc.checkMinMaxOperator(*eventuallyFormula, true);
+	std::vector<double> result = mc.checkOptimizingOperator(*eventuallyFormula, true);
     
 	ASSERT_LT(std::abs(result[31168] - 1.0), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
     
@@ -89,7 +89,7 @@ TEST(SparseMdpPrctlModelCheckerTest, Consensus) {
     storm::property::prctl::And<double>* andFormula = new storm::property::prctl::And<double>(apFormula, apFormula2);
 	eventuallyFormula = new storm::property::prctl::Eventually<double>(andFormula);
     
-	result = mc.checkMinMaxOperator(*eventuallyFormula, true);
+	result = mc.checkOptimizingOperator(*eventuallyFormula, true);
 
 	ASSERT_LT(std::abs(result[31168] - 0.4374282832), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
@@ -100,7 +100,7 @@ TEST(SparseMdpPrctlModelCheckerTest, Consensus) {
     andFormula = new storm::property::prctl::And<double>(apFormula, apFormula2);
     eventuallyFormula = new storm::property::prctl::Eventually<double>(andFormula);
     
-	result = mc.checkMinMaxOperator(*eventuallyFormula, false);
+	result = mc.checkOptimizingOperator(*eventuallyFormula, false);
     
 	ASSERT_LT(std::abs(result[31168] - 0.5293286369), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
     
@@ -112,7 +112,7 @@ TEST(SparseMdpPrctlModelCheckerTest, Consensus) {
     andFormula = new storm::property::prctl::And<double>(apFormula, notFormula);
     eventuallyFormula = new storm::property::prctl::Eventually<double>(andFormula);
     
-	result = mc.checkMinMaxOperator(*eventuallyFormula, false);
+	result = mc.checkOptimizingOperator(*eventuallyFormula, false);
     
 	ASSERT_LT(std::abs(result[31168] - 0.10414097), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
     
@@ -121,11 +121,11 @@ TEST(SparseMdpPrctlModelCheckerTest, Consensus) {
     apFormula = new storm::property::prctl::Ap<double>("finished");
 	storm::property::prctl::BoundedEventually<double>* boundedEventuallyFormula = new storm::property::prctl::BoundedEventually<double>(apFormula, 50ull);
     
-	result = mc.checkMinMaxOperator(*boundedEventuallyFormula, true);
+	result = mc.checkOptimizingOperator(*boundedEventuallyFormula, true);
     
 	ASSERT_LT(std::abs(result[31168] - 0.0), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
     
-	result = mc.checkMinMaxOperator(*boundedEventuallyFormula, false);
+	result = mc.checkOptimizingOperator(*boundedEventuallyFormula, false);
 
 	ASSERT_LT(std::abs(result[31168] - 0.0), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
@@ -134,11 +134,11 @@ TEST(SparseMdpPrctlModelCheckerTest, Consensus) {
     apFormula = new storm::property::prctl::Ap<double>("finished");
 	storm::property::prctl::ReachabilityReward<double>* reachabilityRewardFormula = new storm::property::prctl::ReachabilityReward<double>(apFormula);
     
-	result = mc.checkMinMaxOperator(*reachabilityRewardFormula, true);
+	result = mc.checkOptimizingOperator(*reachabilityRewardFormula, true);
     
 	ASSERT_LT(std::abs(result[31168] - 1725.593313), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
-	result = mc.checkMinMaxOperator(*reachabilityRewardFormula, false);
+	result = mc.checkOptimizingOperator(*reachabilityRewardFormula, false);
 
 	ASSERT_LT(std::abs(result[31168] - 2183.142422), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 

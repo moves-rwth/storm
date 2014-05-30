@@ -13,7 +13,6 @@
 #include "src/formula/Prctl/AbstractPathFormula.h"
 #include "src/formula/Prctl/AbstractStateFormula.h"
 #include "src/modelchecker/prctl/AbstractModelChecker.h"
-#include "src/formula/Actions/MinMaxAction.h"
 
 namespace storm {
 namespace property {
@@ -24,23 +23,19 @@ class PrctlFilter : public storm::property::AbstractFilter<T> {
 
 public:
 
-	PrctlFilter() : child(nullptr) {
+	PrctlFilter() : AbstractFilter<T>(UNDEFINED), child(nullptr) {
 		// Intentionally left empty.
 	}
 
-	PrctlFilter(AbstractPrctlFormula<T>* child) : child(child) {
+	PrctlFilter(AbstractPrctlFormula<T>* child, OptimizingOperator opt = UNDEFINED) : AbstractFilter<T>(opt), child(child) {
 		// Intentionally left empty.
 	}
 
-	PrctlFilter(AbstractPrctlFormula<T>* child, bool minimize) : child(child) {
-		this->actions.push_back(new storm::property::action::MinMaxAction<T>(minimize));
+	PrctlFilter(AbstractPrctlFormula<T>* child, action::AbstractAction<T>* action, OptimizingOperator opt = UNDEFINED) : AbstractFilter<T>(action, opt), child(child) {
+		// Intentionally left empty.
 	}
 
-	PrctlFilter(AbstractPrctlFormula<T>* child, action::AbstractAction<T>* action) : child(child) {
-		this->actions.push_back(action);
-	}
-
-	PrctlFilter(AbstractPrctlFormula<T>* child, std::vector<action::AbstractAction<T>*> actions) : AbstractFilter<T>(actions), child(child) {
+	PrctlFilter(AbstractPrctlFormula<T>* child, std::vector<action::AbstractAction<T>*> actions, OptimizingOperator opt = UNDEFINED) : AbstractFilter<T>(actions, opt), child(child) {
 		// Intentionally left empty.
 	}
 
@@ -53,8 +48,8 @@ public:
 
 		// Write out the formula to be checked.
 		std::cout << std::endl;
-		LOG4CPLUS_INFO(logger, "Model checking formula\t" << this->toFormulaString());
-		std::cout << "Model checking formula:\t" << this->toFormulaString() << std::endl;
+		LOG4CPLUS_INFO(logger, "Model checking formula\t" << this->toString());
+		std::cout << "Model checking formula:\t" << this->toString() << std::endl;
 
 		// Do a dynamic cast to test for the actual formula type and call the correct evaluation function.
 		if(dynamic_cast<AbstractStateFormula<T>*>(child) != nullptr) {
@@ -177,12 +172,94 @@ public:
 		return true;
 	}
 
-	std::string toFormulaString() const {
-		std::string desc = "filter(";
+	virtual std::string toString() const override {
+		std::string desc = "";
+
+		if(dynamic_cast<AbstractStateFormula<T>*>(child) == nullptr) {
+
+			// The formula is not a state formula so we either have a probability query or a reward query.
+			if(this->actions.empty()){
+
+				// There is exactly one action in the list, the minmax action. Again, we do legacy support-
+
+				if(dynamic_cast<AbstractPathFormula<T>*>(child) != nullptr) {
+					// It is a probability query.
+					desc += "P ";
+
+				} else {
+					// It is a reward query.
+					desc += "R ";
+				}
+
+				switch(this->opt) {
+					case MINIMIZE:
+						desc += "min ";
+						break;
+					case MAXIMIZE:
+						desc += "max ";
+						break;
+					default:
+						break;
+				}
+
+				desc += "= ? ";
+
+			} else {
+				desc = "filter[";
+
+				switch(this->opt) {
+					case MINIMIZE:
+						desc += " min, ";
+						break;
+					case MAXIMIZE:
+						desc += " max, ";
+						break;
+					default:
+						break;
+				}
+
+				for(auto action : this->actions) {
+					desc += action->toString();
+					desc += ", ";
+				}
+
+				// Remove the last ", ".
+				desc.pop_back();
+				desc.pop_back();
+
+				desc += "]";
+			}
+
+		} else {
+
+			if(this->actions.empty()) {
+
+				// There are no filter actions but only the raw state formula. So just print that.
+				return child->toString();
+			}
+
+			desc = "filter[";
+
+			for(auto action : this->actions) {
+				desc += action->toString();
+				desc += ", ";
+			}
+
+			// Remove the last ", ".
+			desc.pop_back();
+			desc.pop_back();
+
+			desc += "]";
+		}
+
+		desc += "(";
+		desc += child->toString();
+		desc += ")";
+
 		return desc;
 	}
 
-	std::string toString() const {
+	virtual std::string toPrettyString() const override{
 		std::string desc = "Filter: ";
 		desc += "\nActions:";
 		for(auto action : this->actions) {
@@ -206,9 +283,9 @@ private:
 		// First, get the model checking result.
 		storm::storage::BitVector result;
 
-		if(this->getActionCount() != 0 &&  dynamic_cast<storm::property::action::MinMaxAction<T>*>(this->getAction(0)) != nullptr) {
-			// If there is an action specifying that min/max probabilities should be computed, call the appropriate method of the model checker.
-			result = modelchecker.checkMinMaxOperator(*formula, static_cast<storm::property::action::MinMaxAction<T>*>(this->getAction(0))->getMinimize());
+		if(this->opt != UNDEFINED) {
+			// If it is specified that min/max probabilities/rewards should be computed, call the appropriate method of the model checker.
+			result = modelchecker.checkOptimizingOperator(*formula, this->opt == storm::property::MINIMIZE ? true : false);
 		} else {
 			result = formula->check(modelchecker);
 		}
@@ -225,9 +302,9 @@ private:
 		// First, get the model checking result.
 		std::vector<T> result;
 
-		if(this->getActionCount() != 0 &&  dynamic_cast<storm::property::action::MinMaxAction<T>*>(this->getAction(0)) != nullptr) {
-			// If there is an action specifying that min/max probabilities should be computed, call the appropriate method of the model checker.
-			result = modelchecker.checkMinMaxOperator(*formula, dynamic_cast<storm::property::action::MinMaxAction<T>*>(this->getAction(0))->getMinimize());
+		if(this->opt != UNDEFINED) {
+			// If it is specified that min/max probabilities/rewards should be computed, call the appropriate method of the model checker.
+			result = modelchecker.checkOptimizingOperator(*formula, this->opt == storm::property::MINIMIZE ? true : false);
 		} else {
 			result = formula->check(modelchecker, false);
 		}
@@ -243,9 +320,9 @@ private:
 		// First, get the model checking result.
 		std::vector<T> result;
 
-		if(this->getActionCount() != 0 &&  dynamic_cast<storm::property::action::MinMaxAction<T>*>(this->getAction(0)) != nullptr) {
-			// If there is an action specifying that min/max probabilities should be computed, call the appropriate method of the model checker.
-			result = modelchecker.checkMinMaxOperator(*formula, dynamic_cast<storm::property::action::MinMaxAction<T>*>(this->getAction(0))->getMinimize());
+		if(this->opt != UNDEFINED) {
+			// If it is specified that min/max probabilities/rewards should be computed, call the appropriate method of the model checker.
+			result = modelchecker.checkOptimizingOperator(*formula, this->opt == storm::property::MINIMIZE ? true : false);
 		} else {
 			result = formula->check(modelchecker, false);
 		}

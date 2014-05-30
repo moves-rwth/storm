@@ -63,7 +63,7 @@ TEST(PrctlParserTest, parseProbabilisticFormulaTest) {
 	ASSERT_EQ(0.5, op->getBound());
 
 	// Test the string representation for the parsed formula.
-	ASSERT_EQ("P > 0.500000 [F a]", formula->toString());
+	ASSERT_EQ("P > 0.500000 (F a)", formula->toString());
 
 	delete formula;
 
@@ -86,7 +86,7 @@ TEST(PrctlParserTest, parseRewardFormulaTest) {
 	ASSERT_EQ(15.0, op->getBound());
 
 	// Test the string representation for the parsed formula.
-	ASSERT_EQ("R >= 15.000000 [I=5]", formula->toString());
+	ASSERT_EQ("R >= 15.000000 (I=5)", formula->toString());
 
 	delete formula;
 }
@@ -102,7 +102,7 @@ TEST(PrctlParserTest, parseRewardNoBoundFormulaTest) {
 	ASSERT_NE(formula, nullptr);
 
 	// The input was parsed correctly.
-	ASSERT_EQ("R = ? [F a]", formula->toString());
+	ASSERT_EQ("R = ? (F a)", formula->toString());
 
 	delete formula;
 }
@@ -118,7 +118,7 @@ TEST(PrctlParserTest, parseProbabilisticNoBoundFormulaTest) {
 	ASSERT_NE(formula, nullptr);
 
 	// The input was parsed correctly.
-	ASSERT_EQ("P = ? [a U<=4 (b & !c)]", formula->toString());
+	ASSERT_EQ("P = ? (a U<=4 (b & !c))", formula->toString());
 
 	delete formula;
 }
@@ -134,7 +134,7 @@ TEST(PrctlParserTest, parseComplexFormulaTest) {
 	ASSERT_NE(formula, nullptr);
 
 	// The input was parsed correctly.
-	ASSERT_EQ("(R <= 0.500000 [S] & (R > 15.000000 [C <= 0.500000] | !P < 0.400000 [G P > 0.900000 [F<=7 (a & b)]]))", formula->toString());
+	ASSERT_EQ("(R <= 0.500000 (S) & (R > 15.000000 (C <= 0.500000) | !P < 0.400000 (G P > 0.900000 (F<=7 (a & b)))))", formula->toString());
 
 	delete formula;
 }

@@ -4,7 +4,6 @@
 
 // The action class headers.
 #include "src/formula/Actions/AbstractAction.h"
-#include "src/formula/Actions/MinMaxAction.h"
 #include "src/formula/Actions/RangeAction.h"
 
 // If the parser fails due to ill-formed data, this exception is thrown.
@@ -54,31 +53,31 @@ struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, storm::property::prctl:
 		stateFormula.name("state formula");
 		orFormula = andFormula[qi::_val = qi::_1] > *(qi::lit("|") > andFormula)[qi::_val =
 				phoenix::new_<storm::property::prctl::Or<double>>(qi::_val, qi::_1)];
-		orFormula.name("state formula");
+		orFormula.name("or formula");
 		andFormula = notFormula[qi::_val = qi::_1] > *(qi::lit("&") > notFormula)[qi::_val =
 				phoenix::new_<storm::property::prctl::And<double>>(qi::_val, qi::_1)];
-		andFormula.name("state formula");
+		andFormula.name("and formula");
 		notFormula = atomicStateFormula[qi::_val = qi::_1] | (qi::lit("!") > atomicStateFormula)[qi::_val =
 				phoenix::new_<storm::property::prctl::Not<double>>(qi::_1)];
-		notFormula.name("state formula");
+		notFormula.name("not formula");
 
 		//This block defines rules for "atomic" state formulas
 		//(Propositions, probabilistic/reward formulas, and state formulas in brackets)
-		atomicStateFormula %= probabilisticBoundOperator | rewardBoundOperator | atomicProposition | qi::lit("(") >> stateFormula >> qi::lit(")");
-		atomicStateFormula.name("state formula");
+		atomicStateFormula %= probabilisticBoundOperator | rewardBoundOperator | atomicProposition | qi::lit("(") >> stateFormula >> qi::lit(")") | qi::lit("[") >> stateFormula >> qi::lit("]");
+		atomicStateFormula.name("atomic state formula");
 		atomicProposition = (freeIdentifierName)[qi::_val =
 				phoenix::new_<storm::property::prctl::Ap<double>>(qi::_1)];
-		atomicProposition.name("state formula");
+		atomicProposition.name("atomic proposition");
 		probabilisticBoundOperator = ((qi::lit("P") >> comparisonType > qi::double_ > qi::lit("[") > pathFormula > qi::lit("]"))[qi::_val =
 				phoenix::new_<storm::property::prctl::ProbabilisticBoundOperator<double> >(qi::_1, qi::_2, qi::_3)]);
 
-		probabilisticBoundOperator.name("state formula");
+		probabilisticBoundOperator.name("probabilistic bound operator");
 		rewardBoundOperator = ((qi::lit("R") >> comparisonType > qi::double_ > qi::lit("[") > rewardPathFormula > qi::lit("]"))[qi::_val =
 				phoenix::new_<storm::property::prctl::RewardBoundOperator<double> >(qi::_1, qi::_2, qi::_3)]);
-		rewardBoundOperator.name("state formula");
+		rewardBoundOperator.name("reward bound operator");
 
 		//This block defines rules for parsing probabilistic path formulas
-		pathFormula = (boundedEventually | eventually | next | globally | boundedUntil | until);
+		pathFormula = (boundedEventually | eventually | next | globally | boundedUntil | until | qi::lit("(") >> pathFormula >> qi::lit(")") | qi::lit("[") >> pathFormula >> qi::lit("]"));
 		pathFormula.name("path formula");
 		boundedEventually = (qi::lit("F") >> qi::lit("<=") > qi::int_ > stateFormula)[qi::_val =
 				phoenix::new_<storm::property::prctl::BoundedEventually<double>>(qi::_2, qi::_1)];
@@ -100,7 +99,7 @@ struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, storm::property::prctl:
 		until.name("path formula (for probabilistic operator)");
 
 		//This block defines rules for parsing reward path formulas
-		rewardPathFormula = (cumulativeReward | reachabilityReward | instantaneousReward | steadyStateReward);
+		rewardPathFormula = (cumulativeReward | reachabilityReward | instantaneousReward | steadyStateReward | qi::lit("(") >> rewardPathFormula >> qi::lit(")") | qi::lit("[") >> rewardPathFormula >> qi::lit("]"));
 		rewardPathFormula.name("path formula (for reward operator)");
 		cumulativeReward = (qi::lit("C") > qi::lit("<=") > qi::double_)[qi::_val =
 				phoenix::new_<storm::property::prctl::CumulativeReward<double>>(qi::_1)];
@@ -122,50 +121,44 @@ struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, storm::property::prctl:
 		noBoundOperator = (probabilisticNoBoundOperator | rewardNoBoundOperator);
 		noBoundOperator.name("no bound operator");
 		probabilisticNoBoundOperator = (
-				(qi::lit("P") >> qi::lit("min") >> qi::lit("=") >> qi::lit("?") >> qi::lit("[") >> pathFormula >> qi::lit("]"))[qi::_val =
-						phoenix::new_<storm::property::prctl::PrctlFilter<double> >(qi::_1, true)] |
-				(qi::lit("P") >> qi::lit("max") >> qi::lit("=") >> qi::lit("?") >> qi::lit("[") >> pathFormula >> qi::lit("]"))[qi::_val =
-						phoenix::new_<storm::property::prctl::PrctlFilter<double> >(qi::_1, false)] |
-				(qi::lit("P") >> qi::lit("=") >> qi::lit("?") > qi::lit("[") > pathFormula > qi::lit("]"))[qi::_val =
+				(qi::lit("P") >> qi::lit("min") >> qi::lit("=") > qi::lit("?") >> pathFormula )[qi::_val =
+						phoenix::new_<storm::property::prctl::PrctlFilter<double> >(qi::_1, storm::property::MINIMIZE)] |
+				(qi::lit("P") >> qi::lit("max") >> qi::lit("=") > qi::lit("?") >> pathFormula )[qi::_val =
+						phoenix::new_<storm::property::prctl::PrctlFilter<double> >(qi::_1, storm::property::MAXIMIZE)] |
+				(qi::lit("P") >> qi::lit("=") > qi::lit("?") >> pathFormula )[qi::_val =
 						phoenix::new_<storm::property::prctl::PrctlFilter<double> >(qi::_1)]
 				);
 		probabilisticNoBoundOperator.name("no bound operator");
 
 		rewardNoBoundOperator = (
-				(qi::lit("R") >> qi::lit("min") >> qi::lit("=") >> qi::lit("?") >> qi::lit("[") >> rewardPathFormula >> qi::lit("]"))[qi::_val =
-						phoenix::new_<storm::property::prctl::PrctlFilter<double> >(qi::_1, true)] |
-				(qi::lit("R") >> qi::lit("max") >> qi::lit("=") >> qi::lit("?") >> qi::lit("[") >> rewardPathFormula >> qi::lit("]"))[qi::_val =
-						phoenix::new_<storm::property::prctl::PrctlFilter<double> >(qi::_1, false)] |
-				(qi::lit("R") >> qi::lit("=") >> qi::lit("?") >> qi::lit("[") >> rewardPathFormula >> qi::lit("]"))[qi::_val =
+				(qi::lit("R") >> qi::lit("min") >> qi::lit("=") > qi::lit("?") >> rewardPathFormula )[qi::_val =
+						phoenix::new_<storm::property::prctl::PrctlFilter<double> >(qi::_1, storm::property::MINIMIZE)] |
+				(qi::lit("R") >> qi::lit("max") >> qi::lit("=") > qi::lit("?") >> rewardPathFormula )[qi::_val =
+						phoenix::new_<storm::property::prctl::PrctlFilter<double> >(qi::_1, storm::property::MAXIMIZE)] |
+				(qi::lit("R") >> qi::lit("=") >> qi::lit("?") >> rewardPathFormula )[qi::_val =
 						phoenix::new_<storm::property::prctl::PrctlFilter<double> >(qi::_1)]
 
 				);
 		rewardNoBoundOperator.name("no bound operator");
 
-		minMaxAction = qi::lit("minmax") >> qi::lit(",") >> (
-				qi::lit("min")[qi::_val =
-						phoenix::new_<storm::property::action::MinMaxAction<double>>(true)] |
-				qi::lit("min")[qi::_val =
-						phoenix::new_<storm::property::action::MinMaxAction<double>>(false)]);
-		minMaxAction.name("minmax action for the formula filter");
-
 		rangeAction = (qi::lit("range") >> qi::lit(",") >> qi::uint_ >> qi::lit(",") >> qi::uint_)[qi::_val =
 				phoenix::new_<storm::property::action::RangeAction<double>>(qi::_1, qi::_2)];
 		rangeAction.name("range action for the formula filter");
 
-		abstractAction = (rangeAction | minMaxAction) >> (qi::eps | qi::lit(","));
+		abstractAction = (rangeAction) >> (qi::eps | qi::lit(","));
 		abstractAction.name("filter action");
 
-		filter = (qi::lit("filter") >> qi::lit("[") >> +abstractAction >> qi::lit("]") >> qi::lit("(") >> formula >> qi::lit(")"))[qi::_val =
+		filter = (qi::lit("filter") > qi::lit("[") >> +abstractAction >> qi::lit("]") >> qi::lit("(") >> formula >> qi::lit(")"))[qi::_val =
 					phoenix::new_<storm::property::prctl::PrctlFilter<double>>(qi::_2, qi::_1)] |
-				 (formula)[qi::_val =
-					phoenix::new_<storm::property::prctl::PrctlFilter<double>>(qi::_1)] |
 				 (noBoundOperator)[qi::_val =
-					qi::_1];
+					qi::_1] |
+				 (formula)[qi::_val =
+					phoenix::new_<storm::property::prctl::PrctlFilter<double>>(qi::_1)];
 		filter.name("PRCTL formula filter");
 
 		start = (((filter) > (comment | qi::eps))[qi::_val = qi::_1] | comment[qi::_val = nullptr]) > qi::eoi;
 		start.name("PRCTL formula filter");
+
 	}
 
 	qi::rule<Iterator, storm::property::prctl::PrctlFilter<double>*(), Skipper> start;
@@ -177,7 +170,6 @@ struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, storm::property::prctl:
 
 	qi::rule<Iterator, storm::property::action::AbstractAction<double>*(), Skipper> abstractAction;
 	qi::rule<Iterator, storm::property::action::RangeAction<double>*(), Skipper> rangeAction;
-	qi::rule<Iterator, storm::property::action::MinMaxAction<double>*(), Skipper> minMaxAction;
 
 	qi::rule<Iterator, storm::property::prctl::AbstractPrctlFormula<double>*(), Skipper> formula;
 	qi::rule<Iterator, storm::property::prctl::AbstractPrctlFormula<double>*(), Skipper> comment;

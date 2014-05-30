@@ -50,7 +50,7 @@ public:
 		setInterval(lowerBound, upperBound);
 	}
 
-	TimeBoundedEventually(T lowerBound, T upperBound, AbstractStateFormula<T>* child) : child(nullptr) {
+	TimeBoundedEventually(T lowerBound, T upperBound, AbstractStateFormula<T>* child) : child(child) {
 		setInterval(lowerBound, upperBound);
 	}
 
@@ -104,9 +104,9 @@ public:
 	virtual std::string toString() const override {
 		std::string result = "F";
 		if (upperBound == std::numeric_limits<double>::infinity()) {
-			result = ">=" + std::to_string(lowerBound);
+			result += ">=" + std::to_string(lowerBound);
 		} else {
-			result = "[";
+			result += "[";
 			result += std::to_string(lowerBound);
 			result += ",";
 			result += std::to_string(upperBound);

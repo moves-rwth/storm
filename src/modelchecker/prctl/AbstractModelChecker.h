@@ -233,11 +233,11 @@ public:
 	 * Checks the given formula and determines whether minimum or maximum probabilities are to be computed for the formula.
 	 *
 	 * @param formula The formula to check.
-	 * @param minimumOperator True iff minimum probabilities are to be computed.
+	 * @param optOperator True iff minimum probabilities are to be computed.
 	 * @returns The probabilities to satisfy the formula, represented by a vector.
 	 */
-	virtual std::vector<Type> checkMinMaxOperator(storm::property::prctl::AbstractPathFormula<Type> const & formula, bool minimumOperator) const {
-		minimumOperatorStack.push(minimumOperator);
+	virtual std::vector<Type> checkOptimizingOperator(storm::property::prctl::AbstractPathFormula<Type> const & formula, bool optOperator) const {
+		minimumOperatorStack.push(optOperator);
 		std::vector<Type> result = formula.check(*this, false);
 		minimumOperatorStack.pop();
 		return result;
@@ -247,11 +247,11 @@ public:
 	 * Checks the given formula and determines whether minimum or maximum rewards are to be computed for the formula.
 	 *
 	 * @param formula The formula to check.
-	 * @param minimumOperator True iff minimum rewards are to be computed.
+	 * @param optOperator True iff minimum rewards are to be computed.
 	 * @returns The the rewards accumulated by the formula, represented by a vector.
 	 */
-	virtual std::vector<Type> checkMinMaxOperator(storm::property::prctl::AbstractRewardPathFormula<Type> const & formula, bool minimumOperator) const {
-		minimumOperatorStack.push(minimumOperator);
+	virtual std::vector<Type> checkOptimizingOperator(storm::property::prctl::AbstractRewardPathFormula<Type> const & formula, bool optOperator) const {
+		minimumOperatorStack.push(optOperator);
 		std::vector<Type> result = formula.check(*this, false);
 		minimumOperatorStack.pop();
 		return result;
@@ -261,11 +261,11 @@ public:
 	 * Checks the given formula and determines whether minimum or maximum probabilities or rewards are to be computed for the formula.
 	 *
 	 * @param formula The formula to check.
-	 * @param minimumOperator True iff minimum probabilities/rewards are to be computed.
+	 * @param optOperator True iff minimum probabilities/rewards are to be computed.
 	 * @returns The set of states satisfying the formula represented by a bit vector.
 	 */
-	virtual storm::storage::BitVector checkMinMaxOperator(storm::property::prctl::AbstractStateFormula<Type> const & formula, bool minimumOperator) const {
-		minimumOperatorStack.push(minimumOperator);
+	virtual storm::storage::BitVector checkOptimizingOperator(storm::property::prctl::AbstractStateFormula<Type> const & formula, bool optOperator) const {
+		minimumOperatorStack.push(optOperator);
 		storm::storage::BitVector result = formula.check(*this);
 		minimumOperatorStack.pop();
 		return result;

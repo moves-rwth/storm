@@ -123,9 +123,9 @@ public:
 		std::string result = left->toString();
 		result += " U";
 		if (upperBound == std::numeric_limits<double>::infinity()) {
-			result = ">=" + std::to_string(lowerBound);
+			result += ">=" + std::to_string(lowerBound);
 		} else {
-			result = "[";
+			result += "[";
 			result += std::to_string(lowerBound);
 			result += ",";
 			result += std::to_string(upperBound);

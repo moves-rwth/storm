@@ -143,7 +143,7 @@ public:
 		std::stringstream result;
 		result << "( " << left->toString();
 		for (auto it = this->right->begin(); it != this->right->end(); ++it) {
-			result << " U[" << std::get<1>(*it) << "," << std::get<2>(*it) << "] " << std::get<0>(*it)->toString();
+			result << " U(" << std::get<1>(*it) << "," << std::get<2>(*it) << ") " << std::get<0>(*it)->toString();
 		}
 		result << ")";
 		return result.str();

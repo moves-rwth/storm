@@ -488,10 +488,10 @@ public:
 	 *       should be computed for the formula makes no sense in the context of a deterministic model.
 	 *
 	 * @param formula The formula to check.
-	 * @param minimumOperator True iff minimum probabilities/rewards are to be computed.
+	 * @param optOperator True iff minimum probabilities/rewards are to be computed.
 	 * @returns The probabilities to satisfy the formula or the rewards accumulated by it, represented by a vector.
 	 */
-	virtual std::vector<Type> checkMinMaxOperator(storm::property::prctl::AbstractPathFormula<Type> const & formula, bool minimumOperator) const override {
+	virtual std::vector<Type> checkOptimizingOperator(storm::property::prctl::AbstractPathFormula<Type> const & formula, bool optOperator) const override {
 
 		LOG4CPLUS_WARN(logger, "Formula contains min/max operator, which is not meaningful over deterministic models.");
 
@@ -506,10 +506,10 @@ public:
 	 *       should be computed for the formula makes no sense in the context of a deterministic model.
 	 *
 	 * @param formula The formula to check.
-	 * @param minimumOperator True iff minimum probabilities/rewards are to be computed.
+	 * @param optOperator True iff minimum probabilities/rewards are to be computed.
 	 * @returns The set of states satisfying the formula represented by a bit vector.
 	 */
-	virtual storm::storage::BitVector checkMinMaxOperator(storm::property::prctl::AbstractStateFormula<Type> const & formula, bool minimumOperator) const override {
+	virtual storm::storage::BitVector checkOptimizingOperator(storm::property::prctl::AbstractStateFormula<Type> const & formula, bool optOperator) const override {
 
 		LOG4CPLUS_WARN(logger, "Formula contains min/max operator, which is not meaningful over deterministic models.");
 

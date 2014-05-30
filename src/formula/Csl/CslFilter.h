@@ -13,7 +13,6 @@
 #include "src/formula/Csl/AbstractPathFormula.h"
 #include "src/formula/Csl/AbstractStateFormula.h"
 #include "src/modelchecker/csl/AbstractModelChecker.h"
-#include "src/formula/Actions/MinMaxAction.h"
 
 namespace storm {
 namespace property {
@@ -24,23 +23,19 @@ class CslFilter : public storm::property::AbstractFilter<T> {
 
 public:
 
-	CslFilter() : child(nullptr) {
+	CslFilter() : AbstractFilter<T>(UNDEFINED), child(nullptr), steadyStateQuery(false) {
 		// Intentionally left empty.
 	}
 
-	CslFilter(AbstractCslFormula<T>* child) : child(child) {
+	CslFilter(AbstractCslFormula<T>* child, OptimizingOperator opt = UNDEFINED, bool steadyStateQuery = false) : AbstractFilter<T>(opt), child(child), steadyStateQuery(steadyStateQuery) {
 		// Intentionally left empty.
 	}
 
-	CslFilter(AbstractCslFormula<T>* child, bool minimize) : child(child) {
-		this->actions.push_back(new storm::property::action::MinMaxAction<T>(minimize));
+	CslFilter(AbstractCslFormula<T>* child, action::AbstractAction<T>* action, OptimizingOperator opt = UNDEFINED, bool steadyStateQuery = false) : AbstractFilter<T>(action, opt), child(child), steadyStateQuery(steadyStateQuery) {
+		// Intentionally left empty
 	}
 
-	CslFilter(AbstractCslFormula<T>* child, action::AbstractAction<T>* action) : child(child) {
-		this->actions.push_back(action);
-	}
-
-	CslFilter(AbstractCslFormula<T>* child, std::vector<action::AbstractAction<T>*> actions) : AbstractFilter<T>(actions), child(child) {
+	CslFilter(AbstractCslFormula<T>* child, std::vector<action::AbstractAction<T>*> actions, OptimizingOperator opt = UNDEFINED, bool steadyStateQuery = false) : AbstractFilter<T>(actions, opt), child(child), steadyStateQuery(steadyStateQuery) {
 		// Intentionally left empty.
 	}
 
@@ -145,12 +140,94 @@ public:
 		return true;
 	}
 
-	std::string toFormulaString() const {
-		std::string desc = "filter(";
+	virtual std::string toString() const override {
+		std::string desc = "";
+
+		if(dynamic_cast<AbstractStateFormula<T>*>(child) == nullptr) {
+
+			// The formula is not a state formula so we have a probability query.
+			if(this->actions.empty()){
+
+				// Since there are no actions given we do legacy support.
+
+				desc += "P ";
+				switch(this->opt) {
+					case MINIMIZE:
+						desc += "min ";
+						break;
+					case MAXIMIZE:
+						desc += "max ";
+						break;
+					default:
+						break;
+				}
+				desc += "= ? ";
+
+			} else {
+				desc = "filter[";
+
+				switch(this->opt) {
+					case MINIMIZE:
+						desc += "min, ";
+						break;
+					case MAXIMIZE:
+						desc += "max, ";
+						break;
+					default:
+						break;
+				}
+
+				for(auto action : this->actions) {
+					desc += action->toString();
+					desc += ", ";
+				}
+
+				// Remove the last ", ".
+				desc.pop_back();
+				desc.pop_back();
+
+				desc += "]";
+			}
+
+		} else {
+
+			if(this->actions.empty()) {
+
+				if(steadyStateQuery) {
+
+					// Legacy support for the steady state query.
+					desc += "S = ? ";
+
+				} else {
+
+					// There are no filter actions but only the raw state formula. So just print that.
+					return child->toString();
+				}
+			} else {
+
+				desc = "filter[";
+
+				for(auto action : this->actions) {
+					desc += action->toString();
+					desc += ", ";
+				}
+
+				// Remove the last ", ".
+				desc.pop_back();
+				desc.pop_back();
+
+				desc += "]";
+			}
+		}
+
+		desc += "(";
+		desc += child->toString();
+		desc += ")";
+
 		return desc;
 	}
 
-	std::string toString() const {
+	virtual std::string toPrettyString() const override{
 		std::string desc = "Filter: ";
 		desc += "\nActions:";
 		for(auto action : this->actions) {
@@ -174,9 +251,9 @@ private:
 		// First, get the model checking result.
 		storm::storage::BitVector result = modelchecker.checkMinMaxOperator(formula);
 
-		if(this->getActionCount() != 0 &&  dynamic_cast<storm::property::action::MinMaxAction<T>*>(this->getAction(0)) != nullptr) {
+		if(this->opt != UNDEFINED) {
 			// If there is an action specifying that min/max probabilities should be computed, call the appropriate method of the model checker.
-			result = modelchecker.checkMinMaxOperator(formula, static_cast<storm::property::action::MinMaxAction<T>*>(this->getAction(0))->getMinimize());
+			result = modelchecker.checkMinMaxOperator(formula, this->opt == MINIMIZE ? true : false);
 		} else {
 			result = formula->check(modelchecker);
 		}
@@ -193,9 +270,9 @@ private:
 		// First, get the model checking result.
 		std::vector<T> result;
 
-		if(this->getActionCount() != 0 &&  dynamic_cast<storm::property::action::MinMaxAction<T>*>(this->getAction(0)) != nullptr) {
+		if(this->opt != UNDEFINED) {
 			// If there is an action specifying that min/max probabilities should be computed, call the appropriate method of the model checker.
-			result = modelchecker.checkMinMaxOperator(formula, static_cast<storm::property::action::MinMaxAction<T>*>(this->getAction(0))->getMinimize());
+			result = modelchecker.checkMinMaxOperator(formula, this->opt == MINIMIZE ? true : false);
 		} else {
 			result = formula->check(modelchecker, false);
 		}
@@ -208,6 +285,8 @@ private:
 	}
 
 	AbstractCslFormula<T>* child;
+
+	bool steadyStateQuery;
 };
 
 } //namespace csl

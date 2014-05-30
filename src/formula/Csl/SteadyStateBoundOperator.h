@@ -135,9 +135,9 @@ public:
 		case GREATER_EQUAL: result += ">= "; break;
 		}
 		result += std::to_string(bound);
-		result += " [";
+		result += " (";
 		result += stateFormula->toString();
-		result += "]";
+		result += ")";
 		return result;
 	}
 

@@ -58,7 +58,7 @@ TEST(CslParserTest, parseProbabilisticFormulaTest) {
 	ASSERT_EQ(0.5, op->getBound());
 
 	// Test the string representation for the parsed formula.
-	ASSERT_EQ("P > 0.500000 [F a]", formula->toString());
+	ASSERT_EQ("P > 0.500000 (F a)", formula->toString());
 
 	delete formula;
 }
@@ -78,7 +78,7 @@ TEST(CslParserTest, parseSteadyStateBoundFormulaTest) {
 	ASSERT_EQ(15.0, op->getBound());
 
 	// Test the string representation for the parsed formula.
-	ASSERT_EQ("S >= 15.000000 [P < 0.200000 [a U[0.000000,3.000000] b]]", formula->toString());
+	ASSERT_EQ("S >= 15.000000 (P < 0.200000 (a U[0.000000,3.000000] b))", formula->toString());
 
 	delete formula;
 }
@@ -94,7 +94,7 @@ TEST(CslParserTest, parseSteadyStateNoBoundFormulaTest) {
 	ASSERT_NE(formula, nullptr);
 
 	// The input was parsed correctly.
-	ASSERT_EQ("S = ? [P <= 0.500000 [F[0.000000,3.000000] a]]", formula->toString());
+	ASSERT_EQ("S = ? (P <= 0.500000 (F[0.000000,3.000000] a))", formula->toString());
 
 	delete formula;
 }
@@ -110,7 +110,7 @@ TEST(CslParserTest, parseProbabilisticNoBoundFormulaTest) {
 	ASSERT_NE(formula, nullptr);
 
 	// The input was parsed correctly.
-	ASSERT_EQ("P = ? [a U[3.000000,4.000000] (b & !c)]", formula->toString());
+	ASSERT_EQ("P = ? (a U[3.000000,4.000000] (b & !c))", formula->toString());
 
 	delete formula;
 }
@@ -127,7 +127,7 @@ TEST(CslParserTest, parseComplexFormulaTest) {
 	ASSERT_NE(formula, nullptr);
 
 	// The input was parsed correctly.
-	ASSERT_EQ("(S <= 0.500000 [P <= 0.500000 [a U c]] & (P > 0.500000 [G b] | !P < 0.400000 [G P > 0.900000 [F>=7.000000 (a & b)]]))", formula->toString());
+	ASSERT_EQ("(S <= 0.500000 (P <= 0.500000 (a U c)) & (P > 0.500000 (G b) | !P < 0.400000 (G P > 0.900000 (F>=7.000000 (a & b)))))", formula->toString());
 
 	delete formula;
 }
