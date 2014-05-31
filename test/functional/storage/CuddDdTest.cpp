@@ -308,3 +308,36 @@ TEST(CuddDd, ForwardIteratorTest) {
     }
     EXPECT_EQ(1, numberOfValuations);
 }
+
+TEST(CuddDd, ToExpressionTest) {
+    std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::CUDD>> manager(new storm::dd::DdManager<storm::dd::DdType::CUDD>());
+    manager->addMetaVariable("x", 1, 9);
+
+    storm::dd::Dd<storm::dd::DdType::CUDD> dd;
+    ASSERT_NO_THROW(dd = manager->getIdentity("x"));
+    
+    storm::expressions::Expression ddAsExpression;
+    ASSERT_NO_THROW(ddAsExpression = dd.toExpression());
+
+    storm::expressions::SimpleValuation valuation;
+    for (std::size_t bit = 0; bit < manager->getMetaVariable("x").getNumberOfDdVariables(); ++bit) {
+        valuation.addBooleanIdentifier("x." + std::to_string(bit));
+    }
+    
+    storm::dd::DdMetaVariable<storm::dd::DdType::CUDD> const& metaVariable = manager->getMetaVariable("x");
+
+    for (auto valuationValuePair : dd) {
+        for (std::size_t i = 0; i < metaVariable.getNumberOfDdVariables(); ++i) {
+            // Check if the i-th bit is set or not and modify the valuation accordingly.
+            if (((valuationValuePair.first.getIntegerValue("x") - metaVariable.getLow()) & (1 << (metaVariable.getNumberOfDdVariables() - i - 1))) != 0) {
+                valuation.setBooleanValue("x." + std::to_string(i), true);
+            } else {
+                valuation.setBooleanValue("x." + std::to_string(i), false);
+            }
+        }
+        
+        // At this point, the constructed valuation should make the expression obtained from the DD evaluate to the very
+        // same value as the current value obtained from the DD.
+        EXPECT_EQ(valuationValuePair.second, ddAsExpression.evaluateAsDouble(&valuation));
+    }
+}

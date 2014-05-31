@@ -325,6 +325,24 @@ namespace storm {
         Dd<DdType::CUDD> Dd<DdType::CUDD>::notZero() const {
             return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddAdd().BddPattern().Add(), this->getContainedMetaVariableNames());
         }
+        
+        Dd<DdType::CUDD> Dd<DdType::CUDD>::constrain(Dd<DdType::CUDD> const& constraint) const {
+            std::set<std::string> metaVariableNames(this->getContainedMetaVariableNames());
+            metaVariableNames.insert(constraint.getContainedMetaVariableNames().begin(), constraint.getContainedMetaVariableNames().end());
+            
+            return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddAdd().Constrain(constraint.getCuddAdd()), metaVariableNames);
+        }
+        
+        Dd<DdType::CUDD> Dd<DdType::CUDD>::restrict(Dd<DdType::CUDD> const& constraint) const {
+            std::set<std::string> metaVariableNames(this->getContainedMetaVariableNames());
+            metaVariableNames.insert(constraint.getContainedMetaVariableNames().begin(), constraint.getContainedMetaVariableNames().end());
+            
+            return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddAdd().Restrict(constraint.getCuddAdd()), metaVariableNames);
+        }
+        
+        Dd<DdType::CUDD> Dd<DdType::CUDD>::getSupport() const {
+            return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddAdd().Support().Add(), this->getContainedMetaVariableNames());
+        }
 
         uint_fast64_t Dd<DdType::CUDD>::getNonZeroCount() const {
             std::size_t numberOfDdVariables = 0;
@@ -494,6 +512,19 @@ namespace storm {
         
         DdForwardIterator<DdType::CUDD> Dd<DdType::CUDD>::end(bool enumerateDontCareMetaVariables) const {
             return DdForwardIterator<DdType::CUDD>(this->getDdManager(), nullptr, nullptr, 0, true, nullptr, enumerateDontCareMetaVariables);
+        }
+        
+        storm::expressions::Expression Dd<DdType::CUDD>::toExpression() const {
+            return toExpressionRecur(this->getCuddAdd().getNode(), this->getDdManager()->getDdVariableNames());
+        }
+        
+        storm::expressions::Expression Dd<DdType::CUDD>::toExpressionRecur(DdNode const* dd, std::vector<std::string> const& variableNames) {
+            // If the DD is a terminal node, we can simply return a constant expression.
+            if (Cudd_IsConstant(dd)) {
+                return storm::expressions::Expression::createDoubleLiteral(static_cast<double>(Cudd_V(dd)));
+            } else {
+                return storm::expressions::Expression::createBooleanVariable(variableNames[dd->index]).ite(toExpressionRecur(Cudd_T(dd), variableNames), toExpressionRecur(Cudd_E(dd), variableNames));
+            }
         }
         
         std::ostream & operator<<(std::ostream& out, const Dd<DdType::CUDD>& dd) {

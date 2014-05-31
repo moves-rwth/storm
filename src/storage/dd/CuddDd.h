@@ -8,6 +8,7 @@
 
 #include "src/storage/dd/Dd.h"
 #include "src/storage/dd/CuddDdForwardIterator.h"
+#include "src/storage/expressions/Expression.h"
 #include "src/utility/OsDetection.h"
 
 // Include the C++-interface of CUDD.
@@ -318,6 +319,33 @@ namespace storm {
             Dd<DdType::CUDD> notZero() const;
             
             /*!
+             * Computes the constraint of the current DD with the given constraint. That is, the function value of the
+             * resulting DD will be the same as the current ones for all assignments mapping to one in the constraint
+             * and may be different otherwise.
+             *
+             * @param constraint The constraint to use for the operation.
+             * @return The resulting DD.
+             */
+            Dd<DdType::CUDD> constrain(Dd<DdType::CUDD> const& constraint) const;
+            
+            /*!
+             * Computes the restriction of the current DD with the given constraint. That is, the function value of the
+             * resulting DD will be the same as the current ones for all assignments mapping to one in the constraint
+             * and may be different otherwise.
+             *
+             * @param constraint The constraint to use for the operation.
+             * @return The resulting DD.
+             */
+            Dd<DdType::CUDD> restrict(Dd<DdType::CUDD> const& constraint) const;
+            
+            /*!
+             * Retrieves the support of the current DD.
+             *
+             * @return The support represented as a DD.
+             */
+            Dd<DdType::CUDD> getSupport() const;
+            
+            /*!
              * Retrieves the number of encodings that are mapped to a non-zero value.
              *
              * @return The number of encodings that are mapped to a non-zero value.
@@ -481,6 +509,15 @@ namespace storm {
              */
             DdForwardIterator<DdType::CUDD> end(bool enumerateDontCareMetaVariables = true) const;
             
+            /*!
+             * Converts the DD into a (heavily nested) if-then-else expression that represents the very same function.
+             * The variable names used in the expression are derived from the meta variable name with a suffix ".i"
+             * expressing that the variable is the i-th bit of the meta variable. 
+             *
+             * @return The resulting expression.
+             */
+            storm::expressions::Expression toExpression() const;
+            
             friend std::ostream & operator<<(std::ostream& out, const Dd<DdType::CUDD>& dd);
         private:
             /*!
@@ -510,6 +547,15 @@ namespace storm {
              * @param metaVariableName The name of the meta variable to remove.
              */
             void removeContainedMetaVariable(std::string const& metaVariableName);
+            
+            /*!
+             * Performs the recursive step of toExpression on the given DD.
+             *
+             * @param dd The dd to translate into an expression.
+             * @param variableNames The names of the variables to use in the expression.
+             * @return The resulting expression.
+             */
+            static storm::expressions::Expression toExpressionRecur(DdNode const* dd, std::vector<std::string> const& variableNames);
             
             /*!
              * Creates a DD that encapsulates the given CUDD ADD.

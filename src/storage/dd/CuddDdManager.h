@@ -138,7 +138,6 @@ namespace storm {
              */
             void triggerReordering();
             
-        protected:
             /*!
              * Retrieves the meta variable with the given name if it exists.
              *
