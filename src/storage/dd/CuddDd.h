@@ -511,8 +511,9 @@ namespace storm {
             
             /*!
              * Converts the DD into a (heavily nested) if-then-else expression that represents the very same function.
-             * The variable names used in the expression are derived from the meta variable name with a suffix ".i"
-             * expressing that the variable is the i-th bit of the meta variable. 
+             * The variable names used in the expression are derived from the meta variable name and are extended with a
+             * suffix ".i" if the meta variable is integer-valued, expressing that the variable is the i-th bit of the
+             * meta variable.
              *
              * @return The resulting expression.
              */
@@ -562,7 +563,7 @@ namespace storm {
              *
              * @param ddManager The manager responsible for this DD.
              * @param cuddAdd The CUDD ADD to store.
-             * @param
+             * @param containedMetaVariableNames The names of the meta variables that appear in the DD.
              */
             Dd(std::shared_ptr<DdManager<DdType::CUDD>> ddManager, ADD cuddAdd, std::set<std::string> const& containedMetaVariableNames = std::set<std::string>());
             

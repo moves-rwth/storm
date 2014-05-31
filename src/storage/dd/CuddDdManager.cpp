@@ -183,8 +183,14 @@ namespace storm {
             std::vector<std::pair<ADD, std::string>> variableNamePairs;
             for (auto const& nameMetaVariablePair : this->metaVariableMap) {
                 DdMetaVariable<DdType::CUDD> const& metaVariable = nameMetaVariablePair.second;
-                for (uint_fast64_t variableIndex = 0; variableIndex < metaVariable.getNumberOfDdVariables(); ++variableIndex) {
-                    variableNamePairs.emplace_back(metaVariable.getDdVariables()[variableIndex].getCuddAdd(), metaVariable.getName() + "." + std::to_string(variableIndex));
+                // If the meta variable is of type bool, we don't need to suffix it with the bit number.
+                if (metaVariable.getType() == DdMetaVariable<storm::dd::DdType::CUDD>::MetaVariableType::Bool) {
+                    variableNamePairs.emplace_back(metaVariable.getDdVariables().front().getCuddAdd(), metaVariable.getName());
+                } else {
+                    // For integer-valued meta variables, we, however, have to add the suffix.
+                    for (uint_fast64_t variableIndex = 0; variableIndex < metaVariable.getNumberOfDdVariables(); ++variableIndex) {
+                        variableNamePairs.emplace_back(metaVariable.getDdVariables()[variableIndex].getCuddAdd(), metaVariable.getName() + "." + std::to_string(variableIndex));
+                    }
                 }
             }
             
