@@ -522,9 +522,6 @@ namespace storm {
             // Note that we first transform the ADD into a BDD to convert all non-zero terminals to ones and therefore
             // make the DD more compact.
             Dd<DdType::CUDD> tmp(this->getDdManager(), this->getCuddAdd().BddPattern().Add(), this->getContainedMetaVariableNames());
-            tmp.exportToDot("tmp.dot");
-            
-            
             return getMintermExpressionRecur(this->getDdManager()->getCuddManager().getManager(), this->getCuddAdd().BddPattern().getNode(), this->getDdManager()->getDdVariableNames());
         }
         
