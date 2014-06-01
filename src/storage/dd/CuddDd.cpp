@@ -518,12 +518,46 @@ namespace storm {
             return toExpressionRecur(this->getCuddAdd().getNode(), this->getDdManager()->getDdVariableNames());
         }
         
+        storm::expressions::Expression Dd<DdType::CUDD>::getMintermExpression() const {
+            // Note that we first transform the ADD into a BDD to convert all non-zero terminals to ones and therefore
+            // make the DD more compact.
+            Dd<DdType::CUDD> tmp(this->getDdManager(), this->getCuddAdd().BddPattern().Add(), this->getContainedMetaVariableNames());
+            tmp.exportToDot("tmp.dot");
+            
+            
+            return getMintermExpressionRecur(this->getDdManager()->getCuddManager().getManager(), this->getCuddAdd().BddPattern().getNode(), this->getDdManager()->getDdVariableNames());
+        }
+        
         storm::expressions::Expression Dd<DdType::CUDD>::toExpressionRecur(DdNode const* dd, std::vector<std::string> const& variableNames) {
             // If the DD is a terminal node, we can simply return a constant expression.
             if (Cudd_IsConstant(dd)) {
                 return storm::expressions::Expression::createDoubleLiteral(static_cast<double>(Cudd_V(dd)));
             } else {
                 return storm::expressions::Expression::createBooleanVariable(variableNames[dd->index]).ite(toExpressionRecur(Cudd_T(dd), variableNames), toExpressionRecur(Cudd_E(dd), variableNames));
+            }
+        }
+        
+        storm::expressions::Expression Dd<DdType::CUDD>::getMintermExpressionRecur(::DdManager* manager, DdNode const* dd, std::vector<std::string> const& variableNames) {
+            // If the DD is a terminal node, we can simply return a constant expression.
+            if (Cudd_IsConstant(dd)) {
+                if (Cudd_IsComplement(dd)) {
+                    return storm::expressions::Expression::createBooleanLiteral(false);
+                } else {
+                    return storm::expressions::Expression::createBooleanLiteral((dd == Cudd_ReadOne(manager)) ? true : false);
+                }
+            } else {
+                // Get regular versions of the pointers.
+                DdNode* regularDd = Cudd_Regular(dd);
+                DdNode* thenDd = Cudd_T(regularDd);
+                DdNode* elseDd = Cudd_E(regularDd);
+                
+                // Compute expression recursively.
+                storm::expressions::Expression result = storm::expressions::Expression::createBooleanVariable(variableNames[dd->index]).ite(getMintermExpressionRecur(manager, thenDd, variableNames), getMintermExpressionRecur(manager, elseDd, variableNames));
+                if (Cudd_IsComplement(dd)) {
+                    result = !result;
+                }
+                
+                return result;
             }
         }
         

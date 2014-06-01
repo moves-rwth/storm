@@ -340,4 +340,39 @@ TEST(CuddDd, ToExpressionTest) {
         // same value as the current value obtained from the DD.
         EXPECT_EQ(valuationValuePair.second, ddAsExpression.evaluateAsDouble(&valuation));
     }
+    
+    storm::expressions::Expression mintermExpression = dd.getMintermExpression();
+    
+    // Check whether all minterms are covered.
+    for (auto valuationValuePair : dd) {
+        for (std::size_t i = 0; i < metaVariable.getNumberOfDdVariables(); ++i) {
+            // Check if the i-th bit is set or not and modify the valuation accordingly.
+            if (((valuationValuePair.first.getIntegerValue("x") - metaVariable.getLow()) & (1 << (metaVariable.getNumberOfDdVariables() - i - 1))) != 0) {
+                valuation.setBooleanValue("x." + std::to_string(i), true);
+            } else {
+                valuation.setBooleanValue("x." + std::to_string(i), false);
+            }
+        }
+        
+        // At this point, the constructed valuation should make the expression obtained from the DD evaluate to the very
+        // same value as the current value obtained from the DD.
+        EXPECT_TRUE(mintermExpression.evaluateAsBool(&valuation));
+    }
+    
+    // Now check no additional minterms are covered.
+    dd = !dd;
+    for (auto valuationValuePair : dd) {
+        for (std::size_t i = 0; i < metaVariable.getNumberOfDdVariables(); ++i) {
+            // Check if the i-th bit is set or not and modify the valuation accordingly.
+            if (((valuationValuePair.first.getIntegerValue("x") - metaVariable.getLow()) & (1 << (metaVariable.getNumberOfDdVariables() - i - 1))) != 0) {
+                valuation.setBooleanValue("x." + std::to_string(i), true);
+            } else {
+                valuation.setBooleanValue("x." + std::to_string(i), false);
+            }
+        }
+        
+        // At this point, the constructed valuation should make the expression obtained from the DD evaluate to the very
+        // same value as the current value obtained from the DD.
+        EXPECT_FALSE(mintermExpression.evaluateAsBool(&valuation));
+    }
 }

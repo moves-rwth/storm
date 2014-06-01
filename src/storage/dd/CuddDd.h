@@ -518,6 +518,16 @@ namespace storm {
              * @return The resulting expression.
              */
             storm::expressions::Expression toExpression() const;
+
+            /*!
+             * Converts the DD into a (heavily nested) if-then-else (with negations) expression that evaluates to true
+             * if and only if the assignment is minterm of the DD. The variable names used in the expression are derived
+             * from the meta variable name and are extended with a suffix ".i" if the meta variable is integer-valued,
+             * expressing that the variable is the i-th bit of the meta variable.
+             *
+             * @return The resulting expression.
+             */
+            storm::expressions::Expression getMintermExpression() const;
             
             friend std::ostream & operator<<(std::ostream& out, const Dd<DdType::CUDD>& dd);
         private:
@@ -557,6 +567,16 @@ namespace storm {
              * @return The resulting expression.
              */
             static storm::expressions::Expression toExpressionRecur(DdNode const* dd, std::vector<std::string> const& variableNames);
+            
+            /*!
+             * Performs the recursive step of getMintermExpression on the given DD.
+             *
+             * @param manager The manager of the DD.
+             * @param dd The dd whose minterms to translate into an expression.
+             * @param variableNames The names of the variables to use in the expression.
+             * @return The resulting expression.
+             */
+            static storm::expressions::Expression getMintermExpressionRecur(::DdManager* manager, DdNode const* dd, std::vector<std::string> const& variableNames);
             
             /*!
              * Creates a DD that encapsulates the given CUDD ADD.
