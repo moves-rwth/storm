@@ -117,8 +117,8 @@ void printUsage() {
 	double userTime = uLargeInteger.QuadPart / 10000.0;
 
 	std::cout << "CPU Time: " << std::endl;
-	std::cout << "\tKernel Time: " << std::setprecision(3) << kernelTime << std::endl;
-	std::cout << "\tUser Time: " << std::setprecision(3) << userTime << std::endl;
+	std::cout << "\tKernel Time: " << std::setprecision(5) << kernelTime << "ms" << std::endl;
+	std::cout << "\tUser Time: " << std::setprecision(5) << userTime << "ms" << std::endl;
 #endif
 }
 
@@ -451,6 +451,9 @@ int main(const int argc, const char* argv[]) {
 			stormSetAlarm(timeout);
         }
         
+		// Execution Time measurement, start
+		std::chrono::high_resolution_clock::time_point executionStart = std::chrono::high_resolution_clock::now();
+
 		// Now, the settings are received and the specified model is parsed. The actual actions taken depend on whether
         // the model was provided in explicit or symbolic format.
 		if (s->isSet("explicit")) {
@@ -468,6 +471,10 @@ int main(const int argc, const char* argv[]) {
 
 			std::shared_ptr<storm::models::AbstractModel<double>> model = storm::parser::AutoParser::parseModel(chosenTransitionSystemFile, chosenLabelingFile, chosenStateRewardsFile, chosenTransitionRewardsFile);
 
+			// Model Parsing Time Measurement, End
+			std::chrono::high_resolution_clock::time_point parsingEnd = std::chrono::high_resolution_clock::now();
+			std::cout << "Parsing the given model took " << std::chrono::duration_cast<std::chrono::milliseconds>(parsingEnd - executionStart).count() << " milliseconds." << std::endl;
+
             if (s->isSet("exportdot")) {
                 std::ofstream outputFileStream;
                 outputFileStream.open(s->getOptionByLongName("exportdot").getArgument(0).getValueAsString(), std::ofstream::out);
@@ -475,11 +482,16 @@ int main(const int argc, const char* argv[]) {
                 outputFileStream.close();
             }
             
-			//Should there be a counterexample generated in case the formula is not satisfied?
+			// Should there be a counterexample generated in case the formula is not satisfied?
 			if(s->isSet("counterexample")) {
+				// Counterexample Time Measurement, Start
+				std::chrono::high_resolution_clock::time_point counterexampleStart = std::chrono::high_resolution_clock::now();
 
 				generateCounterExample(model);
 			
+				// Counterexample Time Measurement, End
+				std::chrono::high_resolution_clock::time_point counterexampleEnd = std::chrono::high_resolution_clock::now();
+				std::cout << "Generating the counterexample took " << std::chrono::duration_cast<std::chrono::milliseconds>(counterexampleEnd - counterexampleStart).count() << " milliseconds." << std::endl;
 			} else {
 				// Determine which engine is to be used to choose the right model checker.
 				LOG4CPLUS_DEBUG(logger, s->getOptionByLongName("matrixLibrary").getArgument(0).getValueAsString());
@@ -488,6 +500,9 @@ int main(const int argc, const char* argv[]) {
 				storm::modelchecker::prctl::AbstractModelChecker<double>* modelchecker = nullptr;
 				model->printModelInformationToStream(std::cout);
                 
+				// Modelchecking Time Measurement, Start
+				std::chrono::high_resolution_clock::time_point modelcheckingStart = std::chrono::high_resolution_clock::now();
+
 				switch (model->getType()) {
 				case storm::models::DTMC:
 					LOG4CPLUS_INFO(logger, "Model is a DTMC.");
@@ -529,8 +544,15 @@ int main(const int argc, const char* argv[]) {
 				if (modelchecker != nullptr) {
 					delete modelchecker;
 				}
+
+				// Modelchecking Time Measurement, End
+				std::chrono::high_resolution_clock::time_point modelcheckingEnd = std::chrono::high_resolution_clock::now();
+				std::cout << "Running the ModelChecker took " << std::chrono::duration_cast<std::chrono::milliseconds>(modelcheckingEnd - modelcheckingStart).count() << " milliseconds." << std::endl;
 			}
 		} else if (s->isSet("symbolic")) {
+			// Program Translation Time Measurement, Start
+			std::chrono::high_resolution_clock::time_point programTranslationStart = std::chrono::high_resolution_clock::now();
+
             // First, we build the model using the given symbolic model description and constant definitions.
             std::string const& programFile = s->getOptionByLongName("symbolic").getArgument(0).getValueAsString();
             std::string const& constants = s->getOptionByLongName("constants").getArgument(0).getValueAsString();
@@ -538,6 +560,10 @@ int main(const int argc, const char* argv[]) {
             std::shared_ptr<storm::models::AbstractModel<double>> model = storm::adapters::ExplicitModelAdapter<double>::translateProgram(program, constants);
             model->printModelInformationToStream(std::cout);
             
+			// Program Translation Time Measurement, End
+			std::chrono::high_resolution_clock::time_point programTranslationEnd = std::chrono::high_resolution_clock::now();
+			std::cout << "Parsing and translating the Symbolic Input took " << std::chrono::duration_cast<std::chrono::milliseconds>(programTranslationEnd - programTranslationStart).count() << " milliseconds." << std::endl;
+
             if (s->isSet("mincmd")) {
                 if (model->getType() != storm::models::MDP) {
                     LOG4CPLUS_ERROR(logger, "Minimal command counterexample generation is only supported for models of type MDP.");
@@ -549,6 +575,9 @@ int main(const int argc, const char* argv[]) {
                 // Determine whether we are required to use the MILP-version or the SAT-version.
                 bool useMILP = s->getOptionByLongName("mincmd").getArgumentByName("method").getValueAsString() == "milp";
                 
+				// MinCMD Time Measurement, Start
+				std::chrono::high_resolution_clock::time_point minCmdStart = std::chrono::high_resolution_clock::now();
+
                 // Now parse the property file and receive the list of parsed formulas.
                 std::string const& propertyFile = s->getOptionByLongName("mincmd").getArgumentByName("propertyFile").getValueAsString();
                 std::list<storm::property::prctl::AbstractPrctlFormula<double>*> formulaList = storm::parser::PrctlFileParser(propertyFile);
@@ -564,6 +593,10 @@ int main(const int argc, const char* argv[]) {
                     // Once we are done with the formula, delete it.
                     delete formulaPtr;
                 }
+
+				// MinCMD Time Measurement, End
+				std::chrono::high_resolution_clock::time_point minCmdEnd = std::chrono::high_resolution_clock::now();
+				std::cout << "Minimal command Counterexample generation took " << std::chrono::duration_cast<std::chrono::milliseconds>(minCmdStart - minCmdEnd).count() << " milliseconds." << std::endl;
             } else if (s->isSet("prctl")) {
                 // Determine which engine is to be used to choose the right model checker.
 				LOG4CPLUS_DEBUG(logger, s->getOptionByLongName("matrixLibrary").getArgument(0).getValueAsString());
@@ -571,6 +604,9 @@ int main(const int argc, const char* argv[]) {
 				// Depending on the model type, the appropriate model checking procedure is chosen.
 				storm::modelchecker::prctl::AbstractModelChecker<double>* modelchecker = nullptr;
                 
+				// Modelchecking Time Measurement, Start
+				std::chrono::high_resolution_clock::time_point modelcheckingStart = std::chrono::high_resolution_clock::now();
+
 				switch (model->getType()) {
                     case storm::models::DTMC:
                         LOG4CPLUS_INFO(logger, "Model is a DTMC.");
@@ -602,8 +638,16 @@ int main(const int argc, const char* argv[]) {
 				if (modelchecker != nullptr) {
 					delete modelchecker;
 				}
+
+				// Modelchecking Time Measurement, End
+				std::chrono::high_resolution_clock::time_point modelcheckingEnd = std::chrono::high_resolution_clock::now();
+				std::cout << "Running the PRCTL ModelChecker took " << std::chrono::duration_cast<std::chrono::milliseconds>(modelcheckingEnd - modelcheckingStart).count() << " milliseconds." << std::endl;
             }
         }
+
+		// Execution Time Measurement, End
+		std::chrono::high_resolution_clock::time_point executionEnd = std::chrono::high_resolution_clock::now();
+		std::cout << "Complete execution took " << std::chrono::duration_cast<std::chrono::milliseconds>(executionEnd - executionStart).count() << " milliseconds." << std::endl;
         
         // Perform clean-up and terminate.
 		cleanUp();
