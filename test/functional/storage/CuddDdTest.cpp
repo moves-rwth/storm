@@ -329,7 +329,7 @@ TEST(CuddDd, ToExpressionTest) {
     for (auto valuationValuePair : dd) {
         for (std::size_t i = 0; i < metaVariable.getNumberOfDdVariables(); ++i) {
             // Check if the i-th bit is set or not and modify the valuation accordingly.
-            if (((valuationValuePair.first.getIntegerValue("x") - metaVariable.getLow()) & (1 << (metaVariable.getNumberOfDdVariables() - i - 1))) != 0) {
+            if (((valuationValuePair.first.getIntegerValue("x") - metaVariable.getLow()) & (1ull << (metaVariable.getNumberOfDdVariables() - i - 1))) != 0) {
                 valuation.setBooleanValue("x." + std::to_string(i), true);
             } else {
                 valuation.setBooleanValue("x." + std::to_string(i), false);
@@ -347,7 +347,7 @@ TEST(CuddDd, ToExpressionTest) {
     for (auto valuationValuePair : dd) {
         for (std::size_t i = 0; i < metaVariable.getNumberOfDdVariables(); ++i) {
             // Check if the i-th bit is set or not and modify the valuation accordingly.
-            if (((valuationValuePair.first.getIntegerValue("x") - metaVariable.getLow()) & (1 << (metaVariable.getNumberOfDdVariables() - i - 1))) != 0) {
+            if (((valuationValuePair.first.getIntegerValue("x") - metaVariable.getLow()) & (1ull << (metaVariable.getNumberOfDdVariables() - i - 1))) != 0) {
                 valuation.setBooleanValue("x." + std::to_string(i), true);
             } else {
                 valuation.setBooleanValue("x." + std::to_string(i), false);
@@ -364,7 +364,7 @@ TEST(CuddDd, ToExpressionTest) {
     for (auto valuationValuePair : dd) {
         for (std::size_t i = 0; i < metaVariable.getNumberOfDdVariables(); ++i) {
             // Check if the i-th bit is set or not and modify the valuation accordingly.
-            if (((valuationValuePair.first.getIntegerValue("x") - metaVariable.getLow()) & (1 << (metaVariable.getNumberOfDdVariables() - i - 1))) != 0) {
+            if (((valuationValuePair.first.getIntegerValue("x") - metaVariable.getLow()) & (1ull << (metaVariable.getNumberOfDdVariables() - i - 1))) != 0) {
                 valuation.setBooleanValue("x." + std::to_string(i), true);
             } else {
                 valuation.setBooleanValue("x." + std::to_string(i), false);
