@@ -507,7 +507,7 @@ namespace storm {
             int* cube;
             double value;
             DdGen* generator = this->getCuddAdd().FirstCube(&cube, &value);
-            return DdForwardIterator<DdType::CUDD>(this->getDdManager(), generator, cube, value, static_cast<bool>(Cudd_IsGenEmpty(generator)), &this->getContainedMetaVariableNames(), enumerateDontCareMetaVariables);
+            return DdForwardIterator<DdType::CUDD>(this->getDdManager(), generator, cube, value, (Cudd_IsGenEmpty(generator) != 0), &this->getContainedMetaVariableNames(), enumerateDontCareMetaVariables);
         }
         
         DdForwardIterator<DdType::CUDD> Dd<DdType::CUDD>::end(bool enumerateDontCareMetaVariables) const {
