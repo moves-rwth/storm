@@ -290,6 +290,36 @@ public:
         storm::storage::SparseMatrix<T> newTransitionMatrix = storm::utility::matrix::applyScheduler(this->getTransitionMatrix(), scheduler);
         return std::shared_ptr<AbstractModel<T>>(new Dtmc(newTransitionMatrix, this->getStateLabeling(), this->hasStateRewards() ? this->getStateRewardVector() : boost::optional<std::vector<T>>(), this->hasTransitionRewards() ? this->getTransitionRewardMatrix() :  boost::optional<storm::storage::SparseMatrix<T>>(), this->hasChoiceLabeling() ? this->getChoiceLabeling() : boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>()));
     }
+    
+    void dumpToExplicitFormat(std::string const& traFilename, std::string const& labFilename) const {
+        std::ofstream transStream(traFilename);
+        transStream << "dtmc" << std::endl;
+        for (uint_fast64_t stateIndex = 0; stateIndex < this->getNumberOfStates(); ++stateIndex) {
+            for (auto const& element : this->getTransitionMatrix().getRow(stateIndex)) {
+                transStream << stateIndex << " " << element.first << " " << element.second << std::endl;
+            }
+        }
+        transStream.close();
+        
+        std::ofstream labStream(labFilename);
+        labStream << "#DECLARATION" << std::endl;
+        for (auto const& label : this->getStateLabeling().getAtomicPropositions()) {
+            labStream << label << " ";
+        }
+        labStream << std::endl;
+        labStream << "#END" << std::endl;
+        for (uint_fast64_t stateIndex = 0; stateIndex < this->getNumberOfStates(); ++stateIndex) {
+            std::set<std::string> labels = this->getLabelsForState(stateIndex);
+            if (!labels.empty()) {
+                labStream << stateIndex << " ";
+                for (auto const& label : labels) {
+                    labStream << label << " ";
+                }
+                labStream << std::endl;
+            }
+        }
+        labStream.close();
+    }
 
 private:
 	/*!

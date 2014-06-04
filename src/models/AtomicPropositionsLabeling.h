@@ -142,6 +142,21 @@ public:
 		return addAtomicProposition(ap, storage::BitVector(stateCount));
 	}
 	
+    /*!
+     * Retrieves the set of atomic propositions contained in this labeling.
+     *
+     * @return The set of known atomic propositions.
+     */
+    std::set<std::string> getAtomicPropositions() const {
+        std::set<std::string> result;
+        
+        for (auto const& apIndexPair : this->nameToLabelingMap) {
+            result.insert(apIndexPair.first);
+        }
+        
+        return result;
+    }
+    
 	/**
 	 * Creates a new atomic proposition and attaches the given states with the label.
      * @param ap
