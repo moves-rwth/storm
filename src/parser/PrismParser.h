@@ -6,23 +6,8 @@
 #include <memory>
 #include <iomanip>
 
-// Include boost spirit.
-#define BOOST_SPIRIT_USE_PHOENIX_V3
-#include <boost/typeof/typeof.hpp>
-#include <boost/spirit/include/qi.hpp>
-#include <boost/spirit/include/phoenix.hpp>
-#include <boost/spirit/include/support_line_pos_iterator.hpp>
-#include <boost/spirit/home/classic/iterator/position_iterator.hpp>
-
-namespace qi = boost::spirit::qi;
-namespace phoenix = boost::phoenix;
-
-typedef std::string::const_iterator BaseIteratorType;
-typedef boost::spirit::line_pos_iterator<BaseIteratorType> PositionIteratorType;
-typedef PositionIteratorType Iterator;
-typedef BOOST_TYPEOF(boost::spirit::ascii::space | qi::lit("//") >> *(qi::char_ - qi::eol) >> qi::eol) Skipper;
-typedef BOOST_TYPEOF(qi::lit("//") >> *(qi::char_ - qi::eol) >> qi::eol | boost::spirit::ascii::space) Skipper2;
-
+#include "src/parser/SpiritParserDefinitions.h"
+#include "src/parser/ExpressionParser.h"
 #include "src/storage/prism/Program.h"
 #include "src/storage/expressions/Expression.h"
 #include "src/storage/expressions/Expressions.h"
@@ -113,17 +98,6 @@ namespace storm {
                 }
             };
             
-            // Functor used for displaying error information.
-            struct ErrorHandler {
-                typedef qi::error_handler_result result_type;
-                
-                template<typename T1, typename T2, typename T3, typename T4>
-                qi::error_handler_result operator()(T1 b, T2 e, T3 where, T4 const& what) const {
-                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(where) << ": " << " expecting " << what << ".");
-                    return qi::fail;
-                }
-            };
-            
             // Functor used for annotating entities with line number information.
             class PositionAnnotation {
             public:
@@ -165,9 +139,6 @@ namespace storm {
              */
             void allowDoubleLiterals(bool flag);
             
-            // A flag that stores wether to allow or forbid double literals in parsed expressions.
-            bool allowDoubleLiteralsFlag;
-            
             // The name of the file being parsed.
             std::string filename;
             
@@ -179,7 +150,6 @@ namespace storm {
             std::string const& getFilename() const;
             
             // A function used for annotating the entities with their position.
-            phoenix::function<ErrorHandler> handler;
             phoenix::function<PositionAnnotation> annotate;
             
             // The starting point of the grammar.
@@ -237,59 +207,17 @@ namespace storm {
             // Rules for identifier parsing.
             qi::rule<Iterator, std::string(), Skipper> identifier;
             
-            // Rules for parsing a composed expression.
-            qi::rule<Iterator, storm::expressions::Expression(), Skipper> expression;
-            qi::rule<Iterator, storm::expressions::Expression(), Skipper> iteExpression;
-            qi::rule<Iterator, storm::expressions::Expression(), qi::locals<bool>, Skipper> orExpression;
-            qi::rule<Iterator, storm::expressions::Expression(), Skipper> andExpression;
-            qi::rule<Iterator, storm::expressions::Expression(), Skipper> relativeExpression;
-            qi::rule<Iterator, storm::expressions::Expression(), qi::locals<bool>, Skipper> equalityExpression;
-            qi::rule<Iterator, storm::expressions::Expression(), qi::locals<bool>, Skipper> plusExpression;
-            qi::rule<Iterator, storm::expressions::Expression(), qi::locals<bool>, Skipper> multiplicationExpression;
-            qi::rule<Iterator, storm::expressions::Expression(), Skipper> unaryExpression;
-            qi::rule<Iterator, storm::expressions::Expression(), Skipper> atomicExpression;
-            qi::rule<Iterator, storm::expressions::Expression(), Skipper> literalExpression;
-            qi::rule<Iterator, storm::expressions::Expression(), Skipper> identifierExpression;
-            qi::rule<Iterator, storm::expressions::Expression(), qi::locals<bool>, Skipper> minMaxExpression;
-            qi::rule<Iterator, storm::expressions::Expression(), qi::locals<bool>, Skipper> floorCeilExpression;
-            
-            // Parser that is used to recognize doubles only (as opposed to Spirit's double_ parser).
-            boost::spirit::qi::real_parser<double, boost::spirit::qi::strict_real_policies<double>> strict_double;
-            
             // Parsers that recognize special keywords and model types.
             storm::parser::PrismParser::keywordsStruct keywords_;
             storm::parser::PrismParser::modelTypeStruct modelType_;
             qi::symbols<char, storm::expressions::Expression> identifiers_;
             
+            // Parser used for recognizing expressions.
+            storm::parser::ExpressionParser expressionParser;
+            
             // Helper methods used in the grammar.
             bool isValidIdentifier(std::string const& identifier);
             bool addInitialStatesConstruct(storm::expressions::Expression initialStatesExpression, GlobalProgramInformation& globalProgramInformation);
-            
-            storm::expressions::Expression createIteExpression(storm::expressions::Expression e1, storm::expressions::Expression e2, storm::expressions::Expression e3) const;
-            storm::expressions::Expression createImpliesExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
-            storm::expressions::Expression createOrExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
-            storm::expressions::Expression createAndExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
-            storm::expressions::Expression createGreaterExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
-            storm::expressions::Expression createGreaterOrEqualExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
-            storm::expressions::Expression createLessExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
-            storm::expressions::Expression createLessOrEqualExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
-            storm::expressions::Expression createEqualsExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
-            storm::expressions::Expression createNotEqualsExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
-            storm::expressions::Expression createPlusExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
-            storm::expressions::Expression createMinusExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
-            storm::expressions::Expression createMultExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
-            storm::expressions::Expression createDivExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
-            storm::expressions::Expression createNotExpression(storm::expressions::Expression e1) const;
-            storm::expressions::Expression createMinusExpression(storm::expressions::Expression e1) const;
-            storm::expressions::Expression createTrueExpression() const;
-            storm::expressions::Expression createFalseExpression() const;
-            storm::expressions::Expression createDoubleLiteralExpression(double value, bool& pass) const;
-            storm::expressions::Expression createIntegerLiteralExpression(int value) const;
-            storm::expressions::Expression createMinimumExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
-            storm::expressions::Expression createMaximumExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
-            storm::expressions::Expression createFloorExpression(storm::expressions::Expression e1) const;
-            storm::expressions::Expression createCeilExpression(storm::expressions::Expression e1) const;
-            storm::expressions::Expression getIdentifierExpression(std::string const& identifier) const;
             
             storm::prism::Constant createUndefinedBooleanConstant(std::string const& newConstant) const;
             storm::prism::Constant createUndefinedIntegerConstant(std::string const& newConstant) const;
