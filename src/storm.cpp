@@ -31,6 +31,7 @@
 #include "src/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "src/solver/GmmxxLinearEquationSolver.h"
+#include "src/solver/NativeLinearEquationSolver.h"
 #include "src/solver/GmmxxNondeterministicLinearEquationSolver.h"
 #include "src/solver/GurobiLpSolver.h"
 #include "src/counterexamples/MILPMinimalLabelSetGenerator.h"
@@ -252,10 +253,12 @@ void cleanUp() {
 storm::modelchecker::prctl::AbstractModelChecker<double>* createPrctlModelChecker(storm::models::Dtmc<double> const & dtmc) {
     // Create the appropriate model checker.
 	storm::settings::Settings* s = storm::settings::Settings::getInstance();
-	std::string const chosenMatrixLibrary = s->getOptionByLongName("matrixLibrary").getArgument(0).getValueAsString();
-	if (chosenMatrixLibrary == "gmm++") {
+	std::string const& linsolver = s->getOptionByLongName("linsolver").getArgument(0).getValueAsString();
+	if (linsolver == "gmm++") {
 		return new storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double>(dtmc, new storm::solver::GmmxxLinearEquationSolver<double>());
-	}
+	} else if (linsolver == "native") {
+		return new storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double>(dtmc, new storm::solver::NativeLinearEquationSolver<double>());
+    }
     
 	// The control flow should never reach this point, as there is a default setting for matrixlib.
 	std::string message = "No matrix library suitable for DTMC model checking has been set.";
@@ -493,9 +496,6 @@ int main(const int argc, const char* argv[]) {
 				std::chrono::high_resolution_clock::time_point counterexampleEnd = std::chrono::high_resolution_clock::now();
 				std::cout << "Generating the counterexample took " << std::chrono::duration_cast<std::chrono::milliseconds>(counterexampleEnd - counterexampleStart).count() << " milliseconds." << std::endl;
 			} else {
-				// Determine which engine is to be used to choose the right model checker.
-				LOG4CPLUS_DEBUG(logger, s->getOptionByLongName("matrixLibrary").getArgument(0).getValueAsString());
-
 				// Depending on the model type, the appropriate model checking procedure is chosen.
 				storm::modelchecker::prctl::AbstractModelChecker<double>* modelchecker = nullptr;
 				model->printModelInformationToStream(std::cout);
@@ -598,9 +598,6 @@ int main(const int argc, const char* argv[]) {
 				std::chrono::high_resolution_clock::time_point minCmdEnd = std::chrono::high_resolution_clock::now();
 				std::cout << "Minimal command Counterexample generation took " << std::chrono::duration_cast<std::chrono::milliseconds>(minCmdStart - minCmdEnd).count() << " milliseconds." << std::endl;
             } else if (s->isSet("prctl")) {
-                // Determine which engine is to be used to choose the right model checker.
-				LOG4CPLUS_DEBUG(logger, s->getOptionByLongName("matrixLibrary").getArgument(0).getValueAsString());
-                
 				// Depending on the model type, the appropriate model checking procedure is chosen.
 				storm::modelchecker::prctl::AbstractModelChecker<double>* modelchecker = nullptr;
                 
