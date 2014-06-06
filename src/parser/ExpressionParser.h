@@ -66,6 +66,7 @@ namespace storm {
             qi::rule<Iterator, storm::expressions::Expression(), qi::locals<bool>, Skipper> equalityExpression;
             qi::rule<Iterator, storm::expressions::Expression(), qi::locals<bool>, Skipper> plusExpression;
             qi::rule<Iterator, storm::expressions::Expression(), qi::locals<bool>, Skipper> multiplicationExpression;
+            qi::rule<Iterator, storm::expressions::Expression(), qi::locals<bool>, Skipper> powerExpression;
             qi::rule<Iterator, storm::expressions::Expression(), Skipper> unaryExpression;
             qi::rule<Iterator, storm::expressions::Expression(), Skipper> atomicExpression;
             qi::rule<Iterator, storm::expressions::Expression(), Skipper> literalExpression;
@@ -91,6 +92,7 @@ namespace storm {
             storm::expressions::Expression createPlusExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
             storm::expressions::Expression createMinusExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
             storm::expressions::Expression createMultExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
+            storm::expressions::Expression createPowerExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
             storm::expressions::Expression createDivExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
             storm::expressions::Expression createNotExpression(storm::expressions::Expression e1) const;
             storm::expressions::Expression createMinusExpression(storm::expressions::Expression e1) const;

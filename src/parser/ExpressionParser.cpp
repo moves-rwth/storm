@@ -27,7 +27,10 @@ namespace storm {
             unaryExpression = atomicExpression[qi::_val = qi::_1] | (qi::lit("!") >> atomicExpression)[qi::_val = phoenix::bind(&ExpressionParser::createNotExpression, phoenix::ref(*this), qi::_1)] | (qi::lit("-") >> atomicExpression)[qi::_val = phoenix::bind(&ExpressionParser::createMinusExpression, phoenix::ref(*this), qi::_1)];
             unaryExpression.name("unary expression");
             
-            multiplicationExpression = unaryExpression[qi::_val = qi::_1] >> *((qi::lit("*")[qi::_a = true] | qi::lit("/")[qi::_a = false]) >> unaryExpression[phoenix::if_(qi::_a) [qi::_val = phoenix::bind(&ExpressionParser::createMultExpression, phoenix::ref(*this), qi::_val, qi::_1)] .else_ [qi::_val = phoenix::bind(&ExpressionParser::createDivExpression, phoenix::ref(*this), qi::_val, qi::_1)]]);
+            powerExpression = unaryExpression[qi::_val = qi::_1] >> -(qi::lit("^") > expression)[qi::_val = phoenix::bind(&ExpressionParser::createPowerExpression, phoenix::ref(*this), qi::_val, qi::_1)];
+            powerExpression.name("power expression");
+            
+            multiplicationExpression = powerExpression[qi::_val = qi::_1] >> *((qi::lit("*")[qi::_a = true] | qi::lit("/")[qi::_a = false]) >> powerExpression[phoenix::if_(qi::_a) [qi::_val = phoenix::bind(&ExpressionParser::createMultExpression, phoenix::ref(*this), qi::_val, qi::_1)] .else_ [qi::_val = phoenix::bind(&ExpressionParser::createDivExpression, phoenix::ref(*this), qi::_val, qi::_1)]]);
             multiplicationExpression.name("multiplication expression");
             
             plusExpression = multiplicationExpression[qi::_val = qi::_1] >> *((qi::lit("+")[qi::_a = true] | qi::lit("-")[qi::_a = false]) >> multiplicationExpression)[phoenix::if_(qi::_a) [qi::_val = phoenix::bind(&ExpressionParser::createPlusExpression, phoenix::ref(*this), qi::_val, qi::_1)] .else_ [qi::_val = phoenix::bind(&ExpressionParser::createMinusExpression, phoenix::ref(*this), qi::_val, qi::_1)]];
@@ -69,12 +72,18 @@ namespace storm {
         }
         
         void ExpressionParser::setIdentifierMapping(qi::symbols<char, storm::expressions::Expression> const* identifiers_) {
-            this->createExpressions = true;
-            this->identifiers_ = identifiers_;
+            if (identifiers_ != nullptr) {
+                this->createExpressions = true;
+                this->identifiers_ = identifiers_;
+            } else {
+                this->createExpressions = false;
+                this->identifiers_ = nullptr;
+            }
         }
         
         void ExpressionParser::unsetIdentifierMapping() {
             this->createExpressions = false;
+            this->identifiers_ = nullptr;
         }
         
         void ExpressionParser::setAcceptDoubleLiterals(bool flag) {
@@ -86,7 +95,7 @@ namespace storm {
                 try {
                     return e1.ite(e2, e3);
                 } catch (storm::exceptions::InvalidTypeException const& e) {
-                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what() << ".");
+                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
                 }
             } else {
                 return storm::expressions::Expression::createFalse();
@@ -98,7 +107,7 @@ namespace storm {
                 try {
                     return e1.implies(e2);
                 } catch (storm::exceptions::InvalidTypeException const& e) {
-                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what() << ".");
+                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
                 }
             } else {
                 return storm::expressions::Expression::createFalse();
@@ -110,7 +119,7 @@ namespace storm {
                 try {
                     return e1 || e2;
                 } catch (storm::exceptions::InvalidTypeException const& e) {
-                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what() << ".");
+                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
                 }
             } else {
                 return storm::expressions::Expression::createFalse();
@@ -122,7 +131,7 @@ namespace storm {
                 try{
                     return e1 && e2;
                 } catch (storm::exceptions::InvalidTypeException const& e) {
-                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what() << ".");
+                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
                 }
             } else {
                 return storm::expressions::Expression::createFalse();
@@ -134,7 +143,7 @@ namespace storm {
                 try {
                     return e1 > e2;
                 } catch (storm::exceptions::InvalidTypeException const& e) {
-                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what() << ".");
+                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
                 }
             } else {
                 return storm::expressions::Expression::createFalse();
@@ -146,7 +155,7 @@ namespace storm {
                 try {
                     return e1 >= e2;
                 } catch (storm::exceptions::InvalidTypeException const& e) {
-                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what() << ".");
+                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
                 }
             } else {
                 return storm::expressions::Expression::createFalse();
@@ -158,7 +167,7 @@ namespace storm {
                 try {
                     return e1 < e2;
                 } catch (storm::exceptions::InvalidTypeException const& e) {
-                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what() << ".");
+                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
                 }
             } else {
                 return storm::expressions::Expression::createFalse();
@@ -170,7 +179,7 @@ namespace storm {
                 try {
                     return e1 <= e2;
                 } catch (storm::exceptions::InvalidTypeException const& e) {
-                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what() << ".");
+                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
                 }
             } else {
                 return storm::expressions::Expression::createFalse();
@@ -186,7 +195,7 @@ namespace storm {
                         return e1 == e2;
                     }
                 } catch (storm::exceptions::InvalidTypeException const& e) {
-                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what() << ".");
+                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
                 }
             } else {
                 return storm::expressions::Expression::createFalse();
@@ -196,13 +205,9 @@ namespace storm {
         storm::expressions::Expression ExpressionParser::createNotEqualsExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const {
             if (this->createExpressions) {
                 try {
-                    if (e1.hasBooleanReturnType() && e2.hasBooleanReturnType()) {
-                        return e1 ^ e2;
-                    } else {
-                        return e1 != e2;
-                    }
+                    return e1 != e2;
                 } catch (storm::exceptions::InvalidTypeException const& e) {
-                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what() << ".");
+                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
                 }
             } else {
                 return storm::expressions::Expression::createFalse();
@@ -214,7 +219,7 @@ namespace storm {
                 try {
                     return e1 + e2;
                 } catch (storm::exceptions::InvalidTypeException const& e) {
-                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what() << ".");
+                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
                 }
             } else {
                 return storm::expressions::Expression::createFalse();
@@ -226,7 +231,7 @@ namespace storm {
                 try {
                     return e1 - e2;
                 } catch (storm::exceptions::InvalidTypeException const& e) {
-                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what() << ".");
+                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
                 }
             } else {
                 return storm::expressions::Expression::createFalse();
@@ -238,7 +243,19 @@ namespace storm {
                 try {
                     return e1 * e2;
                 } catch (storm::exceptions::InvalidTypeException const& e) {
-                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what() << ".");
+                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
+                }
+            } else {
+                return storm::expressions::Expression::createFalse();
+            }
+        }
+        
+        storm::expressions::Expression ExpressionParser::createPowerExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const {
+            if (this->createExpressions) {
+                try {
+                    return e1 ^ e2;
+                } catch (storm::exceptions::InvalidTypeException const& e) {
+                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
                 }
             } else {
                 return storm::expressions::Expression::createFalse();
@@ -250,7 +267,7 @@ namespace storm {
                 try {
                     return e1 / e2;
                 } catch (storm::exceptions::InvalidTypeException const& e) {
-                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what() << ".");
+                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
                 }
             } else {
                 return storm::expressions::Expression::createFalse();
@@ -262,7 +279,7 @@ namespace storm {
                 try {
                     return !e1;
                 } catch (storm::exceptions::InvalidTypeException const& e) {
-                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what() << ".");
+                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
                 }
             } else {
                 return storm::expressions::Expression::createFalse();
@@ -274,7 +291,7 @@ namespace storm {
                 try {
                     return -e1;
                 } catch (storm::exceptions::InvalidTypeException const& e) {
-                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what() << ".");
+                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
                 }
             } else {
                 return storm::expressions::Expression::createFalse();
@@ -308,9 +325,9 @@ namespace storm {
         
         storm::expressions::Expression ExpressionParser::createIntegerLiteralExpression(int value) const {
             if (this->createExpressions) {
-                return storm::expressions::Expression::createFalse();
-            } else {
                 return storm::expressions::Expression::createIntegerLiteral(static_cast<int_fast64_t>(value));
+            } else {
+                return storm::expressions::Expression::createFalse();
             }
         }
         
@@ -319,7 +336,7 @@ namespace storm {
                 try {
                     return storm::expressions::Expression::minimum(e1, e2);
                 } catch (storm::exceptions::InvalidTypeException const& e) {
-                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what() << ".");
+                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
                 }
             } else {
                 return storm::expressions::Expression::createFalse();
@@ -331,7 +348,7 @@ namespace storm {
                 try {
                     return storm::expressions::Expression::maximum(e1, e2);
                 } catch (storm::exceptions::InvalidTypeException const& e) {
-                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what() << ".");
+                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
                 }
             } else {
                 return storm::expressions::Expression::createFalse();
@@ -343,7 +360,7 @@ namespace storm {
                 try {
                     return e1.floor();
                 } catch (storm::exceptions::InvalidTypeException const& e) {
-                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what() << ".");
+                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
                 }
             } else {
                 return storm::expressions::Expression::createFalse();
@@ -355,7 +372,7 @@ namespace storm {
                 try {
                     return e1.ceil();
                 } catch (storm::exceptions::InvalidTypeException const& e) {
-                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what() << ".");
+                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
                 }
             } else {
                 return storm::expressions::Expression::createFalse();
@@ -364,11 +381,12 @@ namespace storm {
         
         storm::expressions::Expression ExpressionParser::getIdentifierExpression(std::string const& identifier) const {
             if (this->createExpressions) {
-                return storm::expressions::Expression::createFalse();
-            } else {
+                LOG_THROW(this->identifiers_ != nullptr, storm::exceptions::WrongFormatException, "Unable to substitute identifier expressions without given mapping.");
                 storm::expressions::Expression const* expression = this->identifiers_->find(identifier);
                 LOG_THROW(expression != nullptr, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": Undeclared identifier '" << identifier << "'.");
                 return *expression;
+            } else {
+                return storm::expressions::Expression::createFalse();
             }
         }
         

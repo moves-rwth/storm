@@ -196,8 +196,8 @@ namespace storm {
         }
         
         Expression Expression::operator^(Expression const& other) const {
-            LOG_THROW(this->hasBooleanReturnType() && other.hasBooleanReturnType(), storm::exceptions::InvalidTypeException, "Operator '^' requires boolean operands.");
-            return Expression(std::shared_ptr<BaseExpression>(new BinaryBooleanFunctionExpression(ExpressionReturnType::Bool, this->getBaseExpressionPointer(), other.getBaseExpressionPointer(), BinaryBooleanFunctionExpression::OperatorType::Xor)));
+            LOG_THROW(this->hasNumericalReturnType() && other.hasNumericalReturnType(), storm::exceptions::InvalidTypeException, "Operator '^' requires numerical operands.");
+            return Expression(std::shared_ptr<BaseExpression>(new BinaryNumericalFunctionExpression(this->getReturnType() == ExpressionReturnType::Int && other.getReturnType() == ExpressionReturnType::Int ? ExpressionReturnType::Int : ExpressionReturnType::Double, this->getBaseExpressionPointer(), other.getBaseExpressionPointer(), BinaryNumericalFunctionExpression::OperatorType::Power)));
         }
         
         Expression Expression::operator&&(Expression const& other) const {
@@ -221,8 +221,12 @@ namespace storm {
         }
         
         Expression Expression::operator!=(Expression const& other) const {
-            LOG_THROW(this->hasNumericalReturnType() && other.hasNumericalReturnType(), storm::exceptions::InvalidTypeException, "Operator '!=' requires numerical operands.");
-            return Expression(std::shared_ptr<BaseExpression>(new BinaryRelationExpression(ExpressionReturnType::Bool, this->getBaseExpressionPointer(), other.getBaseExpressionPointer(), BinaryRelationExpression::RelationType::NotEqual)));
+            LOG_THROW((this->hasNumericalReturnType() && other.hasNumericalReturnType()) || (this->hasBooleanReturnType() && other.hasBooleanReturnType()), storm::exceptions::InvalidTypeException, "Operator '!=' requires operands of equal type.");
+            if (this->hasNumericalReturnType() && other.hasNumericalReturnType()) {
+                return Expression(std::shared_ptr<BaseExpression>(new BinaryRelationExpression(ExpressionReturnType::Bool, this->getBaseExpressionPointer(), other.getBaseExpressionPointer(), BinaryRelationExpression::RelationType::NotEqual)));
+            } else {
+                return Expression(std::shared_ptr<BaseExpression>(new BinaryBooleanFunctionExpression(ExpressionReturnType::Bool, this->getBaseExpressionPointer(), other.getBaseExpressionPointer(), BinaryBooleanFunctionExpression::OperatorType::Xor)));
+            }
         }
         
         Expression Expression::operator>(Expression const& other) const {

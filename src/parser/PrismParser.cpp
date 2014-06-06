@@ -189,6 +189,7 @@ namespace storm {
         
         void PrismParser::moveToSecondRun() {
             this->secondRun = true;
+            this->expressionParser.setIdentifierMapping(&this->identifiers_);
         }
         
         void PrismParser::allowDoubleLiterals(bool flag) {

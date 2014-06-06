@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cmath>
 
 #include "src/storage/expressions/BinaryNumericalFunctionExpression.h"
 #include "src/exceptions/ExceptionMacros.h"
@@ -22,6 +23,7 @@ namespace storm {
                 case OperatorType::Divide: return storm::expressions::OperatorType::Divide; break;
                 case OperatorType::Min: return storm::expressions::OperatorType::Min; break;
                 case OperatorType::Max: return storm::expressions::OperatorType::Max; break;
+                case OperatorType::Power: return storm::expressions::OperatorType::Power; break;
             }
         }
         
@@ -37,6 +39,7 @@ namespace storm {
                 case OperatorType::Divide: return firstOperandEvaluation / secondOperandEvaluation; break;
                 case OperatorType::Min: return std::min(firstOperandEvaluation, secondOperandEvaluation); break;
                 case OperatorType::Max: return std::max(firstOperandEvaluation, secondOperandEvaluation); break;
+                case OperatorType::Power: return static_cast<int_fast64_t>(std::pow(firstOperandEvaluation, secondOperandEvaluation)); break;
             }
         }
         
@@ -52,6 +55,7 @@ namespace storm {
                 case OperatorType::Divide: return static_cast<double>(firstOperandEvaluation / secondOperandEvaluation); break;
                 case OperatorType::Min: return static_cast<double>(std::min(firstOperandEvaluation, secondOperandEvaluation)); break;
                 case OperatorType::Max: return static_cast<double>(std::max(firstOperandEvaluation, secondOperandEvaluation)); break;
+                case OperatorType::Power: return std::pow(firstOperandEvaluation, secondOperandEvaluation); break;
             }
         }
         
@@ -79,6 +83,7 @@ namespace storm {
                 case OperatorType::Divide: stream << *this->getFirstOperand() << " / " << *this->getSecondOperand(); break;
                 case OperatorType::Min: stream << "min(" << *this->getFirstOperand() << ", " << *this->getSecondOperand() << ")"; break;
                 case OperatorType::Max: stream << "max(" << *this->getFirstOperand() << ", " << *this->getSecondOperand() << ")"; break;
+                case OperatorType::Power: stream << *this->getFirstOperand() << " ^ " << *this->getSecondOperand(); break;
             }
             stream << ")";
         }
