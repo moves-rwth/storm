@@ -3,6 +3,7 @@
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/storage/dd/CuddDdManager.h"
 #include "src/storage/dd/CuddDd.h"
+#include "src/storage/dd/CuddOdd.h"
 #include "src/storage/dd/DdMetaVariable.h"
 
 TEST(CuddDdManager, Constants) {
@@ -374,5 +375,21 @@ TEST(CuddDd, ToExpressionTest) {
         // At this point, the constructed valuation should make the expression obtained from the DD evaluate to the very
         // same value as the current value obtained from the DD.
         EXPECT_FALSE(mintermExpression.evaluateAsBool(&valuation));
+    }
+}
+
+TEST(CuddDd, OddTest) {
+    std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::CUDD>> manager(new storm::dd::DdManager<storm::dd::DdType::CUDD>());
+    manager->addMetaVariable("x", 1, 9);
+    
+    storm::dd::Dd<storm::dd::DdType::CUDD> dd = manager->getIdentity("x");
+    storm::dd::Odd<storm::dd::DdType::CUDD> odd;
+    ASSERT_NO_THROW(odd = storm::dd::Odd<storm::dd::DdType::CUDD>(dd));
+    EXPECT_EQ(9, odd.getTotalOffset());
+    std::vector<double> ddAsVector;
+    ASSERT_NO_THROW(ddAsVector = dd.toDoubleVector());
+    EXPECT_EQ(9, ddAsVector.size());
+    for (uint_fast64_t i = 0; i < ddAsVector.size(); ++i) {
+        EXPECT_TRUE(i+1 == ddAsVector[i]);
     }
 }

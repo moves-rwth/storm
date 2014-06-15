@@ -2,6 +2,7 @@
 #include <algorithm>
 
 #include "src/storage/dd/CuddDd.h"
+#include "src/storage/dd/CuddOdd.h"
 #include "src/storage/dd/CuddDdManager.h"
 
 #include "src/exceptions/InvalidArgumentException.h"
@@ -423,6 +424,55 @@ namespace storm {
         
         bool Dd<DdType::CUDD>::isConstant() const {
             return Cudd_IsConstant(this->cuddAdd.getNode());
+        }
+        
+        uint_fast64_t Dd<DdType::CUDD>::getIndex() const {
+            return static_cast<uint_fast64_t>(this->getCuddAdd().NodeReadIndex());
+        }
+        
+        std::vector<double> Dd<DdType::CUDD>::toDoubleVector() const {
+            return this->toDoubleVector(Odd<DdType::CUDD>(*this));
+        }
+        
+        std::vector<double> Dd<DdType::CUDD>::toDoubleVector(Odd<DdType::CUDD> const& odd) const {
+            std::vector<double> result(odd.getTotalOffset());
+            std::vector<uint_fast64_t> ddVariableIndices = this->getSortedVariableIndices();
+            toDoubleVectorRec(this->getCuddAdd().getNode(), result, odd, 0, ddVariableIndices.size(), 0, ddVariableIndices);
+            return result;
+        }
+        
+        void Dd<DdType::CUDD>::toDoubleVectorRec(DdNode const* dd, std::vector<double>& result, Odd<DdType::CUDD> const& odd, uint_fast64_t currentLevel, uint_fast64_t maxLevel, uint_fast64_t currentOffset, std::vector<uint_fast64_t> const& ddVariableIndices) const {
+            if (dd == this->getDdManager()->getZero().getCuddAdd().getNode()) {
+                return;
+            }
+            
+            // If we are at the maximal level, the value to be set is stored as a constant in the DD.
+            if (currentLevel == maxLevel) {
+                result[currentOffset] = Cudd_V(dd);
+            } else if (ddVariableIndices[currentLevel] < dd->index) {
+                // If we skipped a level, we need to enumerate the explicit entries for the case in which the bit is set
+                // and for the one in which it is not set.
+                toDoubleVectorRec(dd, result, odd.getElseSuccessor(), currentLevel + 1, maxLevel, currentOffset, ddVariableIndices);
+                toDoubleVectorRec(dd, result, odd.getThenSuccessor(), currentLevel + 1, maxLevel, currentOffset + odd.getElseOffset(), ddVariableIndices);
+            } else {
+                // Otherwise, we simply recursively call the function for both (different) cases.
+                toDoubleVectorRec(Cudd_E(dd), result, odd.getElseSuccessor(), currentLevel + 1, maxLevel, currentOffset, ddVariableIndices);
+                toDoubleVectorRec(Cudd_T(dd), result, odd.getThenSuccessor(), currentLevel + 1, maxLevel, currentOffset + odd.getElseOffset(), ddVariableIndices);
+            }
+        }
+        
+        std::vector<uint_fast64_t> Dd<DdType::CUDD>::getSortedVariableIndices() const {
+            std::vector<uint_fast64_t> ddVariableIndices;
+            for (auto const& metaVariableName : this->getContainedMetaVariableNames()) {
+                auto const& metaVariable = this->getDdManager()->getMetaVariable(metaVariableName);
+                for (auto const& ddVariable : metaVariable.getDdVariables()) {
+                    ddVariableIndices.push_back(ddVariable.getIndex());
+                }
+            }
+            
+            // Next, we need to sort them, since they may be arbitrarily ordered otherwise.
+            std::sort(ddVariableIndices.begin(), ddVariableIndices.end());
+            return ddVariableIndices;
         }
         
         bool Dd<DdType::CUDD>::containsMetaVariable(std::string const& metaVariableName) const {

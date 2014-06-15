@@ -16,8 +16,9 @@
 
 namespace storm {
     namespace dd {
-        // Forward-declare the DdManager class.
+        // Forward-declare some classes.
         template<DdType Type> class DdManager;
+        template<DdType Type> class Odd;
         
         template<>
         class Dd<DdType::CUDD> {
@@ -25,6 +26,7 @@ namespace storm {
             // Declare the DdManager and DdIterator class as friend so it can access the internals of a DD.
             friend class DdManager<DdType::CUDD>;
             friend class DdForwardIterator<DdType::CUDD>;
+            friend class Odd<DdType::CUDD>;
             
             // Instantiate all copy/move constructors/assignments with the default implementation.
             Dd() = default;
@@ -448,6 +450,28 @@ namespace storm {
             bool isConstant() const;
             
             /*!
+             * Retrieves the index of the topmost variable in the DD.
+             *
+             * @return The index of the topmost variable in DD.
+             */
+            uint_fast64_t getIndex() const;
+            
+            /*!
+             * Converts the DD to a double vector.
+             *
+             * @return The double vector that is represented by this DD.
+             */
+            std::vector<double> toDoubleVector() const;
+            
+            /*!
+             * Converts the DD to a double vector using the given ODD (that needs to be constructed for the DD).
+             *
+             * @param odd The ODD for the DD.
+             * @return The double vector that is represented by this DD.
+             */
+            std::vector<double> toDoubleVector(Odd<DdType::CUDD> const& odd) const;
+            
+            /*!
              * Retrieves whether the given meta variable is contained in the DD.
              *
              * @param metaVariableName The name of the meta variable for which to query membership.
@@ -586,6 +610,28 @@ namespace storm {
              * @param containedMetaVariableNames The names of the meta variables that appear in the DD.
              */
             Dd(std::shared_ptr<DdManager<DdType::CUDD>> ddManager, ADD cuddAdd, std::set<std::string> const& containedMetaVariableNames = std::set<std::string>());
+            
+            /*!
+             * Helper function to convert the DD into a double vector.
+             *
+             * @param dd The DD to convert.
+             * @param result The resulting vector whose entries are to be set appropriately. This vector needs to be
+             * preallocated.
+             * @param odd The ODD used for the translation.
+             * @param currentLevel The currently considered level in the DD.
+             * @param maxLevel The number of levels that need to be considered.
+             * @param currentOffset The current offset.
+             * @param ddVariableIndices The (sorted) indices of all DD variables that need to be considered.
+             */
+            void toDoubleVectorRec(DdNode const* dd, std::vector<double>& result, Odd<DdType::CUDD> const& odd, uint_fast64_t currentLevel, uint_fast64_t maxLevel, uint_fast64_t currentOffset, std::vector<uint_fast64_t> const& ddVariableIndices) const;
+            
+            /*!
+             * Retrieves the indices of all DD variables that are contained in this DD (not necessarily in the support,
+             * because they could be "don't cares"). Additionally, the indices are sorted to allow for easy access.
+             *
+             * @return The (sorted) indices of all DD variables that are contained in this DD.
+             */
+            std::vector<uint_fast64_t> getSortedVariableIndices() const;
             
             // A pointer to the manager responsible for this DD.
             std::shared_ptr<DdManager<DdType::CUDD>> ddManager;

@@ -13,8 +13,9 @@
 
 namespace storm {
     namespace dd {
-        // Forward-declare the DdManager class.
+        // Forward-declare some classes.
         template<DdType Type> class DdManager;
+        template<DdType Type> class Odd;
         
         template<>
         class DdMetaVariable<DdType::CUDD> {
@@ -22,6 +23,7 @@ namespace storm {
             // Declare the DdManager class as friend so it can access the internals of a meta variable.
             friend class DdManager<DdType::CUDD>;
             friend class Dd<DdType::CUDD>;
+            friend class Odd<DdType::CUDD>;
             friend class DdForwardIterator<DdType::CUDD>;
             
             // An enumeration for all legal types of meta variables.
