@@ -8,6 +8,7 @@
 
 #include "src/storage/dd/Dd.h"
 #include "src/storage/dd/CuddDdForwardIterator.h"
+#include "src/storage/SparseMatrix.h"
 #include "src/storage/expressions/Expression.h"
 #include "src/utility/OsDetection.h"
 
@@ -234,35 +235,35 @@ namespace storm {
              *
              * @param metaVariableNames The names of all meta variables from which to abstract.
              */
-            void existsAbstract(std::set<std::string> const& metaVariableNames);
+            Dd<DdType::CUDD> existsAbstract(std::set<std::string> const& metaVariableNames) const;
             
             /*!
              * Universally abstracts from the given meta variables.
              *
              * @param metaVariableNames The names of all meta variables from which to abstract.
              */
-            void universalAbstract(std::set<std::string> const& metaVariableNames);
+            Dd<DdType::CUDD> universalAbstract(std::set<std::string> const& metaVariableNames) const;
             
             /*!
              * Sum-abstracts from the given meta variables.
              *
              * @param metaVariableNames The names of all meta variables from which to abstract.
              */
-            void sumAbstract(std::set<std::string> const& metaVariableNames);
+            Dd<DdType::CUDD> sumAbstract(std::set<std::string> const& metaVariableNames) const;
             
             /*!
              * Min-abstracts from the given meta variables.
              *
              * @param metaVariableNames The names of all meta variables from which to abstract.
              */
-            void minAbstract(std::set<std::string> const& metaVariableNames);
+            Dd<DdType::CUDD> minAbstract(std::set<std::string> const& metaVariableNames) const;
             
             /*!
              * Max-abstracts from the given meta variables.
              *
              * @param metaVariableNames The names of all meta variables from which to abstract.
              */
-            void maxAbstract(std::set<std::string> const& metaVariableNames);
+            Dd<DdType::CUDD> maxAbstract(std::set<std::string> const& metaVariableNames) const;
             
             /*!
              * Checks whether the current and the given DD represent the same function modulo some given precision.
@@ -461,7 +462,13 @@ namespace storm {
              *
              * @return The double vector that is represented by this DD.
              */
-            std::vector<double> toDoubleVector() const;
+            std::vector<double> toVector() const;
+            
+            /*!
+             * Converts the DD to a (sparse) double matrix. All contained non-primed variables are assumed to encode the
+             * row, whereas all primed variables are assumed to encode the column.
+             */
+            storm::storage::SparseMatrix<double> toMatrix() const;
             
             /*!
              * Converts the DD to a double vector using the given ODD (that needs to be constructed for the DD).
@@ -469,7 +476,7 @@ namespace storm {
              * @param odd The ODD for the DD.
              * @return The double vector that is represented by this DD.
              */
-            std::vector<double> toDoubleVector(Odd<DdType::CUDD> const& odd) const;
+            std::vector<double> toVector(Odd<DdType::CUDD> const& odd) const;
             
             /*!
              * Retrieves whether the given meta variable is contained in the DD.
@@ -623,7 +630,24 @@ namespace storm {
              * @param currentOffset The current offset.
              * @param ddVariableIndices The (sorted) indices of all DD variables that need to be considered.
              */
-            void toDoubleVectorRec(DdNode const* dd, std::vector<double>& result, Odd<DdType::CUDD> const& odd, uint_fast64_t currentLevel, uint_fast64_t maxLevel, uint_fast64_t currentOffset, std::vector<uint_fast64_t> const& ddVariableIndices) const;
+            void toVectorRec(DdNode const* dd, std::vector<double>& result, Odd<DdType::CUDD> const& odd, uint_fast64_t currentLevel, uint_fast64_t maxLevel, uint_fast64_t currentOffset, std::vector<uint_fast64_t> const& ddVariableIndices) const;
+            
+            /*!
+             * Helper function to convert the DD into a (sparse) matrix.
+             *
+             * @param dd The DD to convert.
+             * @param builder A matrix builder that can be used to insert the nonzero entries.
+             * @param rowOdd The ODD used for the row translation.
+             * @param columnOdd The ODD used for the column translation.
+             * @param currentRowLevel The currently considered row level in the DD.
+             * @param currentColumnLevel The currently considered row level in the DD.
+             * @param maxLevel The number of levels that need to be considered.
+             * @param currentRowOffset The current row offset.
+             * @param currentColumnOffset The current row offset.
+             * @param ddRowVariableIndices The (sorted) indices of all DD row variables that need to be considered.
+             * @param ddColumnVariableIndices The (sorted) indices of all DD row variables that need to be considered.
+             */
+            void toMatrixRec(DdNode const* dd, storm::storage::SparseMatrixBuilder<double>& builder, Odd<DdType::CUDD> const& rowOdd, Odd<DdType::CUDD> const& columnOdd, uint_fast64_t currentRowLevel, uint_fast64_t currentColumnLevel, uint_fast64_t maxLevel, uint_fast64_t currentRowOffset, uint_fast64_t currentColumnOffset, std::vector<uint_fast64_t> const& ddRowVariableIndices, std::vector<uint_fast64_t> const& ddColumnVariableIndices) const;
             
             /*!
              * Retrieves the indices of all DD variables that are contained in this DD (not necessarily in the support,

@@ -119,138 +119,141 @@ namespace storm {
         }
         
         Dd<DdType::CUDD> Dd<DdType::CUDD>::equals(Dd<DdType::CUDD> const& other) const {
-            Dd<DdType::CUDD> result(*this);
-            result.cuddAdd = result.cuddAdd.Equals(other.getCuddAdd());
-            return result;
+            std::set<std::string> metaVariableNames(this->getContainedMetaVariableNames());
+            metaVariableNames.insert(other.getContainedMetaVariableNames().begin(), other.getContainedMetaVariableNames().end());
+            return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddAdd().Equals(other.getCuddAdd()), metaVariableNames);
         }
         
         Dd<DdType::CUDD> Dd<DdType::CUDD>::notEquals(Dd<DdType::CUDD> const& other) const {
-            Dd<DdType::CUDD> result(*this);
-            result.cuddAdd = result.cuddAdd.NotEquals(other.getCuddAdd());
-            return result;
+            std::set<std::string> metaVariableNames(this->getContainedMetaVariableNames());
+            metaVariableNames.insert(other.getContainedMetaVariableNames().begin(), other.getContainedMetaVariableNames().end());
+            return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddAdd().NotEquals(other.getCuddAdd()), metaVariableNames);
         }
         
         Dd<DdType::CUDD> Dd<DdType::CUDD>::less(Dd<DdType::CUDD> const& other) const {
-            Dd<DdType::CUDD> result(*this);
-            result.cuddAdd = result.cuddAdd.LessThan(other.getCuddAdd());
-            return result;
+            std::set<std::string> metaVariableNames(this->getContainedMetaVariableNames());
+            metaVariableNames.insert(other.getContainedMetaVariableNames().begin(), other.getContainedMetaVariableNames().end());
+            return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddAdd().LessThan(other.getCuddAdd()), metaVariableNames);
         }
         
         Dd<DdType::CUDD> Dd<DdType::CUDD>::lessOrEqual(Dd<DdType::CUDD> const& other) const {
-            Dd<DdType::CUDD> result(*this);
-            result.cuddAdd = result.cuddAdd.LessThanOrEqual(other.getCuddAdd());
-            return result;
+            std::set<std::string> metaVariableNames(this->getContainedMetaVariableNames());
+            metaVariableNames.insert(other.getContainedMetaVariableNames().begin(), other.getContainedMetaVariableNames().end());
+            return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddAdd().LessThanOrEqual(other.getCuddAdd()), metaVariableNames);
         }
         
         Dd<DdType::CUDD> Dd<DdType::CUDD>::greater(Dd<DdType::CUDD> const& other) const {
-            Dd<DdType::CUDD> result(*this);
-            result.cuddAdd = result.cuddAdd.GreaterThan(other.getCuddAdd());
-            return result;
+            std::set<std::string> metaVariableNames(this->getContainedMetaVariableNames());
+            metaVariableNames.insert(other.getContainedMetaVariableNames().begin(), other.getContainedMetaVariableNames().end());
+            return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddAdd().GreaterThan(other.getCuddAdd()), metaVariableNames);
         }
         
         Dd<DdType::CUDD> Dd<DdType::CUDD>::greaterOrEqual(Dd<DdType::CUDD> const& other) const {
-            Dd<DdType::CUDD> result(*this);
-            result.cuddAdd = result.cuddAdd.GreaterThanOrEqual(other.getCuddAdd());
-            return result;
+            std::set<std::string> metaVariableNames(this->getContainedMetaVariableNames());
+            metaVariableNames.insert(other.getContainedMetaVariableNames().begin(), other.getContainedMetaVariableNames().end());
+            return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddAdd().GreaterThanOrEqual(other.getCuddAdd()), metaVariableNames);
         }
         
         Dd<DdType::CUDD> Dd<DdType::CUDD>::minimum(Dd<DdType::CUDD> const& other) const {
             std::set<std::string> metaVariableNames(this->getContainedMetaVariableNames());
             metaVariableNames.insert(other.getContainedMetaVariableNames().begin(), other.getContainedMetaVariableNames().end());
-            
             return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddAdd().Minimum(other.getCuddAdd()), metaVariableNames);
         }
 
         Dd<DdType::CUDD> Dd<DdType::CUDD>::maximum(Dd<DdType::CUDD> const& other) const {
             std::set<std::string> metaVariableNames(this->getContainedMetaVariableNames());
             metaVariableNames.insert(other.getContainedMetaVariableNames().begin(), other.getContainedMetaVariableNames().end());
-            
             return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddAdd().Maximum(other.getCuddAdd()), metaVariableNames);
         }
 
-        void Dd<DdType::CUDD>::existsAbstract(std::set<std::string> const& metaVariableNames) {
+        Dd<DdType::CUDD> Dd<DdType::CUDD>::existsAbstract(std::set<std::string> const& metaVariableNames) const {
             Dd<DdType::CUDD> cubeDd(this->getDdManager()->getOne());
             
+            std::set<std::string> newMetaVariables = this->getContainedMetaVariableNames();
             for (auto const& metaVariableName : metaVariableNames) {
                 // First check whether the DD contains the meta variable and erase it, if this is the case.
                 if (!this->containsMetaVariable(metaVariableName)) {
                     throw storm::exceptions::InvalidArgumentException() << "Cannot abstract from meta variable that is not present in the DD.";
                 }
-                this->getContainedMetaVariableNames().erase(metaVariableName);
+                newMetaVariables.erase(metaVariableName);
                 
                 DdMetaVariable<DdType::CUDD> const& metaVariable = this->getDdManager()->getMetaVariable(metaVariableName);
                 cubeDd *= metaVariable.getCube();
             }
             
-            this->cuddAdd = this->cuddAdd.OrAbstract(cubeDd.getCuddAdd());
+            return Dd<DdType::CUDD>(this->getDdManager(), this->cuddAdd.OrAbstract(cubeDd.getCuddAdd()), newMetaVariables);
         }
         
-        void Dd<DdType::CUDD>::universalAbstract(std::set<std::string> const& metaVariableNames) {
+        Dd<DdType::CUDD> Dd<DdType::CUDD>::universalAbstract(std::set<std::string> const& metaVariableNames) const {
             Dd<DdType::CUDD> cubeDd(this->getDdManager()->getOne());
             
+            std::set<std::string> newMetaVariables = this->getContainedMetaVariableNames();
             for (auto const& metaVariableName : metaVariableNames) {
                 // First check whether the DD contains the meta variable and erase it, if this is the case.
                 if (!this->containsMetaVariable(metaVariableName)) {
                     throw storm::exceptions::InvalidArgumentException() << "Cannot abstract from meta variable that is not present in the DD.";
                 }
-                this->getContainedMetaVariableNames().erase(metaVariableName);
+                newMetaVariables.erase(metaVariableName);
                 
                 DdMetaVariable<DdType::CUDD> const& metaVariable = this->getDdManager()->getMetaVariable(metaVariableName);
                 cubeDd *= metaVariable.getCube();
             }
             
-            this->cuddAdd = this->cuddAdd.UnivAbstract(cubeDd.getCuddAdd());
+            return Dd<DdType::CUDD>(this->getDdManager(), this->cuddAdd.UnivAbstract(cubeDd.getCuddAdd()), newMetaVariables);
         }
         
-        void Dd<DdType::CUDD>::sumAbstract(std::set<std::string> const& metaVariableNames) {
+        Dd<DdType::CUDD> Dd<DdType::CUDD>::sumAbstract(std::set<std::string> const& metaVariableNames) const {
             Dd<DdType::CUDD> cubeDd(this->getDdManager()->getOne());
             
+            std::set<std::string> newMetaVariables = this->getContainedMetaVariableNames();
             for (auto const& metaVariableName : metaVariableNames) {
                 // First check whether the DD contains the meta variable and erase it, if this is the case.
                 if (!this->containsMetaVariable(metaVariableName)) {
                     throw storm::exceptions::InvalidArgumentException() << "Cannot abstract from meta variable that is not present in the DD.";
                 }
-                this->getContainedMetaVariableNames().erase(metaVariableName);
+                newMetaVariables.erase(metaVariableName);
                 
                 DdMetaVariable<DdType::CUDD> const& metaVariable = this->getDdManager()->getMetaVariable(metaVariableName);
                 cubeDd *= metaVariable.getCube();
             }
             
-            this->cuddAdd = this->cuddAdd.ExistAbstract(cubeDd.getCuddAdd());
+            return Dd<DdType::CUDD>(this->getDdManager(), this->cuddAdd.ExistAbstract(cubeDd.getCuddAdd()), newMetaVariables);
         }
         
-        void Dd<DdType::CUDD>::minAbstract(std::set<std::string> const& metaVariableNames) {
+        Dd<DdType::CUDD> Dd<DdType::CUDD>::minAbstract(std::set<std::string> const& metaVariableNames) const {
             Dd<DdType::CUDD> cubeDd(this->getDdManager()->getOne());
             
+            std::set<std::string> newMetaVariables = this->getContainedMetaVariableNames();
             for (auto const& metaVariableName : metaVariableNames) {
                 // First check whether the DD contains the meta variable and erase it, if this is the case.
                 if (!this->containsMetaVariable(metaVariableName)) {
                     throw storm::exceptions::InvalidArgumentException() << "Cannot abstract from meta variable that is not present in the DD.";
                 }
-                this->getContainedMetaVariableNames().erase(metaVariableName);
+                newMetaVariables.erase(metaVariableName);
                 
                 DdMetaVariable<DdType::CUDD> const& metaVariable = this->getDdManager()->getMetaVariable(metaVariableName);
                 cubeDd *= metaVariable.getCube();
             }
             
-            this->cuddAdd = this->cuddAdd.MinAbstract(cubeDd.getCuddAdd());
+            return Dd<DdType::CUDD>(this->getDdManager(), this->cuddAdd.MinAbstract(cubeDd.getCuddAdd()), newMetaVariables);
         }
         
-        void Dd<DdType::CUDD>::maxAbstract(std::set<std::string> const& metaVariableNames) {
+        Dd<DdType::CUDD> Dd<DdType::CUDD>::maxAbstract(std::set<std::string> const& metaVariableNames) const {
             Dd<DdType::CUDD> cubeDd(this->getDdManager()->getOne());
             
+            std::set<std::string> newMetaVariables = this->getContainedMetaVariableNames();
             for (auto const& metaVariableName : metaVariableNames) {
                 // First check whether the DD contains the meta variable and erase it, if this is the case.
                 if (!this->containsMetaVariable(metaVariableName)) {
                     throw storm::exceptions::InvalidArgumentException() << "Cannot abstract from meta variable that is not present in the DD.";
                 }
-                this->getContainedMetaVariableNames().erase(metaVariableName);
+                newMetaVariables.erase(metaVariableName);
                 
                 DdMetaVariable<DdType::CUDD> const& metaVariable = this->getDdManager()->getMetaVariable(metaVariableName);
                 cubeDd *= metaVariable.getCube();
             }
             
-            this->cuddAdd = this->cuddAdd.MaxAbstract(cubeDd.getCuddAdd());
+            return Dd<DdType::CUDD>(this->getDdManager(), this->cuddAdd.MaxAbstract(cubeDd.getCuddAdd()), newMetaVariables);
         }
         
         bool Dd<DdType::CUDD>::equalModuloPrecision(Dd<DdType::CUDD> const& other, double precision, bool relative) const {
@@ -410,7 +413,7 @@ namespace storm {
             }
             
             Dd<DdType::CUDD> value = *this * valueEncoding;
-            value.sumAbstract(this->getContainedMetaVariableNames());
+            value = value.sumAbstract(this->getContainedMetaVariableNames());
             return static_cast<double>(Cudd_V(value.getCuddAdd().getNode()));
         }
         
@@ -430,18 +433,19 @@ namespace storm {
             return static_cast<uint_fast64_t>(this->getCuddAdd().NodeReadIndex());
         }
         
-        std::vector<double> Dd<DdType::CUDD>::toDoubleVector() const {
-            return this->toDoubleVector(Odd<DdType::CUDD>(*this));
+        std::vector<double> Dd<DdType::CUDD>::toVector() const {
+            return this->toVector(Odd<DdType::CUDD>(*this));
         }
         
-        std::vector<double> Dd<DdType::CUDD>::toDoubleVector(Odd<DdType::CUDD> const& odd) const {
+        std::vector<double> Dd<DdType::CUDD>::toVector(Odd<DdType::CUDD> const& odd) const {
             std::vector<double> result(odd.getTotalOffset());
             std::vector<uint_fast64_t> ddVariableIndices = this->getSortedVariableIndices();
-            toDoubleVectorRec(this->getCuddAdd().getNode(), result, odd, 0, ddVariableIndices.size(), 0, ddVariableIndices);
+            toVectorRec(this->getCuddAdd().getNode(), result, odd, 0, ddVariableIndices.size(), 0, ddVariableIndices);
             return result;
         }
         
-        void Dd<DdType::CUDD>::toDoubleVectorRec(DdNode const* dd, std::vector<double>& result, Odd<DdType::CUDD> const& odd, uint_fast64_t currentLevel, uint_fast64_t maxLevel, uint_fast64_t currentOffset, std::vector<uint_fast64_t> const& ddVariableIndices) const {
+        void Dd<DdType::CUDD>::toVectorRec(DdNode const* dd, std::vector<double>& result, Odd<DdType::CUDD> const& odd, uint_fast64_t currentLevel, uint_fast64_t maxLevel, uint_fast64_t currentOffset, std::vector<uint_fast64_t> const& ddVariableIndices) const {
+            // For the empty DD, we do not need to add any entries.
             if (dd == this->getDdManager()->getZero().getCuddAdd().getNode()) {
                 return;
             }
@@ -452,12 +456,92 @@ namespace storm {
             } else if (ddVariableIndices[currentLevel] < dd->index) {
                 // If we skipped a level, we need to enumerate the explicit entries for the case in which the bit is set
                 // and for the one in which it is not set.
-                toDoubleVectorRec(dd, result, odd.getElseSuccessor(), currentLevel + 1, maxLevel, currentOffset, ddVariableIndices);
-                toDoubleVectorRec(dd, result, odd.getThenSuccessor(), currentLevel + 1, maxLevel, currentOffset + odd.getElseOffset(), ddVariableIndices);
+                toVectorRec(dd, result, odd.getElseSuccessor(), currentLevel + 1, maxLevel, currentOffset, ddVariableIndices);
+                toVectorRec(dd, result, odd.getThenSuccessor(), currentLevel + 1, maxLevel, currentOffset + odd.getElseOffset(), ddVariableIndices);
             } else {
                 // Otherwise, we simply recursively call the function for both (different) cases.
-                toDoubleVectorRec(Cudd_E(dd), result, odd.getElseSuccessor(), currentLevel + 1, maxLevel, currentOffset, ddVariableIndices);
-                toDoubleVectorRec(Cudd_T(dd), result, odd.getThenSuccessor(), currentLevel + 1, maxLevel, currentOffset + odd.getElseOffset(), ddVariableIndices);
+                toVectorRec(Cudd_E(dd), result, odd.getElseSuccessor(), currentLevel + 1, maxLevel, currentOffset, ddVariableIndices);
+                toVectorRec(Cudd_T(dd), result, odd.getThenSuccessor(), currentLevel + 1, maxLevel, currentOffset + odd.getElseOffset(), ddVariableIndices);
+            }
+        }
+        
+        storm::storage::SparseMatrix<double> Dd<DdType::CUDD>::toMatrix() const {
+            std::set<std::string> rowVariables;
+            std::set<std::string> columnVariables;
+            std::vector<uint_fast64_t> ddRowVariableIndices;
+            std::vector<uint_fast64_t> ddColumnVariableIndices;
+
+            for (auto const& variableName : this->getContainedMetaVariableNames()) {
+                DdMetaVariable<DdType::CUDD> const& metaVariable = this->getDdManager()->getMetaVariable(variableName);
+                if (variableName.size() > 0 && variableName.back() == '\'') {
+                    columnVariables.insert(variableName);
+                    for (auto const& ddVariable : metaVariable.getDdVariables()) {
+                        ddColumnVariableIndices.push_back(ddVariable.getIndex());
+                    }
+                } else {
+                    rowVariables.insert(variableName);
+                    for (auto const& ddVariable : metaVariable.getDdVariables()) {
+                        ddRowVariableIndices.push_back(ddVariable.getIndex());
+                    }
+                }
+            }
+            
+            Odd<DdType::CUDD> columnOdd(this->existsAbstract(rowVariables));
+            Odd<DdType::CUDD> rowOdd(this->existsAbstract(columnVariables));
+            
+            storm::storage::SparseMatrixBuilder<double> builder;
+            toMatrixRec(this->getCuddAdd().getNode(), builder, rowOdd, columnOdd, 0, 0, ddRowVariableIndices.size() + ddColumnVariableIndices.size(), 0, 0, ddRowVariableIndices, ddColumnVariableIndices);
+            return builder.build();
+        }
+        
+        void Dd<DdType::CUDD>::toMatrixRec(DdNode const* dd, storm::storage::SparseMatrixBuilder<double>& builder, Odd<DdType::CUDD> const& rowOdd, Odd<DdType::CUDD> const& columnOdd, uint_fast64_t currentRowLevel, uint_fast64_t currentColumnLevel, uint_fast64_t maxLevel, uint_fast64_t currentRowOffset, uint_fast64_t currentColumnOffset, std::vector<uint_fast64_t> const& ddRowVariableIndices, std::vector<uint_fast64_t> const& ddColumnVariableIndices) const {
+            // FIXME: this method currently assumes a strict interleaved order, which does not seem necessary.
+            
+            // For the empty DD, we do not need to add any entries.
+            if (dd == this->getDdManager()->getZero().getCuddAdd().getNode()) {
+                return;
+            }
+
+            // If we are at the maximal level, the value to be set is stored as a constant in the DD.
+            if (currentRowLevel + currentColumnLevel == maxLevel) {
+                builder.addNextValue(currentRowOffset, currentColumnOffset, Cudd_V(dd));
+            } else {
+                DdNode const* elseElse;
+                DdNode const* elseThen;
+                DdNode const* thenElse;
+                DdNode const* thenThen;
+                
+                if (ddColumnVariableIndices[currentColumnLevel] < dd->index) {
+                    elseElse = elseThen = thenElse = thenThen = dd;
+                } else if (ddRowVariableIndices[currentColumnLevel] < dd->index) {
+                    elseElse = thenElse = Cudd_E(dd);
+                    elseThen = thenThen = Cudd_T(dd);
+                } else {
+                    DdNode const* elseNode = Cudd_E(dd);
+                    if (ddColumnVariableIndices[currentColumnLevel] < elseNode->index) {
+                        elseElse = elseThen = elseNode;
+                    } else {
+                        elseElse = Cudd_E(elseNode);
+                        elseThen = Cudd_T(elseNode);
+                    }
+
+                    DdNode const* thenNode = Cudd_T(dd);
+                    if (ddColumnVariableIndices[currentColumnLevel] < thenNode->index) {
+                        thenElse = thenThen = thenNode;
+                    } else {
+                        thenElse = Cudd_E(thenNode);
+                        thenThen = Cudd_T(thenNode);
+                    }
+                }
+                
+                // Visit else-else.
+                toMatrixRec(elseElse, builder, rowOdd.getElseSuccessor(), columnOdd.getElseSuccessor(), currentRowLevel + 1, currentColumnLevel + 1, maxLevel, currentRowOffset, currentColumnOffset, ddRowVariableIndices, ddColumnVariableIndices);
+                // Visit else-then.
+                toMatrixRec(elseThen, builder, rowOdd.getElseSuccessor(), columnOdd.getThenSuccessor(), currentRowLevel + 1, currentColumnLevel + 1, maxLevel, currentRowOffset, currentColumnOffset + columnOdd.getElseOffset(), ddRowVariableIndices, ddColumnVariableIndices);
+                // Visit then-else.
+                toMatrixRec(thenElse, builder, rowOdd.getThenSuccessor(), columnOdd.getElseSuccessor(), currentRowLevel + 1, currentColumnLevel + 1, maxLevel, currentRowOffset + rowOdd.getElseOffset(), currentColumnOffset, ddRowVariableIndices, ddColumnVariableIndices);
+                // Visit then-then.
+                toMatrixRec(thenThen, builder, rowOdd.getThenSuccessor(), columnOdd.getThenSuccessor(), currentRowLevel + 1, currentColumnLevel + 1, maxLevel, currentRowOffset + rowOdd.getElseOffset(), currentColumnOffset + columnOdd.getElseOffset(), ddRowVariableIndices, ddColumnVariableIndices);
             }
         }
         

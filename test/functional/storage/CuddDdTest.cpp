@@ -163,12 +163,12 @@ TEST(CuddDd, OperatorTest) {
     
     dd4 = dd3.minimum(dd1);
     dd4 *= manager->getEncoding("x", 2);
-    dd4.sumAbstract({"x"});
+    dd4 = dd4.sumAbstract({"x"});
     EXPECT_EQ(2, dd4.getValue());
 
     dd4 = dd3.maximum(dd1);
     dd4 *= manager->getEncoding("x", 2);
-    dd4.sumAbstract({"x"});
+    dd4 = dd4.sumAbstract({"x"});
     EXPECT_EQ(5, dd4.getValue());
 
     dd1 = manager->getConstant(0.01);
@@ -188,36 +188,36 @@ TEST(CuddDd, AbstractionTest) {
     dd2 = manager->getConstant(5);
     dd3 = dd1.equals(dd2);
     EXPECT_EQ(1, dd3.getNonZeroCount());
-    ASSERT_THROW(dd3.existsAbstract({"x'"}), storm::exceptions::InvalidArgumentException);
-    ASSERT_NO_THROW(dd3.existsAbstract({"x"}));
+    ASSERT_THROW(dd3 = dd3.existsAbstract({"x'"}), storm::exceptions::InvalidArgumentException);
+    ASSERT_NO_THROW(dd3 = dd3.existsAbstract({"x"}));
     EXPECT_EQ(1, dd3.getNonZeroCount());
     EXPECT_EQ(1, dd3.getMax());
 
     dd3 = dd1.equals(dd2);
     dd3 *= manager->getConstant(3);
     EXPECT_EQ(1, dd3.getNonZeroCount());
-    ASSERT_THROW(dd3.existsAbstract({"x'"}), storm::exceptions::InvalidArgumentException);
-    ASSERT_NO_THROW(dd3.existsAbstract({"x"}));
+    ASSERT_THROW(dd3 = dd3.existsAbstract({"x'"}), storm::exceptions::InvalidArgumentException);
+    ASSERT_NO_THROW(dd3 = dd3.existsAbstract({"x"}));
     EXPECT_TRUE(dd3 == manager->getZero());
 
     dd3 = dd1.equals(dd2);
     dd3 *= manager->getConstant(3);
-    ASSERT_THROW(dd3.sumAbstract({"x'"}), storm::exceptions::InvalidArgumentException);
-    ASSERT_NO_THROW(dd3.sumAbstract({"x"}));
+    ASSERT_THROW(dd3 = dd3.sumAbstract({"x'"}), storm::exceptions::InvalidArgumentException);
+    ASSERT_NO_THROW(dd3 = dd3.sumAbstract({"x"}));
     EXPECT_EQ(1, dd3.getNonZeroCount());
     EXPECT_EQ(3, dd3.getMax());
 
     dd3 = dd1.equals(dd2);
     dd3 *= manager->getConstant(3);
-    ASSERT_THROW(dd3.minAbstract({"x'"}), storm::exceptions::InvalidArgumentException);
-    ASSERT_NO_THROW(dd3.minAbstract({"x"}));
+    ASSERT_THROW(dd3 = dd3.minAbstract({"x'"}), storm::exceptions::InvalidArgumentException);
+    ASSERT_NO_THROW(dd3 = dd3.minAbstract({"x"}));
     EXPECT_EQ(0, dd3.getNonZeroCount());
     EXPECT_EQ(0, dd3.getMax());
 
     dd3 = dd1.equals(dd2);
     dd3 *= manager->getConstant(3);
-    ASSERT_THROW(dd3.maxAbstract({"x'"}), storm::exceptions::InvalidArgumentException);
-    ASSERT_NO_THROW(dd3.maxAbstract({"x"}));
+    ASSERT_THROW(dd3 = dd3.maxAbstract({"x'"}), storm::exceptions::InvalidArgumentException);
+    ASSERT_NO_THROW(dd3 = dd3.maxAbstract({"x"}));
     EXPECT_EQ(1, dd3.getNonZeroCount());
     EXPECT_EQ(3, dd3.getMax());
 }
@@ -389,9 +389,16 @@ TEST(CuddDd, OddTest) {
     EXPECT_EQ(12, odd.getNodeCount());
 
     std::vector<double> ddAsVector;
-    ASSERT_NO_THROW(ddAsVector = dd.toDoubleVector());
+    ASSERT_NO_THROW(ddAsVector = dd.toVector());
     EXPECT_EQ(9, ddAsVector.size());
     for (uint_fast64_t i = 0; i < ddAsVector.size(); ++i) {
         EXPECT_TRUE(i+1 == ddAsVector[i]);
     }
+    
+    dd = manager->getIdentity("x").equals(manager->getIdentity("x'")) * manager->getRange("x");
+    storm::storage::SparseMatrix<double> matrix;
+    ASSERT_NO_THROW(matrix = dd.toMatrix());
+    EXPECT_EQ(9, matrix.getRowCount());
+    EXPECT_EQ(9, matrix.getColumnCount());
+    EXPECT_EQ(9, matrix.getNonzeroEntryCount());
 }
