@@ -80,6 +80,14 @@ namespace storm {
              */
             uint_fast64_t getTotalOffset() const;
             
+            /*!
+             * Retrieves the size of the ODD. Note: the size is computed by a traversal, so this may be costlier than
+             * expected.
+             *
+             * @return The size (in nodes) of this ODD.
+             */
+            uint_fast64_t getNodeCount() const;
+            
         private:
             /*!
              * Constructs an offset-labeled DD with the given topmost DD node, else- and then-successor.

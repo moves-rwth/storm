@@ -10,7 +10,7 @@ namespace storm {
             }
         }
         
-        DdMetaVariable<DdType::CUDD>::DdMetaVariable(std::string const& name, std::vector<Dd<DdType::CUDD>> const& ddVariables, std::shared_ptr<DdManager<DdType::CUDD>> manager) : name(name), type(MetaVariableType::Bool), ddVariables(ddVariables), cube(manager->getOne()), manager(manager) {
+        DdMetaVariable<DdType::CUDD>::DdMetaVariable(std::string const& name, std::vector<Dd<DdType::CUDD>> const& ddVariables, std::shared_ptr<DdManager<DdType::CUDD>> manager) : name(name), type(MetaVariableType::Bool), low(0), high(1), ddVariables(ddVariables), cube(manager->getOne()), manager(manager) {
             // Create the cube of all variables of this meta variable.
             for (auto const& ddVariable : this->ddVariables) {
                 this->cube *= ddVariable;

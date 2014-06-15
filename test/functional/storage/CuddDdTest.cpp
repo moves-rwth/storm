@@ -386,6 +386,8 @@ TEST(CuddDd, OddTest) {
     storm::dd::Odd<storm::dd::DdType::CUDD> odd;
     ASSERT_NO_THROW(odd = storm::dd::Odd<storm::dd::DdType::CUDD>(dd));
     EXPECT_EQ(9, odd.getTotalOffset());
+    EXPECT_EQ(12, odd.getNodeCount());
+
     std::vector<double> ddAsVector;
     ASSERT_NO_THROW(ddAsVector = dd.toDoubleVector());
     EXPECT_EQ(9, ddAsVector.size());

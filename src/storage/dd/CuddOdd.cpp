@@ -59,6 +59,20 @@ namespace storm {
             return this->elseOffset + this->thenOffset;
         }
         
+        uint_fast64_t Odd<DdType::CUDD>::getNodeCount() const {
+            // If the ODD contains a constant (and thus has no children), the size is 1.
+            if (this->elseNode == nullptr && this->thenNode == nullptr) {
+                return 1;
+            }
+            
+            // If the two successors are actually the same, we need to count the subnodes only once.
+            if (this->elseNode == this->thenNode) {
+                return this->elseNode->getNodeCount();
+            } else {
+                return this->elseNode->getNodeCount() + this->thenNode->getNodeCount();
+            }
+        }
+        
         std::shared_ptr<Odd<DdType::CUDD>> Odd<DdType::CUDD>::buildOddRec(DdNode* dd, Cudd const& manager, uint_fast64_t currentLevel, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<std::map<DdNode*, std::shared_ptr<Odd<DdType::CUDD>>>>& uniqueTableForLevels) {
             // Check whether the ODD for this node has already been computed (for this level) and if so, return this instead.
             auto const& iterator = uniqueTableForLevels[currentLevel].find(dd);
