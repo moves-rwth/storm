@@ -300,9 +300,9 @@ namespace storm {
         
         storm::expressions::Expression ExpressionParser::createTrueExpression() const {
             if (this->createExpressions) {
-                return storm::expressions::Expression::createFalse();
-            } else {
                 return storm::expressions::Expression::createTrue();
+            } else {
+                return storm::expressions::Expression::createFalse();
             }
         }
         
