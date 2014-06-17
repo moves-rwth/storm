@@ -396,9 +396,10 @@ TEST(CuddDd, OddTest) {
     }
     
     dd = manager->getIdentity("x").equals(manager->getIdentity("x'")) * manager->getRange("x");
+    dd += manager->getEncoding("x", 1) * manager->getRange("x'") + manager->getEncoding("x'", 1) * manager->getRange("x");
     storm::storage::SparseMatrix<double> matrix;
     ASSERT_NO_THROW(matrix = dd.toMatrix());
     EXPECT_EQ(9, matrix.getRowCount());
     EXPECT_EQ(9, matrix.getColumnCount());
-    EXPECT_EQ(9, matrix.getNonzeroEntryCount());
+    EXPECT_EQ(25, matrix.getNonzeroEntryCount());
 }

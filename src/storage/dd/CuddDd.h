@@ -636,7 +636,13 @@ namespace storm {
              * Helper function to convert the DD into a (sparse) matrix.
              *
              * @param dd The DD to convert.
-             * @param builder A matrix builder that can be used to insert the nonzero entries.
+             * @param rowIndications A vector indicating at which position in the columnsAndValues vector the entries
+             * of row i start. Note: this vector is modified in the computation. More concretely, each entry i in the
+             * vector will be increased by the number of entries in the row. This can be used to count the number
+             * of entries in each row. If the values are not to be modified, a copy needs to be provided or the entries
+             * need to be restored afterwards.
+             * @param columnsAndValues The vector that will hold the columns and values of non-zero entries upon successful
+             * completion.
              * @param rowOdd The ODD used for the row translation.
              * @param columnOdd The ODD used for the column translation.
              * @param currentRowLevel The currently considered row level in the DD.
@@ -646,8 +652,11 @@ namespace storm {
              * @param currentColumnOffset The current row offset.
              * @param ddRowVariableIndices The (sorted) indices of all DD row variables that need to be considered.
              * @param ddColumnVariableIndices The (sorted) indices of all DD row variables that need to be considered.
+             * @param generateValues If set to true, the vector columnsAndValues is filled with the actual entries, which
+             * only works if the offsets given in rowIndications are already correct. If they need to be computed first,
+             * this flag needs to be false.
              */
-            void toMatrixRec(DdNode const* dd, storm::storage::SparseMatrixBuilder<double>& builder, Odd<DdType::CUDD> const& rowOdd, Odd<DdType::CUDD> const& columnOdd, uint_fast64_t currentRowLevel, uint_fast64_t currentColumnLevel, uint_fast64_t maxLevel, uint_fast64_t currentRowOffset, uint_fast64_t currentColumnOffset, std::vector<uint_fast64_t> const& ddRowVariableIndices, std::vector<uint_fast64_t> const& ddColumnVariableIndices) const;
+            void toMatrixRec(DdNode const* dd, std::vector<uint_fast64_t>& rowIndications, std::vector<storm::storage::MatrixEntry<double>>& columnsAndValues, Odd<DdType::CUDD> const& rowOdd, Odd<DdType::CUDD> const& columnOdd, uint_fast64_t currentRowLevel, uint_fast64_t currentColumnLevel, uint_fast64_t maxLevel, uint_fast64_t currentRowOffset, uint_fast64_t currentColumnOffset, std::vector<uint_fast64_t> const& ddRowVariableIndices, std::vector<uint_fast64_t> const& ddColumnVariableIndices, bool generateValues = true) const;
             
             /*!
              * Retrieves the indices of all DD variables that are contained in this DD (not necessarily in the support,

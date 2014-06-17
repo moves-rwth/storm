@@ -489,12 +489,46 @@ namespace storm {
             Odd<DdType::CUDD> columnOdd(this->existsAbstract(rowVariables));
             Odd<DdType::CUDD> rowOdd(this->existsAbstract(columnVariables));
             
-            storm::storage::SparseMatrixBuilder<double> builder;
-            toMatrixRec(this->getCuddAdd().getNode(), builder, rowOdd, columnOdd, 0, 0, ddRowVariableIndices.size() + ddColumnVariableIndices.size(), 0, 0, ddRowVariableIndices, ddColumnVariableIndices);
-            return builder.build();
+            // Prepare the vectors that represent the matrix.
+            std::vector<uint_fast64_t> rowIndications(rowOdd.getTotalOffset() + 1);
+            std::vector<storm::storage::MatrixEntry<double>> columnsAndValues(this->getNonZeroCount());
+            
+            // Use the toMatrixRec function to compute the number of elements in each row. Using the flag, we prevent
+            // it from actually generating the entries in the entry vector.
+            toMatrixRec(this->getCuddAdd().getNode(), rowIndications, columnsAndValues, rowOdd, columnOdd, 0, 0, ddRowVariableIndices.size() + ddColumnVariableIndices.size(), 0, 0, ddRowVariableIndices, ddColumnVariableIndices, false);
+
+            // Now that we computed the number of entries in each row, compute the corresponding offsets in the entry vector.
+            uint_fast64_t tmp = 0;
+            uint_fast64_t tmp2 = 0;
+            for (uint_fast64_t i = 1; i < rowIndications.size(); ++i) {
+                tmp2 = rowIndications[i];
+                rowIndications[i] = rowIndications[i - 1] + tmp;
+                std::swap(tmp, tmp2);
+            }
+            rowIndications[0] = 0;
+            
+            // Now actually fill the entry vector.
+            toMatrixRec(this->getCuddAdd().getNode(), rowIndications, columnsAndValues, rowOdd, columnOdd, 0, 0, ddRowVariableIndices.size() + ddColumnVariableIndices.size(), 0, 0, ddRowVariableIndices, ddColumnVariableIndices, true);
+            
+            // Since the last call to toMatrixRec modified the rowIndications, we need to restore the correct values.
+            for (uint_fast64_t i = rowIndications.size() - 1; i > 0; --i) {
+                rowIndications[i] = rowIndications[i - 1];
+            }
+            rowIndications[0] = 0;
+            
+            // Create a trivial row grouping.
+            std::vector<uint_fast64_t> trivialRowGroupIndices(rowIndications.size());
+            uint_fast64_t i = 0;
+            for (auto& entry : trivialRowGroupIndices) {
+                entry = i;
+                ++i;
+            }
+            
+            // Construct matrix and return result.
+            return storm::storage::SparseMatrix<double>(columnOdd.getTotalOffset(), std::move(rowIndications), std::move(columnsAndValues), std::move(trivialRowGroupIndices));
         }
         
-        void Dd<DdType::CUDD>::toMatrixRec(DdNode const* dd, storm::storage::SparseMatrixBuilder<double>& builder, Odd<DdType::CUDD> const& rowOdd, Odd<DdType::CUDD> const& columnOdd, uint_fast64_t currentRowLevel, uint_fast64_t currentColumnLevel, uint_fast64_t maxLevel, uint_fast64_t currentRowOffset, uint_fast64_t currentColumnOffset, std::vector<uint_fast64_t> const& ddRowVariableIndices, std::vector<uint_fast64_t> const& ddColumnVariableIndices) const {
+        void Dd<DdType::CUDD>::toMatrixRec(DdNode const* dd, std::vector<uint_fast64_t>& rowIndications, std::vector<storm::storage::MatrixEntry<double>>& columnsAndValues, Odd<DdType::CUDD> const& rowOdd, Odd<DdType::CUDD> const& columnOdd, uint_fast64_t currentRowLevel, uint_fast64_t currentColumnLevel, uint_fast64_t maxLevel, uint_fast64_t currentRowOffset, uint_fast64_t currentColumnOffset, std::vector<uint_fast64_t> const& ddRowVariableIndices, std::vector<uint_fast64_t> const& ddColumnVariableIndices, bool generateValues) const {
             // FIXME: this method currently assumes a strict interleaved order, which does not seem necessary.
             
             // For the empty DD, we do not need to add any entries.
@@ -504,7 +538,10 @@ namespace storm {
 
             // If we are at the maximal level, the value to be set is stored as a constant in the DD.
             if (currentRowLevel + currentColumnLevel == maxLevel) {
-                builder.addNextValue(currentRowOffset, currentColumnOffset, Cudd_V(dd));
+                if (generateValues) {
+                    columnsAndValues[rowIndications[currentRowOffset]] = storm::storage::MatrixEntry<double>(currentColumnOffset, Cudd_V(dd));
+                }
+                ++rowIndications[currentRowOffset];
             } else {
                 DdNode const* elseElse;
                 DdNode const* elseThen;
@@ -535,13 +572,13 @@ namespace storm {
                 }
                 
                 // Visit else-else.
-                toMatrixRec(elseElse, builder, rowOdd.getElseSuccessor(), columnOdd.getElseSuccessor(), currentRowLevel + 1, currentColumnLevel + 1, maxLevel, currentRowOffset, currentColumnOffset, ddRowVariableIndices, ddColumnVariableIndices);
+                toMatrixRec(elseElse, rowIndications, columnsAndValues, rowOdd.getElseSuccessor(), columnOdd.getElseSuccessor(), currentRowLevel + 1, currentColumnLevel + 1, maxLevel, currentRowOffset, currentColumnOffset, ddRowVariableIndices, ddColumnVariableIndices, generateValues);
                 // Visit else-then.
-                toMatrixRec(elseThen, builder, rowOdd.getElseSuccessor(), columnOdd.getThenSuccessor(), currentRowLevel + 1, currentColumnLevel + 1, maxLevel, currentRowOffset, currentColumnOffset + columnOdd.getElseOffset(), ddRowVariableIndices, ddColumnVariableIndices);
+                toMatrixRec(elseThen, rowIndications, columnsAndValues, rowOdd.getElseSuccessor(), columnOdd.getThenSuccessor(), currentRowLevel + 1, currentColumnLevel + 1, maxLevel, currentRowOffset, currentColumnOffset + columnOdd.getElseOffset(), ddRowVariableIndices, ddColumnVariableIndices, generateValues);
                 // Visit then-else.
-                toMatrixRec(thenElse, builder, rowOdd.getThenSuccessor(), columnOdd.getElseSuccessor(), currentRowLevel + 1, currentColumnLevel + 1, maxLevel, currentRowOffset + rowOdd.getElseOffset(), currentColumnOffset, ddRowVariableIndices, ddColumnVariableIndices);
+                toMatrixRec(thenElse, rowIndications, columnsAndValues, rowOdd.getThenSuccessor(), columnOdd.getElseSuccessor(), currentRowLevel + 1, currentColumnLevel + 1, maxLevel, currentRowOffset + rowOdd.getElseOffset(), currentColumnOffset, ddRowVariableIndices, ddColumnVariableIndices, generateValues);
                 // Visit then-then.
-                toMatrixRec(thenThen, builder, rowOdd.getThenSuccessor(), columnOdd.getThenSuccessor(), currentRowLevel + 1, currentColumnLevel + 1, maxLevel, currentRowOffset + rowOdd.getElseOffset(), currentColumnOffset + columnOdd.getElseOffset(), ddRowVariableIndices, ddColumnVariableIndices);
+                toMatrixRec(thenThen, rowIndications, columnsAndValues, rowOdd.getThenSuccessor(), columnOdd.getThenSuccessor(), currentRowLevel + 1, currentColumnLevel + 1, maxLevel, currentRowOffset + rowOdd.getElseOffset(), currentColumnOffset + columnOdd.getElseOffset(), ddRowVariableIndices, ddColumnVariableIndices, generateValues);
             }
         }
         
