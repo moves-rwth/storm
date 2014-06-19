@@ -380,6 +380,7 @@ TEST(CuddDd, ToExpressionTest) {
 
 TEST(CuddDd, OddTest) {
     std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::CUDD>> manager(new storm::dd::DdManager<storm::dd::DdType::CUDD>());
+    manager->addMetaVariable("a");
     manager->addMetaVariable("x", 1, 9);
     
     storm::dd::Dd<storm::dd::DdType::CUDD> dd = manager->getIdentity("x");
@@ -389,17 +390,34 @@ TEST(CuddDd, OddTest) {
     EXPECT_EQ(12, odd.getNodeCount());
 
     std::vector<double> ddAsVector;
-    ASSERT_NO_THROW(ddAsVector = dd.toVector());
+    ASSERT_NO_THROW(ddAsVector = dd.toVector<double>());
     EXPECT_EQ(9, ddAsVector.size());
     for (uint_fast64_t i = 0; i < ddAsVector.size(); ++i) {
         EXPECT_TRUE(i+1 == ddAsVector[i]);
     }
     
+    // Create a non-trivial matrix.
     dd = manager->getIdentity("x").equals(manager->getIdentity("x'")) * manager->getRange("x");
     dd += manager->getEncoding("x", 1) * manager->getRange("x'") + manager->getEncoding("x'", 1) * manager->getRange("x");
+    
+    // Create the ODDs.
+    storm::dd::Odd<storm::dd::DdType::CUDD> rowOdd;
+    ASSERT_NO_THROW(rowOdd = storm::dd::Odd<storm::dd::DdType::CUDD>(manager->getRange("x")));
+    storm::dd::Odd<storm::dd::DdType::CUDD> columnOdd;
+    ASSERT_NO_THROW(columnOdd = storm::dd::Odd<storm::dd::DdType::CUDD>(manager->getRange("x'")));
+    
+    // Try to translate the matrix.
     storm::storage::SparseMatrix<double> matrix;
-    ASSERT_NO_THROW(matrix = dd.toMatrix());
+    ASSERT_NO_THROW(matrix = dd.toMatrix({"x"}, {"x'"}, rowOdd, columnOdd));
+    
     EXPECT_EQ(9, matrix.getRowCount());
     EXPECT_EQ(9, matrix.getColumnCount());
     EXPECT_EQ(25, matrix.getNonzeroEntryCount());
+    
+    dd = manager->getRange("x") * manager->getRange("x'") * manager->getEncoding("a", 0).ite(dd, dd + manager->getConstant(1));
+    ASSERT_NO_THROW(matrix = dd.toMatrix({"x"}, {"x'"}, {"a"}, rowOdd, columnOdd));
+    EXPECT_EQ(18, matrix.getRowCount());
+    EXPECT_EQ(9, matrix.getRowGroupCount());
+    EXPECT_EQ(9, matrix.getColumnCount());
+    EXPECT_EQ(106, matrix.getNonzeroEntryCount());
 }
