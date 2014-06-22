@@ -11,7 +11,11 @@
 
 // The action class headers.
 #include "src/formula/Actions/AbstractAction.h"
+#include "src/formula/Actions/BoundAction.h"
+#include "src/formula/Actions/InvertAction.h"
+#include "src/formula/Actions/FormulaAction.h"
 #include "src/formula/Actions/RangeAction.h"
+#include "src/formula/Actions/SortAction.h"
 
 // If the parser fails due to ill-formed data, this exception is thrown.
 #include "src/exceptions/WrongFormatException.h"
@@ -50,6 +54,10 @@ struct CslParser::CslGrammar : qi::grammar<Iterator, storm::property::csl::CslFi
 				(qi::lit(">"))[qi::_val = storm::property::GREATER] |
 				(qi::lit("<="))[qi::_val = storm::property::LESS_EQUAL] |
 				(qi::lit("<"))[qi::_val = storm::property::LESS]);
+		sortingCategory = (
+				(qi::lit("index"))[qi::_val = storm::property::action::SortAction<double>::INDEX] |
+				(qi::lit("value"))[qi::_val = storm::property::action::SortAction<double>::VALUE]
+				);
 		//Comment: Empty line or line starting with "//"
 		comment = (qi::lit("//") >> *(qi::char_))[qi::_val = nullptr];
 
@@ -136,11 +144,37 @@ struct CslParser::CslGrammar : qi::grammar<Iterator, storm::property::csl::CslFi
 				phoenix::new_<storm::property::csl::CslFilter<double>>(qi::_1, storm::property::UNDEFINED, true)];
 		steadyStateNoBoundOperator.name("steady state no bound operator");
 
-		rangeAction = (qi::lit("range") >> qi::lit(",") >> qi::uint_ >> qi::lit(",") >> qi::uint_)[qi::_val =
-				phoenix::new_<storm::property::action::RangeAction<double>>(qi::_1, qi::_2)];
-		rangeAction.name("range action for the formula filter");
+		// This block defines rules for parsing filter actions.
+		boundAction = (qi::lit("bound") > qi::lit("(") >> comparisonType >> qi::lit(",") >> qi::double_ >> qi::lit(")"))[qi::_val =
+				        phoenix::new_<storm::property::action::BoundAction<double>>(qi::_1, qi::_2)];
+		boundAction.name("bound action");
 
-		abstractAction = (rangeAction) >> (qi::eps | qi::lit(","));
+		invertAction = qi::lit("invert")[qi::_val = phoenix::new_<storm::property::action::InvertAction<double>>()];
+		invertAction.name("invert action");
+
+		formulaAction = (qi::lit("formula") > qi::lit("(") >> stateFormula >> qi::lit(")"))[qi::_val =
+						phoenix::new_<storm::property::action::FormulaAction<double>>(qi::_1)];
+		formulaAction.name("formula action");
+
+		rangeAction = (
+				(qi::lit("range") >> qi::lit("(") >> qi::uint_ >> qi::lit(",") > qi::uint_ >> qi::lit(")"))[qi::_val =
+						phoenix::new_<storm::property::action::RangeAction<double>>(qi::_1, qi::_2)] |
+				(qi::lit("range") >> qi::lit("(") >> qi::uint_ >> qi::lit(")"))[qi::_val =
+						phoenix::new_<storm::property::action::RangeAction<double>>(qi::_1, qi::_1 + 1)]
+				);
+		rangeAction.name("range action");
+
+		sortAction = (
+				(qi::lit("sort") > qi::lit("(") >> sortingCategory >> qi::lit(")"))[qi::_val =
+						phoenix::new_<storm::property::action::SortAction<double>>(qi::_1)] |
+				(qi::lit("sort") > qi::lit("(") >> sortingCategory >> qi::lit(", ") >> qi::lit("asc") > qi::lit(")"))[qi::_val =
+						phoenix::new_<storm::property::action::SortAction<double>>(qi::_1, true)] |
+				(qi::lit("sort") > qi::lit("(") >> sortingCategory >> qi::lit(", ") >> qi::lit("desc") > qi::lit(")"))[qi::_val =
+						phoenix::new_<storm::property::action::SortAction<double>>(qi::_1, false)]
+				);
+		sortAction.name("sort action");
+
+		abstractAction = (rangeAction) >> (qi::eps | qi::lit(";"));
 		abstractAction.name("filter action");
 
 		filter = (qi::lit("filter") >> qi::lit("[") >> +abstractAction >> qi::lit("]") >> qi::lit("(") >> formula >> qi::lit(")"))[qi::_val =
@@ -165,7 +199,11 @@ struct CslParser::CslGrammar : qi::grammar<Iterator, storm::property::csl::CslFi
 	qi::rule<Iterator, storm::property::csl::CslFilter<double>*(), Skipper> steadyStateNoBoundOperator;
 
 	qi::rule<Iterator, storm::property::action::AbstractAction<double>*(), Skipper> abstractAction;
+	qi::rule<Iterator, storm::property::action::BoundAction<double>*(), Skipper> boundAction;
+	qi::rule<Iterator, storm::property::action::InvertAction<double>*(), Skipper> invertAction;
+	qi::rule<Iterator, storm::property::action::FormulaAction<double>*(), Skipper> formulaAction;
 	qi::rule<Iterator, storm::property::action::RangeAction<double>*(), Skipper> rangeAction;
+	qi::rule<Iterator, storm::property::action::SortAction<double>*(), Skipper> sortAction;
 
 	qi::rule<Iterator, storm::property::csl::AbstractCslFormula<double>*(), Skipper> formula;
 	qi::rule<Iterator, storm::property::csl::AbstractCslFormula<double>*(), Skipper> comment;
@@ -191,6 +229,7 @@ struct CslParser::CslGrammar : qi::grammar<Iterator, storm::property::csl::CslFi
 
 	qi::rule<Iterator, std::string(), Skipper> freeIdentifierName;
 	qi::rule<Iterator, storm::property::ComparisonType(), Skipper> comparisonType;
+	qi::rule<Iterator, storm::property::action::SortAction<double>::SortingCategory(), Skipper> sortingCategory;
 
 };
 

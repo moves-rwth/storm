@@ -122,24 +122,6 @@ public:
 		}
 	}
 
-	bool validate() const {
-		// Test whether the stored filter actions are consistent in relation to themselves and to the ingoing modelchecking result.
-
-		// Do a dynamic cast to test for the actual formula type.
-		if(dynamic_cast<AbstractStateFormula<T>*>(child) != nullptr) {
-			//TODO: Actual validation.
-		}
-		else if (dynamic_cast<AbstractPathFormula<T>*>(child) != nullptr) {
-			//TODO: Actual validation.
-		}
-		else {
-			// This branch should be unreachable. If you ended up here, something strange has happened.
-			//TODO: Error here.
-		}
-
-		return true;
-	}
-
 	virtual std::string toString() const override {
 		std::string desc = "";
 

@@ -9,6 +9,7 @@
 #define STORM_FORMULA_ABSTRACTFILTER_H_
 
 #include <vector>
+#include <string>
 #include "src/formula/AbstractFormula.h"
 #include "src/formula/Actions/AbstractAction.h"
 
