@@ -9,6 +9,7 @@
 #define STORM_PARSER_LTLPARSER_H_
 
 #include "src/formula/Ltl.h"
+#include "src/formula/Ltl/LtlFilter.h"
 
 namespace storm {
 namespace parser {
@@ -22,7 +23,7 @@ namespace parser {
 	* @param formulaString The string representation of the formula
 	* @throw wrongFormatException If the input could not be parsed successfully
 	*/
-storm::property::ltl::AbstractLtlFormula<double>* LtlParser(std::string formulaString);
+storm::property::ltl::LtlFilter<double>* LtlParser(std::string formulaString);
 
 /*!
  * Struct for the Ltl grammar, that Boost::Spirit uses to parse the formulas.

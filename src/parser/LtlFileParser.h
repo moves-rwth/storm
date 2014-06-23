@@ -9,6 +9,7 @@
 #define LTLFILEPARSER_H_
 
 #include "formula/Ltl.h"
+#include "src/formula/Ltl/LtlFilter.h"
 
 #include <list>
 
@@ -21,7 +22,7 @@ namespace parser {
  * @param filename
  * @return The list of parsed formulas
  */
-std::list<storm::property::ltl::AbstractLtlFormula<double>*> LtlFileParser(std::string filename);
+std::list<storm::property::ltl::LtlFilter<double>*> LtlFileParser(std::string filename);
 
 } //namespace parser
 } //namespace storm

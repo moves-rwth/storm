@@ -180,7 +180,7 @@ struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, storm::property::prctl:
 				);
 		sortAction.name("sort action");
 
-		abstractAction = (rangeAction) >> (qi::eps | qi::lit(";"));
+		abstractAction = (boundAction | invertAction | formulaAction | rangeAction | sortAction) >> (qi::eps | qi::lit(";"));
 		abstractAction.name("filter action");
 
 		filter = (qi::lit("filter") >> qi::lit("[") >> +abstractAction >> qi::lit("]") > qi::lit("(") >> formula >> qi::lit(")"))[qi::_val =

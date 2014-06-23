@@ -10,6 +10,17 @@
 
 #include "src/formula/AbstractFilter.h"
 #include "src/modelchecker/ltl/AbstractModelChecker.h"
+#include "src/formula/Ltl/AbstractLtlFormula.h"
+#include "src/formula/Actions/AbstractAction.h"
+#include "src/exceptions/NotImplementedException.h"
+
+namespace storm {
+namespace property {
+namespace action {
+ template <typename T> class AbstractAction;
+}
+}
+}
 
 namespace storm {
 namespace property {
@@ -18,21 +29,23 @@ namespace ltl {
 template <class T>
 class LtlFilter : public storm::property::AbstractFilter<T> {
 
+	typedef typename storm::property::action::AbstractAction<T>::Result Result;
+
 public:
 
-	LtlFilter() : child(nullptr) {
+	LtlFilter() : AbstractFilter<T>(UNDEFINED), child(nullptr) {
 		// Intentionally left empty.
 	}
 
-	LtlFilter(AbstractLtlFormula* child) : child(child) {
+	LtlFilter(AbstractLtlFormula<T>* child, OptimizingOperator opt = UNDEFINED) : AbstractFilter<T>(opt), child(child) {
 		// Intentionally left empty.
 	}
 
-	LtlFilter(AbstractLtlFormula* child, action::Action<T>* action) : child(child) {
+	LtlFilter(AbstractLtlFormula<T>* child, action::AbstractAction<T>* action, OptimizingOperator opt = UNDEFINED) : AbstractFilter<T>(action, opt), child(child) {
 		this->actions.push_back(action);
 	}
 
-	LtlFilter(AbstractLtlFormula* child, std::vector<action::Action<T>*> actions) : AbstractFilter<T>(actions), child(child) {
+	LtlFilter(AbstractLtlFormula<T>* child, std::vector<action::AbstractAction<T>*> actions, OptimizingOperator opt = UNDEFINED) : AbstractFilter<T>(actions, opt), child(child) {
 		// Intentionally left empty.
 	}
 
@@ -52,15 +65,13 @@ public:
 
 		// Write out the formula to be checked.
 		std::cout << std::endl;
-		LOG4CPLUS_INFO(logger, "Model checking formula\t" << this->toFormulaString());
-		std::cout << "Model checking formula:\t" << this->toFormulaString() << std::endl;
+		LOG4CPLUS_INFO(logger, "Model checking formula\t" << this->toString());
+		std::cout << "Model checking formula:\t" << this->toString() << std::endl;
 
-
-		// Check the formula and apply the filter actions.
-		storm::storage::BitVector result;
+		Result result;
 
 		try {
-			result = evaluate(modelchecker, child);
+			result = evaluate(modelchecker);
 		} catch (std::exception& e) {
 			std::cout << "Error during computation: " << e.what() << "Skipping property." << std::endl;
 			LOG4CPLUS_ERROR(logger, "Error during computation: " << e.what() << "Skipping property.");
@@ -69,41 +80,54 @@ public:
 			return;
 		}
 
-		// Now write out the result.
+		writeOut(result, modelchecker);
 
-		if(this->actions.empty()) {
+	}
 
-			// There is no filter action given. So provide legacy support:
-			// Return the results for all states labeled with "init".
-			LOG4CPLUS_INFO(logger, "Result for initial states:");
-			std::cout << "Result for initial states:" << std::endl;
-			for (auto initialState : modelchecker.getModel<storm::models::AbstractModel<T>>().getInitialStates()) {
-				LOG4CPLUS_INFO(logger, "\t" << initialState << ": " << (result.get(initialState) ? "satisfied" : "not satisfied"));
-				std::cout << "\t" << initialState << ": " << result.get(initialState) << std::endl;
-			}
+	std::string toString() const override {
+		std::string desc = "";
+
+		if(this->actions.empty()){
+			// There are no filter actions but only the raw state formula. So just print that.
+			return child->toString();
 		}
 
-		std::cout << std::endl << "-------------------------------------------" << std::endl;
-	}
+		desc = "filter[";
 
-	bool validate() const {
-		// Test whether the stored filter actions are consistent in relation to themselves and to the ingoing modelchecking result.
+		switch(this->opt) {
+			case MINIMIZE:
+				desc += " min, ";
+				break;
+			case MAXIMIZE:
+				desc += " max, ";
+				break;
+			default:
+				break;
+		}
 
-		//TODO: Actual validation.
+		for(auto action : this->actions) {
+			desc += action->toString();
+			desc += "; ";
+		}
 
-		return true;
-	}
+		// Remove the last "; ".
+		desc.pop_back();
+		desc.pop_back();
 
-	std::string toFormulaString() const {
-		std::string desc = "filter(";
+		desc += "]";
+
+		desc += "(";
+		desc += child->toString();
+		desc += ")";
+
 		return desc;
 	}
 
-	std::string toString() const {
+	virtual std::string toPrettyString() const override {
 		std::string desc = "Filter: ";
 		desc += "\nActions:";
 		for(auto action : this->actions) {
-			desc += "\n\t" + action.toString();
+			desc += "\n\t" + action->toString();
 		}
 		desc += "\nFormula:\n\t" + child->toString();
 		return desc;
@@ -119,15 +143,69 @@ public:
 
 private:
 
-	storm::storage::BitVector evaluate(storm::modelchecker::ltl::AbstractModelChecker<T> const & modelchecker, AbstractLtlFormula<T>* formula) const {
+	Result evaluate(storm::modelchecker::ltl::AbstractModelChecker<T> const & modelchecker) const {
 		// First, get the model checking result.
-		storm::storage::BitVector result = formula->check(modelchecker);
+		Result result;
+
+		if(this->opt != UNDEFINED) {
+			// If it is specified that min/max probabilities/rewards should be computed, call the appropriate method of the model checker.
+			LOG4CPLUS_ERROR(logger, "Calculation of minimizing and maximizing schedulers for LTL-formula model checking is not yet implemented.");
+			throw storm::exceptions::NotImplementedException() << "Calculation of minimizing and maximizing schedulers for LTL-formula model checking is not yet implemented.";
+		} else {
+			result.stateResult = child->check(modelchecker);
+		}
+
+		// Now apply all filter actions and return the result.
+
+		// Init the state selection and state map vectors.
+		result.selection = storm::storage::BitVector(result.stateResult.size(), true);
+		result.stateMap = std::vector<uint_fast64_t>(result.selection.size());
+		for(uint_fast64_t i = 0; i < result.selection.size(); i++) {
+			result.stateMap[i] = i;
+		}
 
 		// Now apply all filter actions and return the result.
 		for(auto action : this->actions) {
-			result = action->evaluate(result);
+			result = action->evaluate(result, modelchecker);
 		}
+
 		return result;
+	}
+
+	void writeOut(Result const & result, storm::modelchecker::ltl::AbstractModelChecker<T> const & modelchecker) const {
+
+		// Test for the kind of result. Values or states.
+		if(!result.pathResult.empty()) {
+
+			// Write out the selected value results in the order given by the stateMap.
+			if(this->actions.empty()) {
+
+				// There is no filter action given. So provide legacy support:
+				// Return the results for all states labeled with "init".
+				LOG4CPLUS_INFO(logger, "Result for initial states:");
+				std::cout << "Result for initial states:" << std::endl;
+				for (auto initialState : modelchecker.template getModel<storm::models::AbstractModel<T>>().getInitialStates()) {
+					LOG4CPLUS_INFO(logger, "\t" << initialState << ": " << result.pathResult[initialState]);
+					std::cout << "\t" << initialState << ": " << result.pathResult[initialState] << std::endl;
+				}
+			} else {
+				LOG4CPLUS_INFO(logger, "Result for " << result.selection.getNumberOfSetBits() << " selected states:");
+				std::cout << "Result for " << result.selection.getNumberOfSetBits() << " selected states:" << std::endl;
+
+				for(uint_fast64_t i = 0; i < result.stateMap.size(); i++) {
+					if(result.selection.get(result.stateMap[i])) {
+						LOG4CPLUS_INFO(logger, "\t" << result.stateMap[i] << ": " << result.pathResult[result.stateMap[i]]);
+						std::cout << "\t" << result.stateMap[i] << ": " << result.pathResult[result.stateMap[i]] << std::endl;
+					}
+				}
+			}
+
+		} else {
+			LOG4CPLUS_WARN(logger, "No results could be computed.");
+			std::cout << "No results could be computed." << std::endl;
+		}
+
+		std::cout << std::endl << "-------------------------------------------" << std::endl;
 	}
 
 	AbstractLtlFormula<T>* child;

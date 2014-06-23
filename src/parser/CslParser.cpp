@@ -174,7 +174,7 @@ struct CslParser::CslGrammar : qi::grammar<Iterator, storm::property::csl::CslFi
 				);
 		sortAction.name("sort action");
 
-		abstractAction = (rangeAction) >> (qi::eps | qi::lit(";"));
+		abstractAction = (boundAction | invertAction | formulaAction | rangeAction | sortAction) >> (qi::eps | qi::lit(";"));
 		abstractAction.name("filter action");
 
 		filter = (qi::lit("filter") >> qi::lit("[") >> +abstractAction >> qi::lit("]") >> qi::lit("(") >> formula >> qi::lit(")"))[qi::_val =
@@ -186,7 +186,7 @@ struct CslParser::CslGrammar : qi::grammar<Iterator, storm::property::csl::CslFi
 
 		filter.name("CSL formula filter");
 
-		start = (((filter) > (comment | qi::eps))[qi::_val = qi::_1] | comment ) > qi::eoi;
+		start = (((filter) > (comment | qi::eps))[qi::_val = qi::_1] | comment[qi::_val = nullptr] ) > qi::eoi;
 		start.name("CSL formula filter start");
 
 	}

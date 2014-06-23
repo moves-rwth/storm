@@ -10,6 +10,13 @@
 #include "src/utility/OsDetection.h"
 #include "src/utility/constants.h"
 
+// The action class headers.
+#include "src/formula/Actions/AbstractAction.h"
+#include "src/formula/Actions/BoundAction.h"
+#include "src/formula/Actions/InvertAction.h"
+#include "src/formula/Actions/RangeAction.h"
+#include "src/formula/Actions/SortAction.h"
+
 // If the parser fails due to ill-formed data, this exception is thrown.
 #include "src/exceptions/WrongFormatException.h"
 
@@ -41,18 +48,27 @@ namespace storm {
 namespace parser {
 
 template<typename Iterator, typename Skipper>
-struct LtlGrammar : qi::grammar<Iterator, storm::property::ltl::AbstractLtlFormula<double>*(), Skipper > {
+struct LtlGrammar : qi::grammar<Iterator, storm::property::ltl::LtlFilter<double>*(), Skipper > {
 	LtlGrammar() : LtlGrammar::base_type(start) {
 		//This block contains helper rules that may be used several times
 		freeIdentifierName = qi::lexeme[qi::alpha >> *(qi::alnum | qi::char_('_'))];
+		comparisonType = (
+				(qi::lit(">="))[qi::_val = storm::property::GREATER_EQUAL] |
+				(qi::lit(">"))[qi::_val = storm::property::GREATER] |
+				(qi::lit("<="))[qi::_val = storm::property::LESS_EQUAL] |
+				(qi::lit("<"))[qi::_val = storm::property::LESS]);
+		sortingCategory = (
+				(qi::lit("index"))[qi::_val = storm::property::action::SortAction<double>::INDEX] |
+				(qi::lit("value"))[qi::_val = storm::property::action::SortAction<double>::VALUE]
+				);
 		//Comment: Empty line or line starting with "//"
 		comment = (qi::lit("//") >> *(qi::char_))[qi::_val = nullptr];
 
 		freeIdentifierName = qi::lexeme[+(qi::alpha | qi::char_('_'))];
 
 		//This block defines rules for parsing state formulas
-		ltlFormula %= orFormula;
-		ltlFormula.name("LTL formula");
+		formula %= orFormula;
+		formula.name("LTL formula");
 		orFormula = andFormula[qi::_val = qi::_1] > *(qi::lit("|") > andFormula)[qi::_val =
 				phoenix::new_<storm::property::ltl::Or<double>>(qi::_val, qi::_1)];
 		orFormula.name("LTL formula");
@@ -68,7 +84,7 @@ struct LtlGrammar : qi::grammar<Iterator, storm::property::ltl::AbstractLtlFormu
 
 		//This block defines rules for "atomic" state formulas
 		//(Propositions, probabilistic/reward formulas, and state formulas in brackets)
-		atomicLtlFormula %= pathFormula | atomicProposition | qi::lit("(") >> ltlFormula >> qi::lit(")");
+		atomicLtlFormula %= pathFormula | atomicProposition | qi::lit("(") >> formula >> qi::lit(")");
 		atomicLtlFormula.name("LTL formula");
 		atomicProposition = (freeIdentifierName)[qi::_val =
 				phoenix::new_<storm::property::ltl::Ap<double>>(qi::_1)];
@@ -77,29 +93,73 @@ struct LtlGrammar : qi::grammar<Iterator, storm::property::ltl::AbstractLtlFormu
 		//This block defines rules for parsing probabilistic path formulas
 		pathFormula = (boundedEventually | eventually | globally | next);
 		pathFormula.name("LTL formula");
-		boundedEventually = (qi::lit("F") >> qi::lit("<=") > qi::int_ > ltlFormula)[qi::_val =
+		boundedEventually = (qi::lit("F") >> qi::lit("<=") > qi::int_ > formula)[qi::_val =
 				phoenix::new_<storm::property::ltl::BoundedEventually<double>>(qi::_2, qi::_1)];
 		boundedEventually.name("LTL formula");
-		eventually = (qi::lit("F") >> ltlFormula)[qi::_val =
+		eventually = (qi::lit("F") >> formula)[qi::_val =
 				phoenix::new_<storm::property::ltl::Eventually<double> >(qi::_1)];
 		eventually.name("LTL formula");
-		globally = (qi::lit("G") >> ltlFormula)[qi::_val =
+		globally = (qi::lit("G") >> formula)[qi::_val =
 				phoenix::new_<storm::property::ltl::Globally<double> >(qi::_1)];
 		globally.name("LTL formula");
-		next = (qi::lit("X") >> ltlFormula)[qi::_val =
+		next = (qi::lit("X") >> formula)[qi::_val =
 				phoenix::new_<storm::property::ltl::Next<double> >(qi::_1)];
 		next.name("LTL formula");
 
-		start = (((ltlFormula) > (comment | qi::eps))[qi::_val = qi::_1] |
-				 comment
-				 ) > qi::eoi;
+		// This block defines rules for parsing filter actions.
+		boundAction = (qi::lit("bound") > qi::lit("(") >> comparisonType >> qi::lit(",") >> qi::double_ >> qi::lit(")"))[qi::_val =
+				        phoenix::new_<storm::property::action::BoundAction<double>>(qi::_1, qi::_2)];
+		boundAction.name("bound action");
+
+		invertAction = qi::lit("invert")[qi::_val = phoenix::new_<storm::property::action::InvertAction<double>>()];
+		invertAction.name("invert action");
+
+		rangeAction = (
+				(qi::lit("range") >> qi::lit("(") >> qi::uint_ >> qi::lit(",") > qi::uint_ >> qi::lit(")"))[qi::_val =
+						phoenix::new_<storm::property::action::RangeAction<double>>(qi::_1, qi::_2)] |
+				(qi::lit("range") >> qi::lit("(") >> qi::uint_ >> qi::lit(")"))[qi::_val =
+						phoenix::new_<storm::property::action::RangeAction<double>>(qi::_1, qi::_1 + 1)]
+				);
+		rangeAction.name("range action");
+
+		sortAction = (
+				(qi::lit("sort") > qi::lit("(") >> sortingCategory >> qi::lit(")"))[qi::_val =
+						phoenix::new_<storm::property::action::SortAction<double>>(qi::_1)] |
+				(qi::lit("sort") > qi::lit("(") >> sortingCategory >> qi::lit(", ") >> qi::lit("asc") > qi::lit(")"))[qi::_val =
+						phoenix::new_<storm::property::action::SortAction<double>>(qi::_1, true)] |
+				(qi::lit("sort") > qi::lit("(") >> sortingCategory >> qi::lit(", ") >> qi::lit("desc") > qi::lit(")"))[qi::_val =
+						phoenix::new_<storm::property::action::SortAction<double>>(qi::_1, false)]
+				);
+		sortAction.name("sort action");
+
+		abstractAction = (boundAction | invertAction | rangeAction | sortAction) >> (qi::eps | qi::lit(";"));
+		abstractAction.name("filter action");
+
+		filter = (qi::lit("filter") >> qi::lit("[") >> +abstractAction >> qi::lit("]") > qi::lit("(") >> formula >> qi::lit(")"))[qi::_val =
+					phoenix::new_<storm::property::ltl::LtlFilter<double>>(qi::_2, qi::_1)] |
+				 (qi::lit("filter") >> qi::lit("[") >> qi::lit("max") > +abstractAction >> qi::lit("]") >> qi::lit("(") >> formula >> qi::lit(")"))[qi::_val =
+					phoenix::new_<storm::property::ltl::LtlFilter<double>>(qi::_2, qi::_1, storm::property::MAXIMIZE)] |
+				 (qi::lit("filter") >> qi::lit("[") >> qi::lit("min") > +abstractAction >> qi::lit("]") >> qi::lit("(") >> formula >> qi::lit(")"))[qi::_val =
+					phoenix::new_<storm::property::ltl::LtlFilter<double>>(qi::_2, qi::_1, storm::property::MINIMIZE)] |
+				 (formula)[qi::_val =
+					phoenix::new_<storm::property::ltl::LtlFilter<double>>(qi::_1)];
+		filter.name("PRCTL formula filter");
+
+		start = (((filter) > (comment | qi::eps))[qi::_val = qi::_1] | comment[qi::_val = nullptr] ) > qi::eoi;
 		start.name("LTL formula");
 	}
 
-	qi::rule<Iterator, storm::property::ltl::AbstractLtlFormula<double>*(), Skipper> start;
-	qi::rule<Iterator, storm::property::ltl::AbstractLtlFormula<double>*(), Skipper> comment;
+	qi::rule<Iterator, storm::property::ltl::LtlFilter<double>*(), Skipper> start;
+	qi::rule<Iterator, storm::property::ltl::LtlFilter<double>*(), Skipper> filter;
 
-	qi::rule<Iterator, storm::property::ltl::AbstractLtlFormula<double>*(), Skipper> ltlFormula;
+	qi::rule<Iterator, storm::property::action::AbstractAction<double>*(), Skipper> abstractAction;
+	qi::rule<Iterator, storm::property::action::BoundAction<double>*(), Skipper> boundAction;
+	qi::rule<Iterator, storm::property::action::InvertAction<double>*(), Skipper> invertAction;
+	qi::rule<Iterator, storm::property::action::RangeAction<double>*(), Skipper> rangeAction;
+	qi::rule<Iterator, storm::property::action::SortAction<double>*(), Skipper> sortAction;
+
+	qi::rule<Iterator, storm::property::ltl::AbstractLtlFormula<double>*(), Skipper> comment;
+	qi::rule<Iterator, storm::property::ltl::AbstractLtlFormula<double>*(), Skipper> formula;
 	qi::rule<Iterator, storm::property::ltl::AbstractLtlFormula<double>*(), Skipper> atomicLtlFormula;
 
 	qi::rule<Iterator, storm::property::ltl::AbstractLtlFormula<double>*(), Skipper> andFormula;
@@ -107,10 +167,6 @@ struct LtlGrammar : qi::grammar<Iterator, storm::property::ltl::AbstractLtlFormu
 	qi::rule<Iterator, storm::property::ltl::AbstractLtlFormula<double>*(), Skipper> atomicProposition;
 	qi::rule<Iterator, storm::property::ltl::AbstractLtlFormula<double>*(), Skipper> orFormula;
 	qi::rule<Iterator, storm::property::ltl::AbstractLtlFormula<double>*(), Skipper> notFormula;
-	//qi::rule<Iterator, storm::property::ltl::ProbabilisticBoundOperator<double>*(), Skipper> probabilisticBoundOperator;
-
-	//qi::rule<Iterator, storm::property::ltl::AbstractNoBoundOperator<double>*(), Skipper> noBoundOperator;
-	//qi::rule<Iterator, storm::property::ltl::AbstractNoBoundOperator<double>*(), Skipper> probabilisticNoBoundOperator;
 
 	qi::rule<Iterator, storm::property::ltl::AbstractLtlFormula<double>*(), Skipper> pathFormula;
 	qi::rule<Iterator, storm::property::ltl::BoundedEventually<double>*(), Skipper> boundedEventually;
@@ -121,6 +177,8 @@ struct LtlGrammar : qi::grammar<Iterator, storm::property::ltl::AbstractLtlFormu
 	qi::rule<Iterator, storm::property::ltl::AbstractLtlFormula<double>*(), qi::locals< std::shared_ptr<storm::property::ltl::AbstractLtlFormula<double>>>, Skipper> until;
 
 	qi::rule<Iterator, std::string(), Skipper> freeIdentifierName;
+	qi::rule<Iterator, storm::property::ComparisonType(), Skipper> comparisonType;
+	qi::rule<Iterator, storm::property::action::SortAction<double>::SortingCategory(), Skipper> sortingCategory;
 
 };
 
@@ -128,7 +186,7 @@ struct LtlGrammar : qi::grammar<Iterator, storm::property::ltl::AbstractLtlFormu
 } //namespace parser
 
 
-storm::property::ltl::AbstractLtlFormula<double>* storm::parser::LtlParser(std::string formulaString) {
+storm::property::ltl::LtlFilter<double>* storm::parser::LtlParser(std::string formulaString) {
 	// Prepare iterators to input.
 	BaseIteratorType stringIteratorBegin = formulaString.begin();
 	BaseIteratorType stringIteratorEnd = formulaString.end();
@@ -137,7 +195,7 @@ storm::property::ltl::AbstractLtlFormula<double>* storm::parser::LtlParser(std::
 
 
 	// Prepare resulting intermediate representation of input.
-	storm::property::ltl::AbstractLtlFormula<double>* result_pointer = nullptr;
+	storm::property::ltl::LtlFilter<double>* result_pointer = nullptr;
 
 	LtlGrammar<PositionIteratorType,  BOOST_TYPEOF(boost::spirit::ascii::space)> grammar;
 

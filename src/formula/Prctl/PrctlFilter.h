@@ -15,6 +15,7 @@
 #include "src/modelchecker/prctl/AbstractModelChecker.h"
 #include "src/formula/Actions/AbstractAction.h"
 
+// TODO: Test if this can be can be ommitted.
 namespace storm {
 namespace property {
 namespace action {
@@ -204,6 +205,7 @@ private:
 			result.stateResult = formula->check(modelchecker);
 		}
 
+		// Now apply all filter actions and return the result.
 		return evaluateActions(result, modelchecker);
 	}
 
@@ -218,6 +220,7 @@ private:
 			result.pathResult = formula->check(modelchecker, false);
 		}
 
+		// Now apply all filter actions and return the result.
 		return evaluateActions(result, modelchecker);
 	}
 
@@ -232,6 +235,7 @@ private:
 			result.pathResult = formula->check(modelchecker, false);
 		}
 
+		// Now apply all filter actions and return the result.
 		return evaluateActions(result, modelchecker);
 	}
 

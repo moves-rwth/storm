@@ -14,12 +14,24 @@
 #include "src/formula/Csl/AbstractStateFormula.h"
 #include "src/modelchecker/csl/AbstractModelChecker.h"
 
+#include "src/formula/Actions/AbstractAction.h"
+
+namespace storm {
+namespace property {
+namespace action {
+ template <typename T> class AbstractAction;
+}
+}
+}
+
 namespace storm {
 namespace property {
 namespace csl {
 
 template <class T>
 class CslFilter : public storm::property::AbstractFilter<T> {
+
+	typedef typename storm::property::action::AbstractAction<T>::Result Result;
 
 public:
 
@@ -44,82 +56,31 @@ public:
 		delete child;
 	}
 
-	void check(storm::modelchecker::csl::AbstractModelChecker<T> const & modelchecker) const {
+	void check(storm::modelchecker::prctl::AbstractModelChecker<T> const & modelchecker) const {
 
 		// Write out the formula to be checked.
 		std::cout << std::endl;
-		LOG4CPLUS_INFO(logger, "Model checking formula\t" << this->toFormulaString());
-		std::cout << "Model checking formula:\t" << this->toFormulaString() << std::endl;
+		LOG4CPLUS_INFO(logger, "Model checking formula\t" << this->toString());
+		std::cout << "Model checking formula:\t" << this->toString() << std::endl;
 
-		// Do a dynamic cast to test for the actual formula type and call the correct evaluation function.
-		if(dynamic_cast<AbstractStateFormula<T>*>(child) != nullptr) {
+		Result result;
 
-			// Check the formula and apply the filter actions.
-			storm::storage::BitVector result;
-
-			try {
-				result = evaluate(modelchecker, static_cast<AbstractStateFormula<T>*>(child));
-			} catch (std::exception& e) {
-				std::cout << "Error during computation: " << e.what() << "Skipping property." << std::endl;
-				LOG4CPLUS_ERROR(logger, "Error during computation: " << e.what() << "Skipping property.");
-				std::cout << std::endl << "-------------------------------------------" << std::endl;
-
-				return;
+		try {
+			if(dynamic_cast<AbstractStateFormula<T> *>(child) != nullptr) {
+				result = evaluate(modelchecker, dynamic_cast<AbstractStateFormula<T> *>(child));
+			} else if (dynamic_cast<AbstractPathFormula<T> *>(child) != nullptr) {
+				result = evaluate(modelchecker, dynamic_cast<AbstractPathFormula<T> *>(child));
 			}
-
-			// Now write out the result.
-
-			if(this->actions.empty()) {
-
-				// There is no filter action given. So provide legacy support:
-				// Return the results for all states labeled with "init".
-				LOG4CPLUS_INFO(logger, "Result for initial states:");
-				std::cout << "Result for initial states:" << std::endl;
-				for (auto initialState : modelchecker.getModel().getInitialStates()) {
-					LOG4CPLUS_INFO(logger, "\t" << initialState << ": " << (result.get(initialState) ? "satisfied" : "not satisfied"));
-					std::cout << "\t" << initialState << ": " << result.get(initialState) << std::endl;
-				}
-			}
-
+		} catch (std::exception& e) {
+			std::cout << "Error during computation: " << e.what() << "Skipping property." << std::endl;
+			LOG4CPLUS_ERROR(logger, "Error during computation: " << e.what() << "Skipping property.");
 			std::cout << std::endl << "-------------------------------------------" << std::endl;
 
+			return;
 		}
-		else if (dynamic_cast<AbstractPathFormula<T>*>(child) != nullptr) {
 
-			// Check the formula and apply the filter actions.
-			std::vector<T> result;
+		writeOut(result, modelchecker);
 
-			try {
-				result = evaluate(modelchecker, static_cast<AbstractPathFormula<T>*>(child));
-			} catch (std::exception& e) {
-				std::cout << "Error during computation: " << e.what() << "Skipping property." << std::endl;
-				LOG4CPLUS_ERROR(logger, "Error during computation: " << e.what() << "Skipping property.");
-				std::cout << std::endl << "-------------------------------------------" << std::endl;
-
-				return;
-			}
-
-			// Now write out the result.
-
-			if(this->actions.empty()) {
-
-				// There is no filter action given. So provide legacy support:
-				// Return the results for all states labeled with "init".
-				LOG4CPLUS_INFO(logger, "Result for initial states:");
-				std::cout << "Result for initial states:" << std::endl;
-				for (auto initialState : modelchecker.getModel().getInitialStates()) {
-					LOG4CPLUS_INFO(logger, "\t" << initialState << ": " << result[initialState]);
-					std::cout << "\t" << initialState << ": " << result[initialState] << std::endl;
-				}
-			}
-
-			std::cout << std::endl << "-------------------------------------------" << std::endl;
-
-		}
-		else {
-			// This branch should be unreachable. If you ended up here, something strange has happened.
-			//TODO: Error here.
-		}
 	}
 
 	virtual std::string toString() const override {
@@ -242,10 +203,7 @@ private:
 
 
 		// Now apply all filter actions and return the result.
-		for(auto action : this->actions) {
-			result = action->evaluate(result);
-		}
-		return result;
+		return evaluateActions(result, modelchecker);
 	}
 
 	std::vector<T> evaluate(storm::modelchecker::csl::AbstractModelChecker<T> const & modelchecker, AbstractPathFormula<T>* formula) const {
@@ -260,10 +218,80 @@ private:
 		}
 
 		// Now apply all filter actions and return the result.
+		return evaluateActions(result, modelchecker);
+	}
+
+	Result evaluateActions(Result result, storm::modelchecker::csl::AbstractModelChecker<T> const & modelchecker) const {
+
+		// Init the state selection and state map vectors.
+		result.selection = storm::storage::BitVector(result.stateResult.size(), true);
+		result.stateMap = std::vector<uint_fast64_t>(result.selection.size());
+		for(uint_fast64_t i = 0; i < result.selection.size(); i++) {
+			result.stateMap[i] = i;
+		}
+
+		// Now apply all filter actions and return the result.
 		for(auto action : this->actions) {
-			result = action->evaluate(result);
+			result = action->evaluate(result, modelchecker);
 		}
 		return result;
+	}
+
+	void writeOut(Result const & result, storm::modelchecker::prctl::AbstractModelChecker<T> const & modelchecker) const {
+
+		// Test for the kind of result. Values or states.
+		if(!result.pathResult.empty()) {
+
+			// Write out the selected value results in the order given by the stateMap.
+			if(this->actions.empty()) {
+
+				// There is no filter action given. So provide legacy support:
+				// Return the results for all states labeled with "init".
+				LOG4CPLUS_INFO(logger, "Result for initial states:");
+				std::cout << "Result for initial states:" << std::endl;
+				for (auto initialState : modelchecker.template getModel<storm::models::AbstractModel<T>>().getInitialStates()) {
+					LOG4CPLUS_INFO(logger, "\t" << initialState << ": " << result.pathResult[initialState]);
+					std::cout << "\t" << initialState << ": " << result.pathResult[initialState] << std::endl;
+				}
+			} else {
+				LOG4CPLUS_INFO(logger, "Result for " << result.selection.getNumberOfSetBits() << " selected states:");
+				std::cout << "Result for " << result.selection.getNumberOfSetBits() << " selected states:" << std::endl;
+
+				for(uint_fast64_t i = 0; i < result.stateMap.size(); i++) {
+					if(result.selection.get(result.stateMap[i])) {
+						LOG4CPLUS_INFO(logger, "\t" << result.stateMap[i] << ": " << result.pathResult[result.stateMap[i]]);
+						std::cout << "\t" << result.stateMap[i] << ": " << result.pathResult[result.stateMap[i]] << std::endl;
+					}
+				}
+			}
+
+		} else {
+
+			// Write out the selected state results in the order given by the stateMap.
+			if(this->actions.empty()) {
+
+				// There is no filter action given. So provide legacy support:
+				// Return the results for all states labeled with "init".
+				LOG4CPLUS_INFO(logger, "Result for initial states:");
+				std::cout << "Result for initial states:" << std::endl;
+				for (auto initialState : modelchecker.template getModel<storm::models::AbstractModel<T>>().getInitialStates()) {
+					LOG4CPLUS_INFO(logger, "\t" << initialState << ": " << (result.stateResult[initialState] ? "satisfied" : "not satisfied"));
+					std::cout << "\t" << initialState << ": " << result.stateResult[initialState] << std::endl;
+				}
+			} else {
+				LOG4CPLUS_INFO(logger, "Result for " << result.selection.getNumberOfSetBits() << " selected states:");
+				std::cout << "Result for " << result.selection.getNumberOfSetBits() << " selected states:" << std::endl;
+
+				for(uint_fast64_t i = 0; i < result.stateMap.size(); i++) {
+					if(result.selection.get(result.stateMap[i])) {
+						LOG4CPLUS_INFO(logger, "\t" << result.stateMap[i] << ": " << (result.stateResult[result.stateMap[i]] ? "satisfied" : "not satisfied"));
+						std::cout << "\t" << result.stateMap[i] << ": " << (result.stateResult[result.stateMap[i]] ? "satisfied" : "not satisfied") << std::endl;
+					}
+				}
+			}
+		}
+
+		std::cout << std::endl << "-------------------------------------------" << std::endl;
 	}
 
 	AbstractCslFormula<T>* child;

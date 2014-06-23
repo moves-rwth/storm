@@ -15,7 +15,7 @@
 namespace storm {
 namespace parser {
 
-std::list<storm::property::ltl::AbstractLtlFormula<double>*> LtlFileParser(std::string filename) {
+std::list<storm::property::ltl::LtlFilter<double>*> LtlFileParser(std::string filename) {
 	// Open file
 	std::ifstream inputFileStream(filename, std::ios::in);
 
@@ -24,7 +24,7 @@ std::list<storm::property::ltl::AbstractLtlFormula<double>*> LtlFileParser(std::
 		throw storm::exceptions::FileIoException() << message << filename;
 	}
 
-	std::list<storm::property::ltl::AbstractLtlFormula<double>*> result;
+	std::list<storm::property::ltl::LtlFilter<double>*> result;
 
 	while(!inputFileStream.eof()) {
 		std::string line;
