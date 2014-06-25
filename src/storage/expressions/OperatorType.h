@@ -16,6 +16,7 @@ namespace storm {
             Divide,
             Min,
             Max,
+            Power,
             Equal,
             NotEqual,
             Less,

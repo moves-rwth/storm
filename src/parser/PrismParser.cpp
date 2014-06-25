@@ -60,52 +60,10 @@ namespace storm {
             return result;
         }
         
-        PrismParser::PrismParser(std::string const& filename, Iterator first) : PrismParser::base_type(start), secondRun(false), allowDoubleLiteralsFlag(true), filename(filename), annotate(first) {
+        PrismParser::PrismParser(std::string const& filename, Iterator first) : PrismParser::base_type(start), secondRun(false), filename(filename), annotate(first), expressionParser(keywords_) {
             // Parse simple identifier.
             identifier %= qi::as_string[qi::raw[qi::lexeme[((qi::alpha | qi::char_('_')) >> *(qi::alnum | qi::char_('_')))]]][qi::_pass = phoenix::bind(&PrismParser::isValidIdentifier, phoenix::ref(*this), qi::_1)];
             identifier.name("identifier");
-            
-            floorCeilExpression = ((qi::lit("floor")[qi::_a = true] | qi::lit("ceil")[qi::_a = false]) >> qi::lit("(") >> plusExpression >> qi::lit(")"))[phoenix::if_(qi::_a) [qi::_val = phoenix::bind(&PrismParser::createFloorExpression, phoenix::ref(*this), qi::_1)] .else_ [qi::_val = phoenix::bind(&PrismParser::createCeilExpression, phoenix::ref(*this), qi::_1)]];
-            floorCeilExpression.name("floor/ceil expression");
-            
-            minMaxExpression = ((qi::lit("min")[qi::_a = true] | qi::lit("max")[qi::_a = false]) >> qi::lit("(") >> plusExpression >> qi::lit(",") >> plusExpression >> qi::lit(")"))[phoenix::if_(qi::_a) [qi::_val = phoenix::bind(&PrismParser::createMinimumExpression, phoenix::ref(*this), qi::_1, qi::_2)] .else_ [qi::_val = phoenix::bind(&PrismParser::createMaximumExpression, phoenix::ref(*this), qi::_1, qi::_2)]];
-            minMaxExpression.name("min/max expression");
-            
-            identifierExpression = identifier[qi::_val = phoenix::bind(&PrismParser::getIdentifierExpression, phoenix::ref(*this), qi::_1)];
-            identifierExpression.name("identifier expression");
-            
-            literalExpression = qi::lit("true")[qi::_val = phoenix::bind(&PrismParser::createTrueExpression, phoenix::ref(*this))] | qi::lit("false")[qi::_val = phoenix::bind(&PrismParser::createFalseExpression, phoenix::ref(*this))] | strict_double[qi::_val = phoenix::bind(&PrismParser::createDoubleLiteralExpression, phoenix::ref(*this), qi::_1, qi::_pass)] | qi::int_[qi::_val = phoenix::bind(&PrismParser::createIntegerLiteralExpression, phoenix::ref(*this), qi::_1)];
-            literalExpression.name("literal expression");
-            
-            atomicExpression = minMaxExpression | floorCeilExpression | qi::lit("(") >> expression >> qi::lit(")") | literalExpression | identifierExpression;
-            atomicExpression.name("atomic expression");
-            
-            unaryExpression = atomicExpression[qi::_val = qi::_1] | (qi::lit("!") >> atomicExpression)[qi::_val = phoenix::bind(&PrismParser::createNotExpression, phoenix::ref(*this), qi::_1)] | (qi::lit("-") >> atomicExpression)[qi::_val = phoenix::bind(&PrismParser::createMinusExpression, phoenix::ref(*this), qi::_1)];
-            unaryExpression.name("unary expression");
-            
-            multiplicationExpression = unaryExpression[qi::_val = qi::_1] >> *((qi::lit("*")[qi::_a = true] | qi::lit("/")[qi::_a = false]) >> unaryExpression[phoenix::if_(qi::_a) [qi::_val = phoenix::bind(&PrismParser::createMultExpression, phoenix::ref(*this), qi::_val, qi::_1)] .else_ [qi::_val = phoenix::bind(&PrismParser::createDivExpression, phoenix::ref(*this), qi::_val, qi::_1)]]);
-            multiplicationExpression.name("multiplication expression");
-            
-            plusExpression = multiplicationExpression[qi::_val = qi::_1] >> *((qi::lit("+")[qi::_a = true] | qi::lit("-")[qi::_a = false]) >> multiplicationExpression)[phoenix::if_(qi::_a) [qi::_val = phoenix::bind(&PrismParser::createPlusExpression, phoenix::ref(*this), qi::_val, qi::_1)] .else_ [qi::_val = phoenix::bind(&PrismParser::createMinusExpression, phoenix::ref(*this), qi::_val, qi::_1)]];
-            plusExpression.name("plus expression");
-            
-            relativeExpression = (plusExpression >> qi::lit(">=") >> plusExpression)[qi::_val = phoenix::bind(&PrismParser::createGreaterOrEqualExpression, phoenix::ref(*this), qi::_1, qi::_2)] | (plusExpression >> qi::lit(">") >> plusExpression)[qi::_val = phoenix::bind(&PrismParser::createGreaterExpression, phoenix::ref(*this), qi::_1, qi::_2)] | (plusExpression >> qi::lit("<=") >> plusExpression)[qi::_val = phoenix::bind(&PrismParser::createLessOrEqualExpression, phoenix::ref(*this), qi::_1, qi::_2)] | (plusExpression >> qi::lit("<") >> plusExpression)[qi::_val = phoenix::bind(&PrismParser::createLessExpression, phoenix::ref(*this), qi::_1, qi::_2)] | plusExpression[qi::_val = qi::_1];
-            relativeExpression.name("relative expression");
-            
-            equalityExpression = relativeExpression[qi::_val = qi::_1] >> *((qi::lit("=")[qi::_a = true] | qi::lit("!=")[qi::_a = false]) >> relativeExpression)[phoenix::if_(qi::_a) [ qi::_val = phoenix::bind(&PrismParser::createEqualsExpression, phoenix::ref(*this), qi::_val, qi::_1) ] .else_ [ qi::_val = phoenix::bind(&PrismParser::createNotEqualsExpression, phoenix::ref(*this), qi::_val, qi::_1) ] ];
-            equalityExpression.name("equality expression");
-            
-            andExpression = equalityExpression[qi::_val = qi::_1] >> *(qi::lit("&") >> equalityExpression)[qi::_val = phoenix::bind(&PrismParser::createAndExpression, phoenix::ref(*this), qi::_val, qi::_1)];
-            andExpression.name("and expression");
-            
-            orExpression = andExpression[qi::_val = qi::_1] >> *((qi::lit("|")[qi::_a = true] | qi::lit("=>")[qi::_a = false]) >> andExpression)[phoenix::if_(qi::_a) [qi::_val = phoenix::bind(&PrismParser::createOrExpression, phoenix::ref(*this), qi::_val, qi::_1)] .else_ [qi::_val = phoenix::bind(&PrismParser::createImpliesExpression, phoenix::ref(*this), qi::_val, qi::_1)] ];
-            orExpression.name("or expression");
-            
-            iteExpression = orExpression[qi::_val = qi::_1] >> -(qi::lit("?") > orExpression > qi::lit(":") > orExpression)[qi::_val = phoenix::bind(&PrismParser::createIteExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)];
-            iteExpression.name("if-then-else expression");
-            
-            expression %= iteExpression;
-            expression.name("expression");
             
             modelTypeDefinition %= modelType_;
             modelTypeDefinition.name("model type");
@@ -122,25 +80,25 @@ namespace storm {
             undefinedConstantDefinition = (undefinedBooleanConstantDefinition | undefinedIntegerConstantDefinition | undefinedDoubleConstantDefinition);
             undefinedConstantDefinition.name("undefined constant definition");
             
-            definedBooleanConstantDefinition = ((qi::lit("const") >> qi::lit("bool") >> identifier >> qi::lit("=")) > expression > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createDefinedBooleanConstant, phoenix::ref(*this), qi::_1, qi::_2)];
+            definedBooleanConstantDefinition = ((qi::lit("const") >> qi::lit("bool") >> identifier >> qi::lit("=")) > expressionParser > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createDefinedBooleanConstant, phoenix::ref(*this), qi::_1, qi::_2)];
             definedBooleanConstantDefinition.name("defined boolean constant declaration");
             
-            definedIntegerConstantDefinition = ((qi::lit("const") >> qi::lit("int") >> identifier >> qi::lit("=")) > expression >> qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createDefinedIntegerConstant, phoenix::ref(*this), qi::_1, qi::_2)];
+            definedIntegerConstantDefinition = ((qi::lit("const") >> qi::lit("int") >> identifier >> qi::lit("=")) > expressionParser >> qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createDefinedIntegerConstant, phoenix::ref(*this), qi::_1, qi::_2)];
             definedIntegerConstantDefinition.name("defined integer constant declaration");
             
-            definedDoubleConstantDefinition = ((qi::lit("const") >> qi::lit("double") >> identifier >> qi::lit("=")) > expression > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createDefinedDoubleConstant, phoenix::ref(*this), qi::_1, qi::_2)];
+            definedDoubleConstantDefinition = ((qi::lit("const") >> qi::lit("double") >> identifier >> qi::lit("=")) > expressionParser > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createDefinedDoubleConstant, phoenix::ref(*this), qi::_1, qi::_2)];
             definedDoubleConstantDefinition.name("defined double constant declaration");
             
             definedConstantDefinition %= (definedBooleanConstantDefinition | definedIntegerConstantDefinition | definedDoubleConstantDefinition);
             definedConstantDefinition.name("defined constant definition");
             
-            formulaDefinition = (qi::lit("formula") > identifier > qi::lit("=") > expression > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createFormula, phoenix::ref(*this), qi::_1, qi::_2)];
+            formulaDefinition = (qi::lit("formula") > identifier > qi::lit("=") > expressionParser > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createFormula, phoenix::ref(*this), qi::_1, qi::_2)];
             formulaDefinition.name("formula definition");
             
-            booleanVariableDefinition = ((identifier >> qi::lit(":") >> qi::lit("bool")) > ((qi::lit("init") > expression) | qi::attr(storm::expressions::Expression::createFalse())) > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createBooleanVariable, phoenix::ref(*this), qi::_1, qi::_2)];
+            booleanVariableDefinition = ((identifier >> qi::lit(":") >> qi::lit("bool")) > ((qi::lit("init") > expressionParser) | qi::attr(storm::expressions::Expression::createFalse())) > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createBooleanVariable, phoenix::ref(*this), qi::_1, qi::_2)];
             booleanVariableDefinition.name("boolean variable definition");
             
-            integerVariableDefinition = ((identifier >> qi::lit(":") >> qi::lit("[")[phoenix::bind(&PrismParser::allowDoubleLiterals, phoenix::ref(*this), false)]) > expression[qi::_a = qi::_1] > qi::lit("..") > expression > qi::lit("]")[phoenix::bind(&PrismParser::allowDoubleLiterals, phoenix::ref(*this), true)] > -(qi::lit("init") > expression[qi::_a = qi::_1]) > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createIntegerVariable, phoenix::ref(*this), qi::_1, qi::_2, qi::_3, qi::_a)];
+            integerVariableDefinition = ((identifier >> qi::lit(":") >> qi::lit("[")[phoenix::bind(&PrismParser::allowDoubleLiterals, phoenix::ref(*this), false)]) > expressionParser[qi::_a = qi::_1] > qi::lit("..") > expressionParser > qi::lit("]")[phoenix::bind(&PrismParser::allowDoubleLiterals, phoenix::ref(*this), true)] > -(qi::lit("init") > expressionParser[qi::_a = qi::_1]) > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createIntegerVariable, phoenix::ref(*this), qi::_1, qi::_2, qi::_3, qi::_a)];
             integerVariableDefinition.name("integer variable definition");
             
             variableDefinition = (booleanVariableDefinition[phoenix::push_back(qi::_r1, qi::_1)] | integerVariableDefinition[phoenix::push_back(qi::_r2, qi::_1)]);
@@ -149,10 +107,10 @@ namespace storm {
             globalVariableDefinition = (qi::lit("global") > (booleanVariableDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::globalBooleanVariables, qi::_r1), qi::_1)] | integerVariableDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::globalIntegerVariables, qi::_r1), qi::_1)]));
             globalVariableDefinition.name("global variable declaration list");
                         
-            stateRewardDefinition = (expression > qi::lit(":") > plusExpression >> qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createStateReward, phoenix::ref(*this), qi::_1, qi::_2)];
+            stateRewardDefinition = (expressionParser > qi::lit(":") > expressionParser >> qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createStateReward, phoenix::ref(*this), qi::_1, qi::_2)];
             stateRewardDefinition.name("state reward definition");
             
-            transitionRewardDefinition = (qi::lit("[") > -(identifier[qi::_a = qi::_1]) > qi::lit("]") > expression > qi::lit(":") > plusExpression > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createTransitionReward, phoenix::ref(*this), qi::_a, qi::_2, qi::_3)];
+            transitionRewardDefinition = (qi::lit("[") > -(identifier[qi::_a = qi::_1]) > qi::lit("]") > expressionParser > qi::lit(":") > expressionParser > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createTransitionReward, phoenix::ref(*this), qi::_a, qi::_2, qi::_3)];
             transitionRewardDefinition.name("transition reward definition");
             
             rewardModelDefinition = (qi::lit("rewards") > -(qi::lit("\"") > identifier[qi::_a = qi::_1] > qi::lit("\""))
@@ -162,25 +120,25 @@ namespace storm {
                                      >> qi::lit("endrewards"))[qi::_val = phoenix::bind(&PrismParser::createRewardModel, phoenix::ref(*this), qi::_a, qi::_b, qi::_c)];
             rewardModelDefinition.name("reward model definition");
             
-            initialStatesConstruct = (qi::lit("init") > expression > qi::lit("endinit"))[qi::_pass = phoenix::bind(&PrismParser::addInitialStatesConstruct, phoenix::ref(*this), qi::_1, qi::_r1)];
+            initialStatesConstruct = (qi::lit("init") > expressionParser > qi::lit("endinit"))[qi::_pass = phoenix::bind(&PrismParser::addInitialStatesConstruct, phoenix::ref(*this), qi::_1, qi::_r1)];
             initialStatesConstruct.name("initial construct");
             
-            labelDefinition = (qi::lit("label") > -qi::lit("\"") > identifier > -qi::lit("\"") > qi::lit("=") > expression >> qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createLabel, phoenix::ref(*this), qi::_1, qi::_2)];
+            labelDefinition = (qi::lit("label") > -qi::lit("\"") > identifier > -qi::lit("\"") > qi::lit("=") > expressionParser >> qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createLabel, phoenix::ref(*this), qi::_1, qi::_2)];
             labelDefinition.name("label definition");
             
-            assignmentDefinition = (qi::lit("(") > identifier > qi::lit("'") > qi::lit("=") > expression > qi::lit(")"))[qi::_val = phoenix::bind(&PrismParser::createAssignment, phoenix::ref(*this), qi::_1, qi::_2)];
+            assignmentDefinition = (qi::lit("(") > identifier > qi::lit("'") > qi::lit("=") > expressionParser > qi::lit(")"))[qi::_val = phoenix::bind(&PrismParser::createAssignment, phoenix::ref(*this), qi::_1, qi::_2)];
             assignmentDefinition.name("assignment");
             
             assignmentDefinitionList %= +assignmentDefinition % "&";
             assignmentDefinitionList.name("assignment list");
             
-            updateDefinition = (((plusExpression > qi::lit(":")) | qi::attr(storm::expressions::Expression::createDoubleLiteral(1))) >> assignmentDefinitionList)[qi::_val = phoenix::bind(&PrismParser::createUpdate, phoenix::ref(*this), qi::_1, qi::_2, qi::_r1)];
+            updateDefinition = (((expressionParser > qi::lit(":")) | qi::attr(storm::expressions::Expression::createDoubleLiteral(1))) >> assignmentDefinitionList)[qi::_val = phoenix::bind(&PrismParser::createUpdate, phoenix::ref(*this), qi::_1, qi::_2, qi::_r1)];
             updateDefinition.name("update");
             
             updateListDefinition %= +updateDefinition(qi::_r1) % "+";
             updateListDefinition.name("update list");
             
-            commandDefinition = (qi::lit("[") > -(identifier[qi::_a = qi::_1]) > qi::lit("]") > expression > qi::lit("->") > updateListDefinition(qi::_r1) > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createCommand, phoenix::ref(*this), qi::_a, qi::_2, qi::_3, qi::_r1)];
+            commandDefinition = (qi::lit("[") > -(identifier[qi::_a = qi::_1]) > qi::lit("]") > expressionParser > qi::lit("->") > updateListDefinition(qi::_r1) > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createCommand, phoenix::ref(*this), qi::_a, qi::_2, qi::_3, qi::_r1)];
             commandDefinition.name("command definition");
             
             moduleDefinition = ((qi::lit("module") >> identifier >> *(variableDefinition(qi::_a, qi::_b))) > +commandDefinition(qi::_r1) > qi::lit("endmodule"))[qi::_val = phoenix::bind(&PrismParser::createModule, phoenix::ref(*this), qi::_1, qi::_a, qi::_b, qi::_2, qi::_r1)];
@@ -209,22 +167,6 @@ namespace storm {
                      > qi::eoi)[qi::_val = phoenix::bind(&PrismParser::createProgram, phoenix::ref(*this), qi::_a)];
             start.name("probabilistic program");
             
-            // Enable error reporting.
-            qi::on_error<qi::fail>(expression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
-            qi::on_error<qi::fail>(iteExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
-            qi::on_error<qi::fail>(orExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
-            qi::on_error<qi::fail>(andExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
-            qi::on_error<qi::fail>(equalityExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
-            qi::on_error<qi::fail>(relativeExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
-            qi::on_error<qi::fail>(plusExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
-            qi::on_error<qi::fail>(multiplicationExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
-            qi::on_error<qi::fail>(unaryExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
-            qi::on_error<qi::fail>(atomicExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
-            qi::on_error<qi::fail>(literalExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
-            qi::on_error<qi::fail>(identifierExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
-            qi::on_error<qi::fail>(minMaxExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
-            qi::on_error<qi::fail>(floorCeilExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
-            
             // Enable location tracking for important entities.
             auto setLocationInfoFunction = this->annotate(qi::_val, qi::_1, qi::_3);
             qi::on_success(undefinedBooleanConstantDefinition, setLocationInfoFunction);
@@ -247,10 +189,11 @@ namespace storm {
         
         void PrismParser::moveToSecondRun() {
             this->secondRun = true;
+            this->expressionParser.setIdentifierMapping(&this->identifiers_);
         }
         
         void PrismParser::allowDoubleLiterals(bool flag) {
-            this->allowDoubleLiteralsFlag = flag;
+            this->expressionParser.setAcceptDoubleLiterals(flag);
         }
         
         std::string const& PrismParser::getFilename() const {
@@ -272,301 +215,6 @@ namespace storm {
             globalProgramInformation.hasInitialConstruct = true;
             globalProgramInformation.initialConstruct = storm::prism::InitialConstruct(initialStatesExpression, this->getFilename(), get_line(qi::_3));
             return true;
-        }
-        
-        storm::expressions::Expression PrismParser::createIteExpression(storm::expressions::Expression e1, storm::expressions::Expression e2, storm::expressions::Expression e3) const {
-            if (!this->secondRun) {
-                return storm::expressions::Expression::createFalse();
-            } else {
-                try {
-                    return e1.ite(e2, e3);
-                } catch (storm::exceptions::InvalidTypeException const& e) {
-                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": " << e.what() << ".");
-                }
-            }
-        }
-        
-        storm::expressions::Expression PrismParser::createImpliesExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const {
-            if (!this->secondRun) {
-                return storm::expressions::Expression::createFalse();
-            } else {
-                try {
-                    return e1.implies(e2);
-                } catch (storm::exceptions::InvalidTypeException const& e) {
-                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": " << e.what() << ".");
-                }
-            }
-        }
-        
-        storm::expressions::Expression PrismParser::createOrExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const {
-            if (!this->secondRun) {
-                return storm::expressions::Expression::createFalse();
-            } else {
-                try {
-                    return e1 || e2;
-                } catch (storm::exceptions::InvalidTypeException const& e) {
-                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": " << e.what() << ".");
-                }
-            }
-        }
-        
-        storm::expressions::Expression PrismParser::createAndExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const {
-            if (!this->secondRun) {
-                return storm::expressions::Expression::createFalse();
-            } else {
-                try{
-                    return e1 && e2;
-                } catch (storm::exceptions::InvalidTypeException const& e) {
-                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": " << e.what() << ".");
-                }
-            }
-        }
-        
-        storm::expressions::Expression PrismParser::createGreaterExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const {
-            if (!this->secondRun) {
-                return storm::expressions::Expression::createFalse();
-            } else {
-                try {
-                    return e1 > e2;
-                } catch (storm::exceptions::InvalidTypeException const& e) {
-                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": " << e.what() << ".");
-                }
-            }
-        }
-        
-        storm::expressions::Expression PrismParser::createGreaterOrEqualExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const {
-            if (!this->secondRun) {
-                return storm::expressions::Expression::createFalse();
-            } else {
-                try {
-                    return e1 >= e2;
-                } catch (storm::exceptions::InvalidTypeException const& e) {
-                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": " << e.what() << ".");
-                }
-            }
-        }
-        
-        storm::expressions::Expression PrismParser::createLessExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const {
-            if (!this->secondRun) {
-                return storm::expressions::Expression::createFalse();
-            } else {
-                try {
-                    return e1 < e2;
-                } catch (storm::exceptions::InvalidTypeException const& e) {
-                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": " << e.what() << ".");
-                }
-            }
-        }
-        
-        storm::expressions::Expression PrismParser::createLessOrEqualExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const {
-            if (!this->secondRun) {
-                return storm::expressions::Expression::createFalse();
-            } else {
-                try {
-                    return e1 <= e2;
-                } catch (storm::exceptions::InvalidTypeException const& e) {
-                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": " << e.what() << ".");
-                }
-            }
-        }
-        
-        storm::expressions::Expression PrismParser::createEqualsExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const {
-            if (!this->secondRun) {
-                return storm::expressions::Expression::createFalse();
-            } else {
-                try {
-                    if (e1.hasBooleanReturnType() && e2.hasBooleanReturnType()) {
-                        return e1.iff(e2);
-                    } else {
-                        return e1 == e2;
-                    }
-                } catch (storm::exceptions::InvalidTypeException const& e) {
-                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": " << e.what() << ".");
-                }
-            }
-        }
-        
-        storm::expressions::Expression PrismParser::createNotEqualsExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const {
-            if (!this->secondRun) {
-                return storm::expressions::Expression::createFalse();
-            } else {
-                try {
-                    if (e1.hasBooleanReturnType() && e2.hasBooleanReturnType()) {
-                        return e1 ^ e2;
-                    } else {
-                        return e1 != e2;
-                    }
-                } catch (storm::exceptions::InvalidTypeException const& e) {
-                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": " << e.what() << ".");
-                }
-            }
-        }
-        
-        storm::expressions::Expression PrismParser::createPlusExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const {
-            if (!this->secondRun) {
-                return storm::expressions::Expression::createFalse();
-            } else {
-                try {
-                    return e1 + e2;
-                } catch (storm::exceptions::InvalidTypeException const& e) {
-                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": " << e.what() << ".");
-                }
-            }
-        }
-        
-        storm::expressions::Expression PrismParser::createMinusExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const {
-            if (!this->secondRun) {
-                return storm::expressions::Expression::createFalse();
-            } else {
-                try {
-                    return e1 - e2;
-                } catch (storm::exceptions::InvalidTypeException const& e) {
-                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": " << e.what() << ".");
-                }
-            }
-        }
-        
-        storm::expressions::Expression PrismParser::createMultExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const {
-            if (!this->secondRun) {
-                return storm::expressions::Expression::createFalse();
-            } else {
-                try {
-                    return e1 * e2;
-                } catch (storm::exceptions::InvalidTypeException const& e) {
-                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": " << e.what() << ".");
-                }
-            }
-        }
-        
-        storm::expressions::Expression PrismParser::createDivExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const {
-            if (!this->secondRun) {
-                return storm::expressions::Expression::createFalse();
-            } else {
-                try {
-                    return e1 / e2;
-                } catch (storm::exceptions::InvalidTypeException const& e) {
-                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": " << e.what() << ".");
-                }
-            }
-        }
-        
-        storm::expressions::Expression PrismParser::createNotExpression(storm::expressions::Expression e1) const {
-            if (!this->secondRun) {
-                return storm::expressions::Expression::createFalse();
-            } else {
-                try {
-                    return !e1;
-                } catch (storm::exceptions::InvalidTypeException const& e) {
-                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": " << e.what() << ".");
-                }
-            }
-        }
-        
-        storm::expressions::Expression PrismParser::createMinusExpression(storm::expressions::Expression e1) const {
-            if (!this->secondRun) {
-                return storm::expressions::Expression::createFalse();
-            } else {
-                try {
-                    return -e1;
-                } catch (storm::exceptions::InvalidTypeException const& e) {
-                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": " << e.what() << ".");
-                }
-            }
-        }
-        
-        storm::expressions::Expression PrismParser::createTrueExpression() const {
-            if (!this->secondRun) {
-                return storm::expressions::Expression::createFalse();
-            } else {
-                return storm::expressions::Expression::createTrue();
-            }
-        }
-        
-        storm::expressions::Expression PrismParser::createFalseExpression() const {
-            if (!this->secondRun) {
-                return storm::expressions::Expression::createFalse();
-            } else {
-                return storm::expressions::Expression::createFalse();
-            }
-        }
-        
-        storm::expressions::Expression PrismParser::createDoubleLiteralExpression(double value, bool& pass) const {
-            // If we are not supposed to accept double expressions, we reject it by setting pass to false.
-            if (!this->allowDoubleLiteralsFlag) {
-                pass = false;
-            }
-            
-            if (!this->secondRun) {
-                return storm::expressions::Expression::createFalse();
-            } else {
-                return storm::expressions::Expression::createDoubleLiteral(value);
-            }
-        }
-        
-        storm::expressions::Expression PrismParser::createIntegerLiteralExpression(int value) const {
-            if (!this->secondRun) {
-                return storm::expressions::Expression::createFalse();
-            } else {
-                return storm::expressions::Expression::createIntegerLiteral(static_cast<int_fast64_t>(value));
-            }
-        }
-        
-        storm::expressions::Expression PrismParser::createMinimumExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const {
-            if (!this->secondRun) {
-                return storm::expressions::Expression::createFalse();
-            } else {
-                try {
-                    return storm::expressions::Expression::minimum(e1, e2);
-                } catch (storm::exceptions::InvalidTypeException const& e) {
-                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": " << e.what() << ".");
-                }
-            }
-        }
-        
-        storm::expressions::Expression PrismParser::createMaximumExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const {
-            if (!this->secondRun) {
-                return storm::expressions::Expression::createFalse();
-            } else {
-                try {
-                    return storm::expressions::Expression::maximum(e1, e2);
-                } catch (storm::exceptions::InvalidTypeException const& e) {
-                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": " << e.what() << ".");
-                }
-            }
-        }
-        
-        storm::expressions::Expression PrismParser::createFloorExpression(storm::expressions::Expression e1) const {
-            if (!this->secondRun) {
-                return storm::expressions::Expression::createFalse();
-            } else {
-                try {
-                    return e1.floor();
-                } catch (storm::exceptions::InvalidTypeException const& e) {
-                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": " << e.what() << ".");
-                }
-            }
-        }
-        
-        storm::expressions::Expression PrismParser::createCeilExpression(storm::expressions::Expression e1) const {
-            if (!this->secondRun) {
-                return storm::expressions::Expression::createFalse();
-            } else {
-                try {
-                    return e1.ceil();
-                } catch (storm::exceptions::InvalidTypeException const& e) {
-                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": " << e.what() << ".");
-                }
-            }
-        }
-        
-        storm::expressions::Expression PrismParser::getIdentifierExpression(std::string const& identifier) const {
-            if (!this->secondRun) {
-                return storm::expressions::Expression::createFalse();
-            } else {
-                storm::expressions::Expression const* expression = this->identifiers_.find(identifier);
-                LOG_THROW(expression != nullptr, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": Undeclared identifier '" << identifier << "'.");
-                return *expression;
-            }
         }
         
         storm::prism::Constant PrismParser::createUndefinedBooleanConstant(std::string const& newConstant) const {

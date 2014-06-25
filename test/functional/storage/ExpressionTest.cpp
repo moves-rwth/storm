@@ -223,10 +223,10 @@ TEST(Expression, OperatorTest) {
     ASSERT_NO_THROW(tempExpression = boolVarExpression.iff(boolVarExpression));
     EXPECT_TRUE(tempExpression.getReturnType() == storm::expressions::ExpressionReturnType::Bool);
     
-    ASSERT_THROW(tempExpression = trueExpression ^ piExpression, storm::exceptions::InvalidTypeException);
-    ASSERT_NO_THROW(tempExpression = trueExpression ^ falseExpression);
+    ASSERT_THROW(tempExpression = trueExpression != piExpression, storm::exceptions::InvalidTypeException);
+    ASSERT_NO_THROW(tempExpression = trueExpression != falseExpression);
     EXPECT_TRUE(tempExpression.getReturnType() == storm::expressions::ExpressionReturnType::Bool);
-    ASSERT_NO_THROW(tempExpression = boolVarExpression ^ boolVarExpression);
+    ASSERT_NO_THROW(tempExpression = boolVarExpression != boolVarExpression);
     EXPECT_TRUE(tempExpression.getReturnType() == storm::expressions::ExpressionReturnType::Bool);
     
     ASSERT_THROW(tempExpression = trueExpression.floor(), storm::exceptions::InvalidTypeException);
@@ -240,6 +240,12 @@ TEST(Expression, OperatorTest) {
     EXPECT_TRUE(tempExpression.getReturnType() == storm::expressions::ExpressionReturnType::Int);
     ASSERT_NO_THROW(tempExpression = doubleVarExpression.ceil());
     EXPECT_TRUE(tempExpression.getReturnType() == storm::expressions::ExpressionReturnType::Int);
+
+    ASSERT_THROW(tempExpression = trueExpression ^ piExpression, storm::exceptions::InvalidTypeException);
+    ASSERT_NO_THROW(tempExpression = threeExpression ^ threeExpression);
+    EXPECT_TRUE(tempExpression.getReturnType() == storm::expressions::ExpressionReturnType::Int);
+    ASSERT_NO_THROW(tempExpression = intVarExpression ^ doubleVarExpression);
+    EXPECT_TRUE(tempExpression.getReturnType() == storm::expressions::ExpressionReturnType::Double);
 }
 
 TEST(Expression, SubstitutionTest) {

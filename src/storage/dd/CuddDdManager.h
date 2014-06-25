@@ -16,6 +16,7 @@ namespace storm {
         class DdManager<DdType::CUDD> : public std::enable_shared_from_this<DdManager<DdType::CUDD>> {
         public:
             friend class Dd<DdType::CUDD>;
+            friend class Odd<DdType::CUDD>;
             friend class DdForwardIterator<DdType::CUDD>;
             
             /*!
@@ -138,7 +139,6 @@ namespace storm {
              */
             void triggerReordering();
             
-        protected:
             /*!
              * Retrieves the meta variable with the given name if it exists.
              *

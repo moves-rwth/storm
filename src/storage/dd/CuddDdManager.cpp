@@ -33,7 +33,7 @@ bool CuddOptionsRegistered = storm::settings::Settings::registerNewModule([] (st
 namespace storm {
     namespace dd {
         DdManager<DdType::CUDD>::DdManager() : metaVariableMap(), cuddManager() {
-            this->cuddManager.SetMaxMemory(storm::settings::Settings::getInstance()->getOptionByLongName("cuddmaxmem").getArgument(0).getValueAsUnsignedInteger() * 1024 * 1024);
+            this->cuddManager.SetMaxMemory(static_cast<unsigned long>(storm::settings::Settings::getInstance()->getOptionByLongName("cuddmaxmem").getArgument(0).getValueAsUnsignedInteger() * 1024ul * 1024ul));
             this->cuddManager.SetEpsilon(storm::settings::Settings::getInstance()->getOptionByLongName("cuddprec").getArgument(0).getValueAsDouble());
         }
         
@@ -183,8 +183,14 @@ namespace storm {
             std::vector<std::pair<ADD, std::string>> variableNamePairs;
             for (auto const& nameMetaVariablePair : this->metaVariableMap) {
                 DdMetaVariable<DdType::CUDD> const& metaVariable = nameMetaVariablePair.second;
-                for (uint_fast64_t variableIndex = 0; variableIndex < metaVariable.getNumberOfDdVariables(); ++variableIndex) {
-                    variableNamePairs.emplace_back(metaVariable.getDdVariables()[variableIndex].getCuddAdd(), metaVariable.getName() + "." + std::to_string(variableIndex));
+                // If the meta variable is of type bool, we don't need to suffix it with the bit number.
+                if (metaVariable.getType() == DdMetaVariable<storm::dd::DdType::CUDD>::MetaVariableType::Bool) {
+                    variableNamePairs.emplace_back(metaVariable.getDdVariables().front().getCuddAdd(), metaVariable.getName());
+                } else {
+                    // For integer-valued meta variables, we, however, have to add the suffix.
+                    for (uint_fast64_t variableIndex = 0; variableIndex < metaVariable.getNumberOfDdVariables(); ++variableIndex) {
+                        variableNamePairs.emplace_back(metaVariable.getDdVariables()[variableIndex].getCuddAdd(), metaVariable.getName() + "." + std::to_string(variableIndex));
+                    }
                 }
             }
             
