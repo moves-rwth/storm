@@ -15,28 +15,30 @@ namespace storm {
 			Z3SmtSolver(Options options = Options::ModelGeneration);
 			virtual ~Z3SmtSolver();
 
-			virtual void push();
+			virtual void push() override;
 
-			virtual void pop();
+			virtual void pop() override;
 
-			virtual void pop(uint_fast64_t n);
+			virtual void pop(uint_fast64_t n) override;
 
-			virtual void reset();
+			virtual void reset() override;
 
-			virtual void assertExpression(storm::expressions::Expression &e);
+			virtual void assertExpression(storm::expressions::Expression &e) override;
 
-			virtual CheckResult check();
+			virtual CheckResult check() override;
 
-			virtual CheckResult checkWithAssumptions(std::set<storm::expressions::Expression> &assumptions);
+			virtual CheckResult checkWithAssumptions(std::set<storm::expressions::Expression> &assumptions) override;
 
-			virtual CheckResult checkWithAssumptions(std::initializer_list<storm::expressions::Expression> assumptions);
+			virtual CheckResult checkWithAssumptions(std::initializer_list<storm::expressions::Expression> assumptions) override;
 
-			virtual storm::expressions::SimpleValuation getModel();
+			virtual storm::expressions::SimpleValuation getModel() override;
 
-			virtual std::set<storm::expressions::SimpleValuation> solveAndDiversify(std::set<storm::expressions::SimpleValuation> diversifyers);
+			virtual std::vector<storm::expressions::SimpleValuation> allSat(std::vector<storm::expressions::Expression> important) override;
 
-			virtual uint_fast64_t solveAndDiversify(std::set<storm::expressions::SimpleValuation> diversifyers, std::function<bool(storm::expressions::Valuation&) > callback);
+			virtual uint_fast64_t allSat(std::vector<storm::expressions::Expression> important, std::function<bool(storm::expressions::SimpleValuation&)> callback) override;
 
+		protected:
+			virtual storm::expressions::SimpleValuation z3ModelToStorm(z3::model m);
 		private:
 
 #ifdef STORM_HAVE_Z3

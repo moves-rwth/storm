@@ -126,28 +126,35 @@ namespace storm {
 			}
 
 			/*!
-			* Get get a maximal number of models for the assertion stack such that each model has a distinct valuation of the diversifyers.
+			* Performs all AllSat over the important atoms. All valuations of the important atoms such that the currently asserted formulas are satisfiable
+			* are returned from the function.
 			*
-			* @param diversifyers A set of expressions over which to diversify. For each returned model the valuation these terms is distinct.
+			* @warning If infinitely many valuations exist, such that the currently asserted formulas are satisfiable, this function will never return!
+			*
+			* @param important A set of expressions over which to perform all sat.
+			*
+			* @returns the set of all valuations of the important atoms, such that the currently asserted formulas are satisfiable
 			*
 			* @throws IllegalFunctionCallException if model generation is not configured for this solver
 			* @throws NotImplementedException if model generation is not implemented with this solver class
 			*/
-			virtual std::set<storm::expressions::SimpleValuation> solveAndDiversify(std::set<storm::expressions::SimpleValuation> diversifyers) {
+			virtual std::vector<storm::expressions::SimpleValuation> allSat(std::vector<storm::expressions::Expression> important) {
 				throw storm::exceptions::NotImplementedException("This subclass of SmtSolver does not support model generation.");
 			}
 
 			/*!
-			* Get get a maximal number of models for the assertion stack such that each model has a distinct valuation of the diversifyers.
-			* For each model that is found the provided callback function is called once with the model as parameter.
+			* Performs all AllSat over the important atoms. Once a valuation of the important atoms such that the currently asserted formulas are satisfiable
+			* is found the callback is called with that valuation.
 			*
-			* @param diversifyers A set of expressions over which to diversify. For each returned model the valuation these terms is distinct.
-			* @param callback A function to call for each found model.
+			* @param important A set of expressions over which to perform all sat.
+			* @param callback A function to call for each found valuation.
+			*
+			* @returns the number of valuations of the important atoms, such that the currently asserted formulas are satisfiable that where found
 			*
 			* @throws IllegalFunctionCallException if model generation is not configured for this solver
 			* @throws NotImplementedException if model generation is not implemented with this solver class
 			*/
-			virtual uint_fast64_t solveAndDiversify(std::set<storm::expressions::SimpleValuation> diversifyers, std::function<bool(storm::expressions::Valuation&)> callback) {
+			virtual uint_fast64_t allSat(std::vector<storm::expressions::Expression> important, std::function<bool(storm::expressions::SimpleValuation&)> callback) {
 				throw storm::exceptions::NotImplementedException("This subclass of SmtSolver does not support model generation.");
 			}
 		};

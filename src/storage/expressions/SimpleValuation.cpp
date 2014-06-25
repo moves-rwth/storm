@@ -15,17 +15,17 @@ namespace storm {
         
         void SimpleValuation::addBooleanIdentifier(std::string const& name, bool initialValue) {
             LOG_THROW(this->identifierToValueMap.find(name) == this->identifierToValueMap.end(), storm::exceptions::InvalidArgumentException, "Identifier '" << name << "' already registered.");
-            this->identifierToValueMap.emplace(name, initialValue);
+			this->identifierToValueMap.emplace(name, initialValue);
         }
         
         void SimpleValuation::addIntegerIdentifier(std::string const& name, int_fast64_t initialValue) {
             LOG_THROW(this->identifierToValueMap.find(name) == this->identifierToValueMap.end(), storm::exceptions::InvalidArgumentException, "Identifier '" << name << "' already registered.");
-            this->identifierToValueMap.emplace(name, initialValue);
+			this->identifierToValueMap.emplace(name, initialValue);
         }
         
         void SimpleValuation::addDoubleIdentifier(std::string const& name, double initialValue) {
             LOG_THROW(this->identifierToValueMap.find(name) == this->identifierToValueMap.end(), storm::exceptions::InvalidArgumentException, "Identifier '" << name << "' already registered.");
-            this->identifierToValueMap.emplace(name, initialValue);
+			this->identifierToValueMap.emplace(name, initialValue);
         }
         
         void SimpleValuation::setBooleanValue(std::string const& name, bool value) {
