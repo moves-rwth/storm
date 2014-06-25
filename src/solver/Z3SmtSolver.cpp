@@ -162,9 +162,6 @@ namespace storm {
 
 			}
 
-
-
-			LOG_THROW(false, storm::exceptions::NotImplementedException, "Model generation is not implemented in this Z3 solver interface.");
 #else
 			LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without Z3 support.");
 #endif

@@ -102,6 +102,11 @@ namespace storm {
             }
             
 			storm::expressions::Expression translateExpression(z3::expr const& expr) {
+				//std::cout << std::boolalpha << expr.is_var() << std::endl;
+				//std::cout << std::boolalpha << expr.is_app() << std::endl;
+				//std::cout << expr.decl().decl_kind() << std::endl;
+
+				/*
 				if (expr.is_bool() && expr.is_const()) {
 					switch (Z3_get_bool_value(expr.ctx(), expr)) {
 						case Z3_L_FALSE:
@@ -128,7 +133,8 @@ namespace storm {
 					} else {
 						LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Failed to convert Z3 expression. Expression is constant real and value does not fit into a fraction with 64-bit integer numerator and denominator.");
 					}
-				} else if (expr.is_app()) {
+					} else */
+				if (expr.is_app()) {
 					switch (expr.decl().decl_kind()) {
 						case Z3_OP_TRUE:
 							return storm::expressions::Expression::createTrue();
@@ -192,8 +198,26 @@ namespace storm {
 							return this->translateExpression(expr.arg(0)) / this->translateExpression(expr.arg(1));
 						case Z3_OP_IDIV:
 							return this->translateExpression(expr.arg(0)) / this->translateExpression(expr.arg(1));
+						case Z3_OP_ANUM:
+							//Arithmetic numeral
+							if (expr.is_int() && expr.is_const()) {
+								int_fast64_t value;
+								if (Z3_get_numeral_int64(expr.ctx(), expr, &value)) {
+									return storm::expressions::Expression::createIntegerLiteral(value);
+								} else {
+									LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Failed to convert Z3 expression. Expression is constant integer and value does not fit into 64-bit integer.");
+								}
+							} else if (expr.is_real() && expr.is_const()) {
+								int_fast64_t num;
+								int_fast64_t den;
+								if (Z3_get_numeral_rational_int64(expr.ctx(), expr, &num, &den)) {
+									return storm::expressions::Expression::createDoubleLiteral(static_cast<double>(num) / static_cast<double>(den));
+								} else {
+									LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Failed to convert Z3 expression. Expression is constant real and value does not fit into a fraction with 64-bit integer numerator and denominator.");
+								}
+							}
 						case Z3_OP_UNINTERPRETED:
-							//this should be a variable...
+							//storm only supports uninterpreted constant functions
 							LOG_THROW(expr.is_const(), storm::exceptions::ExpressionEvaluationException, "Failed to convert Z3 expression. Encountered non constant uninterpreted function.");
 							if (expr.is_bool()) {
 								return storm::expressions::Expression::createBooleanVariable(expr.decl().name().str());

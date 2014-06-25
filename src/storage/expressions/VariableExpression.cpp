@@ -48,6 +48,10 @@ namespace storm {
         bool VariableExpression::containsVariables() const {
             return true;
         }
+
+		bool VariableExpression::isVariable() const {
+			return true;
+		}
         
         std::set<std::string> VariableExpression::getVariables() const {
             return {this->getVariableName()};

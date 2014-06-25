@@ -171,17 +171,17 @@ TEST(Z3ExpressionAdapter, Z3ToStormBasic) {
 
 	z3::expr z3True = ctx.bool_val(true);
 	storm::expressions::Expression exprTrue;
-	ASSERT_NO_THROW(exprTrue = adapter.translateExpression(z3True));
+	exprTrue = adapter.translateExpression(z3True);
 	ASSERT_TRUE(exprTrue.isTrue());
 
 	z3::expr z3False = ctx.bool_val(false);
 	storm::expressions::Expression exprFalse;
-	ASSERT_NO_THROW(exprFalse = adapter.translateExpression(z3False));
+	exprFalse = adapter.translateExpression(z3False);
 	ASSERT_TRUE(exprFalse.isFalse());
 
 	z3::expr z3Conjunction = (ctx.bool_const("x") && ctx.bool_const("y"));
 	storm::expressions::Expression exprConjunction;
-	ASSERT_NO_THROW(exprConjunction = adapter.translateExpression(z3Conjunction));
+	(exprConjunction = adapter.translateExpression(z3Conjunction));
 	ASSERT_EQ(storm::expressions::OperatorType::And, exprConjunction.getOperator());
 	ASSERT_TRUE(exprConjunction.getOperand(0).isVariable());
 	ASSERT_EQ("x", exprConjunction.getOperand(0).getIdentifier());
@@ -190,7 +190,7 @@ TEST(Z3ExpressionAdapter, Z3ToStormBasic) {
 
 	z3::expr z3Nor = !(ctx.bool_const("x") || ctx.bool_const("y"));
 	storm::expressions::Expression exprNor;
-	ASSERT_NO_THROW(exprNor = adapter.translateExpression(z3Nor));
+	(exprNor = adapter.translateExpression(z3Nor));
 	ASSERT_EQ(storm::expressions::OperatorType::Not, exprNor.getOperator());
 	ASSERT_EQ(storm::expressions::OperatorType::Or, exprNor.getOperand(0).getOperator());
 	ASSERT_TRUE(exprNor.getOperand(0).getOperand(0).isVariable());

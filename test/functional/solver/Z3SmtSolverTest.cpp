@@ -174,13 +174,13 @@ TEST(Z3SmtSolver, GenerateModel) {
 		&& c == (a * b)
 		&& b + a > c;
 
-	ASSERT_NO_THROW(s.assertExpression(exprFormula));
-	ASSERT_NO_THROW(result = s.check());
+	(s.assertExpression(exprFormula));
+	(result = s.check());
 	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::SAT);
 	storm::expressions::SimpleValuation model;
-	ASSERT_NO_THROW(model = s.getModel());
+	(model = s.getModel());
 	int_fast64_t a_eval;
-	ASSERT_NO_THROW(a_eval = model.getIntegerValue("a"));
+	(a_eval = model.getIntegerValue("a"));
 	ASSERT_EQ(1, a_eval);
 
 #else

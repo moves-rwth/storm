@@ -31,6 +31,7 @@ namespace storm {
             virtual double evaluateAsDouble(Valuation const* valuation = nullptr) const override;
             virtual std::string const& getIdentifier() const override;
             virtual bool containsVariables() const override;
+			virtual bool isVariable() const override;
 			virtual std::set<std::string> getVariables() const override;
 			virtual std::map<std::string, ExpressionReturnType> getVariablesAndTypes() const override;
             virtual std::shared_ptr<BaseExpression const> simplify() const override;
