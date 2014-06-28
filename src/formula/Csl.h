@@ -10,19 +10,19 @@
 
 #include "src/modelchecker/csl/ForwardDeclarations.h"
 
-#include "Csl/And.h"
-#include "Csl/Ap.h"
-#include "Csl/Next.h"
-#include "Csl/Not.h"
-#include "Csl/Or.h"
-#include "Csl/ProbabilisticBoundOperator.h"
-#include "Csl/SteadyStateBoundOperator.h"
+#include "csl/And.h"
+#include "csl/Ap.h"
+#include "csl/Next.h"
+#include "csl/Not.h"
+#include "csl/Or.h"
+#include "csl/ProbabilisticBoundOperator.h"
+#include "csl/SteadyStateBoundOperator.h"
 
-#include "Csl/Until.h"
-#include "Csl/Eventually.h"
-#include "Csl/Globally.h"
-#include "Csl/TimeBoundedEventually.h"
-#include "Csl/TimeBoundedUntil.h"
+#include "csl/Until.h"
+#include "csl/Eventually.h"
+#include "csl/Globally.h"
+#include "csl/TimeBoundedEventually.h"
+#include "csl/TimeBoundedUntil.h"
 
 #include "modelchecker/csl/AbstractModelChecker.h"
 

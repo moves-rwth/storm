@@ -9,20 +9,24 @@
 #define LTLFILEPARSER_H_
 
 #include "formula/Ltl.h"
-#include "src/formula/Ltl/LtlFilter.h"
+#include "src/formula/ltl/LtlFilter.h"
 
 #include <list>
 
 namespace storm {
 namespace parser {
 
-/*!
- * Parses each line of a given file as prctl formula and returns a list containing the results of the parsing.
- *
- * @param filename
- * @return The list of parsed formulas
- */
-std::list<storm::property::ltl::LtlFilter<double>*> LtlFileParser(std::string filename);
+class LtlFileParser {
+public:
+
+	/*!
+	 * Parses each line of a given file as prctl formula and returns a list containing the results of the parsing.
+	 *
+	 * @param filename
+	 * @return The list of parsed formulas
+	 */
+	static std::list<storm::property::ltl::LtlFilter<double>*> parseLtlFile(std::string filename);
+};
 
 } //namespace parser
 } //namespace storm

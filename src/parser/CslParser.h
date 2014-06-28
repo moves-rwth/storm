@@ -9,7 +9,7 @@
 #define STORM_PARSER_CSLPARSER_H_
 
 #include "src/formula/Csl.h"
-#include "src/formula/Csl/CslFilter.h"
+#include "src/formula/csl/CslFilter.h"
 #include <functional>
 
 namespace storm {

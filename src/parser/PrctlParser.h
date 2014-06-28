@@ -2,7 +2,7 @@
 #define STORM_PARSER_PRCTLPARSER_H_
 
 #include "src/formula/Prctl.h"
-#include "src/formula/Prctl/PrctlFilter.h"
+#include "src/formula/prctl/PrctlFilter.h"
 
 namespace storm {
 namespace parser {
@@ -11,10 +11,6 @@ namespace parser {
  * Reads a PRCTL formula from a string and return the formula tree.
  *
  * If you want to read the formula from a file, use the PrctlFileParser class instead.
- *
- * @note
- * This class creates a PctlFormula object which can be accessed through the getFormula() method (of base
- * class PrctlParser). However, it will not delete this object.
  */
 class PrctlParser {
 public:

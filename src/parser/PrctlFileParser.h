@@ -9,7 +9,7 @@
 #define STORM_PARSER_PRCTLFILEPARSER_H_
 
 #include "formula/Prctl.h"
-#include "src/formula/Prctl/PrctlFilter.h"
+#include "src/formula/prctl/PrctlFilter.h"
 
 #include <list>
 

@@ -10,12 +10,12 @@
 #include "src/utility/constants.h"
 
 // The action class headers.
-#include "src/formula/Actions/AbstractAction.h"
-#include "src/formula/Actions/BoundAction.h"
-#include "src/formula/Actions/InvertAction.h"
-#include "src/formula/Actions/FormulaAction.h"
-#include "src/formula/Actions/RangeAction.h"
-#include "src/formula/Actions/SortAction.h"
+#include "src/formula/actions/AbstractAction.h"
+#include "src/formula/actions/BoundAction.h"
+#include "src/formula/actions/InvertAction.h"
+#include "src/formula/actions/FormulaAction.h"
+#include "src/formula/actions/RangeAction.h"
+#include "src/formula/actions/SortAction.h"
 
 // If the parser fails due to ill-formed data, this exception is thrown.
 #include "src/exceptions/WrongFormatException.h"

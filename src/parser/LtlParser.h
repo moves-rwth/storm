@@ -9,12 +9,20 @@
 #define STORM_PARSER_LTLPARSER_H_
 
 #include "src/formula/Ltl.h"
-#include "src/formula/Ltl/LtlFilter.h"
+#include "src/formula/ltl/LtlFilter.h"
 
 namespace storm {
 namespace parser {
 
 /*!
+ * Reads a LTL formula from a string and return the formula tree.
+ *
+ * If you want to read the formula from a file, use the LtlFileParser class instead.
+ */
+class LtlParser {
+public:
+
+	/*!
 	* Reads a LTL formula from its string representation and parses it into a formula tree, consisting of
 	* classes in the namespace storm::property.
 	*
@@ -23,13 +31,17 @@ namespace parser {
 	* @param formulaString The string representation of the formula
 	* @throw wrongFormatException If the input could not be parsed successfully
 	*/
-storm::property::ltl::LtlFilter<double>* LtlParser(std::string formulaString);
+	static storm::property::ltl::LtlFilter<double>* parseLtlFormula(std::string formulaString);
 
-/*!
- * Struct for the Ltl grammar, that Boost::Spirit uses to parse the formulas.
- */
-template<typename Iterator, typename Skipper>
-struct LtlGrammar;
+private:
+
+	/*!
+	 * Struct for the Ltl grammar, that Boost::Spirit uses to parse the formulas.
+	 */
+	template<typename Iterator, typename Skipper>
+	struct LtlGrammar;
+
+};
 
 } /* namespace parser */
 } /* namespace storm */

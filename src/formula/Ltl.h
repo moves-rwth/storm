@@ -10,16 +10,16 @@
 
 #include "src/modelchecker/ltl/ForwardDeclarations.h"
 
-#include "Ltl/And.h"
-#include "Ltl/Ap.h"
-#include "Ltl/BoundedEventually.h"
-#include "Ltl/BoundedUntil.h"
-#include "Ltl/Eventually.h"
-#include "Ltl/Globally.h"
-#include "Ltl/Next.h"
-#include "Ltl/Not.h"
-#include "Ltl/Or.h"
-#include "Ltl/Until.h"
+#include "ltl/And.h"
+#include "ltl/Ap.h"
+#include "ltl/BoundedEventually.h"
+#include "ltl/BoundedUntil.h"
+#include "ltl/Eventually.h"
+#include "ltl/Globally.h"
+#include "ltl/Next.h"
+#include "ltl/Not.h"
+#include "ltl/Or.h"
+#include "ltl/Until.h"
 
 #include "modelchecker/ltl/AbstractModelChecker.h"
 

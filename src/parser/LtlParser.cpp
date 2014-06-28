@@ -11,11 +11,11 @@
 #include "src/utility/constants.h"
 
 // The action class headers.
-#include "src/formula/Actions/AbstractAction.h"
-#include "src/formula/Actions/BoundAction.h"
-#include "src/formula/Actions/InvertAction.h"
-#include "src/formula/Actions/RangeAction.h"
-#include "src/formula/Actions/SortAction.h"
+#include "src/formula/actions/AbstractAction.h"
+#include "src/formula/actions/BoundAction.h"
+#include "src/formula/actions/InvertAction.h"
+#include "src/formula/actions/RangeAction.h"
+#include "src/formula/actions/SortAction.h"
 
 // If the parser fails due to ill-formed data, this exception is thrown.
 #include "src/exceptions/WrongFormatException.h"
@@ -48,7 +48,7 @@ namespace storm {
 namespace parser {
 
 template<typename Iterator, typename Skipper>
-struct LtlGrammar : qi::grammar<Iterator, storm::property::ltl::LtlFilter<double>*(), Skipper > {
+struct LtlParser::LtlGrammar : qi::grammar<Iterator, storm::property::ltl::LtlFilter<double>*(), Skipper > {
 	LtlGrammar() : LtlGrammar::base_type(start) {
 		//This block contains helper rules that may be used several times
 		freeIdentifierName = qi::lexeme[qi::alpha >> *(qi::alnum | qi::char_('_'))];
@@ -182,11 +182,7 @@ struct LtlGrammar : qi::grammar<Iterator, storm::property::ltl::LtlFilter<double
 
 };
 
-} //namespace storm
-} //namespace parser
-
-
-storm::property::ltl::LtlFilter<double>* storm::parser::LtlParser(std::string formulaString) {
+storm::property::ltl::LtlFilter<double>* LtlParser::parseLtlFormula(std::string formulaString) {
 	// Prepare iterators to input.
 	BaseIteratorType stringIteratorBegin = formulaString.begin();
 	BaseIteratorType stringIteratorEnd = formulaString.end();
@@ -239,3 +235,5 @@ storm::property::ltl::LtlFilter<double>* storm::parser::LtlParser(std::string fo
 	return result_pointer;
 }
 
+} //namespace parser
+} //namespace storm

@@ -11,7 +11,7 @@
 #include <vector>
 #include <string>
 #include "src/formula/AbstractFormula.h"
-#include "src/formula/Actions/AbstractAction.h"
+#include "src/formula/actions/AbstractAction.h"
 
 namespace storm {
 namespace property {

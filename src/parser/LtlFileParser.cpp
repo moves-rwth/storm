@@ -15,7 +15,7 @@
 namespace storm {
 namespace parser {
 
-std::list<storm::property::ltl::LtlFilter<double>*> LtlFileParser(std::string filename) {
+std::list<storm::property::ltl::LtlFilter<double>*> LtlFileParser::parseLtlFile(std::string filename) {
 	// Open file
 	std::ifstream inputFileStream(filename, std::ios::in);
 
@@ -30,7 +30,7 @@ std::list<storm::property::ltl::LtlFilter<double>*> LtlFileParser(std::string fi
 		std::string line;
 		//The while loop reads the input file line by line
 		while (std::getline(inputFileStream, line)) {
-			result.push_back(storm::parser::LtlParser(line));
+			result.push_back(storm::parser::LtlParser::parseLtlFormula(line));
 		}
 	}
 
