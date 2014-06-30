@@ -931,7 +931,7 @@ namespace storm {
 		* Returns a reference to the internal columnMapping vector
 		*/
 		template<typename T>
-		std::vector<std::pair<uint_fast64_t, T>> const& SparseMatrix<T>::__internal_getColumnsAndValues() {
+		std::vector<MatrixEntry<T>> const& SparseMatrix<T>::__internal_getColumnsAndValues() {
 			return this->columnsAndValues;
 		}
         

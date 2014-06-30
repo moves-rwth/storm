@@ -80,7 +80,7 @@ namespace storm {
 				boost::container::flat_set<uint_fast64_t> allTargetBlocks;
 				for (auto state : block) {
 					for (auto const& transitionEntry : this->getRows(state)) {
-						uint_fast64_t targetBlock = stateToBlockMap[transitionEntry.first];
+						uint_fast64_t targetBlock = stateToBlockMap[transitionEntry.getColumn()];
 
 						// We only need to consider transitions that are actually leaving the SCC.
 						if (targetBlock != currentBlockIndex) {

@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 #include "src/parser/AutoParser.h"
+#include "src/models/Dtmc.h"
 #include "src/storage/StronglyConnectedComponentDecomposition.h"
 #include "src/models/MarkovAutomaton.h"
 
@@ -49,8 +50,7 @@ TEST(StronglyConnectedComponentDecomposition, FullSystem2) {
 }
 
 TEST(StronglyConnectedComponentDecomposition, MatrixBasedSystem) {
-	storm::parser::AutoParser<double> parser(STORM_CPP_BASE_PATH "/examples/dtmc/scc/scc.tra", STORM_CPP_BASE_PATH "/examples/dtmc/scc/scc.lab", "", "");
-	std::shared_ptr<storm::models::Dtmc<double>> dtmc = parser.getModel<storm::models::Dtmc<double>>();
+	std::shared_ptr<storm::models::Dtmc<double>> dtmc = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/dtmc/scc/scc.tra", STORM_CPP_BASE_PATH "/examples/dtmc/scc/scc.lab", "", "")->as<storm::models::Dtmc<double>>();
 
 	storm::storage::StronglyConnectedComponentDecomposition<double> sccDecomposition;
 	ASSERT_NO_THROW(sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(*dtmc, true, false));

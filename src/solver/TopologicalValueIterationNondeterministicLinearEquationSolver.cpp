@@ -94,7 +94,7 @@ namespace storm {
 				std::vector<uint_fast64_t> sccSubNondeterministicChoiceIndices(sccSubmatrix.getColumnCount() + 1);
 				sccSubNondeterministicChoiceIndices.at(0) = 0;
 
-				// Preprocess all dependant states
+				// Preprocess all dependent states
 				// Remove outgoing transitions and create the ChoiceIndices
 				uint_fast64_t innerIndex = 0;
                 uint_fast64_t outerIndex = 0;
@@ -105,10 +105,10 @@ namespace storm {
 					for (auto rowGroupIt = nondeterministicChoiceIndices[state]; rowGroupIt != nondeterministicChoiceIndices[state + 1]; ++rowGroupIt) {
 						typename storm::storage::SparseMatrix<ValueType>::const_rows row = A.getRow(rowGroupIt);
 						for (auto rowIt = row.begin(); rowIt != row.end(); ++rowIt) {
-							if (!subMatrixIndices.get(rowIt->first)) {
+							if (!subMatrixIndices.get(rowIt->getColumn())) {
 								// This is an outgoing transition of a state in the SCC to a state not included in the SCC
 								// Subtracting Pr(tau) * x_other from b fixes that
-								sccSubB.at(innerIndex) = sccSubB.at(innerIndex) + (rowIt->second * x.at(rowIt->first));
+								sccSubB.at(innerIndex) = sccSubB.at(innerIndex) + (rowIt->getValue() * x.at(rowIt->getColumn()));
 							}
 						}
                         ++innerIndex;

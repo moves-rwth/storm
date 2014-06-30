@@ -57,7 +57,7 @@ void exploadVector(std::vector<std::pair<IndexType, ValueType>> const& inputVect
 }
 
 template <bool Minimize, bool Relative, typename IndexType, typename ValueType>
-void basicValueIteration_mvReduce(uint_fast64_t const maxIterationCount, ValueType const precision, std::vector<IndexType> const& matrixRowIndices, std::vector<std::pair<IndexType, ValueType>> const& columnIndicesAndValues, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<IndexType> const& nondeterministicChoiceIndices) {
+void basicValueIteration_mvReduce(uint_fast64_t const maxIterationCount, ValueType const precision, std::vector<IndexType> const& matrixRowIndices, std::vector<storm::storage::MatrixEntry<ValueType>> const& columnIndicesAndValues, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<IndexType> const& nondeterministicChoiceIndices) {
 	//std::vector<IndexType> matrixColumnIndices;
 	//std::vector<ValueType> matrixValues;
 	//exploadVector<IndexType, ValueType>(columnIndicesAndValues, matrixColumnIndices, matrixValues);
@@ -305,7 +305,7 @@ cleanup:
 }
 
 template <typename IndexType, typename ValueType>
-void basicValueIteration_spmv(uint_fast64_t const matrixColCount, std::vector<IndexType> const& matrixRowIndices, std::vector<std::pair<IndexType, ValueType>> const& columnIndicesAndValues, std::vector<ValueType> const& x, std::vector<ValueType>& b) {
+void basicValueIteration_spmv(uint_fast64_t const matrixColCount, std::vector<IndexType> const& matrixRowIndices, std::vector<storm::storage::MatrixEntry<ValueType>> const& columnIndicesAndValues, std::vector<ValueType> const& x, std::vector<ValueType>& b) {
 	IndexType* device_matrixRowIndices = nullptr;
 	IndexType* device_matrixColIndicesAndValues = nullptr;
 	ValueType* device_x = nullptr;
@@ -681,7 +681,7 @@ cleanup:
  *
  */
 
-void basicValueIteration_spmv_uint64_double(uint_fast64_t const matrixColCount, std::vector<uint_fast64_t> const& matrixRowIndices, std::vector<std::pair<uint_fast64_t, double>> const& columnIndicesAndValues, std::vector<double> const& x, std::vector<double>& b) {
+void basicValueIteration_spmv_uint64_double(uint_fast64_t const matrixColCount, std::vector<uint_fast64_t> const& matrixRowIndices, std::vector<storm::storage::MatrixEntry<double>> const& columnIndicesAndValues, std::vector<double> const& x, std::vector<double>& b) {
 	basicValueIteration_spmv(matrixColCount, matrixRowIndices, columnIndicesAndValues, x, b);
 }
 
@@ -705,7 +705,7 @@ void basicValueIteration_equalModuloPrecision_double_NonRelative(std::vector<dou
 	basicValueIteration_equalModuloPrecision<double, false>(x, y, maxElement);
 }
 
-void basicValueIteration_mvReduce_uint64_double_minimize(uint_fast64_t const maxIterationCount, double const precision, bool const relativePrecisionCheck, std::vector<uint_fast64_t> const& matrixRowIndices, std::vector<std::pair<uint_fast64_t, double>> const& columnIndicesAndValues, std::vector<double>& x, std::vector<double> const& b, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices) {
+void basicValueIteration_mvReduce_uint64_double_minimize(uint_fast64_t const maxIterationCount, double const precision, bool const relativePrecisionCheck, std::vector<uint_fast64_t> const& matrixRowIndices, std::vector<storm::storage::MatrixEntry<double>> const& columnIndicesAndValues, std::vector<double>& x, std::vector<double> const& b, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices) {
 	if (relativePrecisionCheck) {
 		basicValueIteration_mvReduce<true, true, uint_fast64_t, double>(maxIterationCount, precision, matrixRowIndices, columnIndicesAndValues, x, b, nondeterministicChoiceIndices);
 	} else {
@@ -713,7 +713,7 @@ void basicValueIteration_mvReduce_uint64_double_minimize(uint_fast64_t const max
 	}
 }
 
-void basicValueIteration_mvReduce_uint64_double_maximize(uint_fast64_t const maxIterationCount, double const precision, bool const relativePrecisionCheck, std::vector<uint_fast64_t> const& matrixRowIndices, std::vector<std::pair<uint_fast64_t, double>> const& columnIndicesAndValues, std::vector<double>& x, std::vector<double> const& b, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices) {
+void basicValueIteration_mvReduce_uint64_double_maximize(uint_fast64_t const maxIterationCount, double const precision, bool const relativePrecisionCheck, std::vector<uint_fast64_t> const& matrixRowIndices, std::vector<storm::storage::MatrixEntry<double>> const& columnIndicesAndValues, std::vector<double>& x, std::vector<double> const& b, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices) {
 	if (relativePrecisionCheck) {
 		basicValueIteration_mvReduce<false, true, uint_fast64_t, double>(maxIterationCount, precision, matrixRowIndices, columnIndicesAndValues, x, b, nondeterministicChoiceIndices);
 	} else {

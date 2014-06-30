@@ -732,7 +732,7 @@ namespace storm {
 			/*!
 			* Returns a reference to the internal columnMapping vector
 			*/
-			std::vector<std::pair<uint_fast64_t, T>> const& __internal_getColumnsAndValues();
+			std::vector<MatrixEntry<T>> const& __internal_getColumnsAndValues();
         private:
             /*!
              * Creates a submatrix of the current matrix by keeping only row groups and columns in the given row group
