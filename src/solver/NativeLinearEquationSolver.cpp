@@ -106,7 +106,6 @@ namespace storm {
         void NativeLinearEquationSolver<ValueType>::performMatrixVectorMultiplication(storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n, std::vector<ValueType>* multiplyResult) const {
             // Set up some temporary variables so that we can just swap pointers instead of copying the result after
             // each iteration.
-            std::vector<ValueType>* swap = nullptr;
             std::vector<ValueType>* currentX = &x;
             
             bool multiplyResultProvided = true;

@@ -54,7 +54,6 @@ namespace storm {
                 newX = new std::vector<ValueType>(x.size());
                 xMemoryProvided = false;
             }
-            std::vector<ValueType>* swap = nullptr;
             uint_fast64_t iterations = 0;
             bool converged = false;
 

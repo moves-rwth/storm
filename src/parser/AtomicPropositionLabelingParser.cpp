@@ -7,192 +7,171 @@
 
 #include "src/parser/AtomicPropositionLabelingParser.h"
 
-#include <errno.h>
-#include <time.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <locale.h>
-
-#include <cstdlib>
-#include <cstdio>
 #include <cstring>
 #include <string>
-#include <clocale>
 #include <iostream>
 
+#include "src/utility/cstring.h"
+#include "src/parser/MappedFile.h"
 #include "src/exceptions/WrongFormatException.h"
 #include "src/exceptions/FileIoException.h"
-#include "src/utility/OsDetection.h"
 
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
 extern log4cplus::Logger logger;
 
 namespace storm {
-namespace parser {
+	namespace parser {
 
+		using namespace storm::utility::cstring;
 
-/*!
- *	Reads a label file and puts the result in a labeling structure.
- *
- *	Labelings created with this method have to be freed with the delete operator.
- *	@param node_count the number of states.
- *	@param filename   input .lab file's name.
- *	@return The pointer to the created labeling object.
- */
-storm::models::AtomicPropositionsLabeling AtomicPropositionLabelingParser(uint_fast64_t node_count, std::string const & filename) {
-	/*
-	 *	Open file.
-	 */
-	if (!storm::parser::fileExistsAndIsReadable(filename.c_str())) {
-		LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": File does not exist or is not readable.");
-		throw storm::exceptions::FileIoException() << "The supplied Labeling input file \"" << filename << "\" does not exist or is not readable by this process.";
-	}
+		storm::models::AtomicPropositionsLabeling AtomicPropositionLabelingParser::parseAtomicPropositionLabeling(uint_fast64_t stateCount, std::string const & filename) {
 
-	/*
-	 *	Find out about the used line endings.
-	 */
-	SupportedLineEndingsEnum lineEndings = findUsedLineEndings(filename, true);
+			// Open the given file.
+			if (!MappedFile::fileExistsAndIsReadable(filename.c_str())) {
+				LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": File does not exist or is not readable.");
+				throw storm::exceptions::FileIoException() << "The supplied Labeling input file \"" << filename << "\" does not exist or is not readable by this process.";
+			}
 
-	MappedFile file(filename.c_str());
-	char* buf = file.data;
+			MappedFile file(filename.c_str());
+			char* buf = file.getData();
 
-	/*
-	 *	First run: obtain number of propositions.
-	 */
-	char separator[5];// = " \r\n\t";
-	storm::parser::getMatchingSeparatorString(separator, sizeof(separator), lineEndings);
+			// First pass: Count the number of propositions.
+			bool foundDecl = false, foundEnd = false;
+			uint_fast32_t proposition_count = 0;
+			size_t cnt = 0;
 
-	bool foundDecl = false, foundEnd = false;
-	uint_fast32_t proposition_count = 0;
-	{
-		size_t cnt = 0;
-		/*
-		 *	Iterate over tokens until we hit #END or end of file.
-		 */
-		while(buf[0] != '\0') {
-			buf += cnt;
-			cnt = strcspn(buf, separator);  // position of next separator
-			if (cnt > 0) {
-				/*
-				 *	next token is #DECLARATION: just skip it
-				 *	next token is #END: stop search
-				 *	otherwise increase proposition_count
-				 */
-				if (strncmp(buf, "#DECLARATION", cnt) == 0) {
-					foundDecl = true;
-					continue;
-				} else if (strncmp(buf, "#END", cnt) == 0) {
-					foundEnd = true;
-					break;
+			// Iterate over tokens until we hit #END or the end of the file.
+			while(buf[0] != '\0') {
+
+				//Move the buffer to the beginning of the next word.
+				buf += cnt;
+				buf = trimWhitespaces(buf);
+
+				// Get the number of characters until the next separator.
+				cnt = skipWord(buf) - buf;
+				if (cnt > 0) {
+
+					// If the next token is #DECLARATION: Just skip it.
+					// If the next token is #END: Stop the search.
+					// Otherwise increase proposition_count.
+					if (strncmp(buf, "#DECLARATION", cnt) == 0) {
+						foundDecl = true;
+						continue;
+					} else if (strncmp(buf, "#END", cnt) == 0) {
+						foundEnd = true;
+						break;
+					}
+					proposition_count++;
 				}
-				proposition_count++;
-			} else {
-				buf++;  // next char is separator, one step forward
 			}
-		}
 
-		/*
-		 *	If #DECLARATION or #END were not found, the file format is wrong
-		 */
-		if (!(foundDecl && foundEnd)) {
-			LOG4CPLUS_ERROR(logger, "Wrong file format in (" << filename << "). File header is corrupted.");
-			if (!foundDecl) LOG4CPLUS_ERROR(logger, "\tDid not find #DECLARATION token.");
-			if (!foundEnd) LOG4CPLUS_ERROR(logger, "\tDid not find #END token.");
-			throw storm::exceptions::WrongFormatException();
-		}
-	}
-
-	/*
-	 *	create labeling object with given node and proposition count
-	 */
-	storm::models::AtomicPropositionsLabeling labeling(node_count, proposition_count);
-
-	/*
-	 *	second run: add propositions and node labels to labeling
-	 *
-	 *	first thing to do: reset file pointer
-	 */	
-	buf = file.data;
-	{
-		/*
-		 *	load propositions
-		 *	As we already checked the file format, we can be a bit sloppy here...
-		 */
-		char proposition[128];  // buffer for proposition names
-		size_t cnt = 0;
-		do {
-			buf += cnt;
-			cnt = strcspn(buf, separator);  // position of next separator
-			if (cnt >= sizeof(proposition)) {
-				/*
-				 *	if token is longer than our buffer, the following strncpy code might get risky...
-				 */
-				LOG4CPLUS_ERROR(logger, "Wrong file format in (" << filename << "). Atomic proposition with length > " << (sizeof(proposition)-1) << " was found.");
+			// If #DECLARATION or #END have not been found, the file format is wrong.
+			if (!(foundDecl && foundEnd)) {
+				LOG4CPLUS_ERROR(logger, "Wrong file format in (" << filename << "). File header is corrupted.");
+				if (!foundDecl) LOG4CPLUS_ERROR(logger, "\tDid not find #DECLARATION token.");
+				if (!foundEnd) LOG4CPLUS_ERROR(logger, "\tDid not find #END token.");
 				throw storm::exceptions::WrongFormatException();
-			} else if (cnt > 0) {
-				/*
-				 *	next token is: #DECLARATION: just skip it
-				 *	next token is: #END: stop search
-				 *	otherwise: copy token to buffer, append trailing null byte and hand it to labeling
-				 */
-				if (strncmp(buf, "#DECLARATION", cnt) == 0) continue;
-				if (strncmp(buf, "#END", cnt) == 0) break;
-				strncpy(proposition, buf, cnt);
-				proposition[cnt] = '\0';
-				labeling.addAtomicProposition(proposition);
-			} else {
-				cnt = 1;  // next char is separator, one step forward
 			}
-		} while (cnt > 0);
-		/*
-		 *	Right here, the buf pointer is still pointing to our last token,
-		 *	i.e. to #END. We want to skip this one...
-		 */
-		buf += 4;
-	}
 
-	{
-		/*
-		 *	now parse node label assignments
-		 */
-		uint_fast64_t node;
-		char proposition[128];
-		size_t cnt;
-		/*
-		 *	iterate over nodes
-		 */
-		while (buf[0] != '\0') {
-			/*
-			 *	parse node number, then iterate over propositions
-			 */
-			node = checked_strtol(buf, &buf);
-			while ((buf[0] != '\r') && (buf[0] != '\n') && (buf[0] != '\0')) {
-				cnt = strcspn(buf, separator);
-				if (cnt == 0) {
-					/*
-					 *	next char is a separator
-					 *	if it's a newline, we continue with next node
-					 *	otherwise we skip it and try again
-					 */
-					if (buf[0] == '\n' || buf[0] == '\r') break;
-					buf++;
-				} else {
-					/*
-					 *	copy proposition to buffer and add it to labeling
-					 */
+
+			// Create labeling object with given node and proposition count.
+			storm::models::AtomicPropositionsLabeling labeling(stateCount, proposition_count);
+
+			// Second pass: Add propositions and node labels to labeling.
+			// First thing to do: Reset the file pointer.
+			buf = file.getData();
+
+			// Prepare a buffer for proposition names.
+			char proposition[128];
+			cnt = 0;
+
+			// Parse proposition names.
+			// As we already checked the file header, we know that #DECLARATION and #END are tokens in the character stream.
+			while(buf[0] != '\0') {
+
+				//Move the buffer to the beginning of the next word.
+				buf += cnt;
+				buf = trimWhitespaces(buf);
+
+				// Get the number of characters until the next separator.
+				cnt = skipWord(buf) - buf;
+
+				if (cnt >= sizeof(proposition)) {
+
+					// if token is longer than our buffer, the following strncpy code might get risky...
+					LOG4CPLUS_ERROR(logger, "Wrong file format in (" << filename << "). Atomic proposition with length > " << (sizeof(proposition)-1) << " was found.");
+					throw storm::exceptions::WrongFormatException();
+
+				} else if (cnt > 0) {
+
+					// If the next token is #DECLARATION: Just skip it.
+					if (strncmp(buf, "#DECLARATION", cnt) == 0) continue;
+
+					// If the next token is #END: Stop the search.
+					if (strncmp(buf, "#END", cnt) == 0) break;
+
+					// Otherwise copy the token to the buffer, append a trailing null byte and hand it to labeling.
 					strncpy(proposition, buf, cnt);
 					proposition[cnt] = '\0';
-					labeling.addAtomicPropositionToState(proposition, node);
-					buf += cnt;
+					labeling.addAtomicProposition(proposition);
 				}
 			}
-			buf = storm::parser::trimWhitespaces(buf);
-		}
-	}
-    
-	return labeling;
-}
 
-}  // namespace parser
+			// At this point, the pointer buf is still pointing to our last token, i.e. to #END.
+			// We want to skip it.
+			buf += 4;
+
+			// Now eliminate remaining whitespaces such as empty lines and start parsing.
+			buf = trimWhitespaces(buf);
+
+			uint_fast64_t state = 0;
+			uint_fast64_t lastState = (uint_fast64_t)-1;
+			cnt = 0;
+
+			// Now parse the assignments of labels to nodes.
+			while (buf[0] != '\0') {
+
+				// Parse the state number and iterate over its labels (atomic propositions).
+				// Stop at the end of the line.
+				state = checked_strtol(buf, &buf);
+
+				// If the state has already been read or skipped once there might be a problem with the file (doubled lines, or blocks).
+				if(state <= lastState && lastState != (uint_fast64_t)-1) {
+					LOG4CPLUS_ERROR(logger, "Wrong file format in (" << filename << "). State " << state << " was found but has already been read or skipped previously.");
+					throw storm::exceptions::WrongFormatException() << "State " << state << " was found but has already been read or skipped previously.";
+				}
+
+				while ((buf[0] != '\r') && (buf[0] != '\n') && (buf[0] != '\0')) {
+					cnt = skipWord(buf) - buf;
+					if (cnt == 0) {
+
+						// The next character is a separator.
+						// If it is a line separator, we continue with next node.
+						// Otherwise, we skip it and try again.
+						if (buf[0] == '\n' || buf[0] == '\r') break;
+						buf++;
+					} else {
+
+						// Copy the label to the buffer, null terminate it and add it to labeling.
+						strncpy(proposition, buf, cnt);
+						proposition[cnt] = '\0';
+
+						// Has the label been declared in the header?
+						if(!labeling.containsAtomicProposition(proposition)) {
+							LOG4CPLUS_ERROR(logger, "Wrong file format in (" << filename << "). Atomic proposition" << proposition << " was found but not declared.");
+							throw storm::exceptions::WrongFormatException();
+						}
+						labeling.addAtomicPropositionToState(proposition, state);
+						buf += cnt;
+					}
+				}
+				buf = trimWhitespaces(buf);
+				lastState = state;
+			}
+
+			return labeling;
+		}
+
+	}  // namespace parser
 }  // namespace storm

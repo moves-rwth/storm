@@ -8,56 +8,123 @@
 #ifndef STORM_PARSER_NONDETERMINISTICMODELPARSER_H_
 #define STORM_PARSER_NONDETERMINISTICMODELPARSER_H_
 
-#include "src/parser/Parser.h"
 #include "src/models/Mdp.h"
 #include "src/models/Ctmdp.h"
 
 namespace storm {
+	namespace parser {
 
-namespace parser {
+		/*!
+		 * Loads a nondeterministic model (Mdp or Ctmdp) from files.
+		 *
+		 * Given the file paths of the files holding the transitions, the atomic propositions and optionally the state- and transition rewards
+		 * it loads the files, parses them and returns the desired model.
+		 */
+		class NondeterministicModelParser {
 
-/*!
- *	@brief Load label and transition file and return initialized mdp object
- *
- *	@note This class creates a new Mdp object that can
- *	be accessed via getMdp(). However, it will not delete this object!
- *
- *	@note The labeling representation in the file may use at most as much nodes as are specified in the mdp.
- */
+		public:
 
-storm::models::Mdp<double> NondeterministicModelParserAsMdp(std::string const & transitionSystemFile, std::string const & labelingFile,
-				std::string const & stateRewardFile = "", std::string const & transitionRewardFile = "");
-storm::models::Ctmdp<double> NondeterministicModelParserAsCtmdp(std::string const & transitionSystemFile, std::string const & labelingFile,
-				std::string const & stateRewardFile = "", std::string const & transitionRewardFile = "");
+			/*!
+			 * A structure containing the parsed components of a nondeterministic model.
+			 */
+			struct Result {
+
+				/*!
+				 * The copy constructor.
+				 *
+				 * @param transitionSystem The transition system to be contained in the Result.
+				 * @param labeling The the labeling of the transition system to be contained in the Result.
+				 */
+				Result(storm::storage::SparseMatrix<double>& transitionSystem, storm::models::AtomicPropositionsLabeling& labeling) : transitionSystem(transitionSystem), labeling(labeling) {
+					// Intentionally left empty.
+				}
+
+				/*!
+				 * The move constructor.
+				 *
+				 * @param transitionSystem The transition system to be contained in the Result.
+				 * @param labeling The the labeling of the transition system to be contained in the Result.
+				 */
+				Result(storm::storage::SparseMatrix<double>&& transitionSystem, storm::models::AtomicPropositionsLabeling&& labeling) : transitionSystem(std::move(transitionSystem)), labeling(std::move(labeling)) {
+					// Intentionally left empty.
+				}
+
+				/*!
+				 * A matrix representing the transitions of the model
+				 */
+				storm::storage::SparseMatrix<double> transitionSystem;
+
+				/*!
+				 * The labels of each state.
+				 */
+				storm::models::AtomicPropositionsLabeling labeling;
+
+				/*!
+				 * Optional rewards for each state.
+				 */
+				boost::optional<std::vector<double>> stateRewards;
+
+				/*!
+				 * Optional rewards for each transition.
+				 */
+				boost::optional<storm::storage::SparseMatrix<double>> transitionRewards;
+			};
+
+			/*!
+			 * Parse a Mdp.
+			 *
+			 * This method is an adapter to the actual parsing function.
+			 * I.e. it uses @parseNondeterministicModel internally to parse the given input files, takes its result and compiles it into a Dtmc.
+			 *
+			 * @note The number of states of the model is determined by the transitions file.
+			 *       The labeling file may therefore not contain labels of states that are not contained in the transitions file.
+			 *
+			 * @param transitionsFilename The path and name of the file containing the transitions of the model.
+			 * @param labelingFilename The path and name of the file containing the labels for the states of the model.
+			 * @param stateRewardFilename The path and name of the file containing the state reward of the model. This file is optional.
+			 * @param transitionRewardFilename The path and name of the file containing the transition rewards of the model. This file is optional.
+			 * @return The parsed Mdp.
+			 */
+			static storm::models::Mdp<double> parseMdp(std::string const & transitionsFilename, std::string const & labelingFilename, std::string const & stateRewardFilename = "", std::string const & transitionRewardFilename = "");
 
 
-/*!
- * @brief This Class acts as a container much like std::pair for the five return values of the NondeterministicModelParser
- */
-template <class T>
-class NondeterministicModelParserResultContainer {
-public:
-	storm::storage::SparseMatrix<T> transitionSystem;
-	storm::models::AtomicPropositionsLabeling labeling;
-	boost::optional<std::vector<T>> stateRewards;
-	boost::optional<storm::storage::SparseMatrix<T>> transitionRewards;
-	NondeterministicModelParserResultContainer(storm::storage::SparseMatrix<T>& transitionSystem, storm::models::AtomicPropositionsLabeling& labeling) : transitionSystem(transitionSystem), labeling(labeling) { }
-	NondeterministicModelParserResultContainer(storm::storage::SparseMatrix<T>&& transitionSystem, storm::models::AtomicPropositionsLabeling&& labeling) : transitionSystem(std::move(transitionSystem)), labeling(std::move(labeling)) { }
+			/*!
+			 * Parse a Ctmdp.
+			 *
+			 * This method is an adapter to the actual parsing function.
+			 * I.e. it uses @parseNondeterministicModel internally to parse the given input files, takes its result and compiles it into a Dtmc.
+			 *
+			 * @note The number of states of the model is determined by the transitions file.
+			 *       The labeling file may therefore not contain labels of states that are not contained in the transitions file.
+			 *
+			 * @param transitionsFilename The path and name of the file containing the transitions of the model.
+			 * @param labelingFilename The path and name of the file containing the labels for the states of the model.
+			 * @param stateRewardFilename The path and name of the file containing the state reward of the model. This file is optional.
+			 * @param transitionRewardFilename The path and name of the file containing the transition rewards of the model. This file is optional.
+			 * @return The parsed Ctmdp.
+			 */
+			static storm::models::Ctmdp<double> parseCtmdp(std::string const & transitionsFilename, std::string const & labelingFilename, std::string const & stateRewardFilename = "", std::string const & transitionRewardFilename = "");
 
-	NondeterministicModelParserResultContainer(const NondeterministicModelParserResultContainer & other) : transitionSystem(other.transitionSystem), 
-		labeling(other.labeling), stateRewards(other.stateRewards), transitionRewards(other.transitionRewards) {}
-	NondeterministicModelParserResultContainer(NondeterministicModelParserResultContainer && other) : transitionSystem(std::move(other.transitionSystem)), 
-		labeling(std::move(other.labeling)), stateRewards(std::move(other.stateRewards)), transitionRewards(std::move(other.transitionRewards)) {}
-private:
-	NondeterministicModelParserResultContainer() {}
-};
+		private:
 
+			/*!
+			 * Parses a nondeterministic model from the given files.
+			 * Calls sub-parsers on the given files and fills the container with the results.
+			 *
+			 * @note The number of states of the model is determined by the transitions file.
+			 *       The labeling file may therefore not contain labels of states that are not contained in the transitions file.
+			 *
+			 * @param transitionsFilename The path and name of the file containing the transitions of the model.
+			 * @param labelingFilename The path and name of the file containing the labels for the states of the model.
+			 * @param stateRewardFilename The path and name of the file containing the state reward of the model. This file is optional.
+			 * @param transitionRewardFilename The path and name of the file containing the transition rewards of the model. This file is optional.
+			 * @return The parsed model encapsulated in a Result structure.
+			 */
+			static Result parseNondeterministicModel(std::string const & transitionsFilename, std::string const & labelingFilename, std::string const & stateRewardFilename = "", std::string const & transitionRewardFilename = "");
 
-NondeterministicModelParserResultContainer<double> parseNondeterministicModel(std::string const & transitionSystemFile, std::string const & labelingFile,
-				std::string const & stateRewardFile = "", std::string const & transitionRewardFile = "");
+		};
 
-} /* namespace parser */
-
+	} /* namespace parser */
 } /* namespace storm */
 
 #endif /* STORM_PARSER_NONDETERMINISTICMODELPARSER_H_ */

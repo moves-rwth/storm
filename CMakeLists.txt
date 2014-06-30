@@ -123,6 +123,9 @@ elseif(MSVC)
 	# Windows.h breaks GMM in gmm_except.h because of its macro definition for min and max
 	add_definitions(/DNOMINMAX)
 	
+	# since nobody cares at the moment
+	add_definitions(/wd4250)
+	
 	if(ENABLE_Z3)
 		set(Z3_LIB_NAME "libz3")
 	endif()
@@ -224,6 +227,13 @@ configure_file (
 	"${PROJECT_SOURCE_DIR}/storm-config.h.in"
 	"${PROJECT_BINARY_DIR}/include/storm-config.h"
 )
+
+# Configure a header file to pass the storm version to the source code
+configure_file (
+	"${PROJECT_SOURCE_DIR}/storm-version.h.in"
+	"${PROJECT_BINARY_DIR}/include/storm-version.h"
+)
+
 # Add the binary dir include directory for storm-config.h
 include_directories("${PROJECT_BINARY_DIR}/include")
 
@@ -250,11 +260,11 @@ file(GLOB STORM_PARSER_FILES ${PROJECT_SOURCE_DIR}/src/parser/*.h ${PROJECT_SOUR
 file(GLOB_RECURSE STORM_PARSER_PRISMPARSER_FILES ${PROJECT_SOURCE_DIR}/src/parser/prismparser/*.h ${PROJECT_SOURCE_DIR}/src/parser/prismparser/*.cpp)
 file(GLOB_RECURSE STORM_SETTINGS_FILES ${PROJECT_SOURCE_DIR}/src/settings/*.h ${PROJECT_SOURCE_DIR}/src/settings/*.cpp)
 file(GLOB_RECURSE STORM_SOLVER_FILES ${PROJECT_SOURCE_DIR}/src/solver/*.h ${PROJECT_SOURCE_DIR}/src/solver/*.cpp)
-file(GLOB_RECURSE STORM_STORAGE_FILES ${PROJECT_SOURCE_DIR}/src/storage/*.h ${PROJECT_SOURCE_DIR}/src/storage/*.cpp)
+file(GLOB STORM_STORAGE_FILES ${PROJECT_SOURCE_DIR}/src/storage/*.h ${PROJECT_SOURCE_DIR}/src/storage/*.cpp)
+file(GLOB_RECURSE STORM_STORAGE_DD_FILES ${PROJECT_SOURCE_DIR}/src/storage/dd/*.h ${PROJECT_SOURCE_DIR}/src/storage/dd/*.cpp)
+file(GLOB_RECURSE STORM_STORAGE_EXPRESSIONS_FILES ${PROJECT_SOURCE_DIR}/src/storage/expressions/*.h ${PROJECT_SOURCE_DIR}/src/storage/expressions/*.cpp)
+file(GLOB_RECURSE STORM_STORAGE_PRISM_FILES ${PROJECT_SOURCE_DIR}/src/storage/prism/*.h ${PROJECT_SOURCE_DIR}/src/storage/prism/*.cpp)
 file(GLOB_RECURSE STORM_UTILITY_FILES ${PROJECT_SOURCE_DIR}/src/utility/*.h ${PROJECT_SOURCE_DIR}/src/utility/*.cpp)
-file(GLOB STORM_IR_FILES ${PROJECT_SOURCE_DIR}/src/ir/*.h ${PROJECT_SOURCE_DIR}/src/ir/*.cpp)
-file(GLOB_RECURSE STORM_IR_EXPRESSIONS_FILES ${PROJECT_SOURCE_DIR}/src/ir/expressions/*.h ${PROJECT_SOURCE_DIR}/src/ir/expressions/*.cpp)
-
 # Test Sources
 # Note that the tests also need the source files, except for the main file
 file(GLOB_RECURSE STORM_FUNCTIONAL_TEST_FILES ${STORM_CPP_TESTS_BASE_PATH}/functional/*.h ${STORM_CPP_TESTS_BASE_PATH}/functional/*.cpp)
@@ -273,8 +283,6 @@ source_group(formula\\csl FILES ${STORM_FORMULA_CSL_FILES})
 source_group(formula\\ltl FILES ${STORM_FORMULA_LTL_FILES})
 source_group(formula\\prctl FILES ${STORM_FORMULA_PRCTL_FILES})
 source_group(generated FILES ${STORM_BUILD_HEADERS})
-source_group(ir FILES ${STORM_IR_FILES})
-source_group(ir\\expressions FILES ${STORM_IR_EXPRESSIONS_FILES})
 source_group(modelchecker FILES ${STORM_MODELCHECKER_FILES})
 source_group(counterexamples FILES ${STORM_COUNTEREXAMPLES_FILES})
 source_group(models FILES ${STORM_MODELS_FILES})
@@ -283,6 +291,9 @@ source_group(parser\\prismparser FILES ${STORM_PARSER_PRISMPARSER_FILES})
 source_group(settings FILES ${STORM_SETTINGS_FILES})
 source_group(solver FILES ${STORM_SOLVER_FILES})
 source_group(storage FILES ${STORM_STORAGE_FILES})
+source_group(storage\\dd FILES ${STORM_STORAGE_DD_FILES})
+source_group(storage\\expressions FILES ${STORM_STORAGE_EXPRESSIONS_FILES})
+source_group(storage\\prism FILES ${STORM_STORAGE_PRISM_FILES})
 source_group(utility FILES ${STORM_UTILITY_FILES})
 source_group(functional-test FILES ${STORM_FUNCTIONAL_TEST_FILES})
 source_group(performance-test FILES ${STORM_PERFORMANCE_TEST_FILES})
@@ -542,4 +553,4 @@ INSTALL(TARGETS storm storm-functional-tests storm-performance-tests
 	LIBRARY DESTINATION lib
 	ARCHIVE DESTINATION lib
 )
-include(CPackConfig.cmake)
+include(StormCPackConfig.cmake)

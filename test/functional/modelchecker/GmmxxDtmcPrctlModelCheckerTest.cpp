@@ -11,14 +11,14 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, Die) {
 	storm::settings::Settings* s = storm::settings::Settings::getInstance();
 	storm::settings::InternalOptionMemento deadlockOption("fixDeadlocks", true);
 	ASSERT_TRUE(s->isSet("fixDeadlocks"));
-	storm::parser::AutoParser<double> parser(STORM_CPP_BASE_PATH "/examples/dtmc/die/die.tra", STORM_CPP_BASE_PATH "/examples/dtmc/die/die.lab", "", STORM_CPP_BASE_PATH "/examples/dtmc/die/die.coin_flips.trans.rew");
+	std::shared_ptr<storm::models::AbstractModel<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/dtmc/die/die.tra", STORM_CPP_BASE_PATH "/examples/dtmc/die/die.lab", "", STORM_CPP_BASE_PATH "/examples/dtmc/die/die.coin_flips.trans.rew");
 
-	ASSERT_EQ(parser.getType(), storm::models::DTMC);
+	ASSERT_EQ(abstractModel->getType(), storm::models::DTMC);
 
-	std::shared_ptr<storm::models::Dtmc<double>> dtmc = parser.getModel<storm::models::Dtmc<double>>();
+	std::shared_ptr<storm::models::Dtmc<double>> dtmc = abstractModel->as<storm::models::Dtmc<double>>();
 
 	ASSERT_EQ(dtmc->getNumberOfStates(), 13ull);
-	ASSERT_EQ(dtmc->getNumberOfTransitions(), 27ull);
+	ASSERT_EQ(dtmc->getNumberOfTransitions(), 20ull);
 
 	storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double> mc(*dtmc, new storm::solver::GmmxxLinearEquationSolver<double>());
 
@@ -67,14 +67,14 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, Crowds) {
 	storm::settings::Settings* s = storm::settings::Settings::getInstance();
 	storm::settings::InternalOptionMemento deadlockOption("fixDeadlocks", true);
 	ASSERT_TRUE(s->isSet("fixDeadlocks"));
-	storm::parser::AutoParser<double> parser(STORM_CPP_BASE_PATH "/examples/dtmc/crowds/crowds5_5.tra", STORM_CPP_BASE_PATH "/examples/dtmc/crowds/crowds5_5.lab", "", "");
+	std::shared_ptr<storm::models::AbstractModel<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/dtmc/crowds/crowds5_5.tra", STORM_CPP_BASE_PATH "/examples/dtmc/crowds/crowds5_5.lab", "", "");
 
-	ASSERT_EQ(parser.getType(), storm::models::DTMC);
+	ASSERT_EQ(abstractModel->getType(), storm::models::DTMC);
 
-	std::shared_ptr<storm::models::Dtmc<double>> dtmc = parser.getModel<storm::models::Dtmc<double>>();
+	std::shared_ptr<storm::models::Dtmc<double>> dtmc = abstractModel->as<storm::models::Dtmc<double>>();
 
 	ASSERT_EQ(dtmc->getNumberOfStates(), 8607ull);
-	ASSERT_EQ(dtmc->getNumberOfTransitions(), 22460ull);
+	ASSERT_EQ(dtmc->getNumberOfTransitions(), 15113ull);
 
 	storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double> mc(*dtmc, new storm::solver::GmmxxLinearEquationSolver<double>());
 
@@ -113,13 +113,13 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, SynchronousLeader) {
 	storm::settings::Settings* s = storm::settings::Settings::getInstance();
 	storm::settings::InternalOptionMemento deadlockOption("fixDeadlocks", true);
 	ASSERT_TRUE(s->isSet("fixDeadlocks"));
-	storm::parser::AutoParser<double> parser(STORM_CPP_BASE_PATH "/examples/dtmc/synchronous_leader/leader4_8.tra", STORM_CPP_BASE_PATH "/examples/dtmc/synchronous_leader/leader4_8.lab", "", STORM_CPP_BASE_PATH "/examples/dtmc/synchronous_leader/leader4_8.pick.trans.rew");
+	std::shared_ptr<storm::models::AbstractModel<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/dtmc/synchronous_leader/leader4_8.tra", STORM_CPP_BASE_PATH "/examples/dtmc/synchronous_leader/leader4_8.lab", "", STORM_CPP_BASE_PATH "/examples/dtmc/synchronous_leader/leader4_8.pick.trans.rew");
 
-	ASSERT_EQ(parser.getType(), storm::models::DTMC);
-	std::shared_ptr<storm::models::Dtmc<double>> dtmc = parser.getModel<storm::models::Dtmc<double>>();
+	ASSERT_EQ(abstractModel->getType(), storm::models::DTMC);
+	std::shared_ptr<storm::models::Dtmc<double>> dtmc = abstractModel->as<storm::models::Dtmc<double>>();
 
 	ASSERT_EQ(dtmc->getNumberOfStates(), 12400ull);
-	ASSERT_EQ(dtmc->getNumberOfTransitions(), 28894ull);
+	ASSERT_EQ(dtmc->getNumberOfTransitions(), 16495ull);
 
 	storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double> mc(*dtmc, new storm::solver::GmmxxLinearEquationSolver<double>());
 

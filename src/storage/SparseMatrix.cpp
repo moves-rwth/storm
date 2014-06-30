@@ -18,6 +18,41 @@ namespace storm {
     namespace storage {
         
         template<typename T>
+        MatrixEntry<T>::MatrixEntry(uint_fast64_t column, T value) : entry(column, value) {
+            // Intentionally left empty.
+        }
+        
+        template<typename T>
+        MatrixEntry<T>::MatrixEntry(std::pair<uint_fast64_t, T>&& pair) : entry(std::move(pair)) {
+            // Intentionally left empty.
+        }
+        
+        template<typename T>
+        uint_fast64_t const& MatrixEntry<T>::getColumn() const {
+            return this->entry.first;
+        }
+        
+        template<typename T>
+        uint_fast64_t& MatrixEntry<T>::getColumn() {
+            return this->entry.first;
+        }
+        
+        template<typename T>
+        T const& MatrixEntry<T>::getValue() const {
+            return this->entry.second;
+        }
+        
+        template<typename T>
+        T& MatrixEntry<T>::getValue() {
+            return this->entry.second;
+        }
+        
+        template<typename T>
+        std::pair<uint_fast64_t, T> const& MatrixEntry<T>::getColumnValuePair() const {
+            return this->entry;
+        }
+        
+        template<typename T>
         SparseMatrixBuilder<T>::SparseMatrixBuilder(uint_fast64_t rows, uint_fast64_t columns, uint_fast64_t entries, bool hasCustomRowGrouping, uint_fast64_t rowGroups) : rowCountSet(rows != 0), rowCount(rows), columnCountSet(columns != 0), columnCount(columns), entryCount(entries), hasCustomRowGrouping(hasCustomRowGrouping), rowGroupCountSet(rowGroups != 0), rowGroupCount(rowGroups), rowGroupIndices(), storagePreallocated(rows != 0 && columns != 0 && entries != 0), columnsAndValues(), rowIndications(), currentEntryCount(0), lastRow(0), lastColumn(0), currentRowGroup(0) {
             this->prepareInternalStorage();
         }
@@ -168,7 +203,7 @@ namespace storm {
         void SparseMatrixBuilder<T>::prepareInternalStorage() {
             // Only allocate the memory for the matrix contents if the dimensions of the matrix are already known.
             if (storagePreallocated) {
-                columnsAndValues = std::vector<std::pair<uint_fast64_t, T>>(entryCount, std::make_pair(0, storm::utility::constantZero<T>()));
+                columnsAndValues = std::vector<MatrixEntry<T>>(entryCount, MatrixEntry<T>(0, storm::utility::constantZero<T>()));
                 rowIndications = std::vector<uint_fast64_t>(rowCount + 1, 0);
             } else {
                 rowIndications.push_back(0);
@@ -218,17 +253,17 @@ namespace storm {
         }
         
         template<typename T>
-        SparseMatrix<T>::SparseMatrix() : rowCount(0), columnCount(0), entryCount(0), columnsAndValues(), rowIndications(), rowGroupIndices() {
+        SparseMatrix<T>::SparseMatrix() : rowCount(0), columnCount(0), entryCount(0), nonzeroEntryCount(0), columnsAndValues(), rowIndications(), rowGroupIndices() {
             // Intentionally left empty.
         }
         
         template<typename T>
-        SparseMatrix<T>::SparseMatrix(SparseMatrix<T> const& other) : rowCount(other.rowCount), columnCount(other.columnCount), entryCount(other.entryCount), columnsAndValues(other.columnsAndValues), rowIndications(other.rowIndications), rowGroupIndices(other.rowGroupIndices) {
+        SparseMatrix<T>::SparseMatrix(SparseMatrix<T> const& other) : rowCount(other.rowCount), columnCount(other.columnCount), entryCount(other.entryCount), nonzeroEntryCount(other.nonzeroEntryCount), columnsAndValues(other.columnsAndValues), rowIndications(other.rowIndications), rowGroupIndices(other.rowGroupIndices) {
             // Intentionally left empty.
         }
         
         template<typename T>
-        SparseMatrix<T>::SparseMatrix(SparseMatrix<T>&& other) : rowCount(other.rowCount), columnCount(other.columnCount), entryCount(other.entryCount), columnsAndValues(std::move(other.columnsAndValues)), rowIndications(std::move(other.rowIndications)), rowGroupIndices(std::move(other.rowGroupIndices)) {
+        SparseMatrix<T>::SparseMatrix(SparseMatrix<T>&& other) : rowCount(other.rowCount), columnCount(other.columnCount), entryCount(other.entryCount), nonzeroEntryCount(other.nonzeroEntryCount), columnsAndValues(std::move(other.columnsAndValues)), rowIndications(std::move(other.rowIndications)), rowGroupIndices(std::move(other.rowGroupIndices)) {
             // Now update the source matrix
             other.rowCount = 0;
             other.columnCount = 0;
@@ -236,13 +271,21 @@ namespace storm {
         }
         
         template<typename T>
-        SparseMatrix<T>::SparseMatrix(uint_fast64_t columnCount, std::vector<uint_fast64_t> const& rowIndications, std::vector<std::pair<uint_fast64_t, T>> const& columnsAndValues, std::vector<uint_fast64_t> const& rowGroupIndices) : rowCount(rowIndications.size() - 1), columnCount(columnCount), entryCount(columnsAndValues.size()), columnsAndValues(columnsAndValues), rowIndications(rowIndications), rowGroupIndices(rowGroupIndices) {
-            // Intentionally left empty.
+        SparseMatrix<T>::SparseMatrix(uint_fast64_t columnCount, std::vector<uint_fast64_t> const& rowIndications, std::vector<MatrixEntry<T>> const& columnsAndValues, std::vector<uint_fast64_t> const& rowGroupIndices) : rowCount(rowIndications.size() - 1), columnCount(columnCount), entryCount(columnsAndValues.size()), nonzeroEntryCount(0), columnsAndValues(columnsAndValues), rowIndications(rowIndications), rowGroupIndices(rowGroupIndices) {
+            for (auto const& element : *this) {
+                if (element.getValue() != storm::utility::constantZero<T>()) {
+                    ++this->nonzeroEntryCount;
+                }
+            }
         }
         
         template<typename T>
-        SparseMatrix<T>::SparseMatrix(uint_fast64_t columnCount, std::vector<uint_fast64_t>&& rowIndications, std::vector<std::pair<uint_fast64_t, T>>&& columnsAndValues, std::vector<uint_fast64_t>&& rowGroupIndices) : rowCount(rowIndications.size() - 1), columnCount(columnCount), entryCount(columnsAndValues.size()), columnsAndValues(std::move(columnsAndValues)), rowIndications(std::move(rowIndications)), rowGroupIndices(std::move(rowGroupIndices)) {
-            // Intentionally left empty.
+        SparseMatrix<T>::SparseMatrix(uint_fast64_t columnCount, std::vector<uint_fast64_t>&& rowIndications, std::vector<MatrixEntry<T>>&& columnsAndValues, std::vector<uint_fast64_t>&& rowGroupIndices) : rowCount(rowIndications.size() - 1), columnCount(columnCount), entryCount(columnsAndValues.size()), nonzeroEntryCount(0), columnsAndValues(std::move(columnsAndValues)), rowIndications(std::move(rowIndications)), rowGroupIndices(std::move(rowGroupIndices)) {
+            for (auto const& element : *this) {
+                if (element.getValue() != storm::utility::constantZero<T>()) {
+                    ++this->nonzeroEntryCount;
+                }
+            }
         }
                 
         template<typename T>
@@ -252,6 +295,7 @@ namespace storm {
                 rowCount = other.rowCount;
                 columnCount = other.columnCount;
                 entryCount = other.entryCount;
+                nonzeroEntryCount = other.nonzeroEntryCount;
                 
                 columnsAndValues = other.columnsAndValues;
                 rowIndications = other.rowIndications;
@@ -268,6 +312,7 @@ namespace storm {
                 rowCount = other.rowCount;
                 columnCount = other.columnCount;
                 entryCount = other.entryCount;
+                nonzeroEntryCount = other.nonzeroEntryCount;
                 
                 columnsAndValues = std::move(other.columnsAndValues);
                 rowIndications = std::move(other.rowIndications);
@@ -294,17 +339,17 @@ namespace storm {
             for (uint_fast64_t row = 0; row < this->getRowCount(); ++row) {
                 for (const_iterator it1 = this->begin(row), ite1 = this->end(row), it2 = other.begin(row), ite2 = other.end(row); it1 != ite1 && it2 != ite2; ++it1, ++it2) {
                     // Skip over all zero entries in both matrices.
-                    while (it1 != ite1 && it1->second == storm::utility::constantZero<T>()) {
+                    while (it1 != ite1 && it1->getValue() == storm::utility::constantZero<T>()) {
                         ++it1;
                     }
-                    while (it2 != ite2 && it2->second == storm::utility::constantZero<T>()) {
+                    while (it2 != ite2 && it2->getValue() == storm::utility::constantZero<T>()) {
                         ++it2;
                     }
                     if ((it1 == ite1) || (it2 == ite2)) {
                         equalityResult = (it1 == ite1) ^ (it2 == ite2);
                         break;
                     } else {
-                        if (it1->first != it2->first || it1->second != it2->second) {
+                        if (it1->getColumn() != it2->getColumn() || it1->getValue() != it2->getValue()) {
                             equalityResult = false;
                             break;
                         }
@@ -339,6 +384,11 @@ namespace storm {
 			return result;
 		}
 
+        template<typename T>
+        uint_fast64_t SparseMatrix<T>::getNonzeroEntryCount() const {
+            return nonzeroEntryCount;
+        }
+        
         template<typename T>
         uint_fast64_t SparseMatrix<T>::getRowGroupCount() const {
             return rowGroupIndices.size() - 1;
@@ -383,12 +433,12 @@ namespace storm {
             
             // If there is at least one entry in this row, we can just set it to one, modify its column value to the
             // one given by the parameter and set all subsequent elements of this row to zero.
-            columnValuePtr->first = column;
-            columnValuePtr->second = storm::utility::constantOne<T>();
+            columnValuePtr->getColumn() = column;
+            columnValuePtr->getValue() = storm::utility::constantOne<T>();
             ++columnValuePtr;
             for (; columnValuePtr != columnValuePtrEnd; ++columnValuePtr) {
-                columnValuePtr->first = 0;
-                columnValuePtr->second = storm::utility::constantZero<T>();
+                columnValuePtr->getColumn() = 0;
+                columnValuePtr->getValue() = storm::utility::constantZero<T>();
             }
         }
         
@@ -396,8 +446,8 @@ namespace storm {
         T SparseMatrix<T>::getConstrainedRowSum(uint_fast64_t row, storm::storage::BitVector const& constraint) const {
             T result(0);
             for (const_iterator it = this->begin(row), ite = this->end(row); it != ite; ++it) {
-                if (constraint.get(it->first)) {
-                    result += it->second;
+                if (constraint.get(it->getColumn())) {
+                    result += it->getValue();
                 }
             }
             return result;
@@ -451,10 +501,10 @@ namespace storm {
                     bool foundDiagonalElement = false;
                     
                     for (const_iterator it = this->begin(i), ite = this->end(i); it != ite; ++it) {
-                        if (columnConstraint.get(it->first)) {
+                        if (columnConstraint.get(it->getColumn())) {
                             ++subEntries;
                             
-                            if (index == it->first) {
+                            if (index == it->getColumn()) {
                                 foundDiagonalElement = true;
                             }
                         }
@@ -501,14 +551,14 @@ namespace storm {
                     bool insertedDiagonalElement = false;
                     
                     for (const_iterator it = this->begin(i), ite = this->end(i); it != ite; ++it) {
-                        if (columnConstraint.get(it->first)) {
-                            if (index == it->first) {
+                        if (columnConstraint.get(it->getColumn())) {
+                            if (index == it->getColumn()) {
                                 insertedDiagonalElement = true;
-                            } else if (insertDiagonalEntries && !insertedDiagonalElement && it->first > index) {
+                            } else if (insertDiagonalEntries && !insertedDiagonalElement && it->getColumn() > index) {
                                 matrixBuilder.addNextValue(rowCount, bitsSetBeforeIndex[index], storm::utility::constantZero<T>());
                                 insertedDiagonalElement = true;
                             }
-                            matrixBuilder.addNextValue(rowCount, bitsSetBeforeIndex[it->first], it->second);
+                            matrixBuilder.addNextValue(rowCount, bitsSetBeforeIndex[it->getColumn()], it->getValue());
                         }
                     }
                     if (insertDiagonalEntries && !insertedDiagonalElement) {
@@ -534,7 +584,7 @@ namespace storm {
                 // Iterate through that row and count the number of slots we have to reserve for copying.
                 bool foundDiagonalElement = false;
                 for (const_iterator it = this->begin(rowToCopy), ite = this->end(rowToCopy); it != ite; ++it) {
-                    if (it->first == rowGroupIndex) {
+                    if (it->getColumn() == rowGroupIndex) {
                         foundDiagonalElement = true;
                     }
                     ++subEntries;
@@ -556,13 +606,13 @@ namespace storm {
                 // there is no entry yet.
                 bool insertedDiagonalElement = false;
                 for (const_iterator it = this->begin(rowToCopy), ite = this->end(rowToCopy); it != ite; ++it) {
-                    if (it->first == rowGroupIndex) {
+                    if (it->getColumn() == rowGroupIndex) {
                         insertedDiagonalElement = true;
-                    } else if (insertDiagonalEntries && !insertedDiagonalElement && it->first > rowGroupIndex) {
+                    } else if (insertDiagonalEntries && !insertedDiagonalElement && it->getColumn() > rowGroupIndex) {
                         matrixBuilder.addNextValue(rowGroupIndex, rowGroupIndex, storm::utility::constantZero<T>());
                         insertedDiagonalElement = true;
                     }
-                    matrixBuilder.addNextValue(rowGroupIndex, it->first, it->second);
+                    matrixBuilder.addNextValue(rowGroupIndex, it->getColumn(), it->getValue());
                 }
                 if (insertDiagonalEntries && !insertedDiagonalElement) {
                     matrixBuilder.addNextValue(rowGroupIndex, rowGroupIndex, storm::utility::constantZero<T>());
@@ -580,13 +630,13 @@ namespace storm {
             uint_fast64_t entryCount = this->getEntryCount();
             
             std::vector<uint_fast64_t> rowIndications(rowCount + 1);
-            std::vector<std::pair<uint_fast64_t, T>> columnsAndValues(entryCount);
+            std::vector<MatrixEntry<T>> columnsAndValues(entryCount);
             
             // First, we need to count how many entries each column has.
             for (uint_fast64_t group = 0; group < columnCount; ++group) {
                 for (auto const& transition : joinGroups ? this->getRowGroup(group) : this->getRow(group)) {
-                    if (transition.second != storm::utility::constantZero<T>()) {
-                        ++rowIndications[transition.first + 1];
+                    if (transition.getValue() != storm::utility::constantZero<T>()) {
+                        ++rowIndications[transition.getColumn() + 1];
                     }
                 }
             }
@@ -604,9 +654,9 @@ namespace storm {
             // Now we are ready to actually fill in the values of the transposed matrix.
             for (uint_fast64_t group = 0; group < columnCount; ++group) {
                 for (auto const& transition : joinGroups ? this->getRowGroup(group) : this->getRow(group)) {
-                    if (transition.second != storm::utility::constantZero<T>()) {
-                        columnsAndValues[nextIndices[transition.first]] = std::make_pair(group, transition.second);
-                        nextIndices[transition.first]++;
+                    if (transition.getValue() != storm::utility::constantZero<T>()) {
+                        columnsAndValues[nextIndices[transition.getColumn()]] = std::make_pair(group, transition.getValue());
+                        nextIndices[transition.getColumn()]++;
                     }
                 }
             }
@@ -635,8 +685,8 @@ namespace storm {
             bool foundDiagonalElement = false;
             for (uint_fast64_t group = 0; group < this->getRowGroupCount(); ++group) {
                 for (auto& entry : this->getRowGroup(group)) {
-                    if (entry.first == group) {
-                        entry.second = one - entry.second;
+                    if (entry.getColumn() == group) {
+                        entry.getValue() = one - entry.getValue();
                         foundDiagonalElement = true;
                     }
                 }
@@ -653,8 +703,8 @@ namespace storm {
             // Iterate over all row groups and negate all the elements that are not on the diagonal.
             for (uint_fast64_t group = 0; group < this->getRowGroupCount(); ++group) {
                 for (auto& entry : this->getRowGroup(group)) {
-                    if (entry.first != group) {
-                        entry.second = -entry.second;
+                    if (entry.getColumn() != group) {
+                        entry.getValue() = -entry.getValue();
                     }
                 }
             }
@@ -665,8 +715,8 @@ namespace storm {
             // Iterate over all rows and negate all the elements that are not on the diagonal.
             for (uint_fast64_t group = 0; group < this->getRowGroupCount(); ++group) {
                 for (auto& entry : this->getRowGroup(group)) {
-                    if (entry.first == group) {
-                        entry.second = storm::utility::constantZero<T>();
+                    if (entry.getColumn() == group) {
+                        entry.getValue() = storm::utility::constantZero<T>();
                     }
                 }
             }
@@ -689,9 +739,9 @@ namespace storm {
                 // to invert the entry.
                 T diagonalValue = storm::utility::constantZero<T>();
                 for (const_iterator it = this->begin(rowNumber), ite = this->end(rowNumber); it != ite; ++it) {
-                    if (it->first == rowNumber) {
-                        diagonalValue += it->second;
-                    } else if (it->first > rowNumber) {
+                    if (it->getColumn() == rowNumber) {
+                        diagonalValue += it->getValue();
+                    } else if (it->getColumn() > rowNumber) {
                         break;
                     }
                 }
@@ -710,13 +760,13 @@ namespace storm {
             // add the result to the corresponding position in the vector.
             for (uint_fast64_t row = 0; row < rowCount && row < otherMatrix.rowCount; ++row) {
                 for (const_iterator it1 = this->begin(row), ite1 = this->end(row), it2 = otherMatrix.begin(row), ite2 = otherMatrix.end(row); it1 != ite1 && it2 != ite2; ++it1) {
-                    if (it1->first < it2->first) {
+                    if (it1->getColumn() < it2->getColumn()) {
                         continue;
                     } else {
                         // If the precondition of this method (i.e. that the given matrix is a submatrix
                         // of the current one) was fulfilled, we know now that the two elements are in
                         // the same column, so we can multiply and add them to the row sum vector.
-                        result[row] += it2->second * it1->second;
+                        result[row] += it2->getValue() * it1->getValue();
                         ++it2;
                     }
                 }
@@ -744,7 +794,7 @@ namespace storm {
                                       *resultIterator = storm::utility::constantZero<T>();
                                       
                                       for (ite = this->begin() + *(rowIterator + 1); it != ite; ++it) {
-                                          *resultIterator += it->second * vector[it->first];
+                                          *resultIterator += it->getValue() * vector[it->getColumn()];
                                       }
                                   }
                               });
@@ -752,7 +802,6 @@ namespace storm {
             const_iterator it = this->begin();
             const_iterator ite;
             typename std::vector<uint_fast64_t>::const_iterator rowIterator = rowIndications.begin();
-            typename std::vector<uint_fast64_t>::const_iterator rowIteratorEnd = rowIndications.end();
             typename std::vector<T>::iterator resultIterator = result.begin();
             typename std::vector<T>::iterator resultIteratorEnd = result.end();
             
@@ -760,7 +809,7 @@ namespace storm {
                 *resultIterator = storm::utility::constantZero<T>();
                 
                 for (ite = this->begin() + *(rowIterator + 1); it != ite; ++it) {
-                    *resultIterator += it->second * vector[it->first];
+                    *resultIterator += it->getValue() * vector[it->getColumn()];
                 }
             }
 #endif
@@ -771,7 +820,7 @@ namespace storm {
             uint_fast64_t size = sizeof(*this);
             
             // Add size of columns and values.
-            size += sizeof(std::pair<uint_fast64_t, T>) * columnsAndValues.capacity();
+            size += sizeof(MatrixEntry<T>) * columnsAndValues.capacity();
             
             // Add row_indications size.
             size += sizeof(uint_fast64_t) * rowIndications.capacity();
@@ -843,7 +892,7 @@ namespace storm {
         T SparseMatrix<T>::getRowSum(uint_fast64_t row) const {
             T sum = storm::utility::constantZero<T>();
             for (const_iterator it = this->begin(row), ite = this->end(row); it != ite; ++it) {
-                sum += it->second;
+                sum += it->getValue();
             }
             return sum;
         }
@@ -859,10 +908,10 @@ namespace storm {
             for (uint_fast64_t row = 0; row < this->getRowCount(); ++row) {
                 for (const_iterator it1 = this->begin(row), ite1 = this->end(row), it2 = matrix.begin(row), ite2 = matrix.end(row); it1 != ite1; ++it1) {
                     // Skip over all entries of the other matrix that are before the current entry in the current matrix.
-                    while (it2 != ite2 && it2->first < it1->first) {
+                    while (it2 != ite2 && it2->getColumn() < it1->getColumn()) {
                         ++it2;
                     }
-                    if (it2 == ite2 || it1->first != it2->first) {
+                    if (it2 == ite2 || it1->getColumn() != it2->getColumn()) {
                         return false;
                     }
                 }
@@ -905,8 +954,8 @@ namespace storm {
                     out << i << "\t(\t";
                     uint_fast64_t currentRealIndex = 0;
                     while (currentRealIndex < matrix.columnCount) {
-                        if (nextIndex < matrix.rowIndications[i + 1] && currentRealIndex == matrix.columnsAndValues[nextIndex].first) {
-                            out << matrix.columnsAndValues[nextIndex].second << "\t";
+                        if (nextIndex < matrix.rowIndications[i + 1] && currentRealIndex == matrix.columnsAndValues[nextIndex].getColumn()) {
+                            out << matrix.columnsAndValues[nextIndex].getValue() << "\t";
                             ++nextIndex;
                         } else {
                             out << "0\t";
@@ -941,10 +990,12 @@ namespace storm {
             return result;
         }
         
-        // Explicitly instantiate the builder and the matrix.
+        // Explicitly instantiate the entry, builder and the matrix.
+        template class MatrixEntry<double>;
         template class SparseMatrixBuilder<double>;
         template class SparseMatrix<double>;
         template std::ostream& operator<<(std::ostream& out, SparseMatrix<double> const& matrix);
+        template class MatrixEntry<int>;
         template class SparseMatrixBuilder<int>;
         template class SparseMatrix<int>;
         template std::ostream& operator<<(std::ostream& out, SparseMatrix<int> const& matrix);

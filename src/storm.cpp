@@ -23,6 +23,7 @@
 #include <chrono>
 
 #include "storm-config.h"
+#include "storm-version.h"
 #include "src/models/Dtmc.h"
 #include "src/models/MarkovAutomaton.h"
 #include "src/storage/SparseMatrix.h"
@@ -33,10 +34,11 @@
 #include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "src/modelchecker/prctl/TopologicalValueIterationMdpPrctlModelChecker.h"
 #include "src/solver/GmmxxLinearEquationSolver.h"
+#include "src/solver/NativeLinearEquationSolver.h"
 #include "src/solver/GmmxxNondeterministicLinearEquationSolver.h"
 #include "src/solver/GurobiLpSolver.h"
 #include "src/counterexamples/MILPMinimalLabelSetGenerator.h"
-#include "src/counterexamples/SMTMinimalCommandSetGenerator.h"
+// #include "src/counterexamples/SMTMinimalCommandSetGenerator.h"
 #include "src/counterexamples/PathBasedSubsystemGenerator.h"
 #include "src/parser/AutoParser.h"
 #include "src/parser/MarkovAutomatonParser.h"
@@ -56,10 +58,11 @@
 #include "log4cplus/loggingmacros.h"
 #include "log4cplus/consoleappender.h"
 #include "log4cplus/fileappender.h"
+log4cplus::Logger logger;
 
 #include "src/parser/PrismParser.h"
 #include "src/adapters/ExplicitModelAdapter.h"
-#include "src/adapters/SymbolicModelAdapter.h"
+// #include "src/adapters/SymbolicModelAdapter.h"
 
 #include "src/exceptions/InvalidSettingsException.h"
 
@@ -121,12 +124,10 @@ void printUsage() {
 	double userTime = static_cast<double>(uLargeInteger.QuadPart) / 10000.0;
 
 	std::cout << "CPU Time: " << std::endl;
-	std::cout << "\tKernel Time: " << std::setprecision(5) << kernelTime << std::endl;
-	std::cout << "\tUser Time: " << std::setprecision(5) << userTime << std::endl;
+	std::cout << "\tKernel Time: " << std::setprecision(5) << kernelTime << "ms" << std::endl;
+	std::cout << "\tUser Time: " << std::setprecision(5) << userTime << "ms" << std::endl;
 #endif
 }
-
-log4cplus::Logger logger;
 
 /*!
  * Initializes the logging framework and sets up logging to console.
@@ -269,7 +270,7 @@ void setUp() {
  * Performs some necessary clean-up.
  */
 void cleanUp() {
-	delete storm::utility::cuddUtilityInstance();
+    // Intentionally left empty.
 }
 
 /*!
@@ -278,13 +279,15 @@ void cleanUp() {
  * @param dtmc A reference to the DTMC for which the model checker is to be created.
  * @return A pointer to the resulting model checker.
  */
-storm::modelchecker::prctl::AbstractModelChecker<double>* createPrctlModelChecker(storm::models::Dtmc<double>& dtmc) {
+storm::modelchecker::prctl::AbstractModelChecker<double>* createPrctlModelChecker(storm::models::Dtmc<double> const & dtmc) {
     // Create the appropriate model checker.
 	storm::settings::Settings* s = storm::settings::Settings::getInstance();
-	std::string const chosenMatrixLibrary = s->getOptionByLongName("matrixLibrary").getArgument(0).getValueAsString();
-	if (chosenMatrixLibrary == "gmm++") {
+	std::string const& linsolver = s->getOptionByLongName("linsolver").getArgument(0).getValueAsString();
+	if (linsolver == "gmm++") {
 		return new storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double>(dtmc, new storm::solver::GmmxxLinearEquationSolver<double>());
-	}
+	} else if (linsolver == "native") {
+		return new storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double>(dtmc, new storm::solver::NativeLinearEquationSolver<double>());
+    }
     
 	// The control flow should never reach this point, as there is a default setting for matrixlib.
 	std::string message = "No matrix library suitable for DTMC model checking has been set.";
@@ -298,7 +301,7 @@ storm::modelchecker::prctl::AbstractModelChecker<double>* createPrctlModelChecke
  * @param mdp The Dtmc that the model checker will check
  * @return
  */
-storm::modelchecker::prctl::AbstractModelChecker<double>* createPrctlModelChecker(storm::models::Mdp<double>& mdp) {
+storm::modelchecker::prctl::AbstractModelChecker<double>* createPrctlModelChecker(storm::models::Mdp<double> const & mdp) {
     //return new storm::modelchecker::prctl::SparseMdpPrctlModelChecker<double>(mdp);
 	return new storm::modelchecker::prctl::TopologicalValueIterationMdpPrctlModelChecker<double>(mdp);
 }
@@ -330,13 +333,13 @@ void checkPrctlFormulae(storm::modelchecker::prctl::AbstractModelChecker<double>
  *
  * @param parser An AutoParser to get the model from.
  */
- void generateCounterExample(storm::parser::AutoParser<double> parser) {
+ void generateCounterExample(std::shared_ptr<storm::models::AbstractModel<double>> model) {
 	LOG4CPLUS_INFO(logger, "Starting counterexample generation.");
 	LOG4CPLUS_INFO(logger, "Testing inputs...");
 
 	storm::settings::Settings* s  = storm::settings::Settings::getInstance();
 
-	//First test output directory.
+	// First test output directory.
 	std::string outPath = s->getOptionByLongName("counterExample").getArgument(0).getValueAsString();
 	if(outPath.back() != '/' && outPath.back() != '\\') {
 		LOG4CPLUS_ERROR(logger, "The output path is not valid.");
@@ -350,13 +353,16 @@ void checkPrctlFormulae(storm::modelchecker::prctl::AbstractModelChecker<double>
 	testFile.close();
 	std::remove((outPath + "test.dot").c_str());
 
- 	//Differentiate between model types.
-	if(parser.getType() != storm::models::DTMC) {
+ 	// Differentiate between model types.
+	if(model->getType() != storm::models::DTMC) {
 		LOG4CPLUS_ERROR(logger, "Counterexample generation for the selected model type is not supported.");
 		return;
 	}
 
-	storm::models::Dtmc<double> model = *parser.getModel<storm::models::Dtmc<double>>();
+	// Get the Dtmc back from the AbstractModel
+	// Note that the ownership of the object referenced by dtmc lies at the main function.
+	// Thus, it must not be deleted.
+	storm::models::Dtmc<double> dtmc = *(model->as<storm::models::Dtmc<double>>());
 	LOG4CPLUS_INFO(logger, "Model is a DTMC.");
 
 	// Get specified PRCTL formulas.
@@ -417,10 +423,10 @@ void checkPrctlFormulae(storm::modelchecker::prctl::AbstractModelChecker<double>
 		// Also raise the logger threshold for the log file, so that the model check infos aren't logged (useless and there are lots of them)
 		// Lower it again after the model check.
 		logger.getAppender("mainFileAppender")->setThreshold(log4cplus::WARN_LOG_LEVEL);
-		storm::storage::BitVector result = stateForm.check(*createPrctlModelChecker(model));
+		storm::storage::BitVector result = stateForm.check(*createPrctlModelChecker(dtmc));
 		logger.getAppender("mainFileAppender")->setThreshold(log4cplus::INFO_LOG_LEVEL);
 
-		if((result & model.getInitialStates()).getNumberOfSetBits() == model.getInitialStates().getNumberOfSetBits()) {
+		if((result & dtmc.getInitialStates()).getNumberOfSetBits() == dtmc.getInitialStates().getNumberOfSetBits()) {
 			std::cout << "Formula is satisfied. Can not generate counterexample.\n\n" << std::endl;
 			LOG4CPLUS_INFO(logger, "Formula is satisfied. Can not generate counterexample.");
 			delete formula;
@@ -428,7 +434,7 @@ void checkPrctlFormulae(storm::modelchecker::prctl::AbstractModelChecker<double>
 		}
 
 		// Generate counterexample
-		storm::models::Dtmc<double> counterExample = storm::counterexamples::PathBasedSubsystemGenerator<double>::computeCriticalSubsystem(*parser.getModel<storm::models::Dtmc<double>>(), stateForm);
+		storm::models::Dtmc<double> counterExample = storm::counterexamples::PathBasedSubsystemGenerator<double>::computeCriticalSubsystem(dtmc, stateForm);
 
 		LOG4CPLUS_INFO(logger, "Found counterexample.");
 
@@ -480,6 +486,9 @@ int main(const int argc, const char* argv[]) {
 			stormSetAlarm(timeout);
         }
         
+		// Execution Time measurement, start
+		std::chrono::high_resolution_clock::time_point executionStart = std::chrono::high_resolution_clock::now();
+
 		// Now, the settings are received and the specified model is parsed. The actual actions taken depend on whether
         // the model was provided in explicit or symbolic format.
 		if (s->isSet("explicit")) {
@@ -495,37 +504,46 @@ int main(const int argc, const char* argv[]) {
 				chosenTransitionRewardsFile = s->getOptionByLongName("transitionRewards").getArgument(0).getValueAsString();
 			}
 
-			storm::parser::AutoParser<double> parser(chosenTransitionSystemFile, chosenLabelingFile, chosenStateRewardsFile, chosenTransitionRewardsFile);
+			std::shared_ptr<storm::models::AbstractModel<double>> model = storm::parser::AutoParser::parseModel(chosenTransitionSystemFile, chosenLabelingFile, chosenStateRewardsFile, chosenTransitionRewardsFile);
+
+			// Model Parsing Time Measurement, End
+			std::chrono::high_resolution_clock::time_point parsingEnd = std::chrono::high_resolution_clock::now();
+			std::cout << "Parsing the given model took " << std::chrono::duration_cast<std::chrono::milliseconds>(parsingEnd - executionStart).count() << " milliseconds." << std::endl;
 
             if (s->isSet("exportdot")) {
                 std::ofstream outputFileStream;
                 outputFileStream.open(s->getOptionByLongName("exportdot").getArgument(0).getValueAsString(), std::ofstream::out);
-                parser.getModel<storm::models::AbstractModel<double>>()->writeDotToStream(outputFileStream);
+                model->writeDotToStream(outputFileStream);
                 outputFileStream.close();
             }
             
-			//Should there be a counterexample generated in case the formula is not satisfied?
+			// Should there be a counterexample generated in case the formula is not satisfied?
 			if(s->isSet("counterexample")) {
+				// Counterexample Time Measurement, Start
+				std::chrono::high_resolution_clock::time_point counterexampleStart = std::chrono::high_resolution_clock::now();
 
-				generateCounterExample(parser);
+				generateCounterExample(model);
 			
+				// Counterexample Time Measurement, End
+				std::chrono::high_resolution_clock::time_point counterexampleEnd = std::chrono::high_resolution_clock::now();
+				std::cout << "Generating the counterexample took " << std::chrono::duration_cast<std::chrono::milliseconds>(counterexampleEnd - counterexampleStart).count() << " milliseconds." << std::endl;
 			} else {
-				// Determine which engine is to be used to choose the right model checker.
-				LOG4CPLUS_DEBUG(logger, s->getOptionByLongName("matrixLibrary").getArgument(0).getValueAsString());
-
 				// Depending on the model type, the appropriate model checking procedure is chosen.
 				storm::modelchecker::prctl::AbstractModelChecker<double>* modelchecker = nullptr;
-				parser.getModel<storm::models::AbstractModel<double>>()->printModelInformationToStream(std::cout);
+				model->printModelInformationToStream(std::cout);
                 
-				switch (parser.getType()) {
+				// Modelchecking Time Measurement, Start
+				std::chrono::high_resolution_clock::time_point modelcheckingStart = std::chrono::high_resolution_clock::now();
+
+				switch (model->getType()) {
 				case storm::models::DTMC:
 					LOG4CPLUS_INFO(logger, "Model is a DTMC.");
-					modelchecker = createPrctlModelChecker(*parser.getModel<storm::models::Dtmc<double>>());
+					modelchecker = createPrctlModelChecker(*model->as<storm::models::Dtmc<double>>());
 					checkPrctlFormulae(*modelchecker);
 					break;
 				case storm::models::MDP:
 					LOG4CPLUS_INFO(logger, "Model is an MDP.");
-					modelchecker = createPrctlModelChecker(*parser.getModel<storm::models::Mdp<double>>());
+					modelchecker = createPrctlModelChecker(*model->as<storm::models::Mdp<double>>());
 					checkPrctlFormulae(*modelchecker);
 					break;
 				case storm::models::CTMC:
@@ -538,13 +556,13 @@ int main(const int argc, const char* argv[]) {
 					break;
                 case storm::models::MA: {
                     LOG4CPLUS_INFO(logger, "Model is a Markov automaton.");
-                    std::shared_ptr<storm::models::MarkovAutomaton<double>> markovAutomaton = parser.getModel<storm::models::MarkovAutomaton<double>>();
-                    markovAutomaton->close();
-                    storm::modelchecker::csl::SparseMarkovAutomatonCslModelChecker<double> mc(*markovAutomaton);
+                    storm::models::MarkovAutomaton<double> markovAutomaton = *model->as<storm::models::MarkovAutomaton<double>>();
+                    markovAutomaton.close();
+                    storm::modelchecker::csl::SparseMarkovAutomatonCslModelChecker<double> mc(markovAutomaton);
 //                    std::cout << mc.checkExpectedTime(true, markovAutomaton->getLabeledStates("goal")) << std::endl;
 //                    std::cout << mc.checkExpectedTime(false, markovAutomaton->getLabeledStates("goal")) << std::endl;
-                    std::cout << mc.checkLongRunAverage(true, markovAutomaton->getLabeledStates("goal")) << std::endl;
-                    std::cout << mc.checkLongRunAverage(false, markovAutomaton->getLabeledStates("goal")) << std::endl;
+                    std::cout << mc.checkLongRunAverage(true, markovAutomaton.getLabeledStates("goal")) << std::endl;
+                    std::cout << mc.checkLongRunAverage(false, markovAutomaton.getLabeledStates("goal")) << std::endl;
 //                    std::cout << mc.checkTimeBoundedEventually(true, markovAutomaton->getLabeledStates("goal"), 0, 1) << std::endl;
 //                    std::cout << mc.checkTimeBoundedEventually(true, markovAutomaton->getLabeledStates("goal"), 1, 2) << std::endl;
                     break;
@@ -558,15 +576,26 @@ int main(const int argc, const char* argv[]) {
 				if (modelchecker != nullptr) {
 					delete modelchecker;
 				}
+
+				// Modelchecking Time Measurement, End
+				std::chrono::high_resolution_clock::time_point modelcheckingEnd = std::chrono::high_resolution_clock::now();
+				std::cout << "Running the ModelChecker took " << std::chrono::duration_cast<std::chrono::milliseconds>(modelcheckingEnd - modelcheckingStart).count() << " milliseconds." << std::endl;
 			}
 		} else if (s->isSet("symbolic")) {
+			// Program Translation Time Measurement, Start
+			std::chrono::high_resolution_clock::time_point programTranslationStart = std::chrono::high_resolution_clock::now();
+
             // First, we build the model using the given symbolic model description and constant definitions.
             std::string const& programFile = s->getOptionByLongName("symbolic").getArgument(0).getValueAsString();
             std::string const& constants = s->getOptionByLongName("constants").getArgument(0).getValueAsString();
-            storm::ir::Program program = storm::parser::PrismParserFromFile(programFile);
+            storm::prism::Program program = storm::parser::PrismParser::parse(programFile);
             std::shared_ptr<storm::models::AbstractModel<double>> model = storm::adapters::ExplicitModelAdapter<double>::translateProgram(program, constants);
             model->printModelInformationToStream(std::cout);
             
+			// Program Translation Time Measurement, End
+			std::chrono::high_resolution_clock::time_point programTranslationEnd = std::chrono::high_resolution_clock::now();
+			std::cout << "Parsing and translating the Symbolic Input took " << std::chrono::duration_cast<std::chrono::milliseconds>(programTranslationEnd - programTranslationStart).count() << " milliseconds." << std::endl;
+
             if (s->isSet("mincmd")) {
                 if (model->getType() != storm::models::MDP) {
                     LOG4CPLUS_ERROR(logger, "Minimal command counterexample generation is only supported for models of type MDP.");
@@ -578,6 +607,9 @@ int main(const int argc, const char* argv[]) {
                 // Determine whether we are required to use the MILP-version or the SAT-version.
                 bool useMILP = s->getOptionByLongName("mincmd").getArgumentByName("method").getValueAsString() == "milp";
                 
+				// MinCMD Time Measurement, Start
+				std::chrono::high_resolution_clock::time_point minCmdStart = std::chrono::high_resolution_clock::now();
+
                 // Now parse the property file and receive the list of parsed formulas.
                 std::string const& propertyFile = s->getOptionByLongName("mincmd").getArgumentByName("propertyFile").getValueAsString();
                 std::list<storm::property::prctl::AbstractPrctlFormula<double>*> formulaList = storm::parser::PrctlFileParser(propertyFile);
@@ -587,19 +619,23 @@ int main(const int argc, const char* argv[]) {
                     if (useMILP) {
                         storm::counterexamples::MILPMinimalLabelSetGenerator<double>::computeCounterexample(program, *mdp, formulaPtr);
                     } else {
-                        storm::counterexamples::SMTMinimalCommandSetGenerator<double>::computeCounterexample(program, constants, *mdp, formulaPtr);
+                        // storm::counterexamples::SMTMinimalCommandSetGenerator<double>::computeCounterexample(program, constants, *mdp, formulaPtr);
                     }
                     
                     // Once we are done with the formula, delete it.
                     delete formulaPtr;
                 }
+
+				// MinCMD Time Measurement, End
+				std::chrono::high_resolution_clock::time_point minCmdEnd = std::chrono::high_resolution_clock::now();
+				std::cout << "Minimal command Counterexample generation took " << std::chrono::duration_cast<std::chrono::milliseconds>(minCmdStart - minCmdEnd).count() << " milliseconds." << std::endl;
             } else if (s->isSet("prctl")) {
-                // Determine which engine is to be used to choose the right model checker.
-				LOG4CPLUS_DEBUG(logger, s->getOptionByLongName("matrixLibrary").getArgument(0).getValueAsString());
-                
 				// Depending on the model type, the appropriate model checking procedure is chosen.
 				storm::modelchecker::prctl::AbstractModelChecker<double>* modelchecker = nullptr;
                 
+				// Modelchecking Time Measurement, Start
+				std::chrono::high_resolution_clock::time_point modelcheckingStart = std::chrono::high_resolution_clock::now();
+
 				switch (model->getType()) {
                     case storm::models::DTMC:
                         LOG4CPLUS_INFO(logger, "Model is a DTMC.");
@@ -631,8 +667,16 @@ int main(const int argc, const char* argv[]) {
 				if (modelchecker != nullptr) {
 					delete modelchecker;
 				}
+
+				// Modelchecking Time Measurement, End
+				std::chrono::high_resolution_clock::time_point modelcheckingEnd = std::chrono::high_resolution_clock::now();
+				std::cout << "Running the PRCTL ModelChecker took " << std::chrono::duration_cast<std::chrono::milliseconds>(modelcheckingEnd - modelcheckingStart).count() << " milliseconds." << std::endl;
             }
         }
+
+		// Execution Time Measurement, End
+		std::chrono::high_resolution_clock::time_point executionEnd = std::chrono::high_resolution_clock::now();
+		std::cout << "Complete execution took " << std::chrono::duration_cast<std::chrono::milliseconds>(executionEnd - executionStart).count() << " milliseconds." << std::endl;
         
         // Perform clean-up and terminate.
 		cleanUp();

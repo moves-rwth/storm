@@ -2405,6 +2405,23 @@ ADD::OrAbstract(
 
 } // ADD::OrAbstract
 
+ADD
+ADD::MinAbstract(const ADD& cube) const
+{
+    DdManager *mgr = checkSameManager(cube);
+    DdNode *result = Cudd_addMinAbstract(mgr, node, cube.node);
+    checkReturnValue(result);
+    return ADD(p, result);
+} // ADD::MinAbstract
+
+ADD
+ADD::MaxAbstract(const ADD& cube) const
+{
+    DdManager *mgr = checkSameManager(cube);
+    DdNode *result = Cudd_addMaxAbstract(mgr, node, cube.node);
+    checkReturnValue(result);
+    return ADD(p, result);
+} // ADD::MaxAbstract
 
 ADD
 ADD::Plus(
@@ -4730,6 +4747,16 @@ ADD::EqualSupNorm(
 
 } // ADD::EqualSupNorm
 
+bool
+ADD::EqualSupNormRel(
+  const ADD& g,
+  CUDD_VALUE_TYPE tolerance,
+  int pr) const
+{
+    DdManager *mgr = checkSameManager(g);
+    return Cudd_EqualSupNormRel(mgr, node, g.node, tolerance, pr) != 0;
+    
+} // ADD::EqualSupNormRel
 
 BDD
 BDD::MakePrime(
@@ -5250,14 +5277,14 @@ ABDD::FirstCube(
 
 
 int
-NextCube(
+ABDD::NextCube(
   DdGen * gen,
   int ** cube,
-  CUDD_VALUE_TYPE * value)
+  CUDD_VALUE_TYPE * value) 
 {
     return Cudd_NextCube(gen, cube, value);
 
-} // NextCube
+} // ABDD::NextCube
 
 
 BDD

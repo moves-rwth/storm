@@ -25,7 +25,7 @@
 #include "src/solver/GmmxxNondeterministicLinearEquationSolver.h"
 
 #include "src/utility/counterexamples.h"
-#include "src/utility/IRUtility.h"
+#include "src/utility/PrismUtility.h"
 
 namespace storm {
     namespace counterexamples {

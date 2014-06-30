@@ -200,7 +200,6 @@ namespace storm {
         }
         
         BitVector& BitVector::operator&=(BitVector const& other) {
-            uint_fast64_t minSize =	std::min(other.bucketVector.size(), bucketVector.size());
             
             std::vector<uint64_t>::iterator it = bucketVector.begin();
             for (std::vector<uint64_t>::const_iterator otherIt = other.bucketVector.begin(); it != bucketVector.end() && otherIt != other.bucketVector.end(); ++it, ++otherIt) {
@@ -224,7 +223,6 @@ namespace storm {
         }
         
         BitVector& BitVector::operator|=(BitVector const& other) {
-            uint_fast64_t minSize =	std::min(other.bucketVector.size(), bucketVector.size());
             
             std::vector<uint64_t>::iterator it = bucketVector.begin();
             for (std::vector<uint64_t>::const_iterator otherIt = other.bucketVector.begin(); it != bucketVector.end() && otherIt != other.bucketVector.end(); ++it, ++otherIt) {

@@ -853,6 +853,71 @@ Cudd_EqualSupNorm(
 
 } /* end of Cudd_EqualSupNorm */
 
+/**Function********************************************************************
+ 
+ Synopsis    [Compares two ADDs for equality within tolerance.]
+ 
+ Description [Same as Cudd_EqualSupNorm but tests for max _relative_ difference
+ i.e. (f-g/f)<e instead of (f-g)<e ]
+ 
+ SideEffects [None]
+ 
+ SeeAlso     []
+ 
+ ******************************************************************************/
+int
+Cudd_EqualSupNormRel(
+                     DdManager * dd /* manager */,
+                     DdNode * f /* first ADD */,
+                     DdNode * g /* second ADD */,
+                     CUDD_VALUE_TYPE  tolerance /* maximum allowed difference */,
+                     int  pr /* verbosity level */)
+{
+    DdNode *fv, *fvn, *gv, *gvn, *r;
+    unsigned int topf, topg;
+    
+    statLine(dd);
+    /* Check terminal cases. */
+    if (f == g) return(1);
+    if (Cudd_IsConstant(f) && Cudd_IsConstant(g)) {
+        if (ddAbs((cuddV(f) - cuddV(g))/cuddV(f)) < tolerance) {
+            return(1);
+        } else {
+            if (pr>0) {
+                (void) fprintf(dd->out,"Offending nodes:\n");
+                (void) fprintf(dd->out,
+                               "f: address = %p\t value = %40.30f\n",
+                               (void *) f, cuddV(f));
+                (void) fprintf(dd->out,
+                               "g: address = %p\t value = %40.30f\n",
+                               (void *) g, cuddV(g));
+            }
+            return(0);
+        }
+    }
+    
+    /* We only insert the result in the cache if the comparison is
+     ** successful. Therefore, if we hit we return 1. */
+    r = cuddCacheLookup2(dd,(DD_CTFP)Cudd_EqualSupNormRel,f,g);
+    if (r != NULL) {
+        return(1);
+    }
+    
+    /* Compute the cofactors and solve the recursive subproblems. */
+    topf = cuddI(dd,f->index);
+    topg = cuddI(dd,g->index);
+    
+    if (topf <= topg) {fv = cuddT(f); fvn = cuddE(f);} else {fv = fvn = f;}
+    if (topg <= topf) {gv = cuddT(g); gvn = cuddE(g);} else {gv = gvn = g;}
+    
+    if (!Cudd_EqualSupNormRel(dd,fv,gv,tolerance,pr)) return(0);
+    if (!Cudd_EqualSupNormRel(dd,fvn,gvn,tolerance,pr)) return(0);
+    
+    cuddCacheInsert2(dd,(DD_CTFP)Cudd_EqualSupNormRel,f,g,DD_ONE(dd));
+    
+    return(1);
+    
+} /* end of Cudd_EqualSupNormRel */
 
 /**Function********************************************************************
 

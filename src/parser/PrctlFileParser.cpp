@@ -9,6 +9,7 @@
 
 #include "PrctlFileParser.h"
 #include "PrctlParser.h"
+#include "src/exceptions/FileIoException.h"
 
 namespace storm {
 namespace parser {

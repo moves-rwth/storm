@@ -147,7 +147,7 @@ TEST(SparseMatrix, Build) {
 }
 
 TEST(SparseMatrix, CreationWithMovingContents) {
-    std::vector<std::pair<uint_fast64_t, double>> columnsAndValues;
+    std::vector<storm::storage::MatrixEntry<double>> columnsAndValues;
     columnsAndValues.emplace_back(1, 1.0);
     columnsAndValues.emplace_back(2, 1.2);
     columnsAndValues.emplace_back(0, 0.5);
@@ -540,24 +540,24 @@ TEST(SparseMatrix, Iteration) {
     ASSERT_NO_THROW(matrix = matrixBuilder.build());
     
     for (auto const& entry : matrix.getRow(4)) {
-        if (entry.first == 0) {
-            ASSERT_EQ(0.1, entry.second);
-        } else if (entry.first == 1) {
-            ASSERT_EQ(0.2, entry.second);
-        } else if (entry.first == 3) {
-            ASSERT_EQ(0.3, entry.second);
+        if (entry.getColumn() == 0) {
+            ASSERT_EQ(0.1, entry.getValue());
+        } else if (entry.getColumn() == 1) {
+            ASSERT_EQ(0.2, entry.getValue());
+        } else if (entry.getColumn() == 3) {
+            ASSERT_EQ(0.3, entry.getValue());
         } else {
             ASSERT_TRUE(false);
         }
     }
     
     for (storm::storage::SparseMatrix<double>::iterator it = matrix.begin(4), ite = matrix.end(4); it != ite; ++it) {
-        if (it->first == 0) {
-            ASSERT_EQ(0.1, it->second);
-        } else if (it->first == 1) {
-            ASSERT_EQ(0.2, it->second);
-        } else if (it->first == 3) {
-            ASSERT_EQ(0.3, it->second);
+        if (it->getColumn() == 0) {
+            ASSERT_EQ(0.1, it->getValue());
+        } else if (it->getColumn() == 1) {
+            ASSERT_EQ(0.2, it->getValue());
+        } else if (it->getColumn() == 3) {
+            ASSERT_EQ(0.3, it->getValue());
         } else {
             ASSERT_TRUE(false);
         }

@@ -81,7 +81,7 @@ TEST(GmmxxLinearEquationSolver, qmr) {
     
     ASSERT_NO_THROW(storm::solver::GmmxxLinearEquationSolver<double> solver(storm::solver::GmmxxLinearEquationSolver<double>::QMR, 1e-6, 10000, storm::solver::GmmxxLinearEquationSolver<double>::NONE));
     
-    storm::solver::GmmxxLinearEquationSolver<double> solver(storm::solver::GmmxxLinearEquationSolver<double>::QMR, 1e-6, 10000, storm::solver::GmmxxLinearEquationSolver<double>::NONE, 50);
+    storm::solver::GmmxxLinearEquationSolver<double> solver(storm::solver::GmmxxLinearEquationSolver<double>::QMR, 1e-6, 10000, storm::solver::GmmxxLinearEquationSolver<double>::NONE, true, 50);
     ASSERT_NO_THROW(solver.solveEquationSystem(A, x, b));
     ASSERT_LT(std::abs(x[0] - 1), storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
     ASSERT_LT(std::abs(x[1] - 3), storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());

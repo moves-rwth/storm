@@ -36,8 +36,8 @@ namespace storm {
 //                for (auto state : psiStates) {
 //                    analysisInformation[state] = boost::container::flat_set<uint_fast64_t>();
 //                    for (auto const& predecessorEntry : backwardTransitions.getRow(state)) {
-//                        if (predecessorEntry.first != state && !psiStates.get(predecessorEntry.first)) {
-//                            worklist.push(std::make_pair(predecessorEntry.first, state));
+//                        if (predecessorEntry.getColumn() != state && !psiStates.get(predecessorEntry.getColumn())) {
+//                            worklist.push(std::make_pair(predecessorEntry.getColumn(), state));
 //                        }
 //                    }
 //                }
@@ -57,7 +57,7 @@ namespace storm {
 //                        bool choiceTargetsTargetState = false;
 //                        
 //                        for (auto& entry : transitionMatrix.getRow(currentChoice)) {
-//                            if (entry.first == targetState) {
+//                            if (entry.getColumn() == targetState) {
 //                                choiceTargetsTargetState = true;
 //                                break;
 //                            }
@@ -79,8 +79,8 @@ namespace storm {
 //                    if (analysisInformation[currentState].size() != analysisInformationSizeBefore) {
 //                        for (auto& predecessorEntry : backwardTransitions.getRow(currentState)) {
 //                            // Only put the predecessor in the worklist if it's not already a target state.
-//                            if (!psiStates.get(predecessorEntry.first)) {
-//                                worklist.push(std::make_pair(predecessorEntry.first, currentState));
+//                            if (!psiStates.get(predecessorEntry.getColumn())) {
+//                                worklist.push(std::make_pair(predecessorEntry.getColumn(), currentState));
 //                            }
 //                        }
 //                    }
@@ -96,9 +96,9 @@ namespace storm {
                 for (auto state : psiStates) {
                     analysisInformation[state] = boost::container::flat_set<uint_fast64_t>();
                     for (auto const& predecessorEntry : backwardTransitions.getRow(state)) {
-                        if (predecessorEntry.first != state && !statesInWorkList.get(predecessorEntry.first) && !psiStates.get(predecessorEntry.first)) {
-                            worklist.push(predecessorEntry.first);
-                            statesInWorkList.set(predecessorEntry.first);
+                        if (predecessorEntry.getColumn() != state && !statesInWorkList.get(predecessorEntry.getColumn()) && !psiStates.get(predecessorEntry.getColumn())) {
+                            worklist.push(predecessorEntry.getColumn());
+                            statesInWorkList.set(predecessorEntry.getColumn());
                             markedStates.set(state);
                         }
                     }
@@ -116,7 +116,7 @@ namespace storm {
                         bool modifiedChoice = false;
                         
                         for (auto const& entry : transitionMatrix.getRow(currentChoice)) {
-                            if (markedStates.get(entry.first)) {
+                            if (markedStates.get(entry.getColumn())) {
                                 modifiedChoice = true;
                                 break;
                             }
@@ -127,9 +127,9 @@ namespace storm {
                         // and the choice labels.
                         if (modifiedChoice) {
                             for (auto const& entry : transitionMatrix.getRow(currentChoice)) {
-                                if (markedStates.get(entry.first)) {
+                                if (markedStates.get(entry.getColumn())) {
                                     boost::container::flat_set<uint_fast64_t> tmpIntersection;
-                                    std::set_intersection(analysisInformation[currentState].begin(), analysisInformation[currentState].end(), analysisInformation[entry.first].begin(), analysisInformation[entry.first].end(), std::inserter(tmpIntersection, tmpIntersection.begin()));
+                                    std::set_intersection(analysisInformation[currentState].begin(), analysisInformation[currentState].end(), analysisInformation[entry.getColumn()].begin(), analysisInformation[entry.getColumn()].end(), std::inserter(tmpIntersection, tmpIntersection.begin()));
                                     std::set_intersection(analysisInformation[currentState].begin(), analysisInformation[currentState].end(), choiceLabeling[currentChoice].begin(), choiceLabeling[currentChoice].end(), std::inserter(tmpIntersection, tmpIntersection.begin()));
                                     analysisInformation[currentState] = std::move(tmpIntersection);
                                 }
@@ -142,9 +142,9 @@ namespace storm {
                     if (analysisInformation[currentState].size() != analysisInformationSizeBefore) {
                         for (auto const& predecessorEntry : backwardTransitions.getRow(currentState)) {
                             // Only put the predecessor in the worklist if it's not already a target state.
-                            if (!psiStates.get(predecessorEntry.first) && !statesInWorkList.get(predecessorEntry.first)) {
-                                worklist.push(predecessorEntry.first);
-                                statesInWorkList.set(predecessorEntry.first);
+                            if (!psiStates.get(predecessorEntry.getColumn()) && !statesInWorkList.get(predecessorEntry.getColumn())) {
+                                worklist.push(predecessorEntry.getColumn());
+                                statesInWorkList.set(predecessorEntry.getColumn());
                             }
                         }
                         markedStates.set(currentState, true);

@@ -2,10 +2,12 @@
 #include "storm-config.h"
 #include "src/parser/AutoParser.h"
 #include "src/storage/StronglyConnectedComponentDecomposition.h"
+#include "src/models/MarkovAutomaton.h"
 
 TEST(StronglyConnectedComponentDecomposition, FullSystem1) {
-    storm::parser::AutoParser<double> parser(STORM_CPP_BASE_PATH "/examples/ma/tiny/tiny1.tra", STORM_CPP_BASE_PATH "/examples/ma/tiny/tiny1.lab", "", "");
-	std::shared_ptr<storm::models::MarkovAutomaton<double>> markovAutomaton = parser.getModel<storm::models::MarkovAutomaton<double>>();
+	std::shared_ptr<storm::models::AbstractModel<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/ma/tiny/tiny1.tra", STORM_CPP_BASE_PATH "/examples/ma/tiny/tiny1.lab", "", "");
+
+	std::shared_ptr<storm::models::MarkovAutomaton<double>> markovAutomaton = abstractModel->as<storm::models::MarkovAutomaton<double>>();
     
     storm::storage::StronglyConnectedComponentDecomposition<double> sccDecomposition;
 
@@ -22,8 +24,9 @@ TEST(StronglyConnectedComponentDecomposition, FullSystem1) {
 }
 
 TEST(StronglyConnectedComponentDecomposition, FullSystem2) {
-    storm::parser::AutoParser<double> parser(STORM_CPP_BASE_PATH "/examples/ma/tiny/tiny2.tra", STORM_CPP_BASE_PATH "/examples/ma/tiny/tiny2.lab", "", "");
-	std::shared_ptr<storm::models::MarkovAutomaton<double>> markovAutomaton = parser.getModel<storm::models::MarkovAutomaton<double>>();
+	std::shared_ptr<storm::models::AbstractModel<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/ma/tiny/tiny2.tra", STORM_CPP_BASE_PATH "/examples/ma/tiny/tiny2.lab", "", "");
+
+	std::shared_ptr<storm::models::MarkovAutomaton<double>> markovAutomaton = abstractModel->as<storm::models::MarkovAutomaton<double>>();
     
     storm::storage::StronglyConnectedComponentDecomposition<double> sccDecomposition;
     ASSERT_NO_THROW(sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(*markovAutomaton, true, false));
