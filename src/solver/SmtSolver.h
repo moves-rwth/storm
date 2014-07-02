@@ -157,6 +157,32 @@ namespace storm {
 			virtual uint_fast64_t allSat(std::vector<storm::expressions::Expression> important, std::function<bool(storm::expressions::SimpleValuation&)> callback) {
 				throw storm::exceptions::NotImplementedException("This subclass of SmtSolver does not support model generation.");
 			}
+
+			/*!
+			* Retrieves the unsat core of the last call to check()
+			*
+			* @returns a subset of the asserted formulas s.t. this subset is unsat
+			*
+			* @throws InvalidStateException if no unsat core is available, i.e. the asserted formulas are consistent
+			* @throws IllegalFunctionCallException if unsat core generation is not configured for this solver
+			* @throws NotImplementedException if unsat core generation is not implemented with this solver class
+			*/
+			virtual std::vector<storm::expressions::Expression> getUnsatCore() {
+				throw storm::exceptions::NotImplementedException("This subclass of SmtSolver does not support unsat core generation.");
+			}
+
+			/*!
+			* Retrieves a subset of the assumptions from the last call to checkWithAssumptions(), s.t. the result is still unsatisfiable
+			*
+			* @returns a subset of the assumptions s.t. this subset of the assumptions results in unsat
+			*
+			* @throws InvalidStateException if no unsat assumptions is available, i.e. the asserted formulas are consistent
+			* @throws IllegalFunctionCallException if unsat assumptions generation is not configured for this solver
+			* @throws NotImplementedException if unsat assumptions generation is not implemented with this solver class
+			*/
+			virtual std::vector<storm::expressions::Expression> getUnsatAssumptions() {
+				throw storm::exceptions::NotImplementedException("This subclass of SmtSolver does not support unsat core generation.");
+			}
 		};
 	}
 }

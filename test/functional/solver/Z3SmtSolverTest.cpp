@@ -227,3 +227,33 @@ TEST(Z3SmtSolver, AllSat) {
 	ASSERT_TRUE(false) << "StoRM built without Z3 support.";
 #endif
 }
+
+TEST(Z3SmtSolver, UnsatAssumptions) {
+#ifdef STORM_HAVE_Z3
+	storm::solver::Z3SmtSolver s;
+	storm::solver::Z3SmtSolver::CheckResult result;
+
+	storm::expressions::Expression a = storm::expressions::Expression::createIntegerVariable("a");
+	storm::expressions::Expression b = storm::expressions::Expression::createIntegerVariable("b");
+	storm::expressions::Expression c = storm::expressions::Expression::createIntegerVariable("c");
+	storm::expressions::Expression exprFormula = a >= storm::expressions::Expression::createIntegerLiteral(0)
+		&& a < storm::expressions::Expression::createIntegerLiteral(5)
+		&& b > storm::expressions::Expression::createIntegerLiteral(7)
+		&& c == (a * b)
+		&& b + a > c;
+	storm::expressions::Expression f2 = storm::expressions::Expression::createBooleanVariable("f2");
+	storm::expressions::Expression exprFormula2 = f2.implies(a >= storm::expressions::Expression::createIntegerLiteral(2));
+	
+	(s.assertExpression(exprFormula));
+	(s.assertExpression(exprFormula2));
+	(result = s.checkWithAssumptions({ f2 }));
+	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::UNSAT);
+	std::vector<storm::expressions::Expression> unsatCore = s.getUnsatAssumptions();
+	ASSERT_EQ(unsatCore.size(), 1);
+	ASSERT_TRUE(unsatCore[0].isVariable());
+	ASSERT_STREQ("f2", unsatCore[0].getIdentifier().c_str());
+
+#else
+	ASSERT_TRUE(false) << "StoRM built without Z3 support.";
+#endif
+}

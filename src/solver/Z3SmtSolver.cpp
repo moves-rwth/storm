@@ -9,6 +9,7 @@ namespace storm {
 			, m_solver(m_context)
 			, m_adapter(m_context, {})
 			, lastResult(CheckResult::UNKNOWN)
+			, lastCheckAssumptions(false)
 #endif
 		{
 			//intentionally left empty
@@ -63,6 +64,7 @@ namespace storm {
 		SmtSolver::CheckResult Z3SmtSolver::check()
 		{
 #ifdef STORM_HAVE_Z3
+			lastCheckAssumptions = false;
 			switch (this->m_solver.check()) {
 				case z3::sat:
 					this->lastResult = SmtSolver::CheckResult::SAT;
@@ -83,6 +85,7 @@ namespace storm {
 		SmtSolver::CheckResult Z3SmtSolver::checkWithAssumptions(std::set<storm::expressions::Expression> &assumptions)
 		{
 #ifdef STORM_HAVE_Z3
+			lastCheckAssumptions = true;
 			z3::expr_vector z3Assumptions(this->m_context);
 
 			for (storm::expressions::Expression assumption : assumptions) {
@@ -109,6 +112,7 @@ namespace storm {
 		SmtSolver::CheckResult Z3SmtSolver::checkWithAssumptions(std::initializer_list<storm::expressions::Expression> assumptions)
 		{
 #ifdef STORM_HAVE_Z3
+			lastCheckAssumptions = true;
 			z3::expr_vector z3Assumptions(this->m_context);
 
 			for (storm::expressions::Expression assumption : assumptions) {
@@ -238,6 +242,27 @@ namespace storm {
 			LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without Z3 support.");
 #endif
 		}
+		std::vector<storm::expressions::Expression> Z3SmtSolver::getUnsatAssumptions() {
+#ifdef STORM_HAVE_Z3
+			if (lastResult != SmtSolver::CheckResult::UNSAT) {
+				throw storm::exceptions::InvalidStateException() << "Unsat Assumptions was called but last state is not unsat.";
+			}
+			if (!lastCheckAssumptions) {
+				throw storm::exceptions::InvalidStateException() << "Unsat Assumptions was called but last check had no assumptions.";
+			}
 
+			z3::expr_vector z3UnsatAssumptions = this->m_solver.unsat_core();
+
+			std::vector<storm::expressions::Expression> unsatAssumptions;
+			
+			for (unsigned int i = 0; i < z3UnsatAssumptions.size(); ++i) {
+				unsatAssumptions.push_back(this->m_adapter.translateExpression(z3UnsatAssumptions[i]));
+			}
+
+			return unsatAssumptions;
+#else
+			LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without Z3 support.");
+#endif
+		}
 	}
 }

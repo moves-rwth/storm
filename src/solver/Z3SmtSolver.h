@@ -37,6 +37,8 @@ namespace storm {
 
 			virtual uint_fast64_t allSat(std::vector<storm::expressions::Expression> important, std::function<bool(storm::expressions::SimpleValuation&)> callback) override;
 
+			virtual std::vector<storm::expressions::Expression> getUnsatAssumptions() override;
+
 		protected:
 			virtual storm::expressions::SimpleValuation z3ModelToStorm(z3::model m);
 		private:
@@ -46,6 +48,7 @@ namespace storm {
 			z3::solver m_solver;
 			storm::adapters::Z3ExpressionAdapter m_adapter;
 
+			bool lastCheckAssumptions;
 			CheckResult lastResult;
 #endif
 		};
