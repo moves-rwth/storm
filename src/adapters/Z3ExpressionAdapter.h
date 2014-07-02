@@ -201,15 +201,15 @@ namespace storm {
 						case Z3_OP_ANUM:
 							//Arithmetic numeral
 							if (expr.is_int() && expr.is_const()) {
-								int_fast64_t value;
+								long long value;
 								if (Z3_get_numeral_int64(expr.ctx(), expr, &value)) {
 									return storm::expressions::Expression::createIntegerLiteral(value);
 								} else {
 									LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Failed to convert Z3 expression. Expression is constant integer and value does not fit into 64-bit integer.");
 								}
 							} else if (expr.is_real() && expr.is_const()) {
-								int_fast64_t num;
-								int_fast64_t den;
+								long long num;
+								long long den;
 								if (Z3_get_numeral_rational_int64(expr.ctx(), expr, &num, &den)) {
 									return storm::expressions::Expression::createDoubleLiteral(static_cast<double>(num) / static_cast<double>(den));
 								} else {
