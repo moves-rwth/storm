@@ -16,25 +16,73 @@ bool CuddOptionsRegistered = storm::settings::Settings::registerNewModule([] (st
     // Set up option for reordering.
     std::vector<std::string> reorderingTechniques;
     reorderingTechniques.push_back("none");
+    reorderingTechniques.push_back("random");
+    reorderingTechniques.push_back("randompivot");
     reorderingTechniques.push_back("sift");
+    reorderingTechniques.push_back("siftconv");
     reorderingTechniques.push_back("ssift");
+    reorderingTechniques.push_back("ssiftconv");
     reorderingTechniques.push_back("gsift");
+    reorderingTechniques.push_back("gsiftconv");
     reorderingTechniques.push_back("win2");
+    reorderingTechniques.push_back("win2conv");
     reorderingTechniques.push_back("win3");
+    reorderingTechniques.push_back("win3conv");
     reorderingTechniques.push_back("win4");
+    reorderingTechniques.push_back("win4conv");
     reorderingTechniques.push_back("annealing");
     reorderingTechniques.push_back("genetic");
     reorderingTechniques.push_back("exact");
-	instance->addOption(storm::settings::OptionBuilder("Cudd", "reorder", "", "Sets the reordering technique used by Cudd.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("method", "Sets which technique is used by Cudd's reordering routines. Must be in {\"none\", \"sift\", \"ssift\", \"gsift\", \"win2\", \"win3\", \"win4\", \"annealing\", \"genetic\", \"exact\"}.").setDefaultValueString("gsift").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(reorderingTechniques)).build()).build());
+	instance->addOption(storm::settings::OptionBuilder("Cudd", "reorder", "", "Sets the reordering technique used by Cudd.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("method", "Sets which technique is used by Cudd's reordering routines. Must be in {\"none\", \"random\", \"randompivot\", \"sift\", \"siftconv\", \"ssift\", \"ssiftconv\", \"gsift\", \"gsiftconv\", \"win2\", \"win2conv\", \"win3\", \"win3conv\", \"win4\", \"win4conv\", \"annealing\", \"genetic\", \"exact\"}.").setDefaultValueString("gsift").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(reorderingTechniques)).build()).build());
     
     return true;
 });
 
 namespace storm {
     namespace dd {
-        DdManager<DdType::CUDD>::DdManager() : metaVariableMap(), cuddManager() {
+        DdManager<DdType::CUDD>::DdManager() : metaVariableMap(), cuddManager(), reorderingTechnique(CUDD_REORDER_NONE) {
             this->cuddManager.SetMaxMemory(static_cast<unsigned long>(storm::settings::Settings::getInstance()->getOptionByLongName("cuddmaxmem").getArgument(0).getValueAsUnsignedInteger() * 1024ul * 1024ul));
             this->cuddManager.SetEpsilon(storm::settings::Settings::getInstance()->getOptionByLongName("cuddprec").getArgument(0).getValueAsDouble());
+            
+            // Now set the selected reordering technique.
+            std::string const& reorderingTechnique = storm::settings::Settings::getInstance()->getOptionByLongName("reorder").getArgument(0).getValueAsString();
+            if (reorderingTechnique == "none") {
+                this->reorderingTechnique = CUDD_REORDER_NONE;
+            } else if (reorderingTechnique == "random") {
+                this->reorderingTechnique = CUDD_REORDER_RANDOM;
+            } else if (reorderingTechnique == "randompivot") {
+                this->reorderingTechnique = CUDD_REORDER_RANDOM_PIVOT;
+            } else if (reorderingTechnique == "sift") {
+                this->reorderingTechnique = CUDD_REORDER_SIFT;
+            } else if (reorderingTechnique == "siftconv") {
+                this->reorderingTechnique = CUDD_REORDER_SIFT_CONVERGE;
+            } else if (reorderingTechnique == "ssift") {
+                this->reorderingTechnique = CUDD_REORDER_SYMM_SIFT;
+            } else if (reorderingTechnique == "ssiftconv") {
+                this->reorderingTechnique = CUDD_REORDER_SYMM_SIFT_CONV;
+            } else if (reorderingTechnique == "gsift") {
+                this->reorderingTechnique = CUDD_REORDER_GROUP_SIFT;
+            } else if (reorderingTechnique == "gsiftconv") {
+                this->reorderingTechnique = CUDD_REORDER_GROUP_SIFT_CONV;
+            } else if (reorderingTechnique == "win2") {
+                this->reorderingTechnique = CUDD_REORDER_WINDOW2;
+            } else if (reorderingTechnique == "win2conv") {
+                this->reorderingTechnique = CUDD_REORDER_WINDOW2_CONV;
+            } else if (reorderingTechnique == "win3") {
+                this->reorderingTechnique = CUDD_REORDER_WINDOW3;
+            } else if (reorderingTechnique == "win3conv") {
+                this->reorderingTechnique = CUDD_REORDER_WINDOW3_CONV;
+            } else if (reorderingTechnique == "win4") {
+                this->reorderingTechnique = CUDD_REORDER_WINDOW4;
+            } else if (reorderingTechnique == "win4conv") {
+                this->reorderingTechnique = CUDD_REORDER_WINDOW4_CONV;
+            } else if (reorderingTechnique == "annealing") {
+                this->reorderingTechnique = CUDD_REORDER_ANNEALING;
+            } else if (reorderingTechnique == "genetic") {
+                this->reorderingTechnique = CUDD_REORDER_GENETIC;
+            } else if (reorderingTechnique == "exact") {
+                this->reorderingTechnique = CUDD_REORDER_EXACT;
+            }
         }
         
         Dd<DdType::CUDD> DdManager<DdType::CUDD>::getOne() {
@@ -208,7 +256,7 @@ namespace storm {
         
         void DdManager<DdType::CUDD>::allowDynamicReordering(bool value) {
             if (value) {
-                this->getCuddManager().AutodynEnable(CUDD_REORDER_GROUP_SIFT_CONV);
+                this->getCuddManager().AutodynEnable(this->reorderingTechnique);
             } else {
                 this->getCuddManager().AutodynDisable();
             }
@@ -220,7 +268,7 @@ namespace storm {
         }
         
         void DdManager<DdType::CUDD>::triggerReordering() {
-            this->getCuddManager().ReduceHeap(CUDD_REORDER_GROUP_SIFT_CONV, 0);
+            this->getCuddManager().ReduceHeap(this->reorderingTechnique, 0);
         }
     }
 }

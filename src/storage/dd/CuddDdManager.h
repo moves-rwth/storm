@@ -174,6 +174,9 @@ namespace storm {
             
             // The manager responsible for the DDs created/modified with this DdManager.
             Cudd cuddManager;
+            
+            // The technique that is used for dynamic reordering.
+            Cudd_ReorderingType reorderingTechnique;
         };
     }
 }
