@@ -23,19 +23,19 @@ namespace storm {
 
 			virtual void reset() override;
 
-			virtual void assertExpression(storm::expressions::Expression &e) override;
+			virtual void assertExpression(storm::expressions::Expression const& e) override;
 
 			virtual CheckResult check() override;
 
-			virtual CheckResult checkWithAssumptions(std::set<storm::expressions::Expression> &assumptions) override;
+			virtual CheckResult checkWithAssumptions(std::set<storm::expressions::Expression> const& assumptions) override;
 
 			virtual CheckResult checkWithAssumptions(std::initializer_list<storm::expressions::Expression> assumptions) override;
 
 			virtual storm::expressions::SimpleValuation getModel() override;
 
-			virtual std::vector<storm::expressions::SimpleValuation> allSat(std::vector<storm::expressions::Expression> important) override;
+			virtual std::vector<storm::expressions::SimpleValuation> allSat(std::vector<storm::expressions::Expression> const& important) override;
 
-			virtual uint_fast64_t allSat(std::vector<storm::expressions::Expression> important, std::function<bool(storm::expressions::SimpleValuation&)> callback) override;
+			virtual uint_fast64_t allSat(std::vector<storm::expressions::Expression> const& important, std::function<bool(storm::expressions::SimpleValuation&)> callback) override;
 
 			virtual std::vector<storm::expressions::Expression> getUnsatAssumptions() override;
 

@@ -59,11 +59,11 @@ namespace storm {
 			//! assert an expression in the solver
 			//! @param e the asserted expression, the return type has to be bool
 			//! @throws IllegalArgumentTypeException if the return type of the expression is not bool
-			virtual void assertExpression(storm::expressions::Expression &e) = 0;
+			virtual void assertExpression(storm::expressions::Expression const& e) = 0;
 			//! assert a set of expressions in the solver
 			//! @param es the asserted expressions
 			//! @see assert(storm::expressions::Expression &e)
-			virtual void assertExpression(std::set<storm::expressions::Expression> &es) {
+			virtual void assertExpression(std::set<storm::expressions::Expression> const& es) {
 				for (storm::expressions::Expression e : es) {
 					this->assertExpression(e);
 				}
@@ -80,7 +80,7 @@ namespace storm {
 			//! assert a set of expressions in the solver
 			//! @param es the asserted expressions
 			//! @see assert(storm::expressions::Expression &e)
-			virtual void assertExpression(std::initializer_list<storm::expressions::Expression> &es) {
+			virtual void assertExpression(std::initializer_list<storm::expressions::Expression> const& es) {
 				for (storm::expressions::Expression e : es) {
 					this->assertExpression(e);
 				}
@@ -98,7 +98,7 @@ namespace storm {
 			//! @param es the asserted expressions
 			//! @throws IllegalArgumentTypeException if the return type of one of the expressions is not bool
 			//! @see check()
-			virtual CheckResult checkWithAssumptions(std::set<storm::expressions::Expression> &assumptions) = 0;
+			virtual CheckResult checkWithAssumptions(std::set<storm::expressions::Expression> const& assumptions) = 0;
 			//! check satisfiability of the conjunction of the currently asserted expressions and the provided assumptions
 			//! @param es the asserted expressions
 			//! @throws IllegalArgumentTypeException if the return type of one of the expressions is not bool
@@ -138,7 +138,7 @@ namespace storm {
 			* @throws IllegalFunctionCallException if model generation is not configured for this solver
 			* @throws NotImplementedException if model generation is not implemented with this solver class
 			*/
-			virtual std::vector<storm::expressions::SimpleValuation> allSat(std::vector<storm::expressions::Expression> important) {
+			virtual std::vector<storm::expressions::SimpleValuation> allSat(std::vector<storm::expressions::Expression> const& important) {
 				throw storm::exceptions::NotImplementedException("This subclass of SmtSolver does not support model generation.");
 			}
 
@@ -154,7 +154,7 @@ namespace storm {
 			* @throws IllegalFunctionCallException if model generation is not configured for this solver
 			* @throws NotImplementedException if model generation is not implemented with this solver class
 			*/
-			virtual uint_fast64_t allSat(std::vector<storm::expressions::Expression> important, std::function<bool(storm::expressions::SimpleValuation&)> callback) {
+			virtual uint_fast64_t allSat(std::vector<storm::expressions::Expression> const& important, std::function<bool(storm::expressions::SimpleValuation&)> callback) {
 				throw storm::exceptions::NotImplementedException("This subclass of SmtSolver does not support model generation.");
 			}
 

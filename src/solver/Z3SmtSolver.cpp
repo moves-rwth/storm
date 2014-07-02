@@ -52,7 +52,7 @@ namespace storm {
 #endif
 		}
 
-		void Z3SmtSolver::assertExpression(storm::expressions::Expression &e)
+		void Z3SmtSolver::assertExpression(storm::expressions::Expression const& e)
 		{
 #ifdef STORM_HAVE_Z3
 			this->m_solver.add(m_adapter.translateExpression(e, true));
@@ -82,7 +82,7 @@ namespace storm {
 #endif
 		}
 
-		SmtSolver::CheckResult Z3SmtSolver::checkWithAssumptions(std::set<storm::expressions::Expression> &assumptions)
+		SmtSolver::CheckResult Z3SmtSolver::checkWithAssumptions(std::set<storm::expressions::Expression> const& assumptions)
 		{
 #ifdef STORM_HAVE_Z3
 			lastCheckAssumptions = true;
@@ -179,7 +179,7 @@ namespace storm {
 #endif
 		}
 
-		std::vector<storm::expressions::SimpleValuation> Z3SmtSolver::allSat(std::vector<storm::expressions::Expression> important)
+		std::vector<storm::expressions::SimpleValuation> Z3SmtSolver::allSat(std::vector<storm::expressions::Expression> const& important)
 		{
 #ifdef STORM_HAVE_Z3
 			
@@ -194,7 +194,7 @@ namespace storm {
 #endif
 		}
 
-		uint_fast64_t Z3SmtSolver::allSat(std::vector<storm::expressions::Expression> important, std::function<bool(storm::expressions::SimpleValuation&)> callback)
+		uint_fast64_t Z3SmtSolver::allSat(std::vector<storm::expressions::Expression> const& important, std::function<bool(storm::expressions::SimpleValuation&)> callback)
 		{
 #ifdef STORM_HAVE_Z3
 			for (storm::expressions::Expression e : important) {
