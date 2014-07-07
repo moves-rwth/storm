@@ -7,9 +7,9 @@ namespace storm {
 #ifdef STORM_HAVE_Z3
 			: m_context()
 			, m_solver(m_context)
-			, m_adapter(m_context, {})
-			, lastResult(CheckResult::UNKNOWN)
+			, m_adapter(m_context, std::map<std::string, z3::expr>())
 			, lastCheckAssumptions(false)
+            , lastResult(CheckResult::UNKNOWN)
 #endif
 		{
 			//intentionally left empty

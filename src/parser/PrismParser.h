@@ -225,7 +225,7 @@ namespace storm {
             storm::prism::Constant createDefinedBooleanConstant(std::string const& newConstant, storm::expressions::Expression expression) const;
             storm::prism::Constant createDefinedIntegerConstant(std::string const& newConstant, storm::expressions::Expression expression) const;
             storm::prism::Constant createDefinedDoubleConstant(std::string const& newConstant, storm::expressions::Expression expression) const;
-            storm::prism::Formula createFormula(std::string const& formulaName, storm::expressions::Expression expression) const;
+            storm::prism::Formula createFormula(std::string const& formulaName, storm::expressions::Expression expression);
             storm::prism::Label createLabel(std::string const& labelName, storm::expressions::Expression expression) const;
             storm::prism::RewardModel createRewardModel(std::string const& rewardModelName, std::vector<storm::prism::StateReward> const& stateRewards, std::vector<storm::prism::TransitionReward> const& transitionRewards) const;
             storm::prism::StateReward createStateReward(storm::expressions::Expression statePredicateExpression, storm::expressions::Expression rewardValueExpression) const;

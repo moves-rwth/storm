@@ -39,9 +39,9 @@ namespace storm {
             Z3ExpressionAdapter(z3::context& context, std::map<std::string, z3::expr> const& variableToExpressionMap)
 				: context(context)
 				, stack()
-				, variableToExpressionMap(variableToExpressionMap)
-				, additionalVariableCounter(0)
-				, additionalAssertions() {
+				, additionalAssertions()
+                , additionalVariableCounter(0)
+                , variableToExpressionMap(variableToExpressionMap) {
                 // Intentionally left empty.
             }
             

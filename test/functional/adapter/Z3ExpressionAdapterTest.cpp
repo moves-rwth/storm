@@ -11,7 +11,7 @@ TEST(Z3ExpressionAdapter, StormToZ3Basic) {
 	z3::solver s(ctx);
 	z3::expr conjecture = ctx.bool_val(false);
 
-	storm::adapters::Z3ExpressionAdapter adapter(ctx, {});
+	storm::adapters::Z3ExpressionAdapter adapter(ctx, std::map<std::string, z3::expr>());
 
 	storm::expressions::Expression exprTrue = storm::expressions::Expression::createTrue();
 	z3::expr z3True = ctx.bool_val(true);
@@ -54,7 +54,7 @@ TEST(Z3ExpressionAdapter, StormToZ3Integer) {
 	z3::solver s(ctx);
 	z3::expr conjecture = ctx.bool_val(false);
 
-	storm::adapters::Z3ExpressionAdapter adapter(ctx, {});
+	storm::adapters::Z3ExpressionAdapter adapter(ctx, std::map<std::string, z3::expr>());
 
 	storm::expressions::Expression exprAdd = (storm::expressions::Expression::createIntegerVariable("x") + storm::expressions::Expression::createIntegerVariable("y") < -storm::expressions::Expression::createIntegerVariable("y"));
 	z3::expr z3Add = (ctx.int_const("x") + ctx.int_const("y") < -ctx.int_const("y"));
@@ -81,7 +81,7 @@ TEST(Z3ExpressionAdapter, StormToZ3Real) {
 	z3::solver s(ctx);
 	z3::expr conjecture = ctx.bool_val(false);
 
-	storm::adapters::Z3ExpressionAdapter adapter(ctx, {});
+	storm::adapters::Z3ExpressionAdapter adapter(ctx, std::map<std::string, z3::expr>());
 
 	storm::expressions::Expression exprAdd = (storm::expressions::Expression::createDoubleVariable("x") + storm::expressions::Expression::createDoubleVariable("y") < -storm::expressions::Expression::createDoubleVariable("y"));
 	z3::expr z3Add = (ctx.real_const("x") + ctx.real_const("y") < -ctx.real_const("y"));
@@ -108,7 +108,7 @@ TEST(Z3ExpressionAdapter, StormToZ3TypeErrors) {
 	z3::solver s(ctx);
 	z3::expr conjecture = ctx.bool_val(false);
 
-	storm::adapters::Z3ExpressionAdapter adapter(ctx, {});
+	storm::adapters::Z3ExpressionAdapter adapter(ctx, std::map<std::string, z3::expr>());
 
 	storm::expressions::Expression exprFail1 = (storm::expressions::Expression::createDoubleVariable("x") + storm::expressions::Expression::createIntegerVariable("y") < -storm::expressions::Expression::createDoubleVariable("y"));
 	ASSERT_THROW(conjecture = adapter.translateExpression(exprFail1, true), storm::exceptions::InvalidTypeException);
@@ -124,7 +124,7 @@ TEST(Z3ExpressionAdapter, StormToZ3FloorCeil) {
 	z3::solver s(ctx);
 	z3::expr conjecture = ctx.bool_val(false);
 
-	storm::adapters::Z3ExpressionAdapter adapter(ctx, {});
+	storm::adapters::Z3ExpressionAdapter adapter(ctx, std::map<std::string, z3::expr>());
 
 	storm::expressions::Expression exprFloor = ((storm::expressions::Expression::createDoubleVariable("d").floor()) == storm::expressions::Expression::createIntegerVariable("i") && storm::expressions::Expression::createDoubleVariable("d") > storm::expressions::Expression::createDoubleLiteral(4.1) && storm::expressions::Expression::createDoubleVariable("d") < storm::expressions::Expression::createDoubleLiteral(4.991));
 	z3::expr z3Floor = ctx.int_val(4) == ctx.int_const("i");
@@ -167,7 +167,7 @@ TEST(Z3ExpressionAdapter, Z3ToStormBasic) {
 
 	unsigned args = 2;
 
-	storm::adapters::Z3ExpressionAdapter adapter(ctx, {});
+	storm::adapters::Z3ExpressionAdapter adapter(ctx, std::map<std::string, z3::expr>());
 
 	z3::expr z3True = ctx.bool_val(true);
 	storm::expressions::Expression exprTrue;
