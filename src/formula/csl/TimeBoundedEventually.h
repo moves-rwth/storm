@@ -50,14 +50,12 @@ public:
 		setInterval(lowerBound, upperBound);
 	}
 
-	TimeBoundedEventually(T lowerBound, T upperBound, AbstractStateFormula<T>* child) : child(child) {
+	TimeBoundedEventually(T lowerBound, T upperBound, std::shared_ptr<AbstractStateFormula<T>> const & child) : child(child) {
 		setInterval(lowerBound, upperBound);
 	}
 
 	virtual ~TimeBoundedEventually() {
-		if (child != nullptr) {
-			delete child;
-		}
+		// Intentionally left empty.
 	}
 
 	/*!
@@ -67,10 +65,10 @@ public:
 	 *
 	 * @returns a new BoundedUntil-object that is identical the called object.
 	 */
-	virtual AbstractPathFormula<T>* clone() const override {
-		TimeBoundedEventually<T>* result = new TimeBoundedEventually<T>(this->getLowerBound(), this->getUpperBound());
+	virtual std::shared_ptr<AbstractPathFormula<T>> clone() const override {
+		std::shared_ptr<TimeBoundedEventually<T>> result(new TimeBoundedEventually<T>(lowerBound, upperBound));
 		if (this->childIsSet()) {
-			result->setChild(this->getChild().clone());
+			result->setChild(child->clone());
 		}
 		return result;
 	}
@@ -84,7 +82,7 @@ public:
 	 *
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
-	virtual std::vector<T> check(const storm::modelchecker::csl::AbstractModelChecker<T>& modelChecker, bool qualitative) const override {
+	virtual std::vector<T> check(storm::modelchecker::csl::AbstractModelChecker<T> const & modelChecker, bool qualitative) const override {
 		return modelChecker.template as<ITimeBoundedEventuallyModelChecker>()->checkTimeBoundedEventually(*this, qualitative);
 	}
 
@@ -94,7 +92,7 @@ public:
 	 *  @param checker Formula checker object.
 	 *  @return true iff the subtree conforms to some logic.
 	 */
-	virtual bool validate(const AbstractFormulaChecker<T>& checker) const override {
+	virtual bool validate(AbstractFormulaChecker<T> const & checker) const override {
 		return checker.validate(this->child);
 	}
 
@@ -120,15 +118,15 @@ public:
 	/*!
 	 * @returns the child node
 	 */
-	const AbstractStateFormula<T>& getChild() const {
-		return *child;
+	std::shared_ptr<AbstractStateFormula<T>> const & getChild() const {
+		return child;
 	}
 
 	/*!
 	 * Sets the subtree
 	 * @param child the new child node
 	 */
-	void setChild(AbstractStateFormula<T>* child) {
+	void setChild(std::shared_ptr<AbstractStateFormula<T>> const & child) {
 		this->child = child;
 	}
 
@@ -137,7 +135,7 @@ public:
 	 * @return True if the child is set, i.e. it does not point to nullptr; false otherwise
 	 */
 	bool childIsSet() const {
-		return child != nullptr;
+		return child.get() != nullptr;
 	}
 
 	/**
@@ -145,7 +143,7 @@ public:
 	 *
 	 * @return lower bound of the operator.
 	 */
-	T getLowerBound() const {
+	T const & getLowerBound() const {
 		return lowerBound;
 	}
 
@@ -153,7 +151,7 @@ public:
 	 * Getter for upperBound attribute
 	 * @return upper bound of the operator.
 	 */
-	T getUpperBound() const {
+	T const & getUpperBound() const {
 		return upperBound;
 	}
 
@@ -173,7 +171,7 @@ public:
 	}
 
 private:
-	AbstractStateFormula<T>* child;
+	std::shared_ptr<AbstractStateFormula<T>> child;
 	T lowerBound, upperBound;
 };
 

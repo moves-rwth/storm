@@ -58,7 +58,7 @@ public:
 	 * @note This function is not implemented in this class.
 	 * @returns a new AND-object that is identical the called object.
 	 */
-	virtual AbstractPathFormula<T>* clone() const = 0;
+	virtual std::shared_ptr<AbstractPathFormula<T>> clone() const = 0;
 
 	/*!
 	 * Calls the model checker to check this formula.
@@ -71,7 +71,7 @@ public:
 	 *
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
-	virtual std::vector<T> check(const storm::modelchecker::csl::AbstractModelChecker<T>& modelChecker, bool qualitative) const = 0;
+	virtual std::vector<T> check(storm::modelchecker::csl::AbstractModelChecker<T> const & modelChecker, bool qualitative) const = 0;
 };
 
 } //namespace csl

@@ -26,11 +26,15 @@ class FormulaAction : public AbstractAction<T> {
 
 public:
 
-	FormulaAction(storm::property::prctl::AbstractStateFormula<T>* prctlFormula) : prctlFormula(prctlFormula), cslFormula(nullptr) {
+	FormulaAction() : prctlFormula(nullptr), cslFormula(nullptr) {
 		//Intentionally left empty.
 	}
 
-	FormulaAction(storm::property::csl::AbstractStateFormula<T>* cslFormula) : prctlFormula(nullptr), cslFormula(cslFormula) {
+	FormulaAction(std::shared_ptr<storm::property::prctl::AbstractStateFormula<T>> const & prctlFormula) : prctlFormula(prctlFormula), cslFormula(nullptr) {
+		//Intentionally left empty.
+	}
+
+	FormulaAction(std::shared_ptr<storm::property::csl::AbstractStateFormula<T>> const & cslFormula) : prctlFormula(nullptr), cslFormula(cslFormula) {
 		//Intentionally left empty.
 	}
 
@@ -39,12 +43,7 @@ public:
 	 * To ensure that the right destructor is called
 	 */
 	virtual ~FormulaAction() {
-		if(prctlFormula != nullptr) {
-			delete prctlFormula;
-		}
-		if(cslFormula != nullptr) {
-			delete cslFormula;
-		}
+		// Intentionally left empty.
 	}
 
 	/*!
@@ -55,7 +54,7 @@ public:
 		storm::storage::BitVector selection(result.selection);
 
 		//Compute the modelchecking results of the actions state formula and deselect all states that do not satisfy it.
-		if(prctlFormula != nullptr) {
+		if(prctlFormula.get() != nullptr) {
 			selection = selection & prctlFormula->check(mc);
 		}
 
@@ -70,7 +69,7 @@ public:
 		storm::storage::BitVector selection(result.selection);
 
 		//Compute the modelchecking results of the actions state formula and deselect all states that do not satisfy it.
-		if(cslFormula != nullptr) {
+		if(cslFormula.get() != nullptr) {
 			selection = selection & cslFormula->check(mc);
 		}
 
@@ -82,9 +81,9 @@ public:
 	 */
 	virtual std::string toString() const override {
 		std::string out = "states(";
-		if(prctlFormula != nullptr) {
+		if(prctlFormula.get() != nullptr) {
 			out += prctlFormula->toString();
-		} else if(cslFormula != nullptr) {
+		} else if(cslFormula.get() != nullptr) {
 			out += cslFormula->toString();
 		}
 		out += ")";
@@ -92,8 +91,8 @@ public:
 	}
 
 private:
-	storm::property::prctl::AbstractStateFormula<T>* prctlFormula;
-	storm::property::csl::AbstractStateFormula<T>* cslFormula;
+	std::shared_ptr<storm::property::prctl::AbstractStateFormula<T>> prctlFormula;
+	std::shared_ptr<storm::property::csl::AbstractStateFormula<T>> cslFormula;
 
 };
 

@@ -76,8 +76,9 @@ public:
 	 *
 	 * @returns a new AND-object that is identical the called object.
 	 */
-	virtual AbstractStateFormula<T>* clone() const override {
-		return new Ap(this->getAp());
+	virtual std::shared_ptr<AbstractStateFormula<T>> clone() const override {
+		std::shared_ptr<AbstractStateFormula<T>> result(new Ap(this->getAp()));
+		return result;
 	}
 
 	/*!

@@ -39,7 +39,7 @@ public:
 	 * @note This function is not implemented in this class.
 	 * @returns a new AND-object that is identical the called object.
 	 */
-	virtual AbstractRewardPathFormula<T>* clone() const = 0;
+	virtual std::shared_ptr<AbstractRewardPathFormula<T>> clone() const = 0;
 
 	/*!
 	 * Calls the model checker to check this formula.

@@ -285,11 +285,10 @@ void checkPrctlFormulae(storm::modelchecker::prctl::AbstractModelChecker<double>
 	if (s->isSet("prctl")) {
 		std::string const chosenPrctlFile = s->getOptionByLongName("prctl").getArgument(0).getValueAsString();
 		LOG4CPLUS_INFO(logger, "Parsing prctl file: " << chosenPrctlFile << ".");
-		std::list<storm::property::prctl::PrctlFilter<double>*> formulaList = storm::parser::PrctlFileParser::parsePrctlFile(chosenPrctlFile);
+		std::list<std::shared_ptr<storm::property::prctl::PrctlFilter<double>>> formulaList = storm::parser::PrctlFileParser::parsePrctlFile(chosenPrctlFile);
         
         for (auto formula : formulaList) {
         	formula->check(modelchecker);
-            delete formula;
         }
 	}
 }
@@ -339,7 +338,7 @@ void checkPrctlFormulae(storm::modelchecker::prctl::AbstractModelChecker<double>
 
 	std::string const chosenPrctlFile = s->getOptionByLongName("prctl").getArgument(0).getValueAsString();
 	LOG4CPLUS_INFO(logger, "Parsing prctl file: " << chosenPrctlFile << ".");
-	std::list<storm::property::prctl::PrctlFilter<double>*> formulaList = storm::parser::PrctlFileParser::parsePrctlFile(chosenPrctlFile);
+	std::list<std::shared_ptr<storm::property::prctl::PrctlFilter<double>>> formulaList = storm::parser::PrctlFileParser::parsePrctlFile(chosenPrctlFile);
 
 	// Test for each formula if a counterexample can be generated for it.
 	if(formulaList.size() == 0) {
@@ -369,13 +368,12 @@ void checkPrctlFormulae(storm::modelchecker::prctl::AbstractModelChecker<double>
 	for (auto formula : formulaList) {
 
 		// First check if it is a formula type for which a counterexample can be generated.
-		if (dynamic_cast<storm::property::prctl::AbstractStateFormula<double> const*>(formula->getChild()) == nullptr) {
+		if (std::dynamic_pointer_cast<storm::property::prctl::AbstractStateFormula<double>>(formula->getChild()).get() == nullptr) {
 			LOG4CPLUS_ERROR(logger, "Unexpected kind of formula. Expected a state formula.");
-			delete formula;
 			continue;
 		}
 
-		storm::property::prctl::AbstractStateFormula<double> const& stateForm = static_cast<storm::property::prctl::AbstractStateFormula<double> const&>(*(formula->getChild()));
+		std::shared_ptr<storm::property::prctl::AbstractStateFormula<double>> stateForm = std::static_pointer_cast<storm::property::prctl::AbstractStateFormula<double>>(formula->getChild());
 
 		// Do some output
 		std::cout << "Generating counterexample for formula " << fIndex << ":" << std::endl;
@@ -389,13 +387,12 @@ void checkPrctlFormulae(storm::modelchecker::prctl::AbstractModelChecker<double>
 		// Also raise the logger threshold for the log file, so that the model check infos aren't logged (useless and there are lots of them)
 		// Lower it again after the model check.
 		logger.getAppender("mainFileAppender")->setThreshold(log4cplus::WARN_LOG_LEVEL);
-		storm::storage::BitVector result = stateForm.check(*createPrctlModelChecker(dtmc));
+		storm::storage::BitVector result = stateForm->check(*createPrctlModelChecker(dtmc));
 		logger.getAppender("mainFileAppender")->setThreshold(log4cplus::INFO_LOG_LEVEL);
 
 		if((result & dtmc.getInitialStates()).getNumberOfSetBits() == dtmc.getInitialStates().getNumberOfSetBits()) {
 			std::cout << "Formula is satisfied. Can not generate counterexample.\n\n" << std::endl;
 			LOG4CPLUS_INFO(logger, "Formula is satisfied. Can not generate counterexample.");
-			delete formula;
 			continue;
 		}
 
@@ -418,7 +415,6 @@ void checkPrctlFormulae(storm::modelchecker::prctl::AbstractModelChecker<double>
 		}
 
 		fIndex++;
-		delete formula;
 	}
  }
 
@@ -552,18 +548,15 @@ int main(const int argc, const char* argv[]) {
                 
                 // Now parse the property file and receive the list of parsed formulas.
                 std::string const& propertyFile = s->getOptionByLongName("mincmd").getArgumentByName("propertyFile").getValueAsString();
-                std::list<storm::property::prctl::PrctlFilter<double>*> formulaList = storm::parser::PrctlFileParser::parsePrctlFile(propertyFile);
+                std::list<std::shared_ptr<storm::property::prctl::PrctlFilter<double>>> formulaList = storm::parser::PrctlFileParser::parsePrctlFile(propertyFile);
 
                 // Now generate the counterexamples for each formula.
-                for (storm::property::prctl::PrctlFilter<double>* formulaPtr : formulaList) {
+                for (auto formulaPtr : formulaList) {
                     if (useMILP) {
                         storm::counterexamples::MILPMinimalLabelSetGenerator<double>::computeCounterexample(program, *mdp, formulaPtr->getChild());
                     } else {
                         storm::counterexamples::SMTMinimalCommandSetGenerator<double>::computeCounterexample(program, constants, *mdp, formulaPtr->getChild());
                     }
-                    
-                    // Once we are done with the formula, delete it.
-                    delete formulaPtr;
                 }
             } else if (s->isSet("prctl")) {
                 // Determine which engine is to be used to choose the right model checker.

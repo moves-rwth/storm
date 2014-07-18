@@ -44,7 +44,7 @@ public:
 	 * @note This function is not implemented in this class.
 	 * @returns a new AND-object that is identical the called object.
 	 */
-	virtual AbstractStateFormula<T>* clone() const = 0;
+	virtual std::shared_ptr<AbstractStateFormula<T>> clone() const = 0;
 
 	/*!
 	 * Calls the model checker to check this formula.

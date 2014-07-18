@@ -34,25 +34,6 @@ class IApModelChecker {
 		virtual std::vector<T> checkAp(const Ap<T>& obj) const = 0;
 };
 
-
-/*!
- *	@brief Interface class for visitors that support Ap.
- *
- *	All visitors that support the formula class Ap must inherit
- *	this pure virtual class.
- */
-template <class T>
-class IApVisitor {
-	public:
-		/*!
-		 *	@brief Evaluates And formula within a model checker.
-		 *
-		 *	@param obj Formula object with subformulas.
-		 *	@return Result of the formula for every node.
-		 */
-		virtual void visitAp(const Ap<T>& obj) = 0;
-};
-
 /*!
  * @brief
  * Class for an abstract formula tree with atomic proposition as root.
@@ -78,8 +59,8 @@ public:
 	 *
 	 * @param ap The string representing the atomic proposition
 	 */
-	Ap(std::string ap) {
-		this->ap = ap;
+	Ap(std::string ap) : ap(ap) {
+		// Intentionally left empty.
 	}
 
 	/*!
@@ -112,12 +93,9 @@ public:
 	 *
 	 * @returns a new AND-object that is identical the called object.
 	 */
-	virtual AbstractLtlFormula<T>* clone() const override {
-		return new Ap(this->getAp());
-	}
-
-	virtual void visit(visitor::AbstractLtlFormulaVisitor<T>& visitor) const override {
-		visitor.template as<IApVisitor>()->visitAp(*this);
+	virtual std::shared_ptr<AbstractLtlFormula<T>> clone() const override {
+		std::shared_ptr<AbstractLtlFormula<T>> result(new Ap(this->getAp()));
+		return result;
 	}
 
 	/*!
@@ -136,14 +114,14 @@ public:
 	 *  @param checker Formula checker object.
 	 *  @return true
 	 */
-	virtual bool validate(const AbstractFormulaChecker<T>& checker) const override {
+	virtual bool validate(AbstractFormulaChecker<T> const & checker) const override {
 		return true;
 	}
 
 	/*!
 	 * @returns the name of the atomic proposition
 	 */
-	const std::string& getAp() const {
+	std::string const & getAp() const {
 		return ap;
 	}
 

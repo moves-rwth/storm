@@ -69,9 +69,8 @@ public:
 	/*!
 	 * Empty constructor
 	 */
-	BoundedNaryUntil() {
-		this->left = nullptr;
-		this->right = new std::vector<std::tuple<AbstractStateFormula<T>*,T,T>>();
+	BoundedNaryUntil() : left(nullptr), right() {
+		// Intentionally left empty.
 	}
 
 	/*!
@@ -80,9 +79,8 @@ public:
 	 * @param left The left formula subtree
 	 * @param right The left formula subtree
 	 */
-	BoundedNaryUntil(AbstractStateFormula<T>* left, std::vector<std::tuple<AbstractStateFormula<T>*,T,T>>* right) {
-		this->left = left;
-		this->right = right;
+	BoundedNaryUntil(std::shared_ptr<AbstractStateFormula<T>> const & left, std::vector<std::tuple<std::shared_ptr<AbstractStateFormula<T>>,T,T>> const & right) : left(left), right(right) {
+		// Intentionally left empty.
 	}
 
 	/*!
@@ -92,12 +90,7 @@ public:
 	 * (this behaviour can be prevented by setting the subtrees to NULL before deletion)
 	 */
 	virtual ~BoundedNaryUntil() {
-	  if (left != nullptr) {
-		  delete left;
-	  }
-	  if (right != nullptr) {
-		  delete right;
-	  }
+	  // Intentionally left empty.
 	}
 
 	/*!
@@ -107,15 +100,15 @@ public:
 	 *
 	 * @returns a new BoundedNaryUntil-object that is identical the called object.
 	 */
-	virtual AbstractPathFormula<T>* clone() const override {
-		BoundedNaryUntil<T>* result = new BoundedNaryUntil<T>();
+	virtual std::shared_ptr<AbstractPathFormula<T>> clone() const override {
+		std::shared_ptr<BoundedNaryUntil<T>> result(new BoundedNaryUntil<T>());
 		if (this->leftIsSet()) {
-			result->setLeft(this->getLeft().clone());
+			result->setLeft(left->clone());
 		}
 		if (this->rightIsSet()) {
-			std::vector<std::tuple<AbstractStateFormula<T>*,T,T>>* newright = new std::vector<std::tuple<AbstractStateFormula<T>*,T,T>>();
-			for (auto it = this->right->begin(); it != this->right->end(); ++it) {
-				newright->push_back(std::tuple<AbstractStateFormula<T>*,T,T>(std::get<0>(*it)->clone(), std::get<1>(*it), std::get<2>(*it)));
+			std::vector<std::tuple<std::shared_ptr<AbstractStateFormula<T>>,T,T>> newright;
+			for (auto it = right->begin(); it != right->end(); ++it) {
+				newright.push_back(std::tuple<std::shared_ptr<AbstractStateFormula<T>>,T,T>(std::get<0>(*it)->clone(), std::get<1>(*it), std::get<2>(*it)));
 			}
 			result->setRight(newright);
 		}
@@ -142,7 +135,7 @@ public:
 	virtual std::string toString() const override {
 		std::stringstream result;
 		result << "( " << left->toString();
-		for (auto it = this->right->begin(); it != this->right->end(); ++it) {
+		for (auto it = right->begin(); it != right->end(); ++it) {
 			result << " U(" << std::get<1>(*it) << "," << std::get<2>(*it) << ") " << std::get<0>(*it)->toString();
 		}
 		result << ")";
@@ -156,8 +149,8 @@ public:
      *  @return true iff all subtrees conform to some logic.
      */
 	virtual bool validate(const AbstractFormulaChecker<T>& checker) const override {
-		bool res = checker.validate(this->left);
-		for (auto it = this->right->begin(); it != this->right->end(); ++it) {
+		bool res = checker.validate(left);
+		for (auto it = right->begin(); it != right->end(); ++it) {
 			res &= checker.validate(std::get<0>(*it));
 		}
 		return res;
@@ -168,11 +161,11 @@ public:
 	 *
 	 * @param newLeft the new left child.
 	 */
-	void setLeft(AbstractStateFormula<T>* newLeft) {
+	void setLeft(std::shared_ptr<AbstractStateFormula<T>> const & newLeft) {
 		left = newLeft;
 	}
 
-	void setRight(std::vector<std::tuple<AbstractStateFormula<T>*,T,T>>* newRight) {
+	void setRight(std::vector<std::tuple<std::shared_ptr<AbstractStateFormula<T>>,T,T>> const & newRight) {
 		right = newRight;
 	}
 
@@ -186,10 +179,10 @@ public:
 
 	/*!
 	 *
-	 * @return True if the right child is set, i.e. it does not point to nullptr; false otherwise
+	 * @return True if the right child is set, i.e. it is not empty; false otherwise
 	 */
 	bool rightIsSet() const {
-		return right != nullptr;
+		return !(right.empty());
 	}
 
 	/*!
@@ -197,28 +190,28 @@ public:
 	 *
 	 * @param newRight the new right child.
 	 */
-	void addRight(AbstractStateFormula<T>* newRight, T upperBound, T lowerBound) {
-		this->right->push_back(std::tuple<AbstractStateFormula<T>*,T,T>(newRight, upperBound, lowerBound));
+	void addRight(std::shared_ptr<AbstractStateFormula<T>> const & newRight, T upperBound, T lowerBound) {
+		right.push_back(std::tuple<std::shared_ptr<AbstractStateFormula<T>>,T,T>(newRight, upperBound, lowerBound));
 	}
 
 	/*!
 	 * @returns a pointer to the left child node
 	 */
-	const AbstractStateFormula<T>& getLeft() const {
-		return *left;
+	std::shared_ptr<AbstractStateFormula<T>> const & getLeft() const {
+		return left;
 	}
 
 	/*!
 	 * @returns a pointer to the right child nodes.
 	 */
-	const std::vector<std::tuple<AbstractStateFormula<T>*,T,T>>& getRight() const {
-		return *right;
+	std::vector<std::tuple<std::shared_ptr<AbstractStateFormula<T>>,T,T>> const & getRight() const {
+		return right;
 	}
 
 
 private:
-	AbstractStateFormula<T>* left;
-	std::vector<std::tuple<AbstractStateFormula<T>*,T,T>>* right;
+	std::shared_ptr<AbstractStateFormula<T>> left;
+	std::vector<std::tuple<std::shared_ptr<AbstractStateFormula<T>>,T,T>> right;
 };
 
 } //namespace prctl

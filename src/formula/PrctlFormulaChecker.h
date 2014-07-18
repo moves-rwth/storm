@@ -5,6 +5,7 @@
 #include "src/formula/Prctl.h"
 
 #include <iostream>
+#include <memory>
 
 namespace storm {
 namespace property {
@@ -22,20 +23,19 @@ class PrctlFormulaChecker : public AbstractFormulaChecker<T> {
 		 *	Implementation of AbstractFormulaChecker::validate() using code
 		 *	looking exactly like the sample code given there.
 		 */
-		virtual bool validate(const storm::property::abstract::AbstractFormula<T>* formula) const {
+		virtual bool validate(std::shared_ptr<storm::property::abstract::AbstractFormula<T>> const & formula) const {
 			// What to support: Principles of Model Checking Def. 10.76 + syntactic sugar
 			if (
-					dynamic_cast<const storm::property::prctl::And<T>*>(formula) ||
-					dynamic_cast<const storm::property::prctl::Ap<T>*>(formula) ||
-					dynamic_cast<const storm::property::prctl::BoundedUntil<T>*>(formula) ||
-					dynamic_cast<const storm::property::prctl::Eventually<T>*>(formula) ||
-					dynamic_cast<const storm::property::prctl::Globally<T>*>(formula) ||
-					dynamic_cast<const storm::property::prctl::Next<T>*>(formula) ||
-					dynamic_cast<const storm::property::prctl::Not<T>*>(formula) ||
-					dynamic_cast<const storm::property::prctl::Or<T>*>(formula) ||
-					dynamic_cast<const storm::property::prctl::ProbabilisticNoBoundOperator<T>*>(formula) ||
-					dynamic_cast<const storm::property::prctl::ProbabilisticBoundOperator<T>*>(formula) ||
-					dynamic_cast<const storm::property::prctl::Until<T>*>(formula)
+					dynamic_pointer_cast<storm::property::prctl::And<T>>(formula) ||
+					dynamic_pointer_cast<storm::property::prctl::Ap<T>>(formula) ||
+					dynamic_pointer_cast<storm::property::prctl::BoundedUntil<T>>(formula) ||
+					dynamic_pointer_cast<storm::property::prctl::Eventually<T>>(formula) ||
+					dynamic_pointer_cast<storm::property::prctl::Globally<T>>(formula) ||
+					dynamic_pointer_cast<storm::property::prctl::Next<T>>(formula) ||
+					dynamic_pointer_cast<storm::property::prctl::Not<T>>(formula) ||
+					dynamic_pointer_cast<storm::property::prctl::Or<T>>(formula) ||
+					dynamic_pointer_cast<storm::property::prctl::ProbabilisticBoundOperator<T>>(formula) ||
+					dynamic_pointer_cast<storm::property::prctl::Until<T>>(formula)
 				) {
 				return formula->validate(*this);
 			}

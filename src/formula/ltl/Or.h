@@ -35,24 +35,6 @@ class IOrModelChecker {
 };
 
 /*!
- *	@brief Interface class for visitors that support Or.
- *
- *	All visitors that support the formula class Or must inherit
- *	this pure virtual class.
- */
-template <class T>
-class IOrVisitor {
-	public:
-		/*!
-		 *	@brief Visits Or formula.
-		 *
-		 *	@param obj Formula object with subformulas.
-		 *	@return Result of the formula for every node.
-		 */
-		virtual void visitOr(const Or<T>& obj) = 0;
-};
-
-/*!
  * @brief
  * Class for an abstract formula tree with OR node as root.
  *
@@ -75,9 +57,8 @@ public:
 	 * Empty constructor.
 	 * Will create an AND-node without subnotes. Will not represent a complete formula!
 	 */
-	Or() {
-		left = NULL;
-		right = NULL;
+	Or() : left(nullptr), right(nullptr) {
+		// Intentionally left empty.
 	}
 
 	/*!
@@ -87,9 +68,8 @@ public:
 	 * @param left The left sub formula
 	 * @param right The right sub formula
 	 */
-	Or(AbstractLtlFormula<T>* left, AbstractLtlFormula<T>* right) {
-		this->left = left;
-		this->right = right;
+	Or(std::shared_ptr<AbstractLtlFormula<T>> const & left, std::shared_ptr<AbstractLtlFormula<T>> const & right) : left(left), right(right) {
+		// Intentionally left empty.
 	}
 
 	/*!
@@ -99,12 +79,7 @@ public:
 	 * (this behavior can be prevented by setting them to NULL before deletion)
 	 */
 	virtual ~Or() {
-	  if (left != NULL) {
-		  delete left;
-	  }
-	  if (right != NULL) {
-		  delete right;
-	  }
+		// Intentionally left empty.
 	}
 
 	/*!
@@ -114,13 +89,13 @@ public:
 	 *
 	 * @returns a new AND-object that is identical the called object.
 	 */
-	virtual AbstractLtlFormula<T>* clone() const override {
-		Or<T>* result = new Or();
+	virtual std::shared_ptr<AbstractLtlFormula<T>> clone() const override {
+		std::shared_ptr<Or<T>> result(new Or<T>());
 		if (this->leftIsSet()) {
-		  result->setLeft(this->getLeft().clone());
+		  result->setLeft(left->clone());
 		}
 		if (this->rightIsSet()) {
-		  result->setRight(this->getRight().clone());
+		  result->setRight(right->clone());
 		}
 		return result;
 	}
@@ -134,12 +109,8 @@ public:
 	 *
 	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
 	 */
-	virtual std::vector<T> check(const storm::modelchecker::ltl::AbstractModelChecker<T>& modelChecker) const override {
+	virtual std::vector<T> check(storm::modelchecker::ltl::AbstractModelChecker<T> const & modelChecker) const override {
 		return modelChecker.template as<IOrModelChecker>()->checkOr(*this);
-	}
-
-	virtual void visit(visitor::AbstractLtlFormulaVisitor<T>& visitor) const override {
-		visitor.template as<IOrVisitor>()->visitOr(*this);
 	}
 
 	/*!
@@ -160,7 +131,7 @@ public:
 	 *  @param checker Formula checker object.
 	 *  @return true iff all subtrees conform to some logic.
 	 */
-	virtual bool validate(const AbstractFormulaChecker<T>& checker) const override {
+	virtual bool validate(AbstractFormulaChecker<T> const & checker) const override {
 		return checker.validate(this->left) && checker.validate(this->right);
 	}
 
@@ -169,7 +140,7 @@ public:
 	 *
 	 * @param newLeft the new left child.
 	 */
-	void setLeft(AbstractLtlFormula<T>* newLeft) {
+	void setLeft(std::shared_ptr<AbstractLtlFormula<T>> const & newLeft) {
 		left = newLeft;
 	}
 
@@ -178,22 +149,22 @@ public:
 	 *
 	 * @param newRight the new right child.
 	 */
-	void setRight(AbstractLtlFormula<T>* newRight) {
+	void setRight(std::shared_ptr<AbstractLtlFormula<T>> const & newRight) {
 		right = newRight;
 	}
 
 	/*!
 	 * @returns a pointer to the left child node
 	 */
-	const AbstractLtlFormula<T>& getLeft() const {
-		return *left;
+	std::shared_ptr<AbstractLtlFormula<T>> const & getLeft() const {
+		return left;
 	}
 
 	/*!
 	 * @returns a pointer to the right child node
 	 */
-	const AbstractLtlFormula<T>& getRight() const {
-		return *right;
+	std::shared_ptr<AbstractLtlFormula<T>> const & getRight() const {
+		return right;
 	}
 
 	/*!
@@ -201,7 +172,7 @@ public:
 	 * @return True if the left child is set, i.e. it does not point to nullptr; false otherwise
 	 */
 	bool leftIsSet() const {
-		return left != nullptr;
+		return left.get() != nullptr;
 	}
 
 	/*!
@@ -209,12 +180,12 @@ public:
 	 * @return True if the right child is set, i.e. it does not point to nullptr; false otherwise
 	 */
 	bool rightIsSet() const {
-		return right != nullptr;
+		return right.get() != nullptr;
 	}
 
 private:
-	AbstractLtlFormula<T>* left;
-	AbstractLtlFormula<T>* right;
+	std::shared_ptr<AbstractLtlFormula<T>> left;
+	std::shared_ptr<AbstractLtlFormula<T>> right;
 };
 
 } /* namespace ltl */

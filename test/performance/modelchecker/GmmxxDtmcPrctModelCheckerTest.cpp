@@ -21,8 +21,8 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, Crowds) {
 
 	storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double> mc(*dtmc, new storm::solver::GmmxxLinearEquationSolver<double>());
 
-	storm::property::prctl::Ap<double>* apFormula = new storm::property::prctl::Ap<double>("observe0Greater1");
-	storm::property::prctl::Eventually<double>* eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
+	auto apFormula = std::make_shared<storm::property::prctl::Ap<double>>("observe0Greater1");
+	auto eventuallyFormula = std::make_shared<storm::property::prctl::Eventually<double>>(apFormula);
 
     LOG4CPLUS_WARN(logger, "Model Checking P=? [F observe0Greater1] on crowds/crowds20_5...");
 	std::vector<double> result = eventuallyFormula->check(mc, false);
@@ -30,10 +30,8 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, Crowds) {
 
 	ASSERT_LT(std::abs(result[0] - 0.2296800237), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
-	delete eventuallyFormula;
-
-	apFormula = new storm::property::prctl::Ap<double>("observeIGreater1");
-	eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
+	apFormula = std::make_shared<storm::property::prctl::Ap<double>>("observeIGreater1");
+	eventuallyFormula = std::make_shared<storm::property::prctl::Eventually<double>>(apFormula);
 
     LOG4CPLUS_WARN(logger, "Model Checking P=? [F observeIGreater1] on crowds/crowds20_5...");
     result = eventuallyFormula->check(mc, false);
@@ -41,18 +39,14 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, Crowds) {
     
 	ASSERT_LT(std::abs(result[0] - 0.05073232193), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
-	delete eventuallyFormula;
-
-	apFormula = new storm::property::prctl::Ap<double>("observeOnlyTrueSender");
-	eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
+	apFormula = std::make_shared<storm::property::prctl::Ap<double>>("observeOnlyTrueSender");
+	eventuallyFormula = std::make_shared<storm::property::prctl::Eventually<double>>(apFormula);
 
     LOG4CPLUS_WARN(logger, "Model Checking P=? [F observeOnlyTrueSender] on crowds/crowds20_5...");
     result = eventuallyFormula->check(mc, false);
     LOG4CPLUS_WARN(logger, "Done.");
 
 	ASSERT_LT(std::abs(result[0] - 0.22742171078), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
-
-	delete eventuallyFormula;
 }
 
 
@@ -71,8 +65,8 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, SynchronousLeader) {
 
 	storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double> mc(*dtmc, new storm::solver::GmmxxLinearEquationSolver<double>());
 
-	storm::property::prctl::Ap<double>* apFormula = new storm::property::prctl::Ap<double>("elected");
-	storm::property::prctl::Eventually<double>* eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
+	auto apFormula = std::make_shared<storm::property::prctl::Ap<double>>("elected");
+	auto eventuallyFormula = std::make_shared<storm::property::prctl::Eventually<double>>(apFormula);
 
     LOG4CPLUS_WARN(logger, "Model Checking P=? [F elected] on synchronous_leader/leader6_8...");
 	std::vector<double> result = eventuallyFormula->check(mc, false);
@@ -80,10 +74,8 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, SynchronousLeader) {
 
 	ASSERT_LT(std::abs(result[0] - 1.0), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
-	delete eventuallyFormula;
-
-	apFormula = new storm::property::prctl::Ap<double>("elected");
-	storm::property::prctl::BoundedUntil<double>* boundedUntilFormula = new storm::property::prctl::BoundedUntil<double>(new storm::property::prctl::Ap<double>("true"), apFormula, 20);
+	apFormula = std::make_shared<storm::property::prctl::Ap<double>>("elected");
+	auto boundedUntilFormula = std::make_shared<storm::property::prctl::BoundedUntil<double>>(std::make_shared<storm::property::prctl::Ap<double>>("true"), apFormula, 20);
 
     LOG4CPLUS_WARN(logger, "Model Checking P=? [F<=20 elected] on synchronous_leader/leader6_8...");
     result = boundedUntilFormula->check(mc, false);
@@ -91,16 +83,12 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, SynchronousLeader) {
 
 	ASSERT_LT(std::abs(result[0] - 0.9993949793), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
-	delete boundedUntilFormula;
-
-	apFormula = new storm::property::prctl::Ap<double>("elected");
-	storm::property::prctl::ReachabilityReward<double>* reachabilityRewardFormula = new storm::property::prctl::ReachabilityReward<double>(apFormula);
+	apFormula = std::make_shared<storm::property::prctl::Ap<double>>("elected");
+	auto reachabilityRewardFormula = std::make_shared<storm::property::prctl::ReachabilityReward<double>>(apFormula);
 
     LOG4CPLUS_WARN(logger, "Model Checking R=? [F elected] on synchronous_leader/leader6_8...");
 	result = reachabilityRewardFormula->check(mc, false);
     LOG4CPLUS_WARN(logger, "Done.");
 
 	ASSERT_LT(std::abs(result[0] - 1.025106273), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
-
-	delete reachabilityRewardFormula;
 }

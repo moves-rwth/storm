@@ -39,21 +39,20 @@ public:
 		// Intentionally left empty.
 	}
 
-	CslFilter(AbstractCslFormula<T>* child, OptimizingOperator opt = UNDEFINED, bool steadyStateQuery = false) : AbstractFilter<T>(opt), child(child), steadyStateQuery(steadyStateQuery) {
+	CslFilter(std::shared_ptr<AbstractCslFormula<T>> const & child, OptimizingOperator opt = UNDEFINED, bool steadyStateQuery = false) : AbstractFilter<T>(opt), child(child), steadyStateQuery(steadyStateQuery) {
 		// Intentionally left empty.
 	}
 
-	CslFilter(AbstractCslFormula<T>* child, action::AbstractAction<T>* action, OptimizingOperator opt = UNDEFINED, bool steadyStateQuery = false) : AbstractFilter<T>(action, opt), child(child), steadyStateQuery(steadyStateQuery) {
+	CslFilter(std::shared_ptr<AbstractCslFormula<T>> const & child, action::AbstractAction<T>* action, OptimizingOperator opt = UNDEFINED, bool steadyStateQuery = false) : AbstractFilter<T>(action, opt), child(child), steadyStateQuery(steadyStateQuery) {
 		// Intentionally left empty
 	}
 
-	CslFilter(AbstractCslFormula<T>* child, std::vector<action::AbstractAction<T>*> actions, OptimizingOperator opt = UNDEFINED, bool steadyStateQuery = false) : AbstractFilter<T>(actions, opt), child(child), steadyStateQuery(steadyStateQuery) {
+	CslFilter(std::shared_ptr<AbstractCslFormula<T>> const & child, std::vector<action::AbstractAction<T>*> actions, OptimizingOperator opt = UNDEFINED, bool steadyStateQuery = false) : AbstractFilter<T>(actions, opt), child(child), steadyStateQuery(steadyStateQuery) {
 		// Intentionally left empty.
 	}
 
 	virtual ~CslFilter() {
 		this->actions.clear();
-		delete child;
 	}
 
 	void check(storm::modelchecker::prctl::AbstractModelChecker<T> const & modelchecker) const {
@@ -66,10 +65,10 @@ public:
 		Result result;
 
 		try {
-			if(dynamic_cast<AbstractStateFormula<T> *>(child) != nullptr) {
-				result = evaluate(modelchecker, dynamic_cast<AbstractStateFormula<T> *>(child));
-			} else if (dynamic_cast<AbstractPathFormula<T> *>(child) != nullptr) {
-				result = evaluate(modelchecker, dynamic_cast<AbstractPathFormula<T> *>(child));
+			if(std::dynamic_pointer_cast<AbstractStateFormula<T>>(child).get() != nullptr) {
+				result = evaluate(modelchecker, std::dynamic_pointer_cast<AbstractStateFormula<T>>(child));
+			} else if (std::dynamic_pointer_cast<AbstractPathFormula<T>>(child).get() != nullptr) {
+				result = evaluate(modelchecker, std::dynamic_pointer_cast<AbstractPathFormula<T>>(child));
 			}
 		} catch (std::exception& e) {
 			std::cout << "Error during computation: " << e.what() << "Skipping property." << std::endl;
@@ -86,7 +85,7 @@ public:
 	virtual std::string toString() const override {
 		std::string desc = "";
 
-		if(dynamic_cast<AbstractStateFormula<T>*>(child) == nullptr) {
+		if(!std::dynamic_pointer_cast<AbstractStateFormula<T>>(child)) {
 
 			// The formula is not a state formula so we have a probability query.
 			if(this->actions.empty()){
@@ -180,19 +179,19 @@ public:
 		return desc;
 	}
 
-	void setChild(AbstractCslFormula<T>* child) {
+	void setChild(std::shared_ptr<AbstractCslFormula<T>> const & child) {
 		this->child = child;
 	}
 
-	AbstractCslFormula<T>* getChild() const {
+	std::shared_ptr<AbstractCslFormula<T>> const & getChild() const {
 		return child;
 	}
 
 private:
 
-	storm::storage::BitVector evaluate(storm::modelchecker::csl::AbstractModelChecker<T> const & modelchecker, AbstractStateFormula<T>* formula) const {
+	storm::storage::BitVector evaluate(storm::modelchecker::csl::AbstractModelChecker<T> const & modelchecker, std::shared_ptr<AbstractStateFormula<T>> const & formula) const {
 		// First, get the model checking result.
-		storm::storage::BitVector result = modelchecker.checkMinMaxOperator(formula);
+		storm::storage::BitVector result = modelchecker.checkMinMaxOperator(*formula);
 
 		if(this->opt != UNDEFINED) {
 			// If there is an action specifying that min/max probabilities should be computed, call the appropriate method of the model checker.
@@ -206,13 +205,13 @@ private:
 		return evaluateActions(result, modelchecker);
 	}
 
-	std::vector<T> evaluate(storm::modelchecker::csl::AbstractModelChecker<T> const & modelchecker, AbstractPathFormula<T>* formula) const {
+	std::vector<T> evaluate(storm::modelchecker::csl::AbstractModelChecker<T> const & modelchecker, std::shared_ptr<AbstractPathFormula<T>> const & formula) const {
 		// First, get the model checking result.
 		std::vector<T> result;
 
 		if(this->opt != UNDEFINED) {
 			// If there is an action specifying that min/max probabilities should be computed, call the appropriate method of the model checker.
-			result = modelchecker.checkMinMaxOperator(formula, this->opt == MINIMIZE ? true : false);
+			result = modelchecker.checkMinMaxOperator(*formula, this->opt == MINIMIZE ? true : false);
 		} else {
 			result = formula->check(modelchecker, false);
 		}
@@ -294,7 +293,7 @@ private:
 		std::cout << std::endl << "-------------------------------------------" << std::endl;
 	}
 
-	AbstractCslFormula<T>* child;
+	std::shared_ptr<AbstractCslFormula<T>> child;
 
 	bool steadyStateQuery;
 };

@@ -76,9 +76,8 @@ public:
 	/*!
 	 * Empty constructor
 	 */
-	Until() {
-		this->left = NULL;
-		this->right = NULL;
+	Until() : left(left), right(right) {
+		// Intentionally left empty.
 	}
 
 	/*!
@@ -87,9 +86,8 @@ public:
 	 * @param left The left formula subtree
 	 * @param right The left formula subtree
 	 */
-	Until(AbstractLtlFormula<T>* left, AbstractLtlFormula<T>* right) {
-		this->left = left;
-		this->right = right;
+	Until(std::shared_ptr<AbstractLtlFormula<T>> const & left, std::shared_ptr<AbstractLtlFormula<T>> const & right) : left(left), right(right) {
+		// Intentionally left empty.
 	}
 
 	/*!
@@ -99,12 +97,7 @@ public:
 	 * (this behaviour can be prevented by setting the subtrees to NULL before deletion)
 	 */
 	virtual ~Until() {
-	  if (left != NULL) {
-		  delete left;
-	  }
-	  if (right != NULL) {
-		  delete right;
-	  }
+		// Intentionally left empty.
 	}
 
 	/*!
@@ -114,13 +107,13 @@ public:
 	 *
 	 * @returns a new BoundedUntil-object that is identical the called object.
 	 */
-	virtual AbstractLtlFormula<T>* clone() const override {
-		Until<T>* result = new Until();
+	virtual std::shared_ptr<AbstractLtlFormula<T>> clone() const override {
+		std::shared_ptr<Until<T>> result(new Until<T>());
 		if (this->leftIsSet()) {
-		  result->setLeft(this->getLeft().clone());
+		  result->setLeft(left->clone());
 		}
 		if (this->rightIsSet()) {
-		  result->setRight(this->getRight().clone());
+		  result->setRight(right->clone());
 		}
 		return result;
 	}
@@ -134,12 +127,8 @@ public:
 	 *
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
-	virtual std::vector<T> check(const storm::modelchecker::ltl::AbstractModelChecker<T>& modelChecker) const {
+	virtual std::vector<T> check(storm::modelchecker::ltl::AbstractModelChecker<T> const & modelChecker) const {
 		return modelChecker.template as<IUntilModelChecker>()->checkUntil(*this);
-	}
-
-	virtual void visit(visitor::AbstractLtlFormulaVisitor<T>& visitor) const override {
-		visitor.template as<IUntilVisitor>()->visitUntil(*this);
 	}
 
 	/*!
@@ -163,7 +152,7 @@ public:
      *  @param checker Formula checker object.
      *  @return true iff all subtrees conform to some logic.
      */
-	virtual bool validate(const AbstractFormulaChecker<T>& checker) const override {
+	virtual bool validate(AbstractFormulaChecker<T> const & checker) const override {
         return checker.validate(this->left) && checker.validate(this->right);
 	}
 
@@ -172,7 +161,7 @@ public:
 	 *
 	 * @param newLeft the new left child.
 	 */
-	void setLeft(AbstractLtlFormula<T>* newLeft) {
+	void setLeft(std::shared_ptr<AbstractLtlFormula<T>> const & newLeft) {
 		left = newLeft;
 	}
 
@@ -181,22 +170,22 @@ public:
 	 *
 	 * @param newRight the new right child.
 	 */
-	void setRight(AbstractLtlFormula<T>* newRight) {
+	void setRight(std::shared_ptr<AbstractLtlFormula<T>> const & newRight) {
 		right = newRight;
 	}
 
 	/*!
 	 * @returns a pointer to the left child node
 	 */
-	const AbstractLtlFormula<T>& getLeft() const {
-		return *left;
+	std::shared_ptr<AbstractLtlFormula<T>> const & getLeft() const {
+		return left;
 	}
 
 	/*!
 	 * @returns a pointer to the right child node
 	 */
-	const AbstractLtlFormula<T>& getRight() const {
-		return *right;
+	std::shared_ptr<AbstractLtlFormula<T>> const & getRight() const {
+		return right;
 	}
 
 	/*!
@@ -204,7 +193,7 @@ public:
 	 * @return True if the left child is set, i.e. it does not point to nullptr; false otherwise
 	 */
 	bool leftIsSet() const {
-		return left != nullptr;
+		return left.get() != nullptr;
 	}
 
 	/*!
@@ -212,12 +201,12 @@ public:
 	 * @return True if the right child is set, i.e. it does not point to nullptr; false otherwise
 	 */
 	bool rightIsSet() const {
-		return right != nullptr;
+		return right.get() != nullptr;
 	}
 
 private:
-	AbstractLtlFormula<T>* left;
-	AbstractLtlFormula<T>* right;
+	std::shared_ptr<AbstractLtlFormula<T>> left;
+	std::shared_ptr<AbstractLtlFormula<T>> right;
 };
 
 } //namespace ltl

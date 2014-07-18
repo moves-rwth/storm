@@ -36,24 +36,6 @@ class INotModelChecker {
 };
 
 /*!
- *	@brief Interface class for visitors that support Not.
- *
- *	All visitors that support the formula class Not must inherit
- *	this pure virtual class.
- */
-template <class T>
-class INotVisitor {
-	public:
-		/*!
-		 *	@brief Visits Not formula.
-		 *
-		 *	@param obj Formula object with subformulas.
-		 *	@return Result of the formula for every node.
-		 */
-		virtual void visitNot(const Not<T>& obj) = 0;
-};
-
-/*!
  * @brief
  * Class for an abstract formula tree with NOT node as root.
  *
@@ -72,16 +54,16 @@ public:
 	/*!
 	 * Empty constructor
 	 */
-	Not() {
-		this->child = NULL;
+	Not() : child(nullptr) {
+		// Intentionally left empty.
 	}
 
 	/*!
 	 * Constructor
 	 * @param child The child node
 	 */
-	Not(AbstractLtlFormula<T>* child) {
-		this->child = child;
+	Not(std::shared_ptr<AbstractLtlFormula<T>> const & child) : child(child) {
+		// Intentionally left empty.
 	}
 
 	/*!
@@ -91,9 +73,7 @@ public:
 	 * (this behavior can be prevented by setting them to NULL before deletion)
 	 */
 	virtual ~Not() {
-	  if (child != NULL) {
-		  delete child;
-	  }
+		// Intentionally left empty.
 	}
 
 	/*!
@@ -103,10 +83,10 @@ public:
 	 *
 	 * @returns a new AND-object that is identical the called object.
 	 */
-	virtual AbstractLtlFormula<T>* clone() const override {
-		Not<T>* result = new Not<T>();
+	virtual std::shared_ptr<AbstractLtlFormula<T>> clone() const override {
+		std::shared_ptr<Not<T>> result(new Not<T>());
 		if (this->childIsSet()) {
-			result->setChild(this->getChild().clone());
+			result->setChild(child->clone());
 		}
 		return result;
 	}
@@ -120,12 +100,8 @@ public:
 	 *
 	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
 	 */
-	virtual std::vector<T> check(const storm::modelchecker::ltl::AbstractModelChecker<T>& modelChecker) const override {
+	virtual std::vector<T> check(storm::modelchecker::ltl::AbstractModelChecker<T> const & modelChecker) const override {
 		return modelChecker.template as<INotModelChecker>()->checkNot(*this);
-	}
-
-	virtual void visit(visitor::AbstractLtlFormulaVisitor<T>& visitor) const override {
-		visitor.template as<INotVisitor>()->visitNot(*this);
 	}
 
 	/*!
@@ -143,22 +119,22 @@ public:
      *  @param checker Formula checker object.
      *  @return true iff the subtree conforms to some logic.
      */
-	virtual bool validate(const AbstractFormulaChecker<T>& checker) const override {
+	virtual bool validate(AbstractFormulaChecker<T> const & checker) const override {
 		return checker.validate(this->child);
 	}
 
 	/*!
 	 * @returns The child node
 	 */
-	const AbstractLtlFormula<T>& getChild() const {
-		return *child;
+	std::shared_ptr<AbstractLtlFormula<T>> const & getChild() const {
+		return child;
 	}
 
 	/*!
 	 * Sets the subtree
 	 * @param child the new child node
 	 */
-	void setChild(AbstractLtlFormula<T>* child) {
+	void setChild(std::shared_ptr<AbstractLtlFormula<T>> const & child) {
 		this->child = child;
 	}
 
@@ -167,11 +143,11 @@ public:
 	 * @return True if the child node is set, i.e. it does not point to nullptr; false otherwise
 	 */
 	bool childIsSet() const {
-		return child != nullptr;
+		return child.get() != nullptr;
 	}
 
 private:
-	AbstractLtlFormula<T>* child;
+	std::shared_ptr<AbstractLtlFormula<T>> child;
 };
 
 } //namespace ltl

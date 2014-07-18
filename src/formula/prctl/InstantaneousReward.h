@@ -82,8 +82,9 @@ public:
 	 *
 	 * @returns a new InstantaneousReward-object that is identical the called object.
 	 */
-	virtual AbstractRewardPathFormula<T>* clone() const override {
-		return new InstantaneousReward(this->getBound());
+	virtual std::shared_ptr<AbstractRewardPathFormula<T>> clone() const override {
+		std::shared_ptr<InstantaneousReward<T>> result(new InstantaneousReward(bound));
+		return result;
 	}
 
 
@@ -96,7 +97,7 @@ public:
 	 *
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
-	virtual std::vector<T> check(const storm::modelchecker::prctl::AbstractModelChecker<T>& modelChecker, bool qualitative) const override {
+	virtual std::vector<T> check(storm::modelchecker::prctl::AbstractModelChecker<T> const & modelChecker, bool qualitative) const override {
 		return modelChecker.template as<IInstantaneousRewardModelChecker>()->checkInstantaneousReward(*this, qualitative);
 	}
 
@@ -117,7 +118,7 @@ public:
 	 *  @param checker Formula checker object.
 	 *  @return true
 	 */
-	virtual bool validate(const AbstractFormulaChecker<T>& checker) const override {
+	virtual bool validate(AbstractFormulaChecker<T> const & checker) const override {
 		return true;
 	}
 

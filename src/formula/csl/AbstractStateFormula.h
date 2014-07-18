@@ -44,7 +44,7 @@ public:
 	 * @note This function is not implemented in this class.
 	 * @returns a new AND-object that is identical the called object.
 	 */
-	virtual AbstractStateFormula<T>* clone() const = 0;
+	virtual std::shared_ptr<AbstractStateFormula<T>> clone() const = 0;
 
 	/*!
 	 * Calls the model checker to check this formula.
@@ -57,7 +57,7 @@ public:
 	 *
 	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
 	 */
-	virtual storm::storage::BitVector check(const storm::modelchecker::csl::AbstractModelChecker<T>& modelChecker) const = 0;
+	virtual storm::storage::BitVector check(storm::modelchecker::csl::AbstractModelChecker<T> const & modelChecker) const = 0;
 };
 
 } //namespace csl

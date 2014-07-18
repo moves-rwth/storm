@@ -68,7 +68,7 @@ public:
 	 *
 	 * @param child The child node
 	 */
-	Eventually(AbstractStateFormula<T>* child) : child(child){
+	Eventually(std::shared_ptr<AbstractStateFormula<T>> const & child) : child(child){
 		// Intentionally left empty.
 	}
 
@@ -79,9 +79,7 @@ public:
 	 * (this behaviour can be prevented by setting the subtrees to nullptr before deletion)
 	 */
 	virtual ~Eventually() {
-	  if (child != nullptr) {
-		  delete child;
-	  }
+		// Intentionally left empty.
 	}
 
 	/*!
@@ -91,10 +89,10 @@ public:
 	 *
 	 * @returns a new Eventually-object that is identical the called object.
 	 */
-	virtual AbstractPathFormula<T>* clone() const override {
-		Eventually<T>* result = new Eventually<T>();
+	virtual std::shared_ptr<AbstractPathFormula<T>> clone() const override {
+		std::shared_ptr<Eventually<T>> result(new Eventually<T>());
 		if (this->childIsSet()) {
-			result->setChild(this->getChild().clone());
+			result->setChild(child->clone());
 		}
 		return result;
 	}
@@ -108,7 +106,7 @@ public:
 	 *
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
-	virtual std::vector<T> check(const storm::modelchecker::csl::AbstractModelChecker<T>& modelChecker, bool qualitative) const override {
+	virtual std::vector<T> check(storm::modelchecker::csl::AbstractModelChecker<T> const & modelChecker, bool qualitative) const override {
 		return modelChecker.template as<IEventuallyModelChecker>()->checkEventually(*this, qualitative);
 	}
 
@@ -127,22 +125,22 @@ public:
 	 *  @param checker Formula checker object.
 	 *  @return true iff the subtree conforms to some logic.
 	 */
-	virtual bool validate(const AbstractFormulaChecker<T>& checker) const override {
+	virtual bool validate(AbstractFormulaChecker<T> const & checker) const override {
 		return checker.validate(this->child);
 	}
 
 	/*!
 	 * @returns the child node
 	 */
-	const AbstractStateFormula<T>& getChild() const {
-		return *child;
+	std::shared_ptr<AbstractStateFormula<T>> const & getChild() const {
+		return child;
 	}
 
 	/*!
 	 * Sets the subtree
 	 * @param child the new child node
 	 */
-	void setChild(AbstractStateFormula<T>* child) {
+	void setChild(std::shared_ptr<AbstractStateFormula<T>> const & child) {
 		this->child = child;
 	}
 
@@ -151,11 +149,11 @@ public:
 	 * @return True if the child node is set, i.e. it does not point to nullptr; false otherwise
 	 */
 	bool childIsSet() const {
-		return child != nullptr;
+		return child.get() != nullptr;
 	}
 
 private:
-	AbstractStateFormula<T>* child;
+	std::shared_ptr<AbstractStateFormula<T>> child;
 };
 
 } //namespace csl

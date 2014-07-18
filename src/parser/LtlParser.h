@@ -31,7 +31,7 @@ public:
 	* @param formulaString The string representation of the formula
 	* @throw wrongFormatException If the input could not be parsed successfully
 	*/
-	static storm::property::ltl::LtlFilter<double>* parseLtlFormula(std::string formulaString);
+	static std::shared_ptr<storm::property::ltl::LtlFilter<double>> parseLtlFormula(std::string formulaString);
 
 private:
 

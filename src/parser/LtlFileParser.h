@@ -25,7 +25,7 @@ public:
 	 * @param filename
 	 * @return The list of parsed formulas
 	 */
-	static std::list<storm::property::ltl::LtlFilter<double>*> parseLtlFile(std::string filename);
+	static std::list<std::shared_ptr<storm::property::ltl::LtlFilter<double>>> parseLtlFile(std::string filename);
 };
 
 } //namespace parser

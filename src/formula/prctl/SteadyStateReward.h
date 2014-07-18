@@ -50,11 +50,11 @@ public:
 	 * Empty constructor
 	 */
 	SteadyStateReward() {
-		// Intentionally left empty
-
+		// Intentionally left empty.
 	}
+
 	virtual ~SteadyStateReward() {
-		// Intentionally left empty
+		// Intentionally left empty.
 	}
 
 	/*!
@@ -64,8 +64,9 @@ public:
 	 *
 	 * @returns a new SteadyState-object that is identical the called object.
 	 */
-	virtual AbstractRewardPathFormula<T>* clone() const override {
-		return new SteadyStateReward<T>();
+	virtual std::shared_ptr<AbstractRewardPathFormula<T>> clone() const override {
+		std::shared_ptr<SteadyStateReward<T>> result(new SteadyStateReward<T>());
+		return result;
 	}
 
 	/*!
@@ -77,7 +78,7 @@ public:
 	 *
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
-	virtual std::vector<T> check(const storm::modelchecker::prctl::AbstractModelChecker<T>& modelChecker, bool qualitative) const override {
+	virtual std::vector<T> check(storm::modelchecker::prctl::AbstractModelChecker<T> const & modelChecker, bool qualitative) const override {
 		return modelChecker.template as<ISteadyStateRewardModelChecker>()->checkSteadyStateReward(*this, qualitative);
 	}
 
@@ -96,7 +97,7 @@ public:
      *  @param checker Formula checker object.
      *  @return true
      */
-	virtual bool validate(const AbstractFormulaChecker<T>& checker) const override {
+	virtual bool validate(AbstractFormulaChecker<T> const & checker) const override {
 		return true;
 	}
 };

@@ -37,24 +37,6 @@ class IGloballyModelChecker {
 };
 
 /*!
- *	@brief Interface class for visitors that support Globally.
- *
- *	All visitors that support the formula class Globally must inherit
- *	this pure virtual class.
- */
-template <class T>
-class IGloballyVisitor {
-	public:
-		/*!
-		 *	@brief Visits Globally formula.
-		 *
-		 *	@param obj Formula object with subformulas.
-		 *	@return Result of the formula for every node.
-		 */
-		virtual void visitGlobally(const Globally<T>& obj) = 0;
-};
-
-/*!
  * @brief
  * Class for an abstract (path) formula tree with a Globally node as root.
  *
@@ -76,8 +58,8 @@ public:
 	/*!
 	 * Empty constructor
 	 */
-	Globally() {
-		this->child = nullptr;
+	Globally() : child(nullptr) {
+		// Intentionally left empty.
 	}
 
 	/*!
@@ -85,8 +67,8 @@ public:
 	 *
 	 * @param child The child node
 	 */
-	Globally(AbstractLtlFormula<T>* child) {
-		this->child = child;
+	Globally(std::shared_ptr<AbstractLtlFormula<T>> const & child) : child(child) {
+		// Intentionally left empty.
 	}
 
 	/*!
@@ -96,9 +78,7 @@ public:
 	 * (this behaviour can be prevented by setting the subtrees to nullptr before deletion)
 	 */
 	virtual ~Globally() {
-	  if (child != nullptr) {
-		  delete child;
-	  }
+		// Intentionally left empty.
 	}
 
 	/*!
@@ -108,10 +88,10 @@ public:
 	 *
 	 * @returns a new Globally-object that is identical the called object.
 	 */
-	virtual AbstractLtlFormula<T>* clone() const override {
-		Globally<T>* result = new Globally<T>();
+	virtual std::shared_ptr<AbstractLtlFormula<T>> clone() const override {
+		std::shared_ptr<Globally<T>> result(new Globally<T>());
 		if (this->childIsSet()) {
-			result->setChild(this->getChild().clone());
+			result->setChild(child->clone());
 		}
 		return result;
 	}
@@ -129,10 +109,6 @@ public:
 		return modelChecker.template as<IGloballyModelChecker>()->checkGlobally(*this);
 	}
 
-	virtual void visit(visitor::AbstractLtlFormulaVisitor<T>& visitor) const override {
-		visitor.template as<IGloballyVisitor>()->visitGlobally(*this);
-	}
-
 	/*!
 	 * @returns a string representation of the formula
 	 */
@@ -148,14 +124,14 @@ public:
 	 *  @param checker Formula checker object.
 	 *  @return true iff the subtree conforms to some logic.
 	 */
-	virtual bool validate(const AbstractFormulaChecker<T>& checker) const override {
+	virtual bool validate(AbstractFormulaChecker<T> const & checker) const override {
 		return checker.validate(this->child);
 	}
 
 	/*!
 	 * @returns the child node
 	 */
-	const AbstractLtlFormula<T>& getChild() const {
+	std::shared_ptr<AbstractLtlFormula<T>> const & getChild() const {
 		return *child;
 	}
 
@@ -163,7 +139,7 @@ public:
 	 * Sets the subtree
 	 * @param child the new child node
 	 */
-	void setChild(AbstractLtlFormula<T>* child) {
+	void setChild(std::shared_ptr<AbstractLtlFormula<T>> const & child) {
 		this->child = child;
 	}
 
@@ -172,11 +148,11 @@ public:
 	 * @return True if the child node is set, i.e. it does not point to nullptr; false otherwise
 	 */
 	bool childIsSet() const {
-		return child != nullptr;
+		return child.get() != nullptr;
 	}
 
 	private:
-		AbstractLtlFormula<T>* child;
+		std::shared_ptr<AbstractLtlFormula<T>> child;
 };
 
 } //namespace ltl

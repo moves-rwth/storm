@@ -9,6 +9,7 @@
 #include "storm-config.h"
 
 #include "src/formula/actions/BoundAction.h"
+#include "src/formula/actions/FormulaAction.h"
 
 #include "src/parser/MarkovAutomatonParser.h"
 #include "src/parser/DeterministicModelParser.h"
@@ -27,7 +28,7 @@ TEST(ActionTest, BoundActionFunctionality) {
 
 	// Build the filter input.
 	// Basically the modelchecking result of "F a" on the used DTMC.
-	std::vector<double> pathResult = mc.checkEventually(storm::property::prctl::Eventually<double>(new storm::property::prctl::Ap<double>("a")), false);
+	std::vector<double> pathResult = mc.checkEventually(storm::property::prctl::Eventually<double>(std::make_shared<storm::property::prctl::Ap<double>>("a")), false);
 	std::vector<uint_fast64_t> stateMap(pathResult.size());
 	for(uint_fast64_t i = 0; i < pathResult.size(); i++) {
 		stateMap[i] = i;
@@ -50,6 +51,15 @@ TEST(ActionTest, BoundActionFunctionality) {
 	for(uint_fast64_t i = 0; i < result.selection.size()-2; i++) {
 		ASSERT_TRUE(result.selection[i]);
 	}
+	ASSERT_FALSE(result.selection[6]);
+	ASSERT_FALSE(result.selection[7]);
+
+	// Test whether the filter actually uses the selection given by the input.
+	action = storm::property::action::BoundAction<double>(storm::property::LESS, 0.5);
+	result = action.evaluate(result, mc);
+
+	ASSERT_FALSE(result.selection[0]);
+	ASSERT_TRUE(result.selection[1]);
 	ASSERT_FALSE(result.selection[6]);
 	ASSERT_FALSE(result.selection[7]);
 
@@ -103,7 +113,7 @@ TEST(ActionTest, BoundActionSafety) {
 
 	// Build the filter input.
 	// Basically the modelchecking result of "F a" on the used DTMC.
-	std::vector<double> pathResult = mc.checkEventually(storm::property::prctl::Eventually<double>(new storm::property::prctl::Ap<double>("a")), false);
+	std::vector<double> pathResult = mc.checkEventually(storm::property::prctl::Eventually<double>(std::make_shared<storm::property::prctl::Ap<double>>("a")), false);
 	storm::storage::BitVector stateResult = mc.checkAp(storm::property::prctl::Ap<double>("a"));
 	std::vector<uint_fast64_t> stateMap(pathResult.size());
 	for(uint_fast64_t i = 0; i < pathResult.size(); i++) {
@@ -154,4 +164,51 @@ TEST(ActionTest, BoundActionSafety) {
 
 	// Check for empty input.
 	ASSERT_NO_THROW(result = action.evaluate(Result(), mc));
+}
+
+TEST(ActionTest, FormulaActionFunctionality) {
+
+	// Setup the modelchecker.
+	storm::models::Dtmc<double> model = storm::parser::DeterministicModelParser::parseDtmc(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_actionTest.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/dtmc_actionTest.lab");
+	storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double> mc(model, new storm::solver::GmmxxLinearEquationSolver<double>());
+
+	// Build the filter input.
+	// Basically the modelchecking result of "F a" on the used DTMC.
+	std::vector<double> pathResult = mc.checkEventually(storm::property::prctl::Eventually<double>(std::make_shared<storm::property::prctl::Ap<double>>("a")), false);
+	std::vector<uint_fast64_t> stateMap(pathResult.size());
+	for(uint_fast64_t i = 0; i < pathResult.size(); i++) {
+		stateMap[i] = i;
+	}
+	Result input(storm::storage::BitVector(pathResult.size(), true), stateMap, pathResult, storm::storage::BitVector());
+	Result result;
+
+	// Test the action.
+	// First test that the empty action does no change to the input.
+	storm::property::action::FormulaAction<double> action;
+	input.selection.set(0,false);
+	ASSERT_NO_THROW(result = action.evaluate(input, mc));
+	for(uint_fast64_t i = 0; i < pathResult.size(); i++) {
+		if(i != 0) {
+			ASSERT_TRUE(result.selection[i]);
+		} else {
+			ASSERT_FALSE(result.selection[i]);
+		}
+		ASSERT_EQ(i, stateMap[i]);
+		ASSERT_EQ(input.pathResult, result.pathResult);
+	}
+	ASSERT_TRUE(result.stateResult.size() == 0);
+	input.selection.set(0,true);
+
+	// Now test the general functionality for both results of path and state formulas.
+	action = storm::property::action::FormulaAction<double>(std::make_shared<storm::property::prctl::ProbabilisticBoundOperator<double>>(storm::property::LESS, 0.5, std::make_shared<storm::property::prctl::Eventually<double>>(std::make_shared<storm::property::prctl::Ap<double>>("b"))));
+	ASSERT_NO_THROW(result = action.evaluate(input, mc));
+	ASSERT_TRUE(result.selection[0]);
+	ASSERT_TRUE(result.selection[1]);
+	ASSERT_TRUE(result.selection[2]);
+	ASSERT_FALSE(result.selection[3]);
+	ASSERT_FALSE(result.selection[4]);
+	ASSERT_TRUE(result.selection[5]);
+	ASSERT_FALSE(result.selection[6]);
+	ASSERT_FALSE(result.selection[7]);
+
 }

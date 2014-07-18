@@ -70,7 +70,7 @@ public:
 	 * @param bound The bound for the probability
 	 * @param stateFormula The child node
 	 */
-	SteadyStateBoundOperator(storm::property::ComparisonType comparisonOperator, T bound, AbstractStateFormula<T>* stateFormula)
+	SteadyStateBoundOperator(storm::property::ComparisonType comparisonOperator, T bound, std::shared_ptr<AbstractStateFormula<T>> const & stateFormula)
 		: comparisonOperator(comparisonOperator), bound(bound), stateFormula(stateFormula) {
 		// Intentionally left empty
 	}
@@ -82,9 +82,7 @@ public:
 	 * (this behavior can be prevented by setting them to NULL before deletion)
 	 */
 	virtual ~SteadyStateBoundOperator() {
-		if (stateFormula != nullptr) {
-		 delete stateFormula;
-		}
+		// Intentionally left empty.
 	}
 
 	/*!
@@ -94,9 +92,9 @@ public:
 	 *
 	 * @returns a new BoundedUntil-object that is identical the called object.
 	 */
-	virtual AbstractStateFormula<T>* clone() const override {
-		SteadyStateBoundOperator<T>* result = new SteadyStateBoundOperator<T>();
-		result->setStateFormula(this->getStateFormula().clone());
+	virtual std::shared_ptr<AbstractStateFormula<T>> clone() const override {
+		std::shared_ptr<SteadyStateBoundOperator<T>> result(new SteadyStateBoundOperator<T>());
+		result->setStateFormula(stateFormula->clone());
 		return result;
 	}
 
@@ -109,7 +107,7 @@ public:
 	 *
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
-	virtual storm::storage::BitVector check(const storm::modelchecker::csl::AbstractModelChecker<T>& modelChecker) const override {
+	virtual storm::storage::BitVector check(storm::modelchecker::csl::AbstractModelChecker<T> const & modelChecker) const override {
 		return modelChecker.template as<ISteadyStateBoundOperatorModelChecker>()->checkSteadyStateBoundOperator(*this);
 	}
 
@@ -119,7 +117,7 @@ public:
 	 *  @param checker Formula checker object.
 	 *  @return true iff the subtree conforms to some logic.
 	 */
-	virtual bool validate(const AbstractFormulaChecker<T>& checker) const override {
+	virtual bool validate(AbstractFormulaChecker<T> const & checker) const override {
 		return checker.validate(this->stateFormula);
 	}
 
@@ -144,8 +142,8 @@ public:
 	/*!
 	 * @returns the child node (representation of a formula)
 	 */
-	const AbstractStateFormula<T>& getStateFormula () const {
-		return *stateFormula;
+	std::shared_ptr<AbstractStateFormula<T>> const & getStateFormula () const {
+		return stateFormula;
 	}
 
 	/*!
@@ -153,7 +151,7 @@ public:
 	 *
 	 * @param stateFormula the state formula that becomes the new child node
 	 */
-	void setStateFormula(AbstractStateFormula<T>* stateFormula) {
+	void setStateFormula(std::shared_ptr<AbstractStateFormula<T>> const & stateFormula) {
 		this->stateFormula = stateFormula;
 	}
 
@@ -162,13 +160,13 @@ public:
 	 * @return True if the state formula is set, i.e. it does not point to nullptr; false otherwise
 	 */
 	bool stateFormulaIsSet() const {
-		return stateFormula != nullptr;
+		return stateFormula.get() != nullptr;
 	}
 
 	/*!
 	 * @returns the comparison relation
 	 */
-	const ComparisonType getComparisonOperator() const {
+	ComparisonType const getComparisonOperator() const {
 		return comparisonOperator;
 	}
 
@@ -179,7 +177,7 @@ public:
 	/*!
 	 * @returns the bound for the measure
 	 */
-	const T& getBound() const {
+	T const & getBound() const {
 		return bound;
 	}
 
@@ -188,7 +186,7 @@ public:
 	 *
 	 * @param bound The bound for the measure
 	 */
-	void setBound(T bound) {
+	void setBound(T const & bound) {
 		this->bound = bound;
 	}
 
@@ -205,7 +203,7 @@ public:
 private:
 	ComparisonType comparisonOperator;
 	T bound;
-	AbstractStateFormula<T>* stateFormula;
+	std::shared_ptr<AbstractStateFormula<T>> stateFormula;
 };
 
 } //namespace csl

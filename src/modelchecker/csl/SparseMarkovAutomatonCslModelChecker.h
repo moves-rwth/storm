@@ -65,7 +65,7 @@ public:
 		}
 
 		// First, we need to compute the probability for satisfying the path formula for each state.
-		std::vector<ValueType> quantitativeResult = formula.getPathFormula().check(*this, false);
+		std::vector<ValueType> quantitativeResult = formula.getPathFormula()->check(*this, false);
 
 		//Remove the minimizing operator entry from the stack.
 		this->minimumOperatorStack.pop();
@@ -91,8 +91,8 @@ public:
 			throw storm::exceptions::InvalidArgumentException() << "Formula does not specify neither min nor max optimality, which is not meaningful over nondeterministic models.";
 		}
 
-		storm::storage::BitVector leftStates = formula.getLeft().check(*this);
-		storm::storage::BitVector rightStates = formula.getRight().check(*this);
+		storm::storage::BitVector leftStates = formula.getLeft()->check(*this);
+		storm::storage::BitVector rightStates = formula.getRight()->check(*this);
 		return computeUnboundedUntilProbabilities(this->minimumOperatorStack.top(), leftStates, rightStates, qualitative).first;
 	}
 
@@ -111,7 +111,7 @@ public:
 			throw storm::exceptions::InvalidArgumentException() << "Formula does not specify neither min nor max optimality, which is not meaningful over nondeterministic models.";
 		}
 
-		storm::storage::BitVector goalStates = formula.getChild().check(*this);
+		storm::storage::BitVector goalStates = formula.getChild()->check(*this);
 		return this->checkTimeBoundedEventually(this->minimumOperatorStack.top(), goalStates, formula.getLowerBound(), formula.getUpperBound());
 	}
 
@@ -126,7 +126,7 @@ public:
 			throw storm::exceptions::InvalidArgumentException() << "Formula does not specify neither min nor max optimality, which is not meaningful over nondeterministic models.";
 		}
 
-		storm::storage::BitVector subFormulaStates = formula.getChild().check(*this);
+		storm::storage::BitVector subFormulaStates = formula.getChild()->check(*this);
 		return computeUnboundedUntilProbabilities(this->minimumOperatorStack.top(), storm::storage::BitVector(this->getModel().getNumberOfStates(), true), subFormulaStates, qualitative).first;
 	}
 

@@ -25,7 +25,7 @@ public:
 	 * @param filename
 	 * @return The list of parsed formulas
 	 */
-	static std::list<storm::property::prctl::PrctlFilter<double>*> parsePrctlFile(std::string filename);
+	static std::list<std::shared_ptr<storm::property::prctl::PrctlFilter<double>>> parsePrctlFile(std::string filename);
 
 };
 

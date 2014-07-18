@@ -71,7 +71,7 @@ public:
 	 * @param child The child formula subtree
 	 * @param bound The maximal number of steps
 	 */
-	BoundedEventually(AbstractStateFormula<T>* child, uint_fast64_t bound) : child(child), bound(bound){
+	BoundedEventually(std::shared_ptr<AbstractStateFormula<T>> child, uint_fast64_t bound) : child(child), bound(bound){
 		// Intentionally left empty.
 	}
 
@@ -82,9 +82,7 @@ public:
 	 * (this behaviour can be prevented by setting the subtrees to NULL before deletion)
 	 */
 	virtual ~BoundedEventually() {
-	  if (child != nullptr) {
-		  delete child;
-	  }
+	  // Intentionally left empty.
 	}
 
 	/*!
@@ -94,11 +92,11 @@ public:
 	 *
 	 * @returns a new BoundedUntil-object that is identical the called object.
 	 */
-	virtual AbstractPathFormula<T>* clone() const override {
-		BoundedEventually<T>* result = new BoundedEventually<T>();
-		result->setBound(this->getBound());
+	virtual std::shared_ptr<AbstractPathFormula<T>> clone() const override {
+		std::shared_ptr<BoundedEventually<T>> result(new BoundedEventually<T>());
+		result->setBound(bound);
 		if (this->childIsSet()) {
-			result->setChild(this->getChild().clone());
+			result->setChild(child->clone());
 		}
 		return result;
 	}
@@ -141,15 +139,15 @@ public:
 	/*!
 	 * @returns the child node
 	 */
-	const AbstractStateFormula<T>& getChild() const {
-		return *child;
+	std::shared_ptr<AbstractStateFormula<T>> const & getChild() const {
+		return child;
 	}
 
 	/*!
 	 * Sets the subtree
 	 * @param child the new child node
 	 */
-	void setChild(AbstractStateFormula<T>* child) {
+	void setChild(std::shared_ptr<AbstractStateFormula<T>> const & child) {
 		this->child = child;
 	}
 
@@ -158,7 +156,7 @@ public:
 	 * @return True if the child is set, i.e. it does not point to nullptr; false otherwise
 	 */
 	bool childIsSet() const {
-		return child != nullptr;
+		return child.get() != nullptr;
 	}
 
 	/*!
@@ -178,7 +176,7 @@ public:
 	}
 
 private:
-	AbstractStateFormula<T>* child;
+	std::shared_ptr<AbstractStateFormula<T>> child;
 	uint_fast64_t bound;
 };
 

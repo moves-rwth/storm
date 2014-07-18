@@ -22,41 +22,33 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, Die) {
 
 	storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double> mc(*dtmc, new storm::solver::GmmxxLinearEquationSolver<double>());
 
-	storm::property::prctl::Ap<double>* apFormula = new storm::property::prctl::Ap<double>("one");
-	storm::property::prctl::Eventually<double>* eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
+	auto apFormula = std::make_shared<storm::property::prctl::Ap<double>>("one");
+	auto eventuallyFormula = std::make_shared<storm::property::prctl::Eventually<double>>(apFormula);
 
 	std::vector<double> result = eventuallyFormula->check(mc, false);
 
 	ASSERT_LT(std::abs(result[0] - ((double)1.0/6.0)), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
-	delete eventuallyFormula;
-
-	apFormula = new storm::property::prctl::Ap<double>("two");
-	eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
+	apFormula = std::make_shared<storm::property::prctl::Ap<double>>("two");
+	eventuallyFormula = std::make_shared<storm::property::prctl::Eventually<double>>(apFormula);
 
 	result = eventuallyFormula->check(mc, false);
 
 	ASSERT_LT(std::abs(result[0] - ((double)1.0/6.0)), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
-	delete eventuallyFormula;
-
-	apFormula = new storm::property::prctl::Ap<double>("three");
-	eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
+	apFormula = std::make_shared<storm::property::prctl::Ap<double>>("three");
+	eventuallyFormula = std::make_shared<storm::property::prctl::Eventually<double>>(apFormula);
 
 	result = eventuallyFormula->check(mc, false);
 
 	ASSERT_LT(std::abs(result[0] - ((double)1.0/6.0)), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
-	delete eventuallyFormula;
-
-	storm::property::prctl::Ap<double>* done = new storm::property::prctl::Ap<double>("done");
-	storm::property::prctl::ReachabilityReward<double>* reachabilityRewardFormula = new storm::property::prctl::ReachabilityReward<double>(done);
+	auto done = std::make_shared<storm::property::prctl::Ap<double>>("done");
+	auto reachabilityRewardFormula = std::make_shared<storm::property::prctl::ReachabilityReward<double>>(done);
 
 	result = reachabilityRewardFormula->check(mc, false);
 
 	ASSERT_LT(std::abs(result[0] - ((double)11/3)), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
-
-	delete reachabilityRewardFormula;
 }
 
 TEST(GmmxxDtmcPrctlModelCheckerTest, Crowds) {
@@ -74,32 +66,26 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, Crowds) {
 
 	storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double> mc(*dtmc, new storm::solver::GmmxxLinearEquationSolver<double>());
 
-	storm::property::prctl::Ap<double>* apFormula = new storm::property::prctl::Ap<double>("observe0Greater1");
-	storm::property::prctl::Eventually<double>* eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
+	auto apFormula = std::make_shared<storm::property::prctl::Ap<double>>("observe0Greater1");
+	auto eventuallyFormula = std::make_shared<storm::property::prctl::Eventually<double>>(apFormula);
 
 	std::vector<double> result = eventuallyFormula->check(mc, false);
 
 	ASSERT_LT(std::abs(result[0] - 0.3328800375801578281), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
-	delete eventuallyFormula;
-
-	apFormula = new storm::property::prctl::Ap<double>("observeIGreater1");
-	eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
+	apFormula = std::make_shared<storm::property::prctl::Ap<double>>("observeIGreater1");
+	eventuallyFormula = std::make_shared<storm::property::prctl::Eventually<double>>(apFormula);
 
 	result = eventuallyFormula->check(mc, false);
 
 	ASSERT_LT(std::abs(result[0] - 0.1522194965), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
-	delete eventuallyFormula;
-
-	apFormula = new storm::property::prctl::Ap<double>("observeOnlyTrueSender");
-	eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
+	apFormula = std::make_shared<storm::property::prctl::Ap<double>>("observeOnlyTrueSender");
+	eventuallyFormula = std::make_shared<storm::property::prctl::Eventually<double>>(apFormula);
 
 	result = eventuallyFormula->check(mc, false);
 
 	ASSERT_LT(std::abs(result[0] - 0.32153724292835045), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
-
-	delete eventuallyFormula;
 }
 
 TEST(GmmxxDtmcPrctlModelCheckerTest, SynchronousLeader) {
@@ -116,30 +102,24 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, SynchronousLeader) {
 
 	storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double> mc(*dtmc, new storm::solver::GmmxxLinearEquationSolver<double>());
 
-	storm::property::prctl::Ap<double>* apFormula = new storm::property::prctl::Ap<double>("elected");
-	storm::property::prctl::Eventually<double>* eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
+	auto apFormula = std::make_shared<storm::property::prctl::Ap<double>>("elected");
+	auto eventuallyFormula = std::make_shared<storm::property::prctl::Eventually<double>>(apFormula);
 
 	std::vector<double> result = eventuallyFormula->check(mc, false);
 
 	ASSERT_LT(std::abs(result[0] - 1.0), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
-	delete eventuallyFormula;
-
-	apFormula = new storm::property::prctl::Ap<double>("elected");
-	storm::property::prctl::BoundedUntil<double>* boundedUntilFormula = new storm::property::prctl::BoundedUntil<double>(new storm::property::prctl::Ap<double>("true"), apFormula, 20);
+	apFormula = std::make_shared<storm::property::prctl::Ap<double>>("elected");
+	auto boundedUntilFormula = std::make_shared<storm::property::prctl::BoundedUntil<double>>(std::make_shared<storm::property::prctl::Ap<double>>("true"), apFormula, 20);
 
 	result = boundedUntilFormula->check(mc, false);
 
 	ASSERT_LT(std::abs(result[0] - 0.9999965911265462636), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
-	delete boundedUntilFormula;
-
-	apFormula = new storm::property::prctl::Ap<double>("elected");
-	storm::property::prctl::ReachabilityReward<double>* reachabilityRewardFormula = new storm::property::prctl::ReachabilityReward<double>(apFormula);
+	apFormula = std::make_shared<storm::property::prctl::Ap<double>>("elected");
+	auto reachabilityRewardFormula = std::make_shared<storm::property::prctl::ReachabilityReward<double>>(apFormula);
 
 	result = reachabilityRewardFormula->check(mc, false);
 
 	ASSERT_LT(std::abs(result[0] - 1.044879046), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
-
-	delete reachabilityRewardFormula;
 }

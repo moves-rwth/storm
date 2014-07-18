@@ -87,7 +87,7 @@ namespace storm {
 					}
 
             		// First, we need to compute the probability for satisfying the path formula for each state.
-            		std::vector<Type> quantitativeResult = formula.getPathFormula().check(*this, false);
+            		std::vector<Type> quantitativeResult = formula.getPathFormula()->check(*this, false);
 
             		//Remove the minimizing operator entry from the stack.
             		this->minimumOperatorStack.pop();
@@ -124,7 +124,7 @@ namespace storm {
 					}
 
             		// First, we need to compute the probability for satisfying the path formula for each state.
-            		std::vector<Type> quantitativeResult = formula.getPathFormula().check(*this, false);
+            		std::vector<Type> quantitativeResult = formula.getPathFormula()->check(*this, false);
 
             		//Remove the minimizing operator entry from the stack.
 					this->minimumOperatorStack.pop();
@@ -219,7 +219,7 @@ namespace storm {
                  * checker. If the qualitative flag is set, exact probabilities might not be computed.
                  */
                 virtual std::vector<Type> checkBoundedUntil(storm::property::prctl::BoundedUntil<Type> const& formula, bool qualitative) const {
-                    return checkBoundedUntil(formula.getLeft().check(*this), formula.getRight().check(*this), formula.getBound(), qualitative);
+                    return checkBoundedUntil(formula.getLeft()->check(*this), formula.getRight()->check(*this), formula.getBound(), qualitative);
                 }
                 
                 /*!
@@ -261,7 +261,7 @@ namespace storm {
                  * checker. If the qualitative flag is set, exact probabilities might not be computed.
                  */
                 virtual std::vector<Type> checkNext(const storm::property::prctl::Next<Type>& formula, bool qualitative) const {
-                    return checkNext(formula.getChild().check(*this), qualitative);
+                    return checkNext(formula.getChild()->check(*this), qualitative);
                 }
                 
                 /*!
@@ -277,7 +277,7 @@ namespace storm {
                  */
                 virtual std::vector<Type> checkBoundedEventually(const storm::property::prctl::BoundedEventually<Type>& formula, bool qualitative) const {
                     // Create equivalent temporary bounded until formula and check it.
-                    storm::property::prctl::BoundedUntil<Type> temporaryBoundedUntilFormula(new storm::property::prctl::Ap<Type>("true"), formula.getChild().clone(), formula.getBound());
+                    storm::property::prctl::BoundedUntil<Type> temporaryBoundedUntilFormula(std::shared_ptr<storm::property::prctl::Ap<Type>>(new storm::property::prctl::Ap<Type>("true")), formula.getChild(), formula.getBound());
                     return this->checkBoundedUntil(temporaryBoundedUntilFormula, qualitative);
                 }
                 
@@ -294,7 +294,7 @@ namespace storm {
                  */
                 virtual std::vector<Type> checkEventually(const storm::property::prctl::Eventually<Type>& formula, bool qualitative) const {
                     // Create equivalent temporary until formula and check it.
-                    storm::property::prctl::Until<Type> temporaryUntilFormula(new storm::property::prctl::Ap<Type>("true"), formula.getChild().clone());
+                    storm::property::prctl::Until<Type> temporaryUntilFormula(std::shared_ptr<storm::property::prctl::Ap<Type>>(new storm::property::prctl::Ap<Type>("true")), formula.getChild());
                     return this->checkUntil(temporaryUntilFormula, qualitative);
                 }
                 
@@ -311,7 +311,7 @@ namespace storm {
                  */
                 virtual std::vector<Type> checkGlobally(const storm::property::prctl::Globally<Type>& formula, bool qualitative) const {
                     // Create "equivalent" temporary eventually formula and check it.
-                    storm::property::prctl::Eventually<Type> temporaryEventuallyFormula(new storm::property::prctl::Not<Type>(formula.getChild().clone()));
+                    storm::property::prctl::Eventually<Type> temporaryEventuallyFormula(std::shared_ptr<storm::property::prctl::Not<Type>>(new storm::property::prctl::Not<Type>(formula.getChild())));
                     std::vector<Type> result = this->checkEventually(temporaryEventuallyFormula, qualitative);
                     
                     // Now subtract the resulting vector from the constant one vector to obtain final result.
@@ -340,7 +340,7 @@ namespace storm {
 						throw storm::exceptions::InvalidArgumentException() << "Formula does not specify neither min nor max optimality, which is not meaningful over nondeterministic models.";
 					}
 
-                    return this->checkUntil(this->minimumOperatorStack.top(), formula.getLeft().check(*this), formula.getRight().check(*this), qualitative).first;
+                    return this->checkUntil(this->minimumOperatorStack.top(), formula.getLeft()->check(*this), formula.getRight()->check(*this), qualitative).first;
                 }
                 
                 /*!
@@ -525,7 +525,7 @@ namespace storm {
 						throw storm::exceptions::InvalidArgumentException() << "Formula does not specify neither min nor max optimality, which is not meaningful over nondeterministic models.";
 					}
 
-                    return this->checkReachabilityReward(this->minimumOperatorStack.top(), formula.getChild().check(*this), qualitative).first;
+                    return this->checkReachabilityReward(this->minimumOperatorStack.top(), formula.getChild()->check(*this), qualitative).first;
                 }
                 
                 /*!

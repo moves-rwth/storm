@@ -71,7 +71,7 @@ public:
 	 * @param bound The bound for the probability
 	 * @param pathFormula The child node
 	 */
-	ProbabilisticBoundOperator(storm::property::ComparisonType comparisonOperator, T bound, AbstractPathFormula<T>* pathFormula)
+	ProbabilisticBoundOperator(storm::property::ComparisonType comparisonOperator, T bound, std::shared_ptr<AbstractPathFormula<T>> const & pathFormula)
 		: comparisonOperator(comparisonOperator), bound(bound), pathFormula(pathFormula) {
 		// Intentionally left empty.
 	}
@@ -83,9 +83,7 @@ public:
 	 * (this behavior can be prevented by setting them to NULL before deletion)
 	 */
 	virtual ~ProbabilisticBoundOperator() {
-	 if (pathFormula != nullptr) {
-		 delete pathFormula;
-	 }
+		// Intentionally left empty.
 	}
 
 	/*!
@@ -95,11 +93,11 @@ public:
 	 *
 	 * @returns a new AND-object that is identical the called object.
 	 */
-	virtual AbstractStateFormula<T>* clone() const override {
-		ProbabilisticBoundOperator<T>* result = new ProbabilisticBoundOperator<T>();
-		result->setComparisonOperator(this->getComparisonOperator());
-		result->setBound(this->getBound());
-		result->setPathFormula(this->getPathFormula().clone());
+	virtual std::shared_ptr<AbstractStateFormula<T>> clone() const override {
+		std::shared_ptr<ProbabilisticBoundOperator<T>> result(new ProbabilisticBoundOperator<T>());
+		result->setComparisonOperator(comparisonOperator);
+		result->setBound(bound);
+		result->setPathFormula(pathFormula->clone());
 		return result;
 	}
 
@@ -112,7 +110,7 @@ public:
 	 *
 	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
 	 */
-	virtual storm::storage::BitVector check(const storm::modelchecker::csl::AbstractModelChecker<T>& modelChecker) const override {
+	virtual storm::storage::BitVector check(storm::modelchecker::csl::AbstractModelChecker<T> const & modelChecker) const override {
 		return modelChecker.template as<IProbabilisticBoundOperatorModelChecker>()->checkProbabilisticBoundOperator(*this);
 	}
 
@@ -122,7 +120,7 @@ public:
 	 *  @param checker Formula checker object.
 	 *  @return true iff the subtree conforms to some logic.
 	 */
-	virtual bool validate(const AbstractFormulaChecker<T>& checker) const override {
+	virtual bool validate(AbstractFormulaChecker<T> const & checker) const override {
 		return checker.validate(this->pathFormula);
 	}
 
@@ -148,8 +146,8 @@ public:
 	/*!
 	 * @returns the child node (representation of a formula)
 	 */
-	const AbstractPathFormula<T>& getPathFormula () const {
-		return *pathFormula;
+	std::shared_ptr<AbstractPathFormula<T>> const & getPathFormula () const {
+		return pathFormula;
 	}
 
 	/*!
@@ -157,7 +155,7 @@ public:
 	 *
 	 * @param pathFormula the path formula that becomes the new child node
 	 */
-	void setPathFormula(AbstractPathFormula<T>* pathFormula) {
+	void setPathFormula(std::shared_ptr<AbstractPathFormula<T>> const & pathFormula) {
 		this->pathFormula = pathFormula;
 	}
 
@@ -166,13 +164,13 @@ public:
 	 * @return True if the path formula is set, i.e. it does not point to nullptr; false otherwise
 	 */
 	bool pathFormulaIsSet() const {
-		return pathFormula != nullptr;
+		return pathFormula.get() != nullptr;
 	}
 
 	/*!
 	 * @returns the comparison relation
 	 */
-	const storm::property::ComparisonType getComparisonOperator() const {
+	storm::property::ComparisonType const getComparisonOperator() const {
 		return comparisonOperator;
 	}
 
@@ -183,7 +181,7 @@ public:
 	/*!
 	 * @returns the bound for the measure
 	 */
-	const T& getBound() const {
+	T const & getBound() const {
 		return bound;
 	}
 
@@ -192,11 +190,11 @@ public:
 	 *
 	 * @param bound The bound for the measure
 	 */
-	void setBound(T bound) {
+	void setBound(T const & bound) {
 		this->bound = bound;
 	}
 
-	bool meetsBound(T value) const {
+	bool meetsBound(T const & value) const {
 		switch (comparisonOperator) {
 		case LESS: return value < bound; break;
 		case LESS_EQUAL: return value <= bound; break;
@@ -209,7 +207,7 @@ public:
 private:
 	storm::property::ComparisonType comparisonOperator;
 	T bound;
-	AbstractPathFormula<T>* pathFormula;
+	std::shared_ptr<AbstractPathFormula<T>> pathFormula;
 };
 
 } //namespace csl

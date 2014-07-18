@@ -59,9 +59,8 @@ public:
 	 * Empty constructor.
 	 * Will create an OR-node without subnotes. Will not represent a complete formula!
 	 */
-	Or() {
-		left = NULL;
-		right = NULL;
+	Or() : left(nullptr), right(nullptr) {
+		// Intentionally left empty.
 	}
 
 	/*!
@@ -71,24 +70,17 @@ public:
 	 * @param left The left sub formula
 	 * @param right The right sub formula
 	 */
-	Or(AbstractStateFormula<T>* left, AbstractStateFormula<T>* right) {
-		this->left = left;
-		this->right = right;
+	Or(std::shared_ptr<AbstractStateFormula<T>> left, std::shared_ptr<AbstractStateFormula<T>> right) : left(left), right(right) {
+		// Intentionally left empty.
 	}
 
 	/*!
 	 * Destructor.
 	 *
-	 * The subtrees are deleted with the object
-	 * (this behavior can be prevented by setting them to NULL before deletion)
+	 * Deletes the subtree iff this object is the last remaining owner of the subtree.
 	 */
 	virtual ~Or() {
-	  if (left != NULL) {
-		  delete left;
-	  }
-	  if (right != NULL) {
-		  delete right;
-	  }
+		// Intentionally left empty.
 	}
 
 	/*!
@@ -98,13 +90,13 @@ public:
 	 *
 	 * @returns a new AND-object that is identical the called object.
 	 */
-	virtual AbstractStateFormula<T>* clone() const override {
-		Or<T>* result = new Or();
+	virtual std::shared_ptr<AbstractStateFormula<T>> clone() const override {
+		std::shared_ptr<Or<T>> result(new Or());
 		if (this->leftIsSet()) {
-		  result->setLeft(this->getLeft().clone());
+		  result->setLeft(left->clone());
 		}
 		if (this->rightIsSet()) {
-		  result->setRight(this->getRight().clone());
+		  result->setRight(right->clone());
 		}
 		return result;
 	}
@@ -118,7 +110,7 @@ public:
 	 *
 	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
 	 */
-	virtual storm::storage::BitVector check(const storm::modelchecker::prctl::AbstractModelChecker<T>& modelChecker) const override {
+	virtual storm::storage::BitVector check(storm::modelchecker::prctl::AbstractModelChecker<T> const & modelChecker) const override {
 		return modelChecker.template as<IOrModelChecker>()->checkOr(*this);
 	}
 
@@ -140,7 +132,7 @@ public:
      *  @param checker Formula checker object.
      *  @return true iff all subtrees conform to some logic.
      */
-	virtual bool validate(const AbstractFormulaChecker<T>& checker) const override {
+	virtual bool validate(AbstractFormulaChecker<T> const & checker) const override {
         return checker.validate(this->left) && checker.validate(this->right);
     }
 
@@ -149,7 +141,7 @@ public:
 	 *
 	 * @param newLeft the new left child.
 	 */
-	void setLeft(AbstractStateFormula<T>* newLeft) {
+	void setLeft(std::shared_ptr<AbstractStateFormula<T>> const & newLeft) {
 		left = newLeft;
 	}
 
@@ -158,22 +150,22 @@ public:
 	 *
 	 * @param newRight the new right child.
 	 */
-	void setRight(AbstractStateFormula<T>* newRight) {
+	void setRight(std::shared_ptr<AbstractStateFormula<T>> const & newRight) {
 		right = newRight;
 	}
 
 	/*!
 	 * @returns a pointer to the left child node
 	 */
-	const AbstractStateFormula<T>& getLeft() const {
-		return *left;
+	std::shared_ptr<AbstractStateFormula<T>> const & getLeft() const {
+		return left;
 	}
 
 	/*!
 	 * @returns a pointer to the right child node
 	 */
-	const AbstractStateFormula<T>& getRight() const {
-		return *right;
+	std::shared_ptr<AbstractStateFormula<T>> const & getRight() const {
+		return right;
 	}
 
 	/*!
@@ -181,7 +173,7 @@ public:
 	 * @return True if the left child is set, i.e. it does not point to nullptr; false otherwise
 	 */
 	bool leftIsSet() const {
-		return left != nullptr;
+		return left.get() != nullptr;
 	}
 
 	/*!
@@ -189,12 +181,12 @@ public:
 	 * @return True if the right child is set, i.e. it does not point to nullptr; false otherwise
 	 */
 	bool rightIsSet() const {
-		return right != nullptr;
+		return right.get() != nullptr;
 	}
 
 private:
-	AbstractStateFormula<T>* left;
-	AbstractStateFormula<T>* right;
+	std::shared_ptr<AbstractStateFormula<T>> left;
+	std::shared_ptr<AbstractStateFormula<T>> right;
 
 };
 

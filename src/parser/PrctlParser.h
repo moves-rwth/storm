@@ -25,7 +25,7 @@ public:
 	 * @throw wrongFormatException If the input could not be parsed successfully
 	 * @return A pointer to the parsed Prctl formula. If the line just contained a comment a nullptr will be returned instead.
 	 */
-	static storm::property::prctl::PrctlFilter<double>* parsePrctlFormula(std::string formulaString);
+	static std::shared_ptr<storm::property::prctl::PrctlFilter<double>> parsePrctlFormula(std::string formulaString);
 
 private:
 

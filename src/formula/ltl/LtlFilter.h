@@ -37,21 +37,20 @@ public:
 		// Intentionally left empty.
 	}
 
-	LtlFilter(AbstractLtlFormula<T>* child, OptimizingOperator opt = UNDEFINED) : AbstractFilter<T>(opt), child(child) {
+	LtlFilter(std::shared_ptr<AbstractLtlFormula<T>> const & child, OptimizingOperator opt = UNDEFINED) : AbstractFilter<T>(opt), child(child) {
 		// Intentionally left empty.
 	}
 
-	LtlFilter(AbstractLtlFormula<T>* child, action::AbstractAction<T>* action, OptimizingOperator opt = UNDEFINED) : AbstractFilter<T>(action, opt), child(child) {
+	LtlFilter(std::shared_ptr<AbstractLtlFormula<T>> const & child, action::AbstractAction<T>* action, OptimizingOperator opt = UNDEFINED) : AbstractFilter<T>(action, opt), child(child) {
 		this->actions.push_back(action);
 	}
 
-	LtlFilter(AbstractLtlFormula<T>* child, std::vector<action::AbstractAction<T>*> actions, OptimizingOperator opt = UNDEFINED) : AbstractFilter<T>(actions, opt), child(child) {
+	LtlFilter(std::shared_ptr<AbstractLtlFormula<T>> const & child, std::vector<action::AbstractAction<T>*> actions, OptimizingOperator opt = UNDEFINED) : AbstractFilter<T>(actions, opt), child(child) {
 		// Intentionally left empty.
 	}
 
 	virtual ~LtlFilter() {
 		this->actions.clear();
-		delete child;
 	}
 
 
@@ -133,11 +132,11 @@ public:
 		return desc;
 	}
 
-	void setChild(AbstractLtlFormula<T>* child) {
+	void setChild(std::shared_ptr<AbstractLtlFormula<T>> const & child) {
 		this->child = child;
 	}
 
-	AbstractLtlFormula<T>* getChild() const {
+	std::shared_ptr<AbstractLtlFormula<T>> const & getChild() const {
 		return child;
 	}
 
@@ -208,7 +207,7 @@ private:
 		std::cout << std::endl << "-------------------------------------------" << std::endl;
 	}
 
-	AbstractLtlFormula<T>* child;
+	std::shared_ptr<AbstractLtlFormula<T>> child;
 };
 
 

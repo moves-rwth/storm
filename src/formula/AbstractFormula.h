@@ -78,7 +78,7 @@ public:
 	 *	@param checker Checker object.
 	 *	@return true iff all subtrees are valid.
 	 */
-	virtual bool validate(const AbstractFormulaChecker<T>& checker) const = 0;
+	virtual bool validate(AbstractFormulaChecker<T> const & checker) const = 0;
 };
 
 } // namespace property

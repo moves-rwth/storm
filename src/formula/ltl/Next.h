@@ -36,24 +36,6 @@ class INextModelChecker {
 };
 
 /*!
- *	@brief Interface class for visitors that support Next.
- *
- *	All visitors that support the formula class Next must inherit
- *	this pure virtual class.
- */
-template <class T>
-class INextVisitor {
-	public:
-		/*!
-		 *	@brief Visits Next formula.
-		 *
-		 *	@param obj Formula object with subformulas.
-		 *	@return Result of the formula for every node.
-		 */
-		virtual void visitNext(const Next<T>& obj) = 0;
-};
-
-/*!
  * @brief
  * Class for an abstract (path) formula tree with a Next node as root.
  *
@@ -75,8 +57,8 @@ public:
 	/*!
 	 * Empty constructor
 	 */
-	Next() {
-		this->child = NULL;
+	Next() : child(nullptr) {
+		// Intentionally left empty.
 	}
 
 	/*!
@@ -84,8 +66,8 @@ public:
 	 *
 	 * @param child The child node
 	 */
-	Next(AbstractLtlFormula<T>* child) {
-		this->child = child;
+	Next(std::shared_ptr<AbstractLtlFormula<T>> const & child) : child(child) {
+		// Intentionally left empty.
 	}
 
 	/*!
@@ -95,9 +77,7 @@ public:
 	 * (this behaviour can be prevented by setting the subtrees to NULL before deletion)
 	 */
 	virtual ~Next() {
-	  if (child != NULL) {
-		  delete child;
-	  }
+		// Intentionally left empty.
 	}
 
 	/*!
@@ -107,10 +87,10 @@ public:
 	 *
 	 * @returns a new BoundedUntil-object that is identical the called object.
 	 */
-	virtual AbstractLtlFormula<T>* clone() const override {
-		Next<T>* result = new Next<T>();
+	virtual std::shared_ptr<AbstractLtlFormula<T>> clone() const override {
+		std::shared_ptr<Next<T>> result(new Next<T>());
 		if (this->childIsSet()) {
-			result->setChild(this->getChild().clone());
+			result->setChild(child->clone());
 		}
 		return result;
 	}
@@ -124,12 +104,8 @@ public:
 	 *
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
-	virtual std::vector<T> check(const storm::modelchecker::ltl::AbstractModelChecker<T>& modelChecker) const {
+	virtual std::vector<T> check(storm::modelchecker::ltl::AbstractModelChecker<T> const & modelChecker) const {
 		return modelChecker.template as<INextModelChecker>()->checkNext(*this);
-	}
-
-	virtual void visit(visitor::AbstractLtlFormulaVisitor<T>& visitor) const override {
-		visitor.template as<INextVisitor>()->visitNext(*this);
 	}
 
 	/*!
@@ -149,22 +125,22 @@ public:
 	 *  @param checker Formula checker object.
 	 *  @return true iff the subtree conforms to some logic.
 	 */
-	virtual bool validate(const AbstractFormulaChecker<T>& checker) const override {
+	virtual bool validate(AbstractFormulaChecker<T> const & checker) const override {
 		return checker.validate(this->child);
 	}
 
 	/*!
 	 * @returns the child node
 	 */
-	const AbstractLtlFormula<T>& getChild() const {
-		return *child;
+	std::shared_ptr<AbstractLtlFormula<T>> const & getChild() const {
+		return child;
 	}
 
 	/*!
 	 * Sets the subtree
 	 * @param child the new child node
 	 */
-	void setChild(AbstractLtlFormula<T>* child) {
+	void setChild(std::shared_ptr<AbstractLtlFormula<T>> const & child) {
 		this->child = child;
 	}
 
@@ -173,11 +149,11 @@ public:
 	 * @return True if the child node is set, i.e. it does not point to nullptr; false otherwise
 	 */
 	bool childIsSet() const {
-		return child != nullptr;
+		return child.get() != nullptr;
 	}
 
 private:
-	AbstractLtlFormula<T>* child;
+	std::shared_ptr<AbstractLtlFormula<T>> child;
 };
 
 } //namespace ltl

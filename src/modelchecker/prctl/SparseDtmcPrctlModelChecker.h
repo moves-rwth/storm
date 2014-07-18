@@ -72,7 +72,7 @@ public:
 	 * checker. If the qualitative flag is set, exact probabilities might not be computed.
 	 */
 	virtual std::vector<Type> checkBoundedUntil(storm::property::prctl::BoundedUntil<Type> const& formula, bool qualitative) const {
-		return this->checkBoundedUntil(formula.getLeft().check(*this), formula.getRight().check(*this), formula.getBound(), qualitative);
+		return this->checkBoundedUntil(formula.getLeft()->check(*this), formula.getRight()->check(*this), formula.getBound(), qualitative);
 	}
 
 	/*!
@@ -147,7 +147,7 @@ public:
 	 */
 	virtual std::vector<Type> checkNext(storm::property::prctl::Next<Type> const& formula, bool qualitative) const {
 		// First, we need to compute the states that satisfy the child formula of the next-formula.
-		storm::storage::BitVector nextStates = formula.getChild().check(*this);
+		storm::storage::BitVector nextStates = formula.getChild()->check(*this);
 
 		// Create the vector with which to multiply and initialize it correctly.
 		std::vector<Type> result(this->getModel().getNumberOfStates());
@@ -175,7 +175,7 @@ public:
 	 * checker. If the qualitative flag is set, exact probabilities might not be computed.
 	 */
 	virtual std::vector<Type> checkBoundedEventually(storm::property::prctl::BoundedEventually<Type> const& formula, bool qualitative) const {
-        return this->checkBoundedUntil(storm::storage::BitVector(this->getModel().getNumberOfStates(), true), formula.getChild().check(*this), formula.getBound(), qualitative);
+        return this->checkBoundedUntil(storm::storage::BitVector(this->getModel().getNumberOfStates(), true), formula.getChild()->check(*this), formula.getBound(), qualitative);
 	}
 
 	/*!
@@ -191,7 +191,7 @@ public:
 	 */
 	virtual std::vector<Type> checkEventually(storm::property::prctl::Eventually<Type> const& formula, bool qualitative) const {
 		// Create equivalent temporary until formula and check it.
-		storm::property::prctl::Until<Type> temporaryUntilFormula(new storm::property::prctl::Ap<Type>("true"), formula.getChild().clone());
+		storm::property::prctl::Until<Type> temporaryUntilFormula(std::shared_ptr<storm::property::prctl::Ap<Type>>(new storm::property::prctl::Ap<Type>("true")), formula.getChild());
 		return this->checkUntil(temporaryUntilFormula, qualitative);
 	}
 
@@ -208,7 +208,7 @@ public:
 	 */
 	virtual std::vector<Type> checkGlobally(storm::property::prctl::Globally<Type> const& formula, bool qualitative) const {
 		// Create "equivalent" (equivalent up to negation) temporary eventually formula and check it.
-		storm::property::prctl::Eventually<Type> temporaryEventuallyFormula(new storm::property::prctl::Not<Type>(formula.getChild().clone()));
+		storm::property::prctl::Eventually<Type> temporaryEventuallyFormula(std::shared_ptr<storm::property::prctl::Not<Type>>(new storm::property::prctl::Not<Type>(formula.getChild())));
 		std::vector<Type> result = this->checkEventually(temporaryEventuallyFormula, qualitative);
 
 		// Now subtract the resulting vector from the constant one vector to obtain final result.
@@ -229,7 +229,7 @@ public:
 	 * checker. If the qualitative flag is set, exact probabilities might not be computed.
 	 */
 	virtual std::vector<Type> checkUntil(storm::property::prctl::Until<Type> const& formula, bool qualitative) const {
-		return this->checkUntil(formula.getLeft().check(*this), formula.getRight().check(*this), qualitative);
+		return this->checkUntil(formula.getLeft()->check(*this), formula.getRight()->check(*this), qualitative);
 	}
 
 	/*!
@@ -405,7 +405,7 @@ public:
 		}
 
 		// Determine the states for which the target predicate holds.
-		storm::storage::BitVector targetStates = formula.getChild().check(*this);
+		storm::storage::BitVector targetStates = formula.getChild()->check(*this);
 
 		// Determine which states have a reward of infinity by definition.
 		storm::storage::BitVector trueStates(this->getModel().getNumberOfStates(), true);

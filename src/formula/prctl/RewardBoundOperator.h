@@ -69,7 +69,7 @@ public:
 	 * @param bound The bound for the probability
 	 * @param pathFormula The child node
 	 */
-	RewardBoundOperator(storm::property::ComparisonType comparisonOperator, T bound, AbstractRewardPathFormula<T>* pathFormula)
+	RewardBoundOperator(storm::property::ComparisonType comparisonOperator, T bound, std::shared_ptr<AbstractRewardPathFormula<T>> const & pathFormula)
 		: comparisonOperator(comparisonOperator), bound(bound), pathFormula(pathFormula) {
 		// Intentionally left empty
 	}
@@ -77,13 +77,10 @@ public:
 	/*!
 	 * Destructor
 	 *
-	 * The subtree is deleted with the object
-	 * (this behavior can be prevented by setting them to NULL before deletion)
+	 * Deletes the subtree iff this object is the last remaining owner of the subtree.
 	 */
 	virtual ~RewardBoundOperator() {
-	 if (pathFormula != nullptr) {
-		 delete pathFormula;
-	 }
+		// Intentionally left empty.
 	}
 
 	/*!
@@ -93,11 +90,11 @@ public:
 	 *
 	 * @returns a new AND-object that is identical the called object.
 	 */
-	virtual AbstractStateFormula<T>* clone() const override {
-		RewardBoundOperator<T>* result = new RewardBoundOperator<T>();
-		result->setComparisonOperator(this->getComparisonOperator());
-		result->setBound(this->getBound());
-		result->setPathFormula(this->getPathFormula().clone());
+	virtual std::shared_ptr<AbstractStateFormula<T>> clone() const override {
+		std::shared_ptr<RewardBoundOperator<T>> result(new RewardBoundOperator<T>());
+		result->setComparisonOperator(comparisonOperator);
+		result->setBound(bound);
+		result->setPathFormula(pathFormula->clone());
 		return result;
 	}
 
@@ -110,7 +107,7 @@ public:
 	 *
 	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
 	 */
-	virtual storm::storage::BitVector check(const storm::modelchecker::prctl::AbstractModelChecker<T>& modelChecker) const override {
+	virtual storm::storage::BitVector check(storm::modelchecker::prctl::AbstractModelChecker<T> const & modelChecker) const override {
 		return modelChecker.template as<IRewardBoundOperatorModelChecker>()->checkRewardBoundOperator(*this);
 	}
 
@@ -120,7 +117,7 @@ public:
 	 *  @param checker Formula checker object.
 	 *  @return true iff the subtree conforms to some logic.
 	 */
-	virtual bool validate(const AbstractFormulaChecker<T>& checker) const override {
+	virtual bool validate(AbstractFormulaChecker<T> const & checker) const override {
 		return checker.validate(this->pathFormula);
 	}
 
@@ -130,10 +127,10 @@ public:
 	virtual std::string toString() const override {
 		std::string result = "R ";
 		switch (comparisonOperator) {
-		case LESS: result += "<"; break;
-		case LESS_EQUAL: result += "<="; break;
-		case GREATER: result += ">"; break;
-		case GREATER_EQUAL: result += ">="; break;
+			case LESS: result += "<"; break;
+			case LESS_EQUAL: result += "<="; break;
+			case GREATER: result += ">"; break;
+			case GREATER_EQUAL: result += ">="; break;
 		}
 		result += " ";
 		result += std::to_string(bound);
@@ -146,8 +143,8 @@ public:
 	/*!
 	 * @returns the child node (representation of a formula)
 	 */
-	const AbstractRewardPathFormula<T>& getPathFormula () const {
-		return *pathFormula;
+	std::shared_ptr<AbstractRewardPathFormula<T>> const & getPathFormula () const {
+		return pathFormula;
 	}
 
 	/*!
@@ -155,7 +152,7 @@ public:
 	 *
 	 * @param pathFormula the path formula that becomes the new child node
 	 */
-	void setPathFormula(AbstractRewardPathFormula<T>* pathFormula) {
+	void setPathFormula(std::shared_ptr<AbstractRewardPathFormula<T>> const & pathFormula) {
 		this->pathFormula = pathFormula;
 	}
 
@@ -164,13 +161,13 @@ public:
 	 * @return True if the path formula is set, i.e. it does not point to nullptr; false otherwise
 	 */
 	bool pathFormulaIsSet() const {
-		return pathFormula != nullptr;
+		return pathFormula.get() != nullptr;
 	}
 
 	/*!
 	 * @returns the comparison relation
 	 */
-	const storm::property::ComparisonType getComparisonOperator() const {
+	storm::property::ComparisonType const getComparisonOperator() const {
 		return comparisonOperator;
 	}
 
@@ -181,7 +178,7 @@ public:
 	/*!
 	 * @returns the bound for the measure
 	 */
-	const T& getBound() const {
+	T const & getBound() const {
 		return bound;
 	}
 
@@ -196,18 +193,18 @@ public:
 
 	bool meetsBound(T value) const {
 		switch (comparisonOperator) {
-		case LESS: return value < bound; break;
-		case LESS_EQUAL: return value <= bound; break;
-		case GREATER: return value > bound; break;
-		case GREATER_EQUAL: return value >= bound; break;
-		default: return false;
+			case LESS: return value < bound; break;
+			case LESS_EQUAL: return value <= bound; break;
+			case GREATER: return value > bound; break;
+			case GREATER_EQUAL: return value >= bound; break;
+			default: return false;
 		}
 	}
 
 private:
 	storm::property::ComparisonType comparisonOperator;
 	T bound;
-	AbstractRewardPathFormula<T>* pathFormula;
+	std::shared_ptr<AbstractRewardPathFormula<T>> pathFormula;
 };
 
 } //namespace prctl

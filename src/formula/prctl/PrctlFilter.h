@@ -25,6 +25,7 @@ namespace action {
 }
 
 #include <algorithm>
+#include <memory>
 
 namespace storm {
 namespace property {
@@ -41,21 +42,20 @@ public:
 		// Intentionally left empty.
 	}
 
-	PrctlFilter(AbstractPrctlFormula<T>* child, OptimizingOperator opt = UNDEFINED) : AbstractFilter<T>(opt), child(child) {
+	PrctlFilter(std::shared_ptr<AbstractPrctlFormula<T>> const & child, OptimizingOperator opt = UNDEFINED) : AbstractFilter<T>(opt), child(child) {
 		// Intentionally left empty.
 	}
 
-	PrctlFilter(AbstractPrctlFormula<T>* child, action::AbstractAction<T>* action, OptimizingOperator opt = UNDEFINED) : AbstractFilter<T>(action, opt), child(child) {
+	PrctlFilter(std::shared_ptr<AbstractPrctlFormula<T>> const & child, action::AbstractAction<T>* action, OptimizingOperator opt = UNDEFINED) : AbstractFilter<T>(action, opt), child(child) {
 		// Intentionally left empty.
 	}
 
-	PrctlFilter(AbstractPrctlFormula<T>* child, std::vector<action::AbstractAction<T>*> actions, OptimizingOperator opt = UNDEFINED) : AbstractFilter<T>(actions, opt), child(child) {
+	PrctlFilter(std::shared_ptr<AbstractPrctlFormula<T>> const & child, std::vector<action::AbstractAction<T>*> actions, OptimizingOperator opt = UNDEFINED) : AbstractFilter<T>(actions, opt), child(child) {
 		// Intentionally left empty.
 	}
 
 	virtual ~PrctlFilter() {
 		this->actions.clear();
-		delete child;
 	}
 
 	void check(storm::modelchecker::prctl::AbstractModelChecker<T> const & modelchecker) const {
@@ -68,12 +68,12 @@ public:
 		Result result;
 
 		try {
-			if(dynamic_cast<AbstractStateFormula<T> *>(child) != nullptr) {
-				result = evaluate(modelchecker, dynamic_cast<AbstractStateFormula<T> *>(child));
-			} else if (dynamic_cast<AbstractPathFormula<T> *>(child) != nullptr) {
-				result = evaluate(modelchecker, dynamic_cast<AbstractPathFormula<T> *>(child));
-			} else if (dynamic_cast<AbstractRewardPathFormula<T> *>(child) != nullptr) {
-				result = evaluate(modelchecker, dynamic_cast<AbstractRewardPathFormula<T> *>(child));
+			if(dynamic_cast<AbstractStateFormula<T> *>(child.get()) != nullptr) {
+				result = evaluate(modelchecker, std::dynamic_pointer_cast<AbstractStateFormula<T>>(child));
+			} else if (dynamic_cast<AbstractPathFormula<T> *>(child.get()) != nullptr) {
+				result = evaluate(modelchecker, std::dynamic_pointer_cast<AbstractPathFormula<T>>(child));
+			} else if (dynamic_cast<AbstractRewardPathFormula<T> *>(child.get()) != nullptr) {
+				result = evaluate(modelchecker, std::dynamic_pointer_cast<AbstractRewardPathFormula<T>>(child));
 			}
 		} catch (std::exception& e) {
 			std::cout << "Error during computation: " << e.what() << "Skipping property." << std::endl;
@@ -90,14 +90,14 @@ public:
 	virtual std::string toString() const override {
 		std::string desc = "";
 
-		if(dynamic_cast<AbstractStateFormula<T>*>(child) == nullptr) {
+		if(!std::dynamic_pointer_cast<AbstractStateFormula<T>>(child)) {
 
 			// The formula is not a state formula so we either have a probability query or a reward query.
 			if(this->actions.empty()){
 
 				// There is exactly one action in the list, the minmax action. Again, we do legacy support-
 
-				if(dynamic_cast<AbstractPathFormula<T>*>(child) != nullptr) {
+				if(std::dynamic_pointer_cast<AbstractPathFormula<T>>(child)) {
 					// It is a probability query.
 					desc += "P ";
 
@@ -184,17 +184,17 @@ public:
 		return desc;
 	}
 
-	void setChild(AbstractPrctlFormula<T>* child) {
+	void setChild(std::shared_ptr<AbstractPrctlFormula<T>> const & child) {
 		this->child = child;
 	}
 
-	AbstractPrctlFormula<T>* getChild() const {
+	std::shared_ptr<AbstractPrctlFormula<T>> const & getChild() const {
 		return child;
 	}
 
 private:
 
-	Result evaluate(storm::modelchecker::prctl::AbstractModelChecker<T> const & modelchecker, AbstractStateFormula<T> * formula) const {
+	Result evaluate(storm::modelchecker::prctl::AbstractModelChecker<T> const & modelchecker, std::shared_ptr<AbstractStateFormula<T>> const & formula) const {
 		// First, get the model checking result.
 		Result result;
 
@@ -209,7 +209,7 @@ private:
 		return evaluateActions(result, modelchecker);
 	}
 
-	Result evaluate(storm::modelchecker::prctl::AbstractModelChecker<T> const & modelchecker, AbstractPathFormula<T> * formula) const {
+	Result evaluate(storm::modelchecker::prctl::AbstractModelChecker<T> const & modelchecker, std::shared_ptr<AbstractPathFormula<T>> const & formula) const {
 		// First, get the model checking result.
 		Result result;
 
@@ -224,7 +224,7 @@ private:
 		return evaluateActions(result, modelchecker);
 	}
 
-	Result evaluate(storm::modelchecker::prctl::AbstractModelChecker<T> const & modelchecker, AbstractRewardPathFormula<T> * formula) const {
+	Result evaluate(storm::modelchecker::prctl::AbstractModelChecker<T> const & modelchecker, std::shared_ptr<AbstractRewardPathFormula<T>> const & formula) const {
 		// First, get the model checking result.
 		Result result;
 
@@ -313,7 +313,7 @@ private:
 		std::cout << std::endl << "-------------------------------------------" << std::endl;
 	}
 
-	AbstractPrctlFormula<T>* child;
+	std::shared_ptr<AbstractPrctlFormula<T>> child;
 };
 
 } //namespace prctl

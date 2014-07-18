@@ -36,24 +36,6 @@ class IEventuallyModelChecker {
 };
 
 /*!
- *	@brief Interface class for visitors that support Eventually.
- *
- *	All visitors that support the formula class Eventually must inherit
- *	this pure virtual class.
- */
-template <class T>
-class IEventuallyVisitor {
-	public:
-		/*!
-		 *	@brief Visits Eventually formula.
-		 *
-		 *	@param obj Formula object with subformulas.
-		 *	@return Result of the formula for every node.
-		 */
-		virtual void visitEventually(const Eventually<T>& obj) = 0;
-};
-
-/*!
  * @brief
  * Class for an abstract (path) formula tree with an Eventually node as root.
  *
@@ -75,8 +57,8 @@ public:
 	/*!
 	 * Empty constructor
 	 */
-	Eventually() {
-		this->child = nullptr;
+	Eventually() : child(nullptr) {
+		//  Intentionally left empty.
 	}
 
 	/*!
@@ -84,8 +66,8 @@ public:
 	 *
 	 * @param child The child node
 	 */
-	Eventually(AbstractLtlFormula<T>* child) {
-		this->child = child;
+	Eventually(std::shared_ptr<AbstractLtlFormula<T>> const & child) : child(child) {
+		// Intentionally left empty.
 	}
 
 	/*!
@@ -95,9 +77,7 @@ public:
 	 * (this behaviour can be prevented by setting the subtrees to nullptr before deletion)
 	 */
 	virtual ~Eventually() {
-	  if (child != nullptr) {
-		  delete child;
-	  }
+		// Intentionally left empty.
 	}
 
 	/*!
@@ -107,10 +87,10 @@ public:
 	 *
 	 * @returns a new Eventually-object that is identical the called object.
 	 */
-	virtual AbstractLtlFormula<T>* clone() const override {
-		Eventually<T>* result = new Eventually<T>();
+	virtual std::shared_ptr<AbstractLtlFormula<T>> clone() const override {
+		std::shared_ptr<Eventually<T>> result(new Eventually<T>());
 		if (this->childIsSet()) {
-			result->setChild(this->getChild().clone());
+			result->setChild(child->clone());
 		}
 		return result;
 	}
@@ -128,10 +108,6 @@ public:
 		return modelChecker.template as<IEventuallyModelChecker>()->checkEventually(*this);
 	}
 
-	virtual void visit(visitor::AbstractLtlFormulaVisitor<T>& visitor) const override {
-		visitor.template as<IEventuallyVisitor>()->visitEventually(*this);
-	}
-
 	/*!
 	 * @returns a string representation of the formula
 	 */
@@ -142,27 +118,27 @@ public:
 	}
 
 	/*!
-     *  @brief Checks if the subtree conforms to some logic.
-     *
-     *  @param checker Formula checker object.
-     *  @return true iff the subtree conforms to some logic.
-     */
-	virtual bool validate(const AbstractFormulaChecker<T>& checker) const override {
+	 *  @brief Checks if the subtree conforms to some logic.
+	 *
+	 *  @param checker Formula checker object.
+	 *  @return true iff the subtree conforms to some logic.
+	 */
+	virtual bool validate(AbstractFormulaChecker<T> const & checker) const override {
 		return checker.validate(this->child);
 	}
 
 	/*!
 	 * @returns the child node
 	 */
-	const AbstractLtlFormula<T>& getChild() const {
-		return *child;
+	std::shared_ptr<AbstractLtlFormula<T>> const & getChild() const {
+		return child;
 	}
 
 	/*!
 	 * Sets the subtree
 	 * @param child the new child node
 	 */
-	void setChild(AbstractLtlFormula<T>* child) {
+	void setChild(std::shared_ptr<AbstractLtlFormula<T>> const & child) {
 		this->child = child;
 	}
 
@@ -171,11 +147,11 @@ public:
 	 * @return True if the child node is set, i.e. it does not point to nullptr; false otherwise
 	 */
 	bool childIsSet() const {
-		return child != nullptr;
+		return child.get() != nullptr;
 	}
 
 private:
-	AbstractLtlFormula<T>* child;
+	std::shared_ptr<AbstractLtlFormula<T>> child;
 };
 
 } //namespace ltl

@@ -76,8 +76,9 @@ public:
 	 *
 	 * @returns a new AND-object that is identical the called object.
 	 */
-	virtual AbstractStateFormula<T>* clone() const override {
-		return new Ap(this->getAp());
+	virtual std::shared_ptr<AbstractStateFormula<T>> clone() const override {
+		std::shared_ptr<AbstractStateFormula<T>> result(new Ap(this->getAp()));
+		return result;
 	}
 
 	/*!
@@ -89,7 +90,7 @@ public:
 	 *
 	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
 	 */
-	virtual storm::storage::BitVector check(const storm::modelchecker::csl::AbstractModelChecker<T>& modelChecker) const override {
+	virtual storm::storage::BitVector check(storm::modelchecker::csl::AbstractModelChecker<T> const & modelChecker) const override {
 		return modelChecker.template as<IApModelChecker>()->checkAp(*this);
 	}
 
@@ -101,14 +102,14 @@ public:
      *  @param checker Formula checker object.
      *  @return true
      */
-	virtual bool validate(const AbstractFormulaChecker<T>& checker) const override {
+	virtual bool validate(AbstractFormulaChecker<T> const & checker) const override {
 		return true;
 	}
 
 	/*!
 	 * @returns the name of the atomic proposition
 	 */
-	const std::string& getAp() const {
+	std::string const & getAp() const {
 		return ap;
 	}
 

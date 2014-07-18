@@ -62,8 +62,7 @@ public:
 	 * Will create an AND-node without subnotes. Will not represent a complete formula!
 	 */
 	And() {
-		left = NULL;
-		right = NULL;
+		// Intentionally left empty.
 	}
 
 	/*!
@@ -73,9 +72,8 @@ public:
 	 * @param left The left sub formula
 	 * @param right The right sub formula
 	 */
-	And(AbstractStateFormula<T>* left, AbstractStateFormula<T>* right) {
-		this->left = left;
-		this->right = right;
+	And(std::shared_ptr<AbstractStateFormula<T>> const & left, std::shared_ptr<AbstractStateFormula<T>> const & right) : left(left), right(right) {
+		// Intentionally left empty.
 	}
 
 	/*!
@@ -85,12 +83,7 @@ public:
 	 * (this behavior can be prevented by setting them to NULL before deletion)
 	 */
 	virtual ~And() {
-		if (left != NULL) {
-			delete left;
-		}
-		if (right != NULL) {
-			delete right;
-		}
+		// Intentionally left empty.
 	}
 
 	/*!
@@ -100,13 +93,13 @@ public:
 	 *
 	 * @returns a new AND-object that is identical the called object.
 	 */
-	virtual AbstractStateFormula<T>* clone() const override {
-		And<T>* result = new And();
+	virtual std::shared_ptr<AbstractStateFormula<T>> clone() const override {
+		std::shared_ptr<And<T>> result(new And());
 		if (this->leftIsSet()) {
-		  result->setLeft(this->getLeft().clone());
+		  result->setLeft(left->clone());
 		}
 		if (this->rightIsSet()) {
-		  result->setRight(this->getRight().clone());
+		  result->setRight(right->clone());
 		}
 		return result;
 	}
@@ -151,7 +144,7 @@ public:
 	 *
 	 * @param newLeft the new left child.
 	 */
-	void setLeft(AbstractStateFormula<T>* newLeft) {
+	void setLeft(std::shared_ptr<AbstractStateFormula<T>> const & newLeft) {
 		left = newLeft;
 	}
 
@@ -160,22 +153,22 @@ public:
 	 *
 	 * @param newRight the new right child.
 	 */
-	void setRight(AbstractStateFormula<T>* newRight) {
+	void setRight(std::shared_ptr<AbstractStateFormula<T>> const & newRight) {
 		right = newRight;
 	}
 
 	/*!
-	 * @returns a pointer to the left child node
+	 * @returns a reference to the left child node
 	 */
-	const AbstractStateFormula<T>& getLeft() const {
-		return *left;
+	std::shared_ptr<AbstractStateFormula<T>> const & getLeft() const {
+		return left;
 	}
 
 	/*!
-	 * @returns a pointer to the right child node
+	 * @returns a reference to the right child node
 	 */
-	const AbstractStateFormula<T>& getRight() const {
-		return *right;
+	std::shared_ptr<AbstractStateFormula<T>> const & getRight() const {
+		return right;
 	}
 
 	/*!
@@ -183,7 +176,7 @@ public:
 	 * @return True if the left child is set, i.e. it does not point to nullptr; false otherwise
 	 */
 	bool leftIsSet() const {
-		return left != nullptr;
+		return left.get() != nullptr;
 	}
 
 	/*!
@@ -191,12 +184,12 @@ public:
 	 * @return True if the right child is set, i.e. it does not point to nullptr; false otherwise
 	 */
 	bool rightIsSet() const {
-		return right != nullptr;
+		return right.get() != nullptr;
 	}
 
 private:
-	AbstractStateFormula<T>* left;
-	AbstractStateFormula<T>* right;
+	std::shared_ptr<AbstractStateFormula<T>> left;
+	std::shared_ptr<AbstractStateFormula<T>> right;
 
 };
 

@@ -134,8 +134,8 @@ public:
 	 * @returns The set of states satisfying the formula represented by a bit vector.
 	 */
 	storm::storage::BitVector checkAnd(storm::property::csl::And<Type> const& formula) const {
-		storm::storage::BitVector result = formula.getLeft().check(*this);
-		storm::storage::BitVector right = formula.getRight().check(*this);
+		storm::storage::BitVector result = formula.getLeft()->check(*this);
+		storm::storage::BitVector right = formula.getRight()->check(*this);
 		result &= right;
 		return result;
 	}
@@ -147,8 +147,8 @@ public:
 	 * @returns The set of states satisfying the formula represented by a bit vector.
 	 */
 	storm::storage::BitVector checkOr(storm::property::csl::Or<Type> const& formula) const {
-		storm::storage::BitVector result = formula.getLeft().check(*this);
-		storm::storage::BitVector right = formula.getRight().check(*this);
+		storm::storage::BitVector result = formula.getLeft()->check(*this);
+		storm::storage::BitVector right = formula.getRight()->check(*this);
 		result |= right;
 		return result;
 	}
@@ -160,7 +160,7 @@ public:
 	 * @returns The set of states satisfying the formula represented by a bit vector.
 	 */
 	storm::storage::BitVector checkNot(const storm::property::csl::Not<Type>& formula) const {
-		storm::storage::BitVector result = formula.getChild().check(*this);
+		storm::storage::BitVector result = formula.getChild()->check(*this);
 		result.complement();
 		return result;
 	}
@@ -174,7 +174,7 @@ public:
 	 */
 	virtual storm::storage::BitVector checkProbabilisticBoundOperator(storm::property::csl::ProbabilisticBoundOperator<Type> const& formula) const {
 		// First, we need to compute the probability for satisfying the path formula for each state.
-		std::vector<Type> quantitativeResult = formula.getPathFormula().check(*this, false);
+		std::vector<Type> quantitativeResult = formula.getPathFormula()->check(*this, false);
 
 		// Create resulting bit vector that will hold the yes/no-answer for every state.
 		storm::storage::BitVector result(quantitativeResult.size());

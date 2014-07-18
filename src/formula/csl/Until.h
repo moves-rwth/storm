@@ -69,7 +69,7 @@ public:
 	 * @param left The left formula subtree
 	 * @param right The left formula subtree
 	 */
-	Until(AbstractStateFormula<T>* left, AbstractStateFormula<T>* right) : left(left), right(right){
+	Until(std::shared_ptr<AbstractStateFormula<T>> const & left, std::shared_ptr<AbstractStateFormula<T>> const & right) : left(left), right(right){
 		// Intentionally left empty.
 	}
 
@@ -80,12 +80,7 @@ public:
 	 * (this behaviour can be prevented by setting the subtrees to NULL before deletion)
 	 */
 	virtual ~Until() {
-	  if (left != NULL) {
-		  delete left;
-	  }
-	  if (right != NULL) {
-		  delete right;
-	  }
+		// Intentionally left empty.
 	}
 
 	/*!
@@ -95,13 +90,13 @@ public:
 	 *
 	 * @returns a new BoundedUntil-object that is identical the called object.
 	 */
-	virtual AbstractPathFormula<T>* clone() const override {
-		Until<T>* result = new Until();
+	virtual std::shared_ptr<AbstractPathFormula<T>> clone() const override {
+		std::shared_ptr<Until<T>> result(new Until());
 		if (this->leftIsSet()) {
-		  result->setLeft(this->getLeft().clone());
+		  result->setLeft(left->clone());
 		}
 		if (this->rightIsSet()) {
-		  result->setRight(this->getRight().clone());
+		  result->setRight(left->clone());
 		}
 		return result;
 	}
@@ -115,7 +110,7 @@ public:
 	 *
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
-	virtual std::vector<T> check(const storm::modelchecker::csl::AbstractModelChecker<T>& modelChecker, bool qualitative) const override {
+	virtual std::vector<T> check(storm::modelchecker::csl::AbstractModelChecker<T> const & modelChecker, bool qualitative) const override {
 		return modelChecker.template as<IUntilModelChecker>()->checkUntil(*this, qualitative);
 	}
 
@@ -135,7 +130,7 @@ public:
 	 *  @param checker Formula checker object.
 	 *  @return true iff all subtrees conform to some logic.
 	 */
-	virtual bool validate(const AbstractFormulaChecker<T>& checker) const override {
+	virtual bool validate(AbstractFormulaChecker<T> const & checker) const override {
 		return checker.validate(this->left) && checker.validate(this->right);
 	}
 
@@ -144,7 +139,7 @@ public:
 	 *
 	 * @param newLeft the new left child.
 	 */
-	void setLeft(AbstractStateFormula<T>* newLeft) {
+	void setLeft(std::shared_ptr<AbstractStateFormula<T>> const & newLeft) {
 		left = newLeft;
 	}
 
@@ -153,22 +148,22 @@ public:
 	 *
 	 * @param newRight the new right child.
 	 */
-	void setRight(AbstractStateFormula<T>* newRight) {
+	void setRight(std::shared_ptr<AbstractStateFormula<T>> const & newRight) {
 		right = newRight;
 	}
 
 	/*!
 	 * @returns a pointer to the left child node
 	 */
-	const AbstractStateFormula<T>& getLeft() const {
-		return *left;
+	std::shared_ptr<AbstractStateFormula<T>> const & getLeft() const {
+		return left;
 	}
 
 	/*!
 	 * @returns a pointer to the right child node
 	 */
-	const AbstractStateFormula<T>& getRight() const {
-		return *right;
+	std::shared_ptr<AbstractStateFormula<T>> const & getRight() const {
+		return right;
 	}
 
 	/*!
@@ -176,7 +171,7 @@ public:
 	 * @return True if the left child is set, i.e. it does not point to nullptr; false otherwise
 	 */
 	bool leftIsSet() const {
-		return left != nullptr;
+		return left.get() != nullptr;
 	}
 
 	/*!
@@ -184,12 +179,12 @@ public:
 	 * @return True if the right child is set, i.e. it does not point to nullptr; false otherwise
 	 */
 	bool rightIsSet() const {
-		return right != nullptr;
+		return right.get() != nullptr;
 	}
 
 private:
-	AbstractStateFormula<T>* left;
-	AbstractStateFormula<T>* right;
+	std::shared_ptr<AbstractStateFormula<T>> left;
+	std::shared_ptr<AbstractStateFormula<T>> right;
 };
 
 } //namespace csl

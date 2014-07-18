@@ -38,24 +38,6 @@ class IBoundedUntilModelChecker {
 };
 
 /*!
- *	@brief Interface class for visitors that support BoundedUntil.
- *
- *	All visitors that support the formula class BoundedUnitl must inherit
- *	this pure virtual class.
- */
-template <class T>
-class IBoundedUntilVisitor {
-	public:
-		/*!
-		 *	@brief Visits BoundedUntil formula.
-		 *
-		 *	@param obj Formula object with subformulas.
-		 *	@return Result of the formula for every node.
-		 */
-		virtual void visitBoundedUntil(const BoundedUntil<T>& obj) = 0;
-};
-
-/*!
  * @brief
  * Class for an abstract (path) formula tree with a BoundedUntil node as root.
  *
@@ -78,10 +60,8 @@ public:
 	/*!
 	 * Empty constructor
 	 */
-	BoundedUntil() {
-		this->left = NULL;
-		this->right = NULL;
-		bound = 0;
+	BoundedUntil() : left(nullptr), right(nullptr), bound(0) {
+		// Intentionally left empty.
 	}
 
 	/*!
@@ -91,11 +71,8 @@ public:
 	 * @param right The left formula subtree
 	 * @param bound The maximal number of steps
 	 */
-	BoundedUntil(AbstractLtlFormula<T>* left, AbstractLtlFormula<T>* right,
-					 uint_fast64_t bound) {
-		this->left = left;
-		this->right = right;
-		this->bound = bound;
+	BoundedUntil(std::shared_ptr<AbstractLtlFormula<T>> const & left, std::shared_ptr<AbstractLtlFormula<T>> const & right, uint_fast64_t bound) : left(left), right(right), bound(bound) {
+		// Intentionally left empty.
 	}
 
 	/*!
@@ -105,12 +82,7 @@ public:
 	 * (this behaviour can be prevented by setting the subtrees to NULL before deletion)
 	 */
 	virtual ~BoundedUntil() {
-	  if (left != NULL) {
-		  delete left;
-	  }
-	  if (right != NULL) {
-		  delete right;
-	  }
+		// Intentionally left empty.
 	}
 
 	/*!
@@ -120,14 +92,14 @@ public:
 	 *
 	 * @returns a new BoundedUntil-object that is identical the called object.
 	 */
-	virtual AbstractLtlFormula<T>* clone() const override {
-		BoundedUntil<T>* result = new BoundedUntil<T>();
-		result->setBound(this->getBound());
+	virtual std::shared_ptr<AbstractLtlFormula<T>> clone() const override {
+		std::shared_ptr<BoundedUntil<T>> result(new BoundedUntil<T>());
+		result->setBound(bound);
 		if (this->leftIsSet()) {
-			result->setLeft(this->getLeft().clone());
+			result->setLeft(left->clone());
 		}
 		if (this->rightIsSet()) {
-			result->setRight(this->getRight().clone());
+			result->setRight(right->clone());
 		}
 		return result;
 	}
@@ -144,10 +116,6 @@ public:
 	 */
 	virtual std::vector<T> check(const storm::modelchecker::ltl::AbstractModelChecker<T>& modelChecker) const {
 		return modelChecker.template as<IBoundedUntilModelChecker>()->checkBoundedUntil(*this);
-	}
-
-	virtual void visit(visitor::AbstractLtlFormulaVisitor<T>& visitor) const override {
-		visitor.template as<IBoundedUntilVisitor>()->visitBoundedUntil(*this);
 	}
 
 	/*!
@@ -168,12 +136,12 @@ public:
 	}
 
 	/*!
-     *  @brief Checks if all subtrees conform to some logic.
-     *
-     *  @param checker Formula checker object.
-     *  @return true iff all subtrees conform to some logic.
-     */
-	virtual bool validate(const AbstractFormulaChecker<T>& checker) const override {
+	 *  @brief Checks if all subtrees conform to some logic.
+	 *
+	 *  @param checker Formula checker object.
+	 *  @return true iff all subtrees conform to some logic.
+	 */
+	virtual bool validate(AbstractFormulaChecker<T> const & checker) const override {
 		return checker.validate(this->left) && checker.validate(this->right);
 	}
 
@@ -182,7 +150,7 @@ public:
 	 *
 	 * @param newLeft the new left child.
 	 */
-	void setLeft(AbstractLtlFormula<T>* newLeft) {
+	void setLeft(std::shared_ptr<AbstractLtlFormula<T>> const & newLeft) {
 		left = newLeft;
 	}
 
@@ -191,22 +159,22 @@ public:
 	 *
 	 * @param newRight the new right child.
 	 */
-	void setRight(AbstractLtlFormula<T>* newRight) {
+	void setRight(std::shared_ptr<AbstractLtlFormula<T>> const & newRight) {
 		right = newRight;
 	}
 
 	/*!
 	 * @returns a pointer to the left child node
 	 */
-	const AbstractLtlFormula<T>& getLeft() const {
-		return *left;
+	std::shared_ptr<AbstractLtlFormula<T>> const & getLeft() const {
+		return left;
 	}
 
 	/*!
 	 * @returns a pointer to the right child node
 	 */
-	const AbstractLtlFormula<T>& getRight() const {
-		return *right;
+	std::shared_ptr<AbstractLtlFormula<T>> const & getRight() const {
+		return right;
 	}
 
 	/*!
@@ -214,7 +182,7 @@ public:
 	 * @return True if the left child is set, i.e. it does not point to nullptr; false otherwise
 	 */
 	bool leftIsSet() const {
-		return left != nullptr;
+		return left.get() != nullptr;
 	}
 
 	/*!
@@ -222,7 +190,7 @@ public:
 	 * @return True if the right child is set, i.e. it does not point to nullptr; false otherwise
 	 */
 	bool rightIsSet() const {
-		return right != nullptr;
+		return right.get() != nullptr;
 	}
 
 	/*!
@@ -242,8 +210,8 @@ public:
 	}
 
 private:
-	AbstractLtlFormula<T>* left;
-	AbstractLtlFormula<T>* right;
+	std::shared_ptr<AbstractLtlFormula<T>> left;
+	std::shared_ptr<AbstractLtlFormula<T>> right;
 	uint_fast64_t bound;
 };
 

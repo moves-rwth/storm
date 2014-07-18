@@ -133,7 +133,7 @@ public:
 	 *                     Waring: If the vector does not have the correct size, it will be resized.
 	 * @return The sub-Dtmc.
 	 */
-	storm::models::Dtmc<T> getSubDtmc(storm::storage::BitVector& subSysStates) {
+	storm::models::Dtmc<T> getSubDtmc(storm::storage::BitVector& subSysStates) const {
 
 
 		// Is there any state in the subsystem?
@@ -159,7 +159,7 @@ public:
 		}
 
 		// 1. Get all necessary information from the old transition matrix
-		storm::storage::SparseMatrix<T> const& origMat = this->getTransitionMatrix();
+		storm::storage::SparseMatrix<T> const & origMat = this->getTransitionMatrix();
 
 		// Iterate over all rows. Count the number of all transitions from the old system to be 
 		// transfered to the new one. Also build a mapping from the state number of the old system 
