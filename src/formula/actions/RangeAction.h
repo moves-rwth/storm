@@ -26,11 +26,11 @@ public:
 	}
 
 	/*!
-	 *	Excluding the state with position to.
+	 *	Including the state with position to.
 	 */
 	RangeAction(uint_fast64_t from, uint_fast64_t to) : from(from), to(to) {
 		if(from > to) {
-			throw storm::exceptions::IllegalArgumentException() << "The end of the range is lower than its beginning";
+			throw storm::exceptions::IllegalArgumentValueException() << "The end of the range is lower than its beginning";
 		}
 	}
 
@@ -103,7 +103,7 @@ private:
 		}
 
 		//Fill the output vector.
-		for(uint_fast64_t i=0; i < end; i++) {
+		for(uint_fast64_t i=0; i <= end; i++) {
 			out.set(result.stateMap[from + i], result.selection[result.stateMap[from + i]]);
 		}
 

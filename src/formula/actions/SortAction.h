@@ -137,9 +137,9 @@ private:
 
 		// Sort the state map.
 		if(ascending) {
-			std::sort(outMap.begin(), outMap.end(), [&] (uint_fast64_t a, uint_fast64_t b) -> bool { return values[a] <= values[b]; });
+			std::sort(outMap.begin(), outMap.end(), [&] (uint_fast64_t a, uint_fast64_t b) -> bool { return values[a] == values[b] ? a < b : values[a] < values[b]; });
 		} else {
-			std::sort(outMap.begin(), outMap.end(), [&] (uint_fast64_t a, uint_fast64_t b) -> bool { return values[a] >= values[b]; });
+			std::sort(outMap.begin(), outMap.end(), [&] (uint_fast64_t a, uint_fast64_t b) -> bool { return values[a] == values[b] ? a < b : values[a] > values[b]; });
 		}
 
 		return outMap;
@@ -155,9 +155,9 @@ private:
 
 		// Sort the state map.
 		if(ascending) {
-			std::sort(outMap.begin(), outMap.end(), [&] (uint_fast64_t a, uint_fast64_t b) -> bool { return values[a] <= values[b]; });
+			std::sort(outMap.begin(), outMap.end(), [&] (uint_fast64_t a, uint_fast64_t b) -> bool { return values[a] == values[b] ? a < b : values[a] < values[b]; });
 		} else {
-			std::sort(outMap.begin(), outMap.end(), [&] (uint_fast64_t a, uint_fast64_t b) -> bool { return values[a] >= values[b]; });
+			std::sort(outMap.begin(), outMap.end(), [&] (uint_fast64_t a, uint_fast64_t b) -> bool { return values[a] == values[b] ? a < b : values[a] > values[b]; });
 		}
 
 		return outMap;
