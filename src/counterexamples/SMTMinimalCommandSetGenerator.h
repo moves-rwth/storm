@@ -20,6 +20,8 @@
 #include "src/adapters/Z3ExpressionAdapter.h"
 #endif
 
+#include "src/storage/prism/Program.h"
+#include "src/storage/expressions/Expression.h"
 #include "src/adapters/ExplicitModelAdapter.h"
 #include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "src/solver/GmmxxNondeterministicLinearEquationSolver.h"
@@ -125,7 +127,7 @@ namespace storm {
 
                         for (auto const& entry : transitionMatrix.getRow(row)) {
                             // If there is a relevant successor, we need to add the labels of the current choice.
-                            if (relevancyInformation.relevantStates.get(entry.first) || psiStates.get(entry.first)) {
+                            if (relevancyInformation.relevantStates.get(entry.getColumn()) || psiStates.get(entry.getColumn())) {
                                 for (auto const& label : choiceLabeling[row]) {
                                     relevancyInformation.relevantLabels.insert(label);
                                 }
@@ -212,21 +214,21 @@ namespace storm {
                             for (auto const& entry : transitionMatrix.getRow(relevantChoice)) {
                                 
                                 // If the successor state is neither the state itself nor an irrelevant state, we need to add a variable for the transition.
-                                if (state != entry.first && (relevancyInformation.relevantStates.get(entry.first) || psiStates.get(entry.first))) {
+                                if (state != entry.getColumn() && (relevancyInformation.relevantStates.get(entry.getColumn()) || psiStates.get(entry.getColumn()))) {
                                     
                                     // Make sure that there is not already one variable for the state pair. This may happen because of several nondeterministic choices
                                     // targeting the same state.
-                                    if (variableInformation.statePairToIndexMap.find(std::make_pair(state, entry.first)) != variableInformation.statePairToIndexMap.end()) {
+                                    if (variableInformation.statePairToIndexMap.find(std::make_pair(state, entry.getColumn())) != variableInformation.statePairToIndexMap.end()) {
                                         continue;
                                     }
                                     
                                     // At this point we know that the state-pair does not have an associated variable.
-                                    variableInformation.statePairToIndexMap[std::make_pair(state, entry.first)] = variableInformation.statePairVariables.size();
+                                    variableInformation.statePairToIndexMap[std::make_pair(state, entry.getColumn())] = variableInformation.statePairVariables.size();
                                     
                                     // Clear contents of the stream to construct new expression name.
                                     variableName.clear();
                                     variableName.str("");
-                                    variableName << "t" << state << "_" << entry.first;
+                                    variableName << "t" << state << "_" << entry.getColumn();
                                     
                                     variableInformation.statePairVariables.push_back(context.bool_const(variableName.str().c_str()));
                                 }
@@ -258,7 +260,7 @@ namespace storm {
              * @param solver The solver in which to assert the constraints.
              * @param variableInformation A structure with information about the variables for the labels.
              */
-            static void assertFuMalikInitialConstraints(storm::ir::Program const& program, storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& psiStates, z3::context& context, z3::solver& solver, VariableInformation const& variableInformation, RelevancyInformation const& relevancyInformation) {
+            static void assertFuMalikInitialConstraints(storm::prism::Program const& program, storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& psiStates, z3::context& context, z3::solver& solver, VariableInformation const& variableInformation, RelevancyInformation const& relevancyInformation) {
                 // Assert that at least one of the labels must be taken.
                 z3::expr formula = variableInformation.labelVariables.at(0);
                 for (uint_fast64_t index = 1; index < variableInformation.labelVariables.size(); ++index) {
@@ -316,11 +318,11 @@ namespace storm {
                         // Iterate over successors and add relevant choices of relevant successors to the following label set.
                         bool canReachTargetState = false;
                         for (auto const& entry : transitionMatrix.getRow(currentChoice)) {
-                            if (relevancyInformation.relevantStates.get(entry.first)) {
-                                for (auto relevantChoice : relevancyInformation.relevantChoicesForRelevantStates.at(entry.first)) {
+                            if (relevancyInformation.relevantStates.get(entry.getColumn())) {
+                                for (auto relevantChoice : relevancyInformation.relevantChoicesForRelevantStates.at(entry.getColumn())) {
                                     followingLabels[choiceLabeling[currentChoice]].insert(choiceLabeling[currentChoice]);
                                 }
-                            } else if (psiStates.get(entry.first)) {
+                            } else if (psiStates.get(entry.getColumn())) {
                                 canReachTargetState = true;
                             }
                         }
@@ -335,11 +337,11 @@ namespace storm {
                     // Iterate over predecessors and add all choices that target the current state to the preceding
                     // label set of all labels of all relevant choices of the current state.
                     for (auto const& predecessorEntry : backwardTransitions.getRow(currentState)) {
-                        if (relevancyInformation.relevantStates.get(predecessorEntry.first)) {
-                            for (auto predecessorChoice : relevancyInformation.relevantChoicesForRelevantStates.at(predecessorEntry.first)) {
+                        if (relevancyInformation.relevantStates.get(predecessorEntry.getColumn())) {
+                            for (auto predecessorChoice : relevancyInformation.relevantChoicesForRelevantStates.at(predecessorEntry.getColumn())) {
                                 bool choiceTargetsCurrentState = false;
                                 for (auto const& successorEntry : transitionMatrix.getRow(predecessorChoice)) {
-                                    if (successorEntry.first == currentState) {
+                                    if (successorEntry.getColumn() == currentState) {
                                         choiceTargetsCurrentState = true;
                                     }
                                 }
@@ -554,8 +556,7 @@ namespace storm {
              * @param context The Z3 context in which to build the expressions.
              * @param solver The solver to use for the satisfiability evaluation.
              */
-            static void assertSymbolicCuts(storm::ir::Program const& program, storm::models::Mdp<T> const& labeledMdp, VariableInformation const& variableInformation, RelevancyInformation const& relevancyInformation, z3::context& context, z3::solver& solver) {
-                
+            static void assertSymbolicCuts(storm::prism::Program const& program, storm::models::Mdp<T> const& labeledMdp, VariableInformation const& variableInformation, RelevancyInformation const& relevancyInformation, z3::context& context, z3::solver& solver) {
                 // A container storing the label sets that may precede a given label set.
                 std::map<boost::container::flat_set<uint_fast64_t>, std::set<boost::container::flat_set<uint_fast64_t>>> precedingLabelSets;
 
@@ -581,11 +582,11 @@ namespace storm {
                         // Iterate over predecessors and add all choices that target the current state to the preceding
                         // label set of all labels of all relevant choices of the current state.
                         for (auto const& predecessorEntry : backwardTransitions.getRow(currentState)) {
-                            if (relevancyInformation.relevantStates.get(predecessorEntry.first)) {
-                                for (auto predecessorChoice : relevancyInformation.relevantChoicesForRelevantStates.at(predecessorEntry.first)) {
+                            if (relevancyInformation.relevantStates.get(predecessorEntry.getColumn())) {
+                                for (auto predecessorChoice : relevancyInformation.relevantChoicesForRelevantStates.at(predecessorEntry.getColumn())) {
                                     bool choiceTargetsCurrentState = false;
                                     for (auto const& successorEntry : transitionMatrix.getRow(predecessorChoice)) {
-                                        if (successorEntry.first == currentState) {
+                                        if (successorEntry.getColumn() == currentState) {
                                             choiceTargetsCurrentState = true;
                                         }
                                     }
@@ -599,45 +600,50 @@ namespace storm {
                     }
                 }
                 
-                storm::utility::ir::VariableInformation programVariableInformation = storm::utility::ir::createVariableInformation(program);
-                
                 // Create a context and register all variables of the program with their correct type.
                 z3::context localContext;
+                z3::solver localSolver(localContext);
                 std::map<std::string, z3::expr> solverVariables;
-                for (auto const& booleanVariable : programVariableInformation.booleanVariables) {
+                for (auto const& booleanVariable : program.getGlobalBooleanVariables()) {
                     solverVariables.emplace(booleanVariable.getName(), localContext.bool_const(booleanVariable.getName().c_str()));
                 }
-                for (auto const& integerVariable : programVariableInformation.integerVariables) {
+                for (auto const& integerVariable : program.getGlobalIntegerVariables()) {
                     solverVariables.emplace(integerVariable.getName(), localContext.int_const(integerVariable.getName().c_str()));
                 }
                 
-                // Now create a corresponding local solver and assert all range bounds for the integer variables.
-                z3::solver localSolver(localContext);
+                for (auto const& module : program.getModules()) {
+                    for (auto const& booleanVariable : module.getBooleanVariables()) {
+                        solverVariables.emplace(booleanVariable.getName(), localContext.bool_const(booleanVariable.getName().c_str()));
+                    }
+                    for (auto const& integerVariable : module.getIntegerVariables()) {
+                        solverVariables.emplace(integerVariable.getName(), localContext.int_const(integerVariable.getName().c_str()));
+                    }
+                }
+                
                 storm::adapters::Z3ExpressionAdapter expressionAdapter(localContext, solverVariables);
-                for (auto const& integerVariable : programVariableInformation.integerVariables) {
-                    z3::expr lowerBound = expressionAdapter.translateExpression(integerVariable.getLowerBound());
+
+                // Then add the constraints for bounds of the integer variables..
+                for (auto const& integerVariable : program.getGlobalIntegerVariables()) {
+                    z3::expr lowerBound = expressionAdapter.translateExpression(integerVariable.getLowerBoundExpression());
                     lowerBound = solverVariables.at(integerVariable.getName()) >= lowerBound;
                     localSolver.add(lowerBound);
-                    
-                    z3::expr upperBound = expressionAdapter.translateExpression(integerVariable.getUpperBound());
+                    z3::expr upperBound = expressionAdapter.translateExpression(integerVariable.getUpperBoundExpression());
                     upperBound = solverVariables.at(integerVariable.getName()) <= upperBound;
                     localSolver.add(upperBound);
                 }
-                
-                // Construct an expression that exactly characterizes the initial state.
-                std::unique_ptr<storm::utility::ir::StateType> initialState(storm::utility::ir::getInitialState(program, programVariableInformation));
-                z3::expr initialStateExpression = localContext.bool_val(true);
-                for (uint_fast64_t index = 0; index < programVariableInformation.booleanVariables.size(); ++index) {
-                    if (std::get<0>(*initialState).at(programVariableInformation.booleanVariableToIndexMap.at(programVariableInformation.booleanVariables[index].getName()))) {
-                        initialStateExpression = initialStateExpression && solverVariables.at(programVariableInformation.booleanVariables[index].getName());
-                    } else {
-                        initialStateExpression = initialStateExpression && !solverVariables.at(programVariableInformation.booleanVariables[index].getName());
+                for (auto const& module : program.getModules()) {
+                    for (auto const& integerVariable : module.getIntegerVariables()) {
+                        z3::expr lowerBound = expressionAdapter.translateExpression(integerVariable.getLowerBoundExpression());
+                        lowerBound = solverVariables.at(integerVariable.getName()) >= lowerBound;
+                        localSolver.add(lowerBound);
+                        z3::expr upperBound = expressionAdapter.translateExpression(integerVariable.getUpperBoundExpression());
+                        upperBound = solverVariables.at(integerVariable.getName()) <= upperBound;
+                        localSolver.add(upperBound);
                     }
                 }
-                for (uint_fast64_t index = 0; index < programVariableInformation.integerVariables.size(); ++index) {
-                    storm::ir::IntegerVariable const& variable = programVariableInformation.integerVariables[index];
-                    initialStateExpression = initialStateExpression && (solverVariables.at(variable.getName()) == localContext.int_val(static_cast<int>(std::get<1>(*initialState).at(programVariableInformation.integerVariableToIndexMap.at(variable.getName())))));
-                }
+                
+                // Construct an expression that exactly characterizes the initial state.
+                storm::expressions::Expression initialStateExpression = program.getInitialConstruct().getInitialStatesExpression();
                 
                 // Store the found implications in a container similar to the preceding label sets.
                 std::map<boost::container::flat_set<uint_fast64_t>, std::set<boost::container::flat_set<uint_fast64_t>>> backwardImplications;
@@ -646,12 +652,12 @@ namespace storm {
                 for (auto const& labelSetAndPrecedingLabelSetsPair : precedingLabelSets) {
                 
                     // Find out the commands for the currently considered label set.
-                    std::vector<std::reference_wrapper<storm::ir::Command const>> currentCommandVector;
+                    std::vector<std::reference_wrapper<storm::prism::Command const>> currentCommandVector;
                     for (uint_fast64_t moduleIndex = 0; moduleIndex < program.getNumberOfModules(); ++moduleIndex) {
-                        storm::ir::Module const& module = program.getModule(moduleIndex);
+                        storm::prism::Module const& module = program.getModule(moduleIndex);
                         
                         for (uint_fast64_t commandIndex = 0; commandIndex < module.getNumberOfCommands(); ++commandIndex) {
-                            storm::ir::Command const& command = module.getCommand(commandIndex);
+                            storm::prism::Command const& command = module.getCommand(commandIndex);
 
                             // If the current command is one of the commands we need to consider, store a reference to it in the container.
                             if (labelSetAndPrecedingLabelSetsPair.first.find(command.getGlobalIndex()) != labelSetAndPrecedingLabelSetsPair.first.end()) {
@@ -665,9 +671,9 @@ namespace storm {
                     
                     // Check if the command set is enabled in the initial state.
                     for (auto const& command : currentCommandVector) {
-                        localSolver.add(expressionAdapter.translateExpression(command.get().getGuard()));
+                        localSolver.add(expressionAdapter.translateExpression(command.get().getGuardExpression()));
                     }
-                    localSolver.add(initialStateExpression);
+                    localSolver.add(expressionAdapter.translateExpression(initialStateExpression));
                     
                     z3::check_result checkResult = localSolver.check();
                     localSolver.pop();
@@ -676,19 +682,19 @@ namespace storm {
                     // If the solver reports unsat, then we know that the current selection is not enabled in the initial state.
                     if (checkResult == z3::unsat) {
                         LOG4CPLUS_DEBUG(logger, "Selection not enabled in initial state.");
-                        std::unique_ptr<storm::ir::expressions::BaseExpression> guardConjunction;
+                        storm::expressions::Expression guardConjunction;
                         if (currentCommandVector.size() == 1) {
-                            guardConjunction = currentCommandVector.begin()->get().getGuard()->clone();
+                            guardConjunction = currentCommandVector.begin()->get().getGuardExpression();
                         } else if (currentCommandVector.size() > 1) {
-                            std::vector<std::reference_wrapper<storm::ir::Command const>>::const_iterator setIterator = currentCommandVector.begin();
-                            std::unique_ptr<storm::ir::expressions::BaseExpression> first = setIterator->get().getGuard()->clone();
+                            std::vector<std::reference_wrapper<storm::prism::Command const>>::const_iterator setIterator = currentCommandVector.begin();
+                            storm::expressions::Expression first = setIterator->get().getGuardExpression();
                             ++setIterator;
-                            std::unique_ptr<storm::ir::expressions::BaseExpression> second = setIterator->get().getGuard()->clone();
-                            guardConjunction = std::unique_ptr<storm::ir::expressions::BaseExpression>(new storm::ir::expressions::BinaryBooleanFunctionExpression(std::move(first), std::move(second), storm::ir::expressions::BinaryBooleanFunctionExpression::AND));
+                            storm::expressions::Expression second = setIterator->get().getGuardExpression();
+                            guardConjunction = first && second;
                             ++setIterator;
                             
                             while (setIterator != currentCommandVector.end()) {
-                                guardConjunction = std::unique_ptr<storm::ir::expressions::BaseExpression>(new storm::ir::expressions::BinaryBooleanFunctionExpression(std::move(guardConjunction), setIterator->get().getGuard()->clone(), storm::ir::expressions::BinaryBooleanFunctionExpression::AND));
+                                guardConjunction = guardConjunction && setIterator->get().getGuardExpression();
                                 ++setIterator;
                             }
                         } else {
@@ -701,9 +707,9 @@ namespace storm {
                         bool firstAssignment = true;
                         for (auto const& command : currentCommandVector) {
                             if (firstAssignment) {
-                                guardExpression = !expressionAdapter.translateExpression(command.get().getGuard());
+                                guardExpression = !expressionAdapter.translateExpression(command.get().getGuardExpression());
                             } else {
-                                guardExpression = guardExpression | !expressionAdapter.translateExpression(command.get().getGuard());
+                                guardExpression = guardExpression | !expressionAdapter.translateExpression(command.get().getGuardExpression());
                             }
                         }
                         localSolver.add(guardExpression);
@@ -715,12 +721,12 @@ namespace storm {
                             localSolver.push();
                             
                             // Find out the commands for the currently considered preceding label set.
-                            std::vector<std::reference_wrapper<storm::ir::Command const>> currentPrecedingCommandVector;
+                            std::vector<std::reference_wrapper<storm::prism::Command const>> currentPrecedingCommandVector;
                             for (uint_fast64_t moduleIndex = 0; moduleIndex < program.getNumberOfModules(); ++moduleIndex) {
-                                storm::ir::Module const& module = program.getModule(moduleIndex);
+                                storm::prism::Module const& module = program.getModule(moduleIndex);
                                 
                                 for (uint_fast64_t commandIndex = 0; commandIndex < module.getNumberOfCommands(); ++commandIndex) {
-                                    storm::ir::Command const& command = module.getCommand(commandIndex);
+                                    storm::prism::Command const& command = module.getCommand(commandIndex);
                                     
                                     // If the current command is one of the commands we need to consider, store a reference to it in the container.
                                     if (precedingLabelSet.find(command.getGlobalIndex()) != precedingLabelSet.end()) {
@@ -731,10 +737,10 @@ namespace storm {
                             
                             // Assert all the guards of the preceding command set.
                             for (auto const& command : currentPrecedingCommandVector) {
-                                localSolver.add(expressionAdapter.translateExpression(command.get().getGuard()));
+                                localSolver.add(expressionAdapter.translateExpression(command.get().getGuardExpression()));
                             }
                             
-                            std::vector<std::vector<storm::ir::Update>::const_iterator> iteratorVector;
+                            std::vector<std::vector<storm::prism::Update>::const_iterator> iteratorVector;
                             for (auto const& command : currentPrecedingCommandVector) {
                                 iteratorVector.push_back(command.get().getUpdates().begin());
                             }
@@ -743,13 +749,15 @@ namespace storm {
                             std::vector<z3::expr> formulae;
                             bool done = false;
                             while (!done) {
-                                std::vector<std::reference_wrapper<storm::ir::Update const>> currentUpdateCombination;
+                                std::map<std::string, storm::expressions::Expression> currentUpdateCombinationMap;
                                 for (auto const& updateIterator : iteratorVector) {
-                                    currentUpdateCombination.push_back(*updateIterator);
+                                    for (auto const& assignment : updateIterator->getAssignments()) {
+                                        currentUpdateCombinationMap.emplace(assignment.getVariableName(), assignment.getExpression());
+                                    }
                                 }
                                 
                                 LOG4CPLUS_DEBUG(logger, "About to assert a weakest precondition.");
-                                std::unique_ptr<storm::ir::expressions::BaseExpression> wp = storm::utility::ir::getWeakestPrecondition(guardConjunction->clone(), currentUpdateCombination);
+                                storm::expressions::Expression wp = guardConjunction.substitute(currentUpdateCombinationMap);
                                 formulae.push_back(expressionAdapter.translateExpression(wp));
                                 LOG4CPLUS_DEBUG(logger, "Asserted weakest precondition.");
                                 
@@ -913,16 +921,16 @@ namespace storm {
                         // Assert the constraints (1).
                         boost::container::flat_set<uint_fast64_t> relevantPredecessors;
                         for (auto const& predecessorEntry : backwardTransitions.getRow(relevantState)) {
-                            if (relevantState != predecessorEntry.first && relevancyInformation.relevantStates.get(predecessorEntry.first)) {
-                                relevantPredecessors.insert(predecessorEntry.first);
+                            if (relevantState != predecessorEntry.getColumn() && relevancyInformation.relevantStates.get(predecessorEntry.getColumn())) {
+                                relevantPredecessors.insert(predecessorEntry.getColumn());
                             }
                         }
                         
                         boost::container::flat_set<uint_fast64_t> relevantSuccessors;
                         for (auto const& relevantChoice : relevancyInformation.relevantChoicesForRelevantStates.at(relevantState)) {
                             for (auto const& successorEntry : transitionMatrix.getRow(relevantChoice)) {
-                                if (relevantState != successorEntry.first && (relevancyInformation.relevantStates.get(successorEntry.first) || psiStates.get(successorEntry.first))) {
-                                    relevantSuccessors.insert(successorEntry.first);
+                                if (relevantState != successorEntry.getColumn() && (relevancyInformation.relevantStates.get(successorEntry.getColumn()) || psiStates.get(successorEntry.getColumn()))) {
+                                    relevantSuccessors.insert(successorEntry.getColumn());
                                 }
                             }
                         }
@@ -941,8 +949,8 @@ namespace storm {
                         boost::container::flat_set<uint_fast64_t> relevantSuccessors;
                         for (auto const& relevantChoice : relevancyInformation.relevantChoicesForRelevantStates.at(relevantState)) {
                             for (auto const& successorEntry : transitionMatrix.getRow(relevantChoice)) {
-                                if (relevantState != successorEntry.first && (relevancyInformation.relevantStates.get(successorEntry.first) || psiStates.get(successorEntry.first))) {
-                                    relevantSuccessors.insert(successorEntry.first);
+                                if (relevantState != successorEntry.getColumn() && (relevancyInformation.relevantStates.get(successorEntry.getColumn()) || psiStates.get(successorEntry.getColumn()))) {
+                                    relevantSuccessors.insert(successorEntry.getColumn());
                                 }
                             }
                         }
@@ -965,7 +973,7 @@ namespace storm {
                     boost::container::flat_set<uint_fast64_t> choicesForStatePair;
                     for (auto const& relevantChoice : relevancyInformation.relevantChoicesForRelevantStates.at(sourceState)) {
                         for (auto const& successorEntry : transitionMatrix.getRow(relevantChoice)) {
-                            if (successorEntry.first == targetState) {
+                            if (successorEntry.getColumn() == targetState) {
                                 choicesForStatePair.insert(relevantChoice);
                             }
                         }
@@ -1400,13 +1408,13 @@ namespace storm {
                         bool choiceTargetsRelevantState = false;
                         
                         for (auto const& successorEntry : transitionMatrix.getRow(currentChoice)) {
-                            if (relevancyInformation.relevantStates.get(successorEntry.first) && currentState != successorEntry.first) {
+                            if (relevancyInformation.relevantStates.get(successorEntry.getColumn()) && currentState != successorEntry.getColumn()) {
                                 choiceTargetsRelevantState = true;
-                                if (!reachableStates.get(successorEntry.first)) {
-                                    reachableStates.set(successorEntry.first);
-                                    stack.push_back(successorEntry.first);
+                                if (!reachableStates.get(successorEntry.getColumn())) {
+                                    reachableStates.set(successorEntry.getColumn());
+                                    stack.push_back(successorEntry.getColumn());
                                 }
-                            } else if (psiStates.get(successorEntry.first)) {
+                            } else if (psiStates.get(successorEntry.getColumn())) {
                                 targetStateIsReachable = true;
                             }
                         }
@@ -1446,7 +1454,7 @@ namespace storm {
 
                             // Determine whether the state has the option to leave the reachable state space and go to the unreachable relevant states.
                             for (auto const& successorEntry : originalMdp.getTransitionMatrix().getRow(currentChoice)) {
-                                if (unreachableRelevantStates.get(successorEntry.first)) {
+                                if (unreachableRelevantStates.get(successorEntry.getColumn())) {
                                     isBorderChoice = true;
                                 }
                             }
@@ -1529,13 +1537,13 @@ namespace storm {
                         bool choiceTargetsRelevantState = false;
                         
                         for (auto const& successorEntry : transitionMatrix.getRow(currentChoice)) {
-                            if (relevancyInformation.relevantStates.get(successorEntry.first) && currentState != successorEntry.first) {
+                            if (relevancyInformation.relevantStates.get(successorEntry.getColumn()) && currentState != successorEntry.getColumn()) {
                                 choiceTargetsRelevantState = true;
-                                if (!reachableStates.get(successorEntry.first)) {
-                                    reachableStates.set(successorEntry.first, true);
-                                    stack.push_back(successorEntry.first);
+                                if (!reachableStates.get(successorEntry.getColumn())) {
+                                    reachableStates.set(successorEntry.getColumn(), true);
+                                    stack.push_back(successorEntry.getColumn());
                                 }
-                            } else if (psiStates.get(successorEntry.first)) {
+                            } else if (psiStates.get(successorEntry.getColumn())) {
                                 targetStateIsReachable = true;
                             }
                         }
@@ -1613,7 +1621,7 @@ namespace storm {
              * @param checkThresholdFeasible If set, it is verified that the model can actually achieve/exceed the given probability value. If this check
              * is made and fails, an exception is thrown.
              */
-            static boost::container::flat_set<uint_fast64_t> getMinimalCommandSet(storm::ir::Program program, std::string const& constantDefinitionString, storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool strictBound, bool checkThresholdFeasible = false, bool includeReachabilityEncoding = false) {
+            static boost::container::flat_set<uint_fast64_t> getMinimalCommandSet(storm::prism::Program program, std::string const& constantDefinitionString, storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool strictBound, bool checkThresholdFeasible = false, bool includeReachabilityEncoding = false) {
 #ifdef STORM_HAVE_Z3
                 // Set up all clocks used for time measurement.
                 auto totalClock = std::chrono::high_resolution_clock::now();
@@ -1632,7 +1640,9 @@ namespace storm {
                 auto analysisClock = std::chrono::high_resolution_clock::now();
                 decltype(std::chrono::high_resolution_clock::now() - analysisClock) totalAnalysisTime(0);
 
-                storm::utility::ir::defineUndefinedConstants(program, constantDefinitionString);
+                std::map<std::string, storm::expressions::Expression> constantDefinitions = storm::utility::prism::parseConstantDefinitionString(program, constantDefinitionString);
+                storm::prism::Program preparedProgram = program.defineUndefinedConstants(constantDefinitions);
+                preparedProgram = preparedProgram.substituteConstants();
 
                 // (0) Check whether the MDP is indeed labeled.
                 if (!labeledMdp.hasChoiceLabeling()) {
@@ -1676,7 +1686,7 @@ namespace storm {
                 LOG4CPLUS_DEBUG(logger, "Asserting cuts.");
                 assertExplicitCuts(labeledMdp, psiStates, variableInformation, relevancyInformation, context, solver);
                 LOG4CPLUS_DEBUG(logger, "Asserted explicit cuts.");
-                assertSymbolicCuts(program, labeledMdp, variableInformation, relevancyInformation, context, solver);
+                assertSymbolicCuts(preparedProgram, labeledMdp, variableInformation, relevancyInformation, context, solver);
                 LOG4CPLUS_DEBUG(logger, "Asserted symbolic cuts.");
                 if (includeReachabilityEncoding) {
                     assertReachabilityCuts(labeledMdp, psiStates, variableInformation, relevancyInformation, context, solver);
@@ -1764,8 +1774,6 @@ namespace storm {
                     std::cout << "    * number of models that could not reach a target state: " << zeroProbabilityCount << " (" << 100 * static_cast<double>(zeroProbabilityCount)/iterations << "%)" << std::endl << std::endl;
                 }
 
-                // (9) Return the resulting command set after undefining the constants.
-                storm::utility::ir::undefineUndefinedConstants(program);
                 
                 return commandSet;
 #else
@@ -1773,7 +1781,7 @@ namespace storm {
 #endif
             }
             
-            static void computeCounterexample(storm::ir::Program program, std::string const& constantDefinitionString, storm::models::Mdp<T> const& labeledMdp,  storm::property::prctl::AbstractPrctlFormula<double> const* formulaPtr) {
+            static void computeCounterexample(storm::prism::Program program, std::string const& constantDefinitionString, storm::models::Mdp<T> const& labeledMdp,  storm::property::prctl::AbstractPrctlFormula<double> const* formulaPtr) {
 #ifdef STORM_HAVE_Z3
                 std::cout << std::endl << "Generating minimal label counterexample for formula " << formulaPtr->toString() << std::endl;
                 // First, we need to check whether the current formula is an Until-Formula.
@@ -1821,9 +1829,8 @@ namespace storm {
                 std::cout << std::endl << "Computed minimal label set of size " << labelSet.size() << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms." << std::endl;
                 
                 std::cout << "Resulting program:" << std::endl << std::endl;
-                storm::ir::Program restrictedProgram(program);
-                restrictedProgram.restrictCommands(labelSet);
-                std::cout << restrictedProgram.toString() << std::endl;
+                storm::prism::Program restrictedProgram = program.restrictCommands(labelSet);
+                std::cout << restrictedProgram << std::endl;
                 std::cout << std::endl << "-------------------------------------------" << std::endl;
                 
 #else
