@@ -1,11 +1,11 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
+#ifdef STORM_HAVE_Z3
 #include "src/solver/Z3SmtSolver.h"
 #include "src/settings/Settings.h"
 
 TEST(Z3SmtSolver, CheckSat) {
-#ifdef STORM_HAVE_Z3
 	storm::solver::Z3SmtSolver s;
 	storm::solver::Z3SmtSolver::CheckResult result;
 
@@ -29,14 +29,9 @@ TEST(Z3SmtSolver, CheckSat) {
 	ASSERT_NO_THROW(result = s.check());
 	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::SAT);
 	ASSERT_NO_THROW(s.reset());
-
-#else
-	ASSERT_TRUE(false) << "StoRM built without Z3 support.";
-#endif
 }
 
 TEST(Z3SmtSolver, CheckUnsat) {
-#ifdef STORM_HAVE_Z3
 	storm::solver::Z3SmtSolver s;
 	storm::solver::Z3SmtSolver::CheckResult result;
 
@@ -60,15 +55,10 @@ TEST(Z3SmtSolver, CheckUnsat) {
 	ASSERT_NO_THROW(s.assertExpression(exprFormula));
 	ASSERT_NO_THROW(result = s.check());
 	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::UNSAT);
-
-#else
-    ASSERT_TRUE(false) << "StoRM built without Z3 support.";
-#endif
 }
 
 
 TEST(Z3SmtSolver, Backtracking) {
-#ifdef STORM_HAVE_Z3
 	storm::solver::Z3SmtSolver s;
 	storm::solver::Z3SmtSolver::CheckResult result;
 
@@ -120,14 +110,9 @@ TEST(Z3SmtSolver, Backtracking) {
 	ASSERT_NO_THROW(s.pop());
 	ASSERT_NO_THROW(result = s.check());
 	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::SAT);
-
-#else
-	ASSERT_TRUE(false) << "StoRM built without Z3 support.";
-#endif
 }
 
 TEST(Z3SmtSolver, Assumptions) {
-#ifdef STORM_HAVE_Z3
 	storm::solver::Z3SmtSolver s;
 	storm::solver::Z3SmtSolver::CheckResult result;
 
@@ -154,14 +139,9 @@ TEST(Z3SmtSolver, Assumptions) {
 	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::SAT);
 	ASSERT_NO_THROW(result = s.checkWithAssumptions({ !f2 }));
 	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::SAT);
-
-#else
-	ASSERT_TRUE(false) << "StoRM built without Z3 support.";
-#endif
 }
 
 TEST(Z3SmtSolver, GenerateModel) {
-#ifdef STORM_HAVE_Z3
 	storm::solver::Z3SmtSolver s;
 	storm::solver::Z3SmtSolver::CheckResult result;
 
@@ -182,15 +162,10 @@ TEST(Z3SmtSolver, GenerateModel) {
 	int_fast64_t a_eval;
 	(a_eval = model.getIntegerValue("a"));
 	ASSERT_EQ(1, a_eval);
-
-#else
-	ASSERT_TRUE(false) << "StoRM built without Z3 support.";
-#endif
 }
 
 
 TEST(Z3SmtSolver, AllSat) {
-#ifdef STORM_HAVE_Z3
 	storm::solver::Z3SmtSolver s;
 	storm::solver::Z3SmtSolver::CheckResult result;
 
@@ -222,14 +197,9 @@ TEST(Z3SmtSolver, AllSat) {
 			ASSERT_TRUE((valuations[i].getBooleanValue("x") != valuations[j].getBooleanValue("x")) || (valuations[i].getBooleanValue("y") != valuations[j].getBooleanValue("y")));
 		}
 	}
-
-#else
-	ASSERT_TRUE(false) << "StoRM built without Z3 support.";
-#endif
 }
 
 TEST(Z3SmtSolver, UnsatAssumptions) {
-#ifdef STORM_HAVE_Z3
 	storm::solver::Z3SmtSolver s;
 	storm::solver::Z3SmtSolver::CheckResult result;
 
@@ -252,8 +222,5 @@ TEST(Z3SmtSolver, UnsatAssumptions) {
 	ASSERT_EQ(unsatCore.size(), 1);
 	ASSERT_TRUE(unsatCore[0].isVariable());
 	ASSERT_STREQ("f2", unsatCore[0].getIdentifier().c_str());
-
-#else
-	ASSERT_TRUE(false) << "StoRM built without Z3 support.";
-#endif
 }
+#endif

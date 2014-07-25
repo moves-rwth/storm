@@ -148,8 +148,8 @@ namespace storm {
 #endif
 		}
 
-		storm::expressions::SimpleValuation Z3SmtSolver::z3ModelToStorm(z3::model m) {
 #ifdef STORM_HAVE_Z3
+		storm::expressions::SimpleValuation Z3SmtSolver::z3ModelToStorm(z3::model m) {
 			storm::expressions::SimpleValuation stormModel;
 
 			for (unsigned i = 0; i < m.num_consts(); ++i) {
@@ -174,10 +174,8 @@ namespace storm {
 			}
 
 			return stormModel;
-#else
-			LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without Z3 support.");
-#endif
 		}
+#endif
 
 		std::vector<storm::expressions::SimpleValuation> Z3SmtSolver::allSat(std::vector<storm::expressions::Expression> const& important)
 		{

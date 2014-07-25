@@ -1,13 +1,13 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
+#ifdef STORM_HAVE_GLPK
 #include "src/solver/GlpkLpSolver.h"
 #include "src/exceptions/InvalidStateException.h"
 #include "src/exceptions/InvalidAccessException.h"
 #include "src/settings/Settings.h"
 
 TEST(GlpkLpSolver, LPOptimizeMax) {
-#ifdef STORM_HAVE_GLPK
     storm::solver::GlpkLpSolver solver(storm::solver::LpSolver::ModelSense::Maximize);
     ASSERT_NO_THROW(solver.addBoundedContinuousVariable("x", 0, 1, -1));
     ASSERT_NO_THROW(solver.addLowerBoundedContinuousVariable("y", 0, 2));
@@ -35,13 +35,9 @@ TEST(GlpkLpSolver, LPOptimizeMax) {
     double objectiveValue = 0;
     ASSERT_NO_THROW(objectiveValue = solver.getObjectiveValue());
     ASSERT_LT(std::abs(objectiveValue - 14.75), storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
-#else
-    ASSERT_TRUE(false) << "StoRM built without glpk support.";
-#endif
 }
 
 TEST(GlpkLpSolver, LPOptimizeMin) {
-#ifdef STORM_HAVE_GLPK
     storm::solver::GlpkLpSolver solver(storm::solver::LpSolver::ModelSense::Minimize);
     ASSERT_NO_THROW(solver.addBoundedContinuousVariable("x", 0, 1, -1));
     ASSERT_NO_THROW(solver.addLowerBoundedContinuousVariable("y", 0, 2));
@@ -69,13 +65,9 @@ TEST(GlpkLpSolver, LPOptimizeMin) {
     double objectiveValue = 0;
     ASSERT_NO_THROW(objectiveValue = solver.getObjectiveValue());
     ASSERT_LT(std::abs(objectiveValue - (-6.7)), storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
-#else
-    ASSERT_TRUE(false) << "StoRM built without glpk support.";
-#endif
 }
 
 TEST(GlpkLpSolver, MILPOptimizeMax) {
-#ifdef STORM_HAVE_GLPK
     storm::solver::GlpkLpSolver solver(storm::solver::LpSolver::ModelSense::Maximize);
     ASSERT_NO_THROW(solver.addBinaryVariable("x", -1));
     ASSERT_NO_THROW(solver.addLowerBoundedIntegerVariable("y", 0, 2));
@@ -103,13 +95,9 @@ TEST(GlpkLpSolver, MILPOptimizeMax) {
     double objectiveValue = 0;
     ASSERT_NO_THROW(objectiveValue = solver.getObjectiveValue());
     ASSERT_LT(std::abs(objectiveValue - 14), storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
-#else
-    ASSERT_TRUE(false) << "StoRM built without glpk support.";
-#endif
 }
 
 TEST(GlpkLpSolver, MILPOptimizeMin) {
-#ifdef STORM_HAVE_GLPK
     storm::solver::GlpkLpSolver solver(storm::solver::LpSolver::ModelSense::Minimize);
     ASSERT_NO_THROW(solver.addBinaryVariable("x", -1));
     ASSERT_NO_THROW(solver.addLowerBoundedIntegerVariable("y", 0, 2));
@@ -137,13 +125,9 @@ TEST(GlpkLpSolver, MILPOptimizeMin) {
     double objectiveValue = 0;
     ASSERT_NO_THROW(objectiveValue = solver.getObjectiveValue());
     ASSERT_LT(std::abs(objectiveValue - (-6)), storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
-#else
-    ASSERT_TRUE(false) << "StoRM built without glpk support.";
-#endif
 }
 
 TEST(GlpkLpSolver, LPInfeasible) {
-#ifdef STORM_HAVE_GLPK
     storm::solver::GlpkLpSolver solver(storm::solver::LpSolver::ModelSense::Maximize);
     ASSERT_NO_THROW(solver.addBoundedContinuousVariable("x", 0, 1, -1));
     ASSERT_NO_THROW(solver.addLowerBoundedContinuousVariable("y", 0, 2));
@@ -168,13 +152,9 @@ TEST(GlpkLpSolver, LPInfeasible) {
     ASSERT_THROW(zValue = solver.getContinuousValue("z"), storm::exceptions::InvalidAccessException);
     double objectiveValue = 0;
     ASSERT_THROW(objectiveValue = solver.getObjectiveValue(), storm::exceptions::InvalidAccessException);
-#else
-    ASSERT_TRUE(false) << "StoRM built without glpk support.";
-#endif
 }
 
 TEST(GlpkLpSolver, MILPInfeasible) {
-#ifdef STORM_HAVE_GLPK
     storm::solver::GlpkLpSolver solver(storm::solver::LpSolver::ModelSense::Maximize);
     ASSERT_NO_THROW(solver.addBinaryVariable("x", -1));
     ASSERT_NO_THROW(solver.addLowerBoundedContinuousVariable("y", 0, 2));
@@ -199,13 +179,9 @@ TEST(GlpkLpSolver, MILPInfeasible) {
     ASSERT_THROW(zValue = solver.getContinuousValue("z"), storm::exceptions::InvalidAccessException);
     double objectiveValue = 0;
     ASSERT_THROW(objectiveValue = solver.getObjectiveValue(), storm::exceptions::InvalidAccessException);
-#else
-    ASSERT_TRUE(false) << "StoRM built without glpk support.";
-#endif
 }
 
 TEST(GlpkLpSolver, LPUnbounded) {
-#ifdef STORM_HAVE_GLPK
     storm::solver::GlpkLpSolver solver(storm::solver::LpSolver::ModelSense::Maximize);
     ASSERT_NO_THROW(solver.addBoundedContinuousVariable("x", 0, 1, -1));
     ASSERT_NO_THROW(solver.addLowerBoundedContinuousVariable("y", 0, 2));
@@ -228,13 +204,9 @@ TEST(GlpkLpSolver, LPUnbounded) {
     ASSERT_THROW(zValue = solver.getContinuousValue("z"), storm::exceptions::InvalidAccessException);
     double objectiveValue = 0;
     ASSERT_THROW(objectiveValue = solver.getObjectiveValue(), storm::exceptions::InvalidAccessException);
-#else
-    ASSERT_TRUE(false) << "StoRM built without glpk support.";
-#endif
 }
 
 TEST(GlpkLpSolver, MILPUnbounded) {
-#ifdef STORM_HAVE_GLPK
     storm::solver::GlpkLpSolver solver(storm::solver::LpSolver::ModelSense::Maximize);
     ASSERT_NO_THROW(solver.addBinaryVariable("x", -1));
     ASSERT_NO_THROW(solver.addLowerBoundedContinuousVariable("y", 0, 2));
@@ -257,7 +229,5 @@ TEST(GlpkLpSolver, MILPUnbounded) {
     ASSERT_THROW(zValue = solver.getContinuousValue("z"), storm::exceptions::InvalidAccessException);
     double objectiveValue = 0;
     ASSERT_THROW(objectiveValue = solver.getObjectiveValue(), storm::exceptions::InvalidAccessException);
-#else
-    ASSERT_TRUE(false) << "StoRM built without glpk support.";
-#endif
 }
+#endif

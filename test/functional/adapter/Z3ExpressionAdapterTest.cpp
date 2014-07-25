@@ -1,12 +1,12 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
+#ifdef STORM_HAVE_Z3
 #include "z3++.h"
 #include "src/adapters/Z3ExpressionAdapter.h"
 #include "src/settings/Settings.h"
 
 TEST(Z3ExpressionAdapter, StormToZ3Basic) {
-#ifdef STORM_HAVE_Z3
 	z3::context ctx;
 	z3::solver s(ctx);
 	z3::expr conjecture = ctx.bool_val(false);
@@ -42,14 +42,9 @@ TEST(Z3ExpressionAdapter, StormToZ3Basic) {
 	s.add(conjecture);
 	ASSERT_TRUE(s.check() == z3::unsat);
 	s.reset();
-
-#else
-	ASSERT_TRUE(false) << "StoRM built without Z3 support.";
-#endif
 }
 
 TEST(Z3ExpressionAdapter, StormToZ3Integer) {
-#ifdef STORM_HAVE_Z3
 	z3::context ctx;
 	z3::solver s(ctx);
 	z3::expr conjecture = ctx.bool_val(false);
@@ -69,14 +64,9 @@ TEST(Z3ExpressionAdapter, StormToZ3Integer) {
 	s.add(conjecture);
 	ASSERT_TRUE(s.check() == z3::unsat);
 	s.reset();
-
-#else
-	ASSERT_TRUE(false) << "StoRM built without Z3 support.";
-#endif
 }
 
 TEST(Z3ExpressionAdapter, StormToZ3Real) {
-#ifdef STORM_HAVE_Z3
 	z3::context ctx;
 	z3::solver s(ctx);
 	z3::expr conjecture = ctx.bool_val(false);
@@ -96,14 +86,9 @@ TEST(Z3ExpressionAdapter, StormToZ3Real) {
 	s.add(conjecture);
 	ASSERT_TRUE(s.check() == z3::unsat);
 	s.reset();
-
-#else
-	ASSERT_TRUE(false) << "StoRM built without Z3 support.";
-#endif
 }
 
 TEST(Z3ExpressionAdapter, StormToZ3TypeErrors) {
-#ifdef STORM_HAVE_Z3
 	z3::context ctx;
 	z3::solver s(ctx);
 	z3::expr conjecture = ctx.bool_val(false);
@@ -112,14 +97,9 @@ TEST(Z3ExpressionAdapter, StormToZ3TypeErrors) {
 
 	storm::expressions::Expression exprFail1 = (storm::expressions::Expression::createDoubleVariable("x") + storm::expressions::Expression::createIntegerVariable("y") < -storm::expressions::Expression::createDoubleVariable("y"));
 	ASSERT_THROW(conjecture = adapter.translateExpression(exprFail1, true), storm::exceptions::InvalidTypeException);
-
-#else
-	ASSERT_TRUE(false) << "StoRM built without Z3 support.";
-#endif
 }
 
 TEST(Z3ExpressionAdapter, StormToZ3FloorCeil) {
-#ifdef STORM_HAVE_Z3
 	z3::context ctx;
 	z3::solver s(ctx);
 	z3::expr conjecture = ctx.bool_val(false);
@@ -156,13 +136,9 @@ TEST(Z3ExpressionAdapter, StormToZ3FloorCeil) {
 	s.add(conjecture);
 	ASSERT_TRUE(s.check() == z3::unsat); //it is NOT logical equivalent
 	s.reset();
-#else
-    ASSERT_TRUE(false) << "StoRM built without Z3 support.";
-#endif
 }
 
 TEST(Z3ExpressionAdapter, Z3ToStormBasic) {
-#ifdef STORM_HAVE_Z3
 	z3::context ctx;
 
 	unsigned args = 2;
@@ -197,8 +173,5 @@ TEST(Z3ExpressionAdapter, Z3ToStormBasic) {
 	ASSERT_EQ("x", exprNor.getOperand(0).getOperand(0).getIdentifier());
 	ASSERT_TRUE(exprNor.getOperand(0).getOperand(1).isVariable());
 	ASSERT_EQ("y", exprNor.getOperand(0).getOperand(1).getIdentifier());
-
-#else
-	ASSERT_TRUE(false) << "StoRM built without Z3 support.";
-#endif
 }
+#endif

@@ -5,8 +5,10 @@
 #include "src/solver/SmtSolver.h"
 #include "src/adapters/Z3ExpressionAdapter.h"
 
+#ifdef STORM_HAVE_Z3
 #include "z3++.h"
 #include "z3.h"
+#endif
 
 namespace storm {
 	namespace solver {
@@ -40,7 +42,9 @@ namespace storm {
 			virtual std::vector<storm::expressions::Expression> getUnsatAssumptions() override;
 
 		protected:
+#ifdef STORM_HAVE_Z3
 			virtual storm::expressions::SimpleValuation z3ModelToStorm(z3::model m);
+#endif
 		private:
 
 #ifdef STORM_HAVE_Z3
