@@ -27,28 +27,28 @@ namespace storm {
             unaryExpression = atomicExpression[qi::_val = qi::_1] | (qi::lit("!") >> atomicExpression)[qi::_val = phoenix::bind(&ExpressionParser::createNotExpression, phoenix::ref(*this), qi::_1)] | (qi::lit("-") >> atomicExpression)[qi::_val = phoenix::bind(&ExpressionParser::createMinusExpression, phoenix::ref(*this), qi::_1)];
             unaryExpression.name("unary expression");
             
-            powerExpression = unaryExpression[qi::_val = qi::_1] >> -(qi::lit("^") > expression)[qi::_val = phoenix::bind(&ExpressionParser::createPowerExpression, phoenix::ref(*this), qi::_val, qi::_1)];
+            powerExpression = unaryExpression[qi::_val = qi::_1] > -(powerOperator_ > expression)[qi::_val = phoenix::bind(&ExpressionParser::createPowerExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)];
             powerExpression.name("power expression");
             
-            multiplicationExpression = powerExpression[qi::_val = qi::_1] >> *((qi::lit("*")[qi::_a = true] | qi::lit("/")[qi::_a = false]) >> powerExpression[phoenix::if_(qi::_a) [qi::_val = phoenix::bind(&ExpressionParser::createMultExpression, phoenix::ref(*this), qi::_val, qi::_1)] .else_ [qi::_val = phoenix::bind(&ExpressionParser::createDivExpression, phoenix::ref(*this), qi::_val, qi::_1)]]);
+            multiplicationExpression = powerExpression[qi::_val = qi::_1] > *(multiplicationOperator_ > powerExpression)[qi::_val = phoenix::bind(&ExpressionParser::createMultExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)];
             multiplicationExpression.name("multiplication expression");
             
-            plusExpression = multiplicationExpression[qi::_val = qi::_1] >> *((qi::lit("+")[qi::_a = true] | qi::lit("-")[qi::_a = false]) >> multiplicationExpression)[phoenix::if_(qi::_a) [qi::_val = phoenix::bind(&ExpressionParser::createPlusExpression, phoenix::ref(*this), qi::_val, qi::_1)] .else_ [qi::_val = phoenix::bind(&ExpressionParser::createMinusExpression, phoenix::ref(*this), qi::_val, qi::_1)]];
+            plusExpression = multiplicationExpression[qi::_val = qi::_1] > *(plusOperator_ >> multiplicationExpression)[qi::_val = phoenix::bind(&ExpressionParser::createPlusExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)];
             plusExpression.name("plus expression");
             
-            relativeExpression = (plusExpression >> qi::lit(">=") >> plusExpression)[qi::_val = phoenix::bind(&ExpressionParser::createGreaterOrEqualExpression, phoenix::ref(*this), qi::_1, qi::_2)] | (plusExpression >> qi::lit(">") >> plusExpression)[qi::_val = phoenix::bind(&ExpressionParser::createGreaterExpression, phoenix::ref(*this), qi::_1, qi::_2)] | (plusExpression >> qi::lit("<=") >> plusExpression)[qi::_val = phoenix::bind(&ExpressionParser::createLessOrEqualExpression, phoenix::ref(*this), qi::_1, qi::_2)] | (plusExpression >> qi::lit("<") >> plusExpression)[qi::_val = phoenix::bind(&ExpressionParser::createLessExpression, phoenix::ref(*this), qi::_1, qi::_2)] | plusExpression[qi::_val = qi::_1];
+            relativeExpression = plusExpression[qi::_val = qi::_1] > -(relationalOperator_ > plusExpression)[qi::_val = phoenix::bind(&ExpressionParser::createRelationalExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)];
             relativeExpression.name("relative expression");
-            
-            equalityExpression = relativeExpression[qi::_val = qi::_1] >> *((qi::lit("=")[qi::_a = true] | qi::lit("!=")[qi::_a = false]) >> relativeExpression)[phoenix::if_(qi::_a) [ qi::_val = phoenix::bind(&ExpressionParser::createEqualsExpression, phoenix::ref(*this), qi::_val, qi::_1) ] .else_ [ qi::_val = phoenix::bind(&ExpressionParser::createNotEqualsExpression, phoenix::ref(*this), qi::_val, qi::_1) ] ];
+                        
+            equalityExpression = relativeExpression[qi::_val = qi::_1] >> *(equalityOperator_ >> relativeExpression)[qi::_val = phoenix::bind(&ExpressionParser::createEqualsExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)];
             equalityExpression.name("equality expression");
             
-            andExpression = equalityExpression[qi::_val = qi::_1] >> *(qi::lit("&") >> equalityExpression)[qi::_val = phoenix::bind(&ExpressionParser::createAndExpression, phoenix::ref(*this), qi::_val, qi::_1)];
+            andExpression = equalityExpression[qi::_val = qi::_1] >> *(andOperator_ > equalityExpression)[qi::_val = phoenix::bind(&ExpressionParser::createAndExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)];
             andExpression.name("and expression");
             
-            orExpression = andExpression[qi::_val = qi::_1] >> *((qi::lit("|")[qi::_a = true] | qi::lit("=>")[qi::_a = false]) >> andExpression)[phoenix::if_(qi::_a) [qi::_val = phoenix::bind(&ExpressionParser::createOrExpression, phoenix::ref(*this), qi::_val, qi::_1)] .else_ [qi::_val = phoenix::bind(&ExpressionParser::createImpliesExpression, phoenix::ref(*this), qi::_val, qi::_1)] ];
+            orExpression = andExpression[qi::_val = qi::_1] > *(orOperator_ > andExpression)[qi::_val = phoenix::bind(&ExpressionParser::createOrExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)];
             orExpression.name("or expression");
             
-            iteExpression = orExpression[qi::_val = qi::_1] >> -(qi::lit("?") > orExpression > qi::lit(":") > orExpression)[qi::_val = phoenix::bind(&ExpressionParser::createIteExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)];
+            iteExpression = orExpression[qi::_val = qi::_1] > -(qi::lit("?") > orExpression > qi::lit(":") > orExpression)[qi::_val = phoenix::bind(&ExpressionParser::createIteExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)];
             iteExpression.name("if-then-else expression");
             
             expression %= iteExpression;
@@ -101,98 +101,14 @@ namespace storm {
                 return storm::expressions::Expression::createFalse();
             }
         }
-        
-        storm::expressions::Expression ExpressionParser::createImpliesExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const {
+                
+        storm::expressions::Expression ExpressionParser::createOrExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2) const {
             if (this->createExpressions) {
                 try {
-                    return e1.implies(e2);
-                } catch (storm::exceptions::InvalidTypeException const& e) {
-                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
-                }
-            } else {
-                return storm::expressions::Expression::createFalse();
-            }
-        }
-        
-        storm::expressions::Expression ExpressionParser::createOrExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const {
-            if (this->createExpressions) {
-                try {
-                    return e1 || e2;
-                } catch (storm::exceptions::InvalidTypeException const& e) {
-                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
-                }
-            } else {
-                return storm::expressions::Expression::createFalse();
-            }
-        }
-        
-        storm::expressions::Expression ExpressionParser::createAndExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const {
-            if (this->createExpressions) {
-                try{
-                    return e1 && e2;
-                } catch (storm::exceptions::InvalidTypeException const& e) {
-                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
-                }
-            } else {
-                return storm::expressions::Expression::createFalse();
-            }
-        }
-        
-        storm::expressions::Expression ExpressionParser::createGreaterExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const {
-            if (this->createExpressions) {
-                try {
-                    return e1 > e2;
-                } catch (storm::exceptions::InvalidTypeException const& e) {
-                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
-                }
-            } else {
-                return storm::expressions::Expression::createFalse();
-            }
-        }
-        
-        storm::expressions::Expression ExpressionParser::createGreaterOrEqualExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const {
-            if (this->createExpressions) {
-                try {
-                    return e1 >= e2;
-                } catch (storm::exceptions::InvalidTypeException const& e) {
-                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
-                }
-            } else {
-                return storm::expressions::Expression::createFalse();
-            }
-        }
-        
-        storm::expressions::Expression ExpressionParser::createLessExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const {
-            if (this->createExpressions) {
-                try {
-                    return e1 < e2;
-                } catch (storm::exceptions::InvalidTypeException const& e) {
-                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
-                }
-            } else {
-                return storm::expressions::Expression::createFalse();
-            }
-        }
-        
-        storm::expressions::Expression ExpressionParser::createLessOrEqualExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const {
-            if (this->createExpressions) {
-                try {
-                    return e1 <= e2;
-                } catch (storm::exceptions::InvalidTypeException const& e) {
-                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
-                }
-            } else {
-                return storm::expressions::Expression::createFalse();
-            }
-        }
-        
-        storm::expressions::Expression ExpressionParser::createEqualsExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const {
-            if (this->createExpressions) {
-                try {
-                    if (e1.hasBooleanReturnType() && e2.hasBooleanReturnType()) {
-                        return e1.iff(e2);
-                    } else {
-                        return e1 == e2;
+                    switch (operatorType) {
+                        case storm::expressions::OperatorType::Or: return e1 || e2; break;
+                        case storm::expressions::OperatorType::Implies: return e1.implies(e2); break;
+                        default: LOG_ASSERT(false, "Invalid operation."); break;
                     }
                 } catch (storm::exceptions::InvalidTypeException const& e) {
                     LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
@@ -202,10 +118,13 @@ namespace storm {
             }
         }
         
-        storm::expressions::Expression ExpressionParser::createNotEqualsExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const {
+        storm::expressions::Expression ExpressionParser::createAndExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2) const {
             if (this->createExpressions) {
                 try {
-                    return e1 != e2;
+                    switch (operatorType) {
+                        case storm::expressions::OperatorType::And: return e1 && e2; break;
+                        default: LOG_ASSERT(false, "Invalid operation."); break;
+                    }
                 } catch (storm::exceptions::InvalidTypeException const& e) {
                     LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
                 }
@@ -214,10 +133,16 @@ namespace storm {
             }
         }
         
-        storm::expressions::Expression ExpressionParser::createPlusExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const {
+        storm::expressions::Expression ExpressionParser::createRelationalExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2) const {
             if (this->createExpressions) {
                 try {
-                    return e1 + e2;
+                    switch (operatorType) {
+                        case storm::expressions::OperatorType::GreaterOrEqual: return e1 >= e2; break;
+                        case storm::expressions::OperatorType::Greater: return e1 > e2; break;
+                        case storm::expressions::OperatorType::LessOrEqual: return e1 <= e2; break;
+                        case storm::expressions::OperatorType::Less: return e1 < e2; break;
+                        default: LOG_ASSERT(false, "Invalid operation."); break;
+                    }
                 } catch (storm::exceptions::InvalidTypeException const& e) {
                     LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
                 }
@@ -226,10 +151,14 @@ namespace storm {
             }
         }
         
-        storm::expressions::Expression ExpressionParser::createMinusExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const {
+        storm::expressions::Expression ExpressionParser::createEqualsExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2) const {
             if (this->createExpressions) {
                 try {
-                    return e1 - e2;
+                    switch (operatorType) {
+                        case storm::expressions::OperatorType::Equal: return e1.hasBooleanReturnType() && e2.hasBooleanReturnType() ? e1.iff(e2) : e1 == e2; break;
+                        case storm::expressions::OperatorType::NotEqual: return e1 != e2; break;
+                        default: LOG_ASSERT(false, "Invalid operation."); break;
+                    }
                 } catch (storm::exceptions::InvalidTypeException const& e) {
                     LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
                 }
@@ -238,10 +167,14 @@ namespace storm {
             }
         }
         
-        storm::expressions::Expression ExpressionParser::createMultExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const {
+        storm::expressions::Expression ExpressionParser::createPlusExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2) const {
             if (this->createExpressions) {
                 try {
-                    return e1 * e2;
+                    switch (operatorType) {
+                        case storm::expressions::OperatorType::Plus: return e1 + e2; break;
+                        case storm::expressions::OperatorType::Minus: return e1 - e2; break;
+                        default: LOG_ASSERT(false, "Invalid operation."); break;
+                    }
                 } catch (storm::exceptions::InvalidTypeException const& e) {
                     LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
                 }
@@ -250,10 +183,14 @@ namespace storm {
             }
         }
         
-        storm::expressions::Expression ExpressionParser::createPowerExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const {
+        storm::expressions::Expression ExpressionParser::createMultExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2) const {
             if (this->createExpressions) {
                 try {
-                    return e1 ^ e2;
+                    switch (operatorType) {
+                        case storm::expressions::OperatorType::Times: return e1 * e2; break;
+                        case storm::expressions::OperatorType::Divide: return e1 / e2; break;
+                        default: LOG_ASSERT(false, "Invalid operation."); break;
+                    }
                 } catch (storm::exceptions::InvalidTypeException const& e) {
                     LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
                 }
@@ -262,10 +199,13 @@ namespace storm {
             }
         }
         
-        storm::expressions::Expression ExpressionParser::createDivExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const {
+        storm::expressions::Expression ExpressionParser::createPowerExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2) const {
             if (this->createExpressions) {
                 try {
-                    return e1 / e2;
+                    switch (operatorType) {
+                        case storm::expressions::OperatorType::Power: return e1 ^ e2; break;
+                        default: LOG_ASSERT(false, "Invalid operation."); break;
+                    }
                 } catch (storm::exceptions::InvalidTypeException const& e) {
                     LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
                 }
@@ -273,7 +213,7 @@ namespace storm {
                 return storm::expressions::Expression::createFalse();
             }
         }
-        
+                
         storm::expressions::Expression ExpressionParser::createNotExpression(storm::expressions::Expression e1) const {
             if (this->createExpressions) {
                 try {
