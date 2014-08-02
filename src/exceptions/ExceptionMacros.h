@@ -22,10 +22,10 @@ extern log4cplus::Logger logger;
 
 #define LOG_THROW(cond, exception, message)     \
 {                                               \
-if (!(cond)) {                              \
-LOG4CPLUS_ERROR(logger, message);       \
-throw exception() << message;           \
-}                                           \
+if (!(cond)) {                                  \
+LOG4CPLUS_ERROR(logger, message);               \
+throw exception() << message;                   \
+}                                               \
 } while (false)
 
 #endif /* STORM_EXCEPTIONS_EXCEPTIONMACROS_H_ */
