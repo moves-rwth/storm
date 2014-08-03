@@ -257,9 +257,6 @@ namespace storm {
 				++currentChoice;
 			}
 
-			// Put a sentinel element at the end.
-			result.transitionMatrixBuilder.newRowGroup(currentChoice);
-
 			return result;
 		}
 

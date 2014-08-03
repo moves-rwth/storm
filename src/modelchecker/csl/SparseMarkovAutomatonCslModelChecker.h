@@ -302,8 +302,8 @@ namespace storm {
 
                     // Finally, we are ready to create the SSP matrix and right-hand side of the SSP.
                     std::vector<ValueType> b;
-                    typename storm::storage::SparseMatrixBuilder<ValueType> sspMatrixBuilder(0, 0, 0, true, numberOfStatesNotInMecs + mecDecomposition.size() + 1);
-
+                    typename storm::storage::SparseMatrixBuilder<ValueType> sspMatrixBuilder(0, 0, 0, true, numberOfStatesNotInMecs + mecDecomposition.size());
+                    
                     // If the source state is not contained in any MEC, we copy its choices (and perform the necessary modifications).
                     uint_fast64_t currentChoice = 0;
                     for (auto state : statesNotContainedInAnyMec) {
@@ -385,7 +385,7 @@ namespace storm {
                     }
                     
                     // Finalize the matrix and solve the corresponding system of equations.
-                    storm::storage::SparseMatrix<ValueType> sspMatrix = sspMatrixBuilder.build(currentChoice + 1);
+                    storm::storage::SparseMatrix<ValueType> sspMatrix = sspMatrixBuilder.build(currentChoice);
                     
                     std::vector<ValueType> x(numberOfStatesNotInMecs + mecDecomposition.size());
                     nondeterministicLinearEquationSolver->solveEquationSystem(min, sspMatrix, x, b);
