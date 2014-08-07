@@ -1016,7 +1016,7 @@ namespace storm {
 
                 // Now derive the probability threshold we need to exceed as well as the phi and psi states. Simultaneously, check whether the formula is of a valid shape.
                 double bound = probBoundFormula->getBound();
-                std::shared_ptr<storm::property::prctl::AbstractPathFormula<double>> pathFormula = probBoundFormula->getPathFormula();
+                std::shared_ptr<storm::property::prctl::AbstractPathFormula<double>> pathFormula = probBoundFormula->getChild();
                 storm::storage::BitVector phiStates;
                 storm::storage::BitVector psiStates;
                 storm::modelchecker::prctl::SparseMdpPrctlModelChecker<T> modelchecker(labeledMdp);

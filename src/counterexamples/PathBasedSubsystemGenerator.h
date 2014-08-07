@@ -402,7 +402,7 @@ public:
 			return model.getSubDtmc(subSys);
 		}
 		T bound = boundOperator->getBound();
-		std::shared_ptr<storm::property::prctl::AbstractPathFormula<T>> pathFormula = boundOperator->getPathFormula();;
+		std::shared_ptr<storm::property::prctl::AbstractPathFormula<T>> pathFormula = boundOperator->getChild();
 
 		// get "init" labeled states
 		storm::storage::BitVector initStates = model.getLabeledStates("init");

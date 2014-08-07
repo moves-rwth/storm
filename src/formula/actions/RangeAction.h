@@ -87,16 +87,16 @@ private:
 		uint_fast64_t end = to - from;
 
 		// Safety check for access bounds.
-		if(from > result.stateMap.size()) {
+		if(from >= result.stateMap.size()) {
 			LOG4CPLUS_WARN(logger, "Range begins behind the end of the states by " << to - result.stateMap.size() << ". No state was selected.");
 			std::cout << "Range begins behind the end of the states by " << to - result.stateMap.size() << ". No state was selected." << std::endl;
 
 			return Result(out, result.stateMap, result.pathResult, result.stateResult);
 		}
 
-		if(to > result.stateMap.size()) {
+		if(to >= result.stateMap.size()) {
 
-			end = result.selection.size() - from;
+			end = result.selection.size() - from - 1;
 
 			LOG4CPLUS_WARN(logger, "Range ends behind the end of the states by " << to - result.stateMap.size() << ". The range has been cut at the last state.");
 			std::cout << "Range ends behind the end of the states by " << to - result.stateMap.size() << ". The range has been cut at the last state." << std::endl;

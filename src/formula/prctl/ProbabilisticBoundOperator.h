@@ -60,7 +60,7 @@ public:
 	/*!
 	 * Empty constructor
 	 */
-	ProbabilisticBoundOperator() : comparisonOperator(LESS), bound(0), pathFormula(nullptr) {
+	ProbabilisticBoundOperator() : comparisonOperator(LESS), bound(0), child(nullptr) {
 		// Intentionally left empty.
 	}
 
@@ -69,10 +69,10 @@ public:
 	 *
 	 * @param comparisonOperator The relation for the bound.
 	 * @param bound The bound for the probability
-	 * @param pathFormula The child node
+	 * @param child The child node
 	 */
-	ProbabilisticBoundOperator(storm::property::ComparisonType comparisonOperator, T bound, std::shared_ptr<AbstractPathFormula<T>> const & pathFormula)
-		: comparisonOperator(comparisonOperator), bound(bound), pathFormula(pathFormula) {
+	ProbabilisticBoundOperator(storm::property::ComparisonType comparisonOperator, T bound, std::shared_ptr<AbstractPathFormula<T>> const & child)
+		: comparisonOperator(comparisonOperator), bound(bound), child(child) {
 		// Intentionally left empty.
 	}
 
@@ -96,7 +96,7 @@ public:
 		std::shared_ptr<ProbabilisticBoundOperator<T>> result(new ProbabilisticBoundOperator<T>());
 		result->setComparisonOperator(comparisonOperator);
 		result->setBound(bound);
-		result->setPathFormula(pathFormula->clone());
+		result->setChild(child->clone());
 		return result;
 	}
 
@@ -120,7 +120,7 @@ public:
 	 *  @return true iff the subtree conforms to some logic.
 	 */
 	virtual bool validate(AbstractFormulaChecker<T> const & checker) const override {
-		return checker.validate(pathFormula);
+		return checker.validate(child);
 	}
 
 	/*!
@@ -137,7 +137,7 @@ public:
 		result += " ";
 		result += std::to_string(bound);
 		result += " (";
-		result += pathFormula->toString();
+		result += child->toString();
 		result += ")";
 		return result;
 	}
@@ -145,25 +145,25 @@ public:
 	/*!
 	 * @returns the child node (representation of a formula)
 	 */
-	std::shared_ptr<AbstractPathFormula<T>> const & getPathFormula () const {
-		return pathFormula;
+	std::shared_ptr<AbstractPathFormula<T>> const & getChild () const {
+		return child;
 	}
 
 	/*!
 	 * Sets the child node
 	 *
-	 * @param pathFormula the path formula that becomes the new child node
+	 * @param child the path formula that becomes the new child node
 	 */
-	void setPathFormula(std::shared_ptr<AbstractPathFormula<T>> const & pathFormula) {
-		this->pathFormula = pathFormula;
+	void setChild(std::shared_ptr<AbstractPathFormula<T>> const & child) {
+		this->child = child;
 	}
 
 	/*!
 	 *
 	 * @return True if the path formula is set, i.e. it does not point to nullptr; false otherwise
 	 */
-	bool pathFormulaIsSet() const {
-		return pathFormula.get() != nullptr;
+	bool childIsSet() const {
+		return child.get() != nullptr;
 	}
 
 	/*!
@@ -206,7 +206,7 @@ public:
 private:
 	storm::property::ComparisonType comparisonOperator;
 	T bound;
-	std::shared_ptr<AbstractPathFormula<T>> pathFormula;
+	std::shared_ptr<AbstractPathFormula<T>> child;
 };
 
 } //namespace prctl

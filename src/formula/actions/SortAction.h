@@ -65,7 +65,7 @@ public:
 	 *
 	 */
 	virtual std::string toString() const override {
-		std::string out = "sort, ";
+		std::string out = "sort(";
 		switch (category) {
 			case INDEX:
 				out += "index";
@@ -79,7 +79,7 @@ public:
 				break;
 		}
 		out += ", ";
-		out += ascending ? "ascending" : "descending";
+		out += ascending ? "ascending)" : "descending)";
 		return out;
 	}
 

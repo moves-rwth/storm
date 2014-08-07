@@ -65,6 +65,11 @@ public:
 		LOG4CPLUS_INFO(logger, "Model checking formula\t" << this->toString());
 		std::cout << "Model checking formula:\t" << this->toString() << std::endl;
 
+		writeOut(evaluate(modelchecker), modelchecker);
+	}
+
+	Result evaluate(storm::modelchecker::prctl::AbstractModelChecker<T> const & modelchecker) const {
+
 		Result result;
 
 		try {
@@ -78,13 +83,9 @@ public:
 		} catch (std::exception& e) {
 			std::cout << "Error during computation: " << e.what() << "Skipping property." << std::endl;
 			LOG4CPLUS_ERROR(logger, "Error during computation: " << e.what() << "Skipping property.");
-			std::cout << std::endl << "-------------------------------------------" << std::endl;
-
-			return;
 		}
 
-		writeOut(result, modelchecker);
-
+		return result;
 	}
 
 	virtual std::string toString() const override {
@@ -239,12 +240,14 @@ private:
 		return evaluateActions(result, modelchecker);
 	}
 
-	Result evaluateActions(Result result, storm::modelchecker::prctl::AbstractModelChecker<T> const & modelchecker) const {
+	Result evaluateActions(Result const & input, storm::modelchecker::prctl::AbstractModelChecker<T> const & modelchecker) const {
 
 		// Init the state selection and state map vectors.
-		result.selection = storm::storage::BitVector(result.stateResult.size(), true);
-		result.stateMap = std::vector<uint_fast64_t>(result.selection.size());
-		for(uint_fast64_t i = 0; i < result.selection.size(); i++) {
+		Result result = input;
+		uint_fast64_t size = result.stateResult.size() == 0 ? result.pathResult.size() : result.stateResult.size();
+		result.selection = storm::storage::BitVector(size, true);
+		result.stateMap = std::vector<uint_fast64_t>(size);
+		for(uint_fast64_t i = 0; i < size; i++) {
 			result.stateMap[i] = i;
 		}
 
@@ -257,6 +260,13 @@ private:
 
 
 	void writeOut(Result const & result, storm::modelchecker::prctl::AbstractModelChecker<T> const & modelchecker) const {
+
+		// Test if there is anything to write out.
+		// The selection size should only be 0 if an error occurred during the evaluation (since a model with 0 states is invalid).
+		if(result.selection.size() == 0) {
+			std::cout << std::endl << "-------------------------------------------" << std::endl;
+			return;
+		}
 
 		// Test for the kind of result. Values or states.
 		if(!result.pathResult.empty()) {

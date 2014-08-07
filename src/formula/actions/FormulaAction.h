@@ -80,7 +80,7 @@ public:
 	 *
 	 */
 	virtual std::string toString() const override {
-		std::string out = "states(";
+		std::string out = "formula(";
 		if(prctlFormula.get() != nullptr) {
 			out += prctlFormula->toString();
 		} else if(cslFormula.get() != nullptr) {

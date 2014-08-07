@@ -79,11 +79,10 @@ struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, std::shared_ptr<storm::
 		atomicProposition = (freeIdentifierName)[qi::_val =
 				MAKE(prctl::Ap<double>, qi::_1)];
 		atomicProposition.name("atomic proposition");
-		probabilisticBoundOperator = ((qi::lit("P") >> comparisonType > qi::double_ > qi::lit("[") > pathFormula > qi::lit("]"))[qi::_val =
+		probabilisticBoundOperator = ((qi::lit("P") >> comparisonType > qi::double_ > pathFormula)[qi::_val =
 				MAKE(prctl::ProbabilisticBoundOperator<double>, qi::_1, qi::_2, qi::_3)]);
-
 		probabilisticBoundOperator.name("probabilistic bound operator");
-		rewardBoundOperator = ((qi::lit("R") >> comparisonType > qi::double_ > qi::lit("[") > rewardPathFormula > qi::lit("]"))[qi::_val =
+		rewardBoundOperator = ((qi::lit("R") >> comparisonType > qi::double_ > rewardPathFormula)[qi::_val =
 				MAKE(prctl::RewardBoundOperator<double>, qi::_1, qi::_2, qi::_3)]);
 		rewardBoundOperator.name("reward bound operator");
 
@@ -92,22 +91,22 @@ struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, std::shared_ptr<storm::
 		pathFormula.name("path formula");
 		boundedEventually = (qi::lit("F") >> qi::lit("<=") > qi::int_ > stateFormula)[qi::_val =
 				MAKE(prctl::BoundedEventually<double>, qi::_2, qi::_1)];
-		boundedEventually.name("path formula (for probabilistic operator)");
+		boundedEventually.name("bounded eventually");
 		eventually = (qi::lit("F") > stateFormula)[qi::_val =
 				MAKE(prctl::Eventually<double>, qi::_1)];
-		eventually.name("path formula (for probabilistic operator)");
+		eventually.name("eventually");
 		next = (qi::lit("X") > stateFormula)[qi::_val =
 				MAKE(prctl::Next<double>, qi::_1)];
-		next.name("path formula (for probabilistic operator)");
+		next.name("next");
 		globally = (qi::lit("G") > stateFormula)[qi::_val =
 				MAKE(prctl::Globally<double>, qi::_1)];
-		globally.name("path formula (for probabilistic operator)");
+		globally.name("globally");
 		boundedUntil = (stateFormula[qi::_a = qi::_1] >> qi::lit("U") >> qi::lit("<=") > qi::int_ > stateFormula)[qi::_val =
 				MAKE(prctl::BoundedUntil<double>, qi::_a, qi::_3, qi::_2)];
-		boundedUntil.name("path formula (for probabilistic operator)");
+		boundedUntil.name("boundedUntil");
 		until = (stateFormula[qi::_a = qi::_1] >> qi::lit("U") > stateFormula)[qi::_val =
 				MAKE(prctl::Until<double>, qi::_a, qi::_2)];
-		until.name("path formula (for probabilistic operator)");
+		until.name("until");
 
 		// This block defines rules for parsing reward path formulas.
 		rewardPathFormula = (cumulativeReward | reachabilityReward | instantaneousReward | steadyStateReward | qi::lit("(") >> rewardPathFormula >> qi::lit(")") | qi::lit("[") >> rewardPathFormula >> qi::lit("]"));
@@ -175,16 +174,16 @@ struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, std::shared_ptr<storm::
 		rangeAction.name("range action");
 
 		sortAction = (
-				(qi::lit("sort") > qi::lit("(") >> sortingCategory >> qi::lit(")"))[qi::_val =
+				(qi::lit("sort") >> qi::lit("(") >> sortingCategory >> qi::lit(")"))[qi::_val =
 						phoenix::new_<storm::property::action::SortAction<double>>(qi::_1)] |
-				(qi::lit("sort") > qi::lit("(") >> sortingCategory >> qi::lit(", ") >> qi::lit("asc") > qi::lit(")"))[qi::_val =
+				(qi::lit("sort") >> qi::lit("(") >> sortingCategory >> qi::lit(", ") >> (qi::lit("ascending") | qi::lit("asc")) > qi::lit(")"))[qi::_val =
 						phoenix::new_<storm::property::action::SortAction<double>>(qi::_1, true)] |
-				(qi::lit("sort") > qi::lit("(") >> sortingCategory >> qi::lit(", ") >> qi::lit("desc") > qi::lit(")"))[qi::_val =
+				(qi::lit("sort") >> qi::lit("(") >> sortingCategory >> qi::lit(", ") >> (qi::lit("descending") | qi::lit("desc")) > qi::lit(")"))[qi::_val =
 						phoenix::new_<storm::property::action::SortAction<double>>(qi::_1, false)]
 				);
 		sortAction.name("sort action");
 
-		abstractAction = (boundAction | invertAction | formulaAction | rangeAction | sortAction) >> (qi::eps | qi::lit(";"));
+		abstractAction = (boundAction | invertAction | formulaAction | rangeAction | sortAction) >> (qi::lit(";") | qi::eps);
 		abstractAction.name("filter action");
 
 		filter = (qi::lit("filter") >> qi::lit("[") >> +abstractAction >> qi::lit("]") > qi::lit("(") >> formula >> qi::lit(")"))[qi::_val =
@@ -200,7 +199,7 @@ struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, std::shared_ptr<storm::
 		filter.name("PRCTL formula filter");
 
 		start = (((filter) > (comment | qi::eps))[qi::_val = qi::_1] | comment[qi::_val = MAKE(prctl::PrctlFilter<double>, nullptr)]) > qi::eoi;
-		start.name("PRCTL formula filter");
+		start.name("start");
 
 	}
 
