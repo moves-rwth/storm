@@ -41,6 +41,7 @@ namespace storm {
                 // Start first run.
                 bool succeeded = qi::phrase_parse(iter, last, grammar, boost::spirit::ascii::space | qi::lit("//") >> *(qi::char_ - qi::eol) >> qi::eol, result);
                 LOG_THROW(succeeded,  storm::exceptions::WrongFormatException, "Parsing failed in first pass.");
+                LOG_DEBUG("First pass of parsing PRISM input finished.");
                 
                 // Start second run.
                 first = PositionIteratorType(input.begin());
