@@ -46,16 +46,16 @@ public:
 		// Intentionally left empty.
 	}
 
-	PrctlFilter(std::shared_ptr<AbstractPrctlFormula<T>> const & child, action::AbstractAction<T>* action, OptimizingOperator opt = UNDEFINED) : AbstractFilter<T>(action, opt), child(child) {
+	PrctlFilter(std::shared_ptr<AbstractPrctlFormula<T>> const & child, std::shared_ptr<action::AbstractAction<T>> const & action, OptimizingOperator opt = UNDEFINED) : AbstractFilter<T>(action, opt), child(child) {
 		// Intentionally left empty.
 	}
 
-	PrctlFilter(std::shared_ptr<AbstractPrctlFormula<T>> const & child, std::vector<action::AbstractAction<T>*> actions, OptimizingOperator opt = UNDEFINED) : AbstractFilter<T>(actions, opt), child(child) {
+	PrctlFilter(std::shared_ptr<AbstractPrctlFormula<T>> const & child, std::vector<std::shared_ptr<action::AbstractAction<T>>> const & actions, OptimizingOperator opt = UNDEFINED) : AbstractFilter<T>(actions, opt), child(child) {
 		// Intentionally left empty.
 	}
 
 	virtual ~PrctlFilter() {
-		this->actions.clear();
+		// Intentionally left empty.
 	}
 
 	void check(storm::modelchecker::prctl::AbstractModelChecker<T> const & modelchecker) const {

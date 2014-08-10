@@ -109,31 +109,31 @@ struct LtlParser::LtlGrammar : qi::grammar<Iterator, std::shared_ptr<storm::prop
 
 		// This block defines rules for parsing filter actions.
 		boundAction = (qi::lit("bound") > qi::lit("(") >> comparisonType >> qi::lit(",") >> qi::double_ >> qi::lit(")"))[qi::_val =
-				        phoenix::new_<storm::property::action::BoundAction<double>>(qi::_1, qi::_2)];
+						MAKE(storm::property::action::BoundAction<double> ,qi::_1, qi::_2)];
 		boundAction.name("bound action");
 
-		invertAction = qi::lit("invert")[qi::_val = phoenix::new_<storm::property::action::InvertAction<double>>()];
+		invertAction = qi::lit("invert")[qi::_val = MAKE(storm::property::action::InvertAction<double>, )];
 		invertAction.name("invert action");
 
 		rangeAction = (
 				(qi::lit("range") >> qi::lit("(") >> qi::uint_ >> qi::lit(",") > qi::uint_ >> qi::lit(")"))[qi::_val =
-						phoenix::new_<storm::property::action::RangeAction<double>>(qi::_1, qi::_2)] |
+						MAKE(storm::property::action::RangeAction<double>, qi::_1, qi::_2)] |
 				(qi::lit("range") >> qi::lit("(") >> qi::uint_ >> qi::lit(")"))[qi::_val =
-						phoenix::new_<storm::property::action::RangeAction<double>>(qi::_1, qi::_1 + 1)]
+						MAKE(storm::property::action::RangeAction<double>, qi::_1, qi::_1 + 1)]
 				);
 		rangeAction.name("range action");
 
 		sortAction = (
-				(qi::lit("sort") > qi::lit("(") >> sortingCategory >> qi::lit(")"))[qi::_val =
-						phoenix::new_<storm::property::action::SortAction<double>>(qi::_1)] |
-				(qi::lit("sort") > qi::lit("(") >> sortingCategory >> qi::lit(", ") >> qi::lit("asc") > qi::lit(")"))[qi::_val =
-						phoenix::new_<storm::property::action::SortAction<double>>(qi::_1, true)] |
-				(qi::lit("sort") > qi::lit("(") >> sortingCategory >> qi::lit(", ") >> qi::lit("desc") > qi::lit(")"))[qi::_val =
-						phoenix::new_<storm::property::action::SortAction<double>>(qi::_1, false)]
+				(qi::lit("sort") >> qi::lit("(") >> sortingCategory >> qi::lit(")"))[qi::_val =
+						MAKE(storm::property::action::SortAction<double>, qi::_1)] |
+				(qi::lit("sort") >> qi::lit("(") >> sortingCategory >> qi::lit(", ") >> (qi::lit("ascending") | qi::lit("asc")) > qi::lit(")"))[qi::_val =
+						MAKE(storm::property::action::SortAction<double>, qi::_1, true)] |
+				(qi::lit("sort") >> qi::lit("(") >> sortingCategory >> qi::lit(", ") >> (qi::lit("descending") | qi::lit("desc")) > qi::lit(")"))[qi::_val =
+						MAKE(storm::property::action::SortAction<double>, qi::_1, false)]
 				);
 		sortAction.name("sort action");
 
-		abstractAction = (boundAction | invertAction | rangeAction | sortAction) >> (qi::eps | qi::lit(";"));
+		abstractAction = (boundAction | invertAction | rangeAction | sortAction) >> (qi::lit(";") | qi::eps);
 		abstractAction.name("filter action");
 
 		filter = (qi::lit("filter") >> qi::lit("[") >> +abstractAction >> qi::lit("]") > qi::lit("(") >> formula >> qi::lit(")"))[qi::_val =
@@ -153,11 +153,11 @@ struct LtlParser::LtlGrammar : qi::grammar<Iterator, std::shared_ptr<storm::prop
 	qi::rule<Iterator, std::shared_ptr<storm::property::ltl::LtlFilter<double>>(), Skipper> start;
 	qi::rule<Iterator, std::shared_ptr<storm::property::ltl::LtlFilter<double>>(), Skipper> filter;
 
-	qi::rule<Iterator, storm::property::action::AbstractAction<double>*(), Skipper> abstractAction;
-	qi::rule<Iterator, storm::property::action::BoundAction<double>*(), Skipper> boundAction;
-	qi::rule<Iterator, storm::property::action::InvertAction<double>*(), Skipper> invertAction;
-	qi::rule<Iterator, storm::property::action::RangeAction<double>*(), Skipper> rangeAction;
-	qi::rule<Iterator, storm::property::action::SortAction<double>*(), Skipper> sortAction;
+	qi::rule<Iterator, std::shared_ptr<storm::property::action::AbstractAction<double>>(), Skipper> abstractAction;
+	qi::rule<Iterator, std::shared_ptr<storm::property::action::BoundAction<double>>(), Skipper> boundAction;
+	qi::rule<Iterator, std::shared_ptr<storm::property::action::InvertAction<double>>(), Skipper> invertAction;
+	qi::rule<Iterator, std::shared_ptr<storm::property::action::RangeAction<double>>(), Skipper> rangeAction;
+	qi::rule<Iterator, std::shared_ptr<storm::property::action::SortAction<double>>(), Skipper> sortAction;
 
 	qi::rule<Iterator, std::shared_ptr<storm::property::ltl::AbstractLtlFormula<double>>(), Skipper> comment;
 	qi::rule<Iterator, std::shared_ptr<storm::property::ltl::AbstractLtlFormula<double>>(), Skipper> formula;

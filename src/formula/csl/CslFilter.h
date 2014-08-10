@@ -43,11 +43,11 @@ public:
 		// Intentionally left empty.
 	}
 
-	CslFilter(std::shared_ptr<AbstractCslFormula<T>> const & child, action::AbstractAction<T>* action, OptimizingOperator opt = UNDEFINED, bool steadyStateQuery = false) : AbstractFilter<T>(action, opt), child(child), steadyStateQuery(steadyStateQuery) {
+	CslFilter(std::shared_ptr<AbstractCslFormula<T>> const & child, std::shared_ptr<action::AbstractAction<T>> const & action, OptimizingOperator opt = UNDEFINED, bool steadyStateQuery = false) : AbstractFilter<T>(action, opt), child(child), steadyStateQuery(steadyStateQuery) {
 		// Intentionally left empty
 	}
 
-	CslFilter(std::shared_ptr<AbstractCslFormula<T>> const & child, std::vector<action::AbstractAction<T>*> actions, OptimizingOperator opt = UNDEFINED, bool steadyStateQuery = false) : AbstractFilter<T>(actions, opt), child(child), steadyStateQuery(steadyStateQuery) {
+	CslFilter(std::shared_ptr<AbstractCslFormula<T>> const & child, std::vector<std::shared_ptr<action::AbstractAction<T>>> const & actions, OptimizingOperator opt = UNDEFINED, bool steadyStateQuery = false) : AbstractFilter<T>(actions, opt), child(child), steadyStateQuery(steadyStateQuery) {
 		// Intentionally left empty.
 	}
 

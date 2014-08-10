@@ -41,11 +41,11 @@ public:
 		// Intentionally left empty.
 	}
 
-	LtlFilter(std::shared_ptr<AbstractLtlFormula<T>> const & child, action::AbstractAction<T>* action, OptimizingOperator opt = UNDEFINED) : AbstractFilter<T>(action, opt), child(child) {
+	LtlFilter(std::shared_ptr<AbstractLtlFormula<T>> const & child, std::shared_ptr<action::AbstractAction<T>> const & action, OptimizingOperator opt = UNDEFINED) : AbstractFilter<T>(action, opt), child(child) {
 		this->actions.push_back(action);
 	}
 
-	LtlFilter(std::shared_ptr<AbstractLtlFormula<T>> const & child, std::vector<action::AbstractAction<T>*> actions, OptimizingOperator opt = UNDEFINED) : AbstractFilter<T>(actions, opt), child(child) {
+	LtlFilter(std::shared_ptr<AbstractLtlFormula<T>> const & child, std::vector<std::shared_ptr<action::AbstractAction<T>>> const & actions, OptimizingOperator opt = UNDEFINED) : AbstractFilter<T>(actions, opt), child(child) {
 		// Intentionally left empty.
 	}
 

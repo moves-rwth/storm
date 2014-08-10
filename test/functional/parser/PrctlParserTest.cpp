@@ -169,11 +169,11 @@ TEST(PrctlParserTest, parsePrctlFilterTest) {
 	ASSERT_NE(formula, nullptr);
 
 	ASSERT_EQ(5, formula->getActionCount());
-	ASSERT_NE(dynamic_cast<storm::property::action::FormulaAction<double>*>(formula->getAction(0)), nullptr);
-	ASSERT_NE(dynamic_cast<storm::property::action::InvertAction<double>*>(formula->getAction(1)), nullptr);
-	ASSERT_NE(dynamic_cast<storm::property::action::BoundAction<double>*>(formula->getAction(2)), nullptr);
-	ASSERT_NE(dynamic_cast<storm::property::action::SortAction<double>*>(formula->getAction(3)), nullptr);
-	ASSERT_NE(dynamic_cast<storm::property::action::RangeAction<double>*>(formula->getAction(4)), nullptr);
+	ASSERT_NE(std::dynamic_pointer_cast<storm::property::action::FormulaAction<double>>(formula->getAction(0)).get(), nullptr);
+	ASSERT_NE(std::dynamic_pointer_cast<storm::property::action::InvertAction<double>>(formula->getAction(1)).get(), nullptr);
+	ASSERT_NE(std::dynamic_pointer_cast<storm::property::action::BoundAction<double>>(formula->getAction(2)).get(), nullptr);
+	ASSERT_NE(std::dynamic_pointer_cast<storm::property::action::SortAction<double>>(formula->getAction(3)).get(), nullptr);
+	ASSERT_NE(std::dynamic_pointer_cast<storm::property::action::RangeAction<double>>(formula->getAction(4)).get(), nullptr);
 
 	// The input was parsed correctly.
 	ASSERT_EQ("filter[formula(b); invert; bound(<, 0.500000); sort(value, ascending); range(0, 3)](F a)", formula->toString());

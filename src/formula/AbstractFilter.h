@@ -30,16 +30,42 @@ public:
 		// Intentionally left empty.
 	}
 
-	AbstractFilter(action::AbstractAction<T>* action, OptimizingOperator opt = UNDEFINED) : opt(opt) {
-		actions.push_back(action);
+	AbstractFilter(std::shared_ptr<action::AbstractAction<T>> const & action, OptimizingOperator opt = UNDEFINED) : opt(opt) {
+		if(action.get() != nullptr) {
+			actions.push_back(action);
+		}
 	}
 
-	AbstractFilter(std::vector<action::AbstractAction<T>*> actions, OptimizingOperator opt = UNDEFINED) : actions(actions), opt(opt) {
-		// Intentionally left empty.
+	AbstractFilter(std::vector<std::shared_ptr<action::AbstractAction<T>>> const & actions, OptimizingOperator opt = UNDEFINED) {
+		// Filter out all nullptr actions.
+		// First detect that there is at least one.
+		uint_fast64_t emptyCount = 0;
+		for(uint_fast64_t i = 0; i < actions.size(); i++) {
+			if (actions[i].get() == nullptr) {
+				emptyCount++;
+			}
+		}
+
+		if(emptyCount > 0) {
+			// There is at least one nullptr action.
+			// Allocate space for the non null actions.
+			this->actions = std::vector<std::shared_ptr<action::AbstractAction<T>>>(actions.size() - emptyCount);
+
+			// Fill the vector. Note: For most implementations of the standard there will be no reallocation in the vector while doing this.
+			for(auto action : actions){
+				if(action.get() != nullptr) {
+					this->actions.push_back(action);
+				}
+			}
+		} else {
+			this->actions = actions;
+		}
+
+		this->opt = opt;
 	}
 
 	virtual ~AbstractFilter() {
-		actions.clear();
+		// Intentionally left empty.
 	}
 
 	virtual std::string toString() const {
@@ -70,14 +96,24 @@ public:
 		return desc;
 	}
 
-	void addAction(action::AbstractAction<T>* action) {
-		if(action != nullptr) {
+	void addAction(std::shared_ptr<action::AbstractAction<T>> const & action) {
+		if(action.get() != nullptr) {
 			actions.push_back(action);
 		}
 	}
 
 	void removeAction() {
 		actions.pop_back();
+	}
+
+	std::shared_ptr<action::AbstractAction<T>> getAction(uint_fast64_t position) {
+		// Make sure the chosen position is not beyond the end of the vector.
+		// If it is so return the last element.
+		if(position < actions.size()) {
+			return actions[position];
+		} else {
+			return actions[actions.size()-1];
+		}
 	}
 
 	uint_fast64_t getActionCount() const {
@@ -94,7 +130,7 @@ public:
 
 protected:
 
-	std::vector<action::AbstractAction<T>*> actions;
+	std::vector<std::shared_ptr<action::AbstractAction<T>>> actions;
 
 	OptimizingOperator opt;
 };
