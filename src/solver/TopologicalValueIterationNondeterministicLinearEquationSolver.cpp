@@ -64,9 +64,9 @@ namespace storm {
 
 			std::vector<ValueType>* currentX = nullptr;
 			std::vector<ValueType>* swap = nullptr;
-			uint_fast64_t currentMaxLocalIterations = 0;
-			uint_fast64_t localIterations = 0;
-			uint_fast64_t globalIterations = 0;
+			size_t currentMaxLocalIterations = 0;
+			size_t localIterations = 0;
+			size_t globalIterations = 0;
 			bool converged = true;
 
 			// Iterate over all SCCs of the MDP as specified by the topological sort. This guarantees that an SCC is only
@@ -128,13 +128,30 @@ namespace storm {
 					LOG4CPLUS_INFO(logger, "We will allocate " << (sizeof(uint_fast64_t)* sccSubmatrix.rowIndications.size() + sizeof(uint_fast64_t)* sccSubmatrix.columnsAndValues.size() * 2 + sizeof(double)* sccSubX.size() + sizeof(double)* sccSubX.size() + sizeof(double)* sccSubB.size() + sizeof(double)* sccSubB.size() + sizeof(uint_fast64_t)* sccSubNondeterministicChoiceIndices.size()) << " Bytes.");
 					LOG4CPLUS_INFO(logger, "The CUDA Runtime Version is " << getRuntimeCudaVersion());
 
+					bool result = false;
+					localIterations = 0;
 					if (minimize) {
-						basicValueIteration_mvReduce_uint64_double_minimize(this->maximalNumberOfIterations, this->precision, this->relative, sccSubmatrix.rowIndications, sccSubmatrix.columnsAndValues, *currentX, sccSubB, sccSubNondeterministicChoiceIndices);
+						result = basicValueIteration_mvReduce_uint64_double_minimize(this->maximalNumberOfIterations, this->precision, this->relative, sccSubmatrix.rowIndications, sccSubmatrix.columnsAndValues, *currentX, sccSubB, sccSubNondeterministicChoiceIndices, localIterations);
 					}
 					else {
-						basicValueIteration_mvReduce_uint64_double_maximize(this->maximalNumberOfIterations, this->precision, this->relative, sccSubmatrix.rowIndications, sccSubmatrix.columnsAndValues, *currentX, sccSubB, sccSubNondeterministicChoiceIndices);
+						result = basicValueIteration_mvReduce_uint64_double_maximize(this->maximalNumberOfIterations, this->precision, this->relative, sccSubmatrix.rowIndications, sccSubmatrix.columnsAndValues, *currentX, sccSubB, sccSubNondeterministicChoiceIndices, localIterations);
 					}
-					converged = true;
+					LOG4CPLUS_INFO(logger, "Executed " << localIterations << " of max. " << maximalNumberOfIterations << " Iterations on GPU.");
+
+					if (!result) {
+						converged = false;
+						LOG4CPLUS_ERROR(logger, "An error occurred in the CUDA Plugin. Can not continue.");
+						throw storm::exceptions::InvalidStateException() << "An error occurred in the CUDA Plugin. Can not continue.";
+					} else {
+						converged = true;
+					}
+
+					// As the "number of iterations" of the full method is the maximum of the local iterations, we need to keep
+					// track of the maximum.
+					if (localIterations > currentMaxLocalIterations) {
+						currentMaxLocalIterations = localIterations;
+					}
+
 #else
 					LOG4CPLUS_ERROR(logger, "The useGpu Flag of a SCC was set, but this version of StoRM does not support CUDA acceleration. Internal Error!");
 					throw storm::exceptions::InvalidStateException() << "The useGpu Flag of a SCC was set, but this version of StoRM does not support CUDA acceleration. Internal Error!";

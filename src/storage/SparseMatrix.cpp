@@ -787,8 +787,8 @@ namespace storm {
                                   const_iterator ite;
                                   std::vector<uint_fast64_t>::const_iterator rowIterator = this->rowIndications.begin() + startRow;
                                   std::vector<uint_fast64_t>::const_iterator rowIteratorEnd = this->rowIndications.begin() + endRow;
-                                  typename std::vector<T>::iterator resultIterator = result.begin() + startRow;
-                                  typename std::vector<T>::iterator resultIteratorEnd = result.begin() + endRow;
+                                  std::vector<T>::iterator resultIterator = result.begin() + startRow;
+                                  std::vector<T>::iterator resultIteratorEnd = result.begin() + endRow;
                                   
                                   for (; resultIterator != resultIteratorEnd; ++rowIterator, ++resultIterator) {
                                       *resultIterator = storm::utility::constantZero<T>();
