@@ -16,10 +16,14 @@ namespace storm {
         bool UnaryExpression::containsVariables() const {
             return this->getOperand()->containsVariables();
         }
-        
-        std::set<std::string> UnaryExpression::getVariables() const {
-            return this->getOperand()->getVariables();
-        }
+
+		std::set<std::string> UnaryExpression::getVariables() const {
+			return this->getOperand()->getVariables();
+		}
+
+		std::map<std::string, ExpressionReturnType> UnaryExpression::getVariablesAndTypes() const {
+			return this->getOperand()->getVariablesAndTypes();
+		}
         
         std::shared_ptr<BaseExpression const> const& UnaryExpression::getOperand() const {
             return this->operand;

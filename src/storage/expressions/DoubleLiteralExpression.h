@@ -27,7 +27,8 @@ namespace storm {
             // Override base class methods.
             virtual double evaluateAsDouble(Valuation const* valuation = nullptr) const override;
             virtual bool isLiteral() const override;
-            virtual std::set<std::string> getVariables() const override;
+			virtual std::set<std::string> getVariables() const override;
+			virtual std::map<std::string, ExpressionReturnType> getVariablesAndTypes() const override;
             virtual std::shared_ptr<BaseExpression const> simplify() const override;
             virtual void accept(ExpressionVisitor* visitor) const override;
 

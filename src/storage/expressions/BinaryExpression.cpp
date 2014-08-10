@@ -15,14 +15,21 @@ namespace storm {
         
         bool BinaryExpression::containsVariables() const {
             return this->getFirstOperand()->containsVariables() || this->getSecondOperand()->containsVariables();
-        }
-        
-        std::set<std::string> BinaryExpression::getVariables() const {
-            std::set<std::string> firstVariableSet = this->getFirstOperand()->getVariables();
-            std::set<std::string> secondVariableSet = this->getSecondOperand()->getVariables();
-            firstVariableSet.insert(secondVariableSet.begin(), secondVariableSet.end());
-            return firstVariableSet;
-        }
+		}
+
+		std::set<std::string> BinaryExpression::getVariables() const {
+			std::set<std::string> firstVariableSet = this->getFirstOperand()->getVariables();
+			std::set<std::string> secondVariableSet = this->getSecondOperand()->getVariables();
+			firstVariableSet.insert(secondVariableSet.begin(), secondVariableSet.end());
+			return firstVariableSet;
+		}
+
+		std::map<std::string, ExpressionReturnType> BinaryExpression::getVariablesAndTypes() const {
+			std::map<std::string, ExpressionReturnType> firstVariableSet = this->getFirstOperand()->getVariablesAndTypes();
+			std::map<std::string, ExpressionReturnType> secondVariableSet = this->getSecondOperand()->getVariablesAndTypes();
+			firstVariableSet.insert(secondVariableSet.begin(), secondVariableSet.end());
+			return firstVariableSet;
+		}
         
         std::shared_ptr<BaseExpression const> const& BinaryExpression::getFirstOperand() const {
             return this->firstOperand;

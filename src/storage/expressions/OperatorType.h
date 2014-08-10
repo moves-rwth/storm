@@ -1,6 +1,8 @@
 #ifndef STORM_STORAGE_EXPRESSIONS_OPERATORTYPE_H_
 #define STORM_STORAGE_EXPRESSIONS_OPERATORTYPE_H_
 
+#include <ostream>
+
 namespace storm {
     namespace expressions {
         // An enum representing all possible operator types.
@@ -28,6 +30,8 @@ namespace storm {
             Ceil,
             Ite
         };
+        
+        std::ostream& operator<<(std::ostream& stream, OperatorType const& operatorType);
     }
 }
 

@@ -43,8 +43,8 @@ namespace storm {
                 
         template<typename MapType>
         void TypeCheckVisitor<MapType>::visit(VariableExpression const* expression) {
-            auto identifierTypePair = this->identifierToTypeMap.find(expression->getVariableName());
-            LOG_THROW(identifierTypePair != this->identifierToTypeMap.end(), storm::exceptions::InvalidArgumentException, "No type available for identifier '" << expression->getVariableName() << "'.");
+			auto identifierTypePair = this->identifierToTypeMap.find(expression->getVariableName());
+			LOG_THROW(identifierTypePair != this->identifierToTypeMap.end(), storm::exceptions::InvalidArgumentException, "No type available for identifier '" << expression->getVariableName() << "'.");
             LOG_THROW(identifierTypePair->second == expression->getReturnType(), storm::exceptions::InvalidTypeException, "Type mismatch for variable '" << expression->getVariableName() << "': expected '" << identifierTypePair->first << "', but found '" << expression->getReturnType() << "'.");
         }
         

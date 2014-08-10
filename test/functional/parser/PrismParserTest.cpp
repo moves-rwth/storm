@@ -94,7 +94,7 @@ TEST(PrismParser, ComplexTest) {
     endrewards)";
     
     storm::prism::Program result;
-    result = storm::parser::PrismParser::parseFromString(testInput, "testfile");
+    EXPECT_NO_THROW(result = storm::parser::PrismParser::parseFromString(testInput, "testfile"));
     EXPECT_EQ(storm::prism::Program::ModelType::MA, result.getModelType());
     EXPECT_EQ(3, result.getNumberOfModules());
     EXPECT_EQ(2, result.getNumberOfRewardModels());

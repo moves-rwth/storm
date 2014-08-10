@@ -126,7 +126,7 @@ namespace storm {
                     //uint_fast64_t newNumberOfRows = this->getNumberOfChoices() - numberOfHybridStates;
                     
                     // Create the matrix for the new transition relation and the corresponding nondeterministic choice vector.
-                    storm::storage::SparseMatrixBuilder<T> newTransitionMatrixBuilder(0, 0, 0, true, this->getNumberOfStates() + 1);
+                    storm::storage::SparseMatrixBuilder<T> newTransitionMatrixBuilder(0, 0, 0, true, this->getNumberOfStates());
                     
                     // Now copy over all choices that need to be kept.
                     uint_fast64_t currentChoice = 0;

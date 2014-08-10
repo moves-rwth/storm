@@ -265,10 +265,12 @@ namespace storm {
             return storm::prism::Constant(storm::expressions::ExpressionReturnType::Double, newConstant, expression, this->getFilename());
         }
         
-        storm::prism::Formula PrismParser::createFormula(std::string const& formulaName, storm::expressions::Expression expression) const {
+        storm::prism::Formula PrismParser::createFormula(std::string const& formulaName, storm::expressions::Expression expression) {
             if (!this->secondRun) {
                 LOG_THROW(this->identifiers_.find(formulaName) == nullptr, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": Duplicate identifier '" << formulaName << "'.");
                 this->identifiers_.add(formulaName, expression);
+            } else {
+                this->identifiers_.at(formulaName) = expression;
             }
             return storm::prism::Formula(formulaName, expression, this->getFilename());
         }

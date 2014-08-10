@@ -95,6 +95,21 @@ namespace storm {
         bool Expression::isFalse() const {
             return this->getBaseExpression().isFalse();
         }
+
+		std::set<std::string> Expression::getVariables() const {
+			return this->getBaseExpression().getVariables();
+		}
+
+		std::map<std::string, ExpressionReturnType> Expression::getVariablesAndTypes(bool validate) const {
+			if (validate) {
+				std::map<std::string, ExpressionReturnType> result = this->getBaseExpression().getVariablesAndTypes();
+				this->check(result);
+				return result;
+			}
+			else {
+				return this->getBaseExpression().getVariablesAndTypes();
+			}
+		}
         
         bool Expression::isRelationalExpression() const {
             if (!this->isFunctionApplication()) {
@@ -108,10 +123,6 @@ namespace storm {
         
         bool Expression::isLinear() const {
             return LinearityCheckVisitor().check(*this);
-        }
-        
-        std::set<std::string> Expression::getVariables() const {
-            return this->getBaseExpression().getVariables();
         }
         
         BaseExpression const& Expression::getBaseExpression() const {

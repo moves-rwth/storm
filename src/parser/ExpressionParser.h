@@ -43,6 +43,127 @@ namespace storm {
             void setAcceptDoubleLiterals(bool flag);
             
         private:
+            struct orOperatorStruct : qi::symbols<char, storm::expressions::OperatorType> {
+                orOperatorStruct() {
+                    add
+                    ("|", storm::expressions::OperatorType::Or)
+                    ("=>", storm::expressions::OperatorType::Implies);
+                }
+            };
+            
+            // A parser used for recognizing the operators at the "or" precedence level.
+            orOperatorStruct orOperator_;
+
+            struct andOperatorStruct : qi::symbols<char, storm::expressions::OperatorType> {
+                andOperatorStruct() {
+                    add
+                    ("&", storm::expressions::OperatorType::And);
+                }
+            };
+
+            // A parser used for recognizing the operators at the "and" precedence level.
+            andOperatorStruct andOperator_;
+
+            struct equalityOperatorStruct : qi::symbols<char, storm::expressions::OperatorType> {
+                equalityOperatorStruct() {
+                    add
+                    ("=", storm::expressions::OperatorType::Equal)
+                    ("!=", storm::expressions::OperatorType::NotEqual);
+                }
+            };
+            
+            // A parser used for recognizing the operators at the "equality" precedence level.
+            equalityOperatorStruct equalityOperator_;
+
+            struct relationalOperatorStruct : qi::symbols<char, storm::expressions::OperatorType> {
+                relationalOperatorStruct() {
+                    add
+                    (">=", storm::expressions::OperatorType::GreaterOrEqual)
+                    (">", storm::expressions::OperatorType::Greater)
+                    ("<=", storm::expressions::OperatorType::LessOrEqual)
+                    ("<", storm::expressions::OperatorType::Less);
+                }
+            };
+            
+            // A parser used for recognizing the operators at the "relational" precedence level.
+            relationalOperatorStruct relationalOperator_;
+            
+            struct plusOperatorStruct : qi::symbols<char, storm::expressions::OperatorType> {
+                plusOperatorStruct() {
+                    add
+                    ("+", storm::expressions::OperatorType::Plus)
+                    ("-", storm::expressions::OperatorType::Minus);
+                }
+            };
+            
+            // A parser used for recognizing the operators at the "plus" precedence level.
+            plusOperatorStruct plusOperator_;
+
+            struct multiplicationOperatorStruct : qi::symbols<char, storm::expressions::OperatorType> {
+                multiplicationOperatorStruct() {
+                    add
+                    ("*", storm::expressions::OperatorType::Times)
+                    ("/", storm::expressions::OperatorType::Divide);
+                }
+            };
+            
+            // A parser used for recognizing the operators at the "multiplication" precedence level.
+            multiplicationOperatorStruct multiplicationOperator_;
+
+            struct powerOperatorStruct : qi::symbols<char, storm::expressions::OperatorType> {
+                powerOperatorStruct() {
+                    add
+                    ("^", storm::expressions::OperatorType::Power);
+                }
+            };
+            
+            // A parser used for recognizing the operators at the "power" precedence level.
+            powerOperatorStruct powerOperator_;
+            
+            struct unaryOperatorStruct : qi::symbols<char, storm::expressions::OperatorType> {
+                unaryOperatorStruct() {
+                    add
+                    ("!", storm::expressions::OperatorType::Not)
+                    ("-", storm::expressions::OperatorType::Minus);
+                }
+            };
+            
+            // A parser used for recognizing the operators at the "unary" precedence level.
+            unaryOperatorStruct unaryOperator_;
+
+            struct floorCeilOperatorStruct : qi::symbols<char, storm::expressions::OperatorType> {
+                floorCeilOperatorStruct() {
+                    add
+                    ("floor", storm::expressions::OperatorType::Floor)
+                    ("ceil", storm::expressions::OperatorType::Ceil);
+                }
+            };
+            
+            // A parser used for recognizing the operators at the "floor/ceil" precedence level.
+            floorCeilOperatorStruct floorCeilOperator_;
+
+            struct minMaxOperatorStruct : qi::symbols<char, storm::expressions::OperatorType> {
+                minMaxOperatorStruct() {
+                    add
+                    ("min", storm::expressions::OperatorType::Min)
+                    ("max", storm::expressions::OperatorType::Max);
+                }
+            };
+            
+            // A parser used for recognizing the operators at the "min/max" precedence level.
+            minMaxOperatorStruct minMaxOperator_;
+
+            struct trueFalseOperatorStruct : qi::symbols<char, storm::expressions::Expression> {
+                trueFalseOperatorStruct() {
+                    add
+                    ("true", storm::expressions::Expression::createTrue())
+                    ("false", storm::expressions::Expression::createFalse());
+                }
+            };
+            
+            // A parser used for recognizing the literals true and false.
+            trueFalseOperatorStruct trueFalse_;
+            
             // A flag that indicates whether expressions should actually be generated or just a syntax check shall be
             // performed.
             bool createExpressions;
@@ -80,30 +201,18 @@ namespace storm {
             
             // Helper functions to create expressions.
             storm::expressions::Expression createIteExpression(storm::expressions::Expression e1, storm::expressions::Expression e2, storm::expressions::Expression e3) const;
-            storm::expressions::Expression createImpliesExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
-            storm::expressions::Expression createOrExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
-            storm::expressions::Expression createAndExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
-            storm::expressions::Expression createGreaterExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
-            storm::expressions::Expression createGreaterOrEqualExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
-            storm::expressions::Expression createLessExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
-            storm::expressions::Expression createLessOrEqualExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
-            storm::expressions::Expression createEqualsExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
-            storm::expressions::Expression createNotEqualsExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
-            storm::expressions::Expression createPlusExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
-            storm::expressions::Expression createMinusExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
-            storm::expressions::Expression createMultExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
-            storm::expressions::Expression createPowerExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
-            storm::expressions::Expression createDivExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
-            storm::expressions::Expression createNotExpression(storm::expressions::Expression e1) const;
-            storm::expressions::Expression createMinusExpression(storm::expressions::Expression e1) const;
-            storm::expressions::Expression createTrueExpression() const;
-            storm::expressions::Expression createFalseExpression() const;
+            storm::expressions::Expression createOrExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2) const;
+            storm::expressions::Expression createAndExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2) const;
+            storm::expressions::Expression createRelationalExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2) const;
+            storm::expressions::Expression createEqualsExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2) const;
+            storm::expressions::Expression createPlusExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2) const;
+            storm::expressions::Expression createMultExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2) const;
+            storm::expressions::Expression createPowerExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2) const;
+            storm::expressions::Expression createUnaryExpression(boost::optional<storm::expressions::OperatorType> const& operatorType, storm::expressions::Expression const& e1) const;
             storm::expressions::Expression createDoubleLiteralExpression(double value, bool& pass) const;
             storm::expressions::Expression createIntegerLiteralExpression(int value) const;
-            storm::expressions::Expression createMinimumExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
-            storm::expressions::Expression createMaximumExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
-            storm::expressions::Expression createFloorExpression(storm::expressions::Expression e1) const;
-            storm::expressions::Expression createCeilExpression(storm::expressions::Expression e1) const;
+            storm::expressions::Expression createMinimumMaximumExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2) const;
+            storm::expressions::Expression createFloorCeilExpression(storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e1) const;
             storm::expressions::Expression getIdentifierExpression(std::string const& identifier) const;
             
             bool isValidIdentifier(std::string const& identifier);

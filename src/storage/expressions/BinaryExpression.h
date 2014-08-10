@@ -33,8 +33,9 @@ namespace storm {
             virtual bool isFunctionApplication() const override;
             virtual bool containsVariables() const override;
             virtual uint_fast64_t getArity() const override;
-            virtual std::shared_ptr<BaseExpression const> getOperand(uint_fast64_t operandIndex) const override;
-            virtual std::set<std::string> getVariables() const override;
+			virtual std::shared_ptr<BaseExpression const> getOperand(uint_fast64_t operandIndex) const override;
+			virtual std::set<std::string> getVariables() const override;
+			virtual std::map<std::string, ExpressionReturnType> getVariablesAndTypes() const override;
             
             /*!
              * Retrieves the first operand of the expression.

@@ -38,7 +38,7 @@
 #include "src/solver/GmmxxNondeterministicLinearEquationSolver.h"
 #include "src/solver/GurobiLpSolver.h"
 #include "src/counterexamples/MILPMinimalLabelSetGenerator.h"
-// #include "src/counterexamples/SMTMinimalCommandSetGenerator.h"
+#include "src/counterexamples/SMTMinimalCommandSetGenerator.h"
 #include "src/counterexamples/PathBasedSubsystemGenerator.h"
 #include "src/parser/AutoParser.h"
 #include "src/parser/MarkovAutomatonParser.h"
@@ -619,7 +619,7 @@ int main(const int argc, const char* argv[]) {
                     if (useMILP) {
                         storm::counterexamples::MILPMinimalLabelSetGenerator<double>::computeCounterexample(program, *mdp, formulaPtr);
                     } else {
-                        // storm::counterexamples::SMTMinimalCommandSetGenerator<double>::computeCounterexample(program, constants, *mdp, formulaPtr);
+                        storm::counterexamples::SMTMinimalCommandSetGenerator<double>::computeCounterexample(program, constants, *mdp, formulaPtr);
                     }
                     
                     // Once we are done with the formula, delete it.
@@ -628,7 +628,7 @@ int main(const int argc, const char* argv[]) {
 
 				// MinCMD Time Measurement, End
 				std::chrono::high_resolution_clock::time_point minCmdEnd = std::chrono::high_resolution_clock::now();
-				std::cout << "Minimal command Counterexample generation took " << std::chrono::duration_cast<std::chrono::milliseconds>(minCmdStart - minCmdEnd).count() << " milliseconds." << std::endl;
+				std::cout << "Minimal command Counterexample generation took " << std::chrono::duration_cast<std::chrono::milliseconds>(minCmdEnd - minCmdStart).count() << " milliseconds." << std::endl;
             } else if (s->isSet("prctl")) {
 				// Depending on the model type, the appropriate model checking procedure is chosen.
 				storm::modelchecker::prctl::AbstractModelChecker<double>* modelchecker = nullptr;
