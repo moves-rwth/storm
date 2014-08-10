@@ -41,6 +41,7 @@ namespace storm {
                 // Start first run.
                 bool succeeded = qi::phrase_parse(iter, last, grammar, boost::spirit::ascii::space | qi::lit("//") >> *(qi::char_ - qi::eol) >> qi::eol, result);
                 LOG_THROW(succeeded,  storm::exceptions::WrongFormatException, "Parsing failed in first pass.");
+                LOG_DEBUG("First pass of parsing PRISM input finished.");
                 
                 // Start second run.
                 first = PositionIteratorType(input.begin());
@@ -138,7 +139,7 @@ namespace storm {
             updateListDefinition %= +updateDefinition(qi::_r1) % "+";
             updateListDefinition.name("update list");
             
-            commandDefinition = (qi::lit("[") > -(identifier[qi::_a = qi::_1]) > qi::lit("]") > expressionParser > qi::lit("->") > updateListDefinition(qi::_r1) > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createCommand, phoenix::ref(*this), qi::_a, qi::_2, qi::_3, qi::_r1)];
+            commandDefinition = qi::lit("[") > +(qi::char_ - qi::lit(";")) > qi::lit(";")[qi::_val = phoenix::construct<storm::prism::Command>()];
             commandDefinition.name("command definition");
             
             moduleDefinition = ((qi::lit("module") >> identifier >> *(variableDefinition(qi::_a, qi::_b))) > +commandDefinition(qi::_r1) > qi::lit("endmodule"))[qi::_val = phoenix::bind(&PrismParser::createModule, phoenix::ref(*this), qi::_1, qi::_a, qi::_b, qi::_2, qi::_r1)];
@@ -188,6 +189,10 @@ namespace storm {
         }
         
         void PrismParser::moveToSecondRun() {
+            // In the second run, we actually need to parse the commands instead of just skipping them,
+            // so we adapt the rule for parsing commands.
+            commandDefinition = (qi::lit("[") > -(identifier[qi::_a = qi::_1]) > qi::lit("]") > expressionParser > qi::lit("->") > updateListDefinition(qi::_r1) > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createCommand, phoenix::ref(*this), qi::_a, qi::_2, qi::_3, qi::_r1)];
+            
             this->secondRun = true;
             this->expressionParser.setIdentifierMapping(&this->identifiers_);
         }

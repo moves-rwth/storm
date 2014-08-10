@@ -16,8 +16,13 @@ extern log4cplus::Logger logger;
         assert(cond);                           \
     }                                           \
 } while (false)
+#define LOG_DEBUG(message)                      \
+{                                               \
+    LOG4CPLUS_DEBUG(logger, message);           \
+} while (false)
 #else
 #define LOG_ASSERT(cond, message) /* empty */
+#define LOG_DEBUG(message) /* empty */
 #endif
 
 #define LOG_THROW(cond, exception, message)     \
