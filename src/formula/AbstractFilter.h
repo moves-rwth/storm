@@ -71,15 +71,13 @@ public:
 	}
 
 	void addAction(action::AbstractAction<T>* action) {
-		actions.push_back(action);
+		if(action != nullptr) {
+			actions.push_back(action);
+		}
 	}
 
 	void removeAction() {
 		actions.pop_back();
-	}
-
-	action::AbstractAction<T>* getAction(uint_fast64_t pos) const {
-		return actions[pos];
 	}
 
 	uint_fast64_t getActionCount() const {

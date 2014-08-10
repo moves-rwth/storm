@@ -16,9 +16,9 @@
 #include "src/formula/ltl/LtlFilter.h"
 #include "src/parser/PrctlParser.h"
 
-#include <regex>
+#include <memory>
 
-typedef typename storm::property::prctl::PrctlFilter<double>::Result Result;
+typedef typename storm::property::action::AbstractAction<double>::Result Result;
 
 TEST(PrctlFilterTest, generalFunctionality) {
 	// Test filter queries of increasing complexity.
@@ -70,14 +70,87 @@ TEST(PrctlFilterTest, generalFunctionality) {
 	ASSERT_FALSE(result.selection[7]);
 
 	// Test the sorting.
-	ASSERT_EQ(3, result.stateMap[0]);
-	ASSERT_EQ(4, result.stateMap[1]);
-	ASSERT_EQ(1, result.stateMap[2]);
-	ASSERT_EQ(0, result.stateMap[3]);
-	ASSERT_EQ(2, result.stateMap[4]);
-	ASSERT_EQ(5, result.stateMap[5]);
-	ASSERT_EQ(6, result.stateMap[6]);
-	ASSERT_EQ(7, result.stateMap[7]);
+	ASSERT_EQ(6, result.stateMap[0]);
+	ASSERT_EQ(7, result.stateMap[1]);
+	ASSERT_EQ(3, result.stateMap[2]);
+	ASSERT_EQ(4, result.stateMap[3]);
+	ASSERT_EQ(1, result.stateMap[4]);
+	ASSERT_EQ(0, result.stateMap[5]);
+	ASSERT_EQ(2, result.stateMap[6]);
+	ASSERT_EQ(5, result.stateMap[7]);
+
+	// Get the probability for reaching a 'd' state only for those states that have a probability to do so of at most 0.5.
+	// Sorted by value; lowest first.
+	input = "filter[bound(<, 0.5); sort(value, ascending)](F d)";
+	ASSERT_NO_THROW(
+				formula = storm::parser::PrctlParser::parsePrctlFormula(input)
+	);
+
+	result = formula->evaluate(mc);
+
+	// Test the selection.
+	ASSERT_EQ(4, result.selection.getNumberOfSetBits());
+	ASSERT_FALSE(result.selection[0]);
+	ASSERT_FALSE(result.selection[1]);
+	ASSERT_FALSE(result.selection[2]);
+	ASSERT_TRUE(result.selection[3]);
+	ASSERT_FALSE(result.selection[4]);
+	ASSERT_TRUE(result.selection[5]);
+	ASSERT_TRUE(result.selection[6]);
+	ASSERT_TRUE(result.selection[7]);
+
+	// Test the sorting.
+	ASSERT_EQ(5, result.stateMap[0]);
+	ASSERT_EQ(6, result.stateMap[1]);
+	ASSERT_EQ(7, result.stateMap[2]);
+	ASSERT_EQ(3, result.stateMap[3]);
+	ASSERT_EQ(4, result.stateMap[4]);
+	ASSERT_EQ(1, result.stateMap[5]);
+	ASSERT_EQ(0, result.stateMap[6]);
+	ASSERT_EQ(2, result.stateMap[7]);
+
+	// Get the three highest indexed states reaching an 'a' state with probability at most 0.3.
+	input = "filter[sort(value); range(5,7); sort(index, descending)](P<=0.3(F a))";
+	ASSERT_NO_THROW(
+				formula = storm::parser::PrctlParser::parsePrctlFormula(input)
+	);
+
+	result = formula->evaluate(mc);
+
+	// Test the selection.
+	ASSERT_EQ(3, result.selection.getNumberOfSetBits());
+	ASSERT_FALSE(result.selection[0]);
+	ASSERT_FALSE(result.selection[1]);
+	ASSERT_FALSE(result.selection[2]);
+	ASSERT_TRUE(result.selection[3]);
+	ASSERT_FALSE(result.selection[4]);
+	ASSERT_FALSE(result.selection[5]);
+	ASSERT_TRUE(result.selection[6]);
+	ASSERT_TRUE(result.selection[7]);
+
+	// Test the sorting.
+	ASSERT_EQ(7, result.stateMap[0]);
+	ASSERT_EQ(6, result.stateMap[1]);
+	ASSERT_EQ(5, result.stateMap[2]);
+	ASSERT_EQ(4, result.stateMap[3]);
+	ASSERT_EQ(3, result.stateMap[4]);
+	ASSERT_EQ(2, result.stateMap[5]);
+	ASSERT_EQ(1, result.stateMap[6]);
+	ASSERT_EQ(0, result.stateMap[7]);
+
+}
+
+TEST(PrctlFilterTest, Safety) {
+	// Setup model and modelchecker.
+	storm::models::Dtmc<double> model = storm::parser::DeterministicModelParser::parseDtmc(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_actionTest.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/dtmc_actionTest.lab");
+	storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double> mc(model, new storm::solver::GmmxxLinearEquationSolver<double>());
+
+	// Make a stub formula as child.
+	auto apFormula = std::make_shared<storm::property::prctl::Ap<double>>("a");
+
+	auto formula = std::make_shared<storm::property::prctl::PrctlFilter<double>>(apFormula, nullptr);
+
+	ASSERT_NO_THROW(formula->check(mc));
 }
 
 
