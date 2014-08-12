@@ -80,7 +80,7 @@ namespace storm {
 				bool const useGpu = sccIndexIt->first;
 				storm::storage::StateBlock const& scc = sccIndexIt->second;
 
-				// Generate a submatrix
+				// Generate a sub matrix
 				storm::storage::BitVector subMatrixIndices(A.getColumnCount(), scc.cbegin(), scc.cend());
 				storm::storage::SparseMatrix<ValueType> sccSubmatrix = A.getSubmatrix(true, subMatrixIndices, subMatrixIndices);
 				std::vector<ValueType> sccSubB(sccSubmatrix.getRowCount());
@@ -97,7 +97,7 @@ namespace storm {
 				std::vector<uint_fast64_t> sccSubNondeterministicChoiceIndices(sccSubmatrix.getColumnCount() + 1);
 				sccSubNondeterministicChoiceIndices.at(0) = 0;
 
-				// Preprocess all dependent states
+				// Pre-process all dependent states
 				// Remove outgoing transitions and create the ChoiceIndices
 				uint_fast64_t innerIndex = 0;
                 uint_fast64_t outerIndex = 0;
@@ -135,8 +135,7 @@ namespace storm {
 					localIterations = 0;
 					if (minimize) {
 						result = basicValueIteration_mvReduce_uint64_double_minimize(this->maximalNumberOfIterations, this->precision, this->relative, sccSubmatrix.rowIndications, sccSubmatrix.columnsAndValues, *currentX, sccSubB, sccSubNondeterministicChoiceIndices, localIterations);
-					}
-					else {
+					} else {
 						result = basicValueIteration_mvReduce_uint64_double_maximize(this->maximalNumberOfIterations, this->precision, this->relative, sccSubmatrix.rowIndications, sccSubmatrix.columnsAndValues, *currentX, sccSubB, sccSubNondeterministicChoiceIndices, localIterations);
 					}
 					LOG4CPLUS_INFO(logger, "Executed " << localIterations << " of max. " << maximalNumberOfIterations << " Iterations on GPU.");
@@ -276,13 +275,24 @@ namespace storm {
 								storm::storage::StateBlock const& scc_first = sccDecomposition[topologicalSort[startIndex]];
 								tempGroups.insert(tempGroups.cend(), scc_first.cbegin(), scc_first.cend());
 
-								for (size_t j = startIndex + 1; j < i; ++j) {
-									storm::storage::StateBlock const& scc = sccDecomposition[topologicalSort[j]];
-									std::vector<uint_fast64_t>::iterator const middleIterator = tempGroups.end();
-									tempGroups.insert(tempGroups.cend(), scc.cbegin(), scc.cend());
-									std::inplace_merge(tempGroups.begin(), middleIterator, tempGroups.end());
+								if (((startIndex + 1) + 80) >= i) {
+									size_t lastSize = 0;
+									for (size_t j = startIndex + 1; j < topologicalSort.size(); ++j) {
+										storm::storage::StateBlock const& scc = sccDecomposition[topologicalSort[j]];
+										lastSize = tempGroups.size();
+										tempGroups.insert(tempGroups.cend(), scc.cbegin(), scc.cend());
+										std::vector<uint_fast64_t>::iterator middleIterator = tempGroups.begin();
+										std::advance(middleIterator, lastSize);
+										std::inplace_merge(tempGroups.begin(), middleIterator, tempGroups.end());
+									}
+								} else {
+									// Use std::sort
+									for (size_t j = startIndex + 1; j < i; ++j) {
+										storm::storage::StateBlock const& scc = sccDecomposition[topologicalSort[j]];
+										tempGroups.insert(tempGroups.cend(), scc.cbegin(), scc.cend());
+									}
+									std::sort(tempGroups.begin(), tempGroups.end());
 								}
-
 								result.push_back(std::make_pair(true, storm::storage::StateBlock(boost::container::ordered_unique_range, tempGroups.cbegin(), tempGroups.cend())));
 							} else {
 								// Only one group, copy construct.
@@ -318,13 +328,25 @@ namespace storm {
 						storm::storage::StateBlock const& scc_first = sccDecomposition[topologicalSort[startIndex]];
 						tempGroups.insert(tempGroups.cend(), scc_first.cbegin(), scc_first.cend());
 
-						for (size_t j = startIndex + 1; j < topologicalSort.size(); ++j) {
-							storm::storage::StateBlock const& scc = sccDecomposition[topologicalSort[j]];
-							std::vector<uint_fast64_t>::iterator const middleIterator = tempGroups.end();
-							tempGroups.insert(tempGroups.cend(), scc.cbegin(), scc.cend());
-							std::inplace_merge(tempGroups.begin(), middleIterator, tempGroups.end());
-						}
-
+						// For set counts <= 80, Inplace Merge is faster
+						if (((startIndex + 1) + 80) >= topologicalSortSize) {
+							size_t lastSize = 0;
+							for (size_t j = startIndex + 1; j < topologicalSort.size(); ++j) {
+								storm::storage::StateBlock const& scc = sccDecomposition[topologicalSort[j]];
+								lastSize = tempGroups.size();
+								tempGroups.insert(tempGroups.cend(), scc.cbegin(), scc.cend());
+								std::vector<uint_fast64_t>::iterator middleIterator = tempGroups.begin();
+								std::advance(middleIterator, lastSize);
+								std::inplace_merge(tempGroups.begin(), middleIterator, tempGroups.end());
+							}
+						} else {
+							// Use std::sort
+							for (size_t j = startIndex + 1; j < topologicalSort.size(); ++j) {
+								storm::storage::StateBlock const& scc = sccDecomposition[topologicalSort[j]];
+								tempGroups.insert(tempGroups.cend(), scc.cbegin(), scc.cend());
+							}
+							std::sort(tempGroups.begin(), tempGroups.end());
+						}						
 						result.push_back(std::make_pair(true, storm::storage::StateBlock(boost::container::ordered_unique_range, tempGroups.cbegin(), tempGroups.cend())));
 					}
 					else {

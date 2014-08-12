@@ -29,8 +29,8 @@ namespace storm {
 
 			// Open the given file.
 			if (!MappedFile::fileExistsAndIsReadable(filename.c_str())) {
-				LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": File does not exist or is not readable.");
-				throw storm::exceptions::FileIoException() << "The supplied Labeling input file \"" << filename << "\" does not exist or is not readable by this process.";
+				LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": The supplied Labeling input file does not exist or is not readable by this process.");
+				throw storm::exceptions::FileIoException() << "Error while parsing " << filename << ": The supplied Labeling input file does not exist or is not readable by this process.";
 			}
 
 			MappedFile file(filename.c_str());
@@ -68,10 +68,10 @@ namespace storm {
 
 			// If #DECLARATION or #END have not been found, the file format is wrong.
 			if (!(foundDecl && foundEnd)) {
-				LOG4CPLUS_ERROR(logger, "Wrong file format in (" << filename << "). File header is corrupted.");
+				LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": File header is corrupted (#DECLARATION or #END missing - case sensitive).");
 				if (!foundDecl) LOG4CPLUS_ERROR(logger, "\tDid not find #DECLARATION token.");
 				if (!foundEnd) LOG4CPLUS_ERROR(logger, "\tDid not find #END token.");
-				throw storm::exceptions::WrongFormatException();
+				throw storm::exceptions::WrongFormatException() << "Error while parsing " << filename << ": File header is corrupted (#DECLARATION or #END missing - case sensitive).";
 			}
 
 
@@ -100,8 +100,8 @@ namespace storm {
 				if (cnt >= sizeof(proposition)) {
 
 					// if token is longer than our buffer, the following strncpy code might get risky...
-					LOG4CPLUS_ERROR(logger, "Wrong file format in (" << filename << "). Atomic proposition with length > " << (sizeof(proposition)-1) << " was found.");
-					throw storm::exceptions::WrongFormatException();
+					LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": Atomic proposition with length > " << (sizeof(proposition) - 1) << " was found.");
+					throw storm::exceptions::WrongFormatException() << "Error while parsing " << filename << ": Atomic proposition with length > " << (sizeof(proposition) - 1) << " was found.";
 
 				} else if (cnt > 0) {
 
@@ -127,6 +127,7 @@ namespace storm {
 
 			uint_fast64_t state = 0;
 			uint_fast64_t lastState = (uint_fast64_t)-1;
+			uint_fast64_t const startIndexComparison = lastState;
 			cnt = 0;
 
 			// Now parse the assignments of labels to nodes.
@@ -137,9 +138,9 @@ namespace storm {
 				state = checked_strtol(buf, &buf);
 
 				// If the state has already been read or skipped once there might be a problem with the file (doubled lines, or blocks).
-				if(state <= lastState && lastState != (uint_fast64_t)-1) {
-					LOG4CPLUS_ERROR(logger, "Wrong file format in (" << filename << "). State " << state << " was found but has already been read or skipped previously.");
-					throw storm::exceptions::WrongFormatException() << "State " << state << " was found but has already been read or skipped previously.";
+				if (state <= lastState && lastState != startIndexComparison) {
+					LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": State " << state << " was found but has already been read or skipped previously.");
+					throw storm::exceptions::WrongFormatException() << "Error while parsing " << filename << ": State " << state << " was found but has already been read or skipped previously.";
 				}
 
 				while ((buf[0] != '\r') && (buf[0] != '\n') && (buf[0] != '\0')) {
@@ -159,8 +160,8 @@ namespace storm {
 
 						// Has the label been declared in the header?
 						if(!labeling.containsAtomicProposition(proposition)) {
-							LOG4CPLUS_ERROR(logger, "Wrong file format in (" << filename << "). Atomic proposition" << proposition << " was found but not declared.");
-							throw storm::exceptions::WrongFormatException();
+							LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": Atomic proposition" << proposition << " was found but not declared.");
+							throw storm::exceptions::WrongFormatException() << "Error while parsing " << filename << ": Atomic proposition" << proposition << " was found but not declared.";
 						}
 						labeling.addAtomicPropositionToState(proposition, state);
 						buf += cnt;
