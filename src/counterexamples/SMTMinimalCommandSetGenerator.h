@@ -1809,15 +1809,16 @@ namespace storm {
                     
                     phiStates = untilFormula.getLeft().check(modelchecker);
                     psiStates = untilFormula.getRight().check(modelchecker);
-                } catch (std::bad_cast const& e) {
+                } catch (std::bad_cast const&) {
                     // If the nested formula was not an until formula, it remains to check whether it's an eventually formula.
                     try {
                         storm::property::prctl::Eventually<double> const& eventuallyFormula = dynamic_cast<storm::property::prctl::Eventually<double> const&>(pathFormula);
                         
                         phiStates = storm::storage::BitVector(labeledMdp.getNumberOfStates(), true);
                         psiStates = eventuallyFormula.getChild().check(modelchecker);
-                    } catch (std::bad_cast const& e) {
+                    } catch (std::bad_cast const&) {
                         // If the nested formula is neither an until nor a finally formula, we throw an exception.
+						LOG4CPLUS_ERROR(logger, "Formula nested inside probability bound operator must be an until or eventually formula for counterexample generation.");
                         throw storm::exceptions::InvalidPropertyException() << "Formula nested inside probability bound operator must be an until or eventually formula for counterexample generation.";
                     }
                 }

@@ -45,6 +45,7 @@
 #include "src/utility/ErrorHandling.h"
 #include "src/formula/Prctl.h"
 #include "src/utility/vector.h"
+#include "src/utility/OsDetection.h"
 
 #include "src/settings/Settings.h"
 // Registers all standard options
@@ -156,7 +157,7 @@ void setUpFileLogging() {
 */
 std::string getCurrentWorkingDirectory() {
 	char temp[512];
-	return (_getcwd(temp, 512 - 1) ? std::string(temp) : std::string(""));
+	return (GetCurrentDir(temp, 512 - 1) ? std::string(temp) : std::string(""));
 }
 
 /*!
