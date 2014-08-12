@@ -17,8 +17,10 @@
 #include <iostream>
 #include <fstream>
 #include <cstdio>
+#include <climits>
 #include <sstream>
 #include <vector>
+#include <chrono>
 
 #include "storm-config.h"
 #include "storm-version.h"
@@ -112,10 +114,10 @@ void printUsage() {
 	ULARGE_INTEGER uLargeInteger;
 	uLargeInteger.LowPart = ftKernel.dwLowDateTime;
 	uLargeInteger.HighPart = ftKernel.dwHighDateTime;
-	double kernelTime = uLargeInteger.QuadPart / 10000.0; // 100 ns Resolution to milliseconds
+	double kernelTime = static_cast<double>(uLargeInteger.QuadPart) / 10000.0; // 100 ns Resolution to milliseconds
 	uLargeInteger.LowPart = ftUser.dwLowDateTime;
 	uLargeInteger.HighPart = ftUser.dwHighDateTime;
-	double userTime = uLargeInteger.QuadPart / 10000.0;
+	double userTime = static_cast<double>(uLargeInteger.QuadPart) / 10000.0;
 
 	std::cout << "CPU Time: " << std::endl;
 	std::cout << "\tKernel Time: " << std::setprecision(5) << kernelTime << "ms" << std::endl;
@@ -148,6 +150,16 @@ void setUpFileLogging() {
 }
 
 /*!
+* Gives the current working directory
+*
+* @return std::string The path of the current working directory
+*/
+std::string getCurrentWorkingDirectory() {
+	char temp[512];
+	return (_getcwd(temp, 512 - 1) ? std::string(temp) : std::string(""));
+}
+
+/*!
  * Prints the header.
  */
 void printHeader(const int argc, const char* argv[]) {
@@ -162,7 +174,7 @@ void printHeader(const int argc, const char* argv[]) {
 	if (STORM_CPP_VERSION_DIRTY == 1) {
 		std::cout << " (DIRTY)";
 	}
-	std::cout << std::endl;
+	std::cout << "." << std::endl;
 	
 #ifdef STORM_HAVE_INTELTBB
 	std::cout << "Linked with Intel Threading Building Blocks v" << TBB_VERSION_MAJOR << "." << TBB_VERSION_MINOR << " (Interface version " << TBB_INTERFACE_VERSION << ")." << std::endl;
@@ -185,6 +197,7 @@ void printHeader(const int argc, const char* argv[]) {
 		commandStream << argv[i] << " ";
 	}
 	std::cout << "Command line: " << commandStream.str() << std::endl << std::endl;
+	std::cout << "Current working directory: " << getCurrentWorkingDirectory() << std::endl << std::endl;
 }
 
 /*!
@@ -290,8 +303,11 @@ void checkPrctlFormulae(storm::modelchecker::prctl::AbstractModelChecker<double>
 		std::list<storm::property::prctl::AbstractPrctlFormula<double>*> formulaList = storm::parser::PrctlFileParser(chosenPrctlFile);
         
         for (auto formula : formulaList) {
+			std::chrono::high_resolution_clock::time_point startTime = std::chrono::high_resolution_clock::now();
         	modelchecker.check(*formula);
             delete formula;
+			std::chrono::high_resolution_clock::time_point endTime = std::chrono::high_resolution_clock::now();
+			std::cout << "Checking the formula took " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms." << std::endl;
         }
 	}
 }
