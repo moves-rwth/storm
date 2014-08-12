@@ -9,6 +9,11 @@
 #include "storm-config.h"
 #include "src/parser/CslParser.h"
 #include "src/exceptions/WrongFormatException.h"
+#include "src/formula/actions/FormulaAction.h"
+#include "src/formula/actions/InvertAction.h"
+#include "src/formula/actions/SortAction.h"
+#include "src/formula/actions/RangeAction.h"
+#include "src/formula/actions/BoundAction.h"
 
 namespace csl = storm::property::csl;
 
@@ -38,6 +43,35 @@ TEST(CslParserTest, parsePropositionalFormulaTest) {
 
 	// The input was parsed correctly.
 	ASSERT_EQ("(!(a & b) | (a & !c))", formula->toString());
+}
+
+TEST(CslParserTest, parsePathFormulaTest) {
+	std::string input = "X( P<0.9 (a U b))";
+	std::shared_ptr<csl::CslFilter<double>> formula(nullptr);
+	ASSERT_NO_THROW(
+				formula = storm::parser::CslParser::parseCslFormula(input)
+	);
+
+	// The parser did not falsely recognize the input as a comment.
+	ASSERT_NE(formula, nullptr);
+
+	// The input was parsed correctly.
+	ASSERT_NE(std::dynamic_pointer_cast<csl::Next<double>>(formula->getChild()).get(), nullptr);
+	auto nextFormula = std::dynamic_pointer_cast<csl::Next<double>>(formula->getChild());
+	ASSERT_NE(std::dynamic_pointer_cast<csl::ProbabilisticBoundOperator<double>>(nextFormula->getChild()).get(), nullptr);
+	auto probBoundFormula = std::dynamic_pointer_cast<csl::ProbabilisticBoundOperator<double>>(nextFormula->getChild());
+	ASSERT_NE(std::dynamic_pointer_cast<csl::Until<double>>(probBoundFormula->getChild()).get(), nullptr);
+	auto untilFormula = std::dynamic_pointer_cast<csl::Until<double>>(probBoundFormula->getChild());
+	ASSERT_NE(std::dynamic_pointer_cast<csl::Ap<double>>(untilFormula->getLeft()).get(), nullptr);
+	ASSERT_NE(std::dynamic_pointer_cast<csl::Ap<double>>(untilFormula->getRight()).get(), nullptr);
+	ASSERT_EQ("a", std::dynamic_pointer_cast<csl::Ap<double>>(untilFormula->getLeft())->getAp());
+	ASSERT_EQ("b", std::dynamic_pointer_cast<csl::Ap<double>>(untilFormula->getRight())->getAp());
+	ASSERT_EQ(0.9, probBoundFormula->getBound());
+	ASSERT_EQ(storm::property::LESS, probBoundFormula->getComparisonOperator());
+
+
+	// The string representation is also correct.
+	ASSERT_EQ("P = ? (X P < 0.900000 (a U b))", formula->toString());
 }
 
 TEST(CslParserTest, parseProbabilisticFormulaTest) {
@@ -118,7 +152,46 @@ TEST(CslParserTest, parseComplexFormulaTest) {
 	ASSERT_NE(formula.get(), nullptr);
 
 	// The input was parsed correctly.
-	ASSERT_EQ("(S <= 0.500000 (P <= 0.500000 (a U c)) & (P > 0.500000 (G b) | !P < 0.400000 (G P > 0.900000 (F>=7.000000 (a & b)))))", formula->toString());
+	ASSERT_EQ("S <= 0.500000 ((P <= 0.500000 (a U c) & (P > 0.500000 (G b) | !P < 0.400000 (G P > 0.900000 (F>=7.000000 (a & b))))))", formula->toString());
+}
+
+TEST(CslParserTest, parseCslFilterTest) {
+	std::string input = "filter[formula(b); invert; bound(<, 0.5); sort(value); range(0,3)](F a)";
+	std::shared_ptr<csl::CslFilter<double>> formula(nullptr);
+	ASSERT_NO_THROW(
+				formula = storm::parser::CslParser::parseCslFormula(input)
+	);
+
+	// The parser did not falsely recognize the input as a comment.
+	ASSERT_NE(formula, nullptr);
+
+	ASSERT_EQ(5, formula->getActionCount());
+	ASSERT_NE(std::dynamic_pointer_cast<storm::property::action::FormulaAction<double>>(formula->getAction(0)).get(), nullptr);
+	ASSERT_NE(std::dynamic_pointer_cast<storm::property::action::InvertAction<double>>(formula->getAction(1)).get(), nullptr);
+	ASSERT_NE(std::dynamic_pointer_cast<storm::property::action::BoundAction<double>>(formula->getAction(2)).get(), nullptr);
+	ASSERT_NE(std::dynamic_pointer_cast<storm::property::action::SortAction<double>>(formula->getAction(3)).get(), nullptr);
+	ASSERT_NE(std::dynamic_pointer_cast<storm::property::action::RangeAction<double>>(formula->getAction(4)).get(), nullptr);
+
+	// The input was parsed correctly.
+	ASSERT_EQ("filter[formula(b); invert; bound(<, 0.500000); sort(value, ascending); range(0, 3)](F a)", formula->toString());
+}
+
+TEST(CslParserTest, commentTest) {
+	std::string input = "// This is a comment. And this is a commented out formula: P = ? [ F a ]";
+	std::shared_ptr<csl::CslFilter<double>> formula(nullptr);
+	ASSERT_NO_THROW(
+				formula = storm::parser::CslParser::parseCslFormula(input)
+	);
+
+	// The parser recognized the input as a comment.
+	ASSERT_NE(nullptr, formula.get());
+
+	// Test if the parser recognizes the comment at the end of a line.
+	input = "P = ? [ F a ] // This is a comment.";
+	ASSERT_NO_THROW(
+				formula = storm::parser::CslParser::parseCslFormula(input)
+	);
+	ASSERT_EQ("P = ? (F a)", formula->toString());
 }
 
 TEST(CslParserTest, wrongProbabilisticFormulaTest) {

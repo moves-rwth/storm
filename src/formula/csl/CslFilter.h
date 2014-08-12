@@ -55,13 +55,18 @@ public:
 		this->actions.clear();
 	}
 
-	void check(storm::modelchecker::prctl::AbstractModelChecker<T> const & modelchecker) const {
+	void check(storm::modelchecker::csl::AbstractModelChecker<T> const & modelchecker) const {
 
 		// Write out the formula to be checked.
 		std::cout << std::endl;
 		LOG4CPLUS_INFO(logger, "Model checking formula\t" << this->toString());
 		std::cout << "Model checking formula:\t" << this->toString() << std::endl;
 
+		writeOut(evaluate(modelchecker), modelchecker);
+
+	}
+
+	Result evaluate(storm::modelchecker::csl::AbstractModelChecker<T> const & modelchecker) const {
 		Result result;
 
 		try {
@@ -73,13 +78,9 @@ public:
 		} catch (std::exception& e) {
 			std::cout << "Error during computation: " << e.what() << "Skipping property." << std::endl;
 			LOG4CPLUS_ERROR(logger, "Error during computation: " << e.what() << "Skipping property.");
-			std::cout << std::endl << "-------------------------------------------" << std::endl;
-
-			return;
 		}
 
-		writeOut(result, modelchecker);
-
+		return result;
 	}
 
 	virtual std::string toString() const override {
@@ -121,10 +122,10 @@ public:
 
 				for(auto action : this->actions) {
 					desc += action->toString();
-					desc += ", ";
+					desc += "; ";
 				}
 
-				// Remove the last ", ".
+				// Remove the last "; ".
 				desc.pop_back();
 				desc.pop_back();
 
@@ -151,10 +152,10 @@ public:
 
 				for(auto action : this->actions) {
 					desc += action->toString();
-					desc += ", ";
+					desc += "; ";
 				}
 
-				// Remove the last ", ".
+				// Remove the last "; ".
 				desc.pop_back();
 				desc.pop_back();
 
@@ -189,15 +190,15 @@ public:
 
 private:
 
-	storm::storage::BitVector evaluate(storm::modelchecker::csl::AbstractModelChecker<T> const & modelchecker, std::shared_ptr<AbstractStateFormula<T>> const & formula) const {
+	Result evaluate(storm::modelchecker::csl::AbstractModelChecker<T> const & modelchecker, std::shared_ptr<AbstractStateFormula<T>> const & formula) const {
 		// First, get the model checking result.
-		storm::storage::BitVector result = modelchecker.checkMinMaxOperator(*formula);
+		Result result;
 
 		if(this->opt != UNDEFINED) {
 			// If there is an action specifying that min/max probabilities should be computed, call the appropriate method of the model checker.
-			result = modelchecker.checkMinMaxOperator(formula, this->opt == MINIMIZE ? true : false);
+			result.stateResult = modelchecker.checkMinMaxOperator(*formula, this->opt == MINIMIZE ? true : false);
 		} else {
-			result = formula->check(modelchecker);
+			result.stateResult = formula->check(modelchecker);
 		}
 
 
@@ -205,15 +206,15 @@ private:
 		return evaluateActions(result, modelchecker);
 	}
 
-	std::vector<T> evaluate(storm::modelchecker::csl::AbstractModelChecker<T> const & modelchecker, std::shared_ptr<AbstractPathFormula<T>> const & formula) const {
+	Result evaluate(storm::modelchecker::csl::AbstractModelChecker<T> const & modelchecker, std::shared_ptr<AbstractPathFormula<T>> const & formula) const {
 		// First, get the model checking result.
-		std::vector<T> result;
+		Result result;
 
 		if(this->opt != UNDEFINED) {
 			// If there is an action specifying that min/max probabilities should be computed, call the appropriate method of the model checker.
-			result = modelchecker.checkMinMaxOperator(*formula, this->opt == MINIMIZE ? true : false);
+			result.pathResult = modelchecker.checkMinMaxOperator(*formula, this->opt == MINIMIZE ? true : false);
 		} else {
-			result = formula->check(modelchecker, false);
+			result.pathResult = formula->check(modelchecker, false);
 		}
 
 		// Now apply all filter actions and return the result.
@@ -223,8 +224,9 @@ private:
 	Result evaluateActions(Result result, storm::modelchecker::csl::AbstractModelChecker<T> const & modelchecker) const {
 
 		// Init the state selection and state map vectors.
-		result.selection = storm::storage::BitVector(result.stateResult.size(), true);
-		result.stateMap = std::vector<uint_fast64_t>(result.selection.size());
+		uint_fast64_t size = result.stateResult.size() == 0 ? result.pathResult.size() : result.stateResult.size();
+		result.selection = storm::storage::BitVector(size, true);
+		result.stateMap = std::vector<uint_fast64_t>(size);
 		for(uint_fast64_t i = 0; i < result.selection.size(); i++) {
 			result.stateMap[i] = i;
 		}
@@ -236,7 +238,14 @@ private:
 		return result;
 	}
 
-	void writeOut(Result const & result, storm::modelchecker::prctl::AbstractModelChecker<T> const & modelchecker) const {
+	void writeOut(Result const & result, storm::modelchecker::csl::AbstractModelChecker<T> const & modelchecker) const {
+
+		// Test if there is anything to write out.
+		// The selection size should only be 0 if an error occurred during the evaluation (since a model with 0 states is invalid).
+		if(result.selection.size() == 0) {
+			std::cout << std::endl << "-------------------------------------------" << std::endl;
+			return;
+		}
 
 		// Test for the kind of result. Values or states.
 		if(!result.pathResult.empty()) {

@@ -146,7 +146,7 @@ struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, std::shared_ptr<storm::
 						MAKE(prctl::PrctlFilter<double>, qi::_1, storm::property::MINIMIZE)] |
 				(qi::lit("R") >> qi::lit("max") >> qi::lit("=") > qi::lit("?") >> rewardPathFormula )[qi::_val =
 						MAKE(prctl::PrctlFilter<double>, qi::_1, storm::property::MAXIMIZE)] |
-				(qi::lit("R") >> qi::lit("=") >> qi::lit("?") >> rewardPathFormula )[qi::_val =
+				(qi::lit("R") >> qi::lit("=") > qi::lit("?") >> rewardPathFormula )[qi::_val =
 						MAKE(prctl::PrctlFilter<double>, qi::_1)]
 
 				);
@@ -183,7 +183,7 @@ struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, std::shared_ptr<storm::
 				);
 		sortAction.name("sort action");
 
-		abstractAction = (boundAction | invertAction | formulaAction | rangeAction | sortAction) >> (qi::lit(";") | qi::eps);
+		abstractAction = (qi::lit(";") | qi::eps) >> (boundAction | invertAction | formulaAction | rangeAction | sortAction) >> (qi::lit(";") | qi::eps);
 		abstractAction.name("filter action");
 
 		filter = (qi::lit("filter") >> qi::lit("[") >> +abstractAction >> qi::lit("]") > qi::lit("(") >> formula >> qi::lit(")"))[qi::_val =

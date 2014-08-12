@@ -65,7 +65,7 @@ public:
 		}
 
 		// First, we need to compute the probability for satisfying the path formula for each state.
-		std::vector<ValueType> quantitativeResult = formula.getPathFormula()->check(*this, false);
+		std::vector<ValueType> quantitativeResult = formula.getChild()->check(*this, false);
 
 		//Remove the minimizing operator entry from the stack.
 		this->minimumOperatorStack.pop();

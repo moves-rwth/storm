@@ -174,7 +174,7 @@ public:
 	 */
 	virtual storm::storage::BitVector checkProbabilisticBoundOperator(storm::property::csl::ProbabilisticBoundOperator<Type> const& formula) const {
 		// First, we need to compute the probability for satisfying the path formula for each state.
-		std::vector<Type> quantitativeResult = formula.getPathFormula()->check(*this, false);
+		std::vector<Type> quantitativeResult = formula.getChild()->check(*this, false);
 
 		// Create resulting bit vector that will hold the yes/no-answer for every state.
 		storm::storage::BitVector result(quantitativeResult.size());

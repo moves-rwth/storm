@@ -49,7 +49,7 @@ public:
 		if(emptyCount > 0) {
 			// There is at least one nullptr action.
 			// Allocate space for the non null actions.
-			this->actions = std::vector<std::shared_ptr<action::AbstractAction<T>>>(actions.size() - emptyCount);
+			this->actions.reserve(actions.size() - emptyCount);
 
 			// Fill the vector. Note: For most implementations of the standard there will be no reallocation in the vector while doing this.
 			for(auto action : actions){
