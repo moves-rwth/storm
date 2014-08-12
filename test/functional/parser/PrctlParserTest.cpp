@@ -181,7 +181,7 @@ TEST(PrctlParserTest, parsePrctlFilterTest) {
 	ASSERT_EQ("filter[max; formula(b); invert; bound(<, 0.500000); sort(value, ascending); range(0, 3)](F a)", formula->toString());
 }
 
-TEST(LtlParserTest, commentTest) {
+TEST(PrctlParserTest, commentTest) {
 	std::string input = "// This is a comment. And this is a commented out formula: R = ? [ F a ]";
 	std::shared_ptr<prctl::PrctlFilter<double>> formula(nullptr);
 	ASSERT_NO_THROW(

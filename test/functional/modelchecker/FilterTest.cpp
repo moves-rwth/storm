@@ -356,3 +356,5 @@ TEST(CslFilterTest, Safety) {
 	ASSERT_EQ(0, result.selection.size());
 	ASSERT_EQ(0, result.stateMap.size());
 }
+
+// TODO Set up the LtlFilterTest once an Ltl modelchecker has been implemented.

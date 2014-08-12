@@ -124,7 +124,7 @@ TEST(LtlParserTest, parseLtlFilterTest) {
 	ASSERT_EQ("filter[max; invert; bound(<, 0.500000); sort(value, ascending); range(0, 3)](X a)", formula->toString());
 }
 
-TEST(PrctlParserTest, commentTest) {
+TEST(LtlParserTest, commentTest) {
 	std::string input = "// This is a comment. And this is a commented out formula: F X a";
 	std::shared_ptr<ltl::LtlFilter<double>> formula(nullptr);
 	ASSERT_NO_THROW(

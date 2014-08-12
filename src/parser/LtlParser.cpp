@@ -68,44 +68,45 @@ struct LtlParser::LtlGrammar : qi::grammar<Iterator, std::shared_ptr<storm::prop
 		freeIdentifierName = qi::lexeme[+(qi::alpha | qi::char_('_'))];
 
 		// This block defines rules for parsing state formulas
-		formula %= orFormula | qi::lit("(") >> formula >> qi::lit(")")| qi::lit("[") >> formula >> qi::lit("]");
+		formula %= orFormula;
 		formula.name("LTL formula");
 		orFormula = andFormula[qi::_val = qi::_1] > *(qi::lit("|") > andFormula)[qi::_val =
 				MAKE(ltl::Or<double>, qi::_val, qi::_1)];
-		orFormula.name("LTL formula");
+		orFormula.name("Or");
 		andFormula = untilFormula[qi::_val = qi::_1] > *(qi::lit("&") > untilFormula)[qi::_val =
 				MAKE(ltl::And<double>, qi::_val, qi::_1)];
-		andFormula.name("LTL formula");
+		andFormula.name("And");
 		untilFormula = notFormula[qi::_val = qi::_1] >
 				*((qi::lit("U") >> qi::lit("<=") > qi::int_ > notFormula)[qi::_val = MAKE(ltl::BoundedUntil<double>, qi::_val, qi::_2, qi::_1)] |
 				  (qi::lit("U") > notFormula)[qi::_val = MAKE(ltl::Until<double>, qi::_val, qi::_1)]);
+		until.name("Until");
 		notFormula = atomicLtlFormula[qi::_val = qi::_1] | (qi::lit("!") > atomicLtlFormula)[qi::_val =
 				MAKE(ltl::Not<double>, qi::_1)];
-		notFormula.name("LTL formula");
+		notFormula.name("Not");
 
 		//This block defines rules for "atomic" state formulas
 		//(Propositions, probabilistic/reward formulas, and state formulas in brackets)
-		atomicLtlFormula %= pathFormula | atomicProposition;
-		atomicLtlFormula.name("LTL formula");
+		atomicLtlFormula %= pathFormula | atomicProposition | qi::lit("(") >> formula >> qi::lit(")")| qi::lit("[") >> formula >> qi::lit("]");
+		atomicLtlFormula.name("Atomic LTL formula");
 		atomicProposition = (freeIdentifierName)[qi::_val =
 				MAKE(ltl::Ap<double>, qi::_1)];
-		atomicProposition.name("LTL formula");
+		atomicProposition.name("Atomic Proposition");
 
 		//This block defines rules for parsing probabilistic path formulas
 		pathFormula = (boundedEventually | eventually | globally | next);
-		pathFormula.name("LTL formula");
+		pathFormula.name("Path Formula");
 		boundedEventually = (qi::lit("F") >> qi::lit("<=") > qi::int_ > formula)[qi::_val =
 				MAKE(ltl::BoundedEventually<double>, qi::_2, qi::_1)];
-		boundedEventually.name("LTL formula");
+		boundedEventually.name("Bounded Eventually");
 		eventually = (qi::lit("F") >> formula)[qi::_val =
 				MAKE(ltl::Eventually<double>, qi::_1)];
-		eventually.name("LTL formula");
+		eventually.name("Eventually");
 		globally = (qi::lit("G") >> formula)[qi::_val =
 				MAKE(ltl::Globally<double>, qi::_1)];
-		globally.name("LTL formula");
+		globally.name("Globally");
 		next = (qi::lit("X") >> formula)[qi::_val =
 				MAKE(ltl::Next<double>, qi::_1)];
-		next.name("LTL formula");
+		next.name("Next");
 
 		// This block defines rules for parsing filter actions.
 		boundAction = (qi::lit("bound") > qi::lit("(") >> comparisonType >> qi::lit(",") >> qi::double_ >> qi::lit(")"))[qi::_val =
@@ -144,10 +145,10 @@ struct LtlParser::LtlGrammar : qi::grammar<Iterator, std::shared_ptr<storm::prop
 					MAKE(ltl::LtlFilter<double>, qi::_2, qi::_1, storm::property::MINIMIZE)] |
 				 (formula)[qi::_val =
 					MAKE(ltl::LtlFilter<double>, qi::_1)];
-		filter.name("PRCTL formula filter");
+		filter.name("LTL formula filter");
 
 		start = (((filter) > (comment | qi::eps))[qi::_val = qi::_1] | comment[qi::_val = MAKE(ltl::LtlFilter<double>, nullptr)] ) > qi::eoi;
-		start.name("LTL formula");
+		start.name("start");
 	}
 
 	qi::rule<Iterator, std::shared_ptr<storm::property::ltl::LtlFilter<double>>(), Skipper> start;
@@ -180,7 +181,6 @@ struct LtlParser::LtlGrammar : qi::grammar<Iterator, std::shared_ptr<storm::prop
 	qi::rule<Iterator, std::string(), Skipper> freeIdentifierName;
 	qi::rule<Iterator, storm::property::ComparisonType(), Skipper> comparisonType;
 	qi::rule<Iterator, storm::property::action::SortAction<double>::SortingCategory(), Skipper> sortingCategory;
-
 };
 
 std::shared_ptr<storm::property::ltl::LtlFilter<double>> LtlParser::parseLtlFormula(std::string formulaString) {

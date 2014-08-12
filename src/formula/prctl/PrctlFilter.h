@@ -125,10 +125,10 @@ public:
 
 				switch(this->opt) {
 					case MINIMIZE:
-						desc += " min, ";
+						desc += "min; ";
 						break;
 					case MAXIMIZE:
-						desc += " max, ";
+						desc += "max; ";
 						break;
 					default:
 						break;

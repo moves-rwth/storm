@@ -112,10 +112,8 @@ public:
 	 * @returns a string representation of the formula
 	 */
 	virtual std::string toString() const override {
-		std::string result = "(";
-		result += " X ";
+		std::string result = "X ";
 		result += child->toString();
-		result += ")";
 		return result;
 	}
 
