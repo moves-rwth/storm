@@ -159,7 +159,7 @@ TEST(PrctlParserTest, parseComplexFormulaTest) {
 }
 
 TEST(PrctlParserTest, parsePrctlFilterTest) {
-	std::string input = "filter[formula(b); invert; bound(<, 0.5); sort(value); range(0,3)](F a)";
+	std::string input = "filter[max; formula(b); invert; bound(<, 0.5); sort(value); range(0,3)](F a)";
 	std::shared_ptr<prctl::PrctlFilter<double>> formula(nullptr);
 	ASSERT_NO_THROW(
 				formula = storm::parser::PrctlParser::parsePrctlFormula(input)
@@ -167,6 +167,8 @@ TEST(PrctlParserTest, parsePrctlFilterTest) {
 
 	// The parser did not falsely recognize the input as a comment.
 	ASSERT_NE(formula, nullptr);
+
+	ASSERT_EQ(storm::property::MAXIMIZE, formula->getOptimizingOperator());
 
 	ASSERT_EQ(5, formula->getActionCount());
 	ASSERT_NE(std::dynamic_pointer_cast<storm::property::action::FormulaAction<double>>(formula->getAction(0)).get(), nullptr);
@@ -176,10 +178,10 @@ TEST(PrctlParserTest, parsePrctlFilterTest) {
 	ASSERT_NE(std::dynamic_pointer_cast<storm::property::action::RangeAction<double>>(formula->getAction(4)).get(), nullptr);
 
 	// The input was parsed correctly.
-	ASSERT_EQ("filter[formula(b); invert; bound(<, 0.500000); sort(value, ascending); range(0, 3)](F a)", formula->toString());
+	ASSERT_EQ("filter[max; formula(b); invert; bound(<, 0.500000); sort(value, ascending); range(0, 3)](F a)", formula->toString());
 }
 
-TEST(PrctlParserTest, commentTest) {
+TEST(LtlParserTest, commentTest) {
 	std::string input = "// This is a comment. And this is a commented out formula: R = ? [ F a ]";
 	std::shared_ptr<prctl::PrctlFilter<double>> formula(nullptr);
 	ASSERT_NO_THROW(

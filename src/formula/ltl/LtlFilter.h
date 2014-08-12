@@ -42,7 +42,7 @@ public:
 	}
 
 	LtlFilter(std::shared_ptr<AbstractLtlFormula<T>> const & child, std::shared_ptr<action::AbstractAction<T>> const & action, OptimizingOperator opt = UNDEFINED) : AbstractFilter<T>(action, opt), child(child) {
-		this->actions.push_back(action);
+		// Intentionally left empty.
 	}
 
 	LtlFilter(std::shared_ptr<AbstractLtlFormula<T>> const & child, std::vector<std::shared_ptr<action::AbstractAction<T>>> const & actions, OptimizingOperator opt = UNDEFINED) : AbstractFilter<T>(actions, opt), child(child) {
@@ -50,7 +50,7 @@ public:
 	}
 
 	virtual ~LtlFilter() {
-		this->actions.clear();
+		// Intentionally left empty.
 	}
 
 
@@ -81,6 +81,35 @@ public:
 
 		writeOut(result, modelchecker);
 
+	}
+
+	Result evaluate(storm::modelchecker::ltl::AbstractModelChecker<T> const & modelchecker) const {
+		// First, get the model checking result.
+		Result result;
+
+		if(this->opt != UNDEFINED) {
+			// If it is specified that min/max probabilities/rewards should be computed, call the appropriate method of the model checker.
+			LOG4CPLUS_ERROR(logger, "Calculation of minimizing and maximizing schedulers for LTL-formula model checking is not yet implemented.");
+			throw storm::exceptions::NotImplementedException() << "Calculation of minimizing and maximizing schedulers for LTL-formula model checking is not yet implemented.";
+		} else {
+			result.pathResult = child->check(modelchecker);
+		}
+
+		// Now apply all filter actions and return the result.
+
+		// Init the state selection and state map vectors.
+		result.selection = storm::storage::BitVector(result.stateResult.size(), true);
+		result.stateMap = std::vector<uint_fast64_t>(result.selection.size());
+		for(uint_fast64_t i = 0; i < result.selection.size(); i++) {
+			result.stateMap[i] = i;
+		}
+
+		// Now apply all filter actions and return the result.
+		for(auto action : this->actions) {
+			result = action->evaluate(result, modelchecker);
+		}
+
+		return result;
 	}
 
 	std::string toString() const override {
@@ -141,35 +170,6 @@ public:
 	}
 
 private:
-
-	Result evaluate(storm::modelchecker::ltl::AbstractModelChecker<T> const & modelchecker) const {
-		// First, get the model checking result.
-		Result result;
-
-		if(this->opt != UNDEFINED) {
-			// If it is specified that min/max probabilities/rewards should be computed, call the appropriate method of the model checker.
-			LOG4CPLUS_ERROR(logger, "Calculation of minimizing and maximizing schedulers for LTL-formula model checking is not yet implemented.");
-			throw storm::exceptions::NotImplementedException() << "Calculation of minimizing and maximizing schedulers for LTL-formula model checking is not yet implemented.";
-		} else {
-			result.stateResult = child->check(modelchecker);
-		}
-
-		// Now apply all filter actions and return the result.
-
-		// Init the state selection and state map vectors.
-		result.selection = storm::storage::BitVector(result.stateResult.size(), true);
-		result.stateMap = std::vector<uint_fast64_t>(result.selection.size());
-		for(uint_fast64_t i = 0; i < result.selection.size(); i++) {
-			result.stateMap[i] = i;
-		}
-
-		// Now apply all filter actions and return the result.
-		for(auto action : this->actions) {
-			result = action->evaluate(result, modelchecker);
-		}
-
-		return result;
-	}
 
 	void writeOut(Result const & result, storm::modelchecker::ltl::AbstractModelChecker<T> const & modelchecker) const {
 

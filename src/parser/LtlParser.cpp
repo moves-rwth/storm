@@ -62,13 +62,13 @@ struct LtlParser::LtlGrammar : qi::grammar<Iterator, std::shared_ptr<storm::prop
 				(qi::lit("index"))[qi::_val = storm::property::action::SortAction<double>::INDEX] |
 				(qi::lit("value"))[qi::_val = storm::property::action::SortAction<double>::VALUE]
 				);
-		//Comment: Empty line or line starting with "//"
+		// Comment: Empty line or line starting with "//"
 		comment = (qi::lit("//") >> *(qi::char_))[qi::_val = nullptr];
 
 		freeIdentifierName = qi::lexeme[+(qi::alpha | qi::char_('_'))];
 
-		//This block defines rules for parsing state formulas
-		formula %= orFormula;
+		// This block defines rules for parsing state formulas
+		formula %= orFormula | qi::lit("(") >> formula >> qi::lit(")")| qi::lit("[") >> formula >> qi::lit("]");
 		formula.name("LTL formula");
 		orFormula = andFormula[qi::_val = qi::_1] > *(qi::lit("|") > andFormula)[qi::_val =
 				MAKE(ltl::Or<double>, qi::_val, qi::_1)];
@@ -85,7 +85,7 @@ struct LtlParser::LtlGrammar : qi::grammar<Iterator, std::shared_ptr<storm::prop
 
 		//This block defines rules for "atomic" state formulas
 		//(Propositions, probabilistic/reward formulas, and state formulas in brackets)
-		atomicLtlFormula %= pathFormula | atomicProposition | qi::lit("(") >> formula >> qi::lit(")");
+		atomicLtlFormula %= pathFormula | atomicProposition;
 		atomicLtlFormula.name("LTL formula");
 		atomicProposition = (freeIdentifierName)[qi::_val =
 				MAKE(ltl::Ap<double>, qi::_1)];
@@ -133,7 +133,7 @@ struct LtlParser::LtlGrammar : qi::grammar<Iterator, std::shared_ptr<storm::prop
 				);
 		sortAction.name("sort action");
 
-		abstractAction = (boundAction | invertAction | rangeAction | sortAction) >> (qi::lit(";") | qi::eps);
+		abstractAction = (qi::lit(";") | qi::eps) >> (boundAction | invertAction | rangeAction | sortAction) >> (qi::lit(";") | qi::eps);
 		abstractAction.name("filter action");
 
 		filter = (qi::lit("filter") >> qi::lit("[") >> +abstractAction >> qi::lit("]") > qi::lit("(") >> formula >> qi::lit(")"))[qi::_val =

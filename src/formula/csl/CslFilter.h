@@ -52,7 +52,7 @@ public:
 	}
 
 	virtual ~CslFilter() {
-		this->actions.clear();
+		// Intentionally left empty.
 	}
 
 	void check(storm::modelchecker::csl::AbstractModelChecker<T> const & modelchecker) const {
