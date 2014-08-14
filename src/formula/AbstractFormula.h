@@ -79,6 +79,16 @@ public:
 	 *	@return true iff all subtrees are valid.
 	 */
 	virtual bool validate(AbstractFormulaChecker<T> const & checker) const = 0;
+
+	/*!
+	 * Returns whether the formula is a propositional logic formula.
+	 * That is, this formula and all its subformulas consist only of And, Or, Not and AP.
+	 *
+	 * @return True iff this is a propositional logic formula.
+	 */
+	virtual bool isPropositional() const {
+		return false;
+	}
 };
 
 } // namespace property

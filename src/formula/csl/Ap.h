@@ -106,6 +106,15 @@ public:
 		return true;
 	}
 
+	/*! Returns whether the formula is a propositional logic formula.
+	 *  That is, this formula and all its subformulas consist only of And, Or, Not and AP.
+	 *
+	 *  @return True iff this is a propositional logic formula.
+	 */
+	virtual bool isPropositional() const override {
+		return true;
+	}
+
 	/*!
 	 * @returns the name of the atomic proposition
 	 */

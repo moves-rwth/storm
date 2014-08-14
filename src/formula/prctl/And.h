@@ -140,6 +140,16 @@ public:
 	}
 
 	/*!
+	 * Returns whether the formula is a propositional logic formula.
+	 * That is, this formula and all its subformulas consist only of And, Or, Not and AP.
+	 *
+	 * @return True iff this is a propositional logic formula.
+	 */
+	virtual bool isPropositional() const override {
+		return left->isPropositional() && right->isPropositional();
+	}
+
+	/*!
 	 * Sets the left child node.
 	 *
 	 * @param newLeft the new left child.

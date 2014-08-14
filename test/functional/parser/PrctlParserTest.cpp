@@ -26,7 +26,10 @@ TEST(PrctlParserTest, parseApOnlyTest) {
 	);
 
 	// The parser did not falsely recognize the input as a comment.
-	ASSERT_NE(formula, nullptr);
+	ASSERT_NE(formula.get(), nullptr);
+
+	ASSERT_TRUE(formula->getChild()->isPropositional());
+	ASSERT_FALSE(formula->getChild()->isProbEventuallyAP());
 
 	// The input was parsed correctly.
 	ASSERT_EQ(input, formula->toString());
@@ -40,7 +43,10 @@ TEST(PrctlParserTest, parsePropositionalFormulaTest) {
 	);
 
 	// The parser did not falsely recognize the input as a comment.
-	ASSERT_NE(formula, nullptr);
+	ASSERT_NE(formula.get(), nullptr);
+
+	ASSERT_TRUE(formula->getChild()->isPropositional());
+	ASSERT_FALSE(formula->getChild()->isProbEventuallyAP());
 
 	// The input was parsed correctly.
 	ASSERT_EQ("(!(a & b) | (a & !c))", formula->toString());
@@ -54,22 +60,30 @@ TEST(PrctlParserTest, parsePathFormulaTest) {
 	);
 
 	// The parser did not falsely recognize the input as a comment.
-	ASSERT_NE(formula, nullptr);
+	ASSERT_NE(formula.get(), nullptr);
 
 	// The input was parsed correctly.
 	ASSERT_NE(std::dynamic_pointer_cast<prctl::Next<double>>(formula->getChild()).get(), nullptr);
 	auto nextFormula = std::dynamic_pointer_cast<prctl::Next<double>>(formula->getChild());
+	ASSERT_FALSE(nextFormula->isPropositional());
+	ASSERT_FALSE(nextFormula->isProbEventuallyAP());
+
 	ASSERT_NE(std::dynamic_pointer_cast<prctl::ProbabilisticBoundOperator<double>>(nextFormula->getChild()).get(), nullptr);
 	auto probBoundFormula = std::dynamic_pointer_cast<prctl::ProbabilisticBoundOperator<double>>(nextFormula->getChild());
+	ASSERT_EQ(0.9, probBoundFormula->getBound());
+	ASSERT_EQ(storm::property::LESS, probBoundFormula->getComparisonOperator());
+	ASSERT_FALSE(probBoundFormula->isPropositional());
+	ASSERT_TRUE(probBoundFormula->isProbEventuallyAP());
+
 	ASSERT_NE(std::dynamic_pointer_cast<prctl::Until<double>>(probBoundFormula->getChild()).get(), nullptr);
 	auto untilFormula = std::dynamic_pointer_cast<prctl::Until<double>>(probBoundFormula->getChild());
+	ASSERT_FALSE(untilFormula->isPropositional());
+	ASSERT_FALSE(untilFormula->isProbEventuallyAP());
+
 	ASSERT_NE(std::dynamic_pointer_cast<prctl::Ap<double>>(untilFormula->getLeft()).get(), nullptr);
 	ASSERT_NE(std::dynamic_pointer_cast<prctl::Ap<double>>(untilFormula->getRight()).get(), nullptr);
 	ASSERT_EQ("a", std::dynamic_pointer_cast<prctl::Ap<double>>(untilFormula->getLeft())->getAp());
 	ASSERT_EQ("b", std::dynamic_pointer_cast<prctl::Ap<double>>(untilFormula->getRight())->getAp());
-	ASSERT_EQ(0.9, probBoundFormula->getBound());
-	ASSERT_EQ(storm::property::LESS, probBoundFormula->getComparisonOperator());
-
 
 	// The string representation is also correct.
 	ASSERT_EQ("P = ? (X P < 0.900000 (a U b))", formula->toString());
@@ -83,7 +97,7 @@ TEST(PrctlParserTest, parseProbabilisticFormulaTest) {
 	);
 
 	// The parser did not falsely recognize the input as a comment.
-	ASSERT_NE(formula, nullptr);
+	ASSERT_NE(formula.get(), nullptr);
 
 
 	ASSERT_NE(std::dynamic_pointer_cast<prctl::ProbabilisticBoundOperator<double>>(formula->getChild()).get(), nullptr);
@@ -91,6 +105,8 @@ TEST(PrctlParserTest, parseProbabilisticFormulaTest) {
 
 	ASSERT_EQ(storm::property::GREATER, op->getComparisonOperator());
 	ASSERT_EQ(0.5, op->getBound());
+	ASSERT_FALSE(op->isPropositional());
+	ASSERT_TRUE(op->isProbEventuallyAP());
 
 	// Test the string representation for the parsed formula.
 	ASSERT_EQ("P > 0.500000 (F a)", formula->toString());
@@ -104,13 +120,15 @@ TEST(PrctlParserTest, parseRewardFormulaTest) {
 	);
 
 	// The parser did not falsely recognize the input as a comment.
-	ASSERT_NE(formula, nullptr);
+	ASSERT_NE(formula.get(), nullptr);
 
 	ASSERT_NE(std::dynamic_pointer_cast<prctl::RewardBoundOperator<double>>(formula->getChild()).get(), nullptr);
 	std::shared_ptr<prctl::RewardBoundOperator<double>> op = std::static_pointer_cast<prctl::RewardBoundOperator<double>>(formula->getChild());
 
 	ASSERT_EQ(storm::property::GREATER_EQUAL, op->getComparisonOperator());
 	ASSERT_EQ(15.0, op->getBound());
+	ASSERT_FALSE(op->isPropositional());
+	ASSERT_FALSE(op->isProbEventuallyAP());
 
 	// Test the string representation for the parsed formula.
 	ASSERT_EQ("R >= 15.000000 (I=5)", formula->toString());
@@ -124,7 +142,10 @@ TEST(PrctlParserTest, parseRewardNoBoundFormulaTest) {
 	);
 
 	// The parser did not falsely recognize the input as a comment.
-	ASSERT_NE(formula, nullptr);
+	ASSERT_NE(formula.get(), nullptr);
+
+	ASSERT_FALSE(formula->getChild()->isPropositional());
+	ASSERT_FALSE(formula->getChild()->isProbEventuallyAP());
 
 	// The input was parsed correctly.
 	ASSERT_EQ("R = ? (F a)", formula->toString());
@@ -138,7 +159,10 @@ TEST(PrctlParserTest, parseProbabilisticNoBoundFormulaTest) {
 	);
 
 	// The parser did not falsely recognize the input as a comment.
-	ASSERT_NE(formula, nullptr);
+	ASSERT_NE(formula.get(), nullptr);
+
+	ASSERT_FALSE(formula->getChild()->isPropositional());
+	ASSERT_FALSE(formula->getChild()->isProbEventuallyAP());
 
 	// The input was parsed correctly.
 	ASSERT_EQ("P = ? (a U<=4 (b & !c))", formula->toString());
@@ -152,7 +176,10 @@ TEST(PrctlParserTest, parseComplexFormulaTest) {
 	);
 
 	// The parser did not falsely recognize the input as a comment.
-	ASSERT_NE(formula, nullptr);
+	ASSERT_NE(formula.get(), nullptr);
+
+	ASSERT_FALSE(formula->getChild()->isPropositional());
+	ASSERT_FALSE(formula->getChild()->isProbEventuallyAP());
 
 	// The input was parsed correctly.
 	ASSERT_EQ("(R <= 0.500000 (S) & (R > 15.000000 (C <= 0.500000) | !P < 0.400000 (G P > 0.900000 (F<=7 (a & b)))))", formula->toString());
@@ -166,7 +193,7 @@ TEST(PrctlParserTest, parsePrctlFilterTest) {
 	);
 
 	// The parser did not falsely recognize the input as a comment.
-	ASSERT_NE(formula, nullptr);
+	ASSERT_NE(formula.get(), nullptr);
 
 	ASSERT_EQ(storm::property::MAXIMIZE, formula->getOptimizingOperator());
 
@@ -177,12 +204,15 @@ TEST(PrctlParserTest, parsePrctlFilterTest) {
 	ASSERT_NE(std::dynamic_pointer_cast<storm::property::action::SortAction<double>>(formula->getAction(3)).get(), nullptr);
 	ASSERT_NE(std::dynamic_pointer_cast<storm::property::action::RangeAction<double>>(formula->getAction(4)).get(), nullptr);
 
+	ASSERT_FALSE(formula->getChild()->isPropositional());
+	ASSERT_FALSE(formula->getChild()->isProbEventuallyAP());
+
 	// The input was parsed correctly.
 	ASSERT_EQ("filter[max; formula(b); invert; bound(<, 0.500000); sort(value, ascending); range(0, 3)](F a)", formula->toString());
 }
 
 TEST(PrctlParserTest, commentTest) {
-	std::string input = "// This is a comment. And this is a commented out formula: R = ? [ F a ]";
+	std::string input = "// This is a comment. And this is a commented out formula: P<=0.5 [ X a ]";
 	std::shared_ptr<prctl::PrctlFilter<double>> formula(nullptr);
 	ASSERT_NO_THROW(
 				formula = storm::parser::PrctlParser::parsePrctlFormula(input)
@@ -192,11 +222,15 @@ TEST(PrctlParserTest, commentTest) {
 	ASSERT_NE(nullptr, formula.get());
 
 	// Test if the parser recognizes the comment at the end of a line.
-	input = "R = ? [ F a ] // This is a comment.";
+	input = "P<=0.5 [ X a ] // This is a comment.";
 	ASSERT_NO_THROW(
 				formula = storm::parser::PrctlParser::parsePrctlFormula(input)
 	);
-	ASSERT_EQ("R = ? (F a)", formula->toString());
+
+	ASSERT_FALSE(formula->getChild()->isPropositional());
+	ASSERT_FALSE(formula->getChild()->isProbEventuallyAP());
+
+	ASSERT_EQ("P <= 0.500000 (X a)", formula->toString());
 }
 
 

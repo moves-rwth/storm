@@ -23,7 +23,7 @@ class PrctlFormulaChecker : public AbstractFormulaChecker<T> {
 		 *	Implementation of AbstractFormulaChecker::validate() using code
 		 *	looking exactly like the sample code given there.
 		 */
-		virtual bool validate(std::shared_ptr<storm::property::abstract::AbstractFormula<T>> const & formula) const {
+		virtual bool validate(std::shared_ptr<storm::property::AbstractFormula<T>> const & formula) const {
 			// What to support: Principles of Model Checking Def. 10.76 + syntactic sugar
 			if (
 					dynamic_pointer_cast<storm::property::prctl::And<T>>(formula) ||
