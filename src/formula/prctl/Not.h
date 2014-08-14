@@ -9,7 +9,6 @@
 #define STORM_FORMULA_PRCTL_NOT_H_
 
 #include "AbstractStateFormula.h"
-#include "src/formula/AbstractFormulaChecker.h"
 #include "src/modelchecker/prctl/ForwardDeclarations.h"
 
 namespace storm {
@@ -113,17 +112,6 @@ public:
 		result += child->toString();
 		return result;
 	}
-
-	/*!
-     *  @brief Checks if the subtree conforms to some logic.
-     *
-     *  @param checker Formula checker object.
-     *  @return true iff the subtree conforms to some logic.
-     */
-	virtual bool validate(AbstractFormulaChecker<T> const & checker) const override {
-		return checker.validate(this->child);
-	}
-
 
 	/*!
 	 * Returns whether the formula is a propositional logic formula.

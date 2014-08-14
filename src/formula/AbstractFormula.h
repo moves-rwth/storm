@@ -9,14 +9,13 @@
 #define STORM_FORMULA_ABSTRACTFORMULA_H_
 
 #include <string>
+#include <memory>
 
 namespace storm {
 namespace property {
 template <class T> class AbstractFormula;
 } //namespace property
 } //namespace storm
-
-#include "src/formula/AbstractFormulaChecker.h"
 
 namespace storm {
 namespace property {
@@ -63,22 +62,6 @@ public:
 	 *	@returns a string representation of the formula
 	 */
 	virtual std::string toString() const = 0;
-
-	/*!
-	 *	@brief Checks if all subtrees are valid in some logic.
-	 *
-	 *	@note Every subclass must implement this method.
-	 *
-	 *	This method is given a checker object that knows which formula
-	 *	classes are allowed within the logic the checker represents. Every
-	 *	subclass is supposed to call checker.validate() for all child
-	 *	formulas and return true if and only if all those calls returned
-	 *	true.
-	 *
-	 *	@param checker Checker object.
-	 *	@return true iff all subtrees are valid.
-	 */
-	virtual bool validate(AbstractFormulaChecker<T> const & checker) const = 0;
 
 	/*!
 	 * Returns whether the formula is a propositional logic formula.

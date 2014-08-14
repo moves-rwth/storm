@@ -143,20 +143,6 @@ public:
 	}
 
 	/*!
-     *  @brief Checks if all subtrees conform to some logic.
-     *
-     *  @param checker Formula checker object.
-     *  @return true iff all subtrees conform to some logic.
-     */
-	virtual bool validate(const AbstractFormulaChecker<T>& checker) const override {
-		bool res = checker.validate(left);
-		for (auto it = right->begin(); it != right->end(); ++it) {
-			res &= checker.validate(std::get<0>(*it));
-		}
-		return res;
-	}
-
-	/*!
 	 * Sets the left child node.
 	 *
 	 * @param newLeft the new left child.

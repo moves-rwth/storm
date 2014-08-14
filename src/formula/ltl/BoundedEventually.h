@@ -9,7 +9,6 @@
 #define STORM_FORMULA_LTL_BOUNDEDEVENTUALLY_H_
 
 #include "AbstractLtlFormula.h"
-#include "src/formula/AbstractFormulaChecker.h"
 #include <cstdint>
 #include <string>
 #include "src/modelchecker/ltl/ForwardDeclarations.h"
@@ -124,16 +123,6 @@ public:
 		result += " ";
 		result += child->toString();
 		return result;
-	}
-
-	/*!
-	 *  @brief Checks if the subtree conforms to some logic.
-	 *
-	 *  @param checker Formula checker object.
-	 *  @return true iff the subtree conforms to some logic.
-	 */
-	virtual bool validate(AbstractFormulaChecker<T> const & checker) const override {
-		return checker.validate(this->child);
 	}
 
 	/*!

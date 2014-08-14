@@ -9,7 +9,6 @@
 #define STORM_FORMULA_PRCTL_STEADYSTATEREWARD_H_
 
 #include "AbstractRewardPathFormula.h"
-#include "src/formula/AbstractFormulaChecker.h"
 #include <string>
 
 namespace storm {
@@ -87,18 +86,6 @@ public:
 	 */
 	virtual std::string toString() const override {
 		return "S";
-	}
-
-	/*!
-     *  @brief Checks if all subtrees conform to some logic.
-     *
-     *  As SteadyStateReward objects have no subformulas, we return true here.
-     *
-     *  @param checker Formula checker object.
-     *  @return true
-     */
-	virtual bool validate(AbstractFormulaChecker<T> const & checker) const override {
-		return true;
 	}
 };
 

@@ -10,7 +10,6 @@
 
 #include "AbstractPathFormula.h"
 #include "AbstractStateFormula.h"
-#include "src/formula/AbstractFormulaChecker.h"
 
 namespace storm {
 namespace property {
@@ -122,16 +121,6 @@ public:
 		result += " U ";
 		result += right->toString();
 		return result;
-	}
-
-	/*!
-	 *  @brief Checks if all subtrees conform to some logic.
-	 *
-	 *  @param checker Formula checker object.
-	 *  @return true iff all subtrees conform to some logic.
-	 */
-	virtual bool validate(AbstractFormulaChecker<T> const & checker) const override {
-		return checker.validate(left) && checker.validate(right);
 	}
 
 	/*!

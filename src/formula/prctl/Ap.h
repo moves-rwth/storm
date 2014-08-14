@@ -9,7 +9,6 @@
 #define STORM_FORMULA_PRCTL_AP_H_
 
 #include "src/formula/prctl/AbstractStateFormula.h"
-#include "src/formula/AbstractFormulaChecker.h"
 #include "src/modelchecker/prctl/ForwardDeclarations.h"
 
 namespace storm {
@@ -92,18 +91,6 @@ public:
 	 */
 	virtual storm::storage::BitVector check(const storm::modelchecker::prctl::AbstractModelChecker<T>& modelChecker) const override {
 		return modelChecker.template as<IApModelChecker>()->checkAp(*this);
-	}
-
-	/*!
-     *  @brief Checks if all subtrees conform to some logic.
-     *
-     *	As atomic propositions have no subformulas, we return true here.
-     *
-     *  @param checker Formula checker object.
-     *  @return true
-     */
-	virtual bool validate(const AbstractFormulaChecker<T>& checker) const override {
-		return true;
 	}
 
 	/*!

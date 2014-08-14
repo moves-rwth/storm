@@ -119,16 +119,6 @@ public:
 	}
 
 	/*!
-	 *  @brief Checks if the subtree conforms to some logic.
-	 *
-	 *  @param checker Formula checker object.
-	 *  @return true iff the subtree conforms to some logic.
-	 */
-	virtual bool validate(AbstractFormulaChecker<T> const & checker) const override {
-		return checker.validate(child);
-	}
-
-	/*!
 	 * @returns the child node
 	 */
 	std::shared_ptr<AbstractStateFormula<T>> const & getChild() const {

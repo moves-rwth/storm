@@ -47,19 +47,23 @@ public:
 	 */
 	bool isProbEventuallyAP() const {
 
+		// Test if a probabilistic bound operator is at the root.
 		if(dynamic_cast<storm::property::csl::ProbabilisticBoundOperator<T> const *>(this) == nullptr) {
 			return false;
 		}
 
 		auto probFormula = dynamic_cast<storm::property::csl::ProbabilisticBoundOperator<T> const *>(this);
 
+		// Check if the direct subformula of the probabilistic bound operator is an eventually or until formula.
 		if(std::dynamic_pointer_cast<storm::property::csl::Eventually<T>>(probFormula->getChild()).get() != nullptr) {
 
+			// Get the subformula and check if its subformulas are propositional.
 			auto eventuallyFormula = std::dynamic_pointer_cast<storm::property::csl::Eventually<T>>(probFormula->getChild());
 			return eventuallyFormula->getChild()->isPropositional();
 		}
 		else if(std::dynamic_pointer_cast<storm::property::csl::Until<T>>(probFormula->getChild()).get() != nullptr) {
 
+			// Get the subformula and check if its subformulas are propositional.
 			auto untilFormula = std::dynamic_pointer_cast<storm::property::csl::Until<T>>(probFormula->getChild());
 			return untilFormula->getLeft()->isPropositional() && untilFormula->getRight()->isPropositional();
 		}

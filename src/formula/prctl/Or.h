@@ -9,7 +9,6 @@
 #define STORM_FORMULA_PRCTL_OR_H_
 
 #include "src/formula/prctl/AbstractStateFormula.h"
-#include "src/formula/AbstractFormulaChecker.h"
 
 namespace storm {
 namespace property {
@@ -125,16 +124,6 @@ public:
 		result += ")";
 		return result;
 	}
-
-	/*!
-     *  @brief Checks if all subtrees conform to some logic.
-     *
-     *  @param checker Formula checker object.
-     *  @return true iff all subtrees conform to some logic.
-     */
-	virtual bool validate(AbstractFormulaChecker<T> const & checker) const override {
-        return checker.validate(this->left) && checker.validate(this->right);
-    }
 
 	/*!
 	 * Returns whether the formula is a propositional logic formula.

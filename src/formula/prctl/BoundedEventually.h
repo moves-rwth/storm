@@ -10,7 +10,6 @@
 
 #include "src/formula/prctl/AbstractPathFormula.h"
 #include "src/formula/prctl/AbstractStateFormula.h"
-#include "src/formula/AbstractFormulaChecker.h"
 #include <cstdint>
 #include <string>
 #include "src/modelchecker/prctl/ForwardDeclarations.h"
@@ -124,16 +123,6 @@ public:
 		result += " ";
 		result += child->toString();
 		return result;
-	}
-
-	/*!
-     *  @brief Checks if the subtree conforms to some logic.
-     *
-     *  @param checker Formula checker object.
-     *  @return true iff the subtree conforms to some logic.
-     */
-	virtual bool validate(const AbstractFormulaChecker<T>& checker) const override {
-		return checker.validate(this->child);
 	}
 
 	/*!

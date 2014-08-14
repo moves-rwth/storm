@@ -136,16 +136,6 @@ public:
 	}
 
 	/*!
-	 *  @brief Checks if all subtrees conform to some logic.
-	 *
-	 *  @param checker Formula checker object.
-	 *  @return true iff all subtrees conform to some logic.
-	 */
-	virtual bool validate(AbstractFormulaChecker<T> const & checker) const override {
-		return checker.validate(this->left) && checker.validate(this->right);
-	}
-
-	/*!
 	 * Sets the left child node.
 	 *
 	 * @param newLeft the new left child.

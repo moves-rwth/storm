@@ -9,7 +9,6 @@
 #define STORM_FORMULA_PRCTL_INSTANTANEOUSREWARD_H_
 
 #include "AbstractRewardPathFormula.h"
-#include "src/formula/AbstractFormulaChecker.h"
 #include <cstdint>
 #include <string>
 
@@ -108,18 +107,6 @@ public:
 		std::string result = "I=";
 		result += std::to_string(bound);
 		return result;
-	}
-
-	/*!
-	 *  @brief Checks if all subtrees conform to some logic.
-	 *
-	 *  As InstantaneousReward formulas have no subformulas, we return true here.
-	 *
-	 *  @param checker Formula checker object.
-	 *  @return true
-	 */
-	virtual bool validate(AbstractFormulaChecker<T> const & checker) const override {
-		return true;
 	}
 
 	/*!

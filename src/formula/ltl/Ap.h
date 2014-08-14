@@ -107,18 +107,6 @@ public:
 	}
 
 	/*!
-	 *  @brief Checks if all subtrees conform to some logic.
-	 *
-	 *	As atomic propositions have no subformulas, we return true here.
-	 *
-	 *  @param checker Formula checker object.
-	 *  @return true
-	 */
-	virtual bool validate(AbstractFormulaChecker<T> const & checker) const override {
-		return true;
-	}
-
-	/*!
 	 * Returns whether the formula is a propositional logic formula.
 	 * That is, this formula and all its subformulas consist only of And, Or, Not and AP.
 	 *

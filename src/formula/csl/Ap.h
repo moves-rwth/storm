@@ -9,7 +9,6 @@
 #define STORM_FORMULA_CSL_AP_H_
 
 #include "src/formula/csl/AbstractStateFormula.h"
-#include "src/formula/AbstractFormulaChecker.h"
 #include "src/modelchecker/csl/ForwardDeclarations.h"
 
 namespace storm {
@@ -92,18 +91,6 @@ public:
 	 */
 	virtual storm::storage::BitVector check(storm::modelchecker::csl::AbstractModelChecker<T> const & modelChecker) const override {
 		return modelChecker.template as<IApModelChecker>()->checkAp(*this);
-	}
-
-	/*!
-     *  @brief Checks if all subtrees conform to some logic.
-     *
-     *	As atomic propositions have no subformulas, we return true here.
-     *
-     *  @param checker Formula checker object.
-     *  @return true
-     */
-	virtual bool validate(AbstractFormulaChecker<T> const & checker) const override {
-		return true;
 	}
 
 	/*! Returns whether the formula is a propositional logic formula.

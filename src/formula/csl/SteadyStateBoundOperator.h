@@ -9,7 +9,6 @@
 #define STORM_FORMULA_CSL_STEADYSTATEOPERATOR_H_
 
 #include "AbstractStateFormula.h"
-#include "src/formula/AbstractFormulaChecker.h"
 #include "src/formula/ComparisonType.h"
 
 namespace storm {
@@ -109,16 +108,6 @@ public:
 	 */
 	virtual storm::storage::BitVector check(storm::modelchecker::csl::AbstractModelChecker<T> const & modelChecker) const override {
 		return modelChecker.template as<ISteadyStateBoundOperatorModelChecker>()->checkSteadyStateBoundOperator(*this);
-	}
-
-	/*!
-	 *  @brief Checks if the subtree conforms to some logic.
-	 *
-	 *  @param checker Formula checker object.
-	 *  @return true iff the subtree conforms to some logic.
-	 */
-	virtual bool validate(AbstractFormulaChecker<T> const & checker) const override {
-		return checker.validate(this->stateFormula);
 	}
 
 	/*!

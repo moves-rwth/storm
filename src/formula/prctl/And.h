@@ -9,7 +9,6 @@
 #define STORM_FORMULA_PRCTL_AND_H_
 
 #include "src/formula/prctl/AbstractStateFormula.h"
-#include "src/formula/AbstractFormulaChecker.h"
 #include "src/modelchecker/prctl/ForwardDeclarations.h"
 #include <string>
 
@@ -127,16 +126,6 @@ public:
 		result += right->toString();
 		result += ")";
 		return result;
-	}
-
-	/*!
-	 *	@brief Checks if all subtrees conform to some logic.
-	 *
-	 *	@param checker Formula checker object.
-	 *	@return true iff all subtrees conform to some logic.
-	 */
-	virtual bool validate(const AbstractFormulaChecker<T>& checker) const override {
-		return checker.validate(this->left) && checker.validate(this->right);
 	}
 
 	/*!

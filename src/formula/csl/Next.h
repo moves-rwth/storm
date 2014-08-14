@@ -10,7 +10,6 @@
 
 #include "src/formula/csl/AbstractPathFormula.h"
 #include "src/formula/csl/AbstractStateFormula.h"
-#include "src/formula/AbstractFormulaChecker.h"
 
 namespace storm {
 namespace property {
@@ -117,16 +116,6 @@ public:
 		std::string result = "X ";
 		result += child->toString();
 		return result;
-	}
-
-	/*!
-	 *  @brief Checks if the subtree conforms to some logic.
-	 *
-	 *  @param checker Formula checker object.
-	 *  @return true iff the subtree conforms to some logic.
-	 */
-	virtual bool validate(AbstractFormulaChecker<T> const & checker) const override {
-		return checker.validate(this->child);
 	}
 
 	/*!
