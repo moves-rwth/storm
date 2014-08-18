@@ -139,7 +139,7 @@ public:
         
         std::vector<boost::container::flat_set<uint_fast64_t>> const& choiceLabeling = this->getChoiceLabeling();
         
-        storm::storage::SparseMatrixBuilder<T> transitionMatrixBuilder(0, 0, 0, true);
+        storm::storage::SparseMatrixBuilder<T> transitionMatrixBuilder(0, this->getTransitionMatrix().getColumnCount(), 0, true);
         std::vector<boost::container::flat_set<uint_fast64_t>> newChoiceLabeling;
         
         // Check for each choice of each state, whether the choice labels are fully contained in the given label set.
