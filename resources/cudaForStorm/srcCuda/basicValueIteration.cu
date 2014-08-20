@@ -10,20 +10,15 @@
 #include "utility.h"
 
 #include "cuspExtension.h"
+
 #include <thrust/transform.h>
 #include <thrust/device_ptr.h>
 #include <thrust/functional.h>
 
+#include "storm-cudaplugin-config.h"
+
 #ifdef DEBUG
-#define CUDA_CHECK_ALL_ERRORS() do { \
-	cudaError_t errSync  = cudaGetLastError(); \
-	cudaError_t errAsync = cudaDeviceSynchronize(); \
-	if (errSync != cudaSuccess) { \
-		std::cout << "(DLL) Sync kernel error: " << cudaGetErrorString(errSync) << " (Code: " << errSync << ")" << std::endl; \
-	} \
-	if (errAsync != cudaSuccess) { \
-		std::cout << "(DLL) Async kernel error: " << cudaGetErrorString(errAsync) << " (Code: " << errAsync << ")" << std::endl; \
-	} } while(false)
+#define CUDA_CHECK_ALL_ERRORS() do { cudaError_t errSync  = cudaGetLastError(); cudaError_t errAsync = cudaDeviceSynchronize();	if (errSync != cudaSuccess) { std::cout << "(DLL) Sync kernel error: " << cudaGetErrorString(errSync) << " (Code: " << errSync << ") in Line " << __LINE__ << std::endl; } if (errAsync != cudaSuccess) { std::cout << "(DLL) Async kernel error: " << cudaGetErrorString(errAsync) << " (Code: " << errAsync << ") in Line " << __LINE__ << std::endl; } } while(false)
 #else
 #define CUDA_CHECK_ALL_ERRORS() do {} while (false)
 #endif
@@ -56,15 +51,16 @@ void exploadVector(std::vector<std::pair<IndexType, ValueType>> const& inputVect
 	}
 }
 
+// TEMPLATE VERSION
 template <bool Minimize, bool Relative, typename IndexType, typename ValueType>
-bool basicValueIteration_mvReduce(uint_fast64_t const maxIterationCount, ValueType const precision, std::vector<IndexType> const& matrixRowIndices, std::vector<storm::storage::MatrixEntry<ValueType>> const& columnIndicesAndValues, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<IndexType> const& nondeterministicChoiceIndices, size_t& iterationCount) {
+bool basicValueIteration_mvReduce(uint_fast64_t const maxIterationCount, double const precision, std::vector<IndexType> const& matrixRowIndices, std::vector<storm::storage::MatrixEntry<ValueType>> const& columnIndicesAndValues, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<IndexType> const& nondeterministicChoiceIndices, size_t& iterationCount) {
 	//std::vector<IndexType> matrixColumnIndices;
 	//std::vector<ValueType> matrixValues;
 	//exploadVector<IndexType, ValueType>(columnIndicesAndValues, matrixColumnIndices, matrixValues);
 	bool errorOccured = false;
 
 	IndexType* device_matrixRowIndices = nullptr;
-	IndexType* device_matrixColIndicesAndValues = nullptr;
+	ValueType* device_matrixColIndicesAndValues = nullptr;
 	ValueType* device_x = nullptr;
 	ValueType* device_xSwap = nullptr;
 	ValueType* device_b = nullptr;
@@ -74,7 +70,7 @@ bool basicValueIteration_mvReduce(uint_fast64_t const maxIterationCount, ValueTy
 #ifdef DEBUG
 	std::cout.sync_with_stdio(true);
 	std::cout << "(DLL) Entering CUDA Function: basicValueIteration_mvReduce" << std::endl;
-	std::cout << "(DLL) Device has " << getTotalCudaMemory() << " Bytes of Memory with " << getFreeCudaMemory() << "Bytes free (" << (static_cast<double>(getFreeCudaMemory()) / static_cast<double>(getTotalCudaMemory()))*100 << "%)." << std::endl; 
+	std::cout << "(DLL) Device has " << getTotalCudaMemory() << " Bytes of Memory with " << getFreeCudaMemory() << "Bytes free (" << (static_cast<double>(getFreeCudaMemory()) / static_cast<double>(getTotalCudaMemory())) * 100 << "%)." << std::endl;
 	size_t memSize = sizeof(IndexType) * matrixRowIndices.size() + sizeof(IndexType) * columnIndicesAndValues.size() * 2 + sizeof(ValueType) * x.size() + sizeof(ValueType) * x.size() + sizeof(ValueType) * b.size() + sizeof(ValueType) * b.size() + sizeof(IndexType) * nondeterministicChoiceIndices.size();
 	std::cout << "(DLL) We will allocate " << memSize << " Bytes." << std::endl;
 #endif
@@ -96,12 +92,27 @@ bool basicValueIteration_mvReduce(uint_fast64_t const maxIterationCount, ValueTy
 		goto cleanup;
 	}
 
-	CUDA_CHECK_ALL_ERRORS();
-	cudaMallocResult = cudaMalloc(reinterpret_cast<void**>(&device_matrixColIndicesAndValues), sizeof(IndexType) * matrixNnzCount + sizeof(ValueType) * matrixNnzCount);
-	if (cudaMallocResult != cudaSuccess) {
-		std::cout << "Could not allocate memory for Matrix Column Indices and Values, Error Code " << cudaMallocResult << "." << std::endl;
-		errorOccured = true;
-		goto cleanup;
+#ifdef STORM_CUDAPLUGIN_HAVE_64BIT_FLOAT_ALIGNMENT
+#define STORM_CUDAPLUGIN_HAVE_64BIT_FLOAT_ALIGNMENT_VALUE true
+#else
+#define STORM_CUDAPLUGIN_HAVE_64BIT_FLOAT_ALIGNMENT_VALUE false
+#endif
+	if (sizeof(ValueType) == sizeof(float) && STORM_CUDAPLUGIN_HAVE_64BIT_FLOAT_ALIGNMENT_VALUE) {
+		CUDA_CHECK_ALL_ERRORS();
+		cudaMallocResult = cudaMalloc(reinterpret_cast<void**>(&device_matrixColIndicesAndValues), sizeof(IndexType) * matrixNnzCount + sizeof(IndexType) * matrixNnzCount);
+		if (cudaMallocResult != cudaSuccess) {
+			std::cout << "Could not allocate memory for Matrix Column Indices and Values, Error Code " << cudaMallocResult << "." << std::endl;
+			errorOccured = true;
+			goto cleanup;
+		}
+	} else {
+		CUDA_CHECK_ALL_ERRORS();
+		cudaMallocResult = cudaMalloc(reinterpret_cast<void**>(&device_matrixColIndicesAndValues), sizeof(IndexType) * matrixNnzCount + sizeof(ValueType) * matrixNnzCount);
+		if (cudaMallocResult != cudaSuccess) {
+			std::cout << "Could not allocate memory for Matrix Column Indices and Values, Error Code " << cudaMallocResult << "." << std::endl;
+			errorOccured = true;
+			goto cleanup;
+		}
 	}
 
 	CUDA_CHECK_ALL_ERRORS();
@@ -159,12 +170,23 @@ bool basicValueIteration_mvReduce(uint_fast64_t const maxIterationCount, ValueTy
 		goto cleanup;
 	}
 
-	CUDA_CHECK_ALL_ERRORS();
-	cudaCopyResult = cudaMemcpy(device_matrixColIndicesAndValues, columnIndicesAndValues.data(), (sizeof(IndexType) * matrixNnzCount) + (sizeof(ValueType) * matrixNnzCount), cudaMemcpyHostToDevice);
-	if (cudaCopyResult != cudaSuccess) {
-		std::cout << "Could not copy data for Matrix Column Indices and Values, Error Code " << cudaCopyResult << std::endl;
-		errorOccured = true;
-		goto cleanup;
+	// Copy all data as floats are expanded to 64bits :/
+	if (sizeof(ValueType) == sizeof(float) && STORM_CUDAPLUGIN_HAVE_64BIT_FLOAT_ALIGNMENT_VALUE) {
+		CUDA_CHECK_ALL_ERRORS();
+		cudaCopyResult = cudaMemcpy(device_matrixColIndicesAndValues, columnIndicesAndValues.data(), (sizeof(IndexType) * matrixNnzCount) + (sizeof(IndexType) * matrixNnzCount), cudaMemcpyHostToDevice);
+		if (cudaCopyResult != cudaSuccess) {
+			std::cout << "Could not copy data for Matrix Column Indices and Values, Error Code " << cudaCopyResult << std::endl;
+			errorOccured = true;
+			goto cleanup;
+		}
+	} else {
+		CUDA_CHECK_ALL_ERRORS();
+		cudaCopyResult = cudaMemcpy(device_matrixColIndicesAndValues, columnIndicesAndValues.data(), (sizeof(IndexType) * matrixNnzCount) + (sizeof(ValueType) * matrixNnzCount), cudaMemcpyHostToDevice);
+		if (cudaCopyResult != cudaSuccess) {
+			std::cout << "Could not copy data for Matrix Column Indices and Values, Error Code " << cudaCopyResult << std::endl;
+			errorOccured = true;
+			goto cleanup;
+		}
 	}
 
 	CUDA_CHECK_ALL_ERRORS();
@@ -214,9 +236,8 @@ bool basicValueIteration_mvReduce(uint_fast64_t const maxIterationCount, ValueTy
 #endif
 
 	// Data is on device, start Kernel
-	while (!converged && iterationCount < maxIterationCount)
-	{ // In a sub-area since transfer of control via label evades initialization
-		cusp::detail::device::storm_cuda_opt_spmv_csr_vector<IndexType, ValueType>(matrixRowCount, matrixNnzCount, device_matrixRowIndices, device_matrixColIndicesAndValues, device_x, device_multiplyResult);
+	while (!converged && iterationCount < maxIterationCount) { // In a sub-area since transfer of control via label evades initialization
+		cusp::detail::device::storm_cuda_opt_spmv_csr_vector<ValueType>(matrixRowCount, matrixNnzCount, device_matrixRowIndices, device_matrixColIndicesAndValues, device_x, device_multiplyResult);
 		CUDA_CHECK_ALL_ERRORS();
 
 		thrust::device_ptr<ValueType> devicePtrThrust_b(device_b);
@@ -227,7 +248,7 @@ bool basicValueIteration_mvReduce(uint_fast64_t const maxIterationCount, ValueTy
 		CUDA_CHECK_ALL_ERRORS();
 
 		// Reduce: Reduce multiplyResult to a new x vector
-		cusp::detail::device::storm_cuda_opt_vector_reduce<Minimize, IndexType, ValueType>(matrixColCount, matrixRowCount, device_nondeterministicChoiceIndices, device_xSwap, device_multiplyResult);
+		cusp::detail::device::storm_cuda_opt_vector_reduce<Minimize, ValueType>(matrixColCount, matrixRowCount, device_nondeterministicChoiceIndices, device_xSwap, device_multiplyResult);
 		CUDA_CHECK_ALL_ERRORS();
 
 		// Check for convergence
@@ -338,7 +359,7 @@ cleanup:
 template <typename IndexType, typename ValueType>
 void basicValueIteration_spmv(uint_fast64_t const matrixColCount, std::vector<IndexType> const& matrixRowIndices, std::vector<storm::storage::MatrixEntry<ValueType>> const& columnIndicesAndValues, std::vector<ValueType> const& x, std::vector<ValueType>& b) {
 	IndexType* device_matrixRowIndices = nullptr;
-	IndexType* device_matrixColIndicesAndValues = nullptr;
+	ValueType* device_matrixColIndicesAndValues = nullptr;
 	ValueType* device_x = nullptr;
 	ValueType* device_multiplyResult = nullptr;
 
@@ -362,12 +383,21 @@ void basicValueIteration_spmv(uint_fast64_t const matrixColCount, std::vector<In
 		goto cleanup;
 	}
 
+#ifdef STORM_CUDAPLUGIN_HAVE_64BIT_FLOAT_ALIGNMENT
+	CUDA_CHECK_ALL_ERRORS();
+	cudaMallocResult = cudaMalloc(reinterpret_cast<void**>(&device_matrixColIndicesAndValues), sizeof(IndexType) * matrixNnzCount + sizeof(IndexType) * matrixNnzCount);
+	if (cudaMallocResult != cudaSuccess) {
+		std::cout << "Could not allocate memory for Matrix Column Indices And Values, Error Code " << cudaMallocResult << "." << std::endl;
+		goto cleanup;
+	}
+#else
 	CUDA_CHECK_ALL_ERRORS();
 	cudaMallocResult = cudaMalloc(reinterpret_cast<void**>(&device_matrixColIndicesAndValues), sizeof(IndexType) * matrixNnzCount + sizeof(ValueType) * matrixNnzCount);
 	if (cudaMallocResult != cudaSuccess) {
 		std::cout << "Could not allocate memory for Matrix Column Indices And Values, Error Code " << cudaMallocResult << "." << std::endl;
 		goto cleanup;
 	}
+#endif
 
 	CUDA_CHECK_ALL_ERRORS();
 	cudaMallocResult = cudaMalloc(reinterpret_cast<void**>(&device_x), sizeof(ValueType) * matrixColCount);
@@ -397,12 +427,21 @@ void basicValueIteration_spmv(uint_fast64_t const matrixColCount, std::vector<In
 		goto cleanup;
 	}
 
+#ifdef STORM_CUDAPLUGIN_HAVE_64BIT_FLOAT_ALIGNMENT
+	CUDA_CHECK_ALL_ERRORS();
+	cudaCopyResult = cudaMemcpy(device_matrixColIndicesAndValues, columnIndicesAndValues.data(), (sizeof(IndexType) * matrixNnzCount) + (sizeof(IndexType) * matrixNnzCount), cudaMemcpyHostToDevice);
+	if (cudaCopyResult != cudaSuccess) {
+		std::cout << "Could not copy data for Matrix Column Indices and Values, Error Code " << cudaCopyResult << std::endl;
+		goto cleanup;
+	}
+#else
 	CUDA_CHECK_ALL_ERRORS();
 	cudaCopyResult = cudaMemcpy(device_matrixColIndicesAndValues, columnIndicesAndValues.data(), (sizeof(IndexType) * matrixNnzCount) + (sizeof(ValueType) * matrixNnzCount), cudaMemcpyHostToDevice);
 	if (cudaCopyResult != cudaSuccess) {
 		std::cout << "Could not copy data for Matrix Column Indices and Values, Error Code " << cudaCopyResult << std::endl;
 		goto cleanup;
 	}
+#endif
 
 	CUDA_CHECK_ALL_ERRORS();
 	cudaCopyResult = cudaMemcpy(device_x, x.data(), sizeof(ValueType) * matrixColCount, cudaMemcpyHostToDevice);
@@ -423,7 +462,7 @@ void basicValueIteration_spmv(uint_fast64_t const matrixColCount, std::vector<In
 	std::cout << "(DLL) Finished copying data to GPU memory." << std::endl;
 #endif
 
-	cusp::detail::device::storm_cuda_opt_spmv_csr_vector<IndexType, ValueType>(matrixRowCount, matrixNnzCount, device_matrixRowIndices, device_matrixColIndicesAndValues, device_x, device_multiplyResult);
+	cusp::detail::device::storm_cuda_opt_spmv_csr_vector<ValueType>(matrixRowCount, matrixNnzCount, device_matrixRowIndices, device_matrixColIndicesAndValues, device_x, device_multiplyResult);
 	CUDA_CHECK_ALL_ERRORS();
 
 #ifdef DEBUG
@@ -601,7 +640,7 @@ void basicValueIteration_reduceGroupedVector(std::vector<ValueType> const& group
 	
 	do {
 		// Reduce: Reduce multiplyResult to a new x vector
-		cusp::detail::device::storm_cuda_opt_vector_reduce<Minimize, IndexType, ValueType>(groupingSize - 1, groupedSize, device_grouping, device_target, device_groupedVector);
+		cusp::detail::device::storm_cuda_opt_vector_reduce<Minimize, ValueType>(groupingSize - 1, groupedSize, device_grouping, device_target, device_groupedVector);
 		CUDA_CHECK_ALL_ERRORS();
 	} while (false);
 
@@ -713,7 +752,7 @@ cleanup:
  */
 
 void basicValueIteration_spmv_uint64_double(uint_fast64_t const matrixColCount, std::vector<uint_fast64_t> const& matrixRowIndices, std::vector<storm::storage::MatrixEntry<double>> const& columnIndicesAndValues, std::vector<double> const& x, std::vector<double>& b) {
-	basicValueIteration_spmv(matrixColCount, matrixRowIndices, columnIndicesAndValues, x, b);
+	basicValueIteration_spmv<uint_fast64_t, double>(matrixColCount, matrixRowIndices, columnIndicesAndValues, x, b);
 }
 
 void basicValueIteration_addVectorsInplace_double(std::vector<double>& a, std::vector<double> const& b) {
@@ -736,6 +775,31 @@ void basicValueIteration_equalModuloPrecision_double_NonRelative(std::vector<dou
 	basicValueIteration_equalModuloPrecision<double, false>(x, y, maxElement);
 }
 
+// Float
+void basicValueIteration_spmv_uint64_float(uint_fast64_t const matrixColCount, std::vector<uint_fast64_t> const& matrixRowIndices, std::vector<storm::storage::MatrixEntry<float>> const& columnIndicesAndValues, std::vector<float> const& x, std::vector<float>& b) {
+	basicValueIteration_spmv<uint_fast64_t, float>(matrixColCount, matrixRowIndices, columnIndicesAndValues, x, b);
+}
+
+void basicValueIteration_addVectorsInplace_float(std::vector<float>& a, std::vector<float> const& b) {
+	basicValueIteration_addVectorsInplace<float>(a, b);
+}
+
+void basicValueIteration_reduceGroupedVector_uint64_float_minimize(std::vector<float> const& groupedVector, std::vector<uint_fast64_t> const& grouping, std::vector<float>& targetVector) {
+	basicValueIteration_reduceGroupedVector<uint_fast64_t, float, true>(groupedVector, grouping, targetVector);
+}
+
+void basicValueIteration_reduceGroupedVector_uint64_float_maximize(std::vector<float> const& groupedVector, std::vector<uint_fast64_t> const& grouping, std::vector<float>& targetVector) {
+	basicValueIteration_reduceGroupedVector<uint_fast64_t, float, false>(groupedVector, grouping, targetVector);
+}
+
+void basicValueIteration_equalModuloPrecision_float_Relative(std::vector<float> const& x, std::vector<float> const& y, float& maxElement) {
+	basicValueIteration_equalModuloPrecision<float, true>(x, y, maxElement);
+}
+
+void basicValueIteration_equalModuloPrecision_float_NonRelative(std::vector<float> const& x, std::vector<float> const& y, float& maxElement) {
+	basicValueIteration_equalModuloPrecision<float, false>(x, y, maxElement);
+}
+
 bool basicValueIteration_mvReduce_uint64_double_minimize(uint_fast64_t const maxIterationCount, double const precision, bool const relativePrecisionCheck, std::vector<uint_fast64_t> const& matrixRowIndices, std::vector<storm::storage::MatrixEntry<double>> const& columnIndicesAndValues, std::vector<double>& x, std::vector<double> const& b, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, size_t& iterationCount) {
 	if (relativePrecisionCheck) {
 		return basicValueIteration_mvReduce<true, true, uint_fast64_t, double>(maxIterationCount, precision, matrixRowIndices, columnIndicesAndValues, x, b, nondeterministicChoiceIndices, iterationCount);
@@ -752,8 +816,47 @@ bool basicValueIteration_mvReduce_uint64_double_maximize(uint_fast64_t const max
 	}
 }
 
+bool basicValueIteration_mvReduce_uint64_float_minimize(uint_fast64_t const maxIterationCount, double const precision, bool const relativePrecisionCheck, std::vector<uint_fast64_t> const& matrixRowIndices, std::vector<storm::storage::MatrixEntry<float>> const& columnIndicesAndValues, std::vector<float>& x, std::vector<float> const& b, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, size_t& iterationCount) {
+	if (relativePrecisionCheck) {
+		return basicValueIteration_mvReduce<true, true, uint_fast64_t, float>(maxIterationCount, precision, matrixRowIndices, columnIndicesAndValues, x, b, nondeterministicChoiceIndices, iterationCount);
+	} else {
+		return basicValueIteration_mvReduce<true, false, uint_fast64_t, float>(maxIterationCount, precision, matrixRowIndices, columnIndicesAndValues, x, b, nondeterministicChoiceIndices, iterationCount);
+	}
+}
+
+bool basicValueIteration_mvReduce_uint64_float_maximize(uint_fast64_t const maxIterationCount, double const precision, bool const relativePrecisionCheck, std::vector<uint_fast64_t> const& matrixRowIndices, std::vector<storm::storage::MatrixEntry<float>> const& columnIndicesAndValues, std::vector<float>& x, std::vector<float> const& b, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, size_t& iterationCount) {
+	if (relativePrecisionCheck) {
+		return basicValueIteration_mvReduce<false, true, uint_fast64_t, float>(maxIterationCount, precision, matrixRowIndices, columnIndicesAndValues, x, b, nondeterministicChoiceIndices, iterationCount);
+	} else {
+		return basicValueIteration_mvReduce<false, false, uint_fast64_t, float>(maxIterationCount, precision, matrixRowIndices, columnIndicesAndValues, x, b, nondeterministicChoiceIndices, iterationCount);
+	}
+}
+
 size_t basicValueIteration_mvReduce_uint64_double_calculateMemorySize(size_t const rowCount, size_t const rowGroupCount, size_t const nnzCount) {
 	size_t const valueTypeSize = sizeof(double);
+	size_t const indexTypeSize = sizeof(uint_fast64_t);
+
+	/*
+	IndexType* device_matrixRowIndices = nullptr;
+	IndexType* device_matrixColIndices = nullptr;
+	ValueType* device_matrixValues = nullptr;
+	ValueType* device_x = nullptr;
+	ValueType* device_xSwap = nullptr;
+	ValueType* device_b = nullptr;
+	ValueType* device_multiplyResult = nullptr;
+	IndexType* device_nondeterministicChoiceIndices = nullptr;
+	*/
+
+	// Row Indices, Column Indices, Values, Choice Indices
+	size_t const matrixDataSize = ((rowCount + 1) * indexTypeSize) + (nnzCount * indexTypeSize) + (nnzCount * valueTypeSize) + ((rowGroupCount + 1) * indexTypeSize);
+	// Vectors x, xSwap, b, multiplyResult
+	size_t const vectorSizes = (rowGroupCount * valueTypeSize) + (rowGroupCount * valueTypeSize) + (rowCount * valueTypeSize) + (rowCount * valueTypeSize);
+
+	return (matrixDataSize + vectorSizes);
+}
+
+size_t basicValueIteration_mvReduce_uint64_float_calculateMemorySize(size_t const rowCount, size_t const rowGroupCount, size_t const nnzCount) {
+	size_t const valueTypeSize = sizeof(float);
 	size_t const indexTypeSize = sizeof(uint_fast64_t);
 
 	/*

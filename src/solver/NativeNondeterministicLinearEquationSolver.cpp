@@ -76,7 +76,7 @@ namespace storm {
                 }
                 
                 // Determine whether the method converged.
-                converged = storm::utility::vector::equalModuloPrecision(*currentX, *newX, precision, relative);
+                converged = storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *newX, precision, relative);
                 
                 // Update environment variables.
                 std::swap(currentX, newX);
@@ -140,5 +140,6 @@ namespace storm {
         
         // Explicitly instantiate the solver.
         template class NativeNondeterministicLinearEquationSolver<double>;
+		template class NativeNondeterministicLinearEquationSolver<float>;
     } // namespace solver
 } // namespace storm

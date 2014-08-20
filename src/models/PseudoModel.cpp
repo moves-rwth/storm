@@ -101,6 +101,9 @@ namespace storm {
 		template class ModelBasedPseudoModel<double>;
 		template class NonDeterministicMatrixBasedPseudoModel<double>;
 		template class DeterministicMatrixBasedPseudoModel<double>;
+		template class ModelBasedPseudoModel <float> ;
+		template class NonDeterministicMatrixBasedPseudoModel <float>;
+		template class DeterministicMatrixBasedPseudoModel <float>;
 		template class ModelBasedPseudoModel<int>;
 		template class NonDeterministicMatrixBasedPseudoModel<int>;
 		template class DeterministicMatrixBasedPseudoModel<int>;

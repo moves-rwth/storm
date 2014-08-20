@@ -131,6 +131,24 @@ else()
 	message(FATAL_ERROR "StoRM (CudaPlugin) - Result of Type Alignment Check: FAILED (Code ${STORM_CUDA_RUN_RESULT_TYPEALIGNMENT})")
 endif()
 
+# Test for Float 64bit Alignment
+try_run(STORM_CUDA_RUN_RESULT_FLOATALIGNMENT STORM_CUDA_COMPILE_RESULT_FLOATALIGNMENT
+	${PROJECT_BINARY_DIR} "${PROJECT_SOURCE_DIR}/CMakeFloatAlignmentCheck.cpp"
+	COMPILE_OUTPUT_VARIABLE OUTPUT_TEST_VAR
+)
+if(NOT STORM_CUDA_COMPILE_RESULT_FLOATALIGNMENT)
+	message(FATAL_ERROR "StoRM (CudaPlugin) - Could not test float type alignment, there was an Error while compiling the file ${PROJECT_SOURCE_DIR}/CMakeFloatAlignmentCheck.cpp: ${OUTPUT_TEST_VAR}")
+elseif(STORM_CUDA_RUN_RESULT_FLOATALIGNMENT EQUAL 2)
+	message(STATUS "StoRM (CudaPlugin) - Result of Float Type Alignment Check: 64bit alignment active.")
+	set(STORM_CUDAPLUGIN_FLOAT_64BIT_ALIGN_DEF "define")
+elseif(STORM_CUDA_RUN_RESULT_FLOATALIGNMENT EQUAL 3)
+	message(STATUS "StoRM (CudaPlugin) - Result of Float Type Alignment Check: 64bit alignment disabled.")
+	set(STORM_CUDAPLUGIN_FLOAT_64BIT_ALIGN_DEF "undef")
+else()
+	message(FATAL_ERROR "StoRM (CudaPlugin) - Result of Float Type Alignment Check: FAILED (Code ${STORM_CUDA_RUN_RESULT_FLOATALIGNMENT})")
+endif()
+
+
 #
 # Make a version file containing the current version from git.
 #

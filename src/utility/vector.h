@@ -422,6 +422,20 @@ namespace storm {
                 
                 return subVector;
             }
+
+			/*!
+			* Converts the given vector to the given ValueType
+			*/
+			template<typename NewValueType, typename ValueType>
+			std::vector<NewValueType> toValueType(std::vector<ValueType> const& oldVector) {
+				std::vector<NewValueType> resultVector;
+				resultVector.resize(oldVector.size());
+				for (size_t i = 0, size = oldVector.size(); i < size; ++i) {
+					resultVector.at(i) = static_cast<NewValueType>(oldVector.at(i));
+				}
+
+				return resultVector;
+			}
         } // namespace vector
     } // namespace utility
 } // namespace storm

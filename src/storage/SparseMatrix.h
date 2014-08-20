@@ -733,6 +733,23 @@ namespace storm {
 			* Returns a reference to the internal columnMapping vector
 			*/
 			std::vector<MatrixEntry<T>> const& __internal_getColumnsAndValues();
+
+			/*!
+			* Returns a copy of the matrix with the chosen internal data type
+			*/
+			template<typename NewValueType>
+			SparseMatrix<NewValueType> toValueType() const {
+				std::vector<MatrixEntry<NewValueType>> new_columnsAndValues;
+				std::vector<uint_fast64_t> new_rowIndications(rowIndications);
+				std::vector<uint_fast64_t> new_rowGroupIndices(rowGroupIndices);
+
+				new_columnsAndValues.resize(columnsAndValues.size());
+				for (size_t i = 0, size = columnsAndValues.size(); i < size; ++i) {
+					new_columnsAndValues.at(i) = MatrixEntry<NewValueType>(columnsAndValues.at(i).getColumn(), static_cast<NewValueType>(columnsAndValues.at(i).getValue()));
+				}
+
+				return SparseMatrix<NewValueType>(columnCount, std::move(new_rowIndications), std::move(new_columnsAndValues), std::move(new_rowGroupIndices));
+			}
         private:
             /*!
              * Creates a submatrix of the current matrix by keeping only row groups and columns in the given row group

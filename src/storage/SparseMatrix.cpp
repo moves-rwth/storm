@@ -1000,6 +1000,10 @@ namespace storm {
         template class SparseMatrix<int>;
         template std::ostream& operator<<(std::ostream& out, SparseMatrix<int> const& matrix);
         
+		template class MatrixEntry < float > ;
+		template class SparseMatrixBuilder < float >;
+		template class SparseMatrix < float >;
+		template std::ostream& operator<<(std::ostream& out, SparseMatrix<float> const& matrix);
     } // namespace storage
 } // namespace storm
 
