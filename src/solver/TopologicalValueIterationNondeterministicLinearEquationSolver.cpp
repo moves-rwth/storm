@@ -46,7 +46,8 @@ namespace storm {
 		template<>
 		void TopologicalValueIterationNondeterministicLinearEquationSolver<float>::solveEquationSystem(bool minimize, storm::storage::SparseMatrix<float> const& A, std::vector<float>& x, std::vector<float> const& b, std::vector<float>* multiplyResult, std::vector<float>* newX) const {
 			// For testing only
-			LOG4CPLUS_INFO(logger, ">>> Using GPU based model checker WITH FLOAT! <<<");
+			std::cout << "<<< Using CUDA-FLOAT Kernels >>>" << std::endl;
+			LOG4CPLUS_INFO(logger, "<<< Using CUDA-FLOAT Kernels >>>");
 
 			// Now, we need to determine the SCCs of the MDP and perform a topological sort.
 			std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = A.getRowGroupIndices();
@@ -228,7 +229,6 @@ namespace storm {
 		void TopologicalValueIterationNondeterministicLinearEquationSolver<ValueType>::solveEquationSystem(bool minimize, storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const {
 			
 #ifndef GPU_USE_DOUBLE
-			std::cout << "<<< Using CUDA-FLOAT Kernels >>>" << std::endl;
 			TopologicalValueIterationNondeterministicLinearEquationSolver<float> tvindles(precision, maximalNumberOfIterations, relative);
 
 			storm::storage::SparseMatrix<float> new_A = A.toValueType<float>();
@@ -241,9 +241,9 @@ namespace storm {
 				x.at(i) = new_x.at(i);
 			}
 #else
-			std::cout << "<<< Using CUDA-FLOAT Kernels >>>" << std::endl;
 			// For testing only
-			LOG4CPLUS_INFO(logger, ">>> Using GPU based model checker! <<<");
+			std::cout << "<<< Using CUDA-DOUBLE Kernels >>>" << std::endl;
+			LOG4CPLUS_INFO(logger, "<<< Using CUDA-DOUBLE Kernels >>>");
 
 			// Now, we need to determine the SCCs of the MDP and perform a topological sort.
 			std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = A.getRowGroupIndices();
