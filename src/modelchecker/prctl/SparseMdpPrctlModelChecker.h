@@ -502,7 +502,7 @@ namespace storm {
                         result.resize(this->getModel().getNumberOfStates());
                     }
                     
-                    this->nondeterministicLinearEquationSolver->performMatrixVectorMultiplication(this->minimumOperatorStack.top(), this->getModel().getTransitionMatrix(), result, &totalRewardVector, formula.getBound());
+					this->nondeterministicLinearEquationSolver->performMatrixVectorMultiplication(this->minimumOperatorStack.top(), this->getModel().getTransitionMatrix(), result, &totalRewardVector, static_cast<uint_fast64_t>(formula.getBound()));
                     
                     return result;
                 }

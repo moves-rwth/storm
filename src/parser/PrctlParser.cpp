@@ -117,7 +117,7 @@ struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, std::shared_ptr<storm::
 		reachabilityReward = (qi::lit("F") > stateFormula)[qi::_val =
 				MAKE(prctl::ReachabilityReward<double>, qi::_1)];
 		reachabilityReward.name("path formula (for reward operator)");
-		instantaneousReward = (qi::lit("I") > qi::lit("=") > qi::double_)[qi::_val =
+		instantaneousReward = (qi::lit("I") > qi::lit("=") > qi::uint_)[qi::_val =
 				MAKE(prctl::InstantaneousReward<double>, qi::_1)];
 		instantaneousReward.name("path formula (for reward operator)");
 		steadyStateReward = (qi::lit("S"))[qi::_val =

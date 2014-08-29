@@ -378,7 +378,7 @@ public:
 
 		// Perform the actual matrix-vector multiplication as long as the bound of the formula is met.
         if (linearEquationSolver != nullptr) {
-            this->linearEquationSolver->performMatrixVectorMultiplication(this->getModel().getTransitionMatrix(), result, &totalRewardVector, formula.getBound());
+			this->linearEquationSolver->performMatrixVectorMultiplication(this->getModel().getTransitionMatrix(), result, &totalRewardVector, static_cast<uint_fast64_t>(formula.getBound()));
         } else {
             throw storm::exceptions::InvalidStateException() << "No valid linear equation solver available.";
         }

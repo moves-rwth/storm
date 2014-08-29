@@ -170,7 +170,7 @@ public:
 		for(uint_fast64_t row = 0; row < origMat.getRowCount(); ++row) {
 			if(subSysStates.get(row)){
 				for(auto const& entry : origMat.getRow(row)) {
-					if(subSysStates.get(entry.first)) {
+					if(subSysStates.get(entry.getColumn())) {
 						subSysTransitionCount++;	
 					} 
 				}
@@ -198,10 +198,10 @@ public:
 			if(subSysStates.get(row)){
 				// Transfer transitions
 				for(auto& entry : origMat.getRow(row)) {
-					if(subSysStates.get(entry.first)) {
-						newMatBuilder.addNextValue(newRow, stateMapping[entry.first], entry.second);
+					if(subSysStates.get(entry.getColumn())) {
+						newMatBuilder.addNextValue(newRow, stateMapping[entry.getColumn()], entry.getValue());
 					} else {
-						rest += entry.second;
+						rest += entry.getValue();
 					}
 				}
 
@@ -251,8 +251,8 @@ public:
 				if(subSysStates.get(row)){
 					// Transfer transition rewards
 					for(auto& entry : this->getTransitionRewardMatrix().getRow(row)) {
-						if(subSysStates.get(entry.first)) {
-							newTransRewardsBuilder.addNextValue(newRow, stateMapping[entry.first], entry.second);
+						if(subSysStates.get(entry.getColumn())) {
+							newTransRewardsBuilder.addNextValue(newRow, stateMapping[entry.getColumn()], entry.getValue());
 						}
 					}
 

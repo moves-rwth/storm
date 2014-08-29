@@ -4,13 +4,12 @@
 
 #include <iostream>
 
-#include "src/exceptions/InvalidStateException.h"
+#include "src/storage/expressions/LinearCoefficientVisitor.h"
+
 #include "src/settings/Settings.h"
-
-#include "log4cplus/logger.h"
-#include "log4cplus/loggingmacros.h"
-
-extern log4cplus::Logger logger;
+#include "src/exceptions/ExceptionMacros.h"
+#include "src/exceptions/InvalidAccessException.h"
+#include "src/exceptions/InvalidStateException.h"
 
 bool GlpkLpSolverOptionsRegistered = storm::settings::Settings::registerNewModule([] (storm::settings::Settings* instance) -> bool {
 	instance->addOption(storm::settings::OptionBuilder("GlpkLpSolver", "glpkoutput", "", "If set, the glpk output will be printed to the command line.").build());
@@ -22,7 +21,7 @@ bool GlpkLpSolverOptionsRegistered = storm::settings::Settings::registerNewModul
 
 namespace storm {
     namespace solver {
-        GlpkLpSolver::GlpkLpSolver(std::string const& name, ModelSense const& modelSense) : LpSolver(modelSense), lp(nullptr), nextVariableIndex(1), nextConstraintIndex(1), modelContainsIntegerVariables(false), isInfeasibleFlag(false), isUnboundedFlag(false), rowIndices(), columnIndices(), coefficientValues() {
+        GlpkLpSolver::GlpkLpSolver(std::string const& name, ModelSense const& modelSense) : LpSolver(modelSense), lp(nullptr), variableNameToIndexMap(), nextVariableIndex(1), nextConstraintIndex(1), modelContainsIntegerVariables(false), isInfeasibleFlag(false), isUnboundedFlag(false), rowIndices(), columnIndices(), coefficientValues() {
             // Create the LP problem for glpk.
             lp = glp_create_prob();
             
@@ -38,11 +37,11 @@ namespace storm {
             coefficientValues.push_back(0);
         }
         
-        GlpkLpSolver::GlpkLpSolver(std::string const& name) : GlpkLpSolver(name, MINIMIZE) {
+        GlpkLpSolver::GlpkLpSolver(std::string const& name) : GlpkLpSolver(name, ModelSense::Minimize) {
             // Intentionally left empty.
         }
         
-        GlpkLpSolver::GlpkLpSolver() : GlpkLpSolver("", MINIMIZE) {
+        GlpkLpSolver::GlpkLpSolver() : GlpkLpSolver("", ModelSense::Minimize) {
             // Intentionally left empty.
         }
         
@@ -56,76 +55,120 @@ namespace storm {
             glp_free_env();
         }
         
-        uint_fast64_t GlpkLpSolver::createContinuousVariable(std::string const& name, VariableType const& variableType, double lowerBound, double upperBound, double objectiveFunctionCoefficient) {
+        void GlpkLpSolver::addBoundedContinuousVariable(std::string const& name, double lowerBound, double upperBound, double objectiveFunctionCoefficient) {
+            this->addVariable(name, GLP_CV, GLP_DB, lowerBound, upperBound, objectiveFunctionCoefficient);
+        }
+        
+        void GlpkLpSolver::addLowerBoundedContinuousVariable(std::string const& name, double lowerBound, double objectiveFunctionCoefficient) {
+            this->addVariable(name, GLP_CV, GLP_LO, lowerBound, 0, objectiveFunctionCoefficient);
+        }
+        
+        void GlpkLpSolver::addUpperBoundedContinuousVariable(std::string const& name, double upperBound, double objectiveFunctionCoefficient) {
+            this->addVariable(name, GLP_CV, GLP_UP, 0, upperBound, objectiveFunctionCoefficient);
+        }
+        
+        void GlpkLpSolver::addUnboundedContinuousVariable(std::string const& name, double objectiveFunctionCoefficient) {
+            this->addVariable(name, GLP_CV, GLP_FR, 0, 0, objectiveFunctionCoefficient);
+        }
+        
+        void GlpkLpSolver::addBoundedIntegerVariable(std::string const& name, double lowerBound, double upperBound, double objectiveFunctionCoefficient) {
+            this->addVariable(name, GLP_IV, GLP_DB, lowerBound, upperBound, objectiveFunctionCoefficient);
+            this->modelContainsIntegerVariables = true;
+        }
+        
+        void GlpkLpSolver::addLowerBoundedIntegerVariable(std::string const& name, double lowerBound, double objectiveFunctionCoefficient) {
+            this->addVariable(name, GLP_IV, GLP_LO, lowerBound, 0, objectiveFunctionCoefficient);
+            this->modelContainsIntegerVariables = true;
+        }
+
+        void GlpkLpSolver::addUpperBoundedIntegerVariable(std::string const& name, double upperBound, double objectiveFunctionCoefficient) {
+            this->addVariable(name, GLP_IV, GLP_UP, 0, upperBound, objectiveFunctionCoefficient);
+            this->modelContainsIntegerVariables = true;
+        }
+        
+        void GlpkLpSolver::addUnboundedIntegerVariable(std::string const& name, double objectiveFunctionCoefficient) {
+            this->addVariable(name, GLP_IV, GLP_FR, 0, 0, objectiveFunctionCoefficient);
+            this->modelContainsIntegerVariables = true;
+        }
+        
+        void GlpkLpSolver::addBinaryVariable(std::string const& name, double objectiveFunctionCoefficient) {
+            this->addVariable(name, GLP_BV, GLP_FR, 0, 0, objectiveFunctionCoefficient);
+            this->modelContainsIntegerVariables = true;
+        }
+        
+        void GlpkLpSolver::addVariable(std::string const& name, int variableType, int boundType, double lowerBound, double upperBound, double objectiveFunctionCoefficient) {
+            // Check whether variable already exists.
+            auto nameIndexPair = this->variableNameToIndexMap.find(name);
+            LOG_THROW(nameIndexPair == this->variableNameToIndexMap.end(), storm::exceptions::InvalidArgumentException, "Variable '" << nameIndexPair->first << "' already exists.");
+            
+            // Check for valid variable type.
+            LOG_ASSERT(variableType == GLP_CV || variableType == GLP_IV || variableType == GLP_BV, "Illegal type '" << variableType << "' for glpk variable.");
+            
+            // Check for valid bound type.
+            LOG_ASSERT(boundType == GLP_FR || boundType == GLP_UP || boundType == GLP_LO || boundType == GLP_DB, "Illegal bound type for variable '" << name << "'.");
+            
+            // Finally, create the actual variable.
             glp_add_cols(this->lp, 1);
             glp_set_col_name(this->lp, nextVariableIndex, name.c_str());
-            switch (variableType) {
-                case LpSolver::BOUNDED:
-                    glp_set_col_bnds(lp, nextVariableIndex, GLP_DB, lowerBound, upperBound);
-                    break;
-                case LpSolver::UNBOUNDED:
-                    glp_set_col_bnds(lp, nextVariableIndex, GLP_FR, 0, 0);
-                    break;
-                case LpSolver::UPPER_BOUND:
-                    glp_set_col_bnds(lp, nextVariableIndex, GLP_UP, 0, upperBound);
-                    break;
-                case LpSolver::LOWER_BOUND:
-                    glp_set_col_bnds(lp, nextVariableIndex, GLP_LO, lowerBound, 0);
-                    break;
-            }
-            glp_set_col_kind(this->lp, nextVariableIndex, GLP_CV);
+            glp_set_col_bnds(lp, nextVariableIndex, boundType, lowerBound, upperBound);
+            glp_set_col_kind(this->lp, nextVariableIndex, variableType);
             glp_set_obj_coef(this->lp, nextVariableIndex, objectiveFunctionCoefficient);
-            ++nextVariableIndex;
-            
-            this->currentModelHasBeenOptimized = false;
-            return nextVariableIndex - 1;
-        }
-        
-        uint_fast64_t GlpkLpSolver::createIntegerVariable(std::string const& name, VariableType const& variableType, double lowerBound, double upperBound, double objectiveFunctionCoefficient) {
-            uint_fast64_t index = this->createContinuousVariable(name, variableType, lowerBound, upperBound, objectiveFunctionCoefficient);
-            glp_set_col_kind(this->lp, index, GLP_IV);
-            this->modelContainsIntegerVariables = true;
-            return index;
-        }
-        
-        uint_fast64_t GlpkLpSolver::createBinaryVariable(std::string const& name, double objectiveFunctionCoefficient) {
-            uint_fast64_t index = this->createContinuousVariable(name, UNBOUNDED, 0, 1, objectiveFunctionCoefficient);
-            glp_set_col_kind(this->lp, index, GLP_BV);
-            this->modelContainsIntegerVariables = true;
-            return index;
+            this->variableNameToIndexMap.emplace(name, this->nextVariableIndex);
+            ++this->nextVariableIndex;
         }
         
         void GlpkLpSolver::update() const {
             // Intentionally left empty.
         }
         
-        void GlpkLpSolver::addConstraint(std::string const& name, std::vector<uint_fast64_t> const& variables, std::vector<double> const& coefficients, BoundType const& boundType, double rightHandSideValue) {
-            if (variables.size() != coefficients.size()) {
-                LOG4CPLUS_ERROR(logger, "Sizes of variable indices vector and coefficients vector do not match.");
-                throw storm::exceptions::InvalidStateException() << "Sizes of variable indices vector and coefficients vector do not match.";
-            }
-
+        void GlpkLpSolver::addConstraint(std::string const& name, storm::expressions::Expression const& constraint) {
             // Add the row that will represent this constraint.
             glp_add_rows(this->lp, 1);
             glp_set_row_name(this->lp, nextConstraintIndex, name.c_str());
             
+            LOG_THROW(constraint.isRelationalExpression(), storm::exceptions::InvalidArgumentException, "Illegal constraint is not a relational expression.");
+            LOG_THROW(constraint.getOperator() != storm::expressions::OperatorType::NotEqual, storm::exceptions::InvalidArgumentException, "Illegal constraint uses inequality operator.");
+            
+            std::pair<storm::expressions::SimpleValuation, double> leftCoefficients = storm::expressions::LinearCoefficientVisitor().getLinearCoefficients(constraint.getOperand(0));
+            std::pair<storm::expressions::SimpleValuation, double> rightCoefficients = storm::expressions::LinearCoefficientVisitor().getLinearCoefficients(constraint.getOperand(1));
+            for (auto const& identifier : rightCoefficients.first.getDoubleIdentifiers()) {
+                if (leftCoefficients.first.containsDoubleIdentifier(identifier)) {
+                    leftCoefficients.first.setDoubleValue(identifier, leftCoefficients.first.getDoubleValue(identifier) - rightCoefficients.first.getDoubleValue(identifier));
+                } else {
+                    leftCoefficients.first.addDoubleIdentifier(identifier, -rightCoefficients.first.getDoubleValue(identifier));
+                }
+            }
+            rightCoefficients.second -= leftCoefficients.second;
+            
+            // Now we need to transform the coefficients to the vector representation.
+            std::vector<int> variables;
+            std::vector<double> coefficients;
+            for (auto const& identifier : leftCoefficients.first.getDoubleIdentifiers()) {
+                auto identifierIndexPair = this->variableNameToIndexMap.find(identifier);
+                LOG_THROW(identifierIndexPair != this->variableNameToIndexMap.end(), storm::exceptions::InvalidArgumentException, "Constraint contains illegal identifier '" << identifier << "'.");
+                variables.push_back(identifierIndexPair->second);
+                coefficients.push_back(leftCoefficients.first.getDoubleValue(identifier));
+            }
+            
             // Determine the type of the constraint and add it properly.
-            switch (boundType) {
-                case LESS:
-                    glp_set_row_bnds(this->lp, nextConstraintIndex, GLP_UP, 0, rightHandSideValue - storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+            switch (constraint.getOperator()) {
+                case storm::expressions::OperatorType::Less:
+                    glp_set_row_bnds(this->lp, nextConstraintIndex, GLP_UP, 0, rightCoefficients.second - storm::settings::Settings::getInstance()->getOptionByLongName("glpkinttol").getArgument(0).getValueAsDouble());
                     break;
-                case LESS_EQUAL:
-                    glp_set_row_bnds(this->lp, nextConstraintIndex, GLP_UP, 0, rightHandSideValue);
+                case storm::expressions::OperatorType::LessOrEqual:
+                    glp_set_row_bnds(this->lp, nextConstraintIndex, GLP_UP, 0, rightCoefficients.second);
                     break;
-                case GREATER:
-                    glp_set_row_bnds(this->lp, nextConstraintIndex, GLP_LO, rightHandSideValue + storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble(), 0);
+                case storm::expressions::OperatorType::Greater:
+                    glp_set_row_bnds(this->lp, nextConstraintIndex, GLP_LO, rightCoefficients.second + storm::settings::Settings::getInstance()->getOptionByLongName("glpkinttol").getArgument(0).getValueAsDouble(), 0);
                     break;
-                case GREATER_EQUAL:
-                    glp_set_row_bnds(this->lp, nextConstraintIndex, GLP_LO, rightHandSideValue, 0);
+                case storm::expressions::OperatorType::GreaterOrEqual:
+                    glp_set_row_bnds(this->lp, nextConstraintIndex, GLP_LO, rightCoefficients.second, 0);
                     break;
-                case EQUAL:
-                    glp_set_row_bnds(this->lp, nextConstraintIndex, GLP_FX, rightHandSideValue, rightHandSideValue);
+                case storm::expressions::OperatorType::Equal:
+                    glp_set_row_bnds(this->lp, nextConstraintIndex, GLP_FX, rightCoefficients.second, rightCoefficients.second);
                     break;
+                default:
+                    LOG_ASSERT(false, "Illegal operator in LP solver constraint.");
             }
             
             // Record the variables and coefficients in the coefficient matrix.
@@ -143,13 +186,13 @@ namespace storm {
             this->isUnboundedFlag = false;
             
             // Start by setting the model sense.
-            glp_set_obj_dir(this->lp, this->getModelSense() == MINIMIZE ? GLP_MIN : GLP_MAX);
+            glp_set_obj_dir(this->lp, this->getModelSense() == LpSolver::ModelSense::Minimize ? GLP_MIN : GLP_MAX);
             
             glp_load_matrix(this->lp, rowIndices.size() - 1, rowIndices.data(), columnIndices.data(), coefficientValues.data());
             
             int error = 0;
             if (this->modelContainsIntegerVariables) {
-                glp_iocp* parameters = new glp_iocp;
+                glp_iocp* parameters = new glp_iocp();
                 glp_init_iocp(parameters);
                 parameters->presolve = GLP_ON;
                 parameters->tol_int = storm::settings::Settings::getInstance()->getOptionByLongName("glpkinttol").getArgument(0).getValueAsDouble();
@@ -171,11 +214,7 @@ namespace storm {
                 error = glp_simplex(this->lp, nullptr);
             }
             
-            if (error != 0) {
-                LOG4CPLUS_ERROR(logger, "Unable to optimize glpk model (" << error << ").");
-                throw storm::exceptions::InvalidStateException() << "Unable to optimize glpk model (" << error << ").";
-            }
-            
+            LOG_THROW(error == 0, storm::exceptions::InvalidStateException, "Unable to optimize glpk model (" << error << ").");
             this->currentModelHasBeenOptimized = true;
         }
         
@@ -217,103 +256,75 @@ namespace storm {
             return status == GLP_OPT;
         }
         
-        int_fast64_t GlpkLpSolver::getIntegerValue(uint_fast64_t variableIndex) const {
+        double GlpkLpSolver::getContinuousValue(std::string const& name) const {
             if (!this->isOptimal()) {
-                if (this->isInfeasible()) {
-                    LOG4CPLUS_ERROR(logger, "Unable to get glpk solution from infeasible model.");
-                    throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution from infeasible model.";
-                } else if (this->isUnbounded()) {
-                    LOG4CPLUS_ERROR(logger, "Unable to get glpk solution from unbounded model.");
-                    throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution from unbounded model.";
-                } else {
-                    LOG4CPLUS_ERROR(logger, "Unable to get glpk solution from unoptimized model.");
-                    throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution from unoptimized model.";
-                }
-            }
-           
-            double value = 0;
-            if (this->modelContainsIntegerVariables) {
-                value = glp_mip_col_val(this->lp, static_cast<int>(variableIndex));
-            } else {
-                value = glp_get_col_prim(this->lp, static_cast<int>(variableIndex));
-            }
-
-            if (std::abs(value - static_cast<int>(value)) <= storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble()) {
-                // Nothing to do in this case.
-            } else if (std::abs(value) > storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble()) {
-                LOG4CPLUS_ERROR(logger, "Illegal value for integer variable in glpk solution (" << value << ").");
-                throw storm::exceptions::InvalidStateException() << "Illegal value for integer variable in glpk solution (" << value << ").";
+                LOG_THROW(!this->isInfeasible(), storm::exceptions::InvalidAccessException, "Unable to get glpk solution from infeasible model.");
+                LOG_THROW(!this->isUnbounded(),  storm::exceptions::InvalidAccessException, "Unable to get glpk solution from unbounded model.");
+                LOG_THROW(false, storm::exceptions::InvalidAccessException, "Unable to get glpk solution from unoptimized model.");
             }
             
-            return static_cast<int_fast64_t>(value);
-        }
-        
-        bool GlpkLpSolver::getBinaryValue(uint_fast64_t variableIndex) const {
-            if (!this->isOptimal()) {
-                if (this->isInfeasible()) {
-                    LOG4CPLUS_ERROR(logger, "Unable to get glpk solution from infeasible model.");
-                    throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution from infeasible model.";
-                } else if (this->isUnbounded()) {
-                    LOG4CPLUS_ERROR(logger, "Unable to get glpk solution from unbounded model.");
-                    throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution from unbounded model.";
-                } else {
-                    LOG4CPLUS_ERROR(logger, "Unable to get glpk solution from unoptimized model.");
-                    throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution from unoptimized model.";
-                }
-            }
-
-            double value = 0;
-            if (this->modelContainsIntegerVariables) {
-                value = glp_mip_col_val(this->lp, static_cast<int>(variableIndex));
-            } else {
-                value = glp_get_col_prim(this->lp, static_cast<int>(variableIndex));
-            }
-
-            if (std::abs(value - 1) <= storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble()) {
-                // Nothing to do in this case.
-            } else if (std::abs(value) > storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble()) {
-                LOG4CPLUS_ERROR(logger, "Illegal value for binary variable in Gurobi solution (" << value << ").");
-                throw storm::exceptions::InvalidStateException() << "Illegal value for binary variable in Gurobi solution (" << value << ").";
-            }
+            auto variableIndexPair = this->variableNameToIndexMap.find(name);
+            LOG_THROW(variableIndexPair != this->variableNameToIndexMap.end(), storm::exceptions::InvalidAccessException, "Accessing value of unknown variable '" << name << "'.");
             
-            return static_cast<bool>(value);
-        }
-        
-        double GlpkLpSolver::getContinuousValue(uint_fast64_t variableIndex) const {
-            if (!this->isOptimal()) {
-                if (this->isInfeasible()) {
-                    LOG4CPLUS_ERROR(logger, "Unable to get glpk solution from infeasible model.");
-                    throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution from infeasible model.";
-                } else if (this->isUnbounded()) {
-                    LOG4CPLUS_ERROR(logger, "Unable to get glpk solution from unbounded model.");
-                    throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution from unbounded model.";
-                } else {
-                    LOG4CPLUS_ERROR(logger, "Unable to get glpk solution from unoptimized model.");
-                    throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution from unoptimized model.";
-                }
-            }
-
             double value = 0;
             if (this->modelContainsIntegerVariables) {
-                value = glp_mip_col_val(this->lp, static_cast<int>(variableIndex));
+                value = glp_mip_col_val(this->lp, static_cast<int>(variableIndexPair->second));
             } else {
-                value = glp_get_col_prim(this->lp, static_cast<int>(variableIndex));
+                value = glp_get_col_prim(this->lp, static_cast<int>(variableIndexPair->second));
             }
             return value;
         }
         
+        int_fast64_t GlpkLpSolver::getIntegerValue(std::string const& name) const {
+            if (!this->isOptimal()) {
+                LOG_THROW(!this->isInfeasible(), storm::exceptions::InvalidAccessException, "Unable to get glpk solution from infeasible model.");
+                LOG_THROW(!this->isUnbounded(),  storm::exceptions::InvalidAccessException, "Unable to get glpk solution from unbounded model.");
+                LOG_THROW(false, storm::exceptions::InvalidAccessException, "Unable to get glpk solution from unoptimized model.");
+            }
+           
+            auto variableIndexPair = this->variableNameToIndexMap.find(name);
+            LOG_THROW(variableIndexPair != this->variableNameToIndexMap.end(), storm::exceptions::InvalidAccessException, "Accessing value of unknown variable '" << name << "'.");
+
+            double value = 0;
+            if (this->modelContainsIntegerVariables) {
+                value = glp_mip_col_val(this->lp, static_cast<int>(variableIndexPair->second));
+            } else {
+                value = glp_get_col_prim(this->lp, static_cast<int>(variableIndexPair->second));
+            }
+
+            // Now check the desired precision was actually achieved.
+            LOG_THROW(std::abs(static_cast<int>(value) - value) <= storm::settings::Settings::getInstance()->getOptionByLongName("glpkinttol").getArgument(0).getValueAsDouble(), storm::exceptions::InvalidStateException, "Illegal value for integer variable in glpk solution (" << value << ").");
+            
+            return static_cast<int_fast64_t>(value);
+        }
+        
+        bool GlpkLpSolver::getBinaryValue(std::string const& name) const {
+            if (!this->isOptimal()) {
+                LOG_THROW(!this->isInfeasible(), storm::exceptions::InvalidAccessException, "Unable to get glpk solution from infeasible model.");
+                LOG_THROW(!this->isUnbounded(),  storm::exceptions::InvalidAccessException, "Unable to get glpk solution from unbounded model.");
+                LOG_THROW(false, storm::exceptions::InvalidAccessException, "Unable to get glpk solution from unoptimized model.");
+            }
+
+            auto variableIndexPair = this->variableNameToIndexMap.find(name);
+            LOG_THROW(variableIndexPair != this->variableNameToIndexMap.end(), storm::exceptions::InvalidAccessException, "Accessing value of unknown variable '" << name << "'.");
+            
+            double value = 0;
+            if (this->modelContainsIntegerVariables) {
+                value = glp_mip_col_val(this->lp, static_cast<int>(variableIndexPair->second));
+            } else {
+                value = glp_get_col_prim(this->lp, static_cast<int>(variableIndexPair->second));
+            }
+
+            LOG_THROW(std::abs(static_cast<int>(value) - value) <= storm::settings::Settings::getInstance()->getOptionByLongName("glpkinttol").getArgument(0).getValueAsDouble(), storm::exceptions::InvalidStateException, "Illegal value for binary variable in glpk solution (" << value << ").");
+            
+            return static_cast<bool>(value);
+        }
+        
         double GlpkLpSolver::getObjectiveValue() const {
             if (!this->isOptimal()) {
-                if (this->isInfeasible()) {
-                    LOG4CPLUS_ERROR(logger, "Unable to get glpk solution from infeasible model.");
-                    throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution from infeasible model.";
-                } else if (this->isUnbounded()) {
-                    LOG4CPLUS_ERROR(logger, "Unable to get glpk solution from unbounded model.");
-                    throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution from unbounded model.";
-                } else {
-                    LOG4CPLUS_ERROR(logger, "Unable to get glpk solution from unoptimized model.");
-                    throw storm::exceptions::InvalidStateException() << "Unable to get Gurobi solution from unoptimized model.";
-                }
+                LOG_THROW(!this->isInfeasible(), storm::exceptions::InvalidAccessException, "Unable to get glpk solution from infeasible model.");
+                LOG_THROW(!this->isUnbounded(),  storm::exceptions::InvalidAccessException, "Unable to get glpk solution from unbounded model.");
+                LOG_THROW(false, storm::exceptions::InvalidAccessException, "Unable to get glpk solution from unoptimized model.");
             }
 
             double value = 0;

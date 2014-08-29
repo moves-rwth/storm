@@ -3,7 +3,7 @@
 
 namespace storm {
     namespace dd {
-        enum DdType {
+        enum class DdType {
             CUDD
         };
     }

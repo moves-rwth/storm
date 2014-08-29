@@ -69,31 +69,31 @@ public:
 
 				for(auto const& trans : transMat.getRow(init)) {
 					//save transition only if it's no 'virtual transition of prob 0 and it doesn't go from init state to init state.
-					if(trans.second != (T) 0 && !subSysStates.get(trans.first)) {
+					if(trans.getValue() != (T) 0 && !subSysStates.get(trans.getColumn())) {
 						//new state?
-						if(distances[trans.first].second == (T) -1) {
-							distances[trans.first].first = init;
-							distances[trans.first].second = trans.second;
+						if(distances[trans.getColumn()].second == (T) -1) {
+							distances[trans.getColumn()].first = init;
+							distances[trans.getColumn()].second = trans.getValue();
 
-							activeSet.insert(std::pair<uint_fast64_t, T>(trans.first, distances[trans.first].second));
+							activeSet.insert(std::pair<uint_fast64_t, T>(trans.getColumn(), distances[trans.getColumn()].second));
 						}
-						else if(distances[trans.first].second < trans.second){
+						else if(distances[trans.getColumn()].second < trans.getValue()){
 							//This state has already been discovered
 							//And the distance can be improved by using this transition.
 
 							//find state in set, remove it, reenter it with new and correct values.
-							auto range = activeSet.equal_range(std::pair<uint_fast64_t, T>(trans.first, distances[trans.first].second));
+							auto range = activeSet.equal_range(std::pair<uint_fast64_t, T>(trans.getColumn(), distances[trans.getColumn()].second));
 							for(;range.first != range.second; range.first++) {
-								if(trans.first == range.first->first) {
+								if(trans.getColumn() == range.first->first) {
 									activeSet.erase(range.first);
 									break;
 								}
 							}
 
-							distances[trans.first].first = init;
-							distances[trans.first].second = trans.second;
+							distances[trans.getColumn()].first = init;
+							distances[trans.getColumn()].second = trans.getValue();
 
-							activeSet.insert(std::pair<uint_fast64_t, T>(trans.first, trans.second));
+							activeSet.insert(std::pair<uint_fast64_t, T>(trans.getColumn(), trans.getValue()));
 						}
 					}
 				}
@@ -115,36 +115,36 @@ public:
 				// Look at all neighbors
 				for(auto const& trans : transMat.getRow(activeState.first)) {
 					// Only consider the transition if it's not virtual
-					if(trans.second != (T) 0) {
+					if(trans.getValue() != (T) 0) {
 
-						T distance = activeState.second * trans.second;
+						T distance = activeState.second * trans.getValue();
 
 						//not discovered or initial terminal state
-						if(distances[trans.first].second == (T)-1) {
+						if(distances[trans.getColumn()].second == (T)-1) {
 							//New state discovered -> save it
-							distances[trans.first].first = activeState.first;
-							distances[trans.first].second = distance;
+							distances[trans.getColumn()].first = activeState.first;
+							distances[trans.getColumn()].second = distance;
 
 							// push newly discovered state into activeSet
-							activeSet.insert(std::pair<uint_fast64_t, T>(trans.first, distance));
+							activeSet.insert(std::pair<uint_fast64_t, T>(trans.getColumn(), distance));
 						}
-						else if(distances[trans.first].second < distance ){
+						else if(distances[trans.getColumn()].second < distance) {
 							//This state has already been discovered
 							//And the distance can be improved by using this transition.
 
 							//find state in set, remove it, reenter it with new and correct values.
 
-							auto range = activeSet.equal_range(std::pair<uint_fast64_t, T>(trans.first, distances[trans.first].second));
+							auto range = activeSet.equal_range(std::pair<uint_fast64_t, T>(trans.getColumn(), distances[trans.getColumn()].second));
 							for(;range.first != range.second; range.first++) {
-								if(trans.first == range.first->first) {
+								if(trans.getColumn() == range.first->first) {
 									activeSet.erase(range.first);
 									break;
 								}
 							}
 
-							distances[trans.first].first = activeState.first;
-							distances[trans.first].second = distance;
-							activeSet.insert(std::pair<uint_fast64_t, T>(trans.first, distance));
+							distances[trans.getColumn()].first = activeState.first;
+							distances[trans.getColumn()].second = distance;
+							activeSet.insert(std::pair<uint_fast64_t, T>(trans.getColumn(), distance));
 						}
 					}
 				}
@@ -182,33 +182,33 @@ public:
 
 				for(auto const& trans : transMat.getRow(init)) {
 					//save transition only if it's no 'virtual transition of prob 0 and it doesn't go from init state to init state.
-					if(trans.second != (T) 0 && !subSysStates.get(trans.first)) {
+					if(trans.getValue() != (T) 0 && !subSysStates.get(trans.getColumn())) {
 						//new state?
-						if(distances[trans.first].second == (T) -1) {
+						if(distances[trans.getColumn()].second == (T) -1) {
 							//for initialization of subsys -> subsys search use prob (init -> subsys state -> found state) instead of prob(subsys state -> found state)
-							distances[trans.first].first = init;
-							distances[trans.first].second = trans.second * (itDistances[init].second == -1 ? 1 : itDistances[init].second);
+							distances[trans.getColumn()].first = init;
+							distances[trans.getColumn()].second = trans.getValue() * (itDistances[init].second == -1 ? 1 : itDistances[init].second);
 
-							activeSet.insert(std::pair<uint_fast64_t, T>(trans.first, distances[trans.first].second));
+							activeSet.insert(std::pair<uint_fast64_t, T>(trans.getColumn(), distances[trans.getColumn()].second));
 						}
-						else if(distances[trans.first].second < trans.second * itDistances[init].second){
+						else if(distances[trans.getColumn()].second < trans.getValue() * itDistances[init].second){
 							//This state has already been discovered
 							//And the distance can be improved by using this transition.
 
 							//find state in set, remove it, reenter it with new and correct values.
-							auto range = activeSet.equal_range(std::pair<uint_fast64_t, T>(trans.first, distances[trans.first].second));
+							auto range = activeSet.equal_range(std::pair<uint_fast64_t, T>(trans.getColumn(), distances[trans.getColumn()].second));
 							for(;range.first != range.second; range.first++) {
-								if(trans.first == range.first->first) {
+								if(trans.getColumn() == range.first->first) {
 									activeSet.erase(range.first);
 									break;
 								}
 							}
 
 							//for initialization of subsys -> subsys search use prob (init -> subsys state -> found state) instead of prob(subsys state -> found state)
-							distances[trans.first].first = init;
-							distances[trans.first].second = trans.second * (itDistances[init].second == -1 ? 1 : itDistances[init].second);
+							distances[trans.getColumn()].first = init;
+							distances[trans.getColumn()].second = trans.getValue() * (itDistances[init].second == -1 ? 1 : itDistances[init].second);
 
-							activeSet.insert(std::pair<uint_fast64_t, T>(trans.first, trans.second));
+							activeSet.insert(std::pair<uint_fast64_t, T>(trans.getColumn(), trans.getValue()));
 						}
 					}
 				}
@@ -225,7 +225,7 @@ public:
 			activeSet.erase(--activeSet.end());
 
 			// Always stop at first target/terminal state
-			//if(terminalStates.get(activeState.first) || subSysStates.get(activeState.first)) break;
+			//if(terminalStates.get(activeState.getColumn()) || subSysStates.get(activeState.getColumn())) break;
 
 			// If this is an initial state, do not consider its outgoing transitions, since all relevant ones have already been considered
 			// Same goes for forbidden states since they may not be used on a path, except as last node.
@@ -233,36 +233,36 @@ public:
 				// Look at all neighbors
 				for(auto const& trans : transMat.getRow(activeState.first)) {
 					// Only consider the transition if it's not virtual
-					if(trans.second != (T) 0) {
+					if(trans.getValue() != (T) 0) {
 
-						T distance = activeState.second * trans.second;
+						T distance = activeState.second * trans.getValue();
 
 						//not discovered or initial terminal state
-						if(distances[trans.first].second == (T)-1) {
+						if(distances[trans.getColumn()].second == (T)-1) {
 							//New state discovered -> save it
-							distances[trans.first].first = activeState.first;
-							distances[trans.first].second = distance;
+							distances[trans.getColumn()].first = activeState.first;
+							distances[trans.getColumn()].second = distance;
 
 							// push newly discovered state into activeSet
-							activeSet.insert(std::pair<uint_fast64_t, T>(trans.first, distance));
+							activeSet.insert(std::pair<uint_fast64_t, T>(trans.getColumn(), distance));
 						}
-						else if(distances[trans.first].second < distance ){
+						else if(distances[trans.getColumn()].second < distance) {
 							//This state has already been discovered
 							//And the distance can be improved by using this transition.
 
 							//find state in set, remove it, reenter it with new and correct values.
 
-							auto range = activeSet.equal_range(std::pair<uint_fast64_t, T>(trans.first, distances[trans.first].second));
+							auto range = activeSet.equal_range(std::pair<uint_fast64_t, T>(trans.getColumn(), distances[trans.getColumn()].second));
 							for(;range.first != range.second; range.first++) {
-								if(trans.first == range.first->first) {
+								if(trans.getColumn() == range.first->first) {
 									activeSet.erase(range.first);
 									break;
 								}
 							}
 
-							distances[trans.first].first = activeState.first;
-							distances[trans.first].second = distance;
-							activeSet.insert(std::pair<uint_fast64_t, T>(trans.first, distance));
+							distances[trans.getColumn()].first = activeState.first;
+							distances[trans.getColumn()].second = distance;
+							activeSet.insert(std::pair<uint_fast64_t, T>(trans.getColumn(), distance));
 						}
 					}
 				}
@@ -350,7 +350,7 @@ public:
 		shortestPath.push_back(bestIndex);
 
 		//At last compensate for the distance between init and source state
-		probability = itSearch ? probability : probability / itDistances[bestIndex].second;
+		probability = itSearch ? probability : probability / itDistances[bestIndex].first;
 	}
 
 private:
@@ -375,7 +375,7 @@ public:
 	/*!
 	 *
 	 */
-	static storm::models::Dtmc<T> computeCriticalSubsystem(storm::models::Dtmc<T> const & model, std::shared_ptr<storm::properties::prctl::AbstractStateFormula<T>> const & stateFormula) {
+	static storm::models::Dtmc<T> computeCriticalSubsystem(storm::models::Dtmc<T> & model, std::shared_ptr<storm::properties::prctl::AbstractStateFormula<T>> const & stateFormula) {
 
 		//-------------------------------------------------------------
 		// 1. Strip and handle formulas
@@ -392,7 +392,6 @@ public:
 
 		// init bit vector to contain the subsystem
 		storm::storage::BitVector subSys(model.getNumberOfStates());
-
 
 		// Strip bound operator
 		std::shared_ptr<storm::properties::prctl::ProbabilisticBoundOperator<T>> boundOperator = std::dynamic_pointer_cast<storm::properties::prctl::ProbabilisticBoundOperator<T>>(stateFormula);
