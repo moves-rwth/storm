@@ -23,7 +23,7 @@
 
 #include <memory>
 
-typedef typename storm::properties::action::AbstractAction<double>::Result Result;
+typedef storm::properties::action::AbstractAction<double>::Result Result;
 
 TEST(PrctlFilterTest, generalFunctionality) {
 	// Test filter queries of increasing complexity.

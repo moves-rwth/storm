@@ -21,7 +21,7 @@
 #include "src/solver/GmmxxLinearEquationSolver.h"
 #include "src/exceptions/InvalidArgumentException.h"
 
-typedef typename storm::properties::action::AbstractAction<double>::Result Result;
+typedef storm::properties::action::AbstractAction<double>::Result Result;
 
 TEST(ActionTest, BoundActionFunctionality) {
 
