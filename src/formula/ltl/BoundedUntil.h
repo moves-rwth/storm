@@ -17,38 +17,46 @@ namespace storm {
 namespace property {
 namespace ltl {
 
+// Forward declaration for the interface class.
 template <class T> class BoundedUntil;
 
 /*!
- *  @brief Interface class for model checkers that support BoundedUntil.
+ * Interface class for model checkers that support BoundedUntil.
  *   
- *  All model checkers that support the formula class BoundedUntil must inherit
- *  this pure virtual class.
+ * All model checkers that support the formula class BoundedUntil must inherit
+ * this pure virtual class.
  */
 template <class T>
 class IBoundedUntilModelChecker {
     public:
+
 		/*!
-         *  @brief Evaluates BoundedUntil formula within a model checker.
-         *
-         *  @param obj Formula object with subformulas.
-         *  @return Result of the formula for every node.
-         */
+		 * Empty virtual destructor.
+		 */
+		virtual ~IBoundedUntilModelChecker() {
+			// Intentionally left empty
+		}
+
+		/*!
+		 * Evaluates a BoundedUntil formula within a model checker.
+		 *
+		 * @param obj Formula object with subformulas.
+		 * @return The modelchecking result of the formula for every state.
+		 */
         virtual std::vector<T> checkBoundedUntil(const BoundedUntil<T>& obj) const = 0;
 };
 
 /*!
- * @brief
- * Class for an abstract (path) formula tree with a BoundedUntil node as root.
+ * Class for an Ltl formula tree with a BoundedUntil node as root.
  *
- * Has two Abstract LTL formulas as sub formulas/trees.
+ * Has two Ltl formulas as sub formulas/trees.
  *
  * @par Semantics
  * The formula holds iff in at most \e bound steps, formula \e right (the right subtree) holds, and before,
  * \e left holds.
  *
- * The subtrees are seen as part of the object and deleted with the object
- * (this behavior can be prevented by setting them to NULL before deletion)
+ * The object has shared ownership of its subtrees. If this object is deleted and no other object has a shared
+ * ownership of the subtrees they will be deleted as well.
  *
  * @see AbstractLtlFormula
  */
@@ -58,28 +66,26 @@ class BoundedUntil : public AbstractLtlFormula<T> {
 public:
 
 	/*!
-	 * Empty constructor
+	 * Creates a BoundedUntil node without subnodes.
+	 * The resulting object will not represent a complete formula!
 	 */
 	BoundedUntil() : left(nullptr), right(nullptr), bound(0) {
 		// Intentionally left empty.
 	}
 
 	/*!
-	 * Constructor
+	 * Creates a BoundedUntil node using the given parameters.
 	 *
-	 * @param left The left formula subtree
-	 * @param right The left formula subtree
-	 * @param bound The maximal number of steps
+	 * @param left The left formula subtree.
+	 * @param right The right formula subtree.
+	 * @param bound The maximal number of steps within which the right subformula must hold.
 	 */
 	BoundedUntil(std::shared_ptr<AbstractLtlFormula<T>> const & left, std::shared_ptr<AbstractLtlFormula<T>> const & right, uint_fast64_t bound) : left(left), right(right), bound(bound) {
 		// Intentionally left empty.
 	}
 
 	/*!
-	 * Destructor.
-	 *
-	 * Also deletes the subtrees.
-	 * (this behaviour can be prevented by setting the subtrees to NULL before deletion)
+	 * Empty virtual destructor.
 	 */
 	virtual ~BoundedUntil() {
 		// Intentionally left empty.
@@ -88,17 +94,17 @@ public:
 	/*!
 	 * Clones the called object.
 	 *
-	 * Performs a "deep copy", i.e. the subtrees of the new object are clones of the original ones
+	 * Performs a "deep copy", i.e. the subnodes of the new object are clones of the original ones.
 	 *
-	 * @returns a new BoundedUntil-object that is identical the called object.
+	 * @returns A new BoundedUntil object that is a deep copy of the called object.
 	 */
 	virtual std::shared_ptr<AbstractLtlFormula<T>> clone() const override {
 		std::shared_ptr<BoundedUntil<T>> result(new BoundedUntil<T>());
 		result->setBound(bound);
-		if (this->leftIsSet()) {
+		if (this->isLeftSet()) {
 			result->setLeft(left->clone());
 		}
-		if (this->rightIsSet()) {
+		if (this->isRightSet()) {
 			result->setRight(right->clone());
 		}
 		return result;
@@ -119,12 +125,9 @@ public:
 	}
 
 	/*!
-	 *	@brief Return string representation of this formula.
+	 * Returns a textual representation of the formula tree with this node as root.
 	 *
-	 * In LTL, brackets are needed around the until, as Until may appear nested (in other logics, Until always is the
-	 * root of a path formula); hence this function is overwritten in this class.
-	 *
-	 * @return A string representation of the formula.
+	 * @returns A string representing the formula tree.
 	 */
 	virtual std::string toString() const override {
 		std::string result = "(" + left->toString();
@@ -136,9 +139,27 @@ public:
 	}
 
 	/*!
+	 * Gets the left child node.
+	 *
+	 * @returns The left child node.
+	 */
+	std::shared_ptr<AbstractLtlFormula<T>> const & getLeft() const {
+		return left;
+	}
+
+	/*!
+	 * Gets the right child node.
+	 *
+	 * @returns The right child node.
+	 */
+	std::shared_ptr<AbstractLtlFormula<T>> const & getRight() const {
+		return right;
+	}
+
+	/*!
 	 * Sets the left child node.
 	 *
-	 * @param newLeft the new left child.
+	 * @param newLeft The new left child.
 	 */
 	void setLeft(std::shared_ptr<AbstractLtlFormula<T>> const & newLeft) {
 		left = newLeft;
@@ -147,61 +168,57 @@ public:
 	/*!
 	 * Sets the right child node.
 	 *
-	 * @param newRight the new right child.
+	 * @param newRight The new right child.
 	 */
 	void setRight(std::shared_ptr<AbstractLtlFormula<T>> const & newRight) {
 		right = newRight;
 	}
 
 	/*!
-	 * @returns a pointer to the left child node
-	 */
-	std::shared_ptr<AbstractLtlFormula<T>> const & getLeft() const {
-		return left;
-	}
-
-	/*!
-	 * @returns a pointer to the right child node
-	 */
-	std::shared_ptr<AbstractLtlFormula<T>> const & getRight() const {
-		return right;
-	}
-
-	/*!
+	 * Checks if the left child is set, i.e. it does not point to null.
 	 *
-	 * @return True if the left child is set, i.e. it does not point to nullptr; false otherwise
+	 * @return True iff the left child is set.
 	 */
-	bool leftIsSet() const {
+	bool isLeftSet() const {
 		return left.get() != nullptr;
 	}
 
 	/*!
+	 * Checks if the right child is set, i.e. it does not point to null.
 	 *
-	 * @return True if the right child is set, i.e. it does not point to nullptr; false otherwise
+	 * @return True iff the right child is set.
 	 */
-	bool rightIsSet() const {
+	bool isRightSet() const {
 		return right.get() != nullptr;
 	}
 
 	/*!
-	 * @returns the maximally allowed number of steps for the bounded until operator
+	 * Gets the maximally allowed number of steps for the bounded until operator.
+	 *
+	 * @returns The bound.
 	 */
 	uint_fast64_t getBound() const {
 		return bound;
 	}
 
 	/*!
-	 * Sets the maximally allowed number of steps for the bounded until operator
+	 * Sets the maximally allowed number of steps for the bounded until operator.
 	 *
-	 * @param bound the new bound.
+	 * @param bound The new bound.
 	 */
 	void setBound(uint_fast64_t bound) {
 		this->bound = bound;
 	}
 
 private:
+
+	// The left child node.
 	std::shared_ptr<AbstractLtlFormula<T>> left;
+
+	// The right child node.
 	std::shared_ptr<AbstractLtlFormula<T>> right;
+
+	// The maximal number of steps within which the subformulas must hold.
 	uint_fast64_t bound;
 };
 

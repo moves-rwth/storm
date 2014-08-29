@@ -15,32 +15,44 @@ namespace storm {
 namespace property {
 namespace prctl {
 
+// Forward declaration for the interface class.
 template <class T> class CumulativeReward;
 
 /*!
- *  @brief Interface class for model checkers that support CumulativeReward.
+ * Interface class for model checkers that support CumulativeReward.
  *
- *  All model checkers that support the formula class CumulativeReward must inherit
- *  this pure virtual class.
+ * All model checkers that support the formula class CumulativeReward must inherit
+ * this pure virtual class.
  */
 template <class T>
 class ICumulativeRewardModelChecker {
     public:
+
 		/*!
-         *  @brief Evaluates CumulativeReward formula within a model checker.
+		 * Empty virtual destructor.
+		 */
+		virtual ~ICumulativeRewardModelChecker() {
+			// Intentionally left empty
+		}
+
+		/*!
+         * Evaluates CumulativeReward formula within a model checker.
          *
-         *  @param obj Formula object with subformulas.
-         *  @return Result of the formula for every node.
+         * @param obj Formula object with subformulas.
+         * @param qualitative A flag indicating whether the formula only needs to be evaluated qualitatively, i.e. if the
+         *                    results are only compared against the bounds 0 and 1.
+         * @return Result of the formula for every node.
          */
         virtual std::vector<T> checkCumulativeReward(const CumulativeReward<T>& obj, bool qualitative) const = 0;
 };
 
 /*!
- * @brief
- * Class for an abstract (path) formula tree with a Cumulative Reward node as root.
+ * Class for a Prctl (reward path) formula tree with a Cumulative Reward node as root.
  *
- * The subtrees are seen as part of the object and deleted with the object
- * (this behavior can be prevented by setting them to NULL before deletion)
+ * Given a path of finite length.
+ * The sum of all rewards received upon entering each state of the path is the cumulative reward of the path.
+ * The cumulative reward for a state s at time \e bound is the expected cumulative reward of a path of length \e bound starting in s.
+ * In the continuous case all paths that need at most time \e bound are considered.
  *
  * @see AbstractPathFormula
  * @see AbstractPrctlFormula
@@ -49,19 +61,15 @@ template <class T>
 class CumulativeReward : public AbstractRewardPathFormula<T> {
 
 public:
-	/*!
-	 * Empty constructor
-	 */
-	CumulativeReward() : bound(0){
-		// Intentionally left empty.
-	}
 
 	/*!
-	 * Constructor
+	 * Creates a CumulativeReward node with the given bound.
 	 *
-	 * @param bound The time bound of the reward formula
+	 * If no bound is given it defaults to 0, referencing the state reward received upon entering the state s itself.
+	 *
+	 * @param bound The time instance of the reward formula.
 	 */
-	CumulativeReward(T bound) : bound(bound){
+	CumulativeReward(T bound = 0) : bound(bound){
 		// Intentionally left empty.
 	}
 
@@ -75,9 +83,9 @@ public:
 	/*!
 	 * Clones the called object.
 	 *
-	 * Performs a "deep copy", i.e. the subtrees of the new object are clones of the original ones
+	 * Performs a "deep copy", i.e. the subnodes of the new object are clones of the original ones.
 	 *
-	 * @returns a new CumulativeReward-object that is identical the called object.
+	 * @returns A new CumulativeReward object that is a deep copy of the called object.
 	 */
 	virtual std::shared_ptr<AbstractRewardPathFormula<T>> clone() const override {
 		std::shared_ptr<CumulativeReward<T>> result(new CumulativeReward(this->getBound()));
@@ -99,7 +107,9 @@ public:
 	}
 
 	/*!
-	 * @returns a string representation of the formula
+	 * Returns a textual representation of the formula tree with this node as root.
+	 *
+	 * @returns A string representing the formula tree.
 	 */
 	virtual std::string toString() const override {
 		std::string result = "C <= ";
@@ -108,22 +118,26 @@ public:
 	}
 
 	/*!
-	 * @returns the time instance for the instantaneous reward operator
+	 * Gets the time bound for the paths considered.
+	 *
+	 * @returns The time bound for the paths considered.
 	 */
 	T getBound() const {
 		return bound;
 	}
 
 	/*!
-	 * Sets the the time instance for the instantaneous reward operator
+	 * Sets the time bound for the paths considered.
 	 *
-	 * @param bound the new bound.
+	 * @param bound The new bound.
 	 */
 	void setBound(T bound) {
 		this->bound = bound;
 	}
 
 private:
+
+	// The time bound for the paths considered.
 	T bound;
 };
 

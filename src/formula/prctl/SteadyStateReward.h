@@ -15,43 +15,60 @@ namespace storm {
 namespace property {
 namespace prctl {
 
+// Forward declaration for the interface class.
 template <class T> class SteadyStateReward;
 
 /*!
- *  @brief Interface class for model checkers that support SteadyStateReward.
+ * Interface class for model checkers that support SteadyStateReward.
  *
- *  All model checkers that support the formula class SteadyStateReward must inherit
- *  this pure virtual class.
+ * All model checkers that support the formula class SteadyStateReward must inherit
+ * this pure virtual class.
  */
 template <class T>
 class ISteadyStateRewardModelChecker {
     public:
+
 		/*!
-         *  @brief Evaluates CumulativeReward formula within a model checker.
-         *
-         *  @param obj Formula object with subformulas.
-         *  @return Result of the formula for every node.
-         */
+		 * Empty virtual destructor.
+		 */
+		virtual ~ISteadyStateRewardModelChecker() {
+			// Intentionally left empty
+		}
+
+		/*!
+		 * Evaluates a SteadyStateReward formula within a model checker.
+		 *
+		 * @param obj Formula object with subformulas.
+		 * @param qualitative A flag indicating whether the formula only needs to be evaluated qualitatively, i.e. if the
+         *                    results are only compared against the bounds 0 and 1.
+		 * @return The modelchecking result of the formula for every state.
+		 */
         virtual std::vector<T> checkSteadyStateReward(const SteadyStateReward<T>& obj, bool qualitative) const = 0;
 };
 
 /*!
- * @brief
- * Class for an abstract (path) formula tree with a Steady State Reward node as root.
+ * Class for a Steady State Reward formula.
+ * This class represents a possible leaf in a reward formula tree.
  *
- * @see AbstractPathFormula
+ * This formula expresses the expected long-run rewards for each state in the model.
+ *
+ * @see AbstractRewardPathFormula
  * @see AbstractPrctlFormula
  */
 template <class T>
 class SteadyStateReward: public AbstractRewardPathFormula<T> {
 public:
+
 	/*!
-	 * Empty constructor
+	 * Creates a new SteadyStateReward node.
 	 */
 	SteadyStateReward() {
 		// Intentionally left empty.
 	}
 
+	/*!
+	 * Empty virtual destructor.
+	 */
 	virtual ~SteadyStateReward() {
 		// Intentionally left empty.
 	}
@@ -59,12 +76,12 @@ public:
 	/*!
 	 * Clones the called object.
 	 *
-	 * Performs a "deep copy", i.e. the subtrees of the new object are clones of the original ones
+	 * Performs a "deep copy", i.e. the subnodes of the new object are clones of the original ones.
 	 *
-	 * @returns a new SteadyState-object that is identical the called object.
+	 * @returns A new SteadyStateReward object that is a deep copy of the called object.
 	 */
 	virtual std::shared_ptr<AbstractRewardPathFormula<T>> clone() const override {
-		std::shared_ptr<SteadyStateReward<T>> result(new SteadyStateReward<T>());
+		auto result = std::make_shared<SteadyStateReward<T>>();
 		return result;
 	}
 
@@ -82,7 +99,9 @@ public:
 	}
 
 	/*!
-	 * @returns a string representation of the formula
+	 * Returns a textual representation of the formula tree with this node as root.
+	 *
+	 * @returns A string representing the formula tree.
 	 */
 	virtual std::string toString() const override {
 		return "S";

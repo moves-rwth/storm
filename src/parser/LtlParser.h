@@ -28,8 +28,9 @@ public:
 	*
 	* If the string could not be parsed successfully, it will throw a wrongFormatException.
 	*
-	* @param formulaString The string representation of the formula
-	* @throw wrongFormatException If the input could not be parsed successfully
+	* @param formulaString The string representation of the formula.
+	* @throw wrongFormatException If the input could not be parsed successfully.
+	* @return A LtlFilter maintaining the parsed formula.
 	*/
 	static std::shared_ptr<storm::property::ltl::LtlFilter<double>> parseLtlFormula(std::string formulaString);
 

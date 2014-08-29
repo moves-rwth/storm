@@ -15,55 +15,78 @@ namespace storm {
 namespace property {
 namespace csl {
 
+// Forward declaration for the interface class.
 template <class T> class TimeBoundedUntil;
 
 /*!
- *  @brief Interface class for model checkers that support TimeBoundedUntil.
+ * Interface class for model checkers that support TimeBoundedUntil.
  *
- *  All model checkers that support the formula class BoundedEventually must inherit
- *  this pure virtual class.
+ * All model checkers that support the formula class TimeBoundedUntil must inherit
+ * this pure virtual class.
  */
 template <class T>
 class ITimeBoundedUntilModelChecker {
     public:
+
 		/*!
-         *  @brief Evaluates TimeBoundedUntil formula within a model checker.
-         *
-         *  @param obj Formula object with subformulas.
-         *  @return Result of the formula for every node.
-         */
+		 * Empty virtual destructor.
+		 */
+		virtual ~ITimeBoundedUntilModelChecker() {
+			// Intentionally left empty
+		}
+
+		/*!
+		 * Evaluates a TimeBoundedUntil formula within a model checker.
+		 *
+		 * @param obj Formula object with subformulas.
+		 * @param qualitative A flag indicating whether the formula only needs to be evaluated qualitatively, i.e. if the
+		 *                    results are only compared against the bounds 0 and 1.
+		 * @return The modelchecking result of the formula for every state.
+		 */
         virtual std::vector<T> checkTimeBoundedUntil(const TimeBoundedUntil<T>& obj, bool qualitative) const = 0;
 };
 
+
+/*!
+ * Class for a Csl (path) formula tree with a TimeBoundedUntil node as root.
+ *
+ * Has two state formulas as subformulas/trees.
+ *
+ * @par Semantics
+ * The formula holds iff formula \e right holds within the given time interval [lowerBound, upperBound] and \e left holds
+ * in each point in time before that.
+ *
+ * The object has shared ownership of its subtree. If this object is deleted and no other object has a shared
+ * ownership of the subtree it will be deleted as well.
+ *
+ * @see AbstractPathFormula
+ * @see AbstractCslFormula
+ */
 template <class T>
 class TimeBoundedUntil: public AbstractPathFormula<T> {
 public:
 
-	/**
-	 * Constructor providing bounds only;
-	 * Sub formulas are set to null.
-	 *
-	 * @param lowerBound
-	 * @param upperBound
+	/*!
+	 * Creates a TimeBoundedUntil node without a subnode.
+	 * The resulting object will not represent a complete formula!
 	 */
-	TimeBoundedUntil(T lowerBound, T upperBound) : left(nullptr), right(nullptr) {
+	TimeBoundedUntil() : lowerBound(0), upperBound(0), left(nullptr), right(nullptr) {
 		setInterval(lowerBound, upperBound);
 	}
 
-
-	/**
-	 * Full constructor
-	 * @param lowerBound
-	 * @param upperBound
-	 * @param left
-	 * @param right
+	/*!
+	 * Creates a TimeBoundedUntil node using the given parameters.
+	 *
+	 * @param lowerBound The lower bound of the admissable time interval.
+	 * @param upperBound The upper bound of the admissable time interval.
+	 * @param child The child formula subtree.
 	 */
 	TimeBoundedUntil(T lowerBound, T upperBound, std::shared_ptr<AbstractStateFormula<T>> const & left, std::shared_ptr<AbstractStateFormula<T>> const & right) : left(left), right(right) {
 		setInterval(lowerBound, upperBound);
 	}
 
 	/*!
-	 * Destructor
+	 * Empty virtual destructor.
 	 */
 	virtual ~TimeBoundedUntil() {
 		// Intentionally left empty.
@@ -72,16 +95,16 @@ public:
 	/*!
 	 * Clones the called object.
 	 *
-	 * Performs a "deep copy", i.e. the subtrees of the new object are clones of the original ones
+	 * Performs a "deep copy", i.e. the subnodes of the new object are clones of the original ones.
 	 *
-	 * @returns a new BoundedUntil-object that is identical the called object.
+	 * @returns A new TimeBoundedUntil object that is a deep copy of the called object.
 	 */
 	virtual std::shared_ptr<AbstractPathFormula<T>> clone() const override {
 		std::shared_ptr<TimeBoundedUntil<T>> result(new TimeBoundedUntil<T>(lowerBound, upperBound));
-		if (this->leftIsSet()) {
+		if (this->isLeftSet()) {
 			result->setLeft(left->clone());
 		}
-		if (this->rightIsSet()) {
+		if (this->isRightSet()) {
 			result->setRight(right->clone());
 		}
 		return result;
@@ -102,7 +125,9 @@ public:
 	}
 
 	/*!
-	 * @returns a string representation of the formula
+	 * Returns a textual representation of the formula tree with this node as root.
+	 *
+	 * @returns A string representing the formula tree.
 	 */
 	virtual std::string toString() const override {
 		std::string result = left->toString();
@@ -122,9 +147,27 @@ public:
 	}
 
 	/*!
+	 * Gets the left child node.
+	 *
+	 * @returns The left child node.
+	 */
+	std::shared_ptr<AbstractStateFormula<T>> const & getLeft() const {
+		return left;
+	}
+
+	/*!
+	 * Gets the right child node.
+	 *
+	 * @returns The right child node.
+	 */
+	std::shared_ptr<AbstractStateFormula<T>> const & getRight() const {
+		return right;
+	}
+
+	/*!
 	 * Sets the left child node.
 	 *
-	 * @param newLeft the new left child.
+	 * @param newLeft The new left child.
 	 */
 	void setLeft(std::shared_ptr<AbstractStateFormula<T>> const & newLeft) {
 		left = newLeft;
@@ -133,54 +176,43 @@ public:
 	/*!
 	 * Sets the right child node.
 	 *
-	 * @param newRight the new right child.
+	 * @param newRight The new right child.
 	 */
 	void setRight(std::shared_ptr<AbstractStateFormula<T>> const & newRight) {
 		right = newRight;
 	}
 
 	/*!
-	 * @returns a pointer to the left child node
-	 */
-	std::shared_ptr<AbstractStateFormula<T>> const & getLeft() const {
-		return left;
-	}
-
-	/*!
-	 * @returns a pointer to the right child node
-	 */
-	std::shared_ptr<AbstractStateFormula<T>> const & getRight() const {
-		return right;
-	}
-
-	/*!
+	 * Checks if the left child is set, i.e. it does not point to null.
 	 *
-	 * @return True if the left child is set, i.e. it does not point to nullptr; false otherwise
+	 * @return True iff the left child is set.
 	 */
-	bool leftIsSet() const {
+	bool isLeftSet() const {
 		return left.get() != nullptr;
 	}
 
 	/*!
+	 * Checks if the right child is set, i.e. it does not point to null.
 	 *
-	 * @return True if the right child is set, i.e. it does not point to nullptr; false otherwise
+	 * @return True iff the right child is set.
 	 */
-	bool rightIsSet() const {
+	bool isRightSet() const {
 		return right.get() != nullptr;
 	}
 
-	/**
-	 * Getter for lowerBound attribute
+	/*!
+	 * Get the lower time bound.
 	 *
-	 * @return lower bound of the operator.
+	 * @return The lower time bound.
 	 */
 	T const & getLowerBound() const {
 		return lowerBound;
 	}
 
-	/**
-	 * Getter for upperBound attribute
-	 * @return upper bound of the operator.
+	/*!
+	 * Get the upper time bound.
+	 *
+	 * @return The upper time bound.
 	 */
 	T const & getUpperBound() const {
 		return upperBound;
@@ -189,8 +221,8 @@ public:
 	/**
 	 * Set the time interval for the time bounded operator
 	 *
-	 * @param lowerBound
-	 * @param upperBound
+	 * @param lowerBound The new lower time bound.
+	 * @param upperBound The new upper time bound.
 	 * @throw InvalidArgumentException if the lower bound is larger than the upper bound.
 	 */
 	void setInterval(T lowerBound, T upperBound) {
@@ -202,9 +234,18 @@ public:
 	}
 
 private:
+
+	// The left child node.
 	std::shared_ptr<AbstractStateFormula<T>> left;
+
+	// The right child node.
 	std::shared_ptr<AbstractStateFormula<T>> right;
-	T lowerBound, upperBound;
+
+	// The lower time bound.
+	T lowerBound;
+
+	// The upper time bound.
+	T upperBound;
 };
 
 } /* namespace csl */

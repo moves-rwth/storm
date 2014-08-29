@@ -14,16 +14,21 @@ namespace storm {
 namespace property {
 namespace prctl {
 
-/*! Base class for reward path formulas.
+/*!
+ * Abstract base class for Prctl reward path formulas.
  *
- *  Reward path formulas are subformulas of reward bound operators.
- *  They may not be subformulas of a probabilitic bound operator.
+ * Reward path formulas may not be subformulas of a probabilitic bound operator, as they describe rewards along paths not probabilities.
  *
+ * @note Differing from the formal definitions of PRCTL a reward path formula may be the root of a PRCTL formula.
+ *       The result of a modelchecking process on such a formula is a vector representing the rewards for each state of the model.
+ *
+ * @see AbstractPrctlFormula
  */
 template <class T>
 class AbstractRewardPathFormula : public virtual storm::property::prctl::AbstractPrctlFormula<T> {
 
 public:
+
 	/*!
 	 * Empty virtual destructor.
 	 */
@@ -37,7 +42,8 @@ public:
 	 * Performs a "deep copy", i.e. the subtrees of the new object are clones of the original ones
 	 *
 	 * @note This function is not implemented in this class.
-	 * @returns a new AND-object that is identical the called object.
+	 *
+	 * @returns A deep copy of the called object.
 	 */
 	virtual std::shared_ptr<AbstractRewardPathFormula<T>> clone() const = 0;
 

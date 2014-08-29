@@ -16,14 +16,14 @@ class PrctlParser {
 public:
 
 	/*!
-	 * Reads a PRCTL formula from its string representation and parses it into a formula tree, consisting of
+	 * Reads a Prctl formula from its string representation and parses it into a formula tree, consisting of
 	 * classes in the namespace storm::property.
 	 *
 	 * If the string could not be parsed successfully, it will throw a wrongFormatException.
 	 *
 	 * @param formulaString The string representation of the formula
 	 * @throw wrongFormatException If the input could not be parsed successfully
-	 * @return A pointer to the parsed Prctl formula. If the line just contained a comment a nullptr will be returned instead.
+	 * @return A PrctlFilter maintaining the parsed formula. If the line just contained a comment a nullptr will be returned instead.
 	 */
 	static std::shared_ptr<storm::property::prctl::PrctlFilter<double>> parsePrctlFormula(std::string formulaString);
 

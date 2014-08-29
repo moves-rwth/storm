@@ -14,37 +14,45 @@ namespace storm {
 namespace property {
 namespace ltl {
 
+// Forward declaration for the interface class.
 template <class T> class Next;
 
 /*!
- *  @brief Interface class for model checkers that support Next.
+ * Interface class for model checkers that support Next.
  *   
- *  All model checkers that support the formula class Next must inherit
- *  this pure virtual class.
+ * All model checkers that support the formula class Next must inherit
+ * this pure virtual class.
  */
 template <class T>
 class INextModelChecker {
     public:
+
 		/*!
-         *  @brief Evaluates Next formula within a model checker.
-         *
-         *  @param obj Formula object with subformulas.
-         *  @return Result of the formula for every node.
-         */
+		 * Empty virtual destructor.
+		 */
+		virtual ~INextModelChecker() {
+			// Intentionally left empty
+		}
+
+		/*!
+		 * Evaluates Next formula within a model checker.
+		 *
+		 * @param obj Formula object with subformulas.
+		 * @return Result of the formula for every node.
+		 */
         virtual std::vector<T> checkNext(const Next<T>& obj) const = 0;
 };
 
 /*!
- * @brief
- * Class for an abstract (path) formula tree with a Next node as root.
+ * Class for an Ltl formula tree with a Next node as root.
  *
- * Has two Abstract LTL formulas as sub formulas/trees.
+ * Has two LTL formulas as sub formulas/trees.
  *
  * @par Semantics
- * The formula holds iff in the next step, \e child holds
+ * The formula holds iff in the next step, formula \e child holds
  *
- * The subtree is seen as part of the object and deleted with the object
- * (this behavior can be prevented by setting them to NULL before deletion)
+ * The object has shared ownership of its subtree. If this object is deleted and no other object has a shared
+ * ownership of the subtree it will be deleted as well.
  *
  * @see AbstractLtlFormula
  */
@@ -54,26 +62,24 @@ class Next : public AbstractLtlFormula<T> {
 public:
 
 	/*!
-	 * Empty constructor
+	 * Creates a Next node without a subnode.
+	 * The resulting object will not represent a complete formula!
 	 */
 	Next() : child(nullptr) {
 		// Intentionally left empty.
 	}
 
 	/*!
-	 * Constructor
+	 * Creates a Next node using the given parameter.
 	 *
-	 * @param child The child node
+	 * @param child The child formula subtree.
 	 */
 	Next(std::shared_ptr<AbstractLtlFormula<T>> const & child) : child(child) {
 		// Intentionally left empty.
 	}
 
 	/*!
-	 * Constructor.
-	 *
-	 * Also deletes the subtree.
-	 * (this behaviour can be prevented by setting the subtrees to NULL before deletion)
+	 * Empty virtual destructor.
 	 */
 	virtual ~Next() {
 		// Intentionally left empty.
@@ -82,13 +88,13 @@ public:
 	/*!
 	 * Clones the called object.
 	 *
-	 * Performs a "deep copy", i.e. the subtrees of the new object are clones of the original ones
+	 * Performs a "deep copy", i.e. the subnodes of the new object are clones of the original ones.
 	 *
-	 * @returns a new BoundedUntil-object that is identical the called object.
+	 * @returns A new Next object that is a deep copy of the called object.
 	 */
 	virtual std::shared_ptr<AbstractLtlFormula<T>> clone() const override {
 		std::shared_ptr<Next<T>> result(new Next<T>());
-		if (this->childIsSet()) {
+		if (this->isChildSet()) {
 			result->setChild(child->clone());
 		}
 		return result;
@@ -108,7 +114,9 @@ public:
 	}
 
 	/*!
-	 * @returns a string representation of the formula
+	 * Returns a textual representation of the formula tree with this node as root.
+	 *
+	 * @returns A string representing the formula tree.
 	 */
 	virtual std::string toString() const override {
 		std::string result = "X ";
@@ -117,29 +125,35 @@ public:
 	}
 
 	/*!
-	 * @returns the child node
+	 * Gets the child node.
+	 *
+	 * @returns The child node.
 	 */
 	std::shared_ptr<AbstractLtlFormula<T>> const & getChild() const {
 		return child;
 	}
 
 	/*!
-	 * Sets the subtree
-	 * @param child the new child node
+	 * Sets the subtree.
+	 *
+	 * @param child The new child.
 	 */
 	void setChild(std::shared_ptr<AbstractLtlFormula<T>> const & child) {
 		this->child = child;
 	}
 
 	/*!
+	 * Checks if the child is set, i.e. it does not point to null.
 	 *
-	 * @return True if the child node is set, i.e. it does not point to nullptr; false otherwise
+	 * @return True iff the child is set.
 	 */
-	bool childIsSet() const {
+	bool isChildSet() const {
 		return child.get() != nullptr;
 	}
 
 private:
+
+	// The child node.
 	std::shared_ptr<AbstractLtlFormula<T>> child;
 };
 

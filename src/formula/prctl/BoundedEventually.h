@@ -18,37 +18,47 @@ namespace storm {
 namespace property {
 namespace prctl{
 
+// Forward declaration for the interface class.
 template <class T> class BoundedEventually;
 
 /*!
- *  @brief Interface class for model checkers that support BoundedEventually.
+ * Interface class for model checkers that support BoundedEventually.
  *   
- *  All model checkers that support the formula class BoundedEventually must inherit
- *  this pure virtual class.
+ * All model checkers that support the formula class BoundedEventually must inherit
+ * this pure virtual class.
  */
 template <class T>
 class IBoundedEventuallyModelChecker {
     public:
+
 		/*!
-         *  @brief Evaluates BoundedEventually formula within a model checker.
+		 * Empty virtual destructor.
+		 */
+		virtual ~IBoundedEventuallyModelChecker() {
+			// Intentionally left empty
+		}
+
+		/*!
+         * Evaluates a BoundedEventually formula within a model checker.
          *
-         *  @param obj Formula object with subformulas.
-         *  @return Result of the formula for every node.
+         * @param obj Formula object with subformulas.
+         * @param qualitative A flag indicating whether the formula only needs to be evaluated qualitatively, i.e. if the
+         *                    results are only compared against the bounds 0 and 1.
+		 * @return The modelchecking result of the formula for every state.
          */
         virtual std::vector<T> checkBoundedEventually(const BoundedEventually<T>& obj, bool qualitative) const = 0;
 };
 
 /*!
- * @brief
- * Class for an abstract (path) formula tree with a BoundedEventually node as root.
+ * Class for a Prctl (path) formula tree with a BoundedEventually node as root.
  *
- * Has one Abstract state formulas as sub formula/tree.
+ * Has one state formula as subformula/tree.
  *
  * @par Semantics
  * The formula holds iff in at most \e bound steps, formula \e child holds.
  *
- * The subtrees are seen as part of the object and deleted with the object
- * (this behavior can be prevented by setting them to NULL before deletion)
+ * The object has shared ownership of its subtree. If this object is deleted and no other object has a shared
+ * ownership of the subtree it will be deleted as well.
  *
  * @see AbstractPathFormula
  * @see AbstractPrctlFormula
@@ -57,28 +67,27 @@ template <class T>
 class BoundedEventually : public AbstractPathFormula<T> {
 
 public:
+
 	/*!
-	 * Empty constructor
+	 * Creates a BoundedEventually node without a subnode.
+	 * The resulting object will not represent a complete formula!
 	 */
-	BoundedEventually() : child(nullptr), bound(0){
+	BoundedEventually() : child(nullptr), bound(0) {
 		// Intentionally left empty.
 	}
 
 	/*!
-	 * Constructor
+	 * Creates a BoundedEventually node using the given parameters.
 	 *
-	 * @param child The child formula subtree
-	 * @param bound The maximal number of steps
+	 * @param child The child formula subtree.
+	 * @param bound The maximal number of steps within which the subformula must hold.
 	 */
-	BoundedEventually(std::shared_ptr<AbstractStateFormula<T>> child, uint_fast64_t bound) : child(child), bound(bound){
+	BoundedEventually(std::shared_ptr<AbstractStateFormula<T>> child, uint_fast64_t bound) : child(child), bound(bound) {
 		// Intentionally left empty.
 	}
 
 	/*!
-	 * Destructor.
-	 *
-	 * Also deletes the subtrees.
-	 * (this behaviour can be prevented by setting the subtrees to NULL before deletion)
+	 * Empty virtual destructor.
 	 */
 	virtual ~BoundedEventually() {
 	  // Intentionally left empty.
@@ -87,14 +96,14 @@ public:
 	/*!
 	 * Clones the called object.
 	 *
-	 * Performs a "deep copy", i.e. the subtrees of the new object are clones of the original ones
+	 * Performs a "deep copy", i.e. the subnodes of the new object are clones of the original ones.
 	 *
-	 * @returns a new BoundedUntil-object that is identical the called object.
+	 * @returns A new BoundedEventually object that is a deep copy of the called object.
 	 */
 	virtual std::shared_ptr<AbstractPathFormula<T>> clone() const override {
 		std::shared_ptr<BoundedEventually<T>> result(new BoundedEventually<T>());
 		result->setBound(bound);
-		if (this->childIsSet()) {
+		if (this->isChildSet()) {
 			result->setChild(child->clone());
 		}
 		return result;
@@ -115,7 +124,9 @@ public:
 	}
 
 	/*!
-	 * @returns a string representation of the formula
+	 * Returns a textual representation of the formula tree with this node as root.
+	 *
+	 * @returns A string representing the formula tree.
 	 */
 	virtual std::string toString() const override {
 		std::string result = "F<=";
@@ -126,46 +137,56 @@ public:
 	}
 
 	/*!
-	 * @returns the child node
+	 * Gets the child node.
+	 *
+	 * @returns The child node.
 	 */
 	std::shared_ptr<AbstractStateFormula<T>> const & getChild() const {
 		return child;
 	}
 
 	/*!
-	 * Sets the subtree
-	 * @param child the new child node
+	 * Sets the subtree.
+	 *
+	 * @param child The new child.
 	 */
 	void setChild(std::shared_ptr<AbstractStateFormula<T>> const & child) {
 		this->child = child;
 	}
 
 	/*!
+	 * Checks if the child is set, i.e. it does not point to null.
 	 *
-	 * @return True if the child is set, i.e. it does not point to nullptr; false otherwise
+	 * @return True iff the child is set.
 	 */
-	bool childIsSet() const {
+	bool isChildSet() const {
 		return child.get() != nullptr;
 	}
 
 	/*!
-	 * @returns the maximally allowed number of steps for the bounded until operator
+	 * Gets the maximally allowed number of steps for the bounded eventually operator.
+	 *
+	 * @returns The bound.
 	 */
 	uint_fast64_t getBound() const {
 		return bound;
 	}
 
 	/*!
-	 * Sets the maximally allowed number of steps for the bounded until operator
+	 * Sets the maximally allowed number of steps for the bounded eventually operator.
 	 *
-	 * @param bound the new bound.
+	 * @param bound The new bound.
 	 */
 	void setBound(uint_fast64_t bound) {
 		this->bound = bound;
 	}
 
 private:
+
+	// The child node.
 	std::shared_ptr<AbstractStateFormula<T>> child;
+
+	// The maximal number of steps within which the subformula must hold.
 	uint_fast64_t bound;
 };
 

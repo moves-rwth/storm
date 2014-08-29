@@ -15,37 +15,45 @@ namespace storm {
 namespace property {
 namespace csl {
 
+// Forward declaration for the interface class.
 template <class T> class SteadyStateBoundOperator;
 
 /*!
- *  @brief Interface class for model checkers that support SteadyStateOperator.
+ * Interface class for model checkers that support SteadyStateOperator.
  *   
- *  All model checkers that support the formula class SteadyStateOperator must inherit
- *  this pure virtual class.
+ * All model checkers that support the formula class SteadyStateOperator must inherit
+ * this pure virtual class.
  */
 template <class T>
 class ISteadyStateBoundOperatorModelChecker {
     public:
+
 		/*!
-         *  @brief Evaluates SteadyStateOperator formula within a model checker.
+		 * Empty virtual destructor.
+		 */
+		virtual ~ISteadyStateBoundOperatorModelChecker() {
+			// Intentionally left empty
+		}
+
+		/*!
+         * Evaluates a SteadyStateOperator formula within a model checker.
          *
-         *  @param obj Formula object with subformulas.
-         *  @return Result of the formula for every node.
+         * @param obj Formula object with subformulas.
+         * @return The modelchecking result of the formula for every state.
          */
         virtual storm::storage::BitVector checkSteadyStateBoundOperator(const SteadyStateBoundOperator<T>& obj) const = 0;
 };
 
 /*!
- * @brief
- * Class for an Abstract (path) formula tree with a SteadyStateOperator node as root.
+ * Class for a Csl formula tree with a SteadyStateOperator node as root.
  *
- * Has two Abstract state formulas as sub formulas/trees.
+ * Has two state formulas as sub formulas/trees.
  *
  * @par Semantics
- * The formula holds iff \e child holds  SteadyStateOperator step, \e child holds
+ * The formula holds iff the long-run probability of being in a state satisfying \e child meets the \e bound specified in this operator.
  *
- * The subtree is seen as part of the object and deleted with the object
- * (this behavior can be prevented by setting them to NULL before deletion)
+ * The object has shared ownership of its subtree. If this object is deleted and no other object has a shared
+ * ownership of the subtree it will be deleted as well.
  *
  * @see AbstractPathFormula
  * @see AbstractCslFormula
@@ -56,29 +64,27 @@ class SteadyStateBoundOperator : public AbstractStateFormula<T> {
 public:
 
 	/*!
-	 * Empty constructor
+	 * Creates a SteadyStateBoundOperator node without a subnode.
+	 * The resulting object will not represent a complete formula!
 	 */
-	SteadyStateBoundOperator() : comparisonOperator(LESS), bound(storm::utility::constantZero<T>()), stateFormula(nullptr) {
+	SteadyStateBoundOperator() : comparisonOperator(LESS), bound(storm::utility::constantZero<T>()), child(nullptr) {
 		// Intentionally left empty
 	}
 
 	/*!
-	 * Constructor
+	 * Creates a SteadyStateBoundOperator node using the given parameters.
 	 *
 	 * @param comparisonOperator The relation for the bound.
-	 * @param bound The bound for the probability
-	 * @param stateFormula The child node
+	 * @param bound The bound for the probability.
+	 * @param child The child formula subtree.
 	 */
-	SteadyStateBoundOperator(storm::property::ComparisonType comparisonOperator, T bound, std::shared_ptr<AbstractStateFormula<T>> const & stateFormula)
-		: comparisonOperator(comparisonOperator), bound(bound), stateFormula(stateFormula) {
+	SteadyStateBoundOperator(storm::property::ComparisonType comparisonOperator, T bound, std::shared_ptr<AbstractStateFormula<T>> const & child)
+		: comparisonOperator(comparisonOperator), bound(bound), child(child) {
 		// Intentionally left empty
 	}
 
 	/*!
-	 * Destructor
-	 *
-	 * The subtree is deleted with the object
-	 * (this behavior can be prevented by setting them to NULL before deletion)
+	 * Empty virtual destructor.
 	 */
 	virtual ~SteadyStateBoundOperator() {
 		// Intentionally left empty.
@@ -87,13 +93,13 @@ public:
 	/*!
 	 * Clones the called object.
 	 *
-	 * Performs a "deep copy", i.e. the subtrees of the new object are clones of the original ones
+	 * Performs a "deep copy", i.e. the subnodes of the new object are clones of the original ones.
 	 *
-	 * @returns a new BoundedUntil-object that is identical the called object.
+	 * @returns A new SteadyStateBoundOperator object that is a deep copy of the called object.
 	 */
 	virtual std::shared_ptr<AbstractStateFormula<T>> clone() const override {
 		std::shared_ptr<SteadyStateBoundOperator<T>> result(new SteadyStateBoundOperator<T>());
-		result->setStateFormula(stateFormula->clone());
+		result->setChild(child->clone());
 		return result;
 	}
 
@@ -111,7 +117,9 @@ public:
 	}
 
 	/*!
-	 * @returns a string representation of the formula
+	 * Returns a textual representation of the formula tree with this node as root.
+	 *
+	 * @returns A string representing the formula tree.
 	 */
 	virtual std::string toString() const override {
 		std::string result = "S ";
@@ -123,62 +131,80 @@ public:
 		}
 		result += std::to_string(bound);
 		result += " (";
-		result += stateFormula->toString();
+		result += child->toString();
 		result += ")";
 		return result;
 	}
 
 	/*!
-	 * @returns the child node (representation of a formula)
-	 */
-	std::shared_ptr<AbstractStateFormula<T>> const & getStateFormula () const {
-		return stateFormula;
-	}
-
-	/*!
-	 * Sets the child node
+	 * Gets the child node.
 	 *
-	 * @param stateFormula the state formula that becomes the new child node
+	 * @returns The child node.
 	 */
-	void setStateFormula(std::shared_ptr<AbstractStateFormula<T>> const & stateFormula) {
-		this->stateFormula = stateFormula;
+	std::shared_ptr<AbstractStateFormula<T>> const & getChild () const {
+		return child;
 	}
 
 	/*!
+	 * Sets the subtree.
 	 *
-	 * @return True if the state formula is set, i.e. it does not point to nullptr; false otherwise
+	 * @param child The new child.
 	 */
-	bool stateFormulaIsSet() const {
-		return stateFormula.get() != nullptr;
+	void setChild(std::shared_ptr<AbstractStateFormula<T>> const & child) {
+		this->child = child;
 	}
 
 	/*!
-	 * @returns the comparison relation
+	 * Checks if the child is set, i.e. it does not point to null.
+	 *
+	 * @return True iff the child is set.
+	 */
+	bool isChildSet() const {
+		return child.get() != nullptr;
+	}
+
+	/*!
+	 * Gets the comparison operator.
+	 *
+	 * @returns An enum value representing the comparison relation.
 	 */
 	ComparisonType const getComparisonOperator() const {
 		return comparisonOperator;
 	}
 
+	/*!
+	 * Sets the comparison operator.
+	 *
+	 * @param comparisonOperator An enum value representing the new comparison relation.
+	 */
 	void setComparisonOperator(ComparisonType comparisonOperator) {
 		this->comparisonOperator = comparisonOperator;
 	}
 
 	/*!
-	 * @returns the bound for the measure
+	 * Gets the bound which the steady state probability has to obey.
+	 *
+	 * @returns The probability bound.
 	 */
 	T const & getBound() const {
 		return bound;
 	}
 
 	/*!
-	 * Sets the interval in which the probability that the path formula holds may lie in.
+	 * Sets the bound which the steady state probability has to obey.
 	 *
-	 * @param bound The bound for the measure
+	 * @param bound The new probability bound.
 	 */
 	void setBound(T const & bound) {
 		this->bound = bound;
 	}
 
+	/*!
+	 * Checks if the bound is met by the given value.
+	 *
+	 * @param value The value to test against the bound.
+	 * @returns True iff value <comparisonOperator> bound holds.
+	 */
 	bool meetsBound(T value) const {
 		switch (comparisonOperator) {
 		case LESS: return value < bound; break;
@@ -190,9 +216,15 @@ public:
 	}
 
 private:
+
+	// The operator used to indicate the kind of bound that is to be met.
 	ComparisonType comparisonOperator;
+
+	// The probability bound.
 	T bound;
-	std::shared_ptr<AbstractStateFormula<T>> stateFormula;
+
+	// The state formula for whose state the long-run probability has to meet the bound.
+	std::shared_ptr<AbstractStateFormula<T>> child;
 };
 
 } //namespace csl

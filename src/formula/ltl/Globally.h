@@ -1,5 +1,5 @@
 /*
- * Next.h
+ * Globally.h
  *
  *  Created on: 26.12.2012
  *      Author: Christian Dehnert
@@ -15,37 +15,45 @@ namespace storm {
 namespace property {
 namespace ltl {
 
+// Forward declaration for the interface class.
 template <class T> class Globally;
 
 /*!
- *  @brief Interface class for model checkers that support Globally.
+ * Interface class for model checkers that support Globally.
  *   
- *  All model checkers that support the formula class Globally must inherit
- *  this pure virtual class.
+ * All model checkers that support the formula class Globally must inherit
+ * this pure virtual class.
  */
 template <class T>
 class IGloballyModelChecker {
     public:
+
 		/*!
-         *  @brief Evaluates Globally formula within a model checker.
-         *
-         *  @param obj Formula object with subformulas.
-         *  @return Result of the formula for every node.
-         */
+		 * Empty virtual destructor.
+		 */
+		virtual ~IGloballyModelChecker() {
+			// Intentionally left empty
+		}
+
+		/*!
+		 * Evaluates a Globally formula within a model checker.
+		 *
+		 * @param obj Formula object with subformulas.
+		 * @return The modelchecking result of the formula for every state.
+		 */
         virtual std::vector<T> checkGlobally(const Globally<T>& obj) const = 0;
 };
 
 /*!
- * @brief
- * Class for an abstract (path) formula tree with a Globally node as root.
+ * Class for an Ltl formula tree with a Globally node as root.
  *
- * Has one Abstract LTL formula as sub formula/tree.
+ * Has one Ltl formula as sub formula/tree.
  *
  * @par Semantics
- * The formula holds iff globally \e child holds.
+ * The formula holds iff always formula \e child holds.
  *
- * The subtree is seen as part of the object and deleted with the object
- * (this behavior can be prevented by setting them to nullptr before deletion)
+ * The object has shared ownership of its subtree. If this object is deleted and no other object has a shared
+ * ownership of the subtree it will be deleted as well.
  *
  * @see AbstractLtlFormula
  */
@@ -55,26 +63,24 @@ class Globally : public AbstractLtlFormula<T> {
 public:
 
 	/*!
-	 * Empty constructor
+	 * Creates a Globally node without a subnode.
+	 * The resulting object will not represent a complete formula!
 	 */
 	Globally() : child(nullptr) {
 		// Intentionally left empty.
 	}
 
 	/*!
-	 * Constructor
+	 * Creates a Globally node using the given parameter.
 	 *
-	 * @param child The child node
+	 * @param child The child formula subtree.
 	 */
 	Globally(std::shared_ptr<AbstractLtlFormula<T>> const & child) : child(child) {
 		// Intentionally left empty.
 	}
 
 	/*!
-	 * Constructor.
-	 *
-	 * Also deletes the subtree.
-	 * (this behaviour can be prevented by setting the subtrees to nullptr before deletion)
+	 * Empty virtual destructor.
 	 */
 	virtual ~Globally() {
 		// Intentionally left empty.
@@ -83,13 +89,13 @@ public:
 	/*!
 	 * Clones the called object.
 	 *
-	 * Performs a "deep copy", i.e. the subtrees of the new object are clones of the original ones
+	 * Performs a "deep copy", i.e. the subnodes of the new object are clones of the original ones.
 	 *
-	 * @returns a new Globally-object that is identical the called object.
+	 * @returns A new Globally object that is a deep copy of the called object.
 	 */
 	virtual std::shared_ptr<AbstractLtlFormula<T>> clone() const override {
 		std::shared_ptr<Globally<T>> result(new Globally<T>());
-		if (this->childIsSet()) {
+		if (this->isChildSet()) {
 			result->setChild(child->clone());
 		}
 		return result;
@@ -109,7 +115,9 @@ public:
 	}
 
 	/*!
-	 * @returns a string representation of the formula
+	 * Returns a textual representation of the formula tree with this node as root.
+	 *
+	 * @returns A string representing the formula tree.
 	 */
 	virtual std::string toString() const override {
 		std::string result = "G ";
@@ -118,30 +126,36 @@ public:
 	}
 
 	/*!
-	 * @returns the child node
+	 * Gets the child node.
+	 *
+	 * @returns The child node.
 	 */
 	std::shared_ptr<AbstractLtlFormula<T>> const & getChild() const {
 		return *child;
 	}
 
 	/*!
-	 * Sets the subtree
-	 * @param child the new child node
+	 * Sets the subtree.
+	 *
+	 * @param child The new child.
 	 */
 	void setChild(std::shared_ptr<AbstractLtlFormula<T>> const & child) {
 		this->child = child;
 	}
 
 	/*!
+	 * Checks if the child is set, i.e. it does not point to null.
 	 *
-	 * @return True if the child node is set, i.e. it does not point to nullptr; false otherwise
+	 * @return True iff the child is set.
 	 */
-	bool childIsSet() const {
+	bool isChildSet() const {
 		return child.get() != nullptr;
 	}
 
-	private:
-		std::shared_ptr<AbstractLtlFormula<T>> child;
+private:
+
+	// The child node.
+	std::shared_ptr<AbstractLtlFormula<T>> child;
 };
 
 } //namespace ltl

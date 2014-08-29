@@ -17,20 +17,15 @@ namespace property {
 namespace prctl {
 
 /*!
- * @brief
- * Abstract base class for Abstract state formulas.
- *
- * @attention This class is abstract.
- * @note Formula classes do not have copy constructors. The parameters of the constructors are usually the subtrees, so
- * 	   the syntax conflicts with copy constructors for unary operators. To produce an identical object, use the method
- * 	   clone().
+ * Abstract base class for Prctl state formulas.
  */
 template <class T>
 class AbstractStateFormula : public storm::property::prctl::AbstractPrctlFormula<T> {
 
 public:
+
 	/*!
-	 * empty destructor
+	 * Empty virtual destructor.
 	 */
 	virtual ~AbstractStateFormula() {
 		// Intentionally left empty
@@ -42,7 +37,8 @@ public:
 	 * Performs a "deep copy", i.e. the subtrees of the new object are clones of the original ones
 	 *
 	 * @note This function is not implemented in this class.
-	 * @returns a new AND-object that is identical the called object.
+	 *
+	 * @returns A deep copy of the called object.
 	 */
 	virtual std::shared_ptr<AbstractStateFormula<T>> clone() const = 0;
 

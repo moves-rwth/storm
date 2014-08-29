@@ -8,14 +8,6 @@
 #ifndef STORM_FORMULA_CSL_ABSTRACTPATHFORMULA_H_
 #define STORM_FORMULA_CSL_ABSTRACTPATHFORMULA_H_
 
-namespace storm {
-namespace property {
-namespace csl {
-template<class T> class AbstractPathFormula;
-} //namespace csl
-} //namespace property
-} //namespace storm
-
 #include "src/formula/csl/AbstractCslFormula.h"
 #include "src/modelchecker/csl/ForwardDeclarations.h"
 
@@ -28,23 +20,18 @@ namespace property {
 namespace csl {
 
 /*!
- * @brief
- * Abstract base class for Abstract path formulas.
+ * Abstract base class for Csl path formulas.
  *
- * @attention This class is abstract.
- * @note Formula classes do not have copy constructors. The parameters of the constructors are usually the subtrees, so
- * 	   the syntax conflicts with copy constructors for unary operators. To produce an identical object, use the method
- * 	   clone().
- *
- * @note
- * 		This class is intentionally not derived from AbstractCslFormula, as a path formula is not a complete CSL formula.
+ * @note Differing from the formal definitions of PRCTL a path formula may be the root of a PRCTL formula.
+ *       The result of a modelchecking process on such a formula is a vector representing the satisfaction probabilities for each state of the model.
  */
 template <class T>
 class AbstractPathFormula : public virtual storm::property::csl::AbstractCslFormula<T> {
 
 public:
+
 	/*!
-	 * empty destructor
+	 * The virtual destructor.
 	 */
 	virtual ~AbstractPathFormula() {
 		// Intentionally left empty
@@ -53,10 +40,11 @@ public:
 	/*!
 	 * Clones the called object.
 	 *
-	 * Performs a "deep copy", i.e. the subtrees of the new object are clones of the original ones
+	 * Performs a "deep copy", i.e. the subtrees of the new object are clones of the original ones.
 	 *
 	 * @note This function is not implemented in this class.
-	 * @returns a new AND-object that is identical the called object.
+	 *
+	 * @returns A deep copy of the called object.
 	 */
 	virtual std::shared_ptr<AbstractPathFormula<T>> clone() const = 0;
 

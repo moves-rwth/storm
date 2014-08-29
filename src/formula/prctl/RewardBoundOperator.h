@@ -17,57 +17,72 @@ namespace storm {
 namespace property {
 namespace prctl {
 
+// Forward declaration for the interface class.
 template <class T> class RewardBoundOperator;
 
 /*!
- *  @brief Interface class for model checkers that support RewardBoundOperator.
+ * Interface class for model checkers that support RewardBoundOperator.
  *
- *  All model checkers that support the formula class PathBoundOperator must inherit
- *  this pure virtual class.
+ * All model checkers that support the formula class PathBoundOperator must inherit
+ * this pure virtual class.
  */
 template <class T>
 class IRewardBoundOperatorModelChecker {
     public:
+
+		/*!
+		 * Empty virtual destructor.
+		 */
+		virtual ~IRewardBoundOperatorModelChecker() {
+			// Intentionally left empty
+		}
+
+		/*!
+		 * Evaluates a RewardBoundOperator within a model checker.
+		 *
+		 * @param obj Formula object with subformulas.
+		 * @return The modelchecking result of the formula for every state.
+		 */
         virtual storm::storage::BitVector checkRewardBoundOperator(const RewardBoundOperator<T>& obj) const = 0;
 };
 
 /*!
- * @brief
- * Class for an abstract formula tree with a R (reward) operator node over a reward interval as root.
+ * Class for a Prctl formula tree with an R (reward) operator node as root.
  *
  * Has a reward path formula as sub formula/tree.
  *
  * @par Semantics
- * 	  The formula holds iff the reward of the reward path formula is inside the bounds
- * 	  specified in this operator
+ * 	  The formula holds iff the reward of the reward path formula meets the bound
+ * 	  specified in this operator.
  *
- * The subtree is seen as part of the object and deleted with it
- * (this behavior can be prevented by setting them to NULL before deletion)
+ * The object has shared ownership of its subtree. If this object is deleted and no other object has a shared
+ * ownership of the subtree it will be deleted as well.
  *
  *
  * @see AbstractStateFormula
- * @see AbstractPathFormula
- * @see ProbabilisticOperator
- * @see ProbabilisticNoBoundsOperator
+ * @see AbstractRewardPathFormula
  * @see AbstractPrctlFormula
+ * @see ProbabilisticBoundOperator
  */
 template<class T>
 class RewardBoundOperator : public AbstractStateFormula<T> {
 
 public:
+
 	/*!
-	 * Empty constructor
+	 * Creates a RewardBoundOperator node without a subnode.
+	 * The resulting object will not represent a complete formula!
 	 */
 	RewardBoundOperator() : comparisonOperator(LESS), bound(0), child(nullptr){
 		// Intentionally left empty
 	}
 
 	/*!
-	 * Constructor for non-optimizing operator.
+	 * Creates a ProbabilisticBoundOperator node using the given parameters.
 	 *
 	 * @param comparisonOperator The relation for the bound.
-	 * @param bound The bound for the probability
-	 * @param child The child node
+	 * @param bound The bound for the rewards.
+	 * @param child The child formula subtree.
 	 */
 	RewardBoundOperator(storm::property::ComparisonType comparisonOperator, T bound, std::shared_ptr<AbstractRewardPathFormula<T>> const & child)
 		: comparisonOperator(comparisonOperator), bound(bound), child(child) {
@@ -75,9 +90,7 @@ public:
 	}
 
 	/*!
-	 * Destructor
-	 *
-	 * Deletes the subtree iff this object is the last remaining owner of the subtree.
+	 * Empty virtual destructor.
 	 */
 	virtual ~RewardBoundOperator() {
 		// Intentionally left empty.
@@ -86,9 +99,9 @@ public:
 	/*!
 	 * Clones the called object.
 	 *
-	 * Performs a "deep copy", i.e. the subtrees of the new object are clones of the original ones
+	 * Performs a "deep copy", i.e. the subnodes of the new object are clones of the original ones.
 	 *
-	 * @returns a new AND-object that is identical the called object.
+	 * @returns A new RewardBoundOperator object that is a deep copy of the called object.
 	 */
 	virtual std::shared_ptr<AbstractStateFormula<T>> clone() const override {
 		std::shared_ptr<RewardBoundOperator<T>> result(new RewardBoundOperator<T>());
@@ -112,7 +125,9 @@ public:
 	}
 
 	/*!
-	 * @returns a string representation of the formula
+	 * Returns a textual representation of the formula tree with this node as root.
+	 *
+	 * @returns A string representing the formula tree.
 	 */
 	virtual std::string toString() const override {
 		std::string result = "R ";
@@ -131,56 +146,74 @@ public:
 	}
 
 	/*!
-	 * @returns the child node (representation of a formula)
+	 * Gets the child node.
+	 *
+	 * @returns The child node.
 	 */
 	std::shared_ptr<AbstractRewardPathFormula<T>> const & getChild () const {
 		return child;
 	}
 
 	/*!
-	 * Sets the child node
+	 * Sets the subtree.
 	 *
-	 * @param child the path formula that becomes the new child node
+	 * @param child The new child.
 	 */
 	void setChild(std::shared_ptr<AbstractRewardPathFormula<T>> const & child) {
 		this->child = child;
 	}
 
 	/*!
+	 * Checks if the child is set, i.e. it does not point to null.
 	 *
-	 * @return True if the path formula is set, i.e. it does not point to nullptr; false otherwise
+	 * @return True iff the child is set.
 	 */
-	bool childIsSet() const {
+	bool isChildSet() const {
 		return child.get() != nullptr;
 	}
 
 	/*!
-	 * @returns the comparison relation
+	 * Gets the comparison operator.
+	 *
+	 * @returns An enum value representing the comparison relation.
 	 */
 	storm::property::ComparisonType const getComparisonOperator() const {
 		return comparisonOperator;
 	}
 
+	/*!
+	 * Sets the comparison operator.
+	 *
+	 * @param comparisonOperator An enum value representing the new comparison relation.
+	 */
 	void setComparisonOperator(storm::property::ComparisonType comparisonOperator) {
 		this->comparisonOperator = comparisonOperator;
 	}
 
 	/*!
-	 * @returns the bound for the measure
+	 * Gets the bound which is to be obeyed by the rewards of the reward path formula.
+	 *
+	 * @returns The probability bound.
 	 */
 	T const & getBound() const {
 		return bound;
 	}
 
 	/*!
-	 * Sets the interval in which the probability that the path formula holds may lie in.
+	 * Sets the bound which is to be obeyed by the rewards of the reward path formula
 	 *
-	 * @param bound The bound for the measure
+	 * @param bound The new reward bound.
 	 */
 	void setBound(T bound) {
 		this->bound = bound;
 	}
 
+	/*!
+	 * Checks if the bound is met by the given value.
+	 *
+	 * @param value The value to test against the bound.
+	 * @returns True iff value <comparisonOperator> bound holds.
+	 */
 	bool meetsBound(T value) const {
 		switch (comparisonOperator) {
 			case LESS: return value < bound; break;
@@ -192,8 +225,14 @@ public:
 	}
 
 private:
+
+	// The operator used to indicate the kind of bound that is to be met.
 	storm::property::ComparisonType comparisonOperator;
+
+	// The reward bound.
 	T bound;
+
+	// The reward path formula whose rewards have to meet the bound.
 	std::shared_ptr<AbstractRewardPathFormula<T>> child;
 };
 

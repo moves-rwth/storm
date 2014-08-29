@@ -22,8 +22,8 @@ public:
 	/*!
 	 * Parses each line of a given file as prctl formula and returns a list containing the results of the parsing.
 	 *
-	 * @param filename
-	 * @return The list of parsed formulas
+	 * @param filename Name and path to the file in which the formula strings can be found.
+	 * @return The list of parsed formulas.
 	 */
 	static std::list<std::shared_ptr<storm::property::ltl::LtlFilter<double>>> parseLtlFile(std::string filename);
 };

@@ -5,14 +5,16 @@
  *      Author: Thomas Heinemann
  */
 
-#ifndef ABSTRACTCSLFORMULA_H_
-#define ABSTRACTCSLFORMULA_H_
+#ifndef STORM_FORMULA_CSL_ABSTRACTCSLFORMULA_H_
+#define STORM_FORMULA_CSL_ABSTRACTCSLFORMULA_H_
 
 #include "src/formula/AbstractFormula.h"
 
 namespace storm {
 namespace property {
 namespace csl {
+
+// Forward declarations.
 
 template <class T> class ProbabilisticBoundOperator;
 template <class T> class Eventually;
@@ -27,11 +29,20 @@ namespace property {
 namespace csl {
 
 /*!
- * Abstract base class for all CSL root formulas.
+ * This is the abstract base class for all Csl formulas.
+ *
+ * @note While formula classes do have copy constructors using a copy constructor
+ *       will yield a formula objects whose formula subtree consists of the same objects
+ *       as the original formula. The ownership of the formula tree will be shared between
+ *       the original and the copy.
  */
 template <class T>
 class AbstractCslFormula : public virtual storm::property::AbstractFormula<T>{
 public:
+
+	/*!
+	 * The virtual destructor.
+	 */
 	virtual ~AbstractCslFormula() {
 		// Intentionally left empty
 	}
@@ -75,4 +86,4 @@ public:
 } /* namespace csl */
 } /* namespace property */
 } /* namespace storm */
-#endif /* ABSTRACTCSLFORMULA_H_ */
+#endif /* STORM_FORMULA_CSL_ABSTRACTCSLFORMULA_H_ */

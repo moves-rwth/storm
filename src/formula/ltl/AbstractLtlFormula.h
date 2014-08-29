@@ -17,17 +17,32 @@ namespace property {
 namespace ltl {
 
 /*!
- * Interface class for all LTL root formulas.
+ * This is the abstract base class for all Ltl formulas.
+ *
+ * @note While formula classes do have copy constructors using a copy constructor
+ *       will yield a formula objects whose formula subtree consists of the same objects
+ *       as the original formula. The ownership of the formula tree will be shared between
+ *       the original and the copy.
  */
 template <class T>
 class AbstractLtlFormula : public virtual storm::property::AbstractFormula<T> {
 public:
-	/**
-	 * Empty destructor
+
+	/*!
+	 * The virtual destructor.
 	 */
 	virtual ~AbstractLtlFormula() {
 		// Intentionally left empty
 	}
+
+	/*!
+	 * Clones the called object.
+	 *
+	 * Performs a "deep copy", i.e. the subtrees of the new object are clones of the original ones
+	 *
+	 * @returns A deep copy of the called object.
+	 */
+	virtual std::shared_ptr<AbstractLtlFormula<T>> clone() const = 0;
 
 	/*!
 	 * Calls the model checker to check this formula.
@@ -41,15 +56,6 @@ public:
 	 * @returns A vector indicating the probability that the formula holds for each state.
 	 */
 	virtual std::vector<T> check(const storm::modelchecker::ltl::AbstractModelChecker<T>& modelChecker) const = 0;
-
-	/*!
-	 * Clones the called object.
-	 *
-	 * Performs a "deep copy", i.e. the subtrees of the new object are clones of the original ones
-	 *
-	 * @returns a new AND-object that is identical the called object.
-	 */
-	virtual std::shared_ptr<AbstractLtlFormula<T>> clone() const = 0;
 };
 
 } /* namespace ltl */

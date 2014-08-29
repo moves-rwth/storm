@@ -15,45 +15,77 @@ namespace storm {
 namespace property {
 namespace csl {
 
+// Forward declaration for the interface class.
 template<class T> class TimeBoundedEventually;
 
 /*!
- *  @brief Interface class for model checkers that support TimeBoundedEventually.
+ * Interface class for model checkers that support TimeBoundedEventually.
  *
- *  All model checkers that support the formula class BoundedEventually must inherit
- *  this pure virtual class.
+ * All model checkers that support the formula class TimeBoundedEventually must inherit
+ * this pure virtual class.
  */
 template <class T>
 class ITimeBoundedEventuallyModelChecker {
     public:
+
 		/*!
-         *  @brief Evaluates TimeBoundedUntil formula within a model checker.
-         *
-         *  @param obj Formula object with subformulas.
-         *  @return Result of the formula for every node.
-         */
+		 * Empty virtual destructor.
+		 */
+		virtual ~ITimeBoundedEventuallyModelChecker() {
+			// Intentionally left empty
+		}
+
+		/*!
+		 * Evaluates a TimeBoundedEventually formula within a model checker.
+		 *
+		 * @param obj Formula object with subformulas.
+		 * @param qualitative A flag indicating whether the formula only needs to be evaluated qualitatively, i.e. if the
+		 *                    results are only compared against the bounds 0 and 1.
+		 * @return The modelchecking result of the formula for every state.
+		 */
         virtual std::vector<T> checkTimeBoundedEventually(const TimeBoundedEventually<T>& obj, bool qualitative) const = 0;
 };
 
-
+/*!
+ * Class for a Csl (path) formula tree with a TimeBoundedEventually node as root.
+ *
+ * Has one state formula as subformula/tree.
+ *
+ * @par Semantics
+ * The formula holds iff formula \e child holds within the given time interval [lowerBound, upperBound].
+ *
+ * The object has shared ownership of its subtree. If this object is deleted and no other object has a shared
+ * ownership of the subtree it will be deleted as well.
+ *
+ * @see AbstractPathFormula
+ * @see AbstractCslFormula
+ */
 template<class T>
 class TimeBoundedEventually: public AbstractPathFormula<T> {
 public:
 
-	/**
-	 * Simple constructor: Only sets the bounds
-	 *
-	 * @param lowerBound
-	 * @param upperBound
+	/*!
+	 * Creates a TimeBoundedEventually node without a subnode.
+	 * The resulting object will not represent a complete formula!
 	 */
-	TimeBoundedEventually(T lowerBound, T upperBound) : child(nullptr) {
-		setInterval(lowerBound, upperBound);
+	TimeBoundedEventually() : lowerBound(0), upperBound(0), child(nullptr) {
+		// Intentionally left empty.
 	}
 
+	/*!
+	 * Creates a TimeBoundedEventually node using the given parameters.
+	 *
+	 * @param lowerBound The lower bound of the admissable time interval.
+	 * @param upperBound The upper bound of the admissable time interval.
+	 * @param child The child formula subtree.
+	 */
 	TimeBoundedEventually(T lowerBound, T upperBound, std::shared_ptr<AbstractStateFormula<T>> const & child) : child(child) {
 		setInterval(lowerBound, upperBound);
 	}
 
+	/*!
+	 * Empty virtual destructor.
+	 */
 	virtual ~TimeBoundedEventually() {
 		// Intentionally left empty.
 	}
@@ -61,13 +93,13 @@ public:
 	/*!
 	 * Clones the called object.
 	 *
-	 * Performs a "deep copy", i.e. the subtrees of the new object are clones of the original ones
+	 * Performs a "deep copy", i.e. the subnodes of the new object are clones of the original ones.
 	 *
-	 * @returns a new BoundedUntil-object that is identical the called object.
+	 * @returns A new TimeBoundedEventually object that is a deep copy of the called object.
 	 */
 	virtual std::shared_ptr<AbstractPathFormula<T>> clone() const override {
 		std::shared_ptr<TimeBoundedEventually<T>> result(new TimeBoundedEventually<T>(lowerBound, upperBound));
-		if (this->childIsSet()) {
+		if (this->isChildSet()) {
 			result->setChild(child->clone());
 		}
 		return result;
@@ -87,7 +119,9 @@ public:
 	}
 
 	/*!
-	 * @returns a string representation of the formula
+	 * Returns a textual representation of the formula tree with this node as root.
+	 *
+	 * @returns A string representing the formula tree.
 	 */
 	virtual std::string toString() const override {
 		std::string result = "F";
@@ -106,50 +140,55 @@ public:
 	}
 
 	/*!
-	 * @returns the child node
+	 * Gets the child node.
+	 *
+	 * @returns The child node.
 	 */
 	std::shared_ptr<AbstractStateFormula<T>> const & getChild() const {
 		return child;
 	}
 
 	/*!
-	 * Sets the subtree
-	 * @param child the new child node
+	 * Sets the subtree.
+	 *
+	 * @param child The new child.
 	 */
 	void setChild(std::shared_ptr<AbstractStateFormula<T>> const & child) {
 		this->child = child;
 	}
 
 	/*!
+	 * Checks if the child is set, i.e. it does not point to null.
 	 *
-	 * @return True if the child is set, i.e. it does not point to nullptr; false otherwise
+	 * @return True iff the child is set.
 	 */
-	bool childIsSet() const {
+	bool isChildSet() const {
 		return child.get() != nullptr;
 	}
 
-	/**
-	 * Getter for lowerBound attribute
+	/*!
+	 * Get the lower time bound.
 	 *
-	 * @return lower bound of the operator.
+	 * @return The lower time bound.
 	 */
 	T const & getLowerBound() const {
 		return lowerBound;
 	}
 
-	/**
-	 * Getter for upperBound attribute
-	 * @return upper bound of the operator.
+	/*!
+	 * Get the upper time bound.
+	 *
+	 * @return The upper time bound.
 	 */
 	T const & getUpperBound() const {
 		return upperBound;
 	}
 
-	/**
-	 * Set the time interval for the time bounded operator
+	/*!
+	 * Set the time interval for the time bounded operator.
 	 *
-	 * @param lowerBound
-	 * @param upperBound
+	 * @param lowerBound The new lower time bound.
+	 * @param upperBound The new upper time bound.
 	 * @throw InvalidArgumentException if the lower bound is larger than the upper bound.
 	 */
 	void setInterval(T lowerBound, T upperBound) {
@@ -161,8 +200,15 @@ public:
 	}
 
 private:
+
+	// The child node.
 	std::shared_ptr<AbstractStateFormula<T>> child;
-	T lowerBound, upperBound;
+
+	// The lower time bound.
+	T lowerBound;
+
+	// The upper time bound.
+	T upperBound;
 };
 
 } /* namespace csl */

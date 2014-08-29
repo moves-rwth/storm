@@ -14,37 +14,45 @@ namespace storm {
 namespace property {
 namespace csl {
 
+// Forward declaration for the interface class.
 template <class T> class Or;
 
 /*!
- *  @brief Interface class for model checkers that support Or.
+ * Interface class for model checkers that support Or.
  *   
- *  All model checkers that support the formula class Or must inherit
- *  this pure virtual class.
+ * All model checkers that support the formula class Or must inherit
+ * this pure virtual class.
  */
 template <class T>
 class IOrModelChecker {
 	public:
+
 		/*!
-         *  @brief Evaluates Or formula within a model checker.
-         *
-         *  @param obj Formula object with subformulas.
-         *  @return Result of the formula for every node.
-         */
+		 * Empty virtual destructor.
+		 */
+		virtual ~IOrModelChecker() {
+			// Intentionally left empty
+		}
+
+		/*!
+		 * Evaluates Or formula within a model checker.
+		 *
+		 * @param obj Formula object with subformulas.
+		 * @return Result of the formula for every node.
+		 */
 		virtual storm::storage::BitVector checkOr(const Or<T>& obj) const = 0;
 };
 
 /*!
- * @brief
- * Class for an abstract formula tree with OR node as root.
+ * Class for an Csl formula tree with an Or node as root.
  *
- * Has two Abstract state formulas as sub formulas/trees.
+ * Has two state formulas as sub formulas/trees.
  *
- * As OR is commutative, the order is \e theoretically not important, but will influence the order in which
+ * As Or is commutative, the order is \e theoretically not important, but will influence the order in which
  * the model checker works.
  *
- * The subtrees are seen as part of the object and deleted with the object
- * (this behavior can be prevented by setting them to NULL before deletion)
+ * The object has shared ownership of its subtrees. If this object is deleted and no other object has a shared
+ * ownership of the subtrees they will be deleted as well.
  *
  * @see AbstractStateFormula
  * @see AbstractCslFormula
@@ -55,47 +63,43 @@ class Or : public AbstractStateFormula<T> {
 public:
 
 	/*!
-		 * Empty constructor.
-		 * Will create an OR-node without subnotes. Will not represent a complete formula!
-		 */
-		Or() : left(nullptr), right(nullptr) {
-			// Intentionally left empty.
-		}
+	 * Creates an Or node without subnodes.
+	 * The resulting object will not represent a complete formula!
+	 */
+	Or() : left(nullptr), right(nullptr) {
+		// Intentionally left empty.
+	}
 
-		/*!
-		 * Constructor.
-		 * Creates an OR note with the parameters as subtrees.
-		 *
-		 * @param left The left sub formula
-		 * @param right The right sub formula
-		 */
-		Or(std::shared_ptr<AbstractStateFormula<T>> const & left, std::shared_ptr<AbstractStateFormula<T>> const & right) : left(left), right(right) {
-			// Intentionally left empty.
-		}
+	/*!
+	 * Creates an Or node with the parameters as subtrees.
+	 *
+	 * @param left The left sub formula.
+	 * @param right The right sub formula.
+	 */
+	Or(std::shared_ptr<AbstractStateFormula<T>> const & left, std::shared_ptr<AbstractStateFormula<T>> const & right) : left(left), right(right) {
+		// Intentionally left empty.
+	}
 
-		/*!
-		 * Destructor.
-		 *
-		 * The subtrees are deleted with the object
-		 * (this behavior can be prevented by setting them to NULL before deletion)
-		 */
-		virtual ~Or() {
-			// Intentionally left empty.
-		}
+	/*!
+	 * Empty virtual destructor.
+	 */
+	virtual ~Or() {
+		// Intentionally left empty.
+	}
 
 	/*!
 	 * Clones the called object.
 	 *
-	 * Performs a "deep copy", i.e. the subtrees of the new object are clones of the original ones
+	 * Performs a "deep copy", i.e. the subtrees of the new object are clones of the original ones.
 	 *
-	 * @returns a new AND-object that is identical the called object.
+	 * @returns A new Or object that is a deep copy of the called object.
 	 */
 	virtual std::shared_ptr<AbstractStateFormula<T>> clone() const override {
 		std::shared_ptr<Or<T>> result(new Or());
-		if (this->leftIsSet()) {
+		if (this->isLeftSet()) {
 		  result->setLeft(left->clone());
 		}
-		if (this->rightIsSet()) {
+		if (this->isRightSet()) {
 		  result->setRight(right->clone());
 		}
 		return result;
@@ -115,7 +119,9 @@ public:
 	}
 
 	/*!
-	 * @returns a string representation of the formula
+	 * Returns a textual representation of the formula tree with this node as root.
+	 *
+	 * @returns A string representing the formula tree.
 	 */
 	virtual std::string toString() const override {
 		std::string result = "(";
@@ -136,9 +142,27 @@ public:
 	}
 
 	/*!
+	 * Gets the left child node.
+	 *
+	 * @returns The left child node.
+	 */
+	std::shared_ptr<AbstractStateFormula<T>> const & getLeft() const {
+		return left;
+	}
+
+	/*!
+	 * Gets the right child node.
+	 *
+	 * @returns The right child node.
+	 */
+	std::shared_ptr<AbstractStateFormula<T>> const & getRight() const {
+		return right;
+	}
+
+	/*!
 	 * Sets the left child node.
 	 *
-	 * @param newLeft the new left child.
+	 * @param newLeft The new left child.
 	 */
 	void setLeft(std::shared_ptr<AbstractStateFormula<T>> const & newLeft) {
 		left = newLeft;
@@ -147,44 +171,36 @@ public:
 	/*!
 	 * Sets the right child node.
 	 *
-	 * @param newRight the new right child.
+	 * @param newRight The new right child.
 	 */
 	void setRight(std::shared_ptr<AbstractStateFormula<T>> const & newRight) {
 		right = newRight;
 	}
 
 	/*!
-	 * @returns a pointer to the left child node
-	 */
-	std::shared_ptr<AbstractStateFormula<T>> const & getLeft() const {
-		return left;
-	}
-
-	/*!
-	 * @returns a pointer to the right child node
-	 */
-	std::shared_ptr<AbstractStateFormula<T>> const & getRight() const {
-		return right;
-	}
-
-	/*!
+	 * Checks if the left child is set, i.e. it does not point to null.
 	 *
-	 * @return True if the left child is set, i.e. it does not point to nullptr; false otherwise
+	 * @return True iff the left child is set.
 	 */
-	bool leftIsSet() const {
+	bool isLeftSet() const {
 		return left.get() != nullptr;
 	}
 
 	/*!
+	 * Checks if the right child is set, i.e. it does not point to null.
 	 *
-	 * @return True if the right child is set, i.e. it does not point to nullptr; false otherwise
+	 * @return True iff the left right is set.
 	 */
-	bool rightIsSet() const {
+	bool isRightSet() const {
 		return right.get() != nullptr;
 	}
 
 private:
+
+	// The left child node.
 	std::shared_ptr<AbstractStateFormula<T>> left;
+
+	// The right child node.
 	std::shared_ptr<AbstractStateFormula<T>> right;
 
 };

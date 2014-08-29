@@ -15,6 +15,11 @@
 namespace storm {
 namespace parser {
 
+/*!
+ * Reads a Csl formula from a string and returns the formula tree.
+ *
+ * If you want to read the formula from a file, use the LtlFileParser class instead.
+ */
 class CslParser {
 public:
 
@@ -24,8 +29,9 @@ public:
 	 *
 	 * If the string could not be parsed successfully, it will throw a wrongFormatException.
 	 *
-	 * @param formulaString The string representation of the formula
-	 * @throw wrongFormatException If the input could not be parsed successfully
+	 * @param formulaString The string representation of the formula.
+	 * @throw wrongFormatException If the input could not be parsed successfully.
+	 * @return A CslFilter maintaining the parsed formula.
 	 */
 	static std::shared_ptr<storm::property::csl::CslFilter<double>> parseCslFormula(std::string formulaString);
 

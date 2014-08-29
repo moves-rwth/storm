@@ -14,6 +14,8 @@ namespace storm {
 namespace property {
 namespace prctl {
 
+// Forward declarations.
+
 template <class T> class ProbabilisticBoundOperator;
 template <class T> class Eventually;
 template <class T> class Until;
@@ -27,22 +29,32 @@ namespace property {
 namespace prctl {
 
 /*!
- * Interface class for all PRCTL root formulas.
+ * This is the abstract base class for all Prctl formulas.
+ *
+ * @note While formula classes do have copy constructors using a copy constructor
+ *       will yield a formula objects whose formula subtree consists of the same objects
+ *       as the original formula. The ownership of the formula tree will be shared between
+ *       the original and the copy.
  */
 template<class T>
 class AbstractPrctlFormula : public virtual storm::property::AbstractFormula<T> {
 public:
+
+	/*!
+	 * The virtual destructor.
+	 */
 	virtual ~AbstractPrctlFormula() {
 		// Intentionally left empty
 	}
 
-	/*! Returns whether the formula is a probabilistic bound reachability formula.
-	 *  Returns true iff the formula conforms to the following pattern.
-	 *  Pattern: P[<,<=,>,>=]p ([psi U, E] phi) whith psi, phi propositional logic formulas (consisiting only of And, Or, Not and AP).
-	 *  That is, a probabilistic bound operator as root with a single until or eventually formula directly below it, whose subformulas are propositional
-	 *  (denoting some set of atomic propositions).
+	/*!
+	 * Checks whether the formula is a probabilistic bound reachability formula.
+	 * Returns true iff the formula conforms to the following pattern.
+	 * Pattern: P[<,<=,>,>=]p ([psi U, E] phi) whith psi, phi propositional logic formulas (consisiting only of And, Or, Not and AP).
+	 * That is, a probabilistic bound operator as root with a single until or eventually formula directly below it, whose subformulas are propositional
+	 * (denoting some set of atomic propositions).
 	 *
-	 *  @return True iff this is a probabilistic bound reachability formula.
+	 * @return True iff this is a probabilistic bound reachability formula.
 	 */
 	bool isProbEventuallyAP() const {
 

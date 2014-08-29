@@ -16,52 +16,83 @@ namespace storm {
 namespace property {
 namespace action {
 
+/*!
+ * The bound action deselects all states whose modelchecking values do not satisfy the given bound.
+ *
+ * Strict and non strict upper and lower bounds can be represented.
+ * For modelchecking results of state formulas the value is taken to be 1 iff true and 0 otherwise.
+ */
 template <class T>
 class BoundAction : public AbstractAction<T> {
 
+	// Convenience typedef to make the code more readable.
 	typedef typename AbstractAction<T>::Result Result;
 
 public:
 
+	/*!
+	 * Constructs an empty BoundAction.
+	 * The bound is set to >= 0. Thus, all states will be selected by the action.
+	 */
 	BoundAction() : comparisonOperator(storm::property::GREATER_EQUAL), bound(0) {
 		//Intentionally left empty.
 	}
 
+	/*!
+	 * Constructs a BoundAction using the given values for the comparison operator and the bound.
+	 *
+	 * @param comparisonOperator The operator used to make the comparison between the bound and the modelchecking values for each state.
+	 * @param bound The bound to compare the modelchecking values against.
+	 */
 	BoundAction(storm::property::ComparisonType comparisonOperator, T bound) : comparisonOperator(comparisonOperator), bound(bound) {
 		//Intentionally left empty.
 	}
 
 	/*!
-	 * Virtual destructor
-	 * To ensure that the right destructor is called
+	 * The virtual destructor.
+	 * To ensure that the right destructor is called.
 	 */
 	virtual ~BoundAction() {
 		//Intentionally left empty
 	}
 
 	/*!
+	 * Evaluate the action for an Prctl formula.
 	 *
+	 * @param result The Result struct on which the action is to be evaluated.
+	 * @param mc The Prctl modelchecker that computed the path- or stateResult contained in the Result struct.
+	 * @returns A Result struct containing the output of the action.
 	 */
 	virtual Result evaluate(Result const & result, storm::modelchecker::prctl::AbstractModelChecker<T> const & mc) const override {
 		return evaluate(result);
 	}
 
 	/*!
+	 * Evaluate the action for an Csl formula.
 	 *
+	 * @param result The Result struct on which the action is to be evaluated.
+	 * @param mc The Csl modelchecker that computed the path- or stateResult contained in the Result struct.
+	 * @returns A Result struct containing the output of the action.
 	 */
 	virtual Result evaluate(Result const & result, storm::modelchecker::csl::AbstractModelChecker<T> const & mc) const override {
 		return evaluate(result);
 	}
 
 	/*!
+	 * Evaluate the action for an Ltl formula.
 	 *
+	 * @param result The Result struct on which the action is to be evaluated.
+	 * @param mc The Ltl modelchecker that computed the path- or stateResult contained in the Result struct.
+	 * @returns A Result struct containing the output of the action.
 	 */
 	virtual Result evaluate(Result const & result, storm::modelchecker::ltl::AbstractModelChecker<T> const & mc) const override {
 		return evaluate(result);
 	}
 
 	/*!
+	 * Returns a string representation of this action.
 	 *
+	 * @returns A string representing this action.
 	 */
 	virtual std::string toString() const override {
 		std::string out = "bound(";
@@ -92,7 +123,14 @@ public:
 private:
 
 	/*!
+	 * Evaluate the action.
 	 *
+	 * As the BoundAction does not depend on the model or the formula for which the modelchecking result was computed,
+	 * it does not depend on the modelchecker at all. This internal version of the evaluate method therefore only needs the
+	 * modelchecking result as input.
+	 *
+	 * @param result The Result struct on which the action is to be evaluated.
+	 * @returns A Result struct containing the output of the action.
 	 */
 	virtual Result evaluate(Result const & result) const {
 
@@ -159,7 +197,10 @@ private:
 		return Result(out, result.stateMap, result.pathResult, result.stateResult);
 	}
 
+	// The operator used to make the comparison between the bound and the modelchecking values for each state at time of evaluation.
 	storm::property::ComparisonType comparisonOperator;
+
+	// The bound to compare the modelchecking values against during evaluation.
 	T bound;
 
 };

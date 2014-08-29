@@ -14,56 +14,46 @@ namespace storm {
 namespace property {
 namespace ltl {
 
+// Forward declaration for the interface class.
 template <class T> class Until;
 
 /*!
- *  @brief Interface class for model checkers that support Until.
+ * Interface class for model checkers that support Until.
  *
- *  All model checkers that support the formula class Until must inherit
- *  this pure virtual class.
+ * All model checkers that support the formula class Until must inherit
+ * this pure virtual class.
  */
 template <class T>
 class IUntilModelChecker {
     public:
+
 		/*!
-         *  @brief Evaluates Until formula within a model checker.
-         *
-         *  @param obj Formula object with subformulas.
-         *  @return Result of the formula for every node.
-         */
+		 * Empty virtual destructor.
+		 */
+		virtual ~IUntilModelChecker() {
+			// Intentionally left empty
+		}
+
+		/*!
+		 * Evaluates an Until formula within a model checker.
+		 *
+		 * @param obj Formula object with subformulas.
+		 * @return The modelchecking result of the formula for every state.
+		 */
         virtual std::vector<T> checkUntil(const Until<T>& obj) const = 0;
 };
 
 /*!
- *	@brief Interface class for visitors that support Until.
+ * Class for an Ltl formula tree with an Until node as root.
  *
- *	All visitors that support the formula class Until must inherit
- *	this pure virtual class.
- */
-template <class T>
-class IUntilVisitor {
-	public:
-		/*!
-		 *	@brief Visits Until formula.
-		 *
-		 *	@param obj Formula object with subformulas.
-		 *	@return Result of the formula for every node.
-		 */
-		virtual void visitUntil(const Until<T>& obj) = 0;
-};
-
-/*!
- * @brief
- * Class for an abstract (path) formula tree with an Until node as root.
- *
- * Has two Abstract LTL formulas as sub formulas/trees.
+ * Has two Ltl formulas as sub formulas/trees.
  *
  * @par Semantics
  * The formula holds iff eventually, formula \e right (the right subtree) holds, and before,
  * \e left holds always.
  *
- * The subtrees are seen as part of the object and deleted with the object
- * (this behavior can be prevented by setting them to NULL before deletion)
+ * The object has shared ownership of its subtrees. If this object is deleted and no other object has a shared
+ * ownership of the subtrees they will be deleted as well.
  *
  * @see AbstractLtlFormula
  */
@@ -73,27 +63,25 @@ class Until : public AbstractLtlFormula<T> {
 public:
 
 	/*!
-	 * Empty constructor
+	 * Creates an Until node without subnodes.
+	 * The resulting object will not represent a complete formula!
 	 */
-	Until() : left(left), right(right) {
+	Until() : left(nullptr), right(nullptr) {
 		// Intentionally left empty.
 	}
 
 	/*!
-	 * Constructor
+	 * Creates an Until node using the given parameters.
 	 *
-	 * @param left The left formula subtree
-	 * @param right The left formula subtree
+	 * @param left The left formula subtree.
+	 * @param right The right formula subtree.
 	 */
 	Until(std::shared_ptr<AbstractLtlFormula<T>> const & left, std::shared_ptr<AbstractLtlFormula<T>> const & right) : left(left), right(right) {
 		// Intentionally left empty.
 	}
 
 	/*!
-	 * Destructor.
-	 *
-	 * Also deletes the subtrees.
-	 * (this behaviour can be prevented by setting the subtrees to NULL before deletion)
+	 * Empty virtual destructor.
 	 */
 	virtual ~Until() {
 		// Intentionally left empty.
@@ -102,16 +90,16 @@ public:
 	/*!
 	 * Clones the called object.
 	 *
-	 * Performs a "deep copy", i.e. the subtrees of the new object are clones of the original ones
+	 * Performs a "deep copy", i.e. the subnodes of the new object are clones of the original ones.
 	 *
-	 * @returns a new BoundedUntil-object that is identical the called object.
+	 * @returns A new Until object that is a deep copy of the called object.
 	 */
 	virtual std::shared_ptr<AbstractLtlFormula<T>> clone() const override {
 		std::shared_ptr<Until<T>> result(new Until<T>());
-		if (this->leftIsSet()) {
+		if (this->isLeftSet()) {
 		  result->setLeft(left->clone());
 		}
-		if (this->rightIsSet()) {
+		if (this->isRightSet()) {
 		  result->setRight(right->clone());
 		}
 		return result;
@@ -131,12 +119,9 @@ public:
 	}
 
 	/*!
-	 *	@brief Return string representation of this formula.
+	 * Returns a textual representation of the formula tree with this node as root.
 	 *
-	 * In LTL, brackets are needed around the until, as Until may appear nested (in other logics, Until always is the
-	 * root of a path formula); hence this function is overwritten in this class.
-	 *
-	 * @return A string representation of the formula.
+	 * @returns A string representing the formula tree.
 	 */
 	virtual std::string toString() const {
 		std::string result = "(" + left->toString();
@@ -146,9 +131,27 @@ public:
 	}
 
 	/*!
+	 * Gets the left child node.
+	 *
+	 * @returns The left child node.
+	 */
+	std::shared_ptr<AbstractLtlFormula<T>> const & getLeft() const {
+		return left;
+	}
+
+	/*!
+	 * Gets the right child node.
+	 *
+	 * @returns The right child node.
+	 */
+	std::shared_ptr<AbstractLtlFormula<T>> const & getRight() const {
+		return right;
+	}
+
+	/*!
 	 * Sets the left child node.
 	 *
-	 * @param newLeft the new left child.
+	 * @param newLeft The new left child.
 	 */
 	void setLeft(std::shared_ptr<AbstractLtlFormula<T>> const & newLeft) {
 		left = newLeft;
@@ -157,44 +160,36 @@ public:
 	/*!
 	 * Sets the right child node.
 	 *
-	 * @param newRight the new right child.
+	 * @param newRight The new right child.
 	 */
 	void setRight(std::shared_ptr<AbstractLtlFormula<T>> const & newRight) {
 		right = newRight;
 	}
 
 	/*!
-	 * @returns a pointer to the left child node
-	 */
-	std::shared_ptr<AbstractLtlFormula<T>> const & getLeft() const {
-		return left;
-	}
-
-	/*!
-	 * @returns a pointer to the right child node
-	 */
-	std::shared_ptr<AbstractLtlFormula<T>> const & getRight() const {
-		return right;
-	}
-
-	/*!
+	 * Checks if the left child is set, i.e. it does not point to null.
 	 *
-	 * @return True if the left child is set, i.e. it does not point to nullptr; false otherwise
+	 * @return True iff the left child is set.
 	 */
-	bool leftIsSet() const {
+	bool isLeftSet() const {
 		return left.get() != nullptr;
 	}
 
 	/*!
+	 * Checks if the right child is set, i.e. it does not point to null.
 	 *
-	 * @return True if the right child is set, i.e. it does not point to nullptr; false otherwise
+	 * @return True iff the right child is set.
 	 */
-	bool rightIsSet() const {
+	bool isRightSet() const {
 		return right.get() != nullptr;
 	}
 
 private:
+
+	// The left child node.
 	std::shared_ptr<AbstractLtlFormula<T>> left;
+
+	// The right child node.
 	std::shared_ptr<AbstractLtlFormula<T>> right;
 };
 

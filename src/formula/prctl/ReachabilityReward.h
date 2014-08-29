@@ -15,62 +15,77 @@ namespace storm {
 namespace property {
 namespace prctl {
 
+// Forward declaration for the interface class.
 template <class T> class ReachabilityReward;
 
 /*!
- *  @brief Interface class for model checkers that support ReachabilityReward.
+ * Interface class for model checkers that support ReachabilityReward.
  *   
- *  All model checkers that support the formula class ReachabilityReward must inherit
- *  this pure virtual class.
+ * All model checkers that support the formula class ReachabilityReward must inherit
+ * this pure virtual class.
  */
 template <class T>
 class IReachabilityRewardModelChecker {
     public:
+
 		/*!
-         *  @brief Evaluates ReachabilityReward formula within a model checker.  
-         *
-         *  @param obj Formula object with subformulas.
-         *  @return Result of the formula for every node.
-         */
+		 * Empty virtual destructor.
+		 */
+		virtual ~IReachabilityRewardModelChecker() {
+			// Intentionally left empty
+		}
+
+		/*!
+		 * Evaluates a ReachabilityReward formula within a model checker.
+		 *
+		 * @param obj Formula object with subformulas.
+		 * @param qualitative A flag indicating whether the formula only needs to be evaluated qualitatively, i.e. if the
+         *                    results are only compared against the bounds 0 and 1.
+		 * @return The modelchecking result of the formula for every state.
+		 */
         virtual std::vector<T> checkReachabilityReward(const ReachabilityReward<T>& obj, bool qualitative) const = 0;
 };
 
 /*!
- * @brief
- * Class for an abstract (path) formula tree with an Reachability Reward node as root.
+ * Class for an Prctl (reward path) formula tree with an Reachability Reward node as root.
  *
- * Has one Abstract state formula as sub formula/tree.
+ * Has one state formula as sub formula/tree.
  *
- * The subtree is seen as part of the object and deleted with the object
- * (this behavior can be prevented by setting them to nullptr before deletion)
+ * This formula expresses the rewards received or costs needed to reach a state satisfying the formula \e child.
+ * In case the state under consiteration itself satisfies the formula \e child the rewards are zero.
+ * In case that there is a non zero probability of not reaching any of the target states the rewards are infinite.
+ * Also note that for this formula both state and transition rewards are considered and use if available in the model.
  *
- * @see AbstractPathFormula
+ * The object has shared ownership of its subtree. If this object is deleted and no other object has a shared
+ * ownership of the subtree it will be deleted as well.
+ *
+ * @see AbstractRewardPathFormula
  * @see AbstractPrctlFormula
  */
 template <class T>
 class ReachabilityReward : public AbstractRewardPathFormula<T> {
 
 public:
+
 	/*!
-	 * Empty constructor
+	 * Creates a ReachabilityReward node without a subnode.
+	 * The resulting object will not represent a complete formula!
 	 */
 	ReachabilityReward() : child(nullptr){
 		// Intentionally left empty
 	}
 
 	/*!
-	 * Constructor
+	 * Creates an Eventually node using the given parameter.
 	 *
-	 * @param child The child node
+	 * @param child The child formula subtree.
 	 */
 	ReachabilityReward(std::shared_ptr<AbstractStateFormula<T>> child) : child(child){
 		// Intentionally left empty
 	}
 
 	/*!
-	 * Destructor.
-	 *
-	 * Deletes the subtree iff this object is the last remaining owner of the subtree.
+	 * Empty virtual destructor.
 	 */
 	virtual ~ReachabilityReward() {
 		// Intentionally left empty.
@@ -79,13 +94,13 @@ public:
 	/*!
 	 * Clones the called object.
 	 *
-	 * Performs a "deep copy", i.e. the subtrees of the new object are clones of the original ones
+	 * Performs a "deep copy", i.e. the subnodes of the new object are clones of the original ones.
 	 *
-	 * @returns a new ReachabilityReward-object that is identical the called object.
+	 * @returns A new ReachabilityReward object that is a deep copy of the called object.
 	 */
 	virtual std::shared_ptr<AbstractRewardPathFormula<T>> clone() const override {
 		std::shared_ptr<ReachabilityReward<T>> result(new ReachabilityReward<T>());
-		if (this->childIsSet()) {
+		if (this->isChildSet()) {
 			result->setChild(child->clone());
 		}
 		return result;
@@ -105,7 +120,9 @@ public:
 	}
 
 	/*!
-	 * @returns a string representation of the formula
+	 * Returns a textual representation of the formula tree with this node as root.
+	 *
+	 * @returns A string representing the formula tree.
 	 */
 	virtual std::string toString() const override {
 		std::string result = "F ";
@@ -114,29 +131,35 @@ public:
 	}
 
 	/*!
-	 * @returns the child node
+	 * Gets the child node.
+	 *
+	 * @returns The child node.
 	 */
 	std::shared_ptr<AbstractStateFormula<T>> const & getChild() const {
 		return child;
 	}
 
 	/*!
-	 * Sets the subtree
-	 * @param child the new child node
+	 * Sets the subtree.
+	 *
+	 * @param child The new child.
 	 */
 	void setChild(std::shared_ptr<AbstractStateFormula<T>> const & child) {
 		this->child = child;
 	}
 
 	/*!
+	 * Checks if the child is set, i.e. it does not point to null.
 	 *
-	 * @return True if the child node is set, i.e. it does not point to nullptr; false otherwise
+	 * @return True iff the child is set.
 	 */
-	bool childIsSet() const {
+	bool isChildSet() const {
 		return child.get() != nullptr;
 	}
 
 private:
+
+	// The child node.
 	std::shared_ptr<AbstractStateFormula<T>> child;
 };
 

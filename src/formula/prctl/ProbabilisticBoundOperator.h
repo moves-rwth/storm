@@ -17,40 +17,51 @@ namespace storm {
 namespace property {
 namespace prctl {
 
+// Forward declaration for the interface class.
 template <class T> class ProbabilisticBoundOperator;
 
 /*!
- *  @brief Interface class for model checkers that support ProbabilisticBoundOperator.
+ * Interface class for model checkers that support ProbabilisticBoundOperator.
  *
- *  All model checkers that support the formula class PathBoundOperator must inherit
- *  this pure virtual class.
+ * All model checkers that support the formula class PathBoundOperator must inherit
+ * this pure virtual class.
  */
 template <class T>
 class IProbabilisticBoundOperatorModelChecker {
     public:
+
+		/*!
+		 * Empty virtual destructor.
+		 */
+		virtual ~IProbabilisticBoundOperatorModelChecker() {
+			// Intentionally left empty
+		}
+
+		/*!
+		 * Evaluates a ProbabilisticBoundOperator within a model checker.
+		 *
+		 * @param obj Formula object with subformulas.
+		 * @return The modelchecking result of the formula for every state.
+		 */
         virtual storm::storage::BitVector checkProbabilisticBoundOperator(const ProbabilisticBoundOperator<T>& obj) const = 0;
 };
 
 /*!
- * @brief
- * Class for an abstract formula tree with a P (probablistic) operator node over a probability interval
- * as root.
+ * Class for a Prctl formula tree with a P (probablistic) bound operator node as root.
  *
- * Has one Abstract path formula as sub formula/tree.
+ * Has one path formula as sub formula/tree.
  *
  * @par Semantics
- * 	  The formula holds iff the probability that the path formula holds is inside the bounds
- * 	  specified in this operator
+ * 	  The formula holds iff the probability that the path formula holds meets the bound
+ * 	  specified in this operator.
  *
- * The subtree is seen as part of the object and deleted with it
- * (this behavior can be prevented by setting them to NULL before deletion)
- *
+ * The object has shared ownership of its subtree. If this object is deleted and no other object has a shared
+ * ownership of the subtree it will be deleted as well.
  *
  * @see AbstractStateFormula
  * @see AbstractPathFormula
- * @see ProbabilisticOperator
- * @see ProbabilisticNoBoundsOperator
  * @see AbstractPrctlFormula
+ * @see RewardBoundOperator
  */
 template<class T>
 class ProbabilisticBoundOperator : public AbstractStateFormula<T> {
@@ -58,18 +69,19 @@ class ProbabilisticBoundOperator : public AbstractStateFormula<T> {
 public:
 
 	/*!
-	 * Empty constructor
+	 * Creates a ProbabilisticBoundOperator node without a subnode.
+	 * The resulting object will not represent a complete formula!
 	 */
 	ProbabilisticBoundOperator() : comparisonOperator(LESS), bound(0), child(nullptr) {
 		// Intentionally left empty.
 	}
 
 	/*!
-	 * Constructor for non-optimizing operator.
+	 * Creates a ProbabilisticBoundOperator node using the given parameters.
 	 *
 	 * @param comparisonOperator The relation for the bound.
-	 * @param bound The bound for the probability
-	 * @param child The child node
+	 * @param bound The bound for the probability.
+	 * @param child The child formula subtree.
 	 */
 	ProbabilisticBoundOperator(storm::property::ComparisonType comparisonOperator, T bound, std::shared_ptr<AbstractPathFormula<T>> const & child)
 		: comparisonOperator(comparisonOperator), bound(bound), child(child) {
@@ -77,9 +89,7 @@ public:
 	}
 
 	/*!
-	 * Destructor
-	 *
-	 * Deletes the subtree iff this object is the last remaining owner of the subtree.
+	 * Empty virtual destructor.
 	 */
 	virtual ~ProbabilisticBoundOperator() {
 		// Intentionally left empty.
@@ -88,9 +98,9 @@ public:
 	/*!
 	 * Clones the called object.
 	 *
-	 * Performs a "deep copy", i.e. the subtrees of the new object are clones of the original ones
+	 * Performs a "deep copy", i.e. the subnodes of the new object are clones of the original ones.
 	 *
-	 * @returns a new AND-object that is identical the called object.
+	 * @returns A new ProbabilisticBoundOperator object that is a deep copy of the called object.
 	 */
 	virtual std::shared_ptr<AbstractStateFormula<T>> clone() const override {
 		std::shared_ptr<ProbabilisticBoundOperator<T>> result(new ProbabilisticBoundOperator<T>());
@@ -114,7 +124,9 @@ public:
 	}
 
 	/*!
-	 * @returns a string representation of the formula
+	 * Returns a textual representation of the formula tree with this node as root.
+	 *
+	 * @returns A string representing the formula tree.
 	 */
 	virtual std::string toString() const override {
 		std::string result = "P ";
@@ -133,56 +145,74 @@ public:
 	}
 
 	/*!
-	 * @returns the child node (representation of a formula)
+	 * Gets the child node.
+	 *
+	 * @returns The child node.
 	 */
 	std::shared_ptr<AbstractPathFormula<T>> const & getChild () const {
 		return child;
 	}
 
 	/*!
-	 * Sets the child node
+	 * Sets the subtree.
 	 *
-	 * @param child the path formula that becomes the new child node
+	 * @param child The new child.
 	 */
 	void setChild(std::shared_ptr<AbstractPathFormula<T>> const & child) {
 		this->child = child;
 	}
 
 	/*!
+	 * Checks if the child is set, i.e. it does not point to null.
 	 *
-	 * @return True if the path formula is set, i.e. it does not point to nullptr; false otherwise
+	 * @return True iff the child is set.
 	 */
-	bool childIsSet() const {
+	bool isChildSet() const {
 		return child.get() != nullptr;
 	}
 
 	/*!
-	 * @returns the comparison relation
+	 * Gets the comparison operator.
+	 *
+	 * @returns An enum value representing the comparison relation.
 	 */
 	storm::property::ComparisonType const getComparisonOperator() const {
 		return comparisonOperator;
 	}
 
+	/*!
+	 * Sets the comparison operator.
+	 *
+	 * @param comparisonOperator An enum value representing the new comparison relation.
+	 */
 	void setComparisonOperator(storm::property::ComparisonType comparisonOperator) {
 		this->comparisonOperator = comparisonOperator;
 	}
 
 	/*!
-	 * @returns the bound for the measure
+	 * Gets the bound which the probability that the path formula holds has to obey.
+	 *
+	 * @returns The probability bound.
 	 */
 	T const & getBound() const {
 		return bound;
 	}
 
 	/*!
-	 * Sets the interval in which the probability that the path formula holds may lie in.
+	 * Sets the bound which the probability that the path formula holds has to obey.
 	 *
-	 * @param bound The bound for the measure
+	 * @param bound The new probability bound.
 	 */
 	void setBound(T bound) {
 		this->bound = bound;
 	}
 
+	/*!
+	 * Checks if the bound is met by the given value.
+	 *
+	 * @param value The value to test against the bound.
+	 * @returns True iff value <comparisonOperator> bound holds.
+	 */
 	bool meetsBound(T value) const {
 		switch (comparisonOperator) {
 		case LESS: return value < bound; break;
@@ -194,8 +224,14 @@ public:
 	}
 
 private:
+
+	// The operator used to indicate the kind of bound that is to be met.
 	storm::property::ComparisonType comparisonOperator;
+
+	// The probability bound.
 	T bound;
+
+	// The path formula for which the probability to be satisfied has to meet the bound.
 	std::shared_ptr<AbstractPathFormula<T>> child;
 };
 

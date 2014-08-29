@@ -15,29 +15,37 @@ namespace storm {
 namespace property {
 namespace csl {
 
+// Forward declaration for the interface class.
 template <class T> class Ap;
 
 /*!
- *  @brief Interface class for model checkers that support Ap.
+ * Interface class for model checkers that support Ap.
  *
- *  All model checkers that support the formula class Ap must inherit
- *  this pure virtual class.
+ * All model checkers that support the formula class Ap must inherit
+ * this pure virtual class.
  */
 template <class T>
 class IApModelChecker {
     public:
+
 		/*!
-         *  @brief Evaluates Ap formula within a model checker.
-         *
-         *  @param obj Formula object with subformulas.
-         *  @return Result of the formula for every node.
-         */
+		 * Empty virtual destructor.
+		 */
+		virtual ~IApModelChecker() {
+			// Intentionally left empty
+		}
+
+		/*!
+		 * Evaluates an Ap formula within a model checker.
+		 *
+		 * @param obj Formula object with subformulas.
+		 * @return The modelchecking result of the formula for every state.
+		 */
         virtual storm::storage::BitVector checkAp(const Ap<T>& obj) const = 0;
 };
 
 /*!
- * @brief
- * Class for an abstract formula tree with atomic proposition as root.
+ * Class for a Csl formula tree with an atomic proposition as root.
  *
  * This class represents the leaves in the formula tree.
  *
@@ -50,19 +58,16 @@ class Ap : public AbstractStateFormula<T> {
 public:
 
 	/*!
-	 * Constructor
+	 * Creates a new atomic proposition leaf, with the given label.
 	 *
-	 * Creates a new atomic proposition leaf, with the label Ap
-	 *
-	 * @param ap The string representing the atomic proposition
+	 * @param ap A string representing the atomic proposition.
 	 */
-	Ap(std::string ap) {
-		this->ap = ap;
+	Ap(std::string ap) : ap(ap) {
+		// Intentionally left empty.
 	}
 
 	/*!
-	 * Destructor.
-	 * At this time, empty...
+	 * Empty virtual destructor.
 	 */
 	virtual ~Ap() {
 		// Intentionally left empty
@@ -71,9 +76,9 @@ public:
 	/*!
 	 * Clones the called object.
 	 *
-	 * Performs a "deep copy", i.e. the subtrees of the new object are clones of the original ones
+	 * Performs a "deep copy", i.e. the subtrees of the new object are clones of the original ones.
 	 *
-	 * @returns a new AND-object that is identical the called object.
+	 * @returns A new Ap object that is a deep copy of the called object.
 	 */
 	virtual std::shared_ptr<AbstractStateFormula<T>> clone() const override {
 		std::shared_ptr<AbstractStateFormula<T>> result(new Ap(this->getAp()));
@@ -93,6 +98,15 @@ public:
 		return modelChecker.template as<IApModelChecker>()->checkAp(*this);
 	}
 
+	/*!
+	 * A string representing the atomic proposition.
+	 *
+	 * @returns A string representing the leaf.
+	 */
+	virtual std::string toString() const override {
+		return getAp();
+	}
+
 	/*! Returns whether the formula is a propositional logic formula.
 	 *  That is, this formula and all its subformulas consist only of And, Or, Not and AP.
 	 *
@@ -103,21 +117,17 @@ public:
 	}
 
 	/*!
-	 * @returns the name of the atomic proposition
+	 * Gets the name of the atomic proposition.
+	 *
+	 * @returns The name of the atomic proposition.
 	 */
 	std::string const & getAp() const {
 		return ap;
 	}
 
-	/*!
-	 * @returns a string representation of the leaf.
-	 *
-	 */
-	virtual std::string toString() const override {
-		return getAp();
-	}
-
 private:
+
+	// The atomic proposition referenced by this leaf.
 	std::string ap;
 
 };

@@ -21,33 +21,42 @@ namespace storm {
 namespace property {
 namespace prctl {
 
-
+// Forward declaration for the interface class.
 template <class T> class BoundedNaryUntil;
 
 /*!
- *  @brief Interface class for model checkers that support BoundedNaryUntil.
+ * Interface class for model checkers that support BoundedNaryUntil.
  *   
- *  All model checkers that support the formula class BoundedNaryUntil must inherit
- *  this pure virtual class.
+ * All model checkers that support the formula class BoundedNaryUntil must inherit
+ * this pure virtual class.
  */
 template <class T>
 class IBoundedNaryUntilModelChecker {
     public:
+
 		/*!
-         *  @brief Evaluates BoundedNaryUntil formula within a model checker.
+		 * Empty virtual destructor.
+		 */
+		virtual ~IBoundedNaryUntilModelChecker() {
+			// Intentionally left empty
+		}
+
+		/*!
+         * Evaluates BoundedNaryUntil formula within a model checker.
          *
-         *  @param obj Formula object with subformulas.
-         *  @return Result of the formula for every node.
+         * @param obj Formula object with subformulas.
+         * @param qualitative A flag indicating whether the formula only needs to be evaluated qualitatively, i.e. if the
+         *                    results are only compared against the bounds 0 and 1.
+         * @return Result of the formula for every state.
          */
         virtual std::vector<T> checkBoundedNaryUntil(const BoundedNaryUntil<T>& obj, bool qualitative) const = 0;
 };
 
 /*!
- * @brief
- * Class for an abstract (path) formula tree with a BoundedNaryUntil node as root.
+ * Class for a Prctl (path) formula tree with a BoundedNaryUntil node as root.
  *
- * Has at least two Abstract state formulas as sub formulas and an interval
- * associated with all but the first sub formula. We'll call the first one
+ * Has at least two state formulas as sub formulas and an interval
+ * associated with all but the first sub formula. We will call the first one
  * \e left and all other one \e right.
  *
  * @par Semantics
@@ -55,8 +64,8 @@ class IBoundedNaryUntilModelChecker {
  * formulas holds after a number of steps contained in the interval
  * associated with this formula.
  *
- * The subtrees are seen as part of the object and deleted with the object
- * (this behavior can be prevented by setting them to NULL before deletion)
+ * The object has shared ownership of its subtrees. If this object is deleted and no other object has a shared
+ * ownership of the subtrees they will be deleted as well.
  *
  * @see AbstractPathFormula
  * @see AbstractPrctlFormula
@@ -67,27 +76,25 @@ class BoundedNaryUntil : public AbstractPathFormula<T> {
 public:
 
 	/*!
-	 * Empty constructor
+	 * Creates a BoundedNaryUntil node without subnodes.
+	 * The resulting object will not represent a complete formula!
 	 */
 	BoundedNaryUntil() : left(nullptr), right() {
 		// Intentionally left empty.
 	}
 
 	/*!
-	 * Constructor
+	 * Creates a BoundedNaryUntil node with the parameters as subtrees.
 	 *
-	 * @param left The left formula subtree
-	 * @param right The left formula subtree
+	 * @param left The left formula subtree.
+	 * @param right The right formula subtrees with their associated intervals.
 	 */
 	BoundedNaryUntil(std::shared_ptr<AbstractStateFormula<T>> const & left, std::vector<std::tuple<std::shared_ptr<AbstractStateFormula<T>>,T,T>> const & right) : left(left), right(right) {
 		// Intentionally left empty.
 	}
 
 	/*!
-	 * Destructor.
-	 *
-	 * Also deletes the subtrees.
-	 * (this behaviour can be prevented by setting the subtrees to NULL before deletion)
+	 * Empty virtual destructor.
 	 */
 	virtual ~BoundedNaryUntil() {
 	  // Intentionally left empty.
@@ -96,16 +103,16 @@ public:
 	/*!
 	 * Clones the called object.
 	 *
-	 * Performs a "deep copy", i.e. the subtrees of the new object are clones of the original ones
+	 * Performs a "deep copy", i.e. the subtrees of the new object are clones of the original ones.
 	 *
-	 * @returns a new BoundedNaryUntil-object that is identical the called object.
+	 * @returns A new BoundedNaryUntil object that is a deep copy of the called object.
 	 */
 	virtual std::shared_ptr<AbstractPathFormula<T>> clone() const override {
 		std::shared_ptr<BoundedNaryUntil<T>> result(new BoundedNaryUntil<T>());
-		if (this->leftIsSet()) {
+		if (this->isLeftSet()) {
 			result->setLeft(left->clone());
 		}
-		if (this->rightIsSet()) {
+		if (this->isRightSet()) {
 			std::vector<std::tuple<std::shared_ptr<AbstractStateFormula<T>>,T,T>> newright;
 			for (auto it = right->begin(); it != right->end(); ++it) {
 				newright.push_back(std::tuple<std::shared_ptr<AbstractStateFormula<T>>,T,T>(std::get<0>(*it)->clone(), std::get<1>(*it), std::get<2>(*it)));
@@ -130,7 +137,9 @@ public:
 	}
 
 	/*!
-	 * @returns a string representation of the formula
+	 * Returns a textual representation of the formula tree with this node as root.
+	 *
+	 * @returns A string representing the formula tree.
 	 */
 	virtual std::string toString() const override {
 		std::stringstream result;
@@ -143,60 +152,76 @@ public:
 	}
 
 	/*!
-	 * Sets the left child node.
+	 * Gets the left child node.
 	 *
-	 * @param newLeft the new left child.
-	 */
-	void setLeft(std::shared_ptr<AbstractStateFormula<T>> const & newLeft) {
-		left = newLeft;
-	}
-
-	void setRight(std::vector<std::tuple<std::shared_ptr<AbstractStateFormula<T>>,T,T>> const & newRight) {
-		right = newRight;
-	}
-
-	/*!
-	 *
-	 * @return True if the left child is set, i.e. it does not point to nullptr; false otherwise
-	 */
-	bool leftIsSet() const {
-		return left != nullptr;
-	}
-
-	/*!
-	 *
-	 * @return True if the right child is set, i.e. it is not empty; false otherwise
-	 */
-	bool rightIsSet() const {
-		return !(right.empty());
-	}
-
-	/*!
-	 * Sets the right child node.
-	 *
-	 * @param newRight the new right child.
-	 */
-	void addRight(std::shared_ptr<AbstractStateFormula<T>> const & newRight, T upperBound, T lowerBound) {
-		right.push_back(std::tuple<std::shared_ptr<AbstractStateFormula<T>>,T,T>(newRight, upperBound, lowerBound));
-	}
-
-	/*!
-	 * @returns a pointer to the left child node
+	 * @returns The left child node.
 	 */
 	std::shared_ptr<AbstractStateFormula<T>> const & getLeft() const {
 		return left;
 	}
 
 	/*!
-	 * @returns a pointer to the right child nodes.
+	 * Gets the right child nodes and their associated intervals.
+	 *
+	 * @returns A vector containing the right children as well as the associated intervals.
 	 */
 	std::vector<std::tuple<std::shared_ptr<AbstractStateFormula<T>>,T,T>> const & getRight() const {
 		return right;
 	}
 
+	/*!
+	 * Sets the left child node.
+	 *
+	 * @param newLeft The new left child.
+	 */
+	void setLeft(std::shared_ptr<AbstractStateFormula<T>> const & newLeft) {
+		left = newLeft;
+	}
+
+	/*!
+	 * Sets the right child nodes.
+	 *
+	 * @param newRight A vector containing the new right children as well as the associated intervals.
+	 */
+	void setRight(std::vector<std::tuple<std::shared_ptr<AbstractStateFormula<T>>,T,T>> const & newRight) {
+		right = newRight;
+	}
+
+	/*!
+	 * Adds a new rightmost child node.
+	 *
+	 * @param newRight The new child.
+	 * @param upperBound The upper bound of the associated interval.
+	 * @param lowerBound The lower bound of the associated interval.
+	 */
+	void addRight(std::shared_ptr<AbstractStateFormula<T>> const & newRight, T upperBound, T lowerBound) {
+		right.push_back(std::tuple<std::shared_ptr<AbstractStateFormula<T>>,T,T>(newRight, upperBound, lowerBound));
+	}
+
+	/*!
+	 * Checks if the left child is set, i.e. it does not point to null.
+	 *
+	 * @return True iff the left child is set.
+	 */
+	bool isLeftSet() const {
+		return left != nullptr;
+	}
+
+	/*!
+	 * Checks if the right child is set, i.e. it contains at least one entry.
+	 *
+	 * @return True iff the right child is set.
+	 */
+	bool isRightSet() const {
+		return !(right.empty());
+	}
 
 private:
+
+	// The left formula subtree.
 	std::shared_ptr<AbstractStateFormula<T>> left;
+
+	// The right formula subtrees with their associated intervals.
 	std::vector<std::tuple<std::shared_ptr<AbstractStateFormula<T>>,T,T>> right;
 };
 

@@ -16,49 +16,83 @@
 
 namespace storm {
 namespace property {
-namespace action {
- template <typename T> class AbstractAction;
-}
-}
-}
-
-namespace storm {
-namespace property {
 namespace ltl {
 
+/*!
+ * This is the Ltl specific filter.
+ *
+ * It maintains a Ltl formula which can be checked against a given model by either calling evaluate() or check().
+ * Additionally it maintains a list of filter actions that are used to further manipulate the modelchecking results and prepare them for output.
+ */
 template <class T>
 class LtlFilter : public storm::property::AbstractFilter<T> {
 
+	// Convenience typedef to make the code more readable.
 	typedef typename storm::property::action::AbstractAction<T>::Result Result;
 
 public:
 
+	/*!
+	 * Creates an empty LtlFilter, maintaining no Ltl formula.
+	 *
+	 * Calling check or evaluate will return an empty result.
+	 */
 	LtlFilter() : AbstractFilter<T>(UNDEFINED), child(nullptr) {
 		// Intentionally left empty.
 	}
 
+	/*!
+	 * Creates an LtlFilter maintaining an Ltl formula but containing no actions.
+	 *
+	 * The modelchecking result will be returned or printed as is.
+	 *
+	 * @param child The Ltl formula to be maintained.
+	 * @param opt An enum value indicating which kind of scheduler shall be used for path formulas on nondeterministic models.
+	 */
 	LtlFilter(std::shared_ptr<AbstractLtlFormula<T>> const & child, OptimizingOperator opt = UNDEFINED) : AbstractFilter<T>(opt), child(child) {
 		// Intentionally left empty.
 	}
 
+	/*!
+	 * Creates an LtlFilter maintaining a Ltl formula and containing a single action.
+	 *
+	 * The given action will be applied to the modelchecking result during evaluation.
+	 * Further actions can be added later.
+	 *
+	 * @param child The Ltl formula to be maintained.
+	 * @param action The single action to be executed during evaluation.
+	 * @param opt An enum value indicating which kind of scheduler shall be used for path formulas on nondeterministic models.
+	 */
 	LtlFilter(std::shared_ptr<AbstractLtlFormula<T>> const & child, std::shared_ptr<action::AbstractAction<T>> const & action, OptimizingOperator opt = UNDEFINED) : AbstractFilter<T>(action, opt), child(child) {
 		// Intentionally left empty.
 	}
 
+	/*!
+	 * Creates an LtlFilter using the given parameters.
+	 *
+	 * The given actions will be applied to the modelchecking result in ascending index order during evaluation.
+	 * Further actions can be added later.
+	 *
+	 * @param child The Ltl formula to be maintained.
+	 * @param actions A vector conatining the actions that are to be executed during evaluation.
+	 * @param opt An enum value indicating which kind of scheduler shall be used for path formulas on nondeterministic models.
+	 */
 	LtlFilter(std::shared_ptr<AbstractLtlFormula<T>> const & child, std::vector<std::shared_ptr<action::AbstractAction<T>>> const & actions, OptimizingOperator opt = UNDEFINED) : AbstractFilter<T>(actions, opt), child(child) {
 		// Intentionally left empty.
 	}
 
+	/*!
+	 * Empty virtual destructor.
+	 */
 	virtual ~LtlFilter() {
 		// Intentionally left empty.
 	}
 
 
-	/*!Description copied from the MC.
-	 * Checks the given state formula on the model and prints the result (true/false) for all initial states, i.e.
-	 * states that carry the atomic proposition "init".
+	/*!
+	 * Calls the modelchecker, retrieves the modelchecking result, applies the filter action one by one and prints out the result.
 	 *
-	 * @param stateFormula The formula to be checked.
+	 * @param modelchecker The modelchecker to be called.
 	 */
 	void check(storm::modelchecker::ltl::AbstractModelChecker<T> const & modelchecker) const {
 
@@ -83,6 +117,12 @@ public:
 
 	}
 
+	/*!
+	 * Calls the modelchecker, retrieves the modelchecking result, applies the filter action one by one and returns the result.
+	 *
+	 * @param modelchecker The modelchecker to be called.
+	 * @returns The result of the sequential application of the filter actions to the modelchecking result.
+	 */
 	Result evaluate(storm::modelchecker::ltl::AbstractModelChecker<T> const & modelchecker) const {
 		// First, get the model checking result.
 		Result result;
@@ -112,6 +152,13 @@ public:
 		return result;
 	}
 
+	/*!
+	 * Returns a textual representation of the filter.
+	 *
+	 * That includes the actions as well as the maintained formula.
+	 *
+	 * @returns A string representing the filter.
+	 */
 	std::string toString() const override {
 		std::string desc = "";
 
@@ -151,26 +198,41 @@ public:
 		return desc;
 	}
 
-	virtual std::string toPrettyString() const override {
-		std::string desc = "Filter: ";
-		desc += "\nActions:";
-		for(auto action : this->actions) {
-			desc += "\n\t" + action->toString();
-		}
-		desc += "\nFormula:\n\t" + child->toString();
-		return desc;
-	}
-
-	void setChild(std::shared_ptr<AbstractLtlFormula<T>> const & child) {
-		this->child = child;
-	}
-
+	/*!
+	 * Gets the child node.
+	 *
+	 * @returns The child node.
+	 */
 	std::shared_ptr<AbstractLtlFormula<T>> const & getChild() const {
 		return child;
 	}
 
+	/*!
+	 * Sets the subtree.
+	 *
+	 * @param child The new child.
+	 */
+	void setChild(std::shared_ptr<AbstractLtlFormula<T>> const & child) {
+		this->child = child;
+	}
+
+	/*!
+	 * Checks if the child is set, i.e. it does not point to null.
+	 *
+	 * @return True iff the child is set.
+	 */
+	bool isChildSet() const {
+		return child.get() != nullptr;
+	}
+
 private:
 
+	/*!
+	 * Writes out the given result.
+	 *
+	 * @param result The result of the sequential application of the filter actions to a modelchecking result.
+	 * @param modelchecker The modelchecker that was called to generate the modelchecking result. Needed for legacy support.
+	 */
 	void writeOut(Result const & result, storm::modelchecker::ltl::AbstractModelChecker<T> const & modelchecker) const {
 
 		// Test for the kind of result. Values or states.
@@ -207,6 +269,7 @@ private:
 		std::cout << std::endl << "-------------------------------------------" << std::endl;
 	}
 
+	// The Ltl formula maintained by this filter.
 	std::shared_ptr<AbstractLtlFormula<T>> child;
 };
 
