@@ -600,11 +600,8 @@ int main(const int argc, const char* argv[]) {
                     if (useMILP) {
                         storm::counterexamples::MILPMinimalLabelSetGenerator<double>::computeCounterexample(program, *mdp, formulaPtr->getChild());
                     } else {
-                        storm::counterexamples::SMTMinimalCommandSetGenerator<double>::computeCounterexample(program, constants, *mdp, formulaPtr->getChild());
+                        // storm::counterexamples::SMTMinimalCommandSetGenerator<double>::computeCounterexample(program, constants, *mdp, formulaPtr->getChild());
                     }
-                    
-                    // Once we are done with the formula, delete it.
-                    delete formulaPtr;
                 }
 
 				// MinCMD Time Measurement, End
