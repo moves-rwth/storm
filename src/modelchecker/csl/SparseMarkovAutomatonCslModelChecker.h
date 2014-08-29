@@ -1,7 +1,6 @@
 #ifndef STORM_MODELCHECKER_CSL_SPARSEMARKOVAUTOMATONCSLMODELCHECKER_H_
 #define STORM_MODELCHECKER_CSL_SPARSEMARKOVAUTOMATONCSLMODELCHECKER_H_
 
-#include <stack>
 #include <utility>
 
 #include "src/modelchecker/csl/AbstractModelChecker.h"
@@ -22,7 +21,7 @@ namespace storm {
             template<typename ValueType>
             class SparseMarkovAutomatonCslModelChecker : public AbstractModelChecker<ValueType> {
             public:
-                explicit SparseMarkovAutomatonCslModelChecker(storm::models::MarkovAutomaton<ValueType> const& model, std::shared_ptr<storm::solver::NondeterministicLinearEquationSolver<ValueType>> nondeterministicLinearEquationSolver) : AbstractModelChecker<ValueType>(model), minimumOperatorStack(), nondeterministicLinearEquationSolver(nondeterministicLinearEquationSolver) {
+                explicit SparseMarkovAutomatonCslModelChecker(storm::models::MarkovAutomaton<ValueType> const& model, std::shared_ptr<storm::solver::NondeterministicLinearEquationSolver<ValueType>> nondeterministicLinearEquationSolver) : AbstractModelChecker<ValueType>(model), nondeterministicLinearEquationSolver(nondeterministicLinearEquationSolver) {
                     // Intentionally left empty.
                 }
                 
@@ -30,7 +29,14 @@ namespace storm {
 					This Second constructor is NEEDED and a workaround for a common Bug in C++ with nested templates
 					See: http://stackoverflow.com/questions/14401308/visual-c-cannot-deduce-given-template-arguments-for-function-used-as-defaul
 				*/
-				explicit SparseMarkovAutomatonCslModelChecker(storm::models::MarkovAutomaton<ValueType> const& model) : AbstractModelChecker<ValueType>(model), minimumOperatorStack(), nondeterministicLinearEquationSolver(storm::utility::solver::getNondeterministicLinearEquationSolver<ValueType>()) {
+				explicit SparseMarkovAutomatonCslModelChecker(storm::models::MarkovAutomaton<ValueType> const& model) : AbstractModelChecker<ValueType>(model), nondeterministicLinearEquationSolver(storm::utility::solver::getNondeterministicLinearEquationSolver<ValueType>()) {
+					// Intentionally left empty.
+				}
+
+				/*!
+				 * Virtual destructor. Needs to be virtual, because this class has virtual methods.
+				 */
+				virtual ~SparseMarkovAutomatonCslModelChecker() {
 					// Intentionally left empty.
 				}
 
@@ -42,48 +48,87 @@ namespace storm {
                     return AbstractModelChecker<ValueType>::template getModel<storm::models::MarkovAutomaton<ValueType>>();
                 }
                 
-                std::vector<ValueType> checkUntil(storm::property::csl::Until<ValueType> const& formula, bool qualitative) const {
-                    storm::storage::BitVector leftStates = formula.getLeft().check(*this);
-                    storm::storage::BitVector rightStates = formula.getRight().check(*this);
-                    return computeUnboundedUntilProbabilities(minimumOperatorStack.top(), leftStates, rightStates, qualitative).first;
+                /*!
+				 * Checks the given formula that is a P operator over a path formula featuring a value bound.
+				 *
+				 * @param formula The formula to check.
+				 * @returns The set of states satisfying the formula represented by a bit vector.
+				 */
+				virtual storm::storage::BitVector checkProbabilisticBoundOperator(storm::properties::csl::ProbabilisticBoundOperator<ValueType> const& formula) const override{
+					// For P< and P<= the MA satisfies the formula iff the probability maximizing scheduler is used.
+					// For P> and P>=               "              iff the probability minimizing         "        .
+					if(formula.getComparisonOperator() == storm::properties::LESS || formula.getComparisonOperator() == storm::properties::LESS_EQUAL) {
+						this->minimumOperatorStack.push(false);
+					}
+					else {
+						this->minimumOperatorStack.push(true);
+					}
+
+					// First, we need to compute the probability for satisfying the path formula for each state.
+					std::vector<ValueType> quantitativeResult = formula.getChild()->check(*this, false);
+
+					//Remove the minimizing operator entry from the stack.
+					this->minimumOperatorStack.pop();
+
+					// Create resulting bit vector that will hold the yes/no-answer for every state.
+					storm::storage::BitVector result(quantitativeResult.size());
+
+					// Now, we can compute which states meet the bound specified in this operator and set the
+					// corresponding bits to true in the resulting vector.
+					for (uint_fast64_t i = 0; i < quantitativeResult.size(); ++i) {
+						if (formula.meetsBound(quantitativeResult[i])) {
+							result.set(i, true);
+						}
+					}
+
+					return result;
+				}
+
+                std::vector<ValueType> checkUntil(storm::properties::csl::Until<ValueType> const& formula, bool qualitative) const {
+                    // Test wheter it is specified if the minimum or the maximum probabilities are to be computed.
+                	if(this->minimumOperatorStack.empty()) {
+                		LOG4CPLUS_ERROR(logger, "Formula does not specify either min or max optimality, which is not meaningful over nondeterministic models.");
+                		throw storm::exceptions::InvalidArgumentException() << "Formula does not specify either min or max optimality, which is not meaningful over nondeterministic models.";
+                	}
+                	storm::storage::BitVector leftStates = formula.getLeft()->check(*this);
+                    storm::storage::BitVector rightStates = formula.getRight()->check(*this);
+                    return computeUnboundedUntilProbabilities(this->minimumOperatorStack.top(), leftStates, rightStates, qualitative).first;
                 }
                 
                 std::pair<std::vector<ValueType>, storm::storage::TotalScheduler> computeUnboundedUntilProbabilities(bool min, storm::storage::BitVector const& leftStates, storm::storage::BitVector const& rightStates, bool qualitative) const {
                     return storm::modelchecker::prctl::SparseMdpPrctlModelChecker<ValueType>::computeUnboundedUntilProbabilities(min, this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), this->getModel().getInitialStates(), leftStates, rightStates, nondeterministicLinearEquationSolver, qualitative);
                 }
                 
-                std::vector<ValueType> checkTimeBoundedUntil(storm::property::csl::TimeBoundedUntil<ValueType> const& formula, bool qualitative) const {
+                std::vector<ValueType> checkTimeBoundedUntil(storm::properties::csl::TimeBoundedUntil<ValueType> const& formula, bool qualitative) const {
                     throw storm::exceptions::NotImplementedException() << "Model checking Until formulas on Markov automata is not yet implemented.";
                 }
                 
-                std::vector<ValueType> checkTimeBoundedEventually(storm::property::csl::TimeBoundedEventually<ValueType> const& formula, bool qualitative) const {
-                    storm::storage::BitVector goalStates = formula.getChild().check(*this);
+                std::vector<ValueType> checkTimeBoundedEventually(storm::properties::csl::TimeBoundedEventually<ValueType> const& formula, bool qualitative) const {
+                	// Test wheter it is specified if the minimum or the maximum probabilities are to be computed.
+					if(this->minimumOperatorStack.empty()) {
+						LOG4CPLUS_ERROR(logger, "Formula does not specify either min or max optimality, which is not meaningful over nondeterministic models.");
+						throw storm::exceptions::InvalidArgumentException() << "Formula does not specify either min or max optimality, which is not meaningful over nondeterministic models.";
+					}
+                	storm::storage::BitVector goalStates = formula.getChild()->check(*this);
                     return this->checkTimeBoundedEventually(this->minimumOperatorStack.top(), goalStates, formula.getLowerBound(), formula.getUpperBound());
                 }
                 
-                std::vector<ValueType> checkGlobally(storm::property::csl::Globally<ValueType> const& formula, bool qualitative) const {
+                std::vector<ValueType> checkGlobally(storm::properties::csl::Globally<ValueType> const& formula, bool qualitative) const {
                     throw storm::exceptions::NotImplementedException() << "Model checking Globally formulas on Markov automata is not yet implemented.";
                 }
                 
-                std::vector<ValueType> checkEventually(storm::property::csl::Eventually<ValueType> const& formula, bool qualitative) const {
-                    storm::storage::BitVector subFormulaStates = formula.getChild().check(*this);
-                    return computeUnboundedUntilProbabilities(minimumOperatorStack.top(), storm::storage::BitVector(this->getModel().getNumberOfStates(), true), subFormulaStates, qualitative).first;
+                std::vector<ValueType> checkEventually(storm::properties::csl::Eventually<ValueType> const& formula, bool qualitative) const {
+                	// Test wheter it is specified if the minimum or the maximum probabilities are to be computed.
+					if(this->minimumOperatorStack.empty()) {
+						LOG4CPLUS_ERROR(logger, "Formula does not specify either min or max optimality, which is not meaningful over nondeterministic models.");
+						throw storm::exceptions::InvalidArgumentException() << "Formula does not specify either min or max optimality, which is not meaningful over nondeterministic models.";
+					}
+                	storm::storage::BitVector subFormulaStates = formula.getChild()->check(*this);
+                    return computeUnboundedUntilProbabilities(this->minimumOperatorStack.top(), storm::storage::BitVector(this->getModel().getNumberOfStates(), true), subFormulaStates, qualitative).first;
                 }
                 
-                std::vector<ValueType> checkNext(storm::property::csl::Next<ValueType> const& formula, bool qualitative) const {
+                std::vector<ValueType> checkNext(storm::properties::csl::Next<ValueType> const& formula, bool qualitative) const {
                     throw storm::exceptions::NotImplementedException() << "Model checking Next formulas on Markov automata is not yet implemented.";
-                }
-                
-                std::vector<ValueType> checkNoBoundOperator(storm::property::csl::AbstractNoBoundOperator<ValueType> const& formula) const {
-                    // Check if the operator was an non-optimality operator and report an error in that case.
-                    if (!formula.isOptimalityOperator()) {
-                        LOG4CPLUS_ERROR(logger, "Formula does not specify neither min nor max optimality, which is not meaningful for nondeterministic models.");
-                        throw storm::exceptions::InvalidArgumentException() << "Formula does not specify neither min nor max optimality, which is not meaningful for nondeterministic models.";
-                    }
-                    minimumOperatorStack.push(formula.isMinimumOperator());
-                    std::vector<ValueType> result = formula.check(*this, false);
-                    minimumOperatorStack.pop();
-                    return result;
                 }
                 
                 static void computeBoundedReachabilityProbabilities(bool min, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& exitRates, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& goalStates, storm::storage::BitVector const& markovianNonGoalStates, storm::storage::BitVector const& probabilisticNonGoalStates, std::vector<ValueType>& markovianNonGoalValues, std::vector<ValueType>& probabilisticNonGoalValues, ValueType delta, uint_fast64_t numberOfSteps) {
@@ -579,12 +624,6 @@ namespace storm {
                     
                     return result;
                 }
-                
-                /*!
-                 * A stack used for storing whether we are currently computing min or max probabilities or rewards, respectively.
-                 * The topmost element is true if and only if we are currently computing minimum probabilities or rewards.
-                 */
-                mutable std::stack<bool> minimumOperatorStack;
                 
                 /*!
                  * A solver that is used for solving systems of linear equations that are the result of nondeterministic choices.
