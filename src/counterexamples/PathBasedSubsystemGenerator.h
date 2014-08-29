@@ -375,7 +375,7 @@ public:
 	/*!
 	 *
 	 */
-	static storm::models::Dtmc<T> computeCriticalSubsystem(storm::models::Dtmc<T> const & model, std::shared_ptr<storm::property::prctl::AbstractStateFormula<T>> const & stateFormula) {
+	static storm::models::Dtmc<T> computeCriticalSubsystem(storm::models::Dtmc<T> const & model, std::shared_ptr<storm::properties::prctl::AbstractStateFormula<T>> const & stateFormula) {
 
 		//-------------------------------------------------------------
 		// 1. Strip and handle formulas
@@ -395,14 +395,14 @@ public:
 
 
 		// Strip bound operator
-		std::shared_ptr<storm::property::prctl::ProbabilisticBoundOperator<T>> boundOperator = std::dynamic_pointer_cast<storm::property::prctl::ProbabilisticBoundOperator<T>>(stateFormula);
+		std::shared_ptr<storm::properties::prctl::ProbabilisticBoundOperator<T>> boundOperator = std::dynamic_pointer_cast<storm::properties::prctl::ProbabilisticBoundOperator<T>>(stateFormula);
 
 		if(boundOperator == nullptr){
 			LOG4CPLUS_ERROR(logger, "No path bound operator at formula root.");
 			return model.getSubDtmc(subSys);
 		}
 		T bound = boundOperator->getBound();
-		std::shared_ptr<storm::property::prctl::AbstractPathFormula<T>> pathFormula = boundOperator->getChild();
+		std::shared_ptr<storm::properties::prctl::AbstractPathFormula<T>> pathFormula = boundOperator->getChild();
 
 		// get "init" labeled states
 		storm::storage::BitVector initStates = model.getLabeledStates("init");
@@ -423,9 +423,9 @@ public:
 		storm::storage::BitVector allowedStates;
 		storm::storage::BitVector targetStates;
 
-		std::shared_ptr<storm::property::prctl::Eventually<T>> eventually = std::dynamic_pointer_cast<storm::property::prctl::Eventually<T>>(pathFormula);
-		std::shared_ptr<storm::property::prctl::Globally<T>> globally = std::dynamic_pointer_cast<storm::property::prctl::Globally<T>>(pathFormula);
-		std::shared_ptr<storm::property::prctl::Until<T>> until = std::dynamic_pointer_cast<storm::property::prctl::Until<T>>(pathFormula);
+		std::shared_ptr<storm::properties::prctl::Eventually<T>> eventually = std::dynamic_pointer_cast<storm::properties::prctl::Eventually<T>>(pathFormula);
+		std::shared_ptr<storm::properties::prctl::Globally<T>> globally = std::dynamic_pointer_cast<storm::properties::prctl::Globally<T>>(pathFormula);
+		std::shared_ptr<storm::properties::prctl::Until<T>> until = std::dynamic_pointer_cast<storm::properties::prctl::Until<T>>(pathFormula);
 		if(eventually.get() != nullptr) {
 			targetStates = eventually->getChild()->check(modelCheck);
 			allowedStates = storm::storage::BitVector(targetStates.size(), true);

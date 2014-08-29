@@ -9,16 +9,16 @@
 #include "storm-config.h"
 #include "src/parser/LtlParser.h"
 #include "src/exceptions/WrongFormatException.h"
-#include "src/formula/actions/InvertAction.h"
-#include "src/formula/actions/SortAction.h"
-#include "src/formula/actions/RangeAction.h"
-#include "src/formula/actions/BoundAction.h"
+#include "src/properties/actions/InvertAction.h"
+#include "src/properties/actions/SortAction.h"
+#include "src/properties/actions/RangeAction.h"
+#include "src/properties/actions/BoundAction.h"
 
-namespace ltl = storm::property::ltl;
+namespace ltl = storm::properties::ltl;
 
 TEST(LtlParserTest, parseApOnlyTest) {
 	std::string input = "ap";
-	std::shared_ptr<storm::property::ltl::LtlFilter<double>> formula(nullptr);
+	std::shared_ptr<storm::properties::ltl::LtlFilter<double>> formula(nullptr);
 	ASSERT_NO_THROW(
 		formula = storm::parser::LtlParser::parseLtlFormula(input);
 	);
@@ -87,7 +87,7 @@ TEST(LtlParserTest, parseBoundedEventuallyFormulaTest) {
 
 	ASSERT_FALSE(formula->getChild()->isPropositional());
 
-	std::shared_ptr<storm::property::ltl::BoundedEventually<double>> op = std::dynamic_pointer_cast<storm::property::ltl::BoundedEventually<double>>(formula->getChild());
+	std::shared_ptr<storm::properties::ltl::BoundedEventually<double>> op = std::dynamic_pointer_cast<storm::properties::ltl::BoundedEventually<double>>(formula->getChild());
 	ASSERT_NE(op.get(), nullptr);
 	ASSERT_EQ(static_cast<uint_fast64_t>(5), op->getBound());
 
@@ -106,7 +106,7 @@ TEST(LtlParserTest, parseBoundedUntilFormulaTest) {
 
 	ASSERT_FALSE(formula->getChild()->isPropositional());
 
-	std::shared_ptr<storm::property::ltl::BoundedUntil<double>> op = std::dynamic_pointer_cast<storm::property::ltl::BoundedUntil<double>>(formula->getChild());
+	std::shared_ptr<storm::properties::ltl::BoundedUntil<double>> op = std::dynamic_pointer_cast<storm::properties::ltl::BoundedUntil<double>>(formula->getChild());
 	ASSERT_NE(op.get(), nullptr);
 	ASSERT_EQ(static_cast<uint_fast64_t>(3), op->getBound());
 
@@ -126,13 +126,13 @@ TEST(LtlParserTest, parseLtlFilterTest) {
 
 	ASSERT_FALSE(formula->getChild()->isPropositional());
 
-	ASSERT_EQ(storm::property::MAXIMIZE, formula->getOptimizingOperator());
+	ASSERT_EQ(storm::properties::MAXIMIZE, formula->getOptimizingOperator());
 
 	ASSERT_EQ(4, formula->getActionCount());
-	ASSERT_NE(std::dynamic_pointer_cast<storm::property::action::InvertAction<double>>(formula->getAction(0)).get(), nullptr);
-	ASSERT_NE(std::dynamic_pointer_cast<storm::property::action::BoundAction<double>>(formula->getAction(1)).get(), nullptr);
-	ASSERT_NE(std::dynamic_pointer_cast<storm::property::action::SortAction<double>>(formula->getAction(2)).get(), nullptr);
-	ASSERT_NE(std::dynamic_pointer_cast<storm::property::action::RangeAction<double>>(formula->getAction(3)).get(), nullptr);
+	ASSERT_NE(std::dynamic_pointer_cast<storm::properties::action::InvertAction<double>>(formula->getAction(0)).get(), nullptr);
+	ASSERT_NE(std::dynamic_pointer_cast<storm::properties::action::BoundAction<double>>(formula->getAction(1)).get(), nullptr);
+	ASSERT_NE(std::dynamic_pointer_cast<storm::properties::action::SortAction<double>>(formula->getAction(2)).get(), nullptr);
+	ASSERT_NE(std::dynamic_pointer_cast<storm::properties::action::RangeAction<double>>(formula->getAction(3)).get(), nullptr);
 
 	// The input was parsed correctly.
 	ASSERT_EQ("filter[max; invert; bound(<, 0.500000); sort(value, ascending); range(0, 3)](X a)", formula->toString());

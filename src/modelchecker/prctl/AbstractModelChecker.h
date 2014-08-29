@@ -19,7 +19,7 @@ namespace prctl {
 
 #include <stack>
 #include "src/exceptions/InvalidPropertyException.h"
-#include "src/formula/Prctl.h"
+#include "src/properties/Prctl.h"
 #include "src/storage/BitVector.h"
 #include "src/models/AbstractModel.h"
 #include "src/settings/Settings.h"
@@ -47,21 +47,21 @@ template<class Type>
 class AbstractModelChecker :
 	// A list of interfaces the model checker supports. Typically, for each of the interfaces, a check method needs to
 	// be implemented that performs the corresponding check.
-	public virtual storm::property::prctl::IApModelChecker<Type>,
-	public virtual storm::property::prctl::IAndModelChecker<Type>,
-	public virtual storm::property::prctl::IOrModelChecker<Type>,
-	public virtual storm::property::prctl::INotModelChecker<Type>,
-	public virtual storm::property::prctl::IUntilModelChecker<Type>,
-	public virtual storm::property::prctl::IEventuallyModelChecker<Type>,
-	public virtual storm::property::prctl::IGloballyModelChecker<Type>,
-	public virtual storm::property::prctl::INextModelChecker<Type>,
-	public virtual storm::property::prctl::IBoundedUntilModelChecker<Type>,
-	public virtual storm::property::prctl::IBoundedEventuallyModelChecker<Type>,
-	public virtual storm::property::prctl::IProbabilisticBoundOperatorModelChecker<Type>,
-	public virtual storm::property::prctl::IRewardBoundOperatorModelChecker<Type>,
-	public virtual storm::property::prctl::IReachabilityRewardModelChecker<Type>,
-	public virtual storm::property::prctl::ICumulativeRewardModelChecker<Type>,
-	public virtual storm::property::prctl::IInstantaneousRewardModelChecker<Type> {
+	public virtual storm::properties::prctl::IApModelChecker<Type>,
+	public virtual storm::properties::prctl::IAndModelChecker<Type>,
+	public virtual storm::properties::prctl::IOrModelChecker<Type>,
+	public virtual storm::properties::prctl::INotModelChecker<Type>,
+	public virtual storm::properties::prctl::IUntilModelChecker<Type>,
+	public virtual storm::properties::prctl::IEventuallyModelChecker<Type>,
+	public virtual storm::properties::prctl::IGloballyModelChecker<Type>,
+	public virtual storm::properties::prctl::INextModelChecker<Type>,
+	public virtual storm::properties::prctl::IBoundedUntilModelChecker<Type>,
+	public virtual storm::properties::prctl::IBoundedEventuallyModelChecker<Type>,
+	public virtual storm::properties::prctl::IProbabilisticBoundOperatorModelChecker<Type>,
+	public virtual storm::properties::prctl::IRewardBoundOperatorModelChecker<Type>,
+	public virtual storm::properties::prctl::IReachabilityRewardModelChecker<Type>,
+	public virtual storm::properties::prctl::ICumulativeRewardModelChecker<Type>,
+	public virtual storm::properties::prctl::IInstantaneousRewardModelChecker<Type> {
 	
 public:
 	/*!
@@ -127,7 +127,7 @@ public:
 	 * @param formula The formula to be checked.
 	 * @return The set of states satisfying the formula represented by a bit vector.
 	 */
-	storm::storage::BitVector checkAp(storm::property::prctl::Ap<Type> const& formula) const {
+	storm::storage::BitVector checkAp(storm::properties::prctl::Ap<Type> const& formula) const {
 		if (formula.getAp() == "true") {
 			return storm::storage::BitVector(model.getNumberOfStates(), true);
 		} else if (formula.getAp() == "false") {
@@ -148,7 +148,7 @@ public:
 	 * @param formula The formula to be checked.
 	 * @return The set of states satisfying the formula represented by a bit vector.
 	 */
-	storm::storage::BitVector checkAnd(storm::property::prctl::And<Type> const& formula) const {
+	storm::storage::BitVector checkAnd(storm::properties::prctl::And<Type> const& formula) const {
 		storm::storage::BitVector result = formula.getLeft()->check(*this);
 		storm::storage::BitVector right = formula.getRight()->check(*this);
 		result &= right;
@@ -161,7 +161,7 @@ public:
 	 * @param formula The formula to check.
 	 * @return The set of states satisfying the formula represented by a bit vector.
 	 */
-	storm::storage::BitVector checkOr(storm::property::prctl::Or<Type> const& formula) const {
+	storm::storage::BitVector checkOr(storm::properties::prctl::Or<Type> const& formula) const {
 		storm::storage::BitVector result = formula.getLeft()->check(*this);
 		storm::storage::BitVector right = formula.getRight()->check(*this);
 		result |= right;
@@ -174,7 +174,7 @@ public:
 	 * @param formula The formula to check.
 	 * @return The set of states satisfying the formula represented by a bit vector.
 	 */
-	storm::storage::BitVector checkNot(const storm::property::prctl::Not<Type>& formula) const {
+	storm::storage::BitVector checkNot(const storm::properties::prctl::Not<Type>& formula) const {
 		storm::storage::BitVector result = formula.getChild()->check(*this);
 		result.complement();
 		return result;
@@ -187,7 +187,7 @@ public:
 	 * @param formula The formula to check.
 	 * @return The set of states satisfying the formula represented by a bit vector.
 	 */
-	virtual storm::storage::BitVector checkProbabilisticBoundOperator(storm::property::prctl::ProbabilisticBoundOperator<Type> const& formula) const {
+	virtual storm::storage::BitVector checkProbabilisticBoundOperator(storm::properties::prctl::ProbabilisticBoundOperator<Type> const& formula) const {
 		// First, we need to compute the probability for satisfying the path formula for each state.
 		std::vector<Type> quantitativeResult = formula.getChild()->check(*this, false);
 
@@ -211,7 +211,7 @@ public:
 	 * @param formula The formula to check.
 	 * @return The set of states satisfying the formula represented by a bit vector.
 	 */
-	virtual storm::storage::BitVector checkRewardBoundOperator(const storm::property::prctl::RewardBoundOperator<Type>& formula) const {
+	virtual storm::storage::BitVector checkRewardBoundOperator(const storm::properties::prctl::RewardBoundOperator<Type>& formula) const {
 		// First, we need to compute the probability for satisfying the path formula for each state.
 		std::vector<Type> quantitativeResult = formula.getChild()->check(*this, false);
 
@@ -236,7 +236,7 @@ public:
 	 * @param optOperator True iff minimum probabilities are to be computed.
 	 * @returns The probabilities to satisfy the formula, represented by a vector.
 	 */
-	virtual std::vector<Type> checkOptimizingOperator(storm::property::prctl::AbstractPathFormula<Type> const & formula, bool optOperator) const {
+	virtual std::vector<Type> checkOptimizingOperator(storm::properties::prctl::AbstractPathFormula<Type> const & formula, bool optOperator) const {
 		minimumOperatorStack.push(optOperator);
 		std::vector<Type> result = formula.check(*this, false);
 		minimumOperatorStack.pop();
@@ -250,7 +250,7 @@ public:
 	 * @param optOperator True iff minimum rewards are to be computed.
 	 * @returns The the rewards accumulated by the formula, represented by a vector.
 	 */
-	virtual std::vector<Type> checkOptimizingOperator(storm::property::prctl::AbstractRewardPathFormula<Type> const & formula, bool optOperator) const {
+	virtual std::vector<Type> checkOptimizingOperator(storm::properties::prctl::AbstractRewardPathFormula<Type> const & formula, bool optOperator) const {
 		minimumOperatorStack.push(optOperator);
 		std::vector<Type> result = formula.check(*this, false);
 		minimumOperatorStack.pop();
@@ -264,7 +264,7 @@ public:
 	 * @param optOperator True iff minimum probabilities/rewards are to be computed.
 	 * @returns The set of states satisfying the formula represented by a bit vector.
 	 */
-	virtual storm::storage::BitVector checkOptimizingOperator(storm::property::prctl::AbstractStateFormula<Type> const & formula, bool optOperator) const {
+	virtual storm::storage::BitVector checkOptimizingOperator(storm::properties::prctl::AbstractStateFormula<Type> const & formula, bool optOperator) const {
 		minimumOperatorStack.push(optOperator);
 		storm::storage::BitVector result = formula.check(*this);
 		minimumOperatorStack.pop();

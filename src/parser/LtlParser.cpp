@@ -11,11 +11,11 @@
 #include "src/utility/constants.h"
 
 // The action class headers.
-#include "src/formula/actions/AbstractAction.h"
-#include "src/formula/actions/BoundAction.h"
-#include "src/formula/actions/InvertAction.h"
-#include "src/formula/actions/RangeAction.h"
-#include "src/formula/actions/SortAction.h"
+#include "src/properties/actions/AbstractAction.h"
+#include "src/properties/actions/BoundAction.h"
+#include "src/properties/actions/InvertAction.h"
+#include "src/properties/actions/RangeAction.h"
+#include "src/properties/actions/SortAction.h"
 
 // If the parser fails due to ill-formed data, this exception is thrown.
 #include "src/exceptions/WrongFormatException.h"
@@ -41,7 +41,7 @@ typedef std::string::const_iterator BaseIteratorType;
 typedef boost::spirit::classic::position_iterator2<BaseIteratorType> PositionIteratorType;
 namespace qi = boost::spirit::qi;
 namespace phoenix = boost::phoenix;
-namespace ltl = storm::property::ltl;
+namespace ltl = storm::properties::ltl;
 
 
 namespace storm {
@@ -49,18 +49,18 @@ namespace storm {
 namespace parser {
 
 template<typename Iterator, typename Skipper>
-struct LtlParser::LtlGrammar : qi::grammar<Iterator, std::shared_ptr<storm::property::ltl::LtlFilter<double>>(), Skipper > {
+struct LtlParser::LtlGrammar : qi::grammar<Iterator, std::shared_ptr<storm::properties::ltl::LtlFilter<double>>(), Skipper > {
 	LtlGrammar() : LtlGrammar::base_type(start) {
 		//This block contains helper rules that may be used several times
 		freeIdentifierName = qi::lexeme[qi::alpha >> *(qi::alnum | qi::char_('_'))];
 		comparisonType = (
-				(qi::lit(">="))[qi::_val = storm::property::GREATER_EQUAL] |
-				(qi::lit(">"))[qi::_val = storm::property::GREATER] |
-				(qi::lit("<="))[qi::_val = storm::property::LESS_EQUAL] |
-				(qi::lit("<"))[qi::_val = storm::property::LESS]);
+				(qi::lit(">="))[qi::_val = storm::properties::GREATER_EQUAL] |
+				(qi::lit(">"))[qi::_val = storm::properties::GREATER] |
+				(qi::lit("<="))[qi::_val = storm::properties::LESS_EQUAL] |
+				(qi::lit("<"))[qi::_val = storm::properties::LESS]);
 		sortingCategory = (
-				(qi::lit("index"))[qi::_val = storm::property::action::SortAction<double>::INDEX] |
-				(qi::lit("value"))[qi::_val = storm::property::action::SortAction<double>::VALUE]
+				(qi::lit("index"))[qi::_val = storm::properties::action::SortAction<double>::INDEX] |
+				(qi::lit("value"))[qi::_val = storm::properties::action::SortAction<double>::VALUE]
 				);
 		// Comment: Empty line or line starting with "//"
 		comment = (qi::lit("//") >> *(qi::char_))[qi::_val = nullptr];
@@ -110,27 +110,27 @@ struct LtlParser::LtlGrammar : qi::grammar<Iterator, std::shared_ptr<storm::prop
 
 		// This block defines rules for parsing filter actions.
 		boundAction = (qi::lit("bound") > qi::lit("(") >> comparisonType >> qi::lit(",") >> qi::double_ >> qi::lit(")"))[qi::_val =
-						MAKE(storm::property::action::BoundAction<double> ,qi::_1, qi::_2)];
+						MAKE(storm::properties::action::BoundAction<double> ,qi::_1, qi::_2)];
 		boundAction.name("bound action");
 
-		invertAction = qi::lit("invert")[qi::_val = MAKE(storm::property::action::InvertAction<double>, )];
+		invertAction = qi::lit("invert")[qi::_val = MAKE(storm::properties::action::InvertAction<double>, )];
 		invertAction.name("invert action");
 
 		rangeAction = (
 				(qi::lit("range") >> qi::lit("(") >> qi::uint_ >> qi::lit(",") > qi::uint_ >> qi::lit(")"))[qi::_val =
-						MAKE(storm::property::action::RangeAction<double>, qi::_1, qi::_2)] |
+						MAKE(storm::properties::action::RangeAction<double>, qi::_1, qi::_2)] |
 				(qi::lit("range") >> qi::lit("(") >> qi::uint_ >> qi::lit(")"))[qi::_val =
-						MAKE(storm::property::action::RangeAction<double>, qi::_1, qi::_1 + 1)]
+						MAKE(storm::properties::action::RangeAction<double>, qi::_1, qi::_1 + 1)]
 				);
 		rangeAction.name("range action");
 
 		sortAction = (
 				(qi::lit("sort") >> qi::lit("(") >> sortingCategory >> qi::lit(")"))[qi::_val =
-						MAKE(storm::property::action::SortAction<double>, qi::_1)] |
+						MAKE(storm::properties::action::SortAction<double>, qi::_1)] |
 				(qi::lit("sort") >> qi::lit("(") >> sortingCategory >> qi::lit(", ") >> (qi::lit("ascending") | qi::lit("asc")) > qi::lit(")"))[qi::_val =
-						MAKE(storm::property::action::SortAction<double>, qi::_1, true)] |
+						MAKE(storm::properties::action::SortAction<double>, qi::_1, true)] |
 				(qi::lit("sort") >> qi::lit("(") >> sortingCategory >> qi::lit(", ") >> (qi::lit("descending") | qi::lit("desc")) > qi::lit(")"))[qi::_val =
-						MAKE(storm::property::action::SortAction<double>, qi::_1, false)]
+						MAKE(storm::properties::action::SortAction<double>, qi::_1, false)]
 				);
 		sortAction.name("sort action");
 
@@ -140,9 +140,9 @@ struct LtlParser::LtlGrammar : qi::grammar<Iterator, std::shared_ptr<storm::prop
 		filter = (qi::lit("filter") >> qi::lit("[") >> +abstractAction >> qi::lit("]") > qi::lit("(") >> formula >> qi::lit(")"))[qi::_val =
 					MAKE(ltl::LtlFilter<double>, qi::_2, qi::_1)] |
 				 (qi::lit("filter") >> qi::lit("[") >> qi::lit("max") > +abstractAction >> qi::lit("]") >> qi::lit("(") >> formula >> qi::lit(")"))[qi::_val =
-					MAKE(ltl::LtlFilter<double>, qi::_2, qi::_1, storm::property::MAXIMIZE)] |
+					MAKE(ltl::LtlFilter<double>, qi::_2, qi::_1, storm::properties::MAXIMIZE)] |
 				 (qi::lit("filter") >> qi::lit("[") >> qi::lit("min") > +abstractAction >> qi::lit("]") >> qi::lit("(") >> formula >> qi::lit(")"))[qi::_val =
-					MAKE(ltl::LtlFilter<double>, qi::_2, qi::_1, storm::property::MINIMIZE)] |
+					MAKE(ltl::LtlFilter<double>, qi::_2, qi::_1, storm::properties::MINIMIZE)] |
 				 (formula)[qi::_val =
 					MAKE(ltl::LtlFilter<double>, qi::_1)];
 		filter.name("LTL formula filter");
@@ -151,39 +151,39 @@ struct LtlParser::LtlGrammar : qi::grammar<Iterator, std::shared_ptr<storm::prop
 		start.name("start");
 	}
 
-	qi::rule<Iterator, std::shared_ptr<storm::property::ltl::LtlFilter<double>>(), Skipper> start;
-	qi::rule<Iterator, std::shared_ptr<storm::property::ltl::LtlFilter<double>>(), Skipper> filter;
+	qi::rule<Iterator, std::shared_ptr<storm::properties::ltl::LtlFilter<double>>(), Skipper> start;
+	qi::rule<Iterator, std::shared_ptr<storm::properties::ltl::LtlFilter<double>>(), Skipper> filter;
 
-	qi::rule<Iterator, std::shared_ptr<storm::property::action::AbstractAction<double>>(), Skipper> abstractAction;
-	qi::rule<Iterator, std::shared_ptr<storm::property::action::BoundAction<double>>(), Skipper> boundAction;
-	qi::rule<Iterator, std::shared_ptr<storm::property::action::InvertAction<double>>(), Skipper> invertAction;
-	qi::rule<Iterator, std::shared_ptr<storm::property::action::RangeAction<double>>(), Skipper> rangeAction;
-	qi::rule<Iterator, std::shared_ptr<storm::property::action::SortAction<double>>(), Skipper> sortAction;
+	qi::rule<Iterator, std::shared_ptr<storm::properties::action::AbstractAction<double>>(), Skipper> abstractAction;
+	qi::rule<Iterator, std::shared_ptr<storm::properties::action::BoundAction<double>>(), Skipper> boundAction;
+	qi::rule<Iterator, std::shared_ptr<storm::properties::action::InvertAction<double>>(), Skipper> invertAction;
+	qi::rule<Iterator, std::shared_ptr<storm::properties::action::RangeAction<double>>(), Skipper> rangeAction;
+	qi::rule<Iterator, std::shared_ptr<storm::properties::action::SortAction<double>>(), Skipper> sortAction;
 
-	qi::rule<Iterator, std::shared_ptr<storm::property::ltl::AbstractLtlFormula<double>>(), Skipper> comment;
-	qi::rule<Iterator, std::shared_ptr<storm::property::ltl::AbstractLtlFormula<double>>(), Skipper> formula;
-	qi::rule<Iterator, std::shared_ptr<storm::property::ltl::AbstractLtlFormula<double>>(), Skipper> atomicLtlFormula;
+	qi::rule<Iterator, std::shared_ptr<storm::properties::ltl::AbstractLtlFormula<double>>(), Skipper> comment;
+	qi::rule<Iterator, std::shared_ptr<storm::properties::ltl::AbstractLtlFormula<double>>(), Skipper> formula;
+	qi::rule<Iterator, std::shared_ptr<storm::properties::ltl::AbstractLtlFormula<double>>(), Skipper> atomicLtlFormula;
 
-	qi::rule<Iterator, std::shared_ptr<storm::property::ltl::AbstractLtlFormula<double>>(), Skipper> andFormula;
-	qi::rule<Iterator, std::shared_ptr<storm::property::ltl::AbstractLtlFormula<double>>(), Skipper> untilFormula;
-	qi::rule<Iterator, std::shared_ptr<storm::property::ltl::AbstractLtlFormula<double>>(), Skipper> atomicProposition;
-	qi::rule<Iterator, std::shared_ptr<storm::property::ltl::AbstractLtlFormula<double>>(), Skipper> orFormula;
-	qi::rule<Iterator, std::shared_ptr<storm::property::ltl::AbstractLtlFormula<double>>(), Skipper> notFormula;
+	qi::rule<Iterator, std::shared_ptr<storm::properties::ltl::AbstractLtlFormula<double>>(), Skipper> andFormula;
+	qi::rule<Iterator, std::shared_ptr<storm::properties::ltl::AbstractLtlFormula<double>>(), Skipper> untilFormula;
+	qi::rule<Iterator, std::shared_ptr<storm::properties::ltl::AbstractLtlFormula<double>>(), Skipper> atomicProposition;
+	qi::rule<Iterator, std::shared_ptr<storm::properties::ltl::AbstractLtlFormula<double>>(), Skipper> orFormula;
+	qi::rule<Iterator, std::shared_ptr<storm::properties::ltl::AbstractLtlFormula<double>>(), Skipper> notFormula;
 
-	qi::rule<Iterator, std::shared_ptr<storm::property::ltl::AbstractLtlFormula<double>>(), Skipper> pathFormula;
-	qi::rule<Iterator, std::shared_ptr<storm::property::ltl::BoundedEventually<double>>(), Skipper> boundedEventually;
-	qi::rule<Iterator, std::shared_ptr<storm::property::ltl::Eventually<double>>(), Skipper> eventually;
-	qi::rule<Iterator, std::shared_ptr<storm::property::ltl::Globally<double>>(), Skipper> globally;
-	qi::rule<Iterator, std::shared_ptr<storm::property::ltl::Next<double>>(), Skipper> next;
-	qi::rule<Iterator, std::shared_ptr<storm::property::ltl::AbstractLtlFormula<double>>(), qi::locals< std::shared_ptr<storm::property::ltl::AbstractLtlFormula<double>>>, Skipper> boundedUntil;
-	qi::rule<Iterator, std::shared_ptr<storm::property::ltl::AbstractLtlFormula<double>>(), qi::locals< std::shared_ptr<storm::property::ltl::AbstractLtlFormula<double>>>, Skipper> until;
+	qi::rule<Iterator, std::shared_ptr<storm::properties::ltl::AbstractLtlFormula<double>>(), Skipper> pathFormula;
+	qi::rule<Iterator, std::shared_ptr<storm::properties::ltl::BoundedEventually<double>>(), Skipper> boundedEventually;
+	qi::rule<Iterator, std::shared_ptr<storm::properties::ltl::Eventually<double>>(), Skipper> eventually;
+	qi::rule<Iterator, std::shared_ptr<storm::properties::ltl::Globally<double>>(), Skipper> globally;
+	qi::rule<Iterator, std::shared_ptr<storm::properties::ltl::Next<double>>(), Skipper> next;
+	qi::rule<Iterator, std::shared_ptr<storm::properties::ltl::AbstractLtlFormula<double>>(), qi::locals< std::shared_ptr<storm::properties::ltl::AbstractLtlFormula<double>>>, Skipper> boundedUntil;
+	qi::rule<Iterator, std::shared_ptr<storm::properties::ltl::AbstractLtlFormula<double>>(), qi::locals< std::shared_ptr<storm::properties::ltl::AbstractLtlFormula<double>>>, Skipper> until;
 
 	qi::rule<Iterator, std::string(), Skipper> freeIdentifierName;
-	qi::rule<Iterator, storm::property::ComparisonType(), Skipper> comparisonType;
-	qi::rule<Iterator, storm::property::action::SortAction<double>::SortingCategory(), Skipper> sortingCategory;
+	qi::rule<Iterator, storm::properties::ComparisonType(), Skipper> comparisonType;
+	qi::rule<Iterator, storm::properties::action::SortAction<double>::SortingCategory(), Skipper> sortingCategory;
 };
 
-std::shared_ptr<storm::property::ltl::LtlFilter<double>> LtlParser::parseLtlFormula(std::string formulaString) {
+std::shared_ptr<storm::properties::ltl::LtlFilter<double>> LtlParser::parseLtlFormula(std::string formulaString) {
 	// Prepare iterators to input.
 	BaseIteratorType stringIteratorBegin = formulaString.begin();
 	BaseIteratorType stringIteratorEnd = formulaString.end();
@@ -192,7 +192,7 @@ std::shared_ptr<storm::property::ltl::LtlFilter<double>> LtlParser::parseLtlForm
 
 
 	// Prepare resulting intermediate representation of input.
-	std::shared_ptr<storm::property::ltl::LtlFilter<double>> result_pointer(nullptr);
+	std::shared_ptr<storm::properties::ltl::LtlFilter<double>> result_pointer(nullptr);
 
 	LtlGrammar<PositionIteratorType,  BOOST_TYPEOF(boost::spirit::ascii::space)> grammar;
 

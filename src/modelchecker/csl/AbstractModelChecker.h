@@ -10,7 +10,7 @@
 
 #include <stack>
 #include "src/exceptions/InvalidPropertyException.h"
-#include "src/formula/Csl.h"
+#include "src/properties/Csl.h"
 #include "src/storage/BitVector.h"
 #include "src/models/AbstractModel.h"
 
@@ -37,17 +37,17 @@ template<class Type>
 class AbstractModelChecker :
 	// A list of interfaces the model checker supports. Typically, for each of the interfaces, a check method needs to
 	// be implemented that performs the corresponding check.
-	public virtual storm::property::csl::IApModelChecker<Type>,
-	public virtual storm::property::csl::IAndModelChecker<Type>,
-	public virtual storm::property::csl::IOrModelChecker<Type>,
-	public virtual storm::property::csl::INotModelChecker<Type>,
-	public virtual storm::property::csl::IUntilModelChecker<Type>,
-	public virtual storm::property::csl::IEventuallyModelChecker<Type>,
-	public virtual storm::property::csl::IGloballyModelChecker<Type>,
-	public virtual storm::property::csl::INextModelChecker<Type>,
-	public virtual storm::property::csl::ITimeBoundedUntilModelChecker<Type>,
-	public virtual storm::property::csl::ITimeBoundedEventuallyModelChecker<Type>,
-	public virtual storm::property::csl::IProbabilisticBoundOperatorModelChecker<Type> {
+	public virtual storm::properties::csl::IApModelChecker<Type>,
+	public virtual storm::properties::csl::IAndModelChecker<Type>,
+	public virtual storm::properties::csl::IOrModelChecker<Type>,
+	public virtual storm::properties::csl::INotModelChecker<Type>,
+	public virtual storm::properties::csl::IUntilModelChecker<Type>,
+	public virtual storm::properties::csl::IEventuallyModelChecker<Type>,
+	public virtual storm::properties::csl::IGloballyModelChecker<Type>,
+	public virtual storm::properties::csl::INextModelChecker<Type>,
+	public virtual storm::properties::csl::ITimeBoundedUntilModelChecker<Type>,
+	public virtual storm::properties::csl::ITimeBoundedEventuallyModelChecker<Type>,
+	public virtual storm::properties::csl::IProbabilisticBoundOperatorModelChecker<Type> {
 	
 public:
 	/*!
@@ -112,7 +112,7 @@ public:
 	 * @param formula The formula to be checked.
 	 * @returns The set of states satisfying the formula represented by a bit vector.
 	 */
-	storm::storage::BitVector checkAp(storm::property::csl::Ap<Type> const& formula) const {
+	storm::storage::BitVector checkAp(storm::properties::csl::Ap<Type> const& formula) const {
 		if (formula.getAp() == "true") {
 			return storm::storage::BitVector(model.getNumberOfStates(), true);
 		} else if (formula.getAp() == "false") {
@@ -133,7 +133,7 @@ public:
 	 * @param formula The formula to be checked.
 	 * @returns The set of states satisfying the formula represented by a bit vector.
 	 */
-	storm::storage::BitVector checkAnd(storm::property::csl::And<Type> const& formula) const {
+	storm::storage::BitVector checkAnd(storm::properties::csl::And<Type> const& formula) const {
 		storm::storage::BitVector result = formula.getLeft()->check(*this);
 		storm::storage::BitVector right = formula.getRight()->check(*this);
 		result &= right;
@@ -146,7 +146,7 @@ public:
 	 * @param formula The formula to check.
 	 * @returns The set of states satisfying the formula represented by a bit vector.
 	 */
-	storm::storage::BitVector checkOr(storm::property::csl::Or<Type> const& formula) const {
+	storm::storage::BitVector checkOr(storm::properties::csl::Or<Type> const& formula) const {
 		storm::storage::BitVector result = formula.getLeft()->check(*this);
 		storm::storage::BitVector right = formula.getRight()->check(*this);
 		result |= right;
@@ -159,7 +159,7 @@ public:
 	 * @param formula The formula to check.
 	 * @returns The set of states satisfying the formula represented by a bit vector.
 	 */
-	storm::storage::BitVector checkNot(const storm::property::csl::Not<Type>& formula) const {
+	storm::storage::BitVector checkNot(const storm::properties::csl::Not<Type>& formula) const {
 		storm::storage::BitVector result = formula.getChild()->check(*this);
 		result.complement();
 		return result;
@@ -172,7 +172,7 @@ public:
 	 * @param formula The formula to check.
 	 * @returns The set of states satisfying the formula represented by a bit vector.
 	 */
-	virtual storm::storage::BitVector checkProbabilisticBoundOperator(storm::property::csl::ProbabilisticBoundOperator<Type> const& formula) const {
+	virtual storm::storage::BitVector checkProbabilisticBoundOperator(storm::properties::csl::ProbabilisticBoundOperator<Type> const& formula) const {
 		// First, we need to compute the probability for satisfying the path formula for each state.
 		std::vector<Type> quantitativeResult = formula.getChild()->check(*this, false);
 
@@ -197,7 +197,7 @@ public:
 	 * @param minimumOperator True iff minimum probabilities/rewards are to be computed.
 	 * @returns The probabilities to satisfy the formula or the rewards accumulated by it, represented by a vector.
 	 */
-	virtual std::vector<Type> checkMinMaxOperator(storm::property::csl::AbstractPathFormula<Type> const & formula, bool minimumOperator) const {
+	virtual std::vector<Type> checkMinMaxOperator(storm::properties::csl::AbstractPathFormula<Type> const & formula, bool minimumOperator) const {
 		minimumOperatorStack.push(minimumOperator);
 		std::vector<Type> result = formula.check(*this, false);
 		minimumOperatorStack.pop();
@@ -211,7 +211,7 @@ public:
 	 * @param minimumOperator True iff minimum probabilities/rewards are to be computed.
 	 * @returns The set of states satisfying the formula represented by a bit vector.
 	 */
-	virtual storm::storage::BitVector checkMinMaxOperator(storm::property::csl::AbstractStateFormula<Type> const & formula, bool minimumOperator) const {
+	virtual storm::storage::BitVector checkMinMaxOperator(storm::properties::csl::AbstractStateFormula<Type> const & formula, bool minimumOperator) const {
 		minimumOperatorStack.push(minimumOperator);
 		storm::storage::BitVector result = formula.check(*this);
 		minimumOperatorStack.pop();

@@ -13,17 +13,17 @@
 #include "src/modelchecker/csl/SparseMarkovAutomatonCslModelChecker.h"
 #include "src/solver/GmmxxLinearEquationSolver.h"
 #include "src/solver/GmmxxNondeterministicLinearEquationSolver.h"
-#include "src/formula/prctl/PrctlFilter.h"
-#include "src/formula/csl/CslFilter.h"
-#include "src/formula/ltl/LtlFilter.h"
+#include "src/properties/prctl/PrctlFilter.h"
+#include "src/properties/csl/CslFilter.h"
+#include "src/properties/ltl/LtlFilter.h"
 #include "src/parser/PrctlParser.h"
 #include "src/parser/CslParser.h"
 #include "src/parser/MarkovAutomatonParser.h"
-#include "src/formula/actions/InvertAction.h"
+#include "src/properties/actions/InvertAction.h"
 
 #include <memory>
 
-typedef typename storm::property::action::AbstractAction<double>::Result Result;
+typedef typename storm::properties::action::AbstractAction<double>::Result Result;
 
 TEST(PrctlFilterTest, generalFunctionality) {
 	// Test filter queries of increasing complexity.
@@ -34,7 +34,7 @@ TEST(PrctlFilterTest, generalFunctionality) {
 
 	// Find the best valued state to finally reach a 'b' state.
 	std::string input = "filter[sort(value, descending); range(0,0)](F b)";
-	std::shared_ptr<storm::property::prctl::PrctlFilter<double>> formula(nullptr);
+	std::shared_ptr<storm::properties::prctl::PrctlFilter<double>> formula(nullptr);
 	ASSERT_NO_THROW(
 				formula = storm::parser::PrctlParser::parsePrctlFormula(input)
 	);
@@ -151,26 +151,26 @@ TEST(PrctlFilterTest, Safety) {
 	storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double> mc(model, new storm::solver::GmmxxLinearEquationSolver<double>());
 
 	// Make a stub formula as child.
-	auto apFormula = std::make_shared<storm::property::prctl::Ap<double>>("a");
+	auto apFormula = std::make_shared<storm::properties::prctl::Ap<double>>("a");
 
 	// Test the filter for nullptr action handling.
-	auto formula = std::make_shared<storm::property::prctl::PrctlFilter<double>>(apFormula, nullptr);
+	auto formula = std::make_shared<storm::properties::prctl::PrctlFilter<double>>(apFormula, nullptr);
 
 	ASSERT_EQ(0, formula->getActionCount());
 	ASSERT_NO_THROW(formula->evaluate(mc));
 
 	// Repeat with vector containing only one action but three nullptr.
-	std::vector<std::shared_ptr<storm::property::action::AbstractAction<double>>> actions(4, nullptr);
-	actions[1] = std::make_shared<storm::property::action::InvertAction<double>>();
+	std::vector<std::shared_ptr<storm::properties::action::AbstractAction<double>>> actions(4, nullptr);
+	actions[1] = std::make_shared<storm::properties::action::InvertAction<double>>();
 
-	formula = std::make_shared<storm::property::prctl::PrctlFilter<double>>(apFormula, actions);
+	formula = std::make_shared<storm::properties::prctl::PrctlFilter<double>>(apFormula, actions);
 
 	ASSERT_EQ(1, formula->getActionCount());
 	ASSERT_NO_THROW(formula->evaluate(mc));
 
 	// Test the filter for nullptr child formula handling.
 	// It sholud not write anything to the standard out and return an empty result.
-	formula = std::make_shared<storm::property::prctl::PrctlFilter<double>>();
+	formula = std::make_shared<storm::properties::prctl::PrctlFilter<double>>();
 	Result result;
 
 	// To capture the output, redirect cout and test the written buffer content.
@@ -200,7 +200,7 @@ TEST(CslFilterTest, generalFunctionality) {
 
 	// Find the best valued state to finally reach a 'r1' state.
 	std::string input = "filter[max; sort(value, descending); range(0,0)](F r1)";
-	std::shared_ptr<storm::property::csl::CslFilter<double>> formula(nullptr);
+	std::shared_ptr<storm::properties::csl::CslFilter<double>> formula(nullptr);
 	ASSERT_NO_THROW(
 				formula = storm::parser::CslParser::parseCslFormula(input)
 	);
@@ -317,26 +317,26 @@ TEST(CslFilterTest, Safety) {
 	storm::modelchecker::csl::SparseMarkovAutomatonCslModelChecker<double> mc(model, std::make_shared<storm::solver::GmmxxNondeterministicLinearEquationSolver<double>>());
 
 	// Make a stub formula as child.
-	auto apFormula = std::make_shared<storm::property::csl::Ap<double>>("r1");
+	auto apFormula = std::make_shared<storm::properties::csl::Ap<double>>("r1");
 
 	// Test the filter for nullptr action handling.
-	auto formula = std::make_shared<storm::property::csl::CslFilter<double>>(apFormula, nullptr, storm::property::MAXIMIZE);
+	auto formula = std::make_shared<storm::properties::csl::CslFilter<double>>(apFormula, nullptr, storm::properties::MAXIMIZE);
 
 	ASSERT_NO_THROW(formula->evaluate(mc));
 	ASSERT_EQ(0, formula->getActionCount());
 
 	// Repeat with vector containing only one action but three nullptr.
-	std::vector<std::shared_ptr<storm::property::action::AbstractAction<double>>> actions(4, nullptr);
-	actions[1] = std::make_shared<storm::property::action::InvertAction<double>>();
+	std::vector<std::shared_ptr<storm::properties::action::AbstractAction<double>>> actions(4, nullptr);
+	actions[1] = std::make_shared<storm::properties::action::InvertAction<double>>();
 
-	formula = std::make_shared<storm::property::csl::CslFilter<double>>(apFormula, actions, storm::property::MAXIMIZE);
+	formula = std::make_shared<storm::properties::csl::CslFilter<double>>(apFormula, actions, storm::properties::MAXIMIZE);
 
 	ASSERT_EQ(1, formula->getActionCount());
 	ASSERT_NO_THROW(formula->evaluate(mc));
 
 	// Test the filter for nullptr child formula handling.
 	// It sholud not write anything to the standard out and return an empty result.
-	formula = std::make_shared<storm::property::csl::CslFilter<double>>();
+	formula = std::make_shared<storm::properties::csl::CslFilter<double>>();
 	Result result;
 
 	// To capture the output, redirect cout and test the written buffer content.

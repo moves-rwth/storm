@@ -8,8 +8,8 @@
 #ifndef STORM_PARSER_LTLPARSER_H_
 #define STORM_PARSER_LTLPARSER_H_
 
-#include "src/formula/Ltl.h"
-#include "src/formula/ltl/LtlFilter.h"
+#include "src/properties/Ltl.h"
+#include "src/properties/ltl/LtlFilter.h"
 
 namespace storm {
 namespace parser {
@@ -24,7 +24,7 @@ public:
 
 	/*!
 	* Reads a LTL formula from its string representation and parses it into a formula tree, consisting of
-	* classes in the namespace storm::property.
+	* classes in the namespace storm::properties.
 	*
 	* If the string could not be parsed successfully, it will throw a wrongFormatException.
 	*
@@ -32,7 +32,7 @@ public:
 	* @throw wrongFormatException If the input could not be parsed successfully.
 	* @return A LtlFilter maintaining the parsed formula.
 	*/
-	static std::shared_ptr<storm::property::ltl::LtlFilter<double>> parseLtlFormula(std::string formulaString);
+	static std::shared_ptr<storm::properties::ltl::LtlFilter<double>> parseLtlFormula(std::string formulaString);
 
 private:
 

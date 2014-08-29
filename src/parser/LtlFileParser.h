@@ -8,8 +8,8 @@
 #ifndef LTLFILEPARSER_H_
 #define LTLFILEPARSER_H_
 
-#include "formula/Ltl.h"
-#include "src/formula/ltl/LtlFilter.h"
+#include "properties/Ltl.h"
+#include "src/properties/ltl/LtlFilter.h"
 
 #include <list>
 
@@ -25,7 +25,7 @@ public:
 	 * @param filename Name and path to the file in which the formula strings can be found.
 	 * @return The list of parsed formulas.
 	 */
-	static std::list<std::shared_ptr<storm::property::ltl::LtlFilter<double>>> parseLtlFile(std::string filename);
+	static std::list<std::shared_ptr<storm::properties::ltl::LtlFilter<double>>> parseLtlFile(std::string filename);
 };
 
 } //namespace parser

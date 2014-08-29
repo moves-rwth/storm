@@ -19,8 +19,8 @@ TEST(SparseMdpPrctlModelCheckerTest, Dice) {
     
 	storm::modelchecker::prctl::SparseMdpPrctlModelChecker<double> mc(*mdp, std::shared_ptr<storm::solver::NativeNondeterministicLinearEquationSolver<double>>(new storm::solver::NativeNondeterministicLinearEquationSolver<double>()));
     
-	auto apFormula = std::make_shared<storm::property::prctl::Ap<double>>("two");
-	auto eventuallyFormula = std::make_shared<storm::property::prctl::Eventually<double>>(apFormula);
+	auto apFormula = std::make_shared<storm::properties::prctl::Ap<double>>("two");
+	auto eventuallyFormula = std::make_shared<storm::properties::prctl::Eventually<double>>(apFormula);
     
 	std::vector<double> result = mc.checkOptimizingOperator(*eventuallyFormula, true);
     
@@ -30,8 +30,8 @@ TEST(SparseMdpPrctlModelCheckerTest, Dice) {
 
 	ASSERT_LT(std::abs(result[0] - 0.0277777612209320068), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
     
-	apFormula = std::make_shared<storm::property::prctl::Ap<double>>("three");
-	eventuallyFormula = std::make_shared<storm::property::prctl::Eventually<double>>(apFormula);
+	apFormula = std::make_shared<storm::properties::prctl::Ap<double>>("three");
+	eventuallyFormula = std::make_shared<storm::properties::prctl::Eventually<double>>(apFormula);
     
 	result = mc.checkOptimizingOperator(*eventuallyFormula, true);
     
@@ -41,8 +41,8 @@ TEST(SparseMdpPrctlModelCheckerTest, Dice) {
 
 	ASSERT_LT(std::abs(result[0] - 0.0555555224418640136), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
     
-	apFormula = std::make_shared<storm::property::prctl::Ap<double>>("four");
-	eventuallyFormula = std::make_shared<storm::property::prctl::Eventually<double>>(apFormula);
+	apFormula = std::make_shared<storm::properties::prctl::Ap<double>>("four");
+	eventuallyFormula = std::make_shared<storm::properties::prctl::Eventually<double>>(apFormula);
     
 	result = mc.checkOptimizingOperator(*eventuallyFormula, true);
     
@@ -52,8 +52,8 @@ TEST(SparseMdpPrctlModelCheckerTest, Dice) {
     
 	ASSERT_LT(std::abs(result[0] - 0.083333283662796020508), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
-	apFormula = std::make_shared<storm::property::prctl::Ap<double>>("done");
-	auto reachabilityRewardFormula = std::make_shared<storm::property::prctl::ReachabilityReward<double>>(apFormula);
+	apFormula = std::make_shared<storm::properties::prctl::Ap<double>>("done");
+	auto reachabilityRewardFormula = std::make_shared<storm::properties::prctl::ReachabilityReward<double>>(apFormula);
 
 	result = mc.checkOptimizingOperator(*reachabilityRewardFormula, true);
 
@@ -71,8 +71,8 @@ TEST(SparseMdpPrctlModelCheckerTest, Dice) {
     
     storm::modelchecker::prctl::SparseMdpPrctlModelChecker<double> stateRewardModelChecker(*stateRewardMdp, std::shared_ptr<storm::solver::NativeNondeterministicLinearEquationSolver<double>>(new storm::solver::NativeNondeterministicLinearEquationSolver<double>()));
 
-	apFormula = std::make_shared<storm::property::prctl::Ap<double>>("done");
-	reachabilityRewardFormula = std::make_shared<storm::property::prctl::ReachabilityReward<double>>(apFormula);
+	apFormula = std::make_shared<storm::properties::prctl::Ap<double>>("done");
+	reachabilityRewardFormula = std::make_shared<storm::properties::prctl::ReachabilityReward<double>>(apFormula);
 
 	result = stateRewardModelChecker.checkOptimizingOperator(*reachabilityRewardFormula, true);
     
@@ -90,8 +90,8 @@ TEST(SparseMdpPrctlModelCheckerTest, Dice) {
     
 	storm::modelchecker::prctl::SparseMdpPrctlModelChecker<double> stateAndTransitionRewardModelChecker(*stateAndTransitionRewardMdp, std::shared_ptr<storm::solver::NativeNondeterministicLinearEquationSolver<double>>(new storm::solver::NativeNondeterministicLinearEquationSolver<double>()));
     
-	apFormula = std::make_shared<storm::property::prctl::Ap<double>>("done");
-	reachabilityRewardFormula = std::make_shared<storm::property::prctl::ReachabilityReward<double>>(apFormula);
+	apFormula = std::make_shared<storm::properties::prctl::Ap<double>>("done");
+	reachabilityRewardFormula = std::make_shared<storm::properties::prctl::ReachabilityReward<double>>(apFormula);
     
 	result = stateAndTransitionRewardModelChecker.checkOptimizingOperator(*reachabilityRewardFormula, true);
     
@@ -115,8 +115,8 @@ TEST(SparseMdpPrctlModelCheckerTest, AsynchronousLeader) {
 
 	storm::modelchecker::prctl::SparseMdpPrctlModelChecker<double> mc(*mdp, std::shared_ptr<storm::solver::NativeNondeterministicLinearEquationSolver<double>>(new storm::solver::NativeNondeterministicLinearEquationSolver<double>()));
 
-	auto apFormula = std::make_shared<storm::property::prctl::Ap<double>>("elected");
-	auto eventuallyFormula = std::make_shared<storm::property::prctl::Eventually<double>>(apFormula);
+	auto apFormula = std::make_shared<storm::properties::prctl::Ap<double>>("elected");
+	auto eventuallyFormula = std::make_shared<storm::properties::prctl::Eventually<double>>(apFormula);
 
 	std::vector<double> result = mc.checkOptimizingOperator(*eventuallyFormula, true);
 
@@ -126,8 +126,8 @@ TEST(SparseMdpPrctlModelCheckerTest, AsynchronousLeader) {
 
 	ASSERT_LT(std::abs(result[0] - 1), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
-	apFormula = std::make_shared<storm::property::prctl::Ap<double>>("elected");
-	auto boundedEventuallyFormula = std::make_shared<storm::property::prctl::BoundedEventually<double>>(apFormula, 25);
+	apFormula = std::make_shared<storm::properties::prctl::Ap<double>>("elected");
+	auto boundedEventuallyFormula = std::make_shared<storm::properties::prctl::BoundedEventually<double>>(apFormula, 25);
 
 	result = mc.checkOptimizingOperator(*boundedEventuallyFormula, true);
 
@@ -137,8 +137,8 @@ TEST(SparseMdpPrctlModelCheckerTest, AsynchronousLeader) {
 
 	ASSERT_LT(std::abs(result[0] - 0.0625), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
-	apFormula = std::make_shared<storm::property::prctl::Ap<double>>("elected");
-	auto reachabilityRewardFormula = std::make_shared<storm::property::prctl::ReachabilityReward<double>>(apFormula);
+	apFormula = std::make_shared<storm::properties::prctl::Ap<double>>("elected");
+	auto reachabilityRewardFormula = std::make_shared<storm::properties::prctl::ReachabilityReward<double>>(apFormula);
 
 	result = mc.checkOptimizingOperator(*reachabilityRewardFormula, true);
 

@@ -8,8 +8,8 @@
 #ifndef STORM_PARSER_PRCTLFILEPARSER_H_
 #define STORM_PARSER_PRCTLFILEPARSER_H_
 
-#include "formula/Prctl.h"
-#include "src/formula/prctl/PrctlFilter.h"
+#include "properties/Prctl.h"
+#include "src/properties/prctl/PrctlFilter.h"
 
 #include <list>
 
@@ -25,7 +25,7 @@ public:
 	 * @param filename Name and path to the file in which the formula strings can be found.
 	 * @return The list of parsed formulas
 	 */
-	static std::list<std::shared_ptr<storm::property::prctl::PrctlFilter<double>>> parsePrctlFile(std::string filename);
+	static std::list<std::shared_ptr<storm::properties::prctl::PrctlFilter<double>>> parsePrctlFile(std::string filename);
 
 };
 

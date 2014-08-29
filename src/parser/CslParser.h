@@ -8,8 +8,8 @@
 #ifndef STORM_PARSER_CSLPARSER_H_
 #define STORM_PARSER_CSLPARSER_H_
 
-#include "src/formula/Csl.h"
-#include "src/formula/csl/CslFilter.h"
+#include "src/properties/Csl.h"
+#include "src/properties/csl/CslFilter.h"
 #include <functional>
 
 namespace storm {
@@ -25,7 +25,7 @@ public:
 
 	/*!
 	 * Reads a CSL formula from its string representation and parses it into a formula tree, consisting of
-	 * classes in the namespace storm::property.
+	 * classes in the namespace storm::properties.
 	 *
 	 * If the string could not be parsed successfully, it will throw a wrongFormatException.
 	 *
@@ -33,7 +33,7 @@ public:
 	 * @throw wrongFormatException If the input could not be parsed successfully.
 	 * @return A CslFilter maintaining the parsed formula.
 	 */
-	static std::shared_ptr<storm::property::csl::CslFilter<double>> parseCslFormula(std::string formulaString);
+	static std::shared_ptr<storm::properties::csl::CslFilter<double>> parseCslFormula(std::string formulaString);
 
 private:
 

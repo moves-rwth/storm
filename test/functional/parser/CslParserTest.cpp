@@ -9,13 +9,13 @@
 #include "storm-config.h"
 #include "src/parser/CslParser.h"
 #include "src/exceptions/WrongFormatException.h"
-#include "src/formula/actions/FormulaAction.h"
-#include "src/formula/actions/InvertAction.h"
-#include "src/formula/actions/SortAction.h"
-#include "src/formula/actions/RangeAction.h"
-#include "src/formula/actions/BoundAction.h"
+#include "src/properties/actions/FormulaAction.h"
+#include "src/properties/actions/InvertAction.h"
+#include "src/properties/actions/SortAction.h"
+#include "src/properties/actions/RangeAction.h"
+#include "src/properties/actions/BoundAction.h"
 
-namespace csl = storm::property::csl;
+namespace csl = storm::properties::csl;
 
 TEST(CslParserTest, parseApOnlyTest) {
 	std::string input = "ap";
@@ -70,7 +70,7 @@ TEST(CslParserTest, parsePathFormulaTest) {
 	ASSERT_NE(std::dynamic_pointer_cast<csl::ProbabilisticBoundOperator<double>>(nextFormula->getChild()).get(), nullptr);
 	auto probBoundFormula = std::dynamic_pointer_cast<csl::ProbabilisticBoundOperator<double>>(nextFormula->getChild());
 	ASSERT_EQ(0.9, probBoundFormula->getBound());
-	ASSERT_EQ(storm::property::LESS, probBoundFormula->getComparisonOperator());
+	ASSERT_EQ(storm::properties::LESS, probBoundFormula->getComparisonOperator());
 	ASSERT_FALSE(probBoundFormula->isPropositional());
 	ASSERT_TRUE(probBoundFormula->isProbEventuallyAP());
 
@@ -99,9 +99,9 @@ TEST(CslParserTest, parseProbabilisticFormulaTest) {
 	// The parser did not falsely recognize the input as a comment.
 	ASSERT_NE(formula.get(), nullptr);
 
-	auto op = std::dynamic_pointer_cast<storm::property::csl::ProbabilisticBoundOperator<double>>(formula->getChild());
+	auto op = std::dynamic_pointer_cast<storm::properties::csl::ProbabilisticBoundOperator<double>>(formula->getChild());
 	ASSERT_NE(op.get(), nullptr);
-	ASSERT_EQ(storm::property::GREATER, op->getComparisonOperator());
+	ASSERT_EQ(storm::properties::GREATER, op->getComparisonOperator());
 	ASSERT_EQ(0.5, op->getBound());
 	ASSERT_FALSE(op->isPropositional());
 	ASSERT_TRUE(op->isProbEventuallyAP());
@@ -120,9 +120,9 @@ TEST(CslParserTest, parseSteadyStateBoundFormulaTest) {
 	// The parser did not falsely recognize the input as a comment.
 	ASSERT_NE(formula.get(), nullptr);
 
-	auto op = std::dynamic_pointer_cast<storm::property::csl::SteadyStateBoundOperator<double>>(formula->getChild());
+	auto op = std::dynamic_pointer_cast<storm::properties::csl::SteadyStateBoundOperator<double>>(formula->getChild());
 	ASSERT_NE(op.get(), nullptr);
-	ASSERT_EQ(storm::property::GREATER_EQUAL, op->getComparisonOperator());
+	ASSERT_EQ(storm::properties::GREATER_EQUAL, op->getComparisonOperator());
 	ASSERT_EQ(15.0, op->getBound());
 	ASSERT_FALSE(op->isPropositional());
 	ASSERT_FALSE(op->isProbEventuallyAP());
@@ -193,14 +193,14 @@ TEST(CslParserTest, parseCslFilterTest) {
 	// The parser did not falsely recognize the input as a comment.
 	ASSERT_NE(formula, nullptr);
 
-	ASSERT_EQ(storm::property::MAXIMIZE, formula->getOptimizingOperator());
+	ASSERT_EQ(storm::properties::MAXIMIZE, formula->getOptimizingOperator());
 
 	ASSERT_EQ(5, formula->getActionCount());
-	ASSERT_NE(std::dynamic_pointer_cast<storm::property::action::FormulaAction<double>>(formula->getAction(0)).get(), nullptr);
-	ASSERT_NE(std::dynamic_pointer_cast<storm::property::action::InvertAction<double>>(formula->getAction(1)).get(), nullptr);
-	ASSERT_NE(std::dynamic_pointer_cast<storm::property::action::BoundAction<double>>(formula->getAction(2)).get(), nullptr);
-	ASSERT_NE(std::dynamic_pointer_cast<storm::property::action::SortAction<double>>(formula->getAction(3)).get(), nullptr);
-	ASSERT_NE(std::dynamic_pointer_cast<storm::property::action::RangeAction<double>>(formula->getAction(4)).get(), nullptr);
+	ASSERT_NE(std::dynamic_pointer_cast<storm::properties::action::FormulaAction<double>>(formula->getAction(0)).get(), nullptr);
+	ASSERT_NE(std::dynamic_pointer_cast<storm::properties::action::InvertAction<double>>(formula->getAction(1)).get(), nullptr);
+	ASSERT_NE(std::dynamic_pointer_cast<storm::properties::action::BoundAction<double>>(formula->getAction(2)).get(), nullptr);
+	ASSERT_NE(std::dynamic_pointer_cast<storm::properties::action::SortAction<double>>(formula->getAction(3)).get(), nullptr);
+	ASSERT_NE(std::dynamic_pointer_cast<storm::properties::action::RangeAction<double>>(formula->getAction(4)).get(), nullptr);
 
 	ASSERT_FALSE(formula->getChild()->isPropositional());
 	ASSERT_FALSE(formula->getChild()->isProbEventuallyAP());

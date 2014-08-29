@@ -14,7 +14,7 @@
 namespace storm {
 namespace parser {
 
-std::list<std::shared_ptr<storm::property::prctl::PrctlFilter<double>>> PrctlFileParser::parsePrctlFile(std::string filename) {
+std::list<std::shared_ptr<storm::properties::prctl::PrctlFilter<double>>> PrctlFileParser::parsePrctlFile(std::string filename) {
 	// Open file
 	std::ifstream inputFileStream;
 	inputFileStream.open(filename, std::ios::in);
@@ -24,12 +24,12 @@ std::list<std::shared_ptr<storm::property::prctl::PrctlFilter<double>>> PrctlFil
 		throw storm::exceptions::FileIoException() << message << filename;
 	}
 
-	std::list<std::shared_ptr<storm::property::prctl::PrctlFilter<double>>> result;
+	std::list<std::shared_ptr<storm::properties::prctl::PrctlFilter<double>>> result;
 
 	std::string line;
 	//The while loop reads the input file line by line
 	while (std::getline(inputFileStream, line)) {
-		std::shared_ptr<storm::property::prctl::PrctlFilter<double>> formula = PrctlParser::parsePrctlFormula(line);
+		std::shared_ptr<storm::properties::prctl::PrctlFilter<double>> formula = PrctlParser::parsePrctlFormula(line);
 		if (formula != nullptr) {
 			//lines containing comments will be skipped.
 			LOG4CPLUS_INFO(logger, "Parsed formula \"" + line + "\" into \"" + formula->toString() + "\"");

@@ -1,8 +1,8 @@
 #ifndef STORM_PARSER_PRCTLPARSER_H_
 #define STORM_PARSER_PRCTLPARSER_H_
 
-#include "src/formula/Prctl.h"
-#include "src/formula/prctl/PrctlFilter.h"
+#include "src/properties/Prctl.h"
+#include "src/properties/prctl/PrctlFilter.h"
 
 namespace storm {
 namespace parser {
@@ -17,7 +17,7 @@ public:
 
 	/*!
 	 * Reads a Prctl formula from its string representation and parses it into a formula tree, consisting of
-	 * classes in the namespace storm::property.
+	 * classes in the namespace storm::properties.
 	 *
 	 * If the string could not be parsed successfully, it will throw a wrongFormatException.
 	 *
@@ -25,7 +25,7 @@ public:
 	 * @throw wrongFormatException If the input could not be parsed successfully
 	 * @return A PrctlFilter maintaining the parsed formula. If the line just contained a comment a nullptr will be returned instead.
 	 */
-	static std::shared_ptr<storm::property::prctl::PrctlFilter<double>> parsePrctlFormula(std::string formulaString);
+	static std::shared_ptr<storm::properties::prctl::PrctlFilter<double>> parsePrctlFormula(std::string formulaString);
 
 private:
 

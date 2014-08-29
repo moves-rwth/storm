@@ -54,10 +54,10 @@ public:
 	 * @param formula The formula to check.
 	 * @returns The set of states satisfying the formula represented by a bit vector.
 	 */
-	virtual storm::storage::BitVector checkProbabilisticBoundOperator(storm::property::csl::ProbabilisticBoundOperator<ValueType> const& formula) const override{
+	virtual storm::storage::BitVector checkProbabilisticBoundOperator(storm::properties::csl::ProbabilisticBoundOperator<ValueType> const& formula) const override{
 		// For P< and P<= the MA satisfies the formula iff the probability maximizing scheduler is used.
 		// For P> and P>=               "              iff the probability minimizing         "        .
-		if(formula.getComparisonOperator() == storm::property::LESS || formula.getComparisonOperator() == storm::property::LESS_EQUAL) {
+		if(formula.getComparisonOperator() == storm::properties::LESS || formula.getComparisonOperator() == storm::properties::LESS_EQUAL) {
 			this->minimumOperatorStack.push(false);
 		}
 		else {
@@ -84,7 +84,7 @@ public:
 		return result;
 	}
 
-	std::vector<ValueType> checkUntil(storm::property::csl::Until<ValueType> const& formula, bool qualitative) const {
+	std::vector<ValueType> checkUntil(storm::properties::csl::Until<ValueType> const& formula, bool qualitative) const {
 		// Test whether it is specified if the minimum or maximum probabilities are to be computed.
 		if(this->minimumOperatorStack.empty()) {
 			LOG4CPLUS_ERROR(logger, "Formula does not specify neither min nor max optimality, which is not meaningful over nondeterministic models.");
@@ -100,11 +100,11 @@ public:
 		return storm::modelchecker::prctl::SparseMdpPrctlModelChecker<ValueType>::computeUnboundedUntilProbabilities(min, this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), this->getModel().getInitialStates(), leftStates, rightStates, nondeterministicLinearEquationSolver, qualitative);
 	}
 
-	std::vector<ValueType> checkTimeBoundedUntil(storm::property::csl::TimeBoundedUntil<ValueType> const& formula, bool qualitative) const {
+	std::vector<ValueType> checkTimeBoundedUntil(storm::properties::csl::TimeBoundedUntil<ValueType> const& formula, bool qualitative) const {
 		throw storm::exceptions::NotImplementedException() << "Model checking Until formulas on Markov automata is not yet implemented.";
 	}
 
-	std::vector<ValueType> checkTimeBoundedEventually(storm::property::csl::TimeBoundedEventually<ValueType> const& formula, bool qualitative) const {
+	std::vector<ValueType> checkTimeBoundedEventually(storm::properties::csl::TimeBoundedEventually<ValueType> const& formula, bool qualitative) const {
 		// Test whether it is specified if the minimum or maximum probabilities are to be computed.
 		if(this->minimumOperatorStack.empty()) {
 			LOG4CPLUS_ERROR(logger, "Formula does not specify neither min nor max optimality, which is not meaningful over nondeterministic models.");
@@ -115,11 +115,11 @@ public:
 		return this->checkTimeBoundedEventually(this->minimumOperatorStack.top(), goalStates, formula.getLowerBound(), formula.getUpperBound());
 	}
 
-	std::vector<ValueType> checkGlobally(storm::property::csl::Globally<ValueType> const& formula, bool qualitative) const {
+	std::vector<ValueType> checkGlobally(storm::properties::csl::Globally<ValueType> const& formula, bool qualitative) const {
 		throw storm::exceptions::NotImplementedException() << "Model checking Globally formulas on Markov automata is not yet implemented.";
 	}
 
-	std::vector<ValueType> checkEventually(storm::property::csl::Eventually<ValueType> const& formula, bool qualitative) const {
+	std::vector<ValueType> checkEventually(storm::properties::csl::Eventually<ValueType> const& formula, bool qualitative) const {
 		// Test whether it is specified if the minimum or maximum probabilities are to be computed.
 		if(this->minimumOperatorStack.empty()) {
 			LOG4CPLUS_ERROR(logger, "Formula does not specify neither min nor max optimality, which is not meaningful over nondeterministic models.");
@@ -130,7 +130,7 @@ public:
 		return computeUnboundedUntilProbabilities(this->minimumOperatorStack.top(), storm::storage::BitVector(this->getModel().getNumberOfStates(), true), subFormulaStates, qualitative).first;
 	}
 
-	std::vector<ValueType> checkNext(storm::property::csl::Next<ValueType> const& formula, bool qualitative) const {
+	std::vector<ValueType> checkNext(storm::properties::csl::Next<ValueType> const& formula, bool qualitative) const {
 		throw storm::exceptions::NotImplementedException() << "Model checking Next formulas on Markov automata is not yet implemented.";
 	}
 

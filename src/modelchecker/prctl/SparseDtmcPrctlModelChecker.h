@@ -71,7 +71,7 @@ public:
 	 * @returns The probabilities for the given formula to hold on every state of the model associated with this model
 	 * checker. If the qualitative flag is set, exact probabilities might not be computed.
 	 */
-	virtual std::vector<Type> checkBoundedUntil(storm::property::prctl::BoundedUntil<Type> const& formula, bool qualitative) const {
+	virtual std::vector<Type> checkBoundedUntil(storm::properties::prctl::BoundedUntil<Type> const& formula, bool qualitative) const {
 		return this->checkBoundedUntil(formula.getLeft()->check(*this), formula.getRight()->check(*this), formula.getBound(), qualitative);
 	}
 
@@ -145,7 +145,7 @@ public:
 	 * @returns The probabilities for the given formula to hold on every state of the model associated with this model
 	 * checker. If the qualitative flag is set, exact probabilities might not be computed.
 	 */
-	virtual std::vector<Type> checkNext(storm::property::prctl::Next<Type> const& formula, bool qualitative) const {
+	virtual std::vector<Type> checkNext(storm::properties::prctl::Next<Type> const& formula, bool qualitative) const {
 		// First, we need to compute the states that satisfy the child formula of the next-formula.
 		storm::storage::BitVector nextStates = formula.getChild()->check(*this);
 
@@ -174,7 +174,7 @@ public:
 	 * @returns The probabilities for the given formula to hold on every state of the model associated with this model
 	 * checker. If the qualitative flag is set, exact probabilities might not be computed.
 	 */
-	virtual std::vector<Type> checkBoundedEventually(storm::property::prctl::BoundedEventually<Type> const& formula, bool qualitative) const {
+	virtual std::vector<Type> checkBoundedEventually(storm::properties::prctl::BoundedEventually<Type> const& formula, bool qualitative) const {
         return this->checkBoundedUntil(storm::storage::BitVector(this->getModel().getNumberOfStates(), true), formula.getChild()->check(*this), formula.getBound(), qualitative);
 	}
 
@@ -189,9 +189,9 @@ public:
 	 * @returns The probabilities for the given formula to hold on every state of the model associated with this model
 	 * checker. If the qualitative flag is set, exact probabilities might not be computed.
 	 */
-	virtual std::vector<Type> checkEventually(storm::property::prctl::Eventually<Type> const& formula, bool qualitative) const {
+	virtual std::vector<Type> checkEventually(storm::properties::prctl::Eventually<Type> const& formula, bool qualitative) const {
 		// Create equivalent temporary until formula and check it.
-		storm::property::prctl::Until<Type> temporaryUntilFormula(std::shared_ptr<storm::property::prctl::Ap<Type>>(new storm::property::prctl::Ap<Type>("true")), formula.getChild());
+		storm::properties::prctl::Until<Type> temporaryUntilFormula(std::shared_ptr<storm::properties::prctl::Ap<Type>>(new storm::properties::prctl::Ap<Type>("true")), formula.getChild());
 		return this->checkUntil(temporaryUntilFormula, qualitative);
 	}
 
@@ -206,9 +206,9 @@ public:
 	 * @returns The probabilities for the given formula to hold on every state of the model associated with this model
 	 * checker. If the qualitative flag is set, exact probabilities might not be computed.
 	 */
-	virtual std::vector<Type> checkGlobally(storm::property::prctl::Globally<Type> const& formula, bool qualitative) const {
+	virtual std::vector<Type> checkGlobally(storm::properties::prctl::Globally<Type> const& formula, bool qualitative) const {
 		// Create "equivalent" (equivalent up to negation) temporary eventually formula and check it.
-		storm::property::prctl::Eventually<Type> temporaryEventuallyFormula(std::shared_ptr<storm::property::prctl::Not<Type>>(new storm::property::prctl::Not<Type>(formula.getChild())));
+		storm::properties::prctl::Eventually<Type> temporaryEventuallyFormula(std::shared_ptr<storm::properties::prctl::Not<Type>>(new storm::properties::prctl::Not<Type>(formula.getChild())));
 		std::vector<Type> result = this->checkEventually(temporaryEventuallyFormula, qualitative);
 
 		// Now subtract the resulting vector from the constant one vector to obtain final result.
@@ -228,7 +228,7 @@ public:
 	 * @returns The probabilities for the given formula to hold on every state of the model associated with this model
 	 * checker. If the qualitative flag is set, exact probabilities might not be computed.
 	 */
-	virtual std::vector<Type> checkUntil(storm::property::prctl::Until<Type> const& formula, bool qualitative) const {
+	virtual std::vector<Type> checkUntil(storm::properties::prctl::Until<Type> const& formula, bool qualitative) const {
 		return this->checkUntil(formula.getLeft()->check(*this), formula.getRight()->check(*this), qualitative);
 	}
 
@@ -319,7 +319,7 @@ public:
 	 * @returns The reward values for the given formula for every state of the model associated with this model
 	 * checker. If the qualitative flag is set, exact values might not be computed.
 	 */
-	virtual std::vector<Type> checkInstantaneousReward(storm::property::prctl::InstantaneousReward<Type> const& formula, bool qualitative) const {
+	virtual std::vector<Type> checkInstantaneousReward(storm::properties::prctl::InstantaneousReward<Type> const& formula, bool qualitative) const {
 		// Only compute the result if the model has a state-based reward model.
 		if (!this->getModel().hasStateRewards()) {
 			LOG4CPLUS_ERROR(logger, "Missing (state-based) reward model for formula.");
@@ -350,7 +350,7 @@ public:
 	 * @returns The reward values for the given formula for every state of the model associated with this model
 	 * checker. If the qualitative flag is set, exact values might not be computed.
 	 */
-	virtual std::vector<Type> checkCumulativeReward(storm::property::prctl::CumulativeReward<Type> const& formula, bool qualitative) const {
+	virtual std::vector<Type> checkCumulativeReward(storm::properties::prctl::CumulativeReward<Type> const& formula, bool qualitative) const {
 		// Only compute the result if the model has at least one reward model.
 		if (!this->getModel().hasStateRewards() && !this->getModel().hasTransitionRewards()) {
 			LOG4CPLUS_ERROR(logger, "Missing reward model for formula.");
@@ -397,7 +397,7 @@ public:
 	 * @returns The reward values for the given formula for every state of the model associated with this model
 	 * checker. If the qualitative flag is set, exact values might not be computed.
 	 */
-	virtual std::vector<Type> checkReachabilityReward(storm::property::prctl::ReachabilityReward<Type> const& formula, bool qualitative) const {
+	virtual std::vector<Type> checkReachabilityReward(storm::properties::prctl::ReachabilityReward<Type> const& formula, bool qualitative) const {
 		// Only compute the result if the model has at least one reward model.
 		if (!this->getModel().hasStateRewards() && !this->getModel().hasTransitionRewards()) {
 			LOG4CPLUS_ERROR(logger, "Missing reward model for formula. Skipping formula");
@@ -491,7 +491,7 @@ public:
 	 * @param optOperator True iff minimum probabilities/rewards are to be computed.
 	 * @returns The probabilities to satisfy the formula or the rewards accumulated by it, represented by a vector.
 	 */
-	virtual std::vector<Type> checkOptimizingOperator(storm::property::prctl::AbstractPathFormula<Type> const & formula, bool optOperator) const override {
+	virtual std::vector<Type> checkOptimizingOperator(storm::properties::prctl::AbstractPathFormula<Type> const & formula, bool optOperator) const override {
 
 		LOG4CPLUS_WARN(logger, "Formula contains min/max operator, which is not meaningful over deterministic models.");
 
@@ -509,7 +509,7 @@ public:
 	 * @param optOperator True iff minimum probabilities/rewards are to be computed.
 	 * @returns The set of states satisfying the formula represented by a bit vector.
 	 */
-	virtual storm::storage::BitVector checkOptimizingOperator(storm::property::prctl::AbstractStateFormula<Type> const & formula, bool optOperator) const override {
+	virtual storm::storage::BitVector checkOptimizingOperator(storm::properties::prctl::AbstractStateFormula<Type> const & formula, bool optOperator) const override {
 
 		LOG4CPLUS_WARN(logger, "Formula contains min/max operator, which is not meaningful over deterministic models.");
 

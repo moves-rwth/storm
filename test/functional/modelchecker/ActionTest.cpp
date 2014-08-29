@@ -8,11 +8,11 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
-#include "src/formula/actions/BoundAction.h"
-#include "src/formula/actions/FormulaAction.h"
-#include "src/formula/actions/InvertAction.h"
-#include "src/formula/actions/RangeAction.h"
-#include "src/formula/actions/SortAction.h"
+#include "src/properties/actions/BoundAction.h"
+#include "src/properties/actions/FormulaAction.h"
+#include "src/properties/actions/InvertAction.h"
+#include "src/properties/actions/RangeAction.h"
+#include "src/properties/actions/SortAction.h"
 
 #include "src/parser/MarkovAutomatonParser.h"
 #include "src/parser/DeterministicModelParser.h"
@@ -21,7 +21,7 @@
 #include "src/solver/GmmxxLinearEquationSolver.h"
 #include "src/exceptions/InvalidArgumentException.h"
 
-typedef typename storm::property::action::AbstractAction<double>::Result Result;
+typedef typename storm::properties::action::AbstractAction<double>::Result Result;
 
 TEST(ActionTest, BoundActionFunctionality) {
 
@@ -31,7 +31,7 @@ TEST(ActionTest, BoundActionFunctionality) {
 
 	// Build the filter input.
 	// Basically the modelchecking result of "F a" on the used DTMC.
-	std::vector<double> pathResult = mc.checkEventually(storm::property::prctl::Eventually<double>(std::make_shared<storm::property::prctl::Ap<double>>("a")), false);
+	std::vector<double> pathResult = mc.checkEventually(storm::properties::prctl::Eventually<double>(std::make_shared<storm::properties::prctl::Ap<double>>("a")), false);
 	std::vector<uint_fast64_t> stateMap(pathResult.size());
 	for(uint_fast64_t i = 0; i < pathResult.size(); i++) {
 		stateMap[i] = i;
@@ -40,7 +40,7 @@ TEST(ActionTest, BoundActionFunctionality) {
 
 	// Test the action.
 	// First test that the boundAction build by the empty constructor does not change the selection.
-	storm::property::action::BoundAction<double> action;
+	storm::properties::action::BoundAction<double> action;
 	Result result = action.evaluate(input, mc);
 
 	for(auto value : result.selection) {
@@ -48,7 +48,7 @@ TEST(ActionTest, BoundActionFunctionality) {
 	}
 
 	// Test that using a strict bound can give different results than using a non-strict bound.
-	action = storm::property::action::BoundAction<double>(storm::property::GREATER, 0);
+	action = storm::properties::action::BoundAction<double>(storm::properties::GREATER, 0);
 	result = action.evaluate(input, mc);
 
 	for(uint_fast64_t i = 0; i < result.selection.size()-2; i++) {
@@ -58,7 +58,7 @@ TEST(ActionTest, BoundActionFunctionality) {
 	ASSERT_FALSE(result.selection[7]);
 
 	// Test whether the filter actually uses the selection given by the input.
-	action = storm::property::action::BoundAction<double>(storm::property::LESS, 0.5);
+	action = storm::properties::action::BoundAction<double>(storm::properties::LESS, 0.5);
 	result = action.evaluate(result, mc);
 
 	ASSERT_FALSE(result.selection[0]);
@@ -71,7 +71,7 @@ TEST(ActionTest, BoundActionFunctionality) {
 		stateMap[i] = pathResult.size() - i - 1;
 	}
 
-	action = storm::property::action::BoundAction<double>(storm::property::GREATER, 0);
+	action = storm::properties::action::BoundAction<double>(storm::properties::GREATER, 0);
 	result = action.evaluate(input, mc);
 
 	for(uint_fast64_t i = 0; i < result.selection.size()-2; i++) {
@@ -82,8 +82,8 @@ TEST(ActionTest, BoundActionFunctionality) {
 
 	// Test the functionality for state formulas instead.
 	input.pathResult = std::vector<double>();
-	input.stateResult = mc.checkAp(storm::property::prctl::Ap<double>("a"));
-	action = storm::property::action::BoundAction<double>(storm::property::GREATER, 0.5);
+	input.stateResult = mc.checkAp(storm::properties::prctl::Ap<double>("a"));
+	action = storm::properties::action::BoundAction<double>(storm::properties::GREATER, 0.5);
 	result = action.evaluate(input, mc);
 
 	for(uint_fast64_t i = 0; i < result.selection.size(); i++) {
@@ -116,8 +116,8 @@ TEST(ActionTest, BoundActionSafety) {
 
 	// Build the filter input.
 	// Basically the modelchecking result of "F a" on the used DTMC.
-	std::vector<double> pathResult = mc.checkEventually(storm::property::prctl::Eventually<double>(std::make_shared<storm::property::prctl::Ap<double>>("a")), false);
-	storm::storage::BitVector stateResult = mc.checkAp(storm::property::prctl::Ap<double>("a"));
+	std::vector<double> pathResult = mc.checkEventually(storm::properties::prctl::Eventually<double>(std::make_shared<storm::properties::prctl::Ap<double>>("a")), false);
+	storm::storage::BitVector stateResult = mc.checkAp(storm::properties::prctl::Ap<double>("a"));
 	std::vector<uint_fast64_t> stateMap(pathResult.size());
 	for(uint_fast64_t i = 0; i < pathResult.size(); i++) {
 		stateMap[i] = i;
@@ -125,30 +125,30 @@ TEST(ActionTest, BoundActionSafety) {
 	Result input(storm::storage::BitVector(pathResult.size(), true), stateMap, pathResult, storm::storage::BitVector());
 
 	// First, test unusual bounds.
-	storm::property::action::BoundAction<double> action(storm::property::LESS, -2044);
+	storm::properties::action::BoundAction<double> action(storm::properties::LESS, -2044);
 	Result result;
 
 	ASSERT_NO_THROW(result = action.evaluate(input, mc));
 	ASSERT_EQ(0, result.selection.getNumberOfSetBits());
 
-	action = storm::property::action::BoundAction<double>(storm::property::GREATER_EQUAL, 5879);
+	action = storm::properties::action::BoundAction<double>(storm::properties::GREATER_EQUAL, 5879);
 
 	ASSERT_NO_THROW(result = action.evaluate(input, mc));
 	ASSERT_EQ(0, result.selection.getNumberOfSetBits());
 
-	action = storm::property::action::BoundAction<double>(storm::property::LESS_EQUAL, 5879);
+	action = storm::properties::action::BoundAction<double>(storm::properties::LESS_EQUAL, 5879);
 
 	ASSERT_NO_THROW(result = action.evaluate(input, mc));
 	ASSERT_EQ(result.selection.size(), result.selection.getNumberOfSetBits());
 
 	// Now, check the behavior under a undefined comparison type.
-	action = storm::property::action::BoundAction<double>(static_cast<storm::property::ComparisonType>(10), 5879);
+	action = storm::properties::action::BoundAction<double>(static_cast<storm::properties::ComparisonType>(10), 5879);
 	ASSERT_THROW(action.toString(), storm::exceptions::InvalidArgumentException);
 	ASSERT_THROW(action.evaluate(input, mc), storm::exceptions::InvalidArgumentException);
 
 	// Test for a result input with both results filled.
 	// It should put out a warning and use the pathResult.
-	action = storm::property::action::BoundAction<double>(storm::property::GREATER_EQUAL, 0.5);
+	action = storm::properties::action::BoundAction<double>(storm::properties::GREATER_EQUAL, 0.5);
 	input.stateResult = stateResult;
 
 	// To capture the warning, redirect cout and test the written buffer content.
@@ -177,8 +177,8 @@ TEST(ActionTest, FormulaActionFunctionality) {
 
 	// Build the filter input.
 	// Basically the modelchecking result of "F a" on the used DTMC.
-	std::vector<double> pathResult = mc.checkEventually(storm::property::prctl::Eventually<double>(std::make_shared<storm::property::prctl::Ap<double>>("a")), false);
-	storm::storage::BitVector stateResult = mc.checkAp(storm::property::prctl::Ap<double>("c"));
+	std::vector<double> pathResult = mc.checkEventually(storm::properties::prctl::Eventually<double>(std::make_shared<storm::properties::prctl::Ap<double>>("a")), false);
+	storm::storage::BitVector stateResult = mc.checkAp(storm::properties::prctl::Ap<double>("c"));
 	std::vector<uint_fast64_t> stateMap(pathResult.size());
 	for(uint_fast64_t i = 0; i < pathResult.size(); i++) {
 		stateMap[i] = i;
@@ -188,7 +188,7 @@ TEST(ActionTest, FormulaActionFunctionality) {
 
 	// Test the action.
 	// First test that the empty action does no change to the input.
-	storm::property::action::FormulaAction<double> action;
+	storm::properties::action::FormulaAction<double> action;
 	input.selection.set(0,false);
 	ASSERT_NO_THROW(result = action.evaluate(input, mc));
 	for(uint_fast64_t i = 0; i < pathResult.size(); i++) {
@@ -204,7 +204,7 @@ TEST(ActionTest, FormulaActionFunctionality) {
 	input.selection.set(0,true);
 
 	// Now test the general functionality.
-	action = storm::property::action::FormulaAction<double>(std::make_shared<storm::property::prctl::ProbabilisticBoundOperator<double>>(storm::property::LESS, 0.5, std::make_shared<storm::property::prctl::Eventually<double>>(std::make_shared<storm::property::prctl::Ap<double>>("b"))));
+	action = storm::properties::action::FormulaAction<double>(std::make_shared<storm::properties::prctl::ProbabilisticBoundOperator<double>>(storm::properties::LESS, 0.5, std::make_shared<storm::properties::prctl::Eventually<double>>(std::make_shared<storm::properties::prctl::Ap<double>>("b"))));
 	ASSERT_NO_THROW(result = action.evaluate(input, mc));
 	ASSERT_TRUE(result.selection[0]);
 	ASSERT_TRUE(result.selection[1]);
@@ -249,7 +249,7 @@ TEST(ActionTest, FormulaActionSafety){
 
 	// Build the filter input.
 	// Basically the modelchecking result of "F a" on the used DTMC.
-	std::vector<double> pathResult = mc.checkEventually(storm::property::prctl::Eventually<double>(std::make_shared<storm::property::prctl::Ap<double>>("a")), false);
+	std::vector<double> pathResult = mc.checkEventually(storm::properties::prctl::Eventually<double>(std::make_shared<storm::properties::prctl::Ap<double>>("a")), false);
 	std::vector<uint_fast64_t> stateMap(pathResult.size());
 	for(uint_fast64_t i = 0; i < pathResult.size(); i++) {
 		stateMap[i] = i;
@@ -258,7 +258,7 @@ TEST(ActionTest, FormulaActionSafety){
 	Result result;
 
 	// Check that constructing the action using a nullptr and using an empty constructor leads to the same behavior.
-	storm::property::action::FormulaAction<double> action(std::shared_ptr<storm::property::csl::AbstractStateFormula<double>>(nullptr));
+	storm::properties::action::FormulaAction<double> action(std::shared_ptr<storm::properties::csl::AbstractStateFormula<double>>(nullptr));
 	input.selection.set(0,false);
 	ASSERT_NO_THROW(result = action.evaluate(input, mc));
 	for(uint_fast64_t i = 0; i < pathResult.size(); i++) {
@@ -282,8 +282,8 @@ TEST(ActionTest, InvertActionFunctionality){
 
 	// Build the filter input.
 	// Basically the modelchecking result of "F a" on the used DTMC.
-	std::vector<double> pathResult = mc.checkEventually(storm::property::prctl::Eventually<double>(std::make_shared<storm::property::prctl::Ap<double>>("a")), false);
-	storm::storage::BitVector stateResult = mc.checkAp(storm::property::prctl::Ap<double>("c"));
+	std::vector<double> pathResult = mc.checkEventually(storm::properties::prctl::Eventually<double>(std::make_shared<storm::properties::prctl::Ap<double>>("a")), false);
+	storm::storage::BitVector stateResult = mc.checkAp(storm::properties::prctl::Ap<double>("c"));
 	std::vector<uint_fast64_t> stateMap(pathResult.size());
 	for(uint_fast64_t i = 0; i < pathResult.size(); i++) {
 		stateMap[i] = pathResult.size()-i-1;
@@ -292,7 +292,7 @@ TEST(ActionTest, InvertActionFunctionality){
 	Result result;
 
 	// Check whether the selection becomes inverted while the rest stays the same.
-	storm::property::action::InvertAction<double> action;
+	storm::properties::action::InvertAction<double> action;
 	input.selection.set(0,false);
 	ASSERT_NO_THROW(result = action.evaluate(input, mc));
 	for(uint_fast64_t i = 0; i < pathResult.size(); i++) {
@@ -316,8 +316,8 @@ TEST(ActionTest, RangeActionFunctionality){
 
 	// Build the filter input.
 	// Basically the modelchecking result of "F a" on the used DTMC.
-	std::vector<double> pathResult = mc.checkEventually(storm::property::prctl::Eventually<double>(std::make_shared<storm::property::prctl::Ap<double>>("a")), false);
-	storm::storage::BitVector stateResult = mc.checkAp(storm::property::prctl::Ap<double>("c"));
+	std::vector<double> pathResult = mc.checkEventually(storm::properties::prctl::Eventually<double>(std::make_shared<storm::properties::prctl::Ap<double>>("a")), false);
+	storm::storage::BitVector stateResult = mc.checkAp(storm::properties::prctl::Ap<double>("c"));
 	std::vector<uint_fast64_t> stateMap(pathResult.size());
 	for(uint_fast64_t i = 0; i < pathResult.size(); i++) {
 		stateMap[i] = i;
@@ -327,7 +327,7 @@ TEST(ActionTest, RangeActionFunctionality){
 
 	// Test if the action selects the first 3 states in relation to the order given by the stateMap.
 	// First in index order.
-	storm::property::action::RangeAction<double> action(0,2);
+	storm::properties::action::RangeAction<double> action(0,2);
 	ASSERT_NO_THROW(result = action.evaluate(input, mc));
 	for(uint_fast64_t i = 0; i < result.selection.size(); i++) {
 		ASSERT_EQ(input.stateMap[i], result.stateMap[i]);
@@ -384,7 +384,7 @@ TEST(ActionTest, RangeActionFunctionality){
 
 	// Test that specifying and interval of (i,i) selects only state i.
 	for(uint_fast64_t i = 0; i < input.selection.size(); i++) {
-		action = storm::property::action::RangeAction<double>(i,i);
+		action = storm::properties::action::RangeAction<double>(i,i);
 		ASSERT_NO_THROW(result = action.evaluate(input, mc));
 		ASSERT_EQ(1, result.selection.getNumberOfSetBits());
 		ASSERT_TRUE(result.selection[result.stateMap[i]]);
@@ -398,8 +398,8 @@ TEST(ActionTest, RangeActionSafety){
 
 	// Build the filter input.
 	// Basically the modelchecking result of "F a" on the used DTMC.
-	std::vector<double> pathResult = mc.checkEventually(storm::property::prctl::Eventually<double>(std::make_shared<storm::property::prctl::Ap<double>>("a")), false);
-	storm::storage::BitVector stateResult = mc.checkAp(storm::property::prctl::Ap<double>("c"));
+	std::vector<double> pathResult = mc.checkEventually(storm::properties::prctl::Eventually<double>(std::make_shared<storm::properties::prctl::Ap<double>>("a")), false);
+	storm::storage::BitVector stateResult = mc.checkAp(storm::properties::prctl::Ap<double>("c"));
 	std::vector<uint_fast64_t> stateMap(pathResult.size());
 	for(uint_fast64_t i = 0; i < pathResult.size(); i++) {
 		stateMap[i] = i;
@@ -414,21 +414,21 @@ TEST(ActionTest, RangeActionSafety){
 	std::streambuf * sbuf = std::cout.rdbuf();
 	std::cout.rdbuf(buffer.rdbuf());
 
-	storm::property::action::RangeAction<double> action(0,42);
+	storm::properties::action::RangeAction<double> action(0,42);
 	ASSERT_NO_THROW(result = action.evaluate(input, mc));
 	ASSERT_TRUE(result.selection.full());
 
 	ASSERT_FALSE(buffer.str().empty());
 	buffer.str("");
 
-	action = storm::property::action::RangeAction<double>(42,98);
+	action = storm::properties::action::RangeAction<double>(42,98);
 	ASSERT_NO_THROW(result = action.evaluate(input, mc));
 	ASSERT_TRUE(result.selection.empty());
 
 	ASSERT_FALSE(buffer.str().empty());
 	std::cout.rdbuf(sbuf);
 
-	ASSERT_THROW(storm::property::action::RangeAction<double>(3,1), storm::exceptions::IllegalArgumentValueException);
+	ASSERT_THROW(storm::properties::action::RangeAction<double>(3,1), storm::exceptions::IllegalArgumentValueException);
 }
 
 TEST(ActionTest, SortActionFunctionality){
@@ -438,8 +438,8 @@ TEST(ActionTest, SortActionFunctionality){
 
 	// Build the filter input.
 	// Basically the modelchecking result of "F a" on the used DTMC.
-	std::vector<double> pathResult = mc.checkEventually(storm::property::prctl::Eventually<double>(std::make_shared<storm::property::prctl::Ap<double>>("a")), false);
-	storm::storage::BitVector stateResult = mc.checkAp(storm::property::prctl::Ap<double>("c"));
+	std::vector<double> pathResult = mc.checkEventually(storm::properties::prctl::Eventually<double>(std::make_shared<storm::properties::prctl::Ap<double>>("a")), false);
+	storm::storage::BitVector stateResult = mc.checkAp(storm::properties::prctl::Ap<double>("c"));
 	std::vector<uint_fast64_t> stateMap(pathResult.size());
 	for(uint_fast64_t i = 0; i < pathResult.size(); i++) {
 		stateMap[i] = pathResult.size()-i-1;
@@ -448,7 +448,7 @@ TEST(ActionTest, SortActionFunctionality){
 	Result result;
 
 	// Test that sorting preserves everything except the state map.
-	storm::property::action::SortAction<double> action;
+	storm::properties::action::SortAction<double> action;
 	ASSERT_NO_THROW(action.toString());
 	input.selection.set(0,false);
 	ASSERT_NO_THROW(result = action.evaluate(input, mc));
@@ -468,14 +468,14 @@ TEST(ActionTest, SortActionFunctionality){
 	// 1) index, ascending -> see above
 	// 2) index descending
 	input.selection.set(3,false);
-	action = storm::property::action::SortAction<double>(storm::property::action::SortAction<double>::INDEX, false);
+	action = storm::properties::action::SortAction<double>(storm::properties::action::SortAction<double>::INDEX, false);
 	ASSERT_NO_THROW(result = action.evaluate(input, mc));
 	for(uint_fast64_t i = 0; i < pathResult.size(); i++) {
 		ASSERT_EQ(pathResult.size()-i-1, result.stateMap[i]);
 	}
 
 	// 3) value, ascending
-	action = storm::property::action::SortAction<double>(storm::property::action::SortAction<double>::VALUE);
+	action = storm::properties::action::SortAction<double>(storm::properties::action::SortAction<double>::VALUE);
 	ASSERT_NO_THROW(result = action.evaluate(input, mc));
 	ASSERT_EQ(6, result.stateMap[0]);
 	ASSERT_EQ(7, result.stateMap[1]);
@@ -487,7 +487,7 @@ TEST(ActionTest, SortActionFunctionality){
 	ASSERT_EQ(5, result.stateMap[7]);
 
 	// 3) value, decending
-	action = storm::property::action::SortAction<double>(storm::property::action::SortAction<double>::VALUE, false);
+	action = storm::properties::action::SortAction<double>(storm::properties::action::SortAction<double>::VALUE, false);
 	ASSERT_NO_THROW(result = action.evaluate(input, mc));
 	ASSERT_EQ(5, result.stateMap[0]);
 	ASSERT_EQ(2, result.stateMap[1]);
@@ -502,7 +502,7 @@ TEST(ActionTest, SortActionFunctionality){
 	input.pathResult = std::vector<double>();
 	input.stateResult = stateResult;
 
-	action = storm::property::action::SortAction<double>(storm::property::action::SortAction<double>::VALUE);
+	action = storm::properties::action::SortAction<double>(storm::properties::action::SortAction<double>::VALUE);
 	ASSERT_NO_THROW(result = action.evaluate(input, mc));
 	ASSERT_EQ(5, result.stateMap[0]);
 	ASSERT_EQ(6, result.stateMap[1]);
@@ -513,7 +513,7 @@ TEST(ActionTest, SortActionFunctionality){
 	ASSERT_EQ(3, result.stateMap[6]);
 	ASSERT_EQ(4, result.stateMap[7]);
 
-	action = storm::property::action::SortAction<double>(storm::property::action::SortAction<double>::VALUE, false);
+	action = storm::properties::action::SortAction<double>(storm::properties::action::SortAction<double>::VALUE, false);
 	ASSERT_NO_THROW(result = action.evaluate(input, mc));
 	ASSERT_EQ(0, result.stateMap[0]);
 	ASSERT_EQ(1, result.stateMap[1]);
@@ -528,9 +528,9 @@ TEST(ActionTest, SortActionFunctionality){
 	input.stateResult = storm::storage::BitVector();
 	input.pathResult = pathResult;
 
-	action = storm::property::action::SortAction<double>(storm::property::action::SortAction<double>::INDEX);
+	action = storm::properties::action::SortAction<double>(storm::properties::action::SortAction<double>::INDEX);
 	ASSERT_NO_THROW(input = action.evaluate(input, mc));
-	action = storm::property::action::SortAction<double>(storm::property::action::SortAction<double>::VALUE);
+	action = storm::properties::action::SortAction<double>(storm::properties::action::SortAction<double>::VALUE);
 	ASSERT_NO_THROW(result = action.evaluate(input, mc));
 	ASSERT_EQ(6, result.stateMap[0]);
 	ASSERT_EQ(7, result.stateMap[1]);
@@ -551,8 +551,8 @@ TEST(ActionTest, SortActionSafety){
 
 	// Build the filter input.
 	// Basically the modelchecking result of "F a" on the used DTMC.
-	std::vector<double> pathResult = mc.checkEventually(storm::property::prctl::Eventually<double>(std::make_shared<storm::property::prctl::Ap<double>>("a")), false);
-	storm::storage::BitVector stateResult = mc.checkAp(storm::property::prctl::Ap<double>("c"));
+	std::vector<double> pathResult = mc.checkEventually(storm::properties::prctl::Eventually<double>(std::make_shared<storm::properties::prctl::Ap<double>>("a")), false);
+	storm::storage::BitVector stateResult = mc.checkAp(storm::properties::prctl::Ap<double>("c"));
 	std::vector<uint_fast64_t> stateMap(pathResult.size());
 	for(uint_fast64_t i = 0; i < pathResult.size(); i++) {
 		stateMap[i] = pathResult.size()-i-1;
@@ -560,7 +560,7 @@ TEST(ActionTest, SortActionSafety){
 	Result input(storm::storage::BitVector(pathResult.size(), true), stateMap, pathResult, stateResult);
 	Result result;
 
-	storm::property::action::SortAction<double> action(storm::property::action::SortAction<double>::VALUE);
+	storm::properties::action::SortAction<double> action(storm::properties::action::SortAction<double>::VALUE);
 	ASSERT_NO_THROW(result = action.evaluate(input, mc));
 	ASSERT_EQ(6, result.stateMap[0]);
 	ASSERT_EQ(7, result.stateMap[1]);

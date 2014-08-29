@@ -10,12 +10,12 @@
 #include "src/utility/constants.h"
 
 // The action class headers.
-#include "src/formula/actions/AbstractAction.h"
-#include "src/formula/actions/BoundAction.h"
-#include "src/formula/actions/InvertAction.h"
-#include "src/formula/actions/FormulaAction.h"
-#include "src/formula/actions/RangeAction.h"
-#include "src/formula/actions/SortAction.h"
+#include "src/properties/actions/AbstractAction.h"
+#include "src/properties/actions/BoundAction.h"
+#include "src/properties/actions/InvertAction.h"
+#include "src/properties/actions/FormulaAction.h"
+#include "src/properties/actions/RangeAction.h"
+#include "src/properties/actions/SortAction.h"
 
 // If the parser fails due to ill-formed data, this exception is thrown.
 #include "src/exceptions/WrongFormatException.h"
@@ -41,7 +41,7 @@ typedef std::string::const_iterator BaseIteratorType;
 typedef boost::spirit::classic::position_iterator2<BaseIteratorType> PositionIteratorType;
 namespace qi = boost::spirit::qi;
 namespace phoenix = boost::phoenix;
-namespace csl = storm::property::csl;
+namespace csl = storm::properties::csl;
 
 namespace storm {
 namespace parser {
@@ -52,13 +52,13 @@ struct CslParser::CslGrammar : qi::grammar<Iterator, std::shared_ptr<csl::CslFil
 		//This block contains helper rules that may be used several times
 		freeIdentifierName = qi::lexeme[qi::alpha >> *(qi::alnum | qi::char_('_'))];
 		comparisonType = (
-				(qi::lit(">="))[qi::_val = storm::property::GREATER_EQUAL] |
-				(qi::lit(">"))[qi::_val = storm::property::GREATER] |
-				(qi::lit("<="))[qi::_val = storm::property::LESS_EQUAL] |
-				(qi::lit("<"))[qi::_val = storm::property::LESS]);
+				(qi::lit(">="))[qi::_val = storm::properties::GREATER_EQUAL] |
+				(qi::lit(">"))[qi::_val = storm::properties::GREATER] |
+				(qi::lit("<="))[qi::_val = storm::properties::LESS_EQUAL] |
+				(qi::lit("<"))[qi::_val = storm::properties::LESS]);
 		sortingCategory = (
-				(qi::lit("index"))[qi::_val = storm::property::action::SortAction<double>::INDEX] |
-				(qi::lit("value"))[qi::_val = storm::property::action::SortAction<double>::VALUE]
+				(qi::lit("index"))[qi::_val = storm::properties::action::SortAction<double>::INDEX] |
+				(qi::lit("value"))[qi::_val = storm::properties::action::SortAction<double>::VALUE]
 				);
 		//Comment: Empty line or line starting with "//"
 		comment = (qi::lit("//") >> *(qi::char_))[qi::_val = nullptr];
@@ -136,43 +136,43 @@ struct CslParser::CslGrammar : qi::grammar<Iterator, std::shared_ptr<csl::CslFil
 		noBoundOperator.name("no bound operator");
 		probabilisticNoBoundOperator =
 				(qi::lit("P") >> qi::lit("min") >> qi::lit("=") > qi::lit("?") >> pathFormula)[qi::_val =
-						MAKE(csl::CslFilter<double>, qi::_1, storm::property::MINIMIZE)] |
+						MAKE(csl::CslFilter<double>, qi::_1, storm::properties::MINIMIZE)] |
 				(qi::lit("P") >> qi::lit("max") >> qi::lit("=") > qi::lit("?") >> pathFormula)[qi::_val =
-						MAKE(csl::CslFilter<double>, qi::_1, storm::property::MAXIMIZE)] |
+						MAKE(csl::CslFilter<double>, qi::_1, storm::properties::MAXIMIZE)] |
 				(qi::lit("P") >> qi::lit("=") > qi::lit("?") >> pathFormula)[qi::_val =
 						MAKE(csl::CslFilter<double>, qi::_1)];
 		probabilisticNoBoundOperator.name("probabilistic no bound operator");
 		steadyStateNoBoundOperator = (qi::lit("S") >> qi::lit("=") > qi::lit("?") >> stateFormula )[qi::_val =
-				MAKE(csl::CslFilter<double>, qi::_1, storm::property::UNDEFINED, true)];
+				MAKE(csl::CslFilter<double>, qi::_1, storm::properties::UNDEFINED, true)];
 		steadyStateNoBoundOperator.name("steady state no bound operator");
 
 		// This block defines rules for parsing filter actions.
 		boundAction = (qi::lit("bound") > qi::lit("(") >> comparisonType >> qi::lit(",") >> qi::double_ >> qi::lit(")"))[qi::_val =
-				        MAKE(storm::property::action::BoundAction<double> ,qi::_1, qi::_2)];
+				        MAKE(storm::properties::action::BoundAction<double> ,qi::_1, qi::_2)];
 		boundAction.name("bound action");
 
-		invertAction = qi::lit("invert")[qi::_val = MAKE(storm::property::action::InvertAction<double>, )];
+		invertAction = qi::lit("invert")[qi::_val = MAKE(storm::properties::action::InvertAction<double>, )];
 		invertAction.name("invert action");
 
 		formulaAction = (qi::lit("formula") > qi::lit("(") >> stateFormula >> qi::lit(")"))[qi::_val =
-						MAKE(storm::property::action::FormulaAction<double>, qi::_1)];
+						MAKE(storm::properties::action::FormulaAction<double>, qi::_1)];
 		formulaAction.name("formula action");
 
 		rangeAction = (
 				(qi::lit("range") >> qi::lit("(") >> qi::uint_ >> qi::lit(",") > qi::uint_ >> qi::lit(")"))[qi::_val =
-						MAKE(storm::property::action::RangeAction<double>, qi::_1, qi::_2)] |
+						MAKE(storm::properties::action::RangeAction<double>, qi::_1, qi::_2)] |
 				(qi::lit("range") >> qi::lit("(") >> qi::uint_ >> qi::lit(")"))[qi::_val =
-						MAKE(storm::property::action::RangeAction<double>, qi::_1, qi::_1 + 1)]
+						MAKE(storm::properties::action::RangeAction<double>, qi::_1, qi::_1 + 1)]
 				);
 		rangeAction.name("range action");
 
 		sortAction = (
 				(qi::lit("sort") >> qi::lit("(") >> sortingCategory >> qi::lit(")"))[qi::_val =
-						MAKE(storm::property::action::SortAction<double>, qi::_1)] |
+						MAKE(storm::properties::action::SortAction<double>, qi::_1)] |
 				(qi::lit("sort") >> qi::lit("(") >> sortingCategory >> qi::lit(", ") >> (qi::lit("ascending") | qi::lit("asc")) > qi::lit(")"))[qi::_val =
-						MAKE(storm::property::action::SortAction<double>, qi::_1, true)] |
+						MAKE(storm::properties::action::SortAction<double>, qi::_1, true)] |
 				(qi::lit("sort") >> qi::lit("(") >> sortingCategory >> qi::lit(", ") >> (qi::lit("descending") | qi::lit("desc")) > qi::lit(")"))[qi::_val =
-						MAKE(storm::property::action::SortAction<double>, qi::_1, false)]
+						MAKE(storm::properties::action::SortAction<double>, qi::_1, false)]
 				);
 		sortAction.name("sort action");
 
@@ -182,9 +182,9 @@ struct CslParser::CslGrammar : qi::grammar<Iterator, std::shared_ptr<csl::CslFil
 		filter = (qi::lit("filter") >> qi::lit("[") >> +abstractAction >> qi::lit("]") >> qi::lit("(") >> formula >> qi::lit(")"))[qi::_val =
 					MAKE(csl::CslFilter<double>, qi::_2, qi::_1)] |
 				 (qi::lit("filter") >> qi::lit("[") >> qi::lit("max") > +abstractAction >> qi::lit("]") >> qi::lit("(") >> formula >> qi::lit(")"))[qi::_val =
-					MAKE(csl::CslFilter<double>, qi::_2, qi::_1, storm::property::MAXIMIZE)] |
+					MAKE(csl::CslFilter<double>, qi::_2, qi::_1, storm::properties::MAXIMIZE)] |
 				 (qi::lit("filter") >> qi::lit("[") >> qi::lit("min") > +abstractAction >> qi::lit("]") >> qi::lit("(") >> formula >> qi::lit(")"))[qi::_val =
-					MAKE(csl::CslFilter<double>, qi::_2, qi::_1, storm::property::MINIMIZE)] |
+					MAKE(csl::CslFilter<double>, qi::_2, qi::_1, storm::properties::MINIMIZE)] |
 				 (noBoundOperator)[qi::_val =
 					qi::_1] |
 				 (formula)[qi::_val =
@@ -204,12 +204,12 @@ struct CslParser::CslGrammar : qi::grammar<Iterator, std::shared_ptr<csl::CslFil
 	qi::rule<Iterator, std::shared_ptr<csl::CslFilter<double>>(), Skipper> probabilisticNoBoundOperator;
 	qi::rule<Iterator, std::shared_ptr<csl::CslFilter<double>>(), Skipper> steadyStateNoBoundOperator;
 
-	qi::rule<Iterator, std::shared_ptr<storm::property::action::AbstractAction<double>>(), Skipper> abstractAction;
-	qi::rule<Iterator, std::shared_ptr<storm::property::action::BoundAction<double>>(), Skipper> boundAction;
-	qi::rule<Iterator, std::shared_ptr<storm::property::action::InvertAction<double>>(), Skipper> invertAction;
-	qi::rule<Iterator, std::shared_ptr<storm::property::action::FormulaAction<double>>(), Skipper> formulaAction;
-	qi::rule<Iterator, std::shared_ptr<storm::property::action::RangeAction<double>>(), Skipper> rangeAction;
-	qi::rule<Iterator, std::shared_ptr<storm::property::action::SortAction<double>>(), Skipper> sortAction;
+	qi::rule<Iterator, std::shared_ptr<storm::properties::action::AbstractAction<double>>(), Skipper> abstractAction;
+	qi::rule<Iterator, std::shared_ptr<storm::properties::action::BoundAction<double>>(), Skipper> boundAction;
+	qi::rule<Iterator, std::shared_ptr<storm::properties::action::InvertAction<double>>(), Skipper> invertAction;
+	qi::rule<Iterator, std::shared_ptr<storm::properties::action::FormulaAction<double>>(), Skipper> formulaAction;
+	qi::rule<Iterator, std::shared_ptr<storm::properties::action::RangeAction<double>>(), Skipper> rangeAction;
+	qi::rule<Iterator, std::shared_ptr<storm::properties::action::SortAction<double>>(), Skipper> sortAction;
 
 	qi::rule<Iterator, std::shared_ptr<csl::AbstractCslFormula<double>>(), Skipper> formula;
 	qi::rule<Iterator, std::shared_ptr<csl::AbstractCslFormula<double>>(), Skipper> comment;
@@ -229,17 +229,17 @@ struct CslParser::CslGrammar : qi::grammar<Iterator, std::shared_ptr<csl::CslFil
 	qi::rule<Iterator, std::shared_ptr<csl::Eventually<double>>(), Skipper> eventually;
 	qi::rule<Iterator, std::shared_ptr<csl::Next<double>>(), Skipper> next;
 	qi::rule<Iterator, std::shared_ptr<csl::Globally<double>>(), Skipper> globally;
-	qi::rule<Iterator, std::shared_ptr<csl::TimeBoundedUntil<double>>(), qi::locals< std::shared_ptr<storm::property::csl::AbstractStateFormula<double>>>, Skipper> timeBoundedUntil;
-	qi::rule<Iterator, std::shared_ptr<csl::Until<double>>(), qi::locals< std::shared_ptr<storm::property::csl::AbstractStateFormula<double>>>, Skipper> until;
+	qi::rule<Iterator, std::shared_ptr<csl::TimeBoundedUntil<double>>(), qi::locals< std::shared_ptr<storm::properties::csl::AbstractStateFormula<double>>>, Skipper> timeBoundedUntil;
+	qi::rule<Iterator, std::shared_ptr<csl::Until<double>>(), qi::locals< std::shared_ptr<storm::properties::csl::AbstractStateFormula<double>>>, Skipper> until;
 
 
 	qi::rule<Iterator, std::string(), Skipper> freeIdentifierName;
-	qi::rule<Iterator, storm::property::ComparisonType(), Skipper> comparisonType;
-	qi::rule<Iterator, storm::property::action::SortAction<double>::SortingCategory(), Skipper> sortingCategory;
+	qi::rule<Iterator, storm::properties::ComparisonType(), Skipper> comparisonType;
+	qi::rule<Iterator, storm::properties::action::SortAction<double>::SortingCategory(), Skipper> sortingCategory;
 
 };
 
-std::shared_ptr<storm::property::csl::CslFilter<double>> CslParser::parseCslFormula(std::string formulaString) {
+std::shared_ptr<storm::properties::csl::CslFilter<double>> CslParser::parseCslFormula(std::string formulaString) {
 	// Prepare iterators to input.
 	BaseIteratorType stringIteratorBegin = formulaString.begin();
 	BaseIteratorType stringIteratorEnd = formulaString.end();
@@ -248,7 +248,7 @@ std::shared_ptr<storm::property::csl::CslFilter<double>> CslParser::parseCslForm
 
 
 	// Prepare resulting intermediate representation of input.
-	std::shared_ptr<storm::property::csl::CslFilter<double>> result_pointer(nullptr);
+	std::shared_ptr<storm::properties::csl::CslFilter<double>> result_pointer(nullptr);
 
 	CslGrammar<PositionIteratorType,  BOOST_TYPEOF(boost::spirit::ascii::space)> grammar;
 
