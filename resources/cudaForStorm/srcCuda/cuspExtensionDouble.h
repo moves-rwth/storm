@@ -65,7 +65,7 @@ namespace device
 template <unsigned int VECTORS_PER_BLOCK, unsigned int THREADS_PER_VECTOR, bool UseCache>
 __launch_bounds__(VECTORS_PER_BLOCK * THREADS_PER_VECTOR,1)
 __global__ void
-storm_cuda_opt_spmv_csr_vector_kernel_double(const uint_fast64_t num_rows, const uint_fast64_t * matrixRowIndices, const double * matrixColumnIndicesAndValues, const double * x, double * y)
+storm_cuda_opt_spmv_csr_vector_kernel_double(const uint_fast64_t num_rows, const uint_fast64_t * __restrict__ matrixRowIndices, const double * __restrict__ matrixColumnIndicesAndValues, const double * __restrict__ x, double * __restrict__ y)
 {
     __shared__ volatile double sdata[VECTORS_PER_BLOCK * THREADS_PER_VECTOR + THREADS_PER_VECTOR / 2];  // padded to avoid reduction conditionals
     __shared__ volatile uint_fast64_t ptrs[VECTORS_PER_BLOCK][2];
@@ -135,7 +135,7 @@ storm_cuda_opt_spmv_csr_vector_kernel_double(const uint_fast64_t num_rows, const
 template <unsigned int ROWS_PER_BLOCK, unsigned int THREADS_PER_ROW, bool Minimize>
 __launch_bounds__(ROWS_PER_BLOCK * THREADS_PER_ROW,1)
 __global__ void
-storm_cuda_opt_vector_reduce_kernel_double(const uint_fast64_t num_rows, const uint_fast64_t * nondeterministicChoiceIndices, double * x, const double * y, const double minMaxInitializer)
+storm_cuda_opt_vector_reduce_kernel_double(const uint_fast64_t num_rows, const uint_fast64_t * __restrict__ nondeterministicChoiceIndices, double * __restrict__ x, const double * __restrict__ y, const double minMaxInitializer)
 {
     __shared__ volatile double sdata[ROWS_PER_BLOCK * THREADS_PER_ROW + THREADS_PER_ROW / 2];  // padded to avoid reduction conditionals
     __shared__ volatile uint_fast64_t ptrs[ROWS_PER_BLOCK][2];
