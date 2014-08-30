@@ -154,24 +154,27 @@ namespace storm {
 			void performSccDecomposition(storm::models::AbstractPseudoModel<ValueType> const& model, storm::storage::BitVector const& subsystem, bool dropNaiveSccs, bool onlyBottomSccs);
             
             /*!
-             * A helper function that performs the SCC decomposition given all auxiliary data structures. As a
-             * side-effect this fills the vector of blocks of the decomposition.
+             * Uses the algorithm by Gabow/Cheriyan/Mehlhorn ("Path-based strongly connected component algorithm") to
+             * compute a mapping of states to their SCCs. All arguments given by (non-const) reference are modified by
+             * the function as a side-effect.
              *
              * @param model The model to decompose into SCCs.
              * @param startState The starting state for the search of Tarjan's algorithm.
+             * @param statesWithSelfLoop A bit vector that is to be filled with all states that have a self-loop. This
+             * is later needed for identification of the naive SCCs.
              * @param subsystem The subsystem to search.
              * @param currentIndex The next free index that can be assigned to states.
-             * @param stateIndices A vector storing the index for each state.
-             * @param lowlinks A vector storing the lowlink for each state.
-             * @param tarjanStack A vector that is to be used as the stack in Tarjan's algorithm.
-             * @param tarjanStackStates A bit vector indicating which states are currently in the stack.
-             * @param visitedStates A bit vector containing all states that have already been visited.
-             * @param dropNaiveSccs A flag that indicates whether trivial SCCs (i.e. SCCs consisting of just one state
-             * without a self-loop) are to be kept in the decomposition.
-             * @param onlyBottomSccs If set to true, only bottom SCCs, i.e. SCCs in which all states have no way of
-             * leaving the SCC), are kept.
+             * @param hasPreorderNumber A bit that is used to keep track of the states that already have a preorder number.
+             * @param preorderNumbers A vector storing the preorder number for each state.
+             * @param s The stack S used by the algorithm.
+             * @param p The stack S used by the algorithm.
+             * @param stateHasScc A bit vector containing all states that have already been assigned to an SCC.
+             * @param stateToSccMapping A mapping from states to the SCC indices they belong to. As a side effect of this
+             * function this mapping is filled (for all states reachable from the starting state).
+             * @param sccCount The number of SCCs that have been computed. As a side effect of this function, this count
+             * is increased.
              */
-			void performSccDecompositionHelper(storm::models::AbstractPseudoModel<ValueType> const& model, uint_fast64_t startState, storm::storage::BitVector const& subsystem, uint_fast64_t& currentIndex, std::vector<uint_fast64_t>& stateIndices, std::vector<uint_fast64_t>& lowlinks, std::vector<uint_fast64_t>& tarjanStack, storm::storage::BitVector& tarjanStackStates, storm::storage::BitVector& visitedStates, bool dropNaiveSccs, bool onlyBottomSccs);
+            void performSccDecompositionGCM(storm::models::AbstractPseudoModel<ValueType> const& model, uint_fast64_t startState, storm::storage::BitVector& statesWithSelfLoop, storm::storage::BitVector const& subsystem, uint_fast64_t& currentIndex, storm::storage::BitVector& hasPreorderNumber, std::vector<uint_fast64_t>& preorderNumbers, std::vector<uint_fast64_t>& s, std::vector<uint_fast64_t>& p, storm::storage::BitVector& stateHasScc, std::vector<uint_fast64_t>& stateToSccMapping, uint_fast64_t& sccCount);
         };
     }
 }
