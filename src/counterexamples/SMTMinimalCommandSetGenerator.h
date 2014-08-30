@@ -1818,6 +1818,7 @@ namespace storm {
                         psiStates = eventuallyFormula.getChild().check(modelchecker);
                     } catch (std::bad_cast const&) {
                         // If the nested formula is neither an until nor a finally formula, we throw an exception.
+						LOG4CPLUS_ERROR(logger, "Formula nested inside probability bound operator must be an until or eventually formula for counterexample generation.");
                         throw storm::exceptions::InvalidPropertyException() << "Formula nested inside probability bound operator must be an until or eventually formula for counterexample generation.";
                     }
                 }

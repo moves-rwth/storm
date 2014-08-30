@@ -46,6 +46,7 @@
 #include "src/utility/ErrorHandling.h"
 #include "src/formula/Prctl.h"
 #include "src/utility/vector.h"
+#include "src/utility/OsDetection.h"
 
 #include "src/settings/Settings.h"
 // Registers all standard options
