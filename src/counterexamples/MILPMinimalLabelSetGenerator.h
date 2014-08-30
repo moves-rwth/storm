@@ -985,38 +985,38 @@ namespace storm {
              * @param formulaPtr A pointer to a safety formula. The outermost operator must be a probabilistic bound operator with a strict upper bound. The nested
              * formula can be either an unbounded until formula or an eventually formula.
              */
-            static void computeCounterexample(storm::prism::Program const& program, storm::models::Mdp<T> const& labeledMdp, storm::property::prctl::AbstractPrctlFormula<double> const* formulaPtr) {
+            static void computeCounterexample(storm::prism::Program const& program, storm::models::Mdp<T> const& labeledMdp, std::shared_ptr<storm::properties::prctl::AbstractPrctlFormula<double>> const & formulaPtr) {
                 std::cout << std::endl << "Generating minimal label counterexample for formula " << formulaPtr->toString() << std::endl;
                 // First, we need to check whether the current formula is an Until-Formula.
-                storm::property::prctl::ProbabilisticBoundOperator<double> const* probBoundFormula = dynamic_cast<storm::property::prctl::ProbabilisticBoundOperator<double> const*>(formulaPtr);
+                auto probBoundFormula = std::dynamic_pointer_cast<storm::properties::prctl::ProbabilisticBoundOperator<double>>(formulaPtr);
                 if (probBoundFormula == nullptr) {
                     LOG4CPLUS_ERROR(logger, "Illegal formula " << probBoundFormula->toString() << " for counterexample generation.");
                     throw storm::exceptions::InvalidPropertyException() << "Illegal formula " << probBoundFormula->toString() << " for counterexample generation.";
                 }
-                if (probBoundFormula->getComparisonOperator() != storm::property::ComparisonType::LESS && probBoundFormula->getComparisonOperator() != storm::property::ComparisonType::LESS_EQUAL) {
+                if (probBoundFormula->getComparisonOperator() != storm::properties::ComparisonType::LESS && probBoundFormula->getComparisonOperator() != storm::properties::ComparisonType::LESS_EQUAL) {
                     LOG4CPLUS_ERROR(logger, "Illegal comparison operator in formula " << probBoundFormula->toString() << ". Only upper bounds are supported for counterexample generation.");
                     throw storm::exceptions::InvalidPropertyException() << "Illegal comparison operator in formula " << probBoundFormula->toString() << ". Only upper bounds are supported for counterexample generation.";
                 }
-                bool strictBound = !(probBoundFormula->getComparisonOperator() == storm::property::ComparisonType::LESS);
+                bool strictBound = !(probBoundFormula->getComparisonOperator() == storm::properties::ComparisonType::LESS);
 
                 // Now derive the probability threshold we need to exceed as well as the phi and psi states. Simultaneously, check whether the formula is of a valid shape.
                 double bound = probBoundFormula->getBound();
-                storm::property::prctl::AbstractPathFormula<double> const& pathFormula = probBoundFormula->getPathFormula();
+                std::shared_ptr<storm::properties::prctl::AbstractPathFormula<double>> pathFormula = probBoundFormula->getChild();
                 storm::storage::BitVector phiStates;
                 storm::storage::BitVector psiStates;
                 storm::modelchecker::prctl::SparseMdpPrctlModelChecker<T> modelchecker(labeledMdp);
                 try {
-                    storm::property::prctl::Until<double> const& untilFormula = dynamic_cast<storm::property::prctl::Until<double> const&>(pathFormula);
+                    auto untilFormula = std::dynamic_pointer_cast<storm::properties::prctl::Until<double>>(pathFormula);
                     
-                    phiStates = untilFormula.getLeft().check(modelchecker);
-                    psiStates = untilFormula.getRight().check(modelchecker);
+                    phiStates = untilFormula->getLeft()->check(modelchecker);
+                    psiStates = untilFormula->getRight()->check(modelchecker);
                 } catch (std::bad_cast const&) {
                     // If the nested formula was not an until formula, it remains to check whether it's an eventually formula.
                     try {
-                        storm::property::prctl::Eventually<double> const& eventuallyFormula = dynamic_cast<storm::property::prctl::Eventually<double> const&>(pathFormula);
+                        auto eventuallyFormula = std::dynamic_pointer_cast<storm::properties::prctl::Eventually<double>>(pathFormula);
                         
                         phiStates = storm::storage::BitVector(labeledMdp.getNumberOfStates(), true);
-                        psiStates = eventuallyFormula.getChild().check(modelchecker);
+                        psiStates = eventuallyFormula->getChild()->check(modelchecker);
                     } catch (std::bad_cast const&) {
                         // If the nested formula is neither an until nor a finally formula, we throw an exception.
                         throw storm::exceptions::InvalidPropertyException() << "Formula nested inside probability bound operator must be an until or eventually formula for counterexample generation.";

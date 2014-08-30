@@ -16,46 +16,37 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, Crowds) {
 
 	std::shared_ptr<storm::models::Dtmc<double>> dtmc = abstractModel->as<storm::models::Dtmc<double>>();
 
-	ASSERT_EQ(dtmc->getNumberOfStates(), 2036647ull);
-	ASSERT_EQ(dtmc->getNumberOfTransitions(), 7362293ull);
+	ASSERT_EQ(2036647ull, dtmc->getNumberOfStates());
+	ASSERT_EQ(7362293ull, dtmc->getNumberOfTransitions());
 
 	storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double> mc(*dtmc, new storm::solver::GmmxxLinearEquationSolver<double>());
 
-	storm::property::prctl::Ap<double>* apFormula = new storm::property::prctl::Ap<double>("observe0Greater1");
-	storm::property::prctl::Eventually<double>* eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
-	storm::property::prctl::ProbabilisticNoBoundOperator<double>* probFormula = new storm::property::prctl::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
+	auto apFormula = std::make_shared<storm::properties::prctl::Ap<double>>("observe0Greater1");
+	auto eventuallyFormula = std::make_shared<storm::properties::prctl::Eventually<double>>(apFormula);
 
     LOG4CPLUS_WARN(logger, "Model Checking P=? [F observe0Greater1] on crowds/crowds20_5...");
-	std::vector<double> result = probFormula->check(mc);
+	std::vector<double> result = eventuallyFormula->check(mc, false);
     LOG4CPLUS_WARN(logger, "Done.");
 
 	ASSERT_LT(std::abs(result[0] - 0.2296800237), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
-	delete probFormula;
-
-	apFormula = new storm::property::prctl::Ap<double>("observeIGreater1");
-	eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
-	probFormula = new storm::property::prctl::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
+	apFormula = std::make_shared<storm::properties::prctl::Ap<double>>("observeIGreater1");
+	eventuallyFormula = std::make_shared<storm::properties::prctl::Eventually<double>>(apFormula);
 
     LOG4CPLUS_WARN(logger, "Model Checking P=? [F observeIGreater1] on crowds/crowds20_5...");
-	result = probFormula->check(mc);
+    result = eventuallyFormula->check(mc, false);
     LOG4CPLUS_WARN(logger, "Done.");
     
 	ASSERT_LT(std::abs(result[0] - 0.05073232193), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
-	delete probFormula;
-
-	apFormula = new storm::property::prctl::Ap<double>("observeOnlyTrueSender");
-	eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
-	probFormula = new storm::property::prctl::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
+	apFormula = std::make_shared<storm::properties::prctl::Ap<double>>("observeOnlyTrueSender");
+	eventuallyFormula = std::make_shared<storm::properties::prctl::Eventually<double>>(apFormula);
 
     LOG4CPLUS_WARN(logger, "Model Checking P=? [F observeOnlyTrueSender] on crowds/crowds20_5...");
-	result = probFormula->check(mc);
+    result = eventuallyFormula->check(mc, false);
     LOG4CPLUS_WARN(logger, "Done.");
 
 	ASSERT_LT(std::abs(result[0] - 0.22742171078), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
-
-	delete probFormula;
 }
 
 
@@ -67,47 +58,37 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, SynchronousLeader) {
 
 	ASSERT_EQ(abstractModel->getType(), storm::models::DTMC);
 
-
 	std::shared_ptr<storm::models::Dtmc<double>> dtmc = abstractModel->as<storm::models::Dtmc<double>>();
 
-	ASSERT_EQ(dtmc->getNumberOfStates(), 1312334ull);
-	ASSERT_EQ(dtmc->getNumberOfTransitions(), 1574477ull);
+	ASSERT_EQ(1312334ull, dtmc->getNumberOfStates());
+	ASSERT_EQ(1574477ull, dtmc->getNumberOfTransitions());
 
 	storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double> mc(*dtmc, new storm::solver::GmmxxLinearEquationSolver<double>());
 
-	storm::property::prctl::Ap<double>* apFormula = new storm::property::prctl::Ap<double>("elected");
-	storm::property::prctl::Eventually<double>* eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
-	storm::property::prctl::ProbabilisticNoBoundOperator<double>* probFormula = new storm::property::prctl::ProbabilisticNoBoundOperator<double>(eventuallyFormula);
+	auto apFormula = std::make_shared<storm::properties::prctl::Ap<double>>("elected");
+	auto eventuallyFormula = std::make_shared<storm::properties::prctl::Eventually<double>>(apFormula);
 
     LOG4CPLUS_WARN(logger, "Model Checking P=? [F elected] on synchronous_leader/leader6_8...");
-	std::vector<double> result = probFormula->check(mc);
+	std::vector<double> result = eventuallyFormula->check(mc, false);
     LOG4CPLUS_WARN(logger, "Done.");
 
 	ASSERT_LT(std::abs(result[0] - 1.0), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
-	delete probFormula;
-
-	apFormula = new storm::property::prctl::Ap<double>("elected");
-	storm::property::prctl::BoundedUntil<double>* boundedUntilFormula = new storm::property::prctl::BoundedUntil<double>(new storm::property::prctl::Ap<double>("true"), apFormula, 20);
-	probFormula = new storm::property::prctl::ProbabilisticNoBoundOperator<double>(boundedUntilFormula);
+	apFormula = std::make_shared<storm::properties::prctl::Ap<double>>("elected");
+	auto boundedUntilFormula = std::make_shared<storm::properties::prctl::BoundedUntil<double>>(std::make_shared<storm::properties::prctl::Ap<double>>("true"), apFormula, 20);
 
     LOG4CPLUS_WARN(logger, "Model Checking P=? [F<=20 elected] on synchronous_leader/leader6_8...");
-	result = probFormula->check(mc);
+    result = boundedUntilFormula->check(mc, false);
     LOG4CPLUS_WARN(logger, "Done.");
 
 	ASSERT_LT(std::abs(result[0] - 0.9993949793), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 
-	delete probFormula;
-
-	apFormula = new storm::property::prctl::Ap<double>("elected");
-	storm::property::prctl::ReachabilityReward<double>* reachabilityRewardFormula = new storm::property::prctl::ReachabilityReward<double>(apFormula);
-	storm::property::prctl::RewardNoBoundOperator<double>* rewardFormula = new storm::property::prctl::RewardNoBoundOperator<double>(reachabilityRewardFormula);
+	apFormula = std::make_shared<storm::properties::prctl::Ap<double>>("elected");
+	auto reachabilityRewardFormula = std::make_shared<storm::properties::prctl::ReachabilityReward<double>>(apFormula);
 
     LOG4CPLUS_WARN(logger, "Model Checking R=? [F elected] on synchronous_leader/leader6_8...");
-	result = rewardFormula->check(mc);
+	result = reachabilityRewardFormula->check(mc, false);
     LOG4CPLUS_WARN(logger, "Done.");
 
 	ASSERT_LT(std::abs(result[0] - 1.025106273), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
-
-	delete rewardFormula;
 }

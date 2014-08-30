@@ -10,6 +10,13 @@
 #include "src/utility/OsDetection.h"
 #include "src/utility/constants.h"
 
+// The action class headers.
+#include "src/properties/actions/AbstractAction.h"
+#include "src/properties/actions/BoundAction.h"
+#include "src/properties/actions/InvertAction.h"
+#include "src/properties/actions/RangeAction.h"
+#include "src/properties/actions/SortAction.h"
+
 // If the parser fails due to ill-formed data, this exception is thrown.
 #include "src/exceptions/WrongFormatException.h"
 
@@ -29,11 +36,12 @@
 
 
 // Some typedefs and namespace definitions to reduce code size.
+#define MAKE(Type, ...) phoenix::construct<std::shared_ptr<Type>>(phoenix::new_<Type>(__VA_ARGS__))
 typedef std::string::const_iterator BaseIteratorType;
 typedef boost::spirit::classic::position_iterator2<BaseIteratorType> PositionIteratorType;
 namespace qi = boost::spirit::qi;
 namespace phoenix = boost::phoenix;
-
+namespace ltl = storm::properties::ltl;
 
 
 namespace storm {
@@ -41,94 +49,141 @@ namespace storm {
 namespace parser {
 
 template<typename Iterator, typename Skipper>
-struct LtlGrammar : qi::grammar<Iterator, storm::property::ltl::AbstractLtlFormula<double>*(), Skipper > {
+struct LtlParser::LtlGrammar : qi::grammar<Iterator, std::shared_ptr<storm::properties::ltl::LtlFilter<double>>(), Skipper > {
 	LtlGrammar() : LtlGrammar::base_type(start) {
 		//This block contains helper rules that may be used several times
 		freeIdentifierName = qi::lexeme[qi::alpha >> *(qi::alnum | qi::char_('_'))];
-		//Comment: Empty line or line starting with "//"
+		comparisonType = (
+				(qi::lit(">="))[qi::_val = storm::properties::GREATER_EQUAL] |
+				(qi::lit(">"))[qi::_val = storm::properties::GREATER] |
+				(qi::lit("<="))[qi::_val = storm::properties::LESS_EQUAL] |
+				(qi::lit("<"))[qi::_val = storm::properties::LESS]);
+		sortingCategory = (
+				(qi::lit("index"))[qi::_val = storm::properties::action::SortAction<double>::INDEX] |
+				(qi::lit("value"))[qi::_val = storm::properties::action::SortAction<double>::VALUE]
+				);
+		// Comment: Empty line or line starting with "//"
 		comment = (qi::lit("//") >> *(qi::char_))[qi::_val = nullptr];
 
 		freeIdentifierName = qi::lexeme[+(qi::alpha | qi::char_('_'))];
 
-		//This block defines rules for parsing state formulas
-		ltlFormula %= orFormula;
-		ltlFormula.name("LTL formula");
+		// This block defines rules for parsing state formulas
+		formula %= orFormula;
+		formula.name("LTL formula");
 		orFormula = andFormula[qi::_val = qi::_1] > *(qi::lit("|") > andFormula)[qi::_val =
-				phoenix::new_<storm::property::ltl::Or<double>>(qi::_val, qi::_1)];
-		orFormula.name("LTL formula");
+				MAKE(ltl::Or<double>, qi::_val, qi::_1)];
+		orFormula.name("Or");
 		andFormula = untilFormula[qi::_val = qi::_1] > *(qi::lit("&") > untilFormula)[qi::_val =
-				phoenix::new_<storm::property::ltl::And<double>>(qi::_val, qi::_1)];
-		andFormula.name("LTL formula");
+				MAKE(ltl::And<double>, qi::_val, qi::_1)];
+		andFormula.name("And");
 		untilFormula = notFormula[qi::_val = qi::_1] >
-				*((qi::lit("U") >> qi::lit("<=") > qi::int_ > notFormula)[qi::_val = phoenix::new_<storm::property::ltl::BoundedUntil<double>>(qi::_val, qi::_2, qi::_1)] |
-				  (qi::lit("U") > notFormula)[qi::_val = phoenix::new_<storm::property::ltl::Until<double>>(qi::_val, qi::_1)]);
+				*((qi::lit("U") >> qi::lit("<=") > qi::int_ > notFormula)[qi::_val = MAKE(ltl::BoundedUntil<double>, qi::_val, qi::_2, qi::_1)] |
+				  (qi::lit("U") > notFormula)[qi::_val = MAKE(ltl::Until<double>, qi::_val, qi::_1)]);
+		until.name("Until");
 		notFormula = atomicLtlFormula[qi::_val = qi::_1] | (qi::lit("!") > atomicLtlFormula)[qi::_val =
-				phoenix::new_<storm::property::ltl::Not<double>>(qi::_1)];
-		notFormula.name("LTL formula");
+				MAKE(ltl::Not<double>, qi::_1)];
+		notFormula.name("Not");
 
 		//This block defines rules for "atomic" state formulas
 		//(Propositions, probabilistic/reward formulas, and state formulas in brackets)
-		atomicLtlFormula %= pathFormula | atomicProposition | qi::lit("(") >> ltlFormula >> qi::lit(")");
-		atomicLtlFormula.name("LTL formula");
+		atomicLtlFormula %= pathFormula | atomicProposition | qi::lit("(") >> formula >> qi::lit(")")| qi::lit("[") >> formula >> qi::lit("]");
+		atomicLtlFormula.name("Atomic LTL formula");
 		atomicProposition = (freeIdentifierName)[qi::_val =
-				phoenix::new_<storm::property::ltl::Ap<double>>(qi::_1)];
-		atomicProposition.name("LTL formula");
+				MAKE(ltl::Ap<double>, qi::_1)];
+		atomicProposition.name("Atomic Proposition");
 
 		//This block defines rules for parsing probabilistic path formulas
 		pathFormula = (boundedEventually | eventually | globally | next);
-		pathFormula.name("LTL formula");
-		boundedEventually = (qi::lit("F") >> qi::lit("<=") > qi::int_ > ltlFormula)[qi::_val =
-				phoenix::new_<storm::property::ltl::BoundedEventually<double>>(qi::_2, qi::_1)];
-		boundedEventually.name("LTL formula");
-		eventually = (qi::lit("F") >> ltlFormula)[qi::_val =
-				phoenix::new_<storm::property::ltl::Eventually<double> >(qi::_1)];
-		eventually.name("LTL formula");
-		globally = (qi::lit("G") >> ltlFormula)[qi::_val =
-				phoenix::new_<storm::property::ltl::Globally<double> >(qi::_1)];
-		globally.name("LTL formula");
-		next = (qi::lit("X") >> ltlFormula)[qi::_val =
-				phoenix::new_<storm::property::ltl::Next<double> >(qi::_1)];
-		next.name("LTL formula");
+		pathFormula.name("Path Formula");
+		boundedEventually = (qi::lit("F") >> qi::lit("<=") > qi::int_ > formula)[qi::_val =
+				MAKE(ltl::BoundedEventually<double>, qi::_2, qi::_1)];
+		boundedEventually.name("Bounded Eventually");
+		eventually = (qi::lit("F") >> formula)[qi::_val =
+				MAKE(ltl::Eventually<double>, qi::_1)];
+		eventually.name("Eventually");
+		globally = (qi::lit("G") >> formula)[qi::_val =
+				MAKE(ltl::Globally<double>, qi::_1)];
+		globally.name("Globally");
+		next = (qi::lit("X") >> formula)[qi::_val =
+				MAKE(ltl::Next<double>, qi::_1)];
+		next.name("Next");
 
-		start = (((ltlFormula) > (comment | qi::eps))[qi::_val = qi::_1] |
-				 comment
-				 ) > qi::eoi;
-		start.name("LTL formula");
+		// This block defines rules for parsing filter actions.
+		boundAction = (qi::lit("bound") > qi::lit("(") >> comparisonType >> qi::lit(",") >> qi::double_ >> qi::lit(")"))[qi::_val =
+						MAKE(storm::properties::action::BoundAction<double> ,qi::_1, qi::_2)];
+		boundAction.name("bound action");
+
+		invertAction = qi::lit("invert")[qi::_val = MAKE(storm::properties::action::InvertAction<double>, )];
+		invertAction.name("invert action");
+
+		rangeAction = (
+				(qi::lit("range") >> qi::lit("(") >> qi::uint_ >> qi::lit(",") > qi::uint_ >> qi::lit(")"))[qi::_val =
+						MAKE(storm::properties::action::RangeAction<double>, qi::_1, qi::_2)] |
+				(qi::lit("range") >> qi::lit("(") >> qi::uint_ >> qi::lit(")"))[qi::_val =
+						MAKE(storm::properties::action::RangeAction<double>, qi::_1, qi::_1 + 1)]
+				);
+		rangeAction.name("range action");
+
+		sortAction = (
+				(qi::lit("sort") >> qi::lit("(") >> sortingCategory >> qi::lit(")"))[qi::_val =
+						MAKE(storm::properties::action::SortAction<double>, qi::_1)] |
+				(qi::lit("sort") >> qi::lit("(") >> sortingCategory >> qi::lit(", ") >> (qi::lit("ascending") | qi::lit("asc")) > qi::lit(")"))[qi::_val =
+						MAKE(storm::properties::action::SortAction<double>, qi::_1, true)] |
+				(qi::lit("sort") >> qi::lit("(") >> sortingCategory >> qi::lit(", ") >> (qi::lit("descending") | qi::lit("desc")) > qi::lit(")"))[qi::_val =
+						MAKE(storm::properties::action::SortAction<double>, qi::_1, false)]
+				);
+		sortAction.name("sort action");
+
+		abstractAction = (qi::lit(";") | qi::eps) >> (boundAction | invertAction | rangeAction | sortAction) >> (qi::lit(";") | qi::eps);
+		abstractAction.name("filter action");
+
+		filter = (qi::lit("filter") >> qi::lit("[") >> +abstractAction >> qi::lit("]") > qi::lit("(") >> formula >> qi::lit(")"))[qi::_val =
+					MAKE(ltl::LtlFilter<double>, qi::_2, qi::_1)] |
+				 (qi::lit("filter") >> qi::lit("[") >> qi::lit("max") > +abstractAction >> qi::lit("]") >> qi::lit("(") >> formula >> qi::lit(")"))[qi::_val =
+					MAKE(ltl::LtlFilter<double>, qi::_2, qi::_1, storm::properties::MAXIMIZE)] |
+				 (qi::lit("filter") >> qi::lit("[") >> qi::lit("min") > +abstractAction >> qi::lit("]") >> qi::lit("(") >> formula >> qi::lit(")"))[qi::_val =
+					MAKE(ltl::LtlFilter<double>, qi::_2, qi::_1, storm::properties::MINIMIZE)] |
+				 (formula)[qi::_val =
+					MAKE(ltl::LtlFilter<double>, qi::_1)];
+		filter.name("LTL formula filter");
+
+		start = (((filter) > (comment | qi::eps))[qi::_val = qi::_1] | comment[qi::_val = MAKE(ltl::LtlFilter<double>, nullptr)] ) > qi::eoi;
+		start.name("start");
 	}
 
-	qi::rule<Iterator, storm::property::ltl::AbstractLtlFormula<double>*(), Skipper> start;
-	qi::rule<Iterator, storm::property::ltl::AbstractLtlFormula<double>*(), Skipper> comment;
+	qi::rule<Iterator, std::shared_ptr<storm::properties::ltl::LtlFilter<double>>(), Skipper> start;
+	qi::rule<Iterator, std::shared_ptr<storm::properties::ltl::LtlFilter<double>>(), Skipper> filter;
 
-	qi::rule<Iterator, storm::property::ltl::AbstractLtlFormula<double>*(), Skipper> ltlFormula;
-	qi::rule<Iterator, storm::property::ltl::AbstractLtlFormula<double>*(), Skipper> atomicLtlFormula;
+	qi::rule<Iterator, std::shared_ptr<storm::properties::action::AbstractAction<double>>(), Skipper> abstractAction;
+	qi::rule<Iterator, std::shared_ptr<storm::properties::action::BoundAction<double>>(), Skipper> boundAction;
+	qi::rule<Iterator, std::shared_ptr<storm::properties::action::InvertAction<double>>(), Skipper> invertAction;
+	qi::rule<Iterator, std::shared_ptr<storm::properties::action::RangeAction<double>>(), Skipper> rangeAction;
+	qi::rule<Iterator, std::shared_ptr<storm::properties::action::SortAction<double>>(), Skipper> sortAction;
 
-	qi::rule<Iterator, storm::property::ltl::AbstractLtlFormula<double>*(), Skipper> andFormula;
-	qi::rule<Iterator, storm::property::ltl::AbstractLtlFormula<double>*(), Skipper> untilFormula;
-	qi::rule<Iterator, storm::property::ltl::AbstractLtlFormula<double>*(), Skipper> atomicProposition;
-	qi::rule<Iterator, storm::property::ltl::AbstractLtlFormula<double>*(), Skipper> orFormula;
-	qi::rule<Iterator, storm::property::ltl::AbstractLtlFormula<double>*(), Skipper> notFormula;
-	//qi::rule<Iterator, storm::property::ltl::ProbabilisticBoundOperator<double>*(), Skipper> probabilisticBoundOperator;
+	qi::rule<Iterator, std::shared_ptr<storm::properties::ltl::AbstractLtlFormula<double>>(), Skipper> comment;
+	qi::rule<Iterator, std::shared_ptr<storm::properties::ltl::AbstractLtlFormula<double>>(), Skipper> formula;
+	qi::rule<Iterator, std::shared_ptr<storm::properties::ltl::AbstractLtlFormula<double>>(), Skipper> atomicLtlFormula;
 
-	//qi::rule<Iterator, storm::property::ltl::AbstractNoBoundOperator<double>*(), Skipper> noBoundOperator;
-	//qi::rule<Iterator, storm::property::ltl::AbstractNoBoundOperator<double>*(), Skipper> probabilisticNoBoundOperator;
+	qi::rule<Iterator, std::shared_ptr<storm::properties::ltl::AbstractLtlFormula<double>>(), Skipper> andFormula;
+	qi::rule<Iterator, std::shared_ptr<storm::properties::ltl::AbstractLtlFormula<double>>(), Skipper> untilFormula;
+	qi::rule<Iterator, std::shared_ptr<storm::properties::ltl::AbstractLtlFormula<double>>(), Skipper> atomicProposition;
+	qi::rule<Iterator, std::shared_ptr<storm::properties::ltl::AbstractLtlFormula<double>>(), Skipper> orFormula;
+	qi::rule<Iterator, std::shared_ptr<storm::properties::ltl::AbstractLtlFormula<double>>(), Skipper> notFormula;
 
-	qi::rule<Iterator, storm::property::ltl::AbstractLtlFormula<double>*(), Skipper> pathFormula;
-	qi::rule<Iterator, storm::property::ltl::BoundedEventually<double>*(), Skipper> boundedEventually;
-	qi::rule<Iterator, storm::property::ltl::Eventually<double>*(), Skipper> eventually;
-	qi::rule<Iterator, storm::property::ltl::Globally<double>*(), Skipper> globally;
-	qi::rule<Iterator, storm::property::ltl::Next<double>*(), Skipper> next;
-	qi::rule<Iterator, storm::property::ltl::AbstractLtlFormula<double>*(), qi::locals< std::shared_ptr<storm::property::ltl::AbstractLtlFormula<double>>>, Skipper> boundedUntil;
-	qi::rule<Iterator, storm::property::ltl::AbstractLtlFormula<double>*(), qi::locals< std::shared_ptr<storm::property::ltl::AbstractLtlFormula<double>>>, Skipper> until;
+	qi::rule<Iterator, std::shared_ptr<storm::properties::ltl::AbstractLtlFormula<double>>(), Skipper> pathFormula;
+	qi::rule<Iterator, std::shared_ptr<storm::properties::ltl::BoundedEventually<double>>(), Skipper> boundedEventually;
+	qi::rule<Iterator, std::shared_ptr<storm::properties::ltl::Eventually<double>>(), Skipper> eventually;
+	qi::rule<Iterator, std::shared_ptr<storm::properties::ltl::Globally<double>>(), Skipper> globally;
+	qi::rule<Iterator, std::shared_ptr<storm::properties::ltl::Next<double>>(), Skipper> next;
+	qi::rule<Iterator, std::shared_ptr<storm::properties::ltl::AbstractLtlFormula<double>>(), qi::locals< std::shared_ptr<storm::properties::ltl::AbstractLtlFormula<double>>>, Skipper> boundedUntil;
+	qi::rule<Iterator, std::shared_ptr<storm::properties::ltl::AbstractLtlFormula<double>>(), qi::locals< std::shared_ptr<storm::properties::ltl::AbstractLtlFormula<double>>>, Skipper> until;
 
 	qi::rule<Iterator, std::string(), Skipper> freeIdentifierName;
-
+	qi::rule<Iterator, storm::properties::ComparisonType(), Skipper> comparisonType;
+	qi::rule<Iterator, storm::properties::action::SortAction<double>::SortingCategory(), Skipper> sortingCategory;
 };
 
-} //namespace storm
-} //namespace parser
-
-
-storm::property::ltl::AbstractLtlFormula<double>* storm::parser::LtlParser(std::string formulaString) {
+std::shared_ptr<storm::properties::ltl::LtlFilter<double>> LtlParser::parseLtlFormula(std::string formulaString) {
 	// Prepare iterators to input.
 	BaseIteratorType stringIteratorBegin = formulaString.begin();
 	BaseIteratorType stringIteratorEnd = formulaString.end();
@@ -137,7 +192,7 @@ storm::property::ltl::AbstractLtlFormula<double>* storm::parser::LtlParser(std::
 
 
 	// Prepare resulting intermediate representation of input.
-	storm::property::ltl::AbstractLtlFormula<double>* result_pointer = nullptr;
+	std::shared_ptr<storm::properties::ltl::LtlFilter<double>> result_pointer(nullptr);
 
 	LtlGrammar<PositionIteratorType,  BOOST_TYPEOF(boost::spirit::ascii::space)> grammar;
 
@@ -174,10 +229,12 @@ storm::property::ltl::AbstractLtlFormula<double>* storm::parser::LtlParser(std::
 	// The syntax can be so wrong that no rule can be matched at all
 	// In that case, no expectation failure is thrown, but the parser just returns nullptr
 	// Then, of course the result is not usable, hence we throw a WrongFormatException, too.
-	if (result_pointer == nullptr) {
+	if (!result_pointer) {
 		throw storm::exceptions::WrongFormatException() << "Syntax error in formula";
 	}
 
 	return result_pointer;
 }
 
+} //namespace parser
+} //namespace storm

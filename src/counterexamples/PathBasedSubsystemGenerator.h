@@ -274,138 +274,6 @@ public:
 
 	/*!
 	 *
-	 *//*
-	template <typename T>
-	static void doBackwardsSearch(storm::storage::SparseMatrix<T> const& transMat, storm::storage::BitVector& initStates, storm::storage::BitVector& subSysStates, storm::storage::BitVector& terminalStates, storm::storage::BitVector& allowedStates, std::vector<T>& probabilities, std::vector<uint_fast64_t>& shortestPath, T& probability) {
-		std::multiset<std::pair<uint_fast64_t, T>, CompareStates<T> > activeSet;
-
-		// resize and init distances
-		const std::pair<uint_fast64_t, T> initDistances(0, (T) -1);
-		std::vector<std::pair<uint_fast64_t, T>> distances(transMat.getColumnCount(), initDistances);
-
-		//since the transition matrix only gives a means to iterate over successors and not over predecessors and there is no Transpose for the matrix
-		//GraphTransitions is used
-		storm::models::GraphTransitions<T> backTrans(transMat, false);
-
-		//First store all allowed predecessors of target states that are not in the subsystem
-		for(storm::storage::BitVector::constIndexIterator target = terminalStates.begin(); target != terminalStates.end(); ++target) {
-
-			// if there is a terminal state that is an initial state then prob == 1 and return
-			if(initStates.get(*target)){
-				distances[*target].getColumn() = *target;
-				distances[*target].getValue() = (T) 1;
-				return;
-			}
-
-			//iterate over predecessors
-			for(auto iter = backTrans.beginStateSuccessorsIterator(*target); iter != backTrans.endStateSuccessorsIterator(*target); iter++) {
-				//only use if allowed and not in subsys and not terminal
-				if(allowedStates.get(*iter) && !subSysStates.get(*iter) && !terminalStates.get(*iter)) {
-					//new state?
-					if(distances[*iter].getValue() == (T) -1) {
-						// save as discovered and push into active set
-						distances[*iter].getColumn() = *target;												//successor
-						distances[*iter].getValue() = transMat.getValue(*iter, *target);					//prob of shortest path
-
-						activeSet.insert(std::pair<uint_fast64_t, T>(*iter, probabilities[*iter]));		//prob of reaching some terminal state from pred.
-					}
-					else {
-						// state was already discovered
-						// is this the better transition?
-						if(distances[*iter].getValue() > transMat.getValue(*iter, *target)) {
-							distances[*iter].getColumn() = *target;
-							distances[*iter].getValue() = transMat.getValue(*iter, *target);
-						}
-					}
-				}
-			}
-		}
-
-		//Now store all allowed predecessors of subsystem states that are not subsystem states themselves
-		for(storm::storage::BitVector::constIndexIterator sysState = subSysStates.begin(); sysState != subSysStates.end(); ++sysState) {
-			//iterate over predecessors
-			for(auto iter = backTrans.beginStateSuccessorsIterator(*sysState); iter != backTrans.endStateSuccessorsIterator(*sysState); iter++) {
-				//only use if allowed and not in subsys and not terminal
-				if(allowedStates.get(*iter) && !subSysStates.get(*iter) && !terminalStates.get(*iter)) {
-					//new state?
-					if(distances[*iter].getValue() == (T) -1) {
-						// save as discovered and push into active set
-						distances[*iter].getColumn() = *sysState;												//successor
-						distances[*iter].getValue() = transMat.getValue(*iter, *sysState);					//prob of shortest path
-
-						activeSet.insert(std::pair<uint_fast64_t, T>(*iter, probabilities[*iter]));		//prob of reaching some terminal state from pred.
-					}
-					else {
-						// state was already discovered
-						// is this the better transition?
-						if(distances[*iter].getValue() > transMat.getValue(*iter, *sysState)) {
-							distances[*iter].getColumn() = *sysState;
-							distances[*iter].getValue() = transMat.getValue(*iter, *sysState);
-						}
-					}
-				}
-			}
-		}
-
-		LOG4CPLUS_DEBUG(logger, "Initialized.");
-
-		// Do the backwards search
-		std::pair<uint_fast64_t, T> state;
-		uint_fast64_t activeState;
-		while(!activeSet.empty()) {
-			// copy here since using a reference leads to segfault
-			state = *(--activeSet.end());
-			activeState = state.getColumn();
-			activeSet.erase(--activeSet.end());
-
-			//stop on the first subsys/init state
-			if(initStates.get(activeState) || subSysStates.get(activeState)) break;
-
-			// If this is a subSys or terminal state, do not consider its incoming transitions, since all relevant ones have already been considered
-			if(!terminalStates.get(activeState) && !subSysStates.get(activeState)) {
-				//iterate over predecessors
-				for(auto iter = backTrans.beginStateSuccessorsIterator(activeState); iter != backTrans.endStateSuccessorsIterator(activeState); iter++) {
-					//only if transition is not "virtual" and no selfloop
-					if(*iter != activeState && transMat.getValue(*iter, activeState) != (T) 0) {
-						//new state?
-						if(distances[*iter].getValue() == (T) -1) {
-							// save as discovered and push into active set
-							distances[*iter].getColumn() = activeState;
-							distances[*iter].getValue() = transMat.getValue(*iter, activeState) * distances[activeState].getValue();
-
-							activeSet.insert(std::pair<uint_fast64_t, T>(*iter, probabilities[*iter]));
-						}
-						else {
-							// state was already discovered
-							// is this the better transition?
-							if(distances[*iter].getValue() < transMat.getValue(*iter, activeState) * distances[activeState].getValue()) {
-								distances[*iter].getColumn() = activeState;
-								distances[*iter].getValue() = transMat.getValue(*iter, activeState) * distances[activeState].getValue();
-							}
-						}
-					}
-				}
-			}
-		}
-
-		//get path probability
-		probability = distances[activeState].getValue();
-		if(probability == (T) -1) probability = 1;
-
-		// iterate over the successors until reaching the end of the finite path
-		shortestPath.push_back(activeState);
-		activeState = distances[activeState].getColumn();
-		while(!terminalStates.get(activeState) && !subSysStates.get(activeState)) {
-			shortestPath.push_back(activeState);
-			activeState = distances[activeState].getColumn();
-		}
-		shortestPath.push_back(activeState);
-	}
-
-	*/
-
-	/*!
-	 *
 	 */
 	static void findShortestPath(storm::storage::SparseMatrix<T> const& transMat, storm::storage::BitVector& subSysStates, storm::storage::BitVector& terminalStates, storm::storage::BitVector& allowedStates, std::vector<std::pair<uint_fast64_t, T>>& itDistances, std::vector<uint_fast64_t>& shortestPath, T& probability) {
 
@@ -507,7 +375,7 @@ public:
 	/*!
 	 *
 	 */
-	static storm::models::Dtmc<T> computeCriticalSubsystem(storm::models::Dtmc<T> & model, storm::property::prctl::AbstractStateFormula<T> const& stateFormula) {
+	static storm::models::Dtmc<T> computeCriticalSubsystem(storm::models::Dtmc<T> & model, std::shared_ptr<storm::properties::prctl::AbstractStateFormula<T>> const & stateFormula) {
 
 		//-------------------------------------------------------------
 		// 1. Strip and handle formulas
@@ -525,27 +393,22 @@ public:
 		// init bit vector to contain the subsystem
 		storm::storage::BitVector subSys(model.getNumberOfStates());
 
-		storm::property::prctl::AbstractPathFormula<T> const* pathFormulaPtr;
-		T bound = 0;
-
 		// Strip bound operator
-		storm::property::prctl::ProbabilisticBoundOperator<T> const* boundOperator = dynamic_cast<storm::property::prctl::ProbabilisticBoundOperator<T> const*>(&stateFormula);
+		std::shared_ptr<storm::properties::prctl::ProbabilisticBoundOperator<T>> boundOperator = std::dynamic_pointer_cast<storm::properties::prctl::ProbabilisticBoundOperator<T>>(stateFormula);
 
 		if(boundOperator == nullptr){
 			LOG4CPLUS_ERROR(logger, "No path bound operator at formula root.");
 			return model.getSubDtmc(subSys);
 		}
-		bound = boundOperator->getBound();
-
-		storm::property::prctl::AbstractPathFormula<T> const& abstractPathFormula = boundOperator->getPathFormula();
-		pathFormulaPtr = &abstractPathFormula;
+		T bound = boundOperator->getBound();
+		std::shared_ptr<storm::properties::prctl::AbstractPathFormula<T>> pathFormula = boundOperator->getChild();
 
 		// get "init" labeled states
 		storm::storage::BitVector initStates = model.getLabeledStates("init");
 
 		//get real prob for formula
 		logger.getAppender("mainFileAppender")->setThreshold(log4cplus::WARN_LOG_LEVEL);
-		std::vector<T> trueProbs = pathFormulaPtr->check(modelCheck, false);
+		std::vector<T> trueProbs = pathFormula->check(modelCheck, false);
 		logger.getAppender("mainFileAppender")->setThreshold(log4cplus::INFO_LOG_LEVEL);
 
 		T trueProb = 0;
@@ -559,22 +422,22 @@ public:
 		storm::storage::BitVector allowedStates;
 		storm::storage::BitVector targetStates;
 
-		storm::property::prctl::Eventually<T> const* eventually = dynamic_cast<storm::property::prctl::Eventually<T> const*>(pathFormulaPtr);
-		storm::property::prctl::Globally<T> const* globally = dynamic_cast<storm::property::prctl::Globally<T> const*>(pathFormulaPtr);
-		storm::property::prctl::Until<T> const* until = dynamic_cast<storm::property::prctl::Until<T> const*>(pathFormulaPtr);
-		if(eventually != nullptr) {
-			targetStates = eventually->getChild().check(modelCheck);
+		std::shared_ptr<storm::properties::prctl::Eventually<T>> eventually = std::dynamic_pointer_cast<storm::properties::prctl::Eventually<T>>(pathFormula);
+		std::shared_ptr<storm::properties::prctl::Globally<T>> globally = std::dynamic_pointer_cast<storm::properties::prctl::Globally<T>>(pathFormula);
+		std::shared_ptr<storm::properties::prctl::Until<T>> until = std::dynamic_pointer_cast<storm::properties::prctl::Until<T>>(pathFormula);
+		if(eventually.get() != nullptr) {
+			targetStates = eventually->getChild()->check(modelCheck);
 			allowedStates = storm::storage::BitVector(targetStates.size(), true);
 		}
-		else if(globally != nullptr){
+		else if(globally.get() != nullptr){
 			// eventually reaching a state without property visiting only states with property
-			allowedStates = globally->getChild().check(modelCheck);
+			allowedStates = globally->getChild()->check(modelCheck);
 			targetStates = storm::storage::BitVector(allowedStates);
 			targetStates.complement();
 		}
-		else if(until != nullptr) {
-			allowedStates = until->getLeft().check(modelCheck);
-			targetStates = until->getRight().check(modelCheck);
+		else if(until.get() != nullptr) {
+			allowedStates = until->getLeft()->check(modelCheck);
+			targetStates = until->getRight()->check(modelCheck);
 		}
 		else {
 			LOG4CPLUS_ERROR(logger, "Strange path formula. Can't decipher.");
@@ -686,8 +549,7 @@ public:
 				// Are we critical?
 				if(subSysProb >= bound){
 					break;
-				}
-				else if (stateEstimate > 100000){
+				} else if (stateEstimate > 100000){
 					precision = static_cast<uint_fast64_t>((stateEstimate / 1000.0) - ((stateEstimate / 1000.0) - minPrec) * (subSysProb/bound));
 				}
 			}

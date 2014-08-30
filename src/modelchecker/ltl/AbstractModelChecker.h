@@ -9,7 +9,7 @@
 #define STORM_MODELCHECKER_LTL_ABSTRACTMODELCHECKER_H_
 
 #include "src/exceptions/InvalidPropertyException.h"
-#include "src/formula/Ltl.h"
+#include "src/properties/Ltl.h"
 #include "src/storage/BitVector.h"
 #include "src/models/AbstractModel.h"
 
@@ -36,16 +36,16 @@ template<class Type>
 class AbstractModelChecker :
 	// A list of interfaces the model checker supports. Typically, for each of the interfaces, a check method needs to
 	// be implemented that performs the corresponding check.
-	public virtual storm::property::ltl::IApModelChecker<Type>,
-	public virtual storm::property::ltl::IAndModelChecker<Type>,
-	public virtual storm::property::ltl::IOrModelChecker<Type>,
-	public virtual storm::property::ltl::INotModelChecker<Type>,
-	public virtual storm::property::ltl::IUntilModelChecker<Type>,
-	public virtual storm::property::ltl::IEventuallyModelChecker<Type>,
-	public virtual storm::property::ltl::IGloballyModelChecker<Type>,
-	public virtual storm::property::ltl::INextModelChecker<Type>,
-	public virtual storm::property::ltl::IBoundedUntilModelChecker<Type>,
-	public virtual storm::property::ltl::IBoundedEventuallyModelChecker<Type> {
+	public virtual storm::properties::ltl::IApModelChecker<Type>,
+	public virtual storm::properties::ltl::IAndModelChecker<Type>,
+	public virtual storm::properties::ltl::IOrModelChecker<Type>,
+	public virtual storm::properties::ltl::INotModelChecker<Type>,
+	public virtual storm::properties::ltl::IUntilModelChecker<Type>,
+	public virtual storm::properties::ltl::IEventuallyModelChecker<Type>,
+	public virtual storm::properties::ltl::IGloballyModelChecker<Type>,
+	public virtual storm::properties::ltl::INextModelChecker<Type>,
+	public virtual storm::properties::ltl::IBoundedUntilModelChecker<Type>,
+	public virtual storm::properties::ltl::IBoundedEventuallyModelChecker<Type> {
 	
 public:
 	/*!
@@ -105,38 +105,12 @@ public:
 	}
 
 	/*!
-	 * Checks the given state formula on the model and prints the result (true/false) for all initial states, i.e.
-	 * states that carry the atomic proposition "init".
-	 *
-	 * @param stateFormula The formula to be checked.
-	 */
-	void check(storm::property::ltl::AbstractLtlFormula<Type> const& ltlFormula) const {
-		std::cout << std::endl;
-		LOG4CPLUS_INFO(logger, "Model checking formula\t" << ltlFormula.toString());
-		std::cout << "Model checking formula:\t" << ltlFormula.toString() << std::endl;
-		storm::storage::BitVector result;
-		try {
-			result = ltlFormula.check(*this);
-			LOG4CPLUS_INFO(logger, "Result for initial states:");
-			std::cout << "Result for initial states:" << std::endl;
-			for (auto initialState : model.getInitialStates()) {
-				LOG4CPLUS_INFO(logger, "\t" << initialState << ": " << (result.get(initialState) ? "satisfied" : "not satisfied"));
-				std::cout << "\t" << initialState << ": " << result.get(initialState) << std::endl;
-			}
-		} catch (std::exception& e) {
-			std::cout << "Error during computation: " << e.what() << "Skipping property." << std::endl;
-			LOG4CPLUS_ERROR(logger, "Error during computation: " << e.what() << "Skipping property.");
-		}
-		std::cout << std::endl << "-------------------------------------------" << std::endl;
-	}
-
-	/*!
 	 * Checks the given formula consisting of a single atomic proposition.
 	 *
 	 * @param formula The formula to be checked.
 	 * @returns The set of states satisfying the formula represented by a bit vector.
 	 */
-    virtual std::vector<Type> checkAp(storm::property::ltl::Ap<Type> const& formula) const = 0;
+    virtual std::vector<Type> checkAp(storm::properties::ltl::Ap<Type> const& formula) const = 0;
         
 	/*!
 	 * Checks the given formula that is a logical "and" of two formulae.
@@ -144,7 +118,7 @@ public:
 	 * @param formula The formula to be checked.
 	 * @returns The set of states satisfying the formula represented by a bit vector.
 	 */
-    virtual std::vector<Type> checkAnd(storm::property::ltl::And<Type> const& formula) const = 0;
+    virtual std::vector<Type> checkAnd(storm::properties::ltl::And<Type> const& formula) const = 0;
 
 	/*!
 	 * Checks the given formula that is a logical "or" of two formulae.
@@ -152,7 +126,7 @@ public:
 	 * @param formula The formula to check.
 	 * @returns The set of states satisfying the formula represented by a bit vector.
 	 */
-    virtual std::vector<Type> checkOr(storm::property::ltl::Or<Type> const& formula) const = 0;
+    virtual std::vector<Type> checkOr(storm::properties::ltl::Or<Type> const& formula) const = 0;
     
 	/*!
 	 * Checks the given formula that is a logical "not" of a sub-formula.
@@ -160,7 +134,7 @@ public:
 	 * @param formula The formula to check.
 	 * @returns The set of states satisfying the formula represented by a bit vector.
 	 */
-    virtual std::vector<Type> checkNot(const storm::property::ltl::Not<Type>& formula) const = 0;
+    virtual std::vector<Type> checkNot(const storm::properties::ltl::Not<Type>& formula) const = 0;
         
 private:
 

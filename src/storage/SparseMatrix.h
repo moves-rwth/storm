@@ -13,6 +13,8 @@
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/exceptions/OutOfRangeException.h"
 
+#include <boost/functional/hash.hpp>
+
 // Forward declaration for adapter classes.
 namespace storm {
 	namespace adapters {

@@ -9,7 +9,6 @@
 #define STORM_MODELCHECKER_PRCTL_SPARSEMDPPRCTLMODELCHECKER_H_
 
 #include <vector>
-#include <stack>
 #include <fstream>
 
 #include "src/modelchecker/prctl/AbstractModelChecker.h"
@@ -38,11 +37,11 @@ namespace storm {
                  *
                  * @param model The MDP to be checked.
                  */
-				explicit SparseMdpPrctlModelChecker(storm::models::Mdp<Type> const& model) : AbstractModelChecker<Type>(model), minimumOperatorStack(), nondeterministicLinearEquationSolver(storm::utility::solver::getNondeterministicLinearEquationSolver<Type>()) {
+				explicit SparseMdpPrctlModelChecker(storm::models::Mdp<Type> const& model) : AbstractModelChecker<Type>(model), nondeterministicLinearEquationSolver(storm::utility::solver::getNondeterministicLinearEquationSolver<Type>()) {
                     // Intentionally left empty.
                 }
                 
-				explicit SparseMdpPrctlModelChecker(storm::models::Mdp<Type> const& model, std::shared_ptr<storm::solver::NondeterministicLinearEquationSolver<Type>> nondeterministicLinearEquationSolver) : AbstractModelChecker<Type>(model), minimumOperatorStack(), nondeterministicLinearEquationSolver(nondeterministicLinearEquationSolver) {
+				explicit SparseMdpPrctlModelChecker(storm::models::Mdp<Type> const& model, std::shared_ptr<storm::solver::NondeterministicLinearEquationSolver<Type>> nondeterministicLinearEquationSolver) : AbstractModelChecker<Type>(model), nondeterministicLinearEquationSolver(nondeterministicLinearEquationSolver) {
 					// Intentionally left empty.
 				}
 
@@ -51,10 +50,17 @@ namespace storm {
                  * constructed model checker will have the model of the given model checker as its associated model.
                  */
                 explicit SparseMdpPrctlModelChecker(storm::modelchecker::prctl::SparseMdpPrctlModelChecker<Type> const& modelchecker)
-                : AbstractModelChecker<Type>(modelchecker),  minimumOperatorStack(), nondeterministicLinearEquationSolver(storm::utility::solver::getNondeterministicLinearEquationSolver<Type>()) {
+                : AbstractModelChecker<Type>(modelchecker), nondeterministicLinearEquationSolver(storm::utility::solver::getNondeterministicLinearEquationSolver<Type>()) {
                     // Intentionally left empty.
                 }
                 
+                /*!
+				 * Virtual destructor. Needs to be virtual, because this class has virtual methods.
+				 */
+                virtual ~SparseMdpPrctlModelChecker() {
+                	// Intentionally left empty.
+                }
+
                 /*!
                  * Returns a constant reference to the MDP associated with this model checker.
                  * @returns A constant reference to the MDP associated with this model checker.
@@ -62,25 +68,81 @@ namespace storm {
                 storm::models::Mdp<Type> const& getModel() const {
                     return AbstractModelChecker<Type>::template getModel<storm::models::Mdp<Type>>();
                 }
-                
-                /*!
-                 * Checks the given formula that is a P/R operator without a bound.
-                 *
-                 * @param formula The formula to check.
-                 * @returns The set of states satisfying the formula represented by a bit vector.
-                 */
-                virtual std::vector<Type> checkNoBoundOperator(const storm::property::prctl::AbstractNoBoundOperator<Type>& formula) const {
-                    // Check if the operator was an non-optimality operator and report an error in that case.
-                    if (!formula.isOptimalityOperator()) {
-                        LOG4CPLUS_ERROR(logger, "Formula does not specify neither min nor max optimality, which is not meaningful over nondeterministic models.");
-                        throw storm::exceptions::InvalidArgumentException() << "Formula does not specify neither min nor max optimality, which is not meaningful over nondeterministic models.";
-                    }
-                    minimumOperatorStack.push(formula.isMinimumOperator());
-                    std::vector<Type> result = formula.check(*this, false);
-                    minimumOperatorStack.pop();
-                    return result;
-                }
-                
+
+            	/*!
+            	 * Checks the given formula that is a P operator over a path formula featuring a value bound.
+            	 *
+            	 * @param formula The formula to check.
+            	 * @return The set of states satisfying the formula represented by a bit vector.
+            	 */
+            	virtual storm::storage::BitVector checkProbabilisticBoundOperator(storm::properties::prctl::ProbabilisticBoundOperator<Type> const& formula) const override {
+
+            		// For P< and P<= the MDP satisfies the formula iff the probability maximizing scheduler is used.
+            		// For P> and P>=                "              iff the probability minimizing         "        .
+					if(formula.getComparisonOperator() == storm::properties::LESS || formula.getComparisonOperator() == storm::properties::LESS_EQUAL) {
+						this->minimumOperatorStack.push(false);
+					}
+					else {
+						this->minimumOperatorStack.push(true);
+					}
+
+            		// First, we need to compute the probability for satisfying the path formula for each state.
+            		std::vector<Type> quantitativeResult = formula.getChild()->check(*this, false);
+
+            		//Remove the minimizing operator entry from the stack.
+            		this->minimumOperatorStack.pop();
+
+            		// Create resulting bit vector that will hold the yes/no-answer for every state.
+            		storm::storage::BitVector result(quantitativeResult.size());
+
+            		// Now, we can compute which states meet the bound specified in this operator and set the
+            		// corresponding bits to true in the resulting vector.
+            		for (uint_fast64_t i = 0; i < quantitativeResult.size(); ++i) {
+            			if (formula.meetsBound(quantitativeResult[i])) {
+            				result.set(i, true);
+            			}
+            		}
+
+            		return result;
+            	}
+
+            	/*!
+            	 * Checks the given formula that is an R operator over a reward formula featuring a value bound.
+            	 *
+            	 * @param formula The formula to check.
+            	 * @return The set of states satisfying the formula represented by a bit vector.
+            	 */
+            	virtual storm::storage::BitVector checkRewardBoundOperator(const storm::properties::prctl::RewardBoundOperator<Type>& formula) const override {
+
+            		// For R< and R<= the MDP satisfies the formula iff the reward maximizing scheduler is used.
+					// For R> and R>=                "              iff the reward minimizing         "        .
+					if(formula.getComparisonOperator() == storm::properties::LESS || formula.getComparisonOperator() == storm::properties::LESS_EQUAL) {
+						this->minimumOperatorStack.push(false);
+					}
+					else {
+						this->minimumOperatorStack.push(true);
+					}
+
+            		// First, we need to compute the probability for satisfying the path formula for each state.
+            		std::vector<Type> quantitativeResult = formula.getChild()->check(*this, false);
+
+            		//Remove the minimizing operator entry from the stack.
+					this->minimumOperatorStack.pop();
+
+            		// Create resulting bit vector that will hold the yes/no-answer for every state.
+            		storm::storage::BitVector result(quantitativeResult.size());
+
+            		// Now, we can compute which states meet the bound specified in this operator and set the
+            		// corresponding bits to true in the resulting vector.
+            		for (uint_fast64_t i = 0; i < quantitativeResult.size(); ++i) {
+            			if (formula.meetsBound(quantitativeResult[i])) {
+            				result.set(i, true);
+            			}
+            		}
+
+            		return result;
+            	}
+
                 /*!
                  * Computes the probability to satisfy phi until psi within a limited number of steps for each state.
                  *
@@ -95,7 +157,13 @@ namespace storm {
                  * If the qualitative flag is set, exact probabilities might not be computed.
                  */
                 std::vector<Type> checkBoundedUntil(storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, uint_fast64_t stepBound, bool qualitative) const {
-                    std::vector<Type> result(this->getModel().getNumberOfStates());
+                    // First test if it is specified if the minimum or maximum probabilities are to be computed.
+                	if(this->minimumOperatorStack.empty()) {
+						LOG4CPLUS_ERROR(logger, "Formula does not specify neither min nor max optimality, which is not meaningful over nondeterministic models.");
+						throw storm::exceptions::InvalidArgumentException() << "Formula does not specify neither min nor max optimality, which is not meaningful over nondeterministic models.";
+                	}
+
+                	std::vector<Type> result(this->getModel().getNumberOfStates());
 
                     // Determine the states that have 0 probability of reaching the target states.
                     storm::storage::BitVector statesWithProbabilityGreater0;
@@ -150,8 +218,8 @@ namespace storm {
                  * @return The probabilities for the given formula to hold on every state of the model associated with this model
                  * checker. If the qualitative flag is set, exact probabilities might not be computed.
                  */
-                virtual std::vector<Type> checkBoundedUntil(storm::property::prctl::BoundedUntil<Type> const& formula, bool qualitative) const {
-                    return checkBoundedUntil(formula.getLeft().check(*this), formula.getRight().check(*this), formula.getBound(), qualitative);
+                virtual std::vector<Type> checkBoundedUntil(storm::properties::prctl::BoundedUntil<Type> const& formula, bool qualitative) const {
+                    return checkBoundedUntil(formula.getLeft()->check(*this), formula.getRight()->check(*this), formula.getBound(), qualitative);
                 }
                 
                 /*!
@@ -166,6 +234,12 @@ namespace storm {
                  * qualitative flag is set, exact probabilities might not be computed.
                  */
                 virtual std::vector<Type> checkNext(storm::storage::BitVector const& nextStates, bool qualitative) const {
+                	// First test if it is specified if the minimum or maximum probabilities are to be computed.
+					if(this->minimumOperatorStack.empty()) {
+						LOG4CPLUS_ERROR(logger, "Formula does not specify neither min nor max optimality, which is not meaningful over nondeterministic models.");
+						throw storm::exceptions::InvalidArgumentException() << "Formula does not specify neither min nor max optimality, which is not meaningful over nondeterministic models.";
+					}
+
                     // Create the vector with which to multiply and initialize it correctly.
                     std::vector<Type> result(this->getModel().getNumberOfStates());
                     storm::utility::vector::setVectorValues(result, nextStates, storm::utility::constantOne<Type>());
@@ -186,8 +260,8 @@ namespace storm {
                  * @return The probabilities for the given formula to hold on every state of the model associated with this model
                  * checker. If the qualitative flag is set, exact probabilities might not be computed.
                  */
-                virtual std::vector<Type> checkNext(const storm::property::prctl::Next<Type>& formula, bool qualitative) const {
-                    return checkNext(formula.getChild().check(*this), qualitative);
+                virtual std::vector<Type> checkNext(const storm::properties::prctl::Next<Type>& formula, bool qualitative) const {
+                    return checkNext(formula.getChild()->check(*this), qualitative);
                 }
                 
                 /*!
@@ -201,9 +275,9 @@ namespace storm {
                  * @returns The probabilities for the given formula to hold on every state of the model associated with this model
                  * checker. If the qualitative flag is set, exact probabilities might not be computed.
                  */
-                virtual std::vector<Type> checkBoundedEventually(const storm::property::prctl::BoundedEventually<Type>& formula, bool qualitative) const {
+                virtual std::vector<Type> checkBoundedEventually(const storm::properties::prctl::BoundedEventually<Type>& formula, bool qualitative) const {
                     // Create equivalent temporary bounded until formula and check it.
-                    storm::property::prctl::BoundedUntil<Type> temporaryBoundedUntilFormula(new storm::property::prctl::Ap<Type>("true"), formula.getChild().clone(), formula.getBound());
+                    storm::properties::prctl::BoundedUntil<Type> temporaryBoundedUntilFormula(std::shared_ptr<storm::properties::prctl::Ap<Type>>(new storm::properties::prctl::Ap<Type>("true")), formula.getChild(), formula.getBound());
                     return this->checkBoundedUntil(temporaryBoundedUntilFormula, qualitative);
                 }
                 
@@ -218,9 +292,9 @@ namespace storm {
                  * @returns The probabilities for the given formula to hold on every state of the model associated with this model
                  * checker. If the qualitative flag is set, exact probabilities might not be computed.
                  */
-                virtual std::vector<Type> checkEventually(const storm::property::prctl::Eventually<Type>& formula, bool qualitative) const {
+                virtual std::vector<Type> checkEventually(const storm::properties::prctl::Eventually<Type>& formula, bool qualitative) const {
                     // Create equivalent temporary until formula and check it.
-                    storm::property::prctl::Until<Type> temporaryUntilFormula(new storm::property::prctl::Ap<Type>("true"), formula.getChild().clone());
+                    storm::properties::prctl::Until<Type> temporaryUntilFormula(std::shared_ptr<storm::properties::prctl::Ap<Type>>(new storm::properties::prctl::Ap<Type>("true")), formula.getChild());
                     return this->checkUntil(temporaryUntilFormula, qualitative);
                 }
                 
@@ -235,9 +309,9 @@ namespace storm {
                  * @returns The probabilities for the given formula to hold on every state of the model associated with this model
                  * checker. If the qualitative flag is set, exact probabilities might not be computed.
                  */
-                virtual std::vector<Type> checkGlobally(const storm::property::prctl::Globally<Type>& formula, bool qualitative) const {
+                virtual std::vector<Type> checkGlobally(const storm::properties::prctl::Globally<Type>& formula, bool qualitative) const {
                     // Create "equivalent" temporary eventually formula and check it.
-                    storm::property::prctl::Eventually<Type> temporaryEventuallyFormula(new storm::property::prctl::Not<Type>(formula.getChild().clone()));
+                    storm::properties::prctl::Eventually<Type> temporaryEventuallyFormula(std::shared_ptr<storm::properties::prctl::Not<Type>>(new storm::properties::prctl::Not<Type>(formula.getChild())));
                     std::vector<Type> result = this->checkEventually(temporaryEventuallyFormula, qualitative);
                     
                     // Now subtract the resulting vector from the constant one vector to obtain final result.
@@ -259,8 +333,14 @@ namespace storm {
                  * @return The probabilities for the given formula to hold on every state of the model associated with this model
                  * checker. If the qualitative flag is set, exact probabilities might not be computed.
                  */
-                virtual std::vector<Type> checkUntil(const storm::property::prctl::Until<Type>& formula, bool qualitative) const {
-                    return this->checkUntil(this->minimumOperatorStack.top(), formula.getLeft().check(*this), formula.getRight().check(*this), qualitative).first;
+                virtual std::vector<Type> checkUntil(const storm::properties::prctl::Until<Type>& formula, bool qualitative) const {
+                	// First test if it is specified if the minimum or maximum probabilities are to be computed.
+					if(this->minimumOperatorStack.empty()) {
+						LOG4CPLUS_ERROR(logger, "Formula does not specify neither min nor max optimality, which is not meaningful over nondeterministic models.");
+						throw storm::exceptions::InvalidArgumentException() << "Formula does not specify neither min nor max optimality, which is not meaningful over nondeterministic models.";
+					}
+
+                    return this->checkUntil(this->minimumOperatorStack.top(), formula.getLeft()->check(*this), formula.getRight()->check(*this), qualitative).first;
                 }
                 
                 /*!
@@ -358,13 +438,19 @@ namespace storm {
                  * @return The reward values for the given formula for every state of the model associated with this model
                  * checker. If the qualitative flag is set, exact values might not be computed.
                  */
-                virtual std::vector<Type> checkInstantaneousReward(const storm::property::prctl::InstantaneousReward<Type>& formula, bool qualitative) const {
+                virtual std::vector<Type> checkInstantaneousReward(const storm::properties::prctl::InstantaneousReward<Type>& formula, bool qualitative) const {
                     // Only compute the result if the model has a state-based reward model.
                     if (!this->getModel().hasStateRewards()) {
                         LOG4CPLUS_ERROR(logger, "Missing (state-based) reward model for formula.");
                         throw storm::exceptions::InvalidPropertyException() << "Missing (state-based) reward model for formula.";
                     }
                     
+                    // Now test whether it is specified if the minimum or maximum probabilities are to be computed.
+					if(this->minimumOperatorStack.empty()) {
+						LOG4CPLUS_ERROR(logger, "Formula does not specify neither min nor max optimality, which is not meaningful over nondeterministic models.");
+						throw storm::exceptions::InvalidArgumentException() << "Formula does not specify neither min nor max optimality, which is not meaningful over nondeterministic models.";
+					}
+
                     // Initialize result to state rewards of the model.
                     std::vector<Type> result(this->getModel().getStateRewardVector());
                     
@@ -384,13 +470,19 @@ namespace storm {
                  * @return The reward values for the given formula for every state of the model associated with this model
                  * checker. If the qualitative flag is set, exact values might not be computed.
                  */
-                virtual std::vector<Type> checkCumulativeReward(const storm::property::prctl::CumulativeReward<Type>& formula, bool qualitative) const {
+                virtual std::vector<Type> checkCumulativeReward(const storm::properties::prctl::CumulativeReward<Type>& formula, bool qualitative) const {
                     // Only compute the result if the model has at least one reward model.
                     if (!this->getModel().hasStateRewards() && !this->getModel().hasTransitionRewards()) {
                         LOG4CPLUS_ERROR(logger, "Missing reward model for formula.");
                         throw storm::exceptions::InvalidPropertyException() << "Missing reward model for formula.";
                     }
                     
+                    // Now test whether it is specified if the minimum or maximum probabilities are to be computed.
+					if(this->minimumOperatorStack.empty()) {
+						LOG4CPLUS_ERROR(logger, "Formula does not specify neither min nor max optimality, which is not meaningful over nondeterministic models.");
+						throw storm::exceptions::InvalidArgumentException() << "Formula does not specify neither min nor max optimality, which is not meaningful over nondeterministic models.";
+					}
+
                     // Compute the reward vector to add in each step based on the available reward models.
                     std::vector<Type> totalRewardVector;
                     if (this->getModel().hasTransitionRewards()) {
@@ -426,8 +518,14 @@ namespace storm {
                  * @return The reward values for the given formula for every state of the model associated with this model
                  * checker. If the qualitative flag is set, exact values might not be computed.
                  */
-                virtual std::vector<Type> checkReachabilityReward(const storm::property::prctl::ReachabilityReward<Type>& formula, bool qualitative) const {
-                    return this->checkReachabilityReward(this->minimumOperatorStack.top(), formula.getChild().check(*this), qualitative).first;
+                virtual std::vector<Type> checkReachabilityReward(const storm::properties::prctl::ReachabilityReward<Type>& formula, bool qualitative) const {
+                	// First test whether it is specified if the minimum or maximum probabilities are to be computed.
+					if(this->minimumOperatorStack.empty()) {
+						LOG4CPLUS_ERROR(logger, "Formula does not specify neither min nor max optimality, which is not meaningful over nondeterministic models.");
+						throw storm::exceptions::InvalidArgumentException() << "Formula does not specify neither min nor max optimality, which is not meaningful over nondeterministic models.";
+					}
+
+                    return this->checkReachabilityReward(this->minimumOperatorStack.top(), formula.getChild()->check(*this), qualitative).first;
                 }
                 
                 /*!
@@ -452,6 +550,12 @@ namespace storm {
                         throw storm::exceptions::InvalidPropertyException() << "Missing reward model for formula.";
                     }
                     
+                    // Also test whether it is specified if the minimum or maximum probabilities are to be computed.
+					if(this->minimumOperatorStack.empty()) {
+						LOG4CPLUS_ERROR(logger, "Formula does not specify neither min nor max optimality, which is not meaningful over nondeterministic models.");
+						throw storm::exceptions::InvalidArgumentException() << "Formula does not specify neither min nor max optimality, which is not meaningful over nondeterministic models.";
+					}
+
                     // Determine which states have a reward of infinity by definition.
                     storm::storage::BitVector infinityStates;
                     storm::storage::BitVector trueStates(this->getModel().getNumberOfStates(), true);
@@ -570,13 +674,7 @@ namespace storm {
 
                     return storm::storage::TotalScheduler(choices);
                 }
-                
-                /*!
-                 * A stack used for storing whether we are currently computing min or max probabilities or rewards, respectively.
-                 * The topmost element is true if and only if we are currently computing minimum probabilities or rewards.
-                 */
-                mutable std::stack<bool> minimumOperatorStack;
-                
+
                 /*!
                  * A solver that is used for solving systems of linear equations that are the result of nondeterministic choices.
                  */
