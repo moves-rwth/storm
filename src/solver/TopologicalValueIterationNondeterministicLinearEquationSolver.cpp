@@ -462,5 +462,6 @@ namespace storm {
 
         // Explicitly instantiate the solver.
 		template class TopologicalValueIterationNondeterministicLinearEquationSolver<double>;
+		template class TopologicalValueIterationNondeterministicLinearEquationSolver<float>;
     } // namespace solver
 } // namespace storm
