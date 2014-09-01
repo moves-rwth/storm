@@ -770,26 +770,18 @@ namespace storm {
         template<typename T>
         void SparseMatrix<T>::multiplyWithVector(std::vector<T> const& vector, std::vector<T>& result) const {
 #ifdef STORM_HAVE_INTELTBB
-            tbb::parallel_for(tbb::blocked_range<uint_fast64_t>(0, result.size(), 10),
-                              [&] (tbb::blocked_range<uint_fast64_t> const& range) {
-                                  uint_fast64_t startRow = range.begin();
-                                  uint_fast64_t endRow = range.end();
-                                  const_iterator it = this->begin(startRow);
-                                  const_iterator ite;
-                                  std::vector<uint_fast64_t>::const_iterator rowIterator = this->rowIndications.begin() + startRow;
-                                  std::vector<uint_fast64_t>::const_iterator rowIteratorEnd = this->rowIndications.begin() + endRow;
-                                  std::vector<T>::iterator resultIterator = result.begin() + startRow;
-                                  std::vector<T>::iterator resultIteratorEnd = result.begin() + endRow;
-                                  
-                                  for (; resultIterator != resultIteratorEnd; ++rowIterator, ++resultIterator) {
-                                      *resultIterator = storm::utility::constantZero<T>();
-                                      
-                                      for (ite = this->begin() + *(rowIterator + 1); it != ite; ++it) {
-                                          *resultIterator += it->getValue() * vector[it->getColumn()];
-                                      }
-                                  }
-                              });
+            if (this->getNonzeroEntryCount() > 10000) {
+                return this->multiplyWithVectorParallel(vector, result);
+            } else {
+                return this->multiplyWithVectorSequential(vector, result);
+            }
 #else
+            return multiplyWithVectorSequential(vector, result);
+#endif
+        }
+        
+        template<typename T>
+        void SparseMatrix<T>::multiplyWithVectorSequential(std::vector<T> const& vector, std::vector<T>& result) const {
             const_iterator it = this->begin();
             const_iterator ite;
             typename std::vector<uint_fast64_t>::const_iterator rowIterator = rowIndications.begin();
@@ -803,9 +795,33 @@ namespace storm {
                     *resultIterator += it->getValue() * vector[it->getColumn()];
                 }
             }
-#endif
         }
-        
+
+#ifdef STORM_HAVE_INTELTBB
+        template<typename T>
+        void SparseMatrix<T>::multiplyWithVectorParallel(std::vector<T> const& vector, std::vector<T>& result) const {
+            tbb::parallel_for(tbb::blocked_range<uint_fast64_t>(0, result.size(), 10),
+                              [&] (tbb::blocked_range<uint_fast64_t> const& range) {
+                                  uint_fast64_t startRow = range.begin();
+                                  uint_fast64_t endRow = range.end();
+                                  const_iterator it = this->begin(startRow);
+                                  const_iterator ite;
+                                  std::vector<uint_fast64_t>::const_iterator rowIterator = this->rowIndications.begin() + startRow;
+                                  std::vector<uint_fast64_t>::const_iterator rowIteratorEnd = this->rowIndications.begin() + endRow;
+                                  typename std::vector<T>::iterator resultIterator = result.begin() + startRow;
+                                  typename std::vector<T>::iterator resultIteratorEnd = result.begin() + endRow;
+                                  
+                                  for (; resultIterator != resultIteratorEnd; ++rowIterator, ++resultIterator) {
+                                      *resultIterator = storm::utility::constantZero<T>();
+                                      
+                                      for (ite = this->begin() + *(rowIterator + 1); it != ite; ++it) {
+                                          *resultIterator += it->getValue() * vector[it->getColumn()];
+                                      }
+                                  }
+                              });
+        }
+#endif
+
         template<typename T>
         uint_fast64_t SparseMatrix<T>::getSizeInMemory() const {
             uint_fast64_t size = sizeof(*this);

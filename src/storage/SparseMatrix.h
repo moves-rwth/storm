@@ -576,13 +576,37 @@ namespace storm {
             std::vector<T> getPointwiseProductRowSumVector(storm::storage::SparseMatrix<T> const& otherMatrix) const;
             
             /*!
-             * Multiplies the matrix with the given vector and writes the result to given result vector.
+             * Multiplies the matrix with the given vector and writes the result to the given result vector. If a
+             * parallel implementation is available and it is considered worthwhile (heuristically, based on the metrics
+             * of the matrix), the multiplication is carried out in parallel.
              *
              * @param vector The vector with which to multiply the matrix.
              * @param result The vector that is supposed to hold the result of the multiplication after the operation.
              * @return The product of the matrix and the given vector as the content of the given result vector.
              */
             void multiplyWithVector(std::vector<T> const& vector, std::vector<T>& result) const;
+            
+            /*!
+             * Multiplies the matrix with the given vector in a sequential way and writes the result to the given result
+             * vector.
+             *
+             * @param vector The vector with which to multiply the matrix.
+             * @param result The vector that is supposed to hold the result of the multiplication after the operation.
+             * @return The product of the matrix and the given vector as the content of the given result vector.
+             */
+            void multiplyWithVectorSequential(std::vector<T> const& vector, std::vector<T>& result) const;
+
+#ifdef STORM_HAVE_INTELTBB
+            /*!
+             * Multiplies the matrix with the given vector in a parallel fashion using Intel's TBB and writes the result
+             * to the given result vector.
+             *
+             * @param vector The vector with which to multiply the matrix.
+             * @param result The vector that is supposed to hold the result of the multiplication after the operation.
+             * @return The product of the matrix and the given vector as the content of the given result vector.
+             */
+            void multiplyWithVectorParallel(std::vector<T> const& vector, std::vector<T>& result) const;
+#endif
             
             /*!
              * Computes the sum of the entries in a given row.
