@@ -149,9 +149,9 @@ namespace storm {
                         for (auto& element : aMarkovian.getRow(rowIndex)) {
                             ValueType eTerm = std::exp(-exitRates[state] * delta);
                             if (element.getColumn() == rowIndex) {
-                                element.getValue() = (storm::utility::constantOne<ValueType>() - eTerm) * element.getValue() + eTerm;
+                                element.setValue((storm::utility::constantOne<ValueType>() - eTerm) * element.getValue() + eTerm);
                             } else {
-                                element.getValue() = (storm::utility::constantOne<ValueType>() - eTerm) * element.getValue();
+                                element.setValue((storm::utility::constantOne<ValueType>() - eTerm) * element.getValue());
                             }
                         }
                         ++rowIndex;
@@ -161,7 +161,7 @@ namespace storm {
                     rowIndex = 0;
                     for (auto state : markovianNonGoalStates) {
                         for (auto& element : aMarkovianToProbabilistic.getRow(rowIndex)) {
-                            element.getValue() = (1 - std::exp(-exitRates[state] * delta)) * element.getValue();
+                            element.setValue((1 - std::exp(-exitRates[state] * delta)) * element.getValue());
                         }
                         ++rowIndex;
                     }

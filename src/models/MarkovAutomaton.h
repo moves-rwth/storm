@@ -259,7 +259,7 @@ namespace storm {
             void turnRatesToProbabilities() {
                 for (auto state : this->markovianStates) {
                     for (auto& transition : this->transitionMatrix.getRowGroup(state)) {
-                        transition.getValue() /= this->exitRates[state];
+                        transition.setValue(transition.getValue() / this->exitRates[state]);
                     }
                 }
             }
