@@ -126,7 +126,7 @@ namespace storm {
                     //uint_fast64_t newNumberOfRows = this->getNumberOfChoices() - numberOfHybridStates;
                     
                     // Create the matrix for the new transition relation and the corresponding nondeterministic choice vector.
-                    storm::storage::SparseMatrixBuilder<T> newTransitionMatrixBuilder(0, 0, 0, true, this->getNumberOfStates() + 1);
+                    storm::storage::SparseMatrixBuilder<T> newTransitionMatrixBuilder(0, 0, 0, true, this->getNumberOfStates());
                     
                     // Now copy over all choices that need to be kept.
                     uint_fast64_t currentChoice = 0;
@@ -147,7 +147,7 @@ namespace storm {
 
                         for (uint_fast64_t row = this->getTransitionMatrix().getRowGroupIndices()[state] + (this->isHybridState(state) ? 1 : 0); row < this->getTransitionMatrix().getRowGroupIndices()[state + 1]; ++row) {
                             for (auto const& entry : this->transitionMatrix.getRow(row)) {
-                                newTransitionMatrixBuilder.addNextValue(currentChoice, entry.first, entry.second);
+                                newTransitionMatrixBuilder.addNextValue(currentChoice, entry.getColumn(), entry.getValue());
                             }
                             ++currentChoice;
                         }
@@ -220,8 +220,8 @@ namespace storm {
                     
                     // Now draw all probabilitic arcs that belong to this nondeterminstic choice.
                     for (auto const& transition : row) {
-                        if (subsystem == nullptr || subsystem->get(transition.first)) {
-                            outStream << "\t\"" << state << "c" << choice << "\" -> " << transition.first << " [ label= \"" << transition.second << "\" ]";
+                        if (subsystem == nullptr || subsystem->get(transition.getColumn())) {
+                            outStream << "\t\"" << state << "c" << choice << "\" -> " << transition.getColumn() << " [ label= \"" << transition.getValue() << "\" ]";
                             
                             // If we were given a scheduler to highlight, we do so now.
                             if (scheduler != nullptr) {
@@ -237,8 +237,8 @@ namespace storm {
                     } else {
                         // In this case we are emitting a Markovian choice, so draw the arrows directly to the target states.
                         for (auto const& transition : row) {
-                            if (subsystem == nullptr || subsystem->get(transition.first)) {
-                                outStream << "\t\"" << state << "\" -> " << transition.first << " [ label= \"" << transition.second << " (" << this->exitRates[state] << ")\" ]";
+                            if (subsystem == nullptr || subsystem->get(transition.getColumn())) {
+                                outStream << "\t\"" << state << "\" -> " << transition.getColumn() << " [ label= \"" << transition.getValue() << " (" << this->exitRates[state] << ")\" ]";
                             }
                         }
                     }
@@ -259,7 +259,7 @@ namespace storm {
             void turnRatesToProbabilities() {
                 for (auto state : this->markovianStates) {
                     for (auto& transition : this->transitionMatrix.getRowGroup(state)) {
-                        transition.second /= this->exitRates[state];
+                        transition.getValue() /= this->exitRates[state];
                     }
                 }
             }

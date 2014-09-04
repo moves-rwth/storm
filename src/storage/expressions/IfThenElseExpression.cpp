@@ -1,9 +1,39 @@
 #include "src/storage/expressions/IfThenElseExpression.h"
 
+#include "src/exceptions/ExceptionMacros.h"
+#include "src/exceptions/InvalidAccessException.h"
+
 namespace storm {
     namespace expressions {
         IfThenElseExpression::IfThenElseExpression(ExpressionReturnType returnType, std::shared_ptr<BaseExpression const> const& condition, std::shared_ptr<BaseExpression const> const& thenExpression, std::shared_ptr<BaseExpression const> const& elseExpression) : BaseExpression(returnType), condition(condition), thenExpression(thenExpression), elseExpression(elseExpression) {
             // Intentionally left empty.
+        }
+        
+        std::shared_ptr<BaseExpression const> IfThenElseExpression::getOperand(uint_fast64_t operandIndex) const {
+            LOG_THROW(operandIndex < 3, storm::exceptions::InvalidAccessException, "Unable to access operand " << operandIndex << " in expression of arity 3.");
+            if (operandIndex == 0) {
+                return this->getCondition();
+            } else if (operandIndex == 1) {
+                return this->getThenExpression();
+            } else {
+                return this->getElseExpression();
+            }
+        }
+        
+        OperatorType IfThenElseExpression::getOperator() const {
+            return OperatorType::Ite;
+        }
+        
+        bool IfThenElseExpression::isFunctionApplication() const {
+            return true;
+        }
+        
+        bool IfThenElseExpression::containsVariables() const {
+            return this->getCondition()->containsVariables() || this->getThenExpression()->containsVariables() || this->getElseExpression()->containsVariables();
+        }
+        
+        uint_fast64_t IfThenElseExpression::getArity() const {
+            return 3;
         }
         
         bool IfThenElseExpression::evaluateAsBool(Valuation const* valuation) const {
@@ -31,29 +61,25 @@ namespace storm {
             } else {
                 return this->elseExpression->evaluateAsDouble(valuation);
             }
-        }
-        
-        bool IfThenElseExpression::isConstant() const {
-            return this->condition->isConstant() && this->thenExpression->isConstant() && this->elseExpression->isConstant();
-        }
-        
-        std::set<std::string> IfThenElseExpression::getVariables() const {
-            std::set<std::string> result = this->condition->getVariables();
-            std::set<std::string> tmp = this->thenExpression->getVariables();
-            result.insert(tmp.begin(), tmp.end());
-            tmp = this->elseExpression->getVariables();
-            result.insert(tmp.begin(), tmp.end());
-            return result;
-        }
-        
-        std::set<std::string> IfThenElseExpression::getConstants() const {
-            std::set<std::string> result = this->condition->getConstants();
-            std::set<std::string> tmp = this->thenExpression->getConstants();
-            result.insert(tmp.begin(), tmp.end());
-            tmp = this->elseExpression->getConstants();
-            result.insert(tmp.begin(), tmp.end());
-            return result;
-        }
+		}
+
+		std::set<std::string> IfThenElseExpression::getVariables() const {
+			std::set<std::string> result = this->condition->getVariables();
+			std::set<std::string> tmp = this->thenExpression->getVariables();
+			result.insert(tmp.begin(), tmp.end());
+			tmp = this->elseExpression->getVariables();
+			result.insert(tmp.begin(), tmp.end());
+			return result;
+		}
+
+		std::map<std::string, ExpressionReturnType> IfThenElseExpression::getVariablesAndTypes() const {
+			std::map<std::string, ExpressionReturnType>  result = this->condition->getVariablesAndTypes();
+			std::map<std::string, ExpressionReturnType>  tmp = this->thenExpression->getVariablesAndTypes();
+			result.insert(tmp.begin(), tmp.end());
+			tmp = this->elseExpression->getVariablesAndTypes();
+			result.insert(tmp.begin(), tmp.end());
+			return result;
+		}
         
         std::shared_ptr<BaseExpression const> IfThenElseExpression::simplify() const {
             std::shared_ptr<BaseExpression const> conditionSimplified;

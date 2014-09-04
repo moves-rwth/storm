@@ -13,6 +13,16 @@ namespace storm {
             return this->operatorType;
         }
         
+        storm::expressions::OperatorType BinaryBooleanFunctionExpression::getOperator() const {
+            switch (this->getOperatorType()) {
+                case OperatorType::And: return storm::expressions::OperatorType::And; break;
+                case OperatorType::Or: return storm::expressions::OperatorType::Or; break;
+                case OperatorType::Xor: return storm::expressions::OperatorType::Xor; break;
+                case OperatorType::Implies: return storm::expressions::OperatorType::Implies; break;
+                case OperatorType::Iff: return storm::expressions::OperatorType::Iff; break;
+            }
+        }
+                
         bool BinaryBooleanFunctionExpression::evaluateAsBool(Valuation const* valuation) const {
             LOG_THROW(this->hasBooleanReturnType(), storm::exceptions::InvalidTypeException, "Unable to evaluate expression as boolean.");
             
@@ -30,7 +40,7 @@ namespace storm {
             
             return result;
         }
-        
+                
         std::shared_ptr<BaseExpression const> BinaryBooleanFunctionExpression::simplify() const {
             std::shared_ptr<BaseExpression const> firstOperandSimplified = this->getFirstOperand()->simplify();
             std::shared_ptr<BaseExpression const> secondOperandSimplified = this->getSecondOperand()->simplify();

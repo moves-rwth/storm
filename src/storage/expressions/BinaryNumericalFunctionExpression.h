@@ -11,7 +11,7 @@ namespace storm {
             /*!
              * An enum type specifying the different operators applicable.
              */
-            enum class OperatorType {Plus, Minus, Times, Divide, Min, Max};
+            enum class OperatorType {Plus, Minus, Times, Divide, Min, Max, Power};
             
             /*!
              * Constructs a binary numerical function expression with the given return type, operands and operator.
@@ -33,6 +33,7 @@ namespace storm {
             virtual ~BinaryNumericalFunctionExpression() = default;
             
             // Override base class methods.
+            virtual storm::expressions::OperatorType getOperator() const override;
             virtual int_fast64_t evaluateAsInt(Valuation const* valuation = nullptr) const override;
             virtual double evaluateAsDouble(Valuation const* valuation = nullptr) const override;
             virtual std::shared_ptr<BaseExpression const> simplify() const override;

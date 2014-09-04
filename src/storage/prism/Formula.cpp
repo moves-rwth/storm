@@ -26,5 +26,5 @@ namespace storm {
             stream << "formula " << formula.getName() << " = " << formula.getExpression() << ";";
             return stream;
         }
-    }
-}
+    } // namespace prism
+} // namespace storm

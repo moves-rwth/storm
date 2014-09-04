@@ -6,6 +6,7 @@
 #include <unordered_map>
 
 #include "src/storage/expressions/BaseExpression.h"
+#include "src/storage/expressions/ExpressionVisitor.h"
 #include "src/utility/OsDetection.h"
 
 namespace storm {
@@ -39,9 +40,6 @@ namespace storm {
             static Expression createIntegerVariable(std::string const& variableName);
             static Expression createDoubleVariable(std::string const& variableName);
             static Expression createUndefinedVariable(std::string const& variableName);
-            static Expression createBooleanConstant(std::string const& constantName);
-            static Expression createIntegerConstant(std::string const& constantName);
-            static Expression createDoubleConstant(std::string const& constantName);
             
             // Provide operator overloads to conveniently construct new expressions from other expressions.
             Expression operator+(Expression const& other) const;
@@ -111,9 +109,24 @@ namespace storm {
 			Expression substitute(std::unordered_map<std::string, std::string> const& identifierToIdentifierMap) const;
             
             /*!
-             * Evaluates the expression under the valuation of unknowns (variables and constants) given by the
-             * valuation and returns the resulting boolean value. If the return type of the expression is not a boolean
-             * an exception is thrown.
+             * Checks that all identifiers appearing in the expression have the types given by the map. An exception
+             * is thrown in case a violation is found.
+             *
+             * @param identifierToTypeMap A mapping from identifiers to the types that are supposed to have.
+             */
+            void check(std::map<std::string, storm::expressions::ExpressionReturnType> const& identifierToTypeMap) const;
+            
+            /*!
+             * Checks that all identifiers appearing in the expression have the types given by the map. An exception
+             * is thrown in case a violation is found.
+             *
+             * @param identifierToTypeMap A mapping from identifiers to the types that are supposed to have.
+             */
+            void check(std::unordered_map<std::string, storm::expressions::ExpressionReturnType> const& identifierToTypeMap) const;
+            
+            /*!
+             * Evaluates the expression under the valuation of variables given by the valuation and returns the
+             * resulting boolean value. If the return type of the expression is not a boolean an exception is thrown.
              *
              * @param valuation The valuation of unknowns under which to evaluate the expression.
              * @return The boolean value of the expression under the given valuation.
@@ -121,9 +134,8 @@ namespace storm {
             bool evaluateAsBool(Valuation const* valuation = nullptr) const;
             
             /*!
-             * Evaluates the expression under the valuation of unknowns (variables and constants) given by the
-             * valuation and returns the resulting integer value. If the return type of the expression is not an integer
-             * an exception is thrown.
+             * Evaluates the expression under the valuation of variables given by the valuation and returns the
+             * resulting integer value. If the return type of the expression is not an integer an exception is thrown.
              *
              * @param valuation The valuation of unknowns under which to evaluate the expression.
              * @return The integer value of the expression under the given valuation.
@@ -131,9 +143,8 @@ namespace storm {
             int_fast64_t evaluateAsInt(Valuation const* valuation = nullptr) const;
             
             /*!
-             * Evaluates the expression under the valuation of unknowns (variables and constants) given by the
-             * valuation and returns the resulting double value. If the return type of the expression is not a double
-             * an exception is thrown.
+             * Evaluates the expression under the valuation of variables given by the valuation and returns the
+             * resulting double value. If the return type of the expression is not a double an exception is thrown.
              *
              * @param valuation The valuation of unknowns under which to evaluate the expression.
              * @return The double value of the expression under the given valuation.
@@ -148,11 +159,63 @@ namespace storm {
             Expression simplify();
             
             /*!
-             * Retrieves whether the expression is constant, i.e., contains no variables or undefined constants.
+             * Retrieves the operator of a function application. This is only legal to call if the expression is
+             * function application.
              *
-             * @return True iff the expression is constant.
+             * @return The operator associated with the function application.
              */
-            bool isConstant() const;
+            OperatorType getOperator() const;
+            
+            /*!
+             * Checks if the expression is a function application (of any sort).
+             *
+             * @return True iff the expression is a function application.
+             */
+            bool isFunctionApplication() const;
+            
+            /*!
+             * Retrieves the arity of the expression.
+             *
+             * @return The arity of the expression.
+             */
+            uint_fast64_t getArity() const;
+            
+            /*!
+             * Retrieves the given operand from the expression.
+             *
+             * @param operandIndex The index of the operand to retrieve. This must be lower than the arity of the expression.
+             * @return The operand at the given index.
+             */
+            Expression getOperand(uint_fast64_t operandIndex) const;
+            
+            /*!
+             * Retrieves the identifier associated with this expression. This is only legal to call if the expression
+             * is a variable.
+             *
+             * @return The identifier associated with this expression.
+             */
+            std::string const& getIdentifier() const;
+            
+            /*!
+             * Retrieves whether the expression contains a variable.
+             *
+             * @return True iff the expression contains a variable.
+             */
+            bool containsVariables() const;
+            
+            /*!
+             * Retrieves whether the expression is a literal.
+             *
+             * @return True iff the expression is a literal.
+             */
+            bool isLiteral() const;
+            
+            /*!
+             * Retrieves whether the expression is a variable.
+             *
+             * @return True iff the expression is a variable.
+             */
+            bool isVariable() const;
             
             /*!
              * Checks if the expression is equal to the boolean literal true.
@@ -169,19 +232,40 @@ namespace storm {
             bool isFalse() const;
             
             /*!
+             * Retrieves whether this expression is a relation expression, i.e., an expression that has a relation
+             * (equal, not equal, less, less or equal, etc.) as its top-level operator.
+             *
+             * @return True iff the expression is a relation expression.
+             */
+            bool isRelationalExpression() const;
+            
+            /*!
+             * Retrieves whether this expression is a linear expression.
+             *
+             * @return True iff the expression is linear.
+             */
+            bool isLinear() const;
+            
+            /*!
              * Retrieves the set of all variables that appear in the expression.
              *
              * @return The set of all variables that appear in the expression.
              */
             std::set<std::string> getVariables() const;
             
-            /*!
-             * Retrieves the set of all constants that appear in the expression.
-             *
-             * @return The set of all constants that appear in the expression.
-             */
-            std::set<std::string> getConstants() const;
-            
+			/*!
+			* Retrieves the mapping of all variables that appear in the expression to their return type.
+			*
+			* @param validate If this parameter is true, check() is called with the returnvalue before 
+			*                 it is returned.
+			*
+			* @throws storm::exceptions::InvalidTypeException If a variables with the same name but different
+			*                                                 types occur somewhere withing the expression.
+			*
+			* @return The mapping of all variables that appear in the expression to their return type.
+			*/
+			std::map<std::string, ExpressionReturnType> getVariablesAndTypes(bool validate = true) const;
+
             /*!
              * Retrieves the base expression underlying this expression object. Note that prior to calling this, the
              * expression object must be properly initialized.
@@ -217,6 +301,13 @@ namespace storm {
              * @return True iff the expression has a boolean return type.
              */
             bool hasBooleanReturnType() const;
+            
+            /*!
+             * Accepts the given visitor.
+             *
+             * @param visitor The visitor to accept.
+             */
+            void accept(ExpressionVisitor* visitor) const;
             
             friend std::ostream& operator<<(std::ostream& stream, Expression const& expression);
 

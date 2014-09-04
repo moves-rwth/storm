@@ -69,31 +69,31 @@ public:
 
 				for(auto const& trans : transMat.getRow(init)) {
 					//save transition only if it's no 'virtual transition of prob 0 and it doesn't go from init state to init state.
-					if(trans.second != (T) 0 && !subSysStates.get(trans.first)) {
+					if(trans.getValue() != (T) 0 && !subSysStates.get(trans.getColumn())) {
 						//new state?
-						if(distances[trans.first].second == (T) -1) {
-							distances[trans.first].first = init;
-							distances[trans.first].second = trans.second;
+						if(distances[trans.getColumn()].second == (T) -1) {
+							distances[trans.getColumn()].first = init;
+							distances[trans.getColumn()].second = trans.getValue();
 
-							activeSet.insert(std::pair<uint_fast64_t, T>(trans.first, distances[trans.first].second));
+							activeSet.insert(std::pair<uint_fast64_t, T>(trans.getColumn(), distances[trans.getColumn()].second));
 						}
-						else if(distances[trans.first].second < trans.second){
+						else if(distances[trans.getColumn()].second < trans.getValue()){
 							//This state has already been discovered
 							//And the distance can be improved by using this transition.
 
 							//find state in set, remove it, reenter it with new and correct values.
-							auto range = activeSet.equal_range(std::pair<uint_fast64_t, T>(trans.first, distances[trans.first].second));
+							auto range = activeSet.equal_range(std::pair<uint_fast64_t, T>(trans.getColumn(), distances[trans.getColumn()].second));
 							for(;range.first != range.second; range.first++) {
-								if(trans.first == range.first->first) {
+								if(trans.getColumn() == range.first->first) {
 									activeSet.erase(range.first);
 									break;
 								}
 							}
 
-							distances[trans.first].first = init;
-							distances[trans.first].second = trans.second;
+							distances[trans.getColumn()].first = init;
+							distances[trans.getColumn()].second = trans.getValue();
 
-							activeSet.insert(std::pair<uint_fast64_t, T>(trans.first, trans.second));
+							activeSet.insert(std::pair<uint_fast64_t, T>(trans.getColumn(), trans.getValue()));
 						}
 					}
 				}
@@ -115,36 +115,36 @@ public:
 				// Look at all neighbors
 				for(auto const& trans : transMat.getRow(activeState.first)) {
 					// Only consider the transition if it's not virtual
-					if(trans.second != (T) 0) {
+					if(trans.getValue() != (T) 0) {
 
-						T distance = activeState.second * trans.second;
+						T distance = activeState.second * trans.getValue();
 
 						//not discovered or initial terminal state
-						if(distances[trans.first].second == (T)-1) {
+						if(distances[trans.getColumn()].second == (T)-1) {
 							//New state discovered -> save it
-							distances[trans.first].first = activeState.first;
-							distances[trans.first].second = distance;
+							distances[trans.getColumn()].first = activeState.first;
+							distances[trans.getColumn()].second = distance;
 
 							// push newly discovered state into activeSet
-							activeSet.insert(std::pair<uint_fast64_t, T>(trans.first, distance));
+							activeSet.insert(std::pair<uint_fast64_t, T>(trans.getColumn(), distance));
 						}
-						else if(distances[trans.first].second < distance ){
+						else if(distances[trans.getColumn()].second < distance) {
 							//This state has already been discovered
 							//And the distance can be improved by using this transition.
 
 							//find state in set, remove it, reenter it with new and correct values.
 
-							auto range = activeSet.equal_range(std::pair<uint_fast64_t, T>(trans.first, distances[trans.first].second));
+							auto range = activeSet.equal_range(std::pair<uint_fast64_t, T>(trans.getColumn(), distances[trans.getColumn()].second));
 							for(;range.first != range.second; range.first++) {
-								if(trans.first == range.first->first) {
+								if(trans.getColumn() == range.first->first) {
 									activeSet.erase(range.first);
 									break;
 								}
 							}
 
-							distances[trans.first].first = activeState.first;
-							distances[trans.first].second = distance;
-							activeSet.insert(std::pair<uint_fast64_t, T>(trans.first, distance));
+							distances[trans.getColumn()].first = activeState.first;
+							distances[trans.getColumn()].second = distance;
+							activeSet.insert(std::pair<uint_fast64_t, T>(trans.getColumn(), distance));
 						}
 					}
 				}
@@ -182,33 +182,33 @@ public:
 
 				for(auto const& trans : transMat.getRow(init)) {
 					//save transition only if it's no 'virtual transition of prob 0 and it doesn't go from init state to init state.
-					if(trans.second != (T) 0 && !subSysStates.get(trans.first)) {
+					if(trans.getValue() != (T) 0 && !subSysStates.get(trans.getColumn())) {
 						//new state?
-						if(distances[trans.first].second == (T) -1) {
+						if(distances[trans.getColumn()].second == (T) -1) {
 							//for initialization of subsys -> subsys search use prob (init -> subsys state -> found state) instead of prob(subsys state -> found state)
-							distances[trans.first].first = init;
-							distances[trans.first].second = trans.second * (itDistances[init].second == -1 ? 1 : itDistances[init].second);
+							distances[trans.getColumn()].first = init;
+							distances[trans.getColumn()].second = trans.getValue() * (itDistances[init].second == -1 ? 1 : itDistances[init].second);
 
-							activeSet.insert(std::pair<uint_fast64_t, T>(trans.first, distances[trans.first].second));
+							activeSet.insert(std::pair<uint_fast64_t, T>(trans.getColumn(), distances[trans.getColumn()].second));
 						}
-						else if(distances[trans.first].second < trans.second * itDistances[init].second){
+						else if(distances[trans.getColumn()].second < trans.getValue() * itDistances[init].second){
 							//This state has already been discovered
 							//And the distance can be improved by using this transition.
 
 							//find state in set, remove it, reenter it with new and correct values.
-							auto range = activeSet.equal_range(std::pair<uint_fast64_t, T>(trans.first, distances[trans.first].second));
+							auto range = activeSet.equal_range(std::pair<uint_fast64_t, T>(trans.getColumn(), distances[trans.getColumn()].second));
 							for(;range.first != range.second; range.first++) {
-								if(trans.first == range.first->first) {
+								if(trans.getColumn() == range.first->first) {
 									activeSet.erase(range.first);
 									break;
 								}
 							}
 
 							//for initialization of subsys -> subsys search use prob (init -> subsys state -> found state) instead of prob(subsys state -> found state)
-							distances[trans.first].first = init;
-							distances[trans.first].second = trans.second * (itDistances[init].second == -1 ? 1 : itDistances[init].second);
+							distances[trans.getColumn()].first = init;
+							distances[trans.getColumn()].second = trans.getValue() * (itDistances[init].second == -1 ? 1 : itDistances[init].second);
 
-							activeSet.insert(std::pair<uint_fast64_t, T>(trans.first, trans.second));
+							activeSet.insert(std::pair<uint_fast64_t, T>(trans.getColumn(), trans.getValue()));
 						}
 					}
 				}
@@ -225,7 +225,7 @@ public:
 			activeSet.erase(--activeSet.end());
 
 			// Always stop at first target/terminal state
-			//if(terminalStates.get(activeState.first) || subSysStates.get(activeState.first)) break;
+			//if(terminalStates.get(activeState.getColumn()) || subSysStates.get(activeState.getColumn())) break;
 
 			// If this is an initial state, do not consider its outgoing transitions, since all relevant ones have already been considered
 			// Same goes for forbidden states since they may not be used on a path, except as last node.
@@ -233,36 +233,36 @@ public:
 				// Look at all neighbors
 				for(auto const& trans : transMat.getRow(activeState.first)) {
 					// Only consider the transition if it's not virtual
-					if(trans.second != (T) 0) {
+					if(trans.getValue() != (T) 0) {
 
-						T distance = activeState.second * trans.second;
+						T distance = activeState.second * trans.getValue();
 
 						//not discovered or initial terminal state
-						if(distances[trans.first].second == (T)-1) {
+						if(distances[trans.getColumn()].second == (T)-1) {
 							//New state discovered -> save it
-							distances[trans.first].first = activeState.first;
-							distances[trans.first].second = distance;
+							distances[trans.getColumn()].first = activeState.first;
+							distances[trans.getColumn()].second = distance;
 
 							// push newly discovered state into activeSet
-							activeSet.insert(std::pair<uint_fast64_t, T>(trans.first, distance));
+							activeSet.insert(std::pair<uint_fast64_t, T>(trans.getColumn(), distance));
 						}
-						else if(distances[trans.first].second < distance ){
+						else if(distances[trans.getColumn()].second < distance) {
 							//This state has already been discovered
 							//And the distance can be improved by using this transition.
 
 							//find state in set, remove it, reenter it with new and correct values.
 
-							auto range = activeSet.equal_range(std::pair<uint_fast64_t, T>(trans.first, distances[trans.first].second));
+							auto range = activeSet.equal_range(std::pair<uint_fast64_t, T>(trans.getColumn(), distances[trans.getColumn()].second));
 							for(;range.first != range.second; range.first++) {
-								if(trans.first == range.first->first) {
+								if(trans.getColumn() == range.first->first) {
 									activeSet.erase(range.first);
 									break;
 								}
 							}
 
-							distances[trans.first].first = activeState.first;
-							distances[trans.first].second = distance;
-							activeSet.insert(std::pair<uint_fast64_t, T>(trans.first, distance));
+							distances[trans.getColumn()].first = activeState.first;
+							distances[trans.getColumn()].second = distance;
+							activeSet.insert(std::pair<uint_fast64_t, T>(trans.getColumn(), distance));
 						}
 					}
 				}
@@ -271,138 +271,6 @@ public:
 
 		LOG4CPLUS_DEBUG(logger, "Discovery done.");
 	}
-
-	/*!
-	 *
-	 *//*
-	template <typename T>
-	static void doBackwardsSearch(storm::storage::SparseMatrix<T> const& transMat, storm::storage::BitVector& initStates, storm::storage::BitVector& subSysStates, storm::storage::BitVector& terminalStates, storm::storage::BitVector& allowedStates, std::vector<T>& probabilities, std::vector<uint_fast64_t>& shortestPath, T& probability) {
-		std::multiset<std::pair<uint_fast64_t, T>, CompareStates<T> > activeSet;
-
-		// resize and init distances
-		const std::pair<uint_fast64_t, T> initDistances(0, (T) -1);
-		std::vector<std::pair<uint_fast64_t, T>> distances(transMat.getColumnCount(), initDistances);
-
-		//since the transition matrix only gives a means to iterate over successors and not over predecessors and there is no Transpose for the matrix
-		//GraphTransitions is used
-		storm::models::GraphTransitions<T> backTrans(transMat, false);
-
-		//First store all allowed predecessors of target states that are not in the subsystem
-		for(storm::storage::BitVector::constIndexIterator target = terminalStates.begin(); target != terminalStates.end(); ++target) {
-
-			// if there is a terminal state that is an initial state then prob == 1 and return
-			if(initStates.get(*target)){
-				distances[*target].first = *target;
-				distances[*target].second = (T) 1;
-				return;
-			}
-
-			//iterate over predecessors
-			for(auto iter = backTrans.beginStateSuccessorsIterator(*target); iter != backTrans.endStateSuccessorsIterator(*target); iter++) {
-				//only use if allowed and not in subsys and not terminal
-				if(allowedStates.get(*iter) && !subSysStates.get(*iter) && !terminalStates.get(*iter)) {
-					//new state?
-					if(distances[*iter].second == (T) -1) {
-						// save as discovered and push into active set
-						distances[*iter].first = *target;												//successor
-						distances[*iter].second = transMat.getValue(*iter, *target);					//prob of shortest path
-
-						activeSet.insert(std::pair<uint_fast64_t, T>(*iter, probabilities[*iter]));		//prob of reaching some terminal state from pred.
-					}
-					else {
-						// state was already discovered
-						// is this the better transition?
-						if(distances[*iter].second > transMat.getValue(*iter, *target)) {
-							distances[*iter].first = *target;
-							distances[*iter].second = transMat.getValue(*iter, *target);
-						}
-					}
-				}
-			}
-		}
-
-		//Now store all allowed predecessors of subsystem states that are not subsystem states themselves
-		for(storm::storage::BitVector::constIndexIterator sysState = subSysStates.begin(); sysState != subSysStates.end(); ++sysState) {
-			//iterate over predecessors
-			for(auto iter = backTrans.beginStateSuccessorsIterator(*sysState); iter != backTrans.endStateSuccessorsIterator(*sysState); iter++) {
-				//only use if allowed and not in subsys and not terminal
-				if(allowedStates.get(*iter) && !subSysStates.get(*iter) && !terminalStates.get(*iter)) {
-					//new state?
-					if(distances[*iter].second == (T) -1) {
-						// save as discovered and push into active set
-						distances[*iter].first = *sysState;												//successor
-						distances[*iter].second = transMat.getValue(*iter, *sysState);					//prob of shortest path
-
-						activeSet.insert(std::pair<uint_fast64_t, T>(*iter, probabilities[*iter]));		//prob of reaching some terminal state from pred.
-					}
-					else {
-						// state was already discovered
-						// is this the better transition?
-						if(distances[*iter].second > transMat.getValue(*iter, *sysState)) {
-							distances[*iter].first = *sysState;
-							distances[*iter].second = transMat.getValue(*iter, *sysState);
-						}
-					}
-				}
-			}
-		}
-
-		LOG4CPLUS_DEBUG(logger, "Initialized.");
-
-		// Do the backwards search
-		std::pair<uint_fast64_t, T> state;
-		uint_fast64_t activeState;
-		while(!activeSet.empty()) {
-			// copy here since using a reference leads to segfault
-			state = *(--activeSet.end());
-			activeState = state.first;
-			activeSet.erase(--activeSet.end());
-
-			//stop on the first subsys/init state
-			if(initStates.get(activeState) || subSysStates.get(activeState)) break;
-
-			// If this is a subSys or terminal state, do not consider its incoming transitions, since all relevant ones have already been considered
-			if(!terminalStates.get(activeState) && !subSysStates.get(activeState)) {
-				//iterate over predecessors
-				for(auto iter = backTrans.beginStateSuccessorsIterator(activeState); iter != backTrans.endStateSuccessorsIterator(activeState); iter++) {
-					//only if transition is not "virtual" and no selfloop
-					if(*iter != activeState && transMat.getValue(*iter, activeState) != (T) 0) {
-						//new state?
-						if(distances[*iter].second == (T) -1) {
-							// save as discovered and push into active set
-							distances[*iter].first = activeState;
-							distances[*iter].second = transMat.getValue(*iter, activeState) * distances[activeState].second;
-
-							activeSet.insert(std::pair<uint_fast64_t, T>(*iter, probabilities[*iter]));
-						}
-						else {
-							// state was already discovered
-							// is this the better transition?
-							if(distances[*iter].second < transMat.getValue(*iter, activeState) * distances[activeState].second) {
-								distances[*iter].first = activeState;
-								distances[*iter].second = transMat.getValue(*iter, activeState) * distances[activeState].second;
-							}
-						}
-					}
-				}
-			}
-		}
-
-		//get path probability
-		probability = distances[activeState].second;
-		if(probability == (T) -1) probability = 1;
-
-		// iterate over the successors until reaching the end of the finite path
-		shortestPath.push_back(activeState);
-		activeState = distances[activeState].first;
-		while(!terminalStates.get(activeState) && !subSysStates.get(activeState)) {
-			shortestPath.push_back(activeState);
-			activeState = distances[activeState].first;
-		}
-		shortestPath.push_back(activeState);
-	}
-
-	*/
 
 	/*!
 	 *
@@ -482,7 +350,7 @@ public:
 		shortestPath.push_back(bestIndex);
 
 		//At last compensate for the distance between init and source state
-		probability = itSearch ? probability : probability / itDistances[bestIndex].second;
+		probability = itSearch ? probability : probability / itDistances[bestIndex].first;
 	}
 
 private:
@@ -507,7 +375,7 @@ public:
 	/*!
 	 *
 	 */
-	static storm::models::Dtmc<T> computeCriticalSubsystem(storm::models::Dtmc<T> & model, storm::property::prctl::AbstractStateFormula<T> const& stateFormula) {
+	static storm::models::Dtmc<T> computeCriticalSubsystem(storm::models::Dtmc<T> & model, std::shared_ptr<storm::properties::prctl::AbstractStateFormula<T>> const & stateFormula) {
 
 		//-------------------------------------------------------------
 		// 1. Strip and handle formulas
@@ -525,27 +393,22 @@ public:
 		// init bit vector to contain the subsystem
 		storm::storage::BitVector subSys(model.getNumberOfStates());
 
-		storm::property::prctl::AbstractPathFormula<T> const* pathFormulaPtr;
-		T bound = 0;
-
 		// Strip bound operator
-		storm::property::prctl::ProbabilisticBoundOperator<T> const* boundOperator = dynamic_cast<storm::property::prctl::ProbabilisticBoundOperator<T> const*>(&stateFormula);
+		std::shared_ptr<storm::properties::prctl::ProbabilisticBoundOperator<T>> boundOperator = std::dynamic_pointer_cast<storm::properties::prctl::ProbabilisticBoundOperator<T>>(stateFormula);
 
 		if(boundOperator == nullptr){
 			LOG4CPLUS_ERROR(logger, "No path bound operator at formula root.");
 			return model.getSubDtmc(subSys);
 		}
-		bound = boundOperator->getBound();
-
-		storm::property::prctl::AbstractPathFormula<T> const& abstractPathFormula = boundOperator->getPathFormula();
-		pathFormulaPtr = &abstractPathFormula;
+		T bound = boundOperator->getBound();
+		std::shared_ptr<storm::properties::prctl::AbstractPathFormula<T>> pathFormula = boundOperator->getChild();
 
 		// get "init" labeled states
 		storm::storage::BitVector initStates = model.getLabeledStates("init");
 
 		//get real prob for formula
 		logger.getAppender("mainFileAppender")->setThreshold(log4cplus::WARN_LOG_LEVEL);
-		std::vector<T> trueProbs = pathFormulaPtr->check(modelCheck, false);
+		std::vector<T> trueProbs = pathFormula->check(modelCheck, false);
 		logger.getAppender("mainFileAppender")->setThreshold(log4cplus::INFO_LOG_LEVEL);
 
 		T trueProb = 0;
@@ -559,22 +422,22 @@ public:
 		storm::storage::BitVector allowedStates;
 		storm::storage::BitVector targetStates;
 
-		storm::property::prctl::Eventually<T> const* eventually = dynamic_cast<storm::property::prctl::Eventually<T> const*>(pathFormulaPtr);
-		storm::property::prctl::Globally<T> const* globally = dynamic_cast<storm::property::prctl::Globally<T> const*>(pathFormulaPtr);
-		storm::property::prctl::Until<T> const* until = dynamic_cast<storm::property::prctl::Until<T> const*>(pathFormulaPtr);
-		if(eventually != nullptr) {
-			targetStates = eventually->getChild().check(modelCheck);
+		std::shared_ptr<storm::properties::prctl::Eventually<T>> eventually = std::dynamic_pointer_cast<storm::properties::prctl::Eventually<T>>(pathFormula);
+		std::shared_ptr<storm::properties::prctl::Globally<T>> globally = std::dynamic_pointer_cast<storm::properties::prctl::Globally<T>>(pathFormula);
+		std::shared_ptr<storm::properties::prctl::Until<T>> until = std::dynamic_pointer_cast<storm::properties::prctl::Until<T>>(pathFormula);
+		if(eventually.get() != nullptr) {
+			targetStates = eventually->getChild()->check(modelCheck);
 			allowedStates = storm::storage::BitVector(targetStates.size(), true);
 		}
-		else if(globally != nullptr){
+		else if(globally.get() != nullptr){
 			//eventually reaching a state without property visiting only states with property
-			allowedStates = globally->getChild().check(modelCheck);
+			allowedStates = globally->getChild()->check(modelCheck);
 			targetStates = storm::storage::BitVector(allowedStates);
 			targetStates.complement();
 		}
-		else if(until != nullptr) {
-			allowedStates = until->getLeft().check(modelCheck);
-			targetStates = until->getRight().check(modelCheck);
+		else if(until.get() != nullptr) {
+			allowedStates = until->getLeft()->check(modelCheck);
+			targetStates = until->getRight()->check(modelCheck);
 		}
 		else {
 			LOG4CPLUS_ERROR(logger, "Strange path formula. Can't decipher.");
@@ -588,7 +451,7 @@ public:
 		// estimate the path count using the models state count as well as the probability bound
 		uint_fast8_t const minPrec = 10;
 		uint_fast64_t const stateCount = model.getNumberOfStates();
-		uint_fast64_t const stateEstimate = ((T) stateCount) * bound;
+		uint_fast64_t const stateEstimate = static_cast<uint_fast64_t>(stateCount * bound);
 
 		//since this only has a good effect on big models -> use only if model has at least 10^5 states
 		uint_fast64_t precision = stateEstimate > 100000 ? stateEstimate/1000 : minPrec;
@@ -686,9 +549,8 @@ public:
 				//Are we critical?
 				if(subSysProb >= bound){
 					break;
-				}
-				else if (stateEstimate > 100000){
-					precision = (stateEstimate/1000) - ((stateEstimate/1000) - minPrec)*(subSysProb/bound);
+				} else if (stateEstimate > 100000){
+					precision = static_cast<uint_fast64_t>((stateEstimate / 1000.0) - ((stateEstimate / 1000.0) - minPrec)*(subSysProb/bound));
 				}
 			}
 		}

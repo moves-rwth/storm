@@ -51,8 +51,8 @@ public:
         columns.reserve(matrix.getEntryCount());
         
         for (auto const& entry : matrix) {
-            columns.emplace_back(entry.first);
-            values.emplace_back(entry.second);
+            columns.emplace_back(entry.getColumn());
+            values.emplace_back(entry.getValue());
         }
         
         std::swap(result->ir, columns);

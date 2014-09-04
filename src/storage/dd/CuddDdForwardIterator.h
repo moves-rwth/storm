@@ -25,7 +25,7 @@ namespace storm {
             friend class Dd<DdType::CUDD>;
 
             // Default-instantiate the constructor.
-            DdForwardIterator() = default;
+            DdForwardIterator();
             
             // Forbid copy-construction and copy assignment, because ownership of the internal pointer is unclear then.
             DdForwardIterator(DdForwardIterator<DdType::CUDD> const& other) = delete;
@@ -82,8 +82,10 @@ namespace storm {
              * @param isAtEnd A flag that indicates whether the iterator is at its end and may not be moved forward any
              * more.
              * @param metaVariables The meta variables that appear in the DD.
+             * @param enumerateDontCareMetaVariables If set to true, all meta variable assignments are enumerated, even
+             * if a meta variable does not at all influence the the function value.
              */
-            DdForwardIterator(std::shared_ptr<DdManager<DdType::CUDD>> ddManager, DdGen* generator, int* cube, double value, bool isAtEnd, std::set<std::string> const* metaVariables = nullptr);
+            DdForwardIterator(std::shared_ptr<DdManager<DdType::CUDD>> ddManager, DdGen* generator, int* cube, double value, bool isAtEnd, std::set<std::string> const* metaVariables = nullptr, bool enumerateDontCareMetaVariables = true);
             
             /*!
              * Recreates the internal information when a new cube needs to be treated.
@@ -113,6 +115,10 @@ namespace storm {
             
             // The set of meta variables appearing in the DD.
             std::set<std::string> const* metaVariables;
+            
+            // A flag that indicates whether the iterator is supposed to enumerate meta variable valuations even if
+            // they don't influence the function value.
+            bool enumerateDontCareMetaVariables;
             
             // A number that represents how many assignments of the current cube have already been returned previously.
             // This is needed, because cubes may represent many assignments (if they have don't care variables).

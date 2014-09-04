@@ -4,7 +4,7 @@
 #include <unordered_map>
 
 #include "src/storage/dd/DdManager.h"
-#include "src/storage/dd/DdMetaVariable.h"
+#include "src/storage/dd/CuddDdMetaVariable.h"
 #include "src/utility/OsDetection.h"
 
 // Include the C++-interface of CUDD.
@@ -16,6 +16,8 @@ namespace storm {
         class DdManager<DdType::CUDD> : public std::enable_shared_from_this<DdManager<DdType::CUDD>> {
         public:
             friend class Dd<DdType::CUDD>;
+            friend class Odd<DdType::CUDD>;
+            friend class DdForwardIterator<DdType::CUDD>;
             
             /*!
              * Creates an empty manager without any meta variables.
@@ -83,7 +85,7 @@ namespace storm {
             /*!
              * Adds an integer meta variable with the given name and range.
              *
-             * @param name The name of the meta variable.
+             * @param name The (non-empty) name of the meta variable.
              * @param low The lowest value of the range of the variable.
              * @param high The highest value of the range of the variable.
              */
@@ -92,27 +94,9 @@ namespace storm {
             /*!
              * Adds a boolean meta variable with the given name.
              *
-             * @param name The name of the meta variable.
+             * @param name The (non-empty) name of the meta variable.
              */
             void addMetaVariable(std::string const& name);
-            
-            /*!
-             * Adds integer meta variables with the given names and (equal) range and arranges the DD variables in an
-             * interleaved order.
-             *
-             * @param names The names of the variables.
-             * @param low The lowest value of the ranges of the variables.
-             * @param high The highest value of the ranges of the variables.
-             */
-            void addMetaVariablesInterleaved(std::vector<std::string> const& names, int_fast64_t low, int_fast64_t high);
-            
-            /*!
-             * Retrieves the meta variable with the given name if it exists.
-             *
-             * @param metaVariableName The name of the meta variable to retrieve.
-             * @return The meta variable with the given name.
-             */
-            DdMetaVariable<DdType::CUDD> const& getMetaVariable(std::string const& metaVariableName) const;
             
             /*!
              * Retrieves the names of all meta variables that have been added to the manager.
@@ -136,6 +120,33 @@ namespace storm {
              */
             bool hasMetaVariable(std::string const& metaVariableName) const;
             
+            /*!
+             * Sets whether or not dynamic reordering is allowed for the DDs managed by this manager.
+             *
+             * @param value If set to true, dynamic reordering is allowed and forbidden otherwise.
+             */
+            void allowDynamicReordering(bool value);
+            
+            /*!
+             * Retrieves whether dynamic reordering is currently allowed.
+             *
+             * @return True iff dynamic reordering is currently allowed.
+             */
+            bool isDynamicReorderingAllowed() const;
+            
+            /*!
+             * Triggers a reordering of the DDs managed by this manager.
+             */
+            void triggerReordering();
+            
+            /*!
+             * Retrieves the meta variable with the given name if it exists.
+             *
+             * @param metaVariableName The name of the meta variable to retrieve.
+             * @return The meta variable with the given name.
+             */
+            DdMetaVariable<DdType::CUDD> const& getMetaVariable(std::string const& metaVariableName) const;
+            
         private:
             /*!
              * Retrieves a list of names of the DD variables in the order of their index.
@@ -151,11 +162,21 @@ namespace storm {
              */
             Cudd& getCuddManager();
             
+            /*!
+             * Retrieves the underlying CUDD manager.
+             *
+             * @return The underlying CUDD manager.
+             */
+            Cudd const& getCuddManager() const;
+            
             // A mapping from variable names to the meta variable information.
             std::unordered_map<std::string, DdMetaVariable<DdType::CUDD>> metaVariableMap;
             
             // The manager responsible for the DDs created/modified with this DdManager.
             Cudd cuddManager;
+            
+            // The technique that is used for dynamic reordering.
+            Cudd_ReorderingType reorderingTechnique;
         };
     }
 }

@@ -3,6 +3,7 @@
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/storage/dd/CuddDdManager.h"
 #include "src/storage/dd/CuddDd.h"
+#include "src/storage/dd/CuddOdd.h"
 #include "src/storage/dd/DdMetaVariable.h"
 
 TEST(CuddDdManager, Constants) {
@@ -38,26 +39,18 @@ TEST(CuddDdManager, Constants) {
 TEST(CuddDdManager, AddGetMetaVariableTest) {
     std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::CUDD>> manager(new storm::dd::DdManager<storm::dd::DdType::CUDD>());
     ASSERT_NO_THROW(manager->addMetaVariable("x", 1, 9));
-    EXPECT_EQ(1, manager->getNumberOfMetaVariables());
+    EXPECT_EQ(2, manager->getNumberOfMetaVariables());
     
-    std::vector<std::string> names = {"x", "x'"};
-    ASSERT_THROW(manager->addMetaVariablesInterleaved(names, 0, 3), storm::exceptions::InvalidArgumentException);
+    ASSERT_THROW(manager->addMetaVariable("x", 0, 3), storm::exceptions::InvalidArgumentException);
 
-    names = {"y", "y"};
-    ASSERT_THROW(manager->addMetaVariablesInterleaved(names, 0, 3), storm::exceptions::InvalidArgumentException);
+    ASSERT_NO_THROW(manager->addMetaVariable("y", 0, 3));
+    EXPECT_EQ(4, manager->getNumberOfMetaVariables());
     
-    names = {"y", "y'"};
-    ASSERT_NO_THROW(manager->addMetaVariablesInterleaved(names, 0, 3));
-    EXPECT_EQ(3, manager->getNumberOfMetaVariables());
-    
-    EXPECT_FALSE(manager->hasMetaVariable("x'"));
+    EXPECT_TRUE(manager->hasMetaVariable("x'"));
     EXPECT_TRUE(manager->hasMetaVariable("y'"));
     
-    std::set<std::string> metaVariableSet = {"x", "y", "y'"};
+    std::set<std::string> metaVariableSet = {"x", "x'", "y", "y'"};
     EXPECT_EQ(metaVariableSet, manager->getAllMetaVariableNames());
-    
-    ASSERT_THROW(storm::dd::DdMetaVariable<storm::dd::DdType::CUDD> const& metaVariableX = manager->getMetaVariable("x'"), storm::exceptions::InvalidArgumentException);
-    ASSERT_NO_THROW(storm::dd::DdMetaVariable<storm::dd::DdType::CUDD> const& metaVariableX = manager->getMetaVariable("x"));
 }
 
 TEST(CuddDdManager, EncodingTest) {
@@ -97,20 +90,6 @@ TEST(CuddDdManager, IdentityTest) {
     EXPECT_EQ(9, range.getNonZeroCount());
     EXPECT_EQ(10, range.getLeafCount());
     EXPECT_EQ(21, range.getNodeCount());
-}
-
-TEST(CuddDdMetaVariable, AccessorTest) {
-    std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::CUDD>> manager(new storm::dd::DdManager<storm::dd::DdType::CUDD>());
-    manager->addMetaVariable("x", 1, 9);
-    EXPECT_EQ(1, manager->getNumberOfMetaVariables());
-    ASSERT_NO_THROW(storm::dd::DdMetaVariable<storm::dd::DdType::CUDD> const& metaVariableX = manager->getMetaVariable("x"));
-    storm::dd::DdMetaVariable<storm::dd::DdType::CUDD> const& metaVariableX = manager->getMetaVariable("x");
-    
-    EXPECT_EQ(1, metaVariableX.getLow());
-    EXPECT_EQ(9, metaVariableX.getHigh());
-    EXPECT_EQ("x", metaVariableX.getName());
-    EXPECT_EQ(manager, metaVariableX.getDdManager());
-    EXPECT_EQ(4, metaVariableX.getNumberOfDdVariables());
 }
 
 TEST(CuddDd, OperatorTest) {
@@ -184,12 +163,12 @@ TEST(CuddDd, OperatorTest) {
     
     dd4 = dd3.minimum(dd1);
     dd4 *= manager->getEncoding("x", 2);
-    dd4.sumAbstract({"x"});
+    dd4 = dd4.sumAbstract({"x"});
     EXPECT_EQ(2, dd4.getValue());
 
     dd4 = dd3.maximum(dd1);
     dd4 *= manager->getEncoding("x", 2);
-    dd4.sumAbstract({"x"});
+    dd4 = dd4.sumAbstract({"x"});
     EXPECT_EQ(5, dd4.getValue());
 
     dd1 = manager->getConstant(0.01);
@@ -200,7 +179,7 @@ TEST(CuddDd, OperatorTest) {
 
 TEST(CuddDd, AbstractionTest) {
     std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::CUDD>> manager(new storm::dd::DdManager<storm::dd::DdType::CUDD>());
-    manager->addMetaVariablesInterleaved({"x", "x'"}, 1, 9);
+    manager->addMetaVariable("x", 1, 9);
     storm::dd::Dd<storm::dd::DdType::CUDD> dd1;
     storm::dd::Dd<storm::dd::DdType::CUDD> dd2;
     storm::dd::Dd<storm::dd::DdType::CUDD> dd3;
@@ -209,36 +188,36 @@ TEST(CuddDd, AbstractionTest) {
     dd2 = manager->getConstant(5);
     dd3 = dd1.equals(dd2);
     EXPECT_EQ(1, dd3.getNonZeroCount());
-    ASSERT_THROW(dd3.existsAbstract({"x'"}), storm::exceptions::InvalidArgumentException);
-    ASSERT_NO_THROW(dd3.existsAbstract({"x"}));
+    ASSERT_THROW(dd3 = dd3.existsAbstract({"x'"}), storm::exceptions::InvalidArgumentException);
+    ASSERT_NO_THROW(dd3 = dd3.existsAbstract({"x"}));
     EXPECT_EQ(1, dd3.getNonZeroCount());
     EXPECT_EQ(1, dd3.getMax());
 
     dd3 = dd1.equals(dd2);
     dd3 *= manager->getConstant(3);
     EXPECT_EQ(1, dd3.getNonZeroCount());
-    ASSERT_THROW(dd3.existsAbstract({"x'"}), storm::exceptions::InvalidArgumentException);
-    ASSERT_NO_THROW(dd3.existsAbstract({"x"}));
+    ASSERT_THROW(dd3 = dd3.existsAbstract({"x'"}), storm::exceptions::InvalidArgumentException);
+    ASSERT_NO_THROW(dd3 = dd3.existsAbstract({"x"}));
     EXPECT_TRUE(dd3 == manager->getZero());
 
     dd3 = dd1.equals(dd2);
     dd3 *= manager->getConstant(3);
-    ASSERT_THROW(dd3.sumAbstract({"x'"}), storm::exceptions::InvalidArgumentException);
-    ASSERT_NO_THROW(dd3.sumAbstract({"x"}));
+    ASSERT_THROW(dd3 = dd3.sumAbstract({"x'"}), storm::exceptions::InvalidArgumentException);
+    ASSERT_NO_THROW(dd3 = dd3.sumAbstract({"x"}));
     EXPECT_EQ(1, dd3.getNonZeroCount());
     EXPECT_EQ(3, dd3.getMax());
 
     dd3 = dd1.equals(dd2);
     dd3 *= manager->getConstant(3);
-    ASSERT_THROW(dd3.minAbstract({"x'"}), storm::exceptions::InvalidArgumentException);
-    ASSERT_NO_THROW(dd3.minAbstract({"x"}));
+    ASSERT_THROW(dd3 = dd3.minAbstract({"x'"}), storm::exceptions::InvalidArgumentException);
+    ASSERT_NO_THROW(dd3 = dd3.minAbstract({"x"}));
     EXPECT_EQ(0, dd3.getNonZeroCount());
     EXPECT_EQ(0, dd3.getMax());
 
     dd3 = dd1.equals(dd2);
     dd3 *= manager->getConstant(3);
-    ASSERT_THROW(dd3.maxAbstract({"x'"}), storm::exceptions::InvalidArgumentException);
-    ASSERT_NO_THROW(dd3.maxAbstract({"x"}));
+    ASSERT_THROW(dd3 = dd3.maxAbstract({"x'"}), storm::exceptions::InvalidArgumentException);
+    ASSERT_NO_THROW(dd3 = dd3.maxAbstract({"x"}));
     EXPECT_EQ(1, dd3.getNonZeroCount());
     EXPECT_EQ(3, dd3.getMax());
 }
@@ -246,7 +225,7 @@ TEST(CuddDd, AbstractionTest) {
 TEST(CuddDd, SwapTest) {
     std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::CUDD>> manager(new storm::dd::DdManager<storm::dd::DdType::CUDD>());
     
-    manager->addMetaVariablesInterleaved({"x", "x'"}, 1, 9);
+    manager->addMetaVariable("x", 1, 9);
     manager->addMetaVariable("z", 2, 8);
     storm::dd::Dd<storm::dd::DdType::CUDD> dd1;
     storm::dd::Dd<storm::dd::DdType::CUDD> dd2;
@@ -259,7 +238,7 @@ TEST(CuddDd, SwapTest) {
 
 TEST(CuddDd, MultiplyMatrixTest) {
     std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::CUDD>> manager(new storm::dd::DdManager<storm::dd::DdType::CUDD>());
-    manager->addMetaVariablesInterleaved({"x", "x'"}, 1, 9);
+    manager->addMetaVariable("x", 1, 9);
     
     storm::dd::Dd<storm::dd::DdType::CUDD> dd1 = manager->getIdentity("x").equals(manager->getIdentity("x'"));
     storm::dd::Dd<storm::dd::DdType::CUDD> dd2 = manager->getRange("x'");
@@ -307,4 +286,138 @@ TEST(CuddDd, ForwardIteratorTest) {
         ++numberOfValuations;
     }
     EXPECT_EQ(9, numberOfValuations);
+
+    dd = manager->getRange("x");
+    dd = dd.ite(manager->getOne(), manager->getOne());
+    ASSERT_NO_THROW(it = dd.begin());
+    ASSERT_NO_THROW(ite = dd.end());
+    numberOfValuations = 0;
+    while (it != ite) {
+        ASSERT_NO_THROW(valuationValuePair = *it);
+        ASSERT_NO_THROW(++it);
+        ++numberOfValuations;
+    }
+    EXPECT_EQ(16, numberOfValuations);
+    
+    ASSERT_NO_THROW(it = dd.begin(false));
+    ASSERT_NO_THROW(ite = dd.end());
+    numberOfValuations = 0;
+    while (it != ite) {
+        ASSERT_NO_THROW(valuationValuePair = *it);
+        ASSERT_NO_THROW(++it);
+        ++numberOfValuations;
+    }
+    EXPECT_EQ(1, numberOfValuations);
+}
+
+TEST(CuddDd, ToExpressionTest) {
+    std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::CUDD>> manager(new storm::dd::DdManager<storm::dd::DdType::CUDD>());
+    manager->addMetaVariable("x", 1, 9);
+
+    storm::dd::Dd<storm::dd::DdType::CUDD> dd;
+    ASSERT_NO_THROW(dd = manager->getIdentity("x"));
+    
+    storm::expressions::Expression ddAsExpression;
+    ASSERT_NO_THROW(ddAsExpression = dd.toExpression());
+
+    storm::expressions::SimpleValuation valuation;
+    for (std::size_t bit = 0; bit < manager->getMetaVariable("x").getNumberOfDdVariables(); ++bit) {
+        valuation.addBooleanIdentifier("x." + std::to_string(bit));
+    }
+    
+    storm::dd::DdMetaVariable<storm::dd::DdType::CUDD> const& metaVariable = manager->getMetaVariable("x");
+
+    for (auto valuationValuePair : dd) {
+        for (std::size_t i = 0; i < metaVariable.getNumberOfDdVariables(); ++i) {
+            // Check if the i-th bit is set or not and modify the valuation accordingly.
+            if (((valuationValuePair.first.getIntegerValue("x") - metaVariable.getLow()) & (1ull << (metaVariable.getNumberOfDdVariables() - i - 1))) != 0) {
+                valuation.setBooleanValue("x." + std::to_string(i), true);
+            } else {
+                valuation.setBooleanValue("x." + std::to_string(i), false);
+            }
+        }
+        
+        // At this point, the constructed valuation should make the expression obtained from the DD evaluate to the very
+        // same value as the current value obtained from the DD.
+        EXPECT_EQ(valuationValuePair.second, ddAsExpression.evaluateAsDouble(&valuation));
+    }
+    
+    storm::expressions::Expression mintermExpression = dd.getMintermExpression();
+    
+    // Check whether all minterms are covered.
+    for (auto valuationValuePair : dd) {
+        for (std::size_t i = 0; i < metaVariable.getNumberOfDdVariables(); ++i) {
+            // Check if the i-th bit is set or not and modify the valuation accordingly.
+            if (((valuationValuePair.first.getIntegerValue("x") - metaVariable.getLow()) & (1ull << (metaVariable.getNumberOfDdVariables() - i - 1))) != 0) {
+                valuation.setBooleanValue("x." + std::to_string(i), true);
+            } else {
+                valuation.setBooleanValue("x." + std::to_string(i), false);
+            }
+        }
+        
+        // At this point, the constructed valuation should make the expression obtained from the DD evaluate to the very
+        // same value as the current value obtained from the DD.
+        EXPECT_TRUE(mintermExpression.evaluateAsBool(&valuation));
+    }
+    
+    // Now check no additional minterms are covered.
+    dd = !dd;
+    for (auto valuationValuePair : dd) {
+        for (std::size_t i = 0; i < metaVariable.getNumberOfDdVariables(); ++i) {
+            // Check if the i-th bit is set or not and modify the valuation accordingly.
+            if (((valuationValuePair.first.getIntegerValue("x") - metaVariable.getLow()) & (1ull << (metaVariable.getNumberOfDdVariables() - i - 1))) != 0) {
+                valuation.setBooleanValue("x." + std::to_string(i), true);
+            } else {
+                valuation.setBooleanValue("x." + std::to_string(i), false);
+            }
+        }
+        
+        // At this point, the constructed valuation should make the expression obtained from the DD evaluate to the very
+        // same value as the current value obtained from the DD.
+        EXPECT_FALSE(mintermExpression.evaluateAsBool(&valuation));
+    }
+}
+
+TEST(CuddDd, OddTest) {
+    std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::CUDD>> manager(new storm::dd::DdManager<storm::dd::DdType::CUDD>());
+    manager->addMetaVariable("a");
+    manager->addMetaVariable("x", 1, 9);
+    
+    storm::dd::Dd<storm::dd::DdType::CUDD> dd = manager->getIdentity("x");
+    storm::dd::Odd<storm::dd::DdType::CUDD> odd;
+    ASSERT_NO_THROW(odd = storm::dd::Odd<storm::dd::DdType::CUDD>(dd));
+    EXPECT_EQ(9, odd.getTotalOffset());
+    EXPECT_EQ(12, odd.getNodeCount());
+
+    std::vector<double> ddAsVector;
+    ASSERT_NO_THROW(ddAsVector = dd.toVector<double>());
+    EXPECT_EQ(9, ddAsVector.size());
+    for (uint_fast64_t i = 0; i < ddAsVector.size(); ++i) {
+        EXPECT_TRUE(i+1 == ddAsVector[i]);
+    }
+    
+    // Create a non-trivial matrix.
+    dd = manager->getIdentity("x").equals(manager->getIdentity("x'")) * manager->getRange("x");
+    dd += manager->getEncoding("x", 1) * manager->getRange("x'") + manager->getEncoding("x'", 1) * manager->getRange("x");
+    
+    // Create the ODDs.
+    storm::dd::Odd<storm::dd::DdType::CUDD> rowOdd;
+    ASSERT_NO_THROW(rowOdd = storm::dd::Odd<storm::dd::DdType::CUDD>(manager->getRange("x")));
+    storm::dd::Odd<storm::dd::DdType::CUDD> columnOdd;
+    ASSERT_NO_THROW(columnOdd = storm::dd::Odd<storm::dd::DdType::CUDD>(manager->getRange("x'")));
+    
+    // Try to translate the matrix.
+    storm::storage::SparseMatrix<double> matrix;
+    ASSERT_NO_THROW(matrix = dd.toMatrix({"x"}, {"x'"}, rowOdd, columnOdd));
+    
+    EXPECT_EQ(9, matrix.getRowCount());
+    EXPECT_EQ(9, matrix.getColumnCount());
+    EXPECT_EQ(25, matrix.getNonzeroEntryCount());
+    
+    dd = manager->getRange("x") * manager->getRange("x'") * manager->getEncoding("a", 0).ite(dd, dd + manager->getConstant(1));
+    ASSERT_NO_THROW(matrix = dd.toMatrix({"x"}, {"x'"}, {"a"}, rowOdd, columnOdd));
+    EXPECT_EQ(18, matrix.getRowCount());
+    EXPECT_EQ(9, matrix.getRowGroupCount());
+    EXPECT_EQ(9, matrix.getColumnCount());
+    EXPECT_EQ(106, matrix.getNonzeroEntryCount());
 }

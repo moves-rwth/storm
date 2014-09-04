@@ -4,22 +4,18 @@
 #include <cstdint>
 #include <memory>
 #include <set>
+#include <map>
 #include <iostream>
 
+#include "src/storage/expressions/ExpressionReturnType.h"
 #include "src/storage/expressions/Valuation.h"
 #include "src/storage/expressions/ExpressionVisitor.h"
+#include "src/storage/expressions/OperatorType.h"
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/utility/OsDetection.h"
 
 namespace storm {
-    namespace expressions {
-        /*!
-         * Each node in an expression tree has a uniquely defined type from this enum.
-         */
-        enum class ExpressionReturnType {Undefined, Bool, Int, Double};
-        
-        std::ostream& operator<<(std::ostream& stream, ExpressionReturnType const& enumValue);
-        
+    namespace expressions {        
         /*!
          * The base class of all expression classes.
          */
@@ -74,11 +70,56 @@ namespace storm {
             virtual double evaluateAsDouble(Valuation const* valuation = nullptr) const;
 
             /*!
-             * Retrieves whether the expression is constant, i.e., contains no variables or undefined constants.
+             * Returns the arity of the expression.
              *
-             * @return True iff the expression is constant.
+             * @return The arity of the expression.
              */
-            virtual bool isConstant() const;
+            virtual uint_fast64_t getArity() const;
+            
+            /*!
+             * Retrieves the given operand from the expression.
+             *
+             * @param operandIndex The index of the operand to retrieve. This must be lower than the arity of the expression.
+             * @return The operand at the given index.
+             */
+            virtual std::shared_ptr<BaseExpression const> getOperand(uint_fast64_t operandIndex) const;
+            
+            /*!
+             * Retrieves the identifier associated with this expression. This is only legal to call if the expression
+             * is a variable.
+             *
+             * @return The identifier associated with this expression.
+             */
+            virtual std::string const& getIdentifier() const;
+            
+            /*!
+             * Retrieves the operator of a function application. This is only legal to call if the expression is
+             * function application.
+             *
+             * @return The operator associated with the function application.
+             */
+            virtual OperatorType getOperator() const;
+            
+            /*!
+             * Retrieves whether the expression contains a variable.
+             *
+             * @return True iff the expression contains a variable.
+             */
+            virtual bool containsVariables() const;
+            
+            /*!
+             * Retrieves whether the expression is a literal.
+             *
+             * @return True iff the expression is a literal.
+             */
+            virtual bool isLiteral() const;
+            
+            /*!
+             * Retrieves whether the expression is a variable.
+             *
+             * @return True iff the expression is a variable.
+             */
+            virtual bool isVariable() const;
             
             /*!
              * Checks if the expression is equal to the boolean literal true.
@@ -95,19 +136,26 @@ namespace storm {
             virtual bool isFalse() const;
             
             /*!
+             * Checks if the expression is a function application (of any sort).
+             *
+             * @return True iff the expression is a function application.
+             */
+            virtual bool isFunctionApplication() const;
+            
+            /*!
              * Retrieves the set of all variables that appear in the expression.
              *
              * @return The set of all variables that appear in the expression.
              */
             virtual std::set<std::string> getVariables() const = 0;
-            
-            /*!
-             * Retrieves the set of all constants that appear in the expression.
-             *
-             * @return The set of all constants that appear in the expression.
-             */
-            virtual std::set<std::string> getConstants() const = 0;
-            
+
+			/*!
+			* Retrieves the mapping of all variables that appear in the expression to their return type.
+			*
+			* @return The mapping of all variables that appear in the expression to their return type.
+			*/
+			virtual std::map<std::string, ExpressionReturnType> getVariablesAndTypes() const = 0;
+
             /*!
              * Simplifies the expression according to some simple rules.
              *

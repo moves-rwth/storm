@@ -10,17 +10,17 @@ namespace storm {
             return this->getValue();
         }
         
-        bool DoubleLiteralExpression::isConstant() const {
+        bool DoubleLiteralExpression::isLiteral() const {
             return true;
         }
         
         std::set<std::string> DoubleLiteralExpression::getVariables() const {
             return std::set<std::string>();
-        }
-        
-        std::set<std::string> DoubleLiteralExpression::getConstants() const {
-            return std::set<std::string>();
-        }
+		}
+
+		std::map<std::string, ExpressionReturnType> DoubleLiteralExpression::getVariablesAndTypes() const {
+			return std::map<std::string, ExpressionReturnType>();
+		}
         
         std::shared_ptr<BaseExpression const> DoubleLiteralExpression::simplify() const {
             return this->shared_from_this();

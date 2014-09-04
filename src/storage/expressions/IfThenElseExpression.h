@@ -27,12 +27,16 @@ namespace storm {
             virtual ~IfThenElseExpression() = default;
             
             // Override base class methods.
+            virtual std::shared_ptr<BaseExpression const> getOperand(uint_fast64_t operandIndex) const override;
+            virtual OperatorType getOperator() const override;
+            virtual bool isFunctionApplication() const override;
+            virtual bool containsVariables() const override;
+            virtual uint_fast64_t getArity() const override;
             virtual bool evaluateAsBool(Valuation const* valuation = nullptr) const override;
             virtual int_fast64_t evaluateAsInt(Valuation const* valuation = nullptr) const override;
             virtual double evaluateAsDouble(Valuation const* valuation = nullptr) const override;
-            virtual bool isConstant() const override;
-            virtual std::set<std::string> getVariables() const override;
-            virtual std::set<std::string> getConstants() const override;
+			virtual std::set<std::string> getVariables() const override;
+			virtual std::map<std::string, ExpressionReturnType> getVariablesAndTypes() const override;
             virtual std::shared_ptr<BaseExpression const> simplify() const override;
             virtual void accept(ExpressionVisitor* visitor) const override;
             

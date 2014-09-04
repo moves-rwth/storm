@@ -237,7 +237,7 @@ namespace storm {
                                       for (; targetIt != targetIte; ++targetIt, ++rowGroupingIt) {
                                           *targetIt = *sourceIt;
                                           ++sourceIt;
-                                          localChoice = 0;
+                                          localChoice = 1;
                                           if (choices != nullptr) {
                                               *choiceIt = 0;
                                           }
@@ -271,7 +271,7 @@ namespace storm {
                 for (; targetIt != targetIte; ++targetIt, ++rowGroupingIt) {
                     *targetIt = *sourceIt;
                     ++sourceIt;
-                    localChoice = 0;
+                    localChoice = 1;
                     if (choices != nullptr) {
                         *choiceIt = 0;
                     }

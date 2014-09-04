@@ -89,62 +89,6 @@ namespace storm {
                 std::vector<boost::container::flat_set<uint_fast64_t>> choiceLabeling;
             };
             
-            static std::map<std::string, storm::expressions::Expression> parseConstantDefinitionString(storm::prism::Program const& program, std::string const& constantDefinitionString) {
-                std::map<std::string, storm::expressions::Expression> constantDefinitions;
-                std::set<std::string> definedConstants;
-                
-                if (!constantDefinitionString.empty()) {
-                    // Parse the string that defines the undefined constants of the model and make sure that it contains exactly
-                    // one value for each undefined constant of the model.
-                    std::vector<std::string> definitions;
-                    boost::split(definitions, constantDefinitionString, boost::is_any_of(","));
-                    for (auto& definition : definitions) {
-                        boost::trim(definition);
-                        
-                        // Check whether the token could be a legal constant definition.
-                        uint_fast64_t positionOfAssignmentOperator = definition.find('=');
-                        if (positionOfAssignmentOperator == std::string::npos) {
-                            throw storm::exceptions::InvalidArgumentException() << "Illegal constant definition string: syntax error.";
-                        }
-                        
-                        // Now extract the variable name and the value from the string.
-                        std::string constantName = definition.substr(0, positionOfAssignmentOperator);
-                        boost::trim(constantName);
-                        std::string value = definition.substr(positionOfAssignmentOperator + 1);
-                        boost::trim(value);
-                        
-                        // Check whether the constant is a legal undefined constant of the program and if so, of what type it is.
-                        if (program.hasConstant(constantName)) {
-                            // Get the actual constant and check whether it's in fact undefined.
-                            auto const& constant = program.getConstant(constantName);
-                            LOG_THROW(!constant.isDefined(), storm::exceptions::InvalidArgumentException, "Illegally trying to define already defined constant '" << constantName <<"'.");
-                            LOG_THROW(definedConstants.find(constantName) == definedConstants.end(), storm::exceptions::InvalidArgumentException, "Illegally trying to define constant '" << constantName <<"' twice.");
-                            definedConstants.insert(constantName);
-                            
-                            if (constant.getType() == storm::expressions::ExpressionReturnType::Bool) {
-                                if (value == "true") {
-                                    constantDefinitions[constantName] = storm::expressions::Expression::createTrue();
-                                } else if (value == "false") {
-                                    constantDefinitions[constantName] = storm::expressions::Expression::createFalse();
-                                } else {
-                                    throw storm::exceptions::InvalidArgumentException() << "Illegal value for boolean constant: " << value << ".";
-                                }
-                            } else if (constant.getType() == storm::expressions::ExpressionReturnType::Int) {
-                                int_fast64_t integerValue = std::stoi(value);
-                                constantDefinitions[constantName] = storm::expressions::Expression::createIntegerLiteral(integerValue);
-                            } else if (constant.getType() == storm::expressions::ExpressionReturnType::Double) {
-                                double doubleValue = std::stod(value);
-                                constantDefinitions[constantName] = storm::expressions::Expression::createDoubleLiteral(doubleValue);
-                            }
-                        } else {
-                            throw storm::exceptions::InvalidArgumentException() << "Illegal constant definition string: unknown undefined constant " << constantName << ".";
-                        }
-                    }
-                }
-                
-                return constantDefinitions;
-            }
-            
             /*!
              * Convert the program given at construction time to an abstract model. The type of the model is the one
              * specified in the program. The given reward model name selects the rewards that the model will contain.
@@ -160,7 +104,7 @@ namespace storm {
             static std::unique_ptr<storm::models::AbstractModel<ValueType>> translateProgram(storm::prism::Program program, std::string const& constantDefinitionString = "", std::string const& rewardModelName = "") {
 				// Start by defining the undefined constants in the model.
                 // First, we need to parse the constant definition string.
-                std::map<std::string, storm::expressions::Expression> constantDefinitions = parseConstantDefinitionString(program, constantDefinitionString);
+                std::map<std::string, storm::expressions::Expression> constantDefinitions = storm::utility::prism::parseConstantDefinitionString(program, constantDefinitionString);
                 
                 storm::prism::Program preparedProgram = program.defineUndefinedConstants(constantDefinitions);
                 LOG_THROW((std::is_same<ValueType, RationalFunction>::value || !preparedProgram.hasUndefinedConstants()), storm::exceptions::InvalidArgumentException, "Program still contains undefined constants.");

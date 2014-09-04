@@ -3,20 +3,7 @@
 #include <string>
 
 #include "src/storage/expressions/IdentifierSubstitutionVisitor.h"
-
-#include "src/storage/expressions/IfThenElseExpression.h"
-#include "src/storage/expressions/BinaryBooleanFunctionExpression.h"
-#include "src/storage/expressions/BinaryNumericalFunctionExpression.h"
-#include "src/storage/expressions/BinaryRelationExpression.h"
-#include "src/storage/expressions/BooleanConstantExpression.h"
-#include "src/storage/expressions/IntegerConstantExpression.h"
-#include "src/storage/expressions/DoubleConstantExpression.h"
-#include "src/storage/expressions/BooleanLiteralExpression.h"
-#include "src/storage/expressions/IntegerLiteralExpression.h"
-#include "src/storage/expressions/DoubleLiteralExpression.h"
-#include "src/storage/expressions/VariableExpression.h"
-#include "src/storage/expressions/UnaryBooleanFunctionExpression.h"
-#include "src/storage/expressions/UnaryNumericalFunctionExpression.h"
+#include "src/storage/expressions/Expressions.h"
 
 namespace storm {
     namespace expressions  {
@@ -26,8 +13,8 @@ namespace storm {
         }
         
 		template<typename MapType>
-        Expression IdentifierSubstitutionVisitor<MapType>::substitute(BaseExpression const* expression) {
-            expression->accept(this);
+        Expression IdentifierSubstitutionVisitor<MapType>::substitute(Expression const& expression) {
+            expression.getBaseExpression().accept(this);
             return Expression(this->expressionStack.top());
         }
         
@@ -106,40 +93,7 @@ namespace storm {
                 this->expressionStack.push(std::shared_ptr<BaseExpression>(new BinaryRelationExpression(expression->getReturnType(), firstExpression, secondExpression, expression->getRelationType())));
             }
         }
-        
-        template<typename MapType>
-        void IdentifierSubstitutionVisitor<MapType>::visit(BooleanConstantExpression const* expression) {
-            // If the boolean constant is in the key set of the substitution, we need to replace it.
-            auto const& namePair = this->identifierToIdentifierMap.find(expression->getConstantName());
-            if (namePair != this->identifierToIdentifierMap.end()) {
-                this->expressionStack.push(std::shared_ptr<BaseExpression>(new BooleanConstantExpression(namePair->second)));
-            } else {
-                this->expressionStack.push(expression->getSharedPointer());
-            }
-        }
-        
-        template<typename MapType>
-        void IdentifierSubstitutionVisitor<MapType>::visit(DoubleConstantExpression const* expression) {
-            // If the double constant is in the key set of the substitution, we need to replace it.
-            auto const& namePair = this->identifierToIdentifierMap.find(expression->getConstantName());
-            if (namePair != this->identifierToIdentifierMap.end()) {
-                this->expressionStack.push(std::shared_ptr<BaseExpression>(new DoubleConstantExpression(namePair->second)));
-            } else {
-                this->expressionStack.push(expression->getSharedPointer());
-            }
-        }
-        
-        template<typename MapType>
-        void IdentifierSubstitutionVisitor<MapType>::visit(IntegerConstantExpression const* expression) {
-            // If the integer constant is in the key set of the substitution, we need to replace it.
-            auto const& namePair = this->identifierToIdentifierMap.find(expression->getConstantName());
-            if (namePair != this->identifierToIdentifierMap.end()) {
-                this->expressionStack.push(std::shared_ptr<BaseExpression>(new IntegerConstantExpression(namePair->second)));
-            } else {
-                this->expressionStack.push(expression->getSharedPointer());
-            }
-        }
-        
+                
         template<typename MapType>
         void IdentifierSubstitutionVisitor<MapType>::visit(VariableExpression const* expression) {
             // If the variable is in the key set of the substitution, we need to replace it.

@@ -1,7 +1,6 @@
 #ifndef STORM_MODELCHECKER_CSL_SPARSEMARKOVAUTOMATONCSLMODELCHECKER_H_
 #define STORM_MODELCHECKER_CSL_SPARSEMARKOVAUTOMATONCSLMODELCHECKER_H_
 
-#include <stack>
 #include <utility>
 
 #include "src/modelchecker/csl/AbstractModelChecker.h"
@@ -22,7 +21,7 @@ namespace storm {
             template<typename ValueType>
             class SparseMarkovAutomatonCslModelChecker : public AbstractModelChecker<ValueType> {
             public:
-                explicit SparseMarkovAutomatonCslModelChecker(storm::models::MarkovAutomaton<ValueType> const& model, std::shared_ptr<storm::solver::NondeterministicLinearEquationSolver<ValueType>> nondeterministicLinearEquationSolver) : AbstractModelChecker<ValueType>(model), minimumOperatorStack(), nondeterministicLinearEquationSolver(nondeterministicLinearEquationSolver) {
+                explicit SparseMarkovAutomatonCslModelChecker(storm::models::MarkovAutomaton<ValueType> const& model, std::shared_ptr<storm::solver::NondeterministicLinearEquationSolver<ValueType>> nondeterministicLinearEquationSolver) : AbstractModelChecker<ValueType>(model), nondeterministicLinearEquationSolver(nondeterministicLinearEquationSolver) {
                     // Intentionally left empty.
                 }
                 
@@ -30,7 +29,14 @@ namespace storm {
 					This Second constructor is NEEDED and a workaround for a common Bug in C++ with nested templates
 					See: http://stackoverflow.com/questions/14401308/visual-c-cannot-deduce-given-template-arguments-for-function-used-as-defaul
 				*/
-				explicit SparseMarkovAutomatonCslModelChecker(storm::models::MarkovAutomaton<ValueType> const& model) : AbstractModelChecker<ValueType>(model), minimumOperatorStack(), nondeterministicLinearEquationSolver(storm::utility::solver::getNondeterministicLinearEquationSolver<ValueType>()) {
+				explicit SparseMarkovAutomatonCslModelChecker(storm::models::MarkovAutomaton<ValueType> const& model) : AbstractModelChecker<ValueType>(model), nondeterministicLinearEquationSolver(storm::utility::solver::getNondeterministicLinearEquationSolver<ValueType>()) {
+					// Intentionally left empty.
+				}
+
+				/*!
+				 * Virtual destructor. Needs to be virtual, because this class has virtual methods.
+				 */
+				virtual ~SparseMarkovAutomatonCslModelChecker() {
 					// Intentionally left empty.
 				}
 
@@ -42,48 +48,87 @@ namespace storm {
                     return AbstractModelChecker<ValueType>::template getModel<storm::models::MarkovAutomaton<ValueType>>();
                 }
                 
-                std::vector<ValueType> checkUntil(storm::property::csl::Until<ValueType> const& formula, bool qualitative) const {
-                    storm::storage::BitVector leftStates = formula.getLeft().check(*this);
-                    storm::storage::BitVector rightStates = formula.getRight().check(*this);
-                    return computeUnboundedUntilProbabilities(minimumOperatorStack.top(), leftStates, rightStates, qualitative).first;
+                /*!
+				 * Checks the given formula that is a P operator over a path formula featuring a value bound.
+				 *
+				 * @param formula The formula to check.
+				 * @returns The set of states satisfying the formula represented by a bit vector.
+				 */
+				virtual storm::storage::BitVector checkProbabilisticBoundOperator(storm::properties::csl::ProbabilisticBoundOperator<ValueType> const& formula) const override{
+					// For P< and P<= the MA satisfies the formula iff the probability maximizing scheduler is used.
+					// For P> and P>=               "              iff the probability minimizing         "        .
+					if(formula.getComparisonOperator() == storm::properties::LESS || formula.getComparisonOperator() == storm::properties::LESS_EQUAL) {
+						this->minimumOperatorStack.push(false);
+					}
+					else {
+						this->minimumOperatorStack.push(true);
+					}
+
+					// First, we need to compute the probability for satisfying the path formula for each state.
+					std::vector<ValueType> quantitativeResult = formula.getChild()->check(*this, false);
+
+					//Remove the minimizing operator entry from the stack.
+					this->minimumOperatorStack.pop();
+
+					// Create resulting bit vector that will hold the yes/no-answer for every state.
+					storm::storage::BitVector result(quantitativeResult.size());
+
+					// Now, we can compute which states meet the bound specified in this operator and set the
+					// corresponding bits to true in the resulting vector.
+					for (uint_fast64_t i = 0; i < quantitativeResult.size(); ++i) {
+						if (formula.meetsBound(quantitativeResult[i])) {
+							result.set(i, true);
+						}
+					}
+
+					return result;
+				}
+
+                std::vector<ValueType> checkUntil(storm::properties::csl::Until<ValueType> const& formula, bool qualitative) const {
+                    // Test wheter it is specified if the minimum or the maximum probabilities are to be computed.
+                	if(this->minimumOperatorStack.empty()) {
+                		LOG4CPLUS_ERROR(logger, "Formula does not specify either min or max optimality, which is not meaningful over nondeterministic models.");
+                		throw storm::exceptions::InvalidArgumentException() << "Formula does not specify either min or max optimality, which is not meaningful over nondeterministic models.";
+                	}
+                	storm::storage::BitVector leftStates = formula.getLeft()->check(*this);
+                    storm::storage::BitVector rightStates = formula.getRight()->check(*this);
+                    return computeUnboundedUntilProbabilities(this->minimumOperatorStack.top(), leftStates, rightStates, qualitative).first;
                 }
                 
                 std::pair<std::vector<ValueType>, storm::storage::TotalScheduler> computeUnboundedUntilProbabilities(bool min, storm::storage::BitVector const& leftStates, storm::storage::BitVector const& rightStates, bool qualitative) const {
                     return storm::modelchecker::prctl::SparseMdpPrctlModelChecker<ValueType>::computeUnboundedUntilProbabilities(min, this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), this->getModel().getInitialStates(), leftStates, rightStates, nondeterministicLinearEquationSolver, qualitative);
                 }
                 
-                std::vector<ValueType> checkTimeBoundedUntil(storm::property::csl::TimeBoundedUntil<ValueType> const& formula, bool qualitative) const {
+                std::vector<ValueType> checkTimeBoundedUntil(storm::properties::csl::TimeBoundedUntil<ValueType> const& formula, bool qualitative) const {
                     throw storm::exceptions::NotImplementedException() << "Model checking Until formulas on Markov automata is not yet implemented.";
                 }
                 
-                std::vector<ValueType> checkTimeBoundedEventually(storm::property::csl::TimeBoundedEventually<ValueType> const& formula, bool qualitative) const {
-                    storm::storage::BitVector goalStates = formula.getChild().check(*this);
+                std::vector<ValueType> checkTimeBoundedEventually(storm::properties::csl::TimeBoundedEventually<ValueType> const& formula, bool qualitative) const {
+                	// Test wheter it is specified if the minimum or the maximum probabilities are to be computed.
+					if(this->minimumOperatorStack.empty()) {
+						LOG4CPLUS_ERROR(logger, "Formula does not specify either min or max optimality, which is not meaningful over nondeterministic models.");
+						throw storm::exceptions::InvalidArgumentException() << "Formula does not specify either min or max optimality, which is not meaningful over nondeterministic models.";
+					}
+                	storm::storage::BitVector goalStates = formula.getChild()->check(*this);
                     return this->checkTimeBoundedEventually(this->minimumOperatorStack.top(), goalStates, formula.getLowerBound(), formula.getUpperBound());
                 }
                 
-                std::vector<ValueType> checkGlobally(storm::property::csl::Globally<ValueType> const& formula, bool qualitative) const {
+                std::vector<ValueType> checkGlobally(storm::properties::csl::Globally<ValueType> const& formula, bool qualitative) const {
                     throw storm::exceptions::NotImplementedException() << "Model checking Globally formulas on Markov automata is not yet implemented.";
                 }
                 
-                std::vector<ValueType> checkEventually(storm::property::csl::Eventually<ValueType> const& formula, bool qualitative) const {
-                    storm::storage::BitVector subFormulaStates = formula.getChild().check(*this);
-                    return computeUnboundedUntilProbabilities(minimumOperatorStack.top(), storm::storage::BitVector(this->getModel().getNumberOfStates(), true), subFormulaStates, qualitative).first;
+                std::vector<ValueType> checkEventually(storm::properties::csl::Eventually<ValueType> const& formula, bool qualitative) const {
+                	// Test wheter it is specified if the minimum or the maximum probabilities are to be computed.
+					if(this->minimumOperatorStack.empty()) {
+						LOG4CPLUS_ERROR(logger, "Formula does not specify either min or max optimality, which is not meaningful over nondeterministic models.");
+						throw storm::exceptions::InvalidArgumentException() << "Formula does not specify either min or max optimality, which is not meaningful over nondeterministic models.";
+					}
+                	storm::storage::BitVector subFormulaStates = formula.getChild()->check(*this);
+                    return computeUnboundedUntilProbabilities(this->minimumOperatorStack.top(), storm::storage::BitVector(this->getModel().getNumberOfStates(), true), subFormulaStates, qualitative).first;
                 }
                 
-                std::vector<ValueType> checkNext(storm::property::csl::Next<ValueType> const& formula, bool qualitative) const {
+                std::vector<ValueType> checkNext(storm::properties::csl::Next<ValueType> const& formula, bool qualitative) const {
                     throw storm::exceptions::NotImplementedException() << "Model checking Next formulas on Markov automata is not yet implemented.";
-                }
-                
-                std::vector<ValueType> checkNoBoundOperator(storm::property::csl::AbstractNoBoundOperator<ValueType> const& formula) const {
-                    // Check if the operator was an non-optimality operator and report an error in that case.
-                    if (!formula.isOptimalityOperator()) {
-                        LOG4CPLUS_ERROR(logger, "Formula does not specify neither min nor max optimality, which is not meaningful for nondeterministic models.");
-                        throw storm::exceptions::InvalidArgumentException() << "Formula does not specify neither min nor max optimality, which is not meaningful for nondeterministic models.";
-                    }
-                    minimumOperatorStack.push(formula.isMinimumOperator());
-                    std::vector<ValueType> result = formula.check(*this, false);
-                    minimumOperatorStack.pop();
-                    return result;
                 }
                 
                 static void computeBoundedReachabilityProbabilities(bool min, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& exitRates, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& goalStates, storm::storage::BitVector const& markovianNonGoalStates, storm::storage::BitVector const& probabilisticNonGoalStates, std::vector<ValueType>& markovianNonGoalValues, std::vector<ValueType>& probabilisticNonGoalValues, ValueType delta, uint_fast64_t numberOfSteps) {
@@ -103,10 +148,10 @@ namespace storm {
                     for (auto state : markovianNonGoalStates) {
                         for (auto& element : aMarkovian.getRow(rowIndex)) {
                             ValueType eTerm = std::exp(-exitRates[state] * delta);
-                            if (element.first == rowIndex) {
-                                element.second = (storm::utility::constantOne<ValueType>() - eTerm) * element.second + eTerm;
+                            if (element.getColumn() == rowIndex) {
+                                element.getValue() = (storm::utility::constantOne<ValueType>() - eTerm) * element.getValue() + eTerm;
                             } else {
-                                element.second = (storm::utility::constantOne<ValueType>() - eTerm) * element.second;
+                                element.getValue() = (storm::utility::constantOne<ValueType>() - eTerm) * element.getValue();
                             }
                         }
                         ++rowIndex;
@@ -116,7 +161,7 @@ namespace storm {
                     rowIndex = 0;
                     for (auto state : markovianNonGoalStates) {
                         for (auto& element : aMarkovianToProbabilistic.getRow(rowIndex)) {
-                            element.second = (1 - std::exp(-exitRates[state] * delta)) * element.second;
+                            element.getValue() = (1 - std::exp(-exitRates[state] * delta)) * element.getValue();
                         }
                         ++rowIndex;
                     }
@@ -133,8 +178,8 @@ namespace storm {
                         bMarkovianFixed.push_back(storm::utility::constantZero<ValueType>());
                         
                         for (auto& element : transitionMatrix.getRowGroup(state)) {
-                            if (goalStates.get(element.first)) {
-                                bMarkovianFixed.back() += (1 - std::exp(-exitRates[state] * delta)) * element.second;
+                            if (goalStates.get(element.getColumn())) {
+                                bMarkovianFixed.back() += (1 - std::exp(-exitRates[state] * delta)) * element.getValue();
                             }
                         }
                     }
@@ -302,8 +347,8 @@ namespace storm {
 
                     // Finally, we are ready to create the SSP matrix and right-hand side of the SSP.
                     std::vector<ValueType> b;
-                    typename storm::storage::SparseMatrixBuilder<ValueType> sspMatrixBuilder(0, 0, 0, true, numberOfStatesNotInMecs + mecDecomposition.size() + 1);
-
+                    typename storm::storage::SparseMatrixBuilder<ValueType> sspMatrixBuilder(0, 0, 0, true, numberOfStatesNotInMecs + mecDecomposition.size());
+                    
                     // If the source state is not contained in any MEC, we copy its choices (and perform the necessary modifications).
                     uint_fast64_t currentChoice = 0;
                     for (auto state : statesNotContainedInAnyMec) {
@@ -314,13 +359,13 @@ namespace storm {
                             b.push_back(storm::utility::constantZero<ValueType>());
                             
                             for (auto element : transitionMatrix.getRow(choice)) {
-                                if (statesNotContainedInAnyMec.get(element.first)) {
+                                if (statesNotContainedInAnyMec.get(element.getColumn())) {
                                     // If the target state is not contained in an MEC, we can copy over the entry.
-                                    sspMatrixBuilder.addNextValue(currentChoice, statesNotInMecsBeforeIndex[element.first], element.second);
+                                    sspMatrixBuilder.addNextValue(currentChoice, statesNotInMecsBeforeIndex[element.getColumn()], element.getValue());
                                 } else {
                                     // If the target state is contained in MEC i, we need to add the probability to the corresponding field in the vector
                                     // so that we are able to write the cumulative probability to the MEC into the matrix.
-                                    auxiliaryStateToProbabilityMap[stateToMecIndexMap[element.first]] += element.second;
+                                    auxiliaryStateToProbabilityMap[stateToMecIndexMap[element.getColumn()]] += element.getValue();
                                 }
                             }
                             
@@ -350,13 +395,13 @@ namespace storm {
                                     b.push_back(storm::utility::constantZero<ValueType>());
 
                                     for (auto element : transitionMatrix.getRow(choice)) {
-                                        if (statesNotContainedInAnyMec.get(element.first)) {
+                                        if (statesNotContainedInAnyMec.get(element.getColumn())) {
                                             // If the target state is not contained in an MEC, we can copy over the entry.
-                                            sspMatrixBuilder.addNextValue(currentChoice, statesNotInMecsBeforeIndex[element.first], element.second);
+                                            sspMatrixBuilder.addNextValue(currentChoice, statesNotInMecsBeforeIndex[element.getColumn()], element.getValue());
                                         } else {
                                             // If the target state is contained in MEC i, we need to add the probability to the corresponding field in the vector
                                             // so that we are able to write the cumulative probability to the MEC into the matrix.
-                                            auxiliaryStateToProbabilityMap[stateToMecIndexMap[element.first]] += element.second;
+                                            auxiliaryStateToProbabilityMap[stateToMecIndexMap[element.getColumn()]] += element.getValue();
                                         }
                                     }
                                     
@@ -385,7 +430,7 @@ namespace storm {
                     }
                     
                     // Finalize the matrix and solve the corresponding system of equations.
-                    storm::storage::SparseMatrix<ValueType> sspMatrix = sspMatrixBuilder.build(currentChoice + 1);
+                    storm::storage::SparseMatrix<ValueType> sspMatrix = sspMatrixBuilder.build(currentChoice);
                     
                     std::vector<ValueType> x(numberOfStatesNotInMecs + mecDecomposition.size());
                     nondeterministicLinearEquationSolver->solveEquationSystem(min, sspMatrix, x, b);
@@ -428,61 +473,61 @@ namespace storm {
                  */
                 static ValueType computeLraForMaximalEndComponent(bool min, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::BitVector const& markovianStates, std::vector<ValueType> const& exitRates, storm::storage::BitVector const& goalStates, storm::storage::MaximalEndComponent const& mec, uint_fast64_t mecIndex = 0) {
                     std::shared_ptr<storm::solver::LpSolver> solver = storm::utility::solver::getLpSolver("LRA for MEC");
-                    solver->setModelSense(min ? storm::solver::LpSolver::MAXIMIZE : storm::solver::LpSolver::MINIMIZE);
+                    solver->setModelSense(min ? storm::solver::LpSolver::ModelSense::Maximize : storm::solver::LpSolver::ModelSense::Minimize);
                     
                     // First, we need to create the variables for the problem.
-                    std::map<uint_fast64_t, uint_fast64_t> stateToVariableIndexMap;
+                    std::map<uint_fast64_t, std::string> stateToVariableNameMap;
                     for (auto const& stateChoicesPair : mec) {
-                        stateToVariableIndexMap[stateChoicesPair.first] = solver->createContinuousVariable("x" + std::to_string(stateChoicesPair.first), storm::solver::LpSolver::UNBOUNDED, 0, 0, 0);
+                        std::string variableName = "x" + std::to_string(stateChoicesPair.first);
+                        stateToVariableNameMap[stateChoicesPair.first] = variableName;
+                        solver->addUnboundedContinuousVariable(variableName);
                     }
-                    uint_fast64_t lraValueVariableIndex = solver->createContinuousVariable("k", storm::solver::LpSolver::UNBOUNDED, 0, 0, 1);
+                    solver->addUnboundedContinuousVariable("k", 1);
                     solver->update();
                     
                     // Now we encode the problem as constraints.
-                    std::vector<uint_fast64_t> variables;
-                    std::vector<double> coefficients;
                     for (auto const& stateChoicesPair : mec) {
                         uint_fast64_t state = stateChoicesPair.first;
                         
                         // Now, based on the type of the state, create a suitable constraint.
                         if (markovianStates.get(state)) {
-                            variables.clear();
-                            coefficients.clear();
-                            
-                            variables.push_back(stateToVariableIndexMap.at(state));
-                            coefficients.push_back(1);
+                            storm::expressions::Expression constraint = storm::expressions::Expression::createDoubleVariable(stateToVariableNameMap.at(state));
                             
                             for (auto element : transitionMatrix.getRow(nondeterministicChoiceIndices[state])) {
-                                variables.push_back(stateToVariableIndexMap.at(element.first));
-                                coefficients.push_back(-element.second);
+                                constraint = constraint - storm::expressions::Expression::createDoubleVariable(stateToVariableNameMap.at(element.getColumn()));
                             }
                             
-                            variables.push_back(lraValueVariableIndex);
-                            coefficients.push_back(storm::utility::constantOne<ValueType>() / exitRates[state]);
-                            
-                            solver->addConstraint("state" + std::to_string(state), variables, coefficients, min ? storm::solver::LpSolver::LESS_EQUAL : storm::solver::LpSolver::GREATER_EQUAL, goalStates.get(state) ? storm::utility::constantOne<ValueType>() / exitRates[state] : storm::utility::constantZero<ValueType>());
+                            constraint = constraint + storm::expressions::Expression::createDoubleLiteral(storm::utility::constantOne<ValueType>() / exitRates[state]) * storm::expressions::Expression::createDoubleVariable("k");
+                            storm::expressions::Expression rightHandSide = goalStates.get(state) ? storm::expressions::Expression::createDoubleLiteral(storm::utility::constantOne<ValueType>() / exitRates[state]) : storm::expressions::Expression::createDoubleLiteral(storm::utility::constantZero<ValueType>());
+                            if (min) {
+                                constraint = constraint <= rightHandSide;
+                            } else {
+                                constraint = constraint >= rightHandSide;
+                            }
+                            solver->addConstraint("state" + std::to_string(state), constraint);
                         } else {
                             // For probabilistic states, we want to add the constraint x_s <= sum P(s, a, s') * x_s' where a is the current action
                             // and the sum ranges over all states s'.
                             for (auto choice : stateChoicesPair.second) {
-                                variables.clear();
-                                coefficients.clear();
-                                
-                                variables.push_back(stateToVariableIndexMap.at(state));
-                                coefficients.push_back(1);
-                                
+                                storm::expressions::Expression constraint = storm::expressions::Expression::createDoubleVariable(stateToVariableNameMap.at(state));
+
                                 for (auto element : transitionMatrix.getRow(choice)) {
-                                    variables.push_back(stateToVariableIndexMap.at(element.first));
-                                    coefficients.push_back(-element.second);
+                                    constraint = constraint - storm::expressions::Expression::createDoubleVariable(stateToVariableNameMap.at(element.getColumn()));
                                 }
                                 
-                                solver->addConstraint("state" + std::to_string(state), variables, coefficients, min ? storm::solver::LpSolver::LESS_EQUAL : storm::solver::LpSolver::GREATER_EQUAL, storm::utility::constantZero<ValueType>());
+                                storm::expressions::Expression rightHandSide = storm::expressions::Expression::createDoubleLiteral(storm::utility::constantZero<ValueType>());
+                                if (min) {
+                                    constraint = constraint <= rightHandSide;
+                                } else {
+                                    constraint = constraint >= rightHandSide;
+                                }
+                                solver->addConstraint("state" + std::to_string(state), constraint);
                             }
                         }
                     }
                     
                     solver->optimize();
-                    return solver->getContinuousValue(lraValueVariableIndex);
+                    return solver->getContinuousValue("k");
                 }
                 
                 /*!
@@ -579,12 +624,6 @@ namespace storm {
                     
                     return result;
                 }
-                
-                /*!
-                 * A stack used for storing whether we are currently computing min or max probabilities or rewards, respectively.
-                 * The topmost element is true if and only if we are currently computing minimum probabilities or rewards.
-                 */
-                mutable std::stack<bool> minimumOperatorStack;
                 
                 /*!
                  * A solver that is used for solving systems of linear equations that are the result of nondeterministic choices.

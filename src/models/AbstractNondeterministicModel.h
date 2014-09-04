@@ -189,8 +189,8 @@ namespace storm {
             
                         // Now draw all probabilitic arcs that belong to this nondeterminstic choice.
                         for (auto const& transition : row) {
-                            if (subsystem == nullptr || subsystem->get(transition.first)) {
-                                outStream << "\t\"" << state << "c" << choice << "\" -> " << transition.first << " [ label= \"" << transition.second << "\" ]";
+                            if (subsystem == nullptr || subsystem->get(transition.getColumn())) {
+                                outStream << "\t\"" << state << "c" << choice << "\" -> " << transition.getColumn() << " [ label= \"" << transition.getValue() << "\" ]";
                                 
                                 // If we were given a scheduler to highlight, we do so now.
                                 if (scheduler != nullptr) {

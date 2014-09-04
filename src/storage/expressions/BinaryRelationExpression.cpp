@@ -8,7 +8,18 @@ namespace storm {
         BinaryRelationExpression::BinaryRelationExpression(ExpressionReturnType returnType, std::shared_ptr<BaseExpression const> const& firstOperand, std::shared_ptr<BaseExpression const> const& secondOperand, RelationType relationType) : BinaryExpression(returnType, firstOperand, secondOperand), relationType(relationType) {
             // Intentionally left empty.
         }
-                
+        
+        storm::expressions::OperatorType BinaryRelationExpression::getOperator() const {
+            switch (this->getRelationType()) {
+                case RelationType::Equal: return storm::expressions::OperatorType::Equal; break;
+                case RelationType::NotEqual: return storm::expressions::OperatorType::NotEqual; break;
+                case RelationType::Less: return storm::expressions::OperatorType::Less; break;
+                case RelationType::LessOrEqual: return storm::expressions::OperatorType::LessOrEqual; break;
+                case RelationType::Greater: return storm::expressions::OperatorType::Greater; break;
+                case RelationType::GreaterOrEqual: return storm::expressions::OperatorType::GreaterOrEqual; break;
+            }
+        }
+        
         bool BinaryRelationExpression::evaluateAsBool(Valuation const* valuation) const {
             LOG_THROW(this->hasBooleanReturnType(), storm::exceptions::InvalidTypeException, "Unable to evaluate expression as boolean.");
 

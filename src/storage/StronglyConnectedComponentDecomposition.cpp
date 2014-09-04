@@ -46,27 +46,88 @@ namespace storm {
             this->blocks = std::move(other.blocks);
             return *this;
         }
-        
+
         template <typename ValueType>
         void StronglyConnectedComponentDecomposition<ValueType>::performSccDecomposition(storm::models::AbstractModel<ValueType> const& model, storm::storage::BitVector const& subsystem, bool dropNaiveSccs, bool onlyBottomSccs) {
-            // Set up the environment of Tarjan's algorithm.
             uint_fast64_t numberOfStates = model.getNumberOfStates();
-            std::vector<uint_fast64_t> tarjanStack;
-            tarjanStack.reserve(numberOfStates);
-            storm::storage::BitVector tarjanStackStates(numberOfStates);
-            std::vector<uint_fast64_t> stateIndices(numberOfStates);
-            std::vector<uint_fast64_t> lowlinks(numberOfStates);
-            storm::storage::BitVector visitedStates(numberOfStates);
+
+            // Set up the environment of the algorithm.
+            // Start with the two stacks it maintains.
+            std::vector<uint_fast64_t> s;
+            s.reserve(numberOfStates);
+            std::vector<uint_fast64_t> p;
+            p.reserve(numberOfStates);
+            
+            // We also need to store the preorder numbers of states and which states have been assigned to which SCC.
+            std::vector<uint_fast64_t> preorderNumbers(numberOfStates);
+            storm::storage::BitVector hasPreorderNumber(numberOfStates);
+            storm::storage::BitVector stateHasScc(numberOfStates);
+            std::vector<uint_fast64_t> stateToSccMapping(numberOfStates);
+            uint_fast64_t sccCount = 0;
+            
+            // Finally, we need to keep track of the states with a self-loop to identify naive SCCs.
+            storm::storage::BitVector statesWithSelfLoop(numberOfStates);
             
             // Start the search for SCCs from every state in the block.
             uint_fast64_t currentIndex = 0;
             for (auto state : subsystem) {
-                if (!visitedStates.get(state)) {
-                    performSccDecompositionHelper(model, state, subsystem, currentIndex, stateIndices, lowlinks, tarjanStack, tarjanStackStates, visitedStates, dropNaiveSccs, onlyBottomSccs);
+                if (!hasPreorderNumber.get(state)) {
+                    performSccDecompositionGCM(model, state, statesWithSelfLoop, subsystem, currentIndex, hasPreorderNumber, preorderNumbers, s, p, stateHasScc, stateToSccMapping, sccCount);
                 }
             }
-        }
 
+            // After we obtained the state-to-SCC mapping, we build the actual blocks.
+            this->blocks.resize(sccCount);
+            for (uint_fast64_t state = 0; state < numberOfStates; ++state) {
+                this->blocks[stateToSccMapping[state]].insert(state);
+            }
+            
+            // If requested, we need to drop some SCCs.
+            if (onlyBottomSccs || dropNaiveSccs) {
+                storm::storage::BitVector blocksToDrop(sccCount);
+                
+                // If requested, we need to delete all naive SCCs.
+                if (dropNaiveSccs) {
+                    for (uint_fast64_t sccIndex = 0; sccIndex < sccCount; ++sccIndex) {
+                        if (this->blocks[sccIndex].size() == 1) {
+                            uint_fast64_t onlyState = *this->blocks[sccIndex].begin();
+                            
+                            if (!statesWithSelfLoop.get(onlyState)) {
+                                blocksToDrop.set(sccIndex);
+                            }
+                        }
+                    }
+                }
+                
+                // If requested, we need to drop all non-bottom SCCs.
+                if (onlyBottomSccs) {
+                    for (uint_fast64_t state = 0; state < numberOfStates; ++state) {
+                        // If the block of the state is already known to be dropped, we don't need to check the transitions.
+                        if (!blocksToDrop.get(stateToSccMapping[state])) {
+                            for (typename storm::storage::SparseMatrix<ValueType>::const_iterator successorIt = model.getRows(state).begin(), successorIte = model.getRows(state).end(); successorIt != successorIte; ++successorIt) {
+                                if (subsystem.get(successorIt->getColumn()) && stateToSccMapping[state] != stateToSccMapping[successorIt->getColumn()]) {
+                                    blocksToDrop.set(stateToSccMapping[state]);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // Create the new set of blocks by moving all the blocks we need to keep into it.
+                std::vector<Block> newBlocks((~blocksToDrop).getNumberOfSetBits());
+                uint_fast64_t currentBlock = 0;
+                for (uint_fast64_t blockIndex = 0; blockIndex < this->blocks.size(); ++blockIndex) {
+                    if (!blocksToDrop.get(blockIndex)) {
+                        newBlocks[currentBlock] = std::move(this->blocks[blockIndex]);
+                        ++currentBlock;
+                    }
+                }
+                
+                // Now set this new set of blocks as the result of the decomposition.
+                this->blocks = std::move(newBlocks);
+            }
+        }
         
         template <typename ValueType>
         void StronglyConnectedComponentDecomposition<ValueType>::performSccDecomposition(storm::models::AbstractModel<ValueType> const& model, bool dropNaiveSccs, bool onlyBottomSccs) {
@@ -78,128 +139,68 @@ namespace storm {
         }
         
         template <typename ValueType>
-        void StronglyConnectedComponentDecomposition<ValueType>::performSccDecompositionHelper(storm::models::AbstractModel<ValueType> const& model, uint_fast64_t startState, storm::storage::BitVector const& subsystem, uint_fast64_t& currentIndex, std::vector<uint_fast64_t>& stateIndices, std::vector<uint_fast64_t>& lowlinks, std::vector<uint_fast64_t>& tarjanStack, storm::storage::BitVector& tarjanStackStates, storm::storage::BitVector& visitedStates, bool dropNaiveSccs, bool onlyBottomSccs) {
-            // Create the stacks needed for turning the recursive formulation of Tarjan's algorithm into an iterative
-            // version. In particular, we keep one stack for states and one stack for the iterators. The last one is not
-            // strictly needed, but reduces iteration work when all successors of a particular state are considered.
+        void StronglyConnectedComponentDecomposition<ValueType>::performSccDecompositionGCM(storm::models::AbstractModel<ValueType> const& model, uint_fast64_t startState, storm::storage::BitVector& statesWithSelfLoop, storm::storage::BitVector const& subsystem, uint_fast64_t& currentIndex, storm::storage::BitVector& hasPreorderNumber, std::vector<uint_fast64_t>& preorderNumbers, std::vector<uint_fast64_t>& s, std::vector<uint_fast64_t>& p, storm::storage::BitVector& stateHasScc, std::vector<uint_fast64_t>& stateToSccMapping, uint_fast64_t& sccCount) {
+            
+            // Prepare the stack used for turning the recursive procedure into an iterative one.
             std::vector<uint_fast64_t> recursionStateStack;
-            recursionStateStack.reserve(lowlinks.size());
-            std::vector<typename storm::storage::SparseMatrix<ValueType>::const_iterator> recursionIteratorStack;
-            recursionIteratorStack.reserve(lowlinks.size());
-            std::vector<bool> statesInStack(lowlinks.size());
-            
-            // Store a bit vector of all states with a self-loop to be able to detect non-trivial SCCs with only one
-            // state.
-            storm::storage::BitVector statesWithSelfloop;
-            if (dropNaiveSccs) {
-                statesWithSelfloop = storm::storage::BitVector(lowlinks.size());
-            }
-            
-            // Initialize the recursion stacks with the given initial state (and its successor iterator).
+            recursionStateStack.reserve(model.getNumberOfStates());
             recursionStateStack.push_back(startState);
+            std::vector<typename storm::storage::SparseMatrix<ValueType>::const_iterator> recursionIteratorStack;
             recursionIteratorStack.push_back(model.getRows(startState).begin());
-            
-        recursionStepForward:
+
             while (!recursionStateStack.empty()) {
                 uint_fast64_t currentState = recursionStateStack.back();
-                typename storm::storage::SparseMatrix<ValueType>::const_iterator successorIt = recursionIteratorStack.back();
+                typename storm::storage::SparseMatrix<ValueType>::const_iterator& successorIt = recursionIteratorStack.back();
+
+                if (!hasPreorderNumber.get(currentState)) {
+                    preorderNumbers[currentState] = currentIndex++;
+                    hasPreorderNumber.set(currentState, true);
                 
-                // Perform the treatment of newly discovered state as defined by Tarjan's algorithm.
-                visitedStates.set(currentState, true);
-                stateIndices[currentState] = currentIndex;
-                lowlinks[currentState] = currentIndex;
-                ++currentIndex;
-                tarjanStack.push_back(currentState);
-                tarjanStackStates.set(currentState, true);
-                
-                // Now, traverse all successors of the current state.
-                for(; successorIt != model.getRows(currentState).end(); ++successorIt) {
-                    // Record if the current state has a self-loop if we are to drop naive SCCs later.
-                    if (dropNaiveSccs && currentState == successorIt->first) {
-                        statesWithSelfloop.set(currentState, true);
-                    }
-                    
-                    // If we have not visited the successor already, we need to perform the procedure recursively on the
-                    // newly found state, but only if it belongs to the subsystem in which we are interested.
-                    if (subsystem.get(successorIt->first)) {
-                        if (!visitedStates.get(successorIt->first)) {
-                            // Save current iterator position so we can continue where we left off later.
-                            recursionIteratorStack.pop_back();
-                            recursionIteratorStack.push_back(successorIt);
-                            
-                            // Put unvisited successor on top of our recursion stack and remember that.
-                            recursionStateStack.push_back(successorIt->first);
-                            statesInStack[successorIt->first] = true;
-                            
-                            // Also, put initial value for iterator on corresponding recursion stack.
-                            recursionIteratorStack.push_back(model.getRows(successorIt->first).begin());
-                            
-                            // Perform the actual recursion step in an iterative way.
-                            goto recursionStepForward;
-                            
-                        recursionStepBackward:
-                            lowlinks[currentState] = std::min(lowlinks[currentState], lowlinks[successorIt->first]);
-                        } else if (tarjanStackStates.get(successorIt->first)) {
-                            // Update the lowlink of the current state.
-                            lowlinks[currentState] = std::min(lowlinks[currentState], stateIndices[successorIt->first]);
-                        }
-                    }
+                    s.push_back(currentState);
+                    p.push_back(currentState);
                 }
                 
-                // If the current state is the root of a SCC, we need to pop all states of the SCC from the algorithm's
-                // stack.
-                if (lowlinks[currentState] == stateIndices[currentState]) {
-                    Block scc;
-                    
-                    uint_fast64_t lastState = 0;
-                    do {
-                        // Pop topmost state from the algorithm's stack.
-                        lastState = tarjanStack.back();
-                        tarjanStack.pop_back();
-                        tarjanStackStates.set(lastState, false);
+                bool recursionStepIn = false;
+                for (; successorIt != model.getRows(currentState).end(); ++successorIt) {
+                    if (subsystem.get(successorIt->getColumn())) {
+                        if (currentState == successorIt->getColumn()) {
+                            statesWithSelfLoop.set(currentState);
+                        }
                         
-                        // Add the state to the current SCC.
-                        scc.insert(lastState);
-                    } while (lastState != currentState);
-
-                    bool isBottomScc = true;
-                    if (onlyBottomSccs) {
-                        for (auto const& state : scc) {
-                            for (auto const& successor : model.getRows(state)) {
-                                if (scc.find(successor.first) == scc.end()) {
-                                    isBottomScc = false;
-                                    break;
+                        if (!hasPreorderNumber.get(successorIt->getColumn())) {
+                            // In this case, we must recursively visit the successor. We therefore push the state onto the recursion stack an break the for-loop.
+                            recursionStateStack.push_back(successorIt->getColumn());
+                            recursionStepIn = true;
+                            
+                            recursionIteratorStack.push_back(model.getRows(successorIt->getColumn()).begin());
+                            break;
+                        } else {
+                            if (!stateHasScc.get(successorIt->getColumn())) {
+                                while (preorderNumbers[p.back()] > preorderNumbers[successorIt->getColumn()]) {
+                                    p.pop_back();
                                 }
                             }
                         }
                     }
-
-                    // Now determine whether we want to keep this SCC in the decomposition.
-                    // First, we need to check whether we should drop the SCC because of the requirement to not include
-                    // naive SCCs.
-                    bool keepScc = !dropNaiveSccs || (scc.size() > 1 || statesWithSelfloop.get(*scc.begin()));
-                    // Then, we also need to make sure that it is a bottom SCC if we were required to.
-                    keepScc &= !onlyBottomSccs || isBottomScc;
-                    
-                    // Only add the SCC if we determined to keep it, based on the given parameters.
-                    if (keepScc) {
-                        this->blocks.emplace_back(std::move(scc));
+                }
+                
+                if (!recursionStepIn) {
+                    if (currentState == p.back()) {
+                        p.pop_back();
+                        uint_fast64_t poppedState = 0;
+                        do {
+                            poppedState = s.back();
+                            s.pop_back();
+                            stateToSccMapping[poppedState] = sccCount;
+                            stateHasScc.set(poppedState);
+                        } while (poppedState != currentState);
+                        ++sccCount;
                     }
-                }
-                
-                // If we reach this point, we have completed the recursive descent for the current state. That is, we
-                // need to pop it from the recursion stacks.
-                recursionStateStack.pop_back();
-                recursionIteratorStack.pop_back();
-                
-                // If there is at least one state under the current one in our recursion stack, we need to restore the
-                // topmost state as the current state and jump to the part after the original recursive call.
-                if (recursionStateStack.size() > 0) {
-                    currentState = recursionStateStack.back();
-                    successorIt = recursionIteratorStack.back();
                     
-                    goto recursionStepBackward;
+                    recursionStateStack.pop_back();
+                    recursionIteratorStack.pop_back();
                 }
+                recursionStepIn = false;
             }
         }
         

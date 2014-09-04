@@ -10,7 +10,7 @@ namespace storm {
             return this->getValue();
         }
         
-        bool BooleanLiteralExpression::isConstant() const {
+        bool BooleanLiteralExpression::isLiteral() const {
             return true;
         }
         
@@ -24,11 +24,11 @@ namespace storm {
         
         std::set<std::string> BooleanLiteralExpression::getVariables() const {
             return std::set<std::string>();
-        }
-        
-        std::set<std::string> BooleanLiteralExpression::getConstants() const {
-            return std::set<std::string>();
-        }
+		}
+
+		std::map<std::string, ExpressionReturnType> BooleanLiteralExpression::getVariablesAndTypes() const {
+			return std::map<std::string, ExpressionReturnType>();
+		}
         
         std::shared_ptr<BaseExpression const> BooleanLiteralExpression::simplify() const {
             return this->shared_from_this();

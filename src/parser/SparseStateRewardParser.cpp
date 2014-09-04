@@ -4,7 +4,7 @@
  *  Created on: 23.12.2012
  *      Author: Christian Dehnert
  */
-
+#include <iostream>
 #include "src/parser/SparseStateRewardParser.h"
 
 #include "src/exceptions/WrongFormatException.h"
@@ -37,6 +37,7 @@ namespace storm {
 			// Now parse state reward assignments.
 			uint_fast64_t state = 0;
 			uint_fast64_t lastState = (uint_fast64_t)-1;
+			uint_fast64_t const startIndexComparison = lastState;
 			double reward;
 
 			// Iterate over states.
@@ -47,21 +48,21 @@ namespace storm {
 
 				// If the state has already been read or skipped once there might be a problem with the file (doubled lines, or blocks).
 				// Note: The value -1 shows that lastState has not yet been set, i.e. this is the first run of the loop (state index (2^64)-1 is a really bad starting index).
-				if(state <= lastState && lastState != (uint_fast64_t)-1) {
-					LOG4CPLUS_ERROR(logger, "State " << state << " was found but has already been read or skipped previously.");
-					throw storm::exceptions::WrongFormatException() << "State " << state << " was found but has already been read or skipped previously.";
+				if (state <= lastState && lastState != startIndexComparison) {
+					LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": State " << state << " was found but has already been read or skipped previously.");
+					throw storm::exceptions::WrongFormatException() << "Error while parsing " << filename << ": State " << state << " was found but has already been read or skipped previously.";
 				}
 
 				if(stateCount <= state) {
-					LOG4CPLUS_ERROR(logger, "Found reward for a state of an invalid index \"" << state << "\". The model has only " << stateCount << " states.");
-					throw storm::exceptions::OutOfRangeException() << "Found reward for a state of an invalid index \"" << state << "\"";
+					LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": Found reward for a state of an invalid index \"" << state << "\". The model has only " << stateCount << " states.");
+					throw storm::exceptions::OutOfRangeException() << "Error while parsing " << filename << ": Found reward for a state of an invalid index \"" << state << "\"";
 				}
 
 				reward = checked_strtod(buf, &buf);
 
 				if (reward < 0.0) {
-					LOG4CPLUS_ERROR(logger, "Expected positive reward value but got \"" << reward << "\".");
-					throw storm::exceptions::WrongFormatException() << "State reward file specifies illegal reward value.";
+					LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": Expected positive reward value but got \"" << reward << "\".");
+					throw storm::exceptions::WrongFormatException() << "Error while parsing " << filename << ": State reward file specifies illegal reward value.";
 				}
 
 				stateRewards[state] = reward;

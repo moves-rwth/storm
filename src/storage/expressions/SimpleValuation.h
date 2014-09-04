@@ -1,12 +1,12 @@
 #ifndef STORM_STORAGE_EXPRESSIONS_SIMPLEVALUATION_H_
 #define STORM_STORAGE_EXPRESSIONS_SIMPLEVALUATION_H_
 
-#include <memory>
-#include <vector>
-#include <unordered_map>
+#include <boost/container/flat_map.hpp>
+#include <boost/variant.hpp>
 #include <iostream>
 
 #include "src/storage/expressions/Valuation.h"
+#include "src/storage/expressions/ExpressionReturnType.h"
 #include "src/utility/OsDetection.h"
 
 namespace storm {
@@ -16,12 +16,8 @@ namespace storm {
             friend class SimpleValuationPointerHash;
             friend class SimpleValuationPointerLess;
             
-            /*!
-             * Creates a simple valuation without any identifiers.
-            */
-            SimpleValuation();
-
             // Instantiate some constructors and assignments with their default implementations.
+            SimpleValuation() = default;
             SimpleValuation(SimpleValuation const&) = default;
             SimpleValuation& operator=(SimpleValuation const&) = default;
 #ifndef WINDOWS            
@@ -83,7 +79,30 @@ namespace storm {
              */
             void setDoubleValue(std::string const& name, double value);
             
+            /*!
+             * Removes the given identifier from this valuation.
+             *
+             * @param name The name of the identifier that is to be removed.
+             */
+            void removeIdentifier(std::string const& name);
+
+            /*!
+             * Retrieves the type of the identifier with the given name.
+             *
+             * @param name The name of the identifier whose type to retrieve.
+             * @return The type of the identifier with the given name.
+             */
+            ExpressionReturnType getIdentifierType(std::string const& name) const;
+            
             // Override base class methods.
+            virtual bool containsBooleanIdentifier(std::string const& name) const override;
+            virtual bool containsIntegerIdentifier(std::string const& name) const override;
+            virtual bool containsDoubleIdentifier(std::string const& name) const override;
+            virtual std::size_t getNumberOfIdentifiers() const override;
+            virtual std::set<std::string> getIdentifiers() const override;
+            virtual std::set<std::string> getBooleanIdentifiers() const override;
+            virtual std::set<std::string> getIntegerIdentifiers() const override;
+            virtual std::set<std::string> getDoubleIdentifiers() const override;
             virtual bool getBooleanValue(std::string const& name) const override;
             virtual int_fast64_t getIntegerValue(std::string const& name) const override;
             virtual double getDoubleValue(std::string const& name) const override;
@@ -92,22 +111,7 @@ namespace storm {
 
         private:
             // A mapping of boolean identifiers to their local indices in the value container.
-            std::shared_ptr<std::unordered_map<std::string, uint_fast64_t>> booleanIdentifierToIndexMap;
-            
-            // A mapping of integer identifiers to their local indices in the value container.
-            std::shared_ptr<std::unordered_map<std::string, uint_fast64_t>> integerIdentifierToIndexMap;
-            
-            // A mapping of double identifiers to their local indices in the value container.
-            std::shared_ptr<std::unordered_map<std::string, uint_fast64_t>> doubleIdentifierToIndexMap;
-            
-            // The value container for all boolean identifiers.
-            std::vector<bool> booleanValues;
-            
-            // The value container for all integer identifiers.
-            std::vector<int_fast64_t> integerValues;
-            
-            // The value container for all double identifiers.
-            std::vector<double> doubleValues;
+            boost::container::flat_map<std::string, boost::variant<bool, int_fast64_t, double>> identifierToValueMap;
         };
         
         /*!

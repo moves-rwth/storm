@@ -8,6 +8,8 @@
 
 #include "src/storage/dd/Dd.h"
 #include "src/storage/dd/CuddDdForwardIterator.h"
+#include "src/storage/SparseMatrix.h"
+#include "src/storage/expressions/Expression.h"
 #include "src/utility/OsDetection.h"
 
 // Include the C++-interface of CUDD.
@@ -15,8 +17,9 @@
 
 namespace storm {
     namespace dd {
-        // Forward-declare the DdManager class.
+        // Forward-declare some classes.
         template<DdType Type> class DdManager;
+        template<DdType Type> class Odd;
         
         template<>
         class Dd<DdType::CUDD> {
@@ -24,6 +27,7 @@ namespace storm {
             // Declare the DdManager and DdIterator class as friend so it can access the internals of a DD.
             friend class DdManager<DdType::CUDD>;
             friend class DdForwardIterator<DdType::CUDD>;
+            friend class Odd<DdType::CUDD>;
             
             // Instantiate all copy/move constructors/assignments with the default implementation.
             Dd() = default;
@@ -231,28 +235,35 @@ namespace storm {
              *
              * @param metaVariableNames The names of all meta variables from which to abstract.
              */
-            void existsAbstract(std::set<std::string> const& metaVariableNames);
+            Dd<DdType::CUDD> existsAbstract(std::set<std::string> const& metaVariableNames) const;
+            
+            /*!
+             * Universally abstracts from the given meta variables.
+             *
+             * @param metaVariableNames The names of all meta variables from which to abstract.
+             */
+            Dd<DdType::CUDD> universalAbstract(std::set<std::string> const& metaVariableNames) const;
             
             /*!
              * Sum-abstracts from the given meta variables.
              *
              * @param metaVariableNames The names of all meta variables from which to abstract.
              */
-            void sumAbstract(std::set<std::string> const& metaVariableNames);
+            Dd<DdType::CUDD> sumAbstract(std::set<std::string> const& metaVariableNames) const;
             
             /*!
              * Min-abstracts from the given meta variables.
              *
              * @param metaVariableNames The names of all meta variables from which to abstract.
              */
-            void minAbstract(std::set<std::string> const& metaVariableNames);
+            Dd<DdType::CUDD> minAbstract(std::set<std::string> const& metaVariableNames) const;
             
             /*!
              * Max-abstracts from the given meta variables.
              *
              * @param metaVariableNames The names of all meta variables from which to abstract.
              */
-            void maxAbstract(std::set<std::string> const& metaVariableNames);
+            Dd<DdType::CUDD> maxAbstract(std::set<std::string> const& metaVariableNames) const;
             
             /*!
              * Checks whether the current and the given DD represent the same function modulo some given precision.
@@ -283,6 +294,59 @@ namespace storm {
              * @return A DD representing the result of the matrix-matrix multiplication.
              */
             Dd<DdType::CUDD> multiplyMatrix(Dd<DdType::CUDD> const& otherMatrix, std::set<std::string> const& summationMetaVariableNames) const;
+            
+            /*!
+             * Computes a DD that represents the function in which all assignments with a function value strictly larger
+             * than the given value are mapped to one and all others to zero.
+             *
+             * @param value The value used for the comparison.
+             * @return The resulting DD.
+             */
+            Dd<DdType::CUDD> greater(double value) const;
+
+            /*!
+             * Computes a DD that represents the function in which all assignments with a function value larger or equal
+             * to the given value are mapped to one and all others to zero.
+             *
+             * @param value The value used for the comparison.
+             * @return The resulting DD.
+             */
+            Dd<DdType::CUDD> greaterOrEqual(double value) const;
+            
+            /*!
+             * Computes a DD that represents the function in which all assignments with a function value unequal to zero
+             * are mapped to one and all others to zero.
+             *
+             * @return The resulting DD.
+             */
+            Dd<DdType::CUDD> notZero() const;
+            
+            /*!
+             * Computes the constraint of the current DD with the given constraint. That is, the function value of the
+             * resulting DD will be the same as the current ones for all assignments mapping to one in the constraint
+             * and may be different otherwise.
+             *
+             * @param constraint The constraint to use for the operation.
+             * @return The resulting DD.
+             */
+            Dd<DdType::CUDD> constrain(Dd<DdType::CUDD> const& constraint) const;
+            
+            /*!
+             * Computes the restriction of the current DD with the given constraint. That is, the function value of the
+             * resulting DD will be the same as the current ones for all assignments mapping to one in the constraint
+             * and may be different otherwise.
+             *
+             * @param constraint The constraint to use for the operation.
+             * @return The resulting DD.
+             */
+            Dd<DdType::CUDD> restrict(Dd<DdType::CUDD> const& constraint) const;
+            
+            /*!
+             * Retrieves the support of the current DD.
+             *
+             * @return The support represented as a DD.
+             */
+            Dd<DdType::CUDD> getSupport() const;
             
             /*!
              * Retrieves the number of encodings that are mapped to a non-zero value.
@@ -387,6 +451,76 @@ namespace storm {
             bool isConstant() const;
             
             /*!
+             * Retrieves the index of the topmost variable in the DD.
+             *
+             * @return The index of the topmost variable in DD.
+             */
+            uint_fast64_t getIndex() const;
+            
+            /*!
+             * Converts the DD to a vector.
+             *
+             * @return The double vector that is represented by this DD.
+             */
+            template<typename ValueType>
+            std::vector<ValueType> toVector() const;
+
+            /*!
+             * Converts the DD to a vector. The given offset-labeled DD is used to determine the correct row of
+             * each entry.
+             *
+             * @param rowOdd The ODD used for determining the correct row.
+             * @return The double vector that is represented by this DD.
+             */
+            template<typename ValueType>
+            std::vector<ValueType> toVector(storm::dd::Odd<DdType::CUDD> const& rowOdd) const;
+            
+            /*!
+             * Converts the DD to a (sparse) double matrix. All contained non-primed variables are assumed to encode the
+             * row, whereas all primed variables are assumed to encode the column.
+             *
+             * @return The matrix that is represented by this DD.
+             */
+            storm::storage::SparseMatrix<double> toMatrix() const;
+
+            /*!
+             * Converts the DD to a (sparse) double matrix. All contained non-primed variables are assumed to encode the
+             * row, whereas all primed variables are assumed to encode the column. The given offset-labeled DDs are used
+             * to determine the correct row and column, respectively, for each entry.
+             *
+             * @param rowOdd The ODD used for determining the correct row.
+             * @param columnOdd The ODD used for determining the correct column.
+             * @return The matrix that is represented by this DD.
+             */
+            storm::storage::SparseMatrix<double> toMatrix(storm::dd::Odd<DdType::CUDD> const& rowOdd, storm::dd::Odd<DdType::CUDD> const& columnOdd) const;
+
+            /*!
+             * Converts the DD to a (sparse) double matrix. The given offset-labeled DDs are used to determine the
+             * correct row and column, respectively, for each entry.
+             *
+             * @param rowMetaVariables The meta variables that encode the rows of the matrix.
+             * @param columnMetaVariables The meta variables that encode the columns of the matrix.
+             * @param rowOdd The ODD used for determining the correct row.
+             * @param columnOdd The ODD used for determining the correct column.
+             * @return The matrix that is represented by this DD.
+             */
+            storm::storage::SparseMatrix<double> toMatrix(std::set<std::string> const& rowMetaVariables, std::set<std::string> const& columnMetaVariables, storm::dd::Odd<DdType::CUDD> const& rowOdd, storm::dd::Odd<DdType::CUDD> const& columnOdd) const;
+            
+            /*!
+             * Converts the DD to a row-grouped (sparse) double matrix. The given offset-labeled DDs are used to
+             * determine the correct row and column, respectively, for each entry. Note: this function assumes that
+             * the meta variables used to distinguish different row groups are at the very top of the DD.
+             *
+             * @param rowMetaVariables The meta variables that encode the rows of the matrix.
+             * @param columnMetaVariables The meta variables that encode the columns of the matrix.
+             * @param groupMetaVariables The meta variables that are used to distinguish different row groups.
+             * @param rowOdd The ODD used for determining the correct row.
+             * @param columnOdd The ODD used for determining the correct column.
+             * @return The matrix that is represented by this DD.
+             */
+            storm::storage::SparseMatrix<double> toMatrix(std::set<std::string> const& rowMetaVariables, std::set<std::string> const& columnMetaVariables, std::set<std::string> const& groupMetaVariables, storm::dd::Odd<DdType::CUDD> const& rowOdd, storm::dd::Odd<DdType::CUDD> const& columnOdd) const;
+            
+            /*!
              * Retrieves whether the given meta variable is contained in the DD.
              *
              * @param metaVariableName The name of the meta variable for which to query membership.
@@ -433,16 +567,40 @@ namespace storm {
             /*!
              * Retrieves an iterator that points to the first meta variable assignment with a non-zero function value.
              *
+             * @param enumerateDontCareMetaVariables If set to true, all meta variable assignments are enumerated, even
+             * if a meta variable does not at all influence the the function value.
              * @return An iterator that points to the first meta variable assignment with a non-zero function value.
              */
-            DdForwardIterator<DdType::CUDD> begin() const;
+            DdForwardIterator<DdType::CUDD> begin(bool enumerateDontCareMetaVariables = true) const;
             
             /*!
              * Retrieves an iterator that points past the end of the container.
              *
+             * @param enumerateDontCareMetaVariables If set to true, all meta variable assignments are enumerated, even
+             * if a meta variable does not at all influence the the function value.
              * @return An iterator that points past the end of the container.
              */
-            DdForwardIterator<DdType::CUDD> end() const;
+            DdForwardIterator<DdType::CUDD> end(bool enumerateDontCareMetaVariables = true) const;
+            
+            /*!
+             * Converts the DD into a (heavily nested) if-then-else expression that represents the very same function.
+             * The variable names used in the expression are derived from the meta variable name and are extended with a
+             * suffix ".i" if the meta variable is integer-valued, expressing that the variable is the i-th bit of the
+             * meta variable.
+             *
+             * @return The resulting expression.
+             */
+            storm::expressions::Expression toExpression() const;
+
+            /*!
+             * Converts the DD into a (heavily nested) if-then-else (with negations) expression that evaluates to true
+             * if and only if the assignment is minterm of the DD. The variable names used in the expression are derived
+             * from the meta variable name and are extended with a suffix ".i" if the meta variable is integer-valued,
+             * expressing that the variable is the i-th bit of the meta variable.
+             *
+             * @return The resulting expression.
+             */
+            storm::expressions::Expression getMintermExpression() const;
             
             friend std::ostream & operator<<(std::ostream& out, const Dd<DdType::CUDD>& dd);
         private:
@@ -475,13 +633,93 @@ namespace storm {
             void removeContainedMetaVariable(std::string const& metaVariableName);
             
             /*!
+             * Performs the recursive step of toExpression on the given DD.
+             *
+             * @param dd The dd to translate into an expression.
+             * @param variableNames The names of the variables to use in the expression.
+             * @return The resulting expression.
+             */
+            static storm::expressions::Expression toExpressionRecur(DdNode const* dd, std::vector<std::string> const& variableNames);
+            
+            /*!
+             * Performs the recursive step of getMintermExpression on the given DD.
+             *
+             * @param manager The manager of the DD.
+             * @param dd The dd whose minterms to translate into an expression.
+             * @param variableNames The names of the variables to use in the expression.
+             * @return The resulting expression.
+             */
+            static storm::expressions::Expression getMintermExpressionRecur(::DdManager* manager, DdNode const* dd, std::vector<std::string> const& variableNames);
+            
+            /*!
              * Creates a DD that encapsulates the given CUDD ADD.
              *
              * @param ddManager The manager responsible for this DD.
              * @param cuddAdd The CUDD ADD to store.
-             * @param
+             * @param containedMetaVariableNames The names of the meta variables that appear in the DD.
              */
             Dd(std::shared_ptr<DdManager<DdType::CUDD>> ddManager, ADD cuddAdd, std::set<std::string> const& containedMetaVariableNames = std::set<std::string>());
+            
+            /*!
+             * Helper function to convert the DD into a (sparse) matrix.
+             *
+             * @param dd The DD to convert.
+             * @param rowIndications A vector indicating at which position in the columnsAndValues vector the entries
+             * of row i start. Note: this vector is modified in the computation. More concretely, each entry i in the
+             * vector will be increased by the number of entries in the row. This can be used to count the number
+             * of entries in each row. If the values are not to be modified, a copy needs to be provided or the entries
+             * need to be restored afterwards.
+             * @param columnsAndValues The vector that will hold the columns and values of non-zero entries upon successful
+             * completion.
+             * @param rowGroupOffsets The row offsets at which a given row group starts.
+             * @param rowOdd The ODD used for the row translation.
+             * @param columnOdd The ODD used for the column translation.
+             * @param currentRowLevel The currently considered row level in the DD.
+             * @param currentColumnLevel The currently considered row level in the DD.
+             * @param maxLevel The number of levels that need to be considered.
+             * @param currentRowOffset The current row offset.
+             * @param currentColumnOffset The current row offset.
+             * @param ddRowVariableIndices The (sorted) indices of all DD row variables that need to be considered.
+             * @param ddColumnVariableIndices The (sorted) indices of all DD row variables that need to be considered.
+             * @param generateValues If set to true, the vector columnsAndValues is filled with the actual entries, which
+             * only works if the offsets given in rowIndications are already correct. If they need to be computed first,
+             * this flag needs to be false.
+             */
+            void toMatrixRec(DdNode const* dd, std::vector<uint_fast64_t>& rowIndications, std::vector<storm::storage::MatrixEntry<double>>& columnsAndValues, std::vector<uint_fast64_t> const& rowGroupOffsets, Odd<DdType::CUDD> const& rowOdd, Odd<DdType::CUDD> const& columnOdd, uint_fast64_t currentRowLevel, uint_fast64_t currentColumnLevel, uint_fast64_t maxLevel, uint_fast64_t currentRowOffset, uint_fast64_t currentColumnOffset, std::vector<uint_fast64_t> const& ddRowVariableIndices, std::vector<uint_fast64_t> const& ddColumnVariableIndices, bool generateValues = true) const;
+            
+            /*!
+             * Splits the given matrix DD into the groups using the given group variables.
+             *
+             * @param dd The DD to split.
+             * @param groups A vector that is to be filled with the DDs for the individual groups.
+             * @param ddGroupVariableIndices The (sorted) indices of all DD group variables that need to be considered.
+             * @param currentLevel The currently considered level in the DD.
+             * @param maxLevel The number of levels that need to be considered.
+             * @param remainingMetaVariables The meta variables that remain in the DDs after the groups have been split.
+             */
+            void splitGroupsRec(DdNode* dd, std::vector<Dd<DdType::CUDD>>& groups, std::vector<uint_fast64_t> const& ddGroupVariableIndices, uint_fast64_t currentLevel, uint_fast64_t maxLevel, std::set<std::string> const& remainingMetaVariables) const;
+            
+            /*!
+             * Performs a recursive step to add the given DD-based vector to the given explicit vector.
+             *
+             * @param dd The DD to add to the explicit vector.
+             * @param currentLevel The currently considered level in the DD.
+             * @param maxLevel The number of levels that need to be considered.
+             * @param currentOffset The current offset.
+             * @param odd The ODD used for the translation.
+             * @param ddVariableIndices The (sorted) indices of all DD variables that need to be considered.
+             * @param targetVector The vector to which the translated DD-based vector is to be added.
+             */
+            template<typename ValueType>
+            void addToVectorRec(DdNode const* dd, uint_fast64_t currentLevel, uint_fast64_t maxLevel, uint_fast64_t currentOffset, Odd<DdType::CUDD> const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType>& targetVector) const;
+            
+            /*!
+             * Retrieves the indices of all DD variables that are contained in this DD (not necessarily in the support,
+             * because they could be "don't cares"). Additionally, the indices are sorted to allow for easy access.
+             *
+             * @return The (sorted) indices of all DD variables that are contained in this DD.
+             */
+            std::vector<uint_fast64_t> getSortedVariableIndices() const;
             
             // A pointer to the manager responsible for this DD.
             std::shared_ptr<DdManager<DdType::CUDD>> ddManager;

@@ -1,6 +1,7 @@
 #include "src/storage/expressions/BaseExpression.h"
 #include "src/exceptions/ExceptionMacros.h"
 #include "src/exceptions/InvalidTypeException.h"
+#include "src/exceptions/InvalidAccessException.h"
 
 namespace storm {
     namespace expressions {        
@@ -36,10 +37,34 @@ namespace storm {
             LOG_THROW(false, storm::exceptions::InvalidTypeException, "Unable to evaluate expression as double.");
         }
         
-        bool BaseExpression::isConstant() const {
+        uint_fast64_t BaseExpression::getArity() const {
+            return 0;
+        }
+        
+        std::shared_ptr<BaseExpression const> BaseExpression::getOperand(uint_fast64_t operandIndex) const {
+            LOG_THROW(false, storm::exceptions::InvalidAccessException, "Unable to access operand " << operandIndex << " in expression of arity 0.");
+        }
+        
+        std::string const& BaseExpression::getIdentifier() const {
+            LOG_THROW(false, storm::exceptions::InvalidAccessException, "Unable to access identifier of non-constant, non-variable expression.");
+        }
+        
+        OperatorType BaseExpression::getOperator() const {
+            LOG_THROW(false, storm::exceptions::InvalidAccessException, "Unable to access operator of non-function application expression.");
+        }
+        
+        bool BaseExpression::containsVariables() const {
             return false;
         }
-
+        
+        bool BaseExpression::isLiteral() const {
+            return false;
+        }
+        
+        bool BaseExpression::isVariable() const {
+            return false;
+        }
+        
         bool BaseExpression::isTrue() const {
             return false;
         }
@@ -48,13 +73,12 @@ namespace storm {
             return false;
         }
         
-        std::shared_ptr<BaseExpression const> BaseExpression::getSharedPointer() const {
-            return this->shared_from_this();
+        bool BaseExpression::isFunctionApplication() const {
+            return false;
         }
         
-        std::ostream& operator<<(std::ostream& stream, ExpressionReturnType const& enumValue) {
-            stream << static_cast<std::underlying_type<ExpressionReturnType>::type>(enumValue);
-            return stream;
+        std::shared_ptr<BaseExpression const> BaseExpression::getSharedPointer() const {
+            return this->shared_from_this();
         }
         
         std::ostream& operator<<(std::ostream& stream, BaseExpression const& expression) {

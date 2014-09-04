@@ -3,13 +3,86 @@
 #include <algorithm>
 
 #include "src/storage/dd/CuddDdManager.h"
+#include "src/exceptions/ExceptionMacros.h"
 #include "src/exceptions/InvalidArgumentException.h"
+#include "src/settings/Settings.h"
+
+bool CuddOptionsRegistered = storm::settings::Settings::registerNewModule([] (storm::settings::Settings* instance) -> bool {
+    // Set up options for precision and maximal memory available to Cudd.
+    instance->addOption(storm::settings::OptionBuilder("Cudd", "cuddprec", "", "Sets the precision used by Cudd.").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision up to which to constants are considered to be different.").setDefaultValueDouble(1e-15).addValidationFunctionDouble(storm::settings::ArgumentValidators::doubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
+
+    instance->addOption(storm::settings::OptionBuilder("Cudd", "cuddmaxmem", "", "Sets the upper bound of memory available to Cudd in MB.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("mb", "The memory available to Cudd (0 means unlimited).").setDefaultValueUnsignedInteger(2048).build()).build());
+    
+    // Set up option for reordering.
+    std::vector<std::string> reorderingTechniques;
+    reorderingTechniques.push_back("none");
+    reorderingTechniques.push_back("random");
+    reorderingTechniques.push_back("randompivot");
+    reorderingTechniques.push_back("sift");
+    reorderingTechniques.push_back("siftconv");
+    reorderingTechniques.push_back("ssift");
+    reorderingTechniques.push_back("ssiftconv");
+    reorderingTechniques.push_back("gsift");
+    reorderingTechniques.push_back("gsiftconv");
+    reorderingTechniques.push_back("win2");
+    reorderingTechniques.push_back("win2conv");
+    reorderingTechniques.push_back("win3");
+    reorderingTechniques.push_back("win3conv");
+    reorderingTechniques.push_back("win4");
+    reorderingTechniques.push_back("win4conv");
+    reorderingTechniques.push_back("annealing");
+    reorderingTechniques.push_back("genetic");
+    reorderingTechniques.push_back("exact");
+	instance->addOption(storm::settings::OptionBuilder("Cudd", "reorder", "", "Sets the reordering technique used by Cudd.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("method", "Sets which technique is used by Cudd's reordering routines. Must be in {\"none\", \"random\", \"randompivot\", \"sift\", \"siftconv\", \"ssift\", \"ssiftconv\", \"gsift\", \"gsiftconv\", \"win2\", \"win2conv\", \"win3\", \"win3conv\", \"win4\", \"win4conv\", \"annealing\", \"genetic\", \"exact\"}.").setDefaultValueString("gsift").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(reorderingTechniques)).build()).build());
+    
+    return true;
+});
 
 namespace storm {
     namespace dd {
-        DdManager<DdType::CUDD>::DdManager() : metaVariableMap(), cuddManager() {
+        DdManager<DdType::CUDD>::DdManager() : metaVariableMap(), cuddManager(), reorderingTechnique(CUDD_REORDER_NONE) {
+            this->cuddManager.SetMaxMemory(static_cast<unsigned long>(storm::settings::Settings::getInstance()->getOptionByLongName("cuddmaxmem").getArgument(0).getValueAsUnsignedInteger() * 1024ul * 1024ul));
+            this->cuddManager.SetEpsilon(storm::settings::Settings::getInstance()->getOptionByLongName("cuddprec").getArgument(0).getValueAsDouble());
             
-            this->cuddManager.SetEpsilon(1.0e-15);
+            // Now set the selected reordering technique.
+            std::string const& reorderingTechnique = storm::settings::Settings::getInstance()->getOptionByLongName("reorder").getArgument(0).getValueAsString();
+            if (reorderingTechnique == "none") {
+                this->reorderingTechnique = CUDD_REORDER_NONE;
+            } else if (reorderingTechnique == "random") {
+                this->reorderingTechnique = CUDD_REORDER_RANDOM;
+            } else if (reorderingTechnique == "randompivot") {
+                this->reorderingTechnique = CUDD_REORDER_RANDOM_PIVOT;
+            } else if (reorderingTechnique == "sift") {
+                this->reorderingTechnique = CUDD_REORDER_SIFT;
+            } else if (reorderingTechnique == "siftconv") {
+                this->reorderingTechnique = CUDD_REORDER_SIFT_CONVERGE;
+            } else if (reorderingTechnique == "ssift") {
+                this->reorderingTechnique = CUDD_REORDER_SYMM_SIFT;
+            } else if (reorderingTechnique == "ssiftconv") {
+                this->reorderingTechnique = CUDD_REORDER_SYMM_SIFT_CONV;
+            } else if (reorderingTechnique == "gsift") {
+                this->reorderingTechnique = CUDD_REORDER_GROUP_SIFT;
+            } else if (reorderingTechnique == "gsiftconv") {
+                this->reorderingTechnique = CUDD_REORDER_GROUP_SIFT_CONV;
+            } else if (reorderingTechnique == "win2") {
+                this->reorderingTechnique = CUDD_REORDER_WINDOW2;
+            } else if (reorderingTechnique == "win2conv") {
+                this->reorderingTechnique = CUDD_REORDER_WINDOW2_CONV;
+            } else if (reorderingTechnique == "win3") {
+                this->reorderingTechnique = CUDD_REORDER_WINDOW3;
+            } else if (reorderingTechnique == "win3conv") {
+                this->reorderingTechnique = CUDD_REORDER_WINDOW3_CONV;
+            } else if (reorderingTechnique == "win4") {
+                this->reorderingTechnique = CUDD_REORDER_WINDOW4;
+            } else if (reorderingTechnique == "win4conv") {
+                this->reorderingTechnique = CUDD_REORDER_WINDOW4_CONV;
+            } else if (reorderingTechnique == "annealing") {
+                this->reorderingTechnique = CUDD_REORDER_ANNEALING;
+            } else if (reorderingTechnique == "genetic") {
+                this->reorderingTechnique = CUDD_REORDER_GENETIC;
+            } else if (reorderingTechnique == "exact") {
+                this->reorderingTechnique = CUDD_REORDER_EXACT;
+            }
         }
         
         Dd<DdType::CUDD> DdManager<DdType::CUDD>::getOne() {
@@ -25,17 +98,9 @@ namespace storm {
         }
         
         Dd<DdType::CUDD> DdManager<DdType::CUDD>::getEncoding(std::string const& metaVariableName, int_fast64_t value) {
-            // Check whether the meta variable exists.
-            if (!this->hasMetaVariable(metaVariableName)) {
-                throw storm::exceptions::InvalidArgumentException() << "Unknown meta variable name '" << metaVariableName << "'.";
-            }
-            
             DdMetaVariable<DdType::CUDD> const& metaVariable = this->getMetaVariable(metaVariableName);
             
-            // Check whether the value is legal for this meta variable.
-            if (value < metaVariable.getLow() || value > metaVariable.getHigh()) {
-                throw storm::exceptions::InvalidArgumentException() << "Illegal value " << value << " for meta variable '" << metaVariableName << "'.";
-            }
+            LOG_THROW(value >= metaVariable.getLow() && value <= metaVariable.getHigh(), storm::exceptions::InvalidArgumentException, "Illegal value " << value << " for meta variable '" << metaVariableName << "'.");
             
             // Now compute the encoding relative to the low value of the meta variable.
             value -= metaVariable.getLow();
@@ -61,11 +126,6 @@ namespace storm {
         }
         
         Dd<DdType::CUDD> DdManager<DdType::CUDD>::getRange(std::string const& metaVariableName) {
-            // Check whether the meta variable exists.
-            if (!this->hasMetaVariable(metaVariableName)) {
-                throw storm::exceptions::InvalidArgumentException() << "Unknown meta variable name '" << metaVariableName << "'.";
-            }
-
             storm::dd::DdMetaVariable<DdType::CUDD> const& metaVariable = this->getMetaVariable(metaVariableName);
             
             Dd<DdType::CUDD> result = this->getZero();
@@ -77,11 +137,6 @@ namespace storm {
         }
         
         Dd<DdType::CUDD> DdManager<DdType::CUDD>::getIdentity(std::string const& metaVariableName) {
-            // Check whether the meta variable exists.
-            if (!this->hasMetaVariable(metaVariableName)) {
-                throw storm::exceptions::InvalidArgumentException() << "Unknown meta variable name '" << metaVariableName << "'.";
-            }
-            
             storm::dd::DdMetaVariable<DdType::CUDD> const& metaVariable = this->getMetaVariable(metaVariableName);
             
             Dd<DdType::CUDD> result = this->getZero();
@@ -92,84 +147,57 @@ namespace storm {
         }
 
         void DdManager<DdType::CUDD>::addMetaVariable(std::string const& name, int_fast64_t low, int_fast64_t high) {
+            // Check whether the variable name is legal.
+            LOG_THROW(name != "" && name.back() != '\'', storm::exceptions::InvalidArgumentException, "Illegal name of meta variable: '" << name << "'.");
+            
             // Check whether a meta variable already exists.
-            if (this->hasMetaVariable(name)) {
-                throw storm::exceptions::InvalidArgumentException() << "A meta variable '" << name << "' already exists.";
-            }
+            LOG_THROW(!this->hasMetaVariable(name), storm::exceptions::InvalidArgumentException, "A meta variable '" << name << "' already exists.");
 
             // Check that the range is legal.
-            if (high == low) {
-                throw storm::exceptions::InvalidArgumentException() << "Range of meta variable must be at least 2 elements.";
-            }
+            LOG_THROW(high != low, storm::exceptions::InvalidArgumentException, "Range of meta variable must be at least 2 elements.");
             
             std::size_t numberOfBits = static_cast<std::size_t>(std::ceil(std::log2(high - low + 1)));
             
             std::vector<Dd<DdType::CUDD>> variables;
+            std::vector<Dd<DdType::CUDD>> variablesPrime;
             for (std::size_t i = 0; i < numberOfBits; ++i) {
                 variables.emplace_back(Dd<DdType::CUDD>(this->shared_from_this(), cuddManager.addVar(), {name}));
+                variablesPrime.emplace_back(Dd<DdType::CUDD>(this->shared_from_this(), cuddManager.addVar(), {name + "'"}));
+            }
+            
+            // Now group the non-primed and primed variable.
+            for (uint_fast64_t i = 0; i < numberOfBits; ++i) {
+                this->getCuddManager().MakeTreeNode(variables[i].getCuddAdd().NodeReadIndex(), 2, MTR_FIXED);
             }
             
             metaVariableMap.emplace(name, DdMetaVariable<DdType::CUDD>(name, low, high, variables, this->shared_from_this()));
+            metaVariableMap.emplace(name + "'", DdMetaVariable<DdType::CUDD>(name + "'", low, high, variablesPrime, this->shared_from_this()));
         }
         
         void DdManager<DdType::CUDD>::addMetaVariable(std::string const& name) {
+            // Check whether the variable name is legal.
+            LOG_THROW(name != "" && name.back() != '\'', storm::exceptions::InvalidArgumentException, "Illegal name of meta variable: '" << name << "'.");
+            
             // Check whether a meta variable already exists.
-            if (this->hasMetaVariable(name)) {
-                throw storm::exceptions::InvalidArgumentException() << "A meta variable '" << name << "' already exists.";
-            }
+            LOG_THROW(!this->hasMetaVariable(name), storm::exceptions::InvalidArgumentException, "A meta variable '" << name << "' already exists.");
             
             std::vector<Dd<DdType::CUDD>> variables;
+            std::vector<Dd<DdType::CUDD>> variablesPrime;
             variables.emplace_back(Dd<DdType::CUDD>(this->shared_from_this(), cuddManager.addVar(), {name}));
+            variablesPrime.emplace_back(Dd<DdType::CUDD>(this->shared_from_this(), cuddManager.addVar(), {name + "'"}));
+
+            // Now group the non-primed and primed variable.
+            this->getCuddManager().MakeTreeNode(variables.front().getCuddAdd().NodeReadIndex(), 2, MTR_FIXED);
             
             metaVariableMap.emplace(name, DdMetaVariable<DdType::CUDD>(name, variables, this->shared_from_this()));
-        }
-        
-        void DdManager<DdType::CUDD>::addMetaVariablesInterleaved(std::vector<std::string> const& names, int_fast64_t low, int_fast64_t high) {
-            // Make sure that at least one meta variable is added.
-            if (names.size() == 0) {
-                throw storm::exceptions::InvalidArgumentException() << "Illegal to add zero meta variables.";
-            }
-            
-            // Check that there are no duplicate names in the given name vector.
-            std::vector<std::string> nameCopy(names);
-            std::sort(nameCopy.begin(), nameCopy.end());
-            if (std::adjacent_find(nameCopy.begin(), nameCopy.end()) != nameCopy.end()) {
-                throw storm::exceptions::InvalidArgumentException() << "Cannot add duplicate meta variables.";
-            }
-            
-            // Check that the range is legal.
-            if (high == low) {
-                throw storm::exceptions::InvalidArgumentException() << "Range of meta variable must be at least 2 elements.";
-            }
-
-            // Check whether a meta variable already exists.
-            for (auto const& metaVariableName : names) {
-                if (this->hasMetaVariable(metaVariableName)) {
-                    throw storm::exceptions::InvalidArgumentException() << "A meta variable '" << metaVariableName << "' already exists.";
-                }
-            }
-            
-            // Add the variables in interleaved order.
-            std::size_t numberOfBits = static_cast<std::size_t>(std::ceil(std::log2(high - low + 1)));
-            std::vector<std::vector<Dd<DdType::CUDD>>> variables(names.size());
-            for (uint_fast64_t bit = 0; bit < numberOfBits; ++bit) {
-                for (uint_fast64_t i = 0; i < names.size(); ++i) {
-                    variables[i].emplace_back(Dd<DdType::CUDD>(this->shared_from_this(), cuddManager.addVar(), {names[i]}));
-                }
-            }
-            
-            // Now add the meta variables.
-            for (uint_fast64_t i = 0; i < names.size(); ++i) {
-                metaVariableMap.emplace(names[i], DdMetaVariable<DdType::CUDD>(names[i], low, high, variables[i], this->shared_from_this()));
-            }
+            metaVariableMap.emplace(name + "'", DdMetaVariable<DdType::CUDD>(name + "'", variablesPrime, this->shared_from_this()));
         }
         
         DdMetaVariable<DdType::CUDD> const& DdManager<DdType::CUDD>::getMetaVariable(std::string const& metaVariableName) const {
             auto const& nameVariablePair = metaVariableMap.find(metaVariableName);
             
-            if (!this->hasMetaVariable(metaVariableName)) {
-                throw storm::exceptions::InvalidArgumentException() << "Unknown meta variable name '" << metaVariableName << "'.";
-            }
+            // Check whether the meta variable exists.
+            LOG_THROW(nameVariablePair != metaVariableMap.end(), storm::exceptions::InvalidArgumentException, "Unknown meta variable name '" << metaVariableName << "'.");
             
             return nameVariablePair->second;
         }
@@ -193,14 +221,24 @@ namespace storm {
         Cudd& DdManager<DdType::CUDD>::getCuddManager() {
             return this->cuddManager;
         }
+
+        Cudd const& DdManager<DdType::CUDD>::getCuddManager() const {
+            return this->cuddManager;
+        }
         
         std::vector<std::string> DdManager<DdType::CUDD>::getDdVariableNames() const {
             // First, we initialize a list DD variables and their names.
             std::vector<std::pair<ADD, std::string>> variableNamePairs;
             for (auto const& nameMetaVariablePair : this->metaVariableMap) {
                 DdMetaVariable<DdType::CUDD> const& metaVariable = nameMetaVariablePair.second;
-                for (uint_fast64_t variableIndex = 0; variableIndex < metaVariable.getNumberOfDdVariables(); ++variableIndex) {
-                    variableNamePairs.emplace_back(metaVariable.getDdVariables()[variableIndex].getCuddAdd(), metaVariable.getName() + "." + std::to_string(variableIndex));
+                // If the meta variable is of type bool, we don't need to suffix it with the bit number.
+                if (metaVariable.getType() == DdMetaVariable<storm::dd::DdType::CUDD>::MetaVariableType::Bool) {
+                    variableNamePairs.emplace_back(metaVariable.getDdVariables().front().getCuddAdd(), metaVariable.getName());
+                } else {
+                    // For integer-valued meta variables, we, however, have to add the suffix.
+                    for (uint_fast64_t variableIndex = 0; variableIndex < metaVariable.getNumberOfDdVariables(); ++variableIndex) {
+                        variableNamePairs.emplace_back(metaVariable.getDdVariables()[variableIndex].getCuddAdd(), metaVariable.getName() + "." + std::to_string(variableIndex));
+                    }
                 }
             }
             
@@ -214,6 +252,23 @@ namespace storm {
             }
             
             return result;
+        }
+        
+        void DdManager<DdType::CUDD>::allowDynamicReordering(bool value) {
+            if (value) {
+                this->getCuddManager().AutodynEnable(this->reorderingTechnique);
+            } else {
+                this->getCuddManager().AutodynDisable();
+            }
+        }
+        
+        bool DdManager<DdType::CUDD>::isDynamicReorderingAllowed() const {
+            Cudd_ReorderingType type;
+            return this->getCuddManager().ReorderingStatus(&type);
+        }
+        
+        void DdManager<DdType::CUDD>::triggerReordering() {
+            this->getCuddManager().ReduceHeap(this->reorderingTechnique, 0);
         }
     }
 }

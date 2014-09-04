@@ -6,34 +6,23 @@
 #include <memory>
 #include <iomanip>
 
-// Include boost spirit.
-#define BOOST_SPIRIT_USE_PHOENIX_V3
-#include <boost/typeof/typeof.hpp>
-#include <boost/spirit/include/qi.hpp>
-#include <boost/spirit/include/phoenix.hpp>
-#include <boost/spirit/include/support_line_pos_iterator.hpp>
-#include <boost/spirit/home/classic/iterator/position_iterator.hpp>
-
-namespace qi = boost::spirit::qi;
-namespace phoenix = boost::phoenix;
-
-typedef std::string::const_iterator BaseIteratorType;
-typedef boost::spirit::line_pos_iterator<BaseIteratorType> PositionIteratorType;
-typedef PositionIteratorType Iterator;
-typedef BOOST_TYPEOF(boost::spirit::ascii::space | qi::lit("//") >> *(qi::char_ - qi::eol) >> qi::eol) Skipper;
-typedef BOOST_TYPEOF(qi::lit("//") >> *(qi::char_ - qi::eol) >> qi::eol | boost::spirit::ascii::space) Skipper2;
-
+#include "src/parser/SpiritParserDefinitions.h"
+#include "src/parser/ExpressionParser.h"
 #include "src/storage/prism/Program.h"
 #include "src/storage/expressions/Expression.h"
 #include "src/storage/expressions/Expressions.h"
 #include "src/exceptions/ExceptionMacros.h"
+#include "src/exceptions/WrongFormatException.h"
 
 namespace storm {
     namespace parser {
+        // A class that stores information about the parsed program.
         class GlobalProgramInformation {
         public:
             // Default construct the header information.
-			GlobalProgramInformation() : hasInitialStatesExpression(false), currentCommandIndex(0), currentUpdateIndex(0) {}
+			GlobalProgramInformation() : modelType(), constants(), formulas(), globalBooleanVariables(), globalIntegerVariables(), moduleToIndexMap(), modules(), rewardModels(), labels(),hasInitialConstruct(false), initialConstruct(storm::expressions::Expression::createFalse()), currentCommandIndex(0), currentUpdateIndex(0) {
+                // Intentionally left empty.
+            }
             
             // Members for all essential information that needs to be collected.
             storm::prism::Program::ModelType modelType;
@@ -45,8 +34,8 @@ namespace storm {
             std::vector<storm::prism::Module> modules;
             std::vector<storm::prism::RewardModel> rewardModels;
             std::vector<storm::prism::Label> labels;
-            storm::expressions::Expression initialStatesExpression;
-            bool hasInitialStatesExpression;
+            bool hasInitialConstruct;
+            storm::prism::InitialConstruct initialConstruct;
             
             // Counters to provide unique indexing for commands and updates.
             uint_fast64_t currentCommandIndex;
@@ -59,20 +48,18 @@ namespace storm {
              * Parses the given file into the PRISM storage classes assuming it complies with the PRISM syntax.
              *
              * @param filename the name of the file to parse.
-             * @param typeCheck Sets whether the expressions are generated and therefore typechecked.
              * @return The resulting PRISM program.
              */
-            static storm::prism::Program parse(std::string const& filename, bool typeCheck = true);
+            static storm::prism::Program parse(std::string const& filename);
             
             /*!
              * Parses the given input stream into the PRISM storage classes assuming it complies with the PRISM syntax.
              *
              * @param input The input string to parse.
              * @param filename The name of the file from which the input was read.
-             * @param typeCheck Sets whether the expressions are generated and therefore typechecked.
              * @return The resulting PRISM program.
              */
-            static storm::prism::Program parseFromString(std::string const& input, std::string const& filename, bool typeCheck = true);
+            static storm::prism::Program parseFromString(std::string const& input, std::string const& filename);
             
         private:
             struct modelTypeStruct : qi::symbols<char, storm::prism::Program::ModelType> {
@@ -108,23 +95,6 @@ namespace storm {
                     ("ceil", 17)
                     ("init", 18)
                     ("endinit", 19);
-                }
-            };
-            
-            // Functor used for displaying error information.
-            struct ErrorHandler {
-                typedef qi::error_handler_result result_type;
-                
-                template<typename T1, typename T2, typename T3, typename T4>
-                qi::error_handler_result operator()(T1 b, T2 e, T3 where, T4 const& what) const {
-                    //                    LOG4CPLUS_ERROR(logger, "Error: expecting " << what << " in line " << get_line(where) << " at column " << get_column(b, where, 4) << ".");
-                    std::cerr << "Error: expecting " << what << " in line " << get_line(where) << "." << std::endl;
-                    T3 end(where);
-                    while (end != e && *end != '\r' && *end != '\n') {
-                        ++end;
-                    }
-                    std::cerr << "Error: expecting " << what << " in line " << get_line(where) << ": \n" << std::string(get_line_start(b, where), end) << " ... \n" << std::setw(std::distance(b, where)) << '^' << "---- here\n";
-                    return qi::fail;
                 }
             };
             
@@ -169,9 +139,6 @@ namespace storm {
              */
             void allowDoubleLiterals(bool flag);
             
-            // A flag that stores wether to allow or forbid double literals in parsed expressions.
-            bool allowDoubleLiteralsFlag;
-            
             // The name of the file being parsed.
             std::string filename;
             
@@ -183,7 +150,6 @@ namespace storm {
             std::string const& getFilename() const;
             
             // A function used for annotating the entities with their position.
-            phoenix::function<ErrorHandler> handler;
             phoenix::function<PositionAnnotation> annotate;
             
             // The starting point of the grammar.
@@ -193,7 +159,6 @@ namespace storm {
             qi::rule<Iterator, storm::prism::Program::ModelType(), Skipper> modelTypeDefinition;
             
             // Rules for parsing the program header.
-            qi::rule<Iterator, qi::unused_type(GlobalProgramInformation&), Skipper> programHeader;
             qi::rule<Iterator, storm::prism::Constant(), Skipper> undefinedConstantDefinition;
             qi::rule<Iterator, storm::prism::Constant(), Skipper> undefinedBooleanConstantDefinition;
             qi::rule<Iterator, storm::prism::Constant(), Skipper> undefinedIntegerConstantDefinition;
@@ -242,59 +207,17 @@ namespace storm {
             // Rules for identifier parsing.
             qi::rule<Iterator, std::string(), Skipper> identifier;
             
-            // Rules for parsing a composed expression.
-            qi::rule<Iterator, storm::expressions::Expression(), Skipper> expression;
-            qi::rule<Iterator, storm::expressions::Expression(), Skipper> iteExpression;
-            qi::rule<Iterator, storm::expressions::Expression(), qi::locals<bool>, Skipper> orExpression;
-            qi::rule<Iterator, storm::expressions::Expression(), Skipper> andExpression;
-            qi::rule<Iterator, storm::expressions::Expression(), Skipper> relativeExpression;
-            qi::rule<Iterator, storm::expressions::Expression(), qi::locals<bool>, Skipper> equalityExpression;
-            qi::rule<Iterator, storm::expressions::Expression(), qi::locals<bool>, Skipper> plusExpression;
-            qi::rule<Iterator, storm::expressions::Expression(), qi::locals<bool>, Skipper> multiplicationExpression;
-            qi::rule<Iterator, storm::expressions::Expression(), Skipper> unaryExpression;
-            qi::rule<Iterator, storm::expressions::Expression(), Skipper> atomicExpression;
-            qi::rule<Iterator, storm::expressions::Expression(), Skipper> literalExpression;
-            qi::rule<Iterator, storm::expressions::Expression(), Skipper> identifierExpression;
-            qi::rule<Iterator, storm::expressions::Expression(), qi::locals<bool>, Skipper> minMaxExpression;
-            qi::rule<Iterator, storm::expressions::Expression(), qi::locals<bool>, Skipper> floorCeilExpression;
-            
-            // Parser that is used to recognize doubles only (as opposed to Spirit's double_ parser).
-            boost::spirit::qi::real_parser<double, boost::spirit::qi::strict_real_policies<double>> strict_double;
-            
             // Parsers that recognize special keywords and model types.
             storm::parser::PrismParser::keywordsStruct keywords_;
             storm::parser::PrismParser::modelTypeStruct modelType_;
             qi::symbols<char, storm::expressions::Expression> identifiers_;
             
+            // Parser used for recognizing expressions.
+            storm::parser::ExpressionParser expressionParser;
+            
             // Helper methods used in the grammar.
             bool isValidIdentifier(std::string const& identifier);
-            bool addInitialStatesExpression(storm::expressions::Expression initialStatesExpression, GlobalProgramInformation& globalProgramInformation);
-            
-            storm::expressions::Expression createIteExpression(storm::expressions::Expression e1, storm::expressions::Expression e2, storm::expressions::Expression e3) const;
-            storm::expressions::Expression createImpliesExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
-            storm::expressions::Expression createOrExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
-            storm::expressions::Expression createAndExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
-            storm::expressions::Expression createGreaterExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
-            storm::expressions::Expression createGreaterOrEqualExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
-            storm::expressions::Expression createLessExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
-            storm::expressions::Expression createLessOrEqualExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
-            storm::expressions::Expression createEqualsExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
-            storm::expressions::Expression createNotEqualsExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
-            storm::expressions::Expression createPlusExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
-            storm::expressions::Expression createMinusExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
-            storm::expressions::Expression createMultExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
-            storm::expressions::Expression createDivExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
-            storm::expressions::Expression createNotExpression(storm::expressions::Expression e1) const;
-            storm::expressions::Expression createMinusExpression(storm::expressions::Expression e1) const;
-            storm::expressions::Expression createTrueExpression() const;
-            storm::expressions::Expression createFalseExpression() const;
-            storm::expressions::Expression createDoubleLiteralExpression(double value, bool& pass) const;
-            storm::expressions::Expression createIntegerLiteralExpression(int value) const;
-            storm::expressions::Expression createMinimumExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
-            storm::expressions::Expression createMaximumExpression(storm::expressions::Expression e1, storm::expressions::Expression e2) const;
-            storm::expressions::Expression createFloorExpression(storm::expressions::Expression e1) const;
-            storm::expressions::Expression createCeilExpression(storm::expressions::Expression e1) const;
-            storm::expressions::Expression getIdentifierExpression(std::string const& identifier) const;
+            bool addInitialStatesConstruct(storm::expressions::Expression initialStatesExpression, GlobalProgramInformation& globalProgramInformation);
             
             storm::prism::Constant createUndefinedBooleanConstant(std::string const& newConstant) const;
             storm::prism::Constant createUndefinedIntegerConstant(std::string const& newConstant) const;
@@ -302,7 +225,7 @@ namespace storm {
             storm::prism::Constant createDefinedBooleanConstant(std::string const& newConstant, storm::expressions::Expression expression) const;
             storm::prism::Constant createDefinedIntegerConstant(std::string const& newConstant, storm::expressions::Expression expression) const;
             storm::prism::Constant createDefinedDoubleConstant(std::string const& newConstant, storm::expressions::Expression expression) const;
-            storm::prism::Formula createFormula(std::string const& formulaName, storm::expressions::Expression expression) const;
+            storm::prism::Formula createFormula(std::string const& formulaName, storm::expressions::Expression expression);
             storm::prism::Label createLabel(std::string const& labelName, storm::expressions::Expression expression) const;
             storm::prism::RewardModel createRewardModel(std::string const& rewardModelName, std::vector<storm::prism::StateReward> const& stateRewards, std::vector<storm::prism::TransitionReward> const& transitionRewards) const;
             storm::prism::StateReward createStateReward(storm::expressions::Expression statePredicateExpression, storm::expressions::Expression rewardValueExpression) const;

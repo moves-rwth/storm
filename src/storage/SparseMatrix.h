@@ -8,9 +8,12 @@
 
 #include "src/storage/BitVector.h"
 #include "src/utility/constants.h"
+#include "src/utility/OsDetection.h"
 
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/exceptions/OutOfRangeException.h"
+
+#include <boost/functional/hash.hpp>
 
 // Forward declaration for adapter classes.
 namespace storm {
@@ -26,6 +29,83 @@ namespace storm {
         
         // Forward declare matrix class.
         template<typename T> class SparseMatrix;
+        
+        template<typename T>
+        class MatrixEntry {
+        public:
+            /*!
+             * Constructs a matrix entry with the given column and value.
+             *
+             * @param column The column of the matrix entry.
+             * @param value The value of the matrix entry.
+             */
+            MatrixEntry(uint_fast64_t column, T value);
+            
+            /*!
+             * Move-constructs the matrix entry fro the given column-value pair.
+             *
+             * @param pair The column-value pair from which to move-construct the matrix entry.
+             */
+            MatrixEntry(std::pair<uint_fast64_t, T>&& pair);
+            
+            MatrixEntry() = default;
+            MatrixEntry(MatrixEntry const& other) = default;
+            MatrixEntry& operator=(MatrixEntry const& other) = default;
+#ifndef WINDOWS
+            MatrixEntry(MatrixEntry&& other) = default;
+            MatrixEntry& operator=(MatrixEntry&& other) = default;
+#endif
+            
+            /*!
+             * Retrieves the column of the matrix entry.
+             *
+             * @return The column of the matrix entry.
+             */
+            uint_fast64_t const& getColumn() const;
+            
+            /*!
+             * Retrieves the column of the matrix entry.
+             *
+             * @return The column of the matrix entry.
+             */
+            uint_fast64_t& getColumn();
+            
+            /*!
+             * Retrieves the value of the matrix entry.
+             *
+             * @return The value of the matrix entry.
+             */
+            T const& getValue() const;
+
+            /*!
+             * Retrieves the value of the matrix entry.
+             *
+             * @return The value of the matrix entry.
+             */
+            T& getValue();
+            
+            /*!
+             * Retrieves a pair of column and value that characterizes this entry.
+             *
+             * @return A column-value pair that characterizes this entry.
+             */
+            std::pair<uint_fast64_t, T> const& getColumnValuePair() const;
+            
+        private:
+            // The actual matrix entry.
+            std::pair<uint_fast64_t, T> entry;
+        };
+        
+        /*!
+         * Computes the hash value of a matrix entry.
+         */
+        template<typename T>
+        std::size_t hash_value(MatrixEntry<T> const& matrixEntry) {
+            std::size_t seed = 0;
+            boost::hash_combine(seed, matrixEntry.getColumn());
+            boost::hash_combine(seed, matrixEntry.getValue());
+            return seed;
+        }
         
         /*!
          * A class that can be used to build a sparse matrix by adding value by value.
@@ -128,7 +208,7 @@ namespace storm {
             bool storagePreallocated;
             
             // The storage for the columns and values of all entries in the matrix.
-            std::vector<std::pair<uint_fast64_t, T>> columnsAndValues;
+            std::vector<MatrixEntry<T>> columnsAndValues;
             
             // A vector containing the indices at which each given row begins. This index is to be interpreted as an
             // index in the valueStorage and the columnIndications vectors. Put differently, the values of the entries
@@ -175,8 +255,8 @@ namespace storm {
             friend class storm::adapters::EigenAdapter;
             friend class storm::adapters::StormAdapter;
             
-            typedef typename std::vector<std::pair<uint_fast64_t, T>>::iterator iterator;
-            typedef typename std::vector<std::pair<uint_fast64_t, T>>::const_iterator const_iterator;
+            typedef typename std::vector<MatrixEntry<T>>::iterator iterator;
+            typedef typename std::vector<MatrixEntry<T>>::const_iterator const_iterator;
             
             /*!
              * This class represents a number of consecutive rows of the matrix.
@@ -284,7 +364,7 @@ namespace storm {
              * @param columnsAndValues The vector containing the columns and values of the entries in the matrix.
              * @param rowGroupIndices The vector representing the row groups in the matrix.
              */
-            SparseMatrix(uint_fast64_t columnCount, std::vector<uint_fast64_t> const& rowIndications, std::vector<std::pair<uint_fast64_t, T>> const& columnsAndValues, std::vector<uint_fast64_t> const& rowGroupIndices);
+            SparseMatrix(uint_fast64_t columnCount, std::vector<uint_fast64_t> const& rowIndications, std::vector<MatrixEntry<T>> const& columnsAndValues, std::vector<uint_fast64_t> const& rowGroupIndices);
             
             /*!
              * Constructs a sparse matrix by moving the given contents.
@@ -294,7 +374,7 @@ namespace storm {
              * @param columnsAndValues The vector containing the columns and values of the entries in the matrix.
              * @param rowGroupIndices The vector representing the row groups in the matrix.
              */
-            SparseMatrix(uint_fast64_t columnCount, std::vector<uint_fast64_t>&& rowIndications, std::vector<std::pair<uint_fast64_t, T>>&& columnsAndValues, std::vector<uint_fast64_t>&& rowGroupIndices);
+            SparseMatrix(uint_fast64_t columnCount, std::vector<uint_fast64_t>&& rowIndications, std::vector<MatrixEntry<T>>&& columnsAndValues, std::vector<uint_fast64_t>&& rowGroupIndices);
 
             /*!
              * Assigns the contents of the given matrix to the current one by deep-copying its contents.
@@ -338,6 +418,13 @@ namespace storm {
              * @return The number of entries in the matrix.
              */
             uint_fast64_t getEntryCount() const;
+            
+            /*!
+             * Returns the number of nonzero entries in the matrix.
+             *
+             * @return The number of nonzero entries in the matrix.
+             */
+            uint_fast64_t getNonzeroEntryCount() const;
             
             /*!
              * Returns the number of row groups in the matrix.
@@ -489,13 +576,37 @@ namespace storm {
             std::vector<T> getPointwiseProductRowSumVector(storm::storage::SparseMatrix<T> const& otherMatrix) const;
             
             /*!
-             * Multiplies the matrix with the given vector and writes the result to given result vector.
+             * Multiplies the matrix with the given vector and writes the result to the given result vector. If a
+             * parallel implementation is available and it is considered worthwhile (heuristically, based on the metrics
+             * of the matrix), the multiplication is carried out in parallel.
              *
              * @param vector The vector with which to multiply the matrix.
              * @param result The vector that is supposed to hold the result of the multiplication after the operation.
              * @return The product of the matrix and the given vector as the content of the given result vector.
              */
             void multiplyWithVector(std::vector<T> const& vector, std::vector<T>& result) const;
+            
+            /*!
+             * Multiplies the matrix with the given vector in a sequential way and writes the result to the given result
+             * vector.
+             *
+             * @param vector The vector with which to multiply the matrix.
+             * @param result The vector that is supposed to hold the result of the multiplication after the operation.
+             * @return The product of the matrix and the given vector as the content of the given result vector.
+             */
+            void multiplyWithVectorSequential(std::vector<T> const& vector, std::vector<T>& result) const;
+
+#ifdef STORM_HAVE_INTELTBB
+            /*!
+             * Multiplies the matrix with the given vector in a parallel fashion using Intel's TBB and writes the result
+             * to the given result vector.
+             *
+             * @param vector The vector with which to multiply the matrix.
+             * @param result The vector that is supposed to hold the result of the multiplication after the operation.
+             * @return The product of the matrix and the given vector as the content of the given result vector.
+             */
+            void multiplyWithVectorParallel(std::vector<T> const& vector, std::vector<T>& result) const;
+#endif
             
             /*!
              * Computes the sum of the entries in a given row.
@@ -651,8 +762,11 @@ namespace storm {
             // The number of entries in the matrix.
             uint_fast64_t entryCount;
             
+            // The number of nonzero entries in the matrix.
+            uint_fast64_t nonzeroEntryCount;
+            
             // The storage for the columns and values of all entries in the matrix.
-            std::vector<std::pair<uint_fast64_t, T>> columnsAndValues;
+            std::vector<MatrixEntry<T>> columnsAndValues;
             
             // A vector containing the indices at which each given row begins. This index is to be interpreted as an
             // index in the valueStorage and the columnIndications vectors. Put differently, the values of the entries
