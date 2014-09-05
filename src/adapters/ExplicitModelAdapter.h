@@ -662,8 +662,8 @@ namespace storm {
                 bool deterministicModel = program.getModelType() == storm::prism::Program::ModelType::DTMC || program.getModelType() == storm::prism::Program::ModelType::CTMC;
 
                 // Build the transition and reward matrices.
-                storm::storage::SparseMatrixBuilder<ValueType> transitionMatrixBuilder(0, 0, 0, !deterministicModel, 0);
-                storm::storage::SparseMatrixBuilder<ValueType> transitionRewardMatrixBuilder(0, 0, 0, !deterministicModel, 0);
+                storm::storage::SparseMatrixBuilder<ValueType> transitionMatrixBuilder(0, 0, 0, false, !deterministicModel, 0);
+                storm::storage::SparseMatrixBuilder<ValueType> transitionRewardMatrixBuilder(0, 0, 0, false, !deterministicModel, 0);
                 modelComponents.choiceLabeling = buildMatrices(program, variableInformation, rewardModel.getTransitionRewards(), stateInformation, deterministicModel, transitionMatrixBuilder, transitionRewardMatrixBuilder);
                 
                 // Finalize the resulting matrices.
