@@ -122,6 +122,8 @@ namespace storm {
             
             /*!
              * Constructs a sparse matrix builder producing a matrix with the given number of rows, columns and entries.
+             * The number of rows, columns and entries is reserved upon creation. If more rows/columns or entries are
+             * added, this will possibly lead to a reallocation.
              *
              * @param rows The number of rows of the resulting matrix.
              * @param columns The number of columns of the resulting matrix.
