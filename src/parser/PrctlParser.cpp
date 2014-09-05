@@ -89,7 +89,7 @@ struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, std::shared_ptr<storm::
 		// This block defines rules for parsing probabilistic path formulas
 		pathFormula = (boundedEventually | eventually | next | globally | boundedUntil | until | qi::lit("(") >> pathFormula >> qi::lit(")") | qi::lit("[") >> pathFormula >> qi::lit("]"));
 		pathFormula.name("path formula");
-		boundedEventually = (qi::lit("F") >> qi::lit("<=") > qi::int_ > stateFormula)[qi::_val =
+		boundedEventually = ((qi::lit("F") >> qi::lit("<=")) > qi::int_ > stateFormula)[qi::_val =
 				MAKE(prctl::BoundedEventually<double>, qi::_2, qi::_1)];
 		boundedEventually.name("bounded eventually");
 		eventually = (qi::lit("F") > stateFormula)[qi::_val =
@@ -132,21 +132,21 @@ struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, std::shared_ptr<storm::
 		noBoundOperator = (probabilisticNoBoundOperator | rewardNoBoundOperator);
 		noBoundOperator.name("no bound operator");
 		probabilisticNoBoundOperator = (
-				(qi::lit("P") >> qi::lit("min") >> qi::lit("=") > qi::lit("?") >> pathFormula )[qi::_val =
+				((qi::lit("P") >> qi::lit("min") >> qi::lit("=")) > qi::lit("?") >> pathFormula )[qi::_val =
 						MAKE(prctl::PrctlFilter<double>, qi::_1, storm::properties::MINIMIZE)] |
-				(qi::lit("P") >> qi::lit("max") >> qi::lit("=") > qi::lit("?") >> pathFormula )[qi::_val =
+				((qi::lit("P") >> qi::lit("max") >> qi::lit("=")) > qi::lit("?") >> pathFormula )[qi::_val =
 						MAKE(prctl::PrctlFilter<double>, qi::_1, storm::properties::MAXIMIZE)] |
-				(qi::lit("P") >> qi::lit("=") > qi::lit("?") >> pathFormula )[qi::_val =
+				((qi::lit("P") >> qi::lit("=")) > qi::lit("?") >> pathFormula )[qi::_val =
 						MAKE(prctl::PrctlFilter<double>, qi::_1)]
 				);
 		probabilisticNoBoundOperator.name("no bound operator");
 
 		rewardNoBoundOperator = (
-				(qi::lit("R") >> qi::lit("min") >> qi::lit("=") > qi::lit("?") >> rewardPathFormula )[qi::_val =
+				((qi::lit("R") >> qi::lit("min") >> qi::lit("=")) > qi::lit("?") >> rewardPathFormula )[qi::_val =
 						MAKE(prctl::PrctlFilter<double>, qi::_1, storm::properties::MINIMIZE)] |
-				(qi::lit("R") >> qi::lit("max") >> qi::lit("=") > qi::lit("?") >> rewardPathFormula )[qi::_val =
+				((qi::lit("R") >> qi::lit("max") >> qi::lit("=")) > qi::lit("?") >> rewardPathFormula )[qi::_val =
 						MAKE(prctl::PrctlFilter<double>, qi::_1, storm::properties::MAXIMIZE)] |
-				(qi::lit("R") >> qi::lit("=") > qi::lit("?") >> rewardPathFormula )[qi::_val =
+				((qi::lit("R") >> qi::lit("=")) > qi::lit("?") >> rewardPathFormula )[qi::_val =
 						MAKE(prctl::PrctlFilter<double>, qi::_1)]
 
 				);
@@ -166,7 +166,7 @@ struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, std::shared_ptr<storm::
 		formulaAction.name("formula action");
 
 		rangeAction = (
-				(qi::lit("range") >> qi::lit("(") >> qi::uint_ >> qi::lit(",") > qi::uint_ >> qi::lit(")"))[qi::_val =
+				((qi::lit("range") >> qi::lit("(") >> qi::uint_ >> qi::lit(",")) > qi::uint_ >> qi::lit(")"))[qi::_val =
 						MAKE(storm::properties::action::RangeAction<double>, qi::_1, qi::_2)] |
 				(qi::lit("range") >> qi::lit("(") >> qi::uint_ >> qi::lit(")"))[qi::_val =
 						MAKE(storm::properties::action::RangeAction<double>, qi::_1, qi::_1 + 1)]
@@ -188,9 +188,9 @@ struct PrctlParser::PrctlGrammar : qi::grammar<Iterator, std::shared_ptr<storm::
 
 		filter = (qi::lit("filter") >> qi::lit("[") >> +abstractAction >> qi::lit("]") > qi::lit("(") >> formula >> qi::lit(")"))[qi::_val =
 					MAKE(prctl::PrctlFilter<double>, qi::_2, qi::_1)] |
-				 (qi::lit("filter") >> qi::lit("[") >> qi::lit("max") > +abstractAction >> qi::lit("]") >> qi::lit("(") >> formula >> qi::lit(")"))[qi::_val =
+				 ((qi::lit("filter") >> qi::lit("[") >> qi::lit("max")) > +abstractAction >> qi::lit("]") >> qi::lit("(") >> formula >> qi::lit(")"))[qi::_val =
 					MAKE(prctl::PrctlFilter<double>, qi::_2, qi::_1, storm::properties::MAXIMIZE)] |
-				 (qi::lit("filter") >> qi::lit("[") >> qi::lit("min") > +abstractAction >> qi::lit("]") >> qi::lit("(") >> formula >> qi::lit(")"))[qi::_val =
+				 ((qi::lit("filter") >> qi::lit("[") >> qi::lit("min")) > +abstractAction >> qi::lit("]") >> qi::lit("(") >> formula >> qi::lit(")"))[qi::_val =
 					MAKE(prctl::PrctlFilter<double>, qi::_2, qi::_1, storm::properties::MINIMIZE)] |
 				 (noBoundOperator)[qi::_val =
 					qi::_1] |

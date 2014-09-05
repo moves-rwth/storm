@@ -98,11 +98,11 @@ struct CslParser::CslGrammar : qi::grammar<Iterator, std::shared_ptr<csl::CslFil
 		pathFormula = (timeBoundedEventually | eventually | globally | next | timeBoundedUntil | until | (qi::lit("(") >> pathFormula >> qi::lit(")")) | (qi::lit("[") >> pathFormula >> qi::lit("]")));
 		pathFormula.name("path formula");
 		timeBoundedEventually = (
-				(qi::lit("F") >> qi::lit("[") >> qi::double_ >> qi::lit(",") > qi::double_ > qi::lit("]") > stateFormula)[qi::_val =
+				((qi::lit("F") >> qi::lit("[") >> qi::double_ >> qi::lit(",")) > qi::double_ > qi::lit("]") > stateFormula)[qi::_val =
 				MAKE(csl::TimeBoundedEventually<double>, qi::_1, qi::_2, qi::_3)] |
-				(qi::lit("F") >> (qi::lit("<=") | qi::lit("<")) > qi::double_ > stateFormula)[qi::_val =
+				((qi::lit("F") >> (qi::lit("<=") | qi::lit("<"))) > qi::double_ > stateFormula)[qi::_val =
 								MAKE(csl::TimeBoundedEventually<double>, 0, qi::_1, qi::_2)] |
-				(qi::lit("F") >> (qi::lit(">=") | qi::lit(">")) > qi::double_ > stateFormula)[qi::_val =
+				((qi::lit("F") >> (qi::lit(">=") | qi::lit(">"))) > qi::double_ > stateFormula)[qi::_val =
 								MAKE(csl::TimeBoundedEventually<double>, qi::_1, std::numeric_limits<double>::infinity(), qi::_2)]
 				);
 		timeBoundedEventually.name("time bounded eventually");
@@ -135,14 +135,14 @@ struct CslParser::CslGrammar : qi::grammar<Iterator, std::shared_ptr<csl::CslFil
 		noBoundOperator = (probabilisticNoBoundOperator | steadyStateNoBoundOperator);
 		noBoundOperator.name("no bound operator");
 		probabilisticNoBoundOperator =
-				(qi::lit("P") >> qi::lit("min") >> qi::lit("=") > qi::lit("?") >> pathFormula)[qi::_val =
+				((qi::lit("P") >> qi::lit("min") >> qi::lit("=")) > qi::lit("?") >> pathFormula)[qi::_val =
 						MAKE(csl::CslFilter<double>, qi::_1, storm::properties::MINIMIZE)] |
-				(qi::lit("P") >> qi::lit("max") >> qi::lit("=") > qi::lit("?") >> pathFormula)[qi::_val =
+				((qi::lit("P") >> qi::lit("max") >> qi::lit("=")) > qi::lit("?") >> pathFormula)[qi::_val =
 						MAKE(csl::CslFilter<double>, qi::_1, storm::properties::MAXIMIZE)] |
-				(qi::lit("P") >> qi::lit("=") > qi::lit("?") >> pathFormula)[qi::_val =
+				((qi::lit("P") >> qi::lit("=")) > qi::lit("?") >> pathFormula)[qi::_val =
 						MAKE(csl::CslFilter<double>, qi::_1)];
 		probabilisticNoBoundOperator.name("probabilistic no bound operator");
-		steadyStateNoBoundOperator = (qi::lit("S") >> qi::lit("=") > qi::lit("?") >> stateFormula )[qi::_val =
+		steadyStateNoBoundOperator = ((qi::lit("S") >> qi::lit("=")) > qi::lit("?") >> stateFormula )[qi::_val =
 				MAKE(csl::CslFilter<double>, qi::_1, storm::properties::UNDEFINED, true)];
 		steadyStateNoBoundOperator.name("steady state no bound operator");
 
@@ -159,7 +159,7 @@ struct CslParser::CslGrammar : qi::grammar<Iterator, std::shared_ptr<csl::CslFil
 		formulaAction.name("formula action");
 
 		rangeAction = (
-				(qi::lit("range") >> qi::lit("(") >> qi::uint_ >> qi::lit(",") > qi::uint_ >> qi::lit(")"))[qi::_val =
+				((qi::lit("range") >> qi::lit("(") >> qi::uint_ >> qi::lit(",")) > qi::uint_ >> qi::lit(")"))[qi::_val =
 						MAKE(storm::properties::action::RangeAction<double>, qi::_1, qi::_2)] |
 				(qi::lit("range") >> qi::lit("(") >> qi::uint_ >> qi::lit(")"))[qi::_val =
 						MAKE(storm::properties::action::RangeAction<double>, qi::_1, qi::_1 + 1)]
@@ -181,9 +181,9 @@ struct CslParser::CslGrammar : qi::grammar<Iterator, std::shared_ptr<csl::CslFil
 
 		filter = (qi::lit("filter") >> qi::lit("[") >> +abstractAction >> qi::lit("]") >> qi::lit("(") >> formula >> qi::lit(")"))[qi::_val =
 					MAKE(csl::CslFilter<double>, qi::_2, qi::_1)] |
-				 (qi::lit("filter") >> qi::lit("[") >> qi::lit("max") > +abstractAction >> qi::lit("]") >> qi::lit("(") >> formula >> qi::lit(")"))[qi::_val =
+				 ((qi::lit("filter") >> qi::lit("[") >> qi::lit("max")) > +abstractAction >> qi::lit("]") >> qi::lit("(") >> formula >> qi::lit(")"))[qi::_val =
 					MAKE(csl::CslFilter<double>, qi::_2, qi::_1, storm::properties::MAXIMIZE)] |
-				 (qi::lit("filter") >> qi::lit("[") >> qi::lit("min") > +abstractAction >> qi::lit("]") >> qi::lit("(") >> formula >> qi::lit(")"))[qi::_val =
+				 ((qi::lit("filter") >> qi::lit("[") >> qi::lit("min")) > +abstractAction >> qi::lit("]") >> qi::lit("(") >> formula >> qi::lit(")"))[qi::_val =
 					MAKE(csl::CslFilter<double>, qi::_2, qi::_1, storm::properties::MINIMIZE)] |
 				 (noBoundOperator)[qi::_val =
 					qi::_1] |

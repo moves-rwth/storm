@@ -53,12 +53,12 @@ namespace storm {
         }
         
         template<typename ValueType>
-        SparseMatrixBuilder<ValueType>::SparseMatrixBuilder(IndexType rows, IndexType columns, IndexType entries, bool hasCustomRowGrouping, IndexType rowGroups) : rowCountSet(rows != 0), rowCount(rows), columnCountSet(columns != 0), columnCount(columns), entryCount(entries), hasCustomRowGrouping(hasCustomRowGrouping), rowGroupCountSet(rowGroups != 0), rowGroupCount(rowGroups), rowGroupIndices(), storagePreallocated(rows != 0 && columns != 0 && entries != 0), columnsAndValues(), rowIndications(), currentEntryCount(0), lastRow(0), lastColumn(0), currentRowGroup(0) {
+        SparseMatrixBuilder<ValueType>::SparseMatrixBuilder(index_type rows, index_type columns, index_type entries, bool hasCustomRowGrouping, index_type rowGroups) : rowCountSet(rows != 0), rowCount(rows), columnCountSet(columns != 0), columnCount(columns), entryCount(entries), hasCustomRowGrouping(hasCustomRowGrouping), rowGroupCountSet(rowGroups != 0), rowGroupCount(rowGroups), rowGroupIndices(), storagePreallocated(rows != 0 && columns != 0 && entries != 0), columnsAndValues(), rowIndications(), currentEntryCount(0), lastRow(0), lastColumn(0), currentRowGroup(0) {
             this->prepareInternalStorage();
         }
         
         template<typename ValueType>
-        void SparseMatrixBuilder<ValueType>::addNextValue(IndexType row, IndexType column, ValueType const& value) {
+        void SparseMatrixBuilder<ValueType>::addNextValue(index_type row, index_type column, ValueType const& value) {
             // Depending on whether the internal data storage was preallocated or not, adding the value is done somewhat
             // differently.
             if (storagePreallocated) {
@@ -94,18 +94,18 @@ namespace storm {
                 if (storagePreallocated) {
                     // If the storage was preallocated, we can access the elements in the vectors with the subscript
                     // operator.
-                    for (IndexType i = lastRow + 1; i <= row; ++i) {
+                    for (index_type i = lastRow + 1; i <= row; ++i) {
                         rowIndications[i] = currentEntryCount;
                     }
                 } else {
                     // Otherwise, we need to push the correct values to the vectors, which might trigger reallocations.
-                    for (IndexType i = lastRow + 1; i <= row; ++i) {
+                    for (index_type i = lastRow + 1; i <= row; ++i) {
                         rowIndications.push_back(currentEntryCount);
                     }
                 }
                 
                 if (!hasCustomRowGrouping) {
-                    for (IndexType i = lastRow + 1; i <= row; ++i) {
+                    for (index_type i = lastRow + 1; i <= row; ++i) {
                         rowGroupIndices.push_back(i);
                         ++currentRowGroup;
                     }
@@ -132,7 +132,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void SparseMatrixBuilder<ValueType>::newRowGroup(IndexType startingRow) {
+        void SparseMatrixBuilder<ValueType>::newRowGroup(index_type startingRow) {
             if (!hasCustomRowGrouping) {
                 throw storm::exceptions::InvalidStateException() << "Illegal call to SparseMatrix::newRowGroup: matrix was not created to have a custom row grouping.";
             } else if (rowGroupIndices.size() > 0 && startingRow < rowGroupIndices.back()) {
@@ -147,21 +147,21 @@ namespace storm {
         }
         
         template<typename ValueType>
-        SparseMatrix<ValueType> SparseMatrixBuilder<ValueType>::build(IndexType overriddenRowCount, IndexType overriddenColumnCount, IndexType overriddenRowGroupCount) {
+        SparseMatrix<ValueType> SparseMatrixBuilder<ValueType>::build(index_type overriddenRowCount, index_type overriddenColumnCount, index_type overriddenRowGroupCount) {
             // Check whether it's safe to finalize the matrix and throw error otherwise.
             if (storagePreallocated && currentEntryCount != entryCount) {
                 throw storm::exceptions::InvalidStateException() << "Illegal call to SparseMatrix::build: expected " << entryCount << " entries, but got " << currentEntryCount << " instead.";
             } else {
                 // Fill in the missing entries in the row indices array, as there may be empty rows at the end.
                 if (storagePreallocated) {
-                    for (IndexType i = lastRow + 1; i < rowCount; ++i) {
+                    for (index_type i = lastRow + 1; i < rowCount; ++i) {
                         rowIndications[i] = currentEntryCount;
                     }
                 } else {
                     if (!rowCountSet) {
                         rowCount = std::max(overriddenRowCount, rowCount);
                     }
-                    for (IndexType i = lastRow + 1; i < rowCount; ++i) {
+                    for (index_type i = lastRow + 1; i < rowCount; ++i) {
                         rowIndications.push_back(currentEntryCount);
                     }
                 }
@@ -184,12 +184,12 @@ namespace storm {
                     rowGroupIndices[rowGroupCount] = rowCount;
                 } else {
                     if (!hasCustomRowGrouping) {
-                        for (IndexType i = currentRowGroup; i < rowCount; ++i) {
+                        for (index_type i = currentRowGroup; i < rowCount; ++i) {
                             rowGroupIndices.push_back(i + 1);
                         }
                     } else {
                         overriddenRowGroupCount = std::max(overriddenRowGroupCount, currentRowGroup + 1);
-                        for (IndexType i = currentRowGroup; i < overriddenRowGroupCount; ++i) {
+                        for (index_type i = currentRowGroup; i < overriddenRowGroupCount; ++i) {
                             rowGroupIndices.push_back(rowCount);
                         }
                     }
@@ -203,8 +203,8 @@ namespace storm {
         void SparseMatrixBuilder<ValueType>::prepareInternalStorage() {
             // Only allocate the memory for the matrix contents if the dimensions of the matrix are already known.
             if (storagePreallocated) {
-                columnsAndValues = std::vector<MatrixEntry<IndexType, ValueType>>(entryCount, MatrixEntry<IndexType, ValueType>(0, storm::utility::constantZero<ValueType>()));
-                rowIndications = std::vector<IndexType>(rowCount + 1, 0);
+                columnsAndValues = std::vector<MatrixEntry<index_type, ValueType>>(entryCount, MatrixEntry<index_type, ValueType>(0, storm::utility::constantZero<ValueType>()));
+                rowIndications = std::vector<index_type>(rowCount + 1, 0);
             } else {
                 rowIndications.push_back(0);
             }
@@ -212,7 +212,7 @@ namespace storm {
             // Only allocate the memory for the row grouping of the matrix contents if the number of groups is already
             // known.
             if (hasCustomRowGrouping && rowGroupCountSet) {
-                rowGroupIndices = std::vector<IndexType>(rowGroupCount + 1, 0);
+                rowGroupIndices = std::vector<index_type>(rowGroupCount + 1, 0);
             } else {
                 if (hasCustomRowGrouping) {
                     // Nothing to do in this case
@@ -223,7 +223,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        SparseMatrix<ValueType>::rows::rows(iterator begin, IndexType entryCount) : beginIterator(begin), entryCount(entryCount) {
+        SparseMatrix<ValueType>::rows::rows(iterator begin, index_type entryCount) : beginIterator(begin), entryCount(entryCount) {
             // Intentionally left empty.
         }
         
@@ -238,12 +238,12 @@ namespace storm {
         }
         
         template<typename ValueType>
-        typename SparseMatrix<ValueType>::IndexType SparseMatrix<ValueType>::rows::getNumberOfEntries() const {
+        typename SparseMatrix<ValueType>::index_type SparseMatrix<ValueType>::rows::getNumberOfEntries() const {
             return this->entryCount;
         }
         
         template<typename ValueType>
-        SparseMatrix<ValueType>::const_rows::const_rows(const_iterator begin, IndexType entryCount) : beginIterator(begin), entryCount(entryCount) {
+        SparseMatrix<ValueType>::const_rows::const_rows(const_iterator begin, index_type entryCount) : beginIterator(begin), entryCount(entryCount) {
             // Intentionally left empty.
         }
         
@@ -258,7 +258,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        typename SparseMatrix<ValueType>::IndexType SparseMatrix<ValueType>::const_rows::getNumberOfEntries() const {
+        typename SparseMatrix<ValueType>::index_type SparseMatrix<ValueType>::const_rows::getNumberOfEntries() const {
             return this->entryCount;
         }
         
@@ -281,7 +281,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        SparseMatrix<ValueType>::SparseMatrix(IndexType columnCount, std::vector<IndexType> const& rowIndications, std::vector<MatrixEntry<IndexType, ValueType>> const& columnsAndValues, std::vector<IndexType> const& rowGroupIndices) : rowCount(rowIndications.size() - 1), columnCount(columnCount), entryCount(columnsAndValues.size()), nonzeroEntryCount(0), columnsAndValues(columnsAndValues), rowIndications(rowIndications), rowGroupIndices(rowGroupIndices) {
+        SparseMatrix<ValueType>::SparseMatrix(index_type columnCount, std::vector<index_type> const& rowIndications, std::vector<MatrixEntry<index_type, ValueType>> const& columnsAndValues, std::vector<index_type> const& rowGroupIndices) : rowCount(rowIndications.size() - 1), columnCount(columnCount), entryCount(columnsAndValues.size()), nonzeroEntryCount(0), columnsAndValues(columnsAndValues), rowIndications(rowIndications), rowGroupIndices(rowGroupIndices) {
             for (auto const& element : *this) {
                 if (element.getValue() != storm::utility::constantZero<ValueType>()) {
                     ++this->nonzeroEntryCount;
@@ -290,7 +290,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        SparseMatrix<ValueType>::SparseMatrix(IndexType columnCount, std::vector<IndexType>&& rowIndications, std::vector<MatrixEntry<IndexType, ValueType>>&& columnsAndValues, std::vector<IndexType>&& rowGroupIndices) : rowCount(rowIndications.size() - 1), columnCount(columnCount), entryCount(columnsAndValues.size()), nonzeroEntryCount(0), columnsAndValues(std::move(columnsAndValues)), rowIndications(std::move(rowIndications)), rowGroupIndices(std::move(rowGroupIndices)) {
+        SparseMatrix<ValueType>::SparseMatrix(index_type columnCount, std::vector<index_type>&& rowIndications, std::vector<MatrixEntry<index_type, ValueType>>&& columnsAndValues, std::vector<index_type>&& rowGroupIndices) : rowCount(rowIndications.size() - 1), columnCount(columnCount), entryCount(columnsAndValues.size()), nonzeroEntryCount(0), columnsAndValues(std::move(columnsAndValues)), rowIndications(std::move(rowIndications)), rowGroupIndices(std::move(rowGroupIndices)) {
             for (auto const& element : *this) {
                 if (element.getValue() != storm::utility::constantZero<ValueType>()) {
                     ++this->nonzeroEntryCount;
@@ -341,12 +341,21 @@ namespace storm {
             bool equalityResult = true;
 
             equalityResult &= this->getRowCount() == other.getRowCount();
+            if (!equalityResult) {
+                return false;
+            }
             equalityResult &= this->getColumnCount() == other.getColumnCount();
+            if (!equalityResult) {
+                return false;
+            }
             equalityResult &= this->getRowGroupIndices() == other.getRowGroupIndices();
+            if (!equalityResult) {
+                return false;
+            }
             
             // For the actual contents, we need to do a little bit more work, because we want to ignore elements that
             // are set to zero, please they may be represented implicitly in the other matrix.
-            for (IndexType row = 0; row < this->getRowCount(); ++row) {
+            for (index_type row = 0; row < this->getRowCount(); ++row) {
                 for (const_iterator it1 = this->begin(row), ite1 = this->end(row), it2 = other.begin(row), ite2 = other.end(row); it1 != ite1 && it2 != ite2; ++it1, ++it2) {
                     // Skip over all zero entries in both matrices.
                     while (it1 != ite1 && it1->getValue() == storm::utility::constantZero<ValueType>()) {
@@ -365,43 +374,46 @@ namespace storm {
                         }
                     }
                 }
+                if (!equalityResult) {
+                    return false;
+                }
             }
             
             return equalityResult;
         }
         
         template<typename ValueType>
-        typename SparseMatrix<ValueType>::IndexType SparseMatrix<ValueType>::getRowCount() const {
+        typename SparseMatrix<ValueType>::index_type SparseMatrix<ValueType>::getRowCount() const {
             return rowCount;
         }
         
         template<typename ValueType>
-        typename SparseMatrix<ValueType>::IndexType SparseMatrix<ValueType>::getColumnCount() const {
+        typename SparseMatrix<ValueType>::index_type SparseMatrix<ValueType>::getColumnCount() const {
             return columnCount;
         }
         
         template<typename ValueType>
-        typename SparseMatrix<ValueType>::IndexType SparseMatrix<ValueType>::getEntryCount() const {
+        typename SparseMatrix<ValueType>::index_type SparseMatrix<ValueType>::getEntryCount() const {
             return entryCount;
         }
         
         template<typename ValueType>
-        typename SparseMatrix<ValueType>::IndexType SparseMatrix<ValueType>::getNonzeroEntryCount() const {
+        typename SparseMatrix<ValueType>::index_type SparseMatrix<ValueType>::getNonzeroEntryCount() const {
             return nonzeroEntryCount;
         }
         
         template<typename ValueType>
-        typename SparseMatrix<ValueType>::IndexType SparseMatrix<ValueType>::getRowGroupCount() const {
+        typename SparseMatrix<ValueType>::index_type SparseMatrix<ValueType>::getRowGroupCount() const {
             return rowGroupIndices.size() - 1;
         }
         
         template<typename ValueType>
-        typename SparseMatrix<ValueType>::IndexType SparseMatrix<ValueType>::getRowGroupSize(IndexType group) const {
+        typename SparseMatrix<ValueType>::index_type SparseMatrix<ValueType>::getRowGroupSize(index_type group) const {
             return this->getRowGroupIndices()[group + 1] - this->getRowGroupIndices()[group];
         }
         
         template<typename ValueType>
-        std::vector<typename SparseMatrix<ValueType>::IndexType> const& SparseMatrix<ValueType>::getRowGroupIndices() const {
+        std::vector<typename SparseMatrix<ValueType>::index_type> const& SparseMatrix<ValueType>::getRowGroupIndices() const {
             return rowGroupIndices;
         }
 
@@ -415,14 +427,14 @@ namespace storm {
         template<typename ValueType>
         void SparseMatrix<ValueType>::makeRowGroupsAbsorbing(storm::storage::BitVector const& rowGroupConstraint) {
             for (auto rowGroup : rowGroupConstraint) {
-                for (IndexType row = this->getRowGroupIndices()[rowGroup]; row < this->getRowGroupIndices()[rowGroup + 1]; ++row) {
+                for (index_type row = this->getRowGroupIndices()[rowGroup]; row < this->getRowGroupIndices()[rowGroup + 1]; ++row) {
                     makeRowDirac(row, rowGroup);
                 }
             }
         }
         
         template<typename ValueType>
-        void SparseMatrix<ValueType>::makeRowDirac(IndexType row, IndexType column) {
+        void SparseMatrix<ValueType>::makeRowDirac(index_type row, index_type column) {
             iterator columnValuePtr = this->begin(row);
             iterator columnValuePtrEnd = this->end(row);
             
@@ -444,7 +456,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        ValueType SparseMatrix<ValueType>::getConstrainedRowSum(IndexType row, storm::storage::BitVector const& constraint) const {
+        ValueType SparseMatrix<ValueType>::getConstrainedRowSum(index_type row, storm::storage::BitVector const& constraint) const {
             ValueType result = storm::utility::constantZero<ValueType>();
             for (const_iterator it = this->begin(row), ite = this->end(row); it != ite; ++it) {
                 if (constraint.get(it->getColumn())) {
@@ -457,7 +469,7 @@ namespace storm {
         template<typename ValueType>
         std::vector<ValueType> SparseMatrix<ValueType>::getConstrainedRowSumVector(storm::storage::BitVector const& rowConstraint, storm::storage::BitVector const& columnConstraint) const {
             std::vector<ValueType> result(rowConstraint.getNumberOfSetBits());
-            IndexType currentRowCount = 0;
+            index_type currentRowCount = 0;
             for (auto row : rowConstraint) {
                 result[currentRowCount++] = getConstrainedRowSum(row, columnConstraint);
             }
@@ -469,7 +481,7 @@ namespace storm {
             std::vector<ValueType> result;
             result.reserve(rowGroupConstraint.getNumberOfSetBits());
             for (auto rowGroup : rowGroupConstraint) {
-                for (IndexType row = this->getRowGroupIndices()[rowGroup]; row < this->getRowGroupIndices()[rowGroup + 1]; ++row) {
+                for (index_type row = this->getRowGroupIndices()[rowGroup]; row < this->getRowGroupIndices()[rowGroup + 1]; ++row) {
                     result.push_back(getConstrainedRowSum(row, columnConstraint));
                 }
             }
@@ -482,9 +494,9 @@ namespace storm {
                 return getSubmatrix(rowConstraint, columnConstraint, this->getRowGroupIndices(), insertDiagonalElements);
             } else {
                 // Create a fake row grouping to reduce this to a call to a more general method.
-                std::vector<IndexType> fakeRowGroupIndices(rowCount + 1);
-                IndexType i = 0;
-                for (std::vector<IndexType>::iterator it = fakeRowGroupIndices.begin(); it != fakeRowGroupIndices.end(); ++it, ++i) {
+                std::vector<index_type> fakeRowGroupIndices(rowCount + 1);
+                index_type i = 0;
+                for (std::vector<index_type>::iterator it = fakeRowGroupIndices.begin(); it != fakeRowGroupIndices.end(); ++it, ++i) {
                     *it = i;
                 }
                 return getSubmatrix(rowConstraint, columnConstraint, fakeRowGroupIndices, insertDiagonalElements);
@@ -492,13 +504,13 @@ namespace storm {
         }
                 
         template<typename ValueType>
-        SparseMatrix<ValueType> SparseMatrix<ValueType>::getSubmatrix(storm::storage::BitVector const& rowGroupConstraint, storm::storage::BitVector const& columnConstraint, std::vector<IndexType> const& rowGroupIndices, bool insertDiagonalEntries) const {
+        SparseMatrix<ValueType> SparseMatrix<ValueType>::getSubmatrix(storm::storage::BitVector const& rowGroupConstraint, storm::storage::BitVector const& columnConstraint, std::vector<index_type> const& rowGroupIndices, bool insertDiagonalEntries) const {
             // First, we need to determine the number of entries and the number of rows of the submatrix.
-            IndexType subEntries = 0;
-            IndexType subRows = 0;
+            index_type subEntries = 0;
+            index_type subRows = 0;
             for (auto index : rowGroupConstraint) {
                 subRows += rowGroupIndices[index + 1] - rowGroupIndices[index];
-                for (IndexType i = rowGroupIndices[index]; i < rowGroupIndices[index + 1]; ++i) {
+                for (index_type i = rowGroupIndices[index]; i < rowGroupIndices[index + 1]; ++i) {
                     bool foundDiagonalElement = false;
                     
                     for (const_iterator it = this->begin(i), ite = this->end(i); it != ite; ++it) {
@@ -523,12 +535,12 @@ namespace storm {
             
             // Create a temporary vector that stores for each index whose bit is set to true the number of bits that
             // were set before that particular index.
-            std::vector<IndexType> bitsSetBeforeIndex;
+            std::vector<index_type> bitsSetBeforeIndex;
             bitsSetBeforeIndex.reserve(columnCount);
             
             // Compute the information to fill this vector.
-            IndexType lastIndex = 0;
-            IndexType currentNumberOfSetBits = 0;
+            index_type lastIndex = 0;
+            index_type currentNumberOfSetBits = 0;
             
             // If we are requested to add missing diagonal entries, we need to make sure the corresponding rows are also
             // taken.
@@ -545,10 +557,10 @@ namespace storm {
             }
             
             // Copy over selected entries.
-            IndexType rowCount = 0;
+            index_type rowCount = 0;
             for (auto index : rowGroupConstraint) {
                 matrixBuilder.newRowGroup(rowCount);
-                for (IndexType i = rowGroupIndices[index]; i < rowGroupIndices[index + 1]; ++i) {
+                for (index_type i = rowGroupIndices[index]; i < rowGroupIndices[index + 1]; ++i) {
                     bool insertedDiagonalElement = false;
                     
                     for (const_iterator it = this->begin(i), ite = this->end(i); it != ite; ++it) {
@@ -574,13 +586,13 @@ namespace storm {
         }
         
         template<typename ValueType>
-        SparseMatrix<ValueType> SparseMatrix<ValueType>::selectRowsFromRowGroups(std::vector<IndexType> const& rowGroupToRowIndexMapping, bool insertDiagonalEntries) const {
+        SparseMatrix<ValueType> SparseMatrix<ValueType>::selectRowsFromRowGroups(std::vector<index_type> const& rowGroupToRowIndexMapping, bool insertDiagonalEntries) const {
             // First, we need to count how many non-zero entries the resulting matrix will have and reserve space for
             // diagonal entries if requested.
-            IndexType subEntries = 0;
-            for (IndexType rowGroupIndex = 0, rowGroupIndexEnd = rowGroupToRowIndexMapping.size(); rowGroupIndex < rowGroupIndexEnd; ++rowGroupIndex) {
+            index_type subEntries = 0;
+            for (index_type rowGroupIndex = 0, rowGroupIndexEnd = rowGroupToRowIndexMapping.size(); rowGroupIndex < rowGroupIndexEnd; ++rowGroupIndex) {
                 // Determine which row we need to select from the current row group.
-                IndexType rowToCopy = rowGroupIndices[rowGroupIndex] + rowGroupToRowIndexMapping[rowGroupIndex];
+                index_type rowToCopy = rowGroupIndices[rowGroupIndex] + rowGroupToRowIndexMapping[rowGroupIndex];
                 
                 // Iterate through that row and count the number of slots we have to reserve for copying.
                 bool foundDiagonalElement = false;
@@ -599,9 +611,9 @@ namespace storm {
             SparseMatrixBuilder<ValueType> matrixBuilder(rowGroupIndices.size() - 1, columnCount, subEntries);
             
             // Copy over the selected lines from the source matrix.
-            for (IndexType rowGroupIndex = 0, rowGroupIndexEnd = rowGroupToRowIndexMapping.size(); rowGroupIndex < rowGroupIndexEnd; ++rowGroupIndex) {
+            for (index_type rowGroupIndex = 0, rowGroupIndexEnd = rowGroupToRowIndexMapping.size(); rowGroupIndex < rowGroupIndexEnd; ++rowGroupIndex) {
                 // Determine which row we need to select from the current row group.
-                IndexType rowToCopy = rowGroupIndices[rowGroupIndex] + rowGroupToRowIndexMapping[rowGroupIndex];
+                index_type rowToCopy = rowGroupIndices[rowGroupIndex] + rowGroupToRowIndexMapping[rowGroupIndex];
                 
                 // Iterate through that row and copy the entries. This also inserts a zero element on the diagonal if
                 // there is no entry yet.
@@ -626,15 +638,15 @@ namespace storm {
         
         template <typename ValueType>
         SparseMatrix<ValueType> SparseMatrix<ValueType>::transpose(bool joinGroups) const {
-            IndexType rowCount = this->getColumnCount();
-            IndexType columnCount = joinGroups ? this->getRowGroupCount() : this->getRowCount();
-            IndexType entryCount = this->getEntryCount();
+            index_type rowCount = this->getColumnCount();
+            index_type columnCount = joinGroups ? this->getRowGroupCount() : this->getRowCount();
+            index_type entryCount = this->getEntryCount();
             
-            std::vector<IndexType> rowIndications(rowCount + 1);
-            std::vector<MatrixEntry<IndexType, ValueType>> columnsAndValues(entryCount);
+            std::vector<index_type> rowIndications(rowCount + 1);
+            std::vector<MatrixEntry<index_type, ValueType>> columnsAndValues(entryCount);
             
             // First, we need to count how many entries each column has.
-            for (IndexType group = 0; group < columnCount; ++group) {
+            for (index_type group = 0; group < columnCount; ++group) {
                 for (auto const& transition : joinGroups ? this->getRowGroup(group) : this->getRow(group)) {
                     if (transition.getValue() != storm::utility::constantZero<ValueType>()) {
                         ++rowIndications[transition.getColumn() + 1];
@@ -643,17 +655,17 @@ namespace storm {
             }
             
             // Now compute the accumulated offsets.
-            for (IndexType i = 1; i < rowCount + 1; ++i) {
+            for (index_type i = 1; i < rowCount + 1; ++i) {
                 rowIndications[i] = rowIndications[i - 1] + rowIndications[i];
             }
             
             // Create an array that stores the index for the next value to be added for
             // each row in the transposed matrix. Initially this corresponds to the previously
             // computed accumulated offsets.
-            std::vector<IndexType> nextIndices = rowIndications;
+            std::vector<index_type> nextIndices = rowIndications;
             
             // Now we are ready to actually fill in the values of the transposed matrix.
-            for (IndexType group = 0; group < columnCount; ++group) {
+            for (index_type group = 0; group < columnCount; ++group) {
                 for (auto const& transition : joinGroups ? this->getRowGroup(group) : this->getRow(group)) {
                     if (transition.getValue() != storm::utility::constantZero<ValueType>()) {
                         columnsAndValues[nextIndices[transition.getColumn()]] = std::make_pair(group, transition.getValue());
@@ -662,8 +674,8 @@ namespace storm {
                 }
             }
             
-            std::vector<IndexType> rowGroupIndices(rowCount + 1);
-            for (IndexType i = 0; i <= rowCount; ++i) {
+            std::vector<index_type> rowGroupIndices(rowCount + 1);
+            for (index_type i = 0; i <= rowCount; ++i) {
                 rowGroupIndices[i] = i;
             }
             
@@ -684,7 +696,7 @@ namespace storm {
             // If there is a row without the diagonal element, an exception is thrown.
             ValueType one = storm::utility::constantOne<ValueType>();
             bool foundDiagonalElement = false;
-            for (IndexType group = 0; group < this->getRowGroupCount(); ++group) {
+            for (index_type group = 0; group < this->getRowGroupCount(); ++group) {
                 for (auto& entry : this->getRowGroup(group)) {
                     if (entry.getColumn() == group) {
                         entry.setValue(one - entry.getValue());
@@ -702,7 +714,7 @@ namespace storm {
         template<typename ValueType>
         void SparseMatrix<ValueType>::negateAllNonDiagonalEntries() {
             // Iterate over all row groups and negate all the elements that are not on the diagonal.
-            for (IndexType group = 0; group < this->getRowGroupCount(); ++group) {
+            for (index_type group = 0; group < this->getRowGroupCount(); ++group) {
                 for (auto& entry : this->getRowGroup(group)) {
                     if (entry.getColumn() != group) {
                         entry.setValue(-entry.getValue());
@@ -714,7 +726,7 @@ namespace storm {
         template<typename ValueType>
         void SparseMatrix<ValueType>::deleteDiagonalEntries() {
             // Iterate over all rows and negate all the elements that are not on the diagonal.
-            for (IndexType group = 0; group < this->getRowGroupCount(); ++group) {
+            for (index_type group = 0; group < this->getRowGroupCount(); ++group) {
                 for (auto& entry : this->getRowGroup(group)) {
                     if (entry.getColumn() == group) {
                         entry.setValue(storm::utility::constantZero<ValueType>());
@@ -734,7 +746,7 @@ namespace storm {
             SparseMatrixBuilder<ValueType> dInvBuilder(rowCount, columnCount, rowCount);
             
             // Copy entries to the appropriate matrices.
-            for (IndexType rowNumber = 0; rowNumber < rowCount; ++rowNumber) {
+            for (index_type rowNumber = 0; rowNumber < rowCount; ++rowNumber) {
                 
                 // Because the matrix may have several entries on the diagonal, we need to sum them before we are able
                 // to invert the entry.
@@ -759,7 +771,7 @@ namespace storm {
             // Iterate over all elements of the current matrix and either continue with the next element in case the
             // given matrix does not have a non-zero element at this column position, or multiply the two entries and
             // add the result to the corresponding position in the vector.
-            for (IndexType row = 0; row < rowCount && row < otherMatrix.rowCount; ++row) {
+            for (index_type row = 0; row < rowCount && row < otherMatrix.rowCount; ++row) {
                 for (const_iterator it1 = this->begin(row), ite1 = this->end(row), it2 = otherMatrix.begin(row), ite2 = otherMatrix.end(row); it1 != ite1 && it2 != ite2; ++it1) {
                     if (it1->getColumn() < it2->getColumn()) {
                         continue;
@@ -794,7 +806,7 @@ namespace storm {
         void SparseMatrix<ValueType>::multiplyWithVectorSequential(std::vector<ValueType> const& vector, std::vector<ValueType>& result) const {
             const_iterator it = this->begin();
             const_iterator ite;
-            typename std::vector<IndexType>::const_iterator rowIterator = rowIndications.begin();
+            typename std::vector<index_type>::const_iterator rowIterator = rowIndications.begin();
             typename std::vector<ValueType>::iterator resultIterator = result.begin();
             typename std::vector<ValueType>::iterator resultIteratorEnd = result.end();
             
@@ -810,14 +822,14 @@ namespace storm {
 #ifdef STORM_HAVE_INTELTBB
         template<typename ValueType>
         void SparseMatrix<ValueType>::multiplyWithVectorParallel(std::vector<ValueType> const& vector, std::vector<ValueType>& result) const {
-            tbb::parallel_for(tbb::blocked_range<IndexType>(0, result.size(), 10),
-                              [&] (tbb::blocked_range<IndexType> const& range) {
-                                  IndexType startRow = range.begin();
-                                  IndexType endRow = range.end();
+            tbb::parallel_for(tbb::blocked_range<index_type>(0, result.size(), 10),
+                              [&] (tbb::blocked_range<index_type> const& range) {
+                                  index_type startRow = range.begin();
+                                  index_type endRow = range.end();
                                   const_iterator it = this->begin(startRow);
                                   const_iterator ite;
-                                  std::vector<IndexType>::const_iterator rowIterator = this->rowIndications.begin() + startRow;
-                                  std::vector<IndexType>::const_iterator rowIteratorEnd = this->rowIndications.begin() + endRow;
+                                  std::vector<index_type>::const_iterator rowIterator = this->rowIndications.begin() + startRow;
+                                  std::vector<index_type>::const_iterator rowIteratorEnd = this->rowIndications.begin() + endRow;
                                   typename std::vector<ValueType>::iterator resultIterator = result.begin() + startRow;
                                   typename std::vector<ValueType>::iterator resultIteratorEnd = result.begin() + endRow;
                                   
@@ -837,7 +849,7 @@ namespace storm {
             uint_fast64_t size = sizeof(*this);
             
             // Add size of columns and values.
-            size += sizeof(MatrixEntry<IndexType, ValueType>) * columnsAndValues.capacity();
+            size += sizeof(MatrixEntry<index_type, ValueType>) * columnsAndValues.capacity();
             
             // Add row_indications size.
             size += sizeof(uint_fast64_t) * rowIndications.capacity();
@@ -846,52 +858,52 @@ namespace storm {
         }
         
         template<typename ValueType>
-        typename SparseMatrix<ValueType>::const_rows SparseMatrix<ValueType>::getRows(IndexType startRow, IndexType endRow) const {
+        typename SparseMatrix<ValueType>::const_rows SparseMatrix<ValueType>::getRows(index_type startRow, index_type endRow) const {
             return const_rows(this->columnsAndValues.begin() + this->rowIndications[startRow], this->rowIndications[endRow + 1] - this->rowIndications[startRow]);
         }
         
         template<typename ValueType>
-        typename SparseMatrix<ValueType>::rows SparseMatrix<ValueType>::getRows(IndexType startRow, IndexType endRow) {
+        typename SparseMatrix<ValueType>::rows SparseMatrix<ValueType>::getRows(index_type startRow, index_type endRow) {
             return rows(this->columnsAndValues.begin() + this->rowIndications[startRow], this->rowIndications[endRow + 1] - this->rowIndications[startRow]);
         }
         
         template<typename ValueType>
-        typename SparseMatrix<ValueType>::const_rows SparseMatrix<ValueType>::getRow(IndexType row) const {
+        typename SparseMatrix<ValueType>::const_rows SparseMatrix<ValueType>::getRow(index_type row) const {
             return getRows(row, row);
         }
         
         template<typename ValueType>
-        typename SparseMatrix<ValueType>::rows SparseMatrix<ValueType>::getRow(IndexType row) {
+        typename SparseMatrix<ValueType>::rows SparseMatrix<ValueType>::getRow(index_type row) {
             return getRows(row, row);
         }
         
         template<typename ValueType>
-        typename SparseMatrix<ValueType>::const_rows SparseMatrix<ValueType>::getRowGroup(IndexType rowGroup) const {
+        typename SparseMatrix<ValueType>::const_rows SparseMatrix<ValueType>::getRowGroup(index_type rowGroup) const {
             return getRows(rowGroupIndices[rowGroup], rowGroupIndices[rowGroup + 1] - 1);
         }
         
         template<typename ValueType>
-        typename SparseMatrix<ValueType>::rows SparseMatrix<ValueType>::getRowGroup(IndexType rowGroup) {
+        typename SparseMatrix<ValueType>::rows SparseMatrix<ValueType>::getRowGroup(index_type rowGroup) {
             return getRows(rowGroupIndices[rowGroup], rowGroupIndices[rowGroup + 1] - 1);
         }
         
         template<typename ValueType>
-        typename SparseMatrix<ValueType>::const_iterator SparseMatrix<ValueType>::begin(IndexType row) const {
+        typename SparseMatrix<ValueType>::const_iterator SparseMatrix<ValueType>::begin(index_type row) const {
             return this->columnsAndValues.begin() + this->rowIndications[row];
         }
         
         template<typename ValueType>
-        typename SparseMatrix<ValueType>::iterator SparseMatrix<ValueType>::begin(IndexType row)  {
+        typename SparseMatrix<ValueType>::iterator SparseMatrix<ValueType>::begin(index_type row)  {
             return this->columnsAndValues.begin() + this->rowIndications[row];
         }
         
         template<typename ValueType>
-        typename SparseMatrix<ValueType>::const_iterator SparseMatrix<ValueType>::end(IndexType row) const {
+        typename SparseMatrix<ValueType>::const_iterator SparseMatrix<ValueType>::end(index_type row) const {
             return this->columnsAndValues.begin() + this->rowIndications[row + 1];
         }
         
         template<typename ValueType>
-        typename SparseMatrix<ValueType>::iterator SparseMatrix<ValueType>::end(IndexType row)  {
+        typename SparseMatrix<ValueType>::iterator SparseMatrix<ValueType>::end(index_type row)  {
             return this->columnsAndValues.begin() + this->rowIndications[row + 1];
         }
         
@@ -906,7 +918,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        ValueType SparseMatrix<ValueType>::getRowSum(IndexType row) const {
+        ValueType SparseMatrix<ValueType>::getRowSum(index_type row) const {
             ValueType sum = storm::utility::constantZero<ValueType>();
             for (const_iterator it = this->begin(row), ite = this->end(row); it != ite; ++it) {
                 sum += it->getValue();
@@ -922,7 +934,7 @@ namespace storm {
             if (this->getRowGroupIndices() != matrix.getRowGroupIndices()) return false;
 
             // Check the subset property for all rows individually.
-            for (IndexType row = 0; row < this->getRowCount(); ++row) {
+            for (index_type row = 0; row < this->getRowCount(); ++row) {
                 for (const_iterator it1 = this->begin(row), ite1 = this->end(row), it2 = matrix.begin(row), ite2 = matrix.end(row); it1 != ite1; ++it1) {
                     // Skip over all entries of the other matrix that are before the current entry in the current matrix.
                     while (it2 != ite2 && it2->getColumn() < it1->getColumn()) {
@@ -940,20 +952,20 @@ namespace storm {
         std::ostream& operator<<(std::ostream& out, SparseMatrix<ValueType> const& matrix) {
             // Print column numbers in header.
             out << "\t\t";
-            for (typename SparseMatrix<ValueType>::IndexType i = 0; i < matrix.getColumnCount(); ++i) {
+            for (typename SparseMatrix<ValueType>::index_type i = 0; i < matrix.getColumnCount(); ++i) {
                 out << i << "\t";
             }
             out << std::endl;
             
             // Iterate over all row groups.
-            for (typename SparseMatrix<ValueType>::IndexType group = 0; group < matrix.getRowGroupCount(); ++group) {
+            for (typename SparseMatrix<ValueType>::index_type group = 0; group < matrix.getRowGroupCount(); ++group) {
                 out << "\t---- group " << group << "/" << (matrix.getRowGroupCount() - 1) << " ---- " << std::endl;
-                for (typename SparseMatrix<ValueType>::IndexType i = matrix.getRowGroupIndices()[group]; i < matrix.getRowGroupIndices()[group + 1]; ++i) {
-                    typename SparseMatrix<ValueType>::IndexType nextIndex = matrix.rowIndications[i];
+                for (typename SparseMatrix<ValueType>::index_type i = matrix.getRowGroupIndices()[group]; i < matrix.getRowGroupIndices()[group + 1]; ++i) {
+                    typename SparseMatrix<ValueType>::index_type nextIndex = matrix.rowIndications[i];
                     
                     // Print the actual row.
                     out << i << "\t(\t";
-                    typename SparseMatrix<ValueType>::IndexType currentRealIndex = 0;
+                    typename SparseMatrix<ValueType>::index_type currentRealIndex = 0;
                     while (currentRealIndex < matrix.columnCount) {
                         if (nextIndex < matrix.rowIndications[i + 1] && currentRealIndex == matrix.columnsAndValues[nextIndex].getColumn()) {
                             out << matrix.columnsAndValues[nextIndex].getValue() << "\t";
@@ -969,7 +981,7 @@ namespace storm {
             
             // Print column numbers in footer.
             out << "\t\t";
-            for (typename SparseMatrix<ValueType>::IndexType i = 0; i < matrix.getColumnCount(); ++i) {
+            for (typename SparseMatrix<ValueType>::index_type i = 0; i < matrix.getColumnCount(); ++i) {
                 out << i << "\t";
             }
             out << std::endl;
@@ -992,11 +1004,11 @@ namespace storm {
         }
         
         // Explicitly instantiate the entry, builder and the matrix.
-        template class MatrixEntry<typename SparseMatrix<double>::IndexType, double>;
+        template class MatrixEntry<typename SparseMatrix<double>::index_type, double>;
         template class SparseMatrixBuilder<double>;
         template class SparseMatrix<double>;
         template std::ostream& operator<<(std::ostream& out, SparseMatrix<double> const& matrix);
-        template class MatrixEntry<typename SparseMatrix<int>::IndexType, int>;
+        template class MatrixEntry<typename SparseMatrix<int>::index_type, int>;
         template class SparseMatrixBuilder<int>;
         template class SparseMatrix<int>;
         template std::ostream& operator<<(std::ostream& out, SparseMatrix<int> const& matrix);
