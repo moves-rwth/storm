@@ -14,6 +14,7 @@
 #include "src/exceptions/OutOfRangeException.h"
 
 #include <boost/functional/hash.hpp>
+#include <boost/container/flat_map.hpp>
 
 // Forward declaration for adapter classes.
 namespace storm {
@@ -30,23 +31,26 @@ namespace storm {
         // Forward declare matrix class.
         template<typename T> class SparseMatrix;
         
-        template<typename T>
+        template<typename IndexType, typename ValueType>
         class MatrixEntry {
         public:
+            typedef IndexType index_type;
+            typedef ValueType value_type;
+            
             /*!
              * Constructs a matrix entry with the given column and value.
              *
              * @param column The column of the matrix entry.
              * @param value The value of the matrix entry.
              */
-            MatrixEntry(uint_fast64_t column, T value);
+            MatrixEntry(index_type column, value_type value);
             
             /*!
              * Move-constructs the matrix entry fro the given column-value pair.
              *
              * @param pair The column-value pair from which to move-construct the matrix entry.
              */
-            MatrixEntry(std::pair<uint_fast64_t, T>&& pair);
+            MatrixEntry(std::pair<index_type, value_type>&& pair);
             
             MatrixEntry() = default;
             MatrixEntry(MatrixEntry const& other) = default;
@@ -61,46 +65,46 @@ namespace storm {
              *
              * @return The column of the matrix entry.
              */
-            uint_fast64_t const& getColumn() const;
+            index_type const& getColumn() const;
             
             /*!
-             * Retrieves the column of the matrix entry.
+             * Sets the column of the current entry.
              *
-             * @return The column of the matrix entry.
+             * @param column The column to set for this entry.
              */
-            uint_fast64_t& getColumn();
+            void setColumn(index_type const& column);
             
             /*!
              * Retrieves the value of the matrix entry.
              *
              * @return The value of the matrix entry.
              */
-            T const& getValue() const;
-
+            value_type const& getValue() const;
+            
             /*!
-             * Retrieves the value of the matrix entry.
+             * Sets the value of the entry in the matrix.
              *
-             * @return The value of the matrix entry.
+             * @param value The value that is to be set for this entry.
              */
-            T& getValue();
+            void setValue(value_type const& value);
             
             /*!
              * Retrieves a pair of column and value that characterizes this entry.
              *
              * @return A column-value pair that characterizes this entry.
              */
-            std::pair<uint_fast64_t, T> const& getColumnValuePair() const;
+            std::pair<index_type, value_type> const& getColumnValuePair() const;
             
         private:
             // The actual matrix entry.
-            std::pair<uint_fast64_t, T> entry;
+            std::pair<index_type, value_type> entry;
         };
         
         /*!
          * Computes the hash value of a matrix entry.
          */
-        template<typename T>
-        std::size_t hash_value(MatrixEntry<T> const& matrixEntry) {
+        template<typename IndexType, typename ValueType>
+        std::size_t hash_value(MatrixEntry<IndexType, ValueType> const& matrixEntry) {
             std::size_t seed = 0;
             boost::hash_combine(seed, matrixEntry.getColumn());
             boost::hash_combine(seed, matrixEntry.getValue());
@@ -110,9 +114,12 @@ namespace storm {
         /*!
          * A class that can be used to build a sparse matrix by adding value by value.
          */
-        template<typename T>
+        template<typename ValueType>
         class SparseMatrixBuilder {
         public:
+            typedef uint_fast64_t index_type;
+            typedef ValueType value_type;
+            
             /*!
              * Constructs a sparse matrix builder producing a matrix with the given number of rows, columns and entries.
              *
@@ -124,7 +131,7 @@ namespace storm {
              * @param rowGroups The number of row groups of the resulting matrix. This is only relevant if the matrix
              * has a custom row grouping.
              */
-            SparseMatrixBuilder(uint_fast64_t rows = 0, uint_fast64_t columns = 0, uint_fast64_t entries = 0, bool hasCustomRowGrouping = false, uint_fast64_t rowGroups = 0);
+            SparseMatrixBuilder(index_type rows = 0, index_type columns = 0, index_type entries = 0, bool hasCustomRowGrouping = false, index_type rowGroups = 0);
             
             /*!
              * Sets the matrix entry at the given row and column to the given value. After all entries have been added,
@@ -139,7 +146,7 @@ namespace storm {
              * @param column The column in which the matrix entry is to be set.
              * @param value The value that is to be set at the specified row and column.
              */
-            void addNextValue(uint_fast64_t row, uint_fast64_t column, T const& value);
+            void addNextValue(index_type row, index_type column, value_type const& value);
             
             /*!
              * Starts a new row group in the matrix. Note that this needs to be called before any entries in the new row
@@ -147,7 +154,7 @@ namespace storm {
              *
              * @param startingRow The starting row of the new row group.
              */
-            void newRowGroup(uint_fast64_t startingRow);
+            void newRowGroup(index_type startingRow);
             
             /*
              * Finalizes the sparse matrix to indicate that initialization process has been completed and the matrix
@@ -168,7 +175,7 @@ namespace storm {
              * effect if the matrix has been created without the number of row groups given. By construction, the row
              * groups added this way will be empty.
              */
-            SparseMatrix<T> build(uint_fast64_t overriddenRowCount = 0, uint_fast64_t overriddenColumnCount = 0, uint_fast64_t overriddenRowGroupCount = 0);
+            SparseMatrix<value_type> build(index_type overriddenRowCount = 0, index_type overriddenColumnCount = 0, index_type overriddenRowGroupCount = 0);
             
         private:
             /*!
@@ -182,16 +189,16 @@ namespace storm {
             bool rowCountSet;
             
             // The number of rows of the matrix.
-            uint_fast64_t rowCount;
+            index_type rowCount;
             
             // A flag indicating whether the number of columns was set upon construction.
             bool columnCountSet;
             
             // The number of columns of the matrix.
-            uint_fast64_t columnCount;
+            index_type columnCount;
             
             // The number of entries in the matrix.
-            uint_fast64_t entryCount;
+            index_type entryCount;
             
             // A flag indicating whether the builder is to construct a custom row grouping for the matrix.
             bool hasCustomRowGrouping;
@@ -200,37 +207,37 @@ namespace storm {
             bool rowGroupCountSet;
             
             // The number of row groups in the matrix.
-            uint_fast64_t rowGroupCount;
+            index_type rowGroupCount;
             
-            std::vector<uint_fast64_t> rowGroupIndices;
+            std::vector<index_type> rowGroupIndices;
             
             // Stores whether the storage of the matrix was preallocated or not.
             bool storagePreallocated;
             
             // The storage for the columns and values of all entries in the matrix.
-            std::vector<MatrixEntry<T>> columnsAndValues;
+            std::vector<MatrixEntry<index_type, value_type>> columnsAndValues;
             
             // A vector containing the indices at which each given row begins. This index is to be interpreted as an
             // index in the valueStorage and the columnIndications vectors. Put differently, the values of the entries
             // in row i are valueStorage[rowIndications[i]] to valueStorage[rowIndications[i + 1]] where the last
             // entry is not included anymore.
-            std::vector<uint_fast64_t> rowIndications;
+            std::vector<index_type> rowIndications;
             
             // Stores the current number of entries in the matrix. This is used for inserting an entry into a matrix
             // with preallocated storage.
-            uint_fast64_t currentEntryCount;
+            index_type currentEntryCount;
             
             // Stores the row of the last entry in the matrix. This is used for correctly inserting an entry into a
             // matrix.
-            uint_fast64_t lastRow;
+            index_type lastRow;
             
             // Stores the column of the currently last entry in the matrix. This is used for correctly inserting an
             // entry into a matrix.
-            uint_fast64_t lastColumn;
+            index_type lastColumn;
             
             // Stores the currently active row group. This is used for correctly constructing the row grouping of the
             // matrix.
-            uint_fast64_t currentRowGroup;
+            index_type currentRowGroup;
         };
         
         /*!
@@ -247,7 +254,7 @@ namespace storm {
          * It should be observed that due to the nature of the sparse matrix format, entries can only be inserted in
          * order, i.e. row by row and column by column.
          */
-        template<typename T>
+        template<typename ValueType>
         class SparseMatrix {
         public:
             // Declare adapter classes as friends to use internal data.
@@ -255,8 +262,10 @@ namespace storm {
             friend class storm::adapters::EigenAdapter;
             friend class storm::adapters::StormAdapter;
             
-            typedef typename std::vector<MatrixEntry<T>>::iterator iterator;
-            typedef typename std::vector<MatrixEntry<T>>::const_iterator const_iterator;
+            typedef uint_fast64_t index_type;
+            typedef ValueType value_type;
+            typedef typename std::vector<MatrixEntry<index_type, value_type>>::iterator iterator;
+            typedef typename std::vector<MatrixEntry<index_type, value_type>>::const_iterator const_iterator;
             
             /*!
              * This class represents a number of consecutive rows of the matrix.
@@ -270,7 +279,7 @@ namespace storm {
                  * @param begin An iterator that points to the beginning of the row.
                  * @param entryCount The number of entrys in the rows.
                  */
-                rows(iterator begin, uint_fast64_t entryCount);
+                rows(iterator begin, index_type entryCount);
                 
                 /*!
                  * Retrieves an iterator that points to the beginning of the rows.
@@ -286,12 +295,19 @@ namespace storm {
                  */
                 iterator end();
                 
+                /*!
+                 * Retrieves the number of entries in the rows.
+                 *
+                 * @return The number of entries in the rows.
+                 */
+                index_type getNumberOfEntries() const;
+                
             private:
                 // The pointer to the columnd and value of the first entry.
                 iterator beginIterator;
                 
                 // The number of non-zero entries in the rows.
-                uint_fast64_t entryCount;
+                index_type entryCount;
             };
 
             /*!
@@ -306,7 +322,7 @@ namespace storm {
                  * @param begin An iterator that points to the beginning of the row.
                  * @param entryCount The number of entrys in the rows.
                  */
-                const_rows(const_iterator begin, uint_fast64_t entryCount);
+                const_rows(const_iterator begin, index_type entryCount);
                 
                 /*!
                  * Retrieves an iterator that points to the beginning of the rows.
@@ -322,12 +338,19 @@ namespace storm {
                  */
                 const_iterator end() const;
                 
+                /*!
+                 * Retrieves the number of entries in the rows.
+                 *
+                 * @return The number of entries in the rows.
+                 */
+                index_type getNumberOfEntries() const;
+                
             private:
                 // The pointer to the columnd and value of the first entry.
                 const_iterator beginIterator;
                 
                 // The number of non-zero entries in the rows.
-                uint_fast64_t entryCount;
+                index_type entryCount;
             };
             
             /*!
@@ -347,14 +370,14 @@ namespace storm {
              *
              * @param other The matrix from which to copy the content.
              */
-            SparseMatrix(SparseMatrix<T> const& other);
+            SparseMatrix(SparseMatrix<value_type> const& other);
             
             /*!
              * Constructs a sparse matrix by moving the contents of the given matrix to the newly created one.
              *
              * @param other The matrix from which to move the content.
              */
-            SparseMatrix(SparseMatrix<T>&& other);
+            SparseMatrix(SparseMatrix<value_type>&& other);
             
             /*!
              * Constructs a sparse matrix by copying the given contents.
@@ -364,7 +387,7 @@ namespace storm {
              * @param columnsAndValues The vector containing the columns and values of the entries in the matrix.
              * @param rowGroupIndices The vector representing the row groups in the matrix.
              */
-            SparseMatrix(uint_fast64_t columnCount, std::vector<uint_fast64_t> const& rowIndications, std::vector<MatrixEntry<T>> const& columnsAndValues, std::vector<uint_fast64_t> const& rowGroupIndices);
+            SparseMatrix(index_type columnCount, std::vector<index_type> const& rowIndications, std::vector<MatrixEntry<index_type, value_type>> const& columnsAndValues, std::vector<index_type> const& rowGroupIndices);
             
             /*!
              * Constructs a sparse matrix by moving the given contents.
@@ -374,21 +397,21 @@ namespace storm {
              * @param columnsAndValues The vector containing the columns and values of the entries in the matrix.
              * @param rowGroupIndices The vector representing the row groups in the matrix.
              */
-            SparseMatrix(uint_fast64_t columnCount, std::vector<uint_fast64_t>&& rowIndications, std::vector<MatrixEntry<T>>&& columnsAndValues, std::vector<uint_fast64_t>&& rowGroupIndices);
+            SparseMatrix(index_type columnCount, std::vector<index_type>&& rowIndications, std::vector<MatrixEntry<index_type, value_type>>&& columnsAndValues, std::vector<index_type>&& rowGroupIndices);
 
             /*!
              * Assigns the contents of the given matrix to the current one by deep-copying its contents.
              *
              * @param other The matrix from which to copy-assign.
              */
-            SparseMatrix<T>& operator=(SparseMatrix<T> const& other);
+            SparseMatrix<value_type>& operator=(SparseMatrix<value_type> const& other);
             
             /*!
              * Assigns the contents of the given matrix to the current one by moving its contents.
              *
              * @param other The matrix from which to move to contents.
              */
-            SparseMatrix<T>& operator=(SparseMatrix<T>&& other);
+            SparseMatrix<value_type>& operator=(SparseMatrix<value_type>&& other);
             
             /*!
              * Determines whether the current and the given matrix are semantically equal.
@@ -396,42 +419,42 @@ namespace storm {
              * @param other The matrix with which to compare the current matrix.
              * @return True iff the given matrix is semantically equal to the current one.
              */
-            bool operator==(SparseMatrix<T> const& other) const;
+            bool operator==(SparseMatrix<value_type> const& other) const;
             
             /*!
              * Returns the number of rows of the matrix.
              *
              * @return The number of rows of the matrix.
              */
-            uint_fast64_t getRowCount() const;
+            index_type getRowCount() const;
             
             /*!
              * Returns the number of columns of the matrix.
              *
              * @return The number of columns of the matrix.
              */
-            uint_fast64_t getColumnCount() const;
+            index_type getColumnCount() const;
             
             /*!
              * Returns the number of entries in the matrix.
              *
              * @return The number of entries in the matrix.
              */
-            uint_fast64_t getEntryCount() const;
+            index_type getEntryCount() const;
             
             /*!
              * Returns the number of nonzero entries in the matrix.
              *
              * @return The number of nonzero entries in the matrix.
              */
-            uint_fast64_t getNonzeroEntryCount() const;
+            index_type getNonzeroEntryCount() const;
             
             /*!
              * Returns the number of row groups in the matrix.
              *
              * @return The number of row groups in the matrix.
              */
-            uint_fast64_t getRowGroupCount() const;
+            index_type getRowGroupCount() const;
             
             /*!
              * Returns the size of the given row group.
@@ -439,14 +462,14 @@ namespace storm {
              * @param group The group whose size to retrieve.
              * @return The number of rows that belong to the given row group.
              */
-            uint_fast64_t getRowGroupSize(uint_fast64_t group) const;
+            index_type getRowGroupSize(index_type group) const;
             
             /*!
              * Returns the grouping of rows of this matrix.
              *
              * @return The grouping of rows of this matrix.
              */
-            std::vector<uint_fast64_t> const& getRowGroupIndices() const;
+            std::vector<index_type> const& getRowGroupIndices() const;
             
             /*!
              * This function makes the given rows absorbing.
@@ -469,7 +492,7 @@ namespace storm {
              * @param row The row to be made Dirac.
              * @param column The index of the column whose value is to be set to 1.
              */
-            void makeRowDirac(const uint_fast64_t row, const uint_fast64_t column);
+            void makeRowDirac(index_type row, index_type column);
             
             /*
              * Sums the entries in the given row and columns.
@@ -478,7 +501,7 @@ namespace storm {
              * @param columns A bit vector that indicates which columns to add.
              * @return The sum of the entries in the given row and columns.
              */
-            T getConstrainedRowSum(uint_fast64_t row, storm::storage::BitVector const& columns) const;
+            value_type getConstrainedRowSum(index_type row, storm::storage::BitVector const& columns) const;
             
             /*!
              * Computes a vector whose i-th entry is the sum of the entries in the i-th selected row where only those
@@ -489,7 +512,7 @@ namespace storm {
              *
              * @return A vector whose elements are the sums of the selected columns in each row.
              */
-            std::vector<T> getConstrainedRowSumVector(storm::storage::BitVector const& rowConstraint, storm::storage::BitVector const& columnConstraint) const;
+            std::vector<value_type> getConstrainedRowSumVector(storm::storage::BitVector const& rowConstraint, storm::storage::BitVector const& columnConstraint) const;
             
             /*!
              * Computes a vector whose entries represent the sums of selected columns for all rows in selected row
@@ -500,7 +523,7 @@ namespace storm {
              * @return A vector whose entries represent the sums of selected columns for all rows in selected row
              * groups.
              */
-            std::vector<T> getConstrainedRowGroupSumVector(storm::storage::BitVector const& rowGroupConstraint, storm::storage::BitVector const& columnConstraint) const;
+            std::vector<value_type> getConstrainedRowGroupSumVector(storm::storage::BitVector const& rowGroupConstraint, storm::storage::BitVector const& columnConstraint) const;
             
             /*!
              * Creates a submatrix of the current matrix by dropping all rows and columns whose bits are not
@@ -524,7 +547,7 @@ namespace storm {
              * each row in row group i. This can then be used for inserting other values later.
              * @return A submatrix of the current matrix by selecting one row out of each row group.
              */
-            SparseMatrix selectRowsFromRowGroups(std::vector<uint_fast64_t> const& rowGroupToRowIndexMapping, bool insertDiagonalEntries = true) const;
+            SparseMatrix selectRowsFromRowGroups(std::vector<index_type> const& rowGroupToRowIndexMapping, bool insertDiagonalEntries = true) const;
             
             /*!
              * Transposes the matrix.
@@ -533,7 +556,7 @@ namespace storm {
              *
              * @return A sparse matrix that represents the transpose of this matrix.
              */
-            storm::storage::SparseMatrix<T> transpose(bool joinGroups = false) const;
+            storm::storage::SparseMatrix<value_type> transpose(bool joinGroups = false) const;
             
             /*!
              * Transforms the matrix into an equation system. That is, it transforms the matrix A into a matrix (1-A).
@@ -561,7 +584,7 @@ namespace storm {
              *
              * @return A pair (L+U, D^-1) containing the matrix L+U and the inverted diagonal matrix D^-1.
              */
-            std::pair<storm::storage::SparseMatrix<T>, storm::storage::SparseMatrix<T>> getJacobiDecomposition() const;
+            std::pair<storm::storage::SparseMatrix<value_type>, storm::storage::SparseMatrix<value_type>> getJacobiDecomposition() const;
             
             /*!
              * Performs a pointwise matrix multiplication of the matrix with the given matrix and returns a vector
@@ -573,7 +596,7 @@ namespace storm {
              * @return A vector containing the sum of the entries in each row of the matrix resulting from pointwise
              * multiplication of the current matrix with the given matrix.
              */
-            std::vector<T> getPointwiseProductRowSumVector(storm::storage::SparseMatrix<T> const& otherMatrix) const;
+            std::vector<value_type> getPointwiseProductRowSumVector(storm::storage::SparseMatrix<value_type> const& otherMatrix) const;
             
             /*!
              * Multiplies the matrix with the given vector and writes the result to the given result vector. If a
@@ -584,7 +607,7 @@ namespace storm {
              * @param result The vector that is supposed to hold the result of the multiplication after the operation.
              * @return The product of the matrix and the given vector as the content of the given result vector.
              */
-            void multiplyWithVector(std::vector<T> const& vector, std::vector<T>& result) const;
+            void multiplyWithVector(std::vector<value_type> const& vector, std::vector<value_type>& result) const;
             
             /*!
              * Multiplies the matrix with the given vector in a sequential way and writes the result to the given result
@@ -594,7 +617,7 @@ namespace storm {
              * @param result The vector that is supposed to hold the result of the multiplication after the operation.
              * @return The product of the matrix and the given vector as the content of the given result vector.
              */
-            void multiplyWithVectorSequential(std::vector<T> const& vector, std::vector<T>& result) const;
+            void multiplyWithVectorSequential(std::vector<value_type> const& vector, std::vector<value_type>& result) const;
 
 #ifdef STORM_HAVE_INTELTBB
             /*!
@@ -605,7 +628,7 @@ namespace storm {
              * @param result The vector that is supposed to hold the result of the multiplication after the operation.
              * @return The product of the matrix and the given vector as the content of the given result vector.
              */
-            void multiplyWithVectorParallel(std::vector<T> const& vector, std::vector<T>& result) const;
+            void multiplyWithVectorParallel(std::vector<value_type> const& vector, std::vector<value_type>& result) const;
 #endif
             
             /*!
@@ -614,7 +637,7 @@ namespace storm {
              * @param row The row that is to be summed.
              * @return The sum of the selected row.
              */
-            T getRowSum(uint_fast64_t row) const;
+            value_type getRowSum(index_type row) const;
             
             /*!
              * Checks if the current matrix is a submatrix of the given matrix, where a matrix A is called a submatrix
@@ -623,7 +646,7 @@ namespace storm {
              * @param matrix The matrix that possibly is a supermatrix of the current matrix.
              * @return True iff the current matrix is a submatrix of the given matrix.
              */
-            bool isSubmatrixOf(SparseMatrix<T> const& matrix) const;
+            bool isSubmatrixOf(SparseMatrix<value_type> const& matrix) const;
             
             template<typename TPrime>
             friend std::ostream& operator<<(std::ostream& out, SparseMatrix<TPrime> const& matrix);
@@ -649,7 +672,7 @@ namespace storm {
              * @param endRow The ending row (which is included in the result).
              * @return An object representing the consecutive rows given by the parameters.
              */
-            const_rows getRows(uint_fast64_t startRow, uint_fast64_t endRow) const;
+            const_rows getRows(index_type startRow, index_type endRow) const;
 
             /*!
              * Returns an object representing the consecutive rows given by the parameters.
@@ -658,7 +681,7 @@ namespace storm {
              * @param endRow The ending row (which is included in the result).
              * @return An object representing the consecutive rows given by the parameters.
              */
-            rows getRows(uint_fast64_t startRow, uint_fast64_t endRow);
+            rows getRows(index_type startRow, index_type endRow);
 
             /*!
              * Returns an object representing the given row.
@@ -666,7 +689,7 @@ namespace storm {
              * @param row The row to get.
              * @return An object representing the given row.
              */
-            const_rows getRow(uint_fast64_t row) const;
+            const_rows getRow(index_type row) const;
 
             /*!
              * Returns an object representing the given row.
@@ -674,7 +697,7 @@ namespace storm {
              * @param row The row to get.
              * @return An object representing the given row.
              */
-            rows getRow(uint_fast64_t row);
+            rows getRow(index_type row);
             
             /*!
              * Returns an object representing the given row group.
@@ -682,7 +705,7 @@ namespace storm {
              * @param rowGroup The row group to get.
              * @return An object representing the given row group.
              */
-            const_rows getRowGroup(uint_fast64_t rowGroup) const;
+            const_rows getRowGroup(index_type rowGroup) const;
             
             /*!
              * Returns an object representing the given row group.
@@ -690,7 +713,7 @@ namespace storm {
              * @param rowGroup The row group to get.
              * @return An object representing the given row group.
              */
-            rows getRowGroup(uint_fast64_t rowGroup);
+            rows getRowGroup(index_type rowGroup);
             
             /*!
              * Retrieves an iterator that points to the beginning of the given row.
@@ -698,7 +721,7 @@ namespace storm {
              * @param row The row to the beginning of which the iterator has to point.
              * @return An iterator that points to the beginning of the given row.
              */
-            const_iterator begin(uint_fast64_t row = 0) const;
+            const_iterator begin(index_type row = 0) const;
             
             /*!
              * Retrieves an iterator that points to the beginning of the given row.
@@ -706,7 +729,7 @@ namespace storm {
              * @param row The row to the beginning of which the iterator has to point.
              * @return An iterator that points to the beginning of the given row.
              */
-            iterator begin(uint_fast64_t row = 0);
+            iterator begin(index_type row = 0);
             
             /*!
              * Retrieves an iterator that points past the end of the given row.
@@ -714,7 +737,7 @@ namespace storm {
              * @param row The row past the end of which the iterator has to point.
              * @return An iterator that points past the end of the given row.
              */
-            const_iterator end(uint_fast64_t row) const;
+            const_iterator end(index_type row) const;
 
             /*!
              * Retrieves an iterator that points past the end of the given row.
@@ -722,7 +745,7 @@ namespace storm {
              * @param row The row past the end of which the iterator has to point.
              * @return An iterator that points past the end of the given row.
              */
-            iterator end(uint_fast64_t row);
+            iterator end(index_type row);
 
             /*!
              * Retrieves an iterator that points past the end of the last row of the matrix.
@@ -751,31 +774,31 @@ namespace storm {
              * @return A matrix corresponding to a submatrix of the current matrix in which only row groups and columns
              * given by the row group constraint are kept and all others are dropped.
              */
-            SparseMatrix getSubmatrix(storm::storage::BitVector const& rowGroupConstraint, storm::storage::BitVector const& columnConstraint, std::vector<uint_fast64_t> const& rowGroupIndices, bool insertDiagonalEntries = false) const;
+            SparseMatrix getSubmatrix(storm::storage::BitVector const& rowGroupConstraint, storm::storage::BitVector const& columnConstraint, std::vector<index_type> const& rowGroupIndices, bool insertDiagonalEntries = false) const;
             
             // The number of rows of the matrix.
-            uint_fast64_t rowCount;
+            index_type rowCount;
             
             // The number of columns of the matrix.
-            uint_fast64_t columnCount;
+            index_type columnCount;
             
             // The number of entries in the matrix.
-            uint_fast64_t entryCount;
+            index_type entryCount;
             
             // The number of nonzero entries in the matrix.
-            uint_fast64_t nonzeroEntryCount;
+            index_type nonzeroEntryCount;
             
             // The storage for the columns and values of all entries in the matrix.
-            std::vector<MatrixEntry<T>> columnsAndValues;
+            std::vector<MatrixEntry<index_type, value_type>> columnsAndValues;
             
             // A vector containing the indices at which each given row begins. This index is to be interpreted as an
             // index in the valueStorage and the columnIndications vectors. Put differently, the values of the entries
             // in row i are valueStorage[rowIndications[i]] to valueStorage[rowIndications[i + 1]] where the last
             // entry is not included anymore.
-            std::vector<uint_fast64_t> rowIndications;
+            std::vector<index_type> rowIndications;
             
             // A vector indicating the row groups of the matrix.
-            std::vector<uint_fast64_t> rowGroupIndices;
+            std::vector<index_type> rowGroupIndices;
         };
 
     } // namespace storage

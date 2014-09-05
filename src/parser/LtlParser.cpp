@@ -77,7 +77,7 @@ struct LtlParser::LtlGrammar : qi::grammar<Iterator, std::shared_ptr<storm::prop
 				MAKE(ltl::And<double>, qi::_val, qi::_1)];
 		andFormula.name("And");
 		untilFormula = notFormula[qi::_val = qi::_1] >
-				*((qi::lit("U") >> qi::lit("<=") > qi::int_ > notFormula)[qi::_val = MAKE(ltl::BoundedUntil<double>, qi::_val, qi::_2, qi::_1)] |
+				*(((qi::lit("U") >> qi::lit("<=")) > qi::int_ > notFormula)[qi::_val = MAKE(ltl::BoundedUntil<double>, qi::_val, qi::_2, qi::_1)] |
 				  (qi::lit("U") > notFormula)[qi::_val = MAKE(ltl::Until<double>, qi::_val, qi::_1)]);
 		until.name("Until");
 		notFormula = atomicLtlFormula[qi::_val = qi::_1] | (qi::lit("!") > atomicLtlFormula)[qi::_val =
@@ -95,7 +95,7 @@ struct LtlParser::LtlGrammar : qi::grammar<Iterator, std::shared_ptr<storm::prop
 		//This block defines rules for parsing probabilistic path formulas
 		pathFormula = (boundedEventually | eventually | globally | next);
 		pathFormula.name("Path Formula");
-		boundedEventually = (qi::lit("F") >> qi::lit("<=") > qi::int_ > formula)[qi::_val =
+		boundedEventually = ((qi::lit("F") >> qi::lit("<=")) > qi::int_ > formula)[qi::_val =
 				MAKE(ltl::BoundedEventually<double>, qi::_2, qi::_1)];
 		boundedEventually.name("Bounded Eventually");
 		eventually = (qi::lit("F") >> formula)[qi::_val =
@@ -117,7 +117,7 @@ struct LtlParser::LtlGrammar : qi::grammar<Iterator, std::shared_ptr<storm::prop
 		invertAction.name("invert action");
 
 		rangeAction = (
-				(qi::lit("range") >> qi::lit("(") >> qi::uint_ >> qi::lit(",") > qi::uint_ >> qi::lit(")"))[qi::_val =
+				((qi::lit("range") >> qi::lit("(") >> qi::uint_ >> qi::lit(",")) > qi::uint_ >> qi::lit(")"))[qi::_val =
 						MAKE(storm::properties::action::RangeAction<double>, qi::_1, qi::_2)] |
 				(qi::lit("range") >> qi::lit("(") >> qi::uint_ >> qi::lit(")"))[qi::_val =
 						MAKE(storm::properties::action::RangeAction<double>, qi::_1, qi::_1 + 1)]
@@ -139,9 +139,9 @@ struct LtlParser::LtlGrammar : qi::grammar<Iterator, std::shared_ptr<storm::prop
 
 		filter = (qi::lit("filter") >> qi::lit("[") >> +abstractAction >> qi::lit("]") > qi::lit("(") >> formula >> qi::lit(")"))[qi::_val =
 					MAKE(ltl::LtlFilter<double>, qi::_2, qi::_1)] |
-				 (qi::lit("filter") >> qi::lit("[") >> qi::lit("max") > +abstractAction >> qi::lit("]") >> qi::lit("(") >> formula >> qi::lit(")"))[qi::_val =
+				 ((qi::lit("filter") >> qi::lit("[") >> qi::lit("max")) > +abstractAction >> qi::lit("]") >> qi::lit("(") >> formula >> qi::lit(")"))[qi::_val =
 					MAKE(ltl::LtlFilter<double>, qi::_2, qi::_1, storm::properties::MAXIMIZE)] |
-				 (qi::lit("filter") >> qi::lit("[") >> qi::lit("min") > +abstractAction >> qi::lit("]") >> qi::lit("(") >> formula >> qi::lit(")"))[qi::_val =
+				 ((qi::lit("filter") >> qi::lit("[") >> qi::lit("min")) > +abstractAction >> qi::lit("]") >> qi::lit("(") >> formula >> qi::lit(")"))[qi::_val =
 					MAKE(ltl::LtlFilter<double>, qi::_2, qi::_1, storm::properties::MINIMIZE)] |
 				 (formula)[qi::_val =
 					MAKE(ltl::LtlFilter<double>, qi::_1)];

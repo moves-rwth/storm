@@ -147,7 +147,7 @@ TEST(SparseMatrix, Build) {
 }
 
 TEST(SparseMatrix, CreationWithMovingContents) {
-    std::vector<storm::storage::MatrixEntry<double>> columnsAndValues;
+    std::vector<storm::storage::MatrixEntry<uint_fast64_t, double>> columnsAndValues;
     columnsAndValues.emplace_back(1, 1.0);
     columnsAndValues.emplace_back(2, 1.2);
     columnsAndValues.emplace_back(0, 0.5);
