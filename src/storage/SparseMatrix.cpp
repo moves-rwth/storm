@@ -1,4 +1,4 @@
-T#include <boost/functional/hash.hpp>
+#include <boost/functional/hash.hpp>
 
 // To detect whether the usage of TBB is possible, this include is neccessary
 #include "storm-config.h"
