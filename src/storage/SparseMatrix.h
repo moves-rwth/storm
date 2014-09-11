@@ -122,16 +122,20 @@ namespace storm {
             
             /*!
              * Constructs a sparse matrix builder producing a matrix with the given number of rows, columns and entries.
+             * The number of rows, columns and entries is reserved upon creation. If more rows/columns or entries are
+             * added, this will possibly lead to a reallocation.
              *
              * @param rows The number of rows of the resulting matrix.
              * @param columns The number of columns of the resulting matrix.
              * @param entries The number of entries of the resulting matrix.
+             * @param forceDimensions If this flag is set, the matrix is expected to have exactly the given number of
+             * rows, columns and entries for all of these entities that are set to a nonzero value.
              * @param hasCustomRowGrouping A flag indicating whether the builder is used to create a non-canonical
              * grouping of rows for this matrix.
              * @param rowGroups The number of row groups of the resulting matrix. This is only relevant if the matrix
              * has a custom row grouping.
              */
-            SparseMatrixBuilder(index_type rows = 0, index_type columns = 0, index_type entries = 0, bool hasCustomRowGrouping = false, index_type rowGroups = 0);
+            SparseMatrixBuilder(index_type rows = 0, index_type columns = 0, index_type entries = 0, bool forceDimensions = true, bool hasCustomRowGrouping = false, index_type rowGroups = 0);
             
             /*!
              * Sets the matrix entry at the given row and column to the given value. After all entries have been added,
@@ -178,41 +182,37 @@ namespace storm {
             SparseMatrix<value_type> build(index_type overriddenRowCount = 0, index_type overriddenColumnCount = 0, index_type overriddenRowGroupCount = 0);
             
         private:
-            /*!
-             * Prepares the internal storage of the builder. This relies on the number of entries and the number of rows
-             * being set correctly. They may, however, be zero, in which case the insertion of elements in the builder
-             * will cause occasional reallocations.
-             */
-            void prepareInternalStorage();
+            // A flag indicating whether a row count was set upon construction.
+            bool initialRowCountSet;
+            
+            // The row count that was initially set (if any).
+            index_type initialRowCount;
+            
+            // A flag indicating whether a column count was set upon construction.
+            bool initialColumnCountSet;
 
-            // A flag indicating whether the number of rows was set upon construction.
-            bool rowCountSet;
+            // The column count that was initially set (if any).
+            index_type initialColumnCount;
             
-            // The number of rows of the matrix.
-            index_type rowCount;
-            
-            // A flag indicating whether the number of columns was set upon construction.
-            bool columnCountSet;
-            
-            // The number of columns of the matrix.
-            index_type columnCount;
+            // A flag indicating whether an entry count was set upon construction.
+            bool initialEntryCountSet;
             
             // The number of entries in the matrix.
-            index_type entryCount;
+            index_type initialEntryCount;
+            
+            // A flag indicating whether the initially given dimensions are to be enforced on the resulting matrix.
+            bool forceInitialDimensions;
             
             // A flag indicating whether the builder is to construct a custom row grouping for the matrix.
             bool hasCustomRowGrouping;
             
             // A flag indicating whether the number of row groups was set upon construction.
-            bool rowGroupCountSet;
+            bool initialRowGroupCountSet;
             
             // The number of row groups in the matrix.
-            index_type rowGroupCount;
+            index_type initialRowGroupCount;
             
             std::vector<index_type> rowGroupIndices;
-            
-            // Stores whether the storage of the matrix was preallocated or not.
-            bool storagePreallocated;
             
             // The storage for the columns and values of all entries in the matrix.
             std::vector<MatrixEntry<index_type, value_type>> columnsAndValues;
@@ -234,6 +234,9 @@ namespace storm {
             // Stores the column of the currently last entry in the matrix. This is used for correctly inserting an
             // entry into a matrix.
             index_type lastColumn;
+            
+            // Stores the highest column at which an entry was inserted into the matrix.
+            index_type highestColumn;
             
             // Stores the currently active row group. This is used for correctly constructing the row grouping of the
             // matrix.
