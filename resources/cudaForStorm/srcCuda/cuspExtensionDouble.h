@@ -2,7 +2,7 @@
  * This is an extension of the original CUSP csr_vector.h SPMV implementation.
  * It is based on the Code and incorporates changes as to cope with the details
  * of the StoRM code.
- * As this is mostly copy & paste, the original license still applies.
+ * Changes have been made for 1) different input format, 2) the sum calculation and 3) the group-reduce algorithm
  */
 
 /*
