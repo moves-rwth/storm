@@ -3,6 +3,20 @@
 #define STORM_COUNTEREXAMPLES_GENERATECOUNTEREXAMPLE_H_
 
 
+#include "src/models/Dtmc.h"
+#include "src/models/AtomicPropositionsLabeling.h"
+#include "src/counterexamples/MILPMinimalLabelSetGenerator.h"
+#include "src/counterexamples/SMTMinimalCommandSetGenerator.h"
+#include "src/counterexamples/PathBasedSubsystemGenerator.h"
+#include "src/parser/PrctlParser.h"
+#include "src/properties/Prctl.h"
+#include "src/modelchecker/prctl/CreatePrctlModelChecker.h"
+
+
+#include "src/parser/PrctlFileParser.h"
+
+#include "src/exceptions/InvalidSettingsException.h"
+
 
 /*!
  * Handles the counterexample generation control.

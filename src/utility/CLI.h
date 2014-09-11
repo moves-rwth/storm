@@ -8,6 +8,23 @@
 
 
 #include "src/utility/OsDetection.h"
+// Registers all standard options
+#include "src/utility/StormOptions.h" 
+
+
+// Includes for the linked libraries and versions header
+#ifdef STORM_HAVE_INTELTBB
+#	include "tbb/tbb_stddef.h"
+#endif
+#ifdef STORM_HAVE_GLPK
+#	include "glpk.h"
+#endif
+#ifdef STORM_HAVE_GUROBI
+#	include "gurobi_c.h"
+#endif
+#ifdef STORM_HAVE_Z3
+#	include "z3.h"
+#endif
 
 /*!
 * Gives the current working directory
