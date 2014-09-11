@@ -9,6 +9,7 @@
 
 #include "src/storage/SparseMatrix.h"
 #include "src/exceptions/InvalidStateException.h"
+#include "src/exceptions/ExceptionMacros.h"
 
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
@@ -53,37 +54,27 @@ namespace storm {
         }
         
         template<typename ValueType>
-        SparseMatrixBuilder<ValueType>::SparseMatrixBuilder(index_type rows, index_type columns, index_type entries, bool hasCustomRowGrouping, index_type rowGroups) : rowCountSet(rows != 0), rowCount(rows), columnCountSet(columns != 0), columnCount(columns), entryCount(entries), hasCustomRowGrouping(hasCustomRowGrouping), rowGroupCountSet(rowGroups != 0), rowGroupCount(rowGroups), rowGroupIndices(), storagePreallocated(rows != 0 && columns != 0 && entries != 0), columnsAndValues(), rowIndications(), currentEntryCount(0), lastRow(0), lastColumn(0), currentRowGroup(0) {
-            this->prepareInternalStorage();
+        SparseMatrixBuilder<ValueType>::SparseMatrixBuilder(index_type rows, index_type columns, index_type entries, bool forceDimensions, bool hasCustomRowGrouping, index_type rowGroups) : initialRowCountSet(rows != 0), initialRowCount(rows), initialColumnCountSet(columns != 0), initialColumnCount(columns), initialEntryCountSet(entries != 0), initialEntryCount(entries), forceInitialDimensions(forceDimensions), hasCustomRowGrouping(hasCustomRowGrouping), initialRowGroupCountSet(rowGroups != 0), initialRowGroupCount(rowGroups), rowGroupIndices(), columnsAndValues(), rowIndications(), currentEntryCount(0), lastRow(0), lastColumn(0), highestColumn(0), currentRowGroup(0) {
+            // Prepare the internal storage.
+            if (initialRowCountSet > 0) {
+                rowIndications.reserve(initialRowCount + 1);
+            }
+            if (initialEntryCountSet > 0) {
+                columnsAndValues.reserve(initialEntryCount);
+            }
+            if (initialRowGroupCountSet > 0) {
+                rowGroupIndices.reserve(initialRowGroupCount + 1);
+            }
+            rowIndications.push_back(0);
         }
         
         template<typename ValueType>
         void SparseMatrixBuilder<ValueType>::addNextValue(index_type row, index_type column, ValueType const& value) {
-            // Depending on whether the internal data storage was preallocated or not, adding the value is done somewhat
-            // differently.
-            if (storagePreallocated) {
-                // Check whether the given row and column positions are valid and throw error otherwise.
-                if (row >= rowCount || column >= columnCount) {
-                    throw storm::exceptions::OutOfRangeException() << "Illegal call to SparseMatrixBuilder::addNextValue: adding entry at out-of-bounds position (" << row << ", " << column << ") in matrix of size (" << rowCount << ", " << columnCount << ").";
-                }
-            } else {
-                if (rowCountSet) {
-                    if (row >= rowCount) {
-                        throw storm::exceptions::OutOfRangeException() << "Illegal call to SparseMatrixBuilder::addNextValue: adding entry at out-of-bounds row " << row << " in matrix with " << rowCount << " rows.";
-                    }
-                }
-                if (columnCountSet) {
-                    if (column >= columnCount) {
-                        throw storm::exceptions::OutOfRangeException() << "Illegal call to SparseMatrixBuilder::addNextValue: adding entry at out-of-bounds column " << column << " in matrix with " << columnCount << " columns.";
-                    }
-                }
-            }
-            
             // Check that we did not move backwards wrt. the row.
             if (row < lastRow) {
                 throw storm::exceptions::InvalidArgumentException() << "Illegal call to SparseMatrixBuilder::addNextValue: adding an element in row " << row << ", but an element in row " << lastRow << " has already been added.";
             }
-            
+
             // Check that we did not move backwards wrt. to column.
             if (row == lastRow && column < lastColumn) {
                 throw storm::exceptions::InvalidArgumentException() << "Illegal call to SparseMatrixBuilder::addNextValue: adding an element in column " << column << " in row " << row << ", but an element in column " << lastColumn << " has already been added in that row.";
@@ -91,24 +82,9 @@ namespace storm {
             
             // If we switched to another row, we have to adjust the missing entries in the row indices vector.
             if (row != lastRow) {
-                if (storagePreallocated) {
-                    // If the storage was preallocated, we can access the elements in the vectors with the subscript
-                    // operator.
-                    for (index_type i = lastRow + 1; i <= row; ++i) {
-                        rowIndications[i] = currentEntryCount;
-                    }
-                } else {
-                    // Otherwise, we need to push the correct values to the vectors, which might trigger reallocations.
-                    for (index_type i = lastRow + 1; i <= row; ++i) {
-                        rowIndications.push_back(currentEntryCount);
-                    }
-                }
-                
-                if (!hasCustomRowGrouping) {
-                    for (index_type i = lastRow + 1; i <= row; ++i) {
-                        rowGroupIndices.push_back(i);
-                        ++currentRowGroup;
-                    }
+                // Otherwise, we need to push the correct values to the vectors, which might trigger reallocations.
+                for (index_type i = lastRow + 1; i <= row; ++i) {
+                    rowIndications.push_back(currentEntryCount);
                 }
                 
                 lastRow = row;
@@ -117,109 +93,76 @@ namespace storm {
             lastColumn = column;
             
             // Finally, set the element and increase the current size.
-            if (storagePreallocated) {
-                columnsAndValues[currentEntryCount] = std::make_pair(column, value);
-            } else {
-                columnsAndValues.emplace_back(column, value);
-                if (!columnCountSet) {
-                    columnCount = std::max(columnCount, column + 1);
-                }
-                if (!rowCountSet) {
-                    rowCount = row + 1;
-                }
-            }
+            columnsAndValues.emplace_back(column, value);
+            highestColumn = std::max(highestColumn, column);
             ++currentEntryCount;
+
+            // In case we did not expect this value, we throw an exception.
+            if (forceInitialDimensions) {
+                LOG_THROW(!initialRowCountSet || lastRow < initialRowCount, storm::exceptions::OutOfRangeException, "Cannot insert value at illegal row " << lastRow << ".");
+                LOG_THROW(!initialColumnCountSet || lastColumn < initialColumnCount, storm::exceptions::OutOfRangeException, "Cannot insert value at illegal column " << lastColumn << ".");
+                LOG_THROW(!initialEntryCountSet || currentEntryCount <= initialEntryCount, storm::exceptions::OutOfRangeException, "Too many entries in matrix, expected only " << initialEntryCount << ".");
+            }
         }
         
         template<typename ValueType>
         void SparseMatrixBuilder<ValueType>::newRowGroup(index_type startingRow) {
-            if (!hasCustomRowGrouping) {
-                throw storm::exceptions::InvalidStateException() << "Illegal call to SparseMatrix::newRowGroup: matrix was not created to have a custom row grouping.";
-            } else if (rowGroupIndices.size() > 0 && startingRow < rowGroupIndices.back()) {
-                throw storm::exceptions::InvalidStateException() << "Illegal call to SparseMatrix::newRowGroup: illegal row group with negative size.";
-            }
-            if (rowGroupCountSet) {
-                rowGroupIndices[currentRowGroup] = startingRow;
-                ++currentRowGroup;
-            } else {
-                rowGroupIndices.push_back(startingRow);
-            }
+            LOG_THROW(hasCustomRowGrouping, storm::exceptions::InvalidStateException, "Matrix was not created to have a custom row grouping.");
+            LOG_THROW(rowGroupIndices.empty() || startingRow >= rowGroupIndices.back(), storm::exceptions::InvalidStateException, "Illegal row group with negative size.");
+            rowGroupIndices.push_back(startingRow);
+            ++currentRowGroup;
         }
         
         template<typename ValueType>
         SparseMatrix<ValueType> SparseMatrixBuilder<ValueType>::build(index_type overriddenRowCount, index_type overriddenColumnCount, index_type overriddenRowGroupCount) {
-            // Check whether it's safe to finalize the matrix and throw error otherwise.
-            if (storagePreallocated && currentEntryCount != entryCount) {
-                throw storm::exceptions::InvalidStateException() << "Illegal call to SparseMatrix::build: expected " << entryCount << " entries, but got " << currentEntryCount << " instead.";
-            } else {
-                // Fill in the missing entries in the row indices array, as there may be empty rows at the end.
-                if (storagePreallocated) {
-                    for (index_type i = lastRow + 1; i < rowCount; ++i) {
-                        rowIndications[i] = currentEntryCount;
-                    }
-                } else {
-                    if (!rowCountSet) {
-                        rowCount = std::max(overriddenRowCount, rowCount);
-                    }
-                    for (index_type i = lastRow + 1; i < rowCount; ++i) {
-                        rowIndications.push_back(currentEntryCount);
-                    }
-                }
-                
-                // We put a sentinel element at the last position of the row indices array. This eases iteration work,
-                // as now the indices of row i are always between rowIndications[i] and rowIndications[i + 1], also for
-                // the first and last row.
-                if (storagePreallocated) {
-                    rowIndications[rowCount] = currentEntryCount;
-                } else {
-                    rowIndications.push_back(currentEntryCount);
-                    if (!columnCountSet) {
-                        columnCount = std::max(columnCount, overriddenColumnCount);
-                    }
-                }
-                
-                entryCount = currentEntryCount;
-                
-                if (hasCustomRowGrouping && rowGroupCountSet) {
-                    rowGroupIndices[rowGroupCount] = rowCount;
-                } else {
-                    if (!hasCustomRowGrouping) {
-                        for (index_type i = currentRowGroup; i < rowCount; ++i) {
-                            rowGroupIndices.push_back(i + 1);
-                        }
-                    } else {
-                        overriddenRowGroupCount = std::max(overriddenRowGroupCount, currentRowGroup + 1);
-                        for (index_type i = currentRowGroup; i < overriddenRowGroupCount; ++i) {
-                            rowGroupIndices.push_back(rowCount);
-                        }
-                    }
-                }
+            uint_fast64_t rowCount = lastRow + 1;
+            if (initialRowCountSet && forceInitialDimensions) {
+                LOG_THROW(rowCount <= initialRowCount, storm::exceptions::InvalidStateException, "Expected not more than " << initialRowCount << " rows, but got " << rowCount << ".");
+                rowCount = std::max(rowCount, initialRowCount);
+            }
+            rowCount = std::max(rowCount, overriddenRowCount);
+            
+            // If the current row count was overridden, we may need to add empty rows.
+            for (index_type i = lastRow + 1; i < rowCount; ++i) {
+                rowIndications.push_back(currentEntryCount);
             }
             
+            // We put a sentinel element at the last position of the row indices array. This eases iteration work,
+            // as now the indices of row i are always between rowIndications[i] and rowIndications[i + 1], also for
+            // the first and last row.
+            rowIndications.push_back(currentEntryCount);
+
+            uint_fast64_t columnCount = highestColumn + 1;
+            if (initialColumnCountSet && forceInitialDimensions) {
+                LOG_THROW(columnCount <= initialColumnCount, storm::exceptions::InvalidStateException, "Expected not more than " << initialColumnCount << " columns, but got " << columnCount << ".");
+                columnCount = std::max(columnCount, initialColumnCount);
+            }
+            columnCount = std::max(columnCount, overriddenColumnCount);
+
+            uint_fast64_t entryCount = currentEntryCount;
+            if (initialEntryCountSet && forceInitialDimensions) {
+                LOG_THROW(entryCount == initialEntryCount, storm::exceptions::InvalidStateException, "Expected " << initialEntryCount << " entries, but got " << entryCount << ".");
+            }
+            
+            // Check whether row groups are missing some entries.
+            if (!hasCustomRowGrouping) {
+                for (index_type i = 0; i <= rowCount; ++i) {
+                    rowGroupIndices.push_back(i);
+                }
+            } else {
+                uint_fast64_t rowGroupCount = currentRowGroup;
+                if (initialRowGroupCountSet && forceInitialDimensions) {
+                    LOG_THROW(rowGroupCount <= initialRowGroupCount, storm::exceptions::InvalidStateException, "Expected not more than " << initialRowGroupCount << " row groups, but got " << rowGroupCount << ".");
+                    rowGroupCount = std::max(rowGroupCount, initialRowGroupCount);
+                }
+                rowGroupCount = std::max(rowGroupCount, overriddenRowGroupCount);
+
+                for (index_type i = currentRowGroup; i <= rowGroupCount; ++i) {
+                    rowGroupIndices.push_back(rowCount);
+                }
+            }
+
             return SparseMatrix<ValueType>(columnCount, std::move(rowIndications), std::move(columnsAndValues), std::move(rowGroupIndices));
-        }
-        
-        template<typename ValueType>
-        void SparseMatrixBuilder<ValueType>::prepareInternalStorage() {
-            // Only allocate the memory for the matrix contents if the dimensions of the matrix are already known.
-            if (storagePreallocated) {
-                columnsAndValues = std::vector<MatrixEntry<index_type, ValueType>>(entryCount, MatrixEntry<index_type, ValueType>(0, storm::utility::constantZero<ValueType>()));
-                rowIndications = std::vector<index_type>(rowCount + 1, 0);
-            } else {
-                rowIndications.push_back(0);
-            }
-            
-            // Only allocate the memory for the row grouping of the matrix contents if the number of groups is already
-            // known.
-            if (hasCustomRowGrouping && rowGroupCountSet) {
-                rowGroupIndices = std::vector<index_type>(rowGroupCount + 1, 0);
-            } else {
-                if (hasCustomRowGrouping) {
-                    // Nothing to do in this case
-                } else {
-                    rowGroupIndices.push_back(0);
-                }
-            }
         }
         
         template<typename ValueType>
@@ -531,7 +474,7 @@ namespace storm {
             }
             
             // Create and initialize resulting matrix.
-            SparseMatrixBuilder<ValueType> matrixBuilder(subRows, columnConstraint.getNumberOfSetBits(), subEntries, true);
+            SparseMatrixBuilder<ValueType> matrixBuilder(subRows, columnConstraint.getNumberOfSetBits(), subEntries, true, true);
             
             // Create a temporary vector that stores for each index whose bit is set to true the number of bits that
             // were set before that particular index.

@@ -5,7 +5,7 @@
 #include "src/settings/Settings.h"
 
 TEST(GmmxxNondeterministicLinearEquationSolver, SolveWithStandardOptions) {
-    storm::storage::SparseMatrixBuilder<double> builder(0, 0, 0, true);
+    storm::storage::SparseMatrixBuilder<double> builder(0, 0, 0, false, true);
     ASSERT_NO_THROW(builder.newRowGroup(0));
     ASSERT_NO_THROW(builder.addNextValue(0, 0, 0.9));
 
@@ -24,7 +24,7 @@ TEST(GmmxxNondeterministicLinearEquationSolver, SolveWithStandardOptions) {
 }
 
 TEST(GmmxxNondeterministicLinearEquationSolver, MatrixVectorMultiplication) {
-    storm::storage::SparseMatrixBuilder<double> builder(0, 0, 0, true);
+    storm::storage::SparseMatrixBuilder<double> builder(0, 0, 0, false, true);
     ASSERT_NO_THROW(builder.newRowGroup(0));
     ASSERT_NO_THROW(builder.addNextValue(0, 0, 0.9));
     ASSERT_NO_THROW(builder.addNextValue(0, 1, 0.099));

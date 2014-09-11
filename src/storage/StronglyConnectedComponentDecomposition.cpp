@@ -161,7 +161,7 @@ namespace storm {
                 
                 bool recursionStepIn = false;
                 for (; successorIt != model.getRows(currentState).end(); ++successorIt) {
-                    if (subsystem.get(successorIt->getColumn())) {
+                    if (subsystem.get(successorIt->getColumn()) && successorIt->getValue() != storm::utility::constantZero<ValueType>()) {
                         if (currentState == successorIt->getColumn()) {
                             statesWithSelfLoop.set(currentState);
                         }
