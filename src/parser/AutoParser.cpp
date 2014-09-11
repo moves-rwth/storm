@@ -76,18 +76,18 @@ namespace storm {
 			// Open the file.
 			MappedFile file(filename.c_str());
             
-            LOG_THROW(file.getDataSize() >= hintLength, storm::exceptions::WrongFormatException, "File too short to be readable.");
+			LOG_THROW(file.getDataSize() >= STORM_PARSER_AUTOPARSER_HINT_LENGTH, storm::exceptions::WrongFormatException, "File too short to be readable.");
 			char const* fileData = file.getData();
             
-            char filehintBuffer[hintLength + 1];
-            memcpy(filehintBuffer, fileData, hintLength);
-            filehintBuffer[hintLength] = 0;
+			char filehintBuffer[STORM_PARSER_AUTOPARSER_HINT_LENGTH + 1];
+			memcpy(filehintBuffer, fileData, STORM_PARSER_AUTOPARSER_HINT_LENGTH);
+			filehintBuffer[STORM_PARSER_AUTOPARSER_HINT_LENGTH] = 0;
 
 			// Find and read in the hint.
-            std::string formatString = "%" + std::to_string(hintLength) + "s";
+			std::string formatString = "%" + std::to_string(STORM_PARSER_AUTOPARSER_HINT_LENGTH) + "s";
 			char hint[5];
 		#ifdef WINDOWS
-			sscanf_s(filehintBuffer, formatString.c_str(), hint, hintLength + 1);
+			sscanf_s(filehintBuffer, formatString.c_str(), hint, STORM_PARSER_AUTOPARSER_HINT_LENGTH + 1);
 		#else
 			int ret = sscanf(filehintBuffer, formatString.c_str(), hint);
 		#endif

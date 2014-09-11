@@ -5,6 +5,8 @@
 
 #include <string>
 
+#define STORM_PARSER_AUTOPARSER_HINT_LENGTH (10ull)
+
 namespace storm {
 
 	/*!
@@ -48,7 +50,7 @@ namespace storm {
 
 		private:
             // Define the maximal length of a hint in the file.
-            static constexpr uint_fast64_t hintLength = 10;
+            static uint_fast64_t hintLength;
 
 			/*!
 			 *	Opens the given file and parses the file format hint.

@@ -749,9 +749,9 @@ namespace storm {
         void SparseMatrix<ValueType>::multiplyWithVectorSequential(std::vector<ValueType> const& vector, std::vector<ValueType>& result) const {
             const_iterator it = this->begin();
             const_iterator ite;
-            typename std::vector<index_type>::const_iterator rowIterator = rowIndications.begin();
-            typename std::vector<ValueType>::iterator resultIterator = result.begin();
-            typename std::vector<ValueType>::iterator resultIteratorEnd = result.end();
+            std::vector<index_type>::const_iterator rowIterator = rowIndications.begin();
+            std::vector<ValueType>::iterator resultIterator = result.begin();
+            std::vector<ValueType>::iterator resultIteratorEnd = result.end();
             
             for (; resultIterator != resultIteratorEnd; ++rowIterator, ++resultIterator) {
                 *resultIterator = storm::utility::constantZero<ValueType>();
@@ -773,8 +773,8 @@ namespace storm {
                                   const_iterator ite;
                                   std::vector<index_type>::const_iterator rowIterator = this->rowIndications.begin() + startRow;
                                   std::vector<index_type>::const_iterator rowIteratorEnd = this->rowIndications.begin() + endRow;
-                                  typename std::vector<ValueType>::iterator resultIterator = result.begin() + startRow;
-                                  typename std::vector<ValueType>::iterator resultIteratorEnd = result.begin() + endRow;
+                                  std::vector<ValueType>::iterator resultIterator = result.begin() + startRow;
+                                  std::vector<ValueType>::iterator resultIteratorEnd = result.begin() + endRow;
                                   
                                   for (; resultIterator != resultIteratorEnd; ++rowIterator, ++resultIterator) {
                                       *resultIterator = storm::utility::constantZero<ValueType>();
