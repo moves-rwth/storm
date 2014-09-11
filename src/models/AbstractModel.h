@@ -309,7 +309,7 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 		 * @return True if this model has a state reward model.
 		 */
 		bool hasStateRewards() const {
-			return stateRewardVector;
+			return static_cast<bool>(stateRewardVector);
 		}
 
 		/*!
@@ -317,7 +317,7 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 		 * @return True if this model has a transition reward model.
 		 */
 		bool hasTransitionRewards() const {
-			return transitionRewardMatrix;
+			return static_cast<bool>(transitionRewardMatrix);
 		}
     
         /*!
@@ -325,7 +325,7 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
          * @return True if this model has a labeling.
          */
         bool hasChoiceLabeling() const {
-            return choiceLabeling;
+            return static_cast<bool>(choiceLabeling);
         }
 
 		/*!
