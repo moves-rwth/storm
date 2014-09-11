@@ -34,7 +34,7 @@ namespace storm {
 			}
 
 			MappedFile file(filename.c_str());
-			char* buf = file.getData();
+			char const* buf = file.getData();
 
 			// First pass: Count the number of propositions.
 			bool foundDecl = false, foundEnd = false;

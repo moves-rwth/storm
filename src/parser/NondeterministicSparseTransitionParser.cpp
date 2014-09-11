@@ -50,7 +50,7 @@ namespace storm {
 
 			// Open file.
 			MappedFile file(filename.c_str());
-			char* buf = file.getData();
+			char const* buf = file.getData();
 
 			// Perform first pass, i.e. obtain number of columns, rows and non-zero elements.
 			NondeterministicSparseTransitionParser::FirstPassResult firstPass = NondeterministicSparseTransitionParser::firstPass(file.getData(), isRewardFile, modelInformation);
@@ -200,7 +200,7 @@ namespace storm {
 			return resultMatrix;
 		}
 
-		NondeterministicSparseTransitionParser::FirstPassResult NondeterministicSparseTransitionParser::firstPass(char* buf, bool isRewardFile, storm::storage::SparseMatrix<double> const & modelInformation) {
+		NondeterministicSparseTransitionParser::FirstPassResult NondeterministicSparseTransitionParser::firstPass(char const* buf, bool isRewardFile, storm::storage::SparseMatrix<double> const & modelInformation) {
 
 			// Check file header and extract number of transitions.
 

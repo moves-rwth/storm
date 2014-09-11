@@ -12,6 +12,7 @@
 #include "src/parser/DeterministicModelParser.h"
 #include "src/parser/NondeterministicModelParser.h"
 #include "src/parser/MarkovAutomatonParser.h"
+#include "src/exceptions/ExceptionMacros.h"
 #include "src/exceptions/WrongFormatException.h"
 
 #include "src/utility/cstring.h"
@@ -74,25 +75,30 @@ namespace storm {
 
 			// Open the file.
 			MappedFile file(filename.c_str());
-			char* buf = file.getData();
+            
+            LOG_THROW(file.getDataSize() >= hintLength, storm::exceptions::WrongFormatException, "File too short to be readable.");
+			char const* fileData = file.getData();
+            
+            char filehintBuffer[hintLength + 1];
+            memcpy(filehintBuffer, fileData, hintLength);
+            filehintBuffer[hintLength] = 0;
 
 			// Find and read in the hint.
-			char hint[65];
-			// %60s => The input hint can be AT MOST 60 chars long.
+            std::string formatString = "%" + std::to_string(hintLength) + "s";
+			char hint[5];
 		#ifdef WINDOWS
-			sscanf_s(buf, "%60s", hint, sizeof(hint));
+			sscanf_s(filehintBuffer, formatString.c_str(), hint, hintLength + 1);
 		#else
-			sscanf(buf, "%60s", hint);
+			int ret = sscanf(filehintBuffer, formatString.c_str(), hint);
 		#endif
-
 			for (char* c = hint; *c != '\0'; c++) *c = toupper(*c);
-
+            
 			// Check if the hint value is known and store the appropriate enum value.
-			if (strncmp(hint, "DTMC", sizeof(hint)) == 0) hintType = storm::models::DTMC;
-			else if (strncmp(hint, "CTMC", sizeof(hint)) == 0) hintType = storm::models::CTMC;
-			else if (strncmp(hint, "MDP", sizeof(hint)) == 0) hintType = storm::models::MDP;
-			else if (strncmp(hint, "CTMDP", sizeof(hint)) == 0) hintType = storm::models::CTMDP;
-			else if (strncmp(hint, "MA", sizeof(hint)) == 0) hintType = storm::models::MA;
+			if (strcmp(hint, "DTMC") == 0) hintType = storm::models::DTMC;
+			else if (strcmp(hint, "CTMC") == 0) hintType = storm::models::CTMC;
+			else if (strcmp(hint, "MDP") == 0) hintType = storm::models::MDP;
+			else if (strcmp(hint, "CTMDP") == 0) hintType = storm::models::CTMDP;
+			else if (strcmp(hint, "MA") == 0) hintType = storm::models::MA;
 
 			return hintType;
 		}

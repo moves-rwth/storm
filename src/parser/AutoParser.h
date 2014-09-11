@@ -47,6 +47,8 @@ namespace storm {
                                                                                     std::string const & transitionRewardFilename = "");
 
 		private:
+            // Define the maximal length of a hint in the file.
+            static constexpr uint_fast64_t hintLength = 10;
 
 			/*!
 			 *	Opens the given file and parses the file format hint.
