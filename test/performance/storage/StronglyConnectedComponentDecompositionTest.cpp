@@ -15,7 +15,7 @@ TEST(StronglyConnectedComponentDecomposition, Crowds) {
     ASSERT_EQ(1290297ull, sccDecomposition.size());
 
     ASSERT_NO_THROW(sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(*dtmc, true));
-    ASSERT_EQ(1290297, sccDecomposition.size());
+    ASSERT_EQ(437690, sccDecomposition.size());
 
     ASSERT_NO_THROW(sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(*dtmc, true, true));
     ASSERT_EQ(425040, sccDecomposition.size());
@@ -33,7 +33,7 @@ TEST(StronglyConnectedComponentDecomposition, SynchronousLeader) {
     ASSERT_EQ(2611835, sccDecomposition.size());
 
     ASSERT_NO_THROW(sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(*dtmc, true));
-    ASSERT_EQ(2611835, sccDecomposition.size());
+    ASSERT_EQ(2, sccDecomposition.size());
 
     ASSERT_NO_THROW(sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(*dtmc, true, true));
     ASSERT_EQ(1, sccDecomposition.size());
