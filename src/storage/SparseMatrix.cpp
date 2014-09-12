@@ -56,13 +56,13 @@ namespace storm {
         template<typename ValueType>
         SparseMatrixBuilder<ValueType>::SparseMatrixBuilder(index_type rows, index_type columns, index_type entries, bool forceDimensions, bool hasCustomRowGrouping, index_type rowGroups) : initialRowCountSet(rows != 0), initialRowCount(rows), initialColumnCountSet(columns != 0), initialColumnCount(columns), initialEntryCountSet(entries != 0), initialEntryCount(entries), forceInitialDimensions(forceDimensions), hasCustomRowGrouping(hasCustomRowGrouping), initialRowGroupCountSet(rowGroups != 0), initialRowGroupCount(rowGroups), rowGroupIndices(), columnsAndValues(), rowIndications(), currentEntryCount(0), lastRow(0), lastColumn(0), highestColumn(0), currentRowGroup(0) {
             // Prepare the internal storage.
-            if (initialRowCountSet > 0) {
+            if (initialRowCountSet) {
                 rowIndications.reserve(initialRowCount + 1);
             }
-            if (initialEntryCountSet > 0) {
+            if (initialEntryCountSet) {
                 columnsAndValues.reserve(initialEntryCount);
             }
-            if (initialRowGroupCountSet > 0) {
+            if (initialRowGroupCountSet) {
                 rowGroupIndices.reserve(initialRowGroupCount + 1);
             }
             rowIndications.push_back(0);
@@ -750,8 +750,8 @@ namespace storm {
             const_iterator it = this->begin();
             const_iterator ite;
             std::vector<index_type>::const_iterator rowIterator = rowIndications.begin();
-            std::vector<ValueType>::iterator resultIterator = result.begin();
-            std::vector<ValueType>::iterator resultIteratorEnd = result.end();
+            typename std::vector<ValueType>::iterator resultIterator = result.begin();
+            typename std::vector<ValueType>::iterator resultIteratorEnd = result.end();
             
             for (; resultIterator != resultIteratorEnd; ++rowIterator, ++resultIterator) {
                 *resultIterator = storm::utility::constantZero<ValueType>();
@@ -773,8 +773,8 @@ namespace storm {
                                   const_iterator ite;
                                   std::vector<index_type>::const_iterator rowIterator = this->rowIndications.begin() + startRow;
                                   std::vector<index_type>::const_iterator rowIteratorEnd = this->rowIndications.begin() + endRow;
-                                  std::vector<ValueType>::iterator resultIterator = result.begin() + startRow;
-                                  std::vector<ValueType>::iterator resultIteratorEnd = result.begin() + endRow;
+                                  typename std::vector<ValueType>::iterator resultIterator = result.begin() + startRow;
+                                  typename std::vector<ValueType>::iterator resultIteratorEnd = result.begin() + endRow;
                                   
                                   for (; resultIterator != resultIteratorEnd; ++rowIterator, ++resultIterator) {
                                       *resultIterator = storm::utility::constantZero<ValueType>();
