@@ -183,6 +183,36 @@ namespace storm {
 			virtual std::vector<storm::expressions::Expression> getUnsatAssumptions() {
 				throw storm::exceptions::NotImplementedException("This subclass of SmtSolver does not support unsat core generation.");
 			}
+
+			/*!
+			* Sets the current interpolation group. All terms added to the assertion stack after this call will belong to
+			* the set group until the next call to this function.
+			*
+			* @param group the interpolation group all expressions asserted after this call are assigned
+			*
+			* @throws IllegalFunctionCallException if interpolation is not configured for this solver
+			* @throws NotImplementedException if interpolation is not implemented with this solver class
+			*/
+			virtual void setInterpolationGroup(uint_fast64_t group) {
+				throw storm::exceptions::NotImplementedException("This subclass of SmtSolver does not support interpolation.");
+			}
+
+			/*!
+			* Retrieves an interpolant for a pair (A, B) of formulas. The formula A is the conjunction of all
+			* formulas in the groups listet in the parameter groupsA, the formula B ist the conjunction of all
+			* other asserted formulas. The solver has to be in an UNSAT state.
+			*
+			* @param groupsA the interpolation groups whose conjunctions make up the formula A
+			*
+			* @returns the interpolant for (A, B), i.e. an expression I that is implied by A but the conjunction of I and B is inconsistent.
+			*
+			* @throws InvalidStateException if no unsat assumptions is available, i.e. the asserted formulas are consistent
+			* @throws IllegalFunctionCallException if unsat assumptions generation is not configured for this solver
+			* @throws NotImplementedException if unsat assumptions generation is not implemented with this solver class
+			*/
+			virtual storm::expressions::Expression getInterpolant(std::vector<uint_fast64_t> groupsA) {
+				throw storm::exceptions::NotImplementedException("This subclass of SmtSolver does not support interpolation.");
+			}
 		};
 	}
 }
