@@ -37,6 +37,7 @@
 #include "src/modelchecker/prctl/CreatePrctlModelChecker.h"
 #include "src/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
+#include "src/modelchecker/reachability/SparseSccModelChecker.h"
 #include "src/solver/GmmxxLinearEquationSolver.h"
 #include "src/solver/NativeLinearEquationSolver.h"
 #include "src/solver/GmmxxNondeterministicLinearEquationSolver.h"
@@ -227,6 +228,12 @@ int main(const int argc, const char* argv[]) {
 			std::chrono::high_resolution_clock::time_point programTranslationEnd = std::chrono::high_resolution_clock::now();
 			std::cout << "Parsing and translating the Symbolic Input took " << std::chrono::duration_cast<std::chrono::milliseconds>(programTranslationEnd - programTranslationStart).count() << " milliseconds." << std::endl;
 
+            storm::modelchecker::reachability::SparseSccModelChecker<double> modelChecker;
+            
+            storm::storage::BitVector trueStates(model->getNumberOfStates(), true);
+            storm::storage::BitVector oneStates = model->getLabeledStates("one");
+            modelChecker.computeReachabilityProbability(*model->as<storm::models::Dtmc<double>>(), trueStates, oneStates);
+            
             if (s->isSet("mincmd")) {
                 if (model->getType() != storm::models::MDP) {
                     LOG4CPLUS_ERROR(logger, "Minimal command counterexample generation is only supported for models of type MDP.");
@@ -258,44 +265,44 @@ int main(const int argc, const char* argv[]) {
 				std::chrono::high_resolution_clock::time_point minCmdEnd = std::chrono::high_resolution_clock::now();
 				std::cout << "Minimal command Counterexample generation took " << std::chrono::duration_cast<std::chrono::milliseconds>(minCmdEnd - minCmdStart).count() << " milliseconds." << std::endl;
             } else if (s->isSet("prctl")) {
-				// Depending on the model type, the appropriate model checking procedure is chosen.
-				storm::modelchecker::prctl::AbstractModelChecker<double>* modelchecker = nullptr;
-                
+//				// Depending on the model type, the appropriate model checking procedure is chosen.
+//				storm::modelchecker::prctl::AbstractModelChecker<double>* modelchecker = nullptr;
+//                
 				// Modelchecking Time Measurement, Start
 				std::chrono::high_resolution_clock::time_point modelcheckingStart = std::chrono::high_resolution_clock::now();
-
-				switch (model->getType()) {
-                    case storm::models::DTMC:
-                        LOG4CPLUS_INFO(logger, "Model is a DTMC.");
-                        modelchecker = createPrctlModelChecker(*model->as<storm::models::Dtmc<double>>());
-                        checkPrctlFormulae(*modelchecker);
-                        break;
-                    case storm::models::MDP:
-                        LOG4CPLUS_INFO(logger, "Model is an MDP.");
-                        modelchecker = createPrctlModelChecker(*model->as<storm::models::Mdp<double>>());
-                        checkPrctlFormulae(*modelchecker);
-                        break;
-                    case storm::models::CTMC:
-                        LOG4CPLUS_INFO(logger, "Model is a CTMC.");
-                        LOG4CPLUS_ERROR(logger, "The selected model type is not supported.");
-                        break;
-                    case storm::models::CTMDP:
-                        LOG4CPLUS_INFO(logger, "Model is a CTMDP.");
-                        LOG4CPLUS_ERROR(logger, "The selected model type is not supported.");
-                        break;
-                    case storm::models::MA:
-                        LOG4CPLUS_INFO(logger, "Model is a Markov automaton.");
-                        break;
-                    case storm::models::Unknown:
-                    default:
-                        LOG4CPLUS_ERROR(logger, "The model type could not be determined correctly.");
-                        break;
-				}
+//
+//				switch (model->getType()) {
+//                    case storm::models::DTMC:
+//                        LOG4CPLUS_INFO(logger, "Model is a DTMC.");
+//                        modelchecker = createPrctlModelChecker(*model->as<storm::models::Dtmc<double>>());
+//                        checkPrctlFormulae(*modelchecker);
+//                        break;
+//                    case storm::models::MDP:
+//                        LOG4CPLUS_INFO(logger, "Model is an MDP.");
+//                        modelchecker = createPrctlModelChecker(*model->as<storm::models::Mdp<double>>());
+//                        checkPrctlFormulae(*modelchecker);
+//                        break;
+//                    case storm::models::CTMC:
+//                        LOG4CPLUS_INFO(logger, "Model is a CTMC.");
+//                        LOG4CPLUS_ERROR(logger, "The selected model type is not supported.");
+//                        break;
+//                    case storm::models::CTMDP:
+//                        LOG4CPLUS_INFO(logger, "Model is a CTMDP.");
+//                        LOG4CPLUS_ERROR(logger, "The selected model type is not supported.");
+//                        break;
+//                    case storm::models::MA:
+//                        LOG4CPLUS_INFO(logger, "Model is a Markov automaton.");
+//                        break;
+//                    case storm::models::Unknown:
+//                    default:
+//                        LOG4CPLUS_ERROR(logger, "The model type could not be determined correctly.");
+//                        break;
+//				}
+//                
+//				if (modelchecker != nullptr) {
+//					delete modelchecker;
+//				}
                 
-				if (modelchecker != nullptr) {
-					delete modelchecker;
-				}
-
 				// Modelchecking Time Measurement, End
 				std::chrono::high_resolution_clock::time_point modelcheckingEnd = std::chrono::high_resolution_clock::now();
 				std::cout << "Running the PRCTL ModelChecker took " << std::chrono::duration_cast<std::chrono::milliseconds>(modelcheckingEnd - modelcheckingStart).count() << " milliseconds." << std::endl;

@@ -53,8 +53,8 @@ TEST(StronglyConnectedComponentDecomposition, AsynchronousLeader) {
     ASSERT_NO_THROW(sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(*mdp, true));
     ASSERT_EQ(127, sccDecomposition.size());
 
-    ASSERT_NO_THROW(sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(*mdp, true));
-    ASSERT_EQ(127, sccDecomposition.size());
+    ASSERT_NO_THROW(sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(*mdp, true, true));
+    ASSERT_EQ(7, sccDecomposition.size());
 
     mdp = nullptr;
 }
