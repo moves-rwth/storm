@@ -50,7 +50,7 @@ namespace storm {
 
 			// Open file.
 			MappedFile file(filename.c_str());
-			char* buf = file.getData();
+			char const* buf = file.getData();
 
 			// Perform first pass, i.e. obtain number of columns, rows and non-zero elements.
 			NondeterministicSparseTransitionParser::FirstPassResult firstPass = NondeterministicSparseTransitionParser::firstPass(file.getData(), isRewardFile, modelInformation);
@@ -92,9 +92,9 @@ namespace storm {
 			LOG4CPLUS_INFO(logger, "Attempting to create matrix of size " << firstPass.choices << " x " << (firstPass.highestStateIndex+1) << " with " << firstPass.numberOfNonzeroEntries << " entries.");
 			storm::storage::SparseMatrixBuilder<double> matrixBuilder;
 			if(!isRewardFile) {
-				matrixBuilder = storm::storage::SparseMatrixBuilder<double>(firstPass.choices, firstPass.highestStateIndex + 1, firstPass.numberOfNonzeroEntries, true, firstPass.highestStateIndex + 1);
+				matrixBuilder = storm::storage::SparseMatrixBuilder<double>(firstPass.choices, firstPass.highestStateIndex + 1, firstPass.numberOfNonzeroEntries, true, true, firstPass.highestStateIndex + 1);
 			} else {
-				matrixBuilder = storm::storage::SparseMatrixBuilder<double>(firstPass.choices, firstPass.highestStateIndex + 1, firstPass.numberOfNonzeroEntries, true, modelInformation.getRowGroupCount());
+				matrixBuilder = storm::storage::SparseMatrixBuilder<double>(firstPass.choices, firstPass.highestStateIndex + 1, firstPass.numberOfNonzeroEntries, true, true, modelInformation.getRowGroupCount());
 			}
 
 			// Initialize variables for the parsing run.
@@ -179,7 +179,7 @@ namespace storm {
 			// Since we assume the transition rewards are for the transitions of the model, we copy the rowGroupIndices.
 			if(isRewardFile) {
 				// We already have rowGroup 0.
-				for(uint_fast64_t index = 1; index < modelInformation.getRowGroupIndices().size(); index++) {
+				for(uint_fast64_t index = 1; index < modelInformation.getRowGroupIndices().size() - 1; index++) {
 					matrixBuilder.newRowGroup(modelInformation.getRowGroupIndices()[index]);
 				}
 			} else {
@@ -200,7 +200,7 @@ namespace storm {
 			return resultMatrix;
 		}
 
-		NondeterministicSparseTransitionParser::FirstPassResult NondeterministicSparseTransitionParser::firstPass(char* buf, bool isRewardFile, storm::storage::SparseMatrix<double> const & modelInformation) {
+		NondeterministicSparseTransitionParser::FirstPassResult NondeterministicSparseTransitionParser::firstPass(char const* buf, bool isRewardFile, storm::storage::SparseMatrix<double> const & modelInformation) {
 
 			// Check file header and extract number of transitions.
 

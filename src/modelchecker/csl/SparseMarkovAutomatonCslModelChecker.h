@@ -347,7 +347,7 @@ namespace storm {
 
                     // Finally, we are ready to create the SSP matrix and right-hand side of the SSP.
                     std::vector<ValueType> b;
-                    typename storm::storage::SparseMatrixBuilder<ValueType> sspMatrixBuilder(0, 0, 0, true, numberOfStatesNotInMecs + mecDecomposition.size());
+                    typename storm::storage::SparseMatrixBuilder<ValueType> sspMatrixBuilder(0, 0, 0, false, true, numberOfStatesNotInMecs + mecDecomposition.size());
                     
                     // If the source state is not contained in any MEC, we copy its choices (and perform the necessary modifications).
                     uint_fast64_t currentChoice = 0;

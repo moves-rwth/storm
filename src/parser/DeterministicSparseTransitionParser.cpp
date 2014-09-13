@@ -53,7 +53,7 @@ namespace storm {
 
 				// Open file.
 				MappedFile file(filename.c_str());
-				char* buf = file.getData();
+				char const* buf = file.getData();
 
 				// Perform first pass, i.e. count entries that are not zero.
 				bool insertDiagonalEntriesIfMissing = !isRewardFile;
@@ -115,6 +115,23 @@ namespace storm {
 						buf = trimWhitespaces(buf);
 					}
 				} else {
+                    // Read first row and add self-loops if necessary.
+                    char const* tmp;
+                    row = checked_strtol(buf, &tmp);
+                    
+                    if (row > 0) {
+                        for (uint_fast64_t skippedRow = 0; skippedRow < row; ++skippedRow) {
+                            hadDeadlocks = true;
+                            if (fixDeadlocks) {
+                                resultMatrix.addNextValue(skippedRow, skippedRow, storm::utility::constantOne<double>());
+                                LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << skippedRow << " has no outgoing transitions. A self-loop was inserted.");
+                            } else {
+                                LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": state " << skippedRow << " has no outgoing transitions.");
+                                // Before throwing the appropriate exception we will give notice of all deadlock states.
+                            }
+                        }
+                    }
+                    
 					while (buf[0] != '\0') {
 
 						// Read next transition.
@@ -139,7 +156,6 @@ namespace storm {
 								hadDeadlocks = true;
 								if (fixDeadlocks) {
 									resultMatrix.addNextValue(skippedRow, skippedRow, storm::utility::constantOne<double>());
-									rowHadDiagonalEntry = true;
 									LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << skippedRow << " has no outgoing transitions. A self-loop was inserted.");
 								} else {
 									LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": state " << skippedRow << " has no outgoing transitions.");
@@ -193,7 +209,7 @@ namespace storm {
 				return result;
 		}
 
-		DeterministicSparseTransitionParser::FirstPassResult DeterministicSparseTransitionParser::firstPass(char* buf, bool insertDiagonalEntriesIfMissing) {
+		DeterministicSparseTransitionParser::FirstPassResult DeterministicSparseTransitionParser::firstPass(char const* buf, bool insertDiagonalEntriesIfMissing) {
 
 			DeterministicSparseTransitionParser::FirstPassResult result;
 
@@ -207,6 +223,16 @@ namespace storm {
 			 // Check all transitions for non-zero diagonal entries and deadlock states.
 			uint_fast64_t row, col, lastRow = 0, lastCol = -1;
 			bool rowHadDiagonalEntry = false;
+            
+            // Read first row and reserve space for self-loops if necessary.
+            char const* tmp;
+            row = checked_strtol(buf, &tmp);
+            if (row > 0) {
+                for (uint_fast64_t skippedRow = 0; skippedRow < row; ++skippedRow) {
+                    ++result.numberOfNonzeroEntries;
+                }
+            }
+            
 			while (buf[0] != '\0') {
 
 				// Read the transition.

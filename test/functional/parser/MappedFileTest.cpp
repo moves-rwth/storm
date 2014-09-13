@@ -23,8 +23,8 @@ TEST(MappedFileTest, BasicFunctionality) {
 	// Open a file and test if the content is loaded as expected.
 	storm::parser::MappedFile file(STORM_CPP_TESTS_BASE_PATH "/functional/parser/testStringFile.txt");
 	std::string testString = "This is a test string.";
-	char * dataPtr = file.getData();
-	for(char const * testStringPtr = testString.c_str(); testStringPtr - testString.c_str() < 22; testStringPtr++) {
+	char const* dataPtr = file.getData();
+	for(char const* testStringPtr = testString.c_str(); testStringPtr - testString.c_str() < 22; testStringPtr++) {
 		ASSERT_EQ(*testStringPtr, *dataPtr);
 		dataPtr++;
 	}

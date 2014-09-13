@@ -42,15 +42,15 @@ namespace storm {
 				LOG4CPLUS_ERROR(logger, "Error in open(" << filename << "): Probably, we may not read this file.");
 				throw exceptions::FileIoException() << "MappedFile Error in open(): Probably, we may not read this file.";
 			}
-
-			this->data = reinterpret_cast<char*>(mmap(NULL, this->st.st_size, PROT_READ, MAP_PRIVATE, this->file, 0));
-			if (this->data == reinterpret_cast<char*>(-1)) {
+            
+			this->data = static_cast<char*>(mmap(NULL, this->st.st_size, PROT_READ, MAP_PRIVATE, this->file, 0));
+			if (this->data == MAP_FAILED) {
 				close(this->file);
 				LOG4CPLUS_ERROR(logger, "Error in mmap(" << filename << "): " << std::strerror(errno));
 				throw exceptions::FileIoException() << "MappedFile Error in mmap(): " << std::strerror(errno);
 			}
 			this->dataEnd = this->data + this->st.st_size;
-		#elif defined WINDOWS
+        #elif defined WINDOWS
 
 			// Do file mapping for windows.
 			// _stat64(), CreateFile(), CreateFileMapping(), MapViewOfFile()
@@ -100,13 +100,17 @@ namespace storm {
 			return fin.good();
 		}
 
-		char* MappedFile::getData() {
+		char const* MappedFile::getData() const {
 			return data;
 		}
 
-		char* MappedFile::getDataEnd() {
+		char const* MappedFile::getDataEnd() const {
 			return dataEnd;
 		}
+            
+        std::size_t MappedFile::getDataSize() const {
+            return this->getDataEnd() - this->getData();
+        }
 
 	} // namespace parser
 } // namespace storm

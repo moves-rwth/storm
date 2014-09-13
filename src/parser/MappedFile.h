@@ -8,6 +8,7 @@
 #ifndef STORM_PARSER_MAPPEDFILE_H_
 #define STORM_PARSER_MAPPEDFILE_H_
 
+#include <cstddef>
 #include <sys/stat.h>
 
 #include "src/utility/OsDetection.h"
@@ -61,15 +62,20 @@ namespace storm {
 			 *
 			 * @return A pointer to the first character of the mapped file data.
 			 */
-			char* getData();
+			char const* getData() const;
 
 			/*!
 			 * Returns a pointer to the end of the mapped file data.
 			 *
 			 * @return A pointer to the first position after the last character of the mapped file data.
 			 */
-			char* getDataEnd();
+			char const* getDataEnd() const;
 
+            /*!
+             * Returns the size of the mapped file data.
+             */
+            std::size_t getDataSize() const;
+            
 		private:
 
 			//! A pointer to the mapped file content.

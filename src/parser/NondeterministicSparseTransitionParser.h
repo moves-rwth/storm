@@ -74,7 +74,7 @@ namespace storm {
 			 * @param insertDiagonalEntriesIfMissing A flag set iff entries on the primary diagonal of the matrix should be added in case they are missing in the parsed file.
 			 * @return A structure representing the result of the first pass.
 			 */
-			static FirstPassResult firstPass(char* buffer, bool isRewardFile, storm::storage::SparseMatrix<double> const & modelInformation);
+			static FirstPassResult firstPass(char const* buffer, bool isRewardFile, storm::storage::SparseMatrix<double> const & modelInformation);
 
 			/*!
 			 * The main parsing routine.
