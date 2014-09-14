@@ -33,11 +33,41 @@ namespace storm {
         namespace graph {
             
             /*!
-             * Performs a backwards breadt-first search trough the underlying graph structure
+             * Performs a forward depth-first search through the underlying graph structure to identify the states that
+             * are reachable from the given set only passing through a constrained set of states until some target
+             * have been reached.
+             *
+             * @param transitionMatrix The transition relation of the graph structure to search.
+             * @param initialStates The set of states from which to start the search.
+             * @param constraintStates The set of states that must not be left.
+             * @param targetStates The target states that may not be passed.
+             */
+            template<typename T>
+            storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates) {
+                storm::storage::BitVector reachableStates(initialStates);
+                storm::storage::BitVector visitedStates(initialStates);
+                
+                // Initialize the stack used for the DFS with the states.
+                std::vector<uint_fast64_t> stack(initialStates.begin(), initialStates.end());
+                
+                // Perform the actual DFS.
+                uint_fast64_t currentState = 0;
+                while (!stack.empty()) {
+                    currentState = stack.back();
+                    stack.pop_back();
+                    
+                    // TODO: actually search
+                }
+                
+                return reachableStates;
+            }
+            
+            /*!
+             * Performs a backward depth-first search trough the underlying graph structure
              * of the given model to determine which states of the model have a positive probability
              * of satisfying phi until psi. The resulting states are written to the given bit vector.
              *
-             * @param model The model whose graph structure to search.
+             * @param backwardTransitions The reversed transition relation of the graph structure to search.
              * @param phiStates A bit vector of all states satisfying phi.
              * @param psiStates A bit vector of all states satisfying psi.
              * @param useStepBound A flag that indicates whether or not to use the given number of maximal steps for the search.
@@ -45,9 +75,10 @@ namespace storm {
              * @return A bit vector with all indices of states that have a probability greater than 0.
              */
             template <typename T>
-            storm::storage::BitVector performProbGreater0(storm::models::AbstractDeterministicModel<T> const& model, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool useStepBound = false, uint_fast64_t maximalSteps = 0) {
+            storm::storage::BitVector performProbGreater0(storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool useStepBound = false, uint_fast64_t maximalSteps = 0) {
                 // Prepare the resulting bit vector.
-                storm::storage::BitVector statesWithProbabilityGreater0(model.getNumberOfStates());
+                uint_fast64_t numberOfStates = phiStates.size();
+                storm::storage::BitVector statesWithProbabilityGreater0(numberOfStates);
                 
                 // Add all psi states as the already satisfy the condition.
                 statesWithProbabilityGreater0 |= psiStates;
@@ -59,9 +90,9 @@ namespace storm {
                 std::vector<uint_fast64_t> stepStack;
                 std::vector<uint_fast64_t> remainingSteps;
                 if (useStepBound) {
-                    stepStack.reserve(model.getNumberOfStates());
+                    stepStack.reserve(numberOfStates);
                     stepStack.insert(stepStack.begin(), psiStates.getNumberOfSetBits(), maximalSteps);
-                    remainingSteps.resize(model.getNumberOfStates());
+                    remainingSteps.resize(numberOfStates);
                     for (auto state : psiStates) {
                         remainingSteps[state] = maximalSteps;
                     }
@@ -106,7 +137,7 @@ namespace storm {
              * characterizes the states that possess at least one path to a target state.
              * The results are written to the given bit vector.
              *
-             * @param model The model whose graph structure to search.
+             * @param backwardTransitions The reversed transition relation of the graph structure to search.
              * @param phiStates A bit vector of all states satisfying phi.
              * @param psiStates A bit vector of all states satisfying psi.
              * @param statesWithProbabilityGreater0 A reference to a bit vector of states that possess a positive
@@ -114,8 +145,8 @@ namespace storm {
              * @return A bit vector with all indices of states that have a probability greater than 1.
              */
             template <typename T>
-            storm::storage::BitVector performProb1(storm::models::AbstractDeterministicModel<T> const& model, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector const& statesWithProbabilityGreater0) {
-                storm::storage::BitVector statesWithProbability1 = performProbGreater0(model, backwardTransitions, ~psiStates, ~statesWithProbabilityGreater0);
+            storm::storage::BitVector performProb1(storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector const& statesWithProbabilityGreater0) {
+                storm::storage::BitVector statesWithProbability1 = performProbGreater0(backwardTransitions, ~psiStates, ~statesWithProbabilityGreater0);
                 statesWithProbability1.complement();
                 return statesWithProbability1;
             }
@@ -127,15 +158,15 @@ namespace storm {
              * characterizes the states that possess at least one path to a target state.
              * The results are written to the given bit vector.
              *
-             * @param model The model whose graph structure to search.
+             * @param backwardTransitions The reversed transition relation of the graph structure to search.
              * @param phiStates A bit vector of all states satisfying phi.
              * @param psiStates A bit vector of all states satisfying psi.
              * @return A bit vector with all indices of states that have a probability greater than 1.
              */
             template <typename T>
-            storm::storage::BitVector performProb1(storm::models::AbstractDeterministicModel<T> const& model, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
-                storm::storage::BitVector statesWithProbabilityGreater0 = performProbGreater0(model, backwardTransitions, phiStates, psiStates);
-                storm::storage::BitVector statesWithProbability1 = performProbGreater0(model, backwardTransitions, ~psiStates, ~(statesWithProbabilityGreater0));
+            storm::storage::BitVector performProb1(storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
+                storm::storage::BitVector statesWithProbabilityGreater0 = performProbGreater0(backwardTransitions, phiStates, psiStates);
+                storm::storage::BitVector statesWithProbability1 = performProbGreater0(backwardTransitions, ~psiStates, ~(statesWithProbabilityGreater0));
                 statesWithProbability1.complement();
                 return statesWithProbability1;
             }

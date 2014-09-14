@@ -232,7 +232,8 @@ int main(const int argc, const char* argv[]) {
             
             storm::storage::BitVector trueStates(model->getNumberOfStates(), true);
             storm::storage::BitVector oneStates = model->getLabeledStates("one");
-            modelChecker.computeReachabilityProbability(*model->as<storm::models::Dtmc<double>>(), trueStates, oneStates);
+            double value = modelChecker.computeReachabilityProbability(*model->as<storm::models::Dtmc<double>>(), trueStates, oneStates);
+            std::cout << "computed value " << value << std::endl;
             
             if (s->isSet("mincmd")) {
                 if (model->getType() != storm::models::MDP) {
