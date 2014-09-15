@@ -55,7 +55,7 @@ namespace storm {
                     currentState = stack.back();
                     stack.pop_back();
                     
-                    for (auto const& successor : transitionMatrix.begin(currentState)) {
+                    for (auto const& successor : transitionMatrix.getRow(currentState)) {
                         // Only explore the state if the transition was actually there and the successor has not yet
                         // been visited.
                         if (successor.getValue() > storm::utility::constantZero<T>() && !reachableStates.get(successor.getColumn())) {
@@ -198,8 +198,8 @@ namespace storm {
             static std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01(storm::models::AbstractDeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
                 std::pair<storm::storage::BitVector, storm::storage::BitVector> result;
                 storm::storage::SparseMatrix<T> backwardTransitions = model.getBackwardTransitions();
-                result.first = performProbGreater0(model, backwardTransitions, phiStates, psiStates);
-                result.second = performProb1(model, backwardTransitions, phiStates, psiStates, result.first);
+                result.first = performProbGreater0(backwardTransitions, phiStates, psiStates);
+                result.second = performProb1(backwardTransitions, phiStates, psiStates, result.first);
                 result.first.complement();
                 return result;
             }

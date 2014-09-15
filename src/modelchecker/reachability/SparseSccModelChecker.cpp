@@ -1,4 +1,7 @@
 #include "src/modelchecker/reachability/SparseSccModelChecker.h"
+
+#include <algorithm>
+
 #include "src/storage/StronglyConnectedComponentDecomposition.h"
 #include "src/utility/graph.h"
 #include "src/exceptions/ExceptionMacros.h"
@@ -40,17 +43,17 @@ namespace storm {
                 std::vector<ValueType> oneStepProbabilities = dtmc.getTransitionMatrix().getConstrainedRowSumVector(maybeStates, statesWithProbability1);
                 
                 // Then, we recursively treat all SCCs.
-                treatScc(dtmc, flexibleMatrix, dtmc.getInitialStates(), maybeStates, statesWithProbability1, dtmc.getBackwardTransitions(), false, 0);
+                treatScc(dtmc, flexibleMatrix, oneStepProbabilities, dtmc.getInitialStates(), maybeStates, statesWithProbability1, dtmc.getBackwardTransitions(), false, 0);
                 
                 // Now, we return the value for the only initial state.
-                return flexibleMatrix.getRow(initialStateIndex)[0].getValue();
+                return oneStepProbabilities[initialStateIndex];
             }
             
             template<typename ValueType>
-            void SparseSccModelChecker<ValueType>::treatScc(storm::models::Dtmc<ValueType> const& dtmc, FlexibleSparseMatrix<ValueType>& matrix, storm::storage::BitVector const& entryStates, storm::storage::BitVector const& scc, storm::storage::BitVector const& targetStates, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, bool eliminateEntryStates, uint_fast64_t level) {
+            void SparseSccModelChecker<ValueType>::treatScc(storm::models::Dtmc<ValueType> const& dtmc, FlexibleSparseMatrix<ValueType>& matrix, std::vector<ValueType>& oneStepProbabilities, storm::storage::BitVector const& entryStates, storm::storage::BitVector const& scc, storm::storage::BitVector const& targetStates, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, bool eliminateEntryStates, uint_fast64_t level) {
                 if (level <= 2) {
                     // Here, we further decompose the SCC into sub-SCCs.
-                    storm::storage::StronglyConnectedComponentDecomposition<ValueType> decomposition(dtmc, scc, true, false);
+                    storm::storage::StronglyConnectedComponentDecomposition<ValueType> decomposition(dtmc, scc & ~entryStates, true, false);
 
                     // To eliminate the remaining one-state SCCs, we need to keep track of them.
                     storm::storage::BitVector remainingStates(scc);
@@ -78,7 +81,7 @@ namespace storm {
                         }
                         
                         // Recursively descend in SCC-hierarchy.
-                        treatScc(dtmc, matrix, entryStates, scc, targetStates, backwardTransitions, true, level + 1);
+                        treatScc(dtmc, matrix, oneStepProbabilities, entryStates, scc, targetStates, backwardTransitions, true, level + 1);
                     }
                     
                     // If we are not supposed to eliminate the entry states, we need to take them out of the set of
@@ -91,12 +94,61 @@ namespace storm {
                     // Therefore, we need to eliminate all states.
                     for (auto const& state : remainingStates) {
                         if (!targetStates.get(state)) {
-                            eliminateState(matrix, state, backwardTransitions);
+                            eliminateState(matrix, oneStepProbabilities, state, backwardTransitions);
                         }
                     }
                 } else {
                     // In this case, we perform simple state elimination in the current SCC.
+                    storm::storage::BitVector remainingStates(scc);
+
+                    // If we are not supposed to eliminate the entry states, we need to take them out of the set of
+                    // remaining states.
+                    if (!eliminateEntryStates) {
+                        remainingStates &= ~entryStates;
+                    }
                     
+                    // Eliminate the remaining states.
+                    for (auto const& state : remainingStates) {
+                        if (!targetStates.get(state)) {
+                            eliminateState(matrix, oneStepProbabilities, state, backwardTransitions);
+                        }
+                    }
+                }
+            }
+            
+            template<typename ValueType>
+            void SparseSccModelChecker<ValueType>::eliminateState(FlexibleSparseMatrix<ValueType>& matrix, std::vector<ValueType>& oneStepProbabilities, uint_fast64_t state, storm::storage::SparseMatrix<ValueType> const& backwardTransitions) {
+
+                ValueType loopProbability = storm::utility::constantZero<ValueType>();
+                for (auto const& entry : matrix.getRow(state)) {
+                    if (entry.getColumn() == state) {
+                        loopProbability = entry.getValue();
+                        break;
+                    }
+                }
+                
+                // Scale all entries in this row with (1 / (1 - loopProbability)).
+                loopProbability = 1 / (1 - loopProbability);
+                for (auto& entry : matrix.getRow(state)) {
+                    entry.setValue(entry.getValue() * loopProbability);
+                }
+                oneStepProbabilities[state] *= loopProbability;
+                
+                // Now connect the predecessors of the state to eliminate with its successors.
+                std::size_t newEntries = matrix.getRow(state).size();
+                for (auto const& predecessorEntry : backwardTransitions.getRow(state)) {
+                    // First, add all entries of the successor to the list of outgoing transitions of the predecessor.
+                    typename FlexibleSparseMatrix<ValueType>::row_type row = matrix.getRow(predecessorEntry.getColumn());
+                    row.reserve(row.size() + newEntries);
+                    row.insert(row.end(), matrix.getRow(state).begin(), matrix.getRow(state).end());
+                    
+                    // Then sort the vector according to their column indices.
+                    std::sort(row.begin(), row.end(), [](storm::storage::MatrixEntry<typename FlexibleSparseMatrix<ValueType>::index_type, typename FlexibleSparseMatrix<ValueType>::value_type> const& a, storm::storage::MatrixEntry<typename FlexibleSparseMatrix<ValueType>::index_type, typename FlexibleSparseMatrix<ValueType>::value_type> const& b){ return a.getColumn() < b.getColumn(); });
+                    
+                    // Now we can eliminate entries with the same column by simple addition.
+                    for () {
+                        // TODO
+                    }
                 }
             }
             
