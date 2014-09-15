@@ -77,7 +77,7 @@ namespace storm {
 
             // After we obtained the state-to-SCC mapping, we build the actual blocks.
             this->blocks.resize(sccCount);
-            for (uint_fast64_t state = 0; state < numberOfStates; ++state) {
+            for (auto state : subsystem) {
                 this->blocks[stateToSccMapping[state]].insert(state);
             }
             
