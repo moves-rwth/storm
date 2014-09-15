@@ -58,7 +58,7 @@ namespace storm {
                 if (level <= 2) {
                     std::cout << "1" << std::endl;
                     // Here, we further decompose the SCC into sub-SCCs.
-                    storm::storage::StronglyConnectedComponentDecomposition<ValueType> decomposition(dtmc, scc & ~entryStates, true, false);
+                    storm::storage::StronglyConnectedComponentDecomposition<ValueType> decomposition(forwardTransitions, scc & ~entryStates, true, false);
                     std::cout << decomposition << std::endl;
 
                     // To eliminate the remaining one-state SCCs, we need to keep track of them.
@@ -147,13 +147,17 @@ namespace storm {
                     typename FlexibleSparseMatrix<ValueType>::row_type row = matrix.getRow(predecessorEntry.getColumn());
                     typename FlexibleSparseMatrix<ValueType>::row_type::iterator multiplyElement = std::find_if(row.begin(), row.end(), [=](storm::storage::MatrixEntry<typename FlexibleSparseMatrix<ValueType>::index_type, typename FlexibleSparseMatrix<ValueType>::value_type> const& a) { return a.getColumn() == state; });
                     
+                    ValueType multiplyFactor = storm::utility::constantOne<ValueType>();
+                    if (multiplyElement != row.end()) {
+                        // Remove the transition to the state that is to be eliminated.
+                        multiplyElement->setValue(0);
+                        multiplyFactor = multiplyElement->getValue();
+                    }
+                    
                     // Now scale all the entries in the current row and insert them in the transitions of the predecessor.
                     row.reserve(row.size() + newEntries);
-                    std::for_each(matrix.getRow(state).begin(), matrix.getRow(state).end(), [&] (storm::storage::MatrixEntry<typename FlexibleSparseMatrix<ValueType>::index_type, typename FlexibleSparseMatrix<ValueType>::value_type> const& a) { row.emplace_back(a.getColumn(), multiplyElement->getValue() * a.getValue()); });
+                    std::for_each(matrix.getRow(state).begin(), matrix.getRow(state).end(), [&] (storm::storage::MatrixEntry<typename FlexibleSparseMatrix<ValueType>::index_type, typename FlexibleSparseMatrix<ValueType>::value_type> const& a) { row.emplace_back(a.getColumn(), multiplyFactor * a.getValue()); });
 
-                    // Remove the transition to the state that is to be eliminated.
-                    multiplyElement->setValue(0);
-                    
                     // Then sort the vector according to their column indices.
                     std::sort(row.begin(), row.end(), [](storm::storage::MatrixEntry<typename FlexibleSparseMatrix<ValueType>::index_type, typename FlexibleSparseMatrix<ValueType>::value_type> const& a, storm::storage::MatrixEntry<typename FlexibleSparseMatrix<ValueType>::index_type, typename FlexibleSparseMatrix<ValueType>::value_type> const& b){ return a.getColumn() < b.getColumn(); });
                     
