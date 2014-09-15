@@ -144,46 +144,41 @@ namespace storm {
             std::vector<uint_fast64_t> recursionStateStack;
             recursionStateStack.reserve(model.getNumberOfStates());
             recursionStateStack.push_back(startState);
-            std::vector<typename storm::storage::SparseMatrix<ValueType>::const_iterator> recursionIteratorStack;
-            recursionIteratorStack.push_back(model.getRows(startState).begin());
 
             while (!recursionStateStack.empty()) {
+                // Peek at the topmost state in the stack, but leave it on there for now.
                 uint_fast64_t currentState = recursionStateStack.back();
-                typename storm::storage::SparseMatrix<ValueType>::const_iterator& successorIt = recursionIteratorStack.back();
 
+                // If the state has not yet been seen, we need to assign it a preorder number and iterate over its successors.
                 if (!hasPreorderNumber.get(currentState)) {
                     preorderNumbers[currentState] = currentIndex++;
                     hasPreorderNumber.set(currentState, true);
                 
                     s.push_back(currentState);
                     p.push_back(currentState);
-                }
                 
-                bool recursionStepIn = false;
-                for (; successorIt != model.getRows(currentState).end(); ++successorIt) {
-                    if (subsystem.get(successorIt->getColumn()) && successorIt->getValue() != storm::utility::constantZero<ValueType>()) {
-                        if (currentState == successorIt->getColumn()) {
-                            statesWithSelfLoop.set(currentState);
-                        }
-                        
-                        if (!hasPreorderNumber.get(successorIt->getColumn())) {
-                            // In this case, we must recursively visit the successor. We therefore push the state onto the recursion stack an break the for-loop.
-                            recursionStateStack.push_back(successorIt->getColumn());
-                            recursionStepIn = true;
+                    for (auto const& successor : model.getRows(currentState)) {
+                        if (subsystem.get(successor.getColumn()) && successor.getValue() != storm::utility::constantZero<ValueType>()) {
+                            if (currentState == successor.getColumn()) {
+                                statesWithSelfLoop.set(currentState);
+                            }
                             
-                            recursionIteratorStack.push_back(model.getRows(successorIt->getColumn()).begin());
-                            break;
-                        } else {
-                            if (!stateHasScc.get(successorIt->getColumn())) {
-                                while (preorderNumbers[p.back()] > preorderNumbers[successorIt->getColumn()]) {
-                                    p.pop_back();
+                            if (!hasPreorderNumber.get(successor.getColumn())) {
+                                // In this case, we must recursively visit the successor. We therefore push the state
+                                // onto the recursion stack.
+                                recursionStateStack.push_back(successor.getColumn());
+                            } else {
+                                if (!stateHasScc.get(successor.getColumn())) {
+                                    while (preorderNumbers[p.back()] > preorderNumbers[successor.getColumn()]) {
+                                        p.pop_back();
+                                    }
                                 }
                             }
                         }
                     }
-                }
-                
-                if (!recursionStepIn) {
+                } else {
+                    // In this case, we have searched all successors of the current state and can exit the "recursion"
+                    // on the current state.
                     if (currentState == p.back()) {
                         p.pop_back();
                         uint_fast64_t poppedState = 0;
@@ -197,9 +192,7 @@ namespace storm {
                     }
                     
                     recursionStateStack.pop_back();
-                    recursionIteratorStack.pop_back();
                 }
-                recursionStepIn = false;
             }
         }
         

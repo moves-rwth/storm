@@ -1,12 +1,5 @@
-/*
- * Prctl.h
- *
- *  Created on: 06.12.2012
- *      Author: Christian Dehnert
- */
-
-#ifndef STORM_FORMULA_PRCTL_H_
-#define STORM_FORMULA_PRCTL_H_
+#ifndef STORM_PROPERTIES_PRCTL_H_
+#define STORM_PROPERTIES_PRCTL_H_
 
 #include "modelchecker/prctl/ForwardDeclarations.h"
 
@@ -37,4 +30,4 @@
 
 #include "modelchecker/prctl/AbstractModelChecker.h"
 
-#endif /* STORM_FORMULA_PRCTL_H_ */
+#endif /* STORM_PROPERTIES_PRCTL_H_ */
