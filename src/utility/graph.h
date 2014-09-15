@@ -45,7 +45,6 @@ namespace storm {
             template<typename T>
             storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates) {
                 storm::storage::BitVector reachableStates(initialStates);
-                storm::storage::BitVector visitedStates(initialStates);
                 
                 // Initialize the stack used for the DFS with the states.
                 std::vector<uint_fast64_t> stack(initialStates.begin(), initialStates.end());
@@ -56,7 +55,21 @@ namespace storm {
                     currentState = stack.back();
                     stack.pop_back();
                     
-                    // TODO: actually search
+                    for (auto const& successor : transitionMatrix.begin(currentState)) {
+                        // Only explore the state if the transition was actually there and the successor has not yet
+                        // been visited.
+                        if (successor.getValue() > storm::utility::constantZero<T>() && !reachableStates.get(successor.getColumn())) {
+                            // If the successor is one of the target states, we need to include it, but must not explore
+                            // it further.
+                            if (targetStates.get(successor.getColumn())) {
+                                reachableStates.set(successor.getColumn());
+                            } else if (constraintStates.get(successor.getColumn())) {
+                                // However, if the state is in the constrained set of states, we need to follow it.
+                                reachableStates.set(successor.getColumn());
+                                stack.push_back(successor.getColumn());
+                            }
+                        }
+                    }
                 }
                 
                 return reachableStates;

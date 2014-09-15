@@ -13,46 +13,87 @@ namespace storm {
                 LOG_THROW(dtmc.getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::IllegalArgumentException, "Input model is required to have exactly one initial state.");
                 typename FlexibleSparseMatrix<ValueType>::index_type initialStateIndex = *dtmc.getInitialStates().begin();
                 
-                storm::storage::BitVector relevantStates = storm::utility::graph::getReachableStates(dtmc.getTransitionMatrix(), dtmc.getInitialStates(), phiStates, psiStates);
-                
+                // Then, compute the subset of states that has a probability of 0 or 1, respectively.
                 std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(dtmc, phiStates, psiStates);
-                storm::storage::BitVector statesWithProbability0 = std::move(statesWithProbability01.first);
-                storm::storage::BitVector statesWithProbability1 = std::move(statesWithProbability01.second);
+                storm::storage::BitVector statesWithProbability0 = statesWithProbability01.first;
+                storm::storage::BitVector statesWithProbability1 = statesWithProbability01.second;
                 storm::storage::BitVector maybeStates = ~(statesWithProbability0 | statesWithProbability1);
-                
+
                 // If the initial state is known to have either probability 0 or 1, we can directly return the result.
                 if (!maybeStates.get(initialStateIndex)) {
                     return statesWithProbability0.get(initialStateIndex) ? 0 : 1;
                 }
                 
+                // Determine the set of states that is reachable from the initial state without jumping over a target state.
+                storm::storage::BitVector reachableStates = storm::utility::graph::getReachableStates(dtmc.getTransitionMatrix(), dtmc.getInitialStates(), maybeStates, statesWithProbability1);
                 
-                // Otherwise, we build the submatrix that only has maybe states
+                // Subtract from the maybe states the set of states that is not reachable.
+                maybeStates &= reachableStates;
                 
-                submatrix = dtmc.getTransitionMatrix().getSubmatrix(false, maybeStates, maybeStates);
+                // Otherwise, we build the submatrix that only has the transitions of the maybe states.
+                storm::storage::SparseMatrix<ValueType> submatrix = dtmc.getTransitionMatrix().getSubmatrix(false, maybeStates, maybeStates);
                 
                 // Then, we convert the reduced matrix to a more flexible format to be able to perform state elimination more easily.
                 FlexibleSparseMatrix<ValueType> flexibleMatrix = getFlexibleSparseMatrix(dtmc.getTransitionMatrix());
                 
+                // Create a vector for the probabilities to go to a state with probability 1 in one step.
+                std::vector<ValueType> oneStepProbabilities = dtmc.getTransitionMatrix().getConstrainedRowSumVector(maybeStates, statesWithProbability1);
+                
                 // Then, we recursively treat all SCCs.
-                treatScc(dtmc, flexibleMatrix, storm::storage::BitVector(dtmc.getNumberOfStates(), true), 0);
+                treatScc(dtmc, flexibleMatrix, dtmc.getInitialStates(), maybeStates, statesWithProbability1, dtmc.getBackwardTransitions(), false, 0);
                 
                 // Now, we return the value for the only initial state.
                 return flexibleMatrix.getRow(initialStateIndex)[0].getValue();
             }
             
             template<typename ValueType>
-            void SparseSccModelChecker<ValueType>::treatScc(storm::models::Dtmc<ValueType> const& dtmc, FlexibleSparseMatrix<ValueType>& matrix, storm::storage::BitVector const& scc, uint_fast64_t level) {
-                if (level < 2) {
+            void SparseSccModelChecker<ValueType>::treatScc(storm::models::Dtmc<ValueType> const& dtmc, FlexibleSparseMatrix<ValueType>& matrix, storm::storage::BitVector const& entryStates, storm::storage::BitVector const& scc, storm::storage::BitVector const& targetStates, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, bool eliminateEntryStates, uint_fast64_t level) {
+                if (level <= 2) {
                     // Here, we further decompose the SCC into sub-SCCs.
                     storm::storage::StronglyConnectedComponentDecomposition<ValueType> decomposition(dtmc, scc, true, false);
 
+                    // To eliminate the remaining one-state SCCs, we need to keep track of them.
+                    storm::storage::BitVector remainingStates(scc);
+                    
                     // And then recursively treat all sub-SCCs.
                     for (auto const& newScc : decomposition) {
-                        treatScc(dtmc, matrix, scc, level + 1);
+                        // If the SCC consists of just one state, we do not explore it recursively, but rather eliminate
+                        // it directly.
+                        if (newScc.size() == 1) {
+                            continue;
+                        }
+                        
+                        // Rewrite SCC into bit vector and subtract it from the remaining states.
+                        storm::storage::BitVector newSccAsBitVector(dtmc.getNumberOfStates(), newScc.begin(), newScc.end());
+                        remainingStates &= ~newSccAsBitVector;
+                        
+                        // Determine the set of entry states of the SCC.
+                        storm::storage::BitVector entryStates(dtmc.getNumberOfStates());
+                        for (auto const& state : newScc) {
+                            for (auto const& predecessor : backwardTransitions.getRow(state)) {
+                                if (predecessor.getValue() > storm::utility::constantZero<ValueType>() && !newSccAsBitVector.get(predecessor.getColumn())) {
+                                    entryStates.set(state);
+                                }
+                            }
+                        }
+                        
+                        // Recursively descend in SCC-hierarchy.
+                        treatScc(dtmc, matrix, entryStates, scc, targetStates, backwardTransitions, true, level + 1);
                     }
                     
+                    // If we are not supposed to eliminate the entry states, we need to take them out of the set of
+                    // remaining states.
+                    if (!eliminateEntryStates) {
+                        remainingStates &= ~entryStates;
+                    }
                     
-                    
+                    // Now that we eliminated all non-trivial sub-SCCs, we need to take care of trivial sub-SCCs.
+                    // Therefore, we need to eliminate all states.
+                    for (auto const& state : remainingStates) {
+                        if (!targetStates.get(state)) {
+                            eliminateState(matrix, state, backwardTransitions);
+                        }
+                    }
                 } else {
                     // In this case, we perform simple state elimination in the current SCC.
                     

@@ -31,7 +31,7 @@ namespace storm {
                 static ValueType computeReachabilityProbability(storm::models::Dtmc<ValueType> const& dtmc, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
                 
             private:
-                static void treatScc(storm::models::Dtmc<ValueType> const& dtmc, FlexibleSparseMatrix<ValueType>& matrix, storm::storage::BitVector const& scc, uint_fast64_t level);
+                static void treatScc(storm::models::Dtmc<ValueType> const& dtmc, FlexibleSparseMatrix<ValueType>& matrix, storm::storage::BitVector const& entryStates, storm::storage::BitVector const& scc, storm::storage::BitVector const& targetStates, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, bool eliminateEntryStates, uint_fast64_t level);
                 static FlexibleSparseMatrix<ValueType> getFlexibleSparseMatrix(storm::storage::SparseMatrix<ValueType> const& matrix);
             };
         }
