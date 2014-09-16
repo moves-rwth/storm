@@ -102,7 +102,7 @@ int main(const int argc, const char* argv[]) {
 	initializeLogger();
 	setUp();
 
-	try {
+//	try {
 		LOG4CPLUS_INFO(logger, "StoRM was invoked.");
 
 		// Parse options.
@@ -229,10 +229,11 @@ int main(const int argc, const char* argv[]) {
 			std::cout << "Parsing and translating the Symbolic Input took " << std::chrono::duration_cast<std::chrono::milliseconds>(programTranslationEnd - programTranslationStart).count() << " milliseconds." << std::endl;
 
             storm::modelchecker::reachability::SparseSccModelChecker<double> modelChecker;
-            
             storm::storage::BitVector trueStates(model->getNumberOfStates(), true);
-            storm::storage::BitVector oneStates = model->getLabeledStates("one");
-            double value = modelChecker.computeReachabilityProbability(*model->as<storm::models::Dtmc<double>>(), trueStates, oneStates);
+            storm::storage::BitVector targetStates = model->getLabeledStates("observe0Greater1");
+//            storm::storage::BitVector targetStates = model->getLabeledStates("one");
+//            storm::storage::BitVector targetStates = model->getLabeledStates("elected");
+            double value = modelChecker.computeReachabilityProbability(*model->as<storm::models::Dtmc<double>>(), trueStates, targetStates);
             std::cout << "computed value " << value << std::endl;
             
             if (s->isSet("mincmd")) {
@@ -319,9 +320,9 @@ int main(const int argc, const char* argv[]) {
         printUsage();
 		LOG4CPLUS_INFO(logger, "StoRM terminating.");
 		return 0;
-	} catch (std::exception& e) {
-		LOG4CPLUS_FATAL(logger, "An exception was thrown. Terminating.");
-		LOG4CPLUS_FATAL(logger, "\t" << e.what());
-	}
+//	} catch (std::exception& e) {
+//		LOG4CPLUS_FATAL(logger, "An exception was thrown. Terminating.");
+//		LOG4CPLUS_FATAL(logger, "\t" << e.what());
+//	}
 	return 1;
 }
