@@ -27,9 +27,9 @@ TEST(GmmxxLinearEquationSolver, SolveWithStandardOptions) {
     
     storm::solver::GmmxxLinearEquationSolver<double> solver;
     ASSERT_NO_THROW(solver.solveEquationSystem(A, x, b));
-    ASSERT_LT(std::abs(x[0] - 1), storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
-    ASSERT_LT(std::abs(x[1] - 3), storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
-    ASSERT_LT(std::abs(x[2] - (-1)), storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+    ASSERT_LT(std::abs(x[0] - 1), storm::settings::SettingsManager::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+    ASSERT_LT(std::abs(x[1] - 3), storm::settings::SettingsManager::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+    ASSERT_LT(std::abs(x[2] - (-1)), storm::settings::SettingsManager::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 }
 
 TEST(GmmxxLinearEquationSolver, gmres) {
@@ -55,9 +55,9 @@ TEST(GmmxxLinearEquationSolver, gmres) {
     
     storm::solver::GmmxxLinearEquationSolver<double> solver(storm::solver::GmmxxLinearEquationSolver<double>::GMRES, 1e-6, 10000, storm::solver::GmmxxLinearEquationSolver<double>::NONE, true, 50);
     ASSERT_NO_THROW(solver.solveEquationSystem(A, x, b));
-    ASSERT_LT(std::abs(x[0] - 1), storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
-    ASSERT_LT(std::abs(x[1] - 3), storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
-    ASSERT_LT(std::abs(x[2] - (-1)), storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+    ASSERT_LT(std::abs(x[0] - 1), storm::settings::SettingsManager::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+    ASSERT_LT(std::abs(x[1] - 3), storm::settings::SettingsManager::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+    ASSERT_LT(std::abs(x[2] - (-1)), storm::settings::SettingsManager::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 }
 
 TEST(GmmxxLinearEquationSolver, qmr) {
@@ -83,9 +83,9 @@ TEST(GmmxxLinearEquationSolver, qmr) {
     
     storm::solver::GmmxxLinearEquationSolver<double> solver(storm::solver::GmmxxLinearEquationSolver<double>::QMR, 1e-6, 10000, storm::solver::GmmxxLinearEquationSolver<double>::NONE, true, 50);
     ASSERT_NO_THROW(solver.solveEquationSystem(A, x, b));
-    ASSERT_LT(std::abs(x[0] - 1), storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
-    ASSERT_LT(std::abs(x[1] - 3), storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
-    ASSERT_LT(std::abs(x[2] - (-1)), storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+    ASSERT_LT(std::abs(x[0] - 1), storm::settings::SettingsManager::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+    ASSERT_LT(std::abs(x[1] - 3), storm::settings::SettingsManager::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+    ASSERT_LT(std::abs(x[2] - (-1)), storm::settings::SettingsManager::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 }
 
 TEST(GmmxxLinearEquationSolver, bicgstab) {
@@ -111,9 +111,9 @@ TEST(GmmxxLinearEquationSolver, bicgstab) {
     
     storm::solver::GmmxxLinearEquationSolver<double> solver(storm::solver::GmmxxLinearEquationSolver<double>::BICGSTAB, 1e-6, 10000, storm::solver::GmmxxLinearEquationSolver<double>::NONE);
     ASSERT_NO_THROW(solver.solveEquationSystem(A, x, b));
-    ASSERT_LT(std::abs(x[0] - 1), storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
-    ASSERT_LT(std::abs(x[1] - 3), storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
-    ASSERT_LT(std::abs(x[2] - (-1)), storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+    ASSERT_LT(std::abs(x[0] - 1), storm::settings::SettingsManager::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+    ASSERT_LT(std::abs(x[1] - 3), storm::settings::SettingsManager::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+    ASSERT_LT(std::abs(x[2] - (-1)), storm::settings::SettingsManager::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 }
 
 TEST(GmmxxLinearEquationSolver, jacobi) {
@@ -139,9 +139,9 @@ TEST(GmmxxLinearEquationSolver, jacobi) {
     
     storm::solver::GmmxxLinearEquationSolver<double> solver(storm::solver::GmmxxLinearEquationSolver<double>::JACOBI, 1e-6, 10000, storm::solver::GmmxxLinearEquationSolver<double>::NONE);
     ASSERT_NO_THROW(solver.solveEquationSystem(A, x, b));
-    ASSERT_LT(std::abs(x[0] - 1), storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
-    ASSERT_LT(std::abs(x[1] - 3), storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
-    ASSERT_LT(std::abs(x[2] - (-1)), storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+    ASSERT_LT(std::abs(x[0] - 1), storm::settings::SettingsManager::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+    ASSERT_LT(std::abs(x[1] - 3), storm::settings::SettingsManager::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+    ASSERT_LT(std::abs(x[2] - (-1)), storm::settings::SettingsManager::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 }
 
 TEST(GmmxxLinearEquationSolver, gmresilu) {
@@ -167,9 +167,9 @@ TEST(GmmxxLinearEquationSolver, gmresilu) {
     
     storm::solver::GmmxxLinearEquationSolver<double> solver(storm::solver::GmmxxLinearEquationSolver<double>::GMRES, 1e-6, 10000, storm::solver::GmmxxLinearEquationSolver<double>::NONE, true, 50);
     ASSERT_NO_THROW(solver.solveEquationSystem(A, x, b));
-    ASSERT_LT(std::abs(x[0] - 1), storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
-    ASSERT_LT(std::abs(x[1] - 3), storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
-    ASSERT_LT(std::abs(x[2] - (-1)), storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+    ASSERT_LT(std::abs(x[0] - 1), storm::settings::SettingsManager::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+    ASSERT_LT(std::abs(x[1] - 3), storm::settings::SettingsManager::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+    ASSERT_LT(std::abs(x[2] - (-1)), storm::settings::SettingsManager::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 }
 
 TEST(GmmxxLinearEquationSolver, gmresdiag) {
@@ -195,9 +195,9 @@ TEST(GmmxxLinearEquationSolver, gmresdiag) {
     
     storm::solver::GmmxxLinearEquationSolver<double> solver(storm::solver::GmmxxLinearEquationSolver<double>::GMRES, 1e-6, 10000, storm::solver::GmmxxLinearEquationSolver<double>::NONE, true, 50);
     ASSERT_NO_THROW(solver.solveEquationSystem(A, x, b));
-    ASSERT_LT(std::abs(x[0] - 1), storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
-    ASSERT_LT(std::abs(x[1] - 3), storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
-    ASSERT_LT(std::abs(x[2] - (-1)), storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+    ASSERT_LT(std::abs(x[0] - 1), storm::settings::SettingsManager::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+    ASSERT_LT(std::abs(x[1] - 3), storm::settings::SettingsManager::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+    ASSERT_LT(std::abs(x[2] - (-1)), storm::settings::SettingsManager::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 }
 
 TEST(GmmxxLinearEquationSolver, MatrixVectorMultplication) {
@@ -220,5 +220,5 @@ TEST(GmmxxLinearEquationSolver, MatrixVectorMultplication) {
     
     storm::solver::GmmxxLinearEquationSolver<double> solver;
     ASSERT_NO_THROW(solver.performMatrixVectorMultiplication(A, x, nullptr, 4));
-    ASSERT_LT(std::abs(x[0] - 1), storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+    ASSERT_LT(std::abs(x[0] - 1), storm::settings::SettingsManager::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 }

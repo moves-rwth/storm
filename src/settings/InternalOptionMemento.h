@@ -29,7 +29,7 @@ namespace settings {
 			 *
 			 *	@param 
 			 */
-			InternalOptionMemento(std::string const& longOptionName, bool requiredHasBeenSetState): instance(storm::settings::Settings::getInstance()), optionName(longOptionName), stateRequired(requiredHasBeenSetState) {
+			InternalOptionMemento(std::string const& longOptionName, bool requiredHasBeenSetState): instance(storm::settings::SettingsManager::getInstance()), optionName(longOptionName), stateRequired(requiredHasBeenSetState) {
 				this->stateBefore = instance->isSet(optionName);
 				if (stateRequired) {
 					instance->set(optionName);
@@ -56,7 +56,7 @@ namespace settings {
 
 			
 		private:
-			storm::settings::Settings* instance;
+			storm::settings::SettingsManager* instance;
 			std::string const optionName;
 			bool stateBefore;
 			bool stateRequired;

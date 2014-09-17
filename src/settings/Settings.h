@@ -33,10 +33,6 @@ namespace storm {
  *	@brief Contains Settings class and associated methods.
  */
 namespace settings {
-	class Settings;
-
-	typedef std::function<bool (Settings*)> ModuleRegistrationFunction_t;
-
 	typedef bool (*stringValidationFunction_t)(const std::string);
 	typedef bool (*integerValidationFunction_t)(const int_fast64_t);
 	typedef bool (*unsignedIntegerValidationFunction_t)(const uint_fast64_t);
@@ -61,13 +57,8 @@ namespace settings {
 	 *	option modules. An option module can be anything that implements the
 	 *	interface specified by registerModule() and does a static initialization call to this function.
 	 */
-	class Settings {
+	class SettingsManager {
 		public:
-
-			/*!
-			 * This function handles the static initialization registration of modules and their options
-			 */
-			static bool registerNewModule(ModuleRegistrationFunction_t registrationFunction);
 			
 			/*!
 			 * This parses the command line of the application and matches it to all prior registered options
@@ -117,7 +108,7 @@ namespace settings {
 			 * Returns a reference to the settings instance
 			 * @throws OptionUnificationException
 			 */
-			Settings& addOption(Option* option);
+			SettingsManager& addOption(Option* option);
 
 			/*!
 			 * Returns true iff there is an Option with the specified longName and it has been set
@@ -138,7 +129,7 @@ namespace settings {
 			 * This function is the Singleton interface for the Settings class
 			 * @return Settings* A Pointer to the singleton instance of Settings 
 			 */
-			static Settings* getInstance();
+			static SettingsManager* getInstance();
 			friend class Destroyer;
 			friend class InternalOptionMemento;
 		private:
@@ -149,7 +140,7 @@ namespace settings {
 			 *	an instance manually, one should always use the
 			 *	newInstance() method.
 			 */
-			Settings() {
+			SettingsManager() {
 				this->addOption(storm::settings::OptionBuilder("StoRM Main", "help", "h", "Shows all available options, arguments and descriptions.").build());
                 
                 this->addOption(storm::settings::OptionBuilder("StoRM Main", "verbose", "v", "Be verbose.").build());
@@ -302,7 +293,7 @@ namespace settings {
 			 *	This destructor should be private, as noone should be able to destroy a singleton.
 			 *	The object is automatically destroyed when the program terminates by the destroyer.
 			 */
-			virtual ~Settings() {
+			virtual ~SettingsManager() {
 				//
 			}
 
@@ -445,7 +436,7 @@ namespace settings {
 	class Destroyer {
 		public:
 			Destroyer(): settingsInstance(nullptr) {
-				this->settingsInstance = storm::settings::Settings::getInstance();
+				this->settingsInstance = storm::settings::SettingsManager::getInstance();
 			}
 
 			/*!
@@ -462,7 +453,7 @@ namespace settings {
 				}
 			}
 		private:
-			storm::settings::Settings* settingsInstance;
+			storm::settings::SettingsManager* settingsInstance;
 	};
 	
 

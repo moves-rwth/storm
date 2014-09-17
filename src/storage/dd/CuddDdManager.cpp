@@ -10,11 +10,11 @@
 namespace storm {
     namespace dd {
         DdManager<DdType::CUDD>::DdManager() : metaVariableMap(), cuddManager(), reorderingTechnique(CUDD_REORDER_NONE) {
-            this->cuddManager.SetMaxMemory(static_cast<unsigned long>(storm::settings::Settings::getInstance()->getOptionByLongName("cuddmaxmem").getArgument(0).getValueAsUnsignedInteger() * 1024ul * 1024ul));
-            this->cuddManager.SetEpsilon(storm::settings::Settings::getInstance()->getOptionByLongName("cuddprec").getArgument(0).getValueAsDouble());
+            this->cuddManager.SetMaxMemory(static_cast<unsigned long>(storm::settings::SettingsManager::getInstance()->getOptionByLongName("cuddmaxmem").getArgument(0).getValueAsUnsignedInteger() * 1024ul * 1024ul));
+            this->cuddManager.SetEpsilon(storm::settings::SettingsManager::getInstance()->getOptionByLongName("cuddprec").getArgument(0).getValueAsDouble());
             
             // Now set the selected reordering technique.
-            std::string const& reorderingTechnique = storm::settings::Settings::getInstance()->getOptionByLongName("reorder").getArgument(0).getValueAsString();
+            std::string const& reorderingTechnique = storm::settings::SettingsManager::getInstance()->getOptionByLongName("reorder").getArgument(0).getValueAsString();
             if (reorderingTechnique == "none") {
                 this->reorderingTechnique = CUDD_REORDER_NONE;
             } else if (reorderingTechnique == "random") {

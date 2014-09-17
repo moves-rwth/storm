@@ -73,7 +73,7 @@
  * @param modelchecker The model checker that is to be invoked on all given formulae.
  */
 void checkPrctlFormulae(storm::modelchecker::prctl::AbstractModelChecker<double> const& modelchecker) {
-	storm::settings::Settings* s = storm::settings::Settings::getInstance();
+	storm::settings::SettingsManager* s = storm::settings::SettingsManager::getInstance();
 	if (s->isSet("prctl")) {
 		std::string const chosenPrctlFile = s->getOptionByLongName("prctl").getArgument(0).getValueAsString();
 		LOG4CPLUS_INFO(logger, "Parsing prctl file: " << chosenPrctlFile << ".");
@@ -112,7 +112,7 @@ int main(const int argc, const char* argv[]) {
 		}
         
         // If requested by the user, we install a timeout signal to abort computation.
-		storm::settings::Settings* s = storm::settings::Settings::getInstance();
+		storm::settings::SettingsManager* s = storm::settings::SettingsManager::getInstance();
         uint_fast64_t timeout = s->getOptionByLongName("timeout").getArgument(0).getValueAsUnsignedInteger();
         if (timeout != 0) {
 			stormSetAlarm(timeout);

@@ -17,7 +17,7 @@ namespace storm {
         template<typename ValueType>
         NativeLinearEquationSolver<ValueType>::NativeLinearEquationSolver() {
             // Get the settings object to customize linear solving.
-            storm::settings::Settings* settings = storm::settings::Settings::getInstance();
+            storm::settings::SettingsManager* settings = storm::settings::SettingsManager::getInstance();
             
             // Get appropriate settings.
             maximalNumberOfIterations = settings->getOptionByLongName("maxiter").getArgument(0).getValueAsUnsignedInteger();

@@ -298,7 +298,7 @@ private:
 	 */
 	bool checkValidityOfProbabilityMatrix() {
 		// Get the settings object to customize linear solving.
-		storm::settings::Settings* s = storm::settings::Settings::getInstance();
+		storm::settings::SettingsManager* s = storm::settings::SettingsManager::getInstance();
 		double precision = s->getOptionByLongName("precision").getArgument(0).getValueAsDouble();
 
 		if (this->getTransitionMatrix().getRowCount() != this->getTransitionMatrix().getColumnCount()) {

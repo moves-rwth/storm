@@ -8,7 +8,7 @@
 #include "src/parser/AutoParser.h"
 
 TEST(GmmxxDtmcPrctlModelCheckerTest, Die) {
-	storm::settings::Settings* s = storm::settings::Settings::getInstance();
+	storm::settings::SettingsManager* s = storm::settings::SettingsManager::getInstance();
 	storm::settings::InternalOptionMemento deadlockOption("fixDeadlocks", true);
 	ASSERT_TRUE(s->isSet("fixDeadlocks"));
 	std::shared_ptr<storm::models::AbstractModel<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/dtmc/die/die.tra", STORM_CPP_BASE_PATH "/examples/dtmc/die/die.lab", "", STORM_CPP_BASE_PATH "/examples/dtmc/die/die.coin_flips.trans.rew");
@@ -52,7 +52,7 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, Die) {
 }
 
 TEST(GmmxxDtmcPrctlModelCheckerTest, Crowds) {
-	storm::settings::Settings* s = storm::settings::Settings::getInstance();
+	storm::settings::SettingsManager* s = storm::settings::SettingsManager::getInstance();
 	storm::settings::InternalOptionMemento deadlockOption("fixDeadlocks", true);
 	ASSERT_TRUE(s->isSet("fixDeadlocks"));
 	std::shared_ptr<storm::models::AbstractModel<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/dtmc/crowds/crowds5_5.tra", STORM_CPP_BASE_PATH "/examples/dtmc/crowds/crowds5_5.lab", "", "");
@@ -89,7 +89,7 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, Crowds) {
 }
 
 TEST(GmmxxDtmcPrctlModelCheckerTest, SynchronousLeader) {
-	storm::settings::Settings* s = storm::settings::Settings::getInstance();
+	storm::settings::SettingsManager* s = storm::settings::SettingsManager::getInstance();
 	storm::settings::InternalOptionMemento deadlockOption("fixDeadlocks", true);
 	ASSERT_TRUE(s->isSet("fixDeadlocks"));
 	std::shared_ptr<storm::models::AbstractModel<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/dtmc/synchronous_leader/leader4_8.tra", STORM_CPP_BASE_PATH "/examples/dtmc/synchronous_leader/leader4_8.lab", "", STORM_CPP_BASE_PATH "/examples/dtmc/synchronous_leader/leader4_8.pick.trans.rew");

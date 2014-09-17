@@ -34,9 +34,9 @@ void setUpLogging() {
  */
 void createEmptyOptions() {
     const char* newArgv[] = {"storm-performance-tests", "--maxiter", "20000"};
-	storm::settings::Settings* s = storm::settings::Settings::getInstance();
+	storm::settings::SettingsManager* s = storm::settings::SettingsManager::getInstance();
 	try {
-		storm::settings::Settings::parse(3, newArgv);
+		storm::settings::SettingsManager::parse(3, newArgv);
 	} catch (storm::exceptions::OptionParserException& e) {
 		std::cout << "Could not recover from settings error: " << e.what() << "." << std::endl;
 		std::cout << std::endl << s->getHelpText();

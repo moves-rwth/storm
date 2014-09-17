@@ -93,7 +93,7 @@ namespace storm {
 
 				uint_fast64_t row, col, lastRow = 0;
 				double val;
-				bool fixDeadlocks = storm::settings::Settings::getInstance()->isSet("fixDeadlocks");
+				bool fixDeadlocks = storm::settings::SettingsManager::getInstance()->isSet("fixDeadlocks");
 				bool hadDeadlocks = false;
 				bool rowHadDiagonalEntry = false;
 

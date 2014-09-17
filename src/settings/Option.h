@@ -32,12 +32,12 @@ extern log4cplus::Logger logger;
 namespace storm {
 	namespace settings {
 
-		class Settings;
+		class SettingsManager;
 
 		class Option {
 		public:
 
-			friend class storm::settings::Settings;
+			friend class storm::settings::SettingsManager;
 
 			Option(std::string const& moduleName, std::string const& longOptionName, std::string const& shortOptionName, std::string const& optionDescription, bool isOptionRequired)
 				: longName(longOptionName), shortName(shortOptionName), description(optionDescription), moduleName(moduleName), isRequired(isOptionRequired), hasBeenSet(false) {

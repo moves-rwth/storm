@@ -15,7 +15,7 @@ namespace storm {
 		MarkovAutomatonSparseTransitionParser::FirstPassResult MarkovAutomatonSparseTransitionParser::firstPass(char const* buf) {
 			MarkovAutomatonSparseTransitionParser::FirstPassResult result;
 
-			bool fixDeadlocks = storm::settings::Settings::getInstance()->isSet("fixDeadlocks");
+			bool fixDeadlocks = storm::settings::SettingsManager::getInstance()->isSet("fixDeadlocks");
 
 			// Skip the format hint if it is there.
 			buf = trimWhitespaces(buf);
@@ -157,7 +157,7 @@ namespace storm {
 		MarkovAutomatonSparseTransitionParser::Result MarkovAutomatonSparseTransitionParser::secondPass(char const* buf, FirstPassResult const& firstPassResult) {
 			Result result(firstPassResult);
 
-			bool fixDeadlocks = storm::settings::Settings::getInstance()->isSet("fixDeadlocks");
+			bool fixDeadlocks = storm::settings::SettingsManager::getInstance()->isSet("fixDeadlocks");
 
 			// Skip the format hint if it is there.
 			buf = trimWhitespaces(buf);

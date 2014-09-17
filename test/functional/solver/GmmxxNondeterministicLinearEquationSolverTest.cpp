@@ -17,10 +17,10 @@ TEST(GmmxxNondeterministicLinearEquationSolver, SolveWithStandardOptions) {
         
     storm::solver::GmmxxNondeterministicLinearEquationSolver<double> solver;
     ASSERT_NO_THROW(solver.solveEquationSystem(true, A, x, b));
-    ASSERT_LT(std::abs(x[0] - 0.5), storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+    ASSERT_LT(std::abs(x[0] - 0.5), storm::settings::SettingsManager::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
     
     ASSERT_NO_THROW(solver.solveEquationSystem(false, A, x, b));
-    ASSERT_LT(std::abs(x[0] - 0.989991), storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+    ASSERT_LT(std::abs(x[0] - 0.989991), storm::settings::SettingsManager::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 }
 
 TEST(GmmxxNondeterministicLinearEquationSolver, MatrixVectorMultiplication) {
@@ -45,21 +45,21 @@ TEST(GmmxxNondeterministicLinearEquationSolver, MatrixVectorMultiplication) {
     
     storm::solver::GmmxxNondeterministicLinearEquationSolver<double> solver;
     ASSERT_NO_THROW(solver.performMatrixVectorMultiplication(true, A, x, nullptr, 1));
-    ASSERT_LT(std::abs(x[0] - 0.099), storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+    ASSERT_LT(std::abs(x[0] - 0.099), storm::settings::SettingsManager::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
     
     x = {0, 1, 0};
     ASSERT_NO_THROW(solver.performMatrixVectorMultiplication(true, A, x, nullptr, 2));
-    ASSERT_LT(std::abs(x[0] - 0.1881), storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+    ASSERT_LT(std::abs(x[0] - 0.1881), storm::settings::SettingsManager::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
     
     x = {0, 1, 0};
     ASSERT_NO_THROW(solver.performMatrixVectorMultiplication(true, A, x, nullptr, 20));
-    ASSERT_LT(std::abs(x[0] - 0.5), storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+    ASSERT_LT(std::abs(x[0] - 0.5), storm::settings::SettingsManager::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
     
     x = {0, 1, 0};
     ASSERT_NO_THROW(solver.performMatrixVectorMultiplication(false, A, x, nullptr, 1));
-    ASSERT_LT(std::abs(x[0] - 0.5), storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+    ASSERT_LT(std::abs(x[0] - 0.5), storm::settings::SettingsManager::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
     
     x = {0, 1, 0};
     ASSERT_NO_THROW(solver.performMatrixVectorMultiplication(false, A, x, nullptr, 20));
-    ASSERT_LT(std::abs(x[0] - 0.9238082658), storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+    ASSERT_LT(std::abs(x[0] - 0.9238082658), storm::settings::SettingsManager::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
 }

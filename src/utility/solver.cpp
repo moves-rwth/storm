@@ -15,7 +15,7 @@ namespace storm {
     namespace utility {
         namespace solver {
             std::shared_ptr<storm::solver::LpSolver> getLpSolver(std::string const& name) {
-                std::string const& lpSolver = storm::settings::Settings::getInstance()->getOptionByLongName("lpsolver").getArgument(0).getValueAsString();
+                std::string const& lpSolver = storm::settings::SettingsManager::getInstance()->getOptionByLongName("lpsolver").getArgument(0).getValueAsString();
                 if (lpSolver == "gurobi") {
                     return std::shared_ptr<storm::solver::LpSolver>(new storm::solver::GurobiLpSolver(name));
                 } else if (lpSolver == "glpk") {
@@ -27,7 +27,7 @@ namespace storm {
             
             template<typename ValueType>
             std::shared_ptr<storm::solver::LinearEquationSolver<ValueType>> getLinearEquationSolver() {
-                std::string const& linearEquationSolver = storm::settings::Settings::getInstance()->getOptionByLongName("linsolver").getArgument(0).getValueAsString();
+                std::string const& linearEquationSolver = storm::settings::SettingsManager::getInstance()->getOptionByLongName("linsolver").getArgument(0).getValueAsString();
                 if (linearEquationSolver == "gmm++") {
                     return std::shared_ptr<storm::solver::LinearEquationSolver<ValueType>>(new storm::solver::GmmxxLinearEquationSolver<ValueType>());
                 } else if (linearEquationSolver == "native") {
@@ -39,7 +39,7 @@ namespace storm {
             
             template<typename ValueType>
             std::shared_ptr<storm::solver::NondeterministicLinearEquationSolver<ValueType>> getNondeterministicLinearEquationSolver() {
-                std::string const& nondeterministicLinearEquationSolver = storm::settings::Settings::getInstance()->getOptionByLongName("ndsolver").getArgument(0).getValueAsString();
+                std::string const& nondeterministicLinearEquationSolver = storm::settings::SettingsManager::getInstance()->getOptionByLongName("ndsolver").getArgument(0).getValueAsString();
                 if (nondeterministicLinearEquationSolver == "gmm++") {
                     return std::shared_ptr<storm::solver::NondeterministicLinearEquationSolver<ValueType>>(new storm::solver::GmmxxNondeterministicLinearEquationSolver<ValueType>());
                 } else if (nondeterministicLinearEquationSolver == "native") {

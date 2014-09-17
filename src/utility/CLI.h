@@ -127,9 +127,9 @@ void printHeader(const int argc, const char* argv[]) {
  * @return True iff the program should continue to run after parsing the options.
  */
 bool parseOptions(const int argc, const char* argv[]) {
-	storm::settings::Settings* s = storm::settings::Settings::getInstance();
+	storm::settings::SettingsManager* s = storm::settings::SettingsManager::getInstance();
 	try {
-		storm::settings::Settings::parse(argc, argv);
+		storm::settings::SettingsManager::parse(argc, argv);
 	} catch (storm::exceptions::OptionParserException& e) {
 		std::cout << "Could not recover from settings error: " << e.what() << "." << std::endl;
 		std::cout << std::endl << s->getHelpText();
@@ -137,7 +137,7 @@ bool parseOptions(const int argc, const char* argv[]) {
 	}
 
 	if (s->isSet("help")) {
-		std::cout << storm::settings::Settings::getInstance()->getHelpText();
+		std::cout << storm::settings::SettingsManager::getInstance()->getHelpText();
 		return false;
 	}
 

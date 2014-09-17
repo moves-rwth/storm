@@ -15,7 +15,7 @@
  */
 storm::modelchecker::prctl::AbstractModelChecker<double>* createPrctlModelChecker(storm::models::Dtmc<double> const & dtmc) {
     // Create the appropriate model checker.
-	storm::settings::Settings* s = storm::settings::Settings::getInstance();
+	storm::settings::SettingsManager* s = storm::settings::SettingsManager::getInstance();
 	std::string const& linsolver = s->getOptionByLongName("linsolver").getArgument(0).getValueAsString();
 	if (linsolver == "gmm++") {
 		return new storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double>(dtmc, new storm::solver::GmmxxLinearEquationSolver<double>());

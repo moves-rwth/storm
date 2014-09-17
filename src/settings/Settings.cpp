@@ -7,7 +7,7 @@
 #include "src/exceptions/OptionParserException.h"
 
 // Static Inits
-storm::settings::Destroyer storm::settings::Settings::destroyer;
+storm::settings::Destroyer storm::settings::SettingsManager::destroyer;
 
 /*!
  *	@brief	Create new instance.
@@ -19,16 +19,16 @@ storm::settings::Destroyer storm::settings::Settings::destroyer;
  *	@param filename either NULL or name of config file
  *	@return The new instance of Settings.
  */
-void storm::settings::Settings::parse(int const argc, char const * const argv[]) {
-	storm::settings::Settings* myInstance = storm::settings::Settings::getInstance();
+void storm::settings::SettingsManager::parse(int const argc, char const * const argv[]) {
+	storm::settings::SettingsManager* myInstance = storm::settings::SettingsManager::getInstance();
 	myInstance->parseCommandLine(argc, argv);
 }
 
-bool storm::settings::Settings::hasAssignment(std::string const& option) {
+bool storm::settings::SettingsManager::hasAssignment(std::string const& option) {
 	return (option.find_first_of('=', 0) != std::string::npos);
 }
 
-storm::settings::stringPair_t storm::settings::Settings::splitOptionString(std::string const& option) {
+storm::settings::stringPair_t storm::settings::SettingsManager::splitOptionString(std::string const& option) {
 	size_t splitLocation = option.find_first_of('=', 0);
 	if (splitLocation == std::string::npos) {
 		// Second half is empty
@@ -40,7 +40,7 @@ storm::settings::stringPair_t storm::settings::Settings::splitOptionString(std::
 	return std::make_pair(option.substr(0, splitLocation), option.substr(splitLocation + 1, std::string::npos));
 }
 
-void storm::settings::Settings::handleAssignment(std::string const& longOptionName, std::vector<std::string> arguments) {
+void storm::settings::SettingsManager::handleAssignment(std::string const& longOptionName, std::vector<std::string> arguments) {
 	std::string optionName = storm::utility::StringHelper::stringToLower(longOptionName);
 
 	Option* option = this->getPtrByLongName(optionName);
@@ -51,7 +51,7 @@ void storm::settings::Settings::handleAssignment(std::string const& longOptionNa
 	uint_fast64_t givenArgsCount = arguments.size();
 
 	if (givenArgsCount > option->getArgumentCount()) {
-		LOG4CPLUS_ERROR(logger, "Settings::handleAssignment: Unable to parse arguments for option \"" << longOptionName << "\": " << arguments.size() << " arguments given, but expected no more than " << option->getArgumentCount() << ".");
+		LOG4CPLUS_ERROR(logger, "SettingsManager::handleAssignment: Unable to parse arguments for option \"" << longOptionName << "\": " << arguments.size() << " arguments given, but expected no more than " << option->getArgumentCount() << ".");
 		throw storm::exceptions::OptionParserException() << "Unable to parse arguments for option \"" << longOptionName << "\": " << arguments.size() << " arguments given, but expected no more than " << option->getArgumentCount() << ".";
 	}
 
@@ -59,7 +59,7 @@ void storm::settings::Settings::handleAssignment(std::string const& longOptionNa
 		if (i < givenArgsCount) {
 			storm::settings::fromStringAssignmentResult_t assignmentResult = option->getArgument(i).fromStringValue(arguments.at(i));
 			if (!assignmentResult.first) {
-				LOG4CPLUS_ERROR(logger, "Settings::handleAssignment: Unable to parse arguments for option \"" << longOptionName << "\": argument " << option->getArgument(i).getArgumentName() << " rejected the given value \"" << arguments.at(i) << "\" with message:\r\n" << assignmentResult.second << ".");
+				LOG4CPLUS_ERROR(logger, "SettingsManager::handleAssignment: Unable to parse arguments for option \"" << longOptionName << "\": argument " << option->getArgument(i).getArgumentName() << " rejected the given value \"" << arguments.at(i) << "\" with message:\r\n" << assignmentResult.second << ".");
 				throw storm::exceptions::OptionParserException() << "Unable to parse arguments for option \"" << longOptionName << "\": argument " << option->getArgument(i).getArgumentName() << " rejected the given value \"" << arguments.at(i) << "\" with message:\r\n" << assignmentResult.second << ".";
 			}
 		} else {
@@ -74,7 +74,7 @@ void storm::settings::Settings::handleAssignment(std::string const& longOptionNa
 	}
 }
 
-std::vector<std::string> storm::settings::Settings::argvToStringArray(int const argc, char const * const argv[]) {
+std::vector<std::string> storm::settings::SettingsManager::argvToStringArray(int const argc, char const * const argv[]) {
 	// Ignore argv[0], it contains the program path and name
 	std::vector<std::string> result;
 	for (int i = 1; i < argc; ++i) {
@@ -83,7 +83,7 @@ std::vector<std::string> storm::settings::Settings::argvToStringArray(int const 
 	return result;
 }
 
-bool storm::settings::Settings::checkArgumentSyntaxForOption(std::string const& argvString) {
+bool storm::settings::SettingsManager::checkArgumentSyntaxForOption(std::string const& argvString) {
 	if (argvString.size() < 2) {
 		return false;
 	}
@@ -100,7 +100,7 @@ bool storm::settings::Settings::checkArgumentSyntaxForOption(std::string const& 
 	return true;
 }
 
-std::vector<bool> storm::settings::Settings::scanForOptions(std::vector<std::string> const& arguments) {
+std::vector<bool> storm::settings::SettingsManager::scanForOptions(std::vector<std::string> const& arguments) {
 	std::vector<bool> result;
 	result.reserve(arguments.size());
 	for (auto it = arguments.cbegin(); it != arguments.cend(); ++it) {
@@ -109,7 +109,7 @@ std::vector<bool> storm::settings::Settings::scanForOptions(std::vector<std::str
 	return result;
 }
 
-void storm::settings::Settings::parseCommandLine(int const argc, char const * const argv[]) {
+void storm::settings::SettingsManager::parseCommandLine(int const argc, char const * const argv[]) {
 	LOG4CPLUS_DEBUG(logger, "Settings::parseCommandLine: Parsing " << argc << " arguments.");
 	
 	std::vector<std::string> stringArgv = argvToStringArray(argc, argv);
@@ -180,41 +180,15 @@ void storm::settings::Settings::parseCommandLine(int const argc, char const * co
 	}
 }
 
-bool storm::settings::Settings::registerNewModule(ModuleRegistrationFunction_t registrationFunction) {
-	Settings* myInstance = Settings::getInstance();
-	bool result = false;
-	try {
-		result = registrationFunction(myInstance);
-		//LOG4CPLUS_DEBUG(logger, "Settings::registerNewModule: Successfully executed a registrationFunction");
-	} catch (storm::exceptions::IllegalArgumentException e) {
-		//LOG4CPLUS_ERROR(logger, "Settings::registerNewModule: Internal Error while setting up available Options!" << std::endl << "IllegalArgumentException: " << e.what() << ".");
-		std::cout << "Internal Error while setting up available options." << std::endl << "IllegalArgumentException: " << e.what() << "." << std::endl;
-		return false;
-	} catch (storm::exceptions::IllegalArgumentValueException e) {
-		//LOG4CPLUS_ERROR(logger, "Settings::registerNewModule: Internal Error while setting up available Options!" << std::endl << "IllegalArgumentValueException: " << e.what() << ".");
-		std::cout << "Internal Error while setting up available options." << std::endl << "IllegalArgumentValueException: " << e.what() << "." << std::endl;
-		return false;
-	} catch (storm::exceptions::IllegalFunctionCallException e) {
-		//LOG4CPLUS_ERROR(logger, "Settings::registerNewModule: Internal Error while setting up available Options!" << std::endl << "IllegalFunctionCallException: " << e.what() << ".");
-		std::cout << "Internal Error while setting up available options." << std::endl << "IllegalFunctionCallException: " << e.what() << "." << std::endl;
-		return false;
-	} catch (std::exception e) {
-		//LOG4CPLUS_ERROR(logger, "Settings::registerNewModule: Internal Error while setting up available Options!" << std::endl << "std::exception: " << e.what() << ".");
-		std::cout << "Internal Error while setting up available options." << std::endl << "std::exception: " << e.what() << "." << std::endl;
-		return false;
-	}
-	return result;
-}
-
-storm::settings::Settings* storm::settings::Settings::getInstance() {
+storm::settings::SettingsManager* storm::settings::SettingsManager::getInstance() {
 	// Usually, this would require double-checked locking.
 	// But since C++11, this is the way to go:
-	static storm::settings::Settings pInstance;
+	static storm::settings::SettingsManager pInstance;
 
 	return &pInstance;
 }
 
-storm::settings::Settings& storm::settings::Settings::addOption(Option* option) {
+storm::settings::SettingsManager& storm::settings::SettingsManager::addOption(Option* option) {
 	// For automatic management of option's lifetime
 	std::shared_ptr<Option> optionPtr(option);
 	
@@ -247,7 +221,7 @@ storm::settings::Settings& storm::settings::Settings::addOption(Option* option) 
 	return *this;
 }
 
-std::string storm::settings::Settings::getHelpText() const {
+std::string storm::settings::SettingsManager::getHelpText() const {
 	
 	// Copy all option names into a vector and sort it
 	std::vector<std::string> optionNames;

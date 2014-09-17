@@ -7,7 +7,7 @@
 #include "src/parser/AutoParser.h"
 
 TEST(SparseMdpPrctlModelCheckerTest, AsynchronousLeader) {
-	storm::settings::Settings* s = storm::settings::Settings::getInstance();
+	storm::settings::SettingsManager* s = storm::settings::SettingsManager::getInstance();
 	std::shared_ptr<storm::models::AbstractModel<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader7.tra", STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader7.lab", "", STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader7.trans.rew");
 
 	ASSERT_EQ(abstractModel->getType(), storm::models::MDP);
@@ -54,7 +54,7 @@ TEST(SparseMdpPrctlModelCheckerTest, AsynchronousLeader) {
 }
 
 TEST(SparseMdpPrctlModelCheckerTest, Consensus) {
-	storm::settings::Settings* s = storm::settings::Settings::getInstance();
+	storm::settings::SettingsManager* s = storm::settings::SettingsManager::getInstance();
     // Increase the maximal number of iterations, because the solver does not converge otherwise.
 	// This is done in the main cpp unit
     
