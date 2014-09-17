@@ -8,9 +8,6 @@
 
 
 #include "src/utility/OsDetection.h"
-// Registers all standard options
-#include "src/utility/StormOptions.h" 
-
 
 // Includes for the linked libraries and versions header
 #ifdef STORM_HAVE_INTELTBB

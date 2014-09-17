@@ -11,14 +11,6 @@
 #include "src/exceptions/InvalidAccessException.h"
 #include "src/exceptions/InvalidStateException.h"
 
-bool GlpkLpSolverOptionsRegistered = storm::settings::Settings::registerNewModule([] (storm::settings::Settings* instance) -> bool {
-	instance->addOption(storm::settings::OptionBuilder("GlpkLpSolver", "glpkoutput", "", "If set, the glpk output will be printed to the command line.").build());
-    
-    instance->addOption(storm::settings::OptionBuilder("GurobiLpSolver", "glpkinttol", "", "Sets glpk's precision for integer variables.").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to achieve.").setDefaultValueDouble(1e-06).addValidationFunctionDouble(storm::settings::ArgumentValidators::doubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
-
-    return true;
-});
-
 namespace storm {
     namespace solver {
         GlpkLpSolver::GlpkLpSolver(std::string const& name, ModelSense const& modelSense) : LpSolver(modelSense), lp(nullptr), variableNameToIndexMap(), nextVariableIndex(1), nextConstraintIndex(1), modelContainsIntegerVariables(false), isInfeasibleFlag(false), isUnboundedFlag(false), rowIndices(), columnIndices(), coefficientValues() {

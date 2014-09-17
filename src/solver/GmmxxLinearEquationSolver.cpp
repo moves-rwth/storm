@@ -12,34 +12,6 @@
 #include "gmm/gmm_matrix.h"
 #include "gmm/gmm_iter_solvers.h"
 
-bool GmmxxLinearEquationSolverOptionsRegistered = storm::settings::Settings::registerNewModule([] (storm::settings::Settings* instance) -> bool {
-    // Offer all available methods as a command line option.
-	std::vector<std::string> methods;
-	methods.push_back("bicgstab");
-	methods.push_back("qmr");
-	methods.push_back("gmres");
-	methods.push_back("jacobi");
-	instance->addOption(storm::settings::OptionBuilder("GmmxxLinearEquationSolver", "gmmlin", "", "The method to be used for solving linear equation systems with the gmm++ engine. Available are: bicgstab, qmr, gmres, jacobi.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the method to use.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(methods)).setDefaultValueString("gmres").build()).build());
-
-    // Register available preconditioners.
-    std::vector<std::string> preconditioner;
-	preconditioner.push_back("ilu");
-	preconditioner.push_back("diagonal");
-	preconditioner.push_back("ildlt");
-	preconditioner.push_back("none");
-	instance->addOption(storm::settings::OptionBuilder("GmmxxLinearEquationSolver", "gmmpre", "", "The preconditioning technique used for solving linear equation systems with the gmm++ engine. Available are: ilu, diagonal, none.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the preconditioning method.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(preconditioner)).setDefaultValueString("ilu").build()).build());
-
-    instance->addOption(storm::settings::OptionBuilder("GmmxxLinearEquationSolver", "gmmrestart", "", "The number of iteration until restarted methods are actually restarted.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("count", "The number of iterations.").setDefaultValueUnsignedInteger(50).build()).build());
-
-	instance->addOption(storm::settings::OptionBuilder("GmmxxLinearEquationSolver", "maxiter", "i", "The maximal number of iterations to perform before iterative solving is aborted.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("count", "The maximal iteration count.").setDefaultValueUnsignedInteger(10000).build()).build());
-    
-	instance->addOption(storm::settings::OptionBuilder("GmmxxLinearEquationSolver", "precision", "", "The precision used for detecting convergence of iterative methods.").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to achieve.").setDefaultValueDouble(1e-06).addValidationFunctionDouble(storm::settings::ArgumentValidators::doubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
-    
-	instance->addOption(storm::settings::OptionBuilder("GmmxxLinearEquationSolver", "absolute", "", "Whether the relative or the absolute error is considered for deciding convergence.").build());
-
-	return true;
-});
-
 namespace storm {
     namespace solver {
         

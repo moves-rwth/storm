@@ -7,7 +7,6 @@
 #include "log4cplus/fileappender.h"
 
 #include "src/settings/Settings.h"
-#include "src/utility/StormOptions.h" // Registers all standard options
 
 log4cplus::Logger logger;
 

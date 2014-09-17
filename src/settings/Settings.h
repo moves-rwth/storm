@@ -150,7 +150,150 @@ namespace settings {
 			 *	newInstance() method.
 			 */
 			Settings() {
-				//
+				this->addOption(storm::settings::OptionBuilder("StoRM Main", "help", "h", "Shows all available options, arguments and descriptions.").build());
+                
+                this->addOption(storm::settings::OptionBuilder("StoRM Main", "verbose", "v", "Be verbose.").build());
+                
+                this->addOption(storm::settings::OptionBuilder("StoRM Main", "debug", "", "Be very verbose (intended for debugging).").build());
+                
+                this->addOption(storm::settings::OptionBuilder("StoRM Main", "trace", "", "Be extremly verbose (intended for debugging, heavy performance impacts).").build());
+                
+                this->addOption(storm::settings::OptionBuilder("StoRM Main", "logfile", "l", "If specified, the log output will also be written to this file.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("logFileName", "The path and name of the file to write to.").build()).build());
+                
+                this->addOption(storm::settings::OptionBuilder("StoRM Main", "exportdot", "", "If specified, the loaded model will be written to the specified file in the dot format.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("dotFileName", "The file to export the model to.").build()).build());
+                
+                this->addOption(storm::settings::OptionBuilder("StoRM Main", "configfile", "c", "If specified, this file will be read and parsed for additional configuration settings.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("configFileName", "The path and name of the file from which to read.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
+                
+                this->addOption(storm::settings::OptionBuilder("StoRM Main", "explicit", "", "Explicit parsing from transition- and labeling files.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("transitionFileName", "The path and name of the file from which to read the transitions.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).addArgument(storm::settings::ArgumentBuilder::createStringArgument("labelingFileName", "The path and name of the file from which to read the labeling.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
+                
+                this->addOption(storm::settings::OptionBuilder("StoRM Main", "symbolic", "", "Parse the given symbolic model file.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("symbolicFileName", "The path and name of the file from which to read the symbolic model.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
+                
+                this->addOption(storm::settings::OptionBuilder("StoRM Main", "prctl", "", "Performs model checking for the PRCTL formulas given in the file.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("prctlFileName", "The file from which to read the PRCTL formulas.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
+                
+                this->addOption(storm::settings::OptionBuilder("StoRM Main", "csl", "", "Performs model checking for the CSL formulas given in the file.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("cslFileName", "The file from which to read the CSL formulas.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
+                
+                this->addOption(storm::settings::OptionBuilder("StoRM Main", "ltl", "", "Performs model checking for the LTL formulas given in the file.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("ltlFileName", "The file from which to read the LTL formulas.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
+                
+                this->addOption(storm::settings::OptionBuilder("StoRM Main", "counterExample", "", "Generates a counterexample for the given PRCTL formulas if not satisfied by the model").addArgument(storm::settings::ArgumentBuilder::createStringArgument("outputPath", "The path to the directory to write the generated counterexample files to.").build()).build());
+                
+                this->addOption(storm::settings::OptionBuilder("StoRM Main", "transitionRewards", "", "If specified, the transition rewards are read from this file and added to the explicit model. Note that this requires an explicit model.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("transitionRewardsFileName", "The file from which to read the transition rewards.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
+                
+                this->addOption(storm::settings::OptionBuilder("StoRM Main", "stateRewards", "", "If specified, the state rewards are read from this file and added to the explicit model. Note that this requires an explicit model.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("stateRewardsFileName", "The file from which to read the state rewards.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
+                
+                this->addOption(storm::settings::OptionBuilder("StoRM Main", "fixDeadlocks", "", "If the model contains deadlock states, setting this option will insert self-loops for these states.").build());
+                
+                this->addOption(storm::settings::OptionBuilder("StoRM Main", "timeout", "t", "If specified, computation will abort after the given number of seconds.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("seconds", "The number of seconds after which to timeout.").setDefaultValueUnsignedInteger(0).build()).build());
+                
+                std::vector<std::string> linearEquationSolver;
+                linearEquationSolver.push_back("gmm++");
+                linearEquationSolver.push_back("native");
+                this->addOption(storm::settings::OptionBuilder("StoRM Main", "linsolver", "", "Sets which solver is preferred for solving systems of linear equations.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the solver to prefer. Available are: gmm++ and native.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(linearEquationSolver)).setDefaultValueString("gmm++").build()).build());
+                
+                std::vector<std::string> nondeterministicLinearEquationSolver;
+                nondeterministicLinearEquationSolver.push_back("gmm++");
+                nondeterministicLinearEquationSolver.push_back("native");
+                this->addOption(storm::settings::OptionBuilder("StoRM Main", "ndsolver", "", "Sets which solver is preferred for solving systems of linear equations arising from nondeterministic systems.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the solver to prefer. Available are: gmm++ and native.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(nondeterministicLinearEquationSolver)).setDefaultValueString("native").build()).build());
+                
+                std::vector<std::string> lpSolvers;
+                lpSolvers.push_back("gurobi");
+                lpSolvers.push_back("glpk");
+                this->addOption(storm::settings::OptionBuilder("StoRM Main", "lpsolver", "", "Sets which LP solver is preferred.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("LP solver name", "The name of an available LP solver. Valid values are gurobi and glpk.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(lpSolvers)).setDefaultValueString("glpk").build()).build());
+                
+                this->addOption(storm::settings::OptionBuilder("ExplicitModelAdapter", "constants", "", "Specifies the constant replacements to use in Explicit Models").addArgument(storm::settings::ArgumentBuilder::createStringArgument("constantString", "A comma separated list of constants and their value, e.g. a=1,b=2,c=3").setDefaultValueString("").build()).build());
+                
+                std::vector<std::string> techniques;
+                techniques.push_back("sat");
+                techniques.push_back("milp");
+                this->addOption(storm::settings::OptionBuilder("Counterexample", "mincmd", "", "Computes a counterexample for the given symbolic model in terms of a minimal command set.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("propertyFile", "The file containing the properties for which counterexamples are to be generated.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).addArgument(storm::settings::ArgumentBuilder::createStringArgument("method", "Sets which technique is used to derive the counterexample. Must be either \"milp\" or \"sat\".").setDefaultValueString("sat").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(techniques)).build()).build());
+                this->addOption(storm::settings::OptionBuilder("Counterexample", "stats", "s", "Sets whether to display statistics for certain functionalities.").build());
+                this->addOption(storm::settings::OptionBuilder("Counterexample", "encreach", "", "Sets whether to encode reachability for SAT-based minimal command counterexample generation.").build());
+                this->addOption(storm::settings::OptionBuilder("Counterexample", "schedcuts", "", "Sets whether to add the scheduler cuts for MILP-based minimal command counterexample generation.").build());
+                
+                this->addOption(storm::settings::OptionBuilder("GmmxxLinearEquationSolver", "digiprecision", "", "Precision used for iterative solving of linear equation systems").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("precision value", "Precision").setDefaultValueDouble(1e-4).addValidationFunctionDouble(storm::settings::ArgumentValidators::doubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
+                
+                this->addOption(storm::settings::OptionBuilder("GlpkLpSolver", "glpkoutput", "", "If set, the glpk output will be printed to the command line.").build());
+                
+                this->addOption(storm::settings::OptionBuilder("GurobiLpSolver", "glpkinttol", "", "Sets glpk's precision for integer variables.").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to achieve.").setDefaultValueDouble(1e-06).addValidationFunctionDouble(storm::settings::ArgumentValidators::doubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
+                
+                // Offer all available methods as a command line option.
+                std::vector<std::string> methods;
+                methods.push_back("bicgstab");
+                methods.push_back("qmr");
+                methods.push_back("gmres");
+                methods.push_back("jacobi");
+                this->addOption(storm::settings::OptionBuilder("GmmxxLinearEquationSolver", "gmmlin", "", "The method to be used for solving linear equation systems with the gmm++ engine. Available are: bicgstab, qmr, gmres, jacobi.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the method to use.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(methods)).setDefaultValueString("gmres").build()).build());
+                
+                // Register available preconditioners.
+                std::vector<std::string> preconditioner;
+                preconditioner.push_back("ilu");
+                preconditioner.push_back("diagonal");
+                preconditioner.push_back("ildlt");
+                preconditioner.push_back("none");
+                this->addOption(storm::settings::OptionBuilder("GmmxxLinearEquationSolver", "gmmpre", "", "The preconditioning technique used for solving linear equation systems with the gmm++ engine. Available are: ilu, diagonal, none.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the preconditioning method.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(preconditioner)).setDefaultValueString("ilu").build()).build());
+                
+                this->addOption(storm::settings::OptionBuilder("GmmxxLinearEquationSolver", "gmmrestart", "", "The number of iteration until restarted methods are actually restarted.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("count", "The number of iterations.").setDefaultValueUnsignedInteger(50).build()).build());
+                
+                this->addOption(storm::settings::OptionBuilder("GmmxxLinearEquationSolver", "maxiter", "i", "The maximal number of iterations to perform before iterative solving is aborted.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("count", "The maximal iteration count.").setDefaultValueUnsignedInteger(10000).build()).build());
+                
+                this->addOption(storm::settings::OptionBuilder("GmmxxLinearEquationSolver", "precision", "", "The precision used for detecting convergence of iterative methods.").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to achieve.").setDefaultValueDouble(1e-06).addValidationFunctionDouble(storm::settings::ArgumentValidators::doubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
+                
+                this->addOption(storm::settings::OptionBuilder("GmmxxLinearEquationSolver", "absolute", "", "Whether the relative or the absolute error is considered for deciding convergence.").build());
+                
+                this->addOption(storm::settings::OptionBuilder("GmmxxNondeterminsticLinearEquationSolver", "maxiter", "i", "The maximal number of iterations to perform before iterative solving is aborted.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("count", "The maximal iteration count.").setDefaultValueUnsignedInteger(10000).build()).build());
+                
+                this->addOption(storm::settings::OptionBuilder("GmmxxNondeterminsticLinearEquationSolver", "precision", "", "The precision used for detecting convergence of iterative methods.").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to achieve.").setDefaultValueDouble(1e-6).addValidationFunctionDouble(storm::settings::ArgumentValidators::doubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
+                
+                this->addOption(storm::settings::OptionBuilder("GmmxxNondeterminsticLinearEquationSolver", "absolute", "", "Whether the relative or the absolute error is considered for deciding convergence.").build());
+                
+                this->addOption(storm::settings::OptionBuilder("GurobiLpSolver", "gurobithreads", "", "The number of threads that may be used by Gurobi.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("count", "The number of threads.").setDefaultValueUnsignedInteger(1).build()).build());
+                
+                this->addOption(storm::settings::OptionBuilder("GurobiLpSolver", "gurobioutput", "", "If set, the Gurobi output will be printed to the command line.").build());
+                
+                this->addOption(storm::settings::OptionBuilder("GurobiLpSolver", "gurobiinttol", "", "Sets Gurobi's precision for integer variables.").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to achieve.").setDefaultValueDouble(1e-06).addValidationFunctionDouble(storm::settings::ArgumentValidators::doubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
+                
+                // Offer all available methods as a command line option.
+                methods.clear();
+                methods.push_back("jacobi");
+                this->addOption(storm::settings::OptionBuilder("NativeLinearEquationSolver", "nativelin", "", "The method to be used for solving linear equation systems with the native engine. Available are: jacobi.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the method to use.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(methods)).setDefaultValueString("jacobi").build()).build());
+                
+                this->addOption(storm::settings::OptionBuilder("NativeLinearEquationSolver", "maxiter", "i", "The maximal number of iterations to perform before iterative solving is aborted.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("count", "The maximal iteration count.").setDefaultValueUnsignedInteger(10000).build()).build());
+                
+                this->addOption(storm::settings::OptionBuilder("NativeLinearEquationSolver", "precision", "", "The precision used for detecting convergence of iterative methods.").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to achieve.").setDefaultValueDouble(1e-06).addValidationFunctionDouble(storm::settings::ArgumentValidators::doubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
+                
+                this->addOption(storm::settings::OptionBuilder("NativeLinearEquationSolver", "absolute", "", "Whether the relative or the absolute error is considered for deciding convergence.").build());
+                
+                this->addOption(storm::settings::OptionBuilder("NativeNondeterminsticLinearEquationSolver", "maxiter", "i", "The maximal number of iterations to perform before iterative solving is aborted.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("count", "The maximal iteration count.").setDefaultValueUnsignedInteger(10000).build()).build());
+                
+                this->addOption(storm::settings::OptionBuilder("NativeNondeterminsticLinearEquationSolver", "precision", "", "The precision used for detecting convergence of iterative methods.").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to achieve.").setDefaultValueDouble(1e-06).addValidationFunctionDouble(storm::settings::ArgumentValidators::doubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
+                
+                this->addOption(storm::settings::OptionBuilder("NativeNondeterminsticLinearEquationSolver", "absolute", "", "Whether the relative or the absolute error is considered for deciding convergence.").build());
+                
+                // Set up options for precision and maximal memory available to Cudd.
+                this->addOption(storm::settings::OptionBuilder("Cudd", "cuddprec", "", "Sets the precision used by Cudd.").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision up to which to constants are considered to be different.").setDefaultValueDouble(1e-15).addValidationFunctionDouble(storm::settings::ArgumentValidators::doubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
+                
+                this->addOption(storm::settings::OptionBuilder("Cudd", "cuddmaxmem", "", "Sets the upper bound of memory available to Cudd in MB.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("mb", "The memory available to Cudd (0 means unlimited).").setDefaultValueUnsignedInteger(2048).build()).build());
+                
+                // Set up option for reordering.
+                std::vector<std::string> reorderingTechniques;
+                reorderingTechniques.push_back("none");
+                reorderingTechniques.push_back("random");
+                reorderingTechniques.push_back("randompivot");
+                reorderingTechniques.push_back("sift");
+                reorderingTechniques.push_back("siftconv");
+                reorderingTechniques.push_back("ssift");
+                reorderingTechniques.push_back("ssiftconv");
+                reorderingTechniques.push_back("gsift");
+                reorderingTechniques.push_back("gsiftconv");
+                reorderingTechniques.push_back("win2");
+                reorderingTechniques.push_back("win2conv");
+                reorderingTechniques.push_back("win3");
+                reorderingTechniques.push_back("win3conv");
+                reorderingTechniques.push_back("win4");
+                reorderingTechniques.push_back("win4conv");
+                reorderingTechniques.push_back("annealing");
+                reorderingTechniques.push_back("genetic");
+                reorderingTechniques.push_back("exact");
+                this->addOption(storm::settings::OptionBuilder("Cudd", "reorder", "", "Sets the reordering technique used by Cudd.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("method", "Sets which technique is used by Cudd's reordering routines. Must be in {\"none\", \"random\", \"randompivot\", \"sift\", \"siftconv\", \"ssift\", \"ssiftconv\", \"gsift\", \"gsiftconv\", \"win2\", \"win2conv\", \"win3\", \"win3conv\", \"win4\", \"win4conv\", \"annealing\", \"genetic\", \"exact\"}.").setDefaultValueString("gsift").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(reorderingTechniques)).build()).build());
 			}
 			
 			/*!
