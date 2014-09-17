@@ -5,7 +5,7 @@
 #include "src/solver/GlpkLpSolver.h"
 #include "src/exceptions/InvalidStateException.h"
 #include "src/exceptions/InvalidAccessException.h"
-#include "src/settings/Settings.h"
+#include "src/settings/SettingsManager.h"
 
 TEST(GlpkLpSolver, LPOptimizeMax) {
     storm::solver::GlpkLpSolver solver(storm::solver::LpSolver::ModelSense::Maximize);

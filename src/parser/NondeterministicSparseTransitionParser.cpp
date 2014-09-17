@@ -10,7 +10,7 @@
 #include <string>
 
 #include "src/parser/MappedFile.h"
-#include "src/settings/Settings.h"
+#include "src/settings/SettingsManager.h"
 #include "src/exceptions/FileIoException.h"
 #include "src/exceptions/OutOfRangeException.h"
 #include "src/exceptions/WrongFormatException.h"

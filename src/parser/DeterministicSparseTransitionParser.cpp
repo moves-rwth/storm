@@ -19,7 +19,7 @@
 #include "src/parser/MappedFile.h"
 #include "src/exceptions/FileIoException.h"
 #include "src/exceptions/WrongFormatException.h"
-#include "src/settings/Settings.h"
+#include "src/settings/SettingsManager.h"
 
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"

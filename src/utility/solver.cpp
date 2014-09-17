@@ -1,6 +1,6 @@
 #include "src/utility/solver.h"
 
-#include "src/settings/Settings.h"
+#include "src/settings/SettingsManager.h"
 
 #include "src/solver/NativeLinearEquationSolver.h"
 #include "src/solver/GmmxxLinearEquationSolver.h"

@@ -2,7 +2,7 @@
 
 #include <utility>
 
-#include "src/settings/Settings.h"
+#include "src/settings/SettingsManager.h"
 #include "src/utility/vector.h"
 
 namespace storm {

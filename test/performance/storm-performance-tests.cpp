@@ -6,7 +6,7 @@
 #include "log4cplus/consoleappender.h"
 #include "log4cplus/fileappender.h"
 
-#include "src/settings/Settings.h"
+#include "src/settings/SettingsManager.h"
 
 log4cplus::Logger logger;
 

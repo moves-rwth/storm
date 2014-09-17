@@ -1,6 +1,6 @@
 #include "MarkovAutomatonSparseTransitionParser.h"
 
-#include "src/settings/Settings.h"
+#include "src/settings/SettingsManager.h"
 #include "src/exceptions/WrongFormatException.h"
 #include "src/exceptions/FileIoException.h"
 #include "src/parser/MappedFile.h"

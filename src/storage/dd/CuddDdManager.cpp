@@ -5,7 +5,7 @@
 #include "src/storage/dd/CuddDdManager.h"
 #include "src/exceptions/ExceptionMacros.h"
 #include "src/exceptions/InvalidArgumentException.h"
-#include "src/settings/Settings.h"
+#include "src/settings/SettingsManager.h"
 
 namespace storm {
     namespace dd {

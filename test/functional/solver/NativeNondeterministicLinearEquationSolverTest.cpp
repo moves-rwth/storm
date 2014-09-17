@@ -2,7 +2,7 @@
 #include "storm-config.h"
 
 #include "src/solver/NativeNondeterministicLinearEquationSolver.h"
-#include "src/settings/Settings.h"
+#include "src/settings/SettingsManager.h"
 
 TEST(NativeNondeterministicLinearEquationSolver, SolveWithStandardOptions) {
     storm::storage::SparseMatrixBuilder<double> builder(0, 0, 0, false, true);

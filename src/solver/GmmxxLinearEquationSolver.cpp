@@ -4,7 +4,7 @@
 #include <utility>
 
 #include "src/adapters/GmmxxAdapter.h"
-#include "src/settings/Settings.h"
+#include "src/settings/SettingsManager.h"
 #include "src/utility/vector.h"
 #include "src/utility/constants.h"
 #include "src/exceptions/InvalidStateException.h"

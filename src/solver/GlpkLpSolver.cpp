@@ -6,7 +6,7 @@
 
 #include "src/storage/expressions/LinearCoefficientVisitor.h"
 
-#include "src/settings/Settings.h"
+#include "src/settings/SettingsManager.h"
 #include "src/exceptions/ExceptionMacros.h"
 #include "src/exceptions/InvalidAccessException.h"
 #include "src/exceptions/InvalidStateException.h"

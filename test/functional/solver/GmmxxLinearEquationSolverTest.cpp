@@ -2,7 +2,7 @@
 #include "storm-config.h"
 
 #include "src/solver/GmmxxLinearEquationSolver.h"
-#include "src/settings/Settings.h"
+#include "src/settings/SettingsManager.h"
 
 TEST(GmmxxLinearEquationSolver, SolveWithStandardOptions) {
     ASSERT_NO_THROW(storm::storage::SparseMatrixBuilder<double> builder);

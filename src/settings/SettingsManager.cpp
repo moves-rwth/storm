@@ -1,4 +1,4 @@
-#include "Settings.h"
+#include "src/settings/SettingsManager.h"
 
 #include <cstring>
 #include <cctype>

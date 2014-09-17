@@ -3,7 +3,7 @@
 
 #include "src/solver/GmmxxLinearEquationSolver.h"
 #include "src/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
-#include "src/settings/Settings.h"
+#include "src/settings/SettingsManager.h"
 #include "src/settings/InternalOptionMemento.h"
 #include "src/parser/AutoParser.h"
 

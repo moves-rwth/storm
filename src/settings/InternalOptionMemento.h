@@ -1,7 +1,7 @@
 #ifndef STORM_SETTINGS_INTERNALOPTIONMEMENTO_H_
 #define STORM_SETTINGS_INTERNALOPTIONMEMENTO_H_
 
-#include "src/settings/Settings.h"
+#include "src/settings/SettingsManager.h"
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
 

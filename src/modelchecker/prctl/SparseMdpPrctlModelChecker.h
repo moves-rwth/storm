@@ -18,7 +18,7 @@
 #include "src/utility/vector.h"
 #include "src/utility/graph.h"
 #include "src/utility/solver.h"
-#include "src/settings/Settings.h"
+#include "src/settings/SettingsManager.h"
 #include "src/storage/TotalScheduler.h"
 
 namespace storm {

@@ -27,7 +27,7 @@
 #include "src/models/Ctmdp.h"
 #include "src/models/AtomicPropositionsLabeling.h"
 #include "src/storage/SparseMatrix.h"
-#include "src/settings/Settings.h"
+#include "src/settings/SettingsManager.h"
 #include "src/exceptions/ExceptionMacros.h"
 #include "src/exceptions/WrongFormatException.h"
 

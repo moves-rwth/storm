@@ -14,7 +14,7 @@
 #include "AtomicPropositionsLabeling.h"
 #include "AbstractNondeterministicModel.h"
 #include "src/storage/SparseMatrix.h"
-#include "src/settings/Settings.h"
+#include "src/settings/SettingsManager.h"
 
 namespace storm {
 

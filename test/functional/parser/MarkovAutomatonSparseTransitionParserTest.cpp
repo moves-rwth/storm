@@ -7,7 +7,7 @@
 
 #include "gtest/gtest.h"
 #include "storm-config.h"
-#include "src/settings/Settings.h"
+#include "src/settings/SettingsManager.h"
 
 #include <vector>
 

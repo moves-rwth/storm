@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
-#include "src/settings/Settings.h"
+#include "src/settings/SettingsManager.h"
 #include "src/parser/AutoParser.h"
 #include "src/utility/graph.h"
 #include "src/storage/StronglyConnectedComponentDecomposition.h"
