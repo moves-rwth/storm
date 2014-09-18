@@ -4,8 +4,12 @@ namespace storm {
     namespace settings {
         namespace modules {
             
-            ModuleSettings::ModuleSettings(storm::settings::SettingsManager& settingsManager) {
+            ModuleSettings::ModuleSettings(storm::settings::SettingsManager& settingsManager) : settingsManager(settingsManager) {
                 // Intentionally left empty.
+            }
+            
+            storm::settings::SettingsManager const& ModuleSettings::getSettingsManager() const {
+                return this->settingsManager;
             }
             
         } // namespace modules

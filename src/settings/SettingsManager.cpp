@@ -9,6 +9,17 @@
 // Static Inits
 storm::settings::Destroyer storm::settings::SettingsManager::destroyer;
 
+namespace storm {
+    namespace settings {
+
+        SettingsManager::SettingsManager() : generalSettings(*this), debugSettings(*this), counterexampleGeneratorSettings(*this), cuddSettings(*this), gmmxxSettings(*this), nativeEquationSolverSettings(*this), glpkSettings(*this), gurobiSettings(*this) {
+            // Intentionally left empty.
+        }
+
+    }
+}
+
+
 /*!
  *	@brief	Create new instance.
  *
