@@ -27,7 +27,7 @@ namespace storm {
                  *
                  * @return True if the settings are consistent.
                  */
-                virtual bool check() const = 0;
+                virtual bool check() const;
                 
             protected:
                 /*!

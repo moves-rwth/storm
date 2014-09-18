@@ -18,7 +18,7 @@ namespace storm {
                                           .addArgument(storm::settings::ArgumentBuilder::createStringArgument("labelingFileName", "The path and name of the file from which to read the labeling.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
                 settingsManager.addOption(storm::settings::OptionBuilder("general", "symbolic", "s", "Parse the given symbolic model file.")
                                           .addArgument(storm::settings::ArgumentBuilder::createStringArgument("symbolicFileName", "The path and name of the file from which to read the symbolic model.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
-                settingsManager.addOption(storm::settings::OptionBuilder("general", "prctl", "", "Performs model checking for the PRCTL formulas given in the file.")
+                settingsManager.addOption(storm::settings::OptionBuilder("general", "pctl", "", "Performs model checking for the PRCTL formulas given in the file.")
                                           .addArgument(storm::settings::ArgumentBuilder::createStringArgument("prctlFileName", "The file from which to read the PRCTL formulas.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
                 settingsManager.addOption(storm::settings::OptionBuilder("general", "csl", "", "Performs model checking for the CSL formulas given in the file.")
                                           .addArgument(storm::settings::ArgumentBuilder::createStringArgument("cslFileName", "The file from which to read the CSL formulas.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
@@ -37,15 +37,9 @@ namespace storm {
                 std::vector<std::string> linearEquationSolver;
                 linearEquationSolver.push_back("gmm++");
                 linearEquationSolver.push_back("native");
-                settingsManager.addOption(storm::settings::OptionBuilder("general", "linsolver", "", "Sets which solver is preferred for solving systems of linear equations.")
+                settingsManager.addOption(storm::settings::OptionBuilder("general", "eqsolver", "", "Sets which solver is preferred for solving systems of linear equations.")
                                           .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the solver to prefer. Available are: gmm++ and native.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(linearEquationSolver)).setDefaultValueString("gmm++").build()).build());
-                
-                std::vector<std::string> nondeterministicLinearEquationSolver;
-                nondeterministicLinearEquationSolver.push_back("gmm++");
-                nondeterministicLinearEquationSolver.push_back("native");
-                settingsManager.addOption(storm::settings::OptionBuilder("general", "ndsolver", "", "Sets which solver is preferred for solving systems of linear equations arising from nondeterministic systems.")
-                                          .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the solver to prefer. Available are: gmm++ and native.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(nondeterministicLinearEquationSolver)).setDefaultValueString("native").build()).build());
-                
+                                
                 std::vector<std::string> lpSolvers;
                 lpSolvers.push_back("gurobi");
                 lpSolvers.push_back("glpk");

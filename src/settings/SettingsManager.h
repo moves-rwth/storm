@@ -37,75 +37,75 @@
 extern log4cplus::Logger logger;
 
 namespace storm {
-
-/*!
- *	@brief Contains Settings class and associated methods.
- */
-namespace settings {
-	typedef bool (*stringValidationFunction_t)(const std::string);
-	typedef bool (*integerValidationFunction_t)(const int_fast64_t);
-	typedef bool (*unsignedIntegerValidationFunction_t)(const uint_fast64_t);
-	typedef bool (*doubleValidationFunction_t)(const double);
-	typedef bool (*booleanValidationFunction_t)(const bool);
-
-	typedef std::pair<std::string, std::string> stringPair_t;
-	typedef std::pair<bool, std::string> fromStringAssignmentResult_t;
-
-	class Destroyer;
-	class InternalOptionMemento;
-
-	/*!
-	 *	@brief	Settings class with command line parser and type validation
-	 *
-	 *
-	 *	It is meant to be used as a singleton. Call 
-	 *	@code storm::settings::Settings::getInstance() @endcode
-	 *	to initialize it and obtain an instance.
-	 *
-	 *	This class can be customized by other parts of the software using
-	 *	option modules. An option module can be anything that implements the
-	 *	interface specified by registerModule() and does a static initialization call to this function.
-	 */
-	class SettingsManager {
+    
+    /*!
+     *	@brief Contains Settings class and associated methods.
+     */
+    namespace settings {
+        typedef bool (*stringValidationFunction_t)(const std::string);
+        typedef bool (*integerValidationFunction_t)(const int_fast64_t);
+        typedef bool (*unsignedIntegerValidationFunction_t)(const uint_fast64_t);
+        typedef bool (*doubleValidationFunction_t)(const double);
+        typedef bool (*booleanValidationFunction_t)(const bool);
+        
+        typedef std::pair<std::string, std::string> stringPair_t;
+        typedef std::pair<bool, std::string> fromStringAssignmentResult_t;
+        
+        class InternalOptionMemento;
+        
+        /*!
+         *	@brief	Settings class with command line parser and type validation
+         *
+         *
+         *	It is meant to be used as a singleton. Call
+         *	@code storm::settings::Settings::getInstance() @endcode
+         *	to initialize it and obtain an instance.
+         *
+         *	This class can be customized by other parts of the software using
+         *	option modules. An option module can be anything that implements the
+         *	interface specified by registerModule() and does a static initialization call to this function.
+         */
+        class SettingsManager {
 		public:
+            friend class InternalOptionMemento;
 			
 			/*!
 			 * This parses the command line of the application and matches it to all prior registered options
 			 * @throws OptionParserException
 			 */
 			static void parse(int const argc, char const * const argv[]);
-
+            
 			std::vector<std::shared_ptr<Option>> const& getOptions() const {
 				return this->optionPointers;
 			}
-
+            
 			// PUBLIC INTERFACE OF OPTIONSACCUMULATOR (now internal)
 			/*!
-			* Returns true IFF an option with the specified longName exists.
-			*/
+             * Returns true IFF an option with the specified longName exists.
+             */
 			bool containsOptionByLongName(std::string const& longName) const {
 				return this->containsLongName(longName);
 			}
-
+            
 			/*!
-			* Returns true IFF an option with the specified shortName exists.
-			*/
+             * Returns true IFF an option with the specified shortName exists.
+             */
 			bool containsOptionByShortName(std::string const& shortName) const {
 				return this->containsLongName(shortName);
 			}
-
+            
 			/*!
-			* Returns a reference to the Option with the specified longName.
-			* Throws an Exception of Type IllegalArgumentException if there is no such Option.
-			*/
+             * Returns a reference to the Option with the specified longName.
+             * Throws an Exception of Type IllegalArgumentException if there is no such Option.
+             */
 			Option const& getOptionByLongName(std::string const& longName) const {
 				return this->getByLongName(longName);
 			}
-
+            
 			/*!
-			* Returns a reference to the Option with the specified shortName.
-			* Throws an Exception of Type IllegalArgumentException if there is no such Option.
-			*/
+             * Returns a reference to the Option with the specified shortName.
+             * Throws an Exception of Type IllegalArgumentException if there is no such Option.
+             */
 			Option const& getOptionByShortName(std::string const& shortName) const {
 				return this->getByShortName(shortName);
 			}
@@ -118,7 +118,7 @@ namespace settings {
 			 * @throws OptionUnificationException
 			 */
 			SettingsManager& addOption(Option* option);
-
+            
 			/*!
 			 * Returns true iff there is an Option with the specified longName and it has been set
 			 * @return bool true if the option exists and has been set
@@ -127,76 +127,92 @@ namespace settings {
 			bool isSet(std::string const& longName) const {
 				return this->getByLongName(longName).getHasOptionBeenSet();
 			}
-
+            
 			/*!
 			 * This generated a list of all registered options and their arguments together with descriptions and defaults.
 			 * @return A std::string containing the help text, delimited by \n
 			 */
 			std::string getHelpText() const;
-
+            
+            /*!
+             * Registers a new module with the given name and options. If the module could not be successfully registered,
+             * an exception is thrown.
+             *
+             * @param moduleName The name of the module to register.
+             * @param options The set of options that the module registers.
+             */
+            void registerModule(std::string const& moduleName, std::vector<std::shared_ptr<Option>> const& options);
+            
 			/*!
-			 * This function is the Singleton interface for the Settings class
-			 * @return Settings* A Pointer to the singleton instance of Settings 
+			 * Retrieves the only existing instance of a settings manager.
+             *
+			 * @return The only existing instance of a settings manager
 			 */
-			static SettingsManager* getInstance();
-			friend class Destroyer;
-			friend class InternalOptionMemento;
-		private:
+			static SettingsManager& manager();
+            
+        private:
 			/*!
-			 *	@brief	Private constructor.
-			 *
-			 *	This constructor is private, as noone should be able to create
-			 *	an instance manually, one should always use the
-			 *	newInstance() method.
+			 * Constructs a new manager. This constructor is private to forbid instantiation of this class. The only
+             * way to create a new instance is by calling the static manager() method.
 			 */
             SettingsManager();
 			
 			/*!
-			 *	@brief	Private destructor.
-			 *
-			 *	This destructor should be private, as noone should be able to destroy a singleton.
-			 *	The object is automatically destroyed when the program terminates by the destroyer.
+			 * This destructor is private, since we need to forbid explicit destruction of the manager.
 			 */
-			virtual ~SettingsManager() {
-				//
-			}
+			virtual ~SettingsManager();
+ 			
+            // An object that provides access to the general settings.
+            storm::settings::modules::GeneralSettings generalSettings;
+            
+            // An object that provides access to the debug settings.
+            storm::settings::modules::DebugSettings debugSettings;
 
-			/*!
+            // An object that provides access to the counterexample generator settings.
+            storm::settings::modules::CounterexampleGeneratorSettings counterexampleGeneratorSettings;
+
+            // An object that provides access to the CUDD settings.
+            storm::settings::modules::CuddSettings cuddSettings;
+
+            // An object that provides access to the gmm++ settings.
+            storm::settings::modules::GmmxxSettings gmmxxSettings;
+
+            // An object that provides access to the native equation solver settings.
+            storm::settings::modules::NativeEquationSolverSettings nativeEquationSolverSettings;
+
+            // An object that provides access to the glpk settings.
+            storm::settings::modules::GlpkSettings glpkSettings;
+
+            // An object that provides access to the Gurobi settings.
+            storm::settings::modules::GurobiSettings gurobiSettings;
+            
+            // The single instance of the manager class. Since it's static, it will automatically be distructed upon termination.
+ 			static SettingsManager settingsManager;
+            
+            
+            
+            /*!
 			 * Parser for the commdand line parameters of the program.
 			 * The first entry of argv will be ignored, as it represents the program name.
 			 * @throws OptionParserException
 			 */
 			void parseCommandLine(int const argc, char const * const argv[]);
-
+            
 			/*!
-			* The map holding the information regarding registered options and their types
-			*/
+             * The map holding the information regarding registered options and their types
+             */
 			std::unordered_map<std::string, std::shared_ptr<Option>> options;
-
+            
 			/*!
-			* The vector holding a pointer to all options
-			*/
+             * The vector holding a pointer to all options
+             */
 			std::vector<std::shared_ptr<Option>> optionPointers;
-
+            
 			/*!
-			* The map holding the information regarding registered options and their short names
-			*/
+             * The map holding the information regarding registered options and their short names
+             */
 			std::unordered_map<std::string, std::string> shortNames;
- 			
-            storm::settings::modules::GeneralSettings generalSettings;
-            storm::settings::modules::DebugSettings debugSettings;
-            storm::settings::modules::CounterexampleGeneratorSettings counterexampleGeneratorSettings;
-            storm::settings::modules::CuddSettings cuddSettings;
-            storm::settings::modules::GmmxxSettings gmmxxSettings;
-            storm::settings::modules::NativeEquationSolverSettings nativeEquationSolverSettings;
-            storm::settings::modules::GlpkSettings glpkSettings;
-            storm::settings::modules::GurobiSettings gurobiSettings;
-        
- 			/*!
- 			 *	@brief	Destroyer object.
- 			 */
- 			static Destroyer destroyer;
-
+            
 			// Helper functions
 			stringPair_t splitOptionString(std::string const& option);
 			bool hasAssignment(std::string const& option);
@@ -204,28 +220,28 @@ namespace settings {
 			std::vector<std::string> argvToStringArray(int const argc, char const * const argv[]);
 			std::vector<bool> scanForOptions(std::vector<std::string> const& arguments);
 			bool checkArgumentSyntaxForOption(std::string const& argvString);
-
+            
 			/*!
-			* Returns true IFF this contains an option with the specified longName.
-			* @return bool true iff there is an option with the specified longName
-			*/
+             * Returns true IFF this contains an option with the specified longName.
+             * @return bool true iff there is an option with the specified longName
+             */
 			bool containsLongName(std::string const& longName) const {
 				return (this->options.find(storm::utility::StringHelper::stringToLower(longName)) != this->options.end());
 			}
-
+            
 			/*!
-			* Returns true IFF this contains an option with the specified shortName.
-			* @return bool true iff there is an option with the specified shortName
-			*/
+             * Returns true IFF this contains an option with the specified shortName.
+             * @return bool true iff there is an option with the specified shortName
+             */
 			bool containsShortName(std::string const& shortName) const {
 				return (this->shortNames.find(storm::utility::StringHelper::stringToLower(shortName)) != this->shortNames.end());
 			}
-
+            
 			/*!
-			* Returns a reference to the Option with the specified longName.
-			* Throws an Exception of Type InvalidArgumentException if there is no such Option.
-			* @throws InvalidArgumentException
-			*/
+             * Returns a reference to the Option with the specified longName.
+             * Throws an Exception of Type InvalidArgumentException if there is no such Option.
+             * @throws InvalidArgumentException
+             */
 			Option& getByLongName(std::string const& longName) const {
 				auto longNameIterator = this->options.find(storm::utility::StringHelper::stringToLower(longName));
 				if (longNameIterator == this->options.end()) {
@@ -234,12 +250,12 @@ namespace settings {
 				}
 				return *longNameIterator->second.get();
 			}
-
+            
 			/*!
-			* Returns a pointer to the Option with the specified longName.
-			* Throws an Exception of Type InvalidArgumentException if there is no such Option.
-			* @throws InvalidArgumentException
-			*/
+             * Returns a pointer to the Option with the specified longName.
+             * Throws an Exception of Type InvalidArgumentException if there is no such Option.
+             * @throws InvalidArgumentException
+             */
 			Option* getPtrByLongName(std::string const& longName) const {
 				auto longNameIterator = this->options.find(storm::utility::StringHelper::stringToLower(longName));
 				if (longNameIterator == this->options.end()) {
@@ -248,12 +264,12 @@ namespace settings {
 				}
 				return longNameIterator->second.get();
 			}
-
+            
 			/*!
-			* Returns a reference to the Option with the specified shortName.
-			* Throws an Exception of Type InvalidArgumentException if there is no such Option.
-			* @throws InvalidArgumentException
-			*/
+             * Returns a reference to the Option with the specified shortName.
+             * Throws an Exception of Type InvalidArgumentException if there is no such Option.
+             * @throws InvalidArgumentException
+             */
 			Option& getByShortName(std::string const& shortName) const {
 				auto shortNameIterator = this->shortNames.find(storm::utility::StringHelper::stringToLower(shortName));
 				if (shortNameIterator == this->shortNames.end()) {
@@ -262,12 +278,12 @@ namespace settings {
 				}
 				return *(this->options.find(shortNameIterator->second)->second.get());
 			}
-
+            
 			/*!
-			* Returns a pointer to the Option with the specified shortName.
-			* Throws an Exception of Type InvalidArgumentException if there is no such Option.
-			* @throws InvalidArgumentException
-			*/
+             * Returns a pointer to the Option with the specified shortName.
+             * Throws an Exception of Type InvalidArgumentException if there is no such Option.
+             * @throws InvalidArgumentException
+             */
 			Option* getPtrByShortName(std::string const& shortName) const {
 				auto shortNameIterator = this->shortNames.find(storm::utility::StringHelper::stringToLower(shortName));
 				if (shortNameIterator == this->shortNames.end()) {
@@ -276,7 +292,7 @@ namespace settings {
 				}
 				return this->options.find(shortNameIterator->second)->second.get();
 			}
-
+            
 			/*!
 			 * Sets the Option with the specified longName
 			 * This function requires the Option to have no arguments
@@ -286,7 +302,7 @@ namespace settings {
 			void set(std::string const& longName) const {
 				return this->getByLongName(longName).setHasOptionBeenSet();
 			}
-
+            
 			/*!
 			 * Unsets the Option with the specified longName
 			 * This function requires the Option to have no arguments
@@ -296,44 +312,9 @@ namespace settings {
 			void unset(std::string const& longName) const {
 				return this->getByLongName(longName).setHasOptionBeenSet(false);
 			}
-	};
-
-	/*!
-	 *	@brief	Destroyer class for singleton object of Settings.
-	 *
-	 *	The sole purpose of this class is to clean up the singleton object
-	 *	instance of Settings. The Settings class has a static member of this
-	 *	Destroyer type that gets cleaned up when the program terminates. In
-	 *	it's destructor, this object will remove the Settings instance.
-	 */
-	class Destroyer {
-		public:
-			Destroyer(): settingsInstance(nullptr) {
-				this->settingsInstance = storm::settings::SettingsManager::getInstance();
-			}
-
-			/*!
-			 *	@brief	Destructor.
-			 *
-			 *	Free Settings::inst.
-			 */
-			virtual ~Destroyer() {
-				if (this->settingsInstance != nullptr) {
-					//LOG4CPLUS_DEBUG(logger, "Destroyer::~Destroyer: Destroying Settings Instance...");
-					// The C++11 Method of Singleton deletes its instance on its own
-					//delete this->settingsInstance;
-					this->settingsInstance = nullptr;
-				}
-			}
-		private:
-			storm::settings::SettingsManager* settingsInstance;
-	};
-	
-
-
-
-
-} // namespace settings
+        };
+        
+    } // namespace settings
 } // namespace storm
 
 #endif // 

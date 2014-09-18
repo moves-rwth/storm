@@ -6,9 +6,6 @@
 
 #include "src/exceptions/OptionParserException.h"
 
-// Static Inits
-storm::settings::Destroyer storm::settings::SettingsManager::destroyer;
-
 namespace storm {
     namespace settings {
 
@@ -16,6 +13,14 @@ namespace storm {
             // Intentionally left empty.
         }
 
+        SettingsManager::~SettingsManager() {
+            // Intentionally left empty.
+        }
+        
+        SettingsManager& SettingsManager::manager() {
+            return settingsManager;
+        }
+        
     }
 }
 

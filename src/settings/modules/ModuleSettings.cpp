@@ -8,6 +8,10 @@ namespace storm {
                 // Intentionally left empty.
             }
             
+            bool ModuleSettings::check() const {
+                return true;
+            }
+            
             storm::settings::SettingsManager const& ModuleSettings::getSettingsManager() const {
                 return this->settingsManager;
             }
