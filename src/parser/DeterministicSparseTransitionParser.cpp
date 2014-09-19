@@ -94,7 +94,7 @@ namespace storm {
 				storm::storage::SparseMatrixBuilder<T> resultMatrix(firstPass.highestStateIndex + 1, firstPass.highestStateIndex + 1, firstPass.numberOfNonzeroEntries);
 
 				uint_fast64_t lastRow = 0;
-				DeterministicTransitionEntry<Tf> trans;
+				DeterministicTransitionEntry<T> trans;
 				bool fixDeadlocks = storm::settings::Settings::getInstance()->isSet("fixDeadlocks");
 				bool hadDeadlocks = false;
 				bool rowHadDiagonalEntry = false;
@@ -113,11 +113,11 @@ namespace storm {
 					}
 				} else {
                     // Read first row and add self-loops if necessary.
-                    char const* tmp;
-                    row = checked_strtol(buf, &tmp);
                     
-                    if (row > 0) {
-                        for (uint_fast64_t skippedRow = 0; skippedRow < row; ++skippedRow) {
+                    readNextTransition(&buf, &trans);
+                    
+                    if (trans.row > 0) {
+                        for (uint_fast64_t skippedRow = 0; skippedRow < trans.row; ++skippedRow) {
                             hadDeadlocks = true;
                             if (fixDeadlocks) {
                                 resultMatrix.addNextValue(skippedRow, skippedRow, storm::utility::constantOne<T>());
@@ -128,6 +128,8 @@ namespace storm {
                             }
                         }
                     }
+                    addTransitionToMatrix(trans, &resultMatrix);
+					
                     
 					while (buf[0] != '\0') {
 
@@ -136,7 +138,7 @@ namespace storm {
 
 						// Test if we moved to a new row.
 						// Handle all incomplete or skipped rows.
-						if (lastRow != row) {
+						if (lastRow != trans.row) {
 							if (!rowHadDiagonalEntry) {
 								if (insertDiagonalEntriesIfMissing) {
 									resultMatrix.addNextValue(lastRow, lastRow, storm::utility::constantZero<T>());
@@ -147,7 +149,7 @@ namespace storm {
 								// No increment for lastRow.
 								rowHadDiagonalEntry = true;
 							}
-							for (uint_fast64_t skippedRow = lastRow + 1; skippedRow < row; ++skippedRow) {
+							for (uint_fast64_t skippedRow = lastRow + 1; skippedRow < trans.row; ++skippedRow) {
 								hadDeadlocks = true;
 								if (fixDeadlocks) {
 									resultMatrix.addNextValue(skippedRow, skippedRow, storm::utility::constantOne<T>());
@@ -157,26 +159,25 @@ namespace storm {
 									// Before throwing the appropriate exception we will give notice of all deadlock states.
 								}
 							}
-							lastRow = row;
+							lastRow = trans.row;
 							rowHadDiagonalEntry = false;
 						}
 
-						if (col == row) {
+						if (trans.col == trans.row) {
 							rowHadDiagonalEntry = true;
 						}
 
-						if (col > row && !rowHadDiagonalEntry) {
+						if (trans.col > trans.row && !rowHadDiagonalEntry) {
 							if (insertDiagonalEntriesIfMissing) {
-								resultMatrix.addNextValue(row, row, storm::utility::constantZero<T>());
-								LOG4CPLUS_DEBUG(logger, "While parsing " << filename << ": state " << row << " has no transition to itself. Inserted a 0-transition. (2)");
+								resultMatrix.addNextValue(trans.row, trans.row, storm::utility::constantZero<T>());
+								LOG4CPLUS_DEBUG(logger, "While parsing " << filename << ": state " << trans.row << " has no transition to itself. Inserted a 0-transition. (2)");
 							} else {
-								LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << row << " has no transition to itself.");
+								LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << trans.row << " has no transition to itself.");
 							}
 							rowHadDiagonalEntry = true;
 						}
 
-						resultMatrix.addNextValue(row, col, val);
-						buf = trimWhitespaces(buf);
+						addTransitionToMatrix(trans, &resultMatrix);
 					}
 
 					if (!rowHadDiagonalEntry) {
@@ -290,7 +291,7 @@ namespace storm {
 		}
         
         template<typename T>
-        void DeterministicSparseTransitionParser::readNextTransition(char** buf, DeterministicTransitionEntry<T>* trans)
+        void DeterministicSparseTransitionParser::readNextTransition(char const** buf, DeterministicTransitionEntry<T>* trans)
         {
             trans->row = checked_strtol(*buf, buf);
             trans->col = checked_strtol(*buf, buf);
@@ -307,7 +308,7 @@ namespace storm {
             mat->addNextValue(trans.row, trans.col, trans.val);
         }
 
-        char* DeterministicSparseTransitionParser::skipFormatHint(char* buf)
+        char const* DeterministicSparseTransitionParser::skipFormatHint(char const* buf)
         {
             // Skip the format hint if it is there.
 			buf = trimWhitespaces(buf);
@@ -318,6 +319,8 @@ namespace storm {
             return buf;
         }
 
+        template storm::storage::SparseMatrix<double> DeterministicSparseTransitionParser::parseDeterministicTransitions<double>(std::string const& filename);
+        template storm::storage::SparseMatrix<double> DeterministicSparseTransitionParser::parseDeterministicTransitionRewards(std::string const& filename, storm::storage::SparseMatrix<double> const & transitionMatrix);
 
 	}  // namespace parser
 }  // namespace storm

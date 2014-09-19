@@ -97,13 +97,13 @@ namespace storm {
 			/*
 			 */
 			template<typename T>
-			static void readNextTransition(char** buf, DeterministicTransitionEntry<T>* trans );
+			static void readNextTransition(char const** buf, DeterministicTransitionEntry<T>* trans );
 			
 			
 			template<typename T>
 			static void addTransitionToMatrix(DeterministicTransitionEntry<T> const& trans, storm::storage::SparseMatrixBuilder<T>* mat);
 		
-			static char* skipFormatHint(char*);
+			static char const* skipFormatHint(char const*);
 		};
 				
 

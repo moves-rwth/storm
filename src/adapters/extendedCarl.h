@@ -8,9 +8,13 @@
 #ifndef STORM_ADAPTERS_EXTENDEDCARL_H_
 #define STORM_ADAPTERS_EXTENDEDCARL_H_
 
+
 #include <carl/core/MultivariatePolynomial.h>
 #include <carl/core/RationalFunction.h>
+#include <carl/core/VariablePool.h>
+#include <carl/numbers/DecimalStringToRational.h>
 
+#undef LOG_ASSERT
 namespace carl
 {
 template<typename C, typename O, typename P>
@@ -27,5 +31,7 @@ inline size_t hash_value(carl::RationalFunction<Pol> const& f)
 }
 
 }
+
+#include "src/exceptions/ExceptionMacros.h"
 
 #endif

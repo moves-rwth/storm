@@ -11,11 +11,9 @@
 #include "ExpressionVisitor.h"
 #include "BaseExpression.h"
 #include "IfThenElseExpression.h"
-#include "DoubleConstantExpression.h"
 #include "DoubleLiteralExpression.h"
 #include "BinaryNumericalFunctionExpression.h"
 
-#include "carl/numbers/DecimalStringToRational.h"
 #include "src/storage/parameters.h"
 #include "IntegerLiteralExpression.h"
 #include "BinaryExpression.h"
@@ -94,31 +92,20 @@ namespace expressions {
 			{
 				std::cout << "br" << std::endl;
 			}
-            virtual void visit(BooleanConstantExpression const* expression) 
+           virtual void visit(VariableExpression const* expression) 
 			{
-				std::cout << "bc" << std::endl;
-			}
-            virtual void visit(DoubleConstantExpression const* expression) 
-			{
-				auto it =  mSharedState->find(expression->getConstantName());
+			   std::string const& varName= expression->getVariableName();
+				auto it =  mSharedState->find(varName);
 				if(it != mSharedState->end())
 				{
 					mValue = T(it->second);
 				}
 				else
 				{
-					carl::Variable nVar = carl::VariablePool::getInstance().getFreshVariable(expression->getConstantName());
-					mSharedState->emplace(expression->getConstantName(),nVar);
+					carl::Variable nVar = carl::VariablePool::getInstance().getFreshVariable(varName);
+					mSharedState->emplace(varName,nVar);
 					mValue = T(nVar);
 				}
-			}
-            virtual void visit(IntegerConstantExpression const* expression) 
-			{
-				std::cout << "ic" << std::endl;
-			}
-            virtual void visit(VariableExpression const* expression) 
-			{
-				std::cout << "ve" << std::endl;
 			}
             virtual void visit(UnaryBooleanFunctionExpression const* expression) 
 			{

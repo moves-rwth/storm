@@ -61,8 +61,9 @@
 #include "src/parser/PrismParser.h"
 #include "src/adapters/ExplicitModelAdapter.h"
 // #include "src/adapters/SymbolicModelAdapter.h"
-#include "stormParametric.h"
 #include "src/exceptions/InvalidSettingsException.h"
+
+#include "storage/parameters.h"
 
 
 
@@ -221,11 +222,14 @@ int main(const int argc, const char* argv[]) {
             std::string const& programFile = s->getOptionByLongName("symbolic").getArgument(0).getValueAsString();
             std::string const& constants = s->getOptionByLongName("constants").getArgument(0).getValueAsString();
             storm::prism::Program program = storm::parser::PrismParser::parse(programFile);
+            std::shared_ptr<storm::models::AbstractModel<storm::RationalFunction>> model = storm::adapters::ExplicitModelAdapter<storm::RationalFunction>::translateProgram(program, constants);
             
 			// Program Translation Time Measurement, End
 			std::chrono::high_resolution_clock::time_point programTranslationEnd = std::chrono::high_resolution_clock::now();
 			std::cout << "Parsing and translating the Symbolic Input took " << std::chrono::duration_cast<std::chrono::milliseconds>(programTranslationEnd - programTranslationStart).count() << " milliseconds." << std::endl;
 
+            
+            
             storm::modelchecker::reachability::SparseSccModelChecker<double> modelChecker;
             storm::storage::BitVector trueStates(model->getNumberOfStates(), true);
             storm::storage::BitVector targetStates = model->getLabeledStates("observe0Greater1");
