@@ -230,12 +230,12 @@ int main(const int argc, const char* argv[]) {
 
             
             
-            storm::modelchecker::reachability::SparseSccModelChecker<double> modelChecker;
+            storm::modelchecker::reachability::SparseSccModelChecker<storm::RationalFunction> modelChecker;
             storm::storage::BitVector trueStates(model->getNumberOfStates(), true);
             storm::storage::BitVector targetStates = model->getLabeledStates("observe0Greater1");
 //            storm::storage::BitVector targetStates = model->getLabeledStates("one");
 //            storm::storage::BitVector targetStates = model->getLabeledStates("elected");
-            double value = modelChecker.computeReachabilityProbability(*model->as<storm::models::Dtmc<double>>(), trueStates, targetStates);
+            storm::RationalFunction value = modelChecker.computeReachabilityProbability(*model->as<storm::models::Dtmc<storm::RationalFunction>>(), trueStates, targetStates);
             std::cout << "computed value " << value << std::endl;
             
             if (s->isSet("mincmd")) {

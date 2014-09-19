@@ -2,6 +2,7 @@
 
 #include <algorithm>
 
+#include "src/storage/parameters.h"
 #include "src/storage/StronglyConnectedComponentDecomposition.h"
 #include "src/utility/graph.h"
 #include "src/utility/vector.h"
@@ -26,7 +27,7 @@ namespace storm {
 
                 // If the initial state is known to have either probability 0 or 1, we can directly return the result.
                 if (!maybeStates.get(initialStateIndex)) {
-                    return statesWithProbability0.get(initialStateIndex) ? 0 : 1;
+                    return statesWithProbability0.get(initialStateIndex) ? storm::utility::constantZero<ValueType>() : storm::utility::constantOne<ValueType>();
                 }
                 
                 // Determine the set of states that is reachable from the initial state without jumping over a target state.
@@ -131,7 +132,7 @@ namespace storm {
                 }
                 
                 // Scale all entries in this row with (1 / (1 - loopProbability)).
-                loopProbability = 1 / (1 - loopProbability);
+                loopProbability = storm::utility::constantOne<ValueType>() / (storm::utility::constantOne<ValueType>() - loopProbability);
                 for (auto& entry : matrix.getRow(state)) {
                     entry.setValue(entry.getValue() * loopProbability);
                 }
@@ -155,7 +156,7 @@ namespace storm {
                     // Make sure we have found the probability and set it to zero.
                     LOG_THROW(multiplyElement != predecessorForwardTransitions.end(), storm::exceptions::InvalidStateException, "No probability for successor found.");
                     ValueType multiplyFactor = multiplyElement->getValue();
-                    multiplyElement->setValue(0);
+                    multiplyElement->setValue(storm::utility::constantZero<ValueType>());
                     
                     // At this point, we need to update the (forward) transitions of the predecessor.
                     typename FlexibleSparseMatrix<ValueType>::row_type::iterator first1 = predecessorForwardTransitions.begin();
@@ -298,7 +299,10 @@ namespace storm {
             
             template class FlexibleSparseMatrix<double>;
             template class SparseSccModelChecker<double>;
-            
+            #ifdef PARAMETRIC_SYSTEMS
+            template class FlexibleSparseMatrix<RationalFunction>;
+            template class SparseSccModelChecker<RationalFunction>;
+            #endif            
         } // namespace reachability
     } // namespace modelchecker
 } // namespace storm
