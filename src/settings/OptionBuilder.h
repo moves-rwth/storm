@@ -1,10 +1,3 @@
-/*
- * OptionBuilder.h
- *
- *  Created on: 11.08.2013
- *      Author: Philipp Berger
- */
-
 #ifndef STORM_SETTINGS_OPTIONBUILDER_H_
 #define STORM_SETTINGS_OPTIONBUILDER_H_
 
@@ -15,9 +8,9 @@
 #include <memory>
 #include <unordered_set>
 
-#include "ArgumentType.h"
-#include "ArgumentBase.h"
-#include "Option.h"
+#include "src/settings/ArgumentType.h"
+#include "src/settings/ArgumentBase.h"
+#include "src/settings/Option.h"
 
 #include "src/exceptions/IllegalArgumentException.h"
 #include "src/exceptions/IllegalFunctionCallException.h"
@@ -25,9 +18,21 @@
 namespace storm {
 	namespace settings {
 
+        /*!
+         * This class provides the interface to create an option.
+         */
 		class OptionBuilder {
 		public:
-			OptionBuilder(std::string const& newOptionModuleName, std::string const& newOptionLongName, std::string const& newOptionShortName, std::string const& newOptionDescription): longName(newOptionLongName), shortName(newOptionShortName), description(newOptionDescription), moduleName(newOptionModuleName), isRequired(false), isBuild(false) {}
+            /*!
+             * Creates a new option builder for an option with the given module, name and description.
+             *
+             * @param moduleName The name of the module to which this option belongs.
+             * @param longName The long name of the option.
+             * @param shortName The short name of the option. If empty, the option does not have a short name.
+             * @param 
+             *
+             */
+			OptionBuilder(std::string const& moduleName, std::string const& longName, std::string const& shortName, std::string const& description): longName(newOptionLongName), shortName(newOptionShortName), description(newOptionDescription), moduleName(newOptionModuleName), isRequired(false), isBuild(false) {}
 
 			~OptionBuilder() {}
 

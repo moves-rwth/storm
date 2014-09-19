@@ -6,48 +6,82 @@ namespace storm {
     namespace settings {
         namespace modules {
             
+            const std::string GeneralSettings::moduleName = "general";
+            const std::string GeneralSettings::helpOptionName = "help";
+            const std::string GeneralSettings::helpOptionShortName = "h";
+            const std::string GeneralSettings::verboseOptionName = "verbose";
+            const std::string GeneralSettings::verboseOptionShortName = "v";
+            const std::string GeneralSettings::exportDotOptionName = "exportdot";
+            const std::string GeneralSettings::configOptionName = "config";
+            const std::string GeneralSettings::configOptionShortName = "c";
+            const std::string GeneralSettings::explicitOptionName = "explicit";
+            const std::string GeneralSettings::explicitOptionShortName = "e";
+            const std::string GeneralSettings::symbolicOptionName = "symbolic";
+            const std::string GeneralSettings::symbolicOptionShortName = "s";
+            const std::string GeneralSettings::pctlOptionName = "pctl";
+            const std::string GeneralSettings::cslOptionName = "csl";
+            const std::string GeneralSettings::ltlOptionName = "ltl";
+            const std::string GeneralSettings::transitionRewardsOptionName = "transrew";
+            const std::string GeneralSettings::stateRewardsOptionName = "staterew";
+            const std::string GeneralSettings::counterexampleOptionName = "counterexample";
+            const std::string GeneralSettings::fixDeadlockOptionName = "fixDeadlocks";
+            const std::string GeneralSettings::fixDeadlockOptionShortName = "fix";
+            const std::string GeneralSettings::timeoutOptionName = "timeout";
+            const std::string GeneralSettings::timeoutOptionShortName = "t";
+            const std::string GeneralSettings::eqSolverOptionName = "eqsolver";
+            const std::string GeneralSettings::lpSolverOptionName = "lpsolver";
+            const std::string GeneralSettings::constantsOptionName = "constants";
+            const std::string GeneralSettings::constantsOptionShortName = "const";
+            
             GeneralSettings::GeneralSettings(storm::settings::SettingsManager& settingsManager) : ModuleSettings(settingsManager) {
-                settingsManager.addOption(storm::settings::OptionBuilder("general", "help", "h", "Shows all available options, arguments and descriptions.").build());
-                settingsManager.addOption(storm::settings::OptionBuilder("general", "verbose", "v", "Be verbose.").build());
-                settingsManager.addOption(storm::settings::OptionBuilder("general", "exportdot", "", "If specified, the loaded model will be written to the specified file in the dot format.")
-                                          .addArgument(storm::settings::ArgumentBuilder::createStringArgument("dotFileName", "The file to export the model to.").build()).build());
-                settingsManager.addOption(storm::settings::OptionBuilder("general", "config", "c", "If specified, this file will be read and parsed for additional configuration settings.")
-                                          .addArgument(storm::settings::ArgumentBuilder::createStringArgument("configFileName", "The path and name of the file from which to read.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
-                settingsManager.addOption(storm::settings::OptionBuilder("general", "explicit", "e", "Explicit parsing from transition- and labeling files.")
-                                          .addArgument(storm::settings::ArgumentBuilder::createStringArgument("transitionFileName", "The path and name of the file from which to read the transitions.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build())
-                                          .addArgument(storm::settings::ArgumentBuilder::createStringArgument("labelingFileName", "The path and name of the file from which to read the labeling.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
-                settingsManager.addOption(storm::settings::OptionBuilder("general", "symbolic", "s", "Parse the given symbolic model file.")
-                                          .addArgument(storm::settings::ArgumentBuilder::createStringArgument("symbolicFileName", "The path and name of the file from which to read the symbolic model.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
-                settingsManager.addOption(storm::settings::OptionBuilder("general", "pctl", "", "Performs model checking for the PRCTL formulas given in the file.")
-                                          .addArgument(storm::settings::ArgumentBuilder::createStringArgument("prctlFileName", "The file from which to read the PRCTL formulas.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
-                settingsManager.addOption(storm::settings::OptionBuilder("general", "csl", "", "Performs model checking for the CSL formulas given in the file.")
-                                          .addArgument(storm::settings::ArgumentBuilder::createStringArgument("cslFileName", "The file from which to read the CSL formulas.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
-                settingsManager.addOption(storm::settings::OptionBuilder("general", "ltl", "", "Performs model checking for the LTL formulas given in the file.")
-                                          .addArgument(storm::settings::ArgumentBuilder::createStringArgument("ltlFileName", "The file from which to read the LTL formulas.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
-                settingsManager.addOption(storm::settings::OptionBuilder("general", "counterExample", "", "Generates a counterexample for the given PRCTL formulas if not satisfied by the model")
-                                          .addArgument(storm::settings::ArgumentBuilder::createStringArgument("outputPath", "The path to the directory to write the generated counterexample files to.").build()).build());
-                settingsManager.addOption(storm::settings::OptionBuilder("general", "transitionRewards", "", "If specified, the transition rewards are read from this file and added to the explicit model. Note that this requires an explicit model.")
-                                          .addArgument(storm::settings::ArgumentBuilder::createStringArgument("transitionRewardsFileName", "The file from which to read the transition rewards.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
-                settingsManager.addOption(storm::settings::OptionBuilder("general", "stateRewards", "", "If specified, the state rewards are read from this file and added to the explicit model. Note that this requires an explicit model.")
-                                          .addArgument(storm::settings::ArgumentBuilder::createStringArgument("stateRewardsFileName", "The file from which to read the state rewards.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
-                settingsManager.addOption(storm::settings::OptionBuilder("general", "fixDeadlocks", "", "If the model contains deadlock states, setting this option will insert self-loops for these states.").build());
-                settingsManager.addOption(storm::settings::OptionBuilder("general", "timeout", "t", "If specified, computation will abort after the given number of seconds.")
-                                          .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("seconds", "The number of seconds after which to timeout.").setDefaultValueUnsignedInteger(0).build()).build());
+                // First, we need to create all options of this module.
+                std::vector<std::shared_ptr<Option>> options;
+                options.push_back(storm::settings::OptionBuilder(moduleName, helpOptionName, helpOptionShortName, "Shows all available options, arguments and descriptions.").build());
+                options.push_back(storm::settings::OptionBuilder(moduleName, verboseOptionName, verboseOptionShortName, "Enables more verbose output.").build());
+                options.push_back(storm::settings::OptionBuilder(moduleName, exportDotOptionName, "", "If given, the loaded model will be written to the specified file in the dot format.")
+                                  .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file to which the model is to be written.").build()).build());
+                options.push_back(storm::settings::OptionBuilder(moduleName, configOptionName, configOptionShortName, "If given, this file will be read and parsed for additional configuration settings.")
+                                  .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file from which to read the configuration.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
+                options.push_back(storm::settings::OptionBuilder(moduleName, explicitOptionName, explicitOptionShortName, "Parses the model given in an explicit (sparse) representation.")
+                                  .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file from which to read the transitions.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build())
+                                  .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file from which to read the state labeling.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
+                options.push_back(storm::settings::OptionBuilder(moduleName, symbolicOptionName, symbolicOptionShortName, "Parses the model given in a symbolic representation.")
+                                  .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file from which to read the symbolic model.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
+                options.push_back(storm::settings::OptionBuilder(moduleName, pctlOptionName, "", "Specifies the PCTL formulas that are to be checked on the model.")
+                                  .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The file from which to read the PCTL formulas.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
+                options.push_back(storm::settings::OptionBuilder(moduleName, cslOptionName, "", "Specifies the CSL formulas that are to be checked on the model.")
+                                  .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The file from which to read the CSL formulas.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
+                options.push_back(storm::settings::OptionBuilder(moduleName, ltlOptionName, "", "Specifies the LTL formulas that are to be checked on the model.")
+                                  .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The file from which to read the LTL formulas.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
+                options.push_back(storm::settings::OptionBuilder(moduleName, counterexampleOptionName, "", "Generates a counterexample for the given PRCTL formulas if not satisfied by the model")
+                                  .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file to which the counterexample is to be written.").build()).build());
+                
+                options.push_back(storm::settings::OptionBuilder(moduleName, transitionRewardsOptionName, "", "If given, the transition rewards are read from this file and added to the explicit model. Note that this requires the model to be given as an explicit model (i.e., via --" + explicitOptionName + ").")
+                                  .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The file from which to read the transition rewards.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
+                options.push_back(storm::settings::OptionBuilder(moduleName, stateRewardsOptionName, "", "If given, the state rewards are read from this file and added to the explicit model. Note that this requires the model to be given as an explicit model (i.e., via --" + explicitOptionName + ").");
+                                  .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The file from which to read the state rewards.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
+                options.push_back(storm::settings::OptionBuilder(moduleName, fixDeadlockOptionName, fixDeadlockOptionShortName, "If the model contains deadlock states, they need to be fixed by setting this option.").build());
                 
                 std::vector<std::string> linearEquationSolver;
                 linearEquationSolver.push_back("gmm++");
                 linearEquationSolver.push_back("native");
-                settingsManager.addOption(storm::settings::OptionBuilder("general", "eqsolver", "", "Sets which solver is preferred for solving systems of linear equations.")
-                                          .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the solver to prefer. Available are: gmm++ and native.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(linearEquationSolver)).setDefaultValueString("gmm++").build()).build());
-                                
+                settingsManager.addOption();
+                options.push_back(storm::settings::OptionBuilder(moduleName, eqSolverOptionName, "", "Sets which solver is preferred for solving systems of linear equations.")
+                                  .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the solver to prefer. Available are: gmm++ and native.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(linearEquationSolver)).setDefaultValueString("gmm++").build()).build());
+                options.push_back(storm::settings::OptionBuilder(moduleName, timeoutOptionName, timeoutOptionShortName, "If given, computation will abort after the timeout has been reached.")
+                                  .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("time", "The number of seconds after which to timeout.").setDefaultValueUnsignedInteger(0).build()).build());
+
                 std::vector<std::string> lpSolvers;
                 lpSolvers.push_back("gurobi");
                 lpSolvers.push_back("glpk");
-                settingsManager.addOption(storm::settings::OptionBuilder("general", "lpsolver", "", "Sets which LP solver is preferred.")
-                                          .addArgument(storm::settings::ArgumentBuilder::createStringArgument("LP solver name", "The name of an available LP solver. Valid values are gurobi and glpk.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(lpSolvers)).setDefaultValueString("glpk").build()).build());
+                settingsManager.addOption();
+                options.push_back(storm::settings::OptionBuilder(moduleName, lpSolverOptionName, "", "Sets which LP solver is preferred.")
+                                  .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of an LP solver. Available are: gurobi and glpk.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(lpSolvers)).setDefaultValueString("glpk").build()).build());
+                options.push_back(storm::settings::OptionBuilder(moduleName, constantsOptionName, constantsOptionShortName, "Specifies the constant replacements to use in symbolic models. Note that Note that this requires the model to be given as an symbolic model (i.e., via --" + symbolicOptionName + ").")
+                                  .addArgument(storm::settings::ArgumentBuilder::createStringArgument("values", "A comma separated list of constants and their value, e.g. a=1,b=2,c=3.").setDefaultValueString("").build()).build());
                 
-                settingsManager.addOption(storm::settings::OptionBuilder("general", "constants", "const", "Specifies the constant replacements to use in symbolic models.")
-                                          .addArgument(storm::settings::ArgumentBuilder::createStringArgument("constantString", "A comma separated list of constants and their value, e.g. a=1,b=2,c=3").setDefaultValueString("").build()).build());
+                // Finally, register all options that we just created.
+                settingsManager.registerModule(moduleName, options);
             }
             
         } // namespace modules
