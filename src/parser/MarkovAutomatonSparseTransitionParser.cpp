@@ -12,7 +12,7 @@ namespace storm {
 
 		using namespace storm::utility::cstring;
 
-		MarkovAutomatonSparseTransitionParser::FirstPassResult MarkovAutomatonSparseTransitionParser::firstPass(char* buf) {
+		MarkovAutomatonSparseTransitionParser::FirstPassResult MarkovAutomatonSparseTransitionParser::firstPass(char const* buf) {
 			MarkovAutomatonSparseTransitionParser::FirstPassResult result;
 
 			bool fixDeadlocks = storm::settings::Settings::getInstance()->isSet("fixDeadlocks");
@@ -154,7 +154,7 @@ namespace storm {
 			return result;
 		}
 
-		MarkovAutomatonSparseTransitionParser::Result MarkovAutomatonSparseTransitionParser::secondPass(char* buf, FirstPassResult const& firstPassResult) {
+		MarkovAutomatonSparseTransitionParser::Result MarkovAutomatonSparseTransitionParser::secondPass(char const* buf, FirstPassResult const& firstPassResult) {
 			Result result(firstPassResult);
 
 			bool fixDeadlocks = storm::settings::Settings::getInstance()->isSet("fixDeadlocks");
@@ -271,7 +271,7 @@ namespace storm {
 
 			// Open file and prepare pointer to buffer.
 			MappedFile file(filename.c_str());
-			char* buf = file.getData();
+			char const* buf = file.getData();
 
 			return secondPass(buf, firstPass(buf));
 		}

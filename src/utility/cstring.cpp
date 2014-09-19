@@ -22,8 +22,8 @@ namespace cstring {
  *	@param end New pointer will be written there
  *	@return Result of strtol()
  */
-uint_fast64_t checked_strtol(const char* str, char** end) {
-	uint_fast64_t res = strtol(str, end, 10);
+uint_fast64_t checked_strtol(char const* str, char const** end) {
+	uint_fast64_t res = strtol(str, const_cast<char**>(end), 10);
 	if (str == *end) {
 		LOG4CPLUS_ERROR(logger, "Error while parsing integer. Next input token is not a number.");
 		LOG4CPLUS_ERROR(logger, "\tUpcoming input is: \"" << std::string(str, 0, 16) << "\"");
@@ -40,8 +40,8 @@ uint_fast64_t checked_strtol(const char* str, char** end) {
  *	@param end New pointer will be written there
  *	@return Result of strtod()
  */
-double checked_strtod(const char* str, char** end) {
-	double res = strtod(str, end);
+double checked_strtod(char const* str, char const** end) {
+	double res = strtod(str, const_cast<char**>(end));
 	if (str == *end) {
 		LOG4CPLUS_ERROR(logger, "Error while parsing floating point. Next input token is not a number.");
 		LOG4CPLUS_ERROR(logger, "\tUpcoming input is: \"" << std::string(str, 0, 16) << "\"");
@@ -56,7 +56,7 @@ double checked_strtod(const char* str, char** end) {
  * @param buf The string buffer to operate on.
  * @return A pointer to the first whitespace character.
  */
-char* skipWord(char* buf){
+char const* skipWord(char const* buf){
 	while(!isspace(*buf) && *buf != '\0') buf++;
 	return buf;
 }
@@ -67,7 +67,7 @@ char* skipWord(char* buf){
  *	@param buf The string buffer to operate on.
  *	@return	A pointer to the first non-whitespace character.
  */
-char* trimWhitespaces(char* buf) {
+char const* trimWhitespaces(char const* buf) {
 	while (isspace(*buf)) buf++;
 	return buf;
 }
@@ -75,15 +75,15 @@ char* trimWhitespaces(char* buf) {
 /*!
  * @brief Encapsulates the usage of function @strcspn to forward to the end of the line (next char is the newline character).
  */
-char* forwardToLineEnd(char* buffer) {
+char const* forwardToLineEnd(char const* buffer) {
 	return buffer + strcspn(buffer, "\n\r\0");
 }
 
 /*!
  * @brief Encapsulates the usage of function @strchr to forward to the next line
  */
-char* forwardToNextLine(char* buffer) {
-	char* lineEnd = forwardToLineEnd(buffer);
+char const* forwardToNextLine(char const* buffer) {
+	char const* lineEnd = forwardToLineEnd(buffer);
 	while((*lineEnd == '\n') || (*lineEnd == '\r')) lineEnd++;
 	return lineEnd;
 }

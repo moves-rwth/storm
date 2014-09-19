@@ -1,12 +1,5 @@
-/*
- * Csl.h
- *
- *  Created on: 19.04.2013
- *      Author: Thomas Heinemann
- */
-
-#ifndef STORM_FORMULA_CSL_H_
-#define STORM_FORMULA_CSL_H_
+#ifndef STORM_PROPERTIES_CSL_H_
+#define STORM_PROPERTIES_CSL_H_
 
 #include "src/modelchecker/csl/ForwardDeclarations.h"
 
@@ -26,4 +19,4 @@
 
 #include "modelchecker/csl/AbstractModelChecker.h"
 
-#endif /* STORM_FORMULA_CSL_H_ */
+#endif /* STORM_PROPERTIES_CSL_H_ */

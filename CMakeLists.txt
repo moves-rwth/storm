@@ -15,7 +15,6 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 set(GMMXX_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/resources/3rdparty/gmm-4.2/include")
 include_directories(${GMMXX_INCLUDE_DIR})
 
-
 #############################################################
 ##
 ##	CMake options of StoRM
@@ -39,7 +38,6 @@ option(PARAMETRIC_SYSTEMS "Sets whether models with parameters are supported." O
 ##	Inclusion of required libraries
 ##
 #############################################################
-
 # Add the resources/cmake folder to Module Search Path for FindTBB.cmake
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/resources/cmake/")
 
@@ -61,7 +59,7 @@ find_package(Doxygen REQUIRED)
 find_package(TBB)
 find_package(Threads REQUIRED)
 
-# If the DEBUG option was turned on, we will target a debug version and a release version otherwise
+# If the DEBUG option was turned on, we will target a debug version and a release version otherwise.
 if (STORM_DEBUG)
     set (CMAKE_BUILD_TYPE "DEBUG")
 else()
@@ -98,7 +96,6 @@ message(STATUS "StoRM - CMAKE_BUILD_TYPE (ENV): $ENV{CMAKE_BUILD_TYPE}")
 ##	Compiler specific settings and definitions
 ##
 #############################################################
-
 # Path to the no-strict-aliasing target
 set(CONVERSIONHELPER_TARGET "${PROJECT_SOURCE_DIR}/src/utility/ConversionHelper.cpp")
 
@@ -248,11 +245,11 @@ file(GLOB_RECURSE STORM_PARAMETRIC_MAIN_FILE ${PROJECT_SOURCE_DIR}/src/stormPara
 set(STORM_SOURCES "${STORM_SOURCES_WITHOUT_MAIN};${STORM_MAIN_FILE};${STORM_PARAMETRIC_MAIN_FILE};")
 file(GLOB_RECURSE STORM_ADAPTERS_FILES ${PROJECT_SOURCE_DIR}/src/adapters/*.h ${PROJECT_SOURCE_DIR}/src/adapters/*.cpp)
 file(GLOB_RECURSE STORM_EXCEPTIONS_FILES ${PROJECT_SOURCE_DIR}/src/exceptions/*.h ${PROJECT_SOURCE_DIR}/src/exceptions/*.cpp)
-file(GLOB STORM_FORMULA_FILES ${PROJECT_SOURCE_DIR}/src/formula/*.h ${PROJECT_SOURCE_DIR}/src/formula/*.cpp)
-file(GLOB_RECURSE STORM_FORMULA_ABSTRACT_FILES ${PROJECT_SOURCE_DIR}/src/formula/abstract/*.h ${PROJECT_SOURCE_DIR}/src/formula/abstract/*.cpp)
-file(GLOB_RECURSE STORM_FORMULA_CSL_FILES ${PROJECT_SOURCE_DIR}/src/formula/Csl/*.h ${PROJECT_SOURCE_DIR}/src/formula/Csl/*.cpp)
-file(GLOB_RECURSE STORM_FORMULA_LTL_FILES ${PROJECT_SOURCE_DIR}/src/formula/Ltl/*.h ${PROJECT_SOURCE_DIR}/src/formula/Ltl/*.cpp)
-file(GLOB_RECURSE STORM_FORMULA_PRCTL_FILES ${PROJECT_SOURCE_DIR}/src/formula/Prctl/*.h ${PROJECT_SOURCE_DIR}/src/formula/Prctl/*.cpp)
+file(GLOB STORM_PROPERTIES_FILES ${PROJECT_SOURCE_DIR}/src/properties/*.h ${PROJECT_SOURCE_DIR}/src/properties/*.cpp)
+file(GLOB_RECURSE STORM_PROPERTIES_CSL_FILES ${PROJECT_SOURCE_DIR}/src/properties/csl/*.h ${PROJECT_SOURCE_DIR}/src/properties/csl/*.cpp)
+file(GLOB_RECURSE STORM_PROPERTIES_LTL_FILES ${PROJECT_SOURCE_DIR}/src/properties/ltl/*.h ${PROJECT_SOURCE_DIR}/src/properties/ltl/*.cpp)
+file(GLOB_RECURSE STORM_PROPERTIES_PRCTL_FILES ${PROJECT_SOURCE_DIR}/src/properties/prctl/*.h ${PROJECT_SOURCE_DIR}/src/properties/prctl/*.cpp)
+file(GLOB_RECURSE STORM_PROPERTIES_ACTIONS_FILES ${PROJECT_SOURCE_DIR}/src/properties/actions/*.h ${PROJECT_SOURCE_DIR}/src/properties/actions/*.cpp)
 file(GLOB_RECURSE STORM_MODELCHECKER_FILES ${PROJECT_SOURCE_DIR}/src/modelchecker/*.h ${PROJECT_SOURCE_DIR}/src/modelchecker/*.cpp)
 file(GLOB_RECURSE STORM_COUNTEREXAMPLES_FILES ${PROJECT_SOURCE_DIR}/src/counterexamples/*.h ${PROJECT_SOURCE_DIR}/src/counterexamples/*.cpp)
 file(GLOB_RECURSE STORM_MODELS_FILES ${PROJECT_SOURCE_DIR}/src/models/*.h ${PROJECT_SOURCE_DIR}/src/models/*.cpp)
@@ -267,8 +264,10 @@ file(GLOB_RECURSE STORM_STORAGE_PRISM_FILES ${PROJECT_SOURCE_DIR}/src/storage/pr
 file(GLOB_RECURSE STORM_UTILITY_FILES ${PROJECT_SOURCE_DIR}/src/utility/*.h ${PROJECT_SOURCE_DIR}/src/utility/*.cpp)
 # Test Sources
 # Note that the tests also need the source files, except for the main file
+file(GLOB STORM_FUNCTIONAL_TEST_MAIN_FILE ${STORM_CPP_TESTS_BASE_PATH}/functional/storm-functional-tests.cpp)
 file(GLOB_RECURSE STORM_FUNCTIONAL_TEST_FILES ${STORM_CPP_TESTS_BASE_PATH}/functional/*.h ${STORM_CPP_TESTS_BASE_PATH}/functional/*.cpp)
-file(GLOB_RECURSE STORM_PERFORMANCE_TEST_FILES ${STORM_CPP_TESTS_BASE_PATH}/performance/*.h ${STORM_CPP_TESTS_BASE_PATH}/performance/*.cpp)
+file(GLOB STORM_PERFORMANCE_TEST_MAIN_FILE ${STORM_CPP_TESTS_BASE_PATH}/performance/storm-performance-tests.cpp)
+file(GLOB_RECURSE STORM_PERFORMANCE_TEST_FILES ${STORM_CPP_TESTS_BASE_PATH}/performance/*/*.h ${STORM_CPP_TESTS_BASE_PATH}/performance/*/*.cpp)
 
 # Additional include files like the storm-config.h
 file(GLOB_RECURSE STORM_BUILD_HEADERS ${PROJECT_BINARY_DIR}/include/*.h)
@@ -277,11 +276,11 @@ file(GLOB_RECURSE STORM_BUILD_HEADERS ${PROJECT_BINARY_DIR}/include/*.h)
 source_group(main FILES ${STORM_MAIN_FILE})
 source_group(adapters FILES ${STORM_ADAPTERS_FILES})
 source_group(exceptions FILES ${STORM_EXCEPTIONS_FILES})
-source_group(formula FILES ${STORM_FORMULA_FILES})
-source_group(formula\\abstract FILES ${STORM_FORMULA_ABSTRACT_FILES})
-source_group(formula\\csl FILES ${STORM_FORMULA_CSL_FILES})
-source_group(formula\\ltl FILES ${STORM_FORMULA_LTL_FILES})
-source_group(formula\\prctl FILES ${STORM_FORMULA_PRCTL_FILES})
+source_group(properties FILES ${STORM_PROPERTIES_FILES})
+source_group(properties\\csl FILES ${STORM_PROPERTIES_CSL_FILES})
+source_group(properties\\ltl FILES ${STORM_PROPERTIES_LTL_FILES})
+source_group(properties\\prctl FILES ${STORM_PROPERTIES_PRCTL_FILES})
+source_group(properties\\actions FILES ${STORM_PROPERTIES_ACTIONS_FILES})
 source_group(generated FILES ${STORM_BUILD_HEADERS})
 source_group(modelchecker FILES ${STORM_MODELCHECKER_FILES})
 source_group(counterexamples FILES ${STORM_COUNTEREXAMPLES_FILES})
@@ -334,9 +333,14 @@ endif()
 ##  All link_directories() calls MUST be made before this point               #
 ##                                                                            #
 ###############################################################################
-add_executable(storm ${STORM_SOURCES} ${STORM_HEADERS} ${STORM_BUILD_HEADERS})
-add_executable(storm-functional-tests ${STORM_FUNCTIONAL_TEST_FILES} ${STORM_SOURCES_WITHOUT_MAIN} ${STORM_HEADERS} ${STORM_BUILD_HEADERS})
-add_executable(storm-performance-tests ${STORM_PERFORMANCE_TEST_FILES} ${STORM_SOURCES_WITHOUT_MAIN} ${STORM_HEADERS} ${STORM_BUILD_HEADERS})
+add_library(storm ${STORM_SOURCES_WITHOUT_MAIN} ${STORM_HEADERS})
+add_executable(storm-main ${STORM_MAIN_FILE})
+target_link_libraries(storm-main storm)
+set_target_properties(storm-main PROPERTIES OUTPUT_NAME "storm")
+add_executable(storm-functional-tests ${STORM_FUNCTIONAL_TEST_MAIN_FILE} ${STORM_FUNCTIONAL_TEST_FILES})
+target_link_libraries(storm-functional-tests storm)
+add_executable(storm-performance-tests ${STORM_PERFORMANCE_TEST_MAIN_FILE} ${STORM_PERFORMANCE_TEST_FILES})
+target_link_libraries(storm-performance-tests storm)
 
 #############################################################
 ##
@@ -345,8 +349,6 @@ add_executable(storm-performance-tests ${STORM_PERFORMANCE_TEST_FILES} ${STORM_S
 #############################################################
 include_directories(${Boost_INCLUDE_DIRS})
 target_link_libraries(storm ${Boost_LIBRARIES})   
-target_link_libraries(storm-functional-tests ${Boost_LIBRARIES})
-target_link_libraries(storm-performance-tests ${Boost_LIBRARIES})
 #message(STATUS "BOOST_INCLUDE_DIRS is ${Boost_INCLUDE_DIRS}")
 #message(STATUS "BOOST_LIBRARY_DIRS is ${Boost_LIBRARY_DIRS}")
 
@@ -364,8 +366,6 @@ include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/src/obj
 include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/src/st")
 include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/src/util")
 target_link_libraries(storm cudd)
-target_link_libraries(storm-functional-tests cudd)
-target_link_libraries(storm-performance-tests cudd)
 
 #############################################################
 ##
@@ -375,8 +375,6 @@ target_link_libraries(storm-performance-tests cudd)
 add_subdirectory("${PROJECT_SOURCE_DIR}/resources/3rdparty/ltl2dstar-0.5.1")
 include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/ltl2dstar-0.5.1/src")
 target_link_libraries(storm ltl2dstar)
-target_link_libraries(storm-functional-tests ltl2dstar)
-target_link_libraries(storm-performance-tests ltl2dstar)
 
 #############################################################
 ##
@@ -400,8 +398,6 @@ message (STATUS "StoRM - Linking with glpk")
 add_subdirectory("${PROJECT_SOURCE_DIR}/resources/3rdparty/glpk-4.53")
 include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/glpk-4.53/src")
 target_link_libraries(storm "glpk")
-target_link_libraries(storm-functional-tests "glpk")
-target_link_libraries(storm-performance-tests "glpk")
 
 #############################################################
 ##
@@ -412,8 +408,6 @@ if (ENABLE_Z3)
     message (STATUS "StoRM - Linking with Z3")
     include_directories("${Z3_ROOT}/include")
     target_link_libraries(storm ${Z3_LIB_NAME})
-    target_link_libraries(storm-functional-tests ${Z3_LIB_NAME})
-    target_link_libraries(storm-performance-tests ${Z3_LIB_NAME})
 endif(ENABLE_Z3)
 
 #############################################################
@@ -466,8 +460,6 @@ if (UNIX AND NOT APPLE)
 	if (STORM_USE_COTIRE)
 		target_link_libraries(storm_unity rt)
 	endif(STORM_USE_COTIRE)
-	target_link_libraries(storm-functional-tests rt)
-	target_link_libraries(storm-performance-tests rt)
 endif(UNIX AND NOT APPLE)
 
 #############################################################
@@ -481,8 +473,6 @@ if (TBB_FOUND)
 		message(STATUS "StoRM - Linking with Intel TBB in ${TBB_LIBRARY_DIRS}.")
 		include_directories(${TBB_INCLUDE_DIRS})
 		target_link_libraries(storm tbb tbbmalloc)
-		target_link_libraries(storm-functional-tests tbb tbbmalloc)
-		target_link_libraries(storm-performance-tests tbb tbbmalloc)
 	endif(STORM_USE_INTELTBB)
 endif(TBB_FOUND)
 
@@ -496,15 +486,11 @@ target_link_libraries(storm ${CMAKE_THREAD_LIBS_INIT})
 if (STORM_USE_COTIRE)
 	target_link_libraries(storm_unity ${CMAKE_THREAD_LIBS_INIT})
 endif(STORM_USE_COTIRE)
-target_link_libraries(storm-functional-tests ${CMAKE_THREAD_LIBS_INIT})
-target_link_libraries(storm-performance-tests ${CMAKE_THREAD_LIBS_INIT})
 
 if (MSVC)
 	# Add the DebugHelper DLL
 	set(CMAKE_CXX_STANDARD_LIBRARIES "${CMAKE_CXX_STANDARD_LIBRARIES} Dbghelp.lib")
 	target_link_libraries(storm "Dbghelp.lib")   
-	target_link_libraries(storm-functional-tests "Dbghelp.lib")
-	target_link_libraries(storm-performance-tests "Dbghelp.lib")
 endif(MSVC)
 
 # Print Cotire Usage Status
@@ -525,8 +511,6 @@ endif()
 if (LINK_LIBCXXABI)
 	message (STATUS "StoRM - Linking against libc++abi.")
 	target_link_libraries(storm "c++abi")
-	target_link_libraries(storm-functional-tests "c++abi")
-	target_link_libraries(storm-performance-tests "c++abi")
 endif(LINK_LIBCXXABI)
 
 # Add a target to generate API documentation with Doxygen
@@ -546,7 +530,7 @@ add_custom_target(memcheck-performance-tests valgrind --leak-check=full --show-r
 set(CPPLINT_ARGS --filter=-whitespace/tab,-whitespace/line_length,-legal/copyright,-readability/streams)
 add_custom_target(style python cpplint.py ${CPPLINT_ARGS} `find ./src/ -iname "*.h" -or -iname "*.cpp" `)
 
-INSTALL(TARGETS storm storm-functional-tests storm-performance-tests
+INSTALL(TARGETS storm-main storm-functional-tests storm-performance-tests
 	RUNTIME DESTINATION bin
 	LIBRARY DESTINATION lib
 	ARCHIVE DESTINATION lib

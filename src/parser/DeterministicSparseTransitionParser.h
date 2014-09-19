@@ -52,7 +52,8 @@ namespace storm {
 			 * @param insertDiagonalEntriesIfMissing A flag set iff entries on the primary diagonal of the matrix should be added in case they are missing in the parsed file.
 			 * @return A SparseMatrix containing the parsed transition system.
 			 */
-			static storm::storage::SparseMatrix<double> parseDeterministicTransitions(std::string const& filename);
+			template<typename T>
+			static storm::storage::SparseMatrix<T> parseDeterministicTransitions(std::string const& filename);
 
 			/*!
 			 * Load the transition rewards for a deterministic transition system from file and create a
@@ -63,7 +64,8 @@ namespace storm {
 			 *                         The dimensions (rows and columns) of the two matrices should match.
 			 * @return A SparseMatrix containing the parsed transition rewards.
 			 */
-			static storm::storage::SparseMatrix<double> parseDeterministicTransitionRewards(std::string const& filename, storm::storage::SparseMatrix<double> const & transitionMatrix);
+			template<typename T>
+			static storm::storage::SparseMatrix<T> parseDeterministicTransitionRewards(std::string const& filename, storm::storage::SparseMatrix<T> const & transitionMatrix);
 
 		private:
 
@@ -75,7 +77,7 @@ namespace storm {
 			 * @param insertDiagonalEntriesIfMissing A flag set iff entries on the primary diagonal of the matrix should be added in case they are missing in the parsed file.
 			 * @return A structure representing the result of the first pass.
 			 */
-			static FirstPassResult firstPass(char* buffer, bool insertDiagonalEntriesIfMissing = true);
+			static FirstPassResult firstPass(char const* buffer, bool insertDiagonalEntriesIfMissing = true);
 
 			/*
 			 * The main parsing routine.

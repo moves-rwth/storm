@@ -29,7 +29,7 @@ namespace storm {
 			}
 
 			MappedFile file(filename.c_str());
-			char* buf = file.getData();
+			char const* buf = file.getData();
 
 			// Create state reward vector with given state count.
 			std::vector<double> stateRewards(stateCount);

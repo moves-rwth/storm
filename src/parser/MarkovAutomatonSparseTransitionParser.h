@@ -85,7 +85,7 @@ namespace storm {
 			 * @param buffer The buffer that cointains the input.
 			 * @return A structure representing the result of the first pass.
 			 */
-			static FirstPassResult firstPass(char* buffer);
+			static FirstPassResult firstPass(char const* buffer);
 
 			/*!
 			 * Performs the second pass on the input pointed to by the given buffer with the information of the first pass.
@@ -94,7 +94,7 @@ namespace storm {
 			 * @param firstPassResult The result of the first pass performed on the same input.
 			 * @return A structure representing the result of the second pass.
 			 */
-			static Result secondPass(char* buffer, FirstPassResult const& firstPassResult);
+			static Result secondPass(char const* buffer, FirstPassResult const& firstPassResult);
 		};
 
 	} // namespace parser
