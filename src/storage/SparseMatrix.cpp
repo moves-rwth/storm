@@ -978,13 +978,17 @@ namespace storm {
         template class SparseMatrix<int>;
         template std::ostream& operator<<(std::ostream& out, SparseMatrix<int> const& matrix);
 #ifdef PARAMETRIC_SYSTEMS
-        template class SparseMatrixBuilder<Polynomial>;
-        template class SparseMatrix<Polynomial>;
-        template std::ostream& operator<<(std::ostream& out, SparseMatrix<Polynomial> const& matrix);
+        template class MatrixEntry<typename SparseMatrix<RationalFunction>::index_type, RationalFunction>;
+        template std::ostream& operator<<(std::ostream& out, MatrixEntry<uint_fast64_t, RationalFunction> const& entry);
         template class SparseMatrixBuilder<RationalFunction>;
         template class SparseMatrix<RationalFunction>;
         template std::ostream& operator<<(std::ostream& out, SparseMatrix<RationalFunction> const& matrix);
         
+        template class MatrixEntry<typename SparseMatrix<Polynomial>::index_type, Polynomial>;
+        template std::ostream& operator<<(std::ostream& out, MatrixEntry<uint_fast64_t, Polynomial> const& entry);
+        template class SparseMatrixBuilder<Polynomial>;
+        template class SparseMatrix<Polynomial>;
+        template std::ostream& operator<<(std::ostream& out, SparseMatrix<Polynomial> const& matrix);
 #endif
         
         

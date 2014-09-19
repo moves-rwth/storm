@@ -78,7 +78,7 @@ namespace storm {
                         storm::storage::BitVector entryStates(dtmc.getNumberOfStates());
                         for (auto const& state : newScc) {
                             for (auto const& predecessor : backwardTransitions.getRow(state)) {
-                                if (predecessor.getValue() > storm::utility::constantZero<ValueType>() && !newSccAsBitVector.get(predecessor.getColumn())) {
+                                if (predecessor.getValue() != storm::utility::constantZero<ValueType>() && !newSccAsBitVector.get(predecessor.getColumn())) {
                                     entryStates.set(state);
                                 }
                             }
