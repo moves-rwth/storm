@@ -10,7 +10,7 @@ namespace storm {
             /*!
              * This class represents the settings for gmm++.
              */
-            class GmmxxSettings : public ModuleSettings {
+            class GmmxxEquationSolverSettings : public ModuleSettings {
             public:
                 // An enumeration of all available techniques for solving linear equations.
                 enum class LinearEquationTechnique { Bicgstab, Qmr, Gmres, Jacobi };
@@ -18,12 +18,15 @@ namespace storm {
                 // An enumeration of all available preconditioning techniques.
                 enum class PreconditioningTechnique { Ilu, Diagonal, Ildlt, None };
                 
+                // An enumeration of all available convergence criteria.
+                enum class ConvergenceCriterion { Absolute, Relative };
+                
                 /*!
                  * Creates a new set of gmm++ settings that is managed by the given manager.
                  *
                  * @param settingsManager The responsible manager.
                  */
-                GmmxxSettings(storm::settings::SettingsManager& settingsManager);
+                GmmxxEquationSolverSettings(storm::settings::SettingsManager& settingsManager);
                 
                 /*!
                  * Retrieves the technique that is to be used for solving systems of linear equations.
@@ -61,18 +64,11 @@ namespace storm {
                 double getPrecision() const;
                 
                 /*!
-                 * Retrieves whether the absolute error is used for detecting convergence.
+                 * Retrieves the selected convergence criterion.
                  *
-                 * @return True iff the absolute error is used convergence detection.
+                 * @return The selected convergence criterion.
                  */
-                bool useAbsoluteConvergenceCriterion() const;
-
-                /*!
-                 * Retrieves whether the relative error is used for detecting convergence.
-                 *
-                 * @return True iff the relative error is used convergence detection.
-                 */
-                bool useRelativeConvergenceCriterion() const;
+                ConvergenceCriterion getConvergenceCriterion() const;
                 
             private:
                 // Define the string names of the options as constants.

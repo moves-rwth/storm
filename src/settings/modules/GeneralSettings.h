@@ -12,6 +12,12 @@ namespace storm {
              */
             class GeneralSettings : public ModuleSettings {
             public:
+                // An enumeration of all available LP solvers.
+                enum class LpSolver { Gurobi, glpk };
+                
+                // An enumeration of all available equation solvers.
+                enum class EquationSolver { Gmmxx, Native };
+                
                 /*!
                  * Creates a new set of general settings that is managed by the given manager.
                  *
@@ -216,46 +222,18 @@ namespace storm {
                 uint_fast64_t getTimeoutInSeconds() const;
 
                 /*!
-                 * Retrieves whether the eqsolver option was set.
+                 * Retrieves the selected equation solver.
                  *
-                 * @return True if the eqsolver option was set.
+                 * @return The selected convergence criterion.
                  */
-                bool isEqSolverSet() const;
-
-                /*!
-                 * Retrieves whether the gmm++ equation solver is to be used.
-                 *
-                 * @return True iff the gmm++ equation solver is to be used.
-                 */
-                bool useGmmxxEquationSolver() const;
-
-                /*!
-                 * Retrieves whether the native equation solver is to be used.
-                 *
-                 * @return True iff the native equation solver is to be used.
-                 */
-                bool useNativeEquationSolver() const;
+                EquationSolver getEquationSolver() const;
                 
                 /*!
-                 * Retrieves whether the lpsolver option was set.
+                 * Retrieves the selected LP solver.
                  *
-                 * @return True if the lpsolver option was set.
+                 * @return The selected LP solver.
                  */
-                bool isLpSolverSet() const;
-
-                /*!
-                 * Retrieves whether glpk is to be used.
-                 *
-                 * @return True iff glpk is to be used.
-                 */
-                bool useGlpk() const;
-                
-                /*!
-                 * Retrieves whether Gurobi is to be used.
-                 *
-                 * @return True iff Gurobi is to be used.
-                 */
-                bool useGurobi() const;
+                LpSolver getLpSolver() const;
                 
                 /*!
                  * Retrieves whether the export-to-dot option was set.

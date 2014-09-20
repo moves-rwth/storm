@@ -4,6 +4,7 @@
 #include <iostream>
 #include <sstream>
 #include <list>
+#include <set>
 #include <utility>
 #include <functional>
 #include <unordered_map>
@@ -22,7 +23,7 @@
 #include "src/settings/modules/DebugSettings.h"
 #include "src/settings/modules/CounterexampleGeneratorSettings.h"
 #include "src/settings/modules/CuddSettings.h"
-#include "src/settings/modules/GmmxxSettings.h"
+#include "src/settings/modules/GmmxxEquationSolverSettings.h"
 #include "src/settings/modules/NativeEquationSolverSettings.h"
 #include "src/settings/modules/GlpkSettings.h"
 #include "src/settings/modules/GurobiSettings.h"
@@ -31,109 +32,108 @@
 #include "src/exceptions/OptionParserException.h"
 
 namespace storm {
-    
     namespace settings {
-        
-        typedef std::pair<std::string, std::string> stringPair_t;
         
         class InternalOptionMemento;
         
         /*!
-         *	@brief	Settings class with command line parser and type validation
-         *
-         *
-         *	It is meant to be used as a singleton. Call
-         *	@code storm::settings::Settings::getInstance() @endcode
-         *	to initialize it and obtain an instance.
-         *
-         *	This class can be customized by other parts of the software using
-         *	option modules. An option module can be anything that implements the
-         *	interface specified by registerModule() and does a static initialization call to this function.
+         * Provides the central API for the registration of command line options and parsing the options from the
+         * command line. Since this class is a singleton, the only instance is accessible via a call to the manager()
+         * function.
          */
         class SettingsManager {
 		public:
+            // Declare the memento class as a friend so it can manipulate the internal state.
             friend class InternalOptionMemento;
 			
-			/*!
-			 * This parses the command line of the application and matches it to all prior registered options
-			 * @throws OptionParserException
-			 */
-			static void parse(int const argc, char const * const argv[]);
-            
-			std::vector<std::shared_ptr<Option>> const& getOptions() const {
-				return this->optionPointers;
-			}
-            
-			// PUBLIC INTERFACE OF OPTIONSACCUMULATOR (now internal)
-			/*!
-             * Returns true IFF an option with the specified longName exists.
+            /*!
+             * This function parses the given command line arguments and sets all registered options accordingly. If the
+             * command line cannot be matched using the known options, an exception is thrown.
+             *
+             * @param argc The number of command line arguments.
+             * @param argv The command line arguments.
              */
-			bool containsOptionByLongName(std::string const& longName) const {
-				return this->containsLongName(longName);
-			}
-            
-			/*!
-             * Returns true IFF an option with the specified shortName exists.
-             */
-			bool containsOptionByShortName(std::string const& shortName) const {
-				return this->containsLongName(shortName);
-			}
-            
-			/*!
-             * Returns a reference to the Option with the specified longName.
-             * Throws an Exception of Type IllegalArgumentException if there is no such Option.
-             */
-			Option const& getOptionByLongName(std::string const& longName) const {
-				return this->getByLongName(longName);
-			}
-            
-			/*!
-             * Returns a reference to the Option with the specified shortName.
-             * Throws an Exception of Type IllegalArgumentException if there is no such Option.
-             */
-			Option const& getOptionByShortName(std::string const& shortName) const {
-				return this->getByShortName(shortName);
-			}
-			
-			/*!
-			 * Adds the given option to the set of known options.
-			 * Unifying with existing options is done automatically.
-			 * Ownership of the Option is handed over when calling this function!
-			 * Returns a reference to the settings instance
-			 * @throws OptionUnificationException
-			 */
-			SettingsManager& addOption(Option* option);
-            
-			/*!
-			 * Returns true iff there is an Option with the specified longName and it has been set
-			 * @return bool true if the option exists and has been set
-			 * @throws InvalidArgumentException
-			 */
-			bool isSet(std::string const& longName) const {
-				return this->getByLongName(longName).getHasOptionBeenSet();
-			}
-            
-			/*!
-			 * This generated a list of all registered options and their arguments together with descriptions and defaults.
-			 * @return A std::string containing the help text, delimited by \n
-			 */
-			std::string getHelpText() const;
+			static void setFromCommandLine(int const argc, char const * const argv[]);
             
             /*!
-             * Registers a new module with the given name and options. If the module could not be successfully registered,
-             * an exception is thrown.
+             * This function parses the given command line arguments (represented by one big string) and sets all
+             * registered options accordingly. If the command line cannot be matched using the known options, an
+             * exception is thrown.
              *
-             * @param moduleName The name of the module to register.
-             * @param options The set of options that the module registers.
+             * @param commandLineString The command line arguments as one string.
              */
-            void registerModule(std::string const& moduleName, std::vector<std::shared_ptr<Option>> const& options);
+            static void setFromString(std::string const& commandLineString);
             
-			/*!
-			 * Retrieves the only existing instance of a settings manager.
+            /*!
+             * This function parses the given command line arguments (represented by several strings) and sets all
+             * registered options accordingly. If the command line cannot be matched using the known options, an
+             * exception is thrown.
              *
-			 * @return The only existing instance of a settings manager
-			 */
-			static SettingsManager& manager();
+             * @param commandLineArguments The command line arguments.
+             */
+            static void setFromExplodedString(std::vector<std::string> const& commandLineArguments);
+            
+            /*!
+             * This function parses the given file and sets all registered options accordingly. If the settings cannot
+             * be matched using the known options, an exception is thrown.
+             */
+            static void setFromConfigurationFile(std::string const& configFilename);
+            
+            /*!
+             * Retrieves the general settings.
+             *
+             * @return An object that allows accessing the general settings.
+             */
+            storm::settings::modules::GeneralSettings const& getGeneralSettings() const;
+
+            /*!
+             * Retrieves the debug settings.
+             *
+             * @return An object that allows accessing the debug settings.
+             */
+            storm::settings::modules::DebugSettings const& getDebugSettings() const;
+
+            /*!
+             * Retrieves the counterexample generator settings.
+             *
+             * @return An object that allows accessing the counterexample generator settings.
+             */
+            storm::settings::modules::CounterexampleGeneratorSettings const& getCounterexampleGeneratorSettings() const;
+
+            /*!
+             * Retrieves the CUDD settings.
+             *
+             * @return An object that allows accessing the CUDD settings.
+             */
+            storm::settings::modules::CuddSettings const& getCuddSettings() const;
+
+            /*!
+             * Retrieves the settings of the gmm++-based equation solver.
+             *
+             * @return An object that allows accessing the settings of the gmm++-based equation solver.
+             */
+            storm::settings::modules::GmmxxEquationSolverSettings const& getGmmxxEquationSolverSettings() const;
+
+            /*!
+             * Retrieves the settings of the native equation solver.
+             *
+             * @return An object that allows accessing the settings of the native equation solver.
+             */
+            storm::settings::modules::NativeEquationSolverSettings const& getNativeEquationSolverSettings() const;
+
+            /*!
+             * Retrieves the settings of glpk.
+             *
+             * @return An object that allows accessing the settings of glpk.
+             */
+            storm::settings::modules::GlpkSettings const& getGlpkSettings() const;
+
+            /*!
+             * Retrieves the settings of Gurobi.
+             *
+             * @return An object that allows accessing the settings of Gurobi.
+             */
+            storm::settings::modules::GurobiSettings const& getGurobiSettings() const;
             
         private:
 			/*!
@@ -160,7 +160,7 @@ namespace storm {
             storm::settings::modules::CuddSettings cuddSettings;
 
             // An object that provides access to the gmm++ settings.
-            storm::settings::modules::GmmxxSettings gmmxxSettings;
+            storm::settings::modules::GmmxxEquationSolverSettings gmmxxEquationSolverSettings;
 
             // An object that provides access to the native equation solver settings.
             storm::settings::modules::NativeEquationSolverSettings nativeEquationSolverSettings;
@@ -174,29 +174,38 @@ namespace storm {
             // The single instance of the manager class. Since it's static, it will automatically be distructed upon termination.
  			static SettingsManager settingsManager;
             
-            
+            // A set of all known (i.e. registered) module names.
+            std::set<std::string> moduleNames;
+
+            // A mapping from all known option names to the options that match it. All options for one option name need
+            // to be compatible in the sense that calling isCompatible(...) pairwise on all options must always return true.
+            std::unordered_map<std::string, std::vector<std::shared_ptr<Option>>> options;
             
             /*!
-			 * Parser for the commdand line parameters of the program.
-			 * The first entry of argv will be ignored, as it represents the program name.
-			 * @throws OptionParserException
-			 */
-			void parseCommandLine(int const argc, char const * const argv[]);
-            
-			/*!
-             * The map holding the information regarding registered options and their types
+             * This function prints a help message to the standard output. Optionally, a module name can be given. If
+             * it is present, name must correspond to a known module. Then, only the help text for this module is
+             * printed.
+             *
+             * @return moduleName The name of the module for which to show the help or "all" if the full help text is to
+             * be printed.
              */
-			std::unordered_map<std::string, std::shared_ptr<Option>> options;
+            void printHelp(std::string const& moduleName = "all") const;
             
-			/*!
-             * The vector holding a pointer to all options
+            /*!
+             * Registers a new module with the given name and options. If the module could not be successfully registered,
+             * an exception is thrown.
+             *
+             * @param moduleName The name of the module to register.
+             * @param options The set of options that the module registers.
              */
-			std::vector<std::shared_ptr<Option>> optionPointers;
+            void registerModule(std::string const& moduleName, std::vector<std::shared_ptr<Option>> const& options);
             
-			/*!
-             * The map holding the information regarding registered options and their short names
+            /*!
+             * Retrieves the only existing instance of a settings manager.
+             *
+             * @return The only existing instance of a settings manager
              */
-			std::unordered_map<std::string, std::string> shortNames;
+            static SettingsManager& manager();
             
 			// Helper functions
 			stringPair_t splitOptionString(std::string const& option);
@@ -205,98 +214,6 @@ namespace storm {
 			std::vector<std::string> argvToStringArray(int const argc, char const * const argv[]);
 			std::vector<bool> scanForOptions(std::vector<std::string> const& arguments);
 			bool checkArgumentSyntaxForOption(std::string const& argvString);
-            
-			/*!
-             * Returns true IFF this contains an option with the specified longName.
-             * @return bool true iff there is an option with the specified longName
-             */
-			bool containsLongName(std::string const& longName) const {
-				return (this->options.find(longName) != this->options.end());
-			}
-            
-			/*!
-             * Returns true IFF this contains an option with the specified shortName.
-             * @return bool true iff there is an option with the specified shortName
-             */
-			bool containsShortName(std::string const& shortName) const {
-				return (this->shortNames.find(shortName) != this->shortNames.end());
-			}
-            
-			/*!
-             * Returns a reference to the Option with the specified longName.
-             * Throws an Exception of Type InvalidArgumentException if there is no such Option.
-             * @throws InvalidArgumentException
-             */
-			Option& getByLongName(std::string const& longName) const {
-				auto longNameIterator = this->options.find(longName);
-				if (longNameIterator == this->options.end()) {
-					LOG4CPLUS_ERROR(logger, "Settings::getByLongName: This program does not contain an option named \"" << longName << "\".");
-					throw storm::exceptions::IllegalArgumentException() << "This program does not contain an option named \"" << longName << "\".";
-				}
-				return *longNameIterator->second.get();
-			}
-            
-			/*!
-             * Returns a pointer to the Option with the specified longName.
-             * Throws an Exception of Type InvalidArgumentException if there is no such Option.
-             * @throws InvalidArgumentException
-             */
-			Option* getPtrByLongName(std::string const& longName) const {
-				auto longNameIterator = this->options.find(longName);
-				if (longNameIterator == this->options.end()) {
-					LOG4CPLUS_ERROR(logger, "Settings::getPtrByLongName: This program does not contain an option named \"" << longName << "\".");
-					throw storm::exceptions::IllegalArgumentException() << "This program does not contain an option named \"" << longName << "\".";
-				}
-				return longNameIterator->second.get();
-			}
-            
-			/*!
-             * Returns a reference to the Option with the specified shortName.
-             * Throws an Exception of Type InvalidArgumentException if there is no such Option.
-             * @throws InvalidArgumentException
-             */
-			Option& getByShortName(std::string const& shortName) const {
-				auto shortNameIterator = this->shortNames.find(shortName);
-				if (shortNameIterator == this->shortNames.end()) {
-					LOG4CPLUS_ERROR(logger, "Settings::getByShortName: This program does not contain an option named \"" << shortName << "\".");
-					throw storm::exceptions::IllegalArgumentException() << "This program does not contain an option named \"" << shortName << "\"";
-				}
-				return *(this->options.find(shortNameIterator->second)->second.get());
-			}
-            
-			/*!
-             * Returns a pointer to the Option with the specified shortName.
-             * Throws an Exception of Type InvalidArgumentException if there is no such Option.
-             * @throws InvalidArgumentException
-             */
-			Option* getPtrByShortName(std::string const& shortName) const {
-				auto shortNameIterator = this->shortNames.find(shortName);
-				if (shortNameIterator == this->shortNames.end()) {
-					LOG4CPLUS_ERROR(logger, "Settings::getPtrByShortName: This program does not contain an option named \"" << shortName << "\".");
-					throw storm::exceptions::IllegalArgumentException() << "This program does not contain an option named \"" << shortName << "\".";
-				}
-				return this->options.find(shortNameIterator->second)->second.get();
-			}
-            
-			/*!
-			 * Sets the Option with the specified longName
-			 * This function requires the Option to have no arguments
-			 * This is for TESTING only and should not be used outside of the testing code!
-			 * @throws InvalidArgumentException
-			 */
-			void set(std::string const& longName) const {
-				return this->getByLongName(longName).setHasOptionBeenSet();
-			}
-            
-			/*!
-			 * Unsets the Option with the specified longName
-			 * This function requires the Option to have no arguments
-			 * This is for TESTING only and should not be used outside of the testing code!
-			 * @throws InvalidArgumentException
-			 */
-			void unset(std::string const& longName) const {
-				return this->getByLongName(longName).setHasOptionBeenSet(false);
-			}
         };
         
     } // namespace settings

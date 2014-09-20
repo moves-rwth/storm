@@ -16,6 +16,14 @@ namespace storm {
                 return this->settingsManager;
             }
             
+            void ModuleSettings::set(std::string const& name) const {
+                return this->getOption(longName).setHasOptionBeenSet();
+            }
+            
+            void ModuleSettings::unset(std::string const& longName) const {
+                return this->getOption(longName).setHasOptionBeenSet(false);
+            }
+            
         } // namespace modules
     } // namespace settings
 } // namespace storm

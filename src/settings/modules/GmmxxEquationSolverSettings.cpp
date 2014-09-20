@@ -1,4 +1,4 @@
-#include "src/settings/modules/GmmxxSettings.h"
+#include "src/settings/modules/GmmxxEquationSolverSettings.h"
 
 #include "src/settings/SettingsManager.h"
 
@@ -6,16 +6,16 @@ namespace storm {
     namespace settings {
         namespace modules {
             
-            const std::string GmmxxSettings::moduleName = "gmm++";
-            const std::string GmmxxSettings::techniqueOptionName = "tech";
-            const std::string GmmxxSettings::preconditionOptionName = "precond";
-            const std::string GmmxxSettings::restartOptionName = "restart";
-            const std::string GmmxxSettings::maximalIterationsOptionName = "maxiter";
-            const std::string GmmxxSettings::maximalIterationsOptionShortName = "maxiter";
-            const std::string GmmxxSettings::precisionOptionName = "precision";
-            const std::string GmmxxSettings::absoluteOptionName = "absolute";
+            const std::string GmmxxEquationSolverSettings::moduleName = "gmm++";
+            const std::string GmmxxEquationSolverSettings::techniqueOptionName = "tech";
+            const std::string GmmxxEquationSolverSettings::preconditionOptionName = "precond";
+            const std::string GmmxxEquationSolverSettings::restartOptionName = "restart";
+            const std::string GmmxxEquationSolverSettings::maximalIterationsOptionName = "maxiter";
+            const std::string GmmxxEquationSolverSettings::maximalIterationsOptionShortName = "i";
+            const std::string GmmxxEquationSolverSettings::precisionOptionName = "precision";
+            const std::string GmmxxEquationSolverSettings::absoluteOptionName = "absolute";
 
-            GmmxxSettings::GmmxxSettings(storm::settings::SettingsManager& settingsManager) : ModuleSettings(settingsManager) {
+            GmmxxEquationSolverSettings::GmmxxEquationSolverSettings(storm::settings::SettingsManager& settingsManager) : ModuleSettings(settingsManager) {
                 // First, we need to create all options of this module.
                 std::vector<std::shared_ptr<Option>> options;
                 std::vector<std::string> methods = {"bicgstab", "qmr", "gmres", "jacobi"};
@@ -31,7 +31,7 @@ namespace storm {
                 
                 options.push_back(storm::settings::OptionBuilder(moduleName, precisionOptionName, true, "The precision used for detecting convergence of iterative methods.").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to achieve.").setDefaultValueDouble(1e-06).addValidationFunctionDouble(storm::settings::ArgumentValidators::doubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
                 
-                options.push_back(storm::settings::OptionBuilder(moduleName, absoluteOptionName, true, "Sets whether the relative or the absolute error is considered for deciding convergence.").build());
+                options.push_back(storm::settings::OptionBuilder(moduleName, absoluteOptionName, true, "Sets whether the relative or the absolute error is considered for detecting convergence.").build());
                 
                 // Finally, register all options that we just created.
                 settingsManager.registerModule(moduleName, options);

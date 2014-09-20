@@ -6,24 +6,27 @@ namespace storm {
     namespace settings {
         namespace modules {
             
+            const std::string NativeEquationSolverSettings::moduleName = "native";
+            const std::string NativeEquationSolverSettings::techniqueOptionName = "tech";
+            const std::string NativeEquationSolverSettings::maximalIterationsOptionName = "maxiter";
+            const std::string NativeEquationSolverSettings::maximalIterationsOptionShortName = "i";
+            const std::string NativeEquationSolverSettings::precisionOptionName = "precision";
+            const std::string NativeEquationSolverSettings::absoluteOptionName = "absolute";
+            
             NativeEquationSolverSettings::NativeEquationSolverSettings(storm::settings::SettingsManager& settingsManager) : ModuleSettings(settingsManager) {
-                // Offer all available methods as a command line option.
-                std::vector<std::string> methods;
-                methods.clear();
-                methods.push_back("jacobi");
-                settingsManager.addOption(storm::settings::OptionBuilder("NativeLinearEquationSolver", "nativelin", "", "The method to be used for solving linear equation systems with the native engine. Available are: jacobi.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the method to use.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(methods)).setDefaultValueString("jacobi").build()).build());
+                // First, we need to create all options of this module.
+                std::vector<std::shared_ptr<Option>> options;
+                std::vector<std::string> methods = { "jacobi" };
+                options.push_back(storm::settings::OptionBuilder(moduleName, techniqueOptionName, true, "The method to be used for solving linear equation systems with the native engine. Available are: { jacobi }.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the method to use.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(methods)).setDefaultValueString("jacobi").build()).build());
                 
-                settingsManager.addOption(storm::settings::OptionBuilder("NativeLinearEquationSolver", "maxiter", "i", "The maximal number of iterations to perform before iterative solving is aborted.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("count", "The maximal iteration count.").setDefaultValueUnsignedInteger(10000).build()).build());
+                options.push_back(storm::settings::OptionBuilder(moduleName, maximalIterationsOptionName, true, "The maximal number of iterations to perform before iterative solving is aborted.").setShortName(maximalIterationsOptionShortName).addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("count", "The maximal iteration count.").setDefaultValueUnsignedInteger(10000).build()).build());
                 
-                settingsManager.addOption(storm::settings::OptionBuilder("NativeLinearEquationSolver", "precision", "", "The precision used for detecting convergence of iterative methods.").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to achieve.").setDefaultValueDouble(1e-06).addValidationFunctionDouble(storm::settings::ArgumentValidators::doubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
+                options.push_back(storm::settings::OptionBuilder(moduleName, precisionOptionName, true, "The precision used for detecting convergence of iterative methods.").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to achieve.").setDefaultValueDouble(1e-06).addValidationFunctionDouble(storm::settings::ArgumentValidators::doubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
                 
-                settingsManager.addOption(storm::settings::OptionBuilder("NativeLinearEquationSolver", "absolute", "", "Whether the relative or the absolute error is considered for deciding convergence.").build());
+                options.push_back(storm::settings::OptionBuilder(moduleName, absoluteOptionName, true, "Sets whether the relative or the absolute error is considered for detecting convergence.").build());
                 
-                settingsManager.addOption(storm::settings::OptionBuilder("NativeNondeterminsticLinearEquationSolver", "maxiter", "i", "The maximal number of iterations to perform before iterative solving is aborted.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("count", "The maximal iteration count.").setDefaultValueUnsignedInteger(10000).build()).build());
-                
-                settingsManager.addOption(storm::settings::OptionBuilder("NativeNondeterminsticLinearEquationSolver", "precision", "", "The precision used for detecting convergence of iterative methods.").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to achieve.").setDefaultValueDouble(1e-06).addValidationFunctionDouble(storm::settings::ArgumentValidators::doubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
-                
-                settingsManager.addOption(storm::settings::OptionBuilder("NativeNondeterminsticLinearEquationSolver", "absolute", "", "Whether the relative or the absolute error is considered for deciding convergence.").build());
+                // Finally, register all options that we just created.
+                settingsManager.registerModule(moduleName, options);
             }
             
         } // namespace modules

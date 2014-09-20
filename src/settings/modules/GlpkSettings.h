@@ -29,6 +29,7 @@ namespace storm {
             private:
                 // Define the string names of the options as constants.
                 static const std::string moduleName;
+                static const std::string integerToleranceOption;
                 static const std::string outputOptionName;
             };
             
