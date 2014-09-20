@@ -56,7 +56,7 @@ namespace storm {
              * to this argument.
              * @param isOptional A flag indicating whether the argument is optional.
              */
-			Argument(std::string const& name, std::string const& description, std::vector<userValidationFunction_t> const& validationFunctions, bool isOptional, T defaultValue): ArgumentBase(argumentName, argumentDescription), argumentValue(), argumentType(ArgumentTypeInferation::inferToEnumType<T>()), validationFunctions(validationFunctions), isOptional(isOptional), defaultValue(defaultValue), hasDefaultValue(true) {
+			Argument(std::string const& name, std::string const& description, std::vector<userValidationFunction_t> const& validationFunctions, bool isOptional, T defaultValue): ArgumentBase(name, description), argumentValue(), argumentType(ArgumentTypeInferation::inferToEnumType<T>()), validationFunctions(validationFunctions), isOptional(isOptional), defaultValue(defaultValue), hasDefaultValue(true) {
                 // Intentionally left empty.
 			}
             
@@ -66,11 +66,11 @@ namespace storm {
             
 			bool setFromStringValue(std::string const& fromStringValue) override {
 				bool conversionOk = false;
-				T newValue = ArgumentBase::convertFromString(fromStringValue, conversionOk);
+				T newValue = ArgumentBase::convertFromString<T>(fromStringValue, conversionOk);
 				if (!conversionOk) {
                     return false;
 				}
-				return this->fromTypeValue(newValue);
+				return this->setFromTypeValue(newValue);
 			}
             
 			bool setFromTypeValue(T const& newValue) {
@@ -93,10 +93,10 @@ namespace storm {
              * @return True iff the given argument is compatible with the current one.
              */
 			template <typename S>
-			bool isCompatibleWith(Argument<S> const& other) {
-                LOG_THROW(this->getArgumentType() == other.getArgumentType(), storm::exceptions::ArgumentUnificationException, "Unable to unify the arguments " << this->getArgumentName() << " and " << other.getArgumentName() << ", because they have different types.");
-                LOG_THROW(this->getIsOptional() != other.getIsOptional(), storm::exceptions::ArgumentUnificationException, "Unable to unify the arguments " << this->getArgumentName() << " and " << other.getArgumentName() << ", because one of them is optional and the other one is not.");
-                LOG_THROW(this->getHasDefaultValue() != other.getHasDefaultValue(), storm::exceptions::ArgumentUnificationException, "Unable to unify the arguments " << this->getArgumentName() << " and " << other.getArgumentName() << ", because one of them has a default value and the other one does not.");
+			bool isCompatibleWith(Argument<S> const& other) const {
+                LOG_THROW(this->getType() == other.getType(), storm::exceptions::ArgumentUnificationException, "Unable to unify the arguments " << this->getName() << " and " << other.getName() << ", because they have different types.");
+                LOG_THROW(this->getIsOptional() != other.getIsOptional(), storm::exceptions::ArgumentUnificationException, "Unable to unify the arguments " << this->getName() << " and " << other.getName() << ", because one of them is optional and the other one is not.");
+                LOG_THROW(this->getHasDefaultValue() != other.getHasDefaultValue(), storm::exceptions::ArgumentUnificationException, "Unable to unify the arguments " << this->getName() << " and " << other.getName() << ", because one of them has a default value and the other one does not.");
                 return true;
 			}
             
@@ -127,9 +127,9 @@ namespace storm {
 					case ArgumentType::Boolean: {
 						bool iValue = ArgumentTypeInferation::inferToBoolean(ArgumentType::Boolean, this->getArgumentValue());
 						if (iValue) {
-							return "true";
+							return trueString;
 						} else {
-							return "false";
+							return falseString;
 						}
 					}
 					default: return ArgumentBase::convertToString(this->argumentValue);
@@ -189,6 +189,10 @@ namespace storm {
             
             // A flag indicating whether a default value has been provided.
             bool hasDefaultValue;
+            
+            // Static constants for the string representations of true and false.
+            static const std::string trueString;
+            static const std::string falseString;
             
             void setDefaultValue(T const& newDefault) {
                 LOG_THROW(this->validate(newDefault), storm::exceptions::IllegalArgumentValueException, "The default value for the argument did not pass all validation functions.");

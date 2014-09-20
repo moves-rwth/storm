@@ -12,7 +12,24 @@ namespace storm {
              */
             class GlpkSettings : public ModuleSettings {
             public:
+                /*!
+                 * Creates a new set of glpk settings that is managed by the given manager.
+                 *
+                 * @param settingsManager The responsible manager.
+                 */
                 GlpkSettings(storm::settings::SettingsManager& settingsManager);
+                
+                /*!
+                 * Retrieves whether the output option was set.
+                 *
+                 * @return True iff the output option was set.
+                 */
+                bool isOutputSet() const;
+                
+            private:
+                // Define the string names of the options as constants.
+                static const std::string moduleName;
+                static const std::string outputOptionName;
             };
             
         } // namespace modules

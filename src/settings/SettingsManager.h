@@ -1,5 +1,5 @@
-#ifndef STORM_SETTINGS_SETTINGS_H_
-#define STORM_SETTINGS_SETTINGS_H_
+#ifndef STORM_SETTINGS_SETTINGSMANAGER_H_
+#define STORM_SETTINGS_SETTINGSMANAGER_H_
 
 #include <iostream>
 #include <sstream>
@@ -9,7 +9,6 @@
 #include <unordered_map>
 #include <vector>
 #include <memory>
-
 
 #include "src/settings/Option.h"
 #include "src/settings/OptionBuilder.h"
@@ -28,28 +27,14 @@
 #include "src/settings/modules/GlpkSettings.h"
 #include "src/settings/modules/GurobiSettings.h"
 
-// Exceptions that should be catched when performing a parsing run
+#include "src/exceptions/ExceptionMacros.h"
 #include "src/exceptions/OptionParserException.h"
-
-#include "log4cplus/logger.h"
-#include "log4cplus/loggingmacros.h"
-
-extern log4cplus::Logger logger;
 
 namespace storm {
     
-    /*!
-     *	@brief Contains Settings class and associated methods.
-     */
     namespace settings {
-        typedef bool (*stringValidationFunction_t)(const std::string);
-        typedef bool (*integerValidationFunction_t)(const int_fast64_t);
-        typedef bool (*unsignedIntegerValidationFunction_t)(const uint_fast64_t);
-        typedef bool (*doubleValidationFunction_t)(const double);
-        typedef bool (*booleanValidationFunction_t)(const bool);
         
         typedef std::pair<std::string, std::string> stringPair_t;
-        typedef std::pair<bool, std::string> fromStringAssignmentResult_t;
         
         class InternalOptionMemento;
         
@@ -226,7 +211,7 @@ namespace storm {
              * @return bool true iff there is an option with the specified longName
              */
 			bool containsLongName(std::string const& longName) const {
-				return (this->options.find(storm::utility::StringHelper::stringToLower(longName)) != this->options.end());
+				return (this->options.find(longName) != this->options.end());
 			}
             
 			/*!
@@ -234,7 +219,7 @@ namespace storm {
              * @return bool true iff there is an option with the specified shortName
              */
 			bool containsShortName(std::string const& shortName) const {
-				return (this->shortNames.find(storm::utility::StringHelper::stringToLower(shortName)) != this->shortNames.end());
+				return (this->shortNames.find(shortName) != this->shortNames.end());
 			}
             
 			/*!
@@ -243,7 +228,7 @@ namespace storm {
              * @throws InvalidArgumentException
              */
 			Option& getByLongName(std::string const& longName) const {
-				auto longNameIterator = this->options.find(storm::utility::StringHelper::stringToLower(longName));
+				auto longNameIterator = this->options.find(longName);
 				if (longNameIterator == this->options.end()) {
 					LOG4CPLUS_ERROR(logger, "Settings::getByLongName: This program does not contain an option named \"" << longName << "\".");
 					throw storm::exceptions::IllegalArgumentException() << "This program does not contain an option named \"" << longName << "\".";
@@ -257,7 +242,7 @@ namespace storm {
              * @throws InvalidArgumentException
              */
 			Option* getPtrByLongName(std::string const& longName) const {
-				auto longNameIterator = this->options.find(storm::utility::StringHelper::stringToLower(longName));
+				auto longNameIterator = this->options.find(longName);
 				if (longNameIterator == this->options.end()) {
 					LOG4CPLUS_ERROR(logger, "Settings::getPtrByLongName: This program does not contain an option named \"" << longName << "\".");
 					throw storm::exceptions::IllegalArgumentException() << "This program does not contain an option named \"" << longName << "\".";
@@ -271,7 +256,7 @@ namespace storm {
              * @throws InvalidArgumentException
              */
 			Option& getByShortName(std::string const& shortName) const {
-				auto shortNameIterator = this->shortNames.find(storm::utility::StringHelper::stringToLower(shortName));
+				auto shortNameIterator = this->shortNames.find(shortName);
 				if (shortNameIterator == this->shortNames.end()) {
 					LOG4CPLUS_ERROR(logger, "Settings::getByShortName: This program does not contain an option named \"" << shortName << "\".");
 					throw storm::exceptions::IllegalArgumentException() << "This program does not contain an option named \"" << shortName << "\"";
@@ -285,7 +270,7 @@ namespace storm {
              * @throws InvalidArgumentException
              */
 			Option* getPtrByShortName(std::string const& shortName) const {
-				auto shortNameIterator = this->shortNames.find(storm::utility::StringHelper::stringToLower(shortName));
+				auto shortNameIterator = this->shortNames.find(shortName);
 				if (shortNameIterator == this->shortNames.end()) {
 					LOG4CPLUS_ERROR(logger, "Settings::getPtrByShortName: This program does not contain an option named \"" << shortName << "\".");
 					throw storm::exceptions::IllegalArgumentException() << "This program does not contain an option named \"" << shortName << "\".";
@@ -317,4 +302,4 @@ namespace storm {
     } // namespace settings
 } // namespace storm
 
-#endif // 
+#endif /* STORM_SETTINGS_SETTINGSMANAGER_H_ */

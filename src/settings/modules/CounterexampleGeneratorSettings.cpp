@@ -6,16 +6,25 @@ namespace storm {
     namespace settings {
         namespace modules {
             
+            const std::string CounterexampleGeneratorSettings::moduleName = "counterexample";
+            const std::string CounterexampleGeneratorSettings::minimalCommandSetOptionName = "mincmd";
+            const std::string CounterexampleGeneratorSettings::encodeReachabilityOptionName = "encreach";
+            const std::string CounterexampleGeneratorSettings::schedulerCutsOptionName = "schedcuts";
+            const std::string CounterexampleGeneratorSettings::statisticsOptionName = "stats";
+            
             CounterexampleGeneratorSettings::CounterexampleGeneratorSettings(storm::settings::SettingsManager& settingsManager) : ModuleSettings(settingsManager) {
-                std::vector<std::string> techniques;
-                techniques.push_back("sat");
-                techniques.push_back("milp");
-                settingsManager.addOption(storm::settings::OptionBuilder("CounterexampleGenerator", "mincmd", "", "Computes a counterexample for the given symbolic model in terms of a minimal command set.")
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("propertyFile", "The file containing the properties for which counterexamples are to be generated.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build())
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("method", "Sets which technique is used to derive the counterexample. Must be either \"milp\" or \"sat\".").setDefaultValueString("sat").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(techniques)).build()).build());
-                settingsManager.addOption(storm::settings::OptionBuilder("CounterexampleGenerator", "stats", "", "Sets whether to display statistics for certain functionalities.").build());
-                settingsManager.addOption(storm::settings::OptionBuilder("CounterexampleGenerator", "encreach", "", "Sets whether to encode reachability for SAT-based minimal command counterexample generation.").build());
-                settingsManager.addOption(storm::settings::OptionBuilder("CounterexampleGenerator", "schedcuts", "", "Sets whether to add the scheduler cuts for MILP-based minimal command counterexample generation.").build());
+                // First, we need to create all options of this module.
+                std::vector<std::shared_ptr<Option>> options;
+                std::vector<std::string> techniques = {"sat", "milp"};
+                options.push_back(storm::settings::OptionBuilder(moduleName, minimalCommandSetOptionName, true, "Computes a counterexample for the given model in terms of a minimal command set. Note that this requires the model to be given in a symbolic format.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The file containing the properties for which counterexamples are to be generated.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build())
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("method", "Sets which technique is used to derive the counterexample. Available are {milp, maxsat}").setDefaultValueString("maxsat").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(techniques)).build()).build());
+                options.push_back(storm::settings::OptionBuilder(moduleName, statisticsOptionName, true, "Sets whether to display statistics for counterexample generation.").build());
+                options.push_back(storm::settings::OptionBuilder(moduleName, encodeReachabilityOptionName, true, "Sets whether to encode reachability for MAXSAT-based minimal command counterexample generation.").build());
+                options.push_back(storm::settings::OptionBuilder(moduleName, schedulerCutsOptionName, true, "Sets whether to add the scheduler cuts for MILP-based minimal command counterexample generation.").build());
+                
+                // Finally, register all options that we just created.
+                settingsManager.registerModule(moduleName, options);
             }
             
         } // namespace modules

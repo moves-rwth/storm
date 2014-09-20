@@ -146,44 +146,56 @@ namespace storm {
              * whether the conversion was successful.
              */
             template <typename TargetType>
-            static TargetType convertFromString(std::string const& valueAsString, bool& conversionSuccessful) {
-                std::istringstream stream(valueAsString);
-                TargetType t;
-                conversionSuccessful = (stream >> t) && (stream >> std::ws).eof();
-                return t;
-            }
+            static TargetType convertFromString(std::string const& valueAsString, bool& conversionSuccessful);
             
-            template <>
-            static bool convertFromString<bool>(std::string const& s, bool& ok) {
-                static const std::string lowerTrueString = "true";
-                static const std::string lowerFalseString = "false";
-                static const std::string lowerYesString = "yes";
-                static const std::string lowerNoString = "no";
-                
-                std::string lowerInput = boost::algorithm::to_lower_copy(s);
-                
-                if (s.compare(lowerTrueString) == 0 || s.compare(lowerYesString) == 0) {
-                    ok = true;
-                    return true;
-                } else if (s.compare(lowerFalseString) == 0 || s.compare(lowerNoString) == 0) {
-                    ok = true;
-                    return false;
-                }
-                
-                std::istringstream stream(s);
-                bool t;
-                ok = (stream >> t) && (stream >> std::ws).eof();
-                return t;
-            }
-            
+            /*!
+             * Converts the given value to a string representation.
+             *
+             * @param value The value to convert.
+             * @return The string representation of the value.
+             */
             template <typename ValueType>
-            std::string convertToString(ValueType const& value) const {
-                std::ostringstream stream;
-                stream << value;
-                return stream.str();
-            }
+            static std::string convertToString(ValueType const& value);
 		};
 
+        template <typename TargetType>
+        TargetType ArgumentBase::convertFromString(std::string const& valueAsString, bool& conversionSuccessful) {
+            std::istringstream stream(valueAsString);
+            TargetType t;
+            conversionSuccessful = (stream >> t) && (stream >> std::ws).eof();
+            return t;
+        }
+        
+        template <>
+        bool ArgumentBase::convertFromString<bool>(std::string const& s, bool& ok) {
+            static const std::string lowerTrueString = "true";
+            static const std::string lowerFalseString = "false";
+            static const std::string lowerYesString = "yes";
+            static const std::string lowerNoString = "no";
+            
+            std::string lowerInput = boost::algorithm::to_lower_copy(s);
+            
+            if (s.compare(lowerTrueString) == 0 || s.compare(lowerYesString) == 0) {
+                ok = true;
+                return true;
+            } else if (s.compare(lowerFalseString) == 0 || s.compare(lowerNoString) == 0) {
+                ok = true;
+                return false;
+            }
+            
+            std::istringstream stream(s);
+            bool t;
+            ok = (stream >> t) && (stream >> std::ws).eof();
+            return t;
+        }
+        
+        template <typename ValueType>
+        std::string ArgumentBase::convertToString(ValueType const& value) {
+            std::ostringstream stream;
+            stream << value;
+            return stream.str();
+        }
+        
 	}
 }
 

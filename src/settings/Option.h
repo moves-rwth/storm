@@ -14,7 +14,6 @@
 #include "ArgumentBase.h"
 #include "Argument.h"
 
-#include "src/utility/StringHelper.h"
 #include "src/exceptions/ExceptionMacros.h"
 #include "src/exceptions/IllegalArgumentException.h"
 #include "src/exceptions/OptionUnificationException.h"
@@ -22,13 +21,16 @@
 namespace storm {
 	namespace settings {
 
+        // Forward-declare settings manager class.
+        class SettingsManager;
+        
         /*!
          * This class represents one command-line option.
          */
 		class Option {
 		public:
-            // (Forward-)declare settings manager class as friend.
-			friend class storm::settings::SettingsManager;
+            // Declare settings manager class as friend.
+			friend class SettingsManager;
 
             /*!
              * Creates an option with the given parameters.
@@ -74,23 +76,23 @@ namespace storm {
                     ArgumentBase const& firstArgument = this->getArgument(i);
                     ArgumentBase const& secondArgument = other.getArgument(i);
 
-                    LOG_THROW(firstArgument.getArgumentType() == secondArgument.getArgumentType(), storm::exceptions::OptionUnificationException, "Unable to unify two options, because their arguments are incompatible.");
+                    LOG_THROW(firstArgument.getType() == secondArgument.getType(), storm::exceptions::OptionUnificationException, "Unable to unify two options, because their arguments are incompatible.");
 
-					switch (firstArgument->getArgumentType()) {
+					switch (firstArgument.getType()) {
 						case ArgumentType::String:
-							static_cast<storm::settings::Argument<std::string>&>(firstArgument).isCompatibleWith(static_cast<storm::settings::Argument<std::string>&>(secondArgument));
+							static_cast<storm::settings::Argument<std::string> const&>(firstArgument).isCompatibleWith(static_cast<storm::settings::Argument<std::string> const&>(secondArgument));
 							break;
 						case ArgumentType::Integer:
-							static_cast<storm::settings::Argument<int_fast64_t>&>(firstArgument).isCompatibleWith(static_cast<storm::settings::Argument<int_fast64_t>&>(secondArgument));
+							static_cast<storm::settings::Argument<int_fast64_t> const&>(firstArgument).isCompatibleWith(static_cast<storm::settings::Argument<int_fast64_t> const&>(secondArgument));
 							break;
 						case ArgumentType::UnsignedInteger:
-							static_cast<storm::settings::Argument<uint_fast64_t>&>(firstArgument).isCompatibleWith(static_cast<storm::settings::Argument<uint_fast64_t>&>(secondArgument));
+							static_cast<storm::settings::Argument<uint_fast64_t> const&>(firstArgument).isCompatibleWith(static_cast<storm::settings::Argument<uint_fast64_t> const&>(secondArgument));
 							break;
 						case ArgumentType::Double:
-							static_cast<storm::settings::Argument<double>&>(firstArgument).isCompatibleWith(static_cast<storm::settings::Argument<double>&>(secondArgument));
+							static_cast<storm::settings::Argument<double> const&>(firstArgument).isCompatibleWith(static_cast<storm::settings::Argument<double> const&>(secondArgument));
 							break;
 						case ArgumentType::Boolean:
-							static_cast<storm::settings::Argument<bool>&>(firstArgument).isCompatibleWith(static_cast<storm::settings::Argument<bool>&>(secondArgument));
+							static_cast<storm::settings::Argument<bool> const&>(firstArgument).isCompatibleWith(static_cast<storm::settings::Argument<bool> const&>(secondArgument));
 							break;
 					}
 				}
@@ -113,7 +115,7 @@ namespace storm {
              * @return The i-th argument of this option.
              */
 			ArgumentBase const& getArgument(uint_fast64_t argumentIndex) const {
-                LOG_THROW(argumentIndex < this->getArgumentCount(), storm::exceptions::IllegalArgumentException, "Index of argument is out of bounds.")
+                LOG_THROW(argumentIndex < this->getArgumentCount(), storm::exceptions::IllegalArgumentException, "Index of argument is out of bounds.");
 				return *this->arguments.at(argumentIndex);
 			}
 
@@ -124,7 +126,7 @@ namespace storm {
              * @return The argument with the given name.
              */
 			ArgumentBase const& getArgumentByName(std::string const& argumentName) const {
-				auto argumentIterator = this->argumentNameMap.find(storm::utility::StringHelper::stringToLower(argumentName));
+				auto argumentIterator = this->argumentNameMap.find(argumentName);
                 LOG_THROW(argumentIterator != this->argumentNameMap.end(), storm::exceptions::IllegalArgumentException, "Unable to retrieve argument with unknown name " << argumentName << ".");
 				return *argumentIterator->second;
 			}
@@ -250,7 +252,7 @@ namespace storm {
 
                 // Then index all arguments.
                 for (auto const& argument : arguments) {
-                    argumentNameMap.emplace(lowerArgumentName, std::shared_ptr<ArgumentBase>(*i));
+                    argumentNameMap.emplace(argument->getName(), argument);
                 }
             }
             

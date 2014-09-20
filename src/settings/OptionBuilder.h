@@ -71,7 +71,7 @@ namespace storm {
                 LOG_THROW(this->arguments.empty() || !argument->getIsOptional() || this->arguments.back()->getIsOptional(), storm::exceptions::IllegalArgumentException, "Unable to add non-optional argument after an option that is optional.");
 
 				std::string lowerArgumentName = boost::algorithm::to_lower_copy(argument->getName());
-                LOG_THROW(argumentNamSet.find(lowerArgumentName) == argumentNameSet.end(), storm::exceptions::IllegalArgumentException, "Unable to add argument to option, because it already has an argument with the same name.");
+                LOG_THROW(argumentNameSet.find(lowerArgumentName) == argumentNameSet.end(), storm::exceptions::IllegalArgumentException, "Unable to add argument to option, because it already has an argument with the same name.");
 
 				argumentNameSet.insert(lowerArgumentName);
 				this->arguments.push_back(argument);

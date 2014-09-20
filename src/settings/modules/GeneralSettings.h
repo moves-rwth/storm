@@ -12,6 +12,11 @@ namespace storm {
              */
             class GeneralSettings : public ModuleSettings {
             public:
+                /*!
+                 * Creates a new set of general settings that is managed by the given manager.
+                 *
+                 * @param settingsManager The responsible manager.
+                 */
                 GeneralSettings(storm::settings::SettingsManager& settingsManager);
                 
                 /*!
@@ -20,6 +25,14 @@ namespace storm {
                  * @return True if the help option was set.
                  */
                 bool isHelpSet() const;
+                
+                /*!
+                 * Retrieves the name of the module for which to show the help or "all" to indicate that the full help
+                 * needs to be shown.
+                 *
+                 * @return The name of the module for which to show the help or "all".
+                 */
+                std::string getHelpModuleName() const;
                 
                 /*!
                  * Retrieves whether the verbose option was set.
@@ -36,6 +49,13 @@ namespace storm {
                 bool isExportDotSet() const;
                 
                 /*!
+                 * Retrieves the name in which to write the model in dot format, if the export-to-dot option was set.
+                 *
+                 * @return The name of the file in which to write the exported model.
+                 */
+                std::string getExportDotFilename() const;
+                
+                /*!
                  * Retrieves whether the config option was set.
                  *
                  * @return True if the config option was set.
@@ -43,18 +63,49 @@ namespace storm {
                 bool isConfigSet() const;
                 
                 /*!
+                 * Retrieves the name of the file that is to be scanned for settings.
+                 *
+                 * @return The name of the file that is to be scanned for settings.
+                 */
+                std::string getConfigFilename() const;
+                
+                /*!
                  * Retrieves whether the explicit option was set.
                  *
                  * @return True if the explicit option was set.
                  */
                 bool isExplicitSet() const;
+                
+                /*!
+                 * Retrieves the name of the file that contains the transitions if the model was given using the explicit
+                 * option.
+                 *
+                 * @return The name of the file that contains the transitions.
+                 */
+                std::string getTransitionFilename() const;
 
+                /*!
+                 * Retrieves the name of the file that contains the state labeling if the model was given using the
+                 * explicit option.
+                 *
+                 * @return The name of the file that contains the state labeling.
+                 */
+                std::string getLabelingFilename() const;
+                
                 /*!
                  * Retrieves whether the symbolic option was set.
                  *
                  * @return True if the symbolic option was set.
                  */
                 bool isSymbolicSet() const;
+                
+                /*!
+                 * Retrieves the name of the file that contains the symbolic model specification if the model was given
+                 * using the symbolic option.
+                 *
+                 * @return The name of the file that contains the symbolic model specification.
+                 */
+                std::string getSymbolicModelFilename() const;
 
                 /*!
                  * Retrieves whether the pctl option was set.
@@ -62,6 +113,13 @@ namespace storm {
                  * @return True if the pctl option was set.
                  */
                 bool isPctlSet() const;
+                
+                /*!
+                 * Retrieves the name of the file that contains the PCTL properties to be checked on the model.
+                 *
+                 * @return The name of the file that contains the PCTL properties to be checked on the model.
+                 */
+                std::string getPctlPropertiesFilename() const;
 
                 /*!
                  * Retrieves whether the csl option was set.
@@ -71,11 +129,25 @@ namespace storm {
                 bool isCslSet() const;
 
                 /*!
+                 * Retrieves the name of the file that contains the CSL properties to be checked on the model.
+                 *
+                 * @return The name of the file that contains the CSL properties to be checked on the model.
+                 */
+                std::string getCslPropertiesFilename() const;
+                
+                /*!
                  * Retrieves whether the ltl option was set.
                  *
                  * @return True if the ltl option was set.
                  */
                 bool isLtlSet() const;
+
+                /*!
+                 * Retrieves the name of the file that contains the LTL properties to be checked on the model.
+                 *
+                 * @return The name of the file that contains the LTL properties to be checked on the model.
+                 */
+                std::string getLtlPropertiesFilename() const;
 
                 /*!
                  * Retrieves whether the transition reward option was set.
@@ -85,11 +157,27 @@ namespace storm {
                 bool isTransitionRewardsSet() const;
 
                 /*!
+                 * Retrieves the name of the file that contains the transition rewards if the model was given using the
+                 * explicit option.
+                 *
+                 * @return The name of the file that contains the transition rewards.
+                 */
+                std::string getTransitionRewardsFilename() const;
+                
+                /*!
                  * Retrieves whether the state reward option was set.
                  *
                  * @return True if the state reward option was set.
                  */
                 bool isStateRewardsSet() const;
+                
+                /*!
+                 * Retrieves the name of the file that contains the state rewards if the model was given using the
+                 * explicit option.
+                 *
+                 * @return The name of the file that contains the state rewards.
+                 */
+                std::string getStateRewardsFilename() const;
                 
                 /*!
                  * Retrieves whether the counterexample option was set.
@@ -98,6 +186,14 @@ namespace storm {
                  */
                 bool isCounterexampleSet() const;
 
+                /*!
+                 * Retrieves the name of the file to which the counterexample is to be written if the counterexample
+                 * option was set.
+                 *
+                 * @return The name of the file to which the counterexample is to be written.
+                 */
+                std::string getCounterexampleFilename() const;
+                
                 /*!
                  * Retrieves whether the fix-deadlocks option was set.
                  *
@@ -111,6 +207,13 @@ namespace storm {
                  * @return True if the timeout option was set.
                  */
                 bool isTimeoutSet() const;
+                
+                /*!
+                 * Retrieves the time after which the computation has to be aborted in case the timeout option was set.
+                 *
+                 * @return The number of seconds after which to timeout.
+                 */
+                uint_fast64_t getTimeoutInSeconds() const;
 
                 /*!
                  * Retrieves whether the eqsolver option was set.
@@ -120,18 +223,53 @@ namespace storm {
                 bool isEqSolverSet() const;
 
                 /*!
-                 * Retrieves whether the export-to-dot option was set.
+                 * Retrieves whether the gmm++ equation solver is to be used.
                  *
-                 * @return True if the export-to-dot option was set.
+                 * @return True iff the gmm++ equation solver is to be used.
+                 */
+                bool useGmmxxEquationSolver() const;
+
+                /*!
+                 * Retrieves whether the native equation solver is to be used.
+                 *
+                 * @return True iff the native equation solver is to be used.
+                 */
+                bool useNativeEquationSolver() const;
+                
+                /*!
+                 * Retrieves whether the lpsolver option was set.
+                 *
+                 * @return True if the lpsolver option was set.
                  */
                 bool isLpSolverSet() const;
 
+                /*!
+                 * Retrieves whether glpk is to be used.
+                 *
+                 * @return True iff glpk is to be used.
+                 */
+                bool useGlpk() const;
+                
+                /*!
+                 * Retrieves whether Gurobi is to be used.
+                 *
+                 * @return True iff Gurobi is to be used.
+                 */
+                bool useGurobi() const;
+                
                 /*!
                  * Retrieves whether the export-to-dot option was set.
                  *
                  * @return True if the export-to-dot option was set.
                  */
                 bool isConstantsSet() const;
+                
+                /*!
+                 * Retrieves the string that defines the constants of a symbolic model (given via the symbolic option).
+                 *
+                 * @return The string that defines the constants of a symbolic model.
+                 */
+                std::string getConstantDefinitionString() const;
                 
             private:
                 // Define the string names of the options as constants.

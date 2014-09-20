@@ -37,7 +37,7 @@ namespace storm {
              * @return The builder of the argument.
              */
 			static ArgumentBuilder createStringArgument(std::string const& name, std::string const& description) {
-				ArgumentBuilder ab(ArgumentType::String, name, argumentDescription);
+				ArgumentBuilder ab(ArgumentType::String, name, description);
 				return ab;
 			}
             
@@ -103,8 +103,8 @@ namespace storm {
 #define PPCAT_NX(A, B) A ## B
 #define PPCAT(A, B) PPCAT_NX(A, B)
 #define MACROaddValidationFunction(funcName, funcType) 	ArgumentBuilder& PPCAT(addValidationFunction, funcName) (storm::settings::Argument< funcType >::userValidationFunction_t userValidationFunction) { \
-LOG_THROW(this->argumentType == ArgumentType::funcName, storm::exceptions::IllegalFunctionCallException, "Illegal validation function for argument, because it takes arguments of different type.") \
-( PPCAT(this->userValidationFunction_, funcName) ).push_back(userValidationFunction); \
+LOG_THROW(this->type == ArgumentType::funcName, storm::exceptions::IllegalFunctionCallException, "Illegal validation function for argument, because it takes arguments of different type.") \
+( PPCAT(this->userValidationFunctions_, funcName) ).push_back(userValidationFunction); \
 return *this; \
 }
             
@@ -117,7 +117,7 @@ return *this; \
             
             
 #define MACROsetDefaultValue(funcName, funcType) ArgumentBuilder& PPCAT(setDefaultValue, funcName) (funcType const& defaultValue) { \
-LOG_THROW(this->argumentType == ArgumentType::funcName, storm::exceptions::IllegalFunctionCallException, "Illegal default value for argument" << this->argumentName << ", because it is of different type.") \
+LOG_THROW(this->type == ArgumentType::funcName, storm::exceptions::IllegalFunctionCallException, "Illegal default value for argument" << this->name << ", because it is of different type.") \
 PPCAT(this->defaultValue_, funcName) = defaultValue; \
 this->hasDefaultValue = true; \
 return *this; \
@@ -138,41 +138,41 @@ return *this; \
             std::shared_ptr<ArgumentBase> build() {
                 LOG_THROW(!this->hasBeenBuilt, storm::exceptions::IllegalFunctionCallException, "Cannot rebuild argument with builder that was already used to build an argument.");
 				this->hasBeenBuilt = true;
-				switch (this->argumentType) {
+				switch (this->type) {
 					case ArgumentType::String: {
 						if (this->hasDefaultValue) {
-							return std::shared_ptr<ArgumentBase>(new Argument<std::string>(this->argumentName, this->argumentDescription, userValidationFunction_String, this->isOptional, this->defaultValue_String));
+							return std::shared_ptr<ArgumentBase>(new Argument<std::string>(this->name, this->description, userValidationFunctions_String, this->isOptional, this->defaultValue_String));
 						} else {
-							return std::shared_ptr<ArgumentBase>(new Argument<std::string>(this->argumentName, this->argumentDescription, userValidationFunction_String));
+							return std::shared_ptr<ArgumentBase>(new Argument<std::string>(this->name, this->description, userValidationFunctions_String));
 						}
 						break;
                     }
 					case ArgumentType::Integer:
 						if (this->hasDefaultValue) {
-							return std::shared_ptr<ArgumentBase>(new Argument<int_fast64_t>(this->argumentName, this->argumentDescription, userValidationFunction_Integer, this->isOptional, this->defaultValue_Integer));
+							return std::shared_ptr<ArgumentBase>(new Argument<int_fast64_t>(this->name, this->description, userValidationFunctions_Integer, this->isOptional, this->defaultValue_Integer));
 						} else {
-							return std::shared_ptr<ArgumentBase>(new Argument<int_fast64_t>(this->argumentName, this->argumentDescription, userValidationFunction_Integer));
+							return std::shared_ptr<ArgumentBase>(new Argument<int_fast64_t>(this->name, this->description, userValidationFunctions_Integer));
 						}
 						break;
 					case ArgumentType::UnsignedInteger:
 						if (this->hasDefaultValue) {
-							return std::shared_ptr<ArgumentBase>(new Argument<uint_fast64_t>(this->argumentName, this->argumentDescription, userValidationFunction_UnsignedInteger, this->isOptional, this->defaultValue_UnsignedInteger));
+							return std::shared_ptr<ArgumentBase>(new Argument<uint_fast64_t>(this->name, this->description, userValidationFunctions_UnsignedInteger, this->isOptional, this->defaultValue_UnsignedInteger));
 						} else {
-							return std::shared_ptr<ArgumentBase>(new Argument<uint_fast64_t>(this->argumentName, this->argumentDescription, userValidationFunction_UnsignedInteger));
+							return std::shared_ptr<ArgumentBase>(new Argument<uint_fast64_t>(this->name, this->description, userValidationFunctions_UnsignedInteger));
 						}
 						break;
 					case ArgumentType::Double:
 						if (this->hasDefaultValue) {
-							return std::shared_ptr<ArgumentBase>(new Argument<double>(this->argumentName, this->argumentDescription, userValidationFunction_Double, this->isOptional, this->defaultValue_Double));
+							return std::shared_ptr<ArgumentBase>(new Argument<double>(this->name, this->description, userValidationFunctions_Double, this->isOptional, this->defaultValue_Double));
 						} else {
-							return std::shared_ptr<ArgumentBase>(new Argument<double>(this->argumentName, this->argumentDescription, userValidationFunction_Double));
+							return std::shared_ptr<ArgumentBase>(new Argument<double>(this->name, this->description, userValidationFunctions_Double));
 						}
 						break;
 					case ArgumentType::Boolean:
 						if (this->hasDefaultValue) {
-							return std::shared_ptr<ArgumentBase>(new Argument<bool>(this->argumentName, this->argumentDescription, userValidationFunction_Boolean, this->isOptional, this->defaultValue_Boolean));
+							return std::shared_ptr<ArgumentBase>(new Argument<bool>(this->name, this->description, userValidationFunctions_Boolean, this->isOptional, this->defaultValue_Boolean));
 						} else {
-							return std::shared_ptr<ArgumentBase>(new Argument<bool>(this->argumentName, this->argumentDescription, userValidationFunction_Boolean));
+							return std::shared_ptr<ArgumentBase>(new Argument<bool>(this->name, this->description, userValidationFunctions_Boolean));
 						}
 						break;
 				}

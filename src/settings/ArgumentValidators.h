@@ -12,6 +12,8 @@
 #include <string>
 
 #include "src/settings/Argument.h"
+#include "src/exceptions/ExceptionMacros.h"
+#include "src/exceptions/InvalidArgumentException.h"
 
 namespace storm {
 	namespace settings {
@@ -24,7 +26,7 @@ namespace storm {
              * @param upperBound The upper bound of the valid range.
              * @return The resulting validation function.
              */
-			static std::function<bool (int_fast64_t const&)> integerRangeValidatorIncluding(int_fast64_t const lowerBound, int_fast64_t const upperBound) {
+			static std::function<bool (int_fast64_t const&)> integerRangeValidatorIncluding(int_fast64_t lowerBound, int_fast64_t upperBound) {
 				return rangeValidatorIncluding<int_fast64_t>(lowerBound, upperBound);
 			}
             
@@ -35,7 +37,7 @@ namespace storm {
              * @param upperBound The upper bound of the valid range.
              * @return The resulting validation function.
              */
-			static std::function<bool (int_fast64_t const&)> integerRangeValidatorExcluding(int_fast64_t const lowerBound, int_fast64_t const upperBound) {
+			static std::function<bool (int_fast64_t const&)> integerRangeValidatorExcluding(int_fast64_t lowerBound, int_fast64_t upperBound) {
 				return rangeValidatorExcluding<int_fast64_t>(lowerBound, upperBound);
 			}
 
@@ -46,7 +48,7 @@ namespace storm {
              * @param upperBound The upper bound of the valid range.
              * @return The resulting validation function.
              */
-			static std::function<bool (uint_fast64_t const&)> unsignedIntegerRangeValidatorIncluding(uint_fast64_t const lowerBound, uint_fast64_t const upperBound) {
+			static std::function<bool (uint_fast64_t const&)> unsignedIntegerRangeValidatorIncluding(uint_fast64_t lowerBound, uint_fast64_t upperBound) {
 				return rangeValidatorIncluding<uint_fast64_t>(lowerBound, upperBound);
 			}
             
@@ -57,7 +59,7 @@ namespace storm {
              * @param upperBound The upper bound of the valid range.
              * @return The resulting validation function.
              */
-			static std::function<bool (uint_fast64_t const&)> unsignedIntegerRangeValidatorExcluding(uint_fast64_t const lowerBound, uint_fast64_t const upperBound) {
+			static std::function<bool (uint_fast64_t const&)> unsignedIntegerRangeValidatorExcluding(uint_fast64_t lowerBound, uint_fast64_t upperBound) {
 				return rangeValidatorExcluding<uint_fast64_t>(lowerBound, upperBound);
 			}
 
@@ -68,7 +70,7 @@ namespace storm {
              * @param upperBound The upper bound of the valid range.
              * @return The resulting validation function.
              */
-			static std::function<bool (double const&)> doubleRangeValidatorIncluding(double const lowerBound, double const upperBound) {
+			static std::function<bool (double const&)> doubleRangeValidatorIncluding(double lowerBound, double upperBound) {
 				return rangeValidatorIncluding<double>(lowerBound, upperBound);
 			}
             
@@ -79,7 +81,7 @@ namespace storm {
              * @param upperBound The upper bound of the valid range.
              * @return The resulting validation function.
              */
-			static std::function<bool (double const&)> doubleRangeValidatorExcluding(double const lowerBound, double const upperBound) {
+			static std::function<bool (double const&)> doubleRangeValidatorExcluding(double lowerBound, double upperBound) {
 				return rangeValidatorExcluding<double>(lowerBound, upperBound);
 			}
 
@@ -106,11 +108,9 @@ namespace storm {
              * @return The resulting validation function.
              */
 			static std::function<bool (std::string const&)> stringInListValidator(std::vector<std::string> const& list) {
-				return [list] (std::string const inputString) -> bool {
-                    std::string lowerInputString = boost::algorithm::to_lower_copy(inputString);
+				return [list] (std::string const& inputString) -> bool {
                     for (auto const& validString : list) {
-                        std::string lowerValidString = boost::algorithm::to_lower_copy(validString);
-						if (lowerInputString == lowerValidString) {
+						if (inputString == validString) {
 							return true;
 						}
 					}
@@ -129,11 +129,11 @@ namespace storm {
              * @return The resulting validation function.
              */
 			template<typename T>
-			static std::function<bool (T const)> rangeValidatorIncluding(T const lowerBound, T const upperBound) {
-				return std::bind([](T const& lowerBound, T const& upperBound, T const& value) -> bool {
-                    LOG_THROW(lowerBound <= value && value <= upperBound, storm::exceptions::InvalidArgumentException, "Value " << value " is out range.");
+			static std::function<bool (T const&)> rangeValidatorIncluding(T lowerBound, T upperBound) {
+				return std::bind([](T lowerBound, T upperBound, T value) -> bool {
+                    LOG_THROW(lowerBound <= value && value <= upperBound, storm::exceptions::InvalidArgumentException, "Value " << value << " is out range.");
                     return true;
-                }, lowerBound, upperBound, std::placeholders::_1, std::placeholders::_2);
+                }, lowerBound, upperBound, std::placeholders::_1);
 			}
             
             /*!
@@ -144,11 +144,11 @@ namespace storm {
              * @return The resulting validation function.
              */
 			template<typename T>
-			static std::function<bool (T const)> rangeValidatorExcluding(T const& lowerBound, T const& upperBound) {
-				return std::bind([](T const& lowerBound, T const& upperBound, T const& value) -> bool {
-                    LOG_THROW(lowerBound < value && value < upperBound, storm::exceptions::InvalidArgumentException, "Value " << value " is out range.");
+			static std::function<bool (T const&)> rangeValidatorExcluding(T lowerBound, T upperBound) {
+				return std::bind([](T lowerBound, T upperBound, T value) -> bool {
+                    LOG_THROW(lowerBound < value && value < upperBound, storm::exceptions::InvalidArgumentException, "Value " << value << " is out range.");
                     return true;
-				}, lowerBound, upperBound, std::placeholders::_1, std::placeholders::_2);
+				}, lowerBound, upperBound, std::placeholders::_1);
 			}
 		};
 	}
