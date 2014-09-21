@@ -27,8 +27,7 @@ void initializeLogger() {
  * Sets up the logging to file.
  */
 void setUpFileLogging() {
-	storm::settings::SettingsManager* s = storm::settings::SettingsManager::getInstance();
-	log4cplus::SharedAppenderPtr fileLogAppender(new log4cplus::FileAppender(s->getOptionByLongName("logfile").getArgument(0).getValueAsString()));
+    log4cplus::SharedAppenderPtr fileLogAppender(new log4cplus::FileAppender(storm::settings::debugSettings().getLogfilename()));
 	fileLogAppender->setName("mainFileAppender");
 	fileLogAppender->setLayout(std::auto_ptr<log4cplus::Layout>(new log4cplus::PatternLayout("%-5p - %D{%H:%M:%S} (%r ms) - %F:%L: %m%n")));
 	logger.addAppender(fileLogAppender);

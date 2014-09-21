@@ -48,9 +48,11 @@ namespace storm {
                  */
                 ConvergenceCriterion getConvergenceCriterion() const;
                 
+                // The name of the module.
+                static const std::string moduleName;
+                
             private:
                 // Define the string names of the options as constants.
-                static const std::string moduleName;
                 static const std::string techniqueOptionName;
                 static const std::string maximalIterationsOptionName;
                 static const std::string maximalIterationsOptionShortName;

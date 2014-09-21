@@ -21,16 +21,20 @@
 namespace storm {
 	namespace settings {
 
-        // Forward-declare settings manager class.
+        // Forward-declare settings manager and module settings classes.
         class SettingsManager;
+        namespace modules {
+            class ModuleSettings;
+        }
         
         /*!
          * This class represents one command-line option.
          */
 		class Option {
 		public:
-            // Declare settings manager class as friend.
+            // Declare settings manager and module settings classes as friends.
 			friend class SettingsManager;
+            friend class modules::ModuleSettings;
 
             /*!
              * Creates an option with the given parameters.

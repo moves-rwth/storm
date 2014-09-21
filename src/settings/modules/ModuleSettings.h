@@ -5,12 +5,12 @@
 #include <unordered_map>
 
 #include "src/settings/Option.h"
-#include "src/settings/SettingMemento.h"
 
 namespace storm {
     namespace settings {
-        // Forward-declare SettingsManager class.
+        // Forward-declare some classes.
         class SettingsManager;
+        class SettingMemento;
         
         namespace modules {
             
@@ -19,12 +19,16 @@ namespace storm {
              */
             class ModuleSettings {
             public:
+                // Declare the memento class as a friend so it can manipulate the internal state.
+                friend class storm::settings::SettingMemento;
+                
                 /*!
                  * Constructs a new settings object.
                  *
                  * @param settingsManager The manager responsible for these settings.
+                 * @param moduleName The name of the module for which to build the settings.
                  */
-                ModuleSettings(storm::settings::SettingsManager& settingsManager);
+                ModuleSettings(storm::settings::SettingsManager& settingsManager, std::string const& moduleName);
                 
                 /*!
                  * Checks whether the settings are consistent. If they are inconsistent, an exception is thrown.
@@ -53,12 +57,9 @@ namespace storm {
                 storm::settings::SettingsManager const& getSettingsManager() const;
                 
                 /*!
-                 * Adds the option with the given long name to the list of options of this module.
-                 *
-                 * @param longName The long name of the option.
-                 * @param option The actual option associated with the given name.
+                 * Retrieves the name of the module to which these settings belong.
                  */
-                void addOption(std::string const& longName, std::shared_ptr<Option> const& option);
+                std::string const& getModuleName() const;
                 
                 /*!
                  * Retrieves the option with the given long name. If no such option exists, an exception is thrown.
@@ -82,7 +83,7 @@ namespace storm {
                  *
                  * @param name The name of the option to set.
                  */
-                void set(std::string const& name) const;
+                void set(std::string const& name);
                 
                 /*!
                  * Unsets the option with the specified name. This requires the option to not have any arguments. This
@@ -90,11 +91,21 @@ namespace storm {
                  *
                  * @param name The name of the option to unset.
                  */
-                void unset(std::string const& longName) const;
+                void unset(std::string const& name);
+                
+                /*!
+                 * Adds and registers the given option.
+                 *
+                 * @param option The option to add and register.
+                 */
+                void addAndRegisterOption(std::shared_ptr<Option> option) const;
                 
             private:
                 // The settings manager responsible for the settings.
                 storm::settings::SettingsManager const& settingsManager;
+                
+                // The name of the module.
+                std::string moduleName;
                 
                 // A mapping of option names of the module to the actual options.
                 std::unordered_map<std::string, std::shared_ptr<Option>> options;

@@ -40,9 +40,11 @@ namespace storm {
                  */
                 bool isOutputSet() const;
                 
+                // The name of the module.
+                static const std::string moduleName;
+                
             private:
                 // Define the string names of the options as constants.
-                static const std::string moduleName;
                 static const std::string integerToleranceOption;
                 static const std::string threadsOption;
                 static const std::string outputOption;

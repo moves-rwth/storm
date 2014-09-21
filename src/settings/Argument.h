@@ -127,9 +127,9 @@ namespace storm {
 					case ArgumentType::Boolean: {
 						bool iValue = ArgumentTypeInferation::inferToBoolean(ArgumentType::Boolean, this->getArgumentValue());
 						if (iValue) {
-							return trueString;
+							return "true";
 						} else {
-							return falseString;
+							return "false";
 						}
 					}
 					default: return ArgumentBase::convertToString(this->argumentValue);
@@ -189,10 +189,6 @@ namespace storm {
             
             // A flag indicating whether a default value has been provided.
             bool hasDefaultValue;
-            
-            // Static constants for the string representations of true and false.
-            static const std::string trueString;
-            static const std::string falseString;
             
             void setDefaultValue(T const& newDefault) {
                 LOG_THROW(this->validate(newDefault), storm::exceptions::IllegalArgumentValueException, "The default value for the argument did not pass all validation functions.");

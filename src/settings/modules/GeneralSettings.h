@@ -11,7 +11,7 @@ namespace storm {
              * This class represents the general settings.
              */
             class GeneralSettings : public ModuleSettings {
-            public:
+            public:                
                 // An enumeration of all available LP solvers.
                 enum class LpSolver { Gurobi, glpk };
                 
@@ -46,6 +46,13 @@ namespace storm {
                  * @return True if the verbose option was set.
                  */
                 bool isVerboseSet() const;
+                
+                /*!
+                 * Retrieves the precision to use for numerical operations.
+                 *
+                 * @return The precision to use for numerical operations.
+                 */
+                double getPrecision() const;
                 
                 /*!
                  * Retrieves whether the export-to-dot option was set.
@@ -248,14 +255,18 @@ namespace storm {
                  * @return The string that defines the constants of a symbolic model.
                  */
                 std::string getConstantDefinitionString() const;
-                
+
+                // The name of the module.
+                static const std::string moduleName;
+
             private:
                 // Define the string names of the options as constants.
-                static const std::string moduleName;
                 static const std::string helpOptionName;
                 static const std::string helpOptionShortName;
                 static const std::string verboseOptionName;
                 static const std::string verboseOptionShortName;
+                static const std::string precisionOptionName;
+                static const std::string precisionOptionShortName;
                 static const std::string exportDotOptionName;
                 static const std::string configOptionName;
                 static const std::string configOptionShortName;

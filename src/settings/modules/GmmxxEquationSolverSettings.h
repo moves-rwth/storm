@@ -16,7 +16,7 @@ namespace storm {
                 enum class LinearEquationTechnique { Bicgstab, Qmr, Gmres, Jacobi };
 
                 // An enumeration of all available preconditioning techniques.
-                enum class PreconditioningTechnique { Ilu, Diagonal, Ildlt, None };
+                enum class PreconditioningTechnique { Ilu, Diagonal, None };
                 
                 // An enumeration of all available convergence criteria.
                 enum class ConvergenceCriterion { Absolute, Relative };
@@ -70,9 +70,11 @@ namespace storm {
                  */
                 ConvergenceCriterion getConvergenceCriterion() const;
                 
+                // The name of the module.
+                static const std::string moduleName;
+                
             private:
                 // Define the string names of the options as constants.
-                static const std::string moduleName;
                 static const std::string techniqueOptionName;
                 static const std::string preconditionOptionName;
                 static const std::string restartOptionName;

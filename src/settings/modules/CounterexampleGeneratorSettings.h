@@ -60,7 +60,9 @@ namespace storm {
                 
                 /*!
                  * Retrieves whether scheduler cuts are to be used if the MAXSAT-based technique is used to generate a
-                 * minimal command set counterexample
+                 * minimal command set counterexample.
+                 *
+                 * @return True iff scheduler cuts are to be used.
                  */
                 bool useSchedulerCuts() const;
                 
@@ -71,9 +73,11 @@ namespace storm {
                  */
                 bool showStatistics() const;
                 
+                // The name of the module.
+                static const std::string moduleName;
+                
             private:
                 // Define the string names of the options as constants.
-                static const std::string moduleName;
                 static const std::string minimalCommandSetOptionName;
                 static const std::string encodeReachabilityOptionName;
                 static const std::string schedulerCutsOptionName;

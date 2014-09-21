@@ -17,17 +17,17 @@ namespace storm {
         template<typename ValueType>
         NativeLinearEquationSolver<ValueType>::NativeLinearEquationSolver() {
             // Get the settings object to customize linear solving.
-            storm::settings::SettingsManager* settings = storm::settings::SettingsManager::getInstance();
+            storm::settings::modules::NativeEquationSolverSettings const& settings = storm::settings::nativeEquationSolverSettings();
             
             // Get appropriate settings.
-            maximalNumberOfIterations = settings->getOptionByLongName("maxiter").getArgument(0).getValueAsUnsignedInteger();
-            precision = settings->getOptionByLongName("precision").getArgument(0).getValueAsDouble();
-            relative = !settings->isSet("absolute");
+            maximalNumberOfIterations = settings.getMaximalIterationCount();
+            precision = settings.getPrecision();
+            relative = settings.getConvergenceCriterion() == storm::settings::modules::NativeEquationSolverSettings::ConvergenceCriterion::Relative;
             
             // Determine the method to be used.
-            std::string const& methodAsString = settings->getOptionByLongName("nativelin").getArgument(0).getValueAsString();
-            if (methodAsString == "jacobi") {
-                method = JACOBI;
+            storm::settings::modules::NativeEquationSolverSettings::LinearEquationTechnique methodAsSetting = settings.getLinearEquationSystemTechnique();
+            if (methodAsSetting == storm::settings::modules::NativeEquationSolverSettings::LinearEquationTechnique::Jacobi) {
+                method = SolutionMethod::Jacobi;
             }
         }
         
@@ -127,10 +127,8 @@ namespace storm {
 
         template<typename ValueType>
         std::string NativeLinearEquationSolver<ValueType>::methodToString() const {
-            if (method == JACOBI) {
-                return "jacobi";
-            } else {
-                throw storm::exceptions::InvalidStateException() << "Illegal method '" << method << "' set in NativeLinearEquationSolver.";
+            switch (method) {
+                case SolutionMethod::Jacobi: return "jacobi";
             }
         }
         

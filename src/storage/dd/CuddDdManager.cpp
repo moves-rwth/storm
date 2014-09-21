@@ -10,47 +10,30 @@
 namespace storm {
     namespace dd {
         DdManager<DdType::CUDD>::DdManager() : metaVariableMap(), cuddManager(), reorderingTechnique(CUDD_REORDER_NONE) {
-            this->cuddManager.SetMaxMemory(static_cast<unsigned long>(storm::settings::SettingsManager::getInstance()->getOptionByLongName("cuddmaxmem").getArgument(0).getValueAsUnsignedInteger() * 1024ul * 1024ul));
-            this->cuddManager.SetEpsilon(storm::settings::SettingsManager::getInstance()->getOptionByLongName("cuddprec").getArgument(0).getValueAsDouble());
+            this->cuddManager.SetMaxMemory(static_cast<unsigned long>(storm::settings::cuddSettings().getMaximalMemory() * 1024ul * 1024ul));
+            this->cuddManager.SetEpsilon(storm::settings::cuddSettings().getConstantPrecision());
             
             // Now set the selected reordering technique.
-            std::string const& reorderingTechnique = storm::settings::SettingsManager::getInstance()->getOptionByLongName("reorder").getArgument(0).getValueAsString();
-            if (reorderingTechnique == "none") {
-                this->reorderingTechnique = CUDD_REORDER_NONE;
-            } else if (reorderingTechnique == "random") {
-                this->reorderingTechnique = CUDD_REORDER_RANDOM;
-            } else if (reorderingTechnique == "randompivot") {
-                this->reorderingTechnique = CUDD_REORDER_RANDOM_PIVOT;
-            } else if (reorderingTechnique == "sift") {
-                this->reorderingTechnique = CUDD_REORDER_SIFT;
-            } else if (reorderingTechnique == "siftconv") {
-                this->reorderingTechnique = CUDD_REORDER_SIFT_CONVERGE;
-            } else if (reorderingTechnique == "ssift") {
-                this->reorderingTechnique = CUDD_REORDER_SYMM_SIFT;
-            } else if (reorderingTechnique == "ssiftconv") {
-                this->reorderingTechnique = CUDD_REORDER_SYMM_SIFT_CONV;
-            } else if (reorderingTechnique == "gsift") {
-                this->reorderingTechnique = CUDD_REORDER_GROUP_SIFT;
-            } else if (reorderingTechnique == "gsiftconv") {
-                this->reorderingTechnique = CUDD_REORDER_GROUP_SIFT_CONV;
-            } else if (reorderingTechnique == "win2") {
-                this->reorderingTechnique = CUDD_REORDER_WINDOW2;
-            } else if (reorderingTechnique == "win2conv") {
-                this->reorderingTechnique = CUDD_REORDER_WINDOW2_CONV;
-            } else if (reorderingTechnique == "win3") {
-                this->reorderingTechnique = CUDD_REORDER_WINDOW3;
-            } else if (reorderingTechnique == "win3conv") {
-                this->reorderingTechnique = CUDD_REORDER_WINDOW3_CONV;
-            } else if (reorderingTechnique == "win4") {
-                this->reorderingTechnique = CUDD_REORDER_WINDOW4;
-            } else if (reorderingTechnique == "win4conv") {
-                this->reorderingTechnique = CUDD_REORDER_WINDOW4_CONV;
-            } else if (reorderingTechnique == "annealing") {
-                this->reorderingTechnique = CUDD_REORDER_ANNEALING;
-            } else if (reorderingTechnique == "genetic") {
-                this->reorderingTechnique = CUDD_REORDER_GENETIC;
-            } else if (reorderingTechnique == "exact") {
-                this->reorderingTechnique = CUDD_REORDER_EXACT;
+            storm::settings::modules::CuddSettings::ReorderingTechnique reorderingTechniqueAsSetting = storm::settings::cuddSettings().getReorderingTechnique();
+            switch (reorderingTechniqueAsSetting) {
+                case storm::settings::modules::CuddSettings::ReorderingTechnique::None: this->reorderingTechnique = CUDD_REORDER_NONE; break;
+                case storm::settings::modules::CuddSettings::ReorderingTechnique::Random: this->reorderingTechnique = CUDD_REORDER_RANDOM; break;
+                case storm::settings::modules::CuddSettings::ReorderingTechnique::RandomPivot: this->reorderingTechnique = CUDD_REORDER_RANDOM_PIVOT; break;
+                case storm::settings::modules::CuddSettings::ReorderingTechnique::Sift: this->reorderingTechnique = CUDD_REORDER_SIFT; break;
+                case storm::settings::modules::CuddSettings::ReorderingTechnique::SiftConv: this->reorderingTechnique = CUDD_REORDER_SIFT_CONVERGE; break;
+                case storm::settings::modules::CuddSettings::ReorderingTechnique::SymmetricSift: this->reorderingTechnique = CUDD_REORDER_SYMM_SIFT; break;
+                case storm::settings::modules::CuddSettings::ReorderingTechnique::SymmetricSiftConv: this->reorderingTechnique = CUDD_REORDER_SYMM_SIFT_CONV; break;
+                case storm::settings::modules::CuddSettings::ReorderingTechnique::GroupSift: this->reorderingTechnique = CUDD_REORDER_GROUP_SIFT; break;
+                case storm::settings::modules::CuddSettings::ReorderingTechnique::GroupSiftConv: this->reorderingTechnique = CUDD_REORDER_GROUP_SIFT_CONV; break;
+                case storm::settings::modules::CuddSettings::ReorderingTechnique::Win2: this->reorderingTechnique = CUDD_REORDER_WINDOW2; break;
+                case storm::settings::modules::CuddSettings::ReorderingTechnique::Win2Conv: this->reorderingTechnique = CUDD_REORDER_WINDOW2_CONV; break;
+                case storm::settings::modules::CuddSettings::ReorderingTechnique::Win3: this->reorderingTechnique = CUDD_REORDER_WINDOW3; break;
+                case storm::settings::modules::CuddSettings::ReorderingTechnique::Win3Conv: this->reorderingTechnique = CUDD_REORDER_WINDOW3_CONV; break;
+                case storm::settings::modules::CuddSettings::ReorderingTechnique::Win4: this->reorderingTechnique = CUDD_REORDER_WINDOW4; break;
+                case storm::settings::modules::CuddSettings::ReorderingTechnique::Win4Conv: this->reorderingTechnique = CUDD_REORDER_WINDOW4_CONV; break;
+                case storm::settings::modules::CuddSettings::ReorderingTechnique::Annealing: this->reorderingTechnique = CUDD_REORDER_ANNEALING; break;
+                case storm::settings::modules::CuddSettings::ReorderingTechnique::Genetic: this->reorderingTechnique = CUDD_REORDER_GENETIC; break;
+                case storm::settings::modules::CuddSettings::ReorderingTechnique::Exact: this->reorderingTechnique = CUDD_REORDER_EXACT; break;
             }
         }
         

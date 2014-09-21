@@ -21,7 +21,7 @@ namespace storm {
             glp_set_prob_name(lp, name.c_str());
             
             // Set whether the glpk output shall be printed to the command line.
-            glp_term_out(storm::settings::SettingsManager::getInstance()->isSet("debug") || storm::settings::SettingsManager::getInstance()->isSet("glpkoutput") ? GLP_ON : GLP_OFF);
+            glp_term_out(storm::settings::debugSettings().isDebugSet() || storm::settings::glpkSettings().isOutputSet() ? GLP_ON : GLP_OFF);
             
             // Because glpk uses 1-based indexing (wtf!?), we need to put dummy elements into the matrix vectors.
             rowIndices.push_back(0);
@@ -145,13 +145,13 @@ namespace storm {
             // Determine the type of the constraint and add it properly.
             switch (constraint.getOperator()) {
                 case storm::expressions::OperatorType::Less:
-                    glp_set_row_bnds(this->lp, nextConstraintIndex, GLP_UP, 0, rightCoefficients.second - storm::settings::SettingsManager::getInstance()->getOptionByLongName("glpkinttol").getArgument(0).getValueAsDouble());
+                    glp_set_row_bnds(this->lp, nextConstraintIndex, GLP_UP, 0, rightCoefficients.second - storm::settings::glpkSettings().getIntegerTolerance());
                     break;
                 case storm::expressions::OperatorType::LessOrEqual:
                     glp_set_row_bnds(this->lp, nextConstraintIndex, GLP_UP, 0, rightCoefficients.second);
                     break;
                 case storm::expressions::OperatorType::Greater:
-                    glp_set_row_bnds(this->lp, nextConstraintIndex, GLP_LO, rightCoefficients.second + storm::settings::SettingsManager::getInstance()->getOptionByLongName("glpkinttol").getArgument(0).getValueAsDouble(), 0);
+                    glp_set_row_bnds(this->lp, nextConstraintIndex, GLP_LO, rightCoefficients.second + storm::settings::glpkSettings().getIntegerTolerance(), 0);
                     break;
                 case storm::expressions::OperatorType::GreaterOrEqual:
                     glp_set_row_bnds(this->lp, nextConstraintIndex, GLP_LO, rightCoefficients.second, 0);
@@ -187,7 +187,7 @@ namespace storm {
                 glp_iocp* parameters = new glp_iocp();
                 glp_init_iocp(parameters);
                 parameters->presolve = GLP_ON;
-                parameters->tol_int = storm::settings::SettingsManager::getInstance()->getOptionByLongName("glpkinttol").getArgument(0).getValueAsDouble();
+                parameters->tol_int = storm::settings::glpkSettings().getIntegerTolerance();
                 error = glp_intopt(this->lp, parameters);
                 delete parameters;
                 
@@ -285,7 +285,7 @@ namespace storm {
             }
 
             // Now check the desired precision was actually achieved.
-            LOG_THROW(std::abs(static_cast<int>(value) - value) <= storm::settings::SettingsManager::getInstance()->getOptionByLongName("glpkinttol").getArgument(0).getValueAsDouble(), storm::exceptions::InvalidStateException, "Illegal value for integer variable in glpk solution (" << value << ").");
+            LOG_THROW(std::abs(static_cast<int>(value) - value) <= storm::settings::glpkSettings().getIntegerTolerance(), storm::exceptions::InvalidStateException, "Illegal value for integer variable in glpk solution (" << value << ").");
             
             return static_cast<int_fast64_t>(value);
         }
@@ -307,7 +307,7 @@ namespace storm {
                 value = glp_get_col_prim(this->lp, static_cast<int>(variableIndexPair->second));
             }
 
-            LOG_THROW(std::abs(static_cast<int>(value) - value) <= storm::settings::SettingsManager::getInstance()->getOptionByLongName("glpkinttol").getArgument(0).getValueAsDouble(), storm::exceptions::InvalidStateException, "Illegal value for binary variable in glpk solution (" << value << ").");
+            LOG_THROW(std::abs(static_cast<int>(value) - value) <= storm::settings::glpkSettings().getIntegerTolerance(), storm::exceptions::InvalidStateException, "Illegal value for binary variable in glpk solution (" << value << ").");
             
             return static_cast<bool>(value);
         }

@@ -26,9 +26,18 @@ namespace storm {
                  */
                 bool isOutputSet() const;
                 
+                /*!
+                 * Retrieves the integer tolerance to be used.
+                 *
+                 * @return The integer tolerance to be used.
+                 */
+                double getIntegerTolerance() const;
+                
+                // The name of the module.
+                static const std::string moduleName;
+                
             private:
                 // Define the string names of the options as constants.
-                static const std::string moduleName;
                 static const std::string integerToleranceOption;
                 static const std::string outputOptionName;
             };

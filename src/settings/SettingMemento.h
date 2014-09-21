@@ -6,7 +6,10 @@
 namespace storm {
     namespace settings {
         
-        class ModuleSettings;
+        // Forward-declare the module settings.
+        namespace modules {
+            class ModuleSettings;
+        }
         
         /*!
          * This class is used to reset the state of an option that was temporarily set to a different status.
@@ -21,7 +24,7 @@ namespace storm {
              * @param resetToState A flag that indicates the status to which the option is to be reset upon
              * deconstruction of this object.
              */
-            SettingMemento(ModuleSettings& settings, std::string const& longOptionName, bool resetToState);
+            SettingMemento(modules::ModuleSettings& settings, std::string const& longOptionName, bool resetToState);
             
             /*!
              * Destructs the memento object and resets the value of the option to its original state.
@@ -30,7 +33,7 @@ namespace storm {
             
 		private:
             // The settings object in which the setting is to be restored.
-            ModuleSettings& settings;
+            modules::ModuleSettings& settings;
             
             // The long name of the option that was temporarily set.
 			std::string const optionName;

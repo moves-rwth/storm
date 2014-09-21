@@ -42,7 +42,7 @@
 #include "src/solver/NativeLinearEquationSolver.h"
 #include "src/solver/GmmxxNondeterministicLinearEquationSolver.h"
 #include "src/solver/GurobiLpSolver.h"
-#include "src/counterexamples/GenerateCounterexample.h"
+// #include "src/counterexamples/GenerateCounterexample.h"
 #include "src/counterexamples/MILPMinimalLabelSetGenerator.h"
 #include "src/counterexamples/SMTMinimalCommandSetGenerator.h"
 #include "src/counterexamples/PathBasedSubsystemGenerator.h"
@@ -73,9 +73,9 @@
  * @param modelchecker The model checker that is to be invoked on all given formulae.
  */
 void checkPrctlFormulae(storm::modelchecker::prctl::AbstractModelChecker<double> const& modelchecker) {
-	storm::settings::SettingsManager* s = storm::settings::SettingsManager::getInstance();
-	if (s->isSet("prctl")) {
-		std::string const chosenPrctlFile = s->getOptionByLongName("prctl").getArgument(0).getValueAsString();
+    storm::settings::modules::GeneralSettings const& settings = storm::settings::generalSettings();
+	if (settings.isPctlSet()) {
+		std::string chosenPrctlFile = settings.getPctlPropertiesFilename();
 		LOG4CPLUS_INFO(logger, "Parsing prctl file: " << chosenPrctlFile << ".");
 		std::list<std::shared_ptr<storm::properties::prctl::PrctlFilter<double>>> formulaList = storm::parser::PrctlFileParser::parsePrctlFile(chosenPrctlFile);
         
@@ -110,12 +110,12 @@ int main(const int argc, const char* argv[]) {
 			// If parsing failed or the option to see the usage was set, program execution stops here.
 			return 0;
 		}
-        
+    
+        storm::settings::modules::GeneralSettings settings = storm::settings::generalSettings();
+    
         // If requested by the user, we install a timeout signal to abort computation.
-		storm::settings::SettingsManager* s = storm::settings::SettingsManager::getInstance();
-        uint_fast64_t timeout = s->getOptionByLongName("timeout").getArgument(0).getValueAsUnsignedInteger();
-        if (timeout != 0) {
-			stormSetAlarm(timeout);
+        if (settings.isTimeoutSet()) {
+            stormSetAlarm(settings.getTimeoutInSeconds());
         }
         
 		// Execution Time measurement, start
@@ -123,17 +123,17 @@ int main(const int argc, const char* argv[]) {
 
 		// Now, the settings are received and the specified model is parsed. The actual actions taken depend on whether
         // the model was provided in explicit or symbolic format.
-		if (s->isSet("explicit")) {
-			std::string const chosenTransitionSystemFile = s->getOptionByLongName("explicit").getArgument(0).getValueAsString();
-			std::string const chosenLabelingFile = s->getOptionByLongName("explicit").getArgument(1).getValueAsString();
+        if (settings.isExplicitSet()) {
+			std::string const chosenTransitionSystemFile = settings.getTransitionFilename();
+			std::string const chosenLabelingFile = settings.getLabelingFilename();
             
 			std::string chosenStateRewardsFile = "";
-			if (s->isSet("stateRewards")) {
-				chosenStateRewardsFile = s->getOptionByLongName("stateRewards").getArgument(0).getValueAsString();
+			if (settings.isStateRewardsSet()) {
+				chosenStateRewardsFile = settings.getStateRewardsFilename();
 			}
 			std::string chosenTransitionRewardsFile = "";
-			if (s->isSet("transitionRewards")) {
-				chosenTransitionRewardsFile = s->getOptionByLongName("transitionRewards").getArgument(0).getValueAsString();
+			if (settings.isTransitionRewardsSet()) {
+				chosenTransitionRewardsFile = settings.getTransitionRewardsFilename();
 			}
 
 			std::shared_ptr<storm::models::AbstractModel<double>> model = storm::parser::AutoParser::parseModel(chosenTransitionSystemFile, chosenLabelingFile, chosenStateRewardsFile, chosenTransitionRewardsFile);
@@ -142,19 +142,19 @@ int main(const int argc, const char* argv[]) {
 			std::chrono::high_resolution_clock::time_point parsingEnd = std::chrono::high_resolution_clock::now();
 			std::cout << "Parsing the given model took " << std::chrono::duration_cast<std::chrono::milliseconds>(parsingEnd - executionStart).count() << " milliseconds." << std::endl;
 
-            if (s->isSet("exportdot")) {
+            if (settings.isExportDotSet()) {
                 std::ofstream outputFileStream;
-                outputFileStream.open(s->getOptionByLongName("exportdot").getArgument(0).getValueAsString(), std::ofstream::out);
+                outputFileStream.open(settings.getExportDotFilename(), std::ofstream::out);
                 model->writeDotToStream(outputFileStream);
                 outputFileStream.close();
             }
             
 			// Should there be a counterexample generated in case the formula is not satisfied?
-			if(s->isSet("counterexample")) {
+			if(settings.isCounterexampleSet()) {
 				// Counterexample Time Measurement, Start
 				std::chrono::high_resolution_clock::time_point counterexampleStart = std::chrono::high_resolution_clock::now();
 
-				generateCounterExample(model);
+				// generateCounterExample(model);
 			
 				// Counterexample Time Measurement, End
 				std::chrono::high_resolution_clock::time_point counterexampleEnd = std::chrono::high_resolution_clock::now();
@@ -213,13 +213,13 @@ int main(const int argc, const char* argv[]) {
 				std::chrono::high_resolution_clock::time_point modelcheckingEnd = std::chrono::high_resolution_clock::now();
 				std::cout << "Running the ModelChecker took " << std::chrono::duration_cast<std::chrono::milliseconds>(modelcheckingEnd - modelcheckingStart).count() << " milliseconds." << std::endl;
 			}
-		} else if (s->isSet("symbolic")) {
+		} else if (settings.isSymbolicSet()) {
 			// Program Translation Time Measurement, Start
 			std::chrono::high_resolution_clock::time_point programTranslationStart = std::chrono::high_resolution_clock::now();
 
             // First, we build the model using the given symbolic model description and constant definitions.
-            std::string const& programFile = s->getOptionByLongName("symbolic").getArgument(0).getValueAsString();
-            std::string const& constants = s->getOptionByLongName("constants").getArgument(0).getValueAsString();
+            std::string const& programFile = settings.getSymbolicModelFilename();
+            std::string const& constants = settings.getConstantDefinitionString();
             storm::prism::Program program = storm::parser::PrismParser::parse(programFile);
             std::shared_ptr<storm::models::AbstractModel<double>> model = storm::adapters::ExplicitModelAdapter<double>::translateProgram(program, constants);
             model->printModelInformationToStream(std::cout);
@@ -236,7 +236,7 @@ int main(const int argc, const char* argv[]) {
             double value = modelChecker.computeReachabilityProbability(*model->as<storm::models::Dtmc<double>>(), trueStates, targetStates);
             std::cout << "computed value " << value << std::endl;
             
-            if (s->isSet("mincmd")) {
+            if (storm::settings::counterexampleGeneratorSettings().isMinimalCommandGenerationSet()) {
                 if (model->getType() != storm::models::MDP) {
                     LOG4CPLUS_ERROR(logger, "Minimal command counterexample generation is only supported for models of type MDP.");
                     throw storm::exceptions::InternalTypeErrorException() << "Minimal command counterexample generation is only supported for models of type MDP.";
@@ -245,13 +245,13 @@ int main(const int argc, const char* argv[]) {
                 std::shared_ptr<storm::models::Mdp<double>> mdp = model->as<storm::models::Mdp<double>>();
                 
                 // Determine whether we are required to use the MILP-version or the SAT-version.
-                bool useMILP = s->getOptionByLongName("mincmd").getArgumentByName("method").getValueAsString() == "milp";
+                bool useMILP = storm::settings::counterexampleGeneratorSettings().useMilpBasedMinimalCommandSetGeneration();
                 
 				// MinCMD Time Measurement, Start
 				std::chrono::high_resolution_clock::time_point minCmdStart = std::chrono::high_resolution_clock::now();
 
                 // Now parse the property file and receive the list of parsed formulas.
-                std::string const& propertyFile = s->getOptionByLongName("mincmd").getArgumentByName("propertyFile").getValueAsString();
+                std::string const& propertyFile = storm::settings::generalSettings().getPctlPropertiesFilename();
                 std::list<std::shared_ptr<storm::properties::prctl::PrctlFilter<double>>> formulaList = storm::parser::PrctlFileParser::parsePrctlFile(propertyFile);
 
                 // Now generate the counterexamples for each formula.
@@ -266,7 +266,7 @@ int main(const int argc, const char* argv[]) {
 				// MinCMD Time Measurement, End
 				std::chrono::high_resolution_clock::time_point minCmdEnd = std::chrono::high_resolution_clock::now();
 				std::cout << "Minimal command Counterexample generation took " << std::chrono::duration_cast<std::chrono::milliseconds>(minCmdEnd - minCmdStart).count() << " milliseconds." << std::endl;
-            } else if (s->isSet("prctl")) {
+            } else if (settings.isPctlSet()) {
 //				// Depending on the model type, the appropriate model checking procedure is chosen.
 //				storm::modelchecker::prctl::AbstractModelChecker<double>* modelchecker = nullptr;
 //                

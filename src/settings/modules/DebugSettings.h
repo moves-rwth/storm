@@ -47,9 +47,11 @@ namespace storm {
                  */
                 std::string getLogfilename() const;
                 
+                // The name of the module.
+                static const std::string moduleName;
+                
             private:
                 // Define the string names of the options as constants.
-                static const std::string moduleName;
                 static const std::string debugOptionName;
                 static const std::string traceOptionName;
                 static const std::string logfileOptionName;

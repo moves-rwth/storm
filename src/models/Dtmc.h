@@ -297,9 +297,7 @@ private:
 	 *	Checks probability matrix if all rows sum up to one.
 	 */
 	bool checkValidityOfProbabilityMatrix() {
-		// Get the settings object to customize linear solving.
-		storm::settings::SettingsManager* s = storm::settings::SettingsManager::getInstance();
-		double precision = s->getOptionByLongName("precision").getArgument(0).getValueAsDouble();
+        double precision = storm::settings::generalSettings().getPrecision();
 
 		if (this->getTransitionMatrix().getRowCount() != this->getTransitionMatrix().getColumnCount()) {
 			// not square

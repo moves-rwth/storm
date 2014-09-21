@@ -312,7 +312,7 @@ namespace storm {
                         }
                         
                         // Check that the resulting distribution is in fact a distribution.
-                        LOG_THROW(std::abs(1 - probabilitySum) < storm::settings::SettingsManager::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble(), storm::exceptions::WrongFormatException, "Probabilities do not sum to one for command '" << command << "'.");
+                        LOG_THROW(std::abs(1 - probabilitySum) < storm::settings::generalSettings().getPrecision(), storm::exceptions::WrongFormatException, "Probabilities do not sum to one for command '" << command << "'.");
                     }
                 }
                 
@@ -418,7 +418,7 @@ namespace storm {
                             }
                             
                             // Check that the resulting distribution is in fact a distribution.
-                            if (std::abs(1 - probabilitySum) > storm::settings::SettingsManager::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble()) {
+                            if (std::abs(1 - probabilitySum) > storm::settings::generalSettings().getPrecision()) {
                                 LOG4CPLUS_ERROR(logger, "Sum of update probabilities do not some to one for some command.");
                                 throw storm::exceptions::WrongFormatException() << "Sum of update probabilities do not some to one for some command.";
                             }
@@ -502,7 +502,7 @@ namespace storm {
                     // If the current state does not have a single choice, we equip it with a self-loop if that was
                     // requested and issue an error otherwise.
                     if (totalNumberOfChoices == 0) {
-                        if (storm::settings::SettingsManager::getInstance()->isSet("fixDeadlocks")) {
+                        if (storm::settings::generalSettings().isFixDeadlocksSet()) {
                             // Insert empty choice labeling for added self-loop transitions.
                             choiceLabels.push_back(boost::container::flat_set<uint_fast64_t>());
                             transitionMatrixBuilder.addNextValue(currentRow, currentState, storm::utility::constantOne<ValueType>());

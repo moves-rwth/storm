@@ -127,35 +127,36 @@ void printHeader(const int argc, const char* argv[]) {
  * @return True iff the program should continue to run after parsing the options.
  */
 bool parseOptions(const int argc, const char* argv[]) {
-	storm::settings::SettingsManager* s = storm::settings::SettingsManager::getInstance();
+	storm::settings::SettingsManager& manager = storm::settings::manager();
 	try {
-		storm::settings::SettingsManager::parse(argc, argv);
+		manager.setFromCommandLine(argc, argv);
 	} catch (storm::exceptions::OptionParserException& e) {
 		std::cout << "Could not recover from settings error: " << e.what() << "." << std::endl;
-		std::cout << std::endl << s->getHelpText();
+        std::cout << std::endl;
+        manager.printHelp();
 		return false;
 	}
 
-	if (s->isSet("help")) {
-		std::cout << storm::settings::SettingsManager::getInstance()->getHelpText();
+    if (storm::settings::generalSettings().isHelpSet()) {
+        storm::settings::manager().printHelp();
 		return false;
 	}
 
-	if (s->isSet("verbose")) {
+	if (storm::settings::generalSettings().isVerboseSet()) {
 		logger.getAppender("mainConsoleAppender")->setThreshold(log4cplus::INFO_LOG_LEVEL);
 		LOG4CPLUS_INFO(logger, "Enabled verbose mode, log output gets printed to console.");
 	}
-	if (s->isSet("debug")) {
+	if (storm::settings::debugSettings().isDebugSet()) {
 		logger.setLogLevel(log4cplus::DEBUG_LOG_LEVEL);
 		logger.getAppender("mainConsoleAppender")->setThreshold(log4cplus::DEBUG_LOG_LEVEL);
 		LOG4CPLUS_INFO(logger, "Enabled very verbose mode, log output gets printed to console.");
 	}
-	if (s->isSet("trace")) {
+	if (storm::settings::debugSettings().isTraceSet()) {
 		logger.setLogLevel(log4cplus::TRACE_LOG_LEVEL);
 		logger.getAppender("mainConsoleAppender")->setThreshold(log4cplus::TRACE_LOG_LEVEL);
 		LOG4CPLUS_INFO(logger, "Enabled trace mode, log output gets printed to console.");
 	}
-	if (s->isSet("logfile")) {
+	if (storm::settings::debugSettings().isLogfileSet()) {
 		setUpFileLogging();
 	}
 	return true;
