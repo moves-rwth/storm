@@ -119,17 +119,32 @@ namespace storm {
 			 */
 			virtual ~SettingsManager();
             
-            // A set of all known (i.e. registered) module names.
-            std::set<std::string> moduleNames;
+            // The registered modules.
+            std::unordered_map<std::string, std::unique_ptr<modules::ModuleSettings>> modules;
 
-            // A mapping from all known option names to the options that match it. All options for one option name need
+            // Mappings from all known option names to the options that match it. All options for one option name need
             // to be compatible in the sense that calling isCompatible(...) pairwise on all options must always return true.
-            std::unordered_map<std::string, std::vector<std::shared_ptr<Option>>> options;
+            std::unordered_map<std::string, std::vector<std::shared_ptr<Option>>> longNameToOptions;
+            std::unordered_map<std::string, std::vector<std::shared_ptr<Option>>> shortNameToOptions;
             
-			// Helper functions
-			void handleAssignment(std::string const& longOptionName, std::vector<std::string> arguments);
-			std::vector<bool> scanForOptions(std::vector<std::string> const& arguments);
-			bool checkArgumentSyntaxForOption(std::string const& argvString);
+            // A mapping of module names to the corresponding options.
+            std::unordered_map<std::string, std::vector<std::shared_ptr<Option>>> moduleOptions;
+            
+            /*!
+             * Adds the given option to the known options.
+             *
+             * @param option The option to add.
+             */
+            void addOption(std::shared_ptr<Option> const& option);
+            
+            /*!
+             * Sets the arguments of the options matching the given name from the provided strings.
+             *
+             * @param optionName The name of the options for which to set the arguments.
+             * @param optionMap The mapping from option names to options.
+             * @param argumentCache The arguments of the option as string values.
+             */
+            void setOptionsArguments(std::string const& optionName, std::unordered_map<std::string, std::vector<std::shared_ptr<Option>>> const& optionMap, std::vector<std::string> const& argumentCache);
         };
         
         /*!

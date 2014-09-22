@@ -24,6 +24,17 @@ namespace storm {
                 return this->getOption(name).setHasOptionBeenSet(false);
             }
             
+            std::vector<std::shared_ptr<Option>> ModuleSettings::getOptions() const {
+                std::vector<std::shared_ptr<Option>> result;
+                result.reserve(this->options.size());
+                
+                for (auto const& option : this->options) {
+                    result.push_back(option.second);
+                }
+                
+                return result;
+            }
+            
         } // namespace modules
     } // namespace settings
 } // namespace storm

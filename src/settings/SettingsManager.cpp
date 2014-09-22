@@ -5,12 +5,13 @@
 #include <mutex>
 #include <boost/algorithm/string.hpp>
 
+#include "src/exceptions/IllegalFunctionCallException.h"
 #include "src/exceptions/OptionParserException.h"
 
 namespace storm {
     namespace settings {
 
-        SettingsManager::SettingsManager() {
+        SettingsManager::SettingsManager() : modules(), longNameToOptions(), shortNameToOptions(), moduleOptions() {
             // Register all known settings modules.
             this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::GeneralSettings(*this)));
             this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::DebugSettings(*this)));
@@ -49,7 +50,47 @@ namespace storm {
         }
         
         void SettingsManager::setFromExplodedString(std::vector<std::string> const& commandLineArguments) {
-            LOG_ASSERT(false, "Not yet implemented");
+            // In order to assign the parsed arguments to an option, we need to keep track of the "active" option's name.
+            bool optionActive = false;
+            bool activeOptionIsShortName = false;
+            std::string activeOptionName = "";
+            std::vector<std::string> argumentCache;
+            
+            // Walk through all arguments.
+            for (uint_fast64_t i = 0; i < commandLineArguments.size(); ++i) {
+                bool existsNextArgument = i < commandLineArguments.size() - 1;
+                std::string const& currentArgument = commandLineArguments[i];
+                
+                // Check if the given argument is a new option or belongs to a previously given option.
+                if (currentArgument.at(0) == '-') {
+                    // At this point we know that a new option is about to come. Hence, we need to assign the current
+                    // cache content to the option that was active until now.
+                    this->setOptionsArguments(activeOptionName, activeOptionIsShortName ? this->longNameToOptions : this->shortNameToOptions, argumentCache);
+                    
+                    if (currentArgument.at(1) == '-') {
+                        // In this case, the argument has to be the long name of an option. Try to get all options that
+                        // match the long name.
+                        std::string optionName = currentArgument.substr(2);
+                        auto optionIterator = this->longNameToOptions.find(optionName);
+                        LOG_THROW(optionIterator != this->longNameToOptions.end(), storm::exceptions::OptionParserException, "Unknown option '" << optionName << "'.");
+                        activeOptionIsShortName = false;
+                        activeOptionName = optionName;
+                    } else {
+                        // In this case, the argument has to be the short name of an option. Try to get all options that
+                        // match the short name.
+                        std::string optionName = currentArgument.substr(1);
+                        auto optionIterator = this->shortNameToOptions.find(optionName);
+                        LOG_THROW(optionIterator != this->shortNameToOptions.end(), storm::exceptions::OptionParserException, "Unknown option '" << optionName << "'.");
+                        activeOptionIsShortName = true;
+                        activeOptionName = optionName;
+                    }
+                } else if (optionActive) {
+                    // Add the current argument to the list of arguments for the currently active options.
+                    argumentCache.push_back(currentArgument);
+                } else {
+                    LOG_THROW(false, storm::exceptions::OptionParserException, "Found stray argument '" << currentArgument << "' that is not preceeded by a matching option.");
+                }
+            }
         }
         
         void SettingsManager::setFromConfigurationFile(std::string const& configFilename) {
@@ -61,8 +102,59 @@ namespace storm {
         }
         
         void SettingsManager::addModule(std::unique_ptr<modules::ModuleSettings>&& moduleSettings) {
-            LOG_ASSERT(false, "Not yet implemented");
+            auto moduleIterator = this->modules.find(moduleSettings->getModuleName());
+            LOG_THROW(moduleIterator == this->modules.end(), storm::exceptions::IllegalFunctionCallException, "Unable to register module '" << moduleSettings->getModuleName() << "' because a module with the same name already exists.");
+            this->modules.emplace(moduleSettings->getModuleName(), std::move(moduleSettings));
+            
+            for (auto const& option : moduleSettings->getOptions()) {
+                this->addOption(option);
+            }
         }
 
+        void SettingsManager::addOption(std::shared_ptr<Option> const& option) {
+            // First, we register to which module the given option belongs.
+            auto moduleOptionIterator = this->moduleOptions.find(option->getModuleName());
+            LOG_THROW(moduleOptionIterator != this->moduleOptions.end(), storm::exceptions::IllegalFunctionCallException, "Cannot add option for unknown module '" << option->getModuleName() << "'.");
+            moduleOptionIterator->second.emplace_back(option);
+            
+            // Then, we add the option's name (and possibly short name) to the registered options. If a module prefix is
+            // not required for this option, we have to add both versions to our mappings, the prefixed one and the
+            // non-prefixed one.
+            if (!option->getRequiresModulePrefix()) {
+                this->longNameToOptions.emplace(option->getLongName(), option);
+            }
+            this->longNameToOptions.emplace(option->getModuleName() + ":" + option->getLongName(), option);
+            
+            if (option->getHasShortName()) {
+                if (!option->getRequiresModulePrefix()) {
+                    this->shortNameToOptions.emplace(option->getLongName(), option);
+                }
+                this->shortNameToOptions.emplace(option->getModuleName() + ":" + option->getShortName(), option);
+            }
+        }
+        
+        void SettingsManager::setOptionsArguments(std::string const& optionName, std::unordered_map<std::string, std::vector<std::shared_ptr<Option>>> const& optionMap, std::vector<std::string> const& argumentCache) {
+            auto optionIterator = optionMap.find(optionName);
+            LOG_THROW(optionIterator != optionMap.end(), storm::exceptions::OptionParserException, "Unknown option '" << optionName << "'.");
+            
+            // Iterate over all options and set the arguments.
+            for (auto& option : optionIterator->second) {
+                option->setHasOptionBeenSet();
+                LOG_THROW(option->getArgumentCount() <= argumentCache.size(), storm::exceptions::OptionParserException, "Unknown option '" << optionName << "'.");
+                
+                // Now set the provided argument values one by one.
+                for (uint_fast64_t i = 0; i < argumentCache.size(); ++i) {
+                    ArgumentBase& argument = option->getArgument(i);
+                    argument.setFromStringValue(argumentCache[i]);
+                }
+                
+                // In case there are optional arguments that were not set, we set them to their default value.
+                for (uint_fast64_t i = argumentCache.size(); i < option->getArgumentCount(); ++i) {
+                    ArgumentBase& argument = option->getArgument(i);
+                    argument.setFromDefaultValue();
+                }
+            }
+        }
+        
     }
 }

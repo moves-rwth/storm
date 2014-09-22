@@ -48,6 +48,20 @@ namespace storm {
                  */
                 std::unique_ptr<storm::settings::SettingMemento> overrideOption(std::string const& name, bool requiredStatus);
                 
+                /*!
+                 * Retrieves the name of the module to which these settings belong.
+                 *
+                 * @return The name of the module.
+                 */
+                std::string const& getModuleName() const;
+
+                /*!
+                 * Retrieves the options of this module.
+                 *
+                 * @return A list of options of this module.
+                 */
+                std::vector<std::shared_ptr<Option>> getOptions() const;
+                
             protected:
                 /*!
                  * Retrieves the manager responsible for the settings.
@@ -55,11 +69,6 @@ namespace storm {
                  * @return The manager responsible for the settings.
                  */
                 storm::settings::SettingsManager const& getSettingsManager() const;
-                
-                /*!
-                 * Retrieves the name of the module to which these settings belong.
-                 */
-                std::string const& getModuleName() const;
                 
                 /*!
                  * Retrieves the option with the given long name. If no such option exists, an exception is thrown.
@@ -98,7 +107,7 @@ namespace storm {
                  *
                  * @param option The option to add and register.
                  */
-                void addAndRegisterOption(std::shared_ptr<Option> option) const;
+                void addOption(std::shared_ptr<Option> option) const;
                 
             private:
                 // The settings manager responsible for the settings.

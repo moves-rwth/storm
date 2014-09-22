@@ -122,6 +122,17 @@ namespace storm {
                 LOG_THROW(argumentIndex < this->getArgumentCount(), storm::exceptions::IllegalArgumentException, "Index of argument is out of bounds.");
 				return *this->arguments.at(argumentIndex);
 			}
+            
+            /*!
+             * Retrieves the i-th argument of this option.
+             *
+             * @param argumentIndex The index of the argument to retrieve.
+             * @return The i-th argument of this option.
+             */
+			ArgumentBase& getArgument(uint_fast64_t argumentIndex) {
+                LOG_THROW(argumentIndex < this->getArgumentCount(), storm::exceptions::IllegalArgumentException, "Index of argument is out of bounds.");
+				return *this->arguments.at(argumentIndex);
+			}
 
 			/*!
              * Returns a reference to the argument with the specified long name.
@@ -189,6 +200,15 @@ namespace storm {
 				return this->isRequired;
 			}
 
+            /*!
+             * Retrieves whether the option requires the module name as a prefix.
+             *
+             * @return True iff the option requires the module name as a prefix.
+             */
+            bool getRequiresModulePrefix() const {
+                return this->requiresModulePrefix;
+            }
+            
             /*!
              * Retrieves whether the option has been set.
              *
