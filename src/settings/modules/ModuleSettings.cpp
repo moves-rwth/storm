@@ -35,6 +35,18 @@ namespace storm {
                 return result;
             }
             
+            Option const& ModuleSettings::getOption(std::string const& longName) const {
+                auto optionIterator = this->options.find(longName);
+                LOG_THROW(optionIterator != this->options.end(), storm::exceptions::IllegalFunctionCallException, "Cannot retrieve unknown option '" << longName << "'.");
+                return *optionIterator->second;
+            }
+
+            Option& ModuleSettings::getOption(std::string const& longName)  {
+                auto optionIterator = this->options.find(longName);
+                LOG_THROW(optionIterator != this->options.end(), storm::exceptions::IllegalFunctionCallException, "Cannot retrieve unknown option '" << longName << "'.");
+                return *optionIterator->second;
+            }
+            
         } // namespace modules
     } // namespace settings
 } // namespace storm

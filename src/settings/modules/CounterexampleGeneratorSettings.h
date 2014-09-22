@@ -40,7 +40,7 @@ namespace storm {
                  *
                  * @return True iff the MILP-based technique is to be used.
                  */
-                bool useMilpBasedMinimalCommandSetGeneration() const;
+                bool isUseMilpBasedMinimalCommandSetGenerationSet() const;
 
                 /*!
                  * Retrieves whether the MAXSAT-based technique is to be used to generate a minimal command set
@@ -48,7 +48,7 @@ namespace storm {
                  *
                  * @return True iff the MAXSAT-based technique is to be used.
                  */
-                bool useMaxSatBasedMinimalCommandSetGeneration() const;
+                bool isUseMaxSatBasedMinimalCommandSetGenerationSet() const;
                 
                 /*!
                  * Retrieves whether reachability of a target state is to be encoded if the MAXSAT-based technique is
@@ -64,14 +64,14 @@ namespace storm {
                  *
                  * @return True iff scheduler cuts are to be used.
                  */
-                bool useSchedulerCuts() const;
+                bool isUseSchedulerCutsSet() const;
                 
                 /*!
                  * Retrieves whether statistics are to be shown for counterexample generation.
                  *
                  * @return True iff statistics are to be shown for counterexample generation.
                  */
-                bool showStatistics() const;
+                bool isShowStatisticsSet() const;
                 
                 // The name of the module.
                 static const std::string moduleName;

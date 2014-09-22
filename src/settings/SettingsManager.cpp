@@ -65,7 +65,7 @@ namespace storm {
                 if (currentArgument.at(0) == '-') {
                     // At this point we know that a new option is about to come. Hence, we need to assign the current
                     // cache content to the option that was active until now.
-                    this->setOptionsArguments(activeOptionName, activeOptionIsShortName ? this->longNameToOptions : this->shortNameToOptions, argumentCache);
+                    setOptionsArguments(activeOptionName, activeOptionIsShortName ? this->longNameToOptions : this->shortNameToOptions, argumentCache);
                     
                     if (currentArgument.at(1) == '-') {
                         // In this case, the argument has to be the long name of an option. Try to get all options that
@@ -121,16 +121,34 @@ namespace storm {
             // not required for this option, we have to add both versions to our mappings, the prefixed one and the
             // non-prefixed one.
             if (!option->getRequiresModulePrefix()) {
+                bool isCompatible = this->isCompatible(option, option->getLongName(), this->longNameToOptions);
+                LOG_THROW(isCompatible, storm::exceptions::IllegalFunctionCallException, "Unable to add option '" << option->getLongName() << "', because an option with the same name is incompatible with it.");
                 this->longNameToOptions.emplace(option->getLongName(), option);
             }
+            // For the prefixed name, we don't need a compatibility check, because a module is not allowed to register the same option twice.
             this->longNameToOptions.emplace(option->getModuleName() + ":" + option->getLongName(), option);
             
             if (option->getHasShortName()) {
                 if (!option->getRequiresModulePrefix()) {
-                    this->shortNameToOptions.emplace(option->getLongName(), option);
+                    this->shortNameToOptions.emplace(option->getShortName(), option);
+                    bool isCompatible = this->isCompatible(option, option->getShortName(), this->shortNameToOptions);
+                    LOG_THROW(isCompatible, storm::exceptions::IllegalFunctionCallException, "Unable to add option '" << option->getLongName() << "', because an option with the same name is incompatible with it.");
                 }
                 this->shortNameToOptions.emplace(option->getModuleName() + ":" + option->getShortName(), option);
             }
+        }
+        
+        bool SettingsManager::isCompatible(std::shared_ptr<Option> const& option, std::string const& optionName, std::unordered_map<std::string, std::vector<std::shared_ptr<Option>>> const& optionMap) {
+            auto optionIterator = optionMap.find(optionName);
+            if (optionIterator != optionMap.end()) {
+                for (auto const& otherOption : optionIterator->second) {
+                    bool locallyCompatible = option->isCompatibleWith(*otherOption);
+                    if (!locallyCompatible) {
+                        return false;
+                    }
+                }
+            }
+            return true;
         }
         
         void SettingsManager::setOptionsArguments(std::string const& optionName, std::unordered_map<std::string, std::vector<std::shared_ptr<Option>>> const& optionMap, std::vector<std::string> const& argumentCache) {

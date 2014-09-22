@@ -79,6 +79,14 @@ namespace storm {
                 Option& getOption(std::string const& longName);
                 
                 /*!
+                 * Retrieves the option with the given long name. If no such option exists, an exception is thrown.
+                 *
+                 * @param longName The long name of the option to retrieve.
+                 * @return The option associated with the given option name.
+                 */
+                Option const& getOption(std::string const& longName) const;
+                
+                /*!
                  * Retrieves whether the option with the given name was set.
                  *
                  * @param The name of the option.

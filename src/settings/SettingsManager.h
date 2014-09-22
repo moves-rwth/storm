@@ -144,7 +144,12 @@ namespace storm {
              * @param optionMap The mapping from option names to options.
              * @param argumentCache The arguments of the option as string values.
              */
-            void setOptionsArguments(std::string const& optionName, std::unordered_map<std::string, std::vector<std::shared_ptr<Option>>> const& optionMap, std::vector<std::string> const& argumentCache);
+            static void setOptionsArguments(std::string const& optionName, std::unordered_map<std::string, std::vector<std::shared_ptr<Option>>> const& optionMap, std::vector<std::string> const& argumentCache);
+            
+            /*!
+             * Checks whether the given option is compatible with all options with the given name in the given mapping.
+             */
+            static bool isCompatible(std::shared_ptr<Option> const& option, std::string const& optionName, std::unordered_map<std::string, std::vector<std::shared_ptr<Option>>> const& optionMap);
         };
         
         /*!
