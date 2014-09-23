@@ -74,14 +74,12 @@ namespace storm {
             void setFromConfigurationFile(std::string const& configFilename);
             
             /*!
-             * This function prints a help message to the standard output. Optionally, a module name can be given. If
-             * it is present, name must correspond to a known module. Then, only the help text for this module is
-             * printed.
+             * This function prints a help message to the standard output. Optionally, a string can be given that either
+             * identifies a module or some options to cut down the help text.
              *
-             * @param moduleName The name of the module for which to show the help or "all" if the full help text is to
-             * be printed.
+             * @param hint The name of a module, some options or "all" for the full help text.
              */
-            void printHelp(std::string const& moduleName = "all") const;
+            void printHelp(std::string const& hint = "all") const;
             
             /*!
              * This function prints a help message for the specified module to the standard output.

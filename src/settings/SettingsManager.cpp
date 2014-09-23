@@ -111,18 +111,42 @@ namespace storm {
             LOG_ASSERT(false, "Not yet implemented");
         }
                 
-        void SettingsManager::printHelp(std::string const& moduleName) const {
+        void SettingsManager::printHelp(std::string const& hint) const {
             std::cout << "usage: storm [options]" << std::endl << std::endl;
             
-            if (moduleName == "all") {
+            if (hint == "all") {
                 // Find longest option name.
                 uint_fast64_t maxLength = getPrintLengthOfLongestOption();
                 for (auto const& moduleName : this->moduleNames) {
                     printHelpForModule(moduleName, maxLength);
                 }
             } else {
-                uint_fast64_t maxLength = getPrintLengthOfLongestOption(moduleName);
-                printHelpForModule(moduleName, maxLength);
+                auto moduleIterator = this->modules.find(hint);
+                
+                // If the supplied information is a module, print the help text of the module.
+                if (moduleIterator != this->modules.end()) {
+                    uint_fast64_t maxLength = getPrintLengthOfLongestOption(hint);
+                    printHelpForModule(hint, maxLength);
+                } else {
+                    auto optionIterator = this->longNameToOptions.find(hint);
+                    
+                    if (optionIterator != this->longNameToOptions.end()) {
+                        // Save the flags for std::cout so we can manipulate them and be sure they will be restored as soon as this
+                        // stream goes out of scope.
+                        boost::io::ios_flags_saver out(std::cout);
+                        
+                        std::cout << "Matching options:" << std::endl;
+                        uint_fast64_t maxLength = 0;
+                        for (auto const& option : optionIterator->second) {
+                            maxLength = std::max(maxLength, option->getPrintLength());
+                        }
+                        for (auto const& option : optionIterator->second) {
+                            std::cout << std::setw(maxLength) << std::left << *option << std::endl;
+                        }
+                    } else {
+                        LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unable to show help for unknown entity '" << hint << "'.");
+                    }
+                }
             }
         }
         

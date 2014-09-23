@@ -37,11 +37,10 @@ namespace storm {
             const std::string GeneralSettings::constantsOptionShortName = "const";
             
             GeneralSettings::GeneralSettings(storm::settings::SettingsManager& settingsManager) : ModuleSettings(settingsManager, moduleName) {
-                std::vector<std::string> moduleNames = {"all", "general", "debug", "cudd", "counterexample", "glpk", "gurobi", "gmm++", "native"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, helpOptionName, false, "Shows all available options, arguments and descriptions.").setShortName(helpOptionShortName)
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("module", "The module for which to show the help or 'all' for all modules.").setDefaultValueString("all").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(moduleNames)).build()).build());
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("module", "The module for which to show the help or 'all' for all modules.").setDefaultValueString("all").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, verboseOptionName, false, "Enables more verbose output.").setShortName(verboseOptionShortName).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, precisionOptionName, true, "The internally used precision.").setShortName(precisionOptionShortName)
+                this->addOption(storm::settings::OptionBuilder(moduleName, precisionOptionName, false, "The internally used precision.").setShortName(precisionOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to use.").setDefaultValueDouble(1e-06).addValidationFunctionDouble(storm::settings::ArgumentValidators::doubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportDotOptionName, "", "If given, the loaded model will be written to the specified file in the dot format.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file to which the model is to be written.").build()).build());
