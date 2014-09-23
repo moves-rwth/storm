@@ -245,7 +245,7 @@ int main(const int argc, const char* argv[]) {
                 std::shared_ptr<storm::models::Mdp<double>> mdp = model->as<storm::models::Mdp<double>>();
                 
                 // Determine whether we are required to use the MILP-version or the SAT-version.
-                bool useMILP = storm::settings::counterexampleGeneratorSettings().useMilpBasedMinimalCommandSetGeneration();
+                bool useMILP = storm::settings::counterexampleGeneratorSettings().isUseMilpBasedMinimalCommandSetGenerationSet();
                 
 				// MinCMD Time Measurement, Start
 				std::chrono::high_resolution_clock::time_point minCmdStart = std::chrono::high_resolution_clock::now();

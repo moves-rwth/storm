@@ -1,6 +1,7 @@
 #include "src/settings/modules/GeneralSettings.h"
 
 #include "src/settings/SettingsManager.h"
+#include "src/settings/SettingMemento.h"
 
 namespace storm {
     namespace settings {
@@ -183,6 +184,10 @@ namespace storm {
                 return this->getOption(fixDeadlockOptionName).getHasOptionBeenSet();
             }
             
+            std::unique_ptr<storm::settings::SettingMemento> GeneralSettings::overrideFixDeadlocksSet(bool stateToSet) {
+                return this->overrideOption(fixDeadlockOptionName, stateToSet);
+            }
+            
             bool GeneralSettings::isTimeoutSet() const {
                 return this->getOption(timeoutOptionName).getHasOptionBeenSet();
             }
@@ -208,7 +213,7 @@ namespace storm {
                 } else if (lpSolverName == "glpk") {
                     return GeneralSettings::LpSolver::glpk;
                 }
-                LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown LP solver '" << equationSolverName << "'.");
+                LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown LP solver '" << lpSolverName << "'.");
             }
             
             bool GeneralSettings::isConstantsSet() const {

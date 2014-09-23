@@ -27,9 +27,9 @@ TEST(NativeLinearEquationSolver, SolveWithStandardOptions) {
     
     storm::solver::NativeLinearEquationSolver<double> solver;
     ASSERT_NO_THROW(solver.solveEquationSystem(A, x, b));
-    ASSERT_LT(std::abs(x[0] - 1), storm::settings::SettingsManager::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
-    ASSERT_LT(std::abs(x[1] - 3), storm::settings::SettingsManager::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
-    ASSERT_LT(std::abs(x[2] - (-1)), storm::settings::SettingsManager::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+    ASSERT_LT(std::abs(x[0] - 1), storm::settings::nativeEquationSolverSettings().getPrecision());
+    ASSERT_LT(std::abs(x[1] - 3), storm::settings::nativeEquationSolverSettings().getPrecision());
+    ASSERT_LT(std::abs(x[2] - (-1)), storm::settings::nativeEquationSolverSettings().getPrecision());
 }
 
 TEST(NativeLinearEquationSolver, MatrixVectorMultplication) {
@@ -52,5 +52,5 @@ TEST(NativeLinearEquationSolver, MatrixVectorMultplication) {
     
     storm::solver::NativeLinearEquationSolver<double> solver;
     ASSERT_NO_THROW(solver.performMatrixVectorMultiplication(A, x, nullptr, 4));
-    ASSERT_LT(std::abs(x[0] - 1), storm::settings::SettingsManager::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+    ASSERT_LT(std::abs(x[0] - 1), storm::settings::nativeEquationSolverSettings().getPrecision());
 }

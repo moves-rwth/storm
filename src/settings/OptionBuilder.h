@@ -88,7 +88,11 @@ namespace storm {
                 LOG_THROW(!this->isBuild, storm::exceptions::IllegalFunctionCallException, "Cannot rebuild an option with one builder.")
 				this->isBuild = true;
 
-				return std::shared_ptr<Option>(new Option(this->moduleName, this->longName, this->shortName, this->description, this->isRequired, this->requireModulePrefix, this->arguments));
+                if (this->hasShortName) {
+                    return std::shared_ptr<Option>(new Option(this->moduleName, this->longName, this->shortName, this->description, this->isRequired, this->requireModulePrefix, this->arguments));
+                } else {
+                    return std::shared_ptr<Option>(new Option(this->moduleName, this->longName, this->description, this->isRequired, this->requireModulePrefix, this->arguments));
+                }
 			}
             
 		private:

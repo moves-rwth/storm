@@ -127,6 +127,15 @@ namespace storm {
              */
 			virtual bool getValueAsBoolean() const = 0;
             
+            /*!
+             * Retrieves the (print) length of the argument.
+             *
+             * @return The length of the argument.
+             */
+            uint_fast64_t getPrintLength() const;
+            
+            friend std::ostream& operator<<(std::ostream& out, ArgumentBase const& argument);
+            
 		protected:            
             // A flag indicating whether the argument has been set.
 			bool hasBeenSet;
@@ -157,45 +166,6 @@ namespace storm {
             template <typename ValueType>
             static std::string convertToString(ValueType const& value);
 		};
-
-        template <typename TargetType>
-        TargetType ArgumentBase::convertFromString(std::string const& valueAsString, bool& conversionSuccessful) {
-            std::istringstream stream(valueAsString);
-            TargetType t;
-            conversionSuccessful = (stream >> t) && (stream >> std::ws).eof();
-            return t;
-        }
-        
-        template <>
-        bool ArgumentBase::convertFromString<bool>(std::string const& s, bool& ok) {
-            static const std::string lowerTrueString = "true";
-            static const std::string lowerFalseString = "false";
-            static const std::string lowerYesString = "yes";
-            static const std::string lowerNoString = "no";
-            
-            std::string lowerInput = boost::algorithm::to_lower_copy(s);
-            
-            if (s.compare(lowerTrueString) == 0 || s.compare(lowerYesString) == 0) {
-                ok = true;
-                return true;
-            } else if (s.compare(lowerFalseString) == 0 || s.compare(lowerNoString) == 0) {
-                ok = true;
-                return false;
-            }
-            
-            std::istringstream stream(s);
-            bool t;
-            ok = (stream >> t) && (stream >> std::ws).eof();
-            return t;
-        }
-        
-        template <typename ValueType>
-        std::string ArgumentBase::convertToString(ValueType const& value) {
-            std::ostringstream stream;
-            stream << value;
-            return stream.str();
-        }
-        
 	}
 }
 

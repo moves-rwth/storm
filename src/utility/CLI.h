@@ -127,7 +127,7 @@ void printHeader(const int argc, const char* argv[]) {
  * @return True iff the program should continue to run after parsing the options.
  */
 bool parseOptions(const int argc, const char* argv[]) {
-	storm::settings::SettingsManager& manager = storm::settings::manager();
+	storm::settings::SettingsManager& manager = storm::settings::mutableManager();
 	try {
 		manager.setFromCommandLine(argc, argv);
 	} catch (storm::exceptions::OptionParserException& e) {
@@ -138,7 +138,7 @@ bool parseOptions(const int argc, const char* argv[]) {
 	}
 
     if (storm::settings::generalSettings().isHelpSet()) {
-        storm::settings::manager().printHelp();
+        storm::settings::manager().printHelp(storm::settings::generalSettings().getHelpModuleName());
 		return false;
 	}
 

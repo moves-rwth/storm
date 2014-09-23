@@ -79,10 +79,18 @@ namespace storm {
              * it is present, name must correspond to a known module. Then, only the help text for this module is
              * printed.
              *
-             * @return moduleName The name of the module for which to show the help or "all" if the full help text is to
+             * @param moduleName The name of the module for which to show the help or "all" if the full help text is to
              * be printed.
              */
             void printHelp(std::string const& moduleName = "all") const;
+            
+            /*!
+             * This function prints a help message for the specified module to the standard output.
+             *
+             * @param moduleName The name of the module for which to show the help.
+             * @param maxLength The maximal length of an option name (necessary for proper alignment).
+             */
+            void printHelpForModule(std::string const& moduleName, uint_fast64_t maxLength = 30) const;
             
             /*!
              * Retrieves the only existing instance of a settings manager.
@@ -106,6 +114,14 @@ namespace storm {
              * @return An object that provides access to the settings of the module.
              */
             modules::ModuleSettings const& getModule(std::string const& moduleName) const;
+
+            /*!
+             * Retrieves the settings of the module with the given name.
+             *
+             * @param moduleName The name of the module for which to retrieve the settings.
+             * @return An object that provides access to the settings of the module.
+             */
+            modules::ModuleSettings& getModule(std::string const& moduleName);
             
         private:
 			/*!
@@ -120,6 +136,7 @@ namespace storm {
 			virtual ~SettingsManager();
             
             // The registered modules.
+            std::vector<std::string> moduleNames;
             std::unordered_map<std::string, std::unique_ptr<modules::ModuleSettings>> modules;
 
             // Mappings from all known option names to the options that match it. All options for one option name need
@@ -150,6 +167,30 @@ namespace storm {
              * Checks whether the given option is compatible with all options with the given name in the given mapping.
              */
             static bool isCompatible(std::shared_ptr<Option> const& option, std::string const& optionName, std::unordered_map<std::string, std::vector<std::shared_ptr<Option>>> const& optionMap);
+            
+            /*!
+             * Inserts the given option to the options with the given name in the given map.
+             *
+             * @param name The name of the option.
+             * @param option The option to add.
+             * @param optionMap The map into which the option is to be inserted.
+             */
+            static void addOptionToMap(std::string const& name, std::shared_ptr<Option> const& option, std::unordered_map<std::string, std::vector<std::shared_ptr<Option>>>& optionMap);
+            
+            /*!
+             * Retrieves the (print) length of the longest option of all modules.
+             *
+             * @return The length of the longest option.
+             */
+            uint_fast64_t getPrintLengthOfLongestOption() const;
+            
+            /*!
+             * Retrieves the (print) length of the longest option in the given module, so we can align the options.
+             *
+             * @param moduleName The module name for which to retrieve the length of the longest option.
+             * @return The length of the longest option name.
+             */
+            uint_fast64_t getPrintLengthOfLongestOption(std::string const& moduleName) const;
         };
         
         /*!
@@ -157,81 +198,78 @@ namespace storm {
          *
          * @return The only settings manager.
          */
-        SettingsManager& manager() {
-            return SettingsManager::manager();
-        }
+        SettingsManager const& manager();
+
+        /*!
+         * Retrieves the settings manager.
+         *
+         * @return The only settings manager.
+         */
+        SettingsManager& mutableManager();
         
         /*!
          * Retrieves the general settings.
          *
          * @return An object that allows accessing the general settings.
          */
-        storm::settings::modules::GeneralSettings const& generalSettings() {
-            return dynamic_cast<storm::settings::modules::GeneralSettings const&>(manager().getModule(storm::settings::modules::GeneralSettings::moduleName));
-        }
+        storm::settings::modules::GeneralSettings const& generalSettings();
+
+        /*!
+         * Retrieves the general settings in a mutable form. This is only meant to be used for debug purposes or very
+         * rare cases where it is necessary.
+         *
+         * @return An object that allows accessing and modifying the general settings.
+         */
+        storm::settings::modules::GeneralSettings& mutableGeneralSettings();
         
         /*!
          * Retrieves the debug settings.
          *
          * @return An object that allows accessing the debug settings.
          */
-        storm::settings::modules::DebugSettings const& debugSettings()  {
-            return dynamic_cast<storm::settings::modules::DebugSettings const&>(manager().getModule(storm::settings::modules::DebugSettings::moduleName));
-        }
+        storm::settings::modules::DebugSettings const& debugSettings();
         
         /*!
          * Retrieves the counterexample generator settings.
          *
          * @return An object that allows accessing the counterexample generator settings.
          */
-        storm::settings::modules::CounterexampleGeneratorSettings const& counterexampleGeneratorSettings() {
-            return dynamic_cast<storm::settings::modules::CounterexampleGeneratorSettings const&>(manager().getModule(storm::settings::modules::CounterexampleGeneratorSettings::moduleName));
-        }
+        storm::settings::modules::CounterexampleGeneratorSettings const& counterexampleGeneratorSettings();
         
         /*!
          * Retrieves the CUDD settings.
          *
          * @return An object that allows accessing the CUDD settings.
          */
-        storm::settings::modules::CuddSettings const& cuddSettings() {
-            return dynamic_cast<storm::settings::modules::CuddSettings const&>(manager().getModule(storm::settings::modules::CuddSettings::moduleName));
-        }
+        storm::settings::modules::CuddSettings const& cuddSettings();
         
         /*!
          * Retrieves the settings of the gmm++-based equation solver.
          *
          * @return An object that allows accessing the settings of the gmm++-based equation solver.
          */
-        storm::settings::modules::GmmxxEquationSolverSettings const& gmmxxEquationSolverSettings() {
-            return dynamic_cast<storm::settings::modules::GmmxxEquationSolverSettings const&>(manager().getModule(storm::settings::modules::GmmxxEquationSolverSettings::moduleName));
-        }
+        storm::settings::modules::GmmxxEquationSolverSettings const& gmmxxEquationSolverSettings();
         
         /*!
          * Retrieves the settings of the native equation solver.
          *
          * @return An object that allows accessing the settings of the native equation solver.
          */
-        storm::settings::modules::NativeEquationSolverSettings const& nativeEquationSolverSettings() {
-            return dynamic_cast<storm::settings::modules::NativeEquationSolverSettings const&>(manager().getModule(storm::settings::modules::NativeEquationSolverSettings::moduleName));
-        }
+        storm::settings::modules::NativeEquationSolverSettings const& nativeEquationSolverSettings();
         
         /*!
          * Retrieves the settings of glpk.
          *
          * @return An object that allows accessing the settings of glpk.
          */
-        storm::settings::modules::GlpkSettings const& glpkSettings() {
-            return dynamic_cast<storm::settings::modules::GlpkSettings const&>(manager().getModule(storm::settings::modules::GlpkSettings::moduleName));
-        }
+        storm::settings::modules::GlpkSettings const& glpkSettings();
         
         /*!
          * Retrieves the settings of Gurobi.
          *
          * @return An object that allows accessing the settings of Gurobi.
          */
-        storm::settings::modules::GurobiSettings const& gurobiSettings() {
-            return dynamic_cast<storm::settings::modules::GurobiSettings const&>(manager().getModule(storm::settings::modules::GurobiSettings::moduleName));
-        }
+        storm::settings::modules::GurobiSettings const& gurobiSettings();
         
     } // namespace settings
 } // namespace storm

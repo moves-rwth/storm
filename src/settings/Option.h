@@ -74,6 +74,7 @@ namespace storm {
              * @return True iff the given argument is compatible with the current one.
              */
 			bool isCompatibleWith(Option const& other) {
+                std::cout << "unifying " << *this << " and " << other << std::endl;
                 LOG_THROW(this->getArgumentCount() == other.getArgumentCount(), storm::exceptions::OptionUnificationException, "Unable to unify two options, because their argument count differs.");
 
 				for(size_t i = 0; i != this->arguments.size(); i++) {
@@ -206,7 +207,7 @@ namespace storm {
              * @return True iff the option requires the module name as a prefix.
              */
             bool getRequiresModulePrefix() const {
-                return this->requiresModulePrefix;
+                return this->requireModulePrefix;
             }
             
             /*!
@@ -218,6 +219,22 @@ namespace storm {
 				return this->hasBeenSet;
 			}
 
+            /*!
+             * Retrieves the arguments of the option.
+             *
+             * @return The arguments of the option.
+             */
+            std::vector<std::shared_ptr<ArgumentBase>> const& getArguments() const;
+            
+            /*!
+             * Retrieves the (print) length of the option.
+             *
+             * @return The length of the option.
+             */
+            uint_fast64_t getPrintLength() const;
+            
+            friend std::ostream& operator<<(std::ostream& out, Option const& option);
+            
 		private:
             // The long name of the option.
 			std::string longName;
@@ -262,7 +279,7 @@ namespace storm {
              * module name.
              * @param optionArguments The arguments of the option.
              */
-            Option(std::string const& moduleName, std::string const& longOptionName, std::string const& shortOptionName, bool hasShortOptionName, std::string const& optionDescription, bool isOptionRequired, bool requireModulePrefix, std::vector<std::shared_ptr<ArgumentBase>> const& optionArguments = std::vector<std::shared_ptr<ArgumentBase>>()) : longName(longOptionName), hasShortName(hasShortOptionName), shortName(shortOptionName), description(optionDescription), moduleName(moduleName), isRequired(isOptionRequired), requireModulePrefix(requireModulePrefix), hasBeenSet(false), arguments(), argumentNameMap() {
+            Option(std::string const& moduleName, std::string const& longOptionName, std::string const& shortOptionName, bool hasShortOptionName, std::string const& optionDescription, bool isOptionRequired, bool requireModulePrefix, std::vector<std::shared_ptr<ArgumentBase>> const& optionArguments = std::vector<std::shared_ptr<ArgumentBase>>()) : longName(longOptionName), hasShortName(hasShortOptionName), shortName(shortOptionName), description(optionDescription), moduleName(moduleName), isRequired(isOptionRequired), requireModulePrefix(requireModulePrefix), hasBeenSet(false), arguments(optionArguments), argumentNameMap() {
 
                 // First, do some sanity checks.
                 LOG_THROW(!longName.empty(), storm::exceptions::IllegalArgumentException, "Unable to construct option with empty name.");

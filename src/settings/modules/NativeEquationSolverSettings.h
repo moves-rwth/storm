@@ -18,6 +18,11 @@ namespace storm {
                 // An enumeration of all available convergence criteria.
                 enum class ConvergenceCriterion { Absolute, Relative };
                 
+                /*!
+                 * Creates a new set of native equation solver settings that is managed by the given manager.
+                 *
+                 * @param settingsManager The responsible manager.
+                 */
                 NativeEquationSolverSettings(storm::settings::SettingsManager& settingsManager);
                 
                 /*!

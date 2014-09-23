@@ -215,6 +215,15 @@ namespace storm {
                 bool isFixDeadlocksSet() const;
 
                 /*!
+                 * Overrides the option to fix deadlocks by setting it to the specified value. As soon as the returned
+                 * memento goes out of scope, the original value is restored.
+                 *
+                 * @param stateToSet The value that is to be set for the fix-deadlocks option.
+                 * @return The memento that will eventually restore the original value.
+                 */
+                std::unique_ptr<storm::settings::SettingMemento> overrideFixDeadlocksSet(bool stateToSet);
+                
+                /*!
                  * Retrieves whether the timeout option was set.
                  *
                  * @return True if the timeout option was set.
@@ -288,7 +297,6 @@ namespace storm {
                 static const std::string lpSolverOptionName;
                 static const std::string constantsOptionName;
                 static const std::string constantsOptionShortName;
-                
             };
             
         } // namespace modules

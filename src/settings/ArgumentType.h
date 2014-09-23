@@ -15,17 +15,7 @@ namespace storm {
 			String, Integer, UnsignedInteger, Double, Boolean
 		};
 
-        std::ostream& operator<<(std::ostream& out, ArgumentType& argumentType) {
-            switch (argumentType) {
-                case ArgumentType::String: out << "string"; break;
-                case ArgumentType::Integer: out << "integer"; break;
-                case ArgumentType::UnsignedInteger: out << "unsigned integer"; break;
-                case ArgumentType::Double: out << "double"; break;
-                case ArgumentType::Boolean: out << "boolean"; break;
-            }
-            
-            return out;
-        }
+        std::ostream& operator<<(std::ostream& out, ArgumentType& argumentType);
         
 	} // namespace settings
 } // namespace storm

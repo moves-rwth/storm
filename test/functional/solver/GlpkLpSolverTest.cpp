@@ -25,16 +25,16 @@ TEST(GlpkLpSolver, LPOptimizeMax) {
     ASSERT_FALSE(solver.isInfeasible());
     double xValue = 0;
     ASSERT_NO_THROW(xValue = solver.getContinuousValue("x"));
-    ASSERT_LT(std::abs(xValue - 1), storm::settings::SettingsManager::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+    ASSERT_LT(std::abs(xValue - 1), storm::settings::generalSettings().getPrecision());
     double yValue = 0;
     ASSERT_NO_THROW(yValue = solver.getContinuousValue("y"));
-    ASSERT_LT(std::abs(yValue - 6.5), storm::settings::SettingsManager::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+    ASSERT_LT(std::abs(yValue - 6.5), storm::settings::generalSettings().getPrecision());
     double zValue = 0;
     ASSERT_NO_THROW(zValue = solver.getContinuousValue("z"));
-    ASSERT_LT(std::abs(zValue - 2.75), storm::settings::SettingsManager::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+    ASSERT_LT(std::abs(zValue - 2.75), storm::settings::generalSettings().getPrecision());
     double objectiveValue = 0;
     ASSERT_NO_THROW(objectiveValue = solver.getObjectiveValue());
-    ASSERT_LT(std::abs(objectiveValue - 14.75), storm::settings::SettingsManager::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+    ASSERT_LT(std::abs(objectiveValue - 14.75), storm::settings::generalSettings().getPrecision());
 }
 
 TEST(GlpkLpSolver, LPOptimizeMin) {
@@ -55,16 +55,16 @@ TEST(GlpkLpSolver, LPOptimizeMin) {
     ASSERT_FALSE(solver.isInfeasible());
     double xValue = 0;
     ASSERT_NO_THROW(xValue = solver.getContinuousValue("x"));
-    ASSERT_LT(std::abs(xValue - 1), storm::settings::SettingsManager::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+    ASSERT_LT(std::abs(xValue - 1), storm::settings::generalSettings().getPrecision());
     double yValue = 0;
     ASSERT_NO_THROW(yValue = solver.getContinuousValue("y"));
-    ASSERT_LT(std::abs(yValue - 0), storm::settings::SettingsManager::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+    ASSERT_LT(std::abs(yValue - 0), storm::settings::generalSettings().getPrecision());
     double zValue = 0;
     ASSERT_NO_THROW(zValue = solver.getContinuousValue("z"));
-    ASSERT_LT(std::abs(zValue - 5.7), storm::settings::SettingsManager::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+    ASSERT_LT(std::abs(zValue - 5.7), storm::settings::generalSettings().getPrecision());
     double objectiveValue = 0;
     ASSERT_NO_THROW(objectiveValue = solver.getObjectiveValue());
-    ASSERT_LT(std::abs(objectiveValue - (-6.7)), storm::settings::SettingsManager::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+    ASSERT_LT(std::abs(objectiveValue - (-6.7)), storm::settings::generalSettings().getPrecision());
 }
 
 TEST(GlpkLpSolver, MILPOptimizeMax) {
@@ -91,10 +91,10 @@ TEST(GlpkLpSolver, MILPOptimizeMax) {
     ASSERT_EQ(6, yValue);
     double zValue = 0;
     ASSERT_NO_THROW(zValue = solver.getContinuousValue("z"));
-    ASSERT_LT(std::abs(zValue - 3), storm::settings::SettingsManager::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+    ASSERT_LT(std::abs(zValue - 3), storm::settings::generalSettings().getPrecision());
     double objectiveValue = 0;
     ASSERT_NO_THROW(objectiveValue = solver.getObjectiveValue());
-    ASSERT_LT(std::abs(objectiveValue - 14), storm::settings::SettingsManager::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+    ASSERT_LT(std::abs(objectiveValue - 14), storm::settings::generalSettings().getPrecision());
 }
 
 TEST(GlpkLpSolver, MILPOptimizeMin) {
@@ -121,10 +121,10 @@ TEST(GlpkLpSolver, MILPOptimizeMin) {
     ASSERT_EQ(0, yValue);
     double zValue = 0;
     ASSERT_NO_THROW(zValue = solver.getContinuousValue("z"));
-    ASSERT_LT(std::abs(zValue - 5), storm::settings::SettingsManager::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+    ASSERT_LT(std::abs(zValue - 5), storm::settings::generalSettings().getPrecision());
     double objectiveValue = 0;
     ASSERT_NO_THROW(objectiveValue = solver.getObjectiveValue());
-    ASSERT_LT(std::abs(objectiveValue - (-6)), storm::settings::SettingsManager::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+    ASSERT_LT(std::abs(objectiveValue - (-6)), storm::settings::generalSettings().getPrecision());
 }
 
 TEST(GlpkLpSolver, LPInfeasible) {

@@ -3,7 +3,9 @@
 #include <cstring>
 #include <cctype>
 #include <mutex>
+#include <iomanip>
 #include <boost/algorithm/string.hpp>
+#include <boost/io/ios_state.hpp>
 
 #include "src/exceptions/IllegalFunctionCallException.h"
 #include "src/exceptions/OptionParserException.h"
@@ -44,6 +46,9 @@ namespace storm {
         }
         
         void SettingsManager::setFromString(std::string const& commandLineString) {
+            if (commandLineString.empty()) {
+                return;
+            }
             std::vector<std::string> argumentVector;
             boost::split(argumentVector, commandLineString, boost::is_any_of("\t "));
             this->setFromExplodedString(argumentVector);
@@ -57,15 +62,21 @@ namespace storm {
             std::vector<std::string> argumentCache;
             
             // Walk through all arguments.
+            std::cout << "before... "<< std::endl;
             for (uint_fast64_t i = 0; i < commandLineArguments.size(); ++i) {
+                std::cout << "in ... " << i << std::endl;
                 bool existsNextArgument = i < commandLineArguments.size() - 1;
                 std::string const& currentArgument = commandLineArguments[i];
                 
                 // Check if the given argument is a new option or belongs to a previously given option.
                 if (currentArgument.at(0) == '-') {
-                    // At this point we know that a new option is about to come. Hence, we need to assign the current
-                    // cache content to the option that was active until now.
-                    setOptionsArguments(activeOptionName, activeOptionIsShortName ? this->longNameToOptions : this->shortNameToOptions, argumentCache);
+                    if (optionActive) {
+                        // At this point we know that a new option is about to come. Hence, we need to assign the current
+                        // cache content to the option that was active until now.
+                        setOptionsArguments(activeOptionName, activeOptionIsShortName ? this->shortNameToOptions : this->longNameToOptions, argumentCache);
+                    } else {
+                        optionActive = true;
+                    }
                     
                     if (currentArgument.at(1) == '-') {
                         // In this case, the argument has to be the long name of an option. Try to get all options that
@@ -91,6 +102,11 @@ namespace storm {
                     LOG_THROW(false, storm::exceptions::OptionParserException, "Found stray argument '" << currentArgument << "' that is not preceeded by a matching option.");
                 }
             }
+            
+            // If an option is still active at this point, we need to set it.
+            if (optionActive) {
+                setOptionsArguments(activeOptionName, activeOptionIsShortName ? this->shortNameToOptions : this->longNameToOptions, argumentCache);
+            }
         }
         
         void SettingsManager::setFromConfigurationFile(std::string const& configFilename) {
@@ -98,15 +114,67 @@ namespace storm {
         }
                 
         void SettingsManager::printHelp(std::string const& moduleName) const {
-            LOG_ASSERT(false, "Not yet implemented");
+            std::cout << "usage: storm [options]" << std::endl << std::endl;
+            
+            if (moduleName == "all") {
+                // Find longest option name.
+                uint_fast64_t maxLength = getPrintLengthOfLongestOption();
+                for (auto const& moduleName : this->moduleNames) {
+                    printHelpForModule(moduleName, maxLength);
+                }
+            } else {
+                uint_fast64_t maxLength = getPrintLengthOfLongestOption(moduleName);
+                printHelpForModule(moduleName, maxLength);
+            }
+        }
+        
+        void SettingsManager::printHelpForModule(std::string const& moduleName, uint_fast64_t maxLength) const {
+            auto moduleIterator = moduleOptions.find(moduleName);
+            LOG_THROW(moduleIterator != moduleOptions.end(), storm::exceptions::IllegalFunctionCallException, "Cannot print help for unknown module '" << moduleName << "'.");
+            std::cout << "##### Module '" << moduleName << "' ";
+            for (uint_fast64_t i = 0; i < std::min(maxLength, maxLength - moduleName.length() - 16); ++i) {
+                std::cout << "#";
+            }
+            std::cout << std::endl;
+            
+            // Save the flags for std::cout so we can manipulate them and be sure they will be restored as soon as this
+            // stream goes out of scope.
+            boost::io::ios_flags_saver out(std::cout);
+            
+            for (auto const& option : moduleIterator->second) {
+                std::cout << std::setw(maxLength) << std::left << *option << std::endl;
+            }
+            std::cout << std::endl;
+        }
+    
+        uint_fast64_t SettingsManager::getPrintLengthOfLongestOption() const {
+            uint_fast64_t length = 0;
+            for (auto const& moduleName : this->moduleNames) {
+                length = std::max(getPrintLengthOfLongestOption(moduleName), length);
+            }
+            return length;
+        }
+        
+        uint_fast64_t SettingsManager::getPrintLengthOfLongestOption(std::string const& moduleName) const {
+            auto moduleIterator = modules.find(moduleName);
+            LOG_THROW(moduleIterator != modules.end(), storm::exceptions::IllegalFunctionCallException, "Unable to retrieve option length of unknown module '" << moduleName << "'.");
+            return moduleIterator->second->getPrintLengthOfLongestOption();
         }
         
         void SettingsManager::addModule(std::unique_ptr<modules::ModuleSettings>&& moduleSettings) {
             auto moduleIterator = this->modules.find(moduleSettings->getModuleName());
             LOG_THROW(moduleIterator == this->modules.end(), storm::exceptions::IllegalFunctionCallException, "Unable to register module '" << moduleSettings->getModuleName() << "' because a module with the same name already exists.");
+        
+            // Take over the module settings object.
+            std::string const& moduleName = moduleSettings->getModuleName();
+            this->moduleNames.push_back(moduleName);
             this->modules.emplace(moduleSettings->getModuleName(), std::move(moduleSettings));
+            auto iterator = this->modules.find(moduleName);
+            std::unique_ptr<modules::ModuleSettings> const& settings = iterator->second;
             
-            for (auto const& option : moduleSettings->getOptions()) {
+            // Now register the options of the module.
+            this->moduleOptions.emplace(moduleName, std::vector<std::shared_ptr<Option>>());
+            for (auto const& option : settings->getOptions()) {
                 this->addOption(option);
             }
         }
@@ -123,19 +191,31 @@ namespace storm {
             if (!option->getRequiresModulePrefix()) {
                 bool isCompatible = this->isCompatible(option, option->getLongName(), this->longNameToOptions);
                 LOG_THROW(isCompatible, storm::exceptions::IllegalFunctionCallException, "Unable to add option '" << option->getLongName() << "', because an option with the same name is incompatible with it.");
-                this->longNameToOptions.emplace(option->getLongName(), option);
+                addOptionToMap(option->getLongName(), option, this->longNameToOptions);
             }
             // For the prefixed name, we don't need a compatibility check, because a module is not allowed to register the same option twice.
-            this->longNameToOptions.emplace(option->getModuleName() + ":" + option->getLongName(), option);
+            addOptionToMap(option->getModuleName() + ":" + option->getLongName(), option, this->longNameToOptions);
             
             if (option->getHasShortName()) {
                 if (!option->getRequiresModulePrefix()) {
-                    this->shortNameToOptions.emplace(option->getShortName(), option);
                     bool isCompatible = this->isCompatible(option, option->getShortName(), this->shortNameToOptions);
                     LOG_THROW(isCompatible, storm::exceptions::IllegalFunctionCallException, "Unable to add option '" << option->getLongName() << "', because an option with the same name is incompatible with it.");
+                    addOptionToMap(option->getShortName(), option, this->shortNameToOptions);
                 }
-                this->shortNameToOptions.emplace(option->getModuleName() + ":" + option->getShortName(), option);
+                addOptionToMap(option->getModuleName() + ":" + option->getShortName(), option, this->shortNameToOptions);
             }
+        }
+
+        modules::ModuleSettings const& SettingsManager::getModule(std::string const& moduleName) const {
+            auto moduleIterator = this->modules.find(moduleName);
+            LOG_THROW(moduleIterator != this->modules.end(), storm::exceptions::IllegalFunctionCallException, "Cannot retrieve unknown module '" << moduleName << "'.");
+            return *moduleIterator->second;
+        }
+        
+        modules::ModuleSettings& SettingsManager::getModule(std::string const& moduleName) {
+            auto moduleIterator = this->modules.find(moduleName);
+            LOG_THROW(moduleIterator != this->modules.end(), storm::exceptions::IllegalFunctionCallException, "Cannot retrieve unknown module '" << moduleName << "'.");
+            return *moduleIterator->second;
         }
         
         bool SettingsManager::isCompatible(std::shared_ptr<Option> const& option, std::string const& optionName, std::unordered_map<std::string, std::vector<std::shared_ptr<Option>>> const& optionMap) {
@@ -174,5 +254,59 @@ namespace storm {
             }
         }
         
+        void SettingsManager::addOptionToMap(std::string const& name, std::shared_ptr<Option> const& option, std::unordered_map<std::string, std::vector<std::shared_ptr<Option>>>& optionMap) {
+            auto optionIterator = optionMap.find(name);
+            if (optionIterator == optionMap.end()) {
+                std::vector<std::shared_ptr<Option>> optionVector;
+                optionVector.push_back(option);
+                optionMap.emplace(name, optionVector);
+            } else {
+                optionIterator->second.push_back(option);
+            }
+        }
+        
+        SettingsManager const& manager() {
+            return SettingsManager::manager();
+        }
+        
+        SettingsManager& mutableManager() {
+            return SettingsManager::manager();
+        }
+        
+        storm::settings::modules::GeneralSettings const& generalSettings() {
+            return dynamic_cast<storm::settings::modules::GeneralSettings const&>(manager().getModule(storm::settings::modules::GeneralSettings::moduleName));
+        }
+        
+        storm::settings::modules::GeneralSettings& mutableGeneralSettings() {
+            return dynamic_cast<storm::settings::modules::GeneralSettings&>(storm::settings::SettingsManager::manager().getModule(storm::settings::modules::GeneralSettings::moduleName));
+        }
+        
+        storm::settings::modules::DebugSettings const& debugSettings()  {
+            return dynamic_cast<storm::settings::modules::DebugSettings const&>(manager().getModule(storm::settings::modules::DebugSettings::moduleName));
+        }
+        
+        storm::settings::modules::CounterexampleGeneratorSettings const& counterexampleGeneratorSettings() {
+            return dynamic_cast<storm::settings::modules::CounterexampleGeneratorSettings const&>(manager().getModule(storm::settings::modules::CounterexampleGeneratorSettings::moduleName));
+        }
+        
+        storm::settings::modules::CuddSettings const& cuddSettings() {
+            return dynamic_cast<storm::settings::modules::CuddSettings const&>(manager().getModule(storm::settings::modules::CuddSettings::moduleName));
+        }
+
+        storm::settings::modules::GmmxxEquationSolverSettings const& gmmxxEquationSolverSettings() {
+            return dynamic_cast<storm::settings::modules::GmmxxEquationSolverSettings const&>(manager().getModule(storm::settings::modules::GmmxxEquationSolverSettings::moduleName));
+        }
+        
+        storm::settings::modules::NativeEquationSolverSettings const& nativeEquationSolverSettings() {
+            return dynamic_cast<storm::settings::modules::NativeEquationSolverSettings const&>(manager().getModule(storm::settings::modules::NativeEquationSolverSettings::moduleName));
+        }
+        
+        storm::settings::modules::GlpkSettings const& glpkSettings() {
+            return dynamic_cast<storm::settings::modules::GlpkSettings const&>(manager().getModule(storm::settings::modules::GlpkSettings::moduleName));
+        }
+        
+        storm::settings::modules::GurobiSettings const& gurobiSettings() {
+            return dynamic_cast<storm::settings::modules::GurobiSettings const&>(manager().getModule(storm::settings::modules::GurobiSettings::moduleName));
+        }
     }
 }

@@ -60,7 +60,14 @@ namespace storm {
                  *
                  * @return A list of options of this module.
                  */
-                std::vector<std::shared_ptr<Option>> getOptions() const;
+                std::vector<std::shared_ptr<Option>> const& getOptions() const;
+                
+                /*!
+                 * Retrieves the (print) length of the longest option.
+                 *
+                 * @return The length of the longest option.
+                 */
+                uint_fast64_t getPrintLengthOfLongestOption() const;
                 
             protected:
                 /*!
@@ -115,7 +122,7 @@ namespace storm {
                  *
                  * @param option The option to add and register.
                  */
-                void addOption(std::shared_ptr<Option> option) const;
+                void addOption(std::shared_ptr<Option> const& option);
                 
             private:
                 // The settings manager responsible for the settings.
@@ -125,7 +132,10 @@ namespace storm {
                 std::string moduleName;
                 
                 // A mapping of option names of the module to the actual options.
-                std::unordered_map<std::string, std::shared_ptr<Option>> options;
+                std::unordered_map<std::string, std::shared_ptr<Option>> optionMap;
+                
+                // The list of known option names in the order they were registered.
+                std::vector<std::shared_ptr<Option>> options;
             };
             
         } // namespace modules

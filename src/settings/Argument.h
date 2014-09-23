@@ -95,8 +95,8 @@ namespace storm {
 			template <typename S>
 			bool isCompatibleWith(Argument<S> const& other) const {
                 LOG_THROW(this->getType() == other.getType(), storm::exceptions::ArgumentUnificationException, "Unable to unify the arguments " << this->getName() << " and " << other.getName() << ", because they have different types.");
-                LOG_THROW(this->getIsOptional() != other.getIsOptional(), storm::exceptions::ArgumentUnificationException, "Unable to unify the arguments " << this->getName() << " and " << other.getName() << ", because one of them is optional and the other one is not.");
-                LOG_THROW(this->getHasDefaultValue() != other.getHasDefaultValue(), storm::exceptions::ArgumentUnificationException, "Unable to unify the arguments " << this->getName() << " and " << other.getName() << ", because one of them has a default value and the other one does not.");
+                LOG_THROW(this->getIsOptional() == other.getIsOptional(), storm::exceptions::ArgumentUnificationException, "Unable to unify the arguments '" << this->getName() << "' and '" << other.getName() << "', because one of them is optional and the other one is not.");
+                LOG_THROW(this->getHasDefaultValue() == other.getHasDefaultValue(), storm::exceptions::ArgumentUnificationException, "Unable to unify the arguments " << this->getName() << " and " << other.getName() << ", because one of them has a default value and the other one does not.");
                 return true;
 			}
             

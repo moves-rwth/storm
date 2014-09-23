@@ -6,10 +6,10 @@ namespace storm {
     namespace settings {
         namespace modules {
             
-            const std::string moduleName = "cudd";
-            const std::string precisionOptionName = "precision";
-            const std::string maximalMemoryOptionName = "maxmem";
-            const std::string reorderOptionName = "reorder";
+            const std::string CuddSettings::moduleName = "cudd";
+            const std::string CuddSettings::precisionOptionName = "precision";
+            const std::string CuddSettings::maximalMemoryOptionName = "maxmem";
+            const std::string CuddSettings::reorderOptionName = "reorder";
             
             CuddSettings::CuddSettings(storm::settings::SettingsManager& settingsManager) : ModuleSettings(settingsManager, moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, precisionOptionName, true, "Sets the precision used by Cudd.").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision up to which to constants are considered to be different.").setDefaultValueDouble(1e-15).addValidationFunctionDouble(storm::settings::ArgumentValidators::doubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
