@@ -7,7 +7,6 @@
 #include "src/parser/AutoParser.h"
 
 TEST(SparseMdpPrctlModelCheckerTest, AsynchronousLeader) {
-	storm::settings::SettingsManager* s = storm::settings::SettingsManager::getInstance();
 	std::shared_ptr<storm::models::AbstractModel<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader7.tra", STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader7.lab", "", STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader7.trans.rew");
 
 	ASSERT_EQ(abstractModel->getType(), storm::models::MDP);
@@ -24,37 +23,36 @@ TEST(SparseMdpPrctlModelCheckerTest, AsynchronousLeader) {
 
 	std::vector<double> result = mc.checkOptimizingOperator(*eventuallyFormula, true);
 
-	ASSERT_LT(std::abs(result[0] - 1.0), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+    ASSERT_LT(std::abs(result[0] - 1.0), storm::settings::nativeEquationSolverSettings().getPrecision());
 
 	result = mc.checkOptimizingOperator(*eventuallyFormula, false);
 
-	ASSERT_LT(std::abs(result[0] - 1.0), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs(result[0] - 1.0), storm::settings::nativeEquationSolverSettings().getPrecision());
 
 	apFormula = std::make_shared<storm::properties::prctl::Ap<double>>("elected");
 	auto boundedEventuallyFormula = std::make_shared<storm::properties::prctl::BoundedEventually<double>>(apFormula, 25);
 
 	result = mc.checkOptimizingOperator(*boundedEventuallyFormula, true);
 
-	ASSERT_LT(std::abs(result[0] - 0.0), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs(result[0] - 0.0), storm::settings::nativeEquationSolverSettings().getPrecision());
 
 	result = mc.checkOptimizingOperator(*boundedEventuallyFormula, false);
 
-	ASSERT_LT(std::abs(result[0] - 0.0), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs(result[0] - 0.0), storm::settings::nativeEquationSolverSettings().getPrecision());
 
 	apFormula = std::make_shared<storm::properties::prctl::Ap<double>>("elected");
 	auto reachabilityRewardFormula = std::make_shared<storm::properties::prctl::ReachabilityReward<double>>(apFormula);
 
 	result = mc.checkOptimizingOperator(*reachabilityRewardFormula, true);
 
-	ASSERT_LT(std::abs(result[0] - 6.172433512), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs(result[0] - 6.172433512), storm::settings::nativeEquationSolverSettings().getPrecision());
 
 	result = mc.checkOptimizingOperator(*reachabilityRewardFormula, false);
 
-	ASSERT_LT(std::abs(result[0] - 6.1724344), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs(result[0] - 6.1724344), storm::settings::nativeEquationSolverSettings().getPrecision());
 }
 
 TEST(SparseMdpPrctlModelCheckerTest, Consensus) {
-	storm::settings::SettingsManager* s = storm::settings::SettingsManager::getInstance();
     // Increase the maximal number of iterations, because the solver does not converge otherwise.
 	// This is done in the main cpp unit
     
@@ -74,7 +72,7 @@ TEST(SparseMdpPrctlModelCheckerTest, Consensus) {
     
 	std::vector<double> result = mc.checkOptimizingOperator(*eventuallyFormula, true);
     
-	ASSERT_LT(std::abs(result[31168] - 1.0), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs(result[31168] - 1.0), storm::settings::nativeEquationSolverSettings().getPrecision());
 
     apFormula = std::make_shared<storm::properties::prctl::Ap<double>>("finished");
     auto apFormula2 = std::make_shared<storm::properties::prctl::Ap<double>>("all_coins_equal_0");
@@ -83,7 +81,7 @@ TEST(SparseMdpPrctlModelCheckerTest, Consensus) {
     
 	result = mc.checkOptimizingOperator(*eventuallyFormula, true);
 
-	ASSERT_LT(std::abs(result[31168] - 0.4374282832), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs(result[31168] - 0.4374282832), storm::settings::nativeEquationSolverSettings().getPrecision());
     
     apFormula = std::make_shared<storm::properties::prctl::Ap<double>>("finished");
     apFormula2 = std::make_shared<storm::properties::prctl::Ap<double>>("all_coins_equal_1");
@@ -92,7 +90,7 @@ TEST(SparseMdpPrctlModelCheckerTest, Consensus) {
     
 	result = mc.checkOptimizingOperator(*eventuallyFormula, false);
     
-	ASSERT_LT(std::abs(result[31168] - 0.5293286369), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs(result[31168] - 0.5293286369), storm::settings::nativeEquationSolverSettings().getPrecision());
 
     apFormula = std::make_shared<storm::properties::prctl::Ap<double>>("finished");
     apFormula2 = std::make_shared<storm::properties::prctl::Ap<double>>("agree");
@@ -102,27 +100,27 @@ TEST(SparseMdpPrctlModelCheckerTest, Consensus) {
     
 	result = mc.checkOptimizingOperator(*eventuallyFormula, false);
     
-	ASSERT_LT(std::abs(result[31168] - 0.10414097), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs(result[31168] - 0.10414097), storm::settings::nativeEquationSolverSettings().getPrecision());
 
     apFormula = std::make_shared<storm::properties::prctl::Ap<double>>("finished");
 	auto boundedEventuallyFormula = std::make_shared<storm::properties::prctl::BoundedEventually<double>>(apFormula, 50ull);
     
 	result = mc.checkOptimizingOperator(*boundedEventuallyFormula, true);
     
-	ASSERT_LT(std::abs(result[31168] - 0.0), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs(result[31168] - 0.0), storm::settings::nativeEquationSolverSettings().getPrecision());
     
 	result = mc.checkOptimizingOperator(*boundedEventuallyFormula, false);
 
-	ASSERT_LT(std::abs(result[31168] - 0.0), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs(result[31168] - 0.0), storm::settings::nativeEquationSolverSettings().getPrecision());
 
     apFormula = std::make_shared<storm::properties::prctl::Ap<double>>("finished");
 	auto reachabilityRewardFormula = std::make_shared<storm::properties::prctl::ReachabilityReward<double>>(apFormula);
     
 	result = mc.checkOptimizingOperator(*reachabilityRewardFormula, true);
     
-	ASSERT_LT(std::abs(result[31168] - 1725.593313), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs(result[31168] - 1725.593313), storm::settings::nativeEquationSolverSettings().getPrecision());
 
 	result = mc.checkOptimizingOperator(*reachabilityRewardFormula, false);
 
-	ASSERT_LT(std::abs(result[31168] - 2183.142422), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs(result[31168] - 2183.142422), storm::settings::nativeEquationSolverSettings().getPrecision());
 }

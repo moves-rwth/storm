@@ -1,15 +1,13 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 #include "src/settings/SettingsManager.h"
-#include "src/settings/InternalOptionMemento.h"
+#include "src/settings/SettingMemento.h"
 #include "src/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "src/solver/GmmxxLinearEquationSolver.h"
 #include "src/parser/AutoParser.h"
 
 TEST(GmmxxDtmcPrctlModelCheckerTest, Crowds) {
-	storm::settings::SettingsManager* s = storm::settings::SettingsManager::getInstance();
-	storm::settings::InternalOptionMemento deadlockOption("fixDeadlocks", true);
-	ASSERT_TRUE(s->isSet("fixDeadlocks"));
+    std::unique_ptr<storm::settings::SettingMemento> deadlockOption = storm::settings::mutableGeneralSettings().overrideFixDeadlocksSet(true);
 	std::shared_ptr<storm::models::AbstractModel<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/dtmc/crowds/crowds20_5.tra", STORM_CPP_BASE_PATH "/examples/dtmc/crowds/crowds20_5.lab", "", "");
 
 	ASSERT_EQ(abstractModel->getType(), storm::models::DTMC);
@@ -19,7 +17,7 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, Crowds) {
 	ASSERT_EQ(2036647ull, dtmc->getNumberOfStates());
 	ASSERT_EQ(7362293ull, dtmc->getNumberOfTransitions());
 
-	storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double> mc(*dtmc, new storm::solver::GmmxxLinearEquationSolver<double>());
+    storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double> mc(*dtmc, std::unique_ptr<storm::solver::LinearEquationSolver<double>>(new storm::solver::GmmxxLinearEquationSolver<double>()));
 
 	auto apFormula = std::make_shared<storm::properties::prctl::Ap<double>>("observe0Greater1");
 	auto eventuallyFormula = std::make_shared<storm::properties::prctl::Eventually<double>>(apFormula);
@@ -28,7 +26,7 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, Crowds) {
 	std::vector<double> result = eventuallyFormula->check(mc, false);
     LOG4CPLUS_WARN(logger, "Done.");
 
-	ASSERT_LT(std::abs(result[0] - 0.2296800237), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+    ASSERT_LT(std::abs(result[0] - 0.2296800237), storm::settings::gmmxxEquationSolverSettings().getPrecision());
 
 	apFormula = std::make_shared<storm::properties::prctl::Ap<double>>("observeIGreater1");
 	eventuallyFormula = std::make_shared<storm::properties::prctl::Eventually<double>>(apFormula);
@@ -37,7 +35,7 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, Crowds) {
     result = eventuallyFormula->check(mc, false);
     LOG4CPLUS_WARN(logger, "Done.");
     
-	ASSERT_LT(std::abs(result[0] - 0.05073232193), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs(result[0] - 0.05073232193), storm::settings::gmmxxEquationSolverSettings().getPrecision());
 
 	apFormula = std::make_shared<storm::properties::prctl::Ap<double>>("observeOnlyTrueSender");
 	eventuallyFormula = std::make_shared<storm::properties::prctl::Eventually<double>>(apFormula);
@@ -46,14 +44,12 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, Crowds) {
     result = eventuallyFormula->check(mc, false);
     LOG4CPLUS_WARN(logger, "Done.");
 
-	ASSERT_LT(std::abs(result[0] - 0.22742171078), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs(result[0] - 0.22742171078), storm::settings::gmmxxEquationSolverSettings().getPrecision());
 }
 
 
 TEST(GmmxxDtmcPrctlModelCheckerTest, SynchronousLeader) {
-	storm::settings::SettingsManager* s = storm::settings::SettingsManager::getInstance();
-	storm::settings::InternalOptionMemento deadlockOption("fixDeadlocks", true);
-	ASSERT_TRUE(s->isSet("fixDeadlocks"));
+    std::unique_ptr<storm::settings::SettingMemento> deadlockOption = storm::settings::mutableGeneralSettings().overrideFixDeadlocksSet(true);
 	std::shared_ptr<storm::models::AbstractModel<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/dtmc/synchronous_leader/leader6_8.tra", STORM_CPP_BASE_PATH "/examples/dtmc/synchronous_leader/leader6_8.lab", "", STORM_CPP_BASE_PATH "/examples/dtmc/synchronous_leader/leader6_8.pick.trans.rew");
 
 	ASSERT_EQ(abstractModel->getType(), storm::models::DTMC);
@@ -63,7 +59,7 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, SynchronousLeader) {
 	ASSERT_EQ(1312334ull, dtmc->getNumberOfStates());
 	ASSERT_EQ(1574477ull, dtmc->getNumberOfTransitions());
 
-	storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double> mc(*dtmc, new storm::solver::GmmxxLinearEquationSolver<double>());
+	storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double> mc(*dtmc, std::unique_ptr<storm::solver::LinearEquationSolver<double>>(new storm::solver::GmmxxLinearEquationSolver<double>()));
 
 	auto apFormula = std::make_shared<storm::properties::prctl::Ap<double>>("elected");
 	auto eventuallyFormula = std::make_shared<storm::properties::prctl::Eventually<double>>(apFormula);
@@ -72,7 +68,7 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, SynchronousLeader) {
 	std::vector<double> result = eventuallyFormula->check(mc, false);
     LOG4CPLUS_WARN(logger, "Done.");
 
-	ASSERT_LT(std::abs(result[0] - 1.0), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs(result[0] - 1.0), storm::settings::gmmxxEquationSolverSettings().getPrecision());
 
 	apFormula = std::make_shared<storm::properties::prctl::Ap<double>>("elected");
 	auto boundedUntilFormula = std::make_shared<storm::properties::prctl::BoundedUntil<double>>(std::make_shared<storm::properties::prctl::Ap<double>>("true"), apFormula, 20);
@@ -81,7 +77,7 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, SynchronousLeader) {
     result = boundedUntilFormula->check(mc, false);
     LOG4CPLUS_WARN(logger, "Done.");
 
-	ASSERT_LT(std::abs(result[0] - 0.9993949793), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs(result[0] - 0.9993949793), storm::settings::gmmxxEquationSolverSettings().getPrecision());
 
 	apFormula = std::make_shared<storm::properties::prctl::Ap<double>>("elected");
 	auto reachabilityRewardFormula = std::make_shared<storm::properties::prctl::ReachabilityReward<double>>(apFormula);
@@ -90,5 +86,5 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, SynchronousLeader) {
 	result = reachabilityRewardFormula->check(mc, false);
     LOG4CPLUS_WARN(logger, "Done.");
 
-	ASSERT_LT(std::abs(result[0] - 1.025106273), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs(result[0] - 1.025106273), storm::settings::gmmxxEquationSolverSettings().getPrecision());
 }

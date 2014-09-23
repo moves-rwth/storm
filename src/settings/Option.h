@@ -74,7 +74,6 @@ namespace storm {
              * @return True iff the given argument is compatible with the current one.
              */
 			bool isCompatibleWith(Option const& other) {
-                std::cout << "unifying " << *this << " and " << other << std::endl;
                 LOG_THROW(this->getArgumentCount() == other.getArgumentCount(), storm::exceptions::OptionUnificationException, "Unable to unify two options, because their argument count differs.");
 
 				for(size_t i = 0; i != this->arguments.size(); i++) {

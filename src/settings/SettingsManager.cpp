@@ -62,9 +62,7 @@ namespace storm {
             std::vector<std::string> argumentCache;
             
             // Walk through all arguments.
-            std::cout << "before... "<< std::endl;
             for (uint_fast64_t i = 0; i < commandLineArguments.size(); ++i) {
-                std::cout << "in ... " << i << std::endl;
                 bool existsNextArgument = i < commandLineArguments.size() - 1;
                 std::string const& currentArgument = commandLineArguments[i];
                 

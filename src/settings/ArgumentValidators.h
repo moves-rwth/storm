@@ -115,7 +115,7 @@ namespace storm {
 						}
 					}
 
-                    LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Value " << inputString << " does not match any entry in the list of valid items.");
+                    LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Value '" << inputString << "' does not match any entry in the list of valid items.");
 					return false;
 				};
 			}

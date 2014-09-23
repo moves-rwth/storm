@@ -12,7 +12,6 @@
 #include <string>
 
 #include "src/settings/ArgumentType.h"
-#include "src/settings/ArgumentTypeInferationHelper.h"
 #include "src/settings/ArgumentBase.h"
 #include "src/settings/Argument.h"
 #include "src/settings/ArgumentValidators.h"
@@ -97,13 +96,14 @@ namespace storm {
              */
 			ArgumentBuilder& setIsOptional(bool isOptional) {
 				this->isOptional = isOptional;
+                LOG_THROW(this->hasDefaultValue, storm::exceptions::IllegalFunctionCallException, "Unable to make argument '" << this->name << "' optional without default value.");
 				return *this;
 			}
             
 #define PPCAT_NX(A, B) A ## B
 #define PPCAT(A, B) PPCAT_NX(A, B)
 #define MACROaddValidationFunction(funcName, funcType) 	ArgumentBuilder& PPCAT(addValidationFunction, funcName) (storm::settings::Argument< funcType >::userValidationFunction_t userValidationFunction) { \
-LOG_THROW(this->type == ArgumentType::funcName, storm::exceptions::IllegalFunctionCallException, "Illegal validation function for argument, because it takes arguments of different type.") \
+LOG_THROW(this->type == ArgumentType::funcName, storm::exceptions::IllegalFunctionCallException, "Illegal validation function for argument, because it takes arguments of different type."); \
 ( PPCAT(this->userValidationFunctions_, funcName) ).push_back(userValidationFunction); \
 return *this; \
 }
@@ -117,12 +117,12 @@ return *this; \
             
             
 #define MACROsetDefaultValue(funcName, funcType) ArgumentBuilder& PPCAT(setDefaultValue, funcName) (funcType const& defaultValue) { \
-LOG_THROW(this->type == ArgumentType::funcName, storm::exceptions::IllegalFunctionCallException, "Illegal default value for argument" << this->name << ", because it is of different type.") \
+LOG_THROW(this->type == ArgumentType::funcName, storm::exceptions::IllegalFunctionCallException, "Illegal default value for argument" << this->name << ", because it is of different type."); \
 PPCAT(this->defaultValue_, funcName) = defaultValue; \
 this->hasDefaultValue = true; \
 return *this; \
 }
-            
+        
             // Add the methods to set a default value.
 			MACROsetDefaultValue(String, std::string)
 			MACROsetDefaultValue(Integer, int_fast64_t)
@@ -141,38 +141,38 @@ return *this; \
 				switch (this->type) {
 					case ArgumentType::String: {
 						if (this->hasDefaultValue) {
-							return std::shared_ptr<ArgumentBase>(new Argument<std::string>(this->name, this->description, userValidationFunctions_String, this->isOptional, this->defaultValue_String));
+							return std::shared_ptr<ArgumentBase>(new Argument<std::string>(this->name, this->description, this->userValidationFunctions_String, this->isOptional, this->defaultValue_String));
 						} else {
-							return std::shared_ptr<ArgumentBase>(new Argument<std::string>(this->name, this->description, userValidationFunctions_String));
+							return std::shared_ptr<ArgumentBase>(new Argument<std::string>(this->name, this->description, this->userValidationFunctions_String));
 						}
 						break;
                     }
 					case ArgumentType::Integer:
 						if (this->hasDefaultValue) {
-							return std::shared_ptr<ArgumentBase>(new Argument<int_fast64_t>(this->name, this->description, userValidationFunctions_Integer, this->isOptional, this->defaultValue_Integer));
+							return std::shared_ptr<ArgumentBase>(new Argument<int_fast64_t>(this->name, this->description, this->userValidationFunctions_Integer, this->isOptional, this->defaultValue_Integer));
 						} else {
-							return std::shared_ptr<ArgumentBase>(new Argument<int_fast64_t>(this->name, this->description, userValidationFunctions_Integer));
+							return std::shared_ptr<ArgumentBase>(new Argument<int_fast64_t>(this->name, this->description, this->userValidationFunctions_Integer));
 						}
 						break;
 					case ArgumentType::UnsignedInteger:
 						if (this->hasDefaultValue) {
-							return std::shared_ptr<ArgumentBase>(new Argument<uint_fast64_t>(this->name, this->description, userValidationFunctions_UnsignedInteger, this->isOptional, this->defaultValue_UnsignedInteger));
+							return std::shared_ptr<ArgumentBase>(new Argument<uint_fast64_t>(this->name, this->description, this->userValidationFunctions_UnsignedInteger, this->isOptional, this->defaultValue_UnsignedInteger));
 						} else {
-							return std::shared_ptr<ArgumentBase>(new Argument<uint_fast64_t>(this->name, this->description, userValidationFunctions_UnsignedInteger));
+							return std::shared_ptr<ArgumentBase>(new Argument<uint_fast64_t>(this->name, this->description, this->userValidationFunctions_UnsignedInteger));
 						}
 						break;
 					case ArgumentType::Double:
 						if (this->hasDefaultValue) {
-							return std::shared_ptr<ArgumentBase>(new Argument<double>(this->name, this->description, userValidationFunctions_Double, this->isOptional, this->defaultValue_Double));
+							return std::shared_ptr<ArgumentBase>(new Argument<double>(this->name, this->description, this->userValidationFunctions_Double, this->isOptional, this->defaultValue_Double));
 						} else {
-							return std::shared_ptr<ArgumentBase>(new Argument<double>(this->name, this->description, userValidationFunctions_Double));
+							return std::shared_ptr<ArgumentBase>(new Argument<double>(this->name, this->description, this->userValidationFunctions_Double));
 						}
 						break;
 					case ArgumentType::Boolean:
 						if (this->hasDefaultValue) {
-							return std::shared_ptr<ArgumentBase>(new Argument<bool>(this->name, this->description, userValidationFunctions_Boolean, this->isOptional, this->defaultValue_Boolean));
+							return std::shared_ptr<ArgumentBase>(new Argument<bool>(this->name, this->description, this->userValidationFunctions_Boolean, this->isOptional, this->defaultValue_Boolean));
 						} else {
-							return std::shared_ptr<ArgumentBase>(new Argument<bool>(this->name, this->description, userValidationFunctions_Boolean));
+							return std::shared_ptr<ArgumentBase>(new Argument<bool>(this->name, this->description, this->userValidationFunctions_Boolean));
 						}
 						break;
 				}

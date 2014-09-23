@@ -24,11 +24,11 @@ namespace storm {
         template<typename ValueType>
         GmmxxLinearEquationSolver<ValueType>::GmmxxLinearEquationSolver() {
             // Get the settings object to customize linear solving.
-            storm::settings::modules::GmmxxEquationSolverSettings const& settings =storm::settings::gmmxxEquationSolverSettings();
+            storm::settings::modules::GmmxxEquationSolverSettings const& settings = storm::settings::gmmxxEquationSolverSettings();
             
             // Get appropriate settings.
             maximalNumberOfIterations = settings.getMaximalIterationCount();
-            precision = settings.getPrecision();;
+            precision = settings.getPrecision();
             relative = settings.getConvergenceCriterion() == storm::settings::modules::GmmxxEquationSolverSettings::ConvergenceCriterion::Relative;
             restart = settings.getRestartIterationCount();
             
@@ -89,7 +89,7 @@ namespace storm {
                     } else if (preconditioner == Preconditioner::None) {
                         gmm::qmr(*gmmA, x, b, gmm::identity_matrix(), iter);
                     }
-                } else if (method == SolutionMethod::Qmr) {
+                } else if (method == SolutionMethod::Gmres) {
                     if (preconditioner == Preconditioner::Ilu) {
                         gmm::gmres(*gmmA, x, b, gmm::ilu_precond<gmm::csr_matrix<ValueType>>(*gmmA), restart, iter);
                     } else if (preconditioner == Preconditioner::Diagonal) {

@@ -13,7 +13,7 @@ namespace storm {
             const std::string CounterexampleGeneratorSettings::statisticsOptionName = "stats";
             
             CounterexampleGeneratorSettings::CounterexampleGeneratorSettings(storm::settings::SettingsManager& settingsManager) : ModuleSettings(settingsManager, moduleName) {
-                std::vector<std::string> techniques = {"sat", "milp"};
+                std::vector<std::string> techniques = {"maxsat", "milp"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, minimalCommandSetOptionName, true, "Computes a counterexample for the given model in terms of a minimal command set. Note that this requires the model to be given in a symbolic format.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The file containing the properties for which counterexamples are to be generated.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build())
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("method", "Sets which technique is used to derive the counterexample. Available are {milp, maxsat}").setDefaultValueString("maxsat").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(techniques)).build()).build());

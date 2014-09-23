@@ -43,7 +43,7 @@ namespace storm {
              * to this argument.
              * @param isOptional A flag indicating whether the argument is optional.
              */
-			Argument(std::string const& name, std::string const& description, std::vector<userValidationFunction_t> const& validationFunctions): ArgumentBase(name, description), argumentValue(), argumentType(ArgumentTypeInferation::inferToEnumType<T>()), validationFunctions(validationFunctions), isOptional(false), defaultValue(), hasDefaultValue(false) {
+			Argument(std::string const& name, std::string const& description, std::vector<userValidationFunction_t> const& validationFunctions): ArgumentBase(name, description), argumentValue(), argumentType(inferToEnumType<T>()), validationFunctions(validationFunctions), isOptional(false), defaultValue(), hasDefaultValue(false) {
                 // Intentionally left empty.
 			}
             
@@ -56,9 +56,9 @@ namespace storm {
              * to this argument.
              * @param isOptional A flag indicating whether the argument is optional.
              */
-			Argument(std::string const& name, std::string const& description, std::vector<userValidationFunction_t> const& validationFunctions, bool isOptional, T defaultValue): ArgumentBase(name, description), argumentValue(), argumentType(ArgumentTypeInferation::inferToEnumType<T>()), validationFunctions(validationFunctions), isOptional(isOptional), defaultValue(defaultValue), hasDefaultValue(true) {
-                // Intentionally left empty.
-			}
+			Argument(std::string const& name, std::string const& description, std::vector<userValidationFunction_t> const& validationFunctions, bool isOptional, T defaultValue): ArgumentBase(name, description), argumentValue(), argumentType(inferToEnumType<T>()), validationFunctions(validationFunctions), isOptional(isOptional), defaultValue(), hasDefaultValue(true) {
+                this->setDefaultValue(defaultValue);
+            }
             
             virtual bool getIsOptional() const override {
                 return this->isOptional;
@@ -106,8 +106,12 @@ namespace storm {
              * @return The value of the argument.
              */
 			T const& getArgumentValue() const {
-                LOG_THROW(this->getHasBeenSet(), storm::exceptions::IllegalFunctionCallException, "Unable to retrieve value of argument, because it was not set.");
-				return this->argumentValue;
+                LOG_THROW(this->getHasBeenSet() || this->getHasDefaultValue(), storm::exceptions::IllegalFunctionCallException, "Unable to retrieve value of argument, because it was neither set nor specifies a default value.");
+                if (this->getHasBeenSet()) {
+                    return this->argumentValue;
+                } else {
+                    return this->defaultValue;
+                }
 			}
             
 			virtual bool getHasDefaultValue() const override {
@@ -123,9 +127,9 @@ namespace storm {
 			virtual std::string getValueAsString() const override {
 				switch (this->argumentType) {
 					case ArgumentType::String:
-						return ArgumentTypeInferation::inferToString(ArgumentType::String, this->getArgumentValue());
+						return inferToString(ArgumentType::String, this->getArgumentValue());
 					case ArgumentType::Boolean: {
-						bool iValue = ArgumentTypeInferation::inferToBoolean(ArgumentType::Boolean, this->getArgumentValue());
+						bool iValue = inferToBoolean(ArgumentType::Boolean, this->getArgumentValue());
 						if (iValue) {
 							return "true";
 						} else {
@@ -139,7 +143,7 @@ namespace storm {
 			virtual int_fast64_t getValueAsInteger() const override {
 				switch (this->argumentType) {
 					case ArgumentType::Integer:
-						return ArgumentTypeInferation::inferToInteger(ArgumentType::Integer, this->getArgumentValue());
+						return inferToInteger(ArgumentType::Integer, this->getArgumentValue());
 					default: LOG_THROW(false, storm::exceptions::IllegalFunctionCallException, "Unable to retrieve argument value as integer."); break;
                 }
             }
@@ -148,7 +152,7 @@ namespace storm {
             virtual uint_fast64_t getValueAsUnsignedInteger() const override {
                 switch (this->argumentType) {
                     case ArgumentType::UnsignedInteger:
-                        return ArgumentTypeInferation::inferToUnsignedInteger(ArgumentType::UnsignedInteger, this->getArgumentValue());
+                        return inferToUnsignedInteger(ArgumentType::UnsignedInteger, this->getArgumentValue());
                     default: LOG_THROW(false, storm::exceptions::IllegalFunctionCallException, "Unable to retrieve argument value as unsigned integer."); break;
                 }
             }
@@ -157,7 +161,7 @@ namespace storm {
             virtual double getValueAsDouble() const override {
                 switch (this->argumentType) {
                     case ArgumentType::Double:
-                        return ArgumentTypeInferation::inferToDouble(ArgumentType::Double, this->getArgumentValue());
+                        return inferToDouble(ArgumentType::Double, this->getArgumentValue());
                     default: LOG_THROW(false, storm::exceptions::IllegalFunctionCallException, "Unable to retrieve argument value as double."); break;
                 }
             }
@@ -166,7 +170,7 @@ namespace storm {
             virtual bool getValueAsBoolean() const override {
                 switch (this->argumentType) {
                     case ArgumentType::Boolean:
-                        return ArgumentTypeInferation::inferToBoolean(ArgumentType::Boolean, this->getArgumentValue());
+                        return inferToBoolean(ArgumentType::Boolean, this->getArgumentValue());
                     default: LOG_THROW(false, storm::exceptions::IllegalFunctionCallException, "Unable to retrieve argument value as boolean."); break;
                 }
             }
@@ -190,6 +194,11 @@ namespace storm {
             // A flag indicating whether a default value has been provided.
             bool hasDefaultValue;
             
+            /*!
+             * Sets the default value of the argument to the provided value.
+             *
+             * @param newDefault The new default value of the argument.
+             */
             void setDefaultValue(T const& newDefault) {
                 LOG_THROW(this->validate(newDefault), storm::exceptions::IllegalArgumentValueException, "The default value for the argument did not pass all validation functions.");
                 this->defaultValue = newDefault;

@@ -9,30 +9,47 @@
 #include "src/exceptions/InternalTypeErrorException.h"
 
 namespace storm {
-	namespace settings {
+    namespace settings {
         /*!
-         * This class serves as a helper class to infer the types of arguments.
+         * This function infers the type in our enum of possible types from the template parameter.
+         *
+         * @return The argument type that has been inferred.
          */
-		class ArgumentTypeInferation {
-		public:
-			// Specialized function template that infers the Type of T to our local enum
-            /*!
-             * This function infers the type in our enum of possible types from the template parameter.
-             *
-             * @return The argument type that has been inferred.
-             */
-			template <typename T>
-			static ArgumentType inferToEnumType();
-
-			// Specialized function templates that allow casting the given value to the correct type. If the conversion
-            // fails, an exception is thrown.
-			template <typename T> static std::string const& inferToString(ArgumentType const& argumentType, T const& value);
-			template <typename T> static int_fast64_t inferToInteger(ArgumentType const& argumentType, T const& value);
-			template <typename T> static uint_fast64_t inferToUnsignedInteger(ArgumentType const& argumentType, T const& value);
-			template <typename T> static double inferToDouble(ArgumentType const& argumentType, T const& value);
-			template <typename T> static bool inferToBoolean(ArgumentType const& argumentType, T const& value);
-		};
-	} // namespace settings
+        template <typename T>
+        ArgumentType inferToEnumType();
+        
+        // Specialized function templates that allow casting the given value to the correct type. If the conversion
+        // fails, an exception is thrown.
+        template <typename T>
+        std::string const& inferToString(ArgumentType const& argumentType, T const& value);
+        
+        template <>
+        std::string const& inferToString(ArgumentType const& argumentType, std::string const& value);
+        
+        template <typename T>
+        int_fast64_t inferToInteger(ArgumentType const& argumentType, T const& value);
+        
+        template <>
+        int_fast64_t inferToInteger(ArgumentType const& argumentType, int_fast64_t const& value);
+        
+        template <typename T>
+        uint_fast64_t inferToUnsignedInteger(ArgumentType const& argumentType, T const& value);
+        
+        template <>
+        uint_fast64_t inferToUnsignedInteger(ArgumentType const& argumentType, uint_fast64_t const& value);
+        
+        template <typename T>
+        double inferToDouble(ArgumentType const& argumentType, T const& value);
+        
+        template <>
+        double inferToDouble(ArgumentType const& argumentType, double const& value);
+        
+        template <typename T>
+        bool inferToBoolean(ArgumentType const& argumentType, T const& value);
+        
+        template <>
+        bool inferToBoolean(ArgumentType const& argumentType, bool const& value);
+    } // namespace settings
 } // namespace storm
 
 #endif // STORM_SETTINGS_ARGUMENTTYPEINFERATIONHELPER_H_

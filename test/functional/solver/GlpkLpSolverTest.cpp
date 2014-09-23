@@ -18,7 +18,7 @@ TEST(GlpkLpSolver, LPOptimizeMax) {
     ASSERT_NO_THROW(solver.addConstraint("", storm::expressions::Expression::createDoubleLiteral(0.5) * storm::expressions::Expression::createDoubleVariable("y") + storm::expressions::Expression::createDoubleVariable("z") - storm::expressions::Expression::createDoubleVariable("x") == storm::expressions::Expression::createDoubleLiteral(5)));
     ASSERT_NO_THROW(solver.addConstraint("", storm::expressions::Expression::createDoubleVariable("y") - storm::expressions::Expression::createDoubleVariable("x") <= storm::expressions::Expression::createDoubleLiteral(5.5)));
     ASSERT_NO_THROW(solver.update());
-
+    
     ASSERT_NO_THROW(solver.optimize());
     ASSERT_TRUE(solver.isOptimal());
     ASSERT_FALSE(solver.isUnbounded());

@@ -49,10 +49,10 @@ namespace storm {
             
             std::unique_ptr<storm::settings::SettingMemento> ModuleSettings::overrideOption(std::string const& name, bool requiredStatus) {
                 bool currentStatus = this->isSet(name);
-                if (currentStatus) {
-                    this->unset(name);
-                } else {
+                if (requiredStatus) {
                     this->set(name);
+                } else {
+                    this->unset(name);
                 }
                 return std::unique_ptr<storm::settings::SettingMemento>(new storm::settings::SettingMemento(*this, name, currentStatus));
             }

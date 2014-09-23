@@ -17,7 +17,6 @@
 #include "src/settings/Argument.h"
 #include "src/settings/ArgumentBuilder.h"
 #include "src/settings/ArgumentType.h"
-#include "src/settings/ArgumentTypeInferationHelper.h"
 #include "src/settings/modules/ModuleSettings.h"
 #include "src/settings/modules/GeneralSettings.h"
 #include "src/settings/modules/DebugSettings.h"
