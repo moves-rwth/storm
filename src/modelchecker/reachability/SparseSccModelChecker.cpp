@@ -13,6 +13,25 @@ namespace storm {
         namespace reachability {
             
             template<typename ValueType>
+            static ValueType&& simplify(ValueType&& value) {
+                // In the general case, we don't to anything here, but merely return the value. If something else is
+                // supposed to happen here, the templated function can be specialized for this particular type.
+                return std::forward<ValueType>(value);
+            }
+            
+            template<typename IndexType, typename ValueType>
+            static storm::storage::MatrixEntry<IndexType, ValueType>&& simplify(storm::storage::MatrixEntry<IndexType, ValueType>&& matrixEntry) {
+                simplify(matrixEntry.getValue());
+                return std::move(matrixEntry);
+            }
+            
+            template<typename IndexType, typename ValueType>
+            static storm::storage::MatrixEntry<IndexType, ValueType>& simplify(storm::storage::MatrixEntry<IndexType, ValueType>& matrixEntry) {
+                matrixEntry.setValue(simplify(matrixEntry.getValue()));
+                return matrixEntry;
+            }
+            
+            template<typename ValueType>
             ValueType SparseSccModelChecker<ValueType>::computeReachabilityProbability(storm::models::Dtmc<ValueType> const& dtmc, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
                 // First, do some sanity checks to establish some required properties.
                 LOG_THROW(dtmc.getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::IllegalArgumentException, "Input model is required to have exactly one initial state.");
@@ -54,7 +73,8 @@ namespace storm {
             
             template<typename ValueType>
             void SparseSccModelChecker<ValueType>::treatScc(storm::models::Dtmc<ValueType> const& dtmc, FlexibleSparseMatrix<ValueType>& matrix, std::vector<ValueType>& oneStepProbabilities, storm::storage::BitVector const& entryStates, storm::storage::BitVector const& scc, storm::storage::SparseMatrix<ValueType> const& forwardTransitions, FlexibleSparseMatrix<ValueType>& backwardTransitions, bool eliminateEntryStates, uint_fast64_t level) {
-                if (level <= 3) {
+                // If the SCCs are still quite large, we try to split them further.
+                if (scc.getNumberOfSetBits() > SparseSccModelChecker<ValueType>::maximalSccSize) {
                     // Here, we further decompose the SCC into sub-SCCs.
                     storm::storage::StronglyConnectedComponentDecomposition<ValueType> decomposition(forwardTransitions, scc & ~entryStates, true, false);
 
@@ -117,6 +137,7 @@ namespace storm {
             
             template<typename ValueType>
             void SparseSccModelChecker<ValueType>::eliminateState(FlexibleSparseMatrix<ValueType>& matrix, std::vector<ValueType>& oneStepProbabilities, uint_fast64_t state, FlexibleSparseMatrix<ValueType>& backwardTransitions) {
+                bool hasSelfLoop = false;
                 ValueType loopProbability = storm::utility::constantZero<ValueType>();
                 
                 // Start by finding loop probability.
@@ -125,17 +146,21 @@ namespace storm {
                     if (entry.getColumn() >= state) {
                         if (entry.getColumn() == state) {
                             loopProbability = entry.getValue();
+                            hasSelfLoop = true;
                         }
                         break;
                     }
                 }
                 
-                // Scale all entries in this row with (1 / (1 - loopProbability)).
-                loopProbability = 1 / (1 - loopProbability);
-                for (auto& entry : matrix.getRow(state)) {
-                    entry.setValue(entry.getValue() * loopProbability);
+                // Scale all entries in this row with (1 / (1 - loopProbability)) only in case there was a self-loop.
+                if (hasSelfLoop) {
+                    loopProbability = 1 / (1 - loopProbability);
+                    simplify(loopProbability);
+                    for (auto& entry : matrix.getRow(state)) {
+                        entry.setValue(simplify(entry.getValue() * loopProbability));
+                    }
+                    oneStepProbabilities[state] = simplify(oneStepProbabilities[state] * loopProbability);
                 }
-                oneStepProbabilities[state] *= loopProbability;
                 
                 // Now connect the predecessors of the state being eliminated with its successors.
                 typename FlexibleSparseMatrix<ValueType>::row_type& currentStatePredecessors = backwardTransitions.getRow(state);
@@ -185,20 +210,20 @@ namespace storm {
                             break;
                         }
                         if (first2->getColumn() < first1->getColumn()) {
-                            *result = *first2 * multiplyFactor;
+                            *result = simplify(*first2 * multiplyFactor);
                             ++first2;
                         } else if (first1->getColumn() < first2->getColumn()) {
                             *result = *first1;
                             ++first1;
                         } else {
-                            *result = storm::storage::MatrixEntry<typename FlexibleSparseMatrix<ValueType>::index_type, typename FlexibleSparseMatrix<ValueType>::value_type>(first1->getColumn(), first1->getValue() + multiplyFactor * first2->getValue());
+                            *result = storm::storage::MatrixEntry<typename FlexibleSparseMatrix<ValueType>::index_type, typename FlexibleSparseMatrix<ValueType>::value_type>(first1->getColumn(), simplify(first1->getValue() + simplify(multiplyFactor * first2->getValue())));
                             ++first1;
                             ++first2;
                         }
                     }
                     for (; first2 != last2; ++first2) {
                         if (first2->getColumn() != state) {
-                            *result = *first2 * multiplyFactor;
+                            *result = simplify(*first2 * multiplyFactor);
                         }
                     }
                     
@@ -206,7 +231,7 @@ namespace storm {
                     predecessorForwardTransitions = std::move(newSuccessors);
                     
                     // Add the probabilities to go to a target state in just one step.
-                    oneStepProbabilities[predecessor] += multiplyFactor * oneStepProbabilities[state];
+                    oneStepProbabilities[predecessor] = simplify(oneStepProbabilities[predecessor] + simplify(multiplyFactor * oneStepProbabilities[state]));
                 }
                 
                 // Finally, we need to add the predecessor to the set of predecessors of every successor.

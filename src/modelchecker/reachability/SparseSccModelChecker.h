@@ -26,9 +26,6 @@ namespace storm {
             
             template<typename ValueType>
             class SparseSccModelChecker {
-            private:
-
-                
             public:
                 static ValueType computeReachabilityProbability(storm::models::Dtmc<ValueType> const& dtmc, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
                 
@@ -36,6 +33,8 @@ namespace storm {
                 static void treatScc(storm::models::Dtmc<ValueType> const& dtmc, FlexibleSparseMatrix<ValueType>& matrix, std::vector<ValueType>& oneStepProbabilities, storm::storage::BitVector const& entryStates, storm::storage::BitVector const& scc, storm::storage::SparseMatrix<ValueType> const& forwardTransitions, FlexibleSparseMatrix<ValueType>& backwardTransitions, bool eliminateEntryStates, uint_fast64_t level);
                 static FlexibleSparseMatrix<ValueType> getFlexibleSparseMatrix(storm::storage::SparseMatrix<ValueType> const& matrix, bool setAllValuesToOne = false);
                 static void eliminateState(FlexibleSparseMatrix<ValueType>& matrix, std::vector<ValueType>& oneStepProbabilities, uint_fast64_t state, FlexibleSparseMatrix<ValueType>& backwardTransitions);
+                
+                static const uint_fast64_t maximalSccSize = 1000;
 
             };
         }

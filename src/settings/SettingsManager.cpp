@@ -74,6 +74,9 @@ namespace storm {
                         // At this point we know that a new option is about to come. Hence, we need to assign the current
                         // cache content to the option that was active until now.
                         setOptionsArguments(activeOptionName, activeOptionIsShortName ? this->shortNameToOptions : this->longNameToOptions, argumentCache);
+                        
+                        // After the assignment, the argument cache needs to be cleared.
+                        argumentCache.clear();
                     } else {
                         optionActive = true;
                     }
@@ -110,7 +113,7 @@ namespace storm {
         }
         
         void SettingsManager::setFromConfigurationFile(std::string const& configFilename) {
-            LOG_ASSERT(false, "Not yet implemented");
+            LOG_ASSERT(false, "Not yet implemented.");
         }
         
         void SettingsManager::printHelp(std::string const& hint) const {
