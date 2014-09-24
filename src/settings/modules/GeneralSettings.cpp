@@ -35,7 +35,9 @@ namespace storm {
             const std::string GeneralSettings::lpSolverOptionName = "lpsolver";
             const std::string GeneralSettings::constantsOptionName = "constants";
             const std::string GeneralSettings::constantsOptionShortName = "const";
-            
+            const std::string GeneralSettings::statisticsOptionName = "statistics";
+            const std::string GeneralSettings::statisticsOptionShortName = "stats";
+
             GeneralSettings::GeneralSettings(storm::settings::SettingsManager& settingsManager) : ModuleSettings(settingsManager, moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, helpOptionName, false, "Shows all available options, arguments and descriptions.").setShortName(helpOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("hint", "A regular expression to show help for all matching entities or 'all' for the complete help.").setDefaultValueString("all").build()).build());
@@ -77,6 +79,8 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of an LP solver. Available are: gurobi and glpk.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(lpSolvers)).setDefaultValueString("glpk").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, constantsOptionName, false, "Specifies the constant replacements to use in symbolic models. Note that Note that this requires the model to be given as an symbolic model (i.e., via --" + symbolicOptionName + ").").setShortName(constantsOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("values", "A comma separated list of constants and their value, e.g. a=1,b=2,c=3.").setDefaultValueString("").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, statisticsOptionName, true, "Sets whether to display statistics if available.").setShortName(statisticsOptionShortName).build());
+
             }
             
             bool GeneralSettings::isHelpSet() const {
@@ -222,6 +226,10 @@ namespace storm {
             
             std::string GeneralSettings::getConstantDefinitionString() const {
                 return this->getOption(constantsOptionName).getArgumentByName("values").getValueAsString();
+            }
+            
+            bool GeneralSettings::isShowStatisticsSet() const {
+                return this->getOption(statisticsOptionName).getHasOptionBeenSet();
             }
             
         } // namespace modules

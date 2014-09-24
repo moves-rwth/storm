@@ -66,13 +66,6 @@ namespace storm {
                  */
                 bool isUseSchedulerCutsSet() const;
                 
-                /*!
-                 * Retrieves whether statistics are to be shown for counterexample generation.
-                 *
-                 * @return True iff statistics are to be shown for counterexample generation.
-                 */
-                bool isShowStatisticsSet() const;
-                
                 // The name of the module.
                 static const std::string moduleName;
                 
@@ -81,7 +74,6 @@ namespace storm {
                 static const std::string minimalCommandSetOptionName;
                 static const std::string encodeReachabilityOptionName;
                 static const std::string schedulerCutsOptionName;
-                static const std::string statisticsOptionName;
             };
             
         } // namespace modules

@@ -264,6 +264,13 @@ namespace storm {
                  * @return The string that defines the constants of a symbolic model.
                  */
                 std::string getConstantDefinitionString() const;
+                
+                /*!
+                 * Retrieves whether statistics are to be shown for counterexample generation.
+                 *
+                 * @return True iff statistics are to be shown for counterexample generation.
+                 */
+                bool isShowStatisticsSet() const;
 
                 // The name of the module.
                 static const std::string moduleName;
@@ -297,6 +304,8 @@ namespace storm {
                 static const std::string lpSolverOptionName;
                 static const std::string constantsOptionName;
                 static const std::string constantsOptionShortName;
+                static const std::string statisticsOptionName;
+                static const std::string statisticsOptionShortName;
             };
             
         } // namespace modules

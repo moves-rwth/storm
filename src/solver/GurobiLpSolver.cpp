@@ -54,15 +54,15 @@ namespace storm {
 			int error = 0;
 
 			// Enable the following line to only print the output of Gurobi if the debug flag is set.
-            error = GRBsetintparam(env, "OutputFlag", storm::settings::Settings::getInstance()->isSet("debug") || storm::settings::Settings::getInstance()->isSet("gurobioutput") ? 1 : 0);
+            error = GRBsetintparam(env, "OutputFlag", storm::settings::debugSettings().isDebugSet() || storm::settings::gurobiSettings().isOutputSet() ? 1 : 0);
             LOG_THROW(error == 0, storm::exceptions::InvalidStateException, "Unable to set Gurobi Parameter OutputFlag (" << GRBgeterrormsg(env) << ", error code " << error << ").");
             
             // Enable the following line to restrict Gurobi to one thread only.
-            error = GRBsetintparam(env, "Threads", storm::settings::Settings::getInstance()->getOptionByLongName("gurobithreads").getArgument(0).getValueAsUnsignedInteger());
+            error = GRBsetintparam(env, "Threads", storm::settings::gurobiSettings().getNumberOfThreads());
             LOG_THROW(error == 0, storm::exceptions::InvalidStateException, "Unable to set Gurobi Parameter Threads (" << GRBgeterrormsg(env) << ", error code " << error << ").");
 
             // Enable the following line to force Gurobi to be as precise about the binary variables as required by the given precision option.
-            error = GRBsetdblparam(env, "IntFeasTol", storm::settings::Settings::getInstance()->getOptionByLongName("gurobiinttol").getArgument(0).getValueAsDouble());
+            error = GRBsetdblparam(env, "IntFeasTol", storm::settings::gurobiSettings().getIntegerTolerance());
             LOG_THROW(error == 0, storm::exceptions::InvalidStateException, "Unable to set Gurobi Parameter IntFeasTol (" << GRBgeterrormsg(env) << ", error code " << error << ").");
         }
         
@@ -155,13 +155,13 @@ namespace storm {
             int error = 0;
             switch (constraint.getOperator()) {
                 case storm::expressions::OperatorType::Less:
-                    error = GRBaddconstr(model, variables.size(), variables.data(), coefficients.data(), GRB_LESS_EQUAL, rightCoefficients.second - storm::settings::Settings::getInstance()->getOptionByLongName("gurobiinttol").getArgument(0).getValueAsDouble(), name == "" ? nullptr : name.c_str());
+                    error = GRBaddconstr(model, variables.size(), variables.data(), coefficients.data(), GRB_LESS_EQUAL, rightCoefficients.second - storm::settings::gurobiSettings().getIntegerTolerance(), name == "" ? nullptr : name.c_str());
                     break;
                 case storm::expressions::OperatorType::LessOrEqual:
                     error = GRBaddconstr(model, variables.size(), variables.data(), coefficients.data(), GRB_LESS_EQUAL, rightCoefficients.second, name == "" ? nullptr : name.c_str());
                     break;
                 case storm::expressions::OperatorType::Greater:
-                    error = GRBaddconstr(model, variables.size(), variables.data(), coefficients.data(), GRB_GREATER_EQUAL, rightCoefficients.second + storm::settings::Settings::getInstance()->getOptionByLongName("gurobiinttol").getArgument(0).getValueAsDouble(), name == "" ? nullptr : name.c_str());
+                    error = GRBaddconstr(model, variables.size(), variables.data(), coefficients.data(), GRB_GREATER_EQUAL, rightCoefficients.second + storm::settings::gurobiSettings().getIntegerTolerance(), name == "" ? nullptr : name.c_str());
                     break;
                 case storm::expressions::OperatorType::GreaterOrEqual:
                     error = GRBaddconstr(model, variables.size(), variables.data(), coefficients.data(), GRB_GREATER_EQUAL, rightCoefficients.second, name == "" ? nullptr : name.c_str());
@@ -288,7 +288,7 @@ namespace storm {
             double value = 0;
             int error = GRBgetdblattrelement(model, GRB_DBL_ATTR_X, variableIndexPair->second, &value);
             LOG_THROW(error == 0, storm::exceptions::InvalidStateException, "Unable to get Gurobi solution (" << GRBgeterrormsg(env) << ", error code " << error << ").");
-            LOG_THROW(std::abs(static_cast<int>(value) - value) <= storm::settings::Settings::getInstance()->getOptionByLongName("gurobiinttol").getArgument(0).getValueAsDouble(), storm::exceptions::InvalidStateException, "Illegal value for integer variable in Gurobi solution (" << value << ").");
+            LOG_THROW(std::abs(static_cast<int>(value) - value) <= storm::settings::gurobiSettings().getIntegerTolerance(), storm::exceptions::InvalidStateException, "Illegal value for integer variable in Gurobi solution (" << value << ").");
             
             return static_cast<int_fast64_t>(value);
         }
@@ -308,9 +308,9 @@ namespace storm {
             LOG_THROW(error == 0, storm::exceptions::InvalidStateException, "Unable to get Gurobi solution (" << GRBgeterrormsg(env) << ", error code " << error << ").");
 
             if (value > 0.5) {
-                LOG_THROW(std::abs(static_cast<int>(value) - 1) <= storm::settings::Settings::getInstance()->getOptionByLongName("gurobiinttol").getArgument(0).getValueAsDouble(), storm::exceptions::InvalidStateException, "Illegal value for integer variable in Gurobi solution (" << value << ").");
+                LOG_THROW(std::abs(static_cast<int>(value) - 1) <= storm::settings::gurobiSettings().getIntegerTolerance(), storm::exceptions::InvalidStateException, "Illegal value for integer variable in Gurobi solution (" << value << ").");
             } else {
-                LOG_THROW(value <= storm::settings::Settings::getInstance()->getOptionByLongName("gurobiinttol").getArgument(0).getValueAsDouble(), storm::exceptions::InvalidStateException, "Illegal value for integer variable in Gurobi solution (" << value << ").");
+                LOG_THROW(value <= storm::settings::gurobiSettings().getIntegerTolerance(), storm::exceptions::InvalidStateException, "Illegal value for integer variable in Gurobi solution (" << value << ").");
             }
             
             return static_cast<bool>(value);
