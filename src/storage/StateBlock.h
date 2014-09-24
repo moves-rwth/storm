@@ -3,10 +3,13 @@
 
 #include <boost/container/flat_set.hpp>
 
+#include "src/storage/sparse/StateType.h"
+
 namespace storm {
     namespace storage {
         
-        typedef boost::container::flat_set<uint_fast64_t> FlatSetStateContainer;
+        // Typedef the most common state container
+        typedef boost::container::flat_set<sparse::state_type> FlatSetStateContainer;
         
         /*!
          * Writes a string representation of the state block to the given output stream.
@@ -17,10 +20,12 @@ namespace storm {
          */
         std::ostream& operator<<(std::ostream& out, FlatSetStateContainer const& block);
         
-        class Block {
+        template <typename ContainerType = FlatSetStateContainer>
+        class StateBlock {
         public:
             typedef ContainerType container_type;
             typedef typename container_type::value_type value_type;
+            static_assert(std::is_same<value_type, sparse::state_type>::value, "Illegal value type of container.");
             typedef typename container_type::iterator iterator;
             typedef typename container_type::const_iterator const_iterator;
             
@@ -86,6 +91,10 @@ namespace storm {
              * @return True iff the SCC is empty.
              */
             bool empty() const;
+            
+        private:
+            // The container that holds the states.
+            ContainerType states;
         };
     }
 }

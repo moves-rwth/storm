@@ -1,25 +1,17 @@
 #ifndef STORM_STORAGE_STRONGLYCONNECTEDCOMPONENT_H_
 #define STORM_STORAGE_STRONGLYCONNECTEDCOMPONENT_H_
 
-#include "src/storage/Block.h"
+#include "src/storage/StateBlock.h"
 #include "src/storage/Decomposition.h"
 
 namespace storm {
     namespace storage {
         
-        typedef FlatSetStateContainer SccBlock;
-        
         /*!
          * This class represents a strongly connected component, i.e., a set of states such that every state can reach
          * every other state.
          */
-        class StronglyConnectedComponent : public Block<SccBlock> {
-        public:
-            typedef SccBlock block_type;
-            typedef block_type::value_type value_type;
-            typedef block_type::iterator iterator;
-            typedef block_type::const_iterator const_iterator;
-            
+        class StronglyConnectedComponent : public StateBlock<FlatSetStateContainer> {
             /*!
              * Creates an empty strongly connected component.
              */
@@ -42,9 +34,6 @@ namespace storm {
         private:
             // Stores whether this SCC is trivial.
             bool isTrivialScc;
-            
-            // The states in this SCC.
-            block_type states;
         };
         
     }
