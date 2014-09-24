@@ -119,7 +119,7 @@ namespace storm {
                 }
                 
                 // Create the new set of blocks by moving all the blocks we need to keep into it.
-                std::vector<Block> newBlocks((~blocksToDrop).getNumberOfSetBits());
+                std::vector<block_type> newBlocks((~blocksToDrop).getNumberOfSetBits());
                 uint_fast64_t currentBlock = 0;
                 for (uint_fast64_t blockIndex = 0; blockIndex < this->blocks.size(); ++blockIndex) {
                     if (!blocksToDrop.get(blockIndex)) {

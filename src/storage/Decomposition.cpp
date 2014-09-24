@@ -76,15 +76,6 @@ namespace storm {
             return blocks[index];
         }
         
-        std::ostream& operator<<(std::ostream& out, StateBlock const& block) {
-            out << "{";
-            for (auto const& element : block) {
-                out << element << ", ";
-            }
-            out << "}";
-            return out;
-        }
-        
         template <typename BlockType>
         std::ostream& operator<<(std::ostream& out, Decomposition<BlockType> const& decomposition) {
             out << "[";

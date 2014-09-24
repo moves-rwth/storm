@@ -3,6 +3,7 @@
 
 #include "src/storage/SparseMatrix.h"
 #include "src/storage/Decomposition.h"
+#include "src/storage/StronglyConnectedComponent.h"
 #include "src/storage/BitVector.h"
 
 namespace storm {
@@ -17,8 +18,8 @@ namespace storm {
          * This class represents the decomposition of a graph-like structure into its strongly connected components.
          */
         template <typename ValueType>
-        class StronglyConnectedComponentDecomposition : public Decomposition<StateBlock> {
-        public:
+        class StronglyConnectedComponentDecomposition : public Decomposition<StronglyConnectedComponent> {
+        public:            
             /*
              * Creates an empty SCC decomposition.
              */
@@ -45,7 +46,7 @@ namespace storm {
              * @param onlyBottomSccs If set to true, only bottom SCCs, i.e. SCCs in which all states have no way of
              * leaving the SCC), are kept.
              */
-            StronglyConnectedComponentDecomposition(storm::models::AbstractModel<ValueType> const& model, StateBlock const& block, bool dropNaiveSccs = false, bool onlyBottomSccs = false);
+            StronglyConnectedComponentDecomposition(storm::models::AbstractModel<ValueType> const& model, Block const& block, bool dropNaiveSccs = false, bool onlyBottomSccs = false);
             
             /*
              * Creates an SCC decomposition of the given subsystem in the given model.

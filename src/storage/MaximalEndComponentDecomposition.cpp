@@ -88,7 +88,7 @@ namespace storm {
                             for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
                                 bool choiceContainedInMEC = true;
                                 for (auto const& entry : transitionMatrix.getRow(choice)) {
-                                    if (scc.find(entry.getColumn()) == scc.end()) {
+                                    if (!scc.containsState(entry.getColumn())) {
                                         choiceContainedInMEC = false;
                                         break;
                                     }
@@ -116,7 +116,7 @@ namespace storm {
                         statesToCheck.clear();
                         for (auto state : statesToRemove) {
                             for (auto const& entry : backwardTransitions.getRow(state)) {
-                                if (scc.find(entry.getColumn()) != scc.end()) {
+                                if (!scc.containsState(entry.getColumn())) {
                                     statesToCheck.set(entry.getColumn());
                                 }
                             }
@@ -127,7 +127,7 @@ namespace storm {
                 // If the MEC changed, we delete it from the list of MECs and append the possible new MEC candidates to
                 // the list instead.
                 if (mecChanged) {
-                    for (StateBlock& scc : sccs) {
+                    for (StronglyConnectedComponent& scc : sccs) {
                         if (!scc.empty()) {
                             endComponentStateSets.push_back(std::move(scc));
                         }
