@@ -142,7 +142,7 @@ namespace storm {
              */
 			ArgumentBase const& getArgumentByName(std::string const& argumentName) const {
 				auto argumentIterator = this->argumentNameMap.find(argumentName);
-                LOG_THROW(argumentIterator != this->argumentNameMap.end(), storm::exceptions::IllegalArgumentException, "Unable to retrieve argument with unknown name " << argumentName << ".");
+                LOG_THROW(argumentIterator != this->argumentNameMap.end(), storm::exceptions::IllegalArgumentException, "Unable to retrieve argument with unknown name '" << argumentName << "'.");
 				return *argumentIterator->second;
 			}
 

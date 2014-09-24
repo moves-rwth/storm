@@ -74,10 +74,11 @@ namespace storm {
             void setFromConfigurationFile(std::string const& configFilename);
             
             /*!
-             * This function prints a help message to the standard output. Optionally, a string can be given that either
-             * identifies a module or some options to cut down the help text.
+             * This function prints a help message to the standard output. Optionally, a string can be given as a hint.
+             * If it is 'all', the complete help is shown. Otherwise, the string is interpreted as a regular expression
+             * and matched against the known modules and options to restrict the help output.
              *
-             * @param hint The name of a module, some options or "all" for the full help text.
+             * @param hint A regular expression to restrict the help output or "all" for the full help text.
              */
             void printHelp(std::string const& hint = "all") const;
             
@@ -143,6 +144,10 @@ namespace storm {
             
             // A mapping of module names to the corresponding options.
             std::unordered_map<std::string, std::vector<std::shared_ptr<Option>>> moduleOptions;
+            
+            // A list of long option names to keep the order in which they were registered. This is, for example, used
+            // to match the regular expression given to the help option against the option names.
+            std::vector<std::string> longOptionNames;
             
             /*!
              * Adds the given option to the known options.

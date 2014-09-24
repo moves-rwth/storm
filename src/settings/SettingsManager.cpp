@@ -4,6 +4,8 @@
 #include <cctype>
 #include <mutex>
 #include <iomanip>
+#include <regex>
+#include <set>
 #include <boost/algorithm/string.hpp>
 #include <boost/io/ios_state.hpp>
 
@@ -12,7 +14,7 @@
 
 namespace storm {
     namespace settings {
-
+        
         SettingsManager::SettingsManager() : modules(), longNameToOptions(), shortNameToOptions(), moduleOptions() {
             // Register all known settings modules.
             this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::GeneralSettings(*this)));
@@ -24,7 +26,7 @@ namespace storm {
             this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::GlpkSettings(*this)));
             this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::GurobiSettings(*this)));
         }
-
+        
         SettingsManager::~SettingsManager() {
             // Intentionally left empty.
         }
@@ -110,7 +112,7 @@ namespace storm {
         void SettingsManager::setFromConfigurationFile(std::string const& configFilename) {
             LOG_ASSERT(false, "Not yet implemented");
         }
-                
+        
         void SettingsManager::printHelp(std::string const& hint) const {
             std::cout << "usage: storm [options]" << std::endl << std::endl;
             
@@ -121,31 +123,62 @@ namespace storm {
                     printHelpForModule(moduleName, maxLength);
                 }
             } else {
-                auto moduleIterator = this->modules.find(hint);
+                // Create a regular expression from the input hint.
+                std::regex hintRegex(hint, std::regex_constants::ECMAScript | std::regex_constants::icase);
                 
-                // If the supplied information is a module, print the help text of the module.
-                if (moduleIterator != this->modules.end()) {
-                    uint_fast64_t maxLength = getPrintLengthOfLongestOption(hint);
-                    printHelpForModule(hint, maxLength);
-                } else {
-                    auto optionIterator = this->longNameToOptions.find(hint);
-                    
-                    if (optionIterator != this->longNameToOptions.end()) {
-                        // Save the flags for std::cout so we can manipulate them and be sure they will be restored as soon as this
-                        // stream goes out of scope.
-                        boost::io::ios_flags_saver out(std::cout);
+                // Remember which options we printed, so we don't display options twice.
+                std::set<std::shared_ptr<Option>> printedOptions;
+                
+                // Try to match the regular expression against the known modules.
+                std::vector<std::string> matchingModuleNames;
+                uint_fast64_t maxLengthModules = 0;
+                for (auto const& moduleName : this->moduleNames) {
+                    if (std::regex_search(moduleName, hintRegex)) {
+                        matchingModuleNames.push_back(moduleName);
+                        maxLengthModules = std::max(maxLengthModules, getPrintLengthOfLongestOption(moduleName));
                         
-                        std::cout << "Matching options:" << std::endl;
-                        uint_fast64_t maxLength = 0;
-                        for (auto const& option : optionIterator->second) {
-                            maxLength = std::max(maxLength, option->getPrintLength());
-                        }
-                        for (auto const& option : optionIterator->second) {
-                            std::cout << std::setw(maxLength) << std::left << *option << std::endl;
-                        }
-                    } else {
-                        LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unable to show help for unknown entity '" << hint << "'.");
+                        // Add all options of this module to the list of printed options so we don't print them twice.
+                        auto optionIterator = this->moduleOptions.find(moduleName);
+                        printedOptions.insert(optionIterator->second.begin(), optionIterator->second.end());
                     }
+                }
+
+                // Try to match the regular expression against the known options.
+                std::vector<std::shared_ptr<Option>> matchingOptions;
+                uint_fast64_t maxLengthOptions = 0;
+                for (auto const& optionName : this->longOptionNames) {
+                    if (std::regex_search(optionName, hintRegex)) {
+                        auto optionIterator = this->longNameToOptions.find(optionName);
+                        for (auto const& option : optionIterator->second) {
+                            // Only add the option if we have not already added it to the list of options that is going
+                            // to be printed anyway.
+                            if (printedOptions.find(option) == printedOptions.end()) {
+                                maxLengthOptions = std::max(maxLengthOptions, option->getPrintLength());
+                                matchingOptions.push_back(option);
+                            }
+                        }
+                    }
+                }
+                
+                // Print the matching modules.
+                uint_fast64_t maxLength = std::max(maxLengthModules, maxLengthOptions);
+                if (matchingModuleNames.size() > 0) {
+                    std::cout << "Matching modules for hint '" << hint << "':" << std::endl;
+                    for (auto const& matchingModuleName : matchingModuleNames) {
+                        printHelpForModule(matchingModuleName, maxLength);
+                    }
+                }
+                
+                // Print the matching options.
+                if (matchingOptions.size() > 0) {
+                    std::cout << "Matching options for hint '" << hint << "':" << std::endl;
+                    for (auto const& option : matchingOptions) {
+                        std::cout << std::setw(maxLength) << std::left << *option << std::endl;
+                    }
+                }
+                
+                if (matchingModuleNames.empty() && matchingOptions.empty()) {
+                    std::cout << "Hint '" << hint << "' did not match any modules or options." << std::endl;
                 }
             }
         }
@@ -168,7 +201,7 @@ namespace storm {
             }
             std::cout << std::endl;
         }
-    
+        
         uint_fast64_t SettingsManager::getPrintLengthOfLongestOption() const {
             uint_fast64_t length = 0;
             for (auto const& moduleName : this->moduleNames) {
@@ -186,7 +219,7 @@ namespace storm {
         void SettingsManager::addModule(std::unique_ptr<modules::ModuleSettings>&& moduleSettings) {
             auto moduleIterator = this->modules.find(moduleSettings->getModuleName());
             LOG_THROW(moduleIterator == this->modules.end(), storm::exceptions::IllegalFunctionCallException, "Unable to register module '" << moduleSettings->getModuleName() << "' because a module with the same name already exists.");
-        
+            
             // Take over the module settings object.
             std::string const& moduleName = moduleSettings->getModuleName();
             this->moduleNames.push_back(moduleName);
@@ -200,7 +233,7 @@ namespace storm {
                 this->addOption(option);
             }
         }
-
+        
         void SettingsManager::addOption(std::shared_ptr<Option> const& option) {
             // First, we register to which module the given option belongs.
             auto moduleOptionIterator = this->moduleOptions.find(option->getModuleName());
@@ -217,6 +250,7 @@ namespace storm {
             }
             // For the prefixed name, we don't need a compatibility check, because a module is not allowed to register the same option twice.
             addOptionToMap(option->getModuleName() + ":" + option->getLongName(), option, this->longNameToOptions);
+            longOptionNames.push_back(option->getModuleName() + ":" + option->getLongName());
             
             if (option->getHasShortName()) {
                 if (!option->getRequiresModulePrefix()) {
@@ -227,7 +261,7 @@ namespace storm {
                 addOptionToMap(option->getModuleName() + ":" + option->getShortName(), option, this->shortNameToOptions);
             }
         }
-
+        
         modules::ModuleSettings const& SettingsManager::getModule(std::string const& moduleName) const {
             auto moduleIterator = this->modules.find(moduleName);
             LOG_THROW(moduleIterator != this->modules.end(), storm::exceptions::IllegalFunctionCallException, "Cannot retrieve unknown module '" << moduleName << "'.");
@@ -260,7 +294,7 @@ namespace storm {
             // Iterate over all options and set the arguments.
             for (auto& option : optionIterator->second) {
                 option->setHasOptionBeenSet();
-                LOG_THROW(option->getArgumentCount() <= argumentCache.size(), storm::exceptions::OptionParserException, "Unknown option '" << optionName << "'.");
+                LOG_THROW(argumentCache.size() <= option->getArgumentCount(), storm::exceptions::OptionParserException, "Too many arguments for option '" << optionName << "'.");
                 
                 // Now set the provided argument values one by one.
                 for (uint_fast64_t i = 0; i < argumentCache.size(); ++i) {
@@ -314,7 +348,7 @@ namespace storm {
         storm::settings::modules::CuddSettings const& cuddSettings() {
             return dynamic_cast<storm::settings::modules::CuddSettings const&>(manager().getModule(storm::settings::modules::CuddSettings::moduleName));
         }
-
+        
         storm::settings::modules::GmmxxEquationSolverSettings const& gmmxxEquationSolverSettings() {
             return dynamic_cast<storm::settings::modules::GmmxxEquationSolverSettings const&>(manager().getModule(storm::settings::modules::GmmxxEquationSolverSettings::moduleName));
         }

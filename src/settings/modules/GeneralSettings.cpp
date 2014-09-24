@@ -38,7 +38,7 @@ namespace storm {
             
             GeneralSettings::GeneralSettings(storm::settings::SettingsManager& settingsManager) : ModuleSettings(settingsManager, moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, helpOptionName, false, "Shows all available options, arguments and descriptions.").setShortName(helpOptionShortName)
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("module", "The module for which to show the help or 'all' for all modules.").setDefaultValueString("all").build()).build());
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("hint", "A regular expression to show help for all matching entities or 'all' for the complete help.").setDefaultValueString("all").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, verboseOptionName, false, "Enables more verbose output.").setShortName(verboseOptionShortName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, precisionOptionName, false, "The internally used precision.").setShortName(precisionOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to use.").setDefaultValueDouble(1e-06).addValidationFunctionDouble(storm::settings::ArgumentValidators::doubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
@@ -84,7 +84,7 @@ namespace storm {
             }
             
             std::string GeneralSettings::getHelpModuleName() const {
-                return this->getOption(helpOptionName).getArgumentByName("module").getValueAsString();
+                return this->getOption(helpOptionName).getArgumentByName("hint").getValueAsString();
             }
             
             bool GeneralSettings::isVerboseSet() const {
