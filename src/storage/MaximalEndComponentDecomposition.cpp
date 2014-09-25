@@ -1,6 +1,5 @@
 #include <list>
 #include <queue>
-#include <iostream>
 
 #include "src/storage/MaximalEndComponentDecomposition.h"
 #include "src/storage/StronglyConnectedComponentDecomposition.h"
@@ -57,7 +56,6 @@ namespace storm {
             endComponentStateSets.emplace_back(subsystem.begin(), subsystem.end());
             storm::storage::BitVector statesToCheck(model.getNumberOfStates());
             
-            std::cout << " starting... " << std::endl;
             // The iterator used here should really be a const_iterator.
             // However, gcc 4.8 (and assorted libraries) does not provide an erase(const_iterator) method for std::list
             // but only an erase(iterator). This is in compliance with the c++11 draft N3337, which specifies the change
@@ -70,9 +68,7 @@ namespace storm {
                 bool mecChanged = false;
                 
                 // Get an SCC decomposition of the current MEC candidate.
-                std::cout << "boom" << std::endl;
                 StronglyConnectedComponentDecomposition<ValueType> sccs(model, mec, true);
-                std::cout << "boom1" << std::endl;
                 
                 // We need to do another iteration in case we have either more than once SCC or the SCC is smaller than
                 // the MEC canditate itself.
@@ -83,7 +79,6 @@ namespace storm {
                     statesToCheck.set(scc.begin(), scc.end());
                     
                     while (!statesToCheck.empty()) {
-                        std::cout << "not empty!" << std::endl;
                         storm::storage::BitVector statesToRemove(model.getNumberOfStates());
                         
                         for (auto state : statesToCheck) {
@@ -146,8 +141,6 @@ namespace storm {
                 }
                 
             } // End of loop over all MEC candidates.
-            
-            std::cout << " got here... " << std::endl;
             
             // Now that we computed the underlying state sets of the MECs, we need to properly identify the choices
             // contained in the MEC and store them as actual MECs.
