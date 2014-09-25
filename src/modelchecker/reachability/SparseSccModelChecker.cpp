@@ -54,18 +54,39 @@ namespace storm {
                 // Subtract from the maybe states the set of states that is not reachable (on a path from the initial to a target state).
                 maybeStates &= reachableStates;
                 
-                // Otherwise, we build the submatrix that only has the transitions of the maybe states.
-                storm::storage::SparseMatrix<ValueType> submatrix = dtmc.getTransitionMatrix().getSubmatrix(false, maybeStates, maybeStates);
-                
-                // Then, we convert the reduced matrix to a more flexible format to be able to perform state elimination more easily.
-                FlexibleSparseMatrix<ValueType> flexibleMatrix = getFlexibleSparseMatrix(submatrix);
-                
                 // Create a vector for the probabilities to go to a state with probability 1 in one step.
                 std::vector<ValueType> oneStepProbabilities = dtmc.getTransitionMatrix().getConstrainedRowSumVector(maybeStates, statesWithProbability1);
                 
+                // Determine the set of initial states of the sub-DTMC.
+                storm::storage::BitVector newInitialStates = dtmc.getInitialStates() % maybeStates;
+                
+                // We then build the submatrix that only has the transitions of the maybe states.
+                storm::storage::SparseMatrix<ValueType> submatrix = dtmc.getTransitionMatrix().getSubmatrix(false, maybeStates, maybeStates);
+                
+                // Create a bit vector that represents the subsystem of states we still have to eliminate.
+                storm::storage::BitVector subsystem = storm::storage::BitVector(maybeStates.getNumberOfSetBits(), true);
+                
+                // Now eliminate chains.
+//                {
+//                    storm::storage::SparseMatrix<ValueType> backwardTransitions = submatrix.transpose();
+//                    
+//                    // As a preprocessing step, we eliminate all states in place that have exactly one outgoing transition,
+//                    // because we can eliminate them in-place.
+//                    for (auto state : maybeStates & ~newInitialStates) {
+//                        if (submatrix.getRow(state).getNumberOfEntries() == 1 && backwardTransitions.getRow(state).getNumberOfEntries() == 1) {
+//                            if (eliminateStateInPlace(submatrix, oneStepProbabilities, state, backwardTransitions)) {
+//                                subsystem.set(state, false);
+//                            }
+//                        }
+//                    }
+//                }
+                
+                // Then, we convert the reduced matrix to a more flexible format to be able to perform state elimination more easily.
+                FlexibleSparseMatrix<ValueType> flexibleMatrix = getFlexibleSparseMatrix(submatrix);
+                FlexibleSparseMatrix<ValueType> flexibleBackwardTransitions = getFlexibleSparseMatrix(submatrix.transpose(), true);
+                
                 // Then, we recursively treat all SCCs.
-                FlexibleSparseMatrix<ValueType> backwardTransitions = getFlexibleSparseMatrix(submatrix.transpose(), true);
-                treatScc(dtmc, flexibleMatrix, oneStepProbabilities, dtmc.getInitialStates() % maybeStates, storm::storage::BitVector(maybeStates.getNumberOfSetBits(), true), submatrix, backwardTransitions, false, 0);
+                treatScc(dtmc, flexibleMatrix, oneStepProbabilities, newInitialStates, subsystem, submatrix, flexibleBackwardTransitions, false, 0);
                 
                 // Now, we return the value for the only initial state.
                 return oneStepProbabilities[initialStateIndex];
@@ -76,10 +97,10 @@ namespace storm {
                 // If the SCCs are large enough, we try to split them further.
                 if (scc.getNumberOfSetBits() > SparseSccModelChecker<ValueType>::maximalSccSize) {
                     // Here, we further decompose the SCC into sub-SCCs.
-                    storm::storage::StronglyConnectedComponentDecomposition<ValueType> decomposition(forwardTransitions, scc & ~entryStates, true, false);
+                    storm::storage::StronglyConnectedComponentDecomposition<ValueType> decomposition(forwardTransitions, scc & ~entryStates, false, false);
                     
                     // To eliminate the remaining one-state SCCs, we need to keep track of them.
-                    storm::storage::BitVector remainingStates(scc);
+                    // storm::storage::BitVector remainingStates(scc);
                     
                     // Store a bit vector of remaining SCCs so we can be flexible when it comes to the order in which
                     // we eliminate the SCCs.
@@ -106,7 +127,7 @@ namespace storm {
                         
                         // Rewrite SCC into bit vector and subtract it from the remaining states.
                         storm::storage::BitVector newSccAsBitVector(forwardTransitions.getRowCount(), newScc.begin(), newScc.end());
-                        remainingStates &= ~newSccAsBitVector;
+                        // remainingStates &= ~newSccAsBitVector;
                         
                         // Determine the set of entry states of the SCC.
                         storm::storage::BitVector entryStates(dtmc.getNumberOfStates());
@@ -124,15 +145,15 @@ namespace storm {
                     
                     // If we are not supposed to eliminate the entry states, we need to take them out of the set of
                     // remaining states.
-                    if (!eliminateEntryStates) {
-                        remainingStates &= ~entryStates;
-                    }
-                    
+                    // if (!eliminateEntryStates) {
+                    //     remainingStates &= ~entryStates;
+                    // }
+                    //
                     // Now that we eliminated all non-trivial sub-SCCs, we need to take care of trivial sub-SCCs.
                     // Therefore, we need to eliminate all states.
-                    for (auto const& state : remainingStates) {
-                        eliminateState(matrix, oneStepProbabilities, state, backwardTransitions);
-                    }
+                    // for (auto const& state : remainingStates) {
+                    //     eliminateState(matrix, oneStepProbabilities, state, backwardTransitions);
+                    // }
                 } else {
                     // In this case, we perform simple state elimination in the current SCC.
                     storm::storage::BitVector remainingStates(scc);
@@ -299,6 +320,86 @@ namespace storm {
                 // Clear the eliminated row to reduce memory consumption.
                 currentStateSuccessors.clear();
                 currentStateSuccessors.shrink_to_fit();
+            }
+            
+            template <typename ValueType>
+            bool SparseSccModelChecker<ValueType>::eliminateStateInPlace(storm::storage::SparseMatrix<ValueType>& matrix, std::vector<ValueType>& oneStepProbabilities, uint_fast64_t state, storm::storage::SparseMatrix<ValueType>& backwardTransitions) {
+                typename storm::storage::SparseMatrix<ValueType>::iterator forwardElement = matrix.getRow(state).begin();
+                typename storm::storage::SparseMatrix<ValueType>::iterator backwardElement = backwardTransitions.getRow(state).begin();
+
+                if (forwardElement->getValue() != storm::utility::constantOne<ValueType>() || backwardElement->getValue() != storm::utility::constantOne<ValueType>()) {
+                    return false;
+                }
+                
+                std::cout << "eliminating " << state << std::endl;
+                std::cout << "fwd element: " << *forwardElement << " and bwd element: " << *backwardElement << std::endl;
+                
+                // Find the element of the predecessor that moves to the state that we want to eliminate.
+                typename storm::storage::SparseMatrix<ValueType>::rows forwardRow = matrix.getRow(backwardElement->getColumn());
+                typename storm::storage::SparseMatrix<ValueType>::iterator multiplyElement = std::find_if(forwardRow.begin(), forwardRow.end(), [&](storm::storage::MatrixEntry<typename storm::storage::SparseMatrix<ValueType>::index_type, typename storm::storage::SparseMatrix<ValueType>::value_type> const& a) { return a.getColumn() == state; });
+                
+                std::cout << "before fwd: " << std::endl;
+                for (auto element : matrix.getRow(backwardElement->getColumn())) {
+                    std::cout << element << ", " << std::endl;
+                }
+                
+                // Modify the forward probability entry of the predecessor.
+                multiplyElement->setValue(multiplyElement->getValue() * forwardElement->getValue());
+                multiplyElement->setColumn(forwardElement->getColumn());
+                
+                // Modify the one-step probability for the predecessor if necessary.
+                if (oneStepProbabilities[state] != storm::utility::constantZero<ValueType>()) {
+                    oneStepProbabilities[backwardElement->getColumn()] += multiplyElement->getValue() * oneStepProbabilities[state];
+                }
+                
+                // If the forward entry is not at the right position, we need to move it there.
+                if (multiplyElement != forwardRow.begin() && multiplyElement->getColumn() < (multiplyElement - 1)->getColumn()) {
+                    while (multiplyElement != forwardRow.begin() && multiplyElement->getColumn() < (multiplyElement - 1)->getColumn()) {
+                        std::swap(*multiplyElement, *(multiplyElement - 1));
+                        --multiplyElement;
+                    }
+                } else if ((multiplyElement + 1) != forwardRow.end() && multiplyElement->getColumn() > (multiplyElement + 1)->getColumn()) {
+                    while ((multiplyElement + 1) != forwardRow.end() && multiplyElement->getColumn() > (multiplyElement + 1)->getColumn()) {
+                        std::swap(*multiplyElement, *(multiplyElement + 1));
+                        ++multiplyElement;
+                    }
+                }
+                
+                std::cout << "after fwd: " << std::endl;
+                for (auto element : matrix.getRow(backwardElement->getColumn())) {
+                    std::cout << element << ", " << std::endl;
+                }
+                
+                // Find the backward element of the successor that moves to the state that we want to eliminate.
+                typename storm::storage::SparseMatrix<ValueType>::rows backwardRow = backwardTransitions.getRow(forwardElement->getColumn());
+                typename storm::storage::SparseMatrix<ValueType>::iterator backwardEntry = std::find_if(backwardRow.begin(), backwardRow.end(), [&](storm::storage::MatrixEntry<typename storm::storage::SparseMatrix<ValueType>::index_type, typename storm::storage::SparseMatrix<ValueType>::value_type> const& a) { return a.getColumn() == state; });
+                
+                std::cout << "before bwd" << std::endl;
+                for (auto element : backwardTransitions.getRow(forwardElement->getColumn())) {
+                    std::cout << element << ", " << std::endl;
+                }
+                
+                // Modify the predecessor list of the successor and add the predecessor of the state we eliminate.
+                backwardEntry->setColumn(backwardElement->getColumn());
+                
+                // If the backward entry is not at the right position, we need to move it there.
+                if (backwardEntry != backwardRow.begin() && backwardEntry->getColumn() < (backwardEntry - 1)->getColumn()) {
+                    while (backwardEntry != backwardRow.begin() && backwardEntry->getColumn() < (backwardEntry - 1)->getColumn()) {
+                        std::swap(*backwardEntry, *(backwardEntry - 1));
+                        --backwardEntry;
+                    }
+                } else if ((backwardEntry + 1) != backwardRow.end() && backwardEntry->getColumn() > (backwardEntry + 1)->getColumn()) {
+                    while ((backwardEntry + 1) != backwardRow.end() && backwardEntry->getColumn() > (backwardEntry + 1)->getColumn()) {
+                        std::swap(*backwardEntry, *(backwardEntry + 1));
+                        ++backwardEntry;
+                    }
+                }
+                
+                std::cout << "after bwd" << std::endl;
+                for (auto element : backwardTransitions.getRow(forwardElement->getColumn())) {
+                    std::cout << element << ", " << std::endl;
+                }
+                return true;
             }
             
             template<typename ValueType>
