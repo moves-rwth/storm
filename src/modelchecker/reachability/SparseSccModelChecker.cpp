@@ -42,7 +42,7 @@ namespace storm {
                 storm::storage::BitVector statesWithProbability0 = statesWithProbability01.first;
                 storm::storage::BitVector statesWithProbability1 = statesWithProbability01.second;
                 storm::storage::BitVector maybeStates = ~(statesWithProbability0 | statesWithProbability1);
-
+                
                 // If the initial state is known to have either probability 0 or 1, we can directly return the result.
                 if (!maybeStates.get(initialStateIndex)) {
                     return statesWithProbability0.get(initialStateIndex) ? 0 : 1;
@@ -77,12 +77,27 @@ namespace storm {
                 if (scc.getNumberOfSetBits() > SparseSccModelChecker<ValueType>::maximalSccSize) {
                     // Here, we further decompose the SCC into sub-SCCs.
                     storm::storage::StronglyConnectedComponentDecomposition<ValueType> decomposition(forwardTransitions, scc & ~entryStates, true, false);
-
+                    
                     // To eliminate the remaining one-state SCCs, we need to keep track of them.
                     storm::storage::BitVector remainingStates(scc);
                     
-                    // And then recursively treat all sub-SCCs.
-                    for (auto const& newScc : decomposition) {
+                    // Store a bit vector of remaining SCCs so we can be flexible when it comes to the order in which
+                    // we eliminate the SCCs.
+                    storm::storage::BitVector remainingSccs(decomposition.size(), true);
+                    
+                    // First, get rid of the trivial SCCs.
+                    for (uint_fast64_t sccIndex = 0; sccIndex < decomposition.size(); ++sccIndex) {
+                        storm::storage::StronglyConnectedComponent const& scc = decomposition.getBlock(sccIndex);
+                        if (scc.isTrivial()) {
+                            storm::storage::sparse::state_type onlyState = *scc.begin();
+                            eliminateState(matrix, oneStepProbabilities, onlyState, backwardTransitions);
+                            remainingSccs.set(sccIndex, false);
+                        }
+                    }
+                    
+                    // And then recursively treat the remaining sub-SCCs.
+                    for (auto sccIndex : remainingSccs) {
+                        storm::storage::StronglyConnectedComponent const& newScc = decomposition.getBlock(sccIndex);
                         // If the SCC consists of just one state, we do not explore it recursively, but rather eliminate
                         // it directly.
                         if (newScc.size() == 1) {
@@ -106,7 +121,7 @@ namespace storm {
                         // Recursively descend in SCC-hierarchy.
                         treatScc(dtmc, matrix, oneStepProbabilities, entryStates, newSccAsBitVector, forwardTransitions, backwardTransitions, true, level + 1);
                     }
-
+                    
                     // If we are not supposed to eliminate the entry states, we need to take them out of the set of
                     // remaining states.
                     if (!eliminateEntryStates) {
@@ -121,7 +136,7 @@ namespace storm {
                 } else {
                     // In this case, we perform simple state elimination in the current SCC.
                     storm::storage::BitVector remainingStates(scc);
-
+                    
                     // If we are not supposed to eliminate the entry states, we need to take them out of the set of
                     // remaining states.
                     if (!eliminateEntryStates) {
@@ -252,7 +267,7 @@ namespace storm {
                     typename FlexibleSparseMatrix<ValueType>::row_type newPredecessors;
                     newPredecessors.reserve((last1 - first1) + (last2 - first2));
                     std::insert_iterator<typename FlexibleSparseMatrix<ValueType>::row_type> result(newPredecessors, newPredecessors.end());
-
+                    
                     
                     for (; first1 != last1; ++result) {
                         if (first2 == last2) {
@@ -279,7 +294,7 @@ namespace storm {
                     // Now move the new predecessors in place.
                     successorBackwardTransitions = std::move(newPredecessors);
                 }
-
+                
                 
                 // Clear the eliminated row to reduce memory consumption.
                 currentStateSuccessors.clear();
