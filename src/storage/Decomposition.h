@@ -2,6 +2,8 @@
 #define STORM_STORAGE_DECOMPOSITION_H_
 
 #include <vector>
+#include <cstdint>
+#include <ostream>
 
 namespace storm {
     namespace storage {
@@ -56,7 +58,7 @@ namespace storm {
              *
              * @return The number of blocks of this decomposition.
              */
-            size_t size() const;
+            std::size_t size() const;
             
             /*!
              * Retrieves an iterator that points to the first block of this decomposition.

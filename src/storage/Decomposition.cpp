@@ -33,7 +33,7 @@ namespace storm {
         }
         
         template <typename BlockType>
-        size_t Decomposition<BlockType>::size() const {
+        std::size_t Decomposition<BlockType>::size() const {
             return blocks.size();
         }
         
