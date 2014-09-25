@@ -46,8 +46,7 @@ namespace storm {
              * @param onlyBottomSccs If set to true, only bottom SCCs, i.e. SCCs in which all states have no way of
              * leaving the SCC), are kept.
              */
-            template<typename ContainerType>
-            StronglyConnectedComponentDecomposition(storm::models::AbstractModel<ValueType> const& model, StateBlock<ContainerType> const& block, bool dropNaiveSccs = false, bool onlyBottomSccs = false);
+            StronglyConnectedComponentDecomposition(storm::models::AbstractModel<ValueType> const& model, StateBlock const& block, bool dropNaiveSccs = false, bool onlyBottomSccs = false);
             
             /*
              * Creates an SCC decomposition of the given subsystem in the given model.

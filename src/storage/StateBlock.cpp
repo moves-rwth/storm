@@ -2,44 +2,44 @@
 
 namespace storm {
     namespace storage {
-        template <typename ContainerType>
-        typename StateBlock<ContainerType>::iterator StateBlock<ContainerType>::begin() {
+        typename StateBlock::iterator StateBlock::begin() {
             return states.begin();
         }
         
-        template <typename ContainerType>
-        typename StateBlock<ContainerType>::const_iterator StateBlock<ContainerType>::begin() const {
+        typename StateBlock::const_iterator StateBlock::begin() const {
             return states.begin();
         }
         
-        template <typename ContainerType>
-        typename StateBlock<ContainerType>::iterator StateBlock<ContainerType>::end() {
+        typename StateBlock::iterator StateBlock::end() {
             return states.end();
         }
         
-        template <typename ContainerType>
-        typename StateBlock<ContainerType>::const_iterator StateBlock<ContainerType>::end() const {
+        typename StateBlock::const_iterator StateBlock::end() const {
             return states.end();
         }
         
-        template <typename ContainerType>
-        std::size_t StateBlock<ContainerType>::size() const {
+        std::size_t StateBlock::size() const {
             return states.size();
         }
         
-        template <typename ContainerType>
-        void StateBlock<ContainerType>::insert(value_type const& state) {
+        bool StateBlock::empty() const {
+            return states.empty();
+        }
+        
+        void StateBlock::insert(value_type const& state) {
             states.insert(state);
         }
 
-        template <typename ContainerType>
-        void StateBlock<ContainerType>::erase(value_type const& state) {
+        void StateBlock::erase(value_type const& state) {
             states.erase(state);
         }
 
-        template <typename ContainerType>
-        bool StateBlock<ContainerType>::containsState(value_type const& state) const {
+        bool StateBlock::containsState(value_type const& state) const {
             return this->states.find(state) != this->states.end();
+        }
+        
+        StateBlock::container_type const& StateBlock::getStates() const {
+            return this->states;
         }
         
         std::ostream& operator<<(std::ostream& out, FlatSetStateContainer const& block) {
@@ -51,7 +51,9 @@ namespace storm {
             return out;
         }
         
-        // Explicitly instantiate template.
-        template Block<FlatSetStateContainer>;
+        std::ostream& operator<<(std::ostream& out, StateBlock const& block) {
+            out << block.getStates();
+            return out;
+        }
     }
 }

@@ -37,8 +37,8 @@ TEST(StronglyConnectedComponentDecomposition, FullSystem2) {
     storm::storage::StateBlock const& scc1 = sccDecomposition[0];
     storm::storage::StateBlock const& scc2 = sccDecomposition[1];
 
-    std::vector<uint_fast64_t> correctScc1 = {1, 3, 8, 9, 10};
-    std::vector<uint_fast64_t> correctScc2 = {4, 5, 6, 7};
+    storm::storage::StateBlock correctScc1 = {1, 3, 8, 9, 10};
+    storm::storage::StateBlock correctScc2 = {4, 5, 6, 7};
     ASSERT_TRUE(scc1 == storm::storage::StateBlock(correctScc1.begin(), correctScc1.end()) || scc1 == storm::storage::StateBlock(correctScc2.begin(), correctScc2.end()));
     ASSERT_TRUE(scc2 == storm::storage::StateBlock(correctScc1.begin(), correctScc1.end()) || scc2 == storm::storage::StateBlock(correctScc2.begin(), correctScc2.end()));
     

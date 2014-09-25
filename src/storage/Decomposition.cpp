@@ -1,4 +1,5 @@
 #include "src/storage/Decomposition.h"
+#include "src/storage/StronglyConnectedComponent.h"
 #include "src/storage/MaximalEndComponent.h"
 
 namespace storm {
@@ -89,8 +90,8 @@ namespace storm {
             return out;
         }
         
-        template class Decomposition<StateBlock>;
-        template std::ostream& operator<<(std::ostream& out, Decomposition<StateBlock> const& decomposition);
+        template class Decomposition<StronglyConnectedComponent>;
+        template std::ostream& operator<<(std::ostream& out, Decomposition<StronglyConnectedComponent> const& decomposition);
         
         template class Decomposition<MaximalEndComponent>;
         template std::ostream& operator<<(std::ostream& out, Decomposition<MaximalEndComponent> const& decomposition);

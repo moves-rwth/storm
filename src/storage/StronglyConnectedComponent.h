@@ -3,6 +3,7 @@
 
 #include "src/storage/StateBlock.h"
 #include "src/storage/Decomposition.h"
+#include "src/utility/OsDetection.h"
 
 namespace storm {
     namespace storage {
@@ -11,11 +12,15 @@ namespace storm {
          * This class represents a strongly connected component, i.e., a set of states such that every state can reach
          * every other state.
          */
-        class StronglyConnectedComponent : public StateBlock<FlatSetStateContainer> {
-            /*!
-             * Creates an empty strongly connected component.
-             */
-            StronglyConnectedComponent();
+        class StronglyConnectedComponent : public StateBlock {
+        public:
+            StronglyConnectedComponent() = default;
+            StronglyConnectedComponent(StronglyConnectedComponent const& other) = default;
+            StronglyConnectedComponent(StronglyConnectedComponent&& other) = default;
+#ifndef WINDOWS
+            StronglyConnectedComponent& operator=(StronglyConnectedComponent const& other) = default;
+            StronglyConnectedComponent& operator=(StronglyConnectedComponent&& other) = default;
+#endif
             
             /*!
              * Sets whether this SCC is trivial or not.

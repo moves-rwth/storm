@@ -14,8 +14,7 @@ namespace storm {
         }
         
         template <typename ValueType>
-        template <typename ContainerType>
-        StronglyConnectedComponentDecomposition<ValueType>::StronglyConnectedComponentDecomposition(storm::models::AbstractModel<ValueType> const& model, StateBlock<ContainerType> const& block, bool dropNaiveSccs, bool onlyBottomSccs) {
+        StronglyConnectedComponentDecomposition<ValueType>::StronglyConnectedComponentDecomposition(storm::models::AbstractModel<ValueType> const& model, StateBlock const& block, bool dropNaiveSccs, bool onlyBottomSccs) {
             storm::storage::BitVector subsystem(model.getNumberOfStates(), block.begin(), block.end());
             performSccDecomposition(model.getTransitionMatrix(), subsystem, dropNaiveSccs, onlyBottomSccs);
         }
@@ -204,6 +203,5 @@ namespace storm {
         
         // Explicitly instantiate the SCC decomposition.
         template class StronglyConnectedComponentDecomposition<double>;
-        template StronglyConnectedComponentDecomposition<double>::StronglyConnectedComponentDecomposition(storm::models::AbstractModel<double> const& model, StateBlock<FlatSetStateContainer> const& block, bool dropNaiveSccs, bool onlyBottomSccs);
     } // namespace storage
 } // namespace storm

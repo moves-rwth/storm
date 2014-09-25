@@ -3,6 +3,7 @@
 
 #include <boost/container/flat_set.hpp>
 
+#include "src/utility/OsDetection.h"
 #include "src/storage/sparse/StateType.h"
 
 namespace storm {
@@ -11,23 +12,53 @@ namespace storm {
         // Typedef the most common state container
         typedef boost::container::flat_set<sparse::state_type> FlatSetStateContainer;
         
-        /*!
-         * Writes a string representation of the state block to the given output stream.
-         *
-         * @param out The output stream to write to.
-         * @param block The block to print to the stream.
-         * @return The given output stream.
-         */
         std::ostream& operator<<(std::ostream& out, FlatSetStateContainer const& block);
-        
-        template <typename ContainerType = FlatSetStateContainer>
+
         class StateBlock {
         public:
-            typedef ContainerType container_type;
+            typedef FlatSetStateContainer container_type;
             typedef typename container_type::value_type value_type;
             static_assert(std::is_same<value_type, sparse::state_type>::value, "Illegal value type of container.");
             typedef typename container_type::iterator iterator;
             typedef typename container_type::const_iterator const_iterator;
+            
+            // Default constructors.
+            StateBlock() = default;
+            StateBlock(StateBlock const& other) = default;
+            StateBlock(StateBlock&& other) = default;
+#ifndef WINDOWS
+            StateBlock& operator=(StateBlock const& other) = default;
+            StateBlock& operator=(StateBlock&& other) = default;
+#endif
+            /*!
+             * Creates a state block and inserts all elements in the given range.
+             *
+             * @param first The first element of the range to insert.
+             * @param last The last element of the range (that is itself not inserted).
+             */
+            template <typename InputIterator>
+            StateBlock(InputIterator first, InputIterator last) : states(first, last) {
+                // Intentionally left empty.
+            }
+            
+            /*!
+             * Constructs a state block from the given initializer list.
+             *
+             * @param list The list of states to add to this state block.
+             */
+            StateBlock(std::initializer_list<sparse::state_type> list) : states(list.begin(), list.end()) {
+                // Intentionally left empty.
+            }
+            
+            /*!
+             * Checks whether the two state blocks contain exactly the same states.
+             *
+             * @param other The state block with which to compare the current one.
+             * @return True iff the two state blocks contain exactly the same states.
+             */
+            bool operator==(StateBlock const& other) const {
+                return this->states == other.states;
+            }
             
             /*!
              * Returns an iterator to the states in this SCC.
@@ -92,10 +123,26 @@ namespace storm {
              */
             bool empty() const;
             
+            /*!
+             * Retrieves the set of states contained in the StateBlock.
+             *
+             * @return The set of states contained in the StateBlock.
+             */
+            container_type const& getStates() const;
+            
         private:
             // The container that holds the states.
-            ContainerType states;
+            container_type states;
         };
+        
+        /*!
+         * Writes a string representation of the state block to the given output stream.
+         *
+         * @param out The output stream to write to.
+         * @param block The block to print to the stream.
+         * @return The given output stream.
+         */
+        std::ostream& operator<<(std::ostream& out, StateBlock const& block);
     }
 }
 

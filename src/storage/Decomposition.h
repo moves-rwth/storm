@@ -119,8 +119,8 @@ namespace storm {
             block_type& operator[](uint_fast64_t index);
             
             // Declare the streaming operator as a friend function to enable output of decompositions.
-            template<typename BlockTimePrime>
-            friend std::ostream& operator<<(std::ostream& out, Decomposition<BlockTimePrime> const& decomposition);
+            template<typename BlockTypePrime>
+            friend std::ostream& operator<<(std::ostream& out, Decomposition<BlockTypePrime> const& decomposition);
             
         protected:
             // The blocks of the decomposition.
