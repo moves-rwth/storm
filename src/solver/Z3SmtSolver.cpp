@@ -3,6 +3,32 @@
 
 namespace storm {
 	namespace solver {
+#ifdef STORM_HAVE_Z3
+		Z3SmtSolver::Z3ModelReference::Z3ModelReference(z3::model &m, storm::adapters::Z3ExpressionAdapter &adapter) : m_model(m), m_adapter(adapter) {
+
+		}
+#endif
+
+		bool Z3SmtSolver::Z3ModelReference::getBooleanValue(std::string const& name) const {
+#ifdef STORM_HAVE_Z3
+			z3::expr z3Expr = this->m_adapter.translateExpression(storm::expressions::Expression::createBooleanVariable(name));
+			z3::expr z3ExprValuation = m_model.eval(z3Expr, true);
+			return this->m_adapter.translateExpression(z3ExprValuation).evaluateAsBool();
+#else
+			LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without Z3 support.");
+#endif
+		}
+
+		int_fast64_t Z3SmtSolver::Z3ModelReference::getIntegerValue(std::string const& name) const {
+#ifdef STORM_HAVE_Z3
+			z3::expr z3Expr = this->m_adapter.translateExpression(storm::expressions::Expression::createIntegerVariable(name));
+			z3::expr z3ExprValuation = m_model.eval(z3Expr, true);
+			return this->m_adapter.translateExpression(z3ExprValuation).evaluateAsInt();
+#else
+			LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without Z3 support.");
+#endif
+		}
+
 		Z3SmtSolver::Z3SmtSolver(Options options)
 #ifdef STORM_HAVE_Z3
 			: m_context()
@@ -240,6 +266,47 @@ namespace storm {
 			LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without Z3 support.");
 #endif
 		}
+
+		uint_fast64_t Z3SmtSolver::allSat(std::function<bool(SmtSolver::ModelReference&)> callback, std::vector<storm::expressions::Expression> const& important)
+		{
+#ifdef STORM_HAVE_Z3
+			for (storm::expressions::Expression e : important) {
+				if (!e.isVariable()) {
+					throw storm::exceptions::InvalidArgumentException() << "The important expressions for AllSat must be atoms, i.e. variable expressions.";
+				}
+			}
+
+			uint_fast64_t numModels = 0;
+			bool proceed = true;
+
+			this->push();
+
+			while (proceed && this->check() == CheckResult::SAT) {
+				++numModels;
+				z3::model m = this->m_solver.get_model();
+
+				z3::expr modelExpr = this->m_context.bool_val(true);
+				storm::expressions::SimpleValuation valuation;
+
+				for (storm::expressions::Expression importantAtom : important) {
+					z3::expr z3ImportantAtom = this->m_adapter.translateExpression(importantAtom);
+					z3::expr z3ImportantAtomValuation = m.eval(z3ImportantAtom, true);
+					modelExpr = modelExpr && (z3ImportantAtom == z3ImportantAtomValuation);
+				}
+
+				proceed = callback(Z3ModelReference(m, m_adapter));
+
+				this->m_solver.add(!modelExpr);
+			}
+
+			this->pop();
+
+			return numModels;
+#else
+			LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without Z3 support.");
+#endif
+		}
+
 		std::vector<storm::expressions::Expression> Z3SmtSolver::getUnsatAssumptions() {
 #ifdef STORM_HAVE_Z3
 			if (lastResult != SmtSolver::CheckResult::UNSAT) {
