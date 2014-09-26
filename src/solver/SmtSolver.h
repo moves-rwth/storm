@@ -32,6 +32,12 @@ namespace storm {
 			};
 			//! possible check results
 			enum class CheckResult { SAT, UNSAT, UNKNOWN };
+
+			class ModelReference {
+			public:
+				virtual bool getBooleanValue(std::string const& name) const =0;
+				virtual int_fast64_t getIntegerValue(std::string const& name) const =0;
+			};
 		public:
 			/*!
 			* Constructs a new smt solver with the given options.
@@ -157,6 +163,23 @@ namespace storm {
 			virtual uint_fast64_t allSat(std::vector<storm::expressions::Expression> const& important, std::function<bool(storm::expressions::SimpleValuation&)> callback) {
 				throw storm::exceptions::NotImplementedException("This subclass of SmtSolver does not support model generation.");
 			}
+
+			/*!
+			* Performs all AllSat over the important atoms. Once a valuation of the important atoms such that the currently asserted formulas are satisfiable
+			* is found the callback is called with a reference to the model. The lifetime of that model is controlled by the solver implementation. It will most
+			* certainly be invalid after the callback returned.
+			*
+			* @param important A set of expressions over which to perform all sat.
+			* @param callback A function to call for each found valuation.
+			*
+			* @returns the number of valuations of the important atoms, such that the currently asserted formulas are satisfiable that where found
+			*
+			* @throws IllegalFunctionCallException if model generation is not configured for this solver
+			* @throws NotImplementedException if model generation is not implemented with this solver class
+			*/
+			virtual uint_fast64_t allSat(std::function<bool(ModelReference&)> callback, std::vector<storm::expressions::Expression> const& important) {
+				throw storm::exceptions::NotImplementedException("This subclass of SmtSolver does not support model generation.");
+			} //hack: switching the parameters is the only way to have overloading work with lambdas
 
 			/*!
 			* Retrieves the unsat core of the last call to check()

@@ -14,6 +14,20 @@ namespace storm {
 	namespace solver {
 		class Z3SmtSolver : public SmtSolver {
 		public:
+			class Z3ModelReference : public SmtSolver::ModelReference {
+			public:
+#ifdef STORM_HAVE_Z3
+				Z3ModelReference(z3::model& m, storm::adapters::Z3ExpressionAdapter &adapter);
+#endif
+				virtual bool getBooleanValue(std::string const& name) const override;
+				virtual int_fast64_t getIntegerValue(std::string const& name) const override;
+			private:
+#ifdef STORM_HAVE_Z3
+				z3::model &m_model;
+				storm::adapters::Z3ExpressionAdapter &m_adapter;
+#endif
+			};
+		public:
 			Z3SmtSolver(Options options = Options::ModelGeneration);
 			virtual ~Z3SmtSolver();
 
@@ -38,6 +52,8 @@ namespace storm {
 			virtual std::vector<storm::expressions::SimpleValuation> allSat(std::vector<storm::expressions::Expression> const& important) override;
 
 			virtual uint_fast64_t allSat(std::vector<storm::expressions::Expression> const& important, std::function<bool(storm::expressions::SimpleValuation&)> callback) override;
+
+			virtual uint_fast64_t allSat(std::function<bool(ModelReference&)> callback, std::vector<storm::expressions::Expression> const& important) override;
 
 			virtual std::vector<storm::expressions::Expression> getUnsatAssumptions() override;
 
