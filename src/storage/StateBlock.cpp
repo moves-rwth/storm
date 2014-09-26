@@ -2,19 +2,19 @@
 
 namespace storm {
     namespace storage {
-        typename StateBlock::iterator StateBlock::begin() {
+        StateBlock::iterator StateBlock::begin() {
             return states.begin();
         }
         
-        typename StateBlock::const_iterator StateBlock::begin() const {
+        StateBlock::const_iterator StateBlock::begin() const {
             return states.begin();
         }
         
-        typename StateBlock::iterator StateBlock::end() {
+        StateBlock::iterator StateBlock::end() {
             return states.end();
         }
         
-        typename StateBlock::const_iterator StateBlock::end() const {
+        StateBlock::const_iterator StateBlock::end() const {
             return states.end();
         }
         

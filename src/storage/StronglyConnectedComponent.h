@@ -15,9 +15,9 @@ namespace storm {
         class StronglyConnectedComponent : public StateBlock {
         public:
             StronglyConnectedComponent() = default;
-            StronglyConnectedComponent(StronglyConnectedComponent const& other) = default;
-            StronglyConnectedComponent(StronglyConnectedComponent&& other) = default;
+			StronglyConnectedComponent(StronglyConnectedComponent const& other) = default;
 #ifndef WINDOWS
+            StronglyConnectedComponent(StronglyConnectedComponent&& other) = default;
             StronglyConnectedComponent& operator=(StronglyConnectedComponent const& other) = default;
             StronglyConnectedComponent& operator=(StronglyConnectedComponent&& other) = default;
 #endif

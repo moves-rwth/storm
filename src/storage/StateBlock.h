@@ -17,16 +17,16 @@ namespace storm {
         class StateBlock {
         public:
             typedef FlatSetStateContainer container_type;
-            typedef typename container_type::value_type value_type;
+            typedef container_type::value_type value_type;
             static_assert(std::is_same<value_type, sparse::state_type>::value, "Illegal value type of container.");
-            typedef typename container_type::iterator iterator;
-            typedef typename container_type::const_iterator const_iterator;
+            typedef container_type::iterator iterator;
+            typedef container_type::const_iterator const_iterator;
             
             // Default constructors.
             StateBlock() = default;
-            StateBlock(StateBlock const& other) = default;
-            StateBlock(StateBlock&& other) = default;
+			StateBlock(StateBlock const& other) = default;
 #ifndef WINDOWS
+            StateBlock(StateBlock&& other) = default;
             StateBlock& operator=(StateBlock const& other) = default;
             StateBlock& operator=(StateBlock&& other) = default;
 #endif
