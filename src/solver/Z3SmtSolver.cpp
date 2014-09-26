@@ -294,7 +294,8 @@ namespace storm {
 					modelExpr = modelExpr && (z3ImportantAtom == z3ImportantAtomValuation);
 				}
 
-				proceed = callback(Z3ModelReference(m, m_adapter));
+				Z3ModelReference modelRef(m, m_adapter);
+				proceed = callback(modelRef);
 
 				this->m_solver.add(!modelExpr);
 			}
