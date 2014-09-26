@@ -66,21 +66,6 @@ namespace storm {
                 // Create a bit vector that represents the subsystem of states we still have to eliminate.
                 storm::storage::BitVector subsystem = storm::storage::BitVector(maybeStates.getNumberOfSetBits(), true);
                 
-                // Now eliminate chains.
-//                {
-//                    storm::storage::SparseMatrix<ValueType> backwardTransitions = submatrix.transpose();
-//                    
-//                    // As a preprocessing step, we eliminate all states in place that have exactly one outgoing transition,
-//                    // because we can eliminate them in-place.
-//                    for (auto state : maybeStates & ~newInitialStates) {
-//                        if (submatrix.getRow(state).getNumberOfEntries() == 1 && backwardTransitions.getRow(state).getNumberOfEntries() == 1) {
-//                            if (eliminateStateInPlace(submatrix, oneStepProbabilities, state, backwardTransitions)) {
-//                                subsystem.set(state, false);
-//                            }
-//                        }
-//                    }
-//                }
-                
                 // Then, we convert the reduced matrix to a more flexible format to be able to perform state elimination more easily.
                 FlexibleSparseMatrix<ValueType> flexibleMatrix = getFlexibleSparseMatrix(submatrix);
                 FlexibleSparseMatrix<ValueType> flexibleBackwardTransitions = getFlexibleSparseMatrix(submatrix.transpose(), true);
@@ -156,17 +141,22 @@ namespace storm {
                     // }
                 } else {
                     // In this case, we perform simple state elimination in the current SCC.
-                    storm::storage::BitVector remainingStates(scc);
+                    storm::storage::BitVector remainingStates = scc;
                     
-                    // If we are not supposed to eliminate the entry states, we need to take them out of the set of
-                    // remaining states.
-                    if (!eliminateEntryStates) {
+//                    if (eliminateEntryStates) {
                         remainingStates &= ~entryStates;
-                    }
+//                    }
                     
                     // Eliminate the remaining states.
                     for (auto const& state : remainingStates) {
                         eliminateState(matrix, oneStepProbabilities, state, backwardTransitions);
+                    }
+                    
+                    // Finally, eliminate the entry states (if we are allowed to do so).
+                    if (eliminateEntryStates) {
+                        for (auto state : entryStates) {
+                            eliminateState(matrix, oneStepProbabilities, state, backwardTransitions);
+                        }
                     }
                 }
             }
@@ -326,7 +316,7 @@ namespace storm {
             bool SparseSccModelChecker<ValueType>::eliminateStateInPlace(storm::storage::SparseMatrix<ValueType>& matrix, std::vector<ValueType>& oneStepProbabilities, uint_fast64_t state, storm::storage::SparseMatrix<ValueType>& backwardTransitions) {
                 typename storm::storage::SparseMatrix<ValueType>::iterator forwardElement = matrix.getRow(state).begin();
                 typename storm::storage::SparseMatrix<ValueType>::iterator backwardElement = backwardTransitions.getRow(state).begin();
-
+                
                 if (forwardElement->getValue() != storm::utility::constantOne<ValueType>() || backwardElement->getValue() != storm::utility::constantOne<ValueType>()) {
                     return false;
                 }
