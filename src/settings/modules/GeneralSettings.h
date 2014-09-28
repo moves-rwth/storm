@@ -208,20 +208,20 @@ namespace storm {
                 std::string getCounterexampleFilename() const;
                 
                 /*!
-                 * Retrieves whether the fix-deadlocks option was set.
+                 * Retrieves whether the dont-fix-deadlocks option was set.
                  *
-                 * @return True if the fix-deadlocks option was set.
+                 * @return True if the dont-fix-deadlocks option was set.
                  */
-                bool isFixDeadlocksSet() const;
+                bool isDontFixDeadlocksSet() const;
 
                 /*!
-                 * Overrides the option to fix deadlocks by setting it to the specified value. As soon as the returned
-                 * memento goes out of scope, the original value is restored.
+                 * Overrides the option to not fix deadlocks by setting it to the specified value. As soon as the
+                 * returned memento goes out of scope, the original value is restored.
                  *
                  * @param stateToSet The value that is to be set for the fix-deadlocks option.
                  * @return The memento that will eventually restore the original value.
                  */
-                std::unique_ptr<storm::settings::SettingMemento> overrideFixDeadlocksSet(bool stateToSet);
+                std::unique_ptr<storm::settings::SettingMemento> overrideDontFixDeadlocksSet(bool stateToSet);
                 
                 /*!
                  * Retrieves whether the timeout option was set.
@@ -296,8 +296,8 @@ namespace storm {
                 static const std::string transitionRewardsOptionName;
                 static const std::string stateRewardsOptionName;
                 static const std::string counterexampleOptionName;
-                static const std::string fixDeadlockOptionName;
-                static const std::string fixDeadlockOptionShortName;
+                static const std::string dontFixDeadlockOptionName;
+                static const std::string dontFixDeadlockOptionShortName;
                 static const std::string timeoutOptionName;
                 static const std::string timeoutOptionShortName;
                 static const std::string eqSolverOptionName;

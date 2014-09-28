@@ -27,8 +27,8 @@ namespace storm {
             const std::string GeneralSettings::transitionRewardsOptionName = "transrew";
             const std::string GeneralSettings::stateRewardsOptionName = "staterew";
             const std::string GeneralSettings::counterexampleOptionName = "counterexample";
-            const std::string GeneralSettings::fixDeadlockOptionName = "fixDeadlocks";
-            const std::string GeneralSettings::fixDeadlockOptionShortName = "fix";
+            const std::string GeneralSettings::dontFixDeadlockOptionName = "nofixdl";
+            const std::string GeneralSettings::dontFixDeadlockOptionShortName = "ndl";
             const std::string GeneralSettings::timeoutOptionName = "timeout";
             const std::string GeneralSettings::timeoutOptionShortName = "t";
             const std::string GeneralSettings::eqSolverOptionName = "eqsolver";
@@ -66,7 +66,7 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The file from which to read the transition rewards.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, stateRewardsOptionName, false, "If given, the state rewards are read from this file and added to the explicit model. Note that this requires the model to be given as an explicit model (i.e., via --" + explicitOptionName + ").")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The file from which to read the state rewards.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, fixDeadlockOptionName, false, "If the model contains deadlock states, they need to be fixed by setting this option.").setShortName(fixDeadlockOptionShortName).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, dontFixDeadlockOptionName, false, "If the model contains deadlock states, they need to be fixed by setting this option.").setShortName(dontFixDeadlockOptionShortName).build());
                 
                 std::vector<std::string> linearEquationSolver = {"gmm++", "native"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, eqSolverOptionName, false, "Sets which solver is preferred for solving systems of linear equations.")
@@ -184,12 +184,12 @@ namespace storm {
                 return this->getOption(counterexampleOptionName).getArgumentByName("filename").getValueAsString();
             }
             
-            bool GeneralSettings::isFixDeadlocksSet() const {
-                return this->getOption(fixDeadlockOptionName).getHasOptionBeenSet();
+            bool GeneralSettings::isDontFixDeadlocksSet() const {
+                return this->getOption(dontFixDeadlockOptionName).getHasOptionBeenSet();
             }
             
-            std::unique_ptr<storm::settings::SettingMemento> GeneralSettings::overrideFixDeadlocksSet(bool stateToSet) {
-                return this->overrideOption(fixDeadlockOptionName, stateToSet);
+            std::unique_ptr<storm::settings::SettingMemento> GeneralSettings::overrideDontFixDeadlocksSet(bool stateToSet) {
+                return this->overrideOption(dontFixDeadlockOptionName, stateToSet);
             }
             
             bool GeneralSettings::isTimeoutSet() const {

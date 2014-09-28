@@ -502,7 +502,7 @@ namespace storm {
                     // If the current state does not have a single choice, we equip it with a self-loop if that was
                     // requested and issue an error otherwise.
                     if (totalNumberOfChoices == 0) {
-                        if (storm::settings::generalSettings().isFixDeadlocksSet()) {
+                        if (!storm::settings::generalSettings().isDontFixDeadlocksSet()) {
                             // Insert empty choice labeling for added self-loop transitions.
                             choiceLabels.push_back(boost::container::flat_set<uint_fast64_t>());
                             transitionMatrixBuilder.addNextValue(currentRow, currentState, storm::utility::constantOne<ValueType>());
