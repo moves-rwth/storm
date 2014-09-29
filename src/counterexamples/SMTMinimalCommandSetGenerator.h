@@ -1781,11 +1781,11 @@ namespace storm {
 #endif
             }
             
-            static void computeCounterexample(storm::prism::Program program, std::string const& constantDefinitionString, storm::models::Mdp<T> const& labeledMdp, std::shared_ptr<storm::properties::prctl::AbstractPrctlFormula<double> const> formula) {
+            static void computeCounterexample(storm::prism::Program program, std::string const& constantDefinitionString, storm::models::Mdp<T> const& labeledMdp, std::shared_ptr<storm::properties::prctl::AbstractPrctlFormula<double>> const& formula) {
 #ifdef STORM_HAVE_Z3
                 std::cout << std::endl << "Generating minimal label counterexample for formula " << formula->toString() << std::endl;
                 // First, we need to check whether the current formula is an Until-Formula.
-                std::shared_ptr<storm::properties::prctl::ProbabilisticBoundOperator<double> const> probBoundFormula = std::dynamic_pointer_cast<storm::properties::prctl::ProbabilisticBoundOperator<double>>(formula);
+                std::shared_ptr<storm::properties::prctl::ProbabilisticBoundOperator<double>> probBoundFormula = std::dynamic_pointer_cast<storm::properties::prctl::ProbabilisticBoundOperator<double>>(formula);
                 if (probBoundFormula.get() == nullptr) {
                     LOG4CPLUS_ERROR(logger, "Illegal formula " << probBoundFormula->toString() << " for counterexample generation.");
                     throw storm::exceptions::InvalidPropertyException() << "Illegal formula " << probBoundFormula->toString() << " for counterexample generation.";
@@ -1800,7 +1800,7 @@ namespace storm {
                 
                 // Now derive the probability threshold we need to exceed as well as the phi and psi states. Simultaneously, check whether the formula is of a valid shape.
                 double bound = probBoundFormula->getBound();
-                std::shared_ptr<storm::properties::prctl::AbstractPathFormula<double> const> pathFormula = probBoundFormula->getChild();
+                std::shared_ptr<storm::properties::prctl::AbstractPathFormula<double>> pathFormula = probBoundFormula->getChild();
                 storm::storage::BitVector phiStates;
                 storm::storage::BitVector psiStates;
                 storm::modelchecker::prctl::SparseMdpPrctlModelChecker<T> modelchecker(labeledMdp);

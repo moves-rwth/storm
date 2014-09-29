@@ -12,10 +12,12 @@
 
 #include "src/models/Mdp.h"
 #include "src/storage/prism/Program.h"
+#include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "src/exceptions/NotImplementedException.h"
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/exceptions/InvalidStateException.h"
 
+#include "src/utility/graph.h"
 #include "src/utility/counterexamples.h"
 #include "src/utility/solver.h"
 

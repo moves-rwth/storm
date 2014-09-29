@@ -6,17 +6,9 @@
 #include <fstream>
 #include <cstdio>
 #include <sstream>
+#include <memory>
 
-#include "src/utility/OsDetection.h"
-#include "src/settings/SettingsManager.h"
-
-#include "log4cplus/logger.h"
-#include "log4cplus/loggingmacros.h"
-#include "log4cplus/consoleappender.h"
-#include "log4cplus/fileappender.h"
-log4cplus::Logger logger;
-
-// Includes for the linked libraries and versions header
+// Includes for the linked libraries and versions header.
 #ifdef STORM_HAVE_INTELTBB
 #	include "tbb/tbb_stddef.h"
 #endif
@@ -29,6 +21,34 @@ log4cplus::Logger logger;
 #ifdef STORM_HAVE_Z3
 #	include "z3.h"
 #endif
+
+#include "log4cplus/logger.h"
+#include "log4cplus/loggingmacros.h"
+#include "log4cplus/consoleappender.h"
+#include "log4cplus/fileappender.h"
+log4cplus::Logger logger;
+
+// Headers that provide auxiliary functionality.
+#include "src/utility/OsDetection.h"
+#include "src/settings/SettingsManager.h"
+
+// Headers related to parsing.
+#include "src/parser/AutoParser.h"
+#include "src/parser/PrismParser.h"
+#include "src/parser/PrctlParser.h"
+
+// Model headers.
+#include "src/models/AbstractModel.h"
+
+// Headers of adapters.
+#include "src/adapters/ExplicitModelAdapter.h"
+
+// Headers for counterexample generation.
+#include "src/counterexamples/MILPMinimalLabelSetGenerator.h"
+#include "src/counterexamples/SMTMinimalCommandSetGenerator.h"
+
+// Headers related to exception handling.
+#include "src/exceptions/InvalidSettingsException.h"
 
 namespace storm {
     namespace utility {
@@ -65,7 +85,7 @@ namespace storm {
             /*!
              * Sets up the logging to file.
              */
-            void setUpFileLogging() {
+            void initializeFileLogging() {
                 log4cplus::SharedAppenderPtr fileLogAppender(new log4cplus::FileAppender(storm::settings::debugSettings().getLogfilename()));
                 fileLogAppender->setName("mainFileAppender");
                 fileLogAppender->setLayout(std::auto_ptr<log4cplus::Layout>(new log4cplus::PatternLayout("%-5p - %D{%H:%M:%S} (%r ms) - %F:%L: %m%n")));
@@ -80,6 +100,47 @@ namespace storm {
             std::string getCurrentWorkingDirectory() {
                 char temp[512];
                 return (GetCurrentDir(temp, 512 - 1) ? std::string(temp) : std::string(""));
+            }
+            
+            /*!
+             * Prints the header including information about the linked libraries.
+             */
+            void printHeader(const int argc, const char* argv[]) {
+                std::cout << "StoRM" << std::endl;
+                std::cout << "-----" << std::endl << std::endl;
+                
+                std::cout << "Version: " << STORM_CPP_VERSION_MAJOR << "." << STORM_CPP_VERSION_MINOR << "." << STORM_CPP_VERSION_PATCH;
+                if (STORM_CPP_VERSION_COMMITS_AHEAD != 0) {
+                    std::cout << " (+" << STORM_CPP_VERSION_COMMITS_AHEAD << " commits)";
+                }
+                std::cout << " build from revision " << STORM_CPP_VERSION_HASH;
+                if (STORM_CPP_VERSION_DIRTY == 1) {
+                    std::cout << " (DIRTY)";
+                }
+                std::cout << "." << std::endl;
+                
+#ifdef STORM_HAVE_INTELTBB
+                std::cout << "Linked with Intel Threading Building Blocks v" << TBB_VERSION_MAJOR << "." << TBB_VERSION_MINOR << " (Interface version " << TBB_INTERFACE_VERSION << ")." << std::endl;
+#endif
+#ifdef STORM_HAVE_GLPK
+                std::cout << "Linked with GNU Linear Programming Kit v" << GLP_MAJOR_VERSION << "." << GLP_MINOR_VERSION << "." << std::endl;
+#endif
+#ifdef STORM_HAVE_GUROBI
+                std::cout << "Linked with Gurobi Optimizer v" << GRB_VERSION_MAJOR << "." << GRB_VERSION_MINOR << "." << GRB_VERSION_TECHNICAL << "." << std::endl;
+#endif
+#ifdef STORM_HAVE_Z3
+                unsigned int z3Major, z3Minor, z3BuildNumber, z3RevisionNumber;
+                Z3_get_version(&z3Major, &z3Minor, &z3BuildNumber, &z3RevisionNumber);
+                std::cout << "Linked with Microsoft Z3 Optimizer v" << z3Major << "." << z3Minor << " Build " << z3BuildNumber << " Rev " << z3RevisionNumber << "." << std::endl;
+#endif
+                
+                // "Compute" the command line argument string with which STORM was invoked.
+                std::stringstream commandStream;
+                for (int i = 0; i < argc; ++i) {
+                    commandStream << argv[i] << " ";
+                }
+                std::cout << "Command line: " << commandStream.str() << std::endl;
+                std::cout << "Current working directory: " << getCurrentWorkingDirectory() << std::endl << std::endl;
             }
             
             
@@ -126,48 +187,6 @@ namespace storm {
             }
             
             
-            
-            /*!
-             * Prints the header.
-             */
-            void printHeader(const int argc, const char* argv[]) {
-                std::cout << "StoRM" << std::endl;
-                std::cout << "-----" << std::endl << std::endl;
-                
-                std::cout << "Version: " << STORM_CPP_VERSION_MAJOR << "." << STORM_CPP_VERSION_MINOR << "." << STORM_CPP_VERSION_PATCH;
-                if (STORM_CPP_VERSION_COMMITS_AHEAD != 0) {
-                    std::cout << " (+" << STORM_CPP_VERSION_COMMITS_AHEAD << " commits)";
-                }
-                std::cout << " build from revision " << STORM_CPP_VERSION_HASH;
-                if (STORM_CPP_VERSION_DIRTY == 1) {
-                    std::cout << " (DIRTY)";
-                }
-                std::cout << "." << std::endl;
-                
-#ifdef STORM_HAVE_INTELTBB
-                std::cout << "Linked with Intel Threading Building Blocks v" << TBB_VERSION_MAJOR << "." << TBB_VERSION_MINOR << " (Interface version " << TBB_INTERFACE_VERSION << ")." << std::endl;
-#endif
-#ifdef STORM_HAVE_GLPK
-                std::cout << "Linked with GNU Linear Programming Kit v" << GLP_MAJOR_VERSION << "." << GLP_MINOR_VERSION << "." << std::endl;
-#endif
-#ifdef STORM_HAVE_GUROBI
-                std::cout << "Linked with Gurobi Optimizer v" << GRB_VERSION_MAJOR << "." << GRB_VERSION_MINOR << "." << GRB_VERSION_TECHNICAL << "." << std::endl;
-#endif
-#ifdef STORM_HAVE_Z3
-                unsigned int z3Major, z3Minor, z3BuildNumber, z3RevisionNumber;
-                Z3_get_version(&z3Major, &z3Minor, &z3BuildNumber, &z3RevisionNumber);
-                std::cout << "Linked with Microsoft Z3 Optimizer v" << z3Major << "." << z3Minor << " Build " << z3BuildNumber << " Rev " << z3RevisionNumber << "." << std::endl;
-#endif
-                
-                // "Compute" the command line argument string with which STORM was invoked.
-                std::stringstream commandStream;
-                for (int i = 0; i < argc; ++i) {
-                    commandStream << argv[i] << " ";
-                }
-                std::cout << "Command line: " << commandStream.str() << std::endl;
-                std::cout << "Current working directory: " << getCurrentWorkingDirectory() << std::endl << std::endl;
-            }
-            
             /*!
              * Parses the given command line arguments.
              *
@@ -206,13 +225,80 @@ namespace storm {
                     LOG4CPLUS_INFO(logger, "Enabled trace mode, log output gets printed to console.");
                 }
                 if (storm::settings::debugSettings().isLogfileSet()) {
-                    setUpFileLogging();
+                    initializeFileLogging();
                 }
                 return true;
             }
             
-            void processOptions() {
+            template<typename ValueType>
+            std::shared_ptr<storm::models::AbstractModel<ValueType>> buildModel() {
+                std::shared_ptr<storm::models::AbstractModel<ValueType>> result(nullptr);
                 
+                storm::settings::modules::GeneralSettings settings = storm::settings::generalSettings();
+
+                if (settings.isExplicitSet()) {
+                    std::string const transitionFile = settings.getTransitionFilename();
+                    std::string const labelingFile = settings.getLabelingFilename();
+                    
+                    // Parse (and therefore build) the model.
+                    result = storm::parser::AutoParser::parseModel(transitionFile, labelingFile, settings.isStateRewardsSet() ? settings.getStateRewardsFilename() : "", settings.isTransitionRewardsSet() ? settings.getTransitionRewardsFilename() : "");
+                } else if (settings.isSymbolicSet()) {
+                    std::string const programFile = settings.getSymbolicModelFilename();
+                    std::string const constants = settings.getConstantDefinitionString();
+                    
+                    // Start by parsing the symbolic model file.
+                    storm::prism::Program program = storm::parser::PrismParser::parse(programFile);
+                    
+                    // Then, build the model from the symbolic description.
+                    result = storm::adapters::ExplicitModelAdapter<double>::translateProgram(program, constants);
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No input model.");
+                }
+                
+                return result;
+            }
+            
+            void generateCounterexample(std::shared_ptr<storm::models::AbstractModel<double>> model, std::shared_ptr<storm::properties::prctl::AbstractPrctlFormula<double>> const& formula) {
+                if (storm::settings::counterexampleGeneratorSettings().isMinimalCommandGenerationSet()) {
+                    STORM_LOG_THROW(model->getType() == storm::models::MDP, storm::exceptions::InvalidTypeException, "Minimal command set generation is only available for MDPs.");
+                    STORM_LOG_THROW(storm::settings::generalSettings().isSymbolicSet(), storm::exceptions::InvalidSettingsException, "Minimal command set generation is only available for symbolic models.");
+                    
+                    std::shared_ptr<storm::models::Mdp<double>> mdp = model->as<storm::models::Mdp<double>>();
+
+                    // FIXME: re-parse the program.
+                    std::string const programFile = storm::settings::generalSettings().getSymbolicModelFilename();
+                    std::string const constants = storm::settings::generalSettings().getConstantDefinitionString();
+                    storm::prism::Program program = storm::parser::PrismParser::parse(programFile);
+
+                    // Determine whether we are required to use the MILP-version or the SAT-version.
+                    bool useMILP = storm::settings::counterexampleGeneratorSettings().isUseMilpBasedMinimalCommandSetGenerationSet();
+
+                    if (useMILP) {
+                        storm::counterexamples::MILPMinimalLabelSetGenerator<double>::computeCounterexample(program, *mdp, formula);
+                    } else {
+                        storm::counterexamples::SMTMinimalCommandSetGenerator<double>::computeCounterexample(program, constants, *mdp, formula);
+                    }
+
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No suitable counterexample representation selected.");
+                }
+            }
+            
+            void processOptions() {
+                storm::settings::modules::GeneralSettings settings = storm::settings::generalSettings();
+                
+                // Start by parsing/building the model.
+                std::shared_ptr<storm::models::AbstractModel<double>> model = buildModel<double>();
+                
+                // Print some information about the model.
+                model->printModelInformationToStream(std::cout);
+                
+                // If we were requested to generate a counterexample, we now do so.
+                if (settings.isCounterexampleSet()) {
+                    STORM_LOG_THROW(settings.isPctlPropertySet(), storm::exceptions::InvalidSettingsException, "Unable to generate counterexample without a property.");
+                    std::shared_ptr<storm::properties::prctl::PrctlFilter<double>> filterFormula = storm::parser::PrctlParser::parsePrctlFormula(settings.getPctlProperty());
+                    generateCounterexample(model, filterFormula->getChild());
+                }
             }
 
         }
