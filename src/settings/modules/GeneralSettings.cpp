@@ -30,6 +30,7 @@ namespace storm {
             const std::string GeneralSettings::transitionRewardsOptionName = "transrew";
             const std::string GeneralSettings::stateRewardsOptionName = "staterew";
             const std::string GeneralSettings::counterexampleOptionName = "counterexample";
+            const std::string GeneralSettings::counterexampleOptionShortName = "cex";
             const std::string GeneralSettings::dontFixDeadlockOptionName = "nofixdl";
             const std::string GeneralSettings::dontFixDeadlockOptionShortName = "ndl";
             const std::string GeneralSettings::timeoutOptionName = "timeout";
@@ -69,7 +70,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, ltlFileOptionName, false, "Specifies the LTL formulas that are to be checked on the model.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The file from which to read the LTL formulas.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, counterexampleOptionName, false, "Generates a counterexample for the given PRCTL formulas if not satisfied by the model")
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file to which the counterexample is to be written.").build()).build());
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file to which the counterexample is to be written.").setDefaultValueString("-").setIsOptional(true).build()).setShortName(counterexampleOptionShortName).build());
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, transitionRewardsOptionName, "", "If given, the transition rewards are read from this file and added to the explicit model. Note that this requires the model to be given as an explicit model (i.e., via --" + explicitOptionName + ").")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The file from which to read the transition rewards.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());

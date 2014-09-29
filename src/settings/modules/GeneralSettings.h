@@ -341,6 +341,7 @@ namespace storm {
                 static const std::string transitionRewardsOptionName;
                 static const std::string stateRewardsOptionName;
                 static const std::string counterexampleOptionName;
+                static const std::string counterexampleOptionShortName;
                 static const std::string dontFixDeadlockOptionName;
                 static const std::string dontFixDeadlockOptionShortName;
                 static const std::string timeoutOptionName;

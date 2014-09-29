@@ -106,7 +106,7 @@ namespace storm {
              * @return The value of the argument.
              */
 			T const& getArgumentValue() const {
-                STORM_LOG_THROW(this->getHasBeenSet() || this->getHasDefaultValue(), storm::exceptions::IllegalFunctionCallException, "Unable to retrieve value of argument, because it was neither set nor specifies a default value.");
+                STORM_LOG_THROW(this->getHasBeenSet() || this->getHasDefaultValue(), storm::exceptions::IllegalFunctionCallException, "Unable to retrieve value of argument '" << this->getName() << "', because it was neither set nor specifies a default value.");
                 if (this->getHasBeenSet()) {
                     return this->argumentValue;
                 } else {
