@@ -302,7 +302,8 @@ namespace storm {
                 // Now set the provided argument values one by one.
                 for (uint_fast64_t i = 0; i < argumentCache.size(); ++i) {
                     ArgumentBase& argument = option->getArgument(i);
-                    argument.setFromStringValue(argumentCache[i]);
+                    bool conversionOk = argument.setFromStringValue(argumentCache[i]);
+                    STORM_LOG_THROW(conversionOk, storm::exceptions::OptionParserException, "Conversion of value of argument '" << argument.getName() << "' to its type failed.");
                 }
                 
                 // In case there are optional arguments that were not set, we set them to their default value.

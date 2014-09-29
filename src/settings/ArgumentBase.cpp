@@ -31,6 +31,12 @@ namespace storm {
         }
         
         template <>
+        std::string ArgumentBase::convertFromString(std::string const& valueAsString, bool& conversionSuccessful) {
+            conversionSuccessful = true;
+            return valueAsString;
+        }
+        
+        template <>
         bool ArgumentBase::convertFromString<bool>(std::string const& s, bool& ok) {
             static const std::string lowerTrueString = "true";
             static const std::string lowerFalseString = "false";

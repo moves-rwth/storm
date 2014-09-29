@@ -27,14 +27,6 @@ namespace storm {
                 bool isMinimalCommandGenerationSet() const;
                 
                 /*!
-                 * Retrieves the name of the file that contains the properties for which a minimal command set
-                 * counterexample is to be generated if the option to generate such a counterexample was set.
-                 *
-                 * @return The name of the file that contains the properties.
-                 */
-                std::string minimalCommandSetPropertyFilename() const;
-                
-                /*!
                  * Retrieves whether the MILP-based technique is to be used to generate a minimal command set
                  * counterexample.
                  *

@@ -1660,7 +1660,7 @@ namespace storm {
                     if ((strictBound && maximalReachabilityProbability < probabilityThreshold) || (!strictBound && maximalReachabilityProbability <= probabilityThreshold)) {
                         throw storm::exceptions::InvalidArgumentException() << "Given probability threshold " << probabilityThreshold << " can not be " << (strictBound ? "achieved" : "exceeded") << " in model with maximal reachability probability of " << maximalReachabilityProbability << ".";
                     }
-                    std::cout << "Maximal reachability in model determined to be " << maximalReachabilityProbability << "." << std::endl;
+                    std::cout << std::endl << "Maximal reachability in model determined is " << maximalReachabilityProbability << "." << std::endl;
                 }
                 
                 // (2) Identify all states and commands that are relevant, because only these need to be considered later.
