@@ -9,7 +9,7 @@
 
 #include "src/storage/SparseMatrix.h"
 #include "src/exceptions/InvalidStateException.h"
-#include "src/exceptions/ExceptionMacros.h"
+#include "src/utility/macros.h"
 
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
@@ -110,16 +110,16 @@ namespace storm {
 
             // In case we did not expect this value, we throw an exception.
             if (forceInitialDimensions) {
-                LOG_THROW(!initialRowCountSet || lastRow < initialRowCount, storm::exceptions::OutOfRangeException, "Cannot insert value at illegal row " << lastRow << ".");
-                LOG_THROW(!initialColumnCountSet || lastColumn < initialColumnCount, storm::exceptions::OutOfRangeException, "Cannot insert value at illegal column " << lastColumn << ".");
-                LOG_THROW(!initialEntryCountSet || currentEntryCount <= initialEntryCount, storm::exceptions::OutOfRangeException, "Too many entries in matrix, expected only " << initialEntryCount << ".");
+                STORM_LOG_THROW(!initialRowCountSet || lastRow < initialRowCount, storm::exceptions::OutOfRangeException, "Cannot insert value at illegal row " << lastRow << ".");
+                STORM_LOG_THROW(!initialColumnCountSet || lastColumn < initialColumnCount, storm::exceptions::OutOfRangeException, "Cannot insert value at illegal column " << lastColumn << ".");
+                STORM_LOG_THROW(!initialEntryCountSet || currentEntryCount <= initialEntryCount, storm::exceptions::OutOfRangeException, "Too many entries in matrix, expected only " << initialEntryCount << ".");
             }
         }
         
         template<typename ValueType>
         void SparseMatrixBuilder<ValueType>::newRowGroup(index_type startingRow) {
-            LOG_THROW(hasCustomRowGrouping, storm::exceptions::InvalidStateException, "Matrix was not created to have a custom row grouping.");
-            LOG_THROW(rowGroupIndices.empty() || startingRow >= rowGroupIndices.back(), storm::exceptions::InvalidStateException, "Illegal row group with negative size.");
+            STORM_LOG_THROW(hasCustomRowGrouping, storm::exceptions::InvalidStateException, "Matrix was not created to have a custom row grouping.");
+            STORM_LOG_THROW(rowGroupIndices.empty() || startingRow >= rowGroupIndices.back(), storm::exceptions::InvalidStateException, "Illegal row group with negative size.");
             rowGroupIndices.push_back(startingRow);
             ++currentRowGroup;
         }
@@ -128,7 +128,7 @@ namespace storm {
         SparseMatrix<ValueType> SparseMatrixBuilder<ValueType>::build(index_type overriddenRowCount, index_type overriddenColumnCount, index_type overriddenRowGroupCount) {
             uint_fast64_t rowCount = lastRow + 1;
             if (initialRowCountSet && forceInitialDimensions) {
-                LOG_THROW(rowCount <= initialRowCount, storm::exceptions::InvalidStateException, "Expected not more than " << initialRowCount << " rows, but got " << rowCount << ".");
+                STORM_LOG_THROW(rowCount <= initialRowCount, storm::exceptions::InvalidStateException, "Expected not more than " << initialRowCount << " rows, but got " << rowCount << ".");
                 rowCount = std::max(rowCount, initialRowCount);
             }
             rowCount = std::max(rowCount, overriddenRowCount);
@@ -145,14 +145,14 @@ namespace storm {
 
             uint_fast64_t columnCount = highestColumn + 1;
             if (initialColumnCountSet && forceInitialDimensions) {
-                LOG_THROW(columnCount <= initialColumnCount, storm::exceptions::InvalidStateException, "Expected not more than " << initialColumnCount << " columns, but got " << columnCount << ".");
+                STORM_LOG_THROW(columnCount <= initialColumnCount, storm::exceptions::InvalidStateException, "Expected not more than " << initialColumnCount << " columns, but got " << columnCount << ".");
                 columnCount = std::max(columnCount, initialColumnCount);
             }
             columnCount = std::max(columnCount, overriddenColumnCount);
 
             uint_fast64_t entryCount = currentEntryCount;
             if (initialEntryCountSet && forceInitialDimensions) {
-                LOG_THROW(entryCount == initialEntryCount, storm::exceptions::InvalidStateException, "Expected " << initialEntryCount << " entries, but got " << entryCount << ".");
+                STORM_LOG_THROW(entryCount == initialEntryCount, storm::exceptions::InvalidStateException, "Expected " << initialEntryCount << " entries, but got " << entryCount << ".");
             }
             
             // Check whether row groups are missing some entries.
@@ -163,7 +163,7 @@ namespace storm {
             } else {
                 uint_fast64_t rowGroupCount = currentRowGroup;
                 if (initialRowGroupCountSet && forceInitialDimensions) {
-                    LOG_THROW(rowGroupCount <= initialRowGroupCount, storm::exceptions::InvalidStateException, "Expected not more than " << initialRowGroupCount << " row groups, but got " << rowGroupCount << ".");
+                    STORM_LOG_THROW(rowGroupCount <= initialRowGroupCount, storm::exceptions::InvalidStateException, "Expected not more than " << initialRowGroupCount << " row groups, but got " << rowGroupCount << ".");
                     rowGroupCount = std::max(rowGroupCount, initialRowGroupCount);
                 }
                 rowGroupCount = std::max(rowGroupCount, overriddenRowGroupCount);

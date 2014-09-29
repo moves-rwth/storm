@@ -86,7 +86,7 @@ namespace storm {
                         // match the long name.
                         std::string optionName = currentArgument.substr(2);
                         auto optionIterator = this->longNameToOptions.find(optionName);
-                        LOG_THROW(optionIterator != this->longNameToOptions.end(), storm::exceptions::OptionParserException, "Unknown option '" << optionName << "'.");
+                        STORM_LOG_THROW(optionIterator != this->longNameToOptions.end(), storm::exceptions::OptionParserException, "Unknown option '" << optionName << "'.");
                         activeOptionIsShortName = false;
                         activeOptionName = optionName;
                     } else {
@@ -94,7 +94,7 @@ namespace storm {
                         // match the short name.
                         std::string optionName = currentArgument.substr(1);
                         auto optionIterator = this->shortNameToOptions.find(optionName);
-                        LOG_THROW(optionIterator != this->shortNameToOptions.end(), storm::exceptions::OptionParserException, "Unknown option '" << optionName << "'.");
+                        STORM_LOG_THROW(optionIterator != this->shortNameToOptions.end(), storm::exceptions::OptionParserException, "Unknown option '" << optionName << "'.");
                         activeOptionIsShortName = true;
                         activeOptionName = optionName;
                     }
@@ -102,7 +102,7 @@ namespace storm {
                     // Add the current argument to the list of arguments for the currently active options.
                     argumentCache.push_back(currentArgument);
                 } else {
-                    LOG_THROW(false, storm::exceptions::OptionParserException, "Found stray argument '" << currentArgument << "' that is not preceeded by a matching option.");
+                    STORM_LOG_THROW(false, storm::exceptions::OptionParserException, "Found stray argument '" << currentArgument << "' that is not preceeded by a matching option.");
                 }
             }
             
@@ -113,7 +113,7 @@ namespace storm {
         }
         
         void SettingsManager::setFromConfigurationFile(std::string const& configFilename) {
-            LOG_ASSERT(false, "Not yet implemented.");
+            STORM_LOG_ASSERT(false, "Not yet implemented.");
         }
         
         void SettingsManager::printHelp(std::string const& hint) const {
@@ -188,7 +188,7 @@ namespace storm {
         
         void SettingsManager::printHelpForModule(std::string const& moduleName, uint_fast64_t maxLength) const {
             auto moduleIterator = moduleOptions.find(moduleName);
-            LOG_THROW(moduleIterator != moduleOptions.end(), storm::exceptions::IllegalFunctionCallException, "Cannot print help for unknown module '" << moduleName << "'.");
+            STORM_LOG_THROW(moduleIterator != moduleOptions.end(), storm::exceptions::IllegalFunctionCallException, "Cannot print help for unknown module '" << moduleName << "'.");
             std::cout << "##### Module '" << moduleName << "' ";
             for (uint_fast64_t i = 0; i < std::min(maxLength, maxLength - moduleName.length() - 16); ++i) {
                 std::cout << "#";
@@ -215,13 +215,13 @@ namespace storm {
         
         uint_fast64_t SettingsManager::getPrintLengthOfLongestOption(std::string const& moduleName) const {
             auto moduleIterator = modules.find(moduleName);
-            LOG_THROW(moduleIterator != modules.end(), storm::exceptions::IllegalFunctionCallException, "Unable to retrieve option length of unknown module '" << moduleName << "'.");
+            STORM_LOG_THROW(moduleIterator != modules.end(), storm::exceptions::IllegalFunctionCallException, "Unable to retrieve option length of unknown module '" << moduleName << "'.");
             return moduleIterator->second->getPrintLengthOfLongestOption();
         }
         
         void SettingsManager::addModule(std::unique_ptr<modules::ModuleSettings>&& moduleSettings) {
             auto moduleIterator = this->modules.find(moduleSettings->getModuleName());
-            LOG_THROW(moduleIterator == this->modules.end(), storm::exceptions::IllegalFunctionCallException, "Unable to register module '" << moduleSettings->getModuleName() << "' because a module with the same name already exists.");
+            STORM_LOG_THROW(moduleIterator == this->modules.end(), storm::exceptions::IllegalFunctionCallException, "Unable to register module '" << moduleSettings->getModuleName() << "' because a module with the same name already exists.");
             
             // Take over the module settings object.
             std::string const& moduleName = moduleSettings->getModuleName();
@@ -240,7 +240,7 @@ namespace storm {
         void SettingsManager::addOption(std::shared_ptr<Option> const& option) {
             // First, we register to which module the given option belongs.
             auto moduleOptionIterator = this->moduleOptions.find(option->getModuleName());
-            LOG_THROW(moduleOptionIterator != this->moduleOptions.end(), storm::exceptions::IllegalFunctionCallException, "Cannot add option for unknown module '" << option->getModuleName() << "'.");
+            STORM_LOG_THROW(moduleOptionIterator != this->moduleOptions.end(), storm::exceptions::IllegalFunctionCallException, "Cannot add option for unknown module '" << option->getModuleName() << "'.");
             moduleOptionIterator->second.emplace_back(option);
             
             // Then, we add the option's name (and possibly short name) to the registered options. If a module prefix is
@@ -248,7 +248,7 @@ namespace storm {
             // non-prefixed one.
             if (!option->getRequiresModulePrefix()) {
                 bool isCompatible = this->isCompatible(option, option->getLongName(), this->longNameToOptions);
-                LOG_THROW(isCompatible, storm::exceptions::IllegalFunctionCallException, "Unable to add option '" << option->getLongName() << "', because an option with the same name is incompatible with it.");
+                STORM_LOG_THROW(isCompatible, storm::exceptions::IllegalFunctionCallException, "Unable to add option '" << option->getLongName() << "', because an option with the same name is incompatible with it.");
                 addOptionToMap(option->getLongName(), option, this->longNameToOptions);
             }
             // For the prefixed name, we don't need a compatibility check, because a module is not allowed to register the same option twice.
@@ -258,7 +258,7 @@ namespace storm {
             if (option->getHasShortName()) {
                 if (!option->getRequiresModulePrefix()) {
                     bool isCompatible = this->isCompatible(option, option->getShortName(), this->shortNameToOptions);
-                    LOG_THROW(isCompatible, storm::exceptions::IllegalFunctionCallException, "Unable to add option '" << option->getLongName() << "', because an option with the same name is incompatible with it.");
+                    STORM_LOG_THROW(isCompatible, storm::exceptions::IllegalFunctionCallException, "Unable to add option '" << option->getLongName() << "', because an option with the same name is incompatible with it.");
                     addOptionToMap(option->getShortName(), option, this->shortNameToOptions);
                 }
                 addOptionToMap(option->getModuleName() + ":" + option->getShortName(), option, this->shortNameToOptions);
@@ -267,13 +267,13 @@ namespace storm {
         
         modules::ModuleSettings const& SettingsManager::getModule(std::string const& moduleName) const {
             auto moduleIterator = this->modules.find(moduleName);
-            LOG_THROW(moduleIterator != this->modules.end(), storm::exceptions::IllegalFunctionCallException, "Cannot retrieve unknown module '" << moduleName << "'.");
+            STORM_LOG_THROW(moduleIterator != this->modules.end(), storm::exceptions::IllegalFunctionCallException, "Cannot retrieve unknown module '" << moduleName << "'.");
             return *moduleIterator->second;
         }
         
         modules::ModuleSettings& SettingsManager::getModule(std::string const& moduleName) {
             auto moduleIterator = this->modules.find(moduleName);
-            LOG_THROW(moduleIterator != this->modules.end(), storm::exceptions::IllegalFunctionCallException, "Cannot retrieve unknown module '" << moduleName << "'.");
+            STORM_LOG_THROW(moduleIterator != this->modules.end(), storm::exceptions::IllegalFunctionCallException, "Cannot retrieve unknown module '" << moduleName << "'.");
             return *moduleIterator->second;
         }
         
@@ -292,12 +292,12 @@ namespace storm {
         
         void SettingsManager::setOptionsArguments(std::string const& optionName, std::unordered_map<std::string, std::vector<std::shared_ptr<Option>>> const& optionMap, std::vector<std::string> const& argumentCache) {
             auto optionIterator = optionMap.find(optionName);
-            LOG_THROW(optionIterator != optionMap.end(), storm::exceptions::OptionParserException, "Unknown option '" << optionName << "'.");
+            STORM_LOG_THROW(optionIterator != optionMap.end(), storm::exceptions::OptionParserException, "Unknown option '" << optionName << "'.");
             
             // Iterate over all options and set the arguments.
             for (auto& option : optionIterator->second) {
                 option->setHasOptionBeenSet();
-                LOG_THROW(argumentCache.size() <= option->getArgumentCount(), storm::exceptions::OptionParserException, "Too many arguments for option '" << optionName << "'.");
+                STORM_LOG_THROW(argumentCache.size() <= option->getArgumentCount(), storm::exceptions::OptionParserException, "Too many arguments for option '" << optionName << "'.");
                 
                 // Now set the provided argument values one by one.
                 for (uint_fast64_t i = 0; i < argumentCache.size(); ++i) {

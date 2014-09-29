@@ -33,13 +33,13 @@ namespace storm {
             
             Option const& ModuleSettings::getOption(std::string const& longName) const {
                 auto optionIterator = this->optionMap.find(longName);
-                LOG_THROW(optionIterator != this->optionMap.end(), storm::exceptions::IllegalFunctionCallException, "Cannot retrieve unknown option '" << longName << "'.");
+                STORM_LOG_THROW(optionIterator != this->optionMap.end(), storm::exceptions::IllegalFunctionCallException, "Cannot retrieve unknown option '" << longName << "'.");
                 return *optionIterator->second;
             }
 
             Option& ModuleSettings::getOption(std::string const& longName)  {
                 auto optionIterator = this->optionMap.find(longName);
-                LOG_THROW(optionIterator != this->optionMap.end(), storm::exceptions::IllegalFunctionCallException, "Cannot retrieve unknown option '" << longName << "'.");
+                STORM_LOG_THROW(optionIterator != this->optionMap.end(), storm::exceptions::IllegalFunctionCallException, "Cannot retrieve unknown option '" << longName << "'.");
                 return *optionIterator->second;
             }
             
@@ -63,7 +63,7 @@ namespace storm {
             
             void ModuleSettings::addOption(std::shared_ptr<Option> const& option) {
                 auto optionIterator = this->optionMap.find(option->getLongName());
-                LOG_THROW(optionIterator == this->optionMap.end(), storm::exceptions::IllegalFunctionCallException, "Unable to register the option '" << option->getLongName() << "' in module '" << this->getModuleName() << "', because an option with this name already exists.");
+                STORM_LOG_THROW(optionIterator == this->optionMap.end(), storm::exceptions::IllegalFunctionCallException, "Unable to register the option '" << option->getLongName() << "' in module '" << this->getModuleName() << "', because an option with this name already exists.");
                 this->optionMap.emplace(option->getLongName(), option);
                 this->options.push_back(option);
             }

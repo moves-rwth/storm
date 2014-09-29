@@ -13,7 +13,7 @@
 #include "src/settings/ArgumentBase.h"
 #include "src/settings/Option.h"
 
-#include "src/exceptions/ExceptionMacros.h"
+#include "src/utility/macros.h"
 #include "src/exceptions/IllegalArgumentException.h"
 #include "src/exceptions/IllegalFunctionCallException.h"
 
@@ -67,11 +67,11 @@ namespace storm {
              * @return A reference to the current builder.
              */
 			OptionBuilder& addArgument(std::shared_ptr<ArgumentBase> argument) {
-                LOG_THROW(!this->isBuild, storm::exceptions::IllegalFunctionCallException, "Cannot add an argument to an option builder that was already used to build the option.");
-                LOG_THROW(this->arguments.empty() || !argument->getIsOptional() || this->arguments.back()->getIsOptional(), storm::exceptions::IllegalArgumentException, "Unable to add non-optional argument after an option that is optional.");
+                STORM_LOG_THROW(!this->isBuild, storm::exceptions::IllegalFunctionCallException, "Cannot add an argument to an option builder that was already used to build the option.");
+                STORM_LOG_THROW(this->arguments.empty() || !argument->getIsOptional() || this->arguments.back()->getIsOptional(), storm::exceptions::IllegalArgumentException, "Unable to add non-optional argument after an option that is optional.");
 
 				std::string lowerArgumentName = boost::algorithm::to_lower_copy(argument->getName());
-                LOG_THROW(argumentNameSet.find(lowerArgumentName) == argumentNameSet.end(), storm::exceptions::IllegalArgumentException, "Unable to add argument to option, because it already has an argument with the same name.");
+                STORM_LOG_THROW(argumentNameSet.find(lowerArgumentName) == argumentNameSet.end(), storm::exceptions::IllegalArgumentException, "Unable to add argument to option, because it already has an argument with the same name.");
 
 				argumentNameSet.insert(lowerArgumentName);
 				this->arguments.push_back(argument);
@@ -85,7 +85,7 @@ namespace storm {
              * @return The resulting option.
              */
             std::shared_ptr<Option> build() {
-                LOG_THROW(!this->isBuild, storm::exceptions::IllegalFunctionCallException, "Cannot rebuild an option with one builder.")
+                STORM_LOG_THROW(!this->isBuild, storm::exceptions::IllegalFunctionCallException, "Cannot rebuild an option with one builder.")
 				this->isBuild = true;
 
                 if (this->hasShortName) {

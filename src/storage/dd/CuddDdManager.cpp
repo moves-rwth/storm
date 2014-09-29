@@ -3,7 +3,7 @@
 #include <algorithm>
 
 #include "src/storage/dd/CuddDdManager.h"
-#include "src/exceptions/ExceptionMacros.h"
+#include "src/utility/macros.h"
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/settings/SettingsManager.h"
 
@@ -52,7 +52,7 @@ namespace storm {
         Dd<DdType::CUDD> DdManager<DdType::CUDD>::getEncoding(std::string const& metaVariableName, int_fast64_t value) {
             DdMetaVariable<DdType::CUDD> const& metaVariable = this->getMetaVariable(metaVariableName);
             
-            LOG_THROW(value >= metaVariable.getLow() && value <= metaVariable.getHigh(), storm::exceptions::InvalidArgumentException, "Illegal value " << value << " for meta variable '" << metaVariableName << "'.");
+            STORM_LOG_THROW(value >= metaVariable.getLow() && value <= metaVariable.getHigh(), storm::exceptions::InvalidArgumentException, "Illegal value " << value << " for meta variable '" << metaVariableName << "'.");
             
             // Now compute the encoding relative to the low value of the meta variable.
             value -= metaVariable.getLow();
@@ -100,13 +100,13 @@ namespace storm {
 
         void DdManager<DdType::CUDD>::addMetaVariable(std::string const& name, int_fast64_t low, int_fast64_t high) {
             // Check whether the variable name is legal.
-            LOG_THROW(name != "" && name.back() != '\'', storm::exceptions::InvalidArgumentException, "Illegal name of meta variable: '" << name << "'.");
+            STORM_LOG_THROW(name != "" && name.back() != '\'', storm::exceptions::InvalidArgumentException, "Illegal name of meta variable: '" << name << "'.");
             
             // Check whether a meta variable already exists.
-            LOG_THROW(!this->hasMetaVariable(name), storm::exceptions::InvalidArgumentException, "A meta variable '" << name << "' already exists.");
+            STORM_LOG_THROW(!this->hasMetaVariable(name), storm::exceptions::InvalidArgumentException, "A meta variable '" << name << "' already exists.");
 
             // Check that the range is legal.
-            LOG_THROW(high != low, storm::exceptions::InvalidArgumentException, "Range of meta variable must be at least 2 elements.");
+            STORM_LOG_THROW(high != low, storm::exceptions::InvalidArgumentException, "Range of meta variable must be at least 2 elements.");
             
             std::size_t numberOfBits = static_cast<std::size_t>(std::ceil(std::log2(high - low + 1)));
             
@@ -128,10 +128,10 @@ namespace storm {
         
         void DdManager<DdType::CUDD>::addMetaVariable(std::string const& name) {
             // Check whether the variable name is legal.
-            LOG_THROW(name != "" && name.back() != '\'', storm::exceptions::InvalidArgumentException, "Illegal name of meta variable: '" << name << "'.");
+            STORM_LOG_THROW(name != "" && name.back() != '\'', storm::exceptions::InvalidArgumentException, "Illegal name of meta variable: '" << name << "'.");
             
             // Check whether a meta variable already exists.
-            LOG_THROW(!this->hasMetaVariable(name), storm::exceptions::InvalidArgumentException, "A meta variable '" << name << "' already exists.");
+            STORM_LOG_THROW(!this->hasMetaVariable(name), storm::exceptions::InvalidArgumentException, "A meta variable '" << name << "' already exists.");
             
             std::vector<Dd<DdType::CUDD>> variables;
             std::vector<Dd<DdType::CUDD>> variablesPrime;
@@ -149,7 +149,7 @@ namespace storm {
             auto const& nameVariablePair = metaVariableMap.find(metaVariableName);
             
             // Check whether the meta variable exists.
-            LOG_THROW(nameVariablePair != metaVariableMap.end(), storm::exceptions::InvalidArgumentException, "Unknown meta variable name '" << metaVariableName << "'.");
+            STORM_LOG_THROW(nameVariablePair != metaVariableMap.end(), storm::exceptions::InvalidArgumentException, "Unknown meta variable name '" << metaVariableName << "'.");
             
             return nameVariablePair->second;
         }

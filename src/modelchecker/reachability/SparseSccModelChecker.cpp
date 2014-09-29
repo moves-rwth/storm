@@ -6,7 +6,7 @@
 #include "src/utility/graph.h"
 #include "src/utility/vector.h"
 #include "src/exceptions/InvalidStateException.h"
-#include "src/exceptions/ExceptionMacros.h"
+#include "src/utility/macros.h"
 
 namespace storm {
     namespace modelchecker {
@@ -34,7 +34,7 @@ namespace storm {
             template<typename ValueType>
             ValueType SparseSccModelChecker<ValueType>::computeReachabilityProbability(storm::models::Dtmc<ValueType> const& dtmc, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
                 // First, do some sanity checks to establish some required properties.
-                LOG_THROW(dtmc.getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::IllegalArgumentException, "Input model is required to have exactly one initial state.");
+                STORM_LOG_THROW(dtmc.getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::IllegalArgumentException, "Input model is required to have exactly one initial state.");
                 typename FlexibleSparseMatrix<ValueType>::index_type initialStateIndex = *dtmc.getInitialStates().begin();
                 
                 // Then, compute the subset of states that has a probability of 0 or 1, respectively.
@@ -204,7 +204,7 @@ namespace storm {
                     typename FlexibleSparseMatrix<ValueType>::row_type::iterator multiplyElement = std::find_if(predecessorForwardTransitions.begin(), predecessorForwardTransitions.end(), [&](storm::storage::MatrixEntry<typename FlexibleSparseMatrix<ValueType>::index_type, typename FlexibleSparseMatrix<ValueType>::value_type> const& a) { return a.getColumn() == state; });
                     
                     // Make sure we have found the probability and set it to zero.
-                    LOG_THROW(multiplyElement != predecessorForwardTransitions.end(), storm::exceptions::InvalidStateException, "No probability for successor found.");
+                    STORM_LOG_THROW(multiplyElement != predecessorForwardTransitions.end(), storm::exceptions::InvalidStateException, "No probability for successor found.");
                     ValueType multiplyFactor = multiplyElement->getValue();
                     multiplyElement->setValue(0);
                     

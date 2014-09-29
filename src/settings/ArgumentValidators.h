@@ -12,7 +12,7 @@
 #include <string>
 
 #include "src/settings/Argument.h"
-#include "src/exceptions/ExceptionMacros.h"
+#include "src/utility/macros.h"
 #include "src/exceptions/InvalidArgumentException.h"
 
 namespace storm {
@@ -96,7 +96,7 @@ namespace storm {
 					std::ifstream targetFile(fileName);
 					bool isFileGood = targetFile.good();
 
-                    LOG_THROW(isFileGood, storm::exceptions::IllegalArgumentValueException, "The file " << fileName << " does not exist or is not readable.");
+                    STORM_LOG_THROW(isFileGood, storm::exceptions::IllegalArgumentValueException, "The file " << fileName << " does not exist or is not readable.");
 					return isFileGood;
 				};
 			}
@@ -115,7 +115,7 @@ namespace storm {
 						}
 					}
 
-                    LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Value '" << inputString << "' does not match any entry in the list of valid items.");
+                    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Value '" << inputString << "' does not match any entry in the list of valid items.");
 					return false;
 				};
 			}
@@ -131,7 +131,7 @@ namespace storm {
 			template<typename T>
 			static std::function<bool (T const&)> rangeValidatorIncluding(T lowerBound, T upperBound) {
 				return std::bind([](T lowerBound, T upperBound, T value) -> bool {
-                    LOG_THROW(lowerBound <= value && value <= upperBound, storm::exceptions::InvalidArgumentException, "Value " << value << " is out range.");
+                    STORM_LOG_THROW(lowerBound <= value && value <= upperBound, storm::exceptions::InvalidArgumentException, "Value " << value << " is out range.");
                     return true;
                 }, lowerBound, upperBound, std::placeholders::_1);
 			}
@@ -146,7 +146,7 @@ namespace storm {
 			template<typename T>
 			static std::function<bool (T const&)> rangeValidatorExcluding(T lowerBound, T upperBound) {
 				return std::bind([](T lowerBound, T upperBound, T value) -> bool {
-                    LOG_THROW(lowerBound < value && value < upperBound, storm::exceptions::InvalidArgumentException, "Value " << value << " is out range.");
+                    STORM_LOG_THROW(lowerBound < value && value < upperBound, storm::exceptions::InvalidArgumentException, "Value " << value << " is out range.");
                     return true;
 				}, lowerBound, upperBound, std::placeholders::_1);
 			}

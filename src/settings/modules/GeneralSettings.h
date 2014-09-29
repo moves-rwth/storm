@@ -125,7 +125,21 @@ namespace storm {
                  *
                  * @return True if the pctl option was set.
                  */
-                bool isPctlSet() const;
+                bool isPctlPropertySet() const;
+                
+                /*!
+                 * Retrieves the property specified with the pctl option.
+                 *
+                 * @return The property specified with the pctl option.
+                 */
+                std::string getPctlProperty() const;
+                
+                /*!
+                 * Retrieves whether the pctl-file option was set.
+                 *
+                 * @return True iff the pctl-file option was set.
+                 */
+                bool isPctlFileSet() const;
                 
                 /*!
                  * Retrieves the name of the file that contains the PCTL properties to be checked on the model.
@@ -139,8 +153,22 @@ namespace storm {
                  *
                  * @return True if the csl option was set.
                  */
-                bool isCslSet() const;
+                bool isCslPropertySet() const;
 
+                /*!
+                 * Retrieves the property specified with the csl option.
+                 *
+                 * @return The property specified with the csl option.
+                 */
+                std::string getCslProperty() const;
+                
+                /*!
+                 * Retrieves whether the csl-file option was set.
+                 *
+                 * @return True iff the csl-file option was set.
+                 */
+                bool isCslFileSet() const;
+                
                 /*!
                  * Retrieves the name of the file that contains the CSL properties to be checked on the model.
                  *
@@ -153,8 +181,22 @@ namespace storm {
                  *
                  * @return True if the ltl option was set.
                  */
-                bool isLtlSet() const;
+                bool isLtlPropertySet() const;
 
+                /*!
+                 * Retrieves the property specified with the ltl option.
+                 *
+                 * @return The property specified with the ltl option.
+                 */
+                std::string getLtlProperty() const;
+                
+                /*!
+                 * Retrieves whether the ltl-file option was set.
+                 *
+                 * @return True iff the ltl-file option was set.
+                 */
+                bool isLtlFileSet() const;
+                
                 /*!
                  * Retrieves the name of the file that contains the LTL properties to be checked on the model.
                  *
@@ -291,8 +333,11 @@ namespace storm {
                 static const std::string symbolicOptionName;
                 static const std::string symbolicOptionShortName;
                 static const std::string pctlOptionName;
+                static const std::string pctlFileOptionName;
                 static const std::string cslOptionName;
+                static const std::string cslFileOptionName;
                 static const std::string ltlOptionName;
+                static const std::string ltlFileOptionName;
                 static const std::string transitionRewardsOptionName;
                 static const std::string stateRewardsOptionName;
                 static const std::string counterexampleOptionName;

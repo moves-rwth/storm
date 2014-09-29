@@ -2,16 +2,14 @@
 #define STORM_EXCEPTIONS_INVALIDOPERATIONEXCEPTION_H_
 
 #include "src/exceptions/BaseException.h"
+#include "src/exceptions/ExceptionMacros.h"
 
 namespace storm {
-    
     namespace exceptions {
         
-        /*!
-         * @brief This exception is thrown when an operation is invalid in this context
-         */
-        STORM_EXCEPTION_DEFINE_NEW(InvalidOperationException)
+        STORM_NEW_EXCEPTION(InvalidOperationException)
         
     } // namespace exceptions
 } // namespace storm
-#endif // STORM_EXCEPTIONS_INVALIDOPERATIONEXCEPTION_H_
+
+#endif /* STORM_EXCEPTIONS_INVALIDOPERATIONEXCEPTION_H_ */

@@ -1,7 +1,7 @@
 #include "src/storage/expressions/LinearityCheckVisitor.h"
 #include "src/storage/expressions/Expressions.h"
 
-#include "src/exceptions/ExceptionMacros.h"
+#include "src/utility/macros.h"
 #include "src/exceptions/InvalidTypeException.h"
 
 namespace storm {

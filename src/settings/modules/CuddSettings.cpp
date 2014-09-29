@@ -85,7 +85,7 @@ namespace storm {
                 } else if (reorderingTechniqueAsString == "exact") {
                     return CuddSettings::ReorderingTechnique::Exact;
                 }
-                LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Illegal value '" << reorderingTechniqueAsString << "' set as reordering technique of Cudd.");
+                STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Illegal value '" << reorderingTechniqueAsString << "' set as reordering technique of Cudd.");
             }
             
         } // namespace modules

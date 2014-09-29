@@ -43,7 +43,7 @@ namespace storm {
                 } else if (linearEquationSystemTechniqueAsString == "jacobi") {
                     return GmmxxEquationSolverSettings::LinearEquationTechnique::Jacobi;
                 }
-                LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown solution technique '" << linearEquationSystemTechniqueAsString << "' selected.");
+                STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown solution technique '" << linearEquationSystemTechniqueAsString << "' selected.");
             }
             
             GmmxxEquationSolverSettings::PreconditioningTechnique GmmxxEquationSolverSettings::getPreconditioningTechnique() const {
@@ -55,7 +55,7 @@ namespace storm {
                 } else if (preconditioningTechniqueAsString == "none") {
                     return GmmxxEquationSolverSettings::PreconditioningTechnique::None;
                 }
-                LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown preconditioning technique '" << preconditioningTechniqueAsString << "' selected.");
+                STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown preconditioning technique '" << preconditioningTechniqueAsString << "' selected.");
             }
             
             uint_fast64_t GmmxxEquationSolverSettings::getRestartIterationCount() const {

@@ -3,7 +3,7 @@
 #include <set>
 
 #include <boost/functional/hash.hpp>
-#include "src/exceptions/ExceptionMacros.h"
+#include "src/utility/macros.h"
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/exceptions/InvalidAccessException.h"
 
@@ -14,17 +14,17 @@ namespace storm {
         }
         
         void SimpleValuation::addBooleanIdentifier(std::string const& name, bool initialValue) {
-            LOG_THROW(this->identifierToValueMap.find(name) == this->identifierToValueMap.end(), storm::exceptions::InvalidArgumentException, "Identifier '" << name << "' already registered.");
+            STORM_LOG_THROW(this->identifierToValueMap.find(name) == this->identifierToValueMap.end(), storm::exceptions::InvalidArgumentException, "Identifier '" << name << "' already registered.");
 			this->identifierToValueMap.emplace(name, initialValue);
         }
         
         void SimpleValuation::addIntegerIdentifier(std::string const& name, int_fast64_t initialValue) {
-            LOG_THROW(this->identifierToValueMap.find(name) == this->identifierToValueMap.end(), storm::exceptions::InvalidArgumentException, "Identifier '" << name << "' already registered.");
+            STORM_LOG_THROW(this->identifierToValueMap.find(name) == this->identifierToValueMap.end(), storm::exceptions::InvalidArgumentException, "Identifier '" << name << "' already registered.");
 			this->identifierToValueMap.emplace(name, initialValue);
         }
         
         void SimpleValuation::addDoubleIdentifier(std::string const& name, double initialValue) {
-            LOG_THROW(this->identifierToValueMap.find(name) == this->identifierToValueMap.end(), storm::exceptions::InvalidArgumentException, "Identifier '" << name << "' already registered.");
+            STORM_LOG_THROW(this->identifierToValueMap.find(name) == this->identifierToValueMap.end(), storm::exceptions::InvalidArgumentException, "Identifier '" << name << "' already registered.");
 			this->identifierToValueMap.emplace(name, initialValue);
         }
         
@@ -42,13 +42,13 @@ namespace storm {
         
         void SimpleValuation::removeIdentifier(std::string const& name) {
             auto nameValuePair = this->identifierToValueMap.find(name);
-            LOG_THROW(nameValuePair != this->identifierToValueMap.end(), storm::exceptions::InvalidArgumentException, "Deleting unknown identifier '" << name << "'.");
+            STORM_LOG_THROW(nameValuePair != this->identifierToValueMap.end(), storm::exceptions::InvalidArgumentException, "Deleting unknown identifier '" << name << "'.");
             this->identifierToValueMap.erase(nameValuePair);
         }
         
         ExpressionReturnType SimpleValuation::getIdentifierType(std::string const& name) const {
             auto nameValuePair = this->identifierToValueMap.find(name);
-            LOG_THROW(nameValuePair != this->identifierToValueMap.end(), storm::exceptions::InvalidAccessException, "Access to unkown identifier '" << name << "'.");
+            STORM_LOG_THROW(nameValuePair != this->identifierToValueMap.end(), storm::exceptions::InvalidAccessException, "Access to unkown identifier '" << name << "'.");
             if (nameValuePair->second.type() == typeid(bool)) {
                 return ExpressionReturnType::Bool;
             } else if (nameValuePair->second.type() == typeid(int_fast64_t)) {
@@ -84,19 +84,19 @@ namespace storm {
         
         bool SimpleValuation::getBooleanValue(std::string const& name) const {
             auto nameValuePair = this->identifierToValueMap.find(name);
-            LOG_THROW(nameValuePair != this->identifierToValueMap.end(), storm::exceptions::InvalidAccessException, "Access to unkown identifier '" << name << "'.");
+            STORM_LOG_THROW(nameValuePair != this->identifierToValueMap.end(), storm::exceptions::InvalidAccessException, "Access to unkown identifier '" << name << "'.");
             return boost::get<bool>(nameValuePair->second);
         }
         
         int_fast64_t SimpleValuation::getIntegerValue(std::string const& name) const {
             auto nameValuePair = this->identifierToValueMap.find(name);
-            LOG_THROW(nameValuePair != this->identifierToValueMap.end(), storm::exceptions::InvalidAccessException, "Access to unkown identifier '" << name << "'.");
+            STORM_LOG_THROW(nameValuePair != this->identifierToValueMap.end(), storm::exceptions::InvalidAccessException, "Access to unkown identifier '" << name << "'.");
             return boost::get<int_fast64_t>(nameValuePair->second);
         }
         
         double SimpleValuation::getDoubleValue(std::string const& name) const {
             auto nameValuePair = this->identifierToValueMap.find(name);
-            LOG_THROW(nameValuePair != this->identifierToValueMap.end(), storm::exceptions::InvalidAccessException, "Access to unkown identifier '" << name << "'.");
+            STORM_LOG_THROW(nameValuePair != this->identifierToValueMap.end(), storm::exceptions::InvalidAccessException, "Access to unkown identifier '" << name << "'.");
             return boost::get<double>(nameValuePair->second);
         }
         

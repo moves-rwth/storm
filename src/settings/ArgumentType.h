@@ -3,7 +3,7 @@
 
 #include <iostream>
 
-#include "src/exceptions/ExceptionMacros.h"
+#include "src/utility/macros.h"
 
 namespace storm {
 	namespace settings {

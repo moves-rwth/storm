@@ -16,7 +16,7 @@
 #include "src/settings/Argument.h"
 #include "src/settings/ArgumentValidators.h"
 
-#include "src/exceptions/ExceptionMacros.h"
+#include "src/utility/macros.h"
 #include "src/exceptions/IllegalFunctionCallException.h"
 #include "src/exceptions/IllegalArgumentTypeException.h"
 
@@ -96,14 +96,14 @@ namespace storm {
              */
 			ArgumentBuilder& setIsOptional(bool isOptional) {
 				this->isOptional = isOptional;
-                LOG_THROW(this->hasDefaultValue, storm::exceptions::IllegalFunctionCallException, "Unable to make argument '" << this->name << "' optional without default value.");
+                STORM_LOG_THROW(this->hasDefaultValue, storm::exceptions::IllegalFunctionCallException, "Unable to make argument '" << this->name << "' optional without default value.");
 				return *this;
 			}
             
 #define PPCAT_NX(A, B) A ## B
 #define PPCAT(A, B) PPCAT_NX(A, B)
 #define MACROaddValidationFunction(funcName, funcType) 	ArgumentBuilder& PPCAT(addValidationFunction, funcName) (storm::settings::Argument< funcType >::userValidationFunction_t userValidationFunction) { \
-LOG_THROW(this->type == ArgumentType::funcName, storm::exceptions::IllegalFunctionCallException, "Illegal validation function for argument, because it takes arguments of different type."); \
+STORM_LOG_THROW(this->type == ArgumentType::funcName, storm::exceptions::IllegalFunctionCallException, "Illegal validation function for argument, because it takes arguments of different type."); \
 ( PPCAT(this->userValidationFunctions_, funcName) ).push_back(userValidationFunction); \
 return *this; \
 }
@@ -117,7 +117,7 @@ return *this; \
             
             
 #define MACROsetDefaultValue(funcName, funcType) ArgumentBuilder& PPCAT(setDefaultValue, funcName) (funcType const& defaultValue) { \
-LOG_THROW(this->type == ArgumentType::funcName, storm::exceptions::IllegalFunctionCallException, "Illegal default value for argument" << this->name << ", because it is of different type."); \
+STORM_LOG_THROW(this->type == ArgumentType::funcName, storm::exceptions::IllegalFunctionCallException, "Illegal default value for argument" << this->name << ", because it is of different type."); \
 PPCAT(this->defaultValue_, funcName) = defaultValue; \
 this->hasDefaultValue = true; \
 return *this; \
@@ -136,7 +136,7 @@ return *this; \
              * @return The resulting argument.
              */
             std::shared_ptr<ArgumentBase> build() {
-                LOG_THROW(!this->hasBeenBuilt, storm::exceptions::IllegalFunctionCallException, "Cannot rebuild argument with builder that was already used to build an argument.");
+                STORM_LOG_THROW(!this->hasBeenBuilt, storm::exceptions::IllegalFunctionCallException, "Cannot rebuild argument with builder that was already used to build an argument.");
 				this->hasBeenBuilt = true;
 				switch (this->type) {
 					case ArgumentType::String: {

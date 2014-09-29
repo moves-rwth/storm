@@ -14,7 +14,7 @@
 #include "ArgumentBase.h"
 #include "Argument.h"
 
-#include "src/exceptions/ExceptionMacros.h"
+#include "src/utility/macros.h"
 #include "src/exceptions/IllegalArgumentException.h"
 #include "src/exceptions/OptionUnificationException.h"
 
@@ -74,13 +74,13 @@ namespace storm {
              * @return True iff the given argument is compatible with the current one.
              */
 			bool isCompatibleWith(Option const& other) {
-                LOG_THROW(this->getArgumentCount() == other.getArgumentCount(), storm::exceptions::OptionUnificationException, "Unable to unify two options, because their argument count differs.");
+                STORM_LOG_THROW(this->getArgumentCount() == other.getArgumentCount(), storm::exceptions::OptionUnificationException, "Unable to unify two options, because their argument count differs.");
 
 				for(size_t i = 0; i != this->arguments.size(); i++) {
                     ArgumentBase const& firstArgument = this->getArgument(i);
                     ArgumentBase const& secondArgument = other.getArgument(i);
 
-                    LOG_THROW(firstArgument.getType() == secondArgument.getType(), storm::exceptions::OptionUnificationException, "Unable to unify two options, because their arguments are incompatible.");
+                    STORM_LOG_THROW(firstArgument.getType() == secondArgument.getType(), storm::exceptions::OptionUnificationException, "Unable to unify two options, because their arguments are incompatible.");
 
 					switch (firstArgument.getType()) {
 						case ArgumentType::String:
@@ -119,7 +119,7 @@ namespace storm {
              * @return The i-th argument of this option.
              */
 			ArgumentBase const& getArgument(uint_fast64_t argumentIndex) const {
-                LOG_THROW(argumentIndex < this->getArgumentCount(), storm::exceptions::IllegalArgumentException, "Index of argument is out of bounds.");
+                STORM_LOG_THROW(argumentIndex < this->getArgumentCount(), storm::exceptions::IllegalArgumentException, "Index of argument is out of bounds.");
 				return *this->arguments.at(argumentIndex);
 			}
             
@@ -130,7 +130,7 @@ namespace storm {
              * @return The i-th argument of this option.
              */
 			ArgumentBase& getArgument(uint_fast64_t argumentIndex) {
-                LOG_THROW(argumentIndex < this->getArgumentCount(), storm::exceptions::IllegalArgumentException, "Index of argument is out of bounds.");
+                STORM_LOG_THROW(argumentIndex < this->getArgumentCount(), storm::exceptions::IllegalArgumentException, "Index of argument is out of bounds.");
 				return *this->arguments.at(argumentIndex);
 			}
 
@@ -142,7 +142,7 @@ namespace storm {
              */
 			ArgumentBase const& getArgumentByName(std::string const& argumentName) const {
 				auto argumentIterator = this->argumentNameMap.find(argumentName);
-                LOG_THROW(argumentIterator != this->argumentNameMap.end(), storm::exceptions::IllegalArgumentException, "Unable to retrieve argument with unknown name '" << argumentName << "'.");
+                STORM_LOG_THROW(argumentIterator != this->argumentNameMap.end(), storm::exceptions::IllegalArgumentException, "Unable to retrieve argument with unknown name '" << argumentName << "'.");
 				return *argumentIterator->second;
 			}
 
@@ -281,14 +281,14 @@ namespace storm {
             Option(std::string const& moduleName, std::string const& longOptionName, std::string const& shortOptionName, bool hasShortOptionName, std::string const& optionDescription, bool isOptionRequired, bool requireModulePrefix, std::vector<std::shared_ptr<ArgumentBase>> const& optionArguments = std::vector<std::shared_ptr<ArgumentBase>>()) : longName(longOptionName), hasShortName(hasShortOptionName), shortName(shortOptionName), description(optionDescription), moduleName(moduleName), isRequired(isOptionRequired), requireModulePrefix(requireModulePrefix), hasBeenSet(false), arguments(optionArguments), argumentNameMap() {
 
                 // First, do some sanity checks.
-                LOG_THROW(!longName.empty(), storm::exceptions::IllegalArgumentException, "Unable to construct option with empty name.");
-                LOG_THROW(!moduleName.empty(), storm::exceptions::IllegalArgumentException, "Unable to construct option with empty module name.");
+                STORM_LOG_THROW(!longName.empty(), storm::exceptions::IllegalArgumentException, "Unable to construct option with empty name.");
+                STORM_LOG_THROW(!moduleName.empty(), storm::exceptions::IllegalArgumentException, "Unable to construct option with empty module name.");
                 
                 bool longNameContainsNonAlpha = std::find_if(longName.begin(), longName.end(), [](char c) { return !std::isalpha(c); }) != longName.end();
-                LOG_THROW(!longNameContainsNonAlpha, storm::exceptions::IllegalArgumentException, "Unable to construct option with illegal name.");
+                STORM_LOG_THROW(!longNameContainsNonAlpha, storm::exceptions::IllegalArgumentException, "Unable to construct option with illegal name.");
                 
                 bool shortNameContainsNonAlpha = std::find_if(shortName.begin(), shortName.end(), [](char c) { return !std::isalpha(c); }) != shortName.end();
-                LOG_THROW(!shortNameContainsNonAlpha, storm::exceptions::IllegalArgumentException, "Unable to construct option with illegal name.");
+                STORM_LOG_THROW(!shortNameContainsNonAlpha, storm::exceptions::IllegalArgumentException, "Unable to construct option with illegal name.");
 
                 // Then index all arguments.
                 for (auto const& argument : arguments) {

@@ -29,7 +29,7 @@ namespace storm {
                 if (linearEquationSystemTechniqueAsString == "jacobi") {
                     return NativeEquationSolverSettings::LinearEquationTechnique::Jacobi;
                 }
-                LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown solution technique '" << linearEquationSystemTechniqueAsString << "' selected.");
+                STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown solution technique '" << linearEquationSystemTechniqueAsString << "' selected.");
             }
             
             uint_fast64_t NativeEquationSolverSettings::getMaximalIterationCount() const {

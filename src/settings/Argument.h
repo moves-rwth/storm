@@ -14,7 +14,7 @@
 #include "src/settings/ArgumentBase.h"
 #include "src/settings/ArgumentType.h"
 #include "src/settings/ArgumentTypeInferationHelper.h"
-#include "src/exceptions/ExceptionMacros.h"
+#include "src/utility/macros.h"
 #include "src/exceptions/ArgumentUnificationException.h"
 #include "src/exceptions/IllegalArgumentException.h"
 #include "src/exceptions/IllegalArgumentValueException.h"
@@ -94,9 +94,9 @@ namespace storm {
              */
 			template <typename S>
 			bool isCompatibleWith(Argument<S> const& other) const {
-                LOG_THROW(this->getType() == other.getType(), storm::exceptions::ArgumentUnificationException, "Unable to unify the arguments " << this->getName() << " and " << other.getName() << ", because they have different types.");
-                LOG_THROW(this->getIsOptional() == other.getIsOptional(), storm::exceptions::ArgumentUnificationException, "Unable to unify the arguments '" << this->getName() << "' and '" << other.getName() << "', because one of them is optional and the other one is not.");
-                LOG_THROW(this->getHasDefaultValue() == other.getHasDefaultValue(), storm::exceptions::ArgumentUnificationException, "Unable to unify the arguments " << this->getName() << " and " << other.getName() << ", because one of them has a default value and the other one does not.");
+                STORM_LOG_THROW(this->getType() == other.getType(), storm::exceptions::ArgumentUnificationException, "Unable to unify the arguments " << this->getName() << " and " << other.getName() << ", because they have different types.");
+                STORM_LOG_THROW(this->getIsOptional() == other.getIsOptional(), storm::exceptions::ArgumentUnificationException, "Unable to unify the arguments '" << this->getName() << "' and '" << other.getName() << "', because one of them is optional and the other one is not.");
+                STORM_LOG_THROW(this->getHasDefaultValue() == other.getHasDefaultValue(), storm::exceptions::ArgumentUnificationException, "Unable to unify the arguments " << this->getName() << " and " << other.getName() << ", because one of them has a default value and the other one does not.");
                 return true;
 			}
             
@@ -106,7 +106,7 @@ namespace storm {
              * @return The value of the argument.
              */
 			T const& getArgumentValue() const {
-                LOG_THROW(this->getHasBeenSet() || this->getHasDefaultValue(), storm::exceptions::IllegalFunctionCallException, "Unable to retrieve value of argument, because it was neither set nor specifies a default value.");
+                STORM_LOG_THROW(this->getHasBeenSet() || this->getHasDefaultValue(), storm::exceptions::IllegalFunctionCallException, "Unable to retrieve value of argument, because it was neither set nor specifies a default value.");
                 if (this->getHasBeenSet()) {
                     return this->argumentValue;
                 } else {
@@ -119,9 +119,9 @@ namespace storm {
 			}
             
 			void setFromDefaultValue() override {
-                LOG_THROW(this->hasDefaultValue, storm::exceptions::IllegalFunctionCallException, "Unable to set value from default value, because the argument has none.");
+                STORM_LOG_THROW(this->hasDefaultValue, storm::exceptions::IllegalFunctionCallException, "Unable to set value from default value, because the argument has none.");
 				bool result = this->setFromTypeValue(this->defaultValue);
-                LOG_THROW(result, storm::exceptions::IllegalArgumentValueException, "Unable to assign default value to argument, because it was rejected.");
+                STORM_LOG_THROW(result, storm::exceptions::IllegalArgumentValueException, "Unable to assign default value to argument, because it was rejected.");
 			}
             
 			virtual std::string getValueAsString() const override {
@@ -144,7 +144,7 @@ namespace storm {
 				switch (this->argumentType) {
 					case ArgumentType::Integer:
 						return inferToInteger(ArgumentType::Integer, this->getArgumentValue());
-					default: LOG_THROW(false, storm::exceptions::IllegalFunctionCallException, "Unable to retrieve argument value as integer."); break;
+					default: STORM_LOG_THROW(false, storm::exceptions::IllegalFunctionCallException, "Unable to retrieve argument value as integer."); break;
                 }
             }
             
@@ -153,7 +153,7 @@ namespace storm {
                 switch (this->argumentType) {
                     case ArgumentType::UnsignedInteger:
                         return inferToUnsignedInteger(ArgumentType::UnsignedInteger, this->getArgumentValue());
-                    default: LOG_THROW(false, storm::exceptions::IllegalFunctionCallException, "Unable to retrieve argument value as unsigned integer."); break;
+                    default: STORM_LOG_THROW(false, storm::exceptions::IllegalFunctionCallException, "Unable to retrieve argument value as unsigned integer."); break;
                 }
             }
             
@@ -162,7 +162,7 @@ namespace storm {
                 switch (this->argumentType) {
                     case ArgumentType::Double:
                         return inferToDouble(ArgumentType::Double, this->getArgumentValue());
-                    default: LOG_THROW(false, storm::exceptions::IllegalFunctionCallException, "Unable to retrieve argument value as double."); break;
+                    default: STORM_LOG_THROW(false, storm::exceptions::IllegalFunctionCallException, "Unable to retrieve argument value as double."); break;
                 }
             }
             
@@ -171,7 +171,7 @@ namespace storm {
                 switch (this->argumentType) {
                     case ArgumentType::Boolean:
                         return inferToBoolean(ArgumentType::Boolean, this->getArgumentValue());
-                    default: LOG_THROW(false, storm::exceptions::IllegalFunctionCallException, "Unable to retrieve argument value as boolean."); break;
+                    default: STORM_LOG_THROW(false, storm::exceptions::IllegalFunctionCallException, "Unable to retrieve argument value as boolean."); break;
                 }
             }
             
@@ -200,7 +200,7 @@ namespace storm {
              * @param newDefault The new default value of the argument.
              */
             void setDefaultValue(T const& newDefault) {
-                LOG_THROW(this->validate(newDefault), storm::exceptions::IllegalArgumentValueException, "The default value for the argument did not pass all validation functions.");
+                STORM_LOG_THROW(this->validate(newDefault), storm::exceptions::IllegalArgumentValueException, "The default value for the argument did not pass all validation functions.");
                 this->defaultValue = newDefault;
                 this->hasDefaultValue = true;
             }

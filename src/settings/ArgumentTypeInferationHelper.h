@@ -5,7 +5,7 @@
 #include <string>
 
 #include "src/settings/ArgumentType.h"
-#include "src/exceptions/ExceptionMacros.h"
+#include "src/utility/macros.h"
 #include "src/exceptions/InternalTypeErrorException.h"
 
 namespace storm {

@@ -28,7 +28,7 @@
 #include "src/models/AtomicPropositionsLabeling.h"
 #include "src/storage/SparseMatrix.h"
 #include "src/settings/SettingsManager.h"
-#include "src/exceptions/ExceptionMacros.h"
+#include "src/utility/macros.h"
 #include "src/exceptions/WrongFormatException.h"
 
 namespace storm {
@@ -106,7 +106,7 @@ namespace storm {
                 std::map<std::string, storm::expressions::Expression> constantDefinitions = storm::utility::prism::parseConstantDefinitionString(program, constantDefinitionString);
                 
                 storm::prism::Program preparedProgram = program.defineUndefinedConstants(constantDefinitions);
-                LOG_THROW(!preparedProgram.hasUndefinedConstants(), storm::exceptions::InvalidArgumentException, "Program still contains undefined constants.");
+                STORM_LOG_THROW(!preparedProgram.hasUndefinedConstants(), storm::exceptions::InvalidArgumentException, "Program still contains undefined constants.");
                 
                 // Now that we have defined all the constants in the program, we need to substitute their appearances in
                 // all expressions in the program so we can then evaluate them without having to store the values of the
@@ -173,10 +173,10 @@ namespace storm {
                         {
                             newValue = assignment.getExpression().evaluateAsInt(baseState);
                             auto const& boundsPair = variableInformation.variableToBoundsMap.find(assignment.getVariableName());
-                            LOG_THROW(boundsPair->second.first <= newValue && newValue <= boundsPair->second.second, storm::exceptions::InvalidArgumentException, "Invalid value " << newValue << " for variable '" << assignment.getVariableName() << "'.");
+                            STORM_LOG_THROW(boundsPair->second.first <= newValue && newValue <= boundsPair->second.second, storm::exceptions::InvalidArgumentException, "Invalid value " << newValue << " for variable '" << assignment.getVariableName() << "'.");
                             newState->setIntegerValue(assignment.getVariableName(), newValue); break;
                         }
-                        default: LOG_ASSERT(false, "Invalid type of assignment."); break;
+                        default: STORM_LOG_ASSERT(false, "Invalid type of assignment."); break;
                     }
                 }
                 return newState;
@@ -312,7 +312,7 @@ namespace storm {
                         }
                         
                         // Check that the resulting distribution is in fact a distribution.
-                        LOG_THROW(std::abs(1 - probabilitySum) < storm::settings::generalSettings().getPrecision(), storm::exceptions::WrongFormatException, "Probabilities do not sum to one for command '" << command << "'.");
+                        STORM_LOG_THROW(std::abs(1 - probabilitySum) < storm::settings::generalSettings().getPrecision(), storm::exceptions::WrongFormatException, "Probabilities do not sum to one for command '" << command << "'.");
                     }
                 }
                 

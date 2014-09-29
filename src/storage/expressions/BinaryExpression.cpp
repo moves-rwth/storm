@@ -1,6 +1,6 @@
 #include "src/storage/expressions/BinaryExpression.h"
 
-#include "src/exceptions/ExceptionMacros.h"
+#include "src/utility/macros.h"
 #include "src/exceptions/InvalidAccessException.h"
 
 namespace storm {
@@ -44,7 +44,7 @@ namespace storm {
         }
         
         std::shared_ptr<BaseExpression const> BinaryExpression::getOperand(uint_fast64_t operandIndex) const {
-            LOG_THROW(operandIndex < 2, storm::exceptions::InvalidAccessException, "Unable to access operand " << operandIndex << " in expression of arity 2.");
+            STORM_LOG_THROW(operandIndex < 2, storm::exceptions::InvalidAccessException, "Unable to access operand " << operandIndex << " in expression of arity 2.");
             if (operandIndex == 0) {
                 return this->getFirstOperand();
             } else {

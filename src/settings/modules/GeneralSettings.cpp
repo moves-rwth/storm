@@ -22,8 +22,11 @@ namespace storm {
             const std::string GeneralSettings::symbolicOptionName = "symbolic";
             const std::string GeneralSettings::symbolicOptionShortName = "s";
             const std::string GeneralSettings::pctlOptionName = "pctl";
+            const std::string GeneralSettings::pctlFileOptionName = "pctlfile";
             const std::string GeneralSettings::cslOptionName = "csl";
+            const std::string GeneralSettings::cslFileOptionName = "cslfile";
             const std::string GeneralSettings::ltlOptionName = "ltl";
+            const std::string GeneralSettings::ltlFileOptionName = "ltlfile";
             const std::string GeneralSettings::transitionRewardsOptionName = "transrew";
             const std::string GeneralSettings::stateRewardsOptionName = "staterew";
             const std::string GeneralSettings::counterexampleOptionName = "counterexample";
@@ -53,11 +56,17 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("labeling filename", "The name of the file from which to read the state labeling.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, symbolicOptionName, false, "Parses the model given in a symbolic representation.").setShortName(symbolicOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file from which to read the symbolic model.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, pctlOptionName, false, "Specifies the PCTL formulas that are to be checked on the model.")
+                this->addOption(storm::settings::OptionBuilder(moduleName, pctlOptionName, false, "Specifies a PCTL formula that is to be checked on the model.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("formula", "The formula to check.").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, pctlFileOptionName, false, "Specifies the PCTL formulas that are to be checked on the model.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The file from which to read the PCTL formulas.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, cslOptionName, false, "Specifies the CSL formulas that are to be checked on the model.")
+                this->addOption(storm::settings::OptionBuilder(moduleName, cslOptionName, false, "Specifies a CSL formula that is to be checked on the model.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("formula", "The formula to check.").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, cslFileOptionName, false, "Specifies the CSL formulas that are to be checked on the model.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The file from which to read the CSL formulas.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, ltlOptionName, false, "Specifies the LTL formulas that are to be checked on the model.")
+                this->addOption(storm::settings::OptionBuilder(moduleName, ltlOptionName, false, "Specifies an LTL formula that is to be checked on the model.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("formula", "The formula to check.").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, ltlFileOptionName, false, "Specifies the LTL formulas that are to be checked on the model.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The file from which to read the LTL formulas.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, counterexampleOptionName, false, "Generates a counterexample for the given PRCTL formulas if not satisfied by the model")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file to which the counterexample is to be written.").build()).build());
@@ -136,24 +145,48 @@ namespace storm {
                 return this->getOption(symbolicOptionName).getArgumentByName("filename").getValueAsString();
             }
             
-            bool GeneralSettings::isPctlSet() const {
+            bool GeneralSettings::isPctlPropertySet() const {
                 return this->getOption(pctlOptionName).getHasOptionBeenSet();
             }
             
-            std::string GeneralSettings::getPctlPropertiesFilename() const {
-                return this->getOption(pctlOptionName).getArgumentByName("filename").getValueAsString();
+            std::string GeneralSettings::getPctlProperty() const {
+                return this->getOption(pctlOptionName).getArgumentByName("formula").getValueAsString();
             }
             
-            bool GeneralSettings::isCslSet() const {
+            bool GeneralSettings::isPctlFileSet() const {
+                return this->getOption(pctlFileOptionName).getHasOptionBeenSet();
+            }
+            
+            std::string GeneralSettings::getPctlPropertiesFilename() const {
+                return this->getOption(pctlFileOptionName).getArgumentByName("filename").getValueAsString();
+            }
+            
+            bool GeneralSettings::isCslPropertySet() const {
                 return this->getOption(cslOptionName).getHasOptionBeenSet();
+            }
+            
+            std::string GeneralSettings::getCslProperty() const {
+                return this->getOption(cslOptionName).getArgumentByName("formula").getValueAsString();
+            }
+            
+            bool GeneralSettings::isCslFileSet() const {
+                return this->getOption(cslFileOptionName).getHasOptionBeenSet();
             }
             
             std::string GeneralSettings::getCslPropertiesFilename() const {
                 return this->getOption(cslOptionName).getArgumentByName("filename").getValueAsString();
             }
             
-            bool GeneralSettings::isLtlSet() const {
+            bool GeneralSettings::isLtlPropertySet() const {
                 return this->getOption(ltlOptionName).getHasOptionBeenSet();
+            }
+            
+            std::string GeneralSettings::getLtlProperty() const {
+                return this->getOption(ltlOptionName).getArgumentByName("formula").getValueAsString();
+            }
+            
+            bool GeneralSettings::isLtlFileSet() const {
+                return this->getOption(ltlFileOptionName).getHasOptionBeenSet();
             }
             
             std::string GeneralSettings::getLtlPropertiesFilename() const {
@@ -207,7 +240,7 @@ namespace storm {
                 } else if (equationSolverName == "native") {
                     return GeneralSettings::EquationSolver::Native;
                 }
-                LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown equation solver '" << equationSolverName << "'.");
+                STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown equation solver '" << equationSolverName << "'.");
             }
             
             GeneralSettings::LpSolver GeneralSettings::getLpSolver() const {
@@ -217,7 +250,7 @@ namespace storm {
                 } else if (lpSolverName == "glpk") {
                     return GeneralSettings::LpSolver::glpk;
                 }
-                LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown LP solver '" << lpSolverName << "'.");
+                STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown LP solver '" << lpSolverName << "'.");
             }
             
             bool GeneralSettings::isConstantsSet() const {
