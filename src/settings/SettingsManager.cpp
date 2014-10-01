@@ -111,37 +111,41 @@ namespace storm {
                 setOptionsArguments(activeOptionName, activeOptionIsShortName ? this->shortNameToOptions : this->longNameToOptions, argumentCache);
             }
 
+            // Include the options from a possibly specified configuration file, but don't overwrite existing settings.
             if (storm::settings::generalSettings().isConfigSet()) {
-                std::map<std::string, std::vector<std::string>> configurationFileSettings = parseConfigFile(storm::settings::generalSettings().getConfigFilename());
+                this->setFromConfigurationFile(storm::settings::generalSettings().getConfigFilename());
+            }
+            
+            // Finally, check whether all modules are okay with the current settings.
+            this->checkAllModules();
+        }
+        
+        void SettingsManager::setFromConfigurationFile(std::string const& configFilename) {
+            std::map<std::string, std::vector<std::string>> configurationFileSettings = parseConfigFile(configFilename);
+            
+            for (auto const& optionArgumentsPair : configurationFileSettings) {
+                auto options = this->longNameToOptions.find(optionArgumentsPair.first);
                 
-                for (auto const& optionArgumentsPair : configurationFileSettings) {
-                    auto options = this->longNameToOptions.find(optionArgumentsPair.first);
-                    
-                    // We don't need to check whether this option exists or not, because this is already checked when
-                    // parsing the configuration file.
-                    
-                    // Now go through all the matching options and set them according to the values.
-                    for (auto option : options->second) {
-                        if (option->getHasOptionBeenSet()) {
-                            // If the option was already set from the command line, we issue a warning and ignore the
-                            // settings from the configuration file.
-                            STORM_LOG_WARN("The option '" << option->getLongName() << " of module '" << option->getModuleName() << "' has been set in the configuration file, but was overriden on the command line.");
-                        } else {
-                            // If, however, the option has not been set yet, we try to assign values ot its arguments
-                            // based on the argument strings.
-                            setOptionArguments(optionArgumentsPair.first, option, optionArgumentsPair.second);
-                        }
+                // We don't need to check whether this option exists or not, because this is already checked when
+                // parsing the configuration file.
+                
+                // Now go through all the matching options and set them according to the values.
+                for (auto option : options->second) {
+                    if (option->getHasOptionBeenSet()) {
+                        // If the option was already set from the command line, we issue a warning and ignore the
+                        // settings from the configuration file.
+                        STORM_LOG_WARN("The option '" << option->getLongName() << "' of module '" << option->getModuleName() << "' has been set in the configuration file '" << configFilename << "', but was overwritten on the command line." << std::endl);
+                    } else {
+                        // If, however, the option has not been set yet, we try to assign values ot its arguments
+                        // based on the argument strings.
+                        setOptionArguments(optionArgumentsPair.first, option, optionArgumentsPair.second);
                     }
                 }
             }
         }
         
-        void SettingsManager::setFromConfigurationFile(std::string const& configFilename) {
-            STORM_LOG_ASSERT(false, "Not yet implemented.");
-        }
-        
         void SettingsManager::printHelp(std::string const& hint) const {
-            std::cout << "usage: storm [options]" << std::endl << std::endl;
+            STORM_PRINT("usage: storm [options]" << std::endl << std::endl);
             
             if (hint == "all") {
                 // Find longest option name.
@@ -190,7 +194,7 @@ namespace storm {
                 // Print the matching modules.
                 uint_fast64_t maxLength = std::max(maxLengthModules, maxLengthOptions);
                 if (matchingModuleNames.size() > 0) {
-                    std::cout << "Matching modules for hint '" << hint << "':" << std::endl;
+                    STORM_PRINT("Matching modules for hint '" << hint << "':" << std::endl)
                     for (auto const& matchingModuleName : matchingModuleNames) {
                         printHelpForModule(matchingModuleName, maxLength);
                     }
@@ -198,14 +202,14 @@ namespace storm {
                 
                 // Print the matching options.
                 if (matchingOptions.size() > 0) {
-                    std::cout << "Matching options for hint '" << hint << "':" << std::endl;
+                    STORM_PRINT("Matching options for hint '" << hint << "':" << std::endl);
                     for (auto const& option : matchingOptions) {
-                        std::cout << std::setw(maxLength) << std::left << *option << std::endl;
+                        STORM_PRINT(std::setw(maxLength) << std::left << *option << std::endl);
                     }
                 }
                 
                 if (matchingModuleNames.empty() && matchingOptions.empty()) {
-                    std::cout << "Hint '" << hint << "' did not match any modules or options." << std::endl;
+                    STORM_PRINT("Hint '" << hint << "' did not match any modules or options." << std::endl);
                 }
             }
         }
@@ -213,20 +217,16 @@ namespace storm {
         void SettingsManager::printHelpForModule(std::string const& moduleName, uint_fast64_t maxLength) const {
             auto moduleIterator = moduleOptions.find(moduleName);
             STORM_LOG_THROW(moduleIterator != moduleOptions.end(), storm::exceptions::IllegalFunctionCallException, "Cannot print help for unknown module '" << moduleName << "'.");
-            std::cout << "##### Module '" << moduleName << "' ";
-            for (uint_fast64_t i = 0; i < std::min(maxLength, maxLength - moduleName.length() - 16); ++i) {
-                std::cout << "#";
-            }
-            std::cout << std::endl;
+            STORM_PRINT("##### Module '" << moduleName << "' " << std::string(std::min(maxLength, maxLength - moduleName.length() - 16), '#') << std::endl);
             
             // Save the flags for std::cout so we can manipulate them and be sure they will be restored as soon as this
             // stream goes out of scope.
             boost::io::ios_flags_saver out(std::cout);
             
             for (auto const& option : moduleIterator->second) {
-                std::cout << std::setw(maxLength) << std::left << *option << std::endl;
+                STORM_PRINT(std::setw(maxLength) << std::left << *option << std::endl);
             }
-            std::cout << std::endl;
+            STORM_PRINT(std::endl);
         }
         
         uint_fast64_t SettingsManager::getPrintLengthOfLongestOption() const {
@@ -329,6 +329,8 @@ namespace storm {
                 ArgumentBase& argument = option->getArgument(i);
                 argument.setFromDefaultValue();
             }
+            
+            option->setHasOptionBeenSet();
         }
         
         void SettingsManager::setOptionsArguments(std::string const& optionName, std::unordered_map<std::string, std::vector<std::shared_ptr<Option>>> const& optionMap, std::vector<std::string> const& argumentCache) {
@@ -337,7 +339,6 @@ namespace storm {
             
             // Iterate over all options and set the arguments.
             for (auto& option : optionIterator->second) {
-                option->setHasOptionBeenSet();
                 setOptionArguments(optionName, option, argumentCache);
             }
         }
@@ -407,6 +408,9 @@ namespace storm {
                         STORM_LOG_THROW(this->longNameToOptions.find(activeModule + ":" + optionName) != this->longNameToOptions.end(), storm::exceptions::OptionParserException, "Option assignment in configuration file '" << filename << " in line " << lineNumber << " refers to unknown option '" << activeModule << ":" <<  optionName << "'.");
                     }
                     
+                    std::string fullOptionName = (!globalScope ? activeModule + ":" : "") + optionName;
+                    STORM_LOG_WARN_COND(result.find(fullOptionName) == result.end(), "Option '" << fullOptionName << "' is set in line " << lineNumber << " of configuration file " << filename << ", but has been set before.");
+                    
                     // If the current line is an assignment, split the right-hand side of the assignment into parts
                     // enclosed by quotation marks.
                     if (containsAssignment) {
@@ -436,11 +440,12 @@ namespace storm {
                             boost::algorithm::trim_left(assignedValues);
                         }
                         
+                        
                         // After successfully parsing the argument values, we store them in the result map.
-                        result.emplace((!globalScope ? activeModule + ":" : "") + optionName, argumentCache);
+                        result.emplace(fullOptionName, argumentCache);
                     } else {
                         // In this case, we can just insert the option to indicate it should be set (without arguments).
-                        result.emplace((!globalScope ? activeModule + ":" : "") + optionName, std::vector<std::string>());
+                        result.emplace(fullOptionName, std::vector<std::string>());
                     }
                 }
             }

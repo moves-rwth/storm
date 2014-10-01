@@ -80,11 +80,12 @@ extern log4cplus::Logger logger;
  */
 #define STORM_PRINT(message)                    \
 {                                               \
-    STORM_LOG_INFO(message);                    \
+    std::cout << message;                       \
 }
 
 #define STORM_PRINT_AND_LOG(message)            \
 {                                               \
+    STORM_LOG_INFO(message);                    \
     STORM_PRINT(message);                       \
 }
 
