@@ -24,6 +24,10 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, absoluteOptionName, false, "Sets whether the relative or the absolute error is considered for detecting convergence.").build());
             }
             
+            bool NativeEquationSolverSettings::isLinearEquationSystemTechniqueSet() const {
+                return this->getOption(techniqueOptionName).getHasOptionBeenSet();
+            }
+            
             NativeEquationSolverSettings::LinearEquationTechnique NativeEquationSolverSettings::getLinearEquationSystemTechnique() const {
                 std::string linearEquationSystemTechniqueAsString = this->getOption(techniqueOptionName).getArgumentByName("name").getValueAsString();
                 if (linearEquationSystemTechniqueAsString == "jacobi") {
@@ -32,16 +36,36 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown solution technique '" << linearEquationSystemTechniqueAsString << "' selected.");
             }
             
+            bool NativeEquationSolverSettings::isMaximalIterationCountSet() const {
+                return this->getOption(maximalIterationsOptionName).getHasOptionBeenSet();
+            }
+            
             uint_fast64_t NativeEquationSolverSettings::getMaximalIterationCount() const {
                 return this->getOption(maximalIterationsOptionName).getArgumentByName("count").getValueAsUnsignedInteger();
+            }
+            
+            bool NativeEquationSolverSettings::isPrecisionSet() const {
+                return this->getOption(precisionOptionName).getHasOptionBeenSet();
             }
             
             double NativeEquationSolverSettings::getPrecision() const {
                 return this->getOption(precisionOptionName).getArgumentByName("value").getValueAsDouble();
             }
             
+            bool NativeEquationSolverSettings::isConvergenceCriterionSet() const {
+                return this->getOption(absoluteOptionName).getHasOptionBeenSet();
+            }
+            
             NativeEquationSolverSettings::ConvergenceCriterion NativeEquationSolverSettings::getConvergenceCriterion() const {
                 return this->getOption(absoluteOptionName).getHasOptionBeenSet() ? NativeEquationSolverSettings::ConvergenceCriterion::Absolute : NativeEquationSolverSettings::ConvergenceCriterion::Relative;
+            }
+            
+            bool NativeEquationSolverSettings::check() const {
+                bool optionSet = isLinearEquationSystemTechniqueSet() || isMaximalIterationCountSet() || isPrecisionSet() || isConvergenceCriterionSet();
+                
+                STORM_LOG_WARN_COND(storm::settings::generalSettings().getEquationSolver() == storm::settings::modules::GeneralSettings::EquationSolver::Native || !optionSet, "Native is not selected as the equation solver, so setting options for native has no effect.");
+                
+                return true;
             }
             
         } // namespace modules

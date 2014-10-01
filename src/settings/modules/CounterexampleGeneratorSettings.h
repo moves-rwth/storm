@@ -24,7 +24,7 @@ namespace storm {
                  *
                  * @return True iff a minimal command set counterexample is to be generated.
                  */
-                bool isMinimalCommandGenerationSet() const;
+                bool isMinimalCommandSetGenerationSet() const;
                 
                 /*!
                  * Retrieves whether the MILP-based technique is to be used to generate a minimal command set
@@ -57,6 +57,8 @@ namespace storm {
                  * @return True iff scheduler cuts are to be used.
                  */
                 bool isUseSchedulerCutsSet() const;
+                
+                bool check() const override;
                 
                 // The name of the module.
                 static const std::string moduleName;

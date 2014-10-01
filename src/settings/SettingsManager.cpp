@@ -110,6 +110,9 @@ namespace storm {
             if (optionActive) {
                 setOptionsArguments(activeOptionName, activeOptionIsShortName ? this->shortNameToOptions : this->longNameToOptions, argumentCache);
             }
+            
+            // Finally check whether all modules are okay with the current settings.
+            this->checkAllModules();
         }
         
         void SettingsManager::setFromConfigurationFile(std::string const& configFilename) {
@@ -322,6 +325,12 @@ namespace storm {
                 optionMap.emplace(name, optionVector);
             } else {
                 optionIterator->second.push_back(option);
+            }
+        }
+        
+        void SettingsManager::checkAllModules() const {
+            for (auto const& nameModulePair : this->modules) {
+                nameModulePair.second->check();
             }
         }
         

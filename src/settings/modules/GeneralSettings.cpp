@@ -2,6 +2,7 @@
 
 #include "src/settings/SettingsManager.h"
 #include "src/settings/SettingMemento.h"
+#include "src/exceptions/InvalidSettingsException.h"
 
 namespace storm {
     namespace settings {
@@ -264,6 +265,17 @@ namespace storm {
             
             bool GeneralSettings::isShowStatisticsSet() const {
                 return this->getOption(statisticsOptionName).getHasOptionBeenSet();
+            }
+            
+            bool GeneralSettings::check() const {
+                // Ensure that the model was given either symbolically or explicitly.
+                STORM_LOG_THROW(!isSymbolicSet() || !isExplicitSet(), storm::exceptions::InvalidSettingsException, "The model may be either given in an explicit or a symbolic format, but not both.");
+                
+                // Make sure that one "source" for properties is given.
+                uint_fast64_t propertySources = 0 + (isPctlPropertySet() ? 1 : 0) + (isPctlFileSet() ? 1 : 0) + (isCslPropertySet() ? + 1 : 0) + (isCslFileSet() ? 1 : 0) + (isLtlPropertySet() ? 1 : 0) + (isLtlFileSet() ? 1 : 0);
+                STORM_LOG_THROW(propertySources <= 1, storm::exceptions::InvalidSettingsException, "Please specify exactly one source of properties.");
+                
+                return true;
             }
             
         } // namespace modules

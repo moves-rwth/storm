@@ -44,14 +44,48 @@ extern log4cplus::Logger logger;
     LOG4CPLUS_WARN(logger, message);            \
 } while (false)
 
+#define STORM_LOG_WARN_COND(cond, message)      \
+{                                               \
+    if (!(cond)) {                              \
+        LOG4CPLUS_WARN(logger, message);        \
+    }                                           \
+} while (false)
+
 #define STORM_LOG_INFO(message)                 \
 {                                               \
     LOG4CPLUS_INFO(logger, message);            \
+} while (false)
+
+#define STORM_LOG_INFO_COND(cond, message)      \
+{                                               \
+    if (!(cond)) {                              \
+        LOG4CPLUS_INFO(logger, message);        \
+    }                                           \
 } while (false)
 
 #define STORM_LOG_ERROR(message)                \
 {                                               \
     LOG4CPLUS_ERROR(logger, message);           \
 } while (false)
+
+#define STORM_LOG_ERROR_COND(cond, message)     \
+{                                               \
+    if (!(cond)) {                              \
+        LOG4CPLUS_ERROR(logger, message);       \
+    }                                           \
+} while (false)
+
+/*!
+ * Define the macros that print information and optionally also log it.
+ */
+#define STORM_PRINT(message)                    \
+{                                               \
+    STORM_LOG_INFO(message);                    \
+}
+
+#define STORM_PRINT_AND_LOG(message)            \
+{                                               \
+    STORM_PRINT(message);                       \
+}
 
 #endif /* STORM_UTILITY_MACROS_H_ */

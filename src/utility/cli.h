@@ -259,7 +259,7 @@ namespace storm {
             }
             
             void generateCounterexample(std::shared_ptr<storm::models::AbstractModel<double>> model, std::shared_ptr<storm::properties::prctl::AbstractPrctlFormula<double>> const& formula) {
-                if (storm::settings::counterexampleGeneratorSettings().isMinimalCommandGenerationSet()) {
+                if (storm::settings::counterexampleGeneratorSettings().isMinimalCommandSetGenerationSet()) {
                     STORM_LOG_THROW(model->getType() == storm::models::MDP, storm::exceptions::InvalidTypeException, "Minimal command set generation is only available for MDPs.");
                     STORM_LOG_THROW(storm::settings::generalSettings().isSymbolicSet(), storm::exceptions::InvalidSettingsException, "Minimal command set generation is only available for symbolic models.");
                     

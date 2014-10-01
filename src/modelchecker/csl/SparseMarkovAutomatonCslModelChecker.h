@@ -494,7 +494,7 @@ namespace storm {
                             storm::expressions::Expression constraint = storm::expressions::Expression::createDoubleVariable(stateToVariableNameMap.at(state));
                             
                             for (auto element : transitionMatrix.getRow(nondeterministicChoiceIndices[state])) {
-                                constraint = constraint - storm::expressions::Expression::createDoubleVariable(stateToVariableNameMap.at(element.getColumn()));
+                                constraint = constraint - storm::expressions::Expression::createDoubleVariable(stateToVariableNameMap.at(element.getColumn())) * storm::expressions::Expression::createDoubleLiteral(element.getValue());
                             }
                             
                             constraint = constraint + storm::expressions::Expression::createDoubleLiteral(storm::utility::constantOne<ValueType>() / exitRates[state]) * storm::expressions::Expression::createDoubleVariable("k");
@@ -512,7 +512,7 @@ namespace storm {
                                 storm::expressions::Expression constraint = storm::expressions::Expression::createDoubleVariable(stateToVariableNameMap.at(state));
 
                                 for (auto element : transitionMatrix.getRow(choice)) {
-                                    constraint = constraint - storm::expressions::Expression::createDoubleVariable(stateToVariableNameMap.at(element.getColumn()));
+                                    constraint = constraint - storm::expressions::Expression::createDoubleVariable(stateToVariableNameMap.at(element.getColumn())) *  storm::expressions::Expression::createDoubleLiteral(element.getValue());
                                 }
                                 
                                 storm::expressions::Expression rightHandSide = storm::expressions::Expression::createDoubleLiteral(storm::utility::constantZero<ValueType>());
