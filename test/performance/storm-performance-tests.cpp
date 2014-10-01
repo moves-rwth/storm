@@ -6,7 +6,7 @@
 #include "log4cplus/consoleappender.h"
 #include "log4cplus/fileappender.h"
 
-#include "src/settings/Settings.h"
+#include "src/settings/SettingsManager.h"
 
 log4cplus::Logger logger;
 
@@ -29,23 +29,8 @@ void setUpLogging() {
 	// logger.addAppender(consoleLogAppender);
 }
 
-/*!
- * Creates an empty settings object as the standard instance of the Settings class.
- */
-void createEmptyOptions() {
-    const char* newArgv[] = {"storm-performance-tests", "--maxiter", "20000"};
-	storm::settings::Settings* s = storm::settings::Settings::getInstance();
-	try {
-		storm::settings::Settings::parse(3, newArgv);
-	} catch (storm::exceptions::OptionParserException& e) {
-		std::cout << "Could not recover from settings error: " << e.what() << "." << std::endl;
-		std::cout << std::endl << s->getHelpText();
-	}
-}
-
 int main(int argc, char* argv[]) {
 	setUpLogging();
-	createEmptyOptions();
 	std::cout << "StoRM (Performance) Testing Suite" << std::endl;
 	
 	testing::InitGoogleTest(&argc, argv);

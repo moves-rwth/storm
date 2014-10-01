@@ -27,7 +27,7 @@ TEST(ActionTest, BoundActionFunctionality) {
 
 	// Setup the modelchecker.
 	storm::models::Dtmc<double> model = storm::parser::DeterministicModelParser::parseDtmc(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_actionTest.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/dtmc_actionTest.lab");
-	storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double> mc(model, new storm::solver::GmmxxLinearEquationSolver<double>());
+	storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double> mc(model, std::unique_ptr<storm::solver::LinearEquationSolver<double>>(new storm::solver::GmmxxLinearEquationSolver<double>()));
 
 	// Build the filter input.
 	// Basically the modelchecking result of "F a" on the used DTMC.
@@ -112,7 +112,7 @@ TEST(ActionTest, BoundActionSafety) {
 
 	// Setup the modelchecker.
 	storm::models::Dtmc<double> model = storm::parser::DeterministicModelParser::parseDtmc(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_actionTest.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/dtmc_actionTest.lab");
-	storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double> mc(model, new storm::solver::GmmxxLinearEquationSolver<double>());
+	storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double> mc(model, std::unique_ptr<storm::solver::LinearEquationSolver<double>>(new storm::solver::GmmxxLinearEquationSolver<double>()));
 
 	// Build the filter input.
 	// Basically the modelchecking result of "F a" on the used DTMC.
@@ -173,7 +173,7 @@ TEST(ActionTest, FormulaActionFunctionality) {
 
 	// Setup the modelchecker.
 	storm::models::Dtmc<double> model = storm::parser::DeterministicModelParser::parseDtmc(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_actionTest.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/dtmc_actionTest.lab");
-	storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double> mc(model, new storm::solver::GmmxxLinearEquationSolver<double>());
+	storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double> mc(model, std::unique_ptr<storm::solver::LinearEquationSolver<double>>(new storm::solver::GmmxxLinearEquationSolver<double>()));
 
 	// Build the filter input.
 	// Basically the modelchecking result of "F a" on the used DTMC.
@@ -245,7 +245,7 @@ TEST(ActionTest, FormulaActionFunctionality) {
 TEST(ActionTest, FormulaActionSafety){
 	// Setup the modelchecker.
 	storm::models::Dtmc<double> model = storm::parser::DeterministicModelParser::parseDtmc(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_actionTest.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/dtmc_actionTest.lab");
-	storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double> mc(model, new storm::solver::GmmxxLinearEquationSolver<double>());
+	storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double> mc(model, std::unique_ptr<storm::solver::LinearEquationSolver<double>>(new storm::solver::GmmxxLinearEquationSolver<double>()));
 
 	// Build the filter input.
 	// Basically the modelchecking result of "F a" on the used DTMC.
@@ -278,7 +278,7 @@ TEST(ActionTest, FormulaActionSafety){
 TEST(ActionTest, InvertActionFunctionality){
 	// Setup the modelchecker.
 	storm::models::Dtmc<double> model = storm::parser::DeterministicModelParser::parseDtmc(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_actionTest.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/dtmc_actionTest.lab");
-	storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double> mc(model, new storm::solver::GmmxxLinearEquationSolver<double>());
+	storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double> mc(model, std::unique_ptr<storm::solver::LinearEquationSolver<double>>(new storm::solver::GmmxxLinearEquationSolver<double>()));
 
 	// Build the filter input.
 	// Basically the modelchecking result of "F a" on the used DTMC.
@@ -312,7 +312,7 @@ TEST(ActionTest, InvertActionFunctionality){
 TEST(ActionTest, RangeActionFunctionality){
 	// Setup the modelchecker.
 	storm::models::Dtmc<double> model = storm::parser::DeterministicModelParser::parseDtmc(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_actionTest.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/dtmc_actionTest.lab");
-	storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double> mc(model, new storm::solver::GmmxxLinearEquationSolver<double>());
+	storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double> mc(model, std::unique_ptr<storm::solver::LinearEquationSolver<double>>(new storm::solver::GmmxxLinearEquationSolver<double>()));
 
 	// Build the filter input.
 	// Basically the modelchecking result of "F a" on the used DTMC.
@@ -394,7 +394,7 @@ TEST(ActionTest, RangeActionFunctionality){
 TEST(ActionTest, RangeActionSafety){
 	// Setup the modelchecker.
 	storm::models::Dtmc<double> model = storm::parser::DeterministicModelParser::parseDtmc(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_actionTest.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/dtmc_actionTest.lab");
-	storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double> mc(model, new storm::solver::GmmxxLinearEquationSolver<double>());
+	storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double> mc(model, std::unique_ptr<storm::solver::LinearEquationSolver<double>>(new storm::solver::GmmxxLinearEquationSolver<double>()));
 
 	// Build the filter input.
 	// Basically the modelchecking result of "F a" on the used DTMC.
@@ -434,7 +434,7 @@ TEST(ActionTest, RangeActionSafety){
 TEST(ActionTest, SortActionFunctionality){
 	// Setup the modelchecker.
 	storm::models::Dtmc<double> model = storm::parser::DeterministicModelParser::parseDtmc(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_actionTest.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/dtmc_actionTest.lab");
-	storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double> mc(model, new storm::solver::GmmxxLinearEquationSolver<double>());
+	storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double> mc(model, std::unique_ptr<storm::solver::LinearEquationSolver<double>>(new storm::solver::GmmxxLinearEquationSolver<double>()));
 
 	// Build the filter input.
 	// Basically the modelchecking result of "F a" on the used DTMC.
@@ -547,7 +547,7 @@ TEST(ActionTest, SortActionSafety){
 	// Check that the path result has priority over the state result if for some erronous reason both are given.
 	// Setup the modelchecker.
 	storm::models::Dtmc<double> model = storm::parser::DeterministicModelParser::parseDtmc(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_actionTest.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/dtmc_actionTest.lab");
-	storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double> mc(model, new storm::solver::GmmxxLinearEquationSolver<double>());
+	storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double> mc(model, std::unique_ptr<storm::solver::LinearEquationSolver<double>>(new storm::solver::GmmxxLinearEquationSolver<double>()));
 
 	// Build the filter input.
 	// Basically the modelchecking result of "F a" on the used DTMC.

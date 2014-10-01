@@ -1,6 +1,6 @@
 #include "src/storage/expressions/BinaryBooleanFunctionExpression.h"
 #include "src/storage/expressions/BooleanLiteralExpression.h"
-#include "src/exceptions/ExceptionMacros.h"
+#include "src/utility/macros.h"
 #include "src/exceptions/InvalidTypeException.h"
 
 namespace storm {
@@ -24,7 +24,7 @@ namespace storm {
         }
                 
         bool BinaryBooleanFunctionExpression::evaluateAsBool(Valuation const* valuation) const {
-            LOG_THROW(this->hasBooleanReturnType(), storm::exceptions::InvalidTypeException, "Unable to evaluate expression as boolean.");
+            STORM_LOG_THROW(this->hasBooleanReturnType(), storm::exceptions::InvalidTypeException, "Unable to evaluate expression as boolean.");
             
             bool firstOperandEvaluation = this->getFirstOperand()->evaluateAsBool(valuation);
             bool secondOperandEvaluation = this->getSecondOperand()->evaluateAsBool(valuation);

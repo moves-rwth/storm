@@ -2,7 +2,7 @@
 #include <cmath>
 
 #include "src/storage/expressions/BinaryNumericalFunctionExpression.h"
-#include "src/exceptions/ExceptionMacros.h"
+#include "src/utility/macros.h"
 #include "src/exceptions/InvalidTypeException.h"
 
 namespace storm {
@@ -28,7 +28,7 @@ namespace storm {
         }
         
         int_fast64_t BinaryNumericalFunctionExpression::evaluateAsInt(Valuation const* valuation) const {
-            LOG_THROW(this->hasIntegralReturnType(), storm::exceptions::InvalidTypeException, "Unable to evaluate expression as integer.");
+            STORM_LOG_THROW(this->hasIntegralReturnType(), storm::exceptions::InvalidTypeException, "Unable to evaluate expression as integer.");
             
             int_fast64_t firstOperandEvaluation = this->getFirstOperand()->evaluateAsInt(valuation);
             int_fast64_t secondOperandEvaluation = this->getSecondOperand()->evaluateAsInt(valuation);
@@ -44,7 +44,7 @@ namespace storm {
         }
         
         double BinaryNumericalFunctionExpression::evaluateAsDouble(Valuation const* valuation) const {
-            LOG_THROW(this->hasNumericalReturnType(), storm::exceptions::InvalidTypeException, "Unable to evaluate expression as double.");
+            STORM_LOG_THROW(this->hasNumericalReturnType(), storm::exceptions::InvalidTypeException, "Unable to evaluate expression as double.");
             
             double firstOperandEvaluation = this->getFirstOperand()->evaluateAsDouble(valuation);
             double secondOperandEvaluation = this->getSecondOperand()->evaluateAsDouble(valuation);

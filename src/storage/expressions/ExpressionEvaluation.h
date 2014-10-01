@@ -17,6 +17,7 @@
 #include "src/storage/parameters.h"
 #include "IntegerLiteralExpression.h"
 #include "BinaryExpression.h"
+#include "src/storage/parameters.h"
 
 namespace storm {
 namespace expressions {
@@ -27,6 +28,7 @@ namespace expressions {
 		typedef int type;
 	};
 	
+#ifdef PARAMETRIC_SYSTEMS
 	template<>
 	struct StateType<Polynomial>
 	{
@@ -38,6 +40,7 @@ namespace expressions {
 	{
 		typedef std::map<std::string, carl::Variable> type;
 	};
+#endif
 		
 	template<typename T, typename S>
 	class ExpressionEvaluationVisitor : public ExpressionVisitor
@@ -129,6 +132,7 @@ namespace expressions {
 				str << std::fixed << std::setprecision( 3 ) << expression->getValue();
 				carl::DecimalStringToRational<typename T::CoeffType> transform;
 				mValue = T(transform(str.str()));
+				
 			}
 
 		const T& value() const

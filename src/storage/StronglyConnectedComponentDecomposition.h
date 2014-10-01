@@ -3,6 +3,7 @@
 
 #include "src/storage/SparseMatrix.h"
 #include "src/storage/Decomposition.h"
+#include "src/storage/StronglyConnectedComponent.h"
 #include "src/storage/BitVector.h"
 
 namespace storm {
@@ -17,8 +18,8 @@ namespace storm {
          * This class represents the decomposition of a graph-like structure into its strongly connected components.
          */
         template <typename ValueType>
-        class StronglyConnectedComponentDecomposition : public Decomposition<StateBlock> {
-        public:
+        class StronglyConnectedComponentDecomposition : public Decomposition<StronglyConnectedComponent> {
+        public:            
             /*
              * Creates an empty SCC decomposition.
              */

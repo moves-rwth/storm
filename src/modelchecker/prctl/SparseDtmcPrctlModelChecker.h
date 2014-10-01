@@ -11,6 +11,7 @@
 #include "src/modelchecker/prctl/AbstractModelChecker.h"
 #include "src/models/Dtmc.h"
 #include "src/solver/LinearEquationSolver.h"
+#include "src/utility/solver.h"
 #include "src/utility/vector.h"
 #include "src/utility/graph.h"
 
@@ -33,9 +34,13 @@ public:
 	 *
 	 * @param model The DTMC to be checked.
 	 */
-	explicit SparseDtmcPrctlModelChecker(storm::models::Dtmc<Type> const& model, storm::solver::LinearEquationSolver<Type>* linearEquationSolver) : AbstractModelChecker<Type>(model), linearEquationSolver(linearEquationSolver) {
+    explicit SparseDtmcPrctlModelChecker(storm::models::Dtmc<Type> const& model, std::unique_ptr<storm::solver::LinearEquationSolver<Type>>&& linearEquationSolver) : AbstractModelChecker<Type>(model), linearEquationSolver(std::move(linearEquationSolver)) {
 		// Intentionally left empty.
 	}
+    
+    explicit SparseDtmcPrctlModelChecker(storm::models::Dtmc<Type> const& model) : AbstractModelChecker<Type>(model), linearEquationSolver(storm::utility::solver::getLinearEquationSolver<Type>()) {
+        // Intentionally left empty.
+    }
     
 	/*!
 	 * Copy constructs a SparseDtmcPrctlModelChecker from the given model checker. In particular, this means that the newly

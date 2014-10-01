@@ -235,7 +235,7 @@ namespace storm {
 
                     // (1) Compute the accuracy we need to achieve the required error bound.
                     ValueType maxExitRate = this->getModel().getMaximalExitRate();
-                    ValueType delta = (2 * storm::settings::Settings::getInstance()->getOptionByLongName("digiprecision").getArgument(0).getValueAsDouble()) / (upperBound * maxExitRate * maxExitRate);
+                    ValueType delta = (2 * storm::settings::generalSettings().getPrecision()) / (upperBound * maxExitRate * maxExitRate);
                     
                     // (2) Compute the number of steps we need to make for the interval.
                     uint_fast64_t numberOfSteps = static_cast<uint_fast64_t>(std::ceil((upperBound - lowerBound) / delta));

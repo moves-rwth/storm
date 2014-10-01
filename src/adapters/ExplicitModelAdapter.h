@@ -27,8 +27,8 @@
 #include "src/models/Ctmdp.h"
 #include "src/models/AtomicPropositionsLabeling.h"
 #include "src/storage/SparseMatrix.h"
-#include "src/settings/Settings.h"
-#include "src/exceptions/ExceptionMacros.h"
+#include "src/settings/SettingsManager.h"
+#include "src/utility/macros.h"
 #include "src/exceptions/WrongFormatException.h"
 #include "src/storage/expressions/ExpressionEvaluation.h"
 
@@ -107,8 +107,12 @@ namespace storm {
                 std::map<std::string, storm::expressions::Expression> constantDefinitions = storm::utility::prism::parseConstantDefinitionString(program, constantDefinitionString);
                 
                 storm::prism::Program preparedProgram = program.defineUndefinedConstants(constantDefinitions);
-                LOG_THROW((std::is_same<ValueType, RationalFunction>::value || !preparedProgram.hasUndefinedConstants()), storm::exceptions::InvalidArgumentException, "Program still contains undefined constants.");
-                
+#ifdef PARAMETRIC_SYSTEMS
+				STORM_LOG_THROW((std::is_same<ValueType, RationalFunction>::value || !preparedProgram.hasUndefinedConstants()), storm::exceptions::InvalidArgumentException, "Program still contains undefined constants.");
+#else
+				STORM_LOG_THROW(!preparedProgram.hasUndefinedConstants(), storm::exceptions::InvalidArgumentException, "Program still contains undefined constants.");
+#endif                
+				
                 // Now that we have defined all the constants in the program, we need to substitute their appearances in
                 // all expressions in the program so we can then evaluate them without having to store the values of the
                 // constants in the state (i.e., valuation).
@@ -173,10 +177,10 @@ namespace storm {
                         {
                             newValue = assignment.getExpression().evaluateAsInt(baseState);
                             auto const& boundsPair = variableInformation.variableToBoundsMap.find(assignment.getVariableName());
-                            LOG_THROW(boundsPair->second.first <= newValue && newValue <= boundsPair->second.second, storm::exceptions::InvalidArgumentException, "Invalid value " << newValue << " for variable '" << assignment.getVariableName() << "'.");
+                            STORM_LOG_THROW(boundsPair->second.first <= newValue && newValue <= boundsPair->second.second, storm::exceptions::InvalidArgumentException, "Invalid value " << newValue << " for variable '" << assignment.getVariableName() << "'.");
                             newState->setIntegerValue(assignment.getVariableName(), newValue); break;
                         }
-                        default: LOG_ASSERT(false, "Invalid type of assignment."); break;
+                        default: STORM_LOG_ASSERT(false, "Invalid type of assignment."); break;
                     }
                 }
                 return newState;
@@ -312,7 +316,7 @@ namespace storm {
                         }
                         
                         // Check that the resulting distribution is in fact a distribution.
-                        LOG_THROW(storm::utility::isOne(probabilitySum), storm::exceptions::WrongFormatException, "Probabilities do not sum to one for command '" << command << "' (sum = " << probabilitySum << ").");
+                        STORM_LOG_THROW(storm::utility::isOne(probabilitySum), storm::exceptions::WrongFormatException, "Probabilities do not sum to one for command '" << command << "' (sum = " << probabilitySum << ").");
                     }
                 }
                 
@@ -502,7 +506,7 @@ namespace storm {
                     // If the current state does not have a single choice, we equip it with a self-loop if that was
                     // requested and issue an error otherwise.
                     if (totalNumberOfChoices == 0) {
-                        if (storm::settings::Settings::getInstance()->isSet("fixDeadlocks")) {
+                        if (!storm::settings::generalSettings().isDontFixDeadlocksSet()) {
                             // Insert empty choice labeling for added self-loop transitions.
                             choiceLabels.push_back(boost::container::flat_set<uint_fast64_t>());
                             transitionMatrixBuilder.addNextValue(currentRow, currentState, storm::utility::constantOne<ValueType>());

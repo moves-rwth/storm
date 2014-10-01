@@ -2,7 +2,7 @@
 
 #include <utility>
 
-#include "src/settings/Settings.h"
+#include "src/settings/SettingsManager.h"
 #include "src/adapters/GmmxxAdapter.h"
 #include "src/utility/vector.h"
 
@@ -12,12 +12,12 @@ namespace storm {
         template<typename ValueType>
         GmmxxNondeterministicLinearEquationSolver<ValueType>::GmmxxNondeterministicLinearEquationSolver() {
             // Get the settings object to customize solving.
-            storm::settings::Settings* settings = storm::settings::Settings::getInstance();
+            storm::settings::modules::GmmxxEquationSolverSettings const& settings = storm::settings::gmmxxEquationSolverSettings();
             
             // Get appropriate settings.
-            maximalNumberOfIterations = settings->getOptionByLongName("maxiter").getArgument(0).getValueAsUnsignedInteger();
-            precision = settings->getOptionByLongName("precision").getArgument(0).getValueAsDouble();
-            relative = !settings->isSet("absolute");
+            maximalNumberOfIterations = settings.getMaximalIterationCount();
+            precision = settings.getPrecision();
+            relative = settings.getConvergenceCriterion() == storm::settings::modules::GmmxxEquationSolverSettings::ConvergenceCriterion::Relative;
         }
         
         template<typename ValueType>

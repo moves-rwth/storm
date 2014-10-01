@@ -19,7 +19,7 @@
 #include "src/parser/MappedFile.h"
 #include "src/exceptions/FileIoException.h"
 #include "src/exceptions/WrongFormatException.h"
-#include "src/settings/Settings.h"
+#include "src/settings/SettingsManager.h"
 
 #include "ReadValues.h"
 
@@ -95,7 +95,7 @@ namespace storm {
 
 				uint_fast64_t lastRow = 0;
 				DeterministicTransitionEntry<T> trans;
-				bool fixDeadlocks = storm::settings::Settings::getInstance()->isSet("fixDeadlocks");
+				bool dontFixDeadlocks = storm::settings::generalSettings().isDontFixDeadlocksSet();
 				bool hadDeadlocks = false;
 				bool rowHadDiagonalEntry = false;
 
@@ -119,8 +119,8 @@ namespace storm {
                     if (trans.row > 0) {
                         for (uint_fast64_t skippedRow = 0; skippedRow < trans.row; ++skippedRow) {
                             hadDeadlocks = true;
-                            if (fixDeadlocks) {
-                                resultMatrix.addNextValue(skippedRow, skippedRow, storm::utility::constantOne<T>());
+                            if (!dontFixDeadlocks) {
+                                resultMatrix.addNextValue(skippedRow, skippedRow, storm::utility::constantOne<double>());
                                 LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << skippedRow << " has no outgoing transitions. A self-loop was inserted.");
                             } else {
                                 LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": state " << skippedRow << " has no outgoing transitions.");
@@ -151,8 +151,8 @@ namespace storm {
 							}
 							for (uint_fast64_t skippedRow = lastRow + 1; skippedRow < trans.row; ++skippedRow) {
 								hadDeadlocks = true;
-								if (fixDeadlocks) {
-									resultMatrix.addNextValue(skippedRow, skippedRow, storm::utility::constantOne<T>());
+								if (!dontFixDeadlocks) {
+									resultMatrix.addNextValue(skippedRow, skippedRow, storm::utility::constantOne<double>());
 									LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << skippedRow << " has no outgoing transitions. A self-loop was inserted.");
 								} else {
 									LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": state " << skippedRow << " has no outgoing transitions.");
@@ -189,8 +189,8 @@ namespace storm {
 						}
 					}
 
-                    // If we encountered deadlock and did not fix them, now is the time to throw the exception.
-                	if (!fixDeadlocks && hadDeadlocks) throw storm::exceptions::WrongFormatException() << "Some of the nodes had deadlocks. You can use --fixDeadlocks to insert self-loops on the fly.";
+					// If we encountered deadlock and did not fix them, now is the time to throw the exception.
+					if (dontFixDeadlocks && hadDeadlocks) throw storm::exceptions::WrongFormatException() << "Some of the states do not have outgoing transitions.";
 				}
 
 				// Finally, build the actual matrix, test and return it.

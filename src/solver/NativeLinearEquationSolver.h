@@ -13,8 +13,8 @@ namespace storm {
         class NativeLinearEquationSolver : public LinearEquationSolver<ValueType> {
         public:
             // An enumeration specifying the available solution methods.
-            enum SolutionMethod {
-                JACOBI
+            enum class SolutionMethod {
+                Jacobi
             };
             
             /*!

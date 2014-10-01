@@ -13,13 +13,13 @@ namespace storm {
         class GmmxxLinearEquationSolver : public LinearEquationSolver<ValueType> {
         public:
             // An enumeration specifying the available preconditioners.
-            enum Preconditioner {
-                ILU, DIAGONAL, NONE
+            enum class Preconditioner {
+                Ilu, Diagonal, None
             };
             
             // An enumeration specifying the available solution methods.
-            enum SolutionMethod {
-                BICGSTAB, QMR, GMRES, JACOBI
+            enum class SolutionMethod {
+                Bicgstab, Qmr, Gmres, Jacobi
             };
             
             /*!

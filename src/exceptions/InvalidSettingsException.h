@@ -2,13 +2,14 @@
 #define STORM_EXCEPTIONS_INVALIDSETTINGSEXCEPTION_H_
 
 #include "src/exceptions/BaseException.h"
+#include "src/exceptions/ExceptionMacros.h"
 
 namespace storm {
-namespace exceptions {
-
-STORM_EXCEPTION_DEFINE_NEW(InvalidSettingsException)
-
-} // namespace exceptions
+    namespace exceptions {
+        
+        STORM_NEW_EXCEPTION(InvalidSettingsException)
+        
+    } // namespace exceptions
 } // namespace storm
 
-#endif // STORM_EXCEPTIONS_INVALIDSETTINGSEXCEPTION_H_
+#endif /* STORM_EXCEPTIONS_INVALIDSETTINGSEXCEPTION_H_ */

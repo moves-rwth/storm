@@ -1,10 +1,3 @@
-/*
- * Option.h
- *
- *  Created on: 11.08.2013
- *      Author: Philipp Berger
- */
-
 #ifndef STORM_SETTINGS_OPTION_H_
 #define STORM_SETTINGS_OPTION_H_
 
@@ -21,235 +14,296 @@
 #include "ArgumentBase.h"
 #include "Argument.h"
 
-#include "src/utility/StringHelper.h"
+#include "src/utility/macros.h"
 #include "src/exceptions/IllegalArgumentException.h"
 #include "src/exceptions/OptionUnificationException.h"
-
-#include "log4cplus/logger.h"
-#include "log4cplus/loggingmacros.h"
-extern log4cplus::Logger logger;
 
 namespace storm {
 	namespace settings {
 
-		class Settings;
-
+        // Forward-declare settings manager and module settings classes.
+        class SettingsManager;
+        namespace modules {
+            class ModuleSettings;
+        }
+        
+        /*!
+         * This class represents one command-line option.
+         */
 		class Option {
 		public:
+            // Declare settings manager and module settings classes as friends.
+			friend class SettingsManager;
+            friend class modules::ModuleSettings;
 
-			friend class storm::settings::Settings;
-
-			Option(std::string const& moduleName, std::string const& longOptionName, std::string const& shortOptionName, std::string const& optionDescription, bool isOptionRequired)
-				: longName(longOptionName), shortName(shortOptionName), description(optionDescription), moduleName(moduleName), isRequired(isOptionRequired), hasBeenSet(false) {
-				validateFields();
+            /*!
+             * Creates an option with the given parameters.
+             *
+             * @param moduleName The module to which this option belongs.
+             * @param longOptionName The long option name.
+             * @param optionDescription The description of the option.
+             * @param isOptionRequired Sets whether the option is required to appear.
+             * @param requireModulePrefix A flag that indicates whether this option requires to be prefixed with the
+             * module name.
+             * @param optionArguments The arguments of the option.
+             */
+			Option(std::string const& moduleName, std::string const& longOptionName, std::string const& optionDescription, bool isOptionRequired, bool requireModulePrefix, std::vector<std::shared_ptr<ArgumentBase>> const& optionArguments = std::vector<std::shared_ptr<ArgumentBase>>()) : Option(moduleName, longOptionName, "", false, optionDescription, isOptionRequired, requireModulePrefix, optionArguments) {
+				// Intentionally left empty.
 			}
+            
+            /*!
+             * Creates an option with the given parameters.
+             *
+             * @param moduleName The module to which this option belongs.
+             * @param longOptionName The long option name.
+             * @param shortOptionName The short option name.
+             * @param optionDescription The description of the option.
+             * @param isOptionRequired Sets whether the option is required to appear.
+             * @param requireModulePrefix A flag that indicates whether this option requires to be prefixed with the
+             * module name.
+             * @param optionArguments The arguments of the option.
+             */
+            Option(std::string const& moduleName, std::string const& longOptionName, std::string const& shortOptionName, std::string const& optionDescription, bool isOptionRequired, bool requireModulePrefix, std::vector<std::shared_ptr<ArgumentBase>> const& optionArguments = std::vector<std::shared_ptr<ArgumentBase>>()) : Option(moduleName, longOptionName, shortOptionName, true, optionDescription, isOptionRequired, requireModulePrefix, optionArguments) {
+                // Intentionally left empty.
+            }
 
-			Option(std::string const& moduleName, std::string const& longOptionName, std::string const& shortOptionName, std::string const& optionDescription, bool isOptionRequired, std::vector<std::shared_ptr<ArgumentBase>> const& optionArguments)
-				: longName(longOptionName), shortName(shortOptionName), description(optionDescription), moduleName(moduleName), isRequired(isOptionRequired), hasBeenSet(false) {
-				// Copy all Arguments
-				this->arguments.reserve(optionArguments.size());
-				for (uint_fast64_t i = 0; i < optionArguments.size(); ++i) {
-					// Clone gives a deep copy
-					this->arguments.push_back(std::shared_ptr<ArgumentBase>(optionArguments.at(i).get()->clone()));
-				}
-				
-				isArgumentsVectorValid(this->arguments);
+            /*!
+             * Checks whether the given option is compatible with the current one. If not, an exception is thrown.
+             *
+             * @param other The other option with which to check compatibility.
+             * @return True iff the given argument is compatible with the current one.
+             */
+			bool isCompatibleWith(Option const& other) {
+                STORM_LOG_THROW(this->getArgumentCount() == other.getArgumentCount(), storm::exceptions::OptionUnificationException, "Unable to unify two options, because their argument count differs.");
 
-				validateFields();
-			}
-
-			Option(Option const& other): longName(other.longName), shortName(other.shortName), description(other.description), moduleName(other.moduleName), isRequired(other.isRequired), hasBeenSet(other.hasBeenSet) {
-				// Copy all Arguments
-				this->arguments.reserve(other.arguments.size());
-				for (size_t i = 0; i < other.arguments.size(); ++i) {
-					// Clone gives a deep copy
-					this->arguments.push_back(std::shared_ptr<ArgumentBase>(other.arguments.at(i).get()->clone()));
-				}
-
-				isArgumentsVectorValid(this->arguments);
-
-				validateFields();
-			}
-
-			~Option() {
-				//std::cout << "Destructing an Option." << std::endl;
-
-				this->arguments.clear();
-				this->argumentNameMap.clear();
-			}
-
-			Option* clone() const {
-				return new Option(*this);
-			}
-
-			void unify(Option& other) {
-				if (this->getLongName().compare(other.getLongName()) != 0) {
-					LOG4CPLUS_ERROR(logger, "Option::unify: Unable to unify option \"" << getLongName() << "\" because of mismatching names (\"" << getLongName() << "\" and \"" << other.getLongName() << "\").");
-					throw storm::exceptions::OptionUnificationException() << "Unable to unify option \"" << getLongName() << "\" because of mismatching names (\"" << getLongName() << "\" and \"" << other.getLongName() << "\").";
-				}
-				if (this->getShortName().compare(other.getShortName()) != 0) {
-					LOG4CPLUS_ERROR(logger, "Option::unify: Unable to unify option \"" << getLongName() << "\" because of mismatching names (\"" << getShortName() << "\" and \"" << other.getShortName() << "\").");
-					throw storm::exceptions::OptionUnificationException() << "Unable to unify option \"" << getLongName() << "\" because of mismatching names (\"" << getShortName() << "\" and \"" << other.getShortName() << "\").";
-				}
-
-				if (this->getArgumentCount() != other.getArgumentCount()) {
-					LOG4CPLUS_ERROR(logger, "Option::unify: Unable to unify option \"" << getLongName() << "\" because of mismatching argument numbers.");
-					throw storm::exceptions::OptionUnificationException() << "Unable to unify option \"" << getLongName() << "\" because of mismatching argument numbers.";
-				}
 				for(size_t i = 0; i != this->arguments.size(); i++) {
-					ArgumentBase* A = this->arguments.at(i).get();
-					ArgumentBase* B = other.arguments.at(i).get();
+                    ArgumentBase const& firstArgument = this->getArgument(i);
+                    ArgumentBase const& secondArgument = other.getArgument(i);
 
-					if (A->getArgumentType() != B->getArgumentType()) {
-						LOG4CPLUS_ERROR(logger, "Option::unify: Unable to unify option \"" << getLongName() << "\" because of mismatching argument types at index " << i << ".");
-						throw storm::exceptions::OptionUnificationException() << "Unable to unify option \"" << getLongName() << "\" because of mismatching argument types at index " << i << ".";
-					}
+                    STORM_LOG_THROW(firstArgument.getType() == secondArgument.getType(), storm::exceptions::OptionUnificationException, "Unable to unify two options, because their arguments are incompatible.");
 
-					switch (A->getArgumentType()) {
+					switch (firstArgument.getType()) {
 						case ArgumentType::String:
-							static_cast<storm::settings::Argument<std::string>*>(A)->unify(*static_cast<storm::settings::Argument<std::string>*>(B));
+							static_cast<storm::settings::Argument<std::string> const&>(firstArgument).isCompatibleWith(static_cast<storm::settings::Argument<std::string> const&>(secondArgument));
 							break;
 						case ArgumentType::Integer:
-							static_cast<storm::settings::Argument<int_fast64_t>*>(A)->unify(*static_cast<storm::settings::Argument<int_fast64_t>*>(B));
+							static_cast<storm::settings::Argument<int_fast64_t> const&>(firstArgument).isCompatibleWith(static_cast<storm::settings::Argument<int_fast64_t> const&>(secondArgument));
 							break;
 						case ArgumentType::UnsignedInteger:
-							static_cast<storm::settings::Argument<uint_fast64_t>*>(A)->unify(*static_cast<storm::settings::Argument<uint_fast64_t>*>(B));
+							static_cast<storm::settings::Argument<uint_fast64_t> const&>(firstArgument).isCompatibleWith(static_cast<storm::settings::Argument<uint_fast64_t> const&>(secondArgument));
 							break;
 						case ArgumentType::Double:
-							static_cast<storm::settings::Argument<double>*>(A)->unify(*static_cast<storm::settings::Argument<double>*>(B));
+							static_cast<storm::settings::Argument<double> const&>(firstArgument).isCompatibleWith(static_cast<storm::settings::Argument<double> const&>(secondArgument));
 							break;
 						case ArgumentType::Boolean:
-							static_cast<storm::settings::Argument<bool>*>(A)->unify(*static_cast<storm::settings::Argument<bool>*>(B));
+							static_cast<storm::settings::Argument<bool> const&>(firstArgument).isCompatibleWith(static_cast<storm::settings::Argument<bool> const&>(secondArgument));
 							break;
-						default:
-							LOG4CPLUS_ERROR(logger, "Option::unify: Missing Case in ArgumentBuilder's switch/case Code.");
-							throw storm::exceptions::InternalTypeErrorException() << "Missing case in Option.";
 					}
 				}
-
-				if (this->getModuleName().compare(other.getModuleName()) != 0) {
-					this->moduleName.append(", ").append(other.getModuleName());
-				}
+                return true;
 			}
 
+            /*!
+             * Retrieves the argument count this option expects.
+             *
+             * @return The argument count of this option.
+             */
 			uint_fast64_t getArgumentCount() const {
 				return this->arguments.size();
 			}
 
-			ArgumentBase& getArgument(uint_fast64_t argumentIndex) const {
-				if (argumentIndex >= getArgumentCount()) {
-					LOG4CPLUS_ERROR(logger, "Option::getArgument: argumentIndex out of bounds!");
-					throw storm::exceptions::IllegalArgumentException() << "Option::getArgument(): index of argument is out of bounds.";
-				}
-				return *this->arguments.at(argumentIndex).get();
+            /*!
+             * Retrieves the i-th argument of this option.
+             *
+             * @param argumentIndex The index of the argument to retrieve.
+             * @return The i-th argument of this option.
+             */
+			ArgumentBase const& getArgument(uint_fast64_t argumentIndex) const {
+                STORM_LOG_THROW(argumentIndex < this->getArgumentCount(), storm::exceptions::IllegalArgumentException, "Index of argument is out of bounds.");
+				return *this->arguments.at(argumentIndex);
+			}
+            
+            /*!
+             * Retrieves the i-th argument of this option.
+             *
+             * @param argumentIndex The index of the argument to retrieve.
+             * @return The i-th argument of this option.
+             */
+			ArgumentBase& getArgument(uint_fast64_t argumentIndex) {
+                STORM_LOG_THROW(argumentIndex < this->getArgumentCount(), storm::exceptions::IllegalArgumentException, "Index of argument is out of bounds.");
+				return *this->arguments.at(argumentIndex);
 			}
 
 			/*!
-			* Returns a reference to the Argument with the specified longName.
-			* Throws an Exception of Type IllegalArgumentException if there is no such Option.
-			*/
+             * Returns a reference to the argument with the specified long name.
+             *
+             * @param argumentName The name of the argument to retrieve.
+             * @return The argument with the given name.
+             */
 			ArgumentBase const& getArgumentByName(std::string const& argumentName) const {
-				auto argumentIterator = this->argumentNameMap.find(storm::utility::StringHelper::stringToLower(argumentName));
-
-				if (argumentIterator == this->argumentNameMap.end()) {
-					LOG4CPLUS_ERROR(logger, "Option::getArgumentByName: Unable to retrieve unknown argument \"" << argumentName << "\" of option \"" << this->getLongName() << "\".");
-					throw storm::exceptions::IllegalArgumentException() << "Unable to retrieve unknown argument \"" << argumentName << "\" of option \"" << this->getLongName() << "\".";
-				}
-
-				return *argumentIterator->second.get();
+				auto argumentIterator = this->argumentNameMap.find(argumentName);
+                STORM_LOG_THROW(argumentIterator != this->argumentNameMap.end(), storm::exceptions::IllegalArgumentException, "Unable to retrieve argument with unknown name '" << argumentName << "'.");
+				return *argumentIterator->second;
 			}
 
+            /*!
+             * Retrieves the long name of this option.
+             *
+             * @return The long name of this option.
+             */
 			std::string const& getLongName() const {
 				return this->longName;
 			}
 
+            /*!
+             * Retrieves whether this option has a short name.
+             *
+             * @return True iff the option has a short name.
+             */
+            bool getHasShortName() const {
+                return this->hasShortName;
+            }
+            
+            /*!
+             * Retrieves the short name of this option.
+             *
+             * @return The short name of this option.
+             */
 			std::string const& getShortName() const {
 				return this->shortName;
 			}
 
+            /*!
+             * Retrieves the description of the option.
+             *
+             * @return The description of the option.
+             */
 			std::string const& getDescription() const {
 				return this->description;
 			}
 
+            /*!
+             * Retrieves the name of the module to which this option belongs.
+             *
+             * @return The name of the module to which this option belongs.
+             */
 			std::string const& getModuleName() const {
 				return this->moduleName;
 			}
 
+            /*!
+             * Retrieves whether the option is required.
+             *
+             * @return True iff the option is required.
+             */
 			bool getIsRequired() const {
 				return this->isRequired;
 			}
 
+            /*!
+             * Retrieves whether the option requires the module name as a prefix.
+             *
+             * @return True iff the option requires the module name as a prefix.
+             */
+            bool getRequiresModulePrefix() const {
+                return this->requireModulePrefix;
+            }
+            
+            /*!
+             * Retrieves whether the option has been set.
+             *
+             * @return True iff the option has been set.
+             */
 			bool getHasOptionBeenSet() const {
 				return this->hasBeenSet;
 			}
 
-			void setHasOptionBeenSet(bool newValue = true) {
-				this->hasBeenSet = newValue;
-			}
+            /*!
+             * Retrieves the arguments of the option.
+             *
+             * @return The arguments of the option.
+             */
+            std::vector<std::shared_ptr<ArgumentBase>> const& getArguments() const;
+            
+            /*!
+             * Retrieves the (print) length of the option.
+             *
+             * @return The length of the option.
+             */
+            uint_fast64_t getPrintLength() const;
+            
+            friend std::ostream& operator<<(std::ostream& out, Option const& option);
+            
 		private:
+            // The long name of the option.
 			std::string longName;
+            
+            // A flag that indicates whether the option has a short name.
+            bool hasShortName;
+            
+            // The short name of the option if any is set and an empty string otherwise.
 			std::string shortName;
+            
+            // The description of the option.
 			std::string description;
+            
+            // The name of the module to which this option belongs.
 			std::string moduleName;
 
+            // A flag that indicates whether this option is required to appear.
 			bool isRequired;
+            
+            // A flag that indicates whether this option is required to be prefixed with the module name.
+            bool requireModulePrefix;
+            
+            // A flag that indicates whether this option has been set.
 			bool hasBeenSet;
 
+            // The arguments of this option (possibly empty).
 			std::vector<std::shared_ptr<ArgumentBase>> arguments;
 
+            // A mapping from argument names of this option to the actual arguments.
 			std::unordered_map<std::string, std::shared_ptr<ArgumentBase>> argumentNameMap;
 
-			void validateFields() const {
-				if (longName.empty()) {
-					LOG4CPLUS_ERROR(logger, "Option::validateFields: Unable to construct an option with empty name.");
-					throw storm::exceptions::IllegalArgumentException() << "Unable to construct an option with empty name.";
-				}
+            /*!
+             * Creates an option with the given parameters.
+             *
+             * @param moduleName The module to which this option belongs.
+             * @param longOptionName The long option name.
+             * @param shortOptionName The short option name.
+             * @param hasShortOptionName A flag that indicates whether this option has a short name.
+             * @param optionDescription The description of the option.
+             * @param isOptionRequired Sets whether the option is required to appear.
+             * @param requireModulePrefix A flag that indicates whether this option requires to be prefixed with the
+             * module name.
+             * @param optionArguments The arguments of the option.
+             */
+            Option(std::string const& moduleName, std::string const& longOptionName, std::string const& shortOptionName, bool hasShortOptionName, std::string const& optionDescription, bool isOptionRequired, bool requireModulePrefix, std::vector<std::shared_ptr<ArgumentBase>> const& optionArguments = std::vector<std::shared_ptr<ArgumentBase>>()) : longName(longOptionName), hasShortName(hasShortOptionName), shortName(shortOptionName), description(optionDescription), moduleName(moduleName), isRequired(isOptionRequired), requireModulePrefix(requireModulePrefix), hasBeenSet(false), arguments(optionArguments), argumentNameMap() {
 
-				if (moduleName.empty()) {
-					LOG4CPLUS_ERROR(logger, "Option::validateFields: Unable to construct an option with empty module.");
-					throw storm::exceptions::IllegalArgumentException() << "Unable to construct an option with empty module.";
-				}
+                // First, do some sanity checks.
+                STORM_LOG_THROW(!longName.empty(), storm::exceptions::IllegalArgumentException, "Unable to construct option with empty name.");
+                STORM_LOG_THROW(!moduleName.empty(), storm::exceptions::IllegalArgumentException, "Unable to construct option with empty module name.");
+                
+                bool longNameContainsNonAlpha = std::find_if(longName.begin(), longName.end(), [](char c) { return !std::isalpha(c); }) != longName.end();
+                STORM_LOG_THROW(!longNameContainsNonAlpha, storm::exceptions::IllegalArgumentException, "Unable to construct option with illegal name.");
+                
+                bool shortNameContainsNonAlpha = std::find_if(shortName.begin(), shortName.end(), [](char c) { return !std::isalpha(c); }) != shortName.end();
+                STORM_LOG_THROW(!shortNameContainsNonAlpha, storm::exceptions::IllegalArgumentException, "Unable to construct option with illegal name.");
 
-				bool longNameContainsNonAlpha = std::find_if(longName.begin(), longName.end(), [](char c) { return !std::isalpha(c); }) != longName.end();
-				bool shortNameContainsNonAlpha = std::find_if(shortName.begin(), shortName.end(), [](char c) { return !std::isalpha(c); }) != shortName.end();
-
-				if (longNameContainsNonAlpha) {
-					LOG4CPLUS_ERROR(logger, "Option::validateFields: Unable to construct an option with a illegal name.");
-					throw storm::exceptions::IllegalArgumentException() << "Unable to construct an option with a illegal name.";
-				}
-				if (shortNameContainsNonAlpha) {
-					LOG4CPLUS_ERROR(logger, "Option::validateFields: Unable to construct an option with a illegal name.");
-					throw storm::exceptions::IllegalArgumentException() << "Unable to construct an option with a illegal name.";
-				}
-			}
-
-			bool isArgumentsVectorValid(std::vector<std::shared_ptr<ArgumentBase>> const& arguments) {
-				bool lastEntryWasOptional = false;
-				std::unordered_set<std::string> argumentNameSet;
-				for (auto i = arguments.begin(); i != arguments.end(); ++i) {
-					bool isCurrentArgumentOptional = i->get()->getIsOptional();
-					//if (!this->isRequired && !i->get()->getHasDefaultValue()) {
-						// LOG
-					//	throw storm::exceptions::IllegalArgumentException() << "Error: The Argument Vector specified for Option \"" << getLongName() << "\" is invalid!\nIt contains an argument without a default value, but the containing option is optional and therefor requires all arguments to provide default values.";
-					//}
-
-					if (!isCurrentArgumentOptional && lastEntryWasOptional) {
-						LOG4CPLUS_ERROR(logger, "Option::isArgumentsVectorValid: The argument vector specified for option \"" << getLongName() << "\" is invalid, because it contains a non-optional argument after an optional one.");
-						throw storm::exceptions::IllegalArgumentException() << "The argument vector specified for option \"" << getLongName() << "\" is invalid, because it contains a non-optional argument after an optional one.";
-					}
-					std::string lowerArgumentName = storm::utility::StringHelper::stringToLower(i->get()->getArgumentName());
-					if (argumentNameSet.find(lowerArgumentName) != argumentNameSet.end()) {
-						LOG4CPLUS_ERROR(logger, "Option::isArgumentsVectorValid: The argument vector specified for option \"" << getLongName() << "\" is invalid, because it contains two arguments with the same name.");
-						throw storm::exceptions::IllegalArgumentException() << "The argument vector specified for option \"" << getLongName() << "\" is invalid, because it contains two arguments with the same name.";
-					}
-					argumentNameSet.insert(lowerArgumentName);
-
-					// This copies the Name to the Name Lookup Map
-					argumentNameMap.insert(std::make_pair(lowerArgumentName, std::shared_ptr<ArgumentBase>(*i)));
-					lastEntryWasOptional = isCurrentArgumentOptional;
-				}
-				return true;
-			}
+                // Then index all arguments.
+                for (auto const& argument : arguments) {
+                    argumentNameMap.emplace(argument->getName(), argument);
+                }
+            }
+            
+            /*!
+             * Sets the flag that marks the option as being (un)set.
+             *
+             * @param newValue The new status of the flag.
+             */
+            void setHasOptionBeenSet(bool newValue = true) {
+                this->hasBeenSet = newValue;
+            }
 		};
 	}
 }

@@ -1,5 +1,5 @@
 #include "src/storage/prism/Constant.h"
-#include "src/exceptions/ExceptionMacros.h"
+#include "src/utility/macros.h"
 #include "src/exceptions/IllegalFunctionCallException.h"
 
 namespace storm {
@@ -25,8 +25,7 @@ namespace storm {
         }
         
         storm::expressions::Expression const& Constant::getExpression() const {
-            assert(this->isDefined());
-            LOG_THROW(this->isDefined(), storm::exceptions::IllegalFunctionCallException, "Unable to retrieve defining expression for undefined constant: " + this->getName());
+            STORM_LOG_THROW(this->isDefined(), storm::exceptions::IllegalFunctionCallException, "Unable to retrieve defining expression for undefined constant.");
             return this->expression;
         }
         

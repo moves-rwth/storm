@@ -16,7 +16,7 @@
 
 #include "AtomicPropositionsLabeling.h"
 #include "src/storage/SparseMatrix.h"
-#include "src/settings/Settings.h"
+#include "src/settings/SettingsManager.h"
 #include "src/models/AbstractNondeterministicModel.h"
 #include "src/utility/matrix.h"
 

@@ -1,6 +1,6 @@
 #include "MarkovAutomatonSparseTransitionParser.h"
 
-#include "src/settings/Settings.h"
+#include "src/settings/SettingsManager.h"
 #include "src/exceptions/WrongFormatException.h"
 #include "src/exceptions/FileIoException.h"
 #include "src/parser/MappedFile.h"
@@ -15,7 +15,7 @@ namespace storm {
 		MarkovAutomatonSparseTransitionParser::FirstPassResult MarkovAutomatonSparseTransitionParser::firstPass(char const* buf) {
 			MarkovAutomatonSparseTransitionParser::FirstPassResult result;
 
-			bool fixDeadlocks = storm::settings::Settings::getInstance()->isSet("fixDeadlocks");
+            bool dontFixDeadlocks = storm::settings::generalSettings().isDontFixDeadlocksSet();
 
 			// Skip the format hint if it is there.
 			buf = trimWhitespaces(buf);
@@ -42,7 +42,7 @@ namespace storm {
 
 				// If we have skipped some states, we need to reserve the space for the self-loop insertion in the second pass.
 				if (source > lastsource + 1) {
-					if (fixDeadlocks) {
+					if (!dontFixDeadlocks) {
 						result.numberOfNonzeroEntries += source - lastsource - 1;
 						result.numberOfChoices += source - lastsource - 1;
 					} else {
@@ -157,7 +157,7 @@ namespace storm {
 		MarkovAutomatonSparseTransitionParser::Result MarkovAutomatonSparseTransitionParser::secondPass(char const* buf, FirstPassResult const& firstPassResult) {
 			Result result(firstPassResult);
 
-			bool fixDeadlocks = storm::settings::Settings::getInstance()->isSet("fixDeadlocks");
+			bool dontFixDeadlocks = storm::settings::generalSettings().isDontFixDeadlocksSet();
 
 			// Skip the format hint if it is there.
 			buf = trimWhitespaces(buf);
@@ -181,7 +181,7 @@ namespace storm {
 
 				// If we have skipped some states, we need to insert self-loops if requested.
 				if (source > lastsource + 1) {
-					if (fixDeadlocks) {
+					if (!dontFixDeadlocks) {
 						for (uint_fast64_t index = lastsource + 1; index < source; ++index) {
 							result.transitionMatrixBuilder.newRowGroup(currentChoice);
 							result.transitionMatrixBuilder.addNextValue(currentChoice, index, 1);

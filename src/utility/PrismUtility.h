@@ -3,7 +3,7 @@
 
 #include "src/storage/LabeledValues.h"
 #include "src/storage/prism/Program.h"
-#include "src/exceptions/ExceptionMacros.h"
+#include "src/utility/macros.h"
 #include "src/exceptions/InvalidArgumentException.h"
 
 namespace storm {
@@ -217,8 +217,8 @@ namespace storm {
                         if (program.hasConstant(constantName)) {
                             // Get the actual constant and check whether it's in fact undefined.
                             auto const& constant = program.getConstant(constantName);
-                            LOG_THROW(!constant.isDefined(), storm::exceptions::InvalidArgumentException, "Illegally trying to define already defined constant '" << constantName <<"'.");
-                            LOG_THROW(definedConstants.find(constantName) == definedConstants.end(), storm::exceptions::InvalidArgumentException, "Illegally trying to define constant '" << constantName <<"' twice.");
+                            STORM_LOG_THROW(!constant.isDefined(), storm::exceptions::InvalidArgumentException, "Illegally trying to define already defined constant '" << constantName <<"'.");
+                            STORM_LOG_THROW(definedConstants.find(constantName) == definedConstants.end(), storm::exceptions::InvalidArgumentException, "Illegally trying to define constant '" << constantName <<"' twice.");
                             definedConstants.insert(constantName);
                             
                             if (constant.getType() == storm::expressions::ExpressionReturnType::Bool) {

@@ -22,7 +22,7 @@ namespace prctl {
 #include "src/properties/Prctl.h"
 #include "src/storage/BitVector.h"
 #include "src/models/AbstractModel.h"
-#include "src/settings/Settings.h"
+#include "src/settings/SettingsManager.h"
 
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"

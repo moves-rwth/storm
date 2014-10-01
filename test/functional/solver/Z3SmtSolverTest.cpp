@@ -3,7 +3,7 @@
 
 #ifdef STORM_HAVE_Z3
 #include "src/solver/Z3SmtSolver.h"
-#include "src/settings/Settings.h"
+#include "src/settings/SettingsManager.h"
 
 TEST(Z3SmtSolver, CheckSat) {
 	storm::solver::Z3SmtSolver s;

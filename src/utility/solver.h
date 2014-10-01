@@ -11,13 +11,13 @@ namespace storm {
     namespace utility {
         namespace solver {
             
-            std::shared_ptr<storm::solver::LpSolver> getLpSolver(std::string const& name);
+            std::unique_ptr<storm::solver::LpSolver> getLpSolver(std::string const& name);
             
             template<typename ValueType>
-            std::shared_ptr<storm::solver::LinearEquationSolver<ValueType>> getLinearEquationSolver();
+            std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> getLinearEquationSolver();
 
             template<typename ValueType>
-            std::shared_ptr<storm::solver::NondeterministicLinearEquationSolver<ValueType>> getNondeterministicLinearEquationSolver();
+            std::unique_ptr<storm::solver::NondeterministicLinearEquationSolver<ValueType>> getNondeterministicLinearEquationSolver();
 
         }
     }

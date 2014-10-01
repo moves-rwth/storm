@@ -12,7 +12,7 @@
 #include "src/parser/DeterministicModelParser.h"
 #include "src/parser/NondeterministicModelParser.h"
 #include "src/parser/MarkovAutomatonParser.h"
-#include "src/exceptions/ExceptionMacros.h"
+#include "src/utility/macros.h"
 #include "src/exceptions/WrongFormatException.h"
 
 #include "src/utility/cstring.h"
@@ -76,7 +76,7 @@ namespace storm {
 			// Open the file.
 			MappedFile file(filename.c_str());
             
-			LOG_THROW(file.getDataSize() >= STORM_PARSER_AUTOPARSER_HINT_LENGTH, storm::exceptions::WrongFormatException, "File too short to be readable.");
+			STORM_LOG_THROW(file.getDataSize() >= STORM_PARSER_AUTOPARSER_HINT_LENGTH, storm::exceptions::WrongFormatException, "File too short to be readable.");
 			char const* fileData = file.getData();
             
 			char filehintBuffer[STORM_PARSER_AUTOPARSER_HINT_LENGTH + 1];

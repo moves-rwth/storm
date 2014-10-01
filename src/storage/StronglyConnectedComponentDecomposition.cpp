@@ -87,6 +87,17 @@ namespace storm {
                 this->blocks[stateToSccMapping[state]].insert(state);
             }
             
+            // Now flag all trivial SCCs as such.
+            for (uint_fast64_t sccIndex = 0; sccIndex < sccCount; ++sccIndex) {
+                if (this->blocks[sccIndex].size() == 1) {
+                    uint_fast64_t onlyState = *this->blocks[sccIndex].begin();
+                    
+                    if (!statesWithSelfLoop.get(onlyState)) {
+                        this->blocks[sccIndex].setIsTrivial(true);
+                    }
+                }
+            }
+            
             // If requested, we need to drop some SCCs.
             if (onlyBottomSccs || dropNaiveSccs) {
                 storm::storage::BitVector blocksToDrop(sccCount);
@@ -94,12 +105,8 @@ namespace storm {
                 // If requested, we need to delete all naive SCCs.
                 if (dropNaiveSccs) {
                     for (uint_fast64_t sccIndex = 0; sccIndex < sccCount; ++sccIndex) {
-                        if (this->blocks[sccIndex].size() == 1) {
-                            uint_fast64_t onlyState = *this->blocks[sccIndex].begin();
-                            
-                            if (!statesWithSelfLoop.get(onlyState)) {
-                                blocksToDrop.set(sccIndex);
-                            }
+                        if (this->blocks[sccIndex].isTrivial()) {
+                            blocksToDrop.set(sccIndex);
                         }
                     }
                 }
@@ -120,7 +127,7 @@ namespace storm {
                 }
                 
                 // Create the new set of blocks by moving all the blocks we need to keep into it.
-                std::vector<Block> newBlocks((~blocksToDrop).getNumberOfSetBits());
+                std::vector<block_type> newBlocks((~blocksToDrop).getNumberOfSetBits());
                 uint_fast64_t currentBlock = 0;
                 for (uint_fast64_t blockIndex = 0; blockIndex < this->blocks.size(); ++blockIndex) {
                     if (!blocksToDrop.get(blockIndex)) {

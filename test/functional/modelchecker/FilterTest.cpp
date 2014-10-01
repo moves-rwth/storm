@@ -30,7 +30,7 @@ TEST(PrctlFilterTest, generalFunctionality) {
 
 	// Setup model and modelchecker.
 	storm::models::Dtmc<double> model = storm::parser::DeterministicModelParser::parseDtmc(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_actionTest.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/dtmc_actionTest.lab");
-	storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double> mc(model, new storm::solver::GmmxxLinearEquationSolver<double>());
+	storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double> mc(model, std::unique_ptr<storm::solver::LinearEquationSolver<double>>(new storm::solver::GmmxxLinearEquationSolver<double>()));
 
 	// Find the best valued state to finally reach a 'b' state.
 	std::string input = "filter[sort(value, descending); range(0,0)](F b)";
@@ -148,7 +148,7 @@ TEST(PrctlFilterTest, generalFunctionality) {
 TEST(PrctlFilterTest, Safety) {
 	// Setup model and modelchecker.
 	storm::models::Dtmc<double> model = storm::parser::DeterministicModelParser::parseDtmc(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_actionTest.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/dtmc_actionTest.lab");
-	storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double> mc(model, new storm::solver::GmmxxLinearEquationSolver<double>());
+	storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double> mc(model, std::unique_ptr<storm::solver::LinearEquationSolver<double>>(new storm::solver::GmmxxLinearEquationSolver<double>()));
 
 	// Make a stub formula as child.
 	auto apFormula = std::make_shared<storm::properties::prctl::Ap<double>>("a");

@@ -21,7 +21,7 @@
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/storage/BitVector.h"
 #include "src/storage/LabeledValues.h"
-#include "src/settings/Settings.h"
+#include "src/settings/SettingsManager.h"
 
 namespace storm {
 
@@ -212,8 +212,7 @@ inline bool isOne(T sum)
 template<>
 inline bool isOne(double sum)
 {
-	storm::settings::Settings* s = storm::settings::Settings::getInstance();
-	double precision = s->getOptionByLongName("precision").getArgument(0).getValueAsDouble();
+	double precision = storm::settings::generalSettings().getPrecision();
 	return std::abs(sum - 1) < precision;
 }
 

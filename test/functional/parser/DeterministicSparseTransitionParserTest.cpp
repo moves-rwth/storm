@@ -10,7 +10,7 @@
 
 #include "src/parser/DeterministicSparseTransitionParser.h"
 #include "src/storage/SparseMatrix.h"
-#include "src/settings/InternalOptionMemento.h"
+#include "src/settings/SettingMemento.h"
 #include "src/exceptions/FileIoException.h"
 #include "src/exceptions/WrongFormatException.h"
 
@@ -190,9 +190,8 @@ TEST(DeterministicSparseTransitionParserTest, MixedTransitionOrder) {
 }
 
 TEST(DeterministicSparseTransitionParserTest, FixDeadlocks) {
-
 	// Set the fixDeadlocks flag temporarily. It is set to its old value once the deadlockOption object is destructed.
-	storm::settings::InternalOptionMemento setDeadlockOption("fixDeadlocks", true);
+    std::unique_ptr<storm::settings::SettingMemento> fixDeadlocks = storm::settings::mutableGeneralSettings().overrideDontFixDeadlocksSet(false);
 
 	// Parse a transitions file with the fixDeadlocks Flag set and test if it works.
 	storm::storage::SparseMatrix<double> transitionMatrix = storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitions<double>(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_deadlock.tra");
@@ -217,7 +216,7 @@ TEST(DeterministicSparseTransitionParserTest, FixDeadlocks) {
 TEST(DeterministicSparseTransitionParserTest, DontFixDeadlocks) {
 
 	// Try to parse a transitions file containing a deadlock state with the fixDeadlocksFlag unset. This should throw an exception.
-	storm::settings::InternalOptionMemento unsetDeadlockOption("fixDeadlocks", false);
+    std::unique_ptr<storm::settings::SettingMemento> dontFixDeadlocks = storm::settings::mutableGeneralSettings().overrideDontFixDeadlocksSet(true);
 
 	ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitions<double>(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_deadlock.tra"), storm::exceptions::WrongFormatException);
 }

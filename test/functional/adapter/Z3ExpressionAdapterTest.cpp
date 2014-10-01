@@ -4,7 +4,7 @@
 #ifdef STORM_HAVE_Z3
 #include "z3++.h"
 #include "src/adapters/Z3ExpressionAdapter.h"
-#include "src/settings/Settings.h"
+#include "src/settings/SettingsManager.h"
 
 TEST(Z3ExpressionAdapter, StormToZ3Basic) {
 	z3::context ctx;

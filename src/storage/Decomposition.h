@@ -2,21 +2,11 @@
 #define STORM_STORAGE_DECOMPOSITION_H_
 
 #include <vector>
-#include <boost/container/flat_set.hpp>
+#include <cstdint>
+#include <ostream>
 
 namespace storm {
     namespace storage {
-        // A typedef that specifies the type of a block consisting of states only.
-        typedef boost::container::flat_set<uint_fast64_t> StateBlock;
-        
-        /*!
-         * Writes a string representation of the state block to the given output stream.
-         *
-         * @param out The output stream to write to.
-         * @param block The block to print to the stream.
-         * @return The given output stream.
-         */
-        std::ostream& operator<<(std::ostream& out, StateBlock const& block);
         
         /*!
          * This class represents the decomposition of a model into blocks which are of the template type.
@@ -24,9 +14,9 @@ namespace storm {
         template <typename BlockType>
         class Decomposition {
         public:
-            typedef BlockType Block;
-            typedef typename std::vector<Block>::iterator iterator;
-            typedef typename std::vector<Block>::const_iterator const_iterator;
+            typedef BlockType block_type;
+            typedef typename std::vector<block_type>::iterator iterator;
+            typedef typename std::vector<block_type>::const_iterator const_iterator;
             
             /*!
              * Creates an empty decomposition.
@@ -68,7 +58,7 @@ namespace storm {
              *
              * @return The number of blocks of this decomposition.
              */
-            size_t size() const;
+            std::size_t size() const;
             
             /*!
              * Retrieves an iterator that points to the first block of this decomposition.
@@ -104,7 +94,7 @@ namespace storm {
              * @param index The index of the block to retrieve.
              * @return The block with the given index.
              */
-            Block const& getBlock(uint_fast64_t index) const;
+            block_type const& getBlock(uint_fast64_t index) const;
             
             /*!
              * Retrieves the block with the given index. If the index is out-of-bounds, an exception is thrown.
@@ -112,7 +102,7 @@ namespace storm {
              * @param index The index of the block to retrieve.
              * @return The block with the given index.
              */
-            Block& getBlock(uint_fast64_t index);
+            block_type& getBlock(uint_fast64_t index);
             
             /*!
              * Retrieves the block with the given index. If the index is out-of-bounds, an behaviour is undefined.
@@ -120,7 +110,7 @@ namespace storm {
              * @param index The index of the block to retrieve.
              * @return The block with the given index.
              */
-            Block const& operator[](uint_fast64_t index) const;
+            block_type const& operator[](uint_fast64_t index) const;
             
             /*!
              * Retrieves the block with the given index. If the index is out-of-bounds, an behaviour is undefined.
@@ -128,15 +118,15 @@ namespace storm {
              * @param index The index of the block to retrieve.
              * @return The block with the given index.
              */
-            Block& operator[](uint_fast64_t index);
+            block_type& operator[](uint_fast64_t index);
             
             // Declare the streaming operator as a friend function to enable output of decompositions.
-            template<typename BlockTimePrime>
-            friend std::ostream& operator<<(std::ostream& out, Decomposition<BlockTimePrime> const& decomposition);
+            template<typename BlockTypePrime>
+            friend std::ostream& operator<<(std::ostream& out, Decomposition<BlockTypePrime> const& decomposition);
             
         protected:
             // The blocks of the decomposition.
-            std::vector<Block> blocks;
+            std::vector<block_type> blocks;
         };
     }
 }

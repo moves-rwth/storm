@@ -1,23 +1,15 @@
-/*
- * NotImplementedException.h
- *
- *  Created on: 12.01.2013
- *      Author: Christian Dehnert
- */
-
 #ifndef STORM_EXCEPTIONS_NOTIMPLEMENTEDEXCEPTION_H_
 #define STORM_EXCEPTIONS_NOTIMPLEMENTEDEXCEPTION_H_
 
 #include "src/exceptions/BaseException.h"
+#include "src/exceptions/ExceptionMacros.h"
 
 namespace storm {
-
-namespace exceptions {
-
-STORM_EXCEPTION_DEFINE_NEW(NotImplementedException)
-
-}
-
-}
+    namespace exceptions {
+        
+        STORM_NEW_EXCEPTION(NotImplementedException)
+        
+    } // namespace exceptions
+} // namespace storm
 
 #endif /* STORM_EXCEPTIONS_NOTIMPLEMENTEDEXCEPTION_H_ */

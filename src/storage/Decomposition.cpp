@@ -1,4 +1,5 @@
 #include "src/storage/Decomposition.h"
+#include "src/storage/StronglyConnectedComponent.h"
 #include "src/storage/MaximalEndComponent.h"
 
 namespace storm {
@@ -32,7 +33,7 @@ namespace storm {
         }
         
         template <typename BlockType>
-        size_t Decomposition<BlockType>::size() const {
+        std::size_t Decomposition<BlockType>::size() const {
             return blocks.size();
         }
         
@@ -76,15 +77,6 @@ namespace storm {
             return blocks[index];
         }
         
-        std::ostream& operator<<(std::ostream& out, StateBlock const& block) {
-            out << "{";
-            for (auto const& element : block) {
-                out << element << ", ";
-            }
-            out << "}";
-            return out;
-        }
-        
         template <typename BlockType>
         std::ostream& operator<<(std::ostream& out, Decomposition<BlockType> const& decomposition) {
             out << "[";
@@ -98,8 +90,8 @@ namespace storm {
             return out;
         }
         
-        template class Decomposition<StateBlock>;
-        template std::ostream& operator<<(std::ostream& out, Decomposition<StateBlock> const& decomposition);
+        template class Decomposition<StronglyConnectedComponent>;
+        template std::ostream& operator<<(std::ostream& out, Decomposition<StronglyConnectedComponent> const& decomposition);
         
         template class Decomposition<MaximalEndComponent>;
         template std::ostream& operator<<(std::ostream& out, Decomposition<MaximalEndComponent> const& decomposition);
