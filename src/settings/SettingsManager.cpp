@@ -110,9 +110,30 @@ namespace storm {
             if (optionActive) {
                 setOptionsArguments(activeOptionName, activeOptionIsShortName ? this->shortNameToOptions : this->longNameToOptions, argumentCache);
             }
-            
-            // Finally check whether all modules are okay with the current settings.
-            this->checkAllModules();
+
+            if (storm::settings::generalSettings().isConfigSet()) {
+                std::map<std::string, std::vector<std::string>> configurationFileSettings = parseConfigFile(storm::settings::generalSettings().getConfigFilename());
+                
+                for (auto const& optionArgumentsPair : configurationFileSettings) {
+                    auto options = this->longNameToOptions.find(optionArgumentsPair.first);
+                    
+                    // We don't need to check whether this option exists or not, because this is already checked when
+                    // parsing the configuration file.
+                    
+                    // Now go through all the matching options and set them according to the values.
+                    for (auto option : options->second) {
+                        if (option->getHasOptionBeenSet()) {
+                            // If the option was already set from the command line, we issue a warning and ignore the
+                            // settings from the configuration file.
+                            STORM_LOG_WARN("The option '" << option->getLongName() << " of module '" << option->getModuleName() << "' has been set in the configuration file, but was overriden on the command line.");
+                        } else {
+                            // If, however, the option has not been set yet, we try to assign values ot its arguments
+                            // based on the argument strings.
+                            setOptionArguments(optionArgumentsPair.first, option, optionArgumentsPair.second);
+                        }
+                    }
+                }
+            }
         }
         
         void SettingsManager::setFromConfigurationFile(std::string const& configFilename) {
@@ -293,6 +314,23 @@ namespace storm {
             return true;
         }
         
+        void SettingsManager::setOptionArguments(std::string const& optionName, std::shared_ptr<Option> option, std::vector<std::string> const& argumentCache) {
+            STORM_LOG_THROW(argumentCache.size() <= option->getArgumentCount(), storm::exceptions::OptionParserException, "Too many arguments for option '" << optionName << "'.");
+            
+            // Now set the provided argument values one by one.
+            for (uint_fast64_t i = 0; i < argumentCache.size(); ++i) {
+                ArgumentBase& argument = option->getArgument(i);
+                bool conversionOk = argument.setFromStringValue(argumentCache[i]);
+                STORM_LOG_THROW(conversionOk, storm::exceptions::OptionParserException, "Conversion of value of argument '" << argument.getName() << "' to its type failed.");
+            }
+            
+            // In case there are optional arguments that were not set, we set them to their default value.
+            for (uint_fast64_t i = argumentCache.size(); i < option->getArgumentCount(); ++i) {
+                ArgumentBase& argument = option->getArgument(i);
+                argument.setFromDefaultValue();
+            }
+        }
+        
         void SettingsManager::setOptionsArguments(std::string const& optionName, std::unordered_map<std::string, std::vector<std::shared_ptr<Option>>> const& optionMap, std::vector<std::string> const& argumentCache) {
             auto optionIterator = optionMap.find(optionName);
             STORM_LOG_THROW(optionIterator != optionMap.end(), storm::exceptions::OptionParserException, "Unknown option '" << optionName << "'.");
@@ -300,20 +338,7 @@ namespace storm {
             // Iterate over all options and set the arguments.
             for (auto& option : optionIterator->second) {
                 option->setHasOptionBeenSet();
-                STORM_LOG_THROW(argumentCache.size() <= option->getArgumentCount(), storm::exceptions::OptionParserException, "Too many arguments for option '" << optionName << "'.");
-                
-                // Now set the provided argument values one by one.
-                for (uint_fast64_t i = 0; i < argumentCache.size(); ++i) {
-                    ArgumentBase& argument = option->getArgument(i);
-                    bool conversionOk = argument.setFromStringValue(argumentCache[i]);
-                    STORM_LOG_THROW(conversionOk, storm::exceptions::OptionParserException, "Conversion of value of argument '" << argument.getName() << "' to its type failed.");
-                }
-                
-                // In case there are optional arguments that were not set, we set them to their default value.
-                for (uint_fast64_t i = argumentCache.size(); i < option->getArgumentCount(); ++i) {
-                    ArgumentBase& argument = option->getArgument(i);
-                    argument.setFromDefaultValue();
-                }
+                setOptionArguments(optionName, option, argumentCache);
             }
         }
         
@@ -332,6 +357,95 @@ namespace storm {
             for (auto const& nameModulePair : this->modules) {
                 nameModulePair.second->check();
             }
+        }
+        
+        std::map<std::string, std::vector<std::string>> SettingsManager::parseConfigFile(std::string const& filename) const {
+            std::map<std::string, std::vector<std::string>> result;
+            
+            std::ifstream input(filename);
+            STORM_LOG_THROW(input.good(), storm::exceptions::OptionParserException, "Could not read from config file '" << filename << "'.");
+
+            bool globalScope = true;
+            std::string activeModule = "";
+            uint_fast64_t lineNumber = 1;
+            for (std::string line; getline(input, line); ++lineNumber) {
+                // If the first character of the line is a "[", we expect the settings of a new module to start and
+                // the line to be of the shape [<module>].
+                if (line.at(0) == '[') {
+                    STORM_LOG_THROW(line.at(0) == '[' && line.find("]") == line.length() - 1 && line.find("[", 1) == line.npos, storm::exceptions::OptionParserException, "Illegal module name header in configuration file '" << filename << " in line " << std::to_string(lineNumber) << ". Expected [<module>] where <module> is a placeholder for a known module.");
+                    
+                    // Extract the module name and check whether it's a legal one.
+                    std::string moduleName = line.substr(1, line.length() - 2);
+                    STORM_LOG_THROW(moduleName != "" && (moduleName == "global" || (this->modules.find(moduleName) != this->modules.end())), storm::exceptions::OptionParserException, "Module header in configuration file '" << filename << " in line " << std::to_string(lineNumber) << " refers to unknown module '" << moduleName << ".");
+                    
+                    // If the module name is "global", we unset the currently active module and treat all options to follow as unprefixed.
+                    if (moduleName == "global") {
+                        globalScope = true;
+                    } else {
+                        activeModule = moduleName;
+                        globalScope = false;
+                    }
+                } else {
+                    // In this case, we expect the line to be of the shape o or o=a b c, where o is an option and a, b
+                    // and c are the values that are supposed to be assigned to the arguments of the option.
+                    std::size_t assignmentSignIndex = line.find("=");
+                    bool containsAssignment = false;
+                    if (assignmentSignIndex != line.npos) {
+                        containsAssignment = true;
+                    }
+                    
+                    std::string optionName;
+                    if (containsAssignment) {
+                        optionName = line.substr(0, assignmentSignIndex);
+                    } else {
+                        optionName = line;
+                    }
+                    
+                    if (globalScope) {
+                        STORM_LOG_THROW(this->longNameToOptions.find(optionName) != this->longNameToOptions.end(), storm::exceptions::OptionParserException, "Option assignment in configuration file '" << filename << " in line " << lineNumber << " refers to unknown option '" << optionName << "'.");
+                    } else {
+                        STORM_LOG_THROW(this->longNameToOptions.find(activeModule + ":" + optionName) != this->longNameToOptions.end(), storm::exceptions::OptionParserException, "Option assignment in configuration file '" << filename << " in line " << lineNumber << " refers to unknown option '" << activeModule << ":" <<  optionName << "'.");
+                    }
+                    
+                    // If the current line is an assignment, split the right-hand side of the assignment into parts
+                    // enclosed by quotation marks.
+                    if (containsAssignment) {
+                        std::string assignedValues = line.substr(assignmentSignIndex + 1);
+                        std::vector<std::string> argumentCache;
+                    
+                        // As horrible as it may look, this regular expression matches either a quoted string (possibly
+                        // containing escaped quotes) or a simple word (without whitespaces and quotes).
+                        std::regex argumentRegex("\"(([^\\\\\"]|((\\\\\\\\)*\\\\\")|\\\\[^\"])*)\"|(([^ \\\\\"]|((\\\\\\\\)*\\\\\")|\\\\[^\"])+)");
+                        boost::algorithm::trim_left(assignedValues);
+                        
+                        while (!assignedValues.empty()) {
+                            std::smatch match;
+                            bool hasMatch = std::regex_search(assignedValues, match, argumentRegex);
+                            
+                            // If the input could not be matched, we have a parsing error.
+                            STORM_LOG_THROW(hasMatch, storm::exceptions::OptionParserException, "Parsing error in configuration file '" << filename << "' in line " << lineNumber << ". Unexpected input '" << assignedValues << "'.");
+
+                            // Extract the matched argument and cut off the quotation marks if necessary.
+                            std::string matchedArgument = std::string(match[0].first, match[0].second);
+                            if (matchedArgument.at(0) == '"') {
+                                matchedArgument = matchedArgument.substr(1, matchedArgument.length() - 2);
+                            }
+                            argumentCache.push_back(matchedArgument);
+                            
+                            assignedValues = assignedValues.substr(match.length());
+                            boost::algorithm::trim_left(assignedValues);
+                        }
+                        
+                        // After successfully parsing the argument values, we store them in the result map.
+                        result.emplace((!globalScope ? activeModule + ":" : "") + optionName, argumentCache);
+                    } else {
+                        // In this case, we can just insert the option to indicate it should be set (without arguments).
+                        result.emplace((!globalScope ? activeModule + ":" : "") + optionName, std::vector<std::string>());
+                    }
+                }
+            }
+            
+            return result;
         }
         
         SettingsManager const& manager() {

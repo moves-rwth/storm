@@ -199,9 +199,8 @@ namespace storm {
                 try {
                     manager.setFromCommandLine(argc, argv);
                 } catch (storm::exceptions::OptionParserException& e) {
-                    std::cout << "Could not recover from settings error: " << e.what() << "." << std::endl;
-                    std::cout << std::endl;
                     manager.printHelp();
+                    throw e;
                     return false;
                 }
                 
