@@ -49,6 +49,7 @@ log4cplus::Logger logger;
 
 // Headers related to exception handling.
 #include "src/exceptions/InvalidSettingsException.h"
+#include "src/exceptions/InvalidTypeException.h"
 
 namespace storm {
     namespace utility {

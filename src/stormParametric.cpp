@@ -7,6 +7,8 @@
 #include "src/utility/macros.h"
 #include "src/utility/cli.h"
 
+#include "src/modelchecker/reachability/SparseSccModelChecker.h"
+#include "src/storage/parameters.h"
 /*!
  * Main entry point of the executable storm.
  */
@@ -20,7 +22,27 @@ int main(const int argc, const char** argv) {
         }
         
         // From this point on we are ready to carry out the actual computations.
-        
+        // Program Translation Time Measurement, Start
+        std::chrono::high_resolution_clock::time_point programTranslationStart = std::chrono::high_resolution_clock::now();
+
+        // First, we build the model using the given symbolic model description and constant definitions.
+        std::string const& programFile = storm::settings::generalSettings().getSymbolicModelFilename();
+        std::string const& constants = storm::settings::generalSettings().getConstantDefinitionString();
+        storm::prism::Program program = storm::parser::PrismParser::parse(programFile);
+        std::shared_ptr<storm::models::AbstractModel<storm::RationalFunction>> model = storm::adapters::ExplicitModelAdapter<storm::RationalFunction>::translateProgram(program, constants);
+
+        // Program Translation Time Measurement, End
+        std::chrono::high_resolution_clock::time_point programTranslationEnd = std::chrono::high_resolution_clock::now();
+        std::cout << "Parsing and translating the Symbolic Input took " << std::chrono::duration_cast<std::chrono::milliseconds>(programTranslationEnd - programTranslationStart).count() << " milliseconds." << std::endl;
+
+        storm::modelchecker::reachability::SparseSccModelChecker<storm::RationalFunction> modelChecker;
+        storm::storage::BitVector trueStates(model->getNumberOfStates(), true);
+        storm::storage::BitVector targetStates = model->getLabeledStates("observe0Greater1");
+//            storm::storage::BitVector targetStates = model->getLabeledStates("one");
+//            storm::storage::BitVector targetStates = model->getLabeledStates("elected");
+        storm::RationalFunction value = modelChecker.computeReachabilityProbability(*model->as<storm::models::Dtmc<storm::RationalFunction>>(), trueStates, targetStates);
+        std::cout << "computed value " << value << std::endl;
+
         // All operations have now been performed, so we clean up everything and terminate.
         storm::utility::cli::cleanUp();
         return 0;
@@ -30,9 +52,6 @@ int main(const int argc, const char** argv) {
         STORM_LOG_ERROR("An unexpected exception occurred and caused StoRM to terminate. The message of this exception is: " << exception.what());
     }
 }
-
-
-
 
 //#include <memory>
 //#include <stdint.h>
