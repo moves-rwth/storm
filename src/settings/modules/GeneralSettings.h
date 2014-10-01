@@ -313,6 +313,8 @@ namespace storm {
                  * @return True iff statistics are to be shown for counterexample generation.
                  */
                 bool isShowStatisticsSet() const;
+                
+                bool check() const override;
 
                 // The name of the module.
                 static const std::string moduleName;

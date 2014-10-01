@@ -27,11 +27,20 @@ namespace storm {
                 bool isOutputSet() const;
                 
                 /*!
+                 * Retrieves whether the integer tolerance has been set.
+                 *
+                 * @return True iff the integer tolerance has been set.
+                 */
+                bool isIntegerToleranceSet() const;
+                
+                /*!
                  * Retrieves the integer tolerance to be used.
                  *
                  * @return The integer tolerance to be used.
                  */
                 double getIntegerTolerance() const;
+                
+                bool check() const override;
                 
                 // The name of the module.
                 static const std::string moduleName;

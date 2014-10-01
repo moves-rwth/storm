@@ -19,8 +19,20 @@ namespace storm {
                 return this->getOption(outputOptionName).getHasOptionBeenSet();
             }
             
+            bool GlpkSettings::isIntegerToleranceSet() const {
+                return this->getOption(integerToleranceOption).getHasOptionBeenSet();
+            }
+            
             double GlpkSettings::getIntegerTolerance() const {
                 return this->getOption(integerToleranceOption).getArgumentByName("value").getValueAsDouble();
+            }
+            
+            bool GlpkSettings::check() const {
+                if (isOutputSet() || isIntegerToleranceSet()) {
+                    STORM_LOG_WARN_COND(storm::settings::generalSettings().getLpSolver() == storm::settings::modules::GeneralSettings::LpSolver::glpk, "glpk is not selected as the used LP solver, so setting options for glpk has no effect.");
+                }
+                
+                return true;
             }
             
         } // namespace modules

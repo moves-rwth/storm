@@ -20,11 +20,25 @@ namespace storm {
                 GurobiSettings(storm::settings::SettingsManager& settingsManager);
                 
                 /*!
+                 * Retrieves whether the integer tolerance has been set.
+                 *
+                 * @return True iff the integer tolerance has been set.
+                 */
+                bool isIntegerToleranceSet() const;
+                
+                /*!
                  * Retrieves the integer tolerance to be used.
                  *
                  * @return The integer tolerance to be used.
                  */
                 double getIntegerTolerance() const;
+                
+                /*!
+                 * Retrieves whether the number of threads has been set.
+                 *
+                 * @return True iff the number of threads has been set.
+                 */
+                bool isNumberOfThreadsSet() const;
                 
                 /*!
                  * Retrieves the maximal number of threads Gurobi is allowed to use.
@@ -39,6 +53,8 @@ namespace storm {
                  * @return True iff the output option was set.
                  */
                 bool isOutputSet() const;
+                
+                bool check() const override;
                 
                 // The name of the module.
                 static const std::string moduleName;

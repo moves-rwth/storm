@@ -8,6 +8,7 @@
 #include <utility>
 #include <functional>
 #include <unordered_map>
+#include <map>
 #include <vector>
 #include <memory>
 
@@ -157,6 +158,15 @@ namespace storm {
             void addOption(std::shared_ptr<Option> const& option);
             
             /*!
+             * Sets the arguments of the given option from the provided strings.
+             *
+             * @param optionName The name of the option. This is only used for error output.
+             * @param option The option for which to set the arguments.
+             * @param argumentCache The arguments of the option as string values.
+             */
+            static void setOptionArguments(std::string const& optionName, std::shared_ptr<Option> option, std::vector<std::string> const& argumentCache);
+            
+            /*!
              * Sets the arguments of the options matching the given name from the provided strings.
              *
              * @param optionName The name of the options for which to set the arguments.
@@ -180,6 +190,11 @@ namespace storm {
             static void addOptionToMap(std::string const& name, std::shared_ptr<Option> const& option, std::unordered_map<std::string, std::vector<std::shared_ptr<Option>>>& optionMap);
             
             /*!
+             * Checks all modules for consistency by calling their respective check method.
+             */
+            void checkAllModules() const;
+            
+            /*!
              * Retrieves the (print) length of the longest option of all modules.
              *
              * @return The length of the longest option.
@@ -193,6 +208,14 @@ namespace storm {
              * @return The length of the longest option name.
              */
             uint_fast64_t getPrintLengthOfLongestOption(std::string const& moduleName) const;
+            
+            /*!
+             * Parses the given file and stores the settings in the returned map.
+             *
+             * @param filename The name of the file that is to be scanned for settings.
+             * @return A mapping of option names to the argument values (represented as strings).
+             */
+            std::map<std::string, std::vector<std::string>> parseConfigFile(std::string const& filename) const;
         };
         
         /*!
