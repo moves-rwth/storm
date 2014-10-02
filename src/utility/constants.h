@@ -22,6 +22,7 @@
 #include "src/storage/BitVector.h"
 #include "src/storage/LabeledValues.h"
 #include "src/settings/SettingsManager.h"
+#include "src/storage/parameters.h"
 
 namespace storm {
 
@@ -208,6 +209,20 @@ inline bool isOne(T sum)
 {
 	return sum == T(1);
 }
+
+#ifdef PARAMETRIC_SYSTEMS
+template<>
+inline bool isOne(const RationalFunction& r)
+{
+	return r.isOne();
+}
+
+template<>
+inline bool isOne(const Polynomial& p)
+{
+	return p.isOne();
+}
+#endif
 
 template<>
 inline bool isOne(double sum)
