@@ -15,8 +15,8 @@ const int M = 2*K+1; // total number of multiplexing units
 // J. Han & P. Jonker
 // IEEEE trans. on nanotechnology vol 1(4) 2002
 
-param double perr; //(0.02) probability nand works correctly
-param double prob1; //(0.9) probability initial inputs are stimulated
+const double perr; //(0.02) probability nand works correctly
+const double prob1; //(0.9) probability initial inputs are stimulated
 
 // model whole system as a single module by resuing variables 
 // to decrease the state space
@@ -62,9 +62,11 @@ module multiplex
     // [] s=3 & z<N -> (1-perr) : (z'=z+(1-x*y)) & (s'=0) & (c'=c+1) & (x'=0) & (y'=0) // not faulty
     //         + perr    : (z'=z+(x*y))    & (s'=0) & (c'=c+1) & (x'=0) & (y'=0); // von neumann fault
     
-    [] s=4 -> true;
+    [] s=4 -> (s'=s);
     
 endmodule
+
+label "target" = s=4 & z/N<0.1;
 
 // rewards: final value of gate
 rewards

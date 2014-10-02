@@ -205,27 +205,27 @@ inline storm::storage::LabeledValues<double> constantInfinity() {
 /*! @endcond */
 
 template<typename T>
-inline bool isOne(T sum)
+inline bool isOne(T const& sum)
 {
 	return sum == T(1);
 }
 
 #ifdef PARAMETRIC_SYSTEMS
 template<>
-inline bool isOne(const RationalFunction& r)
+inline bool isOne(storm::RationalFunction const& r)
 {
 	return r.isOne();
 }
 
 template<>
-inline bool isOne(const Polynomial& p)
+inline bool isOne(storm::Polynomial const& p)
 {
 	return p.isOne();
 }
 #endif
 
 template<>
-inline bool isOne(double sum)
+inline bool isOne(double const& sum)
 {
 	double precision = storm::settings::generalSettings().getPrecision();
 	return std::abs(sum - 1) < precision;

@@ -16,6 +16,8 @@ namespace storm {
             friend class SimpleValuationPointerHash;
             friend class SimpleValuationPointerLess;
             
+            typedef boost::container::flat_map<std::string, boost::variant<bool, int_fast64_t, double>> map_type;
+            
             // Instantiate some constructors and assignments with their default implementations.
             SimpleValuation() = default;
             SimpleValuation(SimpleValuation const&) = default;

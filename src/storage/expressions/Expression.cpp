@@ -3,7 +3,8 @@
 
 #include "src/storage/expressions/Expression.h"
 #include "src/storage/expressions/SubstitutionVisitor.h"
-#include "src/storage/expressions/IdentifierSubstitutionVisitor.h"
+#include "src/storage/expressions/IdentifierSubstitutionWithMapVisitor.h"
+#include "src/storage/expressions/IdentifierSubstitutionWithValuationVisitor.h"
 #include "src/storage/expressions/TypeCheckVisitor.h"
 #include "src/storage/expressions/LinearityCheckVisitor.h"
 #include "src/storage/expressions/Expressions.h"
@@ -25,12 +26,16 @@ namespace storm {
 		}
         
 		Expression Expression::substitute(std::map<std::string, std::string> const& identifierToIdentifierMap) const {
-			return IdentifierSubstitutionVisitor<std::map<std::string, std::string>>(identifierToIdentifierMap).substitute(*this);
+			return IdentifierSubstitutionWithMapVisitor<std::map<std::string, std::string>>(identifierToIdentifierMap).substitute(*this);
         }
 
 		Expression Expression::substitute(std::unordered_map<std::string, std::string> const& identifierToIdentifierMap) const {
-			return IdentifierSubstitutionVisitor<std::unordered_map<std::string, std::string>>(identifierToIdentifierMap).substitute(*this);
+			return IdentifierSubstitutionWithMapVisitor<std::unordered_map<std::string, std::string>>(identifierToIdentifierMap).substitute(*this);
 		}
+        
+        Expression Expression::substitute(SimpleValuation const& valuation) const {
+            return IdentifierSubstitutionWithValuationVisitor(valuation).substitute(*this);
+        }
         
         void Expression::check(std::map<std::string, storm::expressions::ExpressionReturnType> const& identifierToTypeMap) const {
             return TypeCheckVisitor<std::map<std::string, storm::expressions::ExpressionReturnType>>(identifierToTypeMap).check(*this);

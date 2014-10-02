@@ -23,7 +23,9 @@ namespace storm {
             static RationalFunction&& simplify(RationalFunction&& value) {
                 // In the general case, we don't to anything here, but merely return the value. If something else is
                 // supposed to happen here, the templated function can be specialized for this particular type.
+//                std::cout << "simplifying " << value << std::endl;
                 value.simplify();
+//                std::cout << "done simplifying." << std::endl;
                 return std::forward<RationalFunction>(value);
             }
             
@@ -61,6 +63,8 @@ namespace storm {
                 
                 // Subtract from the maybe states the set of states that is not reachable (on a path from the initial to a target state).
                 maybeStates &= reachableStates;
+                
+                std::cout << "solving system with " << maybeStates.getNumberOfSetBits() << " states." << std::endl;
                 
                 // Create a vector for the probabilities to go to a state with probability 1 in one step.
                 std::vector<ValueType> oneStepProbabilities = dtmc.getTransitionMatrix().getConstrainedRowSumVector(maybeStates, statesWithProbability1);
@@ -169,8 +173,11 @@ namespace storm {
                 }
             }
             
+            static int counter = 0;
+            
             template<typename ValueType>
             void SparseSccModelChecker<ValueType>::eliminateState(FlexibleSparseMatrix<ValueType>& matrix, std::vector<ValueType>& oneStepProbabilities, uint_fast64_t state, FlexibleSparseMatrix<ValueType>& backwardTransitions) {
+                std::cout << "eliminating state " << counter++ << std::endl;
                 bool hasSelfLoop = false;
                 ValueType loopProbability = storm::utility::constantZero<ValueType>();
                 

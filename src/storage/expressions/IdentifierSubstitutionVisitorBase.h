@@ -1,5 +1,5 @@
-#ifndef STORM_STORAGE_EXPRESSIONS_IDENTIFIERSUBSTITUTIONVISITOR_H_
-#define STORM_STORAGE_EXPRESSIONS_IDENTIFIERSUBSTITUTIONVISITOR_H_
+#ifndef STORM_STORAGE_EXPRESSIONS_IDENTIFIERSUBSTITUTIONVISITORBASE_H_
+#define STORM_STORAGE_EXPRESSIONS_IDENTIFIERSUBSTITUTIONVISITORBASE_H_
 
 #include <stack>
 
@@ -8,16 +8,8 @@
 
 namespace storm {
     namespace expressions {
-        template<typename MapType>
-        class IdentifierSubstitutionVisitor : public ExpressionVisitor {
+        class IdentifierSubstitutionVisitorBase : public ExpressionVisitor {
         public:
-            /*!
-             * Creates a new substitution visitor that uses the given map to replace identifiers.
-             *
-             * @param identifierToExpressionMap A mapping from identifiers to expressions.
-             */
-            IdentifierSubstitutionVisitor(MapType const& identifierToExpressionMap);
-            
             /*!
              * Substitutes the identifiers in the given expression according to the previously given map and returns the
              * resulting expression.
@@ -32,21 +24,17 @@ namespace storm {
             virtual void visit(BinaryBooleanFunctionExpression const* expression) override;
             virtual void visit(BinaryNumericalFunctionExpression const* expression) override;
             virtual void visit(BinaryRelationExpression const* expression) override;
-            virtual void visit(VariableExpression const* expression) override;
             virtual void visit(UnaryBooleanFunctionExpression const* expression) override;
             virtual void visit(UnaryNumericalFunctionExpression const* expression) override;
             virtual void visit(BooleanLiteralExpression const* expression) override;
             virtual void visit(IntegerLiteralExpression const* expression) override;
             virtual void visit(DoubleLiteralExpression const* expression) override;
             
-        private:
+        protected:
             // A stack of expression used to pass the results to the higher levels.
             std::stack<std::shared_ptr<BaseExpression const>> expressionStack;
-            
-            // A mapping of identifier names to expressions with which they shall be replaced.
-            MapType const& identifierToIdentifierMap;
         };
     }
 }
 
-#endif /* STORM_STORAGE_EXPRESSIONS_IDENTIFIERSUBSTITUTIONVISITOR_H_ */
+#endif /* STORM_STORAGE_EXPRESSIONS_IDENTIFIERSUBSTITUTIONVISITORBASE_H_ */

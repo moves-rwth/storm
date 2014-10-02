@@ -5,6 +5,7 @@
 #include <map>
 #include <unordered_map>
 
+#include "src/storage/expressions/SimpleValuation.h"
 #include "src/storage/expressions/BaseExpression.h"
 #include "src/storage/expressions/ExpressionVisitor.h"
 #include "src/utility/OsDetection.h"
@@ -107,6 +108,15 @@ namespace storm {
 			* identifiers they are mapped to.
 			*/
 			Expression substitute(std::unordered_map<std::string, std::string> const& identifierToIdentifierMap) const;
+            
+            /*!
+             * Substitutes all occurrences of identifiers for which the given valuation specifies a concrete value by
+             * the corresponding value.
+             *
+             * @param valuation The valuation that is used to replace the identifiers.
+             * @return The resulting expression.
+             */
+            Expression substitute(SimpleValuation const& valuation) const;
             
             /*!
              * Checks that all identifiers appearing in the expression have the types given by the map. An exception

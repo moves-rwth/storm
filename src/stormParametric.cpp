@@ -30,6 +30,8 @@ int main(const int argc, const char** argv) {
         std::string const& constants = storm::settings::generalSettings().getConstantDefinitionString();
         storm::prism::Program program = storm::parser::PrismParser::parse(programFile);
         std::shared_ptr<storm::models::AbstractModel<storm::RationalFunction>> model = storm::adapters::ExplicitModelAdapter<storm::RationalFunction>::translateProgram(program, constants);
+        
+        model->printModelInformationToStream(std::cout);
 
         // Program Translation Time Measurement, End
         std::chrono::high_resolution_clock::time_point programTranslationEnd = std::chrono::high_resolution_clock::now();
@@ -37,7 +39,7 @@ int main(const int argc, const char** argv) {
 
         storm::modelchecker::reachability::SparseSccModelChecker<storm::RationalFunction> modelChecker;
         storm::storage::BitVector trueStates(model->getNumberOfStates(), true);
-        storm::storage::BitVector targetStates = model->getLabeledStates("observe0Greater1");
+        storm::storage::BitVector targetStates = model->getLabeledStates("target");
 //            storm::storage::BitVector targetStates = model->getLabeledStates("one");
 //            storm::storage::BitVector targetStates = model->getLabeledStates("elected");
         storm::RationalFunction value = modelChecker.computeReachabilityProbability(*model->as<storm::models::Dtmc<storm::RationalFunction>>(), trueStates, targetStates);

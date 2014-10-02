@@ -9,8 +9,8 @@ const int N = 16;
 const int MAX = 2;
 
 // reliability of channels
-param float pL;
-param float pK;
+const double pL;
+const double pK;
 
 module sender
 
@@ -133,3 +133,5 @@ module  channelL
     [TO_Ack] (l=2) -> (l'=0);
     
 endmodule
+
+label "target" = s=5;

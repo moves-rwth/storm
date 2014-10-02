@@ -1,25 +1,16 @@
-#include <map>
-#include <unordered_map>
 #include <string>
 
-#include "src/storage/expressions/IdentifierSubstitutionVisitor.h"
+#include "src/storage/expressions/IdentifierSubstitutionVisitorBase.h"
 #include "src/storage/expressions/Expressions.h"
 
 namespace storm {
     namespace expressions  {
-		template<typename MapType>
-        IdentifierSubstitutionVisitor<MapType>::IdentifierSubstitutionVisitor(MapType const& identifierToIdentifierMap) : identifierToIdentifierMap(identifierToIdentifierMap) {
-            // Intentionally left empty.
-        }
-        
-		template<typename MapType>
-        Expression IdentifierSubstitutionVisitor<MapType>::substitute(Expression const& expression) {
+        Expression IdentifierSubstitutionVisitorBase::substitute(Expression const& expression) {
             expression.getBaseExpression().accept(this);
             return Expression(this->expressionStack.top());
         }
         
-		template<typename MapType>
-        void IdentifierSubstitutionVisitor<MapType>::visit(IfThenElseExpression const* expression) {
+        void IdentifierSubstitutionVisitorBase::visit(IfThenElseExpression const* expression) {
             expression->getCondition()->accept(this);
             std::shared_ptr<BaseExpression const> conditionExpression = expressionStack.top();
             expressionStack.pop();
@@ -40,8 +31,7 @@ namespace storm {
             }
         }
         
-        template<typename MapType>
-        void IdentifierSubstitutionVisitor<MapType>::visit(BinaryBooleanFunctionExpression const* expression) {
+        void IdentifierSubstitutionVisitorBase::visit(BinaryBooleanFunctionExpression const* expression) {
             expression->getFirstOperand()->accept(this);
             std::shared_ptr<BaseExpression const> firstExpression = expressionStack.top();
             expressionStack.pop();
@@ -58,8 +48,7 @@ namespace storm {
             }
         }
         
-        template<typename MapType>
-        void IdentifierSubstitutionVisitor<MapType>::visit(BinaryNumericalFunctionExpression const* expression) {
+        void IdentifierSubstitutionVisitorBase::visit(BinaryNumericalFunctionExpression const* expression) {
             expression->getFirstOperand()->accept(this);
             std::shared_ptr<BaseExpression const> firstExpression = expressionStack.top();
             expressionStack.pop();
@@ -76,8 +65,7 @@ namespace storm {
             }
         }
         
-        template<typename MapType>
-        void IdentifierSubstitutionVisitor<MapType>::visit(BinaryRelationExpression const* expression) {
+        void IdentifierSubstitutionVisitorBase::visit(BinaryRelationExpression const* expression) {
             expression->getFirstOperand()->accept(this);
             std::shared_ptr<BaseExpression const> firstExpression = expressionStack.top();
             expressionStack.pop();
@@ -93,20 +81,8 @@ namespace storm {
                 this->expressionStack.push(std::shared_ptr<BaseExpression>(new BinaryRelationExpression(expression->getReturnType(), firstExpression, secondExpression, expression->getRelationType())));
             }
         }
-                
-        template<typename MapType>
-        void IdentifierSubstitutionVisitor<MapType>::visit(VariableExpression const* expression) {
-            // If the variable is in the key set of the substitution, we need to replace it.
-            auto const& namePair = this->identifierToIdentifierMap.find(expression->getVariableName());
-            if (namePair != this->identifierToIdentifierMap.end()) {
-                this->expressionStack.push(std::shared_ptr<BaseExpression>(new VariableExpression(expression->getReturnType(), namePair->second)));
-            } else {
-                this->expressionStack.push(expression->getSharedPointer());
-            }
-        }
         
-        template<typename MapType>
-        void IdentifierSubstitutionVisitor<MapType>::visit(UnaryBooleanFunctionExpression const* expression) {
+        void IdentifierSubstitutionVisitorBase::visit(UnaryBooleanFunctionExpression const* expression) {
             expression->getOperand()->accept(this);
             std::shared_ptr<BaseExpression const> operandExpression = expressionStack.top();
             expressionStack.pop();
@@ -119,8 +95,7 @@ namespace storm {
             }
         }
         
-        template<typename MapType>
-        void IdentifierSubstitutionVisitor<MapType>::visit(UnaryNumericalFunctionExpression const* expression) {
+        void IdentifierSubstitutionVisitorBase::visit(UnaryNumericalFunctionExpression const* expression) {
             expression->getOperand()->accept(this);
             std::shared_ptr<BaseExpression const> operandExpression = expressionStack.top();
             expressionStack.pop();
@@ -133,23 +108,16 @@ namespace storm {
             }
         }
         
-        template<typename MapType>
-        void IdentifierSubstitutionVisitor<MapType>::visit(BooleanLiteralExpression const* expression) {
+        void IdentifierSubstitutionVisitorBase::visit(BooleanLiteralExpression const* expression) {
             this->expressionStack.push(expression->getSharedPointer());
         }
         
-        template<typename MapType>
-        void IdentifierSubstitutionVisitor<MapType>::visit(IntegerLiteralExpression const* expression) {
+        void IdentifierSubstitutionVisitorBase::visit(IntegerLiteralExpression const* expression) {
             this->expressionStack.push(expression->getSharedPointer());
         }
         
-        template<typename MapType>
-        void IdentifierSubstitutionVisitor<MapType>::visit(DoubleLiteralExpression const* expression) {
+        void IdentifierSubstitutionVisitorBase::visit(DoubleLiteralExpression const* expression) {
             this->expressionStack.push(expression->getSharedPointer());
         }
-        
-        // Explicitly instantiate the class with map and unordered_map.
-		template class IdentifierSubstitutionVisitor< std::map<std::string, std::string> >;
-		template class IdentifierSubstitutionVisitor< std::unordered_map<std::string, std::string> >;
     }
 }

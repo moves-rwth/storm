@@ -30,7 +30,11 @@ namespace storm {
         }
         
         Constant Constant::substitute(std::map<std::string, storm::expressions::Expression> const& substitution) const {
-            return Constant(this->getType(), this->getName(), this->getExpression().substitute(substitution), this->getFilename(), this->getLineNumber());
+            if (!this->isDefined()) {
+                return *this;
+            } else {
+                return Constant(this->getType(), this->getName(), this->getExpression().substitute(substitution), this->getFilename(), this->getLineNumber());
+            }
         }
         
         std::ostream& operator<<(std::ostream& stream, Constant const& constant) {

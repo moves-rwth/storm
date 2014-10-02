@@ -308,7 +308,7 @@ namespace storm {
                             }
                             
                             // Update the choice by adding the probability/target state to it.
-                            ValueType probabilityToAdd = eval.evaluate(update.getLikelihoodExpression(),currentState);
+                            ValueType probabilityToAdd = eval.evaluate(update.getLikelihoodExpression(), currentState);
                             probabilitySum += probabilityToAdd;
                             boost::container::flat_set<uint_fast64_t> labels;
 							labels.insert(update.getGlobalIndex());

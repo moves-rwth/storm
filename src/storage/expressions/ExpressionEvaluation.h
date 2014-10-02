@@ -157,13 +157,11 @@ namespace expressions {
 		
 		T evaluate(Expression const& expr, storm::expressions::SimpleValuation const* val)
 		{
-			ExpressionEvaluationVisitor<T, typename StateType<T>::type>*  visitor = new ExpressionEvaluationVisitor<T, typename StateType<T>::type>(&mState);
-			std::cout << expr;
-			std::cout.flush();
-			expr.getBaseExpression().accept(visitor);
+			ExpressionEvaluationVisitor<T, typename StateType<T>::type>* visitor = new ExpressionEvaluationVisitor<T, typename StateType<T>::type>(&mState);
+            Expression expressionToTranslate = expr.substitute(*val);
+			expressionToTranslate.getBaseExpression().accept(visitor);
 			T result = visitor->value();
 			result.simplify();
-			std::cout << " -> " << result << std::endl;
 			delete visitor;
 			return result;
 		}
