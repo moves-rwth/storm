@@ -23,9 +23,7 @@ namespace storm {
             static RationalFunction&& simplify(RationalFunction&& value) {
                 // In the general case, we don't to anything here, but merely return the value. If something else is
                 // supposed to happen here, the templated function can be specialized for this particular type.
-//                std::cout << "simplifying " << value << std::endl;
                 value.simplify();
-//                std::cout << "done simplifying." << std::endl;
                 return std::forward<RationalFunction>(value);
             }
             
@@ -64,7 +62,7 @@ namespace storm {
                 // Subtract from the maybe states the set of states that is not reachable (on a path from the initial to a target state).
                 maybeStates &= reachableStates;
                 
-                std::cout << "solving system with " << maybeStates.getNumberOfSetBits() << " states." << std::endl;
+                std::cout << "Solving parametric system with " << maybeStates.getNumberOfSetBits() << " states." << std::endl;
                 
                 // Create a vector for the probabilities to go to a state with probability 1 in one step.
                 std::vector<ValueType> oneStepProbabilities = dtmc.getTransitionMatrix().getConstrainedRowSumVector(maybeStates, statesWithProbability1);
@@ -173,11 +171,19 @@ namespace storm {
                 }
             }
             
+            static int chunkCounter = 0;
             static int counter = 0;
             
             template<typename ValueType>
             void SparseSccModelChecker<ValueType>::eliminateState(FlexibleSparseMatrix<ValueType>& matrix, std::vector<ValueType>& oneStepProbabilities, uint_fast64_t state, FlexibleSparseMatrix<ValueType>& backwardTransitions) {
-                std::cout << "eliminating state " << counter++ << std::endl;
+                
+                ++counter;
+                if (counter > matrix.getNumberOfRows() / 10) {
+                    ++chunkCounter;
+                    std::cout << "Eliminated " << (chunkCounter * 10) << "% of the states." << std::endl;
+                    counter = 0;
+                }
+                
                 bool hasSelfLoop = false;
                 ValueType loopProbability = storm::utility::constantZero<ValueType>();
                 
@@ -423,6 +429,11 @@ namespace storm {
             }
             
             template<typename ValueType>
+            typename FlexibleSparseMatrix<ValueType>::index_type FlexibleSparseMatrix<ValueType>::getNumberOfRows() const {
+                return this->data.size();
+            }
+            
+            template<typename ValueType>
             FlexibleSparseMatrix<ValueType> SparseSccModelChecker<ValueType>::getFlexibleSparseMatrix(storm::storage::SparseMatrix<ValueType> const& matrix, bool setAllValuesToOne) {
                 FlexibleSparseMatrix<ValueType> flexibleMatrix(matrix.getRowCount());
                 
@@ -447,7 +458,7 @@ namespace storm {
             #ifdef PARAMETRIC_SYSTEMS
             template class FlexibleSparseMatrix<RationalFunction>;
             template class SparseSccModelChecker<RationalFunction>;
-            #endif            
+            #endif
         } // namespace reachability
     } // namespace modelchecker
 } // namespace storm

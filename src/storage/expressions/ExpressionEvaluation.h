@@ -82,6 +82,7 @@ namespace expressions {
 						mValue *= visitor->value();
 						break;
 					case BinaryNumericalFunctionExpression::OperatorType::Divide:
+                        assert(false);
 						mValue /= visitor->value();
 						break;
 					default:
@@ -124,7 +125,7 @@ namespace expressions {
 			}
             virtual void visit(IntegerLiteralExpression const* expression) 
 			{
-				mValue = T(expression->getValue());
+				mValue = T(typename T::CoeffType(std::to_string(expression->getValue()), 10));
 			}
             virtual void visit(DoubleLiteralExpression const* expression) 
 			{
@@ -161,7 +162,7 @@ namespace expressions {
             Expression expressionToTranslate = expr.substitute(*val);
 			expressionToTranslate.getBaseExpression().accept(visitor);
 			T result = visitor->value();
-			result.simplify();
+//			result.simplify();
 			delete visitor;
 			return result;
 		}
