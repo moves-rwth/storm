@@ -35,15 +35,15 @@ int main(const int argc, const char** argv) {
 
         // Program Translation Time Measurement, End
         std::chrono::high_resolution_clock::time_point programTranslationEnd = std::chrono::high_resolution_clock::now();
-        std::cout << "Parsing and translating the Symbolic Input took " << std::chrono::duration_cast<std::chrono::milliseconds>(programTranslationEnd - programTranslationStart).count() << " milliseconds." << std::endl;
+        std::cout << "Parsing and translating the model took " << std::chrono::duration_cast<std::chrono::milliseconds>(programTranslationEnd - programTranslationStart).count() << "ms." << std::endl << std::endl;
 
         storm::modelchecker::reachability::SparseSccModelChecker<storm::RationalFunction> modelChecker;
-        storm::storage::BitVector trueStates(model->getNumberOfStates(), true);
-        storm::storage::BitVector targetStates = model->getLabeledStates("target");
-//            storm::storage::BitVector targetStates = model->getLabeledStates("one");
-//            storm::storage::BitVector targetStates = model->getLabeledStates("elected");
-        storm::RationalFunction value = modelChecker.computeReachabilityProbability(*model->as<storm::models::Dtmc<storm::RationalFunction>>(), trueStates, targetStates);
-        std::cout << "computed value " << value << std::endl;
+        
+        STORM_LOG_THROW(storm::settings::generalSettings().isPctlPropertySet(), storm::exceptions::InvalidSettingsException, "Unable to perform model checking without a property.");
+        std::shared_ptr<storm::properties::prctl::PrctlFilter<double>> filterFormula = storm::parser::PrctlParser::parsePrctlFormula(storm::settings::generalSettings().getPctlProperty());
+        
+        storm::RationalFunction value = modelChecker.computeReachabilityProbability(*model->as<storm::models::Dtmc<storm::RationalFunction>>(), filterFormula);
+        STORM_PRINT_AND_LOG(std::endl << "computed value " << value << std::endl);
 
         // All operations have now been performed, so we clean up everything and terminate.
         storm::utility::cli::cleanUp();

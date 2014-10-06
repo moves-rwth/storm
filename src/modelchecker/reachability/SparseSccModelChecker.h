@@ -1,4 +1,9 @@
+#ifndef STORM_MODELCHECKER_REACHABILITY_SPARSESCCMODELCHECKER_H_
+#define STORM_MODELCHECKER_REACHABILITY_SPARSESCCMODELCHECKER_H_
+
+#include "src/storage/sparse/StateType.h"
 #include "src/models/Dtmc.h"
+#include "src/properties/prctl/PrctlFilter.h"
 
 namespace storm {
     namespace modelchecker {
@@ -29,10 +34,10 @@ namespace storm {
             template<typename ValueType>
             class SparseSccModelChecker {
             public:
-                static ValueType computeReachabilityProbability(storm::models::Dtmc<ValueType> const& dtmc, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
+                static ValueType computeReachabilityProbability(storm::models::Dtmc<ValueType> const& dtmc, std::shared_ptr<storm::properties::prctl::PrctlFilter<double>> const& filterFormula);
                 
             private:
-                static void treatScc(storm::models::Dtmc<ValueType> const& dtmc, FlexibleSparseMatrix<ValueType>& matrix, std::vector<ValueType>& oneStepProbabilities, storm::storage::BitVector const& entryStates, storm::storage::BitVector const& scc, storm::storage::SparseMatrix<ValueType> const& forwardTransitions, FlexibleSparseMatrix<ValueType>& backwardTransitions, bool eliminateEntryStates, uint_fast64_t level);
+                static uint_fast64_t treatScc(storm::models::Dtmc<ValueType> const& dtmc, FlexibleSparseMatrix<ValueType>& matrix, std::vector<ValueType>& oneStepProbabilities, storm::storage::BitVector const& entryStates, storm::storage::BitVector const& scc, storm::storage::SparseMatrix<ValueType> const& forwardTransitions, FlexibleSparseMatrix<ValueType>& backwardTransitions, bool eliminateEntryStates, uint_fast64_t level, std::vector<storm::storage::sparse::state_type>& entryStateQueue);
                 static FlexibleSparseMatrix<ValueType> getFlexibleSparseMatrix(storm::storage::SparseMatrix<ValueType> const& matrix, bool setAllValuesToOne = false);
                 static void eliminateState(FlexibleSparseMatrix<ValueType>& matrix, std::vector<ValueType>& oneStepProbabilities, uint_fast64_t state, FlexibleSparseMatrix<ValueType>& backwardTransitions);
                 static bool eliminateStateInPlace(storm::storage::SparseMatrix<ValueType>& matrix, std::vector<ValueType>& oneStepProbabilities, uint_fast64_t state, storm::storage::SparseMatrix<ValueType>& backwardTransitions);
@@ -40,6 +45,9 @@ namespace storm {
                 static const uint_fast64_t maximalSccSize = 1000;
 
             };
-        }
-    }
-}
+            
+        } // namespace reachability
+    } // namespace modelchecker
+} // namespace storm
+
+#endif /* STORM_MODELCHECKER_REACHABILITY_SPARSESCCMODELCHECKER_H_ */

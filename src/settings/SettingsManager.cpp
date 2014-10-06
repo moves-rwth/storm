@@ -25,6 +25,7 @@ namespace storm {
             this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::NativeEquationSolverSettings(*this)));
             this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::GlpkSettings(*this)));
             this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::GurobiSettings(*this)));
+            this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::ParametricSettings(*this)));
         }
         
         SettingsManager::~SettingsManager() {
@@ -495,6 +496,10 @@ namespace storm {
         
         storm::settings::modules::GurobiSettings const& gurobiSettings() {
             return dynamic_cast<storm::settings::modules::GurobiSettings const&>(manager().getModule(storm::settings::modules::GurobiSettings::moduleName));
+        }
+        
+        storm::settings::modules::ParametricSettings const& parametricSettings() {
+            return dynamic_cast<storm::settings::modules::ParametricSettings const&>(manager().getModule(storm::settings::modules::ParametricSettings::moduleName));
         }
     }
 }

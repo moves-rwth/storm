@@ -27,6 +27,7 @@
 #include "src/settings/modules/NativeEquationSolverSettings.h"
 #include "src/settings/modules/GlpkSettings.h"
 #include "src/settings/modules/GurobiSettings.h"
+#include "src/settings/modules/ParametricSettings.h"
 
 #include "src/utility/macros.h"
 #include "src/exceptions/OptionParserException.h"
@@ -295,6 +296,13 @@ namespace storm {
          * @return An object that allows accessing the settings of Gurobi.
          */
         storm::settings::modules::GurobiSettings const& gurobiSettings();
+        
+        /*!
+         * Retrieves the settings for parametric model checking.
+         *
+         * @return An object that allows accessing the settings for parameteric model checking.
+         */
+        storm::settings::modules::ParametricSettings const& parametricSettings();
         
     } // namespace settings
 } // namespace storm

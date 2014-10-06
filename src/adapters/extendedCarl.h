@@ -8,7 +8,7 @@
 #ifndef STORM_ADAPTERS_EXTENDEDCARL_H_
 #define STORM_ADAPTERS_EXTENDEDCARL_H_
 
-
+#include <cln/cln.h>
 #include <carl/core/MultivariatePolynomial.h>
 #include <carl/core/RationalFunction.h>
 #include <carl/core/VariablePool.h>
