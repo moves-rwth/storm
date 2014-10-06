@@ -9,10 +9,8 @@
 extern log4cplus::Logger logger;
 
 /*!
- * Define the macros STORM_LOG_ASSERT and STORM_LOG_DEBUG to be silent in non-debug mode and log the message in case the condition
- * fails to evaluate to true.
+ * Define the macros STORM_LOG_ASSERT, STORM_LOG_DEBUG and STORM_LOG_TRACE.
  */
-#ifndef NDEBUG
 #define STORM_LOG_ASSERT(cond, message)         \
 {                                               \
     if (!(cond)) {                              \
@@ -24,10 +22,10 @@ extern log4cplus::Logger logger;
 {                                               \
     LOG4CPLUS_DEBUG(logger, message);           \
 } while (false)
-#else
-#define STORM_LOG_ASSERT(cond, message) /* empty */
-#define STORM_LOG_DEBUG(message) /* empty */
-#endif
+#define STORM_LOG_TRACE(message)                \
+{                                               \
+    LOG4CPLUS_TRACE(logger, message);           \
+} while (false)
 
 // Define STORM_LOG_THROW to always throw the exception with the given message if the condition fails to hold.
 #define STORM_LOG_THROW(cond, exception, message)     \

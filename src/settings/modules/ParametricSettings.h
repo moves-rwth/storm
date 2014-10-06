@@ -26,10 +26,18 @@ namespace storm {
                  */
                 bool isEliminateEntryStatesLastSet() const;
                 
+                /*!
+                 * Retrieves the maximal size of an SCC on which state elimination is to be directly applied.
+                 *
+                 * @return The maximal size of an SCC on which state elimination is to be directly applied.
+                 */
+                uint_fast64_t getMaximalSccSize() const;
+                
                 const static std::string moduleName;
                 
             private:
                 const static std::string entryStatesLastOptionName;
+                const static std::string maximalSccSizeOptionName;
             };
             
         } // namespace modules

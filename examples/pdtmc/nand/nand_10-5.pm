@@ -62,7 +62,7 @@ module multiplex
 	// [] s=3 & z<N -> (1-perr) : (z'=z+(1-x*y)) & (s'=0) & (c'=c+1) & (x'=0) & (y'=0) // not faulty
 	//         + perr    : (z'=z+(x*y))    & (s'=0) & (c'=c+1) & (x'=0) & (y'=0); // von neumann fault
 	
-	[] s=4 -> true;
+	[] s=4 -> (s'=s);
 	
 endmodule
 

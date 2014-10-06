@@ -27,6 +27,7 @@
 #include "log4cplus/consoleappender.h"
 #include "log4cplus/fileappender.h"
 log4cplus::Logger logger;
+log4cplus::Logger printer;
 
 // Headers that provide auxiliary functionality.
 #include "src/utility/OsDetection.h"

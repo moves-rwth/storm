@@ -125,7 +125,6 @@ namespace expressions {
             virtual void visit(IntegerLiteralExpression const* expression) 
 			{
 				// mValue = T(typename T::CoeffType(std::to_string(expression->getValue()), 10));
-                
                 mValue = T(expression->getValue());
 			}
             virtual void visit(DoubleLiteralExpression const* expression) 

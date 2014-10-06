@@ -25,9 +25,9 @@ namespace storm {
             static RationalFunction&& simplify(RationalFunction&& value) {
                 // In the general case, we don't to anything here, but merely return the value. If something else is
                 // supposed to happen here, the templated function can be specialized for this particular type.
-                STORM_LOG_DEBUG("Simplifying " << value << " ... ");
+                STORM_LOG_TRACE("Simplifying " << value << " ... ");
                 value.simplify();
-                STORM_LOG_DEBUG("done.");
+                STORM_LOG_TRACE("done.");
                 return std::forward<RationalFunction>(value);
             }
             
@@ -117,7 +117,7 @@ namespace storm {
                 // Then, we recursively treat all SCCs.
                 auto modelCheckingStart = std::chrono::high_resolution_clock::now();
                 std::vector<storm::storage::sparse::state_type> entryStateQueue;
-                uint_fast64_t maximalDepth = treatScc(dtmc, flexibleMatrix, oneStepProbabilities, newInitialStates, subsystem, submatrix, flexibleBackwardTransitions, false, 0,entryStateQueue);
+                uint_fast64_t maximalDepth = treatScc(dtmc, flexibleMatrix, oneStepProbabilities, newInitialStates, subsystem, submatrix, flexibleBackwardTransitions, false, 0, storm::settings::parametricSettings().getMaximalSccSize(), entryStateQueue);
                 
                 // If the entry states were to be eliminated last, we need to do so now.
                 STORM_LOG_DEBUG("Eliminating entry states as a last step.");
@@ -154,11 +154,11 @@ namespace storm {
             }
             
             template<typename ValueType>
-            uint_fast64_t SparseSccModelChecker<ValueType>::treatScc(storm::models::Dtmc<ValueType> const& dtmc, FlexibleSparseMatrix<ValueType>& matrix, std::vector<ValueType>& oneStepProbabilities, storm::storage::BitVector const& entryStates, storm::storage::BitVector const& scc, storm::storage::SparseMatrix<ValueType> const& forwardTransitions, FlexibleSparseMatrix<ValueType>& backwardTransitions, bool eliminateEntryStates, uint_fast64_t level, std::vector<storm::storage::sparse::state_type>& entryStateQueue) {
+            uint_fast64_t SparseSccModelChecker<ValueType>::treatScc(storm::models::Dtmc<ValueType> const& dtmc, FlexibleSparseMatrix<ValueType>& matrix, std::vector<ValueType>& oneStepProbabilities, storm::storage::BitVector const& entryStates, storm::storage::BitVector const& scc, storm::storage::SparseMatrix<ValueType> const& forwardTransitions, FlexibleSparseMatrix<ValueType>& backwardTransitions, bool eliminateEntryStates, uint_fast64_t level, uint_fast64_t maximalSccSize, std::vector<storm::storage::sparse::state_type>& entryStateQueue) {
                 uint_fast64_t maximalDepth = level;
                 
                 // If the SCCs are large enough, we try to split them further.
-                if (scc.getNumberOfSetBits() > SparseSccModelChecker<ValueType>::maximalSccSize) {
+                if (scc.getNumberOfSetBits() > maximalSccSize) {
                     STORM_LOG_DEBUG("SCC is large enough (" << scc.getNumberOfSetBits() << " states) to be decomposed further.");
                     
                     // Here, we further decompose the SCC into sub-SCCs.
@@ -199,7 +199,7 @@ namespace storm {
                         }
                         
                         // Recursively descend in SCC-hierarchy.
-                        uint_fast64_t depth = treatScc(dtmc, matrix, oneStepProbabilities, entryStates, newSccAsBitVector, forwardTransitions, backwardTransitions, !storm::settings::parametricSettings().isEliminateEntryStatesLastSet(), level + 1, entryStateQueue);
+                        uint_fast64_t depth = treatScc(dtmc, matrix, oneStepProbabilities, entryStates, newSccAsBitVector, forwardTransitions, backwardTransitions, !storm::settings::parametricSettings().isEliminateEntryStatesLastSet(), level + 1, maximalSccSize, entryStateQueue);
                         maximalDepth = std::max(maximalDepth, depth);
                     }
                     
