@@ -24,6 +24,7 @@ namespace storm {
                 void reserveInRow(index_type row, index_type numberOfElements);
                 
                 row_type& getRow(index_type);
+                row_type const& getRow(index_type) const;
                 
                 index_type getNumberOfRows() const;
                 

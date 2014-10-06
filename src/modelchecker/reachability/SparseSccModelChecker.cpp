@@ -150,7 +150,21 @@ namespace storm {
                 }
                 
                 // Now, we return the value for the only initial state.
-                return oneStepProbabilities[initialStateIndex];
+                return simplify(oneStepProbabilities[initialStateIndex]);
+            }
+            
+            template<typename ValueType>
+            bool hasSelfLoop(storm::storage::sparse::state_type state, FlexibleSparseMatrix<ValueType> const& matrix) {
+                for (auto const& entry : matrix.getRow(state)) {
+                    if (entry.getColumn() < state) {
+                        continue;
+                    } else if (entry.getColumn() > state) {
+                        return false;
+                    } else if (entry.getColumn() == state) {
+                        return true;
+                    }
+                }
+                return false;
             }
             
             template<typename ValueType>
@@ -179,9 +193,10 @@ namespace storm {
                             remainingSccs.set(sccIndex, false);
                         }
                     }
+                    STORM_LOG_DEBUG("Eliminated all trivial SCCs.");
                     
                     // And then recursively treat the remaining sub-SCCs.
-                    STORM_LOG_DEBUG("Eliminating remaining SCCs on level " << level << ".");
+                    STORM_LOG_DEBUG("Eliminating " << remainingSccs.getNumberOfSetBits() << " remaining SCCs on level " << level << ".");
                     for (auto sccIndex : remainingSccs) {
                         storm::storage::StronglyConnectedComponent const& newScc = decomposition.getBlock(sccIndex);
 
@@ -205,12 +220,26 @@ namespace storm {
                     
                 } else {
                     // In this case, we perform simple state elimination in the current SCC.
+                    STORM_LOG_DEBUG("SCC of size " << scc.getNumberOfSetBits() << " is small enough to be eliminated directly.");
                     storm::storage::BitVector remainingStates = scc & ~entryStates;
+                    
+                    // Eliminate the remaining states that do not have a self-loop (in the current, i.e. modified)
+                    // transition probability matrix.
+                    for (auto const& state : remainingStates) {
+                        if (!hasSelfLoop(state, matrix)) {
+                            eliminateState(matrix, oneStepProbabilities, state, backwardTransitions);
+                            remainingStates.set(state, false);
+                        }
+                    }
+
+                    STORM_LOG_DEBUG("Eliminated all states without self-loop.");
                     
                     // Eliminate the remaining states.
                     for (auto const& state : remainingStates) {
                         eliminateState(matrix, oneStepProbabilities, state, backwardTransitions);
                     }
+
+                    STORM_LOG_DEBUG("Eliminated all states with self-loop.");
                 }
                 
                 // Finally, eliminate the entry states (if we are required to do so).
@@ -224,6 +253,7 @@ namespace storm {
                         entryStateQueue.push_back(state);
                     }
                 }
+                STORM_LOG_DEBUG("Eliminated/added entry states.");
 
                 return maximalDepth;
             }
@@ -235,7 +265,7 @@ namespace storm {
             void SparseSccModelChecker<ValueType>::eliminateState(FlexibleSparseMatrix<ValueType>& matrix, std::vector<ValueType>& oneStepProbabilities, uint_fast64_t state, FlexibleSparseMatrix<ValueType>& backwardTransitions) {
                 
                 ++counter;
-                STORM_LOG_DEBUG("Eliminating state " << counter << ".");
+                STORM_LOG_DEBUG("Eliminating state " << state << ".");
                 if (counter > matrix.getNumberOfRows() / 10) {
                     ++chunkCounter;
                     STORM_PRINT_AND_LOG("Eliminated " << (chunkCounter * 10) << "% of the states." << std::endl);
@@ -490,6 +520,12 @@ namespace storm {
             typename FlexibleSparseMatrix<ValueType>::row_type& FlexibleSparseMatrix<ValueType>::getRow(index_type index) {
                 return this->data[index];
             }
+            
+            template<typename ValueType>
+            typename FlexibleSparseMatrix<ValueType>::row_type const& FlexibleSparseMatrix<ValueType>::getRow(index_type index) const {
+                return this->data[index];
+            }
+
             
             template<typename ValueType>
             typename FlexibleSparseMatrix<ValueType>::index_type FlexibleSparseMatrix<ValueType>::getNumberOfRows() const {
