@@ -29,6 +29,7 @@
 log4cplus::Logger logger;
 
 // Headers that provide auxiliary functionality.
+#include "src/utility/storm-version.h"
 #include "src/utility/OsDetection.h"
 #include "src/settings/SettingsManager.h"
 
@@ -49,6 +50,7 @@ log4cplus::Logger logger;
 
 // Headers related to exception handling.
 #include "src/exceptions/InvalidSettingsException.h"
+#include "src/exceptions/InvalidTypeException.h"
 
 namespace storm {
     namespace utility {
@@ -108,17 +110,9 @@ namespace storm {
             void printHeader(const int argc, const char* argv[]) {
                 std::cout << "StoRM" << std::endl;
                 std::cout << "-----" << std::endl << std::endl;
-                
-                std::cout << "Version: " << STORM_CPP_VERSION_MAJOR << "." << STORM_CPP_VERSION_MINOR << "." << STORM_CPP_VERSION_PATCH;
-                if (STORM_CPP_VERSION_COMMITS_AHEAD != 0) {
-                    std::cout << " (+" << STORM_CPP_VERSION_COMMITS_AHEAD << " commits)";
-                }
-                std::cout << " build from revision " << STORM_CPP_VERSION_HASH;
-                if (STORM_CPP_VERSION_DIRTY == 1) {
-                    std::cout << " (DIRTY)";
-                }
-                std::cout << "." << std::endl;
-                
+             	
+			 
+				std::cout << storm::utility::StormVersion::longVersionString() << std::endl;
 #ifdef STORM_HAVE_INTELTBB
                 std::cout << "Linked with Intel Threading Building Blocks v" << TBB_VERSION_MAJOR << "." << TBB_VERSION_MINOR << " (Interface version " << TBB_INTERFACE_VERSION << ")." << std::endl;
 #endif
@@ -208,6 +202,12 @@ namespace storm {
                     storm::settings::manager().printHelp(storm::settings::generalSettings().getHelpModuleName());
                     return false;
                 }
+				
+				if (storm::settings::generalSettings().isVersionSet()) {
+					storm::settings::manager().printVersion();
+					return false;
+				}
+				
                 
                 if (storm::settings::generalSettings().isVerboseSet()) {
                     logger.getAppender("mainConsoleAppender")->setThreshold(log4cplus::INFO_LOG_LEVEL);
