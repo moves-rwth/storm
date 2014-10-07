@@ -12,7 +12,6 @@
 #include <carl/core/MultivariatePolynomial.h>
 #include <carl/core/RationalFunction.h>
 #include <carl/core/VariablePool.h>
-#include <carl/numbers/DecimalStringToRational.h>
 
 #undef LOG_ASSERT
 namespace carl

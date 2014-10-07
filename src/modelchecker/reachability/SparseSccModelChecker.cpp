@@ -106,6 +106,31 @@ namespace storm {
                 // We then build the submatrix that only has the transitions of the maybe states.
                 storm::storage::SparseMatrix<ValueType> submatrix = dtmc.getTransitionMatrix().getSubmatrix(false, maybeStates, maybeStates);
                 
+                // To be able to apply heuristics later, we now determine the distance of each state to the initial state.
+                std::vector<std::pair<storm::storage::sparse::state_type, std::size_t>> stateQueue;
+                stateQueue.reserve(maybeStates.getNumberOfSetBits());
+                std::vector<std::size_t> distances(maybeStates.getNumberOfSetBits());
+                storm::storage::BitVector statesInQueue(maybeStates.getNumberOfSetBits());
+                storm::storage::sparse::state_type currentPosition = 0;
+                for (auto const& initialState : newInitialStates) {
+                    stateQueue.emplace_back(initialState, 0);
+                    statesInQueue.set(initialState);
+                }
+                
+                // Perform a BFS.
+                while (currentPosition < stateQueue.size()) {
+                    std::pair<storm::storage::sparse::state_type, std::size_t> const& stateDistancePair = stateQueue[currentPosition];
+                    distances[stateDistancePair.first] = stateDistancePair.second;
+                    
+                    for (auto const& successorEntry : submatrix.getRow(stateDistancePair.first)) {
+                        if (!statesInQueue.get(successorEntry.getColumn())) {
+                            stateQueue.emplace_back(successorEntry.getColumn(), stateDistancePair.second + 1);
+                            statesInQueue.set(successorEntry.getColumn());
+                        }
+                    }
+                    ++currentPosition;
+                }
+                
                 // Create a bit vector that represents the subsystem of states we still have to eliminate.
                 storm::storage::BitVector subsystem = storm::storage::BitVector(maybeStates.getNumberOfSetBits(), true);
                 
@@ -117,10 +142,16 @@ namespace storm {
                 // Then, we recursively treat all SCCs.
                 auto modelCheckingStart = std::chrono::high_resolution_clock::now();
                 std::vector<storm::storage::sparse::state_type> entryStateQueue;
-                uint_fast64_t maximalDepth = treatScc(dtmc, flexibleMatrix, oneStepProbabilities, newInitialStates, subsystem, submatrix, flexibleBackwardTransitions, false, 0, storm::settings::parametricSettings().getMaximalSccSize(), entryStateQueue);
+                uint_fast64_t maximalDepth = treatScc(dtmc, flexibleMatrix, oneStepProbabilities, newInitialStates, subsystem, submatrix, flexibleBackwardTransitions, false, 0, storm::settings::parametricSettings().getMaximalSccSize(), entryStateQueue, distances);
                 
+                if (storm::settings::parametricSettings().isEliminateEntryStatesLastSet()) {
+                    for (auto const& state : entryStateQueue) {
+                        std::cout << "state " << state << " has " << flexibleMatrix.getRow(state).size() << " outgoing transitions and " << flexibleBackwardTransitions.getRow(state).size() << " predecessors. " << std::endl;
+                    }
+                }
+
                 // If the entry states were to be eliminated last, we need to do so now.
-                STORM_LOG_DEBUG("Eliminating entry states as a last step.");
+                STORM_LOG_DEBUG("Eliminating " << entryStateQueue.size() << " entry states as a last step.");
                 if (storm::settings::parametricSettings().isEliminateEntryStatesLastSet()) {
                     for (auto const& state : entryStateQueue) {
                         eliminateState(flexibleMatrix, oneStepProbabilities, state, flexibleBackwardTransitions);
@@ -168,7 +199,7 @@ namespace storm {
             }
             
             template<typename ValueType>
-            uint_fast64_t SparseSccModelChecker<ValueType>::treatScc(storm::models::Dtmc<ValueType> const& dtmc, FlexibleSparseMatrix<ValueType>& matrix, std::vector<ValueType>& oneStepProbabilities, storm::storage::BitVector const& entryStates, storm::storage::BitVector const& scc, storm::storage::SparseMatrix<ValueType> const& forwardTransitions, FlexibleSparseMatrix<ValueType>& backwardTransitions, bool eliminateEntryStates, uint_fast64_t level, uint_fast64_t maximalSccSize, std::vector<storm::storage::sparse::state_type>& entryStateQueue) {
+            uint_fast64_t SparseSccModelChecker<ValueType>::treatScc(storm::models::Dtmc<ValueType> const& dtmc, FlexibleSparseMatrix<ValueType>& matrix, std::vector<ValueType>& oneStepProbabilities, storm::storage::BitVector const& entryStates, storm::storage::BitVector const& scc, storm::storage::SparseMatrix<ValueType> const& forwardTransitions, FlexibleSparseMatrix<ValueType>& backwardTransitions, bool eliminateEntryStates, uint_fast64_t level, uint_fast64_t maximalSccSize, std::vector<storm::storage::sparse::state_type>& entryStateQueue, std::vector<std::size_t> const& distances) {
                 uint_fast64_t maximalDepth = level;
                 
                 // If the SCCs are large enough, we try to split them further.
@@ -184,14 +215,22 @@ namespace storm {
                     storm::storage::BitVector remainingSccs(decomposition.size(), true);
                     
                     // First, get rid of the trivial SCCs.
-                    STORM_LOG_DEBUG("Eliminating trivial SCCs.");
+                    std::vector<std::pair<storm::storage::sparse::state_type, uint_fast64_t>> trivialSccs;
                     for (uint_fast64_t sccIndex = 0; sccIndex < decomposition.size(); ++sccIndex) {
                         storm::storage::StronglyConnectedComponent const& scc = decomposition.getBlock(sccIndex);
                         if (scc.isTrivial()) {
                             storm::storage::sparse::state_type onlyState = *scc.begin();
-                            eliminateState(matrix, oneStepProbabilities, onlyState, backwardTransitions);
-                            remainingSccs.set(sccIndex, false);
+                            trivialSccs.emplace_back(onlyState, sccIndex);
                         }
+                    }
+                    
+                    STORM_LOG_DEBUG("Eliminating " << trivialSccs.size() << " trivial SCCs.");
+                    if (storm::settings::parametricSettings().isSortTrivialSccsSet()) {
+                        std::sort(trivialSccs.begin(), trivialSccs.end(), [&distances] (std::pair<storm::storage::sparse::state_type, uint_fast64_t> const& state1, std::pair<storm::storage::sparse::state_type, uint_fast64_t> const& state2) -> bool { return distances[state1.first] > distances[state2.first]; } );
+                    }
+                    for (auto const& stateIndexPair : trivialSccs) {
+                        eliminateState(matrix, oneStepProbabilities, stateIndexPair.first, backwardTransitions);
+                        remainingSccs.set(stateIndexPair.second, false);
                     }
                     STORM_LOG_DEBUG("Eliminated all trivial SCCs.");
                     
@@ -214,7 +253,7 @@ namespace storm {
                         }
                         
                         // Recursively descend in SCC-hierarchy.
-                        uint_fast64_t depth = treatScc(dtmc, matrix, oneStepProbabilities, entryStates, newSccAsBitVector, forwardTransitions, backwardTransitions, !storm::settings::parametricSettings().isEliminateEntryStatesLastSet(), level + 1, maximalSccSize, entryStateQueue);
+                        uint_fast64_t depth = treatScc(dtmc, matrix, oneStepProbabilities, entryStates, newSccAsBitVector, forwardTransitions, backwardTransitions, !storm::settings::parametricSettings().isEliminateEntryStatesLastSet(), level + 1, maximalSccSize, entryStateQueue, distances);
                         maximalDepth = std::max(maximalDepth, depth);
                     }
                     
@@ -264,6 +303,8 @@ namespace storm {
             template<typename ValueType>
             void SparseSccModelChecker<ValueType>::eliminateState(FlexibleSparseMatrix<ValueType>& matrix, std::vector<ValueType>& oneStepProbabilities, uint_fast64_t state, FlexibleSparseMatrix<ValueType>& backwardTransitions) {
                 
+                auto eliminationStart = std::chrono::high_resolution_clock::now();
+                
                 ++counter;
                 STORM_LOG_DEBUG("Eliminating state " << state << ".");
                 if (counter > matrix.getNumberOfRows() / 10) {
@@ -287,20 +328,42 @@ namespace storm {
                     }
                 }
                 
+                std::chrono::high_resolution_clock::time_point simplifyClock;
+                std::chrono::high_resolution_clock::duration simplifyTime;
+                std::chrono::high_resolution_clock::time_point multiplicationClock;
+                std::chrono::high_resolution_clock::duration multiplicationTime;
+                std::chrono::high_resolution_clock::time_point additionClock;
+                std::chrono::high_resolution_clock::duration additionTime;
+                std::chrono::high_resolution_clock::time_point additionClock2;
+                std::chrono::high_resolution_clock::duration additionTime2;
+                
                 // Scale all entries in this row with (1 / (1 - loopProbability)) only in case there was a self-loop.
+                std::size_t scaledSuccessors = 0;
                 if (hasSelfLoop) {
                     loopProbability = storm::utility::constantOne<ValueType>() / (storm::utility::constantOne<ValueType>() - loopProbability);
                     simplify(loopProbability);
                     for (auto& entry : matrix.getRow(state)) {
-                        entry.setValue(simplify(entry.getValue() * loopProbability));
+                        // Only scale the non-diagonal entries.
+                        if (entry.getColumn() != state) {
+                            ++scaledSuccessors;
+                            multiplicationClock = std::chrono::high_resolution_clock::now();
+                            auto result = entry.getValue() * loopProbability;
+                            multiplicationTime += std::chrono::high_resolution_clock::now() - multiplicationClock;
+                            entry.setValue(result);
+                        }
                     }
-                    oneStepProbabilities[state] = simplify(oneStepProbabilities[state] * loopProbability);
+                    multiplicationClock = std::chrono::high_resolution_clock::now();
+                    auto result = oneStepProbabilities[state] * loopProbability;
+                    multiplicationTime += std::chrono::high_resolution_clock::now() - multiplicationClock;
+                    oneStepProbabilities[state] = result;
                 }
                 
                 STORM_LOG_DEBUG((hasSelfLoop ? "State has self-loop." : "State does not have a self-loop."));
                 
                 // Now connect the predecessors of the state being eliminated with its successors.
                 typename FlexibleSparseMatrix<ValueType>::row_type& currentStatePredecessors = backwardTransitions.getRow(state);
+                std::size_t numberOfPredecessors = currentStatePredecessors.size();
+                std::size_t predecessorForwardTransitionCount = 0;
                 for (auto const& predecessorEntry : currentStatePredecessors) {
                     uint_fast64_t predecessor = predecessorEntry.getColumn();
                     
@@ -312,6 +375,7 @@ namespace storm {
                     // First, find the probability with which the predecessor can move to the current state, because
                     // the other probabilities need to be scaled with this factor.
                     typename FlexibleSparseMatrix<ValueType>::row_type& predecessorForwardTransitions = matrix.getRow(predecessor);
+                    predecessorForwardTransitionCount += predecessorForwardTransitions.size();
                     typename FlexibleSparseMatrix<ValueType>::row_type::iterator multiplyElement = std::find_if(predecessorForwardTransitions.begin(), predecessorForwardTransitions.end(), [&](storm::storage::MatrixEntry<typename FlexibleSparseMatrix<ValueType>::index_type, typename FlexibleSparseMatrix<ValueType>::value_type> const& a) { return a.getColumn() == state; });
                     
                     // Make sure we have found the probability and set it to zero.
@@ -347,20 +411,43 @@ namespace storm {
                             break;
                         }
                         if (first2->getColumn() < first1->getColumn()) {
-                            *result = simplify(*first2 * multiplyFactor);
+                            multiplicationClock = std::chrono::high_resolution_clock::now();
+                            auto tmpResult = *first2 * multiplyFactor;
+                            multiplicationTime += std::chrono::high_resolution_clock::now() - multiplicationClock;
+                            simplifyClock = std::chrono::high_resolution_clock::now();
+                            *result = simplify(std::move(tmpResult));
+                            simplifyTime += std::chrono::high_resolution_clock::now() - simplifyClock;
                             ++first2;
                         } else if (first1->getColumn() < first2->getColumn()) {
                             *result = *first1;
                             ++first1;
                         } else {
-                            *result = storm::storage::MatrixEntry<typename FlexibleSparseMatrix<ValueType>::index_type, typename FlexibleSparseMatrix<ValueType>::value_type>(first1->getColumn(), simplify(first1->getValue() + simplify(multiplyFactor * first2->getValue())));
+                            multiplicationClock = std::chrono::high_resolution_clock::now();
+                            auto tmp1 = multiplyFactor * first2->getValue();
+                            multiplicationTime += std::chrono::high_resolution_clock::now() - multiplicationClock;
+                            simplifyClock = std::chrono::high_resolution_clock::now();
+                            tmp1 = simplify(std::move(tmp1));
+                            multiplicationClock = std::chrono::high_resolution_clock::now();
+                            simplifyTime += std::chrono::high_resolution_clock::now() - simplifyClock;
+                            additionClock = std::chrono::high_resolution_clock::now();
+                            auto tmp2 = first1->getValue() + tmp1;
+                            additionTime += std::chrono::high_resolution_clock::now() - additionClock;
+                            simplifyClock = std::chrono::high_resolution_clock::now();
+                            tmp2 = simplify(std::move(tmp2));
+                            simplifyTime += std::chrono::high_resolution_clock::now() - simplifyClock;
+                            *result = storm::storage::MatrixEntry<typename FlexibleSparseMatrix<ValueType>::index_type, typename FlexibleSparseMatrix<ValueType>::value_type>(first1->getColumn(), tmp2);
                             ++first1;
                             ++first2;
                         }
                     }
                     for (; first2 != last2; ++first2) {
                         if (first2->getColumn() != state) {
-                            *result = simplify(*first2 * multiplyFactor);
+                            multiplicationClock = std::chrono::high_resolution_clock::now();
+                            auto tmpResult = *first2 * multiplyFactor;
+                            multiplicationTime += std::chrono::high_resolution_clock::now() - multiplicationClock;
+                            simplifyClock = std::chrono::high_resolution_clock::now();
+                            *result = simplify(std::move(tmpResult));
+                            simplifyTime += std::chrono::high_resolution_clock::now() - simplifyClock;
                         }
                     }
                     
@@ -368,7 +455,19 @@ namespace storm {
                     predecessorForwardTransitions = std::move(newSuccessors);
                     
                     // Add the probabilities to go to a target state in just one step.
-                    oneStepProbabilities[predecessor] = simplify(oneStepProbabilities[predecessor] + simplify(multiplyFactor * oneStepProbabilities[state]));
+                    multiplicationClock = std::chrono::high_resolution_clock::now();
+                    auto tmp1 = multiplyFactor * oneStepProbabilities[state];
+                    multiplicationTime += std::chrono::high_resolution_clock::now() - multiplicationClock;
+                    simplifyClock = std::chrono::high_resolution_clock::now();
+                    tmp1 = simplify(std::move(tmp1));
+                    simplifyTime += std::chrono::high_resolution_clock::now() - simplifyClock;
+                    additionClock2 = std::chrono::high_resolution_clock::now();
+                    auto tmp2 = oneStepProbabilities[predecessor] + tmp1;
+                    additionTime2 += std::chrono::high_resolution_clock::now() - additionClock2;
+                    simplifyClock = std::chrono::high_resolution_clock::now();
+                    tmp2 = simplify(std::move(tmp2));
+                    simplifyTime += std::chrono::high_resolution_clock::now() - simplifyClock;
+                    oneStepProbabilities[predecessor] = tmp2;
                     
                     STORM_LOG_DEBUG("Fixed new next-state probabilities of predecessor states.");
                 }
@@ -424,6 +523,21 @@ namespace storm {
                 // Clear the eliminated row to reduce memory consumption.
                 currentStateSuccessors.clear();
                 currentStateSuccessors.shrink_to_fit();
+                
+                auto eliminationEnd = std::chrono::high_resolution_clock::now();
+                auto eliminationTime = eliminationEnd - eliminationStart;
+                
+                // If the elimination took more than 3 seconds, we print some more information and quit.
+                if (std::chrono::duration_cast<std::chrono::milliseconds>(eliminationTime).count() > 3000) {
+                    STORM_PRINT("Elimination took more than 3 seconds (actually took " << std::chrono::duration_cast<std::chrono::milliseconds>(eliminationTime).count() << "ms)." << std::endl);
+                    STORM_PRINT("Simplification took " << std::chrono::duration_cast<std::chrono::milliseconds>(simplifyTime).count() << "ms." << std::endl);
+                    STORM_PRINT("Multiplication took " << std::chrono::duration_cast<std::chrono::milliseconds>(multiplicationTime).count() << "ms." << std::endl);
+                    STORM_PRINT("Addition1 took " << std::chrono::duration_cast<std::chrono::milliseconds>(additionTime).count() << "ms." << std::endl);
+                    STORM_PRINT("Addition2 took " << std::chrono::duration_cast<std::chrono::milliseconds>(additionTime2).count() << "ms." << std::endl);
+                    STORM_PRINT("Number of scaled successors: " << scaledSuccessors << "." << std::endl);
+                    STORM_PRINT("Number of predecessors: " << numberOfPredecessors << "." << std::endl);
+                    STORM_PRINT("Number of predecessor forward transitions " << predecessorForwardTransitionCount << "." << std::endl);
+                }
             }
             
             template <typename ValueType>
@@ -526,7 +640,6 @@ namespace storm {
                 return this->data[index];
             }
 
-            
             template<typename ValueType>
             typename FlexibleSparseMatrix<ValueType>::index_type FlexibleSparseMatrix<ValueType>::getNumberOfRows() const {
                 return this->data.size();

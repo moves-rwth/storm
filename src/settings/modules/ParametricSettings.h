@@ -33,11 +33,20 @@ namespace storm {
                  */
                 uint_fast64_t getMaximalSccSize() const;
                 
+                /*!
+                 * Retrieves whether the option to sort the trivial SCCs (in descending order) wrt. to the distance to 
+                 * the initial state.
+                 *
+                 * @return True iff the trivial SCCs are to be sorted.
+                 */
+                bool isSortTrivialSccsSet() const;
+                
                 const static std::string moduleName;
                 
             private:
                 const static std::string entryStatesLastOptionName;
                 const static std::string maximalSccSizeOptionName;
+                const static std::string sortTrivialSccOptionName;
             };
             
         } // namespace modules

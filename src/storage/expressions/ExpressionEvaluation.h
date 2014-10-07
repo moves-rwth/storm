@@ -131,8 +131,7 @@ namespace expressions {
 			{
 				std::stringstream str;
 				str << std::fixed << std::setprecision( 3 ) << expression->getValue();
-				carl::DecimalStringToRational<typename T::CoeffType> transform;
-				mValue = T(transform(str.str()));
+				mValue = T(carl::rationalize<cln::cl_RA>(str.str()));
 				
 			}
 
