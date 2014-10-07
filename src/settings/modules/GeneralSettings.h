@@ -314,6 +314,13 @@ namespace storm {
                  */
                 bool isShowStatisticsSet() const;
                 
+                /*!
+                 * Retrieves whether the option to perform bisimulation minimization is set.
+                 *
+                 * @return True iff the option was set.
+                 */
+                bool isBisimulationSet() const;
+                
                 bool check() const override;
 
                 // The name of the module.
@@ -354,6 +361,8 @@ namespace storm {
                 static const std::string constantsOptionShortName;
                 static const std::string statisticsOptionName;
                 static const std::string statisticsOptionShortName;
+                static const std::string bisimulationOptionName;
+                static const std::string bisimulationOptionShortName;
             };
             
         } // namespace modules
