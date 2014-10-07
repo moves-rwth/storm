@@ -100,7 +100,7 @@ message(STATUS "StoRM - CMAKE_BUILD_TYPE (ENV): $ENV{CMAKE_BUILD_TYPE}")
 set(CONVERSIONHELPER_TARGET "${PROJECT_SOURCE_DIR}/src/utility/ConversionHelper.cpp")
 
 if(CMAKE_COMPILER_IS_GNUCC)
-    message(STATUS "StoRM - Using Compiler Configuration: GCC")
+    set(STORM_COMPILED_BY "GCC")
     # Set standard flags for GCC
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -funroll-loops")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -pedantic -DBOOST_RESULT_OF_USE_TR1")
@@ -116,7 +116,7 @@ if(CMAKE_COMPILER_IS_GNUCC)
 	# Set the no-strict-aliasing target for GCC
 	set_source_files_properties(${CONVERSIONHELPER_TARGET} PROPERTIES COMPILE_FLAGS " -fno-strict-aliasing ")
 elseif(MSVC)
-    message(STATUS "StoRM - Using Compiler Configuration: MSVC")
+    set(STORM_COMPILED_BY "MSVC")
 	# required for GMM to compile, ugly error directive in their code
 	add_definitions(/D_SCL_SECURE_NO_DEPRECATE /D_CRT_SECURE_NO_WARNINGS)
 	# required as the PRCTL Parser bloats object files (COFF) beyond their maximum size (see http://msdn.microsoft.com/en-us/library/8578y171(v=vs.110).aspx)
@@ -135,7 +135,7 @@ elseif(MSVC)
 	
 	# MSVC does not do strict-aliasing, so no option needed
 else(CLANG)
-    message(STATUS "StoRM - Using Compiler Configuration: Clang (LLVM)")
+    set(STORM_COMPILED_BY "Clang (LLVM)")
 	# As CLANG is not set as a variable, we need to set it in case we have not matched another compiler.
 	set (CLANG ON)
     # Set standard flags for clang
@@ -165,6 +165,8 @@ else(CLANG)
 	# Set the no-strict-aliasing target for Clang
 	set_source_files_properties(${CONVERSIONHELPER_TARGET} PROPERTIES COMPILE_FLAGS " -fno-strict-aliasing ")
 endif()
+
+message(STATUS "StoRM - Using Compiler Configuration: ${STORM_COMPILED_BY}")
 
 #############################################################
 ##
@@ -226,8 +228,8 @@ configure_file (
 
 # Configure a header file to pass the storm version to the source code
 configure_file (
-	"${PROJECT_SOURCE_DIR}/storm-version.h.in"
-	"${PROJECT_BINARY_DIR}/include/storm-version.h"
+	"${PROJECT_SOURCE_DIR}/storm-version.cpp.in"
+	"${PROJECT_SOURCE_DIR}/src/utility/storm-version.cpp"
 )
 
 # Add the binary dir include directory for storm-config.h
@@ -274,6 +276,7 @@ file(GLOB_RECURSE STORM_PERFORMANCE_TEST_FILES ${STORM_CPP_TESTS_BASE_PATH}/perf
 # Additional include files like the storm-config.h
 file(GLOB_RECURSE STORM_BUILD_HEADERS ${PROJECT_BINARY_DIR}/include/*.h)
 
+
 # Group the headers and sources
 source_group(main FILES ${STORM_MAIN_FILE})
 source_group(adapters FILES ${STORM_ADAPTERS_FILES})
@@ -283,7 +286,7 @@ source_group(properties\\csl FILES ${STORM_PROPERTIES_CSL_FILES})
 source_group(properties\\ltl FILES ${STORM_PROPERTIES_LTL_FILES})
 source_group(properties\\prctl FILES ${STORM_PROPERTIES_PRCTL_FILES})
 source_group(properties\\actions FILES ${STORM_PROPERTIES_ACTIONS_FILES})
-source_group(generated FILES ${STORM_BUILD_HEADERS})
+source_group(generated FILES ${STORM_BUILD_HEADERS} ${STORM_BUILD_SOURCES})
 source_group(modelchecker FILES ${STORM_MODELCHECKER_FILES})
 source_group(counterexamples FILES ${STORM_COUNTEREXAMPLES_FILES})
 source_group(models FILES ${STORM_MODELS_FILES})
