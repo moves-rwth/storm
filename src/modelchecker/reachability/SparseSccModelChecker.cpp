@@ -143,12 +143,6 @@ namespace storm {
                 auto modelCheckingStart = std::chrono::high_resolution_clock::now();
                 std::vector<storm::storage::sparse::state_type> entryStateQueue;
                 uint_fast64_t maximalDepth = treatScc(dtmc, flexibleMatrix, oneStepProbabilities, newInitialStates, subsystem, submatrix, flexibleBackwardTransitions, false, 0, storm::settings::parametricSettings().getMaximalSccSize(), entryStateQueue, distances);
-                
-                if (storm::settings::parametricSettings().isEliminateEntryStatesLastSet()) {
-                    for (auto const& state : entryStateQueue) {
-                        std::cout << "state " << state << " has " << flexibleMatrix.getRow(state).size() << " outgoing transitions and " << flexibleBackwardTransitions.getRow(state).size() << " predecessors. " << std::endl;
-                    }
-                }
 
                 // If the entry states were to be eliminated last, we need to do so now.
                 STORM_LOG_DEBUG("Eliminating " << entryStateQueue.size() << " entry states as a last step.");
