@@ -48,7 +48,7 @@ namespace storm {
                 refinementQueue.pop_front();
                 blocksInRefinementQueue.set(currentBlock, false);
                 
-                splitBlock(dtmc, backwardTransitions, currentBlock, stateToBlockMapping, distributions, blocksInRefinementQueue, refinementQueue);
+                splitBlock(dtmc, backwardTransitions, currentBlock, stateToBlockMapping, distributions, blocksInRefinementQueue, refinementQueue, weak);
             }
             
             std::chrono::high_resolution_clock::duration totalTime = std::chrono::high_resolution_clock::now() - totalStart;
@@ -57,57 +57,107 @@ namespace storm {
         }
         
         template<typename ValueType>
-        std::size_t BisimulationDecomposition<ValueType>::splitPredecessorsGraphBased(storm::models::Dtmc<ValueType> const& dtmc, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::size_t const& blockId, std::vector<std::size_t>& stateToBlockMapping, std::vector<storm::storage::Distribution<ValueType>>& distributions, storm::storage::BitVector& blocksInRefinementQueue, std::deque<std::size_t>& graphRefinementQueue) {
+        std::size_t BisimulationDecomposition<ValueType>::splitPredecessorsGraphBased(storm::models::Dtmc<ValueType> const& dtmc, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::size_t const& blockId, std::vector<std::size_t>& stateToBlockMapping, std::vector<storm::storage::Distribution<ValueType>>& distributions, storm::storage::BitVector& blocksInRefinementQueue, std::deque<std::size_t>& graphRefinementQueue, storm::storage::BitVector& splitBlocks) {
+            std::cout << "entering " << std::endl;
+            std::chrono::high_resolution_clock::time_point totalStart = std::chrono::high_resolution_clock::now();
+            
+//            std::cout << "refining predecessors of " << blockId << std::endl;
             
             // This method tries to split the blocks of predecessors of the provided block by checking whether there is
             // a transition into the current block or not.
             std::unordered_map<std::size_t, typename BisimulationDecomposition<ValueType>::block_type> predecessorBlockToNewBlock;
             
             // Now for each predecessor block which state could actually reach the current block.
+            std::chrono::high_resolution_clock::time_point predIterStart = std::chrono::high_resolution_clock::now();
+            int predCounter = 0;
+            storm::storage::BitVector preds(dtmc.getNumberOfStates());
             for (auto const& state : this->blocks[blockId]) {
                 for (auto const& predecessorEntry : backwardTransitions.getRow(state)) {
+                    ++predCounter;
                     storm::storage::sparse::state_type predecessor = predecessorEntry.getColumn();
-                    predecessorBlockToNewBlock[stateToBlockMapping[predecessor]].insert(predecessor);
-                }
-            }
-            
-            // Now, we can check for each predecessor block whether it needs to be split.
-            for (auto const& blockNewBlockPair : predecessorBlockToNewBlock) {
-                if (this->blocks[blockNewBlockPair.first].size() > blockNewBlockPair.second.size()) {
-                    // Add the states which have a successor in the current block to a totally new block.
-                    this->blocks.emplace_back(std::move(blockNewBlockPair.second));
-                    
-                    // Compute the set of states that remains in the old block;
-                    typename BisimulationDecomposition<ValueType>::block_type newBlock;
-                    std::set_difference(this->blocks[blockId].begin(), this->blocks[blockId].end(), this->blocks.back().begin(), this->blocks.back().end(), std::inserter(newBlock, newBlock.begin()));
-                    this->blocks[blockNewBlockPair.first] = std::move(newBlock);
-                    
-                    blocksInRefinementQueue.resize(this->blocks.size());
-                    
-                    // Add the smaller part of the old block to the queue.
-                    std::size_t blockToAddToQueue = this->blocks.back().size() < this->blocks[blockNewBlockPair.first].size() ? this->blocks.size() - 1 : blockNewBlockPair.first;
-                    if (!blocksInRefinementQueue.get(blockToAddToQueue)) {
-                        graphRefinementQueue.push_back(blockToAddToQueue);
-                        blocksInRefinementQueue.set(blockToAddToQueue, true);
+                    if (!preds.get(predecessor)) {
+//                        std::cout << "having pred " << predecessor << " with block " << stateToBlockMapping[predecessor] << std::endl;
+                        predecessorBlockToNewBlock[stateToBlockMapping[predecessor]].insert(predecessor);
+                        preds.set(predecessor);
                     }
                 }
             }
+            std::chrono::high_resolution_clock::duration predIterTime = std::chrono::high_resolution_clock::now() - predIterStart;
+            std::cout << "took " << std::chrono::duration_cast<std::chrono::milliseconds>(predIterTime).count() << "ms. for " << predCounter << " predecessors" << std::endl;
+
+            // Now, we can check for each predecessor block whether it needs to be split.
+            for (auto const& blockNewBlockPair : predecessorBlockToNewBlock) {
+                if (this->blocks[blockNewBlockPair.first].size() > blockNewBlockPair.second.size()) {
+                    std::cout << "splitting!" << std::endl;
+//                    std::cout << "found that not all " << this->blocks[blockNewBlockPair.first].size() << " states of block " << blockNewBlockPair.first << " have a successor in " << blockId << " but only " << blockNewBlockPair.second.size() << std::endl;
+//                    std::cout << "original: " << this->blocks[blockNewBlockPair.first] << std::endl;
+//                    std::cout << "states with pred: " << blockNewBlockPair.second << std::endl;
+                    // Now update the block mapping for the smaller of the two blocks.
+                    typename BisimulationDecomposition<ValueType>::block_type smallerBlock;
+                    typename BisimulationDecomposition<ValueType>::block_type largerBlock;
+                    if (blockNewBlockPair.second.size() < this->blocks[blockNewBlockPair.first].size()/2) {
+                        smallerBlock = std::move(blockNewBlockPair.second);
+                        std::set_difference(this->blocks[blockNewBlockPair.first].begin(), this->blocks[blockNewBlockPair.first].end(), smallerBlock.begin(), smallerBlock.end(), std::inserter(largerBlock, largerBlock.begin()));
+                    } else {
+                        largerBlock = std::move(blockNewBlockPair.second);
+                        std::set_difference(this->blocks[blockNewBlockPair.first].begin(), this->blocks[blockNewBlockPair.first].end(), largerBlock.begin(), largerBlock.end(), std::inserter(smallerBlock, smallerBlock.begin()));
+                    }
+                    
+//                    std::cout << "created a smaller block with " << smallerBlock.size() << " states and a larger one with " << largerBlock.size() << "states" << std::endl;
+//                    std::cout << "smaller: " << smallerBlock << std::endl;
+//                    std::cout << "larger: " << largerBlock << std::endl;
+                    
+                    this->blocks.emplace_back(std::move(smallerBlock));
+                    this->blocks[blockNewBlockPair.first] = std::move(largerBlock);
+                    
+                    // Update the block mapping of all moved states.
+                    std::size_t newBlockId = this->blocks.size() - 1;
+                    for (auto const& state : this->blocks.back()) {
+                        stateToBlockMapping[state] = newBlockId;
+//                        std::cout << "updating " << state << " to block " << newBlockId << std::endl;
+                    }
+                    
+                    blocksInRefinementQueue.resize(this->blocks.size());
+                    
+                    // Add both parts of the old block to the queue.
+                    if (!blocksInRefinementQueue.get(blockNewBlockPair.first)) {
+                        graphRefinementQueue.push_back(blockNewBlockPair.first);
+                        blocksInRefinementQueue.set(blockNewBlockPair.first, true);
+//                        std::cout << "adding " << blockNewBlockPair.first << " to refine further using graph-based analysis " << std::endl;
+                    }
+                    
+                    graphRefinementQueue.push_back(this->blocks.size() - 1);
+                    blocksInRefinementQueue.set(this->blocks.size() - 1);
+//                    std::cout << "adding " << this->blocks.size() - 1 << " to refine further using graph-based analysis " << std::endl;
+                }
+            }
+            std::chrono::high_resolution_clock::duration totalTime = std::chrono::high_resolution_clock::now() - totalStart;
+            std::cout << "refinement of predecessors of block " << blockId << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(totalTime).count() << "ms." << std::endl;
+
+//            std::cout << "done. "<< std::endl;
             
             // FIXME
             return 0;
         }
         
         template<typename ValueType>
-        std::size_t BisimulationDecomposition<ValueType>::splitBlock(storm::models::Dtmc<ValueType> const& dtmc, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::size_t const& blockId, std::vector<std::size_t>& stateToBlockMapping, std::vector<storm::storage::Distribution<ValueType>>& distributions, storm::storage::BitVector& blocksInRefinementQueue, std::deque<std::size_t>& refinementQueue) {
+        std::size_t BisimulationDecomposition<ValueType>::splitBlock(storm::models::Dtmc<ValueType> const& dtmc, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::size_t const& blockId, std::vector<std::size_t>& stateToBlockMapping, std::vector<storm::storage::Distribution<ValueType>>& distributions, storm::storage::BitVector& blocksInRefinementQueue, std::deque<std::size_t>& refinementQueue, bool weakBisimulation) {
             std::chrono::high_resolution_clock::time_point totalStart = std::chrono::high_resolution_clock::now();
             std::unordered_map<storm::storage::Distribution<ValueType>, typename BisimulationDecomposition<ValueType>::block_type> distributionToNewBlocks;
             
             // Traverse all states of the block and check whether they have different distributions.
+            std::chrono::high_resolution_clock::time_point gatherStart = std::chrono::high_resolution_clock::now();
             for (auto const& state : this->blocks[blockId]) {
                 // Now construct the distribution of this state wrt. to the current partitioning.
                 storm::storage::Distribution<ValueType> distribution;
                 for (auto const& successorEntry : dtmc.getTransitionMatrix().getRow(state)) {
                     distribution.addProbability(static_cast<storm::storage::sparse::state_type>(stateToBlockMapping[successorEntry.getColumn()]), successorEntry.getValue());
+                }
+                
+                // If we are requested to compute a weak bisimulation, we need to scale the distribution with the
+                // self-loop probability.
+                if (weakBisimulation) {
+                    distribution.scale(blockId);
                 }
                 
                 // If the distribution already exists, we simply add the state. Otherwise, we open a new block.
@@ -119,10 +169,13 @@ namespace storm {
                 }
             }
             
+            std::chrono::high_resolution_clock::duration gatherTime = std::chrono::high_resolution_clock::now() - gatherStart;
+            std::cout << "time to iterate over all states was " << std::chrono::duration_cast<std::chrono::milliseconds>(gatherTime).count() << "ms." << std::endl;
+            
             // Now we are ready to split the block.
             if (distributionToNewBlocks.size() == 1) {
                 // If there is just one behavior, we just set the distribution as the new one for this block.
-                distributions[blockId] = std::move(distributionToNewBlocks.begin()->first);
+                // distributions[blockId] = std::move(distributionToNewBlocks.begin()->first);
             } else {
                 // In this case, we need to split the block.
                 typename BisimulationDecomposition<ValueType>::block_type tmpBlock;
@@ -154,21 +207,32 @@ namespace storm {
                 std::deque<std::size_t> localRefinementQueue;
                 storm::storage::BitVector blocksInLocalRefinementQueue(this->size());
                 localRefinementQueue.push_back(blockId);
+//                std::cout << "adding " << blockId << " to local ref queue " << std::endl;
+                blocksInLocalRefinementQueue.set(blockId);
                 for (std::size_t i = beforeNumberOfBlocks; i < this->blocks.size(); ++i) {
                     localRefinementQueue.push_back(i);
+                    blocksInLocalRefinementQueue.set(i);
+//                    std::cout << "adding " << i << " to local refinement queue " << std::endl;
                 }
+
+                // We need to keep track of which blocks were split so we can later add all their predecessors as
+                // candidates for furter splitting.
+                storm::storage::BitVector splitBlocks(this->size());
                 
-                while (!localRefinementQueue.empty()) {
-                    std::size_t currentBlock = localRefinementQueue.front();
-                    localRefinementQueue.pop_front();
-                    blocksInLocalRefinementQueue.set(currentBlock, false);
-                    
-                    splitPredecessorsGraphBased(dtmc, backwardTransitions, blockId, stateToBlockMapping, distributions, blocksInLocalRefinementQueue, localRefinementQueue);
-                }
+//                while (!localRefinementQueue.empty()) {
+//                    std::size_t currentBlock = localRefinementQueue.front();
+//                    localRefinementQueue.pop_front();
+//                    blocksInLocalRefinementQueue.set(currentBlock, false);
+//                    
+//                    splitPredecessorsGraphBased(dtmc, backwardTransitions, currentBlock, stateToBlockMapping, distributions, blocksInLocalRefinementQueue, localRefinementQueue, splitBlocks);
+//                }
+                
+//                std::cout << "split blocks: " << std::endl;
+//                std::cout << splitBlocks << std::endl;
                 
                 // Since we created some new blocks, we need to extend the bit vector storing the blocks in the
                 // refinement queue.
-                blocksInRefinementQueue.resize(blocksInRefinementQueue.size() + (distributionToNewBlocks.size() - 1));
+                blocksInRefinementQueue.resize(this->blocks.size());
                 
                 // Insert blocks that possibly need a refinement into the queue.
                 for (auto const& state : tmpBlock) {

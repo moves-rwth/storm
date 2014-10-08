@@ -66,6 +66,19 @@ namespace storm {
         }
         
         template<typename ValueType>
+        void Distribution<ValueType>::scale(storm::storage::sparse::state_type const& state) {
+            auto probabilityIterator = this->distribution.find(state);
+            if (probabilityIterator != this->distribution.end()) {
+                ValueType scaleValue = 1 / probabilityIterator->second;
+                this->distribution.erase(probabilityIterator);
+                
+                for (auto& entry : this->distribution) {
+                    entry.second *= scaleValue;
+                }
+            }
+        }
+        
+        template<typename ValueType>
         std::size_t Distribution<ValueType>::getHash() const {
             return this->hash ^ (this->distribution.size() << 8);
         }

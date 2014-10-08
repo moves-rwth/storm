@@ -67,6 +67,15 @@ namespace storm {
             const_iterator end() const;
             
             /*!
+             * Scales the distribution by multiplying all the probabilities with 1/p where p is the probability of moving
+             * to the given state and sets the probability of moving to the given state to zero. If the probability is
+             * already zero, this operation has no effect.
+             *
+             * @param state The state whose associated probability is used to scale the distribution.
+             */
+            void scale(storm::storage::sparse::state_type const& state);
+            
+            /*!
              * Retrieves the hash value of the distribution.
              *
              * @return The hash value of the distribution.
