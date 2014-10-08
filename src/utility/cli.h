@@ -62,13 +62,15 @@ namespace storm {
              */
             void initializeLogger() {
                 logger = log4cplus::Logger::getInstance(LOG4CPLUS_TEXT("main"));
-                auto loglevel = storm::settings::debugSettings().isTraceSet() ? log4cplus::TRACE_LOG_LEVEL : storm::settings::debugSettings().isDebugSet() ? log4cplus::DEBUG_LOG_LEVEL : log4cplus::WARN_LOG_LEVEL;
-                logger.setLogLevel(loglevel);
                 log4cplus::SharedAppenderPtr consoleLogAppender(new log4cplus::ConsoleAppender());
                 consoleLogAppender->setName("mainConsoleAppender");
-                consoleLogAppender->setThreshold(loglevel);
                 consoleLogAppender->setLayout(std::auto_ptr<log4cplus::Layout>(new log4cplus::PatternLayout("%-5p - %D{%H:%M:%S} (%r ms) - %b:%L: %m%n")));
                 logger.addAppender(consoleLogAppender);
+				auto loglevel = storm::settings::debugSettings().isTraceSet() ? log4cplus::TRACE_LOG_LEVEL : storm::settings::debugSettings().isDebugSet() ? log4cplus::DEBUG_LOG_LEVEL : log4cplus::WARN_LOG_LEVEL;
+                logger.setLogLevel(loglevel);
+				consoleLogAppender->setThreshold(loglevel);
+                
+                
             }
             
             /*!

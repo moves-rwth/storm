@@ -205,6 +205,58 @@ inline storm::storage::LabeledValues<double> constantInfinity() {
 /*! @endcond */
 
 template<typename T>
+inline bool isConstant(T const& v) 
+{
+	return true;
+}
+
+
+#ifdef PARAMETRIC_SYSTEMS
+template<>
+inline bool isConstant(storm::RationalFunction const& r)
+{
+	return r.isConstant();
+}
+
+template<>
+inline bool isConstant(storm::Polynomial const& p)
+{
+	return p.isConstant();
+}
+#endif
+
+
+
+template<typename T>
+inline bool isZero(T const& v)
+{
+	return v == T(0);
+}
+
+template<>
+inline bool isZero(double const& d)
+{
+	double precision = storm::settings::generalSettings().getPrecision();
+	return std::abs(d) < precision;
+}
+
+#ifdef PARAMETRIC_SYSTEMS
+template<>
+inline bool isZero(storm::RationalFunction const& r)
+{
+	return r.isZero();
+}
+
+template<>
+inline bool isZero(storm::Polynomial const& p)
+{
+	return p.isZero();
+}
+#endif
+
+
+
+template<typename T>
 inline bool isOne(T const& sum)
 {
 	return sum == T(1);

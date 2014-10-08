@@ -11,7 +11,10 @@
 namespace storm
 {
 	typedef carl::MultivariatePolynomial<cln::cl_RA> Polynomial;
-	//typedef Parameter  carl::Variable							;
+	typedef carl::Variable  Variable;
+	
+	
+	typedef carl::CompareRelation CompareRelation;
 	typedef carl::RationalFunction<Polynomial> RationalFunction;
 }
 #endif

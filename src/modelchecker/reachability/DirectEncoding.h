@@ -90,7 +90,7 @@ namespace storm
 					
 					smt2 << ("reachability");
 					
-					carl::CompareRelation thresholdRelation = lessequal ? carl::CompareRelation::LE : carl::CompareRelation::GE;
+					carl::CompareRelation thresholdRelation = lessequal ? carl::CompareRelation::LEQ : carl::CompareRelation::GEQ;
 					smt2 <<  carl::Constraint<Polynomial>(initStateReachSum - threshold, thresholdRelation);
 					smt2 << carl::io::smt2flag::CHECKSAT;
 					smt2 << carl::io::smt2flag::MODEL;

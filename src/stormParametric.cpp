@@ -6,7 +6,10 @@
 #include "src/exceptions/BaseException.h"
 #include "src/utility/macros.h"
 #include "src/utility/cli.h"
+#include "src/utility/export.h"
+#include "src/modelchecker/reachability/CollectConstraints.h"
 
+#include "src/modelchecker/reachability/DirectEncoding.h"
 #include "src/modelchecker/reachability/SparseSccModelChecker.h"
 #include "src/storage/parameters.h"
 /*!
@@ -31,19 +34,51 @@ int main(const int argc, const char** argv) {
         storm::prism::Program program = storm::parser::PrismParser::parse(programFile);
         std::shared_ptr<storm::models::AbstractModel<storm::RationalFunction>> model = storm::adapters::ExplicitModelAdapter<storm::RationalFunction>::translateProgram(program, constants);
         
+        
+        
         model->printModelInformationToStream(std::cout);
 
         // Program Translation Time Measurement, End
         std::chrono::high_resolution_clock::time_point programTranslationEnd = std::chrono::high_resolution_clock::now();
         std::cout << "Parsing and translating the model took " << std::chrono::duration_cast<std::chrono::milliseconds>(programTranslationEnd - programTranslationStart).count() << "ms." << std::endl << std::endl;
 
+        std::shared_ptr<storm::models::Dtmc<storm::RationalFunction>> dtmc = model->as<storm::models::Dtmc<storm::RationalFunction>>();
+        assert(dtmc);
+        storm::modelchecker::reachability::CollectConstraints<storm::RationalFunction> constraintCollector;
+        constraintCollector(*dtmc);
+
+        
         storm::modelchecker::reachability::SparseSccModelChecker<storm::RationalFunction> modelChecker;
         
         STORM_LOG_THROW(storm::settings::generalSettings().isPctlPropertySet(), storm::exceptions::InvalidSettingsException, "Unable to perform model checking without a property.");
         std::shared_ptr<storm::properties::prctl::PrctlFilter<double>> filterFormula = storm::parser::PrctlParser::parsePrctlFormula(storm::settings::generalSettings().getPctlProperty());
         
-        storm::RationalFunction value = modelChecker.computeReachabilityProbability(*model->as<storm::models::Dtmc<storm::RationalFunction>>(), filterFormula);
+        storm::RationalFunction value = modelChecker.computeReachabilityProbability(*dtmc, filterFormula);
         STORM_PRINT_AND_LOG(std::endl << "computed value " << value << std::endl);
+        
+        // Get variables from parameter definitions in prism program.
+        std::set<storm::Variable> parameters;
+        for(auto constant : program.getConstants())
+        {
+            if(!constant.isDefined())
+            {
+                carl::Variable p = carl::VariablePool::getInstance().findVariableWithName(constant.getName());
+                assert(p != storm::Variable::NO_VARIABLE);
+                parameters.insert(p);
+            }
+        }
+        // 
+        STORM_LOG_ASSERT(parameters == value.gatherVariables(), "Parameters in result and program definition do not coincide.");
+        
+        if(storm::settings::parametricSettings().exportResultToFile()) {
+            storm::utility::exportParametricMcResult(value, constraintCollector);
+        }
+        
+        if(storm::settings::parametricSettings().exportToSmt2File()) {
+            storm::modelchecker::reachability::DirectEncoding dec;
+            //storm::utility::exportStreamToFile(dec.encodeAsSmt2(modelChecker.getMatrix(), parameters,));
+        }
+        
 
         // All operations have now been performed, so we clean up everything and terminate.
         storm::utility::cli::cleanUp();
@@ -172,16 +207,7 @@ int main(const int argc, const char** argv) {
 //
 //    modelchecker::reachability::DirectEncoding dec;
 //    std::vector<carl::Variable> parameters;
-//    for(auto constant : mProgram.getConstants())
-//    {
-//        if(!constant.isDefined())
-//        {
-//            std::cout << constant.getName() << std::endl;
-//            carl::Variable p = carl::VariablePool::getInstance().findVariableWithName(constant.getName());
-//            assert(p != carl::Variable::NO_VARIABLE);
-//            parameters.push_back(p);
-//        }
-//    }
+    
 //    return dec.encodeAsSmt2(subdtmc, parameters, subdtmc.getLabeledStates("init"), subdtmc.getLabeledStates("__targets__"), mpq_class(1,2));
 //    
 //}
