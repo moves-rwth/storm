@@ -8,6 +8,7 @@
 #include <sstream>
 #include <memory>
 
+#include "storm-config.h"
 // Includes for the linked libraries and versions header.
 #ifdef STORM_HAVE_INTELTBB
 #	include "tbb/tbb_stddef.h"
@@ -30,6 +31,7 @@ log4cplus::Logger logger;
 
 // Headers that provide auxiliary functionality.
 #include "src/utility/storm-version.h"
+
 #include "src/utility/OsDetection.h"
 #include "src/settings/SettingsManager.h"
 
