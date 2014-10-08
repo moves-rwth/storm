@@ -30,6 +30,7 @@ log4cplus::Logger logger;
 
 // Headers that provide auxiliary functionality.
 #include "src/utility/storm-version.h"
+#include "storm-config.h"
 #include "src/utility/OsDetection.h"
 #include "src/settings/SettingsManager.h"
 
