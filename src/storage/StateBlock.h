@@ -101,6 +101,13 @@ namespace storm {
              * @param state The state to add to this SCC.
              */
             void insert(value_type const& state);
+
+            /*!
+             * Inserts the given element into this SCC.
+             *
+             * @param state The state to add to this SCC.
+             */
+            iterator insert(container_type::const_iterator iterator, value_type const& state);
             
             /*!
              * Removes the given element from this SCC.

@@ -2,6 +2,7 @@
 #define STORM_STORAGE_DISTRIBUTION_H_
 
 #include <vector>
+#include <ostream>
 #include <boost/container/flat_map.hpp>
 
 #include "src/storage/sparse/StateType.h"
@@ -19,7 +20,15 @@ namespace storm {
             /*!
              * Creates an empty distribution.
              */
-            Distribution() = default;
+            Distribution();
+            
+            /*!
+             * Checks whether the two distributions specify the same probabilities to go to the same states.
+             *
+             * @param other The distribution with which the current distribution is to be compared.
+             * @return True iff the two distributions are equal.
+             */
+            bool operator==(Distribution const& other) const;
             
             /*!
              * Assigns the given state the given probability under this distribution.
@@ -57,6 +66,13 @@ namespace storm {
              */
             const_iterator end() const;
             
+            /*!
+             * Retrieves the hash value of the distribution.
+             *
+             * @return The hash value of the distribution.
+             */
+            std::size_t getHash() const;
+            
         private:
             // A list of states and the probabilities that are assigned to them.
             container_type distribution;
@@ -65,7 +81,21 @@ namespace storm {
             std::size_t hash;
         };
         
+        template<typename ValueType>
+            std::ostream& operator<<(std::ostream& out, Distribution<ValueType> const& distribution);
     }
 }
+
+namespace std {
+    
+    template <typename ValueType>
+    struct hash<storm::storage::Distribution<ValueType>> {
+        std::size_t operator()(storm::storage::Distribution<ValueType> const& distribution) const {
+            return (distribution.getHash());
+        }
+    };
+    
+}
+
 
 #endif /* STORM_STORAGE_DISTRIBUTION_H_ */

@@ -43,6 +43,9 @@ log4cplus::Logger logger;
 // Headers of adapters.
 #include "src/adapters/ExplicitModelAdapter.h"
 
+// Headers for model processing.
+#include "src/storage/BisimulationDecomposition.h"
+
 // Headers for counterexample generation.
 #include "src/counterexamples/MILPMinimalLabelSetGenerator.h"
 #include "src/counterexamples/SMTMinimalCommandSetGenerator.h"
@@ -254,6 +257,12 @@ namespace storm {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No input model.");
                 }
                 
+                if (settings.isBisimulationSet()) {
+                    STORM_LOG_THROW(result->getType() == storm::models::DTMC, storm::exceptions::InvalidSettingsException, "Bisimulation minimization is currently only compatible with DTMCs.");
+                    std::shared_ptr<storm::models::Dtmc<double>> dtmc = result->template as<storm::models::Dtmc<double>>();
+                    storm::storage::BisimulationDecomposition<double> bisimulationDecomposition(*dtmc);
+                }
+                
                 return result;
             }
             
@@ -298,6 +307,7 @@ namespace storm {
                     std::shared_ptr<storm::properties::prctl::PrctlFilter<double>> filterFormula = storm::parser::PrctlParser::parsePrctlFormula(settings.getPctlProperty());
                     generateCounterexample(model, filterFormula->getChild());
                 }
+                
             }
 
         }
