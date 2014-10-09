@@ -217,6 +217,19 @@ public:
 		return this->singleLabelings[apIndexPair->second].get(state);
 	}
 
+    /*!
+     * Retrieves the set of atomic propositions of the model.
+     *
+     * @return The set of atomic propositions of the model.
+     */
+    std::set<std::string> getAtomicPropositions() const {
+        std::set<std::string> result;
+        for (auto const& labeling : this->nameToLabelingMap) {
+            result.insert(labeling.first);
+        }
+        return result;
+    }
+    
 	/*!
 	 * Returns the number of atomic propositions managed by this object (set in the initialization).
      *
