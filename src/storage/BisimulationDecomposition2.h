@@ -26,13 +26,18 @@ namespace storm {
             BisimulationDecomposition2(storm::models::Dtmc<ValueType> const& model, bool weak = false);
             
         private:
+            class Partition;
+            
             class Block {
             public:
                 Block(storm::storage::sparse::state_type begin, storm::storage::sparse::state_type end, Block* prev, Block* next);
                 
+                // Prints the block.
+                void print(Partition const& partition) const;
+                
                 // An iterator to itself. This is needed to conveniently insert elements in the overall list of blocks
                 // kept by the partition.
-                typename std::list<Block>::iterator itToSelf;
+                typename std::list<Block>::const_iterator itToSelf;
                 
                 // The begin and end indices of the block in terms of the state vector of the partition.
                 storm::storage::sparse::state_type begin;
@@ -86,6 +91,8 @@ namespace storm {
             void computeBisimulationEquivalenceClasses(storm::models::Dtmc<ValueType> const& model, bool weak);
             
             std::size_t splitPartition(storm::storage::SparseMatrix<ValueType> const& backwardTransitions, Block const& splitter, Partition& partition, std::deque<Block*>& splitterQueue);
+            
+            std::size_t splitBlockProbabilities(Block* block, Partition& partition, std::deque<Block*>& splitterQueue);
         };
     }
 }
