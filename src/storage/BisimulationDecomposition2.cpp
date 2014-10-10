@@ -3,29 +3,45 @@
 #include <algorithm>
 #include <unordered_map>
 #include <chrono>
+#include <iomanip>
 
 namespace storm {
     namespace storage {
         
+        static int globalId = 0;
+        
         template<typename ValueType>
-        BisimulationDecomposition2<ValueType>::Block::Block(storm::storage::sparse::state_type begin, storm::storage::sparse::state_type end, Block* prev, Block* next) : begin(begin), end(end), prev(prev), next(next), numberOfStates(end - begin), isMarked(false) {
+        BisimulationDecomposition2<ValueType>::Block::Block(storm::storage::sparse::state_type begin, storm::storage::sparse::state_type end, Block* prev, Block* next) : originalBegin(begin), begin(begin), end(end), prev(prev), next(next), numberOfStates(end - begin), isMarked(false), myId(globalId++) {
             // Intentionally left empty.
+            std::cout << "created new block from " << begin << " to " << end << std::endl;
         }
         
         template<typename ValueType>
         void BisimulationDecomposition2<ValueType>::Block::print(Partition const& partition) const {
-            std::cout << "this " << this << std::endl;
+            std::cout << "block " << this->myId << " and ptr " << this << std::endl;
             std::cout << "begin: " << this->begin << " and end: " << this->end << " (number of states: " << this->numberOfStates << ")" << std::endl;
             std::cout << "next: " << this->next << " and prev " << this->prev << std::endl;
             std::cout << "states:" << std::endl;
             for (storm::storage::sparse::state_type index = this->begin; index < this->end; ++index) {
-                std::cout << partition.states[index] << " " << std::endl;
+                std::cout << partition.states[index] << " ";
             }
+            std::cout << std::endl << "values:" << std::endl;
+            for (storm::storage::sparse::state_type index = this->begin; index < this->end; ++index) {
+                std::cout << std::setprecision(3) << partition.values[index] << " ";
+            }
+            std::cout << std::endl;
+        }
+        
+        template<typename ValueType>
+        void BisimulationDecomposition2<ValueType>::Block::setBegin(storm::storage::sparse::state_type begin) {
+            this->begin = begin;
+            this->originalBegin = begin;
         }
         
         template<typename ValueType>
         BisimulationDecomposition2<ValueType>::Partition::Partition(std::size_t numberOfStates) : stateToBlockMapping(numberOfStates), states(numberOfStates), positions(numberOfStates), values(numberOfStates) {
-            this->blocks.back().itToSelf = blocks.emplace(this->blocks.end(), 0, numberOfStates, nullptr, nullptr);
+            typename std::list<Block>::iterator it = blocks.emplace(this->blocks.end(), 0, numberOfStates, nullptr, nullptr);
+            it->itToSelf = it;
             for (storm::storage::sparse::state_type state = 0; state < numberOfStates; ++state) {
                 states[state] = state;
                 positions[state] = state;
@@ -79,7 +95,7 @@ namespace storm {
             for (auto const& block : this->blocks) {
                 block.print(*this);
             }
-            std::cout << "states" << std::endl;
+            std::cout << "states in partition" << std::endl;
             for (auto const& state : states) {
                 std::cout << state << " ";
             }
@@ -92,10 +108,16 @@ namespace storm {
                 std::cout << block << " ";
             }
             std::cout << std::endl;
+            std::cout << "size: " << this->blocks.size() << std::endl;
         }
         
         template<typename ValueType>
         std::size_t BisimulationDecomposition2<ValueType>::Partition::size() const {
+            int counter = 0;
+            for (auto const& element : blocks) {
+                ++counter;
+            }
+            std::cout << "found " << counter << " elements" << std::endl;
             return this->blocks.size();
         }
         
@@ -137,12 +159,17 @@ namespace storm {
                 std::cout << "####### end of updated partition #######" << std::endl;
             }
             
+            std::cout << "computed a quotient of size " << partition.size() << std::endl;
+            
             std::chrono::high_resolution_clock::duration totalTime = std::chrono::high_resolution_clock::now() - totalStart;
             std::cout << "Bisimulation took " << std::chrono::duration_cast<std::chrono::milliseconds>(totalTime).count() << "ms." << std::endl;
         }
         
         template<typename ValueType>
         std::size_t BisimulationDecomposition2<ValueType>::splitBlockProbabilities(Block* block, Partition& partition, std::deque<Block*>& splitterQueue) {
+            std::cout << "part before split prob" << std::endl;
+            partition.print();
+            
             Block& currentBlock = *block;
             
             // Sort the states in the block based on their probabilities.
@@ -162,12 +189,48 @@ namespace storm {
             storm::storage::sparse::state_type currentIndex = beginIndex;
             storm::storage::sparse::state_type endIndex = currentBlock.end;
             
-            Block* prevBlock = block->prev;
+            // Now we can check whether the block needs to be split, which is the case iff the probabilities for the
+            // first and the last state are different.
+            // Note that this check requires the block to be non-empty.
+            if (std::abs(partition.values[beginIndex] - partition.values[endIndex - 1]) < 1e-6) {
+                return 1;
+            }
+
+            // Now we scan for the first state in the block that disagrees on the probability value.
+            // Note that we do not have to check currentIndex for staying within bounds, because we know the matching
+            // state is within bounds.
+            ValueType currentValue = partition.values[beginIndex];
+            ValueType* valueIterator = &(partition.values[beginIndex]) + 1;
+            ++currentIndex;
+            while (std::abs(*valueIterator - currentValue) < 1e-6) {
+                std::cout << "prob: " << *valueIterator << std::endl;
+                ++currentIndex;
+                ++valueIterator;
+            }
             
+            // Now resize the block.
+            std::cout << "resizing block from " << std::endl;
+            currentBlock.print(partition);
+            currentBlock.end = currentIndex;
+            currentBlock.numberOfStates = currentBlock.end - currentBlock.begin;
+            std::cout << " to " << std::endl;
+            currentBlock.print(partition);
+            beginIndex = currentIndex;
+            
+            // If it is not already a splitter, we mark it as such.
+            if (!currentBlock.isMarked) {
+                currentBlock.isMarked = true;
+            }
+            
+            Block* prevBlock = &currentBlock;
+            
+            // Now scan for new blocks.
             std::list<Block*> createdBlocks;
             std::cout << currentIndex << " < " << endIndex << std::endl;
+            typename std::list<Block>::const_iterator insertPosition = currentBlock.itToSelf;
+            ++insertPosition;
             while (currentIndex < endIndex) {
-                ValueType& currentValue = *(partition.values.begin() + currentIndex);
+                ValueType currentValue = *(partition.values.begin() + currentIndex);
                 
                 ++currentIndex;
                 ValueType* nextValuePtr = &currentValue;
@@ -177,28 +240,36 @@ namespace storm {
                 }
                 
                 // Create a new block from the states that agree on the values.
-                typename std::list<Block>::iterator newBlockIterator = partition.blocks.emplace(currentBlock.itToSelf, beginIndex, endIndex, prevBlock, currentBlock.next);
+                ++insertPosition;
+                typename std::list<Block>::iterator newBlockIterator = partition.blocks.emplace(insertPosition, beginIndex, currentIndex, prevBlock, prevBlock->next);
                 newBlockIterator->itToSelf = newBlockIterator;
-                if (prevBlock != nullptr) {
-                    prevBlock->next = &(*newBlockIterator);
-                }
-                prevBlock = &(*newBlockIterator);
+                Block* newBlock = &(*newBlockIterator);
+                prevBlock->next = newBlock;
+                prevBlock = newBlock;
                 if (prevBlock->numberOfStates > 1) {
                     createdBlocks.emplace_back(prevBlock);
+                }
+                beginIndex = currentIndex;
+                
+                // Update the block mapping for the moved states.
+                for (auto it = partition.states.begin() + newBlock->begin, ite = partition.states.begin() + newBlock->end; it != ite; ++it) {
+                    partition.stateToBlockMapping[*it] = newBlock;
                 }
             }
 
             for (auto block : createdBlocks) {
                 splitterQueue.push_back(block);
+                block->isMarked = true;
             }
+            
+            std::cout << "created " << createdBlocks.size() << " blocks" << std::endl;
             
             return createdBlocks.size();
         }
         
         template<typename ValueType>
         std::size_t BisimulationDecomposition2<ValueType>::splitPartition(storm::storage::SparseMatrix<ValueType> const& backwardTransitions, Block const& splitter, Partition& partition, std::deque<Block*>& splitterQueue) {
-            std::cout << "getting block " << &splitter << " as splitter" << std::endl;
-            splitter.print(partition);
+            std::cout << "getting block " << splitter.myId << " as splitter" << std::endl;
             std::list<Block*> predecessorBlocks;
             
             // Iterate over all states of the splitter and check its predecessors.
@@ -207,14 +278,12 @@ namespace storm {
                 
                 for (auto const& predecessorEntry : backwardTransitions.getRow(state)) {
                     storm::storage::sparse::state_type predecessor = predecessorEntry.getColumn();
-                    std::cout << "found pred " << predecessor << std::endl;
+                    std::cout << "found predecessor " << predecessor << " of state " << *stateIterator << std::endl;
                     Block* predecessorBlock = partition.stateToBlockMapping[predecessor];
-                    std::cout << "predecessor block " << std::endl;
-                    predecessorBlock->print(partition);
+                    std::cout << "predecessor block " << predecessorBlock->myId << std::endl;
                     
                     // If the predecessor block has just one state, there is no point in splitting it.
                     if (predecessorBlock->numberOfStates <= 1) {
-                        std::cout << "continuing" << std::endl;
                         continue;
                     }
                     
@@ -223,21 +292,34 @@ namespace storm {
                     // If we have not seen this predecessor before, we move it to a part near the beginning of the block.
                     std::cout << "predecessor position: " << predecessorPosition << " and begin " << predecessorBlock->begin << std::endl;
                     if (predecessorPosition >= predecessorBlock->begin) {
-                        std::swap(partition.states[predecessorPosition], partition.states[predecessorBlock->begin]);
-                        std::cout << "swapping positions of " << predecessor << " and " << partition.states[predecessorPosition] << std::endl;
-                        storm::storage::sparse::state_type tmp = partition.positions[partition.states[predecessorPosition]];
-                        partition.positions[partition.states[predecessorPosition]] = partition.positions[predecessor];
-                        partition.positions[predecessor] = tmp;
+                        
+//                        We cannot directly move the states at this point, otherwise we would consider states multiple
+//                        times while others are skipped.
+//                        std::swap(partition.states[predecessorPosition], partition.states[predecessorBlock->begin]);
+//                        std::cout << "swapping positions of " << predecessor << " and " << partition.states[predecessorPosition] << std::endl;
+                        
+                        // Instead, we only virtually move the states by setting their positions and move them in place
+                        // later.
+                        storm::storage::sparse::state_type tmp = partition.positions[predecessor];
+                        partition.positions[predecessor] = predecessorBlock->begin;
+                        std::cout << "moved " << predecessor << " to pos " << predecessorBlock->begin << std::endl;
+                        partition.positions[partition.states[predecessorBlock->begin]] = tmp;
+                        
+//                        storm::storage::sparse::state_type tmp = partition.positions[partition.states[predecessorPosition]];
+//                        partition.positions[partition.states[predecessorPosition]] = partition.positions[predecessor];
+//                        partition.positions[predecessor] = tmp;
                         
 //                        std::swap(partition.positions[predecessor], partition.positions[predecessorBlock->begin]);
                         
                         ++predecessorBlock->begin;
-                        std::cout << "incrementing begin... " << std::endl;
-                        partition.values[predecessor] = predecessorEntry.getValue();
+                        std::cout << "incrementing begin, setting probability at " << partition.positions[predecessor] << " to " << predecessorEntry.getValue() << " ... " << std::endl;
+                        partition.values[partition.positions[predecessor]] = predecessorEntry.getValue();
+                        assert(partition.values[partition.positions[predecessor]] <= 1);
                     } else {
                         // Otherwise, we just need to update the probability for this predecessor.
-                        std::cout << "updating probability" << std::endl;
-                        partition.values[predecessor] += predecessorEntry.getValue();
+                        partition.values[predecessorPosition] += predecessorEntry.getValue();
+                        std::cout << "updating probability " << predecessorPosition << " to " << std::setprecision(10) << partition.values[predecessorPosition] << std::endl;
+                        assert(partition.values[predecessorPosition] <= 1 + 1e-6);
                     }
                     
                     if (!predecessorBlock->isMarked) {
@@ -245,6 +327,17 @@ namespace storm {
                         predecessorBlock->isMarked = true;
                     }
                 }
+            }
+
+            // Now that we have computed the new positions of the states we want to move, we need to actually move them.
+            for (auto block : predecessorBlocks) {
+                std::cout << "moving block " << block->myId << std::endl;
+                for (auto stateIterator = partition.states.begin() + block->originalBegin, stateIte = partition.states.begin() + block->end; stateIterator != stateIte; ++stateIterator) {
+                    std::cout << "swapping " << *stateIterator << " to " << partition.positions[*stateIterator] << std::endl;
+                    std::swap(partition.states[partition.positions[*stateIterator]], *stateIterator);
+                }
+                // Set the original begin and begin to the same value.
+                block->setBegin(block->begin);
             }
             
             std::list<Block*> blocksToSplit;
@@ -260,8 +353,7 @@ namespace storm {
                     storm::storage::sparse::state_type tmpBegin = block->begin;
                     storm::storage::sparse::state_type tmpEnd = block->end;
                     
-                    block->begin = block->prev != nullptr ? block->prev->end : 0;
-                    std::cout << "begin: " << block->begin << " and not-null? " << (block->prev != nullptr) << ": " << block->prev << std::endl;
+                    block->setBegin(block->prev != nullptr ? block->prev->end : 0);
                     block->end = tmpBegin;
                     block->numberOfStates = block->end - block->begin;
                     
@@ -289,8 +381,13 @@ namespace storm {
                     splitterQueue.push_back(newBlock);
                 } else {
                     std::cout << "found block to split" << std::endl;
+
+                    // In this case, we can keep the block by setting its begin to the old value.
+                    block->setBegin((block->prev != nullptr) ? block->prev->end : 0);
                     blocksToSplit.emplace_back(block);
                 }
+                
+                block->setBegin(block->begin);
             }
             
             // Finally, we walk through the blocks that have a transition to the splitter and split them using

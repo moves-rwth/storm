@@ -34,12 +34,16 @@ namespace storm {
                 
                 // Prints the block.
                 void print(Partition const& partition) const;
+
+                // Sets the beginning index of the block.
+                void setBegin(storm::storage::sparse::state_type begin);
                 
                 // An iterator to itself. This is needed to conveniently insert elements in the overall list of blocks
                 // kept by the partition.
                 typename std::list<Block>::const_iterator itToSelf;
                 
                 // The begin and end indices of the block in terms of the state vector of the partition.
+                storm::storage::sparse::state_type originalBegin;
                 storm::storage::sparse::state_type begin;
                 storm::storage::sparse::state_type end;
                 
@@ -52,6 +56,8 @@ namespace storm {
                 
                 // A field that can be used for marking the block.
                 bool isMarked;
+                
+                int myId;
             };
             
             class Partition {

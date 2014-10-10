@@ -16,7 +16,7 @@ namespace storm {
             std::chrono::high_resolution_clock::time_point totalStart = std::chrono::high_resolution_clock::now();
             // We start by computing the initial partition. In particular, we also keep a mapping of states to their blocks.
             std::vector<std::size_t> stateToBlockMapping(dtmc.getNumberOfStates());
-            storm::storage::BitVector labeledStates = dtmc.getLabeledStates("one");
+            storm::storage::BitVector labeledStates = dtmc.getLabeledStates("observe0Greater1");
             this->blocks.emplace_back(labeledStates.begin(), labeledStates.end());
             std::for_each(labeledStates.begin(), labeledStates.end(), [&] (storm::storage::sparse::state_type const& state) { stateToBlockMapping[state] = 0; } );
             labeledStates.complement();
@@ -50,6 +50,8 @@ namespace storm {
                 
                 splitBlock(dtmc, backwardTransitions, currentBlock, stateToBlockMapping, distributions, blocksInRefinementQueue, refinementQueue, weak);
             }
+            
+            std::cout << *this << std::endl;
             
             std::chrono::high_resolution_clock::duration totalTime = std::chrono::high_resolution_clock::now() - totalStart;
             
