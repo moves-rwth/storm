@@ -8,6 +8,7 @@
 #include <sstream>
 #include <memory>
 
+#include "storm-config.h"
 // Includes for the linked libraries and versions header.
 #ifdef STORM_HAVE_INTELTBB
 #	include "tbb/tbb_stddef.h"
