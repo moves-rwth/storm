@@ -258,11 +258,20 @@ namespace storm {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No input model.");
                 }
                 
+                // Print some information about the model.
+                result->printModelInformationToStream(std::cout);
+                
                 if (settings.isBisimulationSet()) {
                     STORM_LOG_THROW(result->getType() == storm::models::DTMC, storm::exceptions::InvalidSettingsException, "Bisimulation minimization is currently only compatible with DTMCs.");
                     std::shared_ptr<storm::models::Dtmc<double>> dtmc = result->template as<storm::models::Dtmc<double>>();
-                    storm::storage::DeterministicModelBisimulationDecomposition<double> bisimulationDecomposition(*dtmc);
-                    return bisimulationDecomposition.getQuotient();
+                    
+                    STORM_PRINT(std::endl << "Performing bisimulation minimization..." << std::endl);
+                    storm::storage::DeterministicModelBisimulationDecomposition<double> bisimulationDecomposition(*dtmc, false, true);
+                    
+                    result = bisimulationDecomposition.getQuotient();
+                    
+                    STORM_PRINT_AND_LOG(std::endl << "Model after minimization:" << std::endl);
+                    result->printModelInformationToStream(std::cout);
                 }
                 
                 return result;
@@ -299,9 +308,6 @@ namespace storm {
                 
                 // Start by parsing/building the model.
                 std::shared_ptr<storm::models::AbstractModel<double>> model = buildModel<double>();
-                
-                // Print some information about the model.
-                model->printModelInformationToStream(std::cout);
                 
                 // If we were requested to generate a counterexample, we now do so.
                 if (settings.isCounterexampleSet()) {

@@ -202,6 +202,7 @@ inline storm::storage::LabeledValues<double> constantInfinity() {
     
 /*! @endcond */
 
+    
 } //namespace utility
 
 } //namespace storm

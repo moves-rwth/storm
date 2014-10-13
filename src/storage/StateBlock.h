@@ -2,6 +2,7 @@
 #define STORM_STORAGE_BLOCK_H_
 
 #include <boost/container/flat_set.hpp>
+#include <boost/container/container_fwd.hpp>
 
 #include "src/utility/OsDetection.h"
 #include "src/storage/sparse/StateType.h"
@@ -35,10 +36,15 @@ namespace storm {
              *
              * @param first The first element of the range to insert.
              * @param last The last element of the range (that is itself not inserted).
+             * @param sortedAndUnique If set to true, the input range is assumed to be sorted and duplicate-free.
              */
             template <typename InputIterator>
-            StateBlock(InputIterator first, InputIterator last) : states(first, last) {
-                // Intentionally left empty.
+            StateBlock(InputIterator first, InputIterator last, bool sortedAndUnique = false) {
+                if (sortedAndUnique) {
+                    this->states = container_type(boost::container::ordered_unique_range_t(), first, last);
+                } else {
+                    this->states = container_type(first, last);
+                }
             }
             
             /*!
