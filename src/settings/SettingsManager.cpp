@@ -11,6 +11,7 @@
 
 #include "src/exceptions/IllegalFunctionCallException.h"
 #include "src/exceptions/OptionParserException.h"
+#include "src/utility/storm-version.h"
 
 namespace storm {
     namespace settings {
@@ -226,6 +227,11 @@ namespace storm {
             for (auto const& option : moduleIterator->second) {
                 STORM_PRINT(std::setw(maxLength) << std::left << *option << std::endl);
             }
+            STORM_PRINT(std::endl);
+        }
+        
+        void SettingsManager::printVersion() const {
+            STORM_PRINT(storm::utility::StormVersion::shortVersionString());
             STORM_PRINT(std::endl);
         }
         

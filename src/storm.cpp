@@ -1,7 +1,3 @@
-// Include generated headers.
-#include "storm-config.h"
-#include "storm-version.h"
-
 // Include other headers.
 #include "src/exceptions/BaseException.h"
 #include "src/utility/macros.h"

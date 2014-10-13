@@ -32,6 +32,14 @@ namespace storm {
                  */
                 bool isHelpSet() const;
                 
+				/*!
+                 * Retrieves whether the version option was set.
+                 *
+                 * @return True if the version option was set.
+                 */
+                bool isVersionSet() const;
+				
+				
                 /*!
                  * Retrieves the name of the module for which to show the help or "all" to indicate that the full help
                  * needs to be shown.
@@ -330,6 +338,7 @@ namespace storm {
                 // Define the string names of the options as constants.
                 static const std::string helpOptionName;
                 static const std::string helpOptionShortName;
+				static const std::string versionOptionName;
                 static const std::string verboseOptionName;
                 static const std::string verboseOptionShortName;
                 static const std::string precisionOptionName;
