@@ -5,6 +5,8 @@
 #include <chrono>
 #include <iomanip>
 
+#include "src/exceptions/IllegalFunctionCallException.h"
+
 namespace storm {
     namespace storage {
         
@@ -298,7 +300,12 @@ namespace storm {
         typename DeterministicModelBisimulationDecomposition<ValueType>::Block& DeterministicModelBisimulationDecomposition<ValueType>::Partition::getBlock(storm::storage::sparse::state_type state) {
             return *this->stateToBlockMapping[state];
         }
-        
+
+        template<typename ValueType>
+        typename DeterministicModelBisimulationDecomposition<ValueType>::Block const& DeterministicModelBisimulationDecomposition<ValueType>::Partition::getBlock(storm::storage::sparse::state_type state) const {
+            return *this->stateToBlockMapping[state];
+        }
+
         template<typename ValueType>
         std::vector<storm::storage::sparse::state_type>::iterator DeterministicModelBisimulationDecomposition<ValueType>::Partition::getBeginOfStates(Block const& block) {
             return this->states.begin() + block.getBegin();
@@ -467,23 +474,29 @@ namespace storm {
         }
         
         template<typename ValueType>
-        DeterministicModelBisimulationDecomposition<ValueType>::DeterministicModelBisimulationDecomposition(storm::models::Dtmc<ValueType> const& dtmc, bool weak) : model(dtmc), initialBlocks() {
-            computeBisimulationEquivalenceClasses(dtmc, weak);
+        DeterministicModelBisimulationDecomposition<ValueType>::DeterministicModelBisimulationDecomposition(storm::models::Dtmc<ValueType> const& dtmc, bool weak, bool buildQuotient) {
+            computeBisimulationEquivalenceClasses(dtmc, weak, buildQuotient);
         }
         
         template<typename ValueType>
         std::shared_ptr<storm::models::AbstractDeterministicModel<ValueType>> DeterministicModelBisimulationDecomposition<ValueType>::getQuotient() const {
+            STORM_LOG_THROW(this->quotient != nullptr, storm::exceptions::IllegalFunctionCallException, "Unable to retrieve quotient model from bisimulation decomposition, because it was not built.");
+            return this->quotient;
+        }
+        
+        template<typename ValueType>
+        void DeterministicModelBisimulationDecomposition<ValueType>::buildQuotient(storm::models::Dtmc<ValueType> const& dtmc, Partition const& partition) {
             // In order to create the quotient model, we need to construct
             // (a) the new transition matrix,
             // (b) the new labeling,
             // (c) the new reward structures.
-
+            
             // Prepare a matrix builder for (a).
             storm::storage::SparseMatrixBuilder<ValueType> builder;
-
+            
             // Prepare the new state labeling for (b).
-            storm::models::AtomicPropositionsLabeling newLabeling(this->size(), model.getStateLabeling().getNumberOfAtomicPropositions());
-            std::set<std::string> atomicPropositionsSet = model.getStateLabeling().getAtomicPropositions();
+            storm::models::AtomicPropositionsLabeling newLabeling(this->size(), dtmc.getStateLabeling().getNumberOfAtomicPropositions());
+            std::set<std::string> atomicPropositionsSet = dtmc.getStateLabeling().getAtomicPropositions();
             std::vector<std::string> atomicPropositions = std::vector<std::string>(atomicPropositionsSet.begin(), atomicPropositionsSet.end());
             for (auto const& ap : atomicPropositions) {
                 newLabeling.addAtomicProposition(ap);
@@ -500,18 +513,23 @@ namespace storm {
                 
                 // Add all atomic propositions to the equivalence class that the representative state satisfies.
                 for (auto const& ap : atomicPropositions) {
-                    if (model.getStateLabeling().getStateHasAtomicProposition(ap, representativeState)) {
+                    if (dtmc.getStateLabeling().getStateHasAtomicProposition(ap, representativeState)) {
                         newLabeling.addAtomicPropositionToState(ap, blockIndex);
                     }
                 }
             }
             
+            // Now check which of the blocks of the partition contain at least one initial state.
+            for (auto initialState : dtmc.getInitialStates()) {
+                Block const& initialBlock = partition.getBlock(initialState);
+                newLabeling.addAtomicPropositionToState("init", initialBlock.getId());
+            }
             
-            return nullptr;
+            this->quotient = nullptr;
         }
         
         template<typename ValueType>
-        void DeterministicModelBisimulationDecomposition<ValueType>::computeBisimulationEquivalenceClasses(storm::models::Dtmc<ValueType> const& dtmc, bool weak) {
+        void DeterministicModelBisimulationDecomposition<ValueType>::computeBisimulationEquivalenceClasses(storm::models::Dtmc<ValueType> const& dtmc, bool weak, bool buildQuotient) {
             std::chrono::high_resolution_clock::time_point totalStart = std::chrono::high_resolution_clock::now();
             
             // We start by computing the initial partition.
@@ -537,23 +555,17 @@ namespace storm {
                 splitterQueue.pop_front();
             }
             
+            // If we are required to build the quotient model, do so now.
+            if (buildQuotient) {
+                this->buildQuotient(dtmc, partition);
+            }
+
             // Now move the states from the internal partition into their final place in the decomposition. We do so in
             // a way that maintains the block IDs as indices.
             this->blocks.resize(partition.size());
             for (auto const& block : partition.getBlocks()) {
                 this->blocks[block.getId()] = block_type(partition.getBeginOfStates(block), partition.getEndOfStates(block));
             }
-
-            // FIXME: as we will drop the state-to-block-mapping, we need to create the distribution of each block now.
-            
-            // Now check which of the blocks of the partition contain at least one initial state.
-            for (auto initialState : model.getInitialStates()) {
-                Block& initialBlock = partition.getBlock(initialState);
-                if (std::find(this->initialBlocks.begin(), this->initialBlocks.end(), initialBlock.getId()) == this->initialBlocks.end()) {
-                    this->initialBlocks.emplace_back(initialBlock.getId());
-                }
-            }
-            std::sort(this->initialBlocks.begin(), this->initialBlocks.end());
             
             std::chrono::high_resolution_clock::duration totalTime = std::chrono::high_resolution_clock::now() - totalStart;
             

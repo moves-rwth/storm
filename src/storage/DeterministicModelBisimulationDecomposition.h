@@ -21,7 +21,7 @@ namespace storm {
             /*!
              * Decomposes the given DTMC into equivalence classes under weak or strong bisimulation.
              */
-            DeterministicModelBisimulationDecomposition(storm::models::Dtmc<ValueType> const& model, bool weak = false);
+            DeterministicModelBisimulationDecomposition(storm::models::Dtmc<ValueType> const& model, bool weak = false, bool buildQuotient = false);
             
             /*!
              * Retrieves the quotient of the model under the previously computed bisimulation.
@@ -231,7 +231,10 @@ namespace storm {
 
                 // Retrieves the block of the given state.
                 Block& getBlock(storm::storage::sparse::state_type state);
-                
+
+                // Retrieves the block of the given state.
+                Block const& getBlock(storm::storage::sparse::state_type state) const;
+
                 // Retrieves the position of the given state.
                 storm::storage::sparse::state_type const& getPosition(storm::storage::sparse::state_type state) const;
 
@@ -277,17 +280,16 @@ namespace storm {
                 std::vector<ValueType> values;
             };
             
-            void computeBisimulationEquivalenceClasses(storm::models::Dtmc<ValueType> const& model, bool weak);
+            void computeBisimulationEquivalenceClasses(storm::models::Dtmc<ValueType> const& model, bool weak, bool buildQuotient);
             
             std::size_t splitPartition(storm::storage::SparseMatrix<ValueType> const& backwardTransitions, Block& splitter, Partition& partition, std::deque<Block*>& splitterQueue);
             
             std::size_t splitBlockProbabilities(Block& block, Partition& partition, std::deque<Block*>& splitterQueue);
             
-            // The model for which the bisimulation is computed.
-            storm::models::Dtmc<ValueType> const& model;
+            void buildQuotient(storm::models::Dtmc<ValueType> const& dtmc, Partition const& partition);
 
-            // The indices of all blocks that hold one or more initial states.
-            std::vector<storm::storage::sparse::state_type> initialBlocks;
+            // If required, a quotient model is built and stored in this member.
+            std::shared_ptr<storm::models::AbstractDeterministicModel<ValueType>> quotient;
         };
     }
 }
