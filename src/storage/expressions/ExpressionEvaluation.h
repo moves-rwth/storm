@@ -40,19 +40,29 @@ namespace expressions {
 	{
 		typedef std::map<std::string, carl::Variable> type;
 	};
+    
+    struct ExpressionEvaluationSettings {
+        static const bool useFactorizedPolynomials = false;
+    };
+    
+    struct FactorizedPolynomialsEvaluationSettings : ExpressionEvaluationSettings {
+        static const bool useFactorizedPolynomials = true;
+    };
 #endif
 		
-	template<typename T, typename S>
+	template<typename T, typename S, typename X = FactorizedPolynomialsEvaluationSettings>
 	class ExpressionEvaluationVisitor : public ExpressionVisitor
 	{
 		public:
 			ExpressionEvaluationVisitor(S* sharedState)
-			: mSharedState(sharedState)
+			: mSharedState(sharedState), cache(new carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>())
 			{
 				
 			}
 			
-			virtual ~ExpressionEvaluationVisitor() {}
+			virtual ~ExpressionEvaluationVisitor() {
+
+            }
 			
 			virtual void visit(IfThenElseExpression const* expression) 
 			{
@@ -101,13 +111,13 @@ namespace expressions {
 				auto it =  mSharedState->find(varName);
 				if(it != mSharedState->end())
 				{
-					mValue = T(it->second);
+                    mValue = T(typename T::PolyType(typename T::PolyType::PolyType(it->second), cache));
 				}
 				else
 				{
 					carl::Variable nVar = carl::VariablePool::getInstance().getFreshVariable(varName);
 					mSharedState->emplace(varName,nVar);
-					mValue = T(nVar);
+                    mValue = convertVariableToPolynomial(nVar);
 				}
 			}
             virtual void visit(UnaryBooleanFunctionExpression const* expression) 
@@ -124,17 +134,25 @@ namespace expressions {
 			}
             virtual void visit(IntegerLiteralExpression const* expression) 
 			{
-				// mValue = T(typename T::CoeffType(std::to_string(expression->getValue()), 10));
-                mValue = T(expression->getValue());
+                mValue = T(typename T::PolyType(typename T::CoeffType(expression->getValue())));
 			}
             virtual void visit(DoubleLiteralExpression const* expression) 
 			{
 				std::stringstream str;
 				str << std::fixed << std::setprecision( 3 ) << expression->getValue();
-				mValue = T(carl::rationalize<cln::cl_RA>(str.str()));
-				
+                mValue = T(carl::rationalize<cln::cl_RA>(str.str()));
 			}
 
+        template<typename TP = typename T::PolyType, carl::EnableIf<carl::needs_cache<TP>> = carl::dummy>
+        T convertVariableToPolynomial(carl::Variable const& nVar) {
+            return T(typename T::PolyType(typename T::PolyType::PolyType(nVar), cache));
+        }
+        
+        template<typename TP = typename T::PolyType, carl::DisableIf<carl::needs_cache<TP>> = carl::dummy>
+        T convertVariableToPolynomial(carl::Variable const& nVar) {
+            return T(nVar);
+        }
+        
 		const T& value() const
 		{
 			return mValue;
@@ -143,6 +161,7 @@ namespace expressions {
 		private:
 		S* mSharedState;
 		T mValue;
+        carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>* cache;
 	};
 	
 	template<typename T>
@@ -182,9 +201,6 @@ namespace expressions {
 			return expr.evaluateAsDouble(val);
 		}
 	};
-
-
-	
 	
 }
 }

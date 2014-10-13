@@ -9,7 +9,7 @@
 #include "src/utility/export.h"
 #include "src/modelchecker/reachability/CollectConstraints.h"
 
-#include "src/modelchecker/reachability/DirectEncoding.h"
+//#include "src/modelchecker/reachability/DirectEncoding.h"
 #include "src/modelchecker/reachability/SparseSccModelChecker.h"
 #include "src/storage/parameters.h"
 /*!
@@ -75,8 +75,8 @@ int main(const int argc, const char** argv) {
         }
         
         if(storm::settings::parametricSettings().exportToSmt2File()) {
-            storm::modelchecker::reachability::DirectEncoding dec;
-            //storm::utility::exportStreamToFile(dec.encodeAsSmt2(modelChecker.getMatrix(), parameters,));
+//            storm::modelchecker::reachability::DirectEncoding dec;
+//            storm::utility::exportStreamToFile(dec.encodeAsSmt2(modelChecker.getMatrix(), parameters,));
         }
         
 

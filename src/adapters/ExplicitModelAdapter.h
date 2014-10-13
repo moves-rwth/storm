@@ -646,7 +646,6 @@ namespace storm {
                 ModelComponents modelComponents;
 				expressions::ExpressionEvaluation<ValueType> eval;
 				
-                
                 VariableInformation variableInformation;
                 for (auto const& integerVariable : program.getGlobalIntegerVariables()) {
                     variableInformation.variableToBoundsMap[integerVariable.getName()] = std::make_pair(integerVariable.getLowerBoundExpression().evaluateAsInt(), integerVariable.getUpperBoundExpression().evaluateAsInt());
