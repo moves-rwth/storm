@@ -1,5 +1,5 @@
-#ifndef STORM_STORAGE_BISIMULATIONDECOMPOSITION_H_
-#define STORM_STORAGE_BISIMULATIONDECOMPOSITION_H_
+#ifndef STORM_STORAGE_NAIVEDETERMINISTICMODELBISIMULATIONDECOMPOSITION_H_
+#define STORM_STORAGE_NAIVEDETERMINISTICMODELBISIMULATIONDECOMPOSITION_H_
 
 #include <queue>
 #include <deque>
@@ -15,14 +15,14 @@ namespace storm {
          * This class represents the decomposition model into its bisimulation quotient.
          */
         template <typename ValueType>
-        class BisimulationDecomposition : public Decomposition<StateBlock> {
+        class NaiveDeterministicModelBisimulationDecomposition : public Decomposition<StateBlock> {
         public:
-            BisimulationDecomposition() = default;
+            NaiveDeterministicModelBisimulationDecomposition() = default;
             
             /*!
              * Decomposes the given DTMC into equivalence classes under weak or strong bisimulation.
              */
-            BisimulationDecomposition(storm::models::Dtmc<ValueType> const& model, bool weak = false);
+            NaiveDeterministicModelBisimulationDecomposition(storm::models::Dtmc<ValueType> const& model, bool weak = false);
             
         private:
             void computeBisimulationEquivalenceClasses(storm::models::Dtmc<ValueType> const& model, bool weak);
@@ -32,4 +32,4 @@ namespace storm {
     }
 }
 
-#endif /* STORM_STORAGE_BISIMULATIONDECOMPOSITION_H_ */
+#endif /* STORM_STORAGE_NAIVEDETERMINISTICMODELBISIMULATIONDECOMPOSITION_H_ */

@@ -44,8 +44,8 @@ log4cplus::Logger logger;
 #include "src/adapters/ExplicitModelAdapter.h"
 
 // Headers for model processing.
-#include "src/storage/BisimulationDecomposition.h"
-#include "src/storage/BisimulationDecomposition2.h"
+#include "src/storage/NaiveDeterministicModelBisimulationDecomposition.h"
+#include "src/storage/DeterministicModelBisimulationDecomposition.h"
 
 // Headers for counterexample generation.
 #include "src/counterexamples/MILPMinimalLabelSetGenerator.h"
@@ -261,8 +261,8 @@ namespace storm {
                 if (settings.isBisimulationSet()) {
                     STORM_LOG_THROW(result->getType() == storm::models::DTMC, storm::exceptions::InvalidSettingsException, "Bisimulation minimization is currently only compatible with DTMCs.");
                     std::shared_ptr<storm::models::Dtmc<double>> dtmc = result->template as<storm::models::Dtmc<double>>();
-                    storm::storage::BisimulationDecomposition<double> bisimulationDecomposition(*dtmc);
-                    storm::storage::BisimulationDecomposition2<double> bisimulationDecomposition2(*dtmc);
+                    storm::storage::DeterministicModelBisimulationDecomposition<double> bisimulationDecomposition(*dtmc);
+                    return bisimulationDecomposition.getQuotient();
                 }
                 
                 return result;

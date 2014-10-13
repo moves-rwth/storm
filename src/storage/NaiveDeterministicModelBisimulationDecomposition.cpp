@@ -1,4 +1,4 @@
-#include "src/storage/BisimulationDecomposition.h"
+#include "src/storage/NaiveDeterministicModelBisimulationDecomposition.h"
 
 #include <unordered_map>
 #include <chrono>
@@ -7,22 +7,26 @@ namespace storm {
     namespace storage {
         
         template<typename ValueType>
-        BisimulationDecomposition<ValueType>::BisimulationDecomposition(storm::models::Dtmc<ValueType> const& dtmc, bool weak) {
+        NaiveDeterministicModelBisimulationDecomposition<ValueType>::NaiveDeterministicModelBisimulationDecomposition(storm::models::Dtmc<ValueType> const& dtmc, bool weak) {
             computeBisimulationEquivalenceClasses(dtmc, weak);
         }
         
         template<typename ValueType>
-        void BisimulationDecomposition<ValueType>::computeBisimulationEquivalenceClasses(storm::models::Dtmc<ValueType> const& dtmc, bool weak) {
+        void NaiveDeterministicModelBisimulationDecomposition<ValueType>::computeBisimulationEquivalenceClasses(storm::models::Dtmc<ValueType> const& dtmc, bool weak) {
             std::chrono::high_resolution_clock::time_point totalStart = std::chrono::high_resolution_clock::now();
             // We start by computing the initial partition. In particular, we also keep a mapping of states to their blocks.
             std::vector<std::size_t> stateToBlockMapping(dtmc.getNumberOfStates());
-            storm::storage::BitVector labeledStates = dtmc.getLabeledStates("elected");
+            storm::storage::BitVector labeledStates = dtmc.getLabeledStates("observe0Greater1");
             this->blocks.emplace_back(labeledStates.begin(), labeledStates.end());
             std::for_each(labeledStates.begin(), labeledStates.end(), [&] (storm::storage::sparse::state_type const& state) { stateToBlockMapping[state] = 0; } );
             labeledStates.complement();
             this->blocks.emplace_back(labeledStates.begin(), labeledStates.end());
             std::for_each(labeledStates.begin(), labeledStates.end(), [&] (storm::storage::sparse::state_type const& state) { stateToBlockMapping[state] = 1; } );
             
+            // Check whether any of the blocks is empty and remove it.
+            auto eraseIterator = std::remove_if(this->blocks.begin(), this->blocks.end(), [] (typename NaiveDeterministicModelBisimulationDecomposition<ValueType>::block_type const& a) { return a.empty(); });
+            this->blocks.erase(eraseIterator, this->blocks.end());
+        
             // Create empty distributions for the two initial blocks.
             std::vector<storm::storage::Distribution<ValueType>> distributions(2);
             
@@ -33,8 +37,9 @@ namespace storm {
             // is the ID of the parent block of the splitter and the second entry is the block ID of the splitter itself.
             std::deque<std::size_t> refinementQueue;
             storm::storage::BitVector blocksInRefinementQueue(this->size());
-            refinementQueue.push_back(0);
-            refinementQueue.push_back(1);
+            for (uint_fast64_t index = 0; index < this->blocks.size(); ++index) {
+                refinementQueue.push_back(index);
+            }
             
             // As long as there are blocks to refine, well, refine them.
             uint_fast64_t iteration = 0;
@@ -50,24 +55,22 @@ namespace storm {
                 
                 splitBlock(dtmc, backwardTransitions, currentBlock, stateToBlockMapping, distributions, blocksInRefinementQueue, refinementQueue, weak);
             }
-            
-            std::cout << *this << std::endl;
-            
+                        
             std::chrono::high_resolution_clock::duration totalTime = std::chrono::high_resolution_clock::now() - totalStart;
             
             std::cout << "Bisimulation quotient has " << this->blocks.size() << " blocks and took " << iteration << " iterations and " << std::chrono::duration_cast<std::chrono::milliseconds>(totalTime).count() << "ms." << std::endl;
         }
         
         template<typename ValueType>
-        std::size_t BisimulationDecomposition<ValueType>::splitPredecessorsGraphBased(storm::models::Dtmc<ValueType> const& dtmc, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::size_t const& blockId, std::vector<std::size_t>& stateToBlockMapping, std::vector<storm::storage::Distribution<ValueType>>& distributions, storm::storage::BitVector& blocksInRefinementQueue, std::deque<std::size_t>& graphRefinementQueue, storm::storage::BitVector& splitBlocks) {
-            std::cout << "entering " << std::endl;
+        std::size_t NaiveDeterministicModelBisimulationDecomposition<ValueType>::splitPredecessorsGraphBased(storm::models::Dtmc<ValueType> const& dtmc, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::size_t const& blockId, std::vector<std::size_t>& stateToBlockMapping, std::vector<storm::storage::Distribution<ValueType>>& distributions, storm::storage::BitVector& blocksInRefinementQueue, std::deque<std::size_t>& graphRefinementQueue, storm::storage::BitVector& splitBlocks) {
+//            std::cout << "entering " << std::endl;
             std::chrono::high_resolution_clock::time_point totalStart = std::chrono::high_resolution_clock::now();
             
 //            std::cout << "refining predecessors of " << blockId << std::endl;
             
             // This method tries to split the blocks of predecessors of the provided block by checking whether there is
             // a transition into the current block or not.
-            std::unordered_map<std::size_t, typename BisimulationDecomposition<ValueType>::block_type> predecessorBlockToNewBlock;
+            std::unordered_map<std::size_t, typename NaiveDeterministicModelBisimulationDecomposition<ValueType>::block_type> predecessorBlockToNewBlock;
             
             // Now for each predecessor block which state could actually reach the current block.
             std::chrono::high_resolution_clock::time_point predIterStart = std::chrono::high_resolution_clock::now();
@@ -95,8 +98,8 @@ namespace storm {
 //                    std::cout << "original: " << this->blocks[blockNewBlockPair.first] << std::endl;
 //                    std::cout << "states with pred: " << blockNewBlockPair.second << std::endl;
                     // Now update the block mapping for the smaller of the two blocks.
-                    typename BisimulationDecomposition<ValueType>::block_type smallerBlock;
-                    typename BisimulationDecomposition<ValueType>::block_type largerBlock;
+                    typename NaiveDeterministicModelBisimulationDecomposition<ValueType>::block_type smallerBlock;
+                    typename NaiveDeterministicModelBisimulationDecomposition<ValueType>::block_type largerBlock;
                     if (blockNewBlockPair.second.size() < this->blocks[blockNewBlockPair.first].size()/2) {
                         smallerBlock = std::move(blockNewBlockPair.second);
                         std::set_difference(this->blocks[blockNewBlockPair.first].begin(), this->blocks[blockNewBlockPair.first].end(), smallerBlock.begin(), smallerBlock.end(), std::inserter(largerBlock, largerBlock.begin()));
@@ -143,9 +146,9 @@ namespace storm {
         }
         
         template<typename ValueType>
-        std::size_t BisimulationDecomposition<ValueType>::splitBlock(storm::models::Dtmc<ValueType> const& dtmc, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::size_t const& blockId, std::vector<std::size_t>& stateToBlockMapping, std::vector<storm::storage::Distribution<ValueType>>& distributions, storm::storage::BitVector& blocksInRefinementQueue, std::deque<std::size_t>& refinementQueue, bool weakBisimulation) {
+        std::size_t NaiveDeterministicModelBisimulationDecomposition<ValueType>::splitBlock(storm::models::Dtmc<ValueType> const& dtmc, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::size_t const& blockId, std::vector<std::size_t>& stateToBlockMapping, std::vector<storm::storage::Distribution<ValueType>>& distributions, storm::storage::BitVector& blocksInRefinementQueue, std::deque<std::size_t>& refinementQueue, bool weakBisimulation) {
             std::chrono::high_resolution_clock::time_point totalStart = std::chrono::high_resolution_clock::now();
-            std::unordered_map<storm::storage::Distribution<ValueType>, typename BisimulationDecomposition<ValueType>::block_type> distributionToNewBlocks;
+            std::unordered_map<storm::storage::Distribution<ValueType>, typename NaiveDeterministicModelBisimulationDecomposition<ValueType>::block_type> distributionToNewBlocks;
             
             // Traverse all states of the block and check whether they have different distributions.
             std::chrono::high_resolution_clock::time_point gatherStart = std::chrono::high_resolution_clock::now();
@@ -180,10 +183,12 @@ namespace storm {
                 // distributions[blockId] = std::move(distributionToNewBlocks.begin()->first);
             } else {
                 // In this case, we need to split the block.
-                typename BisimulationDecomposition<ValueType>::block_type tmpBlock;
+                typename NaiveDeterministicModelBisimulationDecomposition<ValueType>::block_type tmpBlock;
                 
                 auto distributionIterator = distributionToNewBlocks.begin();
-                distributions[blockId] = std::move(distributionIterator->first);
+                STORM_LOG_ASSERT(distributionIterator != distributionToNewBlocks.end(), "One block has no distribution...");
+
+                //                distributions[blockId] = std::move(distributionIterator->first);
                 tmpBlock = std::move(distributionIterator->second);
                 std::swap(this->blocks[blockId], tmpBlock);
                 ++distributionIterator;
@@ -252,6 +257,6 @@ namespace storm {
             return distributionToNewBlocks.size();
         }
         
-        template class BisimulationDecomposition<double>;
+        template class NaiveDeterministicModelBisimulationDecomposition<double>;
     }
 }

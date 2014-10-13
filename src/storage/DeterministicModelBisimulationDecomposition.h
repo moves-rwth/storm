@@ -1,5 +1,5 @@
-#ifndef STORM_STORAGE_BISIMULATIONDECOMPOSITION2_H_
-#define STORM_STORAGE_BISIMULATIONDECOMPOSITION2_H_
+#ifndef STORM_STORAGE_DETERMINISTICMODELBISIMULATIONDECOMPOSITION_H_
+#define STORM_STORAGE_DETERMINISTICMODELBISIMULATIONDECOMPOSITION_H_
 
 #include <queue>
 #include <deque>
@@ -16,14 +16,19 @@ namespace storm {
          * This class represents the decomposition model into its bisimulation quotient.
          */
         template <typename ValueType>
-        class BisimulationDecomposition2 : public Decomposition<StateBlock> {
+        class DeterministicModelBisimulationDecomposition : public Decomposition<StateBlock> {
         public:
-            BisimulationDecomposition2() = default;
-            
             /*!
              * Decomposes the given DTMC into equivalence classes under weak or strong bisimulation.
              */
-            BisimulationDecomposition2(storm::models::Dtmc<ValueType> const& model, bool weak = false);
+            DeterministicModelBisimulationDecomposition(storm::models::Dtmc<ValueType> const& model, bool weak = false);
+            
+            /*!
+             * Retrieves the quotient of the model under the previously computed bisimulation.
+             *
+             * @return The quotient model.
+             */
+            std::shared_ptr<storm::models::AbstractDeterministicModel<ValueType>> getQuotient() const;
             
         private:
             class Partition;
@@ -277,8 +282,14 @@ namespace storm {
             std::size_t splitPartition(storm::storage::SparseMatrix<ValueType> const& backwardTransitions, Block& splitter, Partition& partition, std::deque<Block*>& splitterQueue);
             
             std::size_t splitBlockProbabilities(Block& block, Partition& partition, std::deque<Block*>& splitterQueue);
+            
+            // The model for which the bisimulation is computed.
+            storm::models::Dtmc<ValueType> const& model;
+
+            // The indices of all blocks that hold one or more initial states.
+            std::vector<storm::storage::sparse::state_type> initialBlocks;
         };
     }
 }
 
-#endif /* STORM_STORAGE_BISIMULATIONDECOMPOSITION2_H_ */
+#endif /* STORM_STORAGE_DETERMINISTICMODELBISIMULATIONDECOMPOSITION_H_ */
