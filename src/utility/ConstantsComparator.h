@@ -78,6 +78,40 @@ namespace storm {
             double precision;
         };
         
+#ifdef PARAMETRIC_SYSTEMS
+        template<>
+        class ConstantsComparator<storm::RationalFunction> {
+        public:
+            bool isOne(storm::RationalFunction const& value) {
+                return value.isOne();
+            }
+            
+            bool isZero(storm::RationalFunction const& value) {
+                return value.isZero();
+            }
+            
+            bool isEqual(storm::RationalFunction const& value1, storm::RationalFunction const& value2) {
+                return value1 == value2;
+            }
+        };
+        
+        template<>
+        class ConstantsComparator<storm::Polynomial> {
+        public:
+            bool isOne(storm::Polynomial const& value) {
+                return value.isOne();
+            }
+            
+            bool isZero(storm::Polynomial const& value) {
+                return value.isZero();
+            }
+            
+            bool isEqual(storm::Polynomial const& value1, storm::Polynomial const& value2) {
+                return value1 == value2;
+            }
+        };
+#endif
+        
     }
 }
 
