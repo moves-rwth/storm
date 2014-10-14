@@ -89,7 +89,10 @@ namespace storm {
             out << "]";
             return out;
         }
-        
+
+        template class Decomposition<StateBlock>;
+        template std::ostream& operator<<(std::ostream& out, Decomposition<StateBlock> const& decomposition);
+
         template class Decomposition<StronglyConnectedComponent>;
         template std::ostream& operator<<(std::ostream& out, Decomposition<StronglyConnectedComponent> const& decomposition);
         

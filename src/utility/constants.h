@@ -254,8 +254,6 @@ inline bool isZero(storm::Polynomial const& p)
 }
 #endif
 
-
-
 template<typename T>
 inline bool isOne(T const& sum)
 {

@@ -8,6 +8,7 @@
 #include <sstream>
 #include <memory>
 
+#include "storm-config.h"
 // Includes for the linked libraries and versions header.
 #ifdef STORM_HAVE_INTELTBB
 #	include "tbb/tbb_stddef.h"
@@ -44,6 +45,10 @@ log4cplus::Logger printer;
 
 // Headers of adapters.
 #include "src/adapters/ExplicitModelAdapter.h"
+
+// Headers for model processing.
+#include "src/storage/NaiveDeterministicModelBisimulationDecomposition.h"
+#include "src/storage/DeterministicModelStrongBisimulationDecomposition.h"
 
 // Headers for counterexample generation.
 #include "src/counterexamples/MILPMinimalLabelSetGenerator.h"
@@ -258,6 +263,22 @@ namespace storm {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No input model.");
                 }
                 
+                // Print some information about the model.
+                result->printModelInformationToStream(std::cout);
+                
+                if (settings.isBisimulationSet()) {
+                    STORM_LOG_THROW(result->getType() == storm::models::DTMC, storm::exceptions::InvalidSettingsException, "Bisimulation minimization is currently only compatible with DTMCs.");
+                    std::shared_ptr<storm::models::Dtmc<double>> dtmc = result->template as<storm::models::Dtmc<double>>();
+                    
+                    STORM_PRINT(std::endl << "Performing bisimulation minimization..." << std::endl);
+                    storm::storage::DeterministicModelStrongBisimulationDecomposition<double> bisimulationDecomposition(*dtmc, true);
+                    
+                    result = bisimulationDecomposition.getQuotient();
+                    
+                    STORM_PRINT_AND_LOG(std::endl << "Model after minimization:" << std::endl);
+                    result->printModelInformationToStream(std::cout);
+                }
+                
                 return result;
             }
             
@@ -268,7 +289,7 @@ namespace storm {
                     
                     std::shared_ptr<storm::models::Mdp<double>> mdp = model->as<storm::models::Mdp<double>>();
 
-                    // FIXME: re-parse the program.
+                    // FIXME: do not re-parse the program.
                     std::string const programFile = storm::settings::generalSettings().getSymbolicModelFilename();
                     std::string const constants = storm::settings::generalSettings().getConstantDefinitionString();
                     storm::prism::Program program = storm::parser::PrismParser::parse(programFile);
@@ -297,15 +318,13 @@ namespace storm {
                 // Start by parsing/building the model.
                 std::shared_ptr<storm::models::AbstractModel<double>> model = buildModel<double>();
                 
-                // Print some information about the model.
-                model->printModelInformationToStream(std::cout);
-                
                 // If we were requested to generate a counterexample, we now do so.
                 if (settings.isCounterexampleSet()) {
                     STORM_LOG_THROW(settings.isPctlPropertySet(), storm::exceptions::InvalidSettingsException, "Unable to generate counterexample without a property.");
                     std::shared_ptr<storm::properties::prctl::PrctlFilter<double>> filterFormula = storm::parser::PrctlParser::parsePrctlFormula(settings.getPctlProperty());
                     generateCounterexample(model, filterFormula->getChild());
                 }
+                
             }
 
         }

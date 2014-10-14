@@ -30,6 +30,10 @@ namespace storm {
             states.insert(state);
         }
 
+        StateBlock::iterator StateBlock::insert(container_type::const_iterator iterator, value_type const& state) {
+            return states.insert(iterator, state);
+        }
+        
         void StateBlock::erase(value_type const& state) {
             states.erase(state);
         }
@@ -55,5 +59,6 @@ namespace storm {
             out << block.getStates();
             return out;
         }
+        
     }
 }

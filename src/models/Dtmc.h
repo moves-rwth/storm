@@ -73,8 +73,9 @@ public:
 	 * @param optionalChoiceLabeling A vector that represents the labels associated with the choices of each state.
 	 */
 	Dtmc(storm::storage::SparseMatrix<T>&& probabilityMatrix, storm::models::AtomicPropositionsLabeling&& stateLabeling,
-				boost::optional<std::vector<T>>&& optionalStateRewardVector, boost::optional<storm::storage::SparseMatrix<T>>&& optionalTransitionRewardMatrix,
-                boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>&& optionalChoiceLabeling)
+				boost::optional<std::vector<T>>&& optionalStateRewardVector = boost::optional<std::vector<T>>(),
+                boost::optional<storm::storage::SparseMatrix<T>>&& optionalTransitionRewardMatrix = boost::optional<storm::storage::SparseMatrix<T>>(),
+                boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>&& optionalChoiceLabeling = boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>())
 				// The std::move call must be repeated here because otherwise this calls the copy constructor of the Base Class
 			: AbstractDeterministicModel<T>(std::move(probabilityMatrix), std::move(stateLabeling), std::move(optionalStateRewardVector), std::move(optionalTransitionRewardMatrix),
                                             std::move(optionalChoiceLabeling)) {
