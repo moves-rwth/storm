@@ -36,15 +36,15 @@ namespace storm {
         template<typename ValueType>
         class ConstantsComparator {
         public:
-            bool isOne(ValueType const& value) {
+            bool isOne(ValueType const& value) const {
                 return value == one<ValueType>();
             }
             
-            bool isZero(ValueType const& value) {
+            bool isZero(ValueType const& value) const {
                 return value == zero<ValueType>();
             }
             
-            bool isEqual(ValueType const& value1, ValueType const& value2) {
+            bool isEqual(ValueType const& value1, ValueType const& value2) const {
                 return value1 == value2;
             }
         };
@@ -61,16 +61,20 @@ namespace storm {
                 // Intentionally left empty.
             }
             
-            bool isOne(double const& value) {
+            bool isOne(double const& value) const {
                 return std::abs(value - one<double>()) <= precision;
             }
             
-            bool isZero(double const& value) {
+            bool isZero(double const& value) const {
                 return std::abs(value) <= precision;
             }
             
-            bool isEqual(double const& value1, double const& value2) {
+            bool isEqual(double const& value1, double const& value2) const {
                 return std::abs(value1 - value2) <= precision;
+            }
+            
+            bool isConstant(double const& value) const {
+                return true;
             }
             
         private:
