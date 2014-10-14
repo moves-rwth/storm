@@ -205,6 +205,25 @@ namespace storm {
             }
             
             /*!
+             * Computes the sets of states that have probability 0 or 1, respectively, of satisfying phi until psi in a
+             * deterministic model.
+             *
+             * @param backwardTransitions The backward transitions of the model whose graph structure to search.
+             * @param phiStates The set of all states satisfying phi.
+             * @param psiStates The set of all states satisfying psi.
+             * @return A pair of bit vectors such that the first bit vector stores the indices of all states
+             * with probability 0 and the second stores all indices of states with probability 1.
+             */
+            template <typename T>
+            static std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01(storm::storage::SparseMatrix<T> backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
+                std::pair<storm::storage::BitVector, storm::storage::BitVector> result;
+                result.first = performProbGreater0(backwardTransitions, phiStates, psiStates);
+                result.second = performProb1(backwardTransitions, phiStates, psiStates, result.first);
+                result.first.complement();
+                return result;
+            }
+            
+            /*!
              * Computes the sets of states that have probability greater 0 of satisfying phi until psi under at least
              * one possible resolution of non-determinism in a non-deterministic model. Stated differently,
              * this means that these states have a probability greater 0 of satisfying phi until psi if the

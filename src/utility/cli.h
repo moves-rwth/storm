@@ -47,7 +47,7 @@ log4cplus::Logger logger;
 
 // Headers for model processing.
 #include "src/storage/NaiveDeterministicModelBisimulationDecomposition.h"
-#include "src/storage/DeterministicModelBisimulationDecomposition.h"
+#include "src/storage/DeterministicModelStrongBisimulationDecomposition.h"
 
 // Headers for counterexample generation.
 #include "src/counterexamples/MILPMinimalLabelSetGenerator.h"
@@ -267,7 +267,7 @@ namespace storm {
                     std::shared_ptr<storm::models::Dtmc<double>> dtmc = result->template as<storm::models::Dtmc<double>>();
                     
                     STORM_PRINT(std::endl << "Performing bisimulation minimization..." << std::endl);
-                    storm::storage::DeterministicModelBisimulationDecomposition<double> bisimulationDecomposition(*dtmc, false, true);
+                    storm::storage::DeterministicModelStrongBisimulationDecomposition<double> bisimulationDecomposition(*dtmc, true);
                     
                     result = bisimulationDecomposition.getQuotient();
                     
@@ -285,7 +285,7 @@ namespace storm {
                     
                     std::shared_ptr<storm::models::Mdp<double>> mdp = model->as<storm::models::Mdp<double>>();
 
-                    // FIXME: re-parse the program.
+                    // FIXME: do not re-parse the program.
                     std::string const programFile = storm::settings::generalSettings().getSymbolicModelFilename();
                     std::string const constants = storm::settings::generalSettings().getConstantDefinitionString();
                     storm::prism::Program program = storm::parser::PrismParser::parse(programFile);
