@@ -351,7 +351,6 @@ namespace storm {
                             // behaviour for this is undefined anyway, a warning should be issued in that case.
                             for (uint_fast64_t i = 0; i < iteratorList.size(); ++i) {
                                 storm::prism::Command const& command = *iteratorList[i];
-                                std::cout << command << std::endl;
                                 
                                 for (uint_fast64_t j = 0; j < command.getNumberOfUpdates(); ++j) {
                                     storm::prism::Update const& update = command.getUpdate(j);
@@ -367,7 +366,6 @@ namespace storm {
                                             boost::container::flat_set<uint_fast64_t> newLabelSet = valueLabelSetPair.second;
                                             newLabelSet.insert(update.getGlobalIndex());
                                             
-                                            std::cout << "got new value " << valueLabelSetPair.first << " * " << updateProbability << " = " << valueLabelSetPair.first * updateProbability << std::endl;
                                             newProbability.addValue(valueLabelSetPair.first * updateProbability, newLabelSet);
                                         }
                                         
@@ -409,7 +407,6 @@ namespace storm {
                             }
                             
                             ValueType probabilitySum = utility::constantZero<ValueType>();
-                            std::cout << "resetting prob sum" << std::endl;
                             for (auto const& stateProbabilityPair : *newTargetStates) {
                                 std::pair<bool, uint_fast64_t> flagTargetStateIndexPair = getOrAddStateIndex(stateProbabilityPair.first, stateInformation);
 
@@ -421,7 +418,6 @@ namespace storm {
                                 for (auto const& probabilityLabelPair : stateProbabilityPair.second) {
                                     addProbabilityToChoice(choice, flagTargetStateIndexPair.second, probabilityLabelPair.first, probabilityLabelPair.second);
                                     probabilitySum += probabilityLabelPair.first;
-                                    std::cout << "increasing prob sum by " << probabilityLabelPair.first << std::endl;
                                 }
                             }
                             

@@ -20,6 +20,7 @@
 #include "src/settings/SettingsManager.h"
 #include "src/utility/vector.h"
 #include "src/utility/matrix.h"
+#include "src/utility/ConstantsComparator.h"
 
 
 namespace storm {
@@ -329,24 +330,23 @@ private:
 	 *	Checks probability matrix if all rows sum up to one.
 	 */
 	bool checkValidityOfProbabilityMatrix() {
-		// Get the settings object to customize linear solving.
-
-
 		if (this->getTransitionMatrix().getRowCount() != this->getTransitionMatrix().getColumnCount()) {
 			// not square
 			LOG4CPLUS_ERROR(logger, "Probability matrix is not square.");
 			return false;
 		}
+
+        storm::utility::ConstantsComparator<T> comparator;
 		for (uint_fast64_t row = 0; row < this->getTransitionMatrix().getRowCount(); ++row) {
-			T sum = this->getTransitionMatrix().getRowSum(row); 
-			
-			if (sum == T(0)) {
-				
-				LOG4CPLUS_ERROR(logger, "Row " << row << " is a deadlock (sum == " <<  sum << ").");
-				return false;
-			}
-			if (!storm::utility::isOne(sum)) {
-				LOG4CPLUS_ERROR(logger, "Row " << row << " has sum " << sum << ".");
+			T sum = this->getTransitionMatrix().getRowSum(row);
+            
+            // If the sum is not a constant, for example for parametric models, we cannot check whether the sum is one
+            // or not.
+            if (!comparator.isConstant(sum)) {
+                continue;
+            }
+            
+			if (!comparator.isOne(sum)) {
 				return false;
 			}
 		}

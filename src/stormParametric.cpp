@@ -9,7 +9,7 @@
 #include "src/utility/export.h"
 #include "src/modelchecker/reachability/CollectConstraints.h"
 
-//#include "src/modelchecker/reachability/DirectEncoding.h"
+#include "src/modelchecker/reachability/DirectEncoding.h"
 //#include "src/storage/DeterministicModelStrongBisimulationDecomposition.h"
 #include "src/modelchecker/reachability/SparseSccModelChecker.h"
 #include "src/storage/parameters.h"
@@ -43,7 +43,7 @@ int main(const int argc, const char** argv) {
 
         std::shared_ptr<storm::models::Dtmc<storm::RationalFunction>> dtmc = model->as<storm::models::Dtmc<storm::RationalFunction>>();
         
-        // Perform bisimulation minimization if requested.
+//        Perform bisimulation minimization if requested.
 //        if (storm::settings::generalSettings().isBisimulationSet()) {
 //            storm::storage::DeterministicModelStrongBisimulationDecomposition<storm::RationalFunction> bisimulationDecomposition(*dtmc, true);
 //            dtmc = bisimulationDecomposition.getQuotient()->as<storm::models::Dtmc<storm::RationalFunction>>();
@@ -80,11 +80,10 @@ int main(const int argc, const char** argv) {
             storm::utility::exportParametricMcResult(value, constraintCollector);
         }
         
-        if(storm::settings::parametricSettings().exportToSmt2File()) {
+//        if (storm::settings::parametricSettings().exportToSmt2File()) {
 //            storm::modelchecker::reachability::DirectEncoding dec;
-//            storm::utility::exportStreamToFile(dec.encodeAsSmt2(modelChecker.getMatrix(), parameters,));
-        }
-        
+//            storm::utility::exportStringStreamToFile(dec.encodeAsSmt2(modelChecker.getMatrix(), parameters,));
+//        }        
 
         // All operations have now been performed, so we clean up everything and terminate.
         storm::utility::cli::cleanUp();
