@@ -167,9 +167,10 @@ int main(const int argc, const char** argv) {
         
         STORM_LOG_THROW(storm::settings::generalSettings().isPctlPropertySet(), storm::exceptions::InvalidSettingsException, "Unable to perform model checking without a property.");
         std::shared_ptr<storm::properties::prctl::PrctlFilter<double>> filterFormula = storm::parser::PrctlParser::parsePrctlFormula(storm::settings::generalSettings().getPctlProperty());
-        
-        std::tuple<storm::RationalFunction, boost::optional<storm::storage::SparseMatrix<storm::RationalFunction>>, boost::optional<std::vector<storm::RationalFunction>>, boost::optional<storm::storage::BitVector>, boost::optional<double>, boost::optional<bool>> result = computeReachabilityProbability(*dtmc, filterFormula);
-        storm::RationalFunction valueFunction = std::get<0>(result);
+    
+        storm::modelchecker::reachability::SparseSccModelChecker<storm::RationalFunction> modelchecker;
+
+        storm::RationalFunction valueFunction = modelchecker.computeReachabilityProbability(*dtmc, filterFormula);
         STORM_PRINT_AND_LOG(std::endl << "computed value " << valueFunction << std::endl);
         
         // Get variables from parameter definitions in prism program.
@@ -190,11 +191,11 @@ int main(const int argc, const char** argv) {
             storm::utility::exportParametricMcResult(valueFunction, constraintCollector);
         }
         
-        if (storm::settings::parametricSettings().exportToSmt2File() && std::get<1>(result) && std::get<2>(result) && std::get<3>(result) && std::get<4>(result) && std::get<5>(result)) {
-            storm::modelchecker::reachability::DirectEncoding dec;
-            storm::utility::exportStringStreamToFile(dec.encodeAsSmt2(std::get<1>(result).get(), std::get<2>(result).get(), parameters, std::get<3>(result).get(), carl::rationalize<storm::RationalFunction::CoeffType>(std::get<4>(result).get()), std::get<5>(result).get()), "out.smt");
-        }
-        
+//        if (storm::settings::parametricSettings().exportToSmt2File() && std::get<1>(result) && std::get<2>(result) && std::get<3>(result) && std::get<4>(result) && std::get<5>(result)) {
+//            storm::modelchecker::reachability::DirectEncoding dec;
+//            storm::utility::exportStringStreamToFile(dec.encodeAsSmt2(std::get<1>(result).get(), std::get<2>(result).get(), parameters, std::get<3>(result).get(), carl::rationalize<storm::RationalFunction::CoeffType>(std::get<4>(result).get()), std::get<5>(result).get()), "out.smt");
+//        }
+    
         // All operations have now been performed, so we clean up everything and terminate.
         storm::utility::cli::cleanUp();
         return 0;
