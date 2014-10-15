@@ -10,7 +10,7 @@
 #include "src/modelchecker/reachability/CollectConstraints.h"
 
 #include "src/modelchecker/reachability/DirectEncoding.h"
-//#include "src/storage/DeterministicModelStrongBisimulationDecomposition.h"
+#include "src/storage/DeterministicModelStrongBisimulationDecomposition.h"
 #include "src/modelchecker/reachability/SparseSccModelChecker.h"
 #include "src/storage/parameters.h"
 /*!
@@ -43,11 +43,11 @@ int main(const int argc, const char** argv) {
 
         std::shared_ptr<storm::models::Dtmc<storm::RationalFunction>> dtmc = model->as<storm::models::Dtmc<storm::RationalFunction>>();
         
-//        Perform bisimulation minimization if requested.
-//        if (storm::settings::generalSettings().isBisimulationSet()) {
-//            storm::storage::DeterministicModelStrongBisimulationDecomposition<storm::RationalFunction> bisimulationDecomposition(*dtmc, true);
-//            dtmc = bisimulationDecomposition.getQuotient()->as<storm::models::Dtmc<storm::RationalFunction>>();
-//        }
+        // Perform bisimulation minimization if requested.
+        if (storm::settings::generalSettings().isBisimulationSet()) {
+            storm::storage::DeterministicModelStrongBisimulationDecomposition<storm::RationalFunction> bisimulationDecomposition(*dtmc, true);
+            dtmc = bisimulationDecomposition.getQuotient()->as<storm::models::Dtmc<storm::RationalFunction>>();
+        }
         
         assert(dtmc);
         storm::modelchecker::reachability::CollectConstraints<storm::RationalFunction> constraintCollector;

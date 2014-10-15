@@ -900,6 +900,6 @@ namespace storm {
         }
         
         template class DeterministicModelStrongBisimulationDecomposition<double>;
-//        template class DeterministicModelStrongBisimulationDecomposition<storm::RationalFunction>;
+        template class DeterministicModelStrongBisimulationDecomposition<storm::RationalFunction>;
     }
 }

@@ -85,9 +85,7 @@ namespace storm {
 						mValue += visitor->value();
 						break;
 					case BinaryNumericalFunctionExpression::OperatorType::Minus:
-                        std::cout << "mValue: " << mValue << " - " << visitor->value() << std::endl;
 						mValue -= visitor->value();
-                        std::cout << mValue << std::endl;
 						break;
 					case BinaryNumericalFunctionExpression::OperatorType::Times:
 						mValue *= visitor->value();
