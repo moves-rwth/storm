@@ -194,7 +194,6 @@ namespace storm {
 					} else {
 
 						if(this->actions.empty()) {
-
 							// There are no filter actions but only the raw state formula. So just print that.
 							return child->toString();
 						}

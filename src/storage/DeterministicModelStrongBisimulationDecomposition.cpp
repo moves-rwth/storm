@@ -604,10 +604,9 @@ namespace storm {
             // Now build (a) and (b) by traversing all blocks.
             for (uint_fast64_t blockIndex = 0; blockIndex < this->blocks.size(); ++blockIndex) {
                 auto const& block = this->blocks[blockIndex];
-                
+
                 // Pick one representative state. It doesn't matter which state it is, because they all behave equally.
                 storm::storage::sparse::state_type representativeState = *block.begin();
-                
                 Block const& oldBlock = partition.getBlock(representativeState);
                 
                 // If the block is absorbing, we simply add a self-loop.
@@ -655,7 +654,7 @@ namespace storm {
                 Block const& initialBlock = partition.getBlock(initialState);
                 newLabeling.addAtomicPropositionToState("init", initialBlock.getId());
             }
-            
+                        
             // FIXME:
             // If reward structures are allowed, the quotient structures need to be built here.
             
@@ -701,6 +700,12 @@ namespace storm {
         
         template<typename ValueType>
         void DeterministicModelStrongBisimulationDecomposition<ValueType>::refineBlockProbabilities(Block& block, Partition& partition, std::deque<Block*>& splitterQueue) {
+            // First, we simplify all the values. For most types this does not change anything, but for rational
+            // functions, this achieves a canonicity that is used for sorting the rational functions later.
+            for (auto probabilityIt = partition.getBeginOfValues(block), probabilityIte = partition.getEndOfValues(block); probabilityIt != probabilityIte; ++probabilityIt) {
+                storm::utility::simplify(*probabilityIt);
+            }
+            
             // Sort the states in the block based on their probabilities.
             std::sort(partition.getBeginOfStates(block), partition.getEndOfStates(block), [&partition] (storm::storage::sparse::state_type const& a, storm::storage::sparse::state_type const& b) { return partition.getValue(a) < partition.getValue(b); } );
             

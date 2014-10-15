@@ -35,11 +35,11 @@ void exportParametricMcResult(const ValueType& mcresult, storm::modelchecker::re
 	filestream.close();
 }
 
-void exportStringStreamToFile(std::stringstream& stream, std::string filepath) {
+void exportStringStreamToFile(std::string const& str, std::string filepath) {
 	// todo add checks.
 	std::ofstream filestream;
 	filestream.open(filepath);
-	filestream << stream.str();
+	filestream << str;
 	filestream.close();
 }
 

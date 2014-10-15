@@ -20,7 +20,7 @@ namespace storm
             {
             public:
                 template<typename T>
-                std::string encodeAsSmt2(storm::storage::SparseMatrix<T> const& transitionMatrix, std::vector<T> const& oneStepProbabilities, std::vector<carl::Variable> const& parameters, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& finalStates, typename T::CoeffType const& threshold, bool lessequal = false) {
+                std::string encodeAsSmt2(storm::storage::SparseMatrix<T> const& transitionMatrix, std::vector<T> const& oneStepProbabilities, std::set<carl::Variable> const& parameters, storm::storage::BitVector const& initialStates, typename T::CoeffType const& threshold, bool lessequal = false) {
                     
                     carl::io::WriteTosmt2Stream smt2;
                     uint_fast64_t numberOfStates = transitionMatrix.getRowCount();
@@ -37,25 +37,23 @@ namespace storm
                     for (uint_fast64_t state = 0; state < numberOfStates; ++state) {
                         carl::Variable stateVar = vpool.getFreshVariable("s_" + std::to_string(state));
                         stateVars.push_back(stateVar);
-                        if (!finalStates[state]) {
-                            smt2 << ("state_bound_" + std::to_string(state));
-                            smt2 << carl::io::smt2node::AND;
-                            smt2 << carl::Constraint<Polynomial::PolyType>(Polynomial::PolyType(stateVar), carl::CompareRelation::GT);
-                            smt2 << carl::Constraint<Polynomial::PolyType>(Polynomial::PolyType(stateVar) - Polynomial::PolyType(1), carl::CompareRelation::LT);
-                            smt2 << carl::io::smt2node::CLOSENODE;
-                        }
+                        smt2 << ("state_bound_" + std::to_string(state));
+                        smt2 << carl::io::smt2node::AND;
+                        smt2 << carl::Constraint<Polynomial::PolyType>(Polynomial::PolyType(stateVar), carl::CompareRelation::GT);
+                        smt2 << carl::Constraint<Polynomial::PolyType>(Polynomial::PolyType(stateVar) - Polynomial::PolyType(1), carl::CompareRelation::LT);
+                        smt2 << carl::io::smt2node::CLOSENODE;
                     }
                     
                     smt2.setAutomaticLineBreaks(true);
                     Polynomial::PolyType initStateReachSum;
                     for (uint_fast64_t state = 0; state < numberOfStates; ++state) {
-                        T reachpropPol(0);
+                        T reachpropPol;
                         for (auto const& transition : transitionMatrix.getRow(state)) {
-                            reachpropPol += transition.getValue() * stateVars[transition.getColumn()];
+//                            reachpropPol += transition.getValue() * stateVars[transition.getColumn()];
                         }
                         reachpropPol += oneStepProbabilities[state];
                         smt2 << ("transition_" + std::to_string(state));
-                        smt2 << carl::Constraint<T>(reachpropPol - stateVars[state], carl::CompareRelation::EQ);
+//                        smt2 << carl::Constraint<Polynomial::PolyType>(reachpropPol - stateVars[state], carl::CompareRelation::EQ);
                     }
                     
                     smt2 << ("reachability");

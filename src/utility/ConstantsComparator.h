@@ -13,69 +13,49 @@
 #include <cstdint>
 
 #include "src/settings/SettingsManager.h"
+#include "src/storage/SparseMatrix.h"
 
 namespace storm {
     namespace utility {
         
         template<typename ValueType>
-        ValueType one() {
-            return ValueType(1);
-        }
+        ValueType one();
         
         template<typename ValueType>
-        ValueType zero() {
-            return ValueType(0);
-        }
+        ValueType zero();
         
         template<typename ValueType>
-        ValueType infinity() {
-            return std::numeric_limits<ValueType>::infinity();
-        }
+        ValueType infinity();
+        
+        template<typename ValueType>
+        ValueType& simplify(ValueType& value);
         
         // A class that can be used for comparing constants.
         template<typename ValueType>
         class ConstantsComparator {
         public:
-            bool isOne(ValueType const& value) const {
-                return value == one<ValueType>();
-            }
+            bool isOne(ValueType const& value) const;
             
-            bool isZero(ValueType const& value) const {
-                return value == zero<ValueType>();
-            }
+            bool isZero(ValueType const& value) const;
             
-            bool isEqual(ValueType const& value1, ValueType const& value2) const {
-                return value1 == value2;
-            }
+            bool isEqual(ValueType const& value1, ValueType const& value2) const;
         };
         
         // For doubles we specialize this class and consider the comparison modulo some predefined precision.
         template<>
         class ConstantsComparator<double> {
         public:
-            ConstantsComparator() : precision(storm::settings::generalSettings().getPrecision()) {
-                // Intentionally left empty.
-            }
+            ConstantsComparator();
 
-            ConstantsComparator(double precision) : precision(precision) {
-                // Intentionally left empty.
-            }
+            ConstantsComparator(double precision);
             
-            bool isOne(double const& value) const {
-                return std::abs(value - one<double>()) <= precision;
-            }
+            bool isOne(double const& value) const;
             
-            bool isZero(double const& value) const {
-                return std::abs(value) <= precision;
-            }
+            bool isZero(double const& value) const;
             
-            bool isEqual(double const& value1, double const& value2) const {
-                return std::abs(value1 - value2) <= precision;
-            }
+            bool isEqual(double const& value1, double const& value2) const;
             
-            bool isConstant(double const& value) const {
-                return true;
-            }
+            bool isConstant(double const& value) const;
             
         private:
             // The precision used for comparisons.
@@ -84,46 +64,37 @@ namespace storm {
         
 #ifdef PARAMETRIC_SYSTEMS
         template<>
+        RationalFunction& simplify(RationalFunction& value);
+        
+        template<>
         class ConstantsComparator<storm::RationalFunction> {
         public:
-            bool isOne(storm::RationalFunction const& value) const {
-                return value.isOne();
-            }
+            bool isOne(storm::RationalFunction const& value) const;
             
-            bool isZero(storm::RationalFunction const& value) const {
-                return value.isZero();
-            }
+            bool isZero(storm::RationalFunction const& value) const;
             
-            bool isEqual(storm::RationalFunction const& value1, storm::RationalFunction const& value2) const {
-                return value1 == value2;
-            }
+            bool isEqual(storm::RationalFunction const& value1, storm::RationalFunction const& value2) const;
             
-            bool isConstant(storm::RationalFunction const& value) const {
-                return value.isConstant();
-            }
+            bool isConstant(storm::RationalFunction const& value) const;
         };
         
         template<>
         class ConstantsComparator<storm::Polynomial> {
         public:
-            bool isOne(storm::Polynomial const& value) const {
-                return value.isOne();
-            }
+            bool isOne(storm::Polynomial const& value) const;
             
-            bool isZero(storm::Polynomial const& value) const {
-                return value.isZero();
-            }
+            bool isZero(storm::Polynomial const& value) const;
             
-            bool isEqual(storm::Polynomial const& value1, storm::Polynomial const& value2) const {
-                return value1 == value2;
-            }
+            bool isEqual(storm::Polynomial const& value1, storm::Polynomial const& value2) const;
             
-            bool isConstant(storm::Polynomial const& value) const {
-                return value.isConstant();
-            }
+            bool isConstant(storm::Polynomial const& value) const;
         };
+        
+        
 #endif
         
+        template<typename IndexType, typename ValueType>
+        storm::storage::MatrixEntry<IndexType, ValueType>& simplify(storm::storage::MatrixEntry<IndexType, ValueType>& matrixEntry);
     }
 }
 
