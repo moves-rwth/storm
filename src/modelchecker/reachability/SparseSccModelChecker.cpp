@@ -234,21 +234,28 @@ namespace storm {
                     STORM_LOG_DEBUG("SCC of size " << scc.getNumberOfSetBits() << " is small enough to be eliminated directly.");
                     storm::storage::BitVector remainingStates = scc & ~entryStates;
                     
+                    std::vector<uint_fast64_t> statesToEliminate(remainingStates.begin(), remainingStates.end());
+                    if (storm::settings::parametricSettings().isSortTrivialSccsSet()) {
+                        STORM_LOG_THROW(distances, storm::exceptions::IllegalFunctionCallException, "Cannot sort according to distances because none were provided.");
+                        std::vector<std::size_t> const& actualDistances = distances.get();
+                        std::sort(statesToEliminate.begin(), statesToEliminate.end(), [&actualDistances] (storm::storage::sparse::state_type const& state1, storm::storage::sparse::state_type const& state2) -> bool { return actualDistances[state1] > actualDistances[state2]; } );
+                    }
+                    
                     // Eliminate the remaining states that do not have a self-loop (in the current, i.e. modified)
                     // transition probability matrix.
-                    for (auto const& state : remainingStates) {
-                        if (!hasSelfLoop(state, matrix)) {
+                    for (auto const& state : statesToEliminate) {
+//                        if (!hasSelfLoop(state, matrix)) {
                             eliminateState(matrix, oneStepProbabilities, state, backwardTransitions);
-                            remainingStates.set(state, false);
-                        }
+//                            remainingStates.set(state, false);
+//                        }
                     }
 
                     STORM_LOG_DEBUG("Eliminated all states without self-loop.");
                     
                     // Eliminate the remaining states.
-                    for (auto const& state : remainingStates) {
-                        eliminateState(matrix, oneStepProbabilities, state, backwardTransitions);
-                    }
+//                    for (auto const& state : statesToEliminate) {
+//                        eliminateState(matrix, oneStepProbabilities, state, backwardTransitions);
+//                    }
 
                     STORM_LOG_DEBUG("Eliminated all states with self-loop.");
                 }
@@ -495,6 +502,8 @@ namespace storm {
                 // Clear the eliminated row to reduce memory consumption.
                 currentStateSuccessors.clear();
                 currentStateSuccessors.shrink_to_fit();
+                currentStatePredecessors.clear();
+                currentStatePredecessors.shrink_to_fit();
                 
                 auto eliminationEnd = std::chrono::high_resolution_clock::now();
                 auto eliminationTime = eliminationEnd - eliminationStart;

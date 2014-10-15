@@ -69,7 +69,9 @@ namespace storm {
 #ifdef PARAMETRIC_SYSTEMS
         template<>
         RationalFunction& simplify(RationalFunction& value) {
+            STORM_LOG_DEBUG("Simplifying " << value);
             value.simplify();
+            STORM_LOG_DEBUG("done.");
             return value;
         }
         

@@ -10,7 +10,7 @@ dtmc
 
 // Model parameters
 const double PF;  // forwarding probability
-const double badC = 0.167;  // probability that member is untrustworthy
+const double badC;  // probability that member is untrustworthy
 
 // Probability of forwarding
 // const double    PF = 0.8;
