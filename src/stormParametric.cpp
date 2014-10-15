@@ -17,111 +17,111 @@
 #include "src/models/Dtmc.h"
 #include "src/properties/prctl/PrctlFilter.h"
 
-std::tuple<storm::RationalFunction, boost::optional<storm::storage::SparseMatrix<storm::RationalFunction>>, boost::optional<std::vector<storm::RationalFunction>>, boost::optional<storm::storage::BitVector>, boost::optional<double>, boost::optional<bool>> computeReachabilityProbability(storm::models::Dtmc<storm::RationalFunction> const& dtmc, std::shared_ptr<storm::properties::prctl::PrctlFilter<double>> const& filterFormula) {
-    // The first thing we need to do is to make sure the formula is of the correct form and - if so - extract
-    // the bitvector representation of the atomic propositions.
-    
-    std::shared_ptr<storm::properties::prctl::AbstractStateFormula<double>> stateFormula = std::dynamic_pointer_cast<storm::properties::prctl::AbstractStateFormula<double>>(filterFormula->getChild());
-    std::shared_ptr<storm::properties::prctl::AbstractPathFormula<double>> pathFormula;
-    boost::optional<double> threshold;
-    boost::optional<bool> strict;
-    if (stateFormula != nullptr) {
-        std::shared_ptr<storm::properties::prctl::ProbabilisticBoundOperator<double>> probabilisticBoundFormula = std::dynamic_pointer_cast<storm::properties::prctl::ProbabilisticBoundOperator<double>>(stateFormula);
-        STORM_LOG_THROW(probabilisticBoundFormula != nullptr, storm::exceptions::InvalidPropertyException, "Illegal formula " << *filterFormula << " for parametric model checking. Note that only unbounded reachability properties are permitted.");
-        STORM_LOG_THROW(probabilisticBoundFormula->getComparisonOperator() == storm::properties::ComparisonType::LESS_EQUAL || probabilisticBoundFormula->getComparisonOperator() == storm::properties::ComparisonType::LESS, storm::exceptions::InvalidPropertyException, "Illegal formula " << *filterFormula << " for parametric model checking. Note that only unbounded reachability properties with upper probability bounds are permitted.");
-        
-        threshold = probabilisticBoundFormula->getBound();
-        strict = probabilisticBoundFormula->getComparisonOperator() == storm::properties::ComparisonType::LESS;
-        pathFormula = probabilisticBoundFormula->getChild();
-    } else {
-        pathFormula = std::dynamic_pointer_cast<storm::properties::prctl::AbstractPathFormula<double>>(filterFormula->getChild());
-    }
-    
-    STORM_LOG_THROW(pathFormula != nullptr, storm::exceptions::InvalidPropertyException, "Illegal formula " << *filterFormula << " for parametric model checking. Note that only unbounded reachability properties are permitted.");
-    
-    std::shared_ptr<storm::properties::prctl::Until<double>> untilFormula = std::dynamic_pointer_cast<storm::properties::prctl::Until<double>>(pathFormula);
-    std::shared_ptr<storm::properties::prctl::AbstractStateFormula<double>> phiStateFormula;
-    std::shared_ptr<storm::properties::prctl::AbstractStateFormula<double>> psiStateFormula;
-    if (untilFormula != nullptr) {
-        phiStateFormula = untilFormula->getLeft();
-        psiStateFormula = untilFormula->getRight();
-    } else {
-        std::shared_ptr<storm::properties::prctl::Eventually<double>> eventuallyFormula = std::dynamic_pointer_cast<storm::properties::prctl::Eventually<double>>(pathFormula);
-        STORM_LOG_THROW(eventuallyFormula != nullptr, storm::exceptions::InvalidPropertyException, "Illegal formula " << *filterFormula << " for parametric model checking. Note that only unbounded reachability properties are permitted.");
-        phiStateFormula = std::shared_ptr<storm::properties::prctl::Ap<double>>(new storm::properties::prctl::Ap<double>("true"));
-        psiStateFormula = eventuallyFormula->getChild();
-    }
-    
-    // Now we need to make sure the formulas defining the phi and psi states are just labels.
-    std::shared_ptr<storm::properties::prctl::Ap<double>> phiStateFormulaApFormula = std::dynamic_pointer_cast<storm::properties::prctl::Ap<double>>(phiStateFormula);
-    std::shared_ptr<storm::properties::prctl::Ap<double>> psiStateFormulaApFormula = std::dynamic_pointer_cast<storm::properties::prctl::Ap<double>>(psiStateFormula);
-    STORM_LOG_THROW(phiStateFormulaApFormula.get() != nullptr, storm::exceptions::InvalidPropertyException, "Illegal formula " << *phiStateFormula << " for parametric model checking. Note that only atomic propositions are admitted in that position.");
-    STORM_LOG_THROW(psiStateFormulaApFormula.get() != nullptr, storm::exceptions::InvalidPropertyException, "Illegal formula " << *psiStateFormula << " for parametric model checking. Note that only atomic propositions are admitted in that position.");
-    
-    // Now retrieve the appropriate bitvectors from the atomic propositions.
-    storm::storage::BitVector phiStates = phiStateFormulaApFormula->getAp() != "true" ? dtmc.getLabeledStates(phiStateFormulaApFormula->getAp()) : storm::storage::BitVector(dtmc.getNumberOfStates(), true);
-    storm::storage::BitVector psiStates = dtmc.getLabeledStates(psiStateFormulaApFormula->getAp());
-    
-    // Do some sanity checks to establish some required properties.
-    STORM_LOG_THROW(dtmc.getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::IllegalArgumentException, "Input model is required to have exactly one initial state.");
-    
-    // Then, compute the subset of states that has a probability of 0 or 1, respectively.
-    std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(dtmc, phiStates, psiStates);
-    storm::storage::BitVector statesWithProbability0 = statesWithProbability01.first;
-    storm::storage::BitVector statesWithProbability1 = statesWithProbability01.second;
-    storm::storage::BitVector maybeStates = ~(statesWithProbability0 | statesWithProbability1);
-    
-    // If the initial state is known to have either probability 0 or 1, we can directly return the result.
-    if (dtmc.getInitialStates().isDisjointFrom(maybeStates)) {
-        STORM_LOG_DEBUG("The probability of all initial states was found in a preprocessing step.");
-        return statesWithProbability0.get(*dtmc.getInitialStates().begin()) ? storm::utility::constantZero<storm::RationalFunction>() : storm::utility::constantOne<storm::RationalFunction>();
-    }
-    
-    // Determine the set of states that is reachable from the initial state without jumping over a target state.
-    storm::storage::BitVector reachableStates = storm::utility::graph::getReachableStates(dtmc.getTransitionMatrix(), dtmc.getInitialStates(), maybeStates, statesWithProbability1);
-    
-    // Subtract from the maybe states the set of states that is not reachable (on a path from the initial to a target state).
-    maybeStates &= reachableStates;
-    
-    // Create a vector for the probabilities to go to a state with probability 1 in one step.
-    std::vector<storm::RationalFunction> oneStepProbabilities = dtmc.getTransitionMatrix().getConstrainedRowSumVector(maybeStates, statesWithProbability1);
-    
-    // Determine the set of initial states of the sub-DTMC.
-    storm::storage::BitVector newInitialStates = dtmc.getInitialStates() % maybeStates;
-    
-    // We then build the submatrix that only has the transitions of the maybe states.
-    storm::storage::SparseMatrix<storm::RationalFunction> submatrix = dtmc.getTransitionMatrix().getSubmatrix(false, maybeStates, maybeStates);
-    
-    // To be able to apply heuristics later, we now determine the distance of each state to the initial state.
-    std::vector<std::pair<storm::storage::sparse::state_type, std::size_t>> stateQueue;
-    stateQueue.reserve(submatrix.getRowCount());
-    storm::storage::BitVector statesInQueue(submatrix.getRowCount());
-    std::vector<std::size_t> distances(submatrix.getRowCount());
-    
-    storm::storage::sparse::state_type currentPosition = 0;
-    for (auto const& initialState : newInitialStates) {
-        stateQueue.emplace_back(initialState, 0);
-        statesInQueue.set(initialState);
-    }
-    
-    // Perform a BFS.
-    while (currentPosition < stateQueue.size()) {
-        std::pair<storm::storage::sparse::state_type, std::size_t> const& stateDistancePair = stateQueue[currentPosition];
-        distances[stateDistancePair.first] = stateDistancePair.second;
-        
-        for (auto const& successorEntry : submatrix.getRow(stateDistancePair.first)) {
-            if (!statesInQueue.get(successorEntry.getColumn())) {
-                stateQueue.emplace_back(successorEntry.getColumn(), stateDistancePair.second + 1);
-                statesInQueue.set(successorEntry.getColumn());
-            }
-        }
-        ++currentPosition;
-    }
-    
-    storm::modelchecker::reachability::SparseSccModelChecker<storm::RationalFunction> modelchecker;
-    
-    return std::make_tuple(modelchecker.computeReachabilityProbability(submatrix, oneStepProbabilities, submatrix.transpose(), newInitialStates, phiStates, psiStates, distances),submatrix, oneStepProbabilities, newInitialStates, threshold, strict);
-}
+//std::tuple<storm::RationalFunction, boost::optional<storm::storage::SparseMatrix<storm::RationalFunction>>, boost::optional<std::vector<storm::RationalFunction>>, boost::optional<storm::storage::BitVector>, boost::optional<double>, boost::optional<bool>> computeReachabilityProbability(storm::models::Dtmc<storm::RationalFunction> const& dtmc, std::shared_ptr<storm::properties::prctl::PrctlFilter<double>> const& filterFormula) {
+//    // The first thing we need to do is to make sure the formula is of the correct form and - if so - extract
+//    // the bitvector representation of the atomic propositions.
+//    
+//    std::shared_ptr<storm::properties::prctl::AbstractStateFormula<double>> stateFormula = std::dynamic_pointer_cast<storm::properties::prctl::AbstractStateFormula<double>>(filterFormula->getChild());
+//    std::shared_ptr<storm::properties::prctl::AbstractPathFormula<double>> pathFormula;
+//    boost::optional<double> threshold;
+//    boost::optional<bool> strict;
+//    if (stateFormula != nullptr) {
+//        std::shared_ptr<storm::properties::prctl::ProbabilisticBoundOperator<double>> probabilisticBoundFormula = std::dynamic_pointer_cast<storm::properties::prctl::ProbabilisticBoundOperator<double>>(stateFormula);
+//        STORM_LOG_THROW(probabilisticBoundFormula != nullptr, storm::exceptions::InvalidPropertyException, "Illegal formula " << *filterFormula << " for parametric model checking. Note that only unbounded reachability properties are permitted.");
+//        STORM_LOG_THROW(probabilisticBoundFormula->getComparisonOperator() == storm::properties::ComparisonType::LESS_EQUAL || probabilisticBoundFormula->getComparisonOperator() == storm::properties::ComparisonType::LESS, storm::exceptions::InvalidPropertyException, "Illegal formula " << *filterFormula << " for parametric model checking. Note that only unbounded reachability properties with upper probability bounds are permitted.");
+//        
+//        threshold = probabilisticBoundFormula->getBound();
+//        strict = probabilisticBoundFormula->getComparisonOperator() == storm::properties::ComparisonType::LESS;
+//        pathFormula = probabilisticBoundFormula->getChild();
+//    } else {
+//        pathFormula = std::dynamic_pointer_cast<storm::properties::prctl::AbstractPathFormula<double>>(filterFormula->getChild());
+//    }
+//    
+//    STORM_LOG_THROW(pathFormula != nullptr, storm::exceptions::InvalidPropertyException, "Illegal formula " << *filterFormula << " for parametric model checking. Note that only unbounded reachability properties are permitted.");
+//    
+//    std::shared_ptr<storm::properties::prctl::Until<double>> untilFormula = std::dynamic_pointer_cast<storm::properties::prctl::Until<double>>(pathFormula);
+//    std::shared_ptr<storm::properties::prctl::AbstractStateFormula<double>> phiStateFormula;
+//    std::shared_ptr<storm::properties::prctl::AbstractStateFormula<double>> psiStateFormula;
+//    if (untilFormula != nullptr) {
+//        phiStateFormula = untilFormula->getLeft();
+//        psiStateFormula = untilFormula->getRight();
+//    } else {
+//        std::shared_ptr<storm::properties::prctl::Eventually<double>> eventuallyFormula = std::dynamic_pointer_cast<storm::properties::prctl::Eventually<double>>(pathFormula);
+//        STORM_LOG_THROW(eventuallyFormula != nullptr, storm::exceptions::InvalidPropertyException, "Illegal formula " << *filterFormula << " for parametric model checking. Note that only unbounded reachability properties are permitted.");
+//        phiStateFormula = std::shared_ptr<storm::properties::prctl::Ap<double>>(new storm::properties::prctl::Ap<double>("true"));
+//        psiStateFormula = eventuallyFormula->getChild();
+//    }
+//    
+//    // Now we need to make sure the formulas defining the phi and psi states are just labels.
+//    std::shared_ptr<storm::properties::prctl::Ap<double>> phiStateFormulaApFormula = std::dynamic_pointer_cast<storm::properties::prctl::Ap<double>>(phiStateFormula);
+//    std::shared_ptr<storm::properties::prctl::Ap<double>> psiStateFormulaApFormula = std::dynamic_pointer_cast<storm::properties::prctl::Ap<double>>(psiStateFormula);
+//    STORM_LOG_THROW(phiStateFormulaApFormula.get() != nullptr, storm::exceptions::InvalidPropertyException, "Illegal formula " << *phiStateFormula << " for parametric model checking. Note that only atomic propositions are admitted in that position.");
+//    STORM_LOG_THROW(psiStateFormulaApFormula.get() != nullptr, storm::exceptions::InvalidPropertyException, "Illegal formula " << *psiStateFormula << " for parametric model checking. Note that only atomic propositions are admitted in that position.");
+//    
+//    // Now retrieve the appropriate bitvectors from the atomic propositions.
+//    storm::storage::BitVector phiStates = phiStateFormulaApFormula->getAp() != "true" ? dtmc.getLabeledStates(phiStateFormulaApFormula->getAp()) : storm::storage::BitVector(dtmc.getNumberOfStates(), true);
+//    storm::storage::BitVector psiStates = dtmc.getLabeledStates(psiStateFormulaApFormula->getAp());
+//    
+//    // Do some sanity checks to establish some required properties.
+//    STORM_LOG_THROW(dtmc.getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::IllegalArgumentException, "Input model is required to have exactly one initial state.");
+//    
+//    // Then, compute the subset of states that has a probability of 0 or 1, respectively.
+//    std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(dtmc, phiStates, psiStates);
+//    storm::storage::BitVector statesWithProbability0 = statesWithProbability01.first;
+//    storm::storage::BitVector statesWithProbability1 = statesWithProbability01.second;
+//    storm::storage::BitVector maybeStates = ~(statesWithProbability0 | statesWithProbability1);
+//    
+//    // If the initial state is known to have either probability 0 or 1, we can directly return the result.
+//    if (dtmc.getInitialStates().isDisjointFrom(maybeStates)) {
+//        STORM_LOG_DEBUG("The probability of all initial states was found in a preprocessing step.");
+//        return statesWithProbability0.get(*dtmc.getInitialStates().begin()) ? storm::utility::constantZero<storm::RationalFunction>() : storm::utility::constantOne<storm::RationalFunction>();
+//    }
+//    
+//    // Determine the set of states that is reachable from the initial state without jumping over a target state.
+//    storm::storage::BitVector reachableStates = storm::utility::graph::getReachableStates(dtmc.getTransitionMatrix(), dtmc.getInitialStates(), maybeStates, statesWithProbability1);
+//    
+//    // Subtract from the maybe states the set of states that is not reachable (on a path from the initial to a target state).
+//    maybeStates &= reachableStates;
+//    
+//    // Create a vector for the probabilities to go to a state with probability 1 in one step.
+//    std::vector<storm::RationalFunction> oneStepProbabilities = dtmc.getTransitionMatrix().getConstrainedRowSumVector(maybeStates, statesWithProbability1);
+//    
+//    // Determine the set of initial states of the sub-DTMC.
+//    storm::storage::BitVector newInitialStates = dtmc.getInitialStates() % maybeStates;
+//    
+//    // We then build the submatrix that only has the transitions of the maybe states.
+//    storm::storage::SparseMatrix<storm::RationalFunction> submatrix = dtmc.getTransitionMatrix().getSubmatrix(false, maybeStates, maybeStates);
+//    
+//    // To be able to apply heuristics later, we now determine the distance of each state to the initial state.
+//    std::vector<std::pair<storm::storage::sparse::state_type, std::size_t>> stateQueue;
+//    stateQueue.reserve(submatrix.getRowCount());
+//    storm::storage::BitVector statesInQueue(submatrix.getRowCount());
+//    std::vector<std::size_t> distances(submatrix.getRowCount());
+//    
+//    storm::storage::sparse::state_type currentPosition = 0;
+//    for (auto const& initialState : newInitialStates) {
+//        stateQueue.emplace_back(initialState, 0);
+//        statesInQueue.set(initialState);
+//    }
+//    
+//    // Perform a BFS.
+//    while (currentPosition < stateQueue.size()) {
+//        std::pair<storm::storage::sparse::state_type, std::size_t> const& stateDistancePair = stateQueue[currentPosition];
+//        distances[stateDistancePair.first] = stateDistancePair.second;
+//        
+//        for (auto const& successorEntry : submatrix.getRow(stateDistancePair.first)) {
+//            if (!statesInQueue.get(successorEntry.getColumn())) {
+//                stateQueue.emplace_back(successorEntry.getColumn(), stateDistancePair.second + 1);
+//                statesInQueue.set(successorEntry.getColumn());
+//            }
+//        }
+//        ++currentPosition;
+//    }
+//    
+//    storm::modelchecker::reachability::SparseSccModelChecker<storm::RationalFunction> modelchecker;
+//    
+//    return std::make_tuple(modelchecker.computeReachabilityProbability(submatrix, oneStepProbabilities, submatrix.transpose(), newInitialStates, phiStates, psiStates, distances),submatrix, oneStepProbabilities, newInitialStates, threshold, strict);
+//}
 
 /*!
  * Main entry point of the executable storm.
