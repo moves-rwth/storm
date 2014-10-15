@@ -86,15 +86,15 @@ namespace storm {
         template<>
         class ConstantsComparator<storm::RationalFunction> {
         public:
-            bool isOne(storm::RationalFunction const& value) {
+            bool isOne(storm::RationalFunction const& value) const {
                 return value.isOne();
             }
             
-            bool isZero(storm::RationalFunction const& value) {
+            bool isZero(storm::RationalFunction const& value) const {
                 return value.isZero();
             }
             
-            bool isEqual(storm::RationalFunction const& value1, storm::RationalFunction const& value2) {
+            bool isEqual(storm::RationalFunction const& value1, storm::RationalFunction const& value2) const {
                 return value1 == value2;
             }
             
@@ -106,15 +106,15 @@ namespace storm {
         template<>
         class ConstantsComparator<storm::Polynomial> {
         public:
-            bool isOne(storm::Polynomial const& value) {
+            bool isOne(storm::Polynomial const& value) const {
                 return value.isOne();
             }
             
-            bool isZero(storm::Polynomial const& value) {
+            bool isZero(storm::Polynomial const& value) const {
                 return value.isZero();
             }
             
-            bool isEqual(storm::Polynomial const& value1, storm::Polynomial const& value2) {
+            bool isEqual(storm::Polynomial const& value1, storm::Polynomial const& value2) const {
                 return value1 == value2;
             }
             

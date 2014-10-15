@@ -29,6 +29,7 @@
 #include "src/storage/SparseMatrix.h"
 #include "src/settings/SettingsManager.h"
 #include "src/utility/macros.h"
+#include "src/utility/ConstantsComparator.h"
 #include "src/exceptions/WrongFormatException.h"
 #include "src/storage/expressions/ExpressionEvaluation.h"
 
@@ -269,7 +270,7 @@ namespace storm {
                 return result;
             }
                         
-            static std::list<Choice<ValueType>> getUnlabeledTransitions(storm::prism::Program const& program, StateInformation& stateInformation, VariableInformation const& variableInformation, uint_fast64_t stateIndex, std::queue<uint_fast64_t>& stateQueue, expressions::ExpressionEvaluation<ValueType>& eval) {
+            static std::list<Choice<ValueType>> getUnlabeledTransitions(storm::prism::Program const& program, StateInformation& stateInformation, VariableInformation const& variableInformation, uint_fast64_t stateIndex, std::queue<uint_fast64_t>& stateQueue, storm::utility::ConstantsComparator<ValueType> const& comparator, expressions::ExpressionEvaluation<ValueType>& eval) {
                 std::list<Choice<ValueType>> result;
                 
                 StateType const* currentState = stateInformation.reachableStates[stateIndex];
@@ -316,14 +317,14 @@ namespace storm {
                         }
                         
                         // Check that the resulting distribution is in fact a distribution.
-                        STORM_LOG_THROW(storm::utility::isOne(probabilitySum), storm::exceptions::WrongFormatException, "Probabilities do not sum to one for command '" << command << "' (sum = " << probabilitySum << ").");
+                        STORM_LOG_THROW(!comparator.isConstant(probabilitySum) || comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException, "Probabilities do not sum to one for command '" << command << "' (sum = " << probabilitySum << ").");
                     }
                 }
                 
                 return result;
             }
             
-            static std::list<Choice<ValueType>> getLabeledTransitions(storm::prism::Program const& program, StateInformation& stateInformation, VariableInformation const& variableInformation, uint_fast64_t stateIndex, std::queue<uint_fast64_t>& stateQueue, expressions::ExpressionEvaluation<ValueType>& eval) {
+            static std::list<Choice<ValueType>> getLabeledTransitions(storm::prism::Program const& program, StateInformation& stateInformation, VariableInformation const& variableInformation, uint_fast64_t stateIndex, std::queue<uint_fast64_t>& stateQueue, storm::utility::ConstantsComparator<ValueType> const& comparator, expressions::ExpressionEvaluation<ValueType>& eval) {
                 std::list<Choice<ValueType>> result;
                 
                 for (std::string const& action : program.getActions()) {
@@ -422,10 +423,7 @@ namespace storm {
                             }
                             
                             // Check that the resulting distribution is in fact a distribution.
-                            if (!storm::utility::isOne(probabilitySum)) {
-                                LOG4CPLUS_ERROR(logger, "Sum of update probabilities (" << probabilitySum << ") is not one for some command.");
-                                throw storm::exceptions::WrongFormatException() << "Sum of update probabilities do sum to " << probabilitySum << " to one for some command.";
-                            }
+                            STORM_LOG_THROW(!comparator.isConstant(probabilitySum) || comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException, "Sum of update probabilities do sum to " << probabilitySum << " to one for some command.");
                             
                             // Dispose of the temporary maps.
                             delete currentTargetStates;
@@ -467,7 +465,7 @@ namespace storm {
              * @return A tuple containing a vector with all rows at which the nondeterministic choices of each state begin
              * and a vector containing the labels associated with each choice.
              */
-            static std::vector<boost::container::flat_set<uint_fast64_t>> buildMatrices(storm::prism::Program const& program, VariableInformation const& variableInformation, std::vector<storm::prism::TransitionReward> const& transitionRewards, StateInformation& stateInformation, bool deterministicModel, storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, storm::storage::SparseMatrixBuilder<ValueType>& transitionRewardMatrixBuilder, expressions::ExpressionEvaluation<ValueType>& eval) {
+            static std::vector<boost::container::flat_set<uint_fast64_t>> buildMatrices(storm::prism::Program const& program, VariableInformation const& variableInformation, std::vector<storm::prism::TransitionReward> const& transitionRewards, StateInformation& stateInformation, bool deterministicModel, storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, storm::storage::SparseMatrixBuilder<ValueType>& transitionRewardMatrixBuilder, storm::utility::ConstantsComparator<ValueType> const& comparator, expressions::ExpressionEvaluation<ValueType>& eval) {
                 std::vector<boost::container::flat_set<uint_fast64_t>> choiceLabels;
                 
                 // Initialize a queue and insert the initial state.
@@ -498,8 +496,8 @@ namespace storm {
                     uint_fast64_t currentState = stateQueue.front();
             
                     // Retrieve all choices for the current state.
-                    std::list<Choice<ValueType>> allUnlabeledChoices = getUnlabeledTransitions(program, stateInformation, variableInformation, currentState, stateQueue, eval);
-                    std::list<Choice<ValueType>> allLabeledChoices = getLabeledTransitions(program, stateInformation, variableInformation, currentState, stateQueue, eval);
+                    std::list<Choice<ValueType>> allUnlabeledChoices = getUnlabeledTransitions(program, stateInformation, variableInformation, currentState, stateQueue, comparator, eval);
+                    std::list<Choice<ValueType>> allLabeledChoices = getLabeledTransitions(program, stateInformation, variableInformation, currentState, stateQueue, comparator, eval);
                     
                     uint_fast64_t totalNumberOfChoices = allUnlabeledChoices.size() + allLabeledChoices.size();
                     
@@ -669,7 +667,8 @@ namespace storm {
                 // Build the transition and reward matrices.
                 storm::storage::SparseMatrixBuilder<ValueType> transitionMatrixBuilder(0, 0, 0, false, !deterministicModel, 0);
                 storm::storage::SparseMatrixBuilder<ValueType> transitionRewardMatrixBuilder(0, 0, 0, false, !deterministicModel, 0);
-                modelComponents.choiceLabeling = buildMatrices(program, variableInformation, rewardModel.getTransitionRewards(), stateInformation, deterministicModel, transitionMatrixBuilder, transitionRewardMatrixBuilder, eval);
+                storm::utility::ConstantsComparator<ValueType> comparator;
+                modelComponents.choiceLabeling = buildMatrices(program, variableInformation, rewardModel.getTransitionRewards(), stateInformation, deterministicModel, transitionMatrixBuilder, transitionRewardMatrixBuilder, comparator, eval);
                 
                 // Finalize the resulting matrices.
                 modelComponents.transitionMatrix = transitionMatrixBuilder.build();
