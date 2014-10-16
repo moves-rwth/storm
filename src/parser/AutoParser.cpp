@@ -85,7 +85,7 @@ namespace storm {
 
 			// Find and read in the hint.
 			std::string formatString = "%" + std::to_string(STORM_PARSER_AUTOPARSER_HINT_LENGTH) + "s";
-			char hint[5];
+            char hint[STORM_PARSER_AUTOPARSER_HINT_LENGTH + 1];
 		#ifdef WINDOWS
 			sscanf_s(filehintBuffer, formatString.c_str(), hint, STORM_PARSER_AUTOPARSER_HINT_LENGTH + 1);
 		#else
