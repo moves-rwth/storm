@@ -628,6 +628,35 @@ namespace storm {
                             blockProbability[targetBlock] = entry.getValue();
                         }
                     }
+
+#ifdef DEBUG
+                    // FIXME: take this out.
+                    // As a debug check, we walk through all states and check if their behaviour is the same modulo the
+                    // partition.
+                    for (auto const& state : block) {
+                        std::map<storm::storage::sparse::state_type, ValueType> stateProbability;
+                        for (auto const& entry : model.getTransitionMatrix().getRow(state)) {
+                            storm::storage::sparse::state_type targetBlock = partition.getBlock(entry.getColumn()).getId();
+                            auto probIterator = stateProbability.find(targetBlock);
+                            if (probIterator != stateProbability.end()) {
+                                probIterator->second += entry.getValue();
+                            } else {
+                                stateProbability[targetBlock] = entry.getValue();
+                            }
+                        }
+                        if (stateProbability != blockProbability) {
+                            std::cout << "state: " << std::endl;
+                            for (auto const& entry : stateProbability) {
+                                std::cout << entry.first << " -> " << entry.second << std::endl;
+                            }
+                            std::cout << "block: " << std::endl;
+                            for (auto const& entry : blockProbability) {
+                                std::cout << entry.first << " -> " << entry.second << std::endl;
+                            }
+                        }
+                        STORM_LOG_ASSERT(stateProbability == blockProbability, "Quotient distributions did not match.");
+                    }
+#endif
                     
                     // Now add them to the actual matrix.
                     for (auto const& probabilityEntry : blockProbability) {
@@ -745,6 +774,10 @@ namespace storm {
                     newBlock.markAsSplitter();
                 }
                 beginIndex = currentIndex;
+            }
+            
+            for (auto index = currentIndex; index < endIndex - 1; ++index) {
+                STORM_LOG_ASSERT(comparator.isEqual(partition.getValueAtPosition(index + 1), partition.getValueAtPosition(index + 1)), "Expected equal probabilities after sorting block, but got '" << partition.getValueAtPosition(index) << "' and '" << partition.getValueAtPosition(index + 1) << "'.");
             }
         }
         
