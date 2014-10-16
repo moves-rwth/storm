@@ -43,6 +43,9 @@ namespace storm {
                     }
                 }
                 
+                // Make sure that we have eliminated all transitions from the initial state.
+                STORM_LOG_ASSERT(flexibleMatrix.getRow(*initialStates.begin()).empty(), "The transitions of the initial states are non-empty.");
+                
                 auto modelCheckingEnd = std::chrono::high_resolution_clock::now();
                 auto totalTimeEnd = std::chrono::high_resolution_clock::now();
                 
@@ -127,6 +130,7 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> submatrix = dtmc.getTransitionMatrix().getSubmatrix(false, maybeStates, maybeStates);
                 
                 // To be able to apply heuristics later, we now determine the distance of each state to the initial state.
+                // We start by setting up the data structures.
                 std::vector<std::pair<storm::storage::sparse::state_type, std::size_t>> stateQueue;
                 stateQueue.reserve(submatrix.getRowCount());
                 storm::storage::BitVector statesInQueue(submatrix.getRowCount());
@@ -138,7 +142,7 @@ namespace storm {
                     statesInQueue.set(initialState);
                 }
                 
-                // Perform a BFS.
+                // And then perform the BFS.
                 while (currentPosition < stateQueue.size()) {
                     std::pair<storm::storage::sparse::state_type, std::size_t> const& stateDistancePair = stateQueue[currentPosition];
                     distances[stateDistancePair.first] = stateDistancePair.second;

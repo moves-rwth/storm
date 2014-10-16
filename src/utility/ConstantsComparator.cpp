@@ -21,17 +21,10 @@ namespace storm {
         }
         
         template<typename ValueType>
-        ValueType& simplify(ValueType& value) {
+        ValueType simplify(ValueType value) {
             // In the general case, we don't to anything here, but merely return the value. If something else is
             // supposed to happen here, the templated function can be specialized for this particular type.
-            return value;
-        }
-
-        template<typename ValueType>
-        ValueType&& simplify(ValueType&& value) {
-            // In the general case, we don't to anything here, but merely return the value. If something else is
-            // supposed to happen here, the templated function can be specialized for this particular type.
-            return std::move(value);
+            return std::forward<ValueType>(value);
         }
 
         template<typename ValueType>
