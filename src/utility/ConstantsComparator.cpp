@@ -26,7 +26,14 @@ namespace storm {
             // supposed to happen here, the templated function can be specialized for this particular type.
             return value;
         }
-        
+
+        template<typename ValueType>
+        ValueType&& simplify(ValueType&& value) {
+            // In the general case, we don't to anything here, but merely return the value. If something else is
+            // supposed to happen here, the templated function can be specialized for this particular type.
+            return std::move(value);
+        }
+
         template<typename ValueType>
         bool ConstantsComparator<ValueType>::isOne(ValueType const& value) const {
             return value == one<ValueType>();
@@ -69,10 +76,14 @@ namespace storm {
 #ifdef PARAMETRIC_SYSTEMS
         template<>
         RationalFunction& simplify(RationalFunction& value) {
-            STORM_LOG_DEBUG("Simplifying " << value);
             value.simplify();
-            STORM_LOG_DEBUG("done.");
             return value;
+        }
+
+        template<>
+        RationalFunction&& simplify(RationalFunction&& value) {
+            value.simplify();
+            return std::move(value);
         }
         
         bool ConstantsComparator<storm::RationalFunction>::isOne(storm::RationalFunction const& value) const {
@@ -131,6 +142,9 @@ namespace storm {
 
         template double& simplify(double& value);
         template RationalFunction& simplify(RationalFunction& value);
+
+        template double&& simplify(double&& value);
+        template RationalFunction&& simplify(RationalFunction&& value);
         
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, double>& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, double>& matrixEntry);
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, RationalFunction>& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, RationalFunction>& matrixEntry);

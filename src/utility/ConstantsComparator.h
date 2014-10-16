@@ -29,7 +29,10 @@ namespace storm {
         
         template<typename ValueType>
         ValueType& simplify(ValueType& value);
-        
+
+        template<typename ValueType>
+        ValueType&& simplify(ValueType&& value);
+
         // A class that can be used for comparing constants.
         template<typename ValueType>
         class ConstantsComparator {
@@ -65,7 +68,10 @@ namespace storm {
 #ifdef PARAMETRIC_SYSTEMS
         template<>
         RationalFunction& simplify(RationalFunction& value);
-        
+
+        template<>
+        RationalFunction&& simplify(RationalFunction&& value);
+
         template<>
         class ConstantsComparator<storm::RationalFunction> {
         public:

@@ -160,7 +160,7 @@ int main(const int argc, const char** argv) {
             
             dtmc->printModelInformationToStream(std::cout);
         }
-        
+    
         assert(dtmc);
         storm::modelchecker::reachability::CollectConstraints<storm::RationalFunction> constraintCollector;
         constraintCollector(*dtmc);
@@ -172,7 +172,21 @@ int main(const int argc, const char** argv) {
 
         storm::RationalFunction valueFunction = modelchecker.computeReachabilityProbability(*dtmc, filterFormula);
         STORM_PRINT_AND_LOG(std::endl << "computed value " << valueFunction << std::endl);
-        
+    
+//    // Perform bisimulation minimization if requested.
+//    if (storm::settings::generalSettings().isBisimulationSet()) {
+//        storm::storage::DeterministicModelStrongBisimulationDecomposition<storm::RationalFunction> bisimulationDecomposition(*dtmc, true);
+//        dtmc = bisimulationDecomposition.getQuotient()->as<storm::models::Dtmc<storm::RationalFunction>>();
+//        
+//        dtmc->printModelInformationToStream(std::cout);
+//    }
+//
+//    storm::RationalFunction valueFunction2 = modelchecker.computeReachabilityProbability(*dtmc, filterFormula);
+//    STORM_PRINT_AND_LOG(std::endl << "computed value2 " << valueFunction2 << std::endl);
+//
+//    storm::RationalFunction diff = storm::utility::simplify(valueFunction - valueFunction2);
+//    STORM_PRINT_AND_LOG(std::endl << "difference: " << diff << std::endl);
+    
         // Get variables from parameter definitions in prism program.
         std::set<storm::Variable> parameters;
         for(auto constant : program.getConstants())

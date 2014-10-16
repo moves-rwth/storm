@@ -30,9 +30,10 @@ namespace storm {
                 auto conversionEnd = std::chrono::high_resolution_clock::now();
                 
                 // Then, we recursively treat all SCCs.
+                storm::utility::ConstantsComparator<ValueType> comparator;
                 auto modelCheckingStart = std::chrono::high_resolution_clock::now();
                 std::vector<storm::storage::sparse::state_type> entryStateQueue;
-                uint_fast64_t maximalDepth = treatScc(flexibleMatrix, oneStepProbabilities, initialStates, subsystem, transitionMatrix, flexibleBackwardTransitions, false, 0, storm::settings::parametricSettings().getMaximalSccSize(), entryStateQueue, distances);
+                uint_fast64_t maximalDepth = treatScc(flexibleMatrix, oneStepProbabilities, initialStates, subsystem, transitionMatrix, flexibleBackwardTransitions, false, 0, storm::settings::parametricSettings().getMaximalSccSize(), entryStateQueue, comparator, distances);
                 
                 // If the entry states were to be eliminated last, we need to do so now.
                 STORM_LOG_DEBUG("Eliminating " << entryStateQueue.size() << " entry states as a last step.");
@@ -169,7 +170,7 @@ namespace storm {
             }
             
             template<typename ValueType>
-            uint_fast64_t SparseSccModelChecker<ValueType>::treatScc(FlexibleSparseMatrix<ValueType>& matrix, std::vector<ValueType>& oneStepProbabilities, storm::storage::BitVector const& entryStates, storm::storage::BitVector const& scc, storm::storage::SparseMatrix<ValueType> const& forwardTransitions, FlexibleSparseMatrix<ValueType>& backwardTransitions, bool eliminateEntryStates, uint_fast64_t level, uint_fast64_t maximalSccSize, std::vector<storm::storage::sparse::state_type>& entryStateQueue, boost::optional<std::vector<std::size_t>> const& distances) {
+            uint_fast64_t SparseSccModelChecker<ValueType>::treatScc(FlexibleSparseMatrix<ValueType>& matrix, std::vector<ValueType>& oneStepProbabilities, storm::storage::BitVector const& entryStates, storm::storage::BitVector const& scc, storm::storage::SparseMatrix<ValueType> const& forwardTransitions, FlexibleSparseMatrix<ValueType>& backwardTransitions, bool eliminateEntryStates, uint_fast64_t level, uint_fast64_t maximalSccSize, std::vector<storm::storage::sparse::state_type>& entryStateQueue, storm::utility::ConstantsComparator<ValueType> const& comparator, boost::optional<std::vector<std::size_t>> const& distances) {
                 uint_fast64_t maximalDepth = level;
                 
                 // If the SCCs are large enough, we try to split them further.
@@ -198,7 +199,9 @@ namespace storm {
                     if (storm::settings::parametricSettings().isSortTrivialSccsSet()) {
                         STORM_LOG_THROW(distances, storm::exceptions::IllegalFunctionCallException, "Cannot sort according to distances because none were provided.");
                         std::vector<std::size_t> const& actualDistances = distances.get();
-                        std::sort(trivialSccs.begin(), trivialSccs.end(), [&actualDistances] (std::pair<storm::storage::sparse::state_type, uint_fast64_t> const& state1, std::pair<storm::storage::sparse::state_type, uint_fast64_t> const& state2) -> bool { return actualDistances[state1.first] > actualDistances[state2.first]; } );
+//                        std::sort(trivialSccs.begin(), trivialSccs.end(), [&actualDistances] (std::pair<storm::storage::sparse::state_type, uint_fast64_t> const& state1, std::pair<storm::storage::sparse::state_type, uint_fast64_t> const& state2) -> bool { return actualDistances[state1.first] > actualDistances[state2.first]; } );
+
+                        std::sort(trivialSccs.begin(), trivialSccs.end(), [&oneStepProbabilities,&comparator] (std::pair<storm::storage::sparse::state_type, uint_fast64_t> const& state1, std::pair<storm::storage::sparse::state_type, uint_fast64_t> const& state2) -> bool { return comparator.isZero(oneStepProbabilities[state1.first]) && !comparator.isZero(oneStepProbabilities[state2.first]); } );
                     }
                     for (auto const& stateIndexPair : trivialSccs) {
                         eliminateState(matrix, oneStepProbabilities, stateIndexPair.first, backwardTransitions);
@@ -225,7 +228,7 @@ namespace storm {
                         }
                         
                         // Recursively descend in SCC-hierarchy.
-                        uint_fast64_t depth = treatScc(matrix, oneStepProbabilities, entryStates, newSccAsBitVector, forwardTransitions, backwardTransitions, !storm::settings::parametricSettings().isEliminateEntryStatesLastSet(), level + 1, maximalSccSize, entryStateQueue, distances);
+                        uint_fast64_t depth = treatScc(matrix, oneStepProbabilities, entryStates, newSccAsBitVector, forwardTransitions, backwardTransitions, !storm::settings::parametricSettings().isEliminateEntryStatesLastSet(), level + 1, maximalSccSize, entryStateQueue, comparator, distances);
                         maximalDepth = std::max(maximalDepth, depth);
                     }
                     
@@ -236,9 +239,12 @@ namespace storm {
                     
                     std::vector<uint_fast64_t> statesToEliminate(remainingStates.begin(), remainingStates.end());
                     if (storm::settings::parametricSettings().isSortTrivialSccsSet()) {
-                        STORM_LOG_THROW(distances, storm::exceptions::IllegalFunctionCallException, "Cannot sort according to distances because none were provided.");
-                        std::vector<std::size_t> const& actualDistances = distances.get();
-                        std::sort(statesToEliminate.begin(), statesToEliminate.end(), [&actualDistances] (storm::storage::sparse::state_type const& state1, storm::storage::sparse::state_type const& state2) -> bool { return actualDistances[state1] > actualDistances[state2]; } );
+//                        STORM_LOG_THROW(distances, storm::exceptions::IllegalFunctionCallException, "Cannot sort according to distances because none were provided.");
+//                        std::vector<std::size_t> const& actualDistances = distances.get();
+//                        std::sort(statesToEliminate.begin(), statesToEliminate.end(), [&actualDistances] (storm::storage::sparse::state_type const& state1, storm::storage::sparse::state_type const& state2) -> bool { return actualDistances[state1] > actualDistances[state2]; } );
+
+                        std::sort(statesToEliminate.begin(), statesToEliminate.end(), [&oneStepProbabilities,&comparator] (storm::storage::sparse::state_type const& state1, storm::storage::sparse::state_type const& state2) -> bool { return comparator.isZero(oneStepProbabilities[state1]) && !comparator.isZero(oneStepProbabilities[state2]); } );
+
                     }
                     
                     // Eliminate the remaining states that do not have a self-loop (in the current, i.e. modified)
@@ -434,19 +440,19 @@ namespace storm {
                     predecessorForwardTransitions = std::move(newSuccessors);
                     
                     // Add the probabilities to go to a target state in just one step.
-                    multiplicationClock = std::chrono::high_resolution_clock::now();
-                    auto tmp1 = multiplyFactor * oneStepProbabilities[state];
-                    multiplicationTime += std::chrono::high_resolution_clock::now() - multiplicationClock;
-                    simplifyClock = std::chrono::high_resolution_clock::now();
-                    tmp1 = storm::utility::simplify(tmp1);
-                    simplifyTime += std::chrono::high_resolution_clock::now() - simplifyClock;
+//                    multiplicationClock = std::chrono::high_resolution_clock::now();
+//                    auto tmp1 = multiplyFactor * oneStepProbabilities[state];
+//                    multiplicationTime += std::chrono::high_resolution_clock::now() - multiplicationClock;
+//                    simplifyClock = std::chrono::high_resolution_clock::now();
+//                    tmp1 = storm::utility::simplify(tmp1);
+//                    simplifyTime += std::chrono::high_resolution_clock::now() - simplifyClock;
+//                    auto tmp2 = oneStepProbabilities[predecessor] + tmp1;
+//                    simplifyClock = std::chrono::high_resolution_clock::now();
+//                    tmp2 = storm::utility::simplify(tmp2);
+//                    simplifyTime += std::chrono::high_resolution_clock::now() - simplifyClock;
                     additionClock2 = std::chrono::high_resolution_clock::now();
-                    auto tmp2 = oneStepProbabilities[predecessor] + tmp1;
+                    oneStepProbabilities[predecessor] += storm::utility::simplify(multiplyFactor * oneStepProbabilities[state]);
                     additionTime2 += std::chrono::high_resolution_clock::now() - additionClock2;
-                    simplifyClock = std::chrono::high_resolution_clock::now();
-                    tmp2 = storm::utility::simplify(tmp2);
-                    simplifyTime += std::chrono::high_resolution_clock::now() - simplifyClock;
-                    oneStepProbabilities[predecessor] = tmp2;
                     
                     STORM_LOG_DEBUG("Fixed new next-state probabilities of predecessor states.");
                 }

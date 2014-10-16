@@ -648,7 +648,7 @@ namespace storm {
                     }
                 }
             }
-            
+                        
             // Now check which of the blocks of the partition contain at least one initial state.
             for (auto initialState : model.getInitialStates()) {
                 Block const& initialBlock = partition.getBlock(initialState);

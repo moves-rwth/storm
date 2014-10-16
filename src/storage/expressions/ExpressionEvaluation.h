@@ -167,7 +167,7 @@ namespace storm {
         class ExpressionEvaluation
         {
 		public:
-            ExpressionEvaluation() : mState(), cache(new carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>())
+            ExpressionEvaluation() : mState(), cache(new carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>(100000))
             {
                 // Intentionally left empty.
             }
