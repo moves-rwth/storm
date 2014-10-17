@@ -133,6 +133,9 @@ namespace storm {
         template Polynomial one();
         template Polynomial zero();
 
+        template double simplify(double value);
+        template RationalFunction simplify(RationalFunction value);
+        
         template double& simplify(double& value);
         template RationalFunction& simplify(RationalFunction& value);
 
