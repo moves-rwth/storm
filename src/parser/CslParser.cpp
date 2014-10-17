@@ -80,8 +80,7 @@ struct CslParser::CslGrammar : qi::grammar<Iterator, std::shared_ptr<csl::CslFil
 		//(Propositions, probabilistic/reward formulas, and state formulas in brackets)
 		atomicStateFormula %= probabilisticBoundOperator | steadyStateBoundOperator | atomicProposition | (qi::lit("(") >> stateFormula >> qi::lit(")")) | (qi::lit("[") >> stateFormula >> qi::lit("]"));
 		atomicStateFormula.name("atomic state formula");
-		atomicProposition = (freeIdentifierName)[qi::_val =
-				MAKE(csl::Ap<double>, qi::_1)];
+		atomicProposition = (freeIdentifierName)[qi::_val = MAKE(csl::Ap<double>, qi::_1)] | (qi::lit("\"") > (freeIdentifierName)[qi::_val = MAKE(csl::Ap<double>, qi::_1)] > qi::lit("\""));
 		atomicProposition.name("atomic proposition");
 		probabilisticBoundOperator = (
 				(qi::lit("P") >> comparisonType > qi::double_ > pathFormula )[qi::_val =

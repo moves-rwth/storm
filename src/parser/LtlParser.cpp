@@ -88,8 +88,7 @@ struct LtlParser::LtlGrammar : qi::grammar<Iterator, std::shared_ptr<storm::prop
 		//(Propositions, probabilistic/reward formulas, and state formulas in brackets)
 		atomicLtlFormula %= pathFormula | atomicProposition | qi::lit("(") >> formula >> qi::lit(")")| qi::lit("[") >> formula >> qi::lit("]");
 		atomicLtlFormula.name("Atomic LTL formula");
-		atomicProposition = (freeIdentifierName)[qi::_val =
-				MAKE(ltl::Ap<double>, qi::_1)];
+		atomicProposition = (freeIdentifierName)[qi::_val = MAKE(ltl::Ap<double>, qi::_1)] | (qi::lit("\"") > (freeIdentifierName)[qi::_val = MAKE(ltl::Ap<double>, qi::_1)] > qi::lit("\""));
 		atomicProposition.name("Atomic Proposition");
 
 		//This block defines rules for parsing probabilistic path formulas
