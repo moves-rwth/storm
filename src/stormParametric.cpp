@@ -10,7 +10,7 @@
 #include "src/utility/export.h"
 #include "src/modelchecker/reachability/CollectConstraints.h"
 
-#include "src/modelchecker/reachability/DirectEncoding.h"
+//#include "src/modelchecker/reachability/DirectEncoding.h"
 #include "src/storage/DeterministicModelStrongBisimulationDecomposition.h"
 #include "src/modelchecker/reachability/SparseSccModelChecker.h"
 #include "src/storage/parameters.h"
@@ -171,7 +171,9 @@ int main(const int argc, const char** argv) {
         storm::modelchecker::reachability::SparseSccModelChecker<storm::RationalFunction> modelchecker;
 
         storm::RationalFunction valueFunction = modelchecker.computeReachabilityProbability(*dtmc, filterFormula);
-        STORM_PRINT_AND_LOG(std::endl << "computed value " << valueFunction << std::endl);
+//        STORM_PRINT_AND_LOG(std::endl << "Result: (" << carl::computePolynomial(valueFunction.nominator()) << ") / (" << carl::computePolynomial(valueFunction.denominator()) << ")" << std::endl);
+        STORM_PRINT_AND_LOG(std::endl << "Result: (" << valueFunction.nominator() << ") / (" << valueFunction.denominator() << ")" << std::endl);
+        STORM_PRINT_AND_LOG(std::endl << "Result: " << valueFunction << std::endl);
     
 //    // Perform bisimulation minimization if requested.
 //    if (storm::settings::generalSettings().isBisimulationSet()) {
@@ -180,7 +182,7 @@ int main(const int argc, const char** argv) {
 //        
 //        dtmc->printModelInformationToStream(std::cout);
 //    }
-//
+
 //    storm::RationalFunction valueFunction2 = modelchecker.computeReachabilityProbability(*dtmc, filterFormula);
 //    STORM_PRINT_AND_LOG(std::endl << "computed value2 " << valueFunction2 << std::endl);
 //
@@ -198,7 +200,7 @@ int main(const int argc, const char** argv) {
                 parameters.insert(p);
             }
         }
-        //
+    
         STORM_LOG_ASSERT(parameters == valueFunction.gatherVariables(), "Parameters in result and program definition do not coincide.");
         
         if(storm::settings::parametricSettings().exportResultToFile()) {

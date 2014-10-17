@@ -13,8 +13,9 @@ namespace storm
 //	typedef carl::MultivariatePolynomial<cln::cl_RA> Polynomial;
 	typedef carl::Variable  Variable;
     typedef carl::MultivariatePolynomial<cln::cl_RA> RawPolynomial;
-    typedef carl::FactorizedPolynomial<RawPolynomial> Polynomial;
-//    typedef RawPolynomial Polynomial;
+//    typedef carl::FactorizedPolynomial<RawPolynomial> Polynomial;
+
+    typedef RawPolynomial Polynomial;
 	
 	typedef carl::CompareRelation CompareRelation;
 	typedef carl::RationalFunction<Polynomial> RationalFunction;

@@ -110,7 +110,8 @@ namespace storm {
 				auto it =  mSharedState->find(varName);
 				if(it != mSharedState->end())
 				{
-                    mValue = T(typename T::PolyType(typename T::PolyType::PolyType(it->second), cache));
+                    mValue = convertVariableToPolynomial(it->second);
+//                    mValue = T(typename T::PolyType(typename T::PolyType::PolyType(it->second), cache));
 				}
 				else
 				{
