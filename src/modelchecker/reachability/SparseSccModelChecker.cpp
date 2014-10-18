@@ -358,6 +358,7 @@ namespace storm {
                     
                     // Skip the state itself as one of its predecessors.
                     if (predecessor == state) {
+                        assert(hasSelfLoop);
                         continue;
                     }
                     
