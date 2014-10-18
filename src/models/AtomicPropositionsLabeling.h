@@ -249,7 +249,7 @@ public:
         auto apIndexPair = nameToLabelingMap.find(ap);
 		return this->singleLabelings[apIndexPair->second].get(state);
 	}
-
+    
 	/*!
 	 * Returns the number of atomic propositions managed by this object (set in the initialization).
      *

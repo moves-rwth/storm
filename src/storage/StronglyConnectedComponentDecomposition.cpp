@@ -171,7 +171,7 @@ namespace storm {
                     p.push_back(currentState);
                 
                     for (auto const& successor : transitionMatrix.getRowGroup(currentState)) {
-                        if (subsystem.get(successor.getColumn()) && successor.getValue() != storm::utility::constantZero<ValueType>()) {
+                        if (subsystem.get(successor.getColumn()) && !storm::utility::isZero(successor.getValue())) {
                             if (currentState == successor.getColumn()) {
                                 statesWithSelfLoop.set(currentState);
                             }
