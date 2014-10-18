@@ -152,10 +152,36 @@ int main(const int argc, const char** argv) {
         std::cout << "Parsing and translating the model took " << std::chrono::duration_cast<std::chrono::milliseconds>(programTranslationEnd - programTranslationStart).count() << "ms." << std::endl << std::endl;
         
         std::shared_ptr<storm::models::Dtmc<storm::RationalFunction>> dtmc = model->as<storm::models::Dtmc<storm::RationalFunction>>();
-        
+    
+        STORM_LOG_THROW(storm::settings::generalSettings().isPctlPropertySet(), storm::exceptions::InvalidSettingsException, "Unable to perform model checking without a property.");
+        std::shared_ptr<storm::properties::prctl::PrctlFilter<double>> filterFormula = storm::parser::PrctlParser::parsePrctlFormula(storm::settings::generalSettings().getPctlProperty());
+
+    
         // Perform bisimulation minimization if requested.
         if (storm::settings::generalSettings().isBisimulationSet()) {
-            storm::storage::DeterministicModelStrongBisimulationDecomposition<storm::RationalFunction> bisimulationDecomposition(*dtmc, true);
+            // The first thing we need to do is to make sure the formula is of the correct form and - if so - extract
+            // the bitvector representation of the atomic propositions.
+            std::shared_ptr<storm::properties::prctl::Until<double>> untilFormula = std::dynamic_pointer_cast<storm::properties::prctl::Until<double>>(filterFormula->getChild());
+            std::shared_ptr<storm::properties::prctl::AbstractStateFormula<double>> phiStateFormula;
+            std::shared_ptr<storm::properties::prctl::AbstractStateFormula<double>> psiStateFormula;
+            if (untilFormula.get() != nullptr) {
+                phiStateFormula = untilFormula->getLeft();
+                psiStateFormula = untilFormula->getRight();
+            } else {
+                std::shared_ptr<storm::properties::prctl::Eventually<double>> eventuallyFormula = std::dynamic_pointer_cast<storm::properties::prctl::Eventually<double>>(filterFormula->getChild());
+                STORM_LOG_THROW(eventuallyFormula.get() != nullptr, storm::exceptions::InvalidPropertyException, "Illegal formula " << *untilFormula << " for parametric model checking. Note that only unbounded reachability properties are admitted.");
+                
+                phiStateFormula = std::shared_ptr<storm::properties::prctl::Ap<double>>(new storm::properties::prctl::Ap<double>("true"));
+                psiStateFormula = eventuallyFormula->getChild();
+            }
+            
+            // Now we need to make sure the formulas defining the phi and psi states are just labels.
+            std::shared_ptr<storm::properties::prctl::Ap<double>> phiStateFormulaApFormula = std::dynamic_pointer_cast<storm::properties::prctl::Ap<double>>(phiStateFormula);
+            std::shared_ptr<storm::properties::prctl::Ap<double>> psiStateFormulaApFormula = std::dynamic_pointer_cast<storm::properties::prctl::Ap<double>>(psiStateFormula);
+            STORM_LOG_THROW(phiStateFormulaApFormula.get() != nullptr, storm::exceptions::InvalidPropertyException, "Illegal formula " << *phiStateFormula << " for parametric model checking. Note that only atomic propositions are admitted in that position.");
+            STORM_LOG_THROW(psiStateFormulaApFormula.get() != nullptr, storm::exceptions::InvalidPropertyException, "Illegal formula " << *psiStateFormula << " for parametric model checking. Note that only atomic propositions are admitted in that position.");
+            
+            storm::storage::DeterministicModelStrongBisimulationDecomposition<storm::RationalFunction> bisimulationDecomposition(*dtmc, phiStateFormulaApFormula->getAp(), psiStateFormulaApFormula->getAp(), false, true);
             dtmc = bisimulationDecomposition.getQuotient()->as<storm::models::Dtmc<storm::RationalFunction>>();
             
             dtmc->printModelInformationToStream(std::cout);
@@ -164,9 +190,6 @@ int main(const int argc, const char** argv) {
         assert(dtmc);
         storm::modelchecker::reachability::CollectConstraints<storm::RationalFunction> constraintCollector;
         constraintCollector(*dtmc);
-        
-        STORM_LOG_THROW(storm::settings::generalSettings().isPctlPropertySet(), storm::exceptions::InvalidSettingsException, "Unable to perform model checking without a property.");
-        std::shared_ptr<storm::properties::prctl::PrctlFilter<double>> filterFormula = storm::parser::PrctlParser::parsePrctlFormula(storm::settings::generalSettings().getPctlProperty());
     
         storm::modelchecker::reachability::SparseSccModelChecker<storm::RationalFunction> modelchecker;
 
