@@ -28,6 +28,8 @@ namespace storm {
                 
                 index_type getNumberOfRows() const;
                 
+                void print() const;
+                
             private:
                 std::vector<row_type> data;
             };

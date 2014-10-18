@@ -43,6 +43,10 @@ namespace storm {
                     }
                 }
                 
+                // Finally eliminate initial state.
+                STORM_PRINT_AND_LOG("Eliminating initial state " << *initialStates.begin() << std::endl);
+                eliminateState(flexibleMatrix, oneStepProbabilities, *initialStates.begin(), flexibleBackwardTransitions);
+                
                 // Make sure that we have eliminated all transitions from the initial state.
                 STORM_LOG_ASSERT(flexibleMatrix.getRow(*initialStates.begin()).empty(), "The transitions of the initial states are non-empty.");
                 
@@ -119,6 +123,7 @@ namespace storm {
                 
                 // Subtract from the maybe states the set of states that is not reachable (on a path from the initial to a target state).
                 maybeStates &= reachableStates;
+                STORM_PRINT_AND_LOG("Found " << maybeStates.getNumberOfSetBits() << " maybe states." << std::endl);
 
                 // Create a vector for the probabilities to go to a state with probability 1 in one step.
                 std::vector<ValueType> oneStepProbabilities = dtmc.getTransitionMatrix().getConstrainedRowSumVector(maybeStates, statesWithProbability1);
@@ -292,6 +297,14 @@ namespace storm {
             template<typename ValueType>
             void SparseSccModelChecker<ValueType>::eliminateState(FlexibleSparseMatrix<ValueType>& matrix, std::vector<ValueType>& oneStepProbabilities, uint_fast64_t state, FlexibleSparseMatrix<ValueType>& backwardTransitions) {
                 
+//                std::cout << "before eliminating state " << state << std::endl;
+//                matrix.print();
+//                std::cout << "one step probs" << std::endl;
+//                for (uint_fast64_t index = 0; index < oneStepProbabilities.size(); ++index) {
+//                    std::cout << "(" << index << ", " << oneStepProbabilities[index] << ") ";
+//                }
+//                std::cout << std::endl;
+                
                 auto eliminationStart = std::chrono::high_resolution_clock::now();
                 
                 ++counter;
@@ -329,14 +342,21 @@ namespace storm {
                 // Scale all entries in this row with (1 / (1 - loopProbability)) only in case there was a self-loop.
                 std::size_t scaledSuccessors = 0;
                 if (hasSelfLoop) {
+//                    std::cout << "loop: " << loopProbability << std::endl;
+//                    ValueType oneMinusLoop = (storm::utility::constantOne<ValueType>() - loopProbability);
+//                    std::cout << "1-loop: " << oneMinusLoop << std::endl;
+//                    std::cout << "1/(1-loop): " << (storm::utility::constantOne<ValueType>() / oneMinusLoop) << std::endl;
                     loopProbability = storm::utility::constantOne<ValueType>() / (storm::utility::constantOne<ValueType>() - loopProbability);
                     storm::utility::simplify(loopProbability);
+//                    std::cout << "state has self-loop with probability " << loopProbability << std::endl;
                     for (auto& entry : matrix.getRow(state)) {
                         // Only scale the non-diagonal entries.
                         if (entry.getColumn() != state) {
                             ++scaledSuccessors;
                             multiplicationClock = std::chrono::high_resolution_clock::now();
-                            auto result = entry.getValue() * loopProbability;
+//                            std::cout << "scaling " << entry.getValue() << " with " << loopProbability << std::endl;
+                            auto result = storm::utility::simplify(entry.getValue() * loopProbability);
+//                            std::cout << "got " << result << " for state " << entry.getColumn() << std::endl;
                             multiplicationTime += std::chrono::high_resolution_clock::now() - multiplicationClock;
                             entry.setValue(result);
                         }
@@ -355,6 +375,7 @@ namespace storm {
                 std::size_t predecessorForwardTransitionCount = 0;
                 for (auto const& predecessorEntry : currentStatePredecessors) {
                     uint_fast64_t predecessor = predecessorEntry.getColumn();
+//                    std::cout << "treating predecessor " << predecessor << std::endl;
                     
                     // Skip the state itself as one of its predecessors.
                     if (predecessor == state) {
@@ -413,14 +434,18 @@ namespace storm {
                             ++first1;
                         } else {
                             multiplicationClock = std::chrono::high_resolution_clock::now();
+//                            std::cout << "multiplying " << multiplyFactor << " with " << first2->getValue() << std::endl;
                             auto tmp1 = multiplyFactor * first2->getValue();
+//                            std::cout << "result: " << tmp1 << std::endl;
                             multiplicationTime += std::chrono::high_resolution_clock::now() - multiplicationClock;
                             simplifyClock = std::chrono::high_resolution_clock::now();
                             tmp1 = storm::utility::simplify(tmp1);
                             multiplicationClock = std::chrono::high_resolution_clock::now();
                             simplifyTime += std::chrono::high_resolution_clock::now() - simplifyClock;
                             additionClock = std::chrono::high_resolution_clock::now();
+//                            std::cout << "adding " << first1->getValue() << " and " << tmp1 << std::endl;
                             auto tmp2 = first1->getValue() + tmp1;
+//                            std::cout << "result: " << tmp2 << std::endl;
                             additionTime += std::chrono::high_resolution_clock::now() - additionClock;
                             simplifyClock = std::chrono::high_resolution_clock::now();
                             tmp2 = storm::utility::simplify(tmp2);
@@ -530,6 +555,14 @@ namespace storm {
                     STORM_PRINT("Number of predecessors: " << numberOfPredecessors << "." << std::endl);
                     STORM_PRINT("Number of predecessor forward transitions " << predecessorForwardTransitionCount << "." << std::endl);
                 }
+                
+//                std::cout << "after eliminating state " << state << std::endl;
+//                matrix.print();
+//                std::cout << "one step probs" << std::endl;
+//                for (uint_fast64_t index = 0; index < oneStepProbabilities.size(); ++index) {
+//                    std::cout << "(" << index << ", " << oneStepProbabilities[index] << ") ";
+//                }
+//                std::cout << std::endl;
             }
             
             template <typename ValueType>
@@ -635,6 +668,17 @@ namespace storm {
             template<typename ValueType>
             typename FlexibleSparseMatrix<ValueType>::index_type FlexibleSparseMatrix<ValueType>::getNumberOfRows() const {
                 return this->data.size();
+            }
+            
+            template<typename ValueType>
+            void FlexibleSparseMatrix<ValueType>::print() const {
+                for (uint_fast64_t index = 0; index < this->data.size(); ++index) {
+                    std::cout << index << " - ";
+                    for (auto const& element : this->getRow(index)) {
+                        std::cout << "(" << element.getColumn() << ", " << element.getValue() << ") ";
+                    }
+                    std::cout << std::endl;
+                }
             }
             
             template<typename ValueType>

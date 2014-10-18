@@ -20,13 +20,13 @@ namespace storm {
             return std::numeric_limits<ValueType>::infinity();
         }
         
-        template<typename ValueType>
-        ValueType simplify(ValueType value) {
+        template<>
+        double simplify(double value) {
             // In the general case, we don't to anything here, but merely return the value. If something else is
             // supposed to happen here, the templated function can be specialized for this particular type.
-            return std::forward<ValueType>(value);
+            return value;
         }
-
+        
         template<typename ValueType>
         bool ConstantsComparator<ValueType>::isOne(ValueType const& value) const {
             return value == one<ValueType>();
@@ -67,6 +67,12 @@ namespace storm {
         }
         
 #ifdef PARAMETRIC_SYSTEMS
+        template<>
+        RationalFunction simplify(RationalFunction value) {
+            value.simplify();
+            return value;
+        }
+
         template<>
         RationalFunction& simplify(RationalFunction& value) {
             value.simplify();
@@ -134,12 +140,9 @@ namespace storm {
         template Polynomial zero();
 
         template double simplify(double value);
-        template RationalFunction simplify(RationalFunction value);
-        
-        template double& simplify(double& value);
-        template RationalFunction& simplify(RationalFunction& value);
 
-        template double&& simplify(double&& value);
+        template RationalFunction simplify(RationalFunction value);
+        template RationalFunction& simplify(RationalFunction& value);
         template RationalFunction&& simplify(RationalFunction&& value);
         
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, double>& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, double>& matrixEntry);
