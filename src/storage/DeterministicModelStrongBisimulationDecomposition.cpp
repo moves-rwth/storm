@@ -84,22 +84,22 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::setIterator(const_iterator it) {
+        void DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::setIterator(iterator it) {
             this->selfIt = it;
         }
         
         template<typename ValueType>
-        typename DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::const_iterator DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::getIterator() const {
+        typename DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::iterator DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::getIterator() const {
             return this->selfIt;
         }
         
         template<typename ValueType>
-        typename DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::const_iterator DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::getNextIterator() const {
+        typename DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::iterator DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::getNextIterator() const {
             return this->getNextBlock().getIterator();
         }
         
         template<typename ValueType>
-        typename DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::const_iterator DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::getPreviousIterator() const {
+        typename DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::iterator DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::getPreviousIterator() const {
             return this->getPreviousBlock().getIterator();
         }
         
