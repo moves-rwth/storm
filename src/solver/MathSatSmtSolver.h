@@ -4,6 +4,7 @@
 #include "storm-config.h"
 #include "src/solver/SmtSolver.h"
 #include "src/adapters/MathSatExpressionAdapter.h"
+#include <boost/container/flat_map.hpp>
 
 #ifndef STORM_HAVE_MSAT
 #define STORM_HAVE_MSAT
@@ -73,10 +74,13 @@ namespace storm {
 #ifdef STORM_HAVE_MSAT
 			msat_config m_cfg;
 			msat_env m_env;
-			storm::adapters::MathSatExpressionAdapter m_adapter;
+			storm::adapters::MathSatExpressionAdapter *m_adapter;
 
 			bool lastCheckAssumptions;
 			CheckResult lastResult;
+			typedef	boost::container::flat_map<uint_fast64_t, int> InterpolationGroupMap;
+			InterpolationGroupMap interpolationGroups;
+			std::map<std::string, msat_decl> variableToDeclMap;
 #endif
 		};
 	}
