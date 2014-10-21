@@ -161,8 +161,7 @@ namespace storm {
 							}
 						}
 					} else {
-
-						//Fill the selction by comapring the values for all previously selected states with theegiven bound using the comparison operator.
+						// Fill the selection by comparing the values of all previously selected states with the given bound using the comparison operator.
 						for(uint_fast64_t i = 0; i < result.stateMap.size(); i++) {
 							if(result.selection[i]) {
 								switch(comparisonOperator) {
