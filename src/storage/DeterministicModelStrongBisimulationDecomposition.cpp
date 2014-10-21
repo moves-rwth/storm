@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <chrono>
 #include <iomanip>
+#include <boost/iterator/transform_iterator.hpp>
 
 #include "src/utility/graph.h"
 #include "src/exceptions/IllegalFunctionCallException.h"
@@ -30,15 +31,15 @@ namespace storm {
             std::cout << "begin: " << this->begin << " and end: " << this->end << " (number of states: " << this->getNumberOfStates() << ")" << std::endl;
             std::cout << "states:" << std::endl;
             for (storm::storage::sparse::state_type index = this->begin; index < this->end; ++index) {
-                std::cout << partition.states[index] << " ";
+                std::cout << partition.statesAndValues[index].first << " ";
             }
             std::cout << std::endl << "original: " << std::endl;
             for (storm::storage::sparse::state_type index = this->getOriginalBegin(); index < this->end; ++index) {
-                std::cout << partition.states[index] << " ";
+                std::cout << partition.statesAndValues[index].first << " ";
             }
             std::cout << std::endl << "values:" << std::endl;
             for (storm::storage::sparse::state_type index = this->begin; index < this->end; ++index) {
-                std::cout << std::setprecision(3) << partition.values[index] << " ";
+                std::cout << std::setprecision(3) << partition.statesAndValues[index].second << " ";
             }
             std::cout << std::endl;
         }
@@ -84,22 +85,22 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::setIterator(const_iterator it) {
+        void DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::setIterator(iterator it) {
             this->selfIt = it;
         }
         
         template<typename ValueType>
-        typename DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::const_iterator DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::getIterator() const {
+        typename DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::iterator DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::getIterator() const {
             return this->selfIt;
         }
         
         template<typename ValueType>
-        typename DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::const_iterator DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::getNextIterator() const {
+        typename DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::iterator DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::getNextIterator() const {
             return this->getNextBlock().getIterator();
         }
         
         template<typename ValueType>
-        typename DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::const_iterator DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::getPreviousIterator() const {
+        typename DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::iterator DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::getPreviousIterator() const {
             return this->getPreviousBlock().getIterator();
         }
         
@@ -245,28 +246,28 @@ namespace storm {
         }
         
         template<typename ValueType>
-        DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::Partition(std::size_t numberOfStates) : stateToBlockMapping(numberOfStates), states(numberOfStates), positions(numberOfStates), values(numberOfStates) {
+        DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::Partition(std::size_t numberOfStates) : stateToBlockMapping(numberOfStates), statesAndValues(numberOfStates), positions(numberOfStates) {
             // Create the block and give it an iterator to itself.
             typename std::list<Block>::iterator it = blocks.emplace(this->blocks.end(), 0, numberOfStates, nullptr, nullptr);
             it->setIterator(it);
             
             // Set up the different parts of the internal structure.
             for (storm::storage::sparse::state_type state = 0; state < numberOfStates; ++state) {
-                states[state] = state;
+                statesAndValues[state] = std::make_pair(state, storm::utility::zero<ValueType>());
                 positions[state] = state;
                 stateToBlockMapping[state] = &blocks.back();
             }
         }
         
         template<typename ValueType>
-        DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::Partition(std::size_t numberOfStates, storm::storage::BitVector const& prob0States, storm::storage::BitVector const& prob1States, std::string const& otherLabel, std::string const& prob1Label) : stateToBlockMapping(numberOfStates), states(numberOfStates), positions(numberOfStates), values(numberOfStates) {
+        DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::Partition(std::size_t numberOfStates, storm::storage::BitVector const& prob0States, storm::storage::BitVector const& prob1States, std::string const& otherLabel, std::string const& prob1Label) : stateToBlockMapping(numberOfStates), statesAndValues(numberOfStates), positions(numberOfStates) {
             typename std::list<Block>::iterator firstIt = blocks.emplace(this->blocks.end(), 0, prob0States.getNumberOfSetBits(), nullptr, nullptr);
             Block& firstBlock = *firstIt;
             firstBlock.setIterator(firstIt);
 
             storm::storage::sparse::state_type position = 0;
             for (auto state : prob0States) {
-                states[position] = state;
+                statesAndValues[position] = std::make_pair(state, storm::utility::zero<ValueType>());
                 positions[state] = position;
                 stateToBlockMapping[state] = &firstBlock;
                 ++position;
@@ -278,7 +279,7 @@ namespace storm {
             secondBlock.setIterator(secondIt);
             
             for (auto state : prob1States) {
-                states[position] = state;
+                statesAndValues[position] = std::make_pair(state, storm::utility::zero<ValueType>());
                 positions[state] = position;
                 stateToBlockMapping[state] = &secondBlock;
                 ++position;
@@ -291,7 +292,7 @@ namespace storm {
             
             storm::storage::BitVector otherStates = ~(prob0States | prob1States);
             for (auto state : otherStates) {
-                states[position] = state;
+                statesAndValues[position] = std::make_pair(state, storm::utility::zero<ValueType>());
                 positions[state] = position;
                 stateToBlockMapping[state] = &thirdBlock;
                 ++position;
@@ -300,18 +301,16 @@ namespace storm {
         
         template<typename ValueType>
         void DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::swapStates(storm::storage::sparse::state_type state1, storm::storage::sparse::state_type state2) {
-            std::swap(this->states[this->positions[state1]], this->states[this->positions[state2]]);
-            std::swap(this->values[this->positions[state1]], this->values[this->positions[state2]]);
+            std::swap(this->statesAndValues[this->positions[state1]], this->statesAndValues[this->positions[state2]]);
             std::swap(this->positions[state1], this->positions[state2]);
         }
-        
+
         template<typename ValueType>
         void DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::swapStatesAtPositions(storm::storage::sparse::state_type position1, storm::storage::sparse::state_type position2) {
-            storm::storage::sparse::state_type state1 = this->states[position1];
-            storm::storage::sparse::state_type state2 = this->states[position2];
+            storm::storage::sparse::state_type state1 = this->statesAndValues[position1].first;
+            storm::storage::sparse::state_type state2 = this->statesAndValues[position2].first;
             
-            std::swap(this->states[position1], this->states[position2]);
-            std::swap(this->values[position1], this->values[position2]);
+            std::swap(this->statesAndValues[position1], this->statesAndValues[position2]);
             
             this->positions[state1] = position2;
             this->positions[state2] = position1;
@@ -329,38 +328,33 @@ namespace storm {
         
         template<typename ValueType>
         storm::storage::sparse::state_type const& DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::getState(storm::storage::sparse::state_type position) const {
-            return this->states[position];
+            return this->statesAndValues[position].first;
         }
         
         template<typename ValueType>
         ValueType const& DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::getValue(storm::storage::sparse::state_type state) const {
-            return this->values[this->positions[state]];
+            return this->statesAndValues[this->positions[state]].second;
         }
         
         template<typename ValueType>
         ValueType const& DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::getValueAtPosition(storm::storage::sparse::state_type position) const {
-            return this->values[position];
+            return this->statesAndValues[position].second;
         }
         
         template<typename ValueType>
         void DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::setValue(storm::storage::sparse::state_type state, ValueType value) {
-            this->values[this->positions[state]] = value;
-        }
-        
-        template<typename ValueType>
-        std::vector<ValueType>& DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::getValues() {
-            return this->values;
+            this->statesAndValues[this->positions[state]].second = value;
         }
         
         template<typename ValueType>
         void DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::increaseValue(storm::storage::sparse::state_type state, ValueType value) {
-            this->values[this->positions[state]] += value;
+            this->statesAndValues[this->positions[state]].second += value;
         }
 
         template<typename ValueType>
-        void DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::updateBlockMapping(Block& block, std::vector<storm::storage::sparse::state_type>::iterator first, std::vector<storm::storage::sparse::state_type>::iterator last) {
+        void DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::updateBlockMapping(Block& block, typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::iterator first, typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::iterator last) {
             for (; first != last; ++first) {
-                this->stateToBlockMapping[*first] = &block;
+                this->stateToBlockMapping[first->first] = &block;
             }
         }
         
@@ -380,56 +374,61 @@ namespace storm {
         }
 
         template<typename ValueType>
-        std::vector<storm::storage::sparse::state_type>::iterator DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::getBeginOfStates(Block const& block) {
-            return this->states.begin() + block.getBegin();
+        typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::iterator DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::getBegin(Block const& block) {
+            return this->statesAndValues.begin() + block.getBegin();
         }
         
         template<typename ValueType>
-        std::vector<storm::storage::sparse::state_type>::iterator DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::getEndOfStates(Block const& block) {
-            return this->states.begin() + block.getEnd();
+        typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::iterator DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::getEnd(Block const& block) {
+            return this->statesAndValues.begin() + block.getEnd();
         }
 
         template<typename ValueType>
-        std::vector<storm::storage::sparse::state_type>::const_iterator DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::getBeginOfStates(Block const& block) const {
-            return this->states.begin() + block.getBegin();
+        typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::const_iterator DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::getBegin(Block const& block) const {
+            return this->statesAndValues.begin() + block.getBegin();
         }
         
         template<typename ValueType>
-        std::vector<storm::storage::sparse::state_type>::const_iterator DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::getEndOfStates(Block const& block) const {
-            return this->states.begin() + block.getEnd();
-        }
-        
-        template<typename ValueType>
-        typename std::vector<ValueType>::iterator DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::getBeginOfValues(Block const& block) {
-            return this->values.begin() + block.getBegin();
-        }
-        
-        template<typename ValueType>
-        typename std::vector<ValueType>::iterator DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::getEndOfValues(Block const& block) {
-            return this->values.begin() + block.getEnd();
+        typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::const_iterator DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::getEnd(Block const& block) const {
+            return this->statesAndValues.begin() + block.getEnd();
         }
         
         template<typename ValueType>
         typename DeterministicModelStrongBisimulationDecomposition<ValueType>::Block& DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::splitBlock(Block& block, storm::storage::sparse::state_type position) {
-            // FIXME: this could be improved by splitting off the smaller of the two resulting blocks.
-            
             // In case one of the resulting blocks would be empty, we simply return the current block and do not create
             // a new one.
             if (position == block.getBegin() || position == block.getEnd()) {
                 return block;
             }
             
+            // We only split off the smaller of the two resulting blocks so we don't have to update large parts of the
+            // block mapping.
+            bool insertAfterCurrent = false;
+            if ((block.getBegin() + position) > ((block.getEnd() - block.getBegin()) / 2)) {
+                // If the splitting position is far in the back, we create the new block after the one we are splitting.
+                insertAfterCurrent = true;
+            }
+            
             // Actually create the new block and insert it at the correct position.
-            typename std::list<Block>::iterator selfIt = this->blocks.emplace(block.getIterator(), block.getBegin(), position, block.getPreviousBlockPointer(), &block, block.getLabelPtr());
+            typename std::list<Block>::iterator selfIt;
+            if (insertAfterCurrent) {
+                selfIt = this->blocks.emplace(block.hasNextBlock() ? block.getNextIterator() : this->blocks.end(), position, block.getEnd(), &block, block.getNextBlockPointer(), block.getLabelPtr());
+            } else {
+                selfIt = this->blocks.emplace(block.getIterator(), block.getBegin(), position, block.getPreviousBlockPointer(), &block, block.getLabelPtr());
+            }
             selfIt->setIterator(selfIt);
             Block& newBlock = *selfIt;
             
-            // Make the current block end at the given position.
-            block.setBegin(position);
+            // Resize the current block appropriately.
+            if (insertAfterCurrent) {
+                block.setEnd(position);
+            } else {
+                block.setBegin(position);
+            }
             
             // Update the mapping of the states in the newly created block.
-            for (auto it = this->getBeginOfStates(newBlock), ite = this->getEndOfStates(newBlock); it != ite; ++it) {
-                stateToBlockMapping[*it] = &newBlock;
+            for (auto it = this->getBegin(newBlock), ite = this->getEnd(newBlock); it != ite; ++it) {
+                stateToBlockMapping[it->first] = &newBlock;
             }
             
             return newBlock;
@@ -451,8 +450,8 @@ namespace storm {
             newBlock.setIterator(it);
             
             // Update the mapping of the states in the newly created block.
-            for (auto it = this->getBeginOfStates(newBlock), ite = this->getEndOfStates(newBlock); it != ite; ++it) {
-                stateToBlockMapping[*it] = &newBlock;
+            for (auto it = this->getBegin(newBlock), ite = this->getEnd(newBlock); it != ite; ++it) {
+                stateToBlockMapping[it->first] = &newBlock;
             }
             
             return *it;
@@ -464,20 +463,20 @@ namespace storm {
                 Block& block = *blockIterator;
                 
                 // Sort the range of the block such that all states that have the label are moved to the front.
-                std::sort(this->getBeginOfStates(block), this->getEndOfStates(block), [&statesWithLabel] (storm::storage::sparse::state_type const& a, storm::storage::sparse::state_type const& b) { return statesWithLabel.get(a) && !statesWithLabel.get(b); } );
+                std::sort(this->getBegin(block), this->getEnd(block), [&statesWithLabel] (std::pair<storm::storage::sparse::state_type, ValueType> const& a, std::pair<storm::storage::sparse::state_type, ValueType> const& b) { return statesWithLabel.get(a.first) && !statesWithLabel.get(b.first); } );
                 
                 // Update the positions vector.
                 storm::storage::sparse::state_type position = block.getBegin();
-                for (auto stateIt = this->getBeginOfStates(block), stateIte = this->getEndOfStates(block); stateIt != stateIte; ++stateIt, ++position) {
-                    this->positions[*stateIt] = position;
+                for (auto stateIt = this->getBegin(block), stateIte = this->getEnd(block); stateIt != stateIte; ++stateIt, ++position) {
+                    this->positions[stateIt->first] = position;
                 }
                 
                 // Now we can find the first position in the block that does not have the label and create new blocks.
-                std::vector<storm::storage::sparse::state_type>::iterator it = std::find_if(this->getBeginOfStates(block), this->getEndOfStates(block), [&] (storm::storage::sparse::state_type const& a) { return !statesWithLabel.get(a); });
+                typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::iterator it = std::find_if(this->getBegin(block), this->getEnd(block), [&] (std::pair<storm::storage::sparse::state_type, ValueType> const& a) { return !statesWithLabel.get(a.first); });
                 
                 // If not all the states agreed on the validity of the label, we need to split the block.
-                if (it != this->getBeginOfStates(block) && it != this->getEndOfStates(block)) {
-                    auto cutPoint = std::distance(this->states.begin(), it);
+                if (it != this->getBegin(block) && it != this->getEnd(block)) {
+                    auto cutPoint = std::distance(this->statesAndValues.begin(), it);
                     this->splitBlock(block, cutPoint);
                 } else {
                     // Otherwise, we simply proceed to the next block.
@@ -492,8 +491,8 @@ namespace storm {
         }
         
         template<typename ValueType>
-        std::vector<storm::storage::sparse::state_type>& DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::getStates() {
-            return this->states;
+        std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>& DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::getStatesAndValues() {
+            return this->statesAndValues;
         }
         
         template<typename ValueType>
@@ -504,14 +503,14 @@ namespace storm {
         template<typename ValueType>
         bool DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::check() const {
             for (uint_fast64_t state = 0; state < this->positions.size(); ++state) {
-                if (this->states[this->positions[state]] != state) {
+                if (this->statesAndValues[this->positions[state]].first != state) {
                     assert(false);
                 }
             }
             for (auto const& block : this->blocks) {
                 assert(block.check());
-                for (auto stateIt = this->getBeginOfStates(block), stateIte = this->getEndOfStates(block); stateIt != stateIte; ++stateIt) {
-                    if (this->stateToBlockMapping[*stateIt] != &block) {
+                for (auto stateIt = this->getBegin(block), stateIte = this->getEnd(block); stateIt != stateIte; ++stateIt) {
+                    if (this->stateToBlockMapping[stateIt->first] != &block) {
                         assert(false);
                     }
                 }
@@ -525,8 +524,8 @@ namespace storm {
                 block.print(*this);
             }
             std::cout << "states in partition" << std::endl;
-            for (auto const& state : states) {
-                std::cout << state << " ";
+            for (auto const& stateValue : statesAndValues) {
+                std::cout << stateValue.first << " ";
             }
             std::cout << std::endl << "positions: " << std::endl;
             for (auto const& index : positions) {
@@ -667,69 +666,81 @@ namespace storm {
         template<typename ModelType>
         void DeterministicModelStrongBisimulationDecomposition<ValueType>::partitionRefinement(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, Partition& partition, bool buildQuotient) {
             std::chrono::high_resolution_clock::time_point totalStart = std::chrono::high_resolution_clock::now();
-            
+
             // Initially, all blocks are potential splitter, so we insert them in the splitterQueue.
+            std::chrono::high_resolution_clock::time_point refinementStart = std::chrono::high_resolution_clock::now();
             std::deque<Block*> splitterQueue;
             std::for_each(partition.getBlocks().begin(), partition.getBlocks().end(), [&] (Block& a) { splitterQueue.push_back(&a); });
             
             // Then perform the actual splitting until there are no more splitters.
             while (!splitterQueue.empty()) {
+                std::sort(splitterQueue.begin(), splitterQueue.end(), [] (Block const* b1, Block const* b2) { return b1->getNumberOfStates() < b2->getNumberOfStates(); } );
                 refinePartition(backwardTransitions, *splitterQueue.front(), partition, splitterQueue);
                 splitterQueue.pop_front();
             }
-            
+            std::chrono::high_resolution_clock::duration refinementTime = std::chrono::high_resolution_clock::now() - refinementStart;
+
             // Now move the states from the internal partition into their final place in the decomposition. We do so in
             // a way that maintains the block IDs as indices.
+            std::chrono::high_resolution_clock::time_point extractionStart = std::chrono::high_resolution_clock::now();
             this->blocks.resize(partition.size());
             for (auto const& block : partition.getBlocks()) {
                 // We need to sort the states to allow for rapid construction of the blocks.
-                std::sort(partition.getBeginOfStates(block), partition.getEndOfStates(block));
-                this->blocks[block.getId()] = block_type(partition.getBeginOfStates(block), partition.getEndOfStates(block), true);
+                std::sort(partition.getBegin(block), partition.getEnd(block), [] (std::pair<storm::storage::sparse::state_type, ValueType> const& a, std::pair<storm::storage::sparse::state_type, ValueType> const& b) { return a.first < b.first; });
+                
+                // Convert the state-value-pairs to states only.
+                auto lambda = [] (std::pair<storm::storage::sparse::state_type, ValueType> const& a) -> storm::storage::sparse::state_type { return a.first; };
+                this->blocks[block.getId()] = block_type(boost::make_transform_iterator(partition.getBegin(block), lambda), boost::make_transform_iterator(partition.getEnd(block), lambda), true);
             }
 
             // If we are required to build the quotient model, do so now.
             if (buildQuotient) {
                 this->buildQuotient(model, partition);
             }
-            
+
+            std::chrono::high_resolution_clock::duration extractionTime = std::chrono::high_resolution_clock::now() - extractionStart;
             std::chrono::high_resolution_clock::duration totalTime = std::chrono::high_resolution_clock::now() - totalStart;
             
             if (storm::settings::generalSettings().isShowStatisticsSet()) {
-                std::cout << "Computed bisimulation quotient in " << std::chrono::duration_cast<std::chrono::milliseconds>(totalTime).count() << "ms." << std::endl;
+                std::cout << std::endl;
+                std::cout << "Time breakdown:" << std::endl;
+                std::cout << "    * time for partitioning: " << std::chrono::duration_cast<std::chrono::milliseconds>(refinementTime).count() << "ms" << std::endl;
+                std::cout << "    * time for extraction: " << std::chrono::duration_cast<std::chrono::milliseconds>(extractionTime).count() << "ms" << std::endl;
+                std::cout << "------------------------------------------" << std::endl;
+                std::cout << "    * total time: " << std::chrono::duration_cast<std::chrono::milliseconds>(totalTime).count() << "ms" << std::endl;
+                std::cout << std::endl;
             }
         }
         
         template<typename ValueType>
         void DeterministicModelStrongBisimulationDecomposition<ValueType>::refineBlockProbabilities(Block& block, Partition& partition, std::deque<Block*>& splitterQueue) {
             // Sort the states in the block based on their probabilities.
-            std::sort(partition.getBeginOfStates(block), partition.getEndOfStates(block), [&partition] (storm::storage::sparse::state_type const& a, storm::storage::sparse::state_type const& b) { return partition.getValue(a) < partition.getValue(b); } );
-            
-            // FIXME: This can probably be done more efficiently.
-            std::sort(partition.getBeginOfValues(block), partition.getEndOfValues(block));
+            std::sort(partition.getBegin(block), partition.getEnd(block), [&partition] (std::pair<storm::storage::sparse::state_type, ValueType> const& a, std::pair<storm::storage::sparse::state_type, ValueType> const& b) { return a.second < b.second; } );
             
             // Update the positions vector.
             storm::storage::sparse::state_type position = block.getBegin();
-            for (auto stateIt = partition.getBeginOfStates(block), stateIte = partition.getEndOfStates(block); stateIt != stateIte; ++stateIt, ++position) {
-                partition.setPosition(*stateIt, position);
+            for (auto stateIt = partition.getBegin(block), stateIte = partition.getEnd(block); stateIt != stateIte; ++stateIt, ++position) {
+                partition.setPosition(stateIt->first, position);
             }
             
             // Finally, we need to scan the ranges of states that agree on the probability.
-            storm::storage::sparse::state_type beginIndex = block.getBegin();
-            storm::storage::sparse::state_type currentIndex = beginIndex;
-            storm::storage::sparse::state_type endIndex = block.getEnd();
+            typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::const_iterator begin = partition.getBegin(block);
+            typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::const_iterator current = begin;
+            typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::const_iterator end = partition.getEnd(block) - 1;
+            storm::storage::sparse::state_type currentIndex = block.getBegin();
             
             // Now we can check whether the block needs to be split, which is the case iff the probabilities for the
             // first and the last state are different.
-            while (!comparator.isEqual(partition.getValueAtPosition(beginIndex), partition.getValueAtPosition(endIndex - 1))) {
+            while (!comparator.isEqual(begin->second, end->second)) {
                 // Now we scan for the first state in the block that disagrees on the probability value.
                 // Note that we do not have to check currentIndex for staying within bounds, because we know the matching
                 // state is within bounds.
-                ValueType const& currentValue = partition.getValueAtPosition(beginIndex);
+                ValueType const& currentValue = begin->second;
                 
-                typename std::vector<ValueType>::const_iterator valueIterator = partition.getValues().begin() + beginIndex + 1;
+                ++begin;
                 ++currentIndex;
-                while (currentIndex < endIndex && comparator.isEqual(*valueIterator, currentValue)) {
-                    ++valueIterator;
+                while (begin != end && comparator.isEqual(begin->second, currentValue)) {
+                    ++begin;
                     ++currentIndex;
                 }
                 
@@ -739,7 +750,6 @@ namespace storm {
                     splitterQueue.push_back(&newBlock);
                     newBlock.markAsSplitter();
                 }
-                beginIndex = currentIndex;
             }
         }
         
@@ -749,8 +759,8 @@ namespace storm {
             
             // Iterate over all states of the splitter and check its predecessors.
             storm::storage::sparse::state_type currentPosition = splitter.getBegin();
-            for (auto stateIterator = partition.getBeginOfStates(splitter), stateIte = partition.getEndOfStates(splitter); stateIterator != stateIte; ++stateIterator, ++currentPosition) {
-                storm::storage::sparse::state_type currentState = *stateIterator;
+            for (auto stateIterator = partition.getBegin(splitter), stateIte = partition.getEnd(splitter); stateIterator != stateIte; ++stateIterator, ++currentPosition) {
+                storm::storage::sparse::state_type currentState = stateIterator->first;
                 
                 uint_fast64_t elementsToSkip = 0;
                 for (auto const& predecessorEntry : backwardTransitions.getRow(currentState)) {
@@ -814,8 +824,8 @@ namespace storm {
             }
             
             // Now we can traverse the list of states of the splitter whose predecessors we have not yet explored.
-            for (auto stateIterator = partition.getStates().begin() + splitter.getOriginalBegin(), stateIte = partition.getStates().begin() + splitter.getMarkedPosition(); stateIterator != stateIte; ++stateIterator) {
-                storm::storage::sparse::state_type currentState = *stateIterator;
+            for (auto stateIterator = partition.getStatesAndValues().begin() + splitter.getOriginalBegin(), stateIte = partition.getStatesAndValues().begin() + splitter.getMarkedPosition(); stateIterator != stateIte; ++stateIterator) {
+                storm::storage::sparse::state_type currentState = stateIterator->first;
                 
                 for (auto const& predecessorEntry : backwardTransitions.getRow(currentState)) {
                     storm::storage::sparse::state_type predecessor = predecessorEntry.getColumn();
