@@ -73,6 +73,7 @@ namespace storm {
             
             class Block {
             public:
+                typedef typename std::list<Block>::const_iterator iterator;
                 typedef typename std::list<Block>::const_iterator const_iterator;
                 
                 // Creates a new block with the given begin and end.
@@ -103,16 +104,16 @@ namespace storm {
                 storm::storage::sparse::state_type getOriginalBegin() const;
                 
                 // Returns the iterator the block in the list of overall blocks.
-                const_iterator getIterator() const;
+                iterator getIterator() const;
 
                 // Returns the iterator the block in the list of overall blocks.
-                void setIterator(const_iterator it);
+                void setIterator(iterator it);
                 
                 // Returns the iterator the next block in the list of overall blocks if it exists.
-                const_iterator getNextIterator() const;
+                iterator getNextIterator() const;
 
                 // Returns the iterator the next block in the list of overall blocks if it exists.
-                const_iterator getPreviousIterator() const;
+                iterator getPreviousIterator() const;
 
                 // Gets the next block (if there is one).
                 Block& getNextBlock();
@@ -195,7 +196,7 @@ namespace storm {
             private:
                 // An iterator to itself. This is needed to conveniently insert elements in the overall list of blocks
                 // kept by the partition.
-                const_iterator selfIt;
+                iterator selfIt;
                 
                 // Pointers to the next and previous block.
                 Block* next;
