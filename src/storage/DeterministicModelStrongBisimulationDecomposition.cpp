@@ -667,8 +667,9 @@ namespace storm {
         template<typename ModelType>
         void DeterministicModelStrongBisimulationDecomposition<ValueType>::partitionRefinement(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, Partition& partition, bool buildQuotient) {
             std::chrono::high_resolution_clock::time_point totalStart = std::chrono::high_resolution_clock::now();
-            
+
             // Initially, all blocks are potential splitter, so we insert them in the splitterQueue.
+            std::chrono::high_resolution_clock::time_point refinementStart = std::chrono::high_resolution_clock::now();
             std::deque<Block*> splitterQueue;
             std::for_each(partition.getBlocks().begin(), partition.getBlocks().end(), [&] (Block& a) { splitterQueue.push_back(&a); });
             
@@ -677,9 +678,11 @@ namespace storm {
                 refinePartition(backwardTransitions, *splitterQueue.front(), partition, splitterQueue);
                 splitterQueue.pop_front();
             }
-            
+            std::chrono::high_resolution_clock::duration refinementTime = std::chrono::high_resolution_clock::now() - refinementStart;
+
             // Now move the states from the internal partition into their final place in the decomposition. We do so in
             // a way that maintains the block IDs as indices.
+            std::chrono::high_resolution_clock::time_point extractionStart = std::chrono::high_resolution_clock::now();
             this->blocks.resize(partition.size());
             for (auto const& block : partition.getBlocks()) {
                 // We need to sort the states to allow for rapid construction of the blocks.
@@ -691,11 +694,18 @@ namespace storm {
             if (buildQuotient) {
                 this->buildQuotient(model, partition);
             }
-            
+            std::chrono::high_resolution_clock::duration extractionTime = std::chrono::high_resolution_clock::now() - extractionStart;
+
             std::chrono::high_resolution_clock::duration totalTime = std::chrono::high_resolution_clock::now() - totalStart;
             
             if (storm::settings::generalSettings().isShowStatisticsSet()) {
-                std::cout << "Computed bisimulation quotient in " << std::chrono::duration_cast<std::chrono::milliseconds>(totalTime).count() << "ms." << std::endl;
+                std::cout << std::endl;
+                std::cout << "Time breakdown:" << std::endl;
+                std::cout << "    * time for partitioning: " << std::chrono::duration_cast<std::chrono::milliseconds>(refinementTime).count() << "ms" << std::endl;
+                std::cout << "    * time for extraction: " << std::chrono::duration_cast<std::chrono::milliseconds>(extractionTime).count() << "ms" << std::endl;
+                std::cout << "------------------------------------------" << std::endl;
+                std::cout << "    * total time: " << std::chrono::duration_cast<std::chrono::milliseconds>(totalTime).count() << "ms" << std::endl;
+                std::cout << std::endl;
             }
         }
         
