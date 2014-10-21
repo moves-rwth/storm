@@ -73,7 +73,7 @@ namespace storm {
             
             class Block {
             public:
-                typedef typename std::list<Block>::const_iterator iterator;
+                typedef typename std::list<Block>::iterator iterator;
                 typedef typename std::list<Block>::const_iterator const_iterator;
                 
                 // Creates a new block with the given begin and end.
