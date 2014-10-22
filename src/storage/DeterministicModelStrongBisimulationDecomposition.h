@@ -236,8 +236,9 @@ namespace storm {
                  * Creates a partition with one block consisting of all the states.
                  *
                  * @param numberOfStates The number of states the partition holds.
+                 * @param keepSilentProbabilities A flag indicating whether or not silent probabilities are to be tracked.
                  */
-                Partition(std::size_t numberOfStates);
+                Partition(std::size_t numberOfStates, bool keepSilentProbabilities = false);
 
                 /*!
                  * Creates a partition with three blocks: one with all phi states, one with all psi states and one with
@@ -249,8 +250,9 @@ namespace storm {
                  * @param prob1States The states which have probability 1 of satisfying phi until psi.
                  * @param otherLabel The label that is to be attached to all other states.
                  * @param prob1Label The label that is to be attached to all states with probability 1.
+                 * @param keepSilentProbabilities A flag indicating whether or not silent probabilities are to be tracked.
                  */
-                Partition(std::size_t numberOfStates, storm::storage::BitVector const& prob0States, storm::storage::BitVector const& prob1States, std::string const& otherLabel, std::string const& prob1Label);
+                Partition(std::size_t numberOfStates, storm::storage::BitVector const& prob0States, storm::storage::BitVector const& prob1States, std::string const& otherLabel, std::string const& prob1Label, bool keepSilentProbabilities = false);
                 
                 Partition() = default;
                 Partition(Partition const& other) = default;
@@ -342,6 +344,7 @@ namespace storm {
                 
                 // Retrieves the first block of the partition.
                 Block& getFirstBlock();
+                
             private:
                 // The list of blocks in the partition.
                 std::list<Block> blocks;
@@ -355,6 +358,13 @@ namespace storm {
                 
                 // This vector keeps track of the position of each state in the state vector.
                 std::vector<storm::storage::sparse::state_type> positions;
+                
+                // A flag that indicates whether or not the vector with silent probabilities exists.
+                bool keepSilentProbabilities;
+                
+                // This vector keeps track of the silent probabilities (i.e. the probabilities going into the very own
+                // equivalence class) of each state. This means that a state is silent iff its entry is non-zero.
+                std::vector<ValueType> silentProbabilities;
             };
             
             /*!

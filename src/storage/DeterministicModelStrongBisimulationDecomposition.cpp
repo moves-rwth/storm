@@ -249,7 +249,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::Partition(std::size_t numberOfStates) : stateToBlockMapping(numberOfStates), statesAndValues(numberOfStates), positions(numberOfStates) {
+        DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::Partition(std::size_t numberOfStates, bool keepSilentProbabilities) : stateToBlockMapping(numberOfStates), statesAndValues(numberOfStates), positions(numberOfStates), keepSilentProbabilities(keepSilentProbabilities), silentProbabilities() {
             // Create the block and give it an iterator to itself.
             typename std::list<Block>::iterator it = blocks.emplace(this->blocks.end(), 0, numberOfStates, nullptr, nullptr);
             it->setIterator(it);
@@ -263,7 +263,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::Partition(std::size_t numberOfStates, storm::storage::BitVector const& prob0States, storm::storage::BitVector const& prob1States, std::string const& otherLabel, std::string const& prob1Label) : stateToBlockMapping(numberOfStates), statesAndValues(numberOfStates), positions(numberOfStates) {
+        DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::Partition(std::size_t numberOfStates, storm::storage::BitVector const& prob0States, storm::storage::BitVector const& prob1States, std::string const& otherLabel, std::string const& prob1Label, bool keepSilentProbabilities) : stateToBlockMapping(numberOfStates), statesAndValues(numberOfStates), positions(numberOfStates), keepSilentProbabilities(keepSilentProbabilities), silentProbabilities() {
             typename std::list<Block>::iterator firstIt = blocks.emplace(this->blocks.end(), 0, prob0States.getNumberOfSetBits(), nullptr, nullptr);
             Block& firstBlock = *firstIt;
             firstBlock.setIterator(firstIt);
