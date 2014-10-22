@@ -118,6 +118,8 @@ elseif(MSVC)
 	add_definitions(/D_VARIADIC_MAX=10)
 	# Windows.h breaks GMM in gmm_except.h because of its macro definition for min and max
 	add_definitions(/DNOMINMAX)
+	# Boost Defs
+	add_definitions(/DBOOST_RESULT_OF_USE_DECLTYPE)
 	
 	# since nobody cares at the moment
 	add_definitions(/wd4250)
