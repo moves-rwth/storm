@@ -1,8 +1,39 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 #include "src/parser/AutoParser.h"
+#include "src/storage/SparseMatrix.h"
 #include "src/storage/StronglyConnectedComponentDecomposition.h"
 #include "src/models/MarkovAutomaton.h"
+
+
+TEST(StronglyConnectedComponentDecomposition, SmallSystemFromMatrix) {
+	storm::storage::SparseMatrixBuilder<double> matrixBuilder(6, 6);
+	ASSERT_NO_THROW(matrixBuilder.addNextValue(0, 0, 0.3));
+	ASSERT_NO_THROW(matrixBuilder.addNextValue(0, 5, 0.7));
+	ASSERT_NO_THROW(matrixBuilder.addNextValue(1, 2, 1.0));
+	ASSERT_NO_THROW(matrixBuilder.addNextValue(2, 1, 0.4));
+	ASSERT_NO_THROW(matrixBuilder.addNextValue(2, 2, 0.3));
+	ASSERT_NO_THROW(matrixBuilder.addNextValue(2, 3, 0.3));
+	ASSERT_NO_THROW(matrixBuilder.addNextValue(3, 4, 1.0));
+	ASSERT_NO_THROW(matrixBuilder.addNextValue(4, 3, 0.5));
+	ASSERT_NO_THROW(matrixBuilder.addNextValue(4, 4, 0.5));
+	ASSERT_NO_THROW(matrixBuilder.addNextValue(5, 1, 1.0));
+
+	storm::storage::SparseMatrix<double> matrix;
+	ASSERT_NO_THROW(matrix = matrixBuilder.build());
+	storm::storage::BitVector allBits(6, true);
+
+	storm::storage::StronglyConnectedComponentDecomposition<double> sccDecomposition;
+
+	ASSERT_NO_THROW(sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(matrix, allBits, false, false));
+	ASSERT_EQ(4, sccDecomposition.size());
+
+	ASSERT_NO_THROW(sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(matrix, allBits, true, false));
+	ASSERT_EQ(3, sccDecomposition.size());
+
+	ASSERT_NO_THROW(sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(matrix, allBits, true, true));
+	ASSERT_EQ(1, sccDecomposition.size());
+}
 
 TEST(StronglyConnectedComponentDecomposition, FullSystem1) {
 	std::shared_ptr<storm::models::AbstractModel<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/ma/tiny/tiny1.tra", STORM_CPP_BASE_PATH "/examples/ma/tiny/tiny1.lab", "", "");
