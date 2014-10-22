@@ -118,7 +118,6 @@ namespace storm {
         }
         
 #endif
-        
         template<typename IndexType, typename ValueType>
         storm::storage::MatrixEntry<IndexType, ValueType>& simplify(storm::storage::MatrixEntry<IndexType, ValueType>& matrixEntry) {
             simplify(matrixEntry.getValue());
@@ -126,26 +125,29 @@ namespace storm {
         }
         
         template class ConstantsComparator<double>;
-        template class ConstantsComparator<RationalFunction>;
-        template class ConstantsComparator<Polynomial>;
         
         template double one();
         template double zero();
         template double infinity();
 
-        template RationalFunction one();
-        template RationalFunction zero();
-
-        template Polynomial one();
-        template Polynomial zero();
-
         template double simplify(double value);
 
+        template storm::storage::MatrixEntry<storm::storage::sparse::state_type, double>& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, double>& matrixEntry);
+        
+#ifdef PARAMETRIC_SYSTEMS
+        template class ConstantsComparator<RationalFunction>;
+        template class ConstantsComparator<Polynomial>;
+
+        template RationalFunction one();
+        template RationalFunction zero();
+        
+        template Polynomial one();
+        template Polynomial zero();
         template RationalFunction simplify(RationalFunction value);
         template RationalFunction& simplify(RationalFunction& value);
         template RationalFunction&& simplify(RationalFunction&& value);
         
-        template storm::storage::MatrixEntry<storm::storage::sparse::state_type, double>& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, double>& matrixEntry);
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, RationalFunction>& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, RationalFunction>& matrixEntry);
+#endif
     }
 }

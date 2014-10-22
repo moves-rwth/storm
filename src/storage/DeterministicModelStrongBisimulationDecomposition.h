@@ -76,6 +76,7 @@ namespace storm {
                 typedef typename std::list<Block>::iterator iterator;
                 typedef typename std::list<Block>::const_iterator const_iterator;
                 
+                // Creates a new block with the given begin and end.
                 Block(storm::storage::sparse::state_type begin, storm::storage::sparse::state_type end, Block* prev, Block* next, std::shared_ptr<std::string> const& label = nullptr);
                 
                 // Prints the block.
@@ -284,30 +285,21 @@ namespace storm {
 
                 // Retrieves the blocks of the partition.
                 std::list<Block>& getBlocks();
-                
-                // Retrieves the vector of all the states.
-                std::vector<storm::storage::sparse::state_type>& getStates();
 
                 // Checks the partition for internal consistency.
                 bool check() const;
                 
                 // Returns an iterator to the beginning of the states of the given block.
-                std::vector<storm::storage::sparse::state_type>::iterator getBeginOfStates(Block const& block);
+                typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::iterator getBegin(Block const& block);
                 
                 // Returns an iterator to the beginning of the states of the given block.
-                std::vector<storm::storage::sparse::state_type>::iterator getEndOfStates(Block const& block);
+                typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::iterator getEnd(Block const& block);
 
                 // Returns an iterator to the beginning of the states of the given block.
-                std::vector<storm::storage::sparse::state_type>::const_iterator getBeginOfStates(Block const& block) const;
+                typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::const_iterator getBegin(Block const& block) const;
                 
                 // Returns an iterator to the beginning of the states of the given block.
-                std::vector<storm::storage::sparse::state_type>::const_iterator getEndOfStates(Block const& block) const;
-                
-                // Returns an iterator to the beginning of the states of the given block.
-                typename std::vector<ValueType>::iterator getBeginOfValues(Block const& block);
-                
-                // Returns an iterator to the beginning of the states of the given block.
-                typename std::vector<ValueType>::iterator getEndOfValues(Block const& block);
+                typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::const_iterator getEnd(Block const& block) const;
 
                 // Swaps the positions of the two given states.
                 void swapStates(storm::storage::sparse::state_type state1, storm::storage::sparse::state_type state2);
@@ -340,13 +332,13 @@ namespace storm {
                 void setValue(storm::storage::sparse::state_type state, ValueType value);
                 
                 // Retrieves the vector with the probabilities going into the current splitter.
-                std::vector<ValueType>& getValues();
+                std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>& getStatesAndValues();
 
                 // Increases the value for the given state by the specified amount.
                 void increaseValue(storm::storage::sparse::state_type state, ValueType value);
                 
                 // Updates the block mapping for the given range of states to the specified block.
-                void updateBlockMapping(Block& block, std::vector<storm::storage::sparse::state_type>::iterator first, std::vector<storm::storage::sparse::state_type>::iterator end);
+                void updateBlockMapping(Block& block, typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::iterator first, typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::iterator end);
                 
                 // Retrieves the first block of the partition.
                 Block& getFirstBlock();
@@ -357,15 +349,12 @@ namespace storm {
                 // A mapping of states to their blocks.
                 std::vector<Block*> stateToBlockMapping;
                 
-                // A vector containing all the states. It is ordered in a special way such that the blocks only need to
-                // define their start/end indices.
-                std::vector<storm::storage::sparse::state_type> states;
+                // A vector containing all the states and their values. It is ordered in a special way such that the
+                // blocks only need to define their start/end indices.
+                std::vector<std::pair<storm::storage::sparse::state_type, ValueType>> statesAndValues;
                 
                 // This vector keeps track of the position of each state in the state vector.
                 std::vector<storm::storage::sparse::state_type> positions;
-                
-                // This vector stores the probabilities of going to the current splitter.
-                std::vector<ValueType> values;
             };
             
             /*!
