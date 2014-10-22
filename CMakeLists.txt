@@ -96,11 +96,9 @@ if(CMAKE_COMPILER_IS_GNUCC)
     set(STORM_COMPILED_BY "GCC")
     # Set standard flags for GCC
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -funroll-loops")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -pedantic -DBOOST_RESULT_OF_USE_DECLTYPE")
-    # -Werror is atm removed as this gave some problems with existing code
-    # May be re-set later
-    # (Thomas Heinemann, 2012-12-21)
-    
+    add_definitions(-DBOOST_RESULT_OF_USE_DECLTYPE)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -pedantic")
+
     # Turn on popcnt instruction if desired (yes by default)
     if (STORM_USE_POPCNT)
         set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mpopcnt")
@@ -118,7 +116,7 @@ elseif(MSVC)
 	add_definitions(/D_VARIADIC_MAX=10)
 	# Windows.h breaks GMM in gmm_except.h because of its macro definition for min and max
 	add_definitions(/DNOMINMAX)
-	# Boost Defs
+	# Boost Defs, required for using boost's transform iterator
 	add_definitions(/DBOOST_RESULT_OF_USE_DECLTYPE)
 	
 	# since nobody cares at the moment
@@ -148,10 +146,9 @@ else(CLANG)
 		set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libc++")
     endif()
     
-    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -stdlib=${CLANG_STDLIB} -Wall -pedantic -Wno-unused-variable -DBOOST_RESULT_OF_USE_DECLTYPE -ftemplate-depth=1024")
-    
-    set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
-    
+    add_definitions(-DBOOST_RESULT_OF_USE_DECLTYPE)
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -stdlib=${CLANG_STDLIB} -Wall -pedantic -Wno-unused-variable -ftemplate-depth=1024")
+
     # Turn on popcnt instruction if desired (yes by default)
     if (STORM_USE_POPCNT)
         set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mpopcnt")
