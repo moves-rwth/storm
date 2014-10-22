@@ -28,6 +28,7 @@ namespace storm {
             if (prev != nullptr) {
                 prev->next = this;
             }
+            STORM_LOG_ASSERT(begin < end, "Unable to create block of illegal size.");
         }
         
         template<typename ValueType>
@@ -53,11 +54,13 @@ namespace storm {
         void DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::setBegin(storm::storage::sparse::state_type begin) {
             this->begin = begin;
             this->markedPosition = begin;
+            STORM_LOG_ASSERT(begin < end, "Unable to resize block to illegal size.");
         }
         
         template<typename ValueType>
         void DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::setEnd(storm::storage::sparse::state_type end) {
             this->end = end;
+            STORM_LOG_ASSERT(begin < end, "Unable to resize block to illegal size.");
         }
         
         template<typename ValueType>
@@ -406,35 +409,16 @@ namespace storm {
                 return block;
             }
             
-            // We only split off the smaller of the two resulting blocks so we don't have to update large parts of the
-            // block mapping.
-            bool insertAfterCurrent = false;
-            if ((block.getBegin() + position) > ((block.getEnd() - block.getBegin()) / 2)) {
-                // If the splitting position is far in the back, we create the new block after the one we are splitting.
-                insertAfterCurrent = true;
-            }
-            
             // Actually create the new block and insert it at the correct position.
-            typename std::list<Block>::iterator selfIt;
-            if (insertAfterCurrent) {
-                selfIt = this->blocks.emplace(block.hasNextBlock() ? block.getNextIterator() : this->blocks.end(), position, block.getEnd(), &block, block.getNextBlockPointer(), block.getLabelPtr());
-            } else {
-                selfIt = this->blocks.emplace(block.getIterator(), block.getBegin(), position, block.getPreviousBlockPointer(), &block, block.getLabelPtr());
-            }
+            typename std::list<Block>::iterator selfIt = this->blocks.emplace(block.getIterator(), block.getBegin(), position, block.getPreviousBlockPointer(), &block, block.getLabelPtr());
             selfIt->setIterator(selfIt);
             Block& newBlock = *selfIt;
             
             // Resize the current block appropriately.
-            if (insertAfterCurrent) {
-                block.setEnd(position);
-            } else {
-                block.setBegin(position);
-            }
+            block.setBegin(position);
             
             // Update the mapping of the states in the newly created block.
-            for (auto it = this->getBegin(newBlock), ite = this->getEnd(newBlock); it != ite; ++it) {
-                stateToBlockMapping[it->first] = &newBlock;
-            }
+            this->updateBlockMapping(newBlock, this->getBegin(newBlock), this->getEnd(newBlock));
             
             return newBlock;
         }
