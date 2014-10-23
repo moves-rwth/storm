@@ -132,3 +132,5 @@ endmodule
 rewards
 	[aF] i=1 : 1;
 endrewards
+
+label "target" = s=5;

@@ -135,8 +135,17 @@ namespace storm {
              * Compares the given bit vector with the current one.
              *
              * @param other The bitvector with which to compare the current one.
+             * @return True iff the other bit vector is semantically the same as the current one.
              */
             bool operator==(BitVector const& other);
+            
+            /*!
+             * Compares the given bit vector with the current one.
+             *
+             * @param other The bitvector with which to compare the current one.
+             * @return True iff the other bit vector is semantically not the same as the current one.
+             */
+            bool operator!=(BitVector const& other);
             
             /*!
              * Assigns the contents of the given bit vector to the current bit vector via a deep copy.

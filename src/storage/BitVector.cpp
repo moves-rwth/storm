@@ -144,6 +144,10 @@ namespace storm {
             return true;
         }
         
+        bool BitVector::operator!=(BitVector const& other) {
+            return !(*this == other);
+        }
+        
         void BitVector::set(uint_fast64_t index, bool value) {
             if (index >= bitCount) throw storm::exceptions::OutOfRangeException() << "Invalid call to BitVector::set: written index " << index << " out of bounds.";
             uint_fast64_t bucket = index >> 6;
