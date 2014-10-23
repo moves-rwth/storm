@@ -22,20 +22,20 @@ namespace storm {
         class DeterministicModelStrongBisimulationDecomposition : public Decomposition<StateBlock> {
         public:
             /*!
-             * Decomposes the given DTMC into equivalence classes under strong bisimulation.
+             * Decomposes the given DTMC into equivalence classes under weak or strong bisimulation.
              *
              * @param model The model to decompose.
              * @param buildQuotient Sets whether or not the quotient model is to be built.
              */
-            DeterministicModelStrongBisimulationDecomposition(storm::models::Dtmc<ValueType> const& model, bool buildQuotient = false);
+            DeterministicModelStrongBisimulationDecomposition(storm::models::Dtmc<ValueType> const& model, bool weak = false, bool buildQuotient = false);
 
             /*!
-             * Decomposes the given CTMC into equivalence classes under strong bisimulation.
+             * Decomposes the given CTMC into equivalence classes under weak or strong bisimulation.
              *
              * @param model The model to decompose.
              * @param buildQuotient Sets whether or not the quotient model is to be built.
              */
-            DeterministicModelStrongBisimulationDecomposition(storm::models::Ctmc<ValueType> const& model, bool buildQuotient = false);
+            DeterministicModelStrongBisimulationDecomposition(storm::models::Ctmc<ValueType> const& model, bool weak = false, bool buildQuotient = false);
             
             /*!
              * Decomposes the given DTMC into equivalence classes under strong bisimulation in a way that onle safely
@@ -340,11 +340,29 @@ namespace storm {
                 void increaseValue(storm::storage::sparse::state_type state, ValueType value);
                 
                 // Updates the block mapping for the given range of states to the specified block.
-                void updateBlockMapping(Block& block, typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::iterator first, typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::iterator end);
+                void updateBlockMapping(Block& block, typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::iterator first, typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::iterator last);
                 
                 // Retrieves the first block of the partition.
                 Block& getFirstBlock();
                 
+                // Retrieves whether the given state is fully silent (only in case the silent probabilities are tracked).
+                bool isSilent(storm::storage::sparse::state_type state, storm::utility::ConstantsComparator<ValueType> const& comparator) const;
+                
+                // Retrieves whether the given state has a non-zero silent probability.
+                bool hasSilentProbability(storm::storage::sparse::state_type state, storm::utility::ConstantsComparator<ValueType> const& comparator) const;
+                
+                // Retrieves the silent probability (i.e. the probability to stay within the own equivalence class).
+                ValueType const& getSilentProbability(storm::storage::sparse::state_type state) const;
+                
+                // Sets the silent probabilities for all the states in the range to their values in the range.
+                void setSilentProbabilities(typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::iterator first, typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::iterator last);
+                
+                // Sets the silent probabilities for all states in the range to zero.
+                void setSilentProbabilitiesToZero(typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::iterator first, typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::iterator last);
+
+                // Sets the silent probability for the given state to the given value.
+                void setSilentProbability(storm::storage::sparse::state_type state, ValueType const& value);
+
             private:
                 // The list of blocks in the partition.
                 std::list<Block> blocks;
@@ -375,11 +393,12 @@ namespace storm {
              * @param model The model on whose state space to compute the coarses strong bisimulation relation.
              * @param backwardTransitions The backward transitions of the model.
              * @param The initial partition.
+             * @param weak A flag indicating whether a weak or a strong bisimulation is to be computed.
              * @param buildQuotient If set, the quotient model is built and may be retrieved using the getQuotient()
              * method.
              */
             template<typename ModelType>
-            void partitionRefinement(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, Partition& partition, bool buildQuotient);
+            void partitionRefinement(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, Partition& partition, bool weak, bool buildQuotient);
             
             /*!
              * Refines the partition based on the provided splitter. After calling this method all blocks are stable
@@ -389,10 +408,11 @@ namespace storm {
              * probabilities).
              * @param splitter The splitter to use.
              * @param partition The partition to split.
+             * @param weak A flag indicating whether a weak or a strong bisimulation is to be computed.
              * @param splitterQueue A queue into which all blocks that were split are inserted so they can be treated
              * as splitters in the future.
              */
-            void refinePartition(storm::storage::SparseMatrix<ValueType> const& backwardTransitions, Block& splitter, Partition& partition, std::deque<Block*>& splitterQueue);
+            void refinePartition(storm::storage::SparseMatrix<ValueType> const& backwardTransitions, Block& splitter, Partition& partition, bool weak, std::deque<Block*>& splitterQueue);
             
             /*!
              * Refines the block based on their probability values (leading into the splitter).
@@ -403,6 +423,16 @@ namespace storm {
              * as splitters in the future.
              */
             void refineBlockProbabilities(Block& block, Partition& partition, std::deque<Block*>& splitterQueue);
+            
+            void refineBlockWeak(Block& block, Partition& partition, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::deque<Block*>& splitterQueue);
+            
+            /*!
+             * Determines the split offsets in the given block.
+             *
+             * @param block The block that is to be analyzed for splits.
+             * @param partition The partition that contains the block.
+             */
+            std::vector<uint_fast64_t> getSplitPointsWeak(Block& block, Partition& partition);
             
             /*!
              * Builds the quotient model based on the previously computed equivalence classes (stored in the blocks
@@ -435,10 +465,21 @@ namespace storm {
              * Creates the initial partition based on all the labels in the given model.
              *
              * @param model The model whose state space is partitioned based on its labels.
+             * @param weak A flag indicating whether a weak bisimulation is to be computed.
              * @return The resulting partition.
              */
             template<typename ModelType>
-            Partition getLabelBasedInitialPartition(ModelType const& model);
+            Partition getLabelBasedInitialPartition(ModelType const& model, bool weak);
+            
+            /*!
+             * Initializes the silent probabilities by traversing all blocks and adding the probability of going to
+             * the very own equivalence class for each state.
+             *
+             * @param model The model from which to look-up the probabilities.
+             * @param partition The partition that holds the silent probabilities.
+             */
+            template<typename ModelType>
+            void initializeSilentProbabilities(ModelType const& model, Partition& partition);
             
             // If required, a quotient model is built and stored in this member.
             std::shared_ptr<storm::models::AbstractDeterministicModel<ValueType>> quotient;

@@ -155,7 +155,15 @@ namespace storm {
              * into it.
              */
             BitVector& operator=(BitVector&& other);
-                        
+            
+            /*!
+             * Retrieves whether the current bit vector is (in some order) smaller than the given one.
+             *
+             * @param other The other bit vector.
+             * @return True iff the current bit vector is smaller than the given one.
+             */
+            bool operator<(BitVector const& other) const;
+            
             /*!
              * Sets the given truth value at the given index.
              *

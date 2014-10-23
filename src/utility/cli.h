@@ -267,7 +267,7 @@ namespace storm {
                     std::shared_ptr<storm::models::Dtmc<double>> dtmc = result->template as<storm::models::Dtmc<double>>();
                     
                     STORM_PRINT(std::endl << "Performing bisimulation minimization..." << std::endl);
-                    storm::storage::DeterministicModelStrongBisimulationDecomposition<double> bisimulationDecomposition(*dtmc, true);
+                    storm::storage::DeterministicModelStrongBisimulationDecomposition<double> bisimulationDecomposition(*dtmc, storm::settings::bisimulationSettings().isWeakBisimulationSet(), true);
                     
                     result = bisimulationDecomposition.getQuotient();
                     
