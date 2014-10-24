@@ -91,9 +91,6 @@ namespace storm {
                 // Sets the end index of the block.
                 void setEnd(storm::storage::sparse::state_type end);
 
-                // Moves the end index of the block one step to the front.
-                void decrementEnd();
-                
                 // Returns the beginning index of the block.
                 storm::storage::sparse::state_type getBegin() const;
                 
@@ -404,6 +401,7 @@ namespace storm {
              * Refines the partition based on the provided splitter. After calling this method all blocks are stable
              * with respect to the splitter.
              *
+             * @param forwardTransitions The forward transitions of the model.
              * @param backwardTransitions A matrix that can be used to retrieve the predecessors (and their
              * probabilities).
              * @param splitter The splitter to use.
@@ -412,7 +410,7 @@ namespace storm {
              * @param splitterQueue A queue into which all blocks that were split are inserted so they can be treated
              * as splitters in the future.
              */
-            void refinePartition(storm::storage::SparseMatrix<ValueType> const& backwardTransitions, Block& splitter, Partition& partition, bool weak, std::deque<Block*>& splitterQueue);
+            void refinePartition(storm::storage::SparseMatrix<ValueType> const& forwardTransitions, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, Block& splitter, Partition& partition, bool weak, std::deque<Block*>& splitterQueue);
             
             /*!
              * Refines the block based on their probability values (leading into the splitter).
@@ -424,7 +422,7 @@ namespace storm {
              */
             void refineBlockProbabilities(Block& block, Partition& partition, std::deque<Block*>& splitterQueue);
             
-            void refineBlockWeak(Block& block, Partition& partition, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::deque<Block*>& splitterQueue);
+            void refineBlockWeak(Block& block, Partition& partition, storm::storage::SparseMatrix<ValueType> const& forwardTransitions, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::deque<Block*>& splitterQueue);
             
             /*!
              * Determines the split offsets in the given block.
@@ -465,11 +463,12 @@ namespace storm {
              * Creates the initial partition based on all the labels in the given model.
              *
              * @param model The model whose state space is partitioned based on its labels.
+             * @param backwardTransitions The backward transitions of the model.
              * @param weak A flag indicating whether a weak bisimulation is to be computed.
              * @return The resulting partition.
              */
             template<typename ModelType>
-            Partition getLabelBasedInitialPartition(ModelType const& model, bool weak);
+            Partition getLabelBasedInitialPartition(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, bool weak);
             
             /*!
              * Initializes the silent probabilities by traversing all blocks and adding the probability of going to

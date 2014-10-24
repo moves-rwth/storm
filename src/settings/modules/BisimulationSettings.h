@@ -36,6 +36,8 @@ namespace storm {
                  */
                 bool isWeakBisimulationSet() const;
 
+                virtual bool check() const override;
+                
                 // The name of the module.
                 static const std::string moduleName;
                 
