@@ -49,6 +49,10 @@ log4cplus::Logger logger;
 #include "src/storage/NaiveDeterministicModelBisimulationDecomposition.h"
 #include "src/storage/DeterministicModelStrongBisimulationDecomposition.h"
 
+// Headers for model checking.
+#include "src/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
+#include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
+
 // Headers for counterexample generation.
 #include "src/counterexamples/MILPMinimalLabelSetGenerator.h"
 #include "src/counterexamples/SMTMinimalCommandSetGenerator.h"
@@ -315,10 +319,16 @@ namespace storm {
                     STORM_LOG_THROW(settings.isPctlPropertySet(), storm::exceptions::InvalidSettingsException, "Unable to generate counterexample without a property.");
                     std::shared_ptr<storm::properties::prctl::PrctlFilter<double>> filterFormula = storm::parser::PrctlParser::parsePrctlFormula(settings.getPctlProperty());
                     generateCounterexample(model, filterFormula->getChild());
-                }
-                
-            }
+                } else if (settings.isPctlPropertySet()) {
+                    std::shared_ptr<storm::properties::prctl::PrctlFilter<double>> filterFormula = storm::parser::PrctlParser::parsePrctlFormula(storm::settings::generalSettings().getPctlProperty());
 
+                    if (model->getType() == storm::models::DTMC) {
+                        std::shared_ptr<storm::models::Dtmc<double>> dtmc = model->as<storm::models::Dtmc<double>>();
+                        modelchecker::prctl::SparseDtmcPrctlModelChecker<double> modelchecker(*dtmc);
+                        filterFormula->check(modelchecker);
+                    }
+                }
+            }
         }
     }
 }

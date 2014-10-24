@@ -67,9 +67,6 @@ namespace storm {
         template<typename ValueType>
         void DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::incrementBegin() {
             ++this->begin;
-            if (begin == end) {
-                std::cout << "moved begin to end!" << std::endl;
-            }
             STORM_LOG_ASSERT(begin <= end, "Unable to resize block to illegal size.");
         }
         
@@ -154,7 +151,6 @@ namespace storm {
         
         template<typename ValueType>
         bool DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::check() const {
-            std::cout << "checking block " << this->getId() << std::endl;
             assert(this->begin < this->end);
             assert(this->prev == nullptr || this->prev->next == this);
             assert(this->next == nullptr || this->next->prev == this);
@@ -619,7 +615,7 @@ namespace storm {
         
         template<typename ValueType>
         template<typename ModelType>
-        void DeterministicModelStrongBisimulationDecomposition<ValueType>::buildQuotient(ModelType const& model, Partition const& partition) {
+        void DeterministicModelStrongBisimulationDecomposition<ValueType>::buildQuotient(ModelType const& model, Partition const& partition, bool weak) {
             // In order to create the quotient model, we need to construct
             // (a) the new transition matrix,
             // (b) the new labeling,
@@ -640,8 +636,19 @@ namespace storm {
             for (uint_fast64_t blockIndex = 0; blockIndex < this->blocks.size(); ++blockIndex) {
                 auto const& block = this->blocks[blockIndex];
                 
-                // Pick one representative state. It doesn't matter which state it is, because they all behave equally.
+                // Pick one representative state. For strong bisimulation it doesn't matter which state it is, because
+                // they all behave equally.
                 storm::storage::sparse::state_type representativeState = *block.begin();
+                
+                // However, for weak bisimulation, we need to make sure the representative state is a non-silent one.
+                if (weak) {
+                    for (auto const& state : block) {
+                        if (!partition.isSilent(state, comparator)) {
+                            representativeState = state;
+                            break;
+                        }
+                    }
+                }
                 
                 Block const& oldBlock = partition.getBlock(representativeState);
                 
@@ -651,12 +658,26 @@ namespace storm {
                     
                     if (oldBlock.hasLabel()) {
                         newLabeling.addAtomicPropositionToState(oldBlock.getLabel(), blockIndex);
+                    } else {
+                        // Otherwise add all atomic propositions to the equivalence class that the representative state
+                        // satisfies.
+                        for (auto const& ap : atomicPropositions) {
+                            if (model.getStateLabeling().getStateHasAtomicProposition(ap, representativeState)) {
+                                newLabeling.addAtomicPropositionToState(ap, blockIndex);
+                            }
+                        }
                     }
                 } else {
                     // Compute the outgoing transitions of the block.
                     std::map<storm::storage::sparse::state_type, ValueType> blockProbability;
                     for (auto const& entry : model.getTransitionMatrix().getRow(representativeState)) {
                         storm::storage::sparse::state_type targetBlock = partition.getBlock(entry.getColumn()).getId();
+                        
+                        // If we are computing a weak bisimulation quotient, there is no need to add self-loops.
+                        if (weak && targetBlock == blockIndex) {
+                            continue;
+                        }
+                        
                         auto probIterator = blockProbability.find(targetBlock);
                         if (probIterator != blockProbability.end()) {
                             probIterator->second += entry.getValue();
@@ -667,7 +688,11 @@ namespace storm {
                     
                     // Now add them to the actual matrix.
                     for (auto const& probabilityEntry : blockProbability) {
-                        builder.addNextValue(blockIndex, probabilityEntry.first, probabilityEntry.second);
+                        if (weak) {
+                            builder.addNextValue(blockIndex, probabilityEntry.first, probabilityEntry.second / (storm::utility::one<ValueType>() - partition.getSilentProbability(representativeState)));
+                        } else {
+                            builder.addNextValue(blockIndex, probabilityEntry.first, probabilityEntry.second);
+                        }
                     }
                     
                     // If the block has a special label, we only add that to the block.
@@ -711,20 +736,11 @@ namespace storm {
             // Then perform the actual splitting until there are no more splitters.
             while (!splitterQueue.empty()) {
                 std::sort(splitterQueue.begin(), splitterQueue.end(), [] (Block const* b1, Block const* b2) { return b1->getNumberOfStates() < b2->getNumberOfStates(); } );
-                std::cout << "refining with splitter " << splitterQueue.front()->getId() << std::endl;
-                for (auto const& entry : splitterQueue) {
-                    std::cout << entry->getId();
-                }
-                std::cout << std::endl;
-                partition.print();
                 refinePartition(model.getTransitionMatrix(), backwardTransitions, *splitterQueue.front(), partition, weak, splitterQueue);
                 splitterQueue.pop_front();
             }
             std::chrono::high_resolution_clock::duration refinementTime = std::chrono::high_resolution_clock::now() - refinementStart;
 
-            std::cout << "final partition: " << std::endl;
-            partition.print();
-            
             // Now move the states from the internal partition into their final place in the decomposition. We do so in
             // a way that maintains the block IDs as indices.
             std::chrono::high_resolution_clock::time_point extractionStart = std::chrono::high_resolution_clock::now();
@@ -740,8 +756,7 @@ namespace storm {
 
             // If we are required to build the quotient model, do so now.
             if (buildQuotient) {
-                // FIXME: this needs to do a bit more work for weak bisimulation.
-                this->buildQuotient(model, partition);
+                this->buildQuotient(model, partition, weak);
             }
 
             std::chrono::high_resolution_clock::duration extractionTime = std::chrono::high_resolution_clock::now() - extractionStart;
@@ -818,12 +833,6 @@ namespace storm {
             
             // Now that we have the split points of the non-silent states, we perform a backward search from
             // each non-silent state and label the predecessors with the class of the non-silent state.
-            std::cout << "creating labels " << block.getEnd() << " // " << block.getBegin() << std::endl;
-            std::cout << "split points: " << std::endl;
-            for (auto const& point : splitPoints) {
-                std::cout << point << std::endl;
-            }
-            block.print(partition);
             std::vector<storm::storage::BitVector> stateLabels(block.getEnd() - block.getBegin(), storm::storage::BitVector(splitPoints.size() - 1));
             
             std::vector<storm::storage::sparse::state_type> stateStack;
@@ -859,26 +868,10 @@ namespace storm {
             // scan for ranges that agree on the label.
             std::sort(partition.getBegin(block), partition.getEnd(block), [&] (std::pair<storm::storage::sparse::state_type, ValueType> const& a, std::pair<storm::storage::sparse::state_type, ValueType> const& b) { return stateLabels[partition.getPosition(a.first) - block.getBegin()] < stateLabels[partition.getPosition(b.first) - block.getBegin()]; });
             
-            std::cout << "sorted states:" << std::endl;
-            for (auto it = partition.getBegin(block), ite = partition.getEnd(block); it != ite; ++it) {
-                std::cout << it->first << " ";
-            }
-            std::cout << std::endl;
-            
-            for (auto const& label : stateLabels) {
-                std::cout << label << std::endl;
-            }
-            
             // Note that we do not yet repair the positions vector, but for the sake of efficiency temporariliy keep the
             // data structure in an inconsistent state.
             
-            std::cout << "sorted?" << std::endl;
-            for (auto it = partition.getBegin(block), ite = partition.getEnd(block); it != ite; ++it) {
-                std::cout << "state " << it->first << " and label " << stateLabels[partition.getPosition(it->first) - block.getBegin()] << std::endl;
-            }
-            
             // Now we have everything in place to actually split the block by just scanning for ranges of equal label.
-            std::cout << "scanning range " << block.getBegin() << " to " << block.getEnd() << " for equal labelings" << std::endl;
             typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::const_iterator begin = partition.getBegin(block);
             typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::const_iterator current = begin;
             typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::const_iterator end = partition.getEnd(block) - 1;
@@ -890,8 +883,6 @@ namespace storm {
             storm::storage::sparse::state_type blockOffset = block.getBegin();
             bool blockSplit = stateLabels[partition.getPosition(begin->first) - blockOffset] != stateLabels[partition.getPosition(end->first) - blockOffset];
             while (stateLabels[partition.getPosition(begin->first) - blockOffset] != stateLabels[partition.getPosition(end->first) - blockOffset]) {
-                std::cout << "still scanning range " << currentIndex << " to " << block.getEnd() << " for equal labelings" << std::endl;
-                std::cout << "found different labels " << stateLabels[partition.getPosition(begin->first) - blockOffset] << " and " << stateLabels[partition.getPosition(end->first) - blockOffset] << std::endl;
                 // Now we scan for the first state in the block that disagrees on the labeling value.
                 // Note that we do not have to check currentIndex for staying within bounds, because we know the matching
                 // state is within bounds.
@@ -906,10 +897,6 @@ namespace storm {
                 
                 // Now we split the block and mark it as a potential splitter.
                 Block& newBlock = partition.splitBlock(block, currentIndex);
-                std::cout << "splitting block created new block " << std::endl;
-                newBlock.print(partition);
-                std::cout << "old block remained: " << std::endl;
-                block.print(partition);
                 
                 // Update the silent probabilities for all the states in the new block.
                 for (auto stateIt = partition.getBegin(newBlock), stateIte = partition.getEnd(newBlock); stateIt != stateIte; ++stateIt) {
@@ -917,60 +904,43 @@ namespace storm {
                         ValueType newSilentProbability = storm::utility::zero<ValueType>();
                         for (auto const& successorEntry : forwardTransitions.getRow(stateIt->first)) {
                             if (&partition.getBlock(successorEntry.getColumn()) == &newBlock) {
-                                std::cout << successorEntry.getColumn() << " is in block " << newBlock.getId() << std::endl;
                                 newSilentProbability += successorEntry.getValue();
-                            } else {
-                                std::cout << successorEntry.getColumn() << " is not in block " << newBlock.getId() << std::endl;
                             }
                         }
                         partition.setSilentProbability(stateIt->first, newSilentProbability);
                     }
                 }
                 
-                std::cout << "after updating silent probs:" << std::endl;
-                newBlock.print(partition);
-                
                 if (!newBlock.isMarkedAsSplitter()) {
-                    std::cout << "adding " << newBlock.getId() << " to the queue." << std::endl;
                     splitterQueue.push_back(&newBlock);
                     newBlock.markAsSplitter();
                 }
-                std::cout << "end of loop; currentIndex = " << currentIndex << std::endl;
             }
             
             // If the block was split, we also need to insert itself into the splitter queue.
             if (blockSplit) {
                 if (!block.isMarkedAsSplitter()) {
-                    std::cout << "adding " << block.getId() << " to the queue." << std::endl;
                     splitterQueue.push_back(&block);
                     block.markAsSplitter();
                 }
                 
                 // Update the silent probabilities for all the states in the old block.
                 for (auto stateIt = partition.getBegin(block), stateIte = partition.getEnd(block); stateIt != stateIte; ++stateIt) {
-                    std::cout << "computing silent prob of " << stateIt->first << std::endl;
                     if (partition.hasSilentProbability(stateIt->first, comparator)) {
                         ValueType newSilentProbability = storm::utility::zero<ValueType>();
                         for (auto const& successorEntry : forwardTransitions.getRow(stateIt->first)) {
                             if (&partition.getBlock(successorEntry.getColumn()) == &block) {
-                                std::cout << successorEntry.getColumn() << " is in block " << block.getId() << std::endl;
                                 newSilentProbability += successorEntry.getValue();
-                            } else {
-                                std::cout << successorEntry.getColumn() << " is not in block " << block.getId() << std::endl;
                             }
-                    }
+                        }
                         partition.setSilentProbability(stateIt->first, newSilentProbability);
                     }
                 }
-                
-                std::cout << "after updating silent probs for block itself:" << std::endl;
-                block.print(partition);
             }
             
             // Finally update the positions vector.
             storm::storage::sparse::state_type position = blockOffset;
             for (auto stateIt = partition.getStatesAndValues().begin() + blockOffset, stateIte = partition.getEnd(block); stateIt != stateIte; ++stateIt, ++position) {
-                std::cout << "setting position of state " << stateIt->first << " to " << position << std::endl;
                 partition.setPosition(stateIt->first, position);
             }
         }
@@ -982,11 +952,7 @@ namespace storm {
             std::for_each(partition.getStatesAndValues().begin() + block.getOriginalBegin(), partition.getStatesAndValues().begin() + block.getBegin(), [&] (std::pair<storm::storage::sparse::state_type, ValueType>& stateValuePair) {
                 ValueType const& silentProbability = partition.getSilentProbability(stateValuePair.first);
                 if (!comparator.isOne(silentProbability) && !comparator.isZero(silentProbability)) {
-                    std::cout << "prob for state " << stateValuePair.first << " before: " << stateValuePair.second << std::endl;
                     stateValuePair.second /= storm::utility::one<ValueType>() - silentProbability;
-                    std::cout << "and scaled: " << stateValuePair.second << std::endl;
-                } else {
-                    std::cout << "not scaling prob for state " << stateValuePair.first << " because silent prob is " << silentProbability << " and prob is " << stateValuePair.second << std::endl;
                 }
             });
             
@@ -1000,7 +966,6 @@ namespace storm {
             }
             
             // Then, we scan for the ranges of states that agree on the probability.
-            std::cout << "range to scan for split points: " << block.getOriginalBegin() << " to " << (block.getBegin() - 1) << std::endl;
             typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::const_iterator begin = partition.getStatesAndValues().begin() + block.getOriginalBegin();
             typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::const_iterator current = begin;
             typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::const_iterator end = partition.getStatesAndValues().begin() + block.getBegin() - 1;
@@ -1051,9 +1016,7 @@ namespace storm {
                         splitterIsPredecessor = true;
                     }
                     
-                    std::cout << " got predecessor " << predecessor << " of state " << currentState << " in block " << predecessorBlock.getId() << " with prob " << predecessorEntry.getValue() << std::endl;
-                    
-                    // If the predecessor block has just one state, there is no point in splitting it.
+                    // If the predecessor block has just one state or is marked as being absorbing, we must not split it.
                     if (predecessorBlock.getNumberOfStates() <= 1 || predecessorBlock.isAbsorbing()) {
                         continue;
                     }
@@ -1117,8 +1080,6 @@ namespace storm {
                     Block& predecessorBlock = partition.getBlock(predecessor);
                     storm::storage::sparse::state_type predecessorPosition = partition.getPosition(predecessor);
 
-                    std::cout << " got predecessor(2) " << predecessor << " of state " << stateIterator->first << " in block " << predecessorBlock.getId() << " with prob " << predecessorEntry.getValue() << std::endl;
-                    
                     if (predecessorPosition >= predecessorBlock.getBegin()) {
                         partition.swapStatesAtPositions(predecessorPosition, predecessorBlock.getBegin());
                         predecessorBlock.incrementBegin();
@@ -1186,11 +1147,9 @@ namespace storm {
                     
                     // If the splitter is also the predecessor block, we must not refine it at this point.
                     if (&block != &splitter) {
-                        std::cout << "refining predecessor block " << block.getId() << std::endl;
                         refineBlockWeak(block, partition, forwardTransitions, backwardTransitions, splitterQueue);
                     } else {
                         // Restore the begin of the block.
-                        std::cout << "not splitting because predecessor block is the splitter" << std::endl;
                         block.setBegin(block.getOriginalBegin());
                     }
 
@@ -1237,26 +1196,33 @@ namespace storm {
                         
                         // Now traverse the forward transitions of the current state and check whether there is a
                         // transition to some other block.
+                        bool isDirectlyNonDivergent = false;
                         for (auto const& successor : model.getRows(stateIt->first)) {
                             // If there is such a transition, then we can mark all states in the current block that can
                             // reach the state as non-divergent.
                             if (&partition.getBlock(successor.getColumn()) != &block) {
-                                stateStack.push_back(stateIt->first);
+                                isDirectlyNonDivergent = true;
+                                break;
+                            }
+                        }
+                        
+                        if (isDirectlyNonDivergent) {
+                            stateStack.push_back(stateIt->first);
+                            
+                            while (!stateStack.empty()) {
+                                storm::storage::sparse::state_type currentState = stateStack.back();
+                                stateStack.pop_back();
+                                nondivergentStates.set(currentState);
                                 
-                                while (!stateStack.empty()) {
-                                    storm::storage::sparse::state_type currentState = stateStack.back();
-                                    stateStack.pop_back();
-                                    nondivergentStates.set(currentState);
-                                    
-                                    for (auto const& predecessor : backwardTransitions.getRow(stateIt->first)) {
-                                        if (&partition.getBlock(predecessor.getColumn()) == &block && !nondivergentStates.get(predecessor.getColumn())) {
-                                            stateStack.push_back(predecessor.getColumn());
-                                        }
+                                for (auto const& predecessor : backwardTransitions.getRow(currentState)) {
+                                    if (&partition.getBlock(predecessor.getColumn()) == &block && !nondivergentStates.get(predecessor.getColumn())) {
+                                        stateStack.push_back(predecessor.getColumn());
                                     }
                                 }
                             }
                         }
                     }
+                    
                     
                     if (nondivergentStates.getNumberOfSetBits() > 0 && nondivergentStates.getNumberOfSetBits() != block.getNumberOfStates()) {
                         // Now that we have determined all (non)divergent states in the current block, we need to split them
@@ -1269,7 +1235,15 @@ namespace storm {
                         }
                         
                         // Finally, split the block.
-                        partition.splitBlock(block, block.getBegin() + nondivergentStates.getNumberOfSetBits());
+                        Block& nondivergentBlock = partition.splitBlock(block, block.getBegin() + nondivergentStates.getNumberOfSetBits());
+                        
+                        // Since the remaining states in the block are divergent, we can mark the block as absorbing.
+                        // This also guarantees that the self-loop will be added to the state of the quotient
+                        // representing this block of states.
+                        block.setAbsorbing(true);
+                    } else if (nondivergentStates.getNumberOfSetBits() == 0) {
+                        // If there are only diverging states in the block, we need to make it absorbing.
+                        block.setAbsorbing(true);
                     }
                 }
                 

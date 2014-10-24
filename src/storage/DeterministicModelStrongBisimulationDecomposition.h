@@ -440,9 +440,10 @@ namespace storm {
              * determining the transitions of each equivalence class.
              * @param partition The previously computed partition. This is used for quickly retrieving the block of a
              * state.
+             * @param weak A flag indicating whether the quotient is built for weak bisimulation.
              */
             template<typename ModelType>
-            void buildQuotient(ModelType const& model, Partition const& partition);
+            void buildQuotient(ModelType const& model, Partition const& partition, bool weak);
 
             /*!
              * Creates the measure-driven initial partition for reaching psi states from phi states.
