@@ -1,4 +1,4 @@
-#include "src/storage/DeterministicModelStrongBisimulationDecomposition.h"
+#include "src/storage/DeterministicModelBisimulationDecomposition.h"
 
 #include <algorithm>
 #include <unordered_map>
@@ -13,10 +13,10 @@ namespace storm {
     namespace storage {
         
         template<typename ValueType>
-        std::size_t DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::blockId = 0;
+        std::size_t DeterministicModelBisimulationDecomposition<ValueType>::Block::blockId = 0;
         
         template<typename ValueType>
-        DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::Block(storm::storage::sparse::state_type begin, storm::storage::sparse::state_type end, Block* prev, Block* next, std::shared_ptr<std::string> const& label) : next(next), prev(prev), begin(begin), end(end), markedAsSplitter(false), markedAsPredecessorBlock(false), markedPosition(begin), absorbing(false), id(blockId++), label(label) {
+        DeterministicModelBisimulationDecomposition<ValueType>::Block::Block(storm::storage::sparse::state_type begin, storm::storage::sparse::state_type end, Block* prev, Block* next, std::shared_ptr<std::string> const& label) : next(next), prev(prev), begin(begin), end(end), markedAsSplitter(false), markedAsPredecessorBlock(false), markedPosition(begin), absorbing(false), id(blockId++), label(label) {
             if (next != nullptr) {
                 next->prev = this;
             }
@@ -27,7 +27,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::print(Partition const& partition) const {
+        void DeterministicModelBisimulationDecomposition<ValueType>::Block::print(Partition const& partition) const {
             std::cout << "block " << this->getId() << " with marked position " << this->getMarkedPosition() << " and original begin " << this->getOriginalBegin() << std::endl;
             std::cout << "begin: " << this->begin << " and end: " << this->end << " (number of states: " << this->getNumberOfStates() << ")" << std::endl;
             std::cout << "states:" << std::endl;
@@ -52,31 +52,31 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::setBegin(storm::storage::sparse::state_type begin) {
+        void DeterministicModelBisimulationDecomposition<ValueType>::Block::setBegin(storm::storage::sparse::state_type begin) {
             this->begin = begin;
             this->markedPosition = begin;
             STORM_LOG_ASSERT(begin < end, "Unable to resize block to illegal size.");
         }
         
         template<typename ValueType>
-        void DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::setEnd(storm::storage::sparse::state_type end) {
+        void DeterministicModelBisimulationDecomposition<ValueType>::Block::setEnd(storm::storage::sparse::state_type end) {
             this->end = end;
             STORM_LOG_ASSERT(begin < end, "Unable to resize block to illegal size.");
         }
         
         template<typename ValueType>
-        void DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::incrementBegin() {
+        void DeterministicModelBisimulationDecomposition<ValueType>::Block::incrementBegin() {
             ++this->begin;
             STORM_LOG_ASSERT(begin <= end, "Unable to resize block to illegal size.");
         }
         
         template<typename ValueType>
-        storm::storage::sparse::state_type DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::getBegin() const {
+        storm::storage::sparse::state_type DeterministicModelBisimulationDecomposition<ValueType>::Block::getBegin() const {
             return this->begin;
         }
         
         template<typename ValueType>
-        storm::storage::sparse::state_type DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::getOriginalBegin() const {
+        storm::storage::sparse::state_type DeterministicModelBisimulationDecomposition<ValueType>::Block::getOriginalBegin() const {
             if (this->hasPreviousBlock()) {
                 return this->getPreviousBlock().getEnd();
             } else {
@@ -85,72 +85,72 @@ namespace storm {
         }
         
         template<typename ValueType>
-        storm::storage::sparse::state_type DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::getEnd() const {
+        storm::storage::sparse::state_type DeterministicModelBisimulationDecomposition<ValueType>::Block::getEnd() const {
             return this->end;
         }
         
         template<typename ValueType>
-        void DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::setIterator(iterator it) {
+        void DeterministicModelBisimulationDecomposition<ValueType>::Block::setIterator(iterator it) {
             this->selfIt = it;
         }
         
         template<typename ValueType>
-        typename DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::iterator DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::getIterator() const {
+        typename DeterministicModelBisimulationDecomposition<ValueType>::Block::iterator DeterministicModelBisimulationDecomposition<ValueType>::Block::getIterator() const {
             return this->selfIt;
         }
         
         template<typename ValueType>
-        typename DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::iterator DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::getNextIterator() const {
+        typename DeterministicModelBisimulationDecomposition<ValueType>::Block::iterator DeterministicModelBisimulationDecomposition<ValueType>::Block::getNextIterator() const {
             return this->getNextBlock().getIterator();
         }
         
         template<typename ValueType>
-        typename DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::iterator DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::getPreviousIterator() const {
+        typename DeterministicModelBisimulationDecomposition<ValueType>::Block::iterator DeterministicModelBisimulationDecomposition<ValueType>::Block::getPreviousIterator() const {
             return this->getPreviousBlock().getIterator();
         }
         
         template<typename ValueType>
-        typename DeterministicModelStrongBisimulationDecomposition<ValueType>::Block& DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::getNextBlock() {
+        typename DeterministicModelBisimulationDecomposition<ValueType>::Block& DeterministicModelBisimulationDecomposition<ValueType>::Block::getNextBlock() {
             return *this->next;
         }
         
         template<typename ValueType>
-        typename DeterministicModelStrongBisimulationDecomposition<ValueType>::Block const& DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::getNextBlock() const {
+        typename DeterministicModelBisimulationDecomposition<ValueType>::Block const& DeterministicModelBisimulationDecomposition<ValueType>::Block::getNextBlock() const {
             return *this->next;
         }
         
         template<typename ValueType>
-        bool DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::hasNextBlock() const {
+        bool DeterministicModelBisimulationDecomposition<ValueType>::Block::hasNextBlock() const {
             return this->next != nullptr;
         }
         
         template<typename ValueType>
-        typename DeterministicModelStrongBisimulationDecomposition<ValueType>::Block& DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::getPreviousBlock() {
+        typename DeterministicModelBisimulationDecomposition<ValueType>::Block& DeterministicModelBisimulationDecomposition<ValueType>::Block::getPreviousBlock() {
             return *this->prev;
         }
         
         template<typename ValueType>
-        typename DeterministicModelStrongBisimulationDecomposition<ValueType>::Block* DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::getPreviousBlockPointer() {
+        typename DeterministicModelBisimulationDecomposition<ValueType>::Block* DeterministicModelBisimulationDecomposition<ValueType>::Block::getPreviousBlockPointer() {
             return this->prev;
         }
 
         template<typename ValueType>
-        typename DeterministicModelStrongBisimulationDecomposition<ValueType>::Block* DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::getNextBlockPointer() {
+        typename DeterministicModelBisimulationDecomposition<ValueType>::Block* DeterministicModelBisimulationDecomposition<ValueType>::Block::getNextBlockPointer() {
             return this->next;
         }
 
         template<typename ValueType>
-        typename DeterministicModelStrongBisimulationDecomposition<ValueType>::Block const& DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::getPreviousBlock() const {
+        typename DeterministicModelBisimulationDecomposition<ValueType>::Block const& DeterministicModelBisimulationDecomposition<ValueType>::Block::getPreviousBlock() const {
             return *this->prev;
         }
         
         template<typename ValueType>
-        bool DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::hasPreviousBlock() const {
+        bool DeterministicModelBisimulationDecomposition<ValueType>::Block::hasPreviousBlock() const {
             return this->prev != nullptr;
         }
         
         template<typename ValueType>
-        bool DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::check() const {
+        bool DeterministicModelBisimulationDecomposition<ValueType>::Block::check() const {
             assert(this->begin < this->end);
             assert(this->prev == nullptr || this->prev->next == this);
             assert(this->next == nullptr || this->next->prev == this);
@@ -158,94 +158,94 @@ namespace storm {
         }
         
         template<typename ValueType>
-        std::size_t DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::getNumberOfStates() const {
+        std::size_t DeterministicModelBisimulationDecomposition<ValueType>::Block::getNumberOfStates() const {
             // We need to take the original begin here, because the begin is temporarily moved.
             return (this->end - this->getOriginalBegin());
         }
         
         template<typename ValueType>
-        bool DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::isMarkedAsSplitter() const {
+        bool DeterministicModelBisimulationDecomposition<ValueType>::Block::isMarkedAsSplitter() const {
             return this->markedAsSplitter;
         }
         
         template<typename ValueType>
-        void DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::markAsSplitter() {
+        void DeterministicModelBisimulationDecomposition<ValueType>::Block::markAsSplitter() {
             this->markedAsSplitter = true;
         }
 
         template<typename ValueType>
-        void DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::unmarkAsSplitter() {
+        void DeterministicModelBisimulationDecomposition<ValueType>::Block::unmarkAsSplitter() {
             this->markedAsSplitter = false;
         }
 
         template<typename ValueType>
-        std::size_t DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::getId() const {
+        std::size_t DeterministicModelBisimulationDecomposition<ValueType>::Block::getId() const {
             return this->id;
         }
         
         template<typename ValueType>
-        void DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::setAbsorbing(bool absorbing) {
+        void DeterministicModelBisimulationDecomposition<ValueType>::Block::setAbsorbing(bool absorbing) {
             this->absorbing = absorbing;
         }
         
         template<typename ValueType>
-        bool DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::isAbsorbing() const {
+        bool DeterministicModelBisimulationDecomposition<ValueType>::Block::isAbsorbing() const {
             return this->absorbing;
         }
         
         template<typename ValueType>
-        storm::storage::sparse::state_type DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::getMarkedPosition() const {
+        storm::storage::sparse::state_type DeterministicModelBisimulationDecomposition<ValueType>::Block::getMarkedPosition() const {
             return this->markedPosition;
         }
         
         template<typename ValueType>
-        void DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::setMarkedPosition(storm::storage::sparse::state_type position) {
+        void DeterministicModelBisimulationDecomposition<ValueType>::Block::setMarkedPosition(storm::storage::sparse::state_type position) {
             this->markedPosition = position;
         }
         
         template<typename ValueType>
-        void DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::resetMarkedPosition() {
+        void DeterministicModelBisimulationDecomposition<ValueType>::Block::resetMarkedPosition() {
             this->markedPosition = this->begin;
         }
         
         template<typename ValueType>
-        void DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::incrementMarkedPosition() {
+        void DeterministicModelBisimulationDecomposition<ValueType>::Block::incrementMarkedPosition() {
             ++this->markedPosition;
         }
         
         template<typename ValueType>
-        void DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::markAsPredecessorBlock() {
+        void DeterministicModelBisimulationDecomposition<ValueType>::Block::markAsPredecessorBlock() {
             this->markedAsPredecessorBlock = true;
         }
         
         template<typename ValueType>
-        void DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::unmarkAsPredecessorBlock() {
+        void DeterministicModelBisimulationDecomposition<ValueType>::Block::unmarkAsPredecessorBlock() {
             this->markedAsPredecessorBlock = false;
         }
         
         template<typename ValueType>
-        bool DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::isMarkedAsPredecessor() const {
+        bool DeterministicModelBisimulationDecomposition<ValueType>::Block::isMarkedAsPredecessor() const {
             return markedAsPredecessorBlock;
         }
         
         template<typename ValueType>
-        bool DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::hasLabel() const {
+        bool DeterministicModelBisimulationDecomposition<ValueType>::Block::hasLabel() const {
             return this->label != nullptr;
         }
         
         template<typename ValueType>
-        std::string const& DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::getLabel() const {
+        std::string const& DeterministicModelBisimulationDecomposition<ValueType>::Block::getLabel() const {
             STORM_LOG_THROW(this->label != nullptr, storm::exceptions::IllegalFunctionCallException, "Unable to retrieve label of block that has none.");
             return *this->label;
         }
         
         template<typename ValueType>
-        std::shared_ptr<std::string> const& DeterministicModelStrongBisimulationDecomposition<ValueType>::Block::getLabelPtr() const {
+        std::shared_ptr<std::string> const& DeterministicModelBisimulationDecomposition<ValueType>::Block::getLabelPtr() const {
             return this->label;
         }
         
         template<typename ValueType>
-        DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::Partition(std::size_t numberOfStates, bool keepSilentProbabilities) : stateToBlockMapping(numberOfStates), statesAndValues(numberOfStates), positions(numberOfStates), keepSilentProbabilities(keepSilentProbabilities), silentProbabilities() {
+        DeterministicModelBisimulationDecomposition<ValueType>::Partition::Partition(std::size_t numberOfStates, bool keepSilentProbabilities) : stateToBlockMapping(numberOfStates), statesAndValues(numberOfStates), positions(numberOfStates), keepSilentProbabilities(keepSilentProbabilities), silentProbabilities() {
             // Create the block and give it an iterator to itself.
             typename std::list<Block>::iterator it = blocks.emplace(this->blocks.end(), 0, numberOfStates, nullptr, nullptr);
             it->setIterator(it);
@@ -264,7 +264,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::Partition(std::size_t numberOfStates, storm::storage::BitVector const& prob0States, storm::storage::BitVector const& prob1States, std::string const& otherLabel, std::string const& prob1Label, bool keepSilentProbabilities) : stateToBlockMapping(numberOfStates), statesAndValues(numberOfStates), positions(numberOfStates), keepSilentProbabilities(keepSilentProbabilities), silentProbabilities() {
+        DeterministicModelBisimulationDecomposition<ValueType>::Partition::Partition(std::size_t numberOfStates, storm::storage::BitVector const& prob0States, storm::storage::BitVector const& prob1States, std::string const& otherLabel, std::string const& prob1Label, bool keepSilentProbabilities) : stateToBlockMapping(numberOfStates), statesAndValues(numberOfStates), positions(numberOfStates), keepSilentProbabilities(keepSilentProbabilities), silentProbabilities() {
             typename std::list<Block>::iterator firstIt = blocks.emplace(this->blocks.end(), 0, prob0States.getNumberOfSetBits(), nullptr, nullptr);
             Block& firstBlock = *firstIt;
             firstBlock.setIterator(firstIt);
@@ -309,13 +309,13 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::swapStates(storm::storage::sparse::state_type state1, storm::storage::sparse::state_type state2) {
+        void DeterministicModelBisimulationDecomposition<ValueType>::Partition::swapStates(storm::storage::sparse::state_type state1, storm::storage::sparse::state_type state2) {
             std::swap(this->statesAndValues[this->positions[state1]], this->statesAndValues[this->positions[state2]]);
             std::swap(this->positions[state1], this->positions[state2]);
         }
 
         template<typename ValueType>
-        void DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::swapStatesAtPositions(storm::storage::sparse::state_type position1, storm::storage::sparse::state_type position2) {
+        void DeterministicModelBisimulationDecomposition<ValueType>::Partition::swapStatesAtPositions(storm::storage::sparse::state_type position1, storm::storage::sparse::state_type position2) {
             storm::storage::sparse::state_type state1 = this->statesAndValues[position1].first;
             storm::storage::sparse::state_type state2 = this->statesAndValues[position2].first;
             
@@ -326,84 +326,84 @@ namespace storm {
         }
         
         template<typename ValueType>
-        storm::storage::sparse::state_type const& DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::getPosition(storm::storage::sparse::state_type state) const {
+        storm::storage::sparse::state_type const& DeterministicModelBisimulationDecomposition<ValueType>::Partition::getPosition(storm::storage::sparse::state_type state) const {
             return this->positions[state];
         }
         
         template<typename ValueType>
-        void DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::setPosition(storm::storage::sparse::state_type state, storm::storage::sparse::state_type position) {
+        void DeterministicModelBisimulationDecomposition<ValueType>::Partition::setPosition(storm::storage::sparse::state_type state, storm::storage::sparse::state_type position) {
             this->positions[state] = position;
         }
         
         template<typename ValueType>
-        storm::storage::sparse::state_type const& DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::getState(storm::storage::sparse::state_type position) const {
+        storm::storage::sparse::state_type const& DeterministicModelBisimulationDecomposition<ValueType>::Partition::getState(storm::storage::sparse::state_type position) const {
             return this->statesAndValues[position].first;
         }
         
         template<typename ValueType>
-        ValueType const& DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::getValue(storm::storage::sparse::state_type state) const {
+        ValueType const& DeterministicModelBisimulationDecomposition<ValueType>::Partition::getValue(storm::storage::sparse::state_type state) const {
             return this->statesAndValues[this->positions[state]].second;
         }
         
         template<typename ValueType>
-        ValueType const& DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::getValueAtPosition(storm::storage::sparse::state_type position) const {
+        ValueType const& DeterministicModelBisimulationDecomposition<ValueType>::Partition::getValueAtPosition(storm::storage::sparse::state_type position) const {
             return this->statesAndValues[position].second;
         }
         
         template<typename ValueType>
-        void DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::setValue(storm::storage::sparse::state_type state, ValueType value) {
+        void DeterministicModelBisimulationDecomposition<ValueType>::Partition::setValue(storm::storage::sparse::state_type state, ValueType value) {
             this->statesAndValues[this->positions[state]].second = value;
         }
         
         template<typename ValueType>
-        void DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::increaseValue(storm::storage::sparse::state_type state, ValueType value) {
+        void DeterministicModelBisimulationDecomposition<ValueType>::Partition::increaseValue(storm::storage::sparse::state_type state, ValueType value) {
             this->statesAndValues[this->positions[state]].second += value;
         }
 
         template<typename ValueType>
-        void DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::updateBlockMapping(Block& block, typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::iterator first, typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::iterator last) {
+        void DeterministicModelBisimulationDecomposition<ValueType>::Partition::updateBlockMapping(Block& block, typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::iterator first, typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::iterator last) {
             for (; first != last; ++first) {
                 this->stateToBlockMapping[first->first] = &block;
             }
         }
         
         template<typename ValueType>
-        typename DeterministicModelStrongBisimulationDecomposition<ValueType>::Block& DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::getFirstBlock() {
+        typename DeterministicModelBisimulationDecomposition<ValueType>::Block& DeterministicModelBisimulationDecomposition<ValueType>::Partition::getFirstBlock() {
             return *this->blocks.begin();
         }
         
         template<typename ValueType>
-        typename DeterministicModelStrongBisimulationDecomposition<ValueType>::Block& DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::getBlock(storm::storage::sparse::state_type state) {
+        typename DeterministicModelBisimulationDecomposition<ValueType>::Block& DeterministicModelBisimulationDecomposition<ValueType>::Partition::getBlock(storm::storage::sparse::state_type state) {
             return *this->stateToBlockMapping[state];
         }
 
         template<typename ValueType>
-        typename DeterministicModelStrongBisimulationDecomposition<ValueType>::Block const& DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::getBlock(storm::storage::sparse::state_type state) const {
+        typename DeterministicModelBisimulationDecomposition<ValueType>::Block const& DeterministicModelBisimulationDecomposition<ValueType>::Partition::getBlock(storm::storage::sparse::state_type state) const {
             return *this->stateToBlockMapping[state];
         }
 
         template<typename ValueType>
-        typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::iterator DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::getBegin(Block const& block) {
+        typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::iterator DeterministicModelBisimulationDecomposition<ValueType>::Partition::getBegin(Block const& block) {
             return this->statesAndValues.begin() + block.getBegin();
         }
         
         template<typename ValueType>
-        typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::iterator DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::getEnd(Block const& block) {
+        typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::iterator DeterministicModelBisimulationDecomposition<ValueType>::Partition::getEnd(Block const& block) {
             return this->statesAndValues.begin() + block.getEnd();
         }
 
         template<typename ValueType>
-        typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::const_iterator DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::getBegin(Block const& block) const {
+        typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::const_iterator DeterministicModelBisimulationDecomposition<ValueType>::Partition::getBegin(Block const& block) const {
             return this->statesAndValues.begin() + block.getBegin();
         }
         
         template<typename ValueType>
-        typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::const_iterator DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::getEnd(Block const& block) const {
+        typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::const_iterator DeterministicModelBisimulationDecomposition<ValueType>::Partition::getEnd(Block const& block) const {
             return this->statesAndValues.begin() + block.getEnd();
         }
         
         template<typename ValueType>
-        typename DeterministicModelStrongBisimulationDecomposition<ValueType>::Block& DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::splitBlock(Block& block, storm::storage::sparse::state_type position) {
+        typename DeterministicModelBisimulationDecomposition<ValueType>::Block& DeterministicModelBisimulationDecomposition<ValueType>::Partition::splitBlock(Block& block, storm::storage::sparse::state_type position) {
             // In case one of the resulting blocks would be empty, we simply return the current block and do not create
             // a new one.
             if (position == block.getBegin() || position == block.getEnd()) {
@@ -425,7 +425,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        typename DeterministicModelStrongBisimulationDecomposition<ValueType>::Block& DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::insertBlock(Block& block) {
+        typename DeterministicModelBisimulationDecomposition<ValueType>::Block& DeterministicModelBisimulationDecomposition<ValueType>::Partition::insertBlock(Block& block) {
             // Find the beginning of the new block.
             storm::storage::sparse::state_type begin;
             if (block.hasPreviousBlock()) {
@@ -448,7 +448,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::splitLabel(storm::storage::BitVector const& statesWithLabel) {
+        void DeterministicModelBisimulationDecomposition<ValueType>::Partition::splitLabel(storm::storage::BitVector const& statesWithLabel) {
             for (auto blockIterator = this->blocks.begin(), ite = this->blocks.end(); blockIterator != ite; ) { // The update of the loop was intentionally moved to the bottom of the loop.
                 Block& block = *blockIterator;
                 
@@ -476,25 +476,25 @@ namespace storm {
         }
         
         template<typename ValueType>
-        bool DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::isSilent(storm::storage::sparse::state_type state, storm::utility::ConstantsComparator<ValueType> const& comparator) const {
+        bool DeterministicModelBisimulationDecomposition<ValueType>::Partition::isSilent(storm::storage::sparse::state_type state, storm::utility::ConstantsComparator<ValueType> const& comparator) const {
             STORM_LOG_ASSERT(this->keepSilentProbabilities, "Unable to retrieve silentness of state, because silent probabilities are not tracked.");
             return comparator.isOne(this->silentProbabilities[state]);
         }
         
         template<typename ValueType>
-        bool DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::hasSilentProbability(storm::storage::sparse::state_type state, storm::utility::ConstantsComparator<ValueType> const& comparator) const {
+        bool DeterministicModelBisimulationDecomposition<ValueType>::Partition::hasSilentProbability(storm::storage::sparse::state_type state, storm::utility::ConstantsComparator<ValueType> const& comparator) const {
             STORM_LOG_ASSERT(this->keepSilentProbabilities, "Unable to retrieve silentness of state, because silent probabilities are not tracked.");
             return !comparator.isZero(this->silentProbabilities[state]);
         }
         
         template<typename ValueType>
-        ValueType const& DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::getSilentProbability(storm::storage::sparse::state_type state) const {
+        ValueType const& DeterministicModelBisimulationDecomposition<ValueType>::Partition::getSilentProbability(storm::storage::sparse::state_type state) const {
             STORM_LOG_ASSERT(this->keepSilentProbabilities, "Unable to retrieve silent probability of state, because silent probabilities are not tracked.");
             return this->silentProbabilities[state];
         }
         
         template<typename ValueType>
-        void DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::setSilentProbabilities(typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::iterator first, typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::iterator last) {
+        void DeterministicModelBisimulationDecomposition<ValueType>::Partition::setSilentProbabilities(typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::iterator first, typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::iterator last) {
             STORM_LOG_ASSERT(this->keepSilentProbabilities, "Unable to set silent probability of state, because silent probabilities are not tracked.");
             for (; first != last; ++first) {
                 this->silentProbabilities[first->first] = first->second;
@@ -502,7 +502,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::setSilentProbabilitiesToZero(typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::iterator first, typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::iterator last) {
+        void DeterministicModelBisimulationDecomposition<ValueType>::Partition::setSilentProbabilitiesToZero(typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::iterator first, typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::iterator last) {
             STORM_LOG_ASSERT(this->keepSilentProbabilities, "Unable to set silent probability of state, because silent probabilities are not tracked.");
             for (; first != last; ++first) {
                 this->silentProbabilities[first->first] = storm::utility::zero<ValueType>();
@@ -510,28 +510,28 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::setSilentProbability(storm::storage::sparse::state_type state, ValueType const& value) {
+        void DeterministicModelBisimulationDecomposition<ValueType>::Partition::setSilentProbability(storm::storage::sparse::state_type state, ValueType const& value) {
             STORM_LOG_ASSERT(this->keepSilentProbabilities, "Unable to set silent probability of state, because silent probabilities are not tracked.");
             this->silentProbabilities[state] = value;
         }
         
         template<typename ValueType>
-        std::list<typename DeterministicModelStrongBisimulationDecomposition<ValueType>::Block> const& DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::getBlocks() const {
+        std::list<typename DeterministicModelBisimulationDecomposition<ValueType>::Block> const& DeterministicModelBisimulationDecomposition<ValueType>::Partition::getBlocks() const {
             return this->blocks;
         }
         
         template<typename ValueType>
-        std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>& DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::getStatesAndValues() {
+        std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>& DeterministicModelBisimulationDecomposition<ValueType>::Partition::getStatesAndValues() {
             return this->statesAndValues;
         }
         
         template<typename ValueType>
-        std::list<typename DeterministicModelStrongBisimulationDecomposition<ValueType>::Block>& DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::getBlocks() {
+        std::list<typename DeterministicModelBisimulationDecomposition<ValueType>::Block>& DeterministicModelBisimulationDecomposition<ValueType>::Partition::getBlocks() {
             return this->blocks;
         }
         
         template<typename ValueType>
-        bool DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::check() const {
+        bool DeterministicModelBisimulationDecomposition<ValueType>::Partition::check() const {
             for (uint_fast64_t state = 0; state < this->positions.size(); ++state) {
                 if (this->statesAndValues[this->positions[state]].first != state) {
                     assert(false);
@@ -549,7 +549,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::print() const {
+        void DeterministicModelBisimulationDecomposition<ValueType>::Partition::print() const {
             for (auto const& block : this->blocks) {
                 block.print(*this);
             }
@@ -571,51 +571,53 @@ namespace storm {
         }
         
         template<typename ValueType>
-        std::size_t DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition::size() const {
+        std::size_t DeterministicModelBisimulationDecomposition<ValueType>::Partition::size() const {
             return this->blocks.size();
         }
         
         template<typename ValueType>
-        DeterministicModelStrongBisimulationDecomposition<ValueType>::DeterministicModelStrongBisimulationDecomposition(storm::models::Dtmc<ValueType> const& model, bool weak, bool buildQuotient) : comparator(0) {
+        DeterministicModelBisimulationDecomposition<ValueType>::DeterministicModelBisimulationDecomposition(storm::models::Dtmc<ValueType> const& model, bool weak, bool buildQuotient) : comparator() {
             STORM_LOG_THROW(!model.hasStateRewards() && !model.hasTransitionRewards(), storm::exceptions::IllegalFunctionCallException, "Bisimulation is currently only supported for models without reward structures.");
             storm::storage::SparseMatrix<ValueType> backwardTransitions = model.getBackwardTransitions();
             Partition initialPartition = getLabelBasedInitialPartition(model, backwardTransitions, weak);
-            partitionRefinement(model, backwardTransitions, initialPartition, weak, buildQuotient);
+            partitionRefinement(model, backwardTransitions, initialPartition, weak ? BisimulationType::WeakDtmc : BisimulationType::Strong, buildQuotient);
         }
 
         template<typename ValueType>
-        DeterministicModelStrongBisimulationDecomposition<ValueType>::DeterministicModelStrongBisimulationDecomposition(storm::models::Ctmc<ValueType> const& model, bool weak, bool buildQuotient) {
+        DeterministicModelBisimulationDecomposition<ValueType>::DeterministicModelBisimulationDecomposition(storm::models::Ctmc<ValueType> const& model, bool weak, bool buildQuotient) {
             STORM_LOG_THROW(!model.hasStateRewards() && !model.hasTransitionRewards(), storm::exceptions::IllegalFunctionCallException, "Bisimulation is currently only supported for models without reward structures.");
             storm::storage::SparseMatrix<ValueType> backwardTransitions = model.getBackwardTransitions();
             Partition initialPartition = getLabelBasedInitialPartition(model, backwardTransitions, weak);
-            partitionRefinement(model, backwardTransitions, initialPartition, weak, buildQuotient);
+            partitionRefinement(model, backwardTransitions, initialPartition, weak ? BisimulationType::WeakCtmc : BisimulationType::Strong, buildQuotient);
         }
         
         template<typename ValueType>
-        DeterministicModelStrongBisimulationDecomposition<ValueType>::DeterministicModelStrongBisimulationDecomposition(storm::models::Dtmc<ValueType> const& model, std::string const& phiLabel, std::string const& psiLabel, bool bounded, bool buildQuotient) {
+        DeterministicModelBisimulationDecomposition<ValueType>::DeterministicModelBisimulationDecomposition(storm::models::Dtmc<ValueType> const& model, std::string const& phiLabel, std::string const& psiLabel, bool weak, bool bounded, bool buildQuotient) {
             STORM_LOG_THROW(!model.hasStateRewards() && !model.hasTransitionRewards(), storm::exceptions::IllegalFunctionCallException, "Bisimulation is currently only supported for models without reward structures.");
+            STORM_LOG_THROW(!weak || !bounded, storm::exceptions::IllegalFunctionCallException, "Weak bisimulation does not preserve bounded properties.");
             storm::storage::SparseMatrix<ValueType> backwardTransitions = model.getBackwardTransitions();
-            Partition initialPartition = getMeasureDrivenInitialPartition(model, backwardTransitions, phiLabel, psiLabel, bounded);
-            partitionRefinement(model, model.getBackwardTransitions(), initialPartition, false, buildQuotient);
+            Partition initialPartition = getMeasureDrivenInitialPartition(model, backwardTransitions, phiLabel, psiLabel, weak, bounded);
+            partitionRefinement(model, model.getBackwardTransitions(), initialPartition, weak ? BisimulationType::WeakDtmc : BisimulationType::Strong, buildQuotient);
         }
         
         template<typename ValueType>
-        DeterministicModelStrongBisimulationDecomposition<ValueType>::DeterministicModelStrongBisimulationDecomposition(storm::models::Ctmc<ValueType> const& model, std::string const& phiLabel, std::string const& psiLabel, bool bounded, bool buildQuotient) {
+        DeterministicModelBisimulationDecomposition<ValueType>::DeterministicModelBisimulationDecomposition(storm::models::Ctmc<ValueType> const& model, std::string const& phiLabel, std::string const& psiLabel, bool weak, bool bounded, bool buildQuotient) {
             STORM_LOG_THROW(!model.hasStateRewards() && !model.hasTransitionRewards(), storm::exceptions::IllegalFunctionCallException, "Bisimulation is currently only supported for models without reward structures.");
+            STORM_LOG_THROW(!weak || !bounded, storm::exceptions::IllegalFunctionCallException, "Weak bisimulation does not preserve bounded properties.");
             storm::storage::SparseMatrix<ValueType> backwardTransitions = model.getBackwardTransitions();
-            Partition initialPartition = getMeasureDrivenInitialPartition(model, backwardTransitions, phiLabel, psiLabel, bounded);
-            partitionRefinement(model, model.getBackwardTransitions(), initialPartition, false, buildQuotient);
+            Partition initialPartition = getMeasureDrivenInitialPartition(model, backwardTransitions, phiLabel, psiLabel, weak, bounded);
+            partitionRefinement(model, model.getBackwardTransitions(), initialPartition, weak ? BisimulationType::WeakCtmc : BisimulationType::Strong, buildQuotient);
         }
         
         template<typename ValueType>
-        std::shared_ptr<storm::models::AbstractDeterministicModel<ValueType>> DeterministicModelStrongBisimulationDecomposition<ValueType>::getQuotient() const {
+        std::shared_ptr<storm::models::AbstractDeterministicModel<ValueType>> DeterministicModelBisimulationDecomposition<ValueType>::getQuotient() const {
             STORM_LOG_THROW(this->quotient != nullptr, storm::exceptions::IllegalFunctionCallException, "Unable to retrieve quotient model from bisimulation decomposition, because it was not built.");
             return this->quotient;
         }
         
         template<typename ValueType>
         template<typename ModelType>
-        void DeterministicModelStrongBisimulationDecomposition<ValueType>::buildQuotient(ModelType const& model, Partition const& partition, bool weak) {
+        void DeterministicModelBisimulationDecomposition<ValueType>::buildQuotient(ModelType const& model, Partition const& partition, BisimulationType bisimulationType) {
             // In order to create the quotient model, we need to construct
             // (a) the new transition matrix,
             // (b) the new labeling,
@@ -641,7 +643,7 @@ namespace storm {
                 storm::storage::sparse::state_type representativeState = *block.begin();
                 
                 // However, for weak bisimulation, we need to make sure the representative state is a non-silent one.
-                if (weak) {
+                if (bisimulationType == BisimulationType::WeakDtmc) {
                     for (auto const& state : block) {
                         if (!partition.isSilent(state, comparator)) {
                             representativeState = state;
@@ -674,7 +676,7 @@ namespace storm {
                         storm::storage::sparse::state_type targetBlock = partition.getBlock(entry.getColumn()).getId();
                         
                         // If we are computing a weak bisimulation quotient, there is no need to add self-loops.
-                        if (weak && targetBlock == blockIndex) {
+                        if ((bisimulationType == BisimulationType::WeakDtmc || bisimulationType == BisimulationType::WeakCtmc) && targetBlock == blockIndex) {
                             continue;
                         }
                         
@@ -688,7 +690,7 @@ namespace storm {
                     
                     // Now add them to the actual matrix.
                     for (auto const& probabilityEntry : blockProbability) {
-                        if (weak) {
+                        if (bisimulationType == BisimulationType::WeakDtmc) {
                             builder.addNextValue(blockIndex, probabilityEntry.first, probabilityEntry.second / (storm::utility::one<ValueType>() - partition.getSilentProbability(representativeState)));
                         } else {
                             builder.addNextValue(blockIndex, probabilityEntry.first, probabilityEntry.second);
@@ -725,7 +727,7 @@ namespace storm {
         
         template<typename ValueType>
         template<typename ModelType>
-        void DeterministicModelStrongBisimulationDecomposition<ValueType>::partitionRefinement(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, Partition& partition, bool weak, bool buildQuotient) {
+        void DeterministicModelBisimulationDecomposition<ValueType>::partitionRefinement(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, Partition& partition, BisimulationType bisimulationType, bool buildQuotient) {
             std::chrono::high_resolution_clock::time_point totalStart = std::chrono::high_resolution_clock::now();
 
             // Initially, all blocks are potential splitter, so we insert them in the splitterQueue.
@@ -744,7 +746,7 @@ namespace storm {
                 splitter->unmarkAsSplitter();
                 
                 // Now refine the partition using the current splitter.
-                refinePartition(model.getTransitionMatrix(), backwardTransitions, *splitter, partition, weak, splitterQueue);
+                refinePartition(model.getTransitionMatrix(), backwardTransitions, *splitter, partition, bisimulationType, splitterQueue);
             }
             std::chrono::high_resolution_clock::duration refinementTime = std::chrono::high_resolution_clock::now() - refinementStart;
 
@@ -763,7 +765,7 @@ namespace storm {
 
             // If we are required to build the quotient model, do so now.
             if (buildQuotient) {
-                this->buildQuotient(model, partition, weak);
+                this->buildQuotient(model, partition, bisimulationType);
             }
 
             std::chrono::high_resolution_clock::duration extractionTime = std::chrono::high_resolution_clock::now() - extractionStart;
@@ -781,7 +783,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void DeterministicModelStrongBisimulationDecomposition<ValueType>::refineBlockProbabilities(Block& block, Partition& partition, std::deque<Block*>& splitterQueue) {
+        void DeterministicModelBisimulationDecomposition<ValueType>::refineBlockProbabilities(Block& block, Partition& partition, BisimulationType bisimulationType, std::deque<Block*>& splitterQueue) {
             // Sort the states in the block based on their probabilities.
             std::sort(partition.getBegin(block), partition.getEnd(block), [&partition] (std::pair<storm::storage::sparse::state_type, ValueType> const& a, std::pair<storm::storage::sparse::state_type, ValueType> const& b) { return a.second < b.second; } );
             
@@ -831,7 +833,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void DeterministicModelStrongBisimulationDecomposition<ValueType>::refineBlockWeak(Block& block, Partition& partition, storm::storage::SparseMatrix<ValueType> const& forwardTransitions, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::deque<Block*>& splitterQueue) {
+        void DeterministicModelBisimulationDecomposition<ValueType>::refineBlockWeak(Block& block, Partition& partition, storm::storage::SparseMatrix<ValueType> const& forwardTransitions, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::deque<Block*>& splitterQueue) {
             std::vector<uint_fast64_t> splitPoints = getSplitPointsWeak(block, partition);
             
             // Restore the original begin of the block.
@@ -952,7 +954,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        std::vector<uint_fast64_t> DeterministicModelStrongBisimulationDecomposition<ValueType>::getSplitPointsWeak(Block& block, Partition& partition) {
+        std::vector<uint_fast64_t> DeterministicModelBisimulationDecomposition<ValueType>::getSplitPointsWeak(Block& block, Partition& partition) {
             std::vector<uint_fast64_t> result;
             // We first scale all probabilities with (1-p[s]) where p[s] is the silent probability of state s.
             std::for_each(partition.getStatesAndValues().begin() + block.getOriginalBegin(), partition.getStatesAndValues().begin() + block.getBegin(), [&] (std::pair<storm::storage::sparse::state_type, ValueType>& stateValuePair) {
@@ -1003,7 +1005,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void DeterministicModelStrongBisimulationDecomposition<ValueType>::refinePartition(storm::storage::SparseMatrix<ValueType> const& forwardTransitions, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, Block& splitter, Partition& partition, bool weak, std::deque<Block*>& splitterQueue) {
+        void DeterministicModelBisimulationDecomposition<ValueType>::refinePartition(storm::storage::SparseMatrix<ValueType> const& forwardTransitions, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, Block& splitter, Partition& partition, BisimulationType bisimulationType, std::deque<Block*>& splitterQueue) {
             std::list<Block*> predecessorBlocks;
             
             // Iterate over all states of the splitter and check its predecessors.
@@ -1101,7 +1103,7 @@ namespace storm {
                 }
             }
 
-            if (!weak) {
+            if (bisimulationType == BisimulationType::Strong || bisimulationType == BisimulationType::WeakCtmc) {
                 std::list<Block*> blocksToSplit;
                 
                 // Now, we can iterate over the predecessor blocks and see whether we have to create a new block for
@@ -1136,9 +1138,15 @@ namespace storm {
                         continue;
                     }
                     
-                    refineBlockProbabilities(*blockPtr, partition, splitterQueue);
+                    // In the case of weak bisimulation for CTMCs, we don't need to make sure the rate of staying inside
+                    // the own block is the same.
+                    if (bisimulationType == BisimulationType::WeakCtmc && blockPtr == &splitter) {
+                        continue;
+                    }
+                    
+                    refineBlockProbabilities(*blockPtr, partition, bisimulationType, splitterQueue);
                 }
-            } else {
+            } else { // In this case, we are computing a weak bisimulation on a DTMC.
                 // If the splitter was a predecessor of itself and we are computing a weak bisimulation, we need to update
                 // the silent probabilities.
                 if (splitterIsPredecessor) {
@@ -1169,15 +1177,91 @@ namespace storm {
         
         template<typename ValueType>
         template<typename ModelType>
-        typename DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition DeterministicModelStrongBisimulationDecomposition<ValueType>::getMeasureDrivenInitialPartition(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::string const& phiLabel, std::string const& psiLabel, bool bounded) {
+        typename DeterministicModelBisimulationDecomposition<ValueType>::Partition DeterministicModelBisimulationDecomposition<ValueType>::getMeasureDrivenInitialPartition(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::string const& phiLabel, std::string const& psiLabel, bool weak, bool bounded) {
             std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(backwardTransitions, phiLabel == "true" ? storm::storage::BitVector(model.getNumberOfStates(), true) : model.getLabeledStates(phiLabel), model.getLabeledStates(psiLabel));
             Partition partition(model.getNumberOfStates(), statesWithProbability01.first, bounded ? model.getLabeledStates(psiLabel) : statesWithProbability01.second, phiLabel, psiLabel);
+            
+            // If we are creating the initial partition for weak bisimulation, we need to (a) split off all divergent
+            // states of each initial block and (b) initialize the vector of silent probabilities held by the partition.
+            if (weak) {
+                this->splitOffDivergentStates(model, backwardTransitions, partition);
+                this->initializeSilentProbabilities(model, partition);
+            }
+            
             return partition;
         }
         
         template<typename ValueType>
         template<typename ModelType>
-        typename DeterministicModelStrongBisimulationDecomposition<ValueType>::Partition DeterministicModelStrongBisimulationDecomposition<ValueType>::getLabelBasedInitialPartition(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, bool weak) {
+        void DeterministicModelBisimulationDecomposition<ValueType>::splitOffDivergentStates(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, Partition& partition) {
+            std::vector<storm::storage::sparse::state_type> stateStack;
+            stateStack.reserve(model.getNumberOfStates());
+            storm::storage::BitVector nondivergentStates(model.getNumberOfStates());
+            for (auto& block : partition.getBlocks()) {
+                nondivergentStates.clear();
+                
+                for (auto stateIt = partition.getBegin(block), stateIte = partition.getEnd(block); stateIt != stateIte; ++stateIt) {
+                    if (nondivergentStates.get(stateIt->first)) {
+                        continue;
+                    }
+                    
+                    // Now traverse the forward transitions of the current state and check whether there is a
+                    // transition to some other block.
+                    bool isDirectlyNonDivergent = false;
+                    for (auto const& successor : model.getRows(stateIt->first)) {
+                        // If there is such a transition, then we can mark all states in the current block that can
+                        // reach the state as non-divergent.
+                        if (&partition.getBlock(successor.getColumn()) != &block) {
+                            isDirectlyNonDivergent = true;
+                            break;
+                        }
+                    }
+                    
+                    if (isDirectlyNonDivergent) {
+                        stateStack.push_back(stateIt->first);
+                        
+                        while (!stateStack.empty()) {
+                            storm::storage::sparse::state_type currentState = stateStack.back();
+                            stateStack.pop_back();
+                            nondivergentStates.set(currentState);
+                            
+                            for (auto const& predecessor : backwardTransitions.getRow(currentState)) {
+                                if (&partition.getBlock(predecessor.getColumn()) == &block && !nondivergentStates.get(predecessor.getColumn())) {
+                                    stateStack.push_back(predecessor.getColumn());
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                
+                if (nondivergentStates.getNumberOfSetBits() > 0 && nondivergentStates.getNumberOfSetBits() != block.getNumberOfStates()) {
+                    // Now that we have determined all (non)divergent states in the current block, we need to split them
+                    // off.
+                    std::sort(partition.getBegin(block), partition.getEnd(block), [&nondivergentStates] (std::pair<storm::storage::sparse::state_type, ValueType> const& a, std::pair<storm::storage::sparse::state_type, ValueType> const& b) { return nondivergentStates.get(a.first) && !nondivergentStates.get(b.first); } );
+                    // Update the positions vector.
+                    storm::storage::sparse::state_type position = block.getBegin();
+                    for (auto stateIt = partition.getBegin(block), stateIte = partition.getEnd(block); stateIt != stateIte; ++stateIt, ++position) {
+                        partition.setPosition(stateIt->first, position);
+                    }
+                    
+                    // Finally, split the block.
+                    Block& nondivergentBlock = partition.splitBlock(block, block.getBegin() + nondivergentStates.getNumberOfSetBits());
+                    
+                    // Since the remaining states in the block are divergent, we can mark the block as absorbing.
+                    // This also guarantees that the self-loop will be added to the state of the quotient
+                    // representing this block of states.
+                    block.setAbsorbing(true);
+                } else if (nondivergentStates.getNumberOfSetBits() == 0) {
+                    // If there are only diverging states in the block, we need to make it absorbing.
+                    block.setAbsorbing(true);
+                }
+            }
+        }
+        
+        template<typename ValueType>
+        template<typename ModelType>
+        typename DeterministicModelBisimulationDecomposition<ValueType>::Partition DeterministicModelBisimulationDecomposition<ValueType>::getLabelBasedInitialPartition(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, bool weak) {
             Partition partition(model.getNumberOfStates(), weak);
             for (auto const& label : model.getStateLabeling().getAtomicPropositions()) {
                 if (label == "init") {
@@ -1189,70 +1273,7 @@ namespace storm {
             // If we are creating the initial partition for weak bisimulation, we need to (a) split off all divergent
             // states of each initial block and (b) initialize the vector of silent probabilities held by the partition.
             if (weak) {
-                std::vector<storm::storage::sparse::state_type> stateStack;
-                stateStack.reserve(model.getNumberOfStates());
-                storm::storage::BitVector nondivergentStates(model.getNumberOfStates());
-                for (auto& block : partition.getBlocks()) {
-                    nondivergentStates.clear();
-                    
-                    for (auto stateIt = partition.getBegin(block), stateIte = partition.getEnd(block); stateIt != stateIte; ++stateIt) {
-                        if (nondivergentStates.get(stateIt->first)) {
-                            continue;
-                        }
-                        
-                        // Now traverse the forward transitions of the current state and check whether there is a
-                        // transition to some other block.
-                        bool isDirectlyNonDivergent = false;
-                        for (auto const& successor : model.getRows(stateIt->first)) {
-                            // If there is such a transition, then we can mark all states in the current block that can
-                            // reach the state as non-divergent.
-                            if (&partition.getBlock(successor.getColumn()) != &block) {
-                                isDirectlyNonDivergent = true;
-                                break;
-                            }
-                        }
-                        
-                        if (isDirectlyNonDivergent) {
-                            stateStack.push_back(stateIt->first);
-                            
-                            while (!stateStack.empty()) {
-                                storm::storage::sparse::state_type currentState = stateStack.back();
-                                stateStack.pop_back();
-                                nondivergentStates.set(currentState);
-                                
-                                for (auto const& predecessor : backwardTransitions.getRow(currentState)) {
-                                    if (&partition.getBlock(predecessor.getColumn()) == &block && !nondivergentStates.get(predecessor.getColumn())) {
-                                        stateStack.push_back(predecessor.getColumn());
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    
-                    
-                    if (nondivergentStates.getNumberOfSetBits() > 0 && nondivergentStates.getNumberOfSetBits() != block.getNumberOfStates()) {
-                        // Now that we have determined all (non)divergent states in the current block, we need to split them
-                        // off.
-                        std::sort(partition.getBegin(block), partition.getEnd(block), [&nondivergentStates] (std::pair<storm::storage::sparse::state_type, ValueType> const& a, std::pair<storm::storage::sparse::state_type, ValueType> const& b) { return nondivergentStates.get(a.first) && !nondivergentStates.get(b.first); } );
-                        // Update the positions vector.
-                        storm::storage::sparse::state_type position = block.getBegin();
-                        for (auto stateIt = partition.getBegin(block), stateIte = partition.getEnd(block); stateIt != stateIte; ++stateIt, ++position) {
-                            partition.setPosition(stateIt->first, position);
-                        }
-                        
-                        // Finally, split the block.
-                        Block& nondivergentBlock = partition.splitBlock(block, block.getBegin() + nondivergentStates.getNumberOfSetBits());
-                        
-                        // Since the remaining states in the block are divergent, we can mark the block as absorbing.
-                        // This also guarantees that the self-loop will be added to the state of the quotient
-                        // representing this block of states.
-                        block.setAbsorbing(true);
-                    } else if (nondivergentStates.getNumberOfSetBits() == 0) {
-                        // If there are only diverging states in the block, we need to make it absorbing.
-                        block.setAbsorbing(true);
-                    }
-                }
-                
+                this->splitOffDivergentStates(model, backwardTransitions, partition);
                 this->initializeSilentProbabilities(model, partition);
             }
             return partition;
@@ -1260,7 +1281,7 @@ namespace storm {
         
         template<typename ValueType>
         template<typename ModelType>
-        void DeterministicModelStrongBisimulationDecomposition<ValueType>::initializeSilentProbabilities(ModelType const& model, Partition& partition) {
+        void DeterministicModelBisimulationDecomposition<ValueType>::initializeSilentProbabilities(ModelType const& model, Partition& partition) {
             for (auto const& block : partition.getBlocks()) {
                 for (auto stateIt = partition.getBegin(block), stateIte = partition.getEnd(block); stateIt != stateIte; ++stateIt) {
                     ValueType silentProbability = storm::utility::zero<ValueType>();
@@ -1276,6 +1297,6 @@ namespace storm {
             }
         }
         
-        template class DeterministicModelStrongBisimulationDecomposition<double>;
+        template class DeterministicModelBisimulationDecomposition<double>;
     }
 }

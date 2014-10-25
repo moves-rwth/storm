@@ -1,5 +1,5 @@
-#ifndef STORM_STORAGE_DETERMINISTICMODELSTRONGBISIMULATIONDECOMPOSITION_H_
-#define STORM_STORAGE_DETERMINISTICMODELSTRONGBISIMULATIONDECOMPOSITION_H_
+#ifndef STORM_STORAGE_DeterministicModelBisimulationDecomposition_H_
+#define STORM_STORAGE_DeterministicModelBisimulationDecomposition_H_
 
 #include <queue>
 #include <deque>
@@ -19,23 +19,25 @@ namespace storm {
          * This class represents the decomposition model into its (strong) bisimulation quotient.
          */
         template <typename ValueType>
-        class DeterministicModelStrongBisimulationDecomposition : public Decomposition<StateBlock> {
+        class DeterministicModelBisimulationDecomposition : public Decomposition<StateBlock> {
         public:
             /*!
              * Decomposes the given DTMC into equivalence classes under weak or strong bisimulation.
              *
              * @param model The model to decompose.
+             * @param weak A flag indication whether a weak bisimulation is to be computed.
              * @param buildQuotient Sets whether or not the quotient model is to be built.
              */
-            DeterministicModelStrongBisimulationDecomposition(storm::models::Dtmc<ValueType> const& model, bool weak = false, bool buildQuotient = false);
+            DeterministicModelBisimulationDecomposition(storm::models::Dtmc<ValueType> const& model, bool weak = false, bool buildQuotient = false);
 
             /*!
              * Decomposes the given CTMC into equivalence classes under weak or strong bisimulation.
              *
              * @param model The model to decompose.
+             * @param weak A flag indication whether a weak bisimulation is to be computed.
              * @param buildQuotient Sets whether or not the quotient model is to be built.
              */
-            DeterministicModelStrongBisimulationDecomposition(storm::models::Ctmc<ValueType> const& model, bool weak = false, bool buildQuotient = false);
+            DeterministicModelBisimulationDecomposition(storm::models::Ctmc<ValueType> const& model, bool weak = false, bool buildQuotient = false);
             
             /*!
              * Decomposes the given DTMC into equivalence classes under strong bisimulation in a way that onle safely
@@ -44,10 +46,11 @@ namespace storm {
              * @param model The model to decompose.
              * @param phiLabel The label that all phi states carry in the model.
              * @param psiLabel The label that all psi states carry in the model.
+             * @param weak A flag indication whether a weak bisimulation is to be computed.
              * @param bounded If set to true, also bounded until formulas are preserved.
              * @param buildQuotient Sets whether or not the quotient model is to be built.
              */
-            DeterministicModelStrongBisimulationDecomposition(storm::models::Dtmc<ValueType> const& model, std::string const& phiLabel, std::string const& psiLabel, bool bounded, bool buildQuotient = false);
+            DeterministicModelBisimulationDecomposition(storm::models::Dtmc<ValueType> const& model, std::string const& phiLabel, std::string const& psiLabel, bool weak, bool bounded, bool buildQuotient = false);
             
             /*!
              * Decomposes the given CTMC into equivalence classes under strong bisimulation in a way that onle safely
@@ -56,10 +59,11 @@ namespace storm {
              * @param model The model to decompose.
              * @param phiLabel The label that all phi states carry in the model.
              * @param psiLabel The label that all psi states carry in the model.
+             * @param weak A flag indication whether a weak bisimulation is to be computed.
              * @param bounded If set to true, also bounded until formulas are preserved.
              * @param buildQuotient Sets whether or not the quotient model is to be built.
              */
-            DeterministicModelStrongBisimulationDecomposition(storm::models::Ctmc<ValueType> const& model, std::string const& phiLabel, std::string const& psiLabel, bool bounded, bool buildQuotient = false);
+            DeterministicModelBisimulationDecomposition(storm::models::Ctmc<ValueType> const& model, std::string const& phiLabel, std::string const& psiLabel, bool weak, bool bounded, bool buildQuotient = false);
             
             /*!
              * Retrieves the quotient of the model under the previously computed bisimulation.
@@ -69,6 +73,8 @@ namespace storm {
             std::shared_ptr<storm::models::AbstractDeterministicModel<ValueType>> getQuotient() const;
             
         private:
+            enum class BisimulationType { Strong, WeakDtmc, WeakCtmc };
+            
             class Partition;
             
             class Block {
@@ -390,12 +396,12 @@ namespace storm {
              * @param model The model on whose state space to compute the coarses strong bisimulation relation.
              * @param backwardTransitions The backward transitions of the model.
              * @param The initial partition.
-             * @param weak A flag indicating whether a weak or a strong bisimulation is to be computed.
+             * @param bisimulationType The kind of bisimulation that is to be computed.
              * @param buildQuotient If set, the quotient model is built and may be retrieved using the getQuotient()
              * method.
              */
             template<typename ModelType>
-            void partitionRefinement(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, Partition& partition, bool weak, bool buildQuotient);
+            void partitionRefinement(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, Partition& partition, BisimulationType bisimulationType, bool buildQuotient);
             
             /*!
              * Refines the partition based on the provided splitter. After calling this method all blocks are stable
@@ -406,21 +412,22 @@ namespace storm {
              * probabilities).
              * @param splitter The splitter to use.
              * @param partition The partition to split.
-             * @param weak A flag indicating whether a weak or a strong bisimulation is to be computed.
+             * @param bisimulationType The kind of bisimulation that is to be computed.
              * @param splitterQueue A queue into which all blocks that were split are inserted so they can be treated
              * as splitters in the future.
              */
-            void refinePartition(storm::storage::SparseMatrix<ValueType> const& forwardTransitions, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, Block& splitter, Partition& partition, bool weak, std::deque<Block*>& splitterQueue);
+            void refinePartition(storm::storage::SparseMatrix<ValueType> const& forwardTransitions, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, Block& splitter, Partition& partition, BisimulationType bisimulationType, std::deque<Block*>& splitterQueue);
             
             /*!
              * Refines the block based on their probability values (leading into the splitter).
              *
              * @param block The block to refine.
              * @param partition The partition that contains the block.
+             * @param bisimulationType The kind of bisimulation that is to be computed.
              * @param splitterQueue A queue into which all blocks that were split are inserted so they can be treated
              * as splitters in the future.
              */
-            void refineBlockProbabilities(Block& block, Partition& partition, std::deque<Block*>& splitterQueue);
+            void refineBlockProbabilities(Block& block, Partition& partition, BisimulationType bisimulationType, std::deque<Block*>& splitterQueue);
             
             void refineBlockWeak(Block& block, Partition& partition, storm::storage::SparseMatrix<ValueType> const& forwardTransitions, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::deque<Block*>& splitterQueue);
             
@@ -440,10 +447,10 @@ namespace storm {
              * determining the transitions of each equivalence class.
              * @param partition The previously computed partition. This is used for quickly retrieving the block of a
              * state.
-             * @param weak A flag indicating whether the quotient is built for weak bisimulation.
+             * @param bisimulationType The kind of bisimulation that is to be computed.
              */
             template<typename ModelType>
-            void buildQuotient(ModelType const& model, Partition const& partition, bool weak);
+            void buildQuotient(ModelType const& model, Partition const& partition, BisimulationType bisimulationType);
 
             /*!
              * Creates the measure-driven initial partition for reaching psi states from phi states.
@@ -453,12 +460,13 @@ namespace storm {
              * @param backwardTransitions The backward transitions of the model.
              * @param phiLabel The label that all phi states carry in the model.
              * @param psiLabel The label that all psi states carry in the model.
+             * @param weak A flag indicating whether a weak bisimulation is to be computed.
              * @param bounded If set to true, the initial partition will be chosen in such a way that preserves bounded
              * reachability queries.
              * @return The resulting partition.
              */
             template<typename ModelType>
-            Partition getMeasureDrivenInitialPartition(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::string const& phiLabel, std::string const& psiLabel, bool bounded = false);
+            Partition getMeasureDrivenInitialPartition(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::string const& phiLabel, std::string const& psiLabel, bool weak, bool bounded = false);
             
             /*!
              * Creates the initial partition based on all the labels in the given model.
@@ -470,6 +478,17 @@ namespace storm {
              */
             template<typename ModelType>
             Partition getLabelBasedInitialPartition(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, bool weak);
+            
+            /*!
+             * Splits all blocks of the given partition into a block that contains all divergent states and another block
+             * containing the non-divergent states.
+             *
+             * @param model The model from which to look-up the probabilities.
+             * @param backwardTransitions The backward transitions of the model.
+             * @param partition The partition that holds the silent probabilities.
+             */
+            template<typename ModelType>
+            void splitOffDivergentStates(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, Partition& partition);
             
             /*!
              * Initializes the silent probabilities by traversing all blocks and adding the probability of going to
@@ -490,4 +509,4 @@ namespace storm {
     }
 }
 
-#endif /* STORM_STORAGE_DETERMINISTICMODELSTRONGBISIMULATIONDECOMPOSITION_H_ */
+#endif /* STORM_STORAGE_DeterministicModelBisimulationDecomposition_H_ */

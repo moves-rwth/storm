@@ -47,7 +47,7 @@ log4cplus::Logger logger;
 
 // Headers for model processing.
 #include "src/storage/NaiveDeterministicModelBisimulationDecomposition.h"
-#include "src/storage/DeterministicModelStrongBisimulationDecomposition.h"
+#include "src/storage/DeterministicModelBisimulationDecomposition.h"
 
 // Headers for model checking.
 #include "src/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
@@ -271,7 +271,7 @@ namespace storm {
                     std::shared_ptr<storm::models::Dtmc<double>> dtmc = result->template as<storm::models::Dtmc<double>>();
                     
                     STORM_PRINT(std::endl << "Performing bisimulation minimization..." << std::endl);
-                    storm::storage::DeterministicModelStrongBisimulationDecomposition<double> bisimulationDecomposition(*dtmc, storm::settings::bisimulationSettings().isWeakBisimulationSet(), true);
+                    storm::storage::DeterministicModelBisimulationDecomposition<double> bisimulationDecomposition(*dtmc, storm::settings::bisimulationSettings().isWeakBisimulationSet(), true);
                     
                     result = bisimulationDecomposition.getQuotient();
                     
