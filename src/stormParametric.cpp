@@ -11,7 +11,7 @@
 #include "src/modelchecker/reachability/CollectConstraints.h"
 
 //#include "src/modelchecker/reachability/DirectEncoding.h"
-#include "src/storage/DeterministicModelStrongBisimulationDecomposition.h"
+#include "src/storage/DeterministicModelBisimulationDecomposition.h"
 #include "src/modelchecker/reachability/SparseSccModelChecker.h"
 #include "src/storage/parameters.h"
 #include "src/models/Dtmc.h"
@@ -181,7 +181,7 @@ int main(const int argc, const char** argv) {
             STORM_LOG_THROW(phiStateFormulaApFormula.get() != nullptr, storm::exceptions::InvalidPropertyException, "Illegal formula " << *phiStateFormula << " for parametric model checking. Note that only atomic propositions are admitted in that position.");
             STORM_LOG_THROW(psiStateFormulaApFormula.get() != nullptr, storm::exceptions::InvalidPropertyException, "Illegal formula " << *psiStateFormula << " for parametric model checking. Note that only atomic propositions are admitted in that position.");
             
-            storm::storage::DeterministicModelStrongBisimulationDecomposition<storm::RationalFunction> bisimulationDecomposition(*dtmc, phiStateFormulaApFormula->getAp(), psiStateFormulaApFormula->getAp(), false, true);
+            storm::storage::DeterministicModelBisimulationDecomposition<storm::RationalFunction> bisimulationDecomposition(*dtmc, phiStateFormulaApFormula->getAp(), psiStateFormulaApFormula->getAp(), storm::settings::bisimulationSettings().isWeakBisimulationSet(), false, true);
             dtmc = bisimulationDecomposition.getQuotient()->as<storm::models::Dtmc<storm::RationalFunction>>();
             
             dtmc->printModelInformationToStream(std::cout);

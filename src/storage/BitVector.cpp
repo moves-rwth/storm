@@ -1,4 +1,5 @@
 #include <boost/container/flat_set.hpp>
+#include <iostream>
 
 #include "src/storage/BitVector.h"
 #include "src/exceptions/InvalidArgumentException.h"
@@ -96,6 +97,28 @@ namespace storm {
             return *this;
         }
         
+        bool BitVector::operator<(BitVector const& other) const {
+            if (this->size() < other.size()) {
+                return true;
+            } else if (this->size() > other.size()) {
+                return false;
+            }
+            
+            std::vector<uint64_t>::const_iterator first1 = this->bucketVector.begin();
+            std::vector<uint64_t>::const_iterator last1 = this->bucketVector.end();
+            std::vector<uint64_t>::const_iterator first2 = other.bucketVector.begin();
+            std::vector<uint64_t>::const_iterator last2 = other.bucketVector.end();
+            
+            for (; first1 != last1; ++first1, ++first2) {
+                if (*first1 < *first2) {
+                    return true;
+                } else if (*first1 > *first2) {
+                    return false;
+                }
+            }
+            return false;
+        }
+        
         BitVector& BitVector::operator=(BitVector&& other) {
             // Only perform the assignment if the source and target are not identical.
             if (this != &other) {
@@ -121,9 +144,13 @@ namespace storm {
             return true;
         }
         
+        bool BitVector::operator!=(BitVector const& other) {
+            return !(*this == other);
+        }
+        
         void BitVector::set(uint_fast64_t index, bool value) {
-            uint_fast64_t bucket = index >> 6;
             if (index >= bitCount) throw storm::exceptions::OutOfRangeException() << "Invalid call to BitVector::set: written index " << index << " out of bounds.";
+            uint_fast64_t bucket = index >> 6;
             
             uint_fast64_t mask = static_cast<uint_fast64_t>(1) << (index & mod64mask);
             if (value) {

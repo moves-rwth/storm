@@ -25,6 +25,7 @@
 #include "src/settings/modules/CuddSettings.h"
 #include "src/settings/modules/GmmxxEquationSolverSettings.h"
 #include "src/settings/modules/NativeEquationSolverSettings.h"
+#include "src/settings/modules/BisimulationSettings.h"
 #include "src/settings/modules/GlpkSettings.h"
 #include "src/settings/modules/GurobiSettings.h"
 #include "src/settings/modules/ParametricSettings.h"
@@ -287,6 +288,13 @@ namespace storm {
          * @return An object that allows accessing the settings of the native equation solver.
          */
         storm::settings::modules::NativeEquationSolverSettings const& nativeEquationSolverSettings();
+
+        /*!
+         * Retrieves the settings of the native equation solver.
+         *
+         * @return An object that allows accessing the settings of the native equation solver.
+         */
+        storm::settings::modules::BisimulationSettings const& bisimulationSettings();
         
         /*!
          * Retrieves the settings of glpk.
