@@ -579,16 +579,18 @@ namespace storm {
         DeterministicModelBisimulationDecomposition<ValueType>::DeterministicModelBisimulationDecomposition(storm::models::Dtmc<ValueType> const& model, bool weak, bool buildQuotient) : comparator() {
             STORM_LOG_THROW(!model.hasStateRewards() && !model.hasTransitionRewards(), storm::exceptions::IllegalFunctionCallException, "Bisimulation is currently only supported for models without reward structures.");
             storm::storage::SparseMatrix<ValueType> backwardTransitions = model.getBackwardTransitions();
-            Partition initialPartition = getLabelBasedInitialPartition(model, backwardTransitions, weak);
-            partitionRefinement(model, backwardTransitions, initialPartition, weak ? BisimulationType::WeakDtmc : BisimulationType::Strong, buildQuotient);
+            BisimulationType bisimulationType = weak ? BisimulationType::WeakDtmc : BisimulationType::Strong;
+            Partition initialPartition = getLabelBasedInitialPartition(model, backwardTransitions, bisimulationType);
+            partitionRefinement(model, backwardTransitions, initialPartition, bisimulationType, buildQuotient);
         }
 
         template<typename ValueType>
         DeterministicModelBisimulationDecomposition<ValueType>::DeterministicModelBisimulationDecomposition(storm::models::Ctmc<ValueType> const& model, bool weak, bool buildQuotient) {
             STORM_LOG_THROW(!model.hasStateRewards() && !model.hasTransitionRewards(), storm::exceptions::IllegalFunctionCallException, "Bisimulation is currently only supported for models without reward structures.");
             storm::storage::SparseMatrix<ValueType> backwardTransitions = model.getBackwardTransitions();
-            Partition initialPartition = getLabelBasedInitialPartition(model, backwardTransitions, weak);
-            partitionRefinement(model, backwardTransitions, initialPartition, weak ? BisimulationType::WeakCtmc : BisimulationType::Strong, buildQuotient);
+            BisimulationType bisimulationType = weak ? BisimulationType::WeakCtmc : BisimulationType::Strong;
+            Partition initialPartition = getLabelBasedInitialPartition(model, backwardTransitions, bisimulationType);
+            partitionRefinement(model, backwardTransitions, initialPartition, bisimulationType, buildQuotient);
         }
         
         template<typename ValueType>
@@ -596,8 +598,9 @@ namespace storm {
             STORM_LOG_THROW(!model.hasStateRewards() && !model.hasTransitionRewards(), storm::exceptions::IllegalFunctionCallException, "Bisimulation is currently only supported for models without reward structures.");
             STORM_LOG_THROW(!weak || !bounded, storm::exceptions::IllegalFunctionCallException, "Weak bisimulation does not preserve bounded properties.");
             storm::storage::SparseMatrix<ValueType> backwardTransitions = model.getBackwardTransitions();
-            Partition initialPartition = getMeasureDrivenInitialPartition(model, backwardTransitions, phiLabel, psiLabel, weak, bounded);
-            partitionRefinement(model, model.getBackwardTransitions(), initialPartition, weak ? BisimulationType::WeakDtmc : BisimulationType::Strong, buildQuotient);
+            BisimulationType bisimulationType = weak ? BisimulationType::WeakDtmc : BisimulationType::Strong;
+            Partition initialPartition = getMeasureDrivenInitialPartition(model, backwardTransitions, phiLabel, psiLabel, bisimulationType, bounded);
+            partitionRefinement(model, model.getBackwardTransitions(), initialPartition, bisimulationType, buildQuotient);
         }
         
         template<typename ValueType>
@@ -605,8 +608,9 @@ namespace storm {
             STORM_LOG_THROW(!model.hasStateRewards() && !model.hasTransitionRewards(), storm::exceptions::IllegalFunctionCallException, "Bisimulation is currently only supported for models without reward structures.");
             STORM_LOG_THROW(!weak || !bounded, storm::exceptions::IllegalFunctionCallException, "Weak bisimulation does not preserve bounded properties.");
             storm::storage::SparseMatrix<ValueType> backwardTransitions = model.getBackwardTransitions();
-            Partition initialPartition = getMeasureDrivenInitialPartition(model, backwardTransitions, phiLabel, psiLabel, weak, bounded);
-            partitionRefinement(model, model.getBackwardTransitions(), initialPartition, weak ? BisimulationType::WeakCtmc : BisimulationType::Strong, buildQuotient);
+            BisimulationType bisimulationType = weak ? BisimulationType::WeakCtmc : BisimulationType::Strong;
+            Partition initialPartition = getMeasureDrivenInitialPartition(model, backwardTransitions, phiLabel, psiLabel, bisimulationType, bounded);
+            partitionRefinement(model, model.getBackwardTransitions(), initialPartition, bisimulationType, buildQuotient);
         }
         
         template<typename ValueType>
@@ -1177,13 +1181,13 @@ namespace storm {
         
         template<typename ValueType>
         template<typename ModelType>
-        typename DeterministicModelBisimulationDecomposition<ValueType>::Partition DeterministicModelBisimulationDecomposition<ValueType>::getMeasureDrivenInitialPartition(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::string const& phiLabel, std::string const& psiLabel, bool weak, bool bounded) {
+        typename DeterministicModelBisimulationDecomposition<ValueType>::Partition DeterministicModelBisimulationDecomposition<ValueType>::getMeasureDrivenInitialPartition(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::string const& phiLabel, std::string const& psiLabel, BisimulationType bisimulationType, bool bounded) {
             std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(backwardTransitions, phiLabel == "true" ? storm::storage::BitVector(model.getNumberOfStates(), true) : model.getLabeledStates(phiLabel), model.getLabeledStates(psiLabel));
-            Partition partition(model.getNumberOfStates(), statesWithProbability01.first, bounded ? model.getLabeledStates(psiLabel) : statesWithProbability01.second, phiLabel, psiLabel);
+            Partition partition(model.getNumberOfStates(), statesWithProbability01.first, bounded ? model.getLabeledStates(psiLabel) : statesWithProbability01.second, phiLabel, psiLabel, bisimulationType == BisimulationType::WeakDtmc);
             
             // If we are creating the initial partition for weak bisimulation, we need to (a) split off all divergent
             // states of each initial block and (b) initialize the vector of silent probabilities held by the partition.
-            if (weak) {
+            if (bisimulationType == BisimulationType::WeakDtmc) {
                 this->splitOffDivergentStates(model, backwardTransitions, partition);
                 this->initializeSilentProbabilities(model, partition);
             }
@@ -1261,8 +1265,8 @@ namespace storm {
         
         template<typename ValueType>
         template<typename ModelType>
-        typename DeterministicModelBisimulationDecomposition<ValueType>::Partition DeterministicModelBisimulationDecomposition<ValueType>::getLabelBasedInitialPartition(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, bool weak) {
-            Partition partition(model.getNumberOfStates(), weak);
+        typename DeterministicModelBisimulationDecomposition<ValueType>::Partition DeterministicModelBisimulationDecomposition<ValueType>::getLabelBasedInitialPartition(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, BisimulationType bisimulationType) {
+            Partition partition(model.getNumberOfStates(), bisimulationType == BisimulationType::WeakDtmc);
             for (auto const& label : model.getStateLabeling().getAtomicPropositions()) {
                 if (label == "init") {
                     continue;
@@ -1272,7 +1276,7 @@ namespace storm {
             
             // If we are creating the initial partition for weak bisimulation, we need to (a) split off all divergent
             // states of each initial block and (b) initialize the vector of silent probabilities held by the partition.
-            if (weak) {
+            if (bisimulationType == BisimulationType::WeakDtmc) {
                 this->splitOffDivergentStates(model, backwardTransitions, partition);
                 this->initializeSilentProbabilities(model, partition);
             }
