@@ -24,6 +24,7 @@ namespace storm {
             this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::CuddSettings(*this)));
             this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::GmmxxEquationSolverSettings(*this)));
             this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::NativeEquationSolverSettings(*this)));
+            this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::BisimulationSettings(*this)));
             this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::GlpkSettings(*this)));
             this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::GurobiSettings(*this)));
         }
@@ -493,6 +494,10 @@ namespace storm {
         
         storm::settings::modules::NativeEquationSolverSettings const& nativeEquationSolverSettings() {
             return dynamic_cast<storm::settings::modules::NativeEquationSolverSettings const&>(manager().getModule(storm::settings::modules::NativeEquationSolverSettings::moduleName));
+        }
+        
+        storm::settings::modules::BisimulationSettings const& bisimulationSettings() {
+            return dynamic_cast<storm::settings::modules::BisimulationSettings const&>(manager().getModule(storm::settings::modules::BisimulationSettings::moduleName));
         }
         
         storm::settings::modules::GlpkSettings const& glpkSettings() {
