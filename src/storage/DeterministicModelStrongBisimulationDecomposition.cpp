@@ -576,7 +576,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        DeterministicModelStrongBisimulationDecomposition<ValueType>::DeterministicModelStrongBisimulationDecomposition(storm::models::Dtmc<ValueType> const& model, bool weak, bool buildQuotient) {
+        DeterministicModelStrongBisimulationDecomposition<ValueType>::DeterministicModelStrongBisimulationDecomposition(storm::models::Dtmc<ValueType> const& model, bool weak, bool buildQuotient) : comparator(0) {
             STORM_LOG_THROW(!model.hasStateRewards() && !model.hasTransitionRewards(), storm::exceptions::IllegalFunctionCallException, "Bisimulation is currently only supported for models without reward structures.");
             storm::storage::SparseMatrix<ValueType> backwardTransitions = model.getBackwardTransitions();
             Partition initialPartition = getLabelBasedInitialPartition(model, backwardTransitions, weak);
@@ -732,12 +732,19 @@ namespace storm {
             std::chrono::high_resolution_clock::time_point refinementStart = std::chrono::high_resolution_clock::now();
             std::deque<Block*> splitterQueue;
             std::for_each(partition.getBlocks().begin(), partition.getBlocks().end(), [&] (Block& a) { splitterQueue.push_back(&a); a.markAsSplitter(); });
-                        
+
             // Then perform the actual splitting until there are no more splitters.
             while (!splitterQueue.empty()) {
+                // Optionally: sort the splitter queue according to some criterion (here: prefer small splitters).
                 std::sort(splitterQueue.begin(), splitterQueue.end(), [] (Block const* b1, Block const* b2) { return b1->getNumberOfStates() < b2->getNumberOfStates(); } );
-                refinePartition(model.getTransitionMatrix(), backwardTransitions, *splitterQueue.front(), partition, weak, splitterQueue);
+
+                // Get and prepare the next splitter.
+                Block* splitter = splitterQueue.front();
                 splitterQueue.pop_front();
+                splitter->unmarkAsSplitter();
+                
+                // Now refine the partition using the current splitter.
+                refinePartition(model.getTransitionMatrix(), backwardTransitions, *splitter, partition, weak, splitterQueue);
             }
             std::chrono::high_resolution_clock::duration refinementTime = std::chrono::high_resolution_clock::now() - refinementStart;
 
@@ -770,7 +777,6 @@ namespace storm {
                 std::cout << "------------------------------------------" << std::endl;
                 std::cout << "    * total time: " << std::chrono::duration_cast<std::chrono::milliseconds>(totalTime).count() << "ms" << std::endl;
                 std::cout << std::endl;
-                std::cout << "Number of equivalence classes: " << this->size() << std::endl;
             }
         }
         
