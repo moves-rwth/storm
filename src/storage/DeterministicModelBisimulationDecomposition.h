@@ -460,24 +460,24 @@ namespace storm {
              * @param backwardTransitions The backward transitions of the model.
              * @param phiLabel The label that all phi states carry in the model.
              * @param psiLabel The label that all psi states carry in the model.
-             * @param weak A flag indicating whether a weak bisimulation is to be computed.
+             * @param bisimulationType The kind of bisimulation that is to be computed.
              * @param bounded If set to true, the initial partition will be chosen in such a way that preserves bounded
              * reachability queries.
              * @return The resulting partition.
              */
             template<typename ModelType>
-            Partition getMeasureDrivenInitialPartition(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::string const& phiLabel, std::string const& psiLabel, bool weak, bool bounded = false);
+            Partition getMeasureDrivenInitialPartition(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::string const& phiLabel, std::string const& psiLabel, BisimulationType bisimulationType, bool bounded = false);
             
             /*!
              * Creates the initial partition based on all the labels in the given model.
              *
              * @param model The model whose state space is partitioned based on its labels.
              * @param backwardTransitions The backward transitions of the model.
-             * @param weak A flag indicating whether a weak bisimulation is to be computed.
+             * @param bisimulationType The kind of bisimulation that is to be computed.
              * @return The resulting partition.
              */
             template<typename ModelType>
-            Partition getLabelBasedInitialPartition(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, bool weak);
+            Partition getLabelBasedInitialPartition(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, BisimulationType bisimulationType);
             
             /*!
              * Splits all blocks of the given partition into a block that contains all divergent states and another block
