@@ -16,7 +16,7 @@ namespace storm {
             const std::string ParametricSettings::exportResultDestinationPathOptionName = "resultfile";
             
             ParametricSettings::ParametricSettings(storm::settings::SettingsManager& settingsManager) : ModuleSettings(settingsManager, moduleName) {
-                std::vector<std::string> orders = {"fw", "fwrev", "bw", "bwrev"};
+                std::vector<std::string> orders = {"fw", "fwrev", "bw", "bwrev", "rand"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, eliminationOrderOptionName, true, "The order that is to be used for the elimination techniques. Available are {fw, fwrev, bw, bwrev, rand}.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the order in which states are chosen for elimination.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(orders)).setDefaultValueString("bw").build()).build());
 
                 std::vector<std::string> methods = {"state", "hybrid"};
