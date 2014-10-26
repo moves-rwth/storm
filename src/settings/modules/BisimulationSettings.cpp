@@ -29,10 +29,8 @@ namespace storm {
             }
             
             bool BisimulationSettings::check() const {
-                bool optionsSet = isStrongBisimulationSet() || isWeakBisimulationSet();
-                
+                bool optionsSet = this->getOption(typeOptionName).getHasOptionBeenSet();
                 STORM_LOG_WARN_COND(storm::settings::generalSettings().isBisimulationSet() || !optionsSet, "Bisimulation minimization is not selected, so setting options for bisimulation has no effect.");
-                
                 return true;
             }
         } // namespace modules
