@@ -157,31 +157,52 @@ namespace storm {
                 
                 // We then build the submatrix that only has the transitions of the maybe states.
                 storm::storage::SparseMatrix<ValueType> submatrix = dtmc.getTransitionMatrix().getSubmatrix(false, maybeStates, maybeStates);
+                storm::storage::SparseMatrix<ValueType> submatrixTransposed = submatrix.transpose();
                 
                 // Before starting the model checking process, we assign priorities to states so we can use them to
                 // impose ordering constraints later.
                 std::vector<std::size_t> statePriorities(submatrix.getRowCount());
+                std::vector<std::size_t> states(submatrix.getRowCount());
+                for (std::size_t index = 0; index < states.size(); ++index) {
+                    states[index] = index;
+                }
                 if (storm::settings::parametricSettings().getEliminationOrder() == storm::settings::modules::ParametricSettings::EliminationOrder::Random) {
-                    std::vector<std::size_t> states(submatrix.getRowCount());
-                    for (std::size_t index = 0; index < states.size(); ++index) {
-                        states[index] = index;
-                    }
-                    
                     std::random_shuffle(states.begin(), states.end());
-                    
-                    for (std::size_t index = 0; index < states.size(); ++index) {
-                        statePriorities[states[index]] = index;
+                } else {
+                    std::vector<std::size_t> distances;
+                    if (storm::settings::parametricSettings().getEliminationOrder() == storm::settings::modules::ParametricSettings::EliminationOrder::Forward || storm::settings::parametricSettings().getEliminationOrder() == storm::settings::modules::ParametricSettings::EliminationOrder::ForwardReversed) {
+                        distances = storm::utility::graph::getDistances(submatrix, newInitialStates);
+                    } else if (storm::settings::parametricSettings().getEliminationOrder() == storm::settings::modules::ParametricSettings::EliminationOrder::Backward || storm::settings::parametricSettings().getEliminationOrder() == storm::settings::modules::ParametricSettings::EliminationOrder::BackwardReversed) {
+                        // Since the target states were eliminated from the matrix already, we construct a replacement by
+                        // treating all states that have some non-zero probability to go to a target state in one step.
+                        storm::utility::ConstantsComparator<ValueType> comparator;
+                        storm::storage::BitVector pseudoTargetStates(submatrix.getRowCount());
+                        for (std::size_t index = 0; index < oneStepProbabilities.size(); ++index) {
+                            if (!comparator.isZero(oneStepProbabilities[index])) {
+                                pseudoTargetStates.set(index);
+                            }
+                        }
+                        
+                        distances = storm::utility::graph::getDistances(submatrixTransposed, pseudoTargetStates);
+                    } else {
+                        STORM_LOG_ASSERT(false, "Illegal sorting order selected.");
                     }
-                } else if (storm::settings::parametricSettings().getEliminationOrder() == storm::settings::modules::ParametricSettings::EliminationOrder::Forward) {
-                    std::size_t distances = storm::utility::graph::getDistances(submatrix, initialStates);
+                    
+                    // In case of the forward or backward ordering, we can sort the states according to the distances.
+                    if (storm::settings::parametricSettings().getEliminationOrder() == storm::settings::modules::ParametricSettings::EliminationOrder::Forward || storm::settings::parametricSettings().getEliminationOrder() == storm::settings::modules::ParametricSettings::EliminationOrder::Backward) {
+                        std::sort(states.begin(), states.end(), [&distances] (storm::storage::sparse::state_type const& state1, storm::storage::sparse::state_type const& state2) { return distances[state1] < distances[state2]; } );
+                    } else {
+                        // Otherwise, we sort them according to descending distances.
+                        std::sort(states.begin(), states.end(), [&distances] (storm::storage::sparse::state_type const& state1, storm::storage::sparse::state_type const& state2) { return distances[state1] > distances[state2]; } );
+                    }
                 }
                 
+                // Now convert the ordering of the states to priorities.
+                for (std::size_t index = 0; index < states.size(); ++index) {
+                    statePriorities[states[index]] = index;
+                }
                 
-                // To be able to apply heuristics later, we now determine the distance of each state to the initial state.
-                // We start by setting up the data structures.
-
-                
-                return computeReachabilityProbability(submatrix, oneStepProbabilities, submatrix.transpose(), newInitialStates, phiStates, psiStates, distances);
+                return computeReachabilityProbability(submatrix, oneStepProbabilities, submatrixTransposed, newInitialStates, phiStates, psiStates, statePriorities);
             }
             
             template<typename ValueType>
