@@ -13,14 +13,10 @@
 
 #include "utility/OsDetection.h"
 
-//GCC 4.7 does not support method emplace yet, therefore use boost map on Linux
-#ifdef LINUX
-#include <boost/container/set.hpp>
-#endif
-
+#include "src/storage/sparse/StateType.h"
 #include "src/models/AbstractDeterministicModel.h"
 #include "src/models/AbstractNondeterministicModel.h"
-#include "constants.h"
+#include "src/utility/constants.h"
 #include "src/exceptions/InvalidArgumentException.h"
 
 #include "log4cplus/logger.h"
@@ -73,6 +69,45 @@ namespace storm {
                 }
                 
                 return reachableStates;
+            }
+            
+            /*!
+             * Performs a breadth-first search through the underlying graph structure to compute the distance from all
+             * states to the starting states of the search.
+             *
+             * @param transitionMatrix The transition relation of the graph structure to search.
+             * @param initialStates The set of states from which to start the search.
+             * @return The distances of each state to the initial states of the sarch.
+             */
+            template<typename T>
+            std::vector<std::size_t> getReachableStates(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::BitVector const& initialStates) {
+                std::vector<std::size_t> distances(transitionMatrix.getRowGroupCount());
+                
+                std::vector<std::pair<storm::storage::sparse::state_type, std::size_t>> stateQueue;
+                stateQueue.reserve(transitionMatrix.getRowGroupCount());
+                storm::storage::BitVector statesInQueue(transitionMatrix.getRowGroupCount());
+                
+                storm::storage::sparse::state_type currentPosition = 0;
+                for (auto const& initialState : initialStates) {
+                    stateQueue.emplace_back(initialState, 0);
+                    statesInQueue.set(initialState);
+                }
+                
+                // Perform a BFS.
+                while (currentPosition < stateQueue.size()) {
+                    std::pair<storm::storage::sparse::state_type, std::size_t> const& stateDistancePair = stateQueue[currentPosition];
+                    distances[stateDistancePair.first] = stateDistancePair.second;
+                    
+                    for (auto const& successorEntry : transitionMatrix.getRowGroup(stateDistancePair.first)) {
+                        if (!statesInQueue.get(successorEntry.getColumn())) {
+                            stateQueue.emplace_back(successorEntry.getColumn(), stateDistancePair.second + 1);
+                            statesInQueue.set(successorEntry.getColumn());
+                        }
+                    }
+                    ++currentPosition;
+                }
+                
+                return distances;
             }
             
             /*!
@@ -727,11 +762,8 @@ namespace storm {
                 std::vector<uint_fast64_t> predecessors(model.getNumberOfStates(), noPredecessorValue);
                 
                 // Set the probability to 1 for all starting states.
-#ifdef LINUX
-                boost::container::set<std::pair<T, uint_fast64_t>, DistanceCompare<T>> probabilityStateSet;
-#else
                 std::set<std::pair<T, uint_fast64_t>, DistanceCompare<T>> probabilityStateSet;
-#endif
+
                 for (auto state : startingStates) {
                     probabilityStateSet.emplace(storm::utility::constantOne<T>(), state);
                     probabilities[state] = storm::utility::constantOne<T>();
