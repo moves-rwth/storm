@@ -43,16 +43,16 @@ namespace storm {
                         std::sort(states.begin(), states.end(), [&statePriorities] (storm::storage::sparse::state_type const& a, storm::storage::sparse::state_type const& b) { return statePriorities.get()[a] < statePriorities.get()[b]; });
                     }
                     
-                    STORM_PRINT_AND_LOG("Eliminating " << states.size() << " states using the state elimination technique.");
+                    STORM_PRINT_AND_LOG("Eliminating " << states.size() << " states using the state elimination technique." << std::endl);
                     for (auto const& state : states) {
                         eliminateState(flexibleMatrix, oneStepProbabilities, state, flexibleBackwardTransitions);
                     }
-                    STORM_PRINT_AND_LOG("Eliminated " << states.size() << " states.");
+                    STORM_PRINT_AND_LOG("Eliminated " << states.size() << " states." << std::endl);
                 } else if (storm::settings::parametricSettings().getEliminationMethod() == storm::settings::modules::ParametricSettings::EliminationMethod::Hybrid) {
                     // When using the hybrid technique, we recursively treat the SCCs up to some size.
                     storm::utility::ConstantsComparator<ValueType> comparator;
                     std::vector<storm::storage::sparse::state_type> entryStateQueue;
-                    STORM_PRINT_AND_LOG("Eliminating " << subsystem.size() << " states using the hybrid elimination technique.");
+                    STORM_PRINT_AND_LOG("Eliminating " << subsystem.size() << " states using the hybrid elimination technique." << std::endl);
                     maximalDepth = treatScc(flexibleMatrix, oneStepProbabilities, initialStates, subsystem, transitionMatrix, flexibleBackwardTransitions, false, 0, storm::settings::parametricSettings().getMaximalSccSize(), entryStateQueue, comparator, statePriorities);
                     
                     // If the entry states were to be eliminated last, we need to do so now.
@@ -62,7 +62,7 @@ namespace storm {
                             eliminateState(flexibleMatrix, oneStepProbabilities, state, flexibleBackwardTransitions);
                         }
                     }
-                    STORM_PRINT_AND_LOG("Eliminated " << subsystem.size() << " states.");
+                    STORM_PRINT_AND_LOG("Eliminated " << subsystem.size() << " states." << std::endl);
                 }
                 
                 // Finally eliminate initial state.
@@ -147,7 +147,6 @@ namespace storm {
                 
                 // Subtract from the maybe states the set of states that is not reachable (on a path from the initial to a target state).
                 maybeStates &= reachableStates;
-                STORM_PRINT_AND_LOG("Found " << maybeStates.getNumberOfSetBits() << " maybe states." << std::endl);
 
                 // Create a vector for the probabilities to go to a state with probability 1 in one step.
                 std::vector<ValueType> oneStepProbabilities = dtmc.getTransitionMatrix().getConstrainedRowSumVector(maybeStates, statesWithProbability1);
