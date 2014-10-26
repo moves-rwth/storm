@@ -80,7 +80,7 @@ namespace storm {
              * @return The distances of each state to the initial states of the sarch.
              */
             template<typename T>
-            std::vector<std::size_t> getReachableStates(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::BitVector const& initialStates) {
+            std::vector<std::size_t> getDistances(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::BitVector const& initialStates) {
                 std::vector<std::size_t> distances(transitionMatrix.getRowGroupCount());
                 
                 std::vector<std::pair<storm::storage::sparse::state_type, std::size_t>> stateQueue;
