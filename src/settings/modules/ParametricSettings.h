@@ -22,13 +22,36 @@ namespace storm {
 				 */
 				enum class Smt2EncodingStrategy {FULL_TRANSITION_SYSTEM, ONLY_SCC_ENTRY_STATES, HIGH_INDEGREE, RATIONAL_FUNCTION};
 				
+                /*!
+                 * An enum that contains all available state elimination orders.
+                 */
+                enum class EliminationOrder { Forward, ForwardReversed, Backward, BackwardReversed, Random };
 				
+                /*!
+                 * An enum that contains all available techniques to solve parametric systems.
+                 */
+                enum class EliminationMethod { State, Scc, Hybrid};
+                
                 /*!
                  * Creates a new set of parametric model checking settings that is managed by the given manager.
                  *
                  * @param settingsManager The responsible manager.
                  */
                 ParametricSettings(storm::settings::SettingsManager& settingsManager);
+                
+                /*!
+                 * Retrieves the selected elimination method.
+                 *
+                 * @return The selected elimination method.
+                 */
+                EliminationMethod getEliminationMethod() const;
+                
+                /*!
+                 * Retrieves the selected elimination order.
+                 *
+                 * @return The selected elimination order.
+                 */
+                EliminationOrder getEliminationOrder() const;
                 
                 /*!
                  * Retrieves whether the option to eliminate entry states in the very end is set.
@@ -43,14 +66,6 @@ namespace storm {
                  * @return The maximal size of an SCC on which state elimination is to be directly applied.
                  */
                 uint_fast64_t getMaximalSccSize() const;
-                
-                /*!
-                 * Retrieves whether the option to sort the trivial SCCs (in descending order) wrt. to the distance to 
-                 * the initial state.
-                 *
-                 * @return True iff the trivial SCCs are to be sorted.
-                 */
-                bool isSortTrivialSccsSet() const;
 				
 				/**
 				 * Retrieves whether the model checking result should be exported to a file.
@@ -82,13 +97,13 @@ namespace storm {
                  */
 				Smt2EncodingStrategy smt2EncodingStrategy() const;
 				
-				
                 const static std::string moduleName;
                 
             private:
+                const static std::string eliminationMethodOptionName;
+                const static std::string eliminationOrderOptionName;
                 const static std::string entryStatesLastOptionName;
                 const static std::string maximalSccSizeOptionName;
-                const static std::string sortTrivialSccOptionName;
 				const static std::string encodeSmt2StrategyOptionName;
 				const static std::string exportSmt2DestinationPathOptionName;
 				const static std::string exportResultDestinationPathOptionName;
