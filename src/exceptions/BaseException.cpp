@@ -13,6 +13,10 @@ namespace storm {
         BaseException::BaseException(char const* cstr) {
             stream << cstr;
         }
+
+		BaseException::~BaseException() {
+			// Intentionally left empty.
+		}
         
         const char* BaseException::what() const throw() {
             std::string errorString = this->stream.str();

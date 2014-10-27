@@ -13,6 +13,8 @@ exception_name(char const* cstr) : BaseException(cstr) { \
 } \
 exception_name(exception_name const& cp) : BaseException(cp) { \
 } \
+~exception_name() throw() { \
+} \
 template<typename T> \
 exception_name& operator<<(T const& var) { \
     this->stream << var; \
