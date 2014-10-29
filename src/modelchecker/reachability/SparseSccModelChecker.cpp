@@ -419,7 +419,7 @@ namespace storm {
                             break;
                         }
                         if (first2->getColumn() < first1->getColumn()) {
-                            *result = storm::utility::simplify(*first2 * multiplyFactor);
+                            *result = storm::utility::simplify(std::move(*first2 * multiplyFactor));
                             ++first2;
                         } else if (first1->getColumn() < first2->getColumn()) {
                             *result = *first1;
@@ -432,7 +432,7 @@ namespace storm {
                     }
                     for (; first2 != last2; ++first2) {
                         if (first2->getColumn() != state) {
-                            *result = storm::utility::simplify(*first2 * multiplyFactor);
+                            *result = storm::utility::simplify(std::move(*first2 * multiplyFactor));
                         }
                     }
                     
