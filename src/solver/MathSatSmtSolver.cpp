@@ -217,7 +217,13 @@ namespace storm {
 
 
 #ifdef STORM_HAVE_MSAT
-		struct AllsatValuationsCallbackUserData {
+		class AllsatValuationsCallbackUserData {
+		public:
+			AllsatValuationsCallbackUserData(msat_env &env,
+				storm::adapters::MathSatExpressionAdapter &adapter,
+				std::function<bool(storm::expressions::SimpleValuation&)> &callback)
+				: env(env), adapter(adapter), callback(callback) {
+			}
 			msat_env &env;
 			storm::adapters::MathSatExpressionAdapter &adapter;
 			std::function<bool(storm::expressions::SimpleValuation&)> &callback;
@@ -240,6 +246,12 @@ namespace storm {
 				valuation.addBooleanIdentifier(name_str, currentTermValue);
 				msat_free(name);
 			}
+
+			if (user->callback(valuation)) {
+				return 1;
+			} else {
+				return 0;
+			}
 		}
 #endif
 
@@ -257,10 +269,7 @@ namespace storm {
 				msatImportant.push_back(m_adapter->translateExpression(e));
 			}
 
-			AllsatValuationsCallbackUserData allSatUserData;
-			allSatUserData.adapter = m_adapter;
-			allSatUserData.env = m_env;
-			allSatUserData.callback = callback;
+			AllsatValuationsCallbackUserData allSatUserData(m_env, *m_adapter, callback);
 			int numModels = msat_all_sat(m_env, msatImportant.data(), msatImportant.size(), &allsatValuationsCallback, &allSatUserData);
 
 			return numModels;

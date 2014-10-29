@@ -47,7 +47,7 @@ namespace storm {
 			*/
 			msat_term translateExpression(storm::expressions::Expression const& expression, bool createMathSatVariables = false) {
 				//LOG4CPLUS_TRACE(logger, "Translating expression:\n" << expression->toString());
-				expression.accept(this);
+				expression.getBaseExpression().accept(this);
 				msat_term result = stack.top();
 				stack.pop();
 				if (MSAT_ERROR_TERM(result)) {
@@ -87,7 +87,7 @@ namespace storm {
 						stack.push(msat_make_iff(env, leftResult, rightResult));
 						break;
 					default: throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "
-						<< "Unknown boolean binary operator: '" << expression->getOperatorType() << "' in expression " << expression << ".";
+						<< "Unknown boolean binary operator: '" << static_cast<uint_fast64_t>(expression->getOperatorType()) << "' in expression " << expression << ".";
 				}
 
 			}
@@ -122,7 +122,7 @@ namespace storm {
 						stack.push(msat_make_term_ite(env, msat_make_leq(env, leftResult, rightResult), rightResult, leftResult));
 						break;
 					default: throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "
-						<< "Unknown numerical binary operator: '" << expression->getOperatorType() << "' in expression " << expression << ".";
+						<< "Unknown numerical binary operator: '" << static_cast<uint_fast64_t>(expression->getOperatorType()) << "' in expression " << expression << ".";
 				}
 			}
 
@@ -163,7 +163,7 @@ namespace storm {
 						stack.push(msat_make_or(env, msat_make_equal(env, leftResult, rightResult), msat_make_not(env, msat_make_leq(env, leftResult, rightResult))));
 						break;
 					default: throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "
-						<< "Unknown boolean binary operator: '" << expression->getRelationType() << "' in expression " << expression << ".";
+						<< "Unknown boolean binary operator: '" << static_cast<uint_fast64_t>(expression->getRelationType()) << "' in expression " << expression << ".";
 				}
 			}
 
@@ -205,7 +205,7 @@ namespace storm {
 						stack.push(msat_make_not(env, childResult));
 						break;
 					default: throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "
-						<< "Unknown boolean binary operator: '" << expression->getOperatorType() << "' in expression " << expression << ".";
+						<< "Unknown boolean binary operator: '" << static_cast<uint_fast64_t>(expression->getOperatorType()) << "' in expression " << expression << ".";
 				}
 			}
 
@@ -220,7 +220,7 @@ namespace storm {
 						stack.push(msat_make_times(env, msat_make_number(env, "-1"), childResult));
 						break;
 					default: throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "
-						<< "Unknown numerical unary operator: '" << expression->getOperatorType() << "'.";
+						<< "Unknown numerical unary operator: '" << static_cast<uint_fast64_t>(expression->getOperatorType()) << "'.";
 				}
 			}
 
