@@ -763,8 +763,8 @@ namespace storm {
                 std::sort(partition.getBegin(block), partition.getEnd(block), [] (std::pair<storm::storage::sparse::state_type, ValueType> const& a, std::pair<storm::storage::sparse::state_type, ValueType> const& b) { return a.first < b.first; });
                 
                 // Convert the state-value-pairs to states only.
-                auto lambda = [] (std::pair<storm::storage::sparse::state_type, ValueType> const& a) -> storm::storage::sparse::state_type { return a.first; };
-                this->blocks[block.getId()] = block_type(boost::make_transform_iterator(partition.getBegin(block), lambda), boost::make_transform_iterator(partition.getEnd(block), lambda), true);
+                std::function<storm::storage::sparse::state_type (std::pair<storm::storage::sparse::state_type, ValueType> const&)> projection = [] (std::pair<storm::storage::sparse::state_type, ValueType> const& a) -> storm::storage::sparse::state_type { return a.first; };
+                this->blocks[block.getId()] = block_type(boost::make_transform_iterator(partition.getBegin(block), projection), boost::make_transform_iterator(partition.getEnd(block), projection), true);
             }
 
             // If we are required to build the quotient model, do so now.
