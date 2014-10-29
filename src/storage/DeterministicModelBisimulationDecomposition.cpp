@@ -776,12 +776,15 @@ namespace storm {
             std::chrono::high_resolution_clock::duration totalTime = std::chrono::high_resolution_clock::now() - totalStart;
             
             if (storm::settings::generalSettings().isShowStatisticsSet()) {
+                std::chrono::milliseconds refinementTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(refinementTime);
+                std::chrono::milliseconds extractionTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(extractionTime);
+                std::chrono::milliseconds totalTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(totalTime);
                 std::cout << std::endl;
                 std::cout << "Time breakdown:" << std::endl;
-                std::cout << "    * time for partitioning: " << std::chrono::duration_cast<std::chrono::milliseconds>(refinementTime).count() << "ms" << std::endl;
-                std::cout << "    * time for extraction: " << std::chrono::duration_cast<std::chrono::milliseconds>(extractionTime).count() << "ms" << std::endl;
+                std::cout << "    * time for partitioning: " << refinementTimeInMilliseconds.count() << "ms" << std::endl;
+                std::cout << "    * time for extraction: " << extractionTimeInMilliseconds.count() << "ms" << std::endl;
                 std::cout << "------------------------------------------" << std::endl;
-                std::cout << "    * total time: " << std::chrono::duration_cast<std::chrono::milliseconds>(totalTime).count() << "ms" << std::endl;
+                std::cout << "    * total time: " << totalTimeInMilliseconds.count() << "ms" << std::endl;
                 std::cout << std::endl;
             }
         }

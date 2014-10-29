@@ -18,8 +18,8 @@ namespace storm {
             
             template<typename ValueType>
             ValueType SparseSccModelChecker<ValueType>::computeReachabilityProbability(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType>& oneStepProbabilities, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, boost::optional<std::vector<std::size_t>> const& statePriorities) {
-                auto totalTimeStart = std::chrono::high_resolution_clock::now();
-                auto conversionStart = std::chrono::high_resolution_clock::now();
+                std::chrono::high_resolution_clock::time_point totalTimeStart = std::chrono::high_resolution_clock::now();
+                std::chrono::high_resolution_clock::time_point conversionStart = std::chrono::high_resolution_clock::now();
 
                 // Create a bit vector that represents the subsystem of states we still have to eliminate.
                 storm::storage::BitVector subsystem = storm::storage::BitVector(transitionMatrix.getRowCount(), true);
@@ -29,7 +29,7 @@ namespace storm {
                 FlexibleSparseMatrix<ValueType> flexibleBackwardTransitions = getFlexibleSparseMatrix(backwardTransitions, true);
                 auto conversionEnd = std::chrono::high_resolution_clock::now();
                 
-                auto modelCheckingStart = std::chrono::high_resolution_clock::now();
+                std::chrono::high_resolution_clock::time_point modelCheckingStart = std::chrono::high_resolution_clock::now();
                 uint_fast64_t maximalDepth = 0;
                 if (storm::settings::parametricSettings().getEliminationMethod() == storm::settings::modules::ParametricSettings::EliminationMethod::State) {
                     // If we are required to do pure state elimination, we simply create a vector of all states to
@@ -72,20 +72,23 @@ namespace storm {
                 // Make sure that we have eliminated all transitions from the initial state.
                 STORM_LOG_ASSERT(flexibleMatrix.getRow(*initialStates.begin()).empty(), "The transitions of the initial states are non-empty.");
                 
-                auto modelCheckingEnd = std::chrono::high_resolution_clock::now();
-                auto totalTimeEnd = std::chrono::high_resolution_clock::now();
+                std::chrono::high_resolution_clock::time_point modelCheckingEnd = std::chrono::high_resolution_clock::now();
+                std::chrono::high_resolution_clock::time_point totalTimeEnd = std::chrono::high_resolution_clock::now();
                 
                 if (storm::settings::generalSettings().isShowStatisticsSet()) {
-                    auto conversionTime = conversionEnd - conversionStart;
-                    auto modelCheckingTime = modelCheckingEnd - modelCheckingStart;
-                    auto totalTime = totalTimeEnd - totalTimeStart;
+                    std::chrono::high_resolution_clock::duration conversionTime = conversionEnd - conversionStart;
+                    std::chrono::milliseconds conversionTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(conversionTime);
+                    std::chrono::high_resolution_clock::duration modelCheckingTime = modelCheckingEnd - modelCheckingStart;
+                    std::chrono::milliseconds modelCheckingTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(modelCheckingTime);
+                    std::chrono::high_resolution_clock::duration totalTime = totalTimeEnd - totalTimeStart;
+                    std::chrono::milliseconds totalTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(totalTime);
                     
                     STORM_PRINT_AND_LOG(std::endl);
                     STORM_PRINT_AND_LOG("Time breakdown:" << std::endl);
-                    STORM_PRINT_AND_LOG("    * time for conversion: " << std::chrono::duration_cast<std::chrono::milliseconds>(conversionTime).count() << "ms" << std::endl);
-                    STORM_PRINT_AND_LOG("    * time for checking: " << std::chrono::duration_cast<std::chrono::milliseconds>(modelCheckingTime).count() << "ms" << std::endl);
+                    STORM_PRINT_AND_LOG("    * time for conversion: " << conversionTimeInMilliseconds.count() << "ms" << std::endl);
+                    STORM_PRINT_AND_LOG("    * time for checking: " << modelCheckingTimeInMilliseconds.count() << "ms" << std::endl);
                     STORM_PRINT_AND_LOG("------------------------------------------" << std::endl);
-                    STORM_PRINT_AND_LOG("    * total time: " << std::chrono::duration_cast<std::chrono::milliseconds>(totalTime).count() << "ms" << std::endl);
+                    STORM_PRINT_AND_LOG("    * total time: " << totalTimeInMilliseconds.count() << "ms" << std::endl);
                     STORM_PRINT_AND_LOG(std::endl);
                     STORM_PRINT_AND_LOG("Other:" << std::endl);
                     STORM_PRINT_AND_LOG("    * number of states eliminated: " << transitionMatrix.getRowCount() << std::endl);
@@ -100,7 +103,6 @@ namespace storm {
             
             template<typename ValueType>
             ValueType SparseSccModelChecker<ValueType>::computeReachabilityProbability(storm::models::Dtmc<ValueType> const& dtmc, std::shared_ptr<storm::properties::prctl::PrctlFilter<double>> const& filterFormula) {
-                
                 // The first thing we need to do is to make sure the formula is of the correct form and - if so - extract
                 // the bitvector representation of the atomic propositions.
                 std::shared_ptr<storm::properties::prctl::Until<double>> untilFormula = std::dynamic_pointer_cast<storm::properties::prctl::Until<double>>(filterFormula->getChild());
@@ -348,41 +350,19 @@ namespace storm {
                     }
                 }
                 
-                std::chrono::high_resolution_clock::time_point simplifyClock;
-                std::chrono::high_resolution_clock::duration simplifyTime;
-                std::chrono::high_resolution_clock::time_point multiplicationClock;
-                std::chrono::high_resolution_clock::duration multiplicationTime;
-                std::chrono::high_resolution_clock::time_point additionClock;
-                std::chrono::high_resolution_clock::duration additionTime;
-                std::chrono::high_resolution_clock::time_point additionClock2;
-                std::chrono::high_resolution_clock::duration additionTime2;
-                
                 // Scale all entries in this row with (1 / (1 - loopProbability)) only in case there was a self-loop.
                 std::size_t scaledSuccessors = 0;
                 if (hasSelfLoop) {
-//                    std::cout << "loop: " << loopProbability << std::endl;
-//                    ValueType oneMinusLoop = (storm::utility::constantOne<ValueType>() - loopProbability);
-//                    std::cout << "1-loop: " << oneMinusLoop << std::endl;
-//                    std::cout << "1/(1-loop): " << (storm::utility::constantOne<ValueType>() / oneMinusLoop) << std::endl;
                     loopProbability = storm::utility::constantOne<ValueType>() / (storm::utility::constantOne<ValueType>() - loopProbability);
                     storm::utility::simplify(loopProbability);
-//                    std::cout << "state has self-loop with probability " << loopProbability << std::endl;
                     for (auto& entry : matrix.getRow(state)) {
                         // Only scale the non-diagonal entries.
                         if (entry.getColumn() != state) {
                             ++scaledSuccessors;
-                            multiplicationClock = std::chrono::high_resolution_clock::now();
-//                            std::cout << "scaling " << entry.getValue() << " with " << loopProbability << std::endl;
-                            auto result = storm::utility::simplify(entry.getValue() * loopProbability);
-//                            std::cout << "got " << result << " for state " << entry.getColumn() << std::endl;
-                            multiplicationTime += std::chrono::high_resolution_clock::now() - multiplicationClock;
-                            entry.setValue(result);
+                            entry.setValue(storm::utility::simplify(entry.getValue() * loopProbability));
                         }
                     }
-                    multiplicationClock = std::chrono::high_resolution_clock::now();
-                    auto result = oneStepProbabilities[state] * loopProbability;
-                    multiplicationTime += std::chrono::high_resolution_clock::now() - multiplicationClock;
-                    oneStepProbabilities[state] = result;
+                    oneStepProbabilities[state] = oneStepProbabilities[state] * loopProbability;
                 }
                 
                 STORM_LOG_DEBUG((hasSelfLoop ? "State has self-loop." : "State does not have a self-loop."));
@@ -393,7 +373,6 @@ namespace storm {
                 std::size_t predecessorForwardTransitionCount = 0;
                 for (auto const& predecessorEntry : currentStatePredecessors) {
                     uint_fast64_t predecessor = predecessorEntry.getColumn();
-//                    std::cout << "treating predecessor " << predecessor << std::endl;
                     
                     // Skip the state itself as one of its predecessors.
                     if (predecessor == state) {
@@ -440,47 +419,20 @@ namespace storm {
                             break;
                         }
                         if (first2->getColumn() < first1->getColumn()) {
-                            multiplicationClock = std::chrono::high_resolution_clock::now();
-                            auto tmpResult = *first2 * multiplyFactor;
-                            multiplicationTime += std::chrono::high_resolution_clock::now() - multiplicationClock;
-                            simplifyClock = std::chrono::high_resolution_clock::now();
-                            *result = storm::utility::simplify(tmpResult);
-                            simplifyTime += std::chrono::high_resolution_clock::now() - simplifyClock;
+                            *result = storm::utility::simplify(*first2 * multiplyFactor);
                             ++first2;
                         } else if (first1->getColumn() < first2->getColumn()) {
                             *result = *first1;
                             ++first1;
                         } else {
-                            multiplicationClock = std::chrono::high_resolution_clock::now();
-//                            std::cout << "multiplying " << multiplyFactor << " with " << first2->getValue() << std::endl;
-                            auto tmp1 = multiplyFactor * first2->getValue();
-//                            std::cout << "result: " << tmp1 << std::endl;
-                            multiplicationTime += std::chrono::high_resolution_clock::now() - multiplicationClock;
-                            simplifyClock = std::chrono::high_resolution_clock::now();
-                            tmp1 = storm::utility::simplify(tmp1);
-                            multiplicationClock = std::chrono::high_resolution_clock::now();
-                            simplifyTime += std::chrono::high_resolution_clock::now() - simplifyClock;
-                            additionClock = std::chrono::high_resolution_clock::now();
-//                            std::cout << "adding " << first1->getValue() << " and " << tmp1 << std::endl;
-                            auto tmp2 = first1->getValue() + tmp1;
-//                            std::cout << "result: " << tmp2 << std::endl;
-                            additionTime += std::chrono::high_resolution_clock::now() - additionClock;
-                            simplifyClock = std::chrono::high_resolution_clock::now();
-                            tmp2 = storm::utility::simplify(tmp2);
-                            simplifyTime += std::chrono::high_resolution_clock::now() - simplifyClock;
-                            *result = storm::storage::MatrixEntry<typename FlexibleSparseMatrix<ValueType>::index_type, typename FlexibleSparseMatrix<ValueType>::value_type>(first1->getColumn(), tmp2);
+                            *result = storm::storage::MatrixEntry<typename FlexibleSparseMatrix<ValueType>::index_type, typename FlexibleSparseMatrix<ValueType>::value_type>(first1->getColumn(), storm::utility::simplify(first1->getValue() + storm::utility::simplify(multiplyFactor * first2->getValue())));
                             ++first1;
                             ++first2;
                         }
                     }
                     for (; first2 != last2; ++first2) {
                         if (first2->getColumn() != state) {
-                            multiplicationClock = std::chrono::high_resolution_clock::now();
-                            auto tmpResult = *first2 * multiplyFactor;
-                            multiplicationTime += std::chrono::high_resolution_clock::now() - multiplicationClock;
-                            simplifyClock = std::chrono::high_resolution_clock::now();
-                            *result = storm::utility::simplify(tmpResult);
-                            simplifyTime += std::chrono::high_resolution_clock::now() - simplifyClock;
+                            *result = storm::utility::simplify(*first2 * multiplyFactor);
                         }
                     }
                     
@@ -488,20 +440,7 @@ namespace storm {
                     predecessorForwardTransitions = std::move(newSuccessors);
                     
                     // Add the probabilities to go to a target state in just one step.
-//                    multiplicationClock = std::chrono::high_resolution_clock::now();
-//                    auto tmp1 = multiplyFactor * oneStepProbabilities[state];
-//                    multiplicationTime += std::chrono::high_resolution_clock::now() - multiplicationClock;
-//                    simplifyClock = std::chrono::high_resolution_clock::now();
-//                    tmp1 = storm::utility::simplify(tmp1);
-//                    simplifyTime += std::chrono::high_resolution_clock::now() - simplifyClock;
-//                    auto tmp2 = oneStepProbabilities[predecessor] + tmp1;
-//                    simplifyClock = std::chrono::high_resolution_clock::now();
-//                    tmp2 = storm::utility::simplify(tmp2);
-//                    simplifyTime += std::chrono::high_resolution_clock::now() - simplifyClock;
-                    additionClock2 = std::chrono::high_resolution_clock::now();
                     oneStepProbabilities[predecessor] += storm::utility::simplify(multiplyFactor * oneStepProbabilities[state]);
-                    additionTime2 += std::chrono::high_resolution_clock::now() - additionClock2;
-                    
                     STORM_LOG_DEBUG("Fixed new next-state probabilities of predecessor states.");
                 }
                 
@@ -561,18 +500,6 @@ namespace storm {
                 
                 auto eliminationEnd = std::chrono::high_resolution_clock::now();
                 auto eliminationTime = eliminationEnd - eliminationStart;
-                
-                // If the elimination took more than 3 seconds, we print some more information.
-                if (std::chrono::duration_cast<std::chrono::milliseconds>(eliminationTime).count() > 3000) {
-                    STORM_PRINT("Elimination took more than 3 seconds (actually took " << std::chrono::duration_cast<std::chrono::milliseconds>(eliminationTime).count() << "ms)." << std::endl);
-                    STORM_PRINT("Simplification took " << std::chrono::duration_cast<std::chrono::milliseconds>(simplifyTime).count() << "ms." << std::endl);
-                    STORM_PRINT("Multiplication took " << std::chrono::duration_cast<std::chrono::milliseconds>(multiplicationTime).count() << "ms." << std::endl);
-                    STORM_PRINT("Addition1 took " << std::chrono::duration_cast<std::chrono::milliseconds>(additionTime).count() << "ms." << std::endl);
-                    STORM_PRINT("Addition2 took " << std::chrono::duration_cast<std::chrono::milliseconds>(additionTime2).count() << "ms." << std::endl);
-                    STORM_PRINT("Number of scaled successors: " << scaledSuccessors << "." << std::endl);
-                    STORM_PRINT("Number of predecessors: " << numberOfPredecessors << "." << std::endl);
-                    STORM_PRINT("Number of predecessor forward transitions " << predecessorForwardTransitionCount << "." << std::endl);
-                }
             }
             
             template <typename ValueType>
