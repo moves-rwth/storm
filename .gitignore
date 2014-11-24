@@ -43,3 +43,5 @@ build//CMakeLists.txt
 #Temp texteditor files
 *.orig
 *.*~
+# CMake generated/configured files
+src/utility/storm-version.cpp
