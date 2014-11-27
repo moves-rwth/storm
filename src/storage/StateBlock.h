@@ -10,7 +10,7 @@
 namespace storm {
     namespace storage {
         
-        // Typedef the most common state container
+        // Typedef the most common state container.
         typedef boost::container::flat_set<sparse::state_type> FlatSetStateContainer;
         
         std::ostream& operator<<(std::ostream& out, FlatSetStateContainer const& block);

@@ -68,7 +68,7 @@ namespace storm {
              */
 			OptionBuilder& addArgument(std::shared_ptr<ArgumentBase> argument) {
                 STORM_LOG_THROW(!this->isBuild, storm::exceptions::IllegalFunctionCallException, "Cannot add an argument to an option builder that was already used to build the option.");
-                STORM_LOG_THROW(this->arguments.empty() || !argument->getIsOptional() || this->arguments.back()->getIsOptional(), storm::exceptions::IllegalArgumentException, "Unable to add non-optional argument after an option that is optional.");
+                STORM_LOG_THROW(this->arguments.empty() || argument->getIsOptional() || !this->arguments.back()->getIsOptional(), storm::exceptions::IllegalArgumentException, "Unable to add non-optional argument after an option that is optional.");
 
 				std::string lowerArgumentName = boost::algorithm::to_lower_copy(argument->getName());
                 STORM_LOG_THROW(argumentNameSet.find(lowerArgumentName) == argumentNameSet.end(), storm::exceptions::IllegalArgumentException, "Unable to add argument to option, because it already has an argument with the same name.");
