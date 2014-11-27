@@ -73,6 +73,12 @@ else()
     set(ENABLE_GUROBI ON)
 endif()
 
+if ("${CUDA_ROOT}" STREQUAL "")
+    set(ENABLE_CUDA OFF)
+else()
+    set(ENABLE_CUDA ON)
+endif()
+
 if ("${Z3_ROOT}" STREQUAL "")
     set(ENABLE_Z3 OFF)
 else()
@@ -195,6 +201,13 @@ else()
 	set(STORM_CPP_GUROBI_DEF "undef")
 endif()
 
+# CUDA Defines
+if (ENABLE_CUDA)
+	set(STORM_CPP_CUDA_DEF "define")
+else()
+	set(STORM_CPP_CUDA_DEF "undef")
+endif()
+
 # glpk defines
 set(STORM_CPP_GLPK_DEF "define")
 
@@ -226,6 +239,28 @@ configure_file (
 
 # Add the binary dir include directory for storm-config.h
 include_directories("${PROJECT_BINARY_DIR}/include")
+
+#############################################################
+##
+##	CUDA Library generation
+##
+#############################################################
+
+if(ENABLE_CUDA)
+	find_package(CUDA REQUIRED)
+
+	set(STORM_CUDA_LIB_NAME "storm-cuda")
+
+	file(GLOB_RECURSE STORM_CUDA_KERNEL_FILES ${PROJECT_SOURCE_DIR}/cuda/kernels/*.cu)
+
+	set(CUDA_PROPAGATE_HOST_FLAGS OFF)
+	set(CUDA_NVCC_FLAGS "-arch=sm_13")
+
+	cuda_add_library(${STORM_CUDA_LIB_NAME}
+	    ${STORM_CUDA_KERNEL_FILES}
+	    SHARED
+	)
+endif()
 
 #############################################################
 ##
@@ -386,6 +421,16 @@ if (ENABLE_GUROBI)
     target_link_libraries(storm-functional-tests "gurobi56")
     target_link_libraries(storm-performance-tests "gurobi56")
 endif(ENABLE_GUROBI)
+
+#############################################################
+##
+##	CUDA (optional)
+##
+#############################################################
+if (ENABLE_CUDA)
+    message (STATUS "StoRM - Linking with CUDA")
+	target_link_libraries(storm ${STORM_CUDA_LIB_NAME})
+endif(ENABLE_CUDA)
 
 #############################################################
 ##
