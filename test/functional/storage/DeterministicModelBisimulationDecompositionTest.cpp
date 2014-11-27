@@ -30,11 +30,6 @@ TEST(DeterministicModelBisimulationDecomposition, Die) {
     EXPECT_EQ(storm::models::DTMC, result->getType());
     EXPECT_EQ(5, result->getNumberOfStates());
     EXPECT_EQ(8, result->getNumberOfTransitions());
-
-//	std::shared_ptr<storm::models::AbstractModel<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/dtmc/die/die.tra", STORM_CPP_BASE_PATH "/examples/dtmc/die/die.lab", "", STORM_CPP_BASE_PATH "/examples/dtmc/die/die.coin_flips.trans.rew");
-//    
-//    ASSERT_EQ(abstractModel->getType(), storm::models::DTMC);
-//	std::shared_ptr<storm::models::Dtmc<double>> dtmc = abstractModel->as<storm::models::Dtmc<double>>();
 }
 
 TEST(DeterministicModelBisimulationDecomposition, Crowds) {
