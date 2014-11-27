@@ -508,6 +508,15 @@ namespace storm {
             template<typename ModelType>
             void initializeSilentProbabilities(ModelType const& model, Partition& partition);
             
+            /*!
+             * Splits all blocks of the partition in a way such that the states of each block agree on the rewards.
+             *
+             * @param model The model from which to look-up the rewards.
+             * @param partition The partition that is to be split.
+             */
+            template<typename ModelType>
+            void splitRewards(ModelType const& model, Partition& partition);
+            
             // If required, a quotient model is built and stored in this member.
             std::shared_ptr<storm::models::AbstractDeterministicModel<ValueType>> quotient;
             
