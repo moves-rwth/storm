@@ -149,6 +149,11 @@ namespace storm {
             return !this->rewardModels.empty();
         }
         
+        bool Program::hasRewardModel(std::string const& name) const {
+            auto const& nameIndexPair = this->rewardModelToIndexMap.find(name);
+            return nameIndexPair != this->rewardModelToIndexMap.end();
+        }
+        
         std::vector<storm::prism::RewardModel> const& Program::getRewardModels() const {
             return this->rewardModels;
         }

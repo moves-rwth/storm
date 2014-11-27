@@ -116,7 +116,7 @@ namespace storm {
                 // all expressions in the program so we can then evaluate them without having to store the values of the
                 // constants in the state (i.e., valuation).
                 preparedProgram = preparedProgram.substituteConstants();
-                storm::prism::RewardModel const& rewardModel = rewardModelName != "" ? preparedProgram.getRewardModel(rewardModelName) : storm::prism::RewardModel();
+                storm::prism::RewardModel const& rewardModel = rewardModelName != "" || preparedProgram.hasRewardModel(rewardModelName) ? preparedProgram.getRewardModel(rewardModelName) : storm::prism::RewardModel();
                 
                 ModelComponents modelComponents = buildModelComponents(preparedProgram, rewardModel);
                 
