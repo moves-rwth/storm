@@ -540,7 +540,6 @@ namespace storm {
                                     
                                     // Now add all rewards that match this choice.
                                     for (auto const& transitionReward : transitionRewards) {
-                                        std::cout << transitionReward.getStatePredicateExpression() << std::endl;
                                         if (transitionReward.getActionName() == "" && transitionReward.getStatePredicateExpression().evaluateAsBool(stateInformation.reachableStates.at(currentState))) {
                                             stateToRewardMap[stateProbabilityPair.first] += eval.evaluate(transitionReward.getRewardValueExpression(),stateInformation.reachableStates.at(currentState));
                                         }
@@ -560,8 +559,7 @@ namespace storm {
                                     }
                                 }
                             }
-
-                            
+                    
                             // Now add the resulting distribution as the only choice of the current state.
                             choiceLabels.push_back(globalChoice.getChoiceLabels());
                             
