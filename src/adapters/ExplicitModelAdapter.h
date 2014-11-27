@@ -110,7 +110,7 @@ namespace storm {
                 // all expressions in the program so we can then evaluate them without having to store the values of the
                 // constants in the state (i.e., valuation).
                 preparedProgram = preparedProgram.substituteConstants();
-                storm::prism::RewardModel const& rewardModel = rewardModelName != "" ? preparedProgram.getRewardModel(rewardModelName) : storm::prism::RewardModel();
+                storm::prism::RewardModel const& rewardModel = rewardModelName != "" || preparedProgram.hasRewardModel(rewardModelName) ? preparedProgram.getRewardModel(rewardModelName) : storm::prism::RewardModel();
                 
                 ModelComponents modelComponents = buildModelComponents(preparedProgram, rewardModel);
                 
@@ -526,7 +526,6 @@ namespace storm {
                                     
                                     // Now add all rewards that match this choice.
                                     for (auto const& transitionReward : transitionRewards) {
-                                        std::cout << transitionReward.getStatePredicateExpression() << std::endl;
                                         if (transitionReward.getActionName() == "" && transitionReward.getStatePredicateExpression().evaluateAsBool(stateInformation.reachableStates.at(currentState))) {
                                             stateToRewardMap[stateProbabilityPair.first] += ValueType(transitionReward.getRewardValueExpression().evaluateAsDouble(stateInformation.reachableStates.at(currentState)));
                                         }

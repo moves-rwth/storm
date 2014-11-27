@@ -227,6 +227,14 @@ namespace storm {
             bool hasRewardModel() const;
             
             /*!
+             * Retrieves whether the program has a reward model with the given name.
+             *
+             * @param name The name of the reward model to look for.
+             * @return True iff the program has a reward model with the given name.
+             */
+            bool hasRewardModel(std::string const& name) const;
+            
+            /*!
              * Retrieves the reward models of the program.
              *
              * @return The reward models of the program.
