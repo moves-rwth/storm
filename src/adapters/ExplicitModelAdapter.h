@@ -98,7 +98,7 @@ namespace storm {
              * @param rewardModel The reward model that is to be built.
              * @return The explicit model that was given by the probabilistic program.
              */
-            static std::unique_ptr<storm::models::AbstractModel<ValueType>> translateProgram(storm::prism::Program program, std::string const& rewardModelName = "", std::string const& constantDefinitionString = "") {
+            static std::unique_ptr<storm::models::AbstractModel<ValueType>> translateProgram(storm::prism::Program program, bool rewards = true, std::string const& rewardModelName = "", std::string const& constantDefinitionString = "") {
                 // Start by defining the undefined constants in the model.
                 // First, we need to parse the constant definition string.
                 std::map<std::string, storm::expressions::Expression> constantDefinitions = storm::utility::prism::parseConstantDefinitionString(program, constantDefinitionString);
@@ -110,8 +110,19 @@ namespace storm {
                 // all expressions in the program so we can then evaluate them without having to store the values of the
                 // constants in the state (i.e., valuation).
                 preparedProgram = preparedProgram.substituteConstants();
-                storm::prism::RewardModel const& rewardModel = rewardModelName != "" || preparedProgram.hasRewardModel(rewardModelName) ? preparedProgram.getRewardModel(rewardModelName) : storm::prism::RewardModel();
+                storm::prism::RewardModel rewardModel = storm::prism::RewardModel();
                 
+                // Select the appropriate reward model.
+                if (rewards) {
+                    // If a specific reward model was selected or one with the empty name exists, select it.
+                    if (rewardModelName != "" || preparedProgram.hasRewardModel(rewardModelName)) {
+                        rewardModel = preparedProgram.getRewardModel(rewardModelName);
+                    } else if (preparedProgram.hasRewardModel()) {
+                        // Otherwise, we select the first one.
+                        rewardModel = preparedProgram.getRewardModel(0);
+                    }
+                }
+
                 ModelComponents modelComponents = buildModelComponents(preparedProgram, rewardModel);
                 
                 std::unique_ptr<storm::models::AbstractModel<ValueType>> result;
