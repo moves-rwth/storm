@@ -29,12 +29,17 @@ namespace storm {
              */
             BaseException(char const* cstr);
             
+			/*!
+			 * Declare a destructor to counter the "looser throw specificator" error
+			 */
+			virtual ~BaseException();
+
             /*!
              * Retrieves the message associated with this exception.
              *
              * @return The message associated with this exception.
              */
-            virtual const char* what() const throw();
+            virtual const char* what() const noexcept;
             
         protected:
             // This stream stores the message of this exception.

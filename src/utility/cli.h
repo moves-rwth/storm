@@ -262,7 +262,7 @@ namespace storm {
                     storm::prism::Program program = storm::parser::PrismParser::parse(programFile);
                     
                     // Then, build the model from the symbolic description.
-                    result = storm::adapters::ExplicitModelAdapter<ValueType>::translateProgram(program, constants);
+                    result = storm::adapters::ExplicitModelAdapter<double>::translateProgram(program, settings.isSymbolicRewardModelNameSet() ? program.getRewardModel(settings.getSymbolicRewardModelName()) : storm::prism::RewardModel(), constants);
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No input model.");
                 }
@@ -275,7 +275,7 @@ namespace storm {
                     std::shared_ptr<storm::models::Dtmc<double>> dtmc = result->template as<storm::models::Dtmc<double>>();
                     
                     STORM_PRINT(std::endl << "Performing bisimulation minimization..." << std::endl);
-                    storm::storage::DeterministicModelBisimulationDecomposition<double> bisimulationDecomposition(*dtmc, storm::settings::bisimulationSettings().isWeakBisimulationSet(), true);
+                    storm::storage::DeterministicModelBisimulationDecomposition<double> bisimulationDecomposition(*dtmc, boost::optional<std::set<std::string>>(), storm::settings::bisimulationSettings().isWeakBisimulationSet(), true);
                     
                     result = bisimulationDecomposition.getQuotient();
                     

@@ -10,6 +10,10 @@ namespace storm {
             return this->rewardModelName;
         }
         
+        bool RewardModel::empty() const {
+            return !this->hasStateRewards() && !this->hasTransitionRewards();
+        }
+        
         bool RewardModel::hasStateRewards() const {
             return this->stateRewards.size() > 0;
         }

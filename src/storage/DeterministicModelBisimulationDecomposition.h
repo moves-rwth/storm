@@ -25,19 +25,23 @@ namespace storm {
              * Decomposes the given DTMC into equivalence classes under weak or strong bisimulation.
              *
              * @param model The model to decompose.
+             * @param A set of atomic propositions that is to be respected. If not given, all atomic propositions of the
+             * model will be respected. If built, the quotient model will only contain the respected atomic propositions.
              * @param weak A flag indication whether a weak bisimulation is to be computed.
              * @param buildQuotient Sets whether or not the quotient model is to be built.
              */
-            DeterministicModelBisimulationDecomposition(storm::models::Dtmc<ValueType> const& model, bool weak = false, bool buildQuotient = false);
+            DeterministicModelBisimulationDecomposition(storm::models::Dtmc<ValueType> const& model, boost::optional<std::set<std::string>> const& atomicPropositions = boost::optional<std::set<std::string>>(), bool weak = false, bool buildQuotient = false);
 
             /*!
              * Decomposes the given CTMC into equivalence classes under weak or strong bisimulation.
              *
              * @param model The model to decompose.
+             * @param A set of atomic propositions that is to be respected. If not given, all atomic propositions of the
+             * model will be respected. If built, the quotient model will only contain the respected atomic propositions.
              * @param weak A flag indication whether a weak bisimulation is to be computed.
              * @param buildQuotient Sets whether or not the quotient model is to be built.
              */
-            DeterministicModelBisimulationDecomposition(storm::models::Ctmc<ValueType> const& model, bool weak = false, bool buildQuotient = false);
+            DeterministicModelBisimulationDecomposition(storm::models::Ctmc<ValueType> const& model, boost::optional<std::set<std::string>> const& atomicPropositions = boost::optional<std::set<std::string>>(), bool weak = false, bool buildQuotient = false);
             
             /*!
              * Decomposes the given DTMC into equivalence classes under strong bisimulation in a way that onle safely
@@ -83,7 +87,7 @@ namespace storm {
                 typedef typename std::list<Block>::const_iterator const_iterator;
                 
                 // Creates a new block with the given begin and end.
-                Block(storm::storage::sparse::state_type begin, storm::storage::sparse::state_type end, Block* prev, Block* next, std::shared_ptr<std::string> const& label = nullptr);
+                Block(storm::storage::sparse::state_type begin, storm::storage::sparse::state_type end, Block* prev, Block* next, std::size_t id, std::shared_ptr<std::string> const& label = nullptr);
                 
                 // Prints the block.
                 void print(Partition const& partition) const;
@@ -226,9 +230,6 @@ namespace storm {
                 
                 // The label of the block or nullptr if it has none.
                 std::shared_ptr<std::string> label;
-                
-                // A counter for the IDs of the blocks.
-                static std::size_t blockId;
             };
             
             class Partition {
@@ -394,6 +395,8 @@ namespace storm {
              * getQuotient().
              *
              * @param model The model on whose state space to compute the coarses strong bisimulation relation.
+             * @param atomicPropositions The set of atomic propositions that the bisimulation considers. If not given,
+             * all atomic propositions are considered.
              * @param backwardTransitions The backward transitions of the model.
              * @param The initial partition.
              * @param bisimulationType The kind of bisimulation that is to be computed.
@@ -401,7 +404,7 @@ namespace storm {
              * method.
              */
             template<typename ModelType>
-            void partitionRefinement(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, Partition& partition, BisimulationType bisimulationType, bool buildQuotient);
+            void partitionRefinement(ModelType const& model, boost::optional<std::set<std::string>> const& atomicPropositions, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, Partition& partition, BisimulationType bisimulationType, bool buildQuotient);
             
             /*!
              * Refines the partition based on the provided splitter. After calling this method all blocks are stable
@@ -445,12 +448,15 @@ namespace storm {
              *
              * @param model The model whose state space was used for computing the equivalence classes. This is used for
              * determining the transitions of each equivalence class.
+             * @param selectedAtomicPropositions The set of atomic propositions that was considered by the bisimulation. The
+             * quotient will only have these atomic propositions. If not given, all atomic propositions will be
+             * considered.
              * @param partition The previously computed partition. This is used for quickly retrieving the block of a
              * state.
              * @param bisimulationType The kind of bisimulation that is to be computed.
              */
             template<typename ModelType>
-            void buildQuotient(ModelType const& model, Partition const& partition, BisimulationType bisimulationType);
+            void buildQuotient(ModelType const& model, boost::optional<std::set<std::string>> const& selectedAtomicPropositions, Partition const& partition, BisimulationType bisimulationType);
 
             /*!
              * Creates the measure-driven initial partition for reaching psi states from phi states.
@@ -474,10 +480,12 @@ namespace storm {
              * @param model The model whose state space is partitioned based on its labels.
              * @param backwardTransitions The backward transitions of the model.
              * @param bisimulationType The kind of bisimulation that is to be computed.
+             * @param atomicPropositions The set of atomic propositions to respect. If not given, then all atomic
+             * propositions of the model are respected.
              * @return The resulting partition.
              */
             template<typename ModelType>
-            Partition getLabelBasedInitialPartition(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, BisimulationType bisimulationType);
+            Partition getLabelBasedInitialPartition(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, BisimulationType bisimulationType, boost::optional<std::set<std::string>> const& atomicPropositions = boost::optional<std::set<std::string>>());
             
             /*!
              * Splits all blocks of the given partition into a block that contains all divergent states and another block
@@ -499,6 +507,15 @@ namespace storm {
              */
             template<typename ModelType>
             void initializeSilentProbabilities(ModelType const& model, Partition& partition);
+            
+            /*!
+             * Splits all blocks of the partition in a way such that the states of each block agree on the rewards.
+             *
+             * @param model The model from which to look-up the rewards.
+             * @param partition The partition that is to be split.
+             */
+            template<typename ModelType>
+            void splitRewards(ModelType const& model, Partition& partition);
             
             // If required, a quotient model is built and stored in this member.
             std::shared_ptr<storm::models::AbstractDeterministicModel<ValueType>> quotient;

@@ -39,7 +39,6 @@ namespace storm {
                  */
                 bool isVersionSet() const;
 				
-				
                 /*!
                  * Retrieves the name of the module for which to show the help or "all" to indicate that the full help
                  * needs to be shown.
@@ -127,6 +126,20 @@ namespace storm {
                  * @return The name of the file that contains the symbolic model specification.
                  */
                 std::string getSymbolicModelFilename() const;
+                
+                /*!
+                 * Retrieves whether the name of a reward model was passed to the symbolic option.
+                 *
+                 * @return True iff the name of a reward model was passed to the symbolic option.
+                 */
+                bool isSymbolicRewardModelNameSet() const;
+                
+                /*!
+                 * Retrieves the name of the reward model if one was set using the symbolic option.
+                 *
+                 * @return The name of the selected reward model.
+                 */
+                std::string getSymbolicRewardModelName() const;
 
                 /*!
                  * Retrieves whether the pctl option was set.
