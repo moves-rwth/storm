@@ -61,7 +61,8 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("transition filename", "The name of the file from which to read the transitions.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build())
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("labeling filename", "The name of the file from which to read the state labeling.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, symbolicOptionName, false, "Parses the model given in a symbolic representation.").setShortName(symbolicOptionShortName)
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file from which to read the symbolic model.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file from which to read the symbolic model.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build())
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("rewardmodel", "The name of the reward model to use.").setDefaultValueString("").setIsOptional(true).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, pctlOptionName, false, "Specifies a PCTL formula that is to be checked on the model.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("formula", "The formula to check.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, pctlFileOptionName, false, "Specifies the PCTL formulas that are to be checked on the model.")
@@ -152,6 +153,14 @@ namespace storm {
             
             std::string GeneralSettings::getSymbolicModelFilename() const {
                 return this->getOption(symbolicOptionName).getArgumentByName("filename").getValueAsString();
+            }
+            
+            bool GeneralSettings::isSymbolicRewardModelNameSet() const {
+                return this->getOption(symbolicOptionName).getArgumentByName("rewardmodel").getHasBeenSet();
+            }
+            
+            std::string GeneralSettings::getSymbolicRewardModelName() const {
+                return this->getOption(symbolicOptionName).getArgumentByName("rewardmodel").getValueAsString();
             }
             
             bool GeneralSettings::isPctlPropertySet() const {

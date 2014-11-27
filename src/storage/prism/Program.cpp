@@ -145,6 +145,10 @@ namespace storm {
             return variableNameToModuleIndexPair->second;
         }
         
+        bool Program::hasRewardModel() const {
+            return !this->rewardModels.empty();
+        }
+        
         std::vector<storm::prism::RewardModel> const& Program::getRewardModels() const {
             return this->rewardModels;
         }
@@ -157,6 +161,11 @@ namespace storm {
             auto const& nameIndexPair = this->rewardModelToIndexMap.find(name);
             STORM_LOG_THROW(nameIndexPair != this->rewardModelToIndexMap.end(), storm::exceptions::OutOfRangeException, "Reward model '" << name << "' does not exist.");
             return this->getRewardModels()[nameIndexPair->second];
+        }
+        
+        RewardModel const& Program::getRewardModel(uint_fast64_t index) const {
+            STORM_LOG_THROW(this->getNumberOfRewardModels() > index, storm::exceptions::OutOfRangeException, "Reward model with index " << index << " does not exist.");
+            return this->rewardModels[index];
         }
         
         std::vector<Label> const& Program::getLabels() const {

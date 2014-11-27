@@ -41,6 +41,13 @@ namespace storm {
             std::string const& getName() const;
             
             /*!
+             * Checks whether the reward model is empty, i.e. contains no state or transition rewards.
+             *
+             * @return True iff the reward model is empty.
+             */
+            bool empty() const;
+            
+            /*!
              * Retrieves whether there are any state rewards.
              *
              * @return True iff there are any state rewards.
