@@ -328,6 +328,13 @@ namespace storm {
                  * @return True iff the option was set.
                  */
                 bool isBisimulationSet() const;
+
+                /*!
+                 * Retrieves whether the option to use CUDA is set.
+                 *
+                 * @return True iff the option was set.
+                 */
+                bool isCudaSet() const;
                 
                 bool check() const override;
 
@@ -372,6 +379,7 @@ namespace storm {
                 static const std::string statisticsOptionShortName;
                 static const std::string bisimulationOptionName;
                 static const std::string bisimulationOptionShortName;
+                static const std::string cudaOptionName;
             };
             
         } // namespace modules
