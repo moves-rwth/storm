@@ -18,7 +18,7 @@ namespace storm {
 			// Intentionally left empty.
 		}
         
-        const char* BaseException::what() const noexcept {
+        const char* BaseException::what() const NOEXCEPT {
             std::string errorString = this->stream.str();
             char* result = new char[errorString.size() + 1];
             result[errorString.size()] = '\0';

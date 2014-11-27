@@ -3,6 +3,7 @@
 
 #if defined __linux__ || defined __linux
 #	define LINUX
+#   define NOEXCEPT noexcept
 #	include <sys/mman.h>
 #	include <unistd.h>
 #include <execinfo.h> // Required by ErrorHandling.h
@@ -12,6 +13,7 @@
 #	define GetCurrentDir getcwd
 #elif defined TARGET_OS_MAC || defined __apple__ || defined __APPLE__
 #	define MACOSX
+#   define NOEXCEPT noexcept
 #	define _DARWIN_USE_64_BIT_INODE
 #	include <sys/mman.h>
 #	include <unistd.h>
@@ -22,6 +24,7 @@
 #	define GetCurrentDir getcwd
 #elif defined _WIN32 || defined _WIN64
 #	define WINDOWS
+#   define NOEXCEPT throw()
 #	ifndef NOMINMAX
 #		define NOMINMAX
 #		undef min
