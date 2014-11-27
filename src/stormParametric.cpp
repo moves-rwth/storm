@@ -143,7 +143,7 @@ int main(const int argc, const char** argv) {
         std::string const& programFile = storm::settings::generalSettings().getSymbolicModelFilename();
         std::string const& constants = storm::settings::generalSettings().getConstantDefinitionString();
         storm::prism::Program program = storm::parser::PrismParser::parse(programFile);
-        std::shared_ptr<storm::models::AbstractModel<storm::RationalFunction>> model = storm::adapters::ExplicitModelAdapter<storm::RationalFunction>::translateProgram(program, storm::settings::generalSettings().isSymbolicRewardModelNameSet() ? program.getRewardModel(storm::settings::generalSettings().getSymbolicRewardModelName()) : storm::prism::RewardModel(), constants);
+        std::shared_ptr<storm::models::AbstractModel<storm::RationalFunction>> model = storm::adapters::ExplicitModelAdapter<storm::RationalFunction>::translateProgram(program, true, storm::settings::generalSettings().isSymbolicRewardModelNameSet() ? storm::settings::generalSettings().getSymbolicRewardModelName() : "", constants);
         
         model->printModelInformationToStream(std::cout);
         
