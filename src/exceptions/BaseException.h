@@ -4,6 +4,8 @@
 #include <exception>
 #include <sstream>
 
+#include "utility/OsDetection.h"
+
 namespace storm {
     namespace exceptions {
         
@@ -39,7 +41,7 @@ namespace storm {
              *
              * @return The message associated with this exception.
              */
-            virtual const char* what() const noexcept;
+            virtual const char* what() const NOEXCEPT override;
             
         protected:
             // This stream stores the message of this exception.
