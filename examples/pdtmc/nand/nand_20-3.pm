@@ -67,9 +67,10 @@ module multiplex
 endmodule
 
 label "target" = s=4 & z/N<0.1;
+label "end" = s=4;
 
 // rewards: final value of gate
 rewards
-	[] s=0 & (c=N) & (u=M) : z/N;
+    // [] s=0 & (c=N) & (u=M) : z/N;
+    s=0 & (c=N) & (u=M) : z/N;
 endrewards
-
