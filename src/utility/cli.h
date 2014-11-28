@@ -327,6 +327,11 @@ namespace storm {
                         modelchecker::prctl::SparseDtmcPrctlModelChecker<double> modelchecker(*dtmc);
                         filterFormula->check(modelchecker);
                     }
+                    if (model->getType() == storm::models::MDP) {
+                        std::shared_ptr<storm::models::Mdp<double>> mdp = model->as<storm::models::Mdp<double>>();
+                        modelchecker::prctl::SparseMdpPrctlModelChecker<double> modelchecker(*mdp);
+                        filterFormula->check(modelchecker);
+                    }
                 }
             }
         }
