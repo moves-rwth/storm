@@ -209,9 +209,14 @@ public:
 	 * @return True if the node is labeled with the atomic proposition, false otherwise.
 	 */
 	bool getStateHasAtomicProposition(std::string const& ap, const uint_fast64_t state) const {
+        if (ap == "true") {
+            return true;
+        } else if (ap == "false") {
+            return false;
+        }
 		if (!this->containsAtomicProposition(ap)) {
-			LOG4CPLUS_ERROR(logger, "The atomic proposition " << ap << " is invalid for the labeling of the model.");
-			throw storm::exceptions::InvalidArgumentException() << "The atomic proposition " << ap << " is invalid for the labeling of the model.";
+			LOG4CPLUS_ERROR(logger, "The atomic proposition '" << ap << "' is invalid for the labeling of the model.");
+			throw storm::exceptions::InvalidArgumentException() << "The atomic proposition '" << ap << "' is invalid for the labeling of the model.";
 		}
         auto apIndexPair = nameToLabelingMap.find(ap);
 		return this->singleLabelings[apIndexPair->second].get(state);
