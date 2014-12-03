@@ -192,7 +192,7 @@ int main(const int argc, const char** argv) {
         
         // Perform bisimulation minimization if requested.
         if (storm::settings::generalSettings().isBisimulationSet()) {
-            storm::storage::DeterministicModelBisimulationDecomposition<storm::RationalFunction> bisimulationDecomposition(*dtmc, phiStateFormulaApFormula->getAp(), psiStateFormulaApFormula->getAp(), true, storm::settings::bisimulationSettings().isWeakBisimulationSet(), false, true);
+            storm::storage::DeterministicModelBisimulationDecomposition<storm::RationalFunction> bisimulationDecomposition(*dtmc, phiStateFormulaApFormula->getAp(), psiStateFormulaApFormula->getAp(), keepRewards, storm::settings::bisimulationSettings().isWeakBisimulationSet(), false, true);
             dtmc = bisimulationDecomposition.getQuotient()->as<storm::models::Dtmc<storm::RationalFunction>>();
             
             dtmc->printModelInformationToStream(std::cout);
