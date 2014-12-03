@@ -1,6 +1,8 @@
 #ifndef STORM_STORAGE_BLOCK_H_
 #define STORM_STORAGE_BLOCK_H_
 
+#include <ostream>
+
 #include <boost/container/flat_set.hpp>
 #include <boost/container/container_fwd.hpp>
 
