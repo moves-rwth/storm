@@ -155,7 +155,11 @@ int main(const int argc, const char** argv) {
     
         STORM_LOG_THROW(storm::settings::generalSettings().isPctlPropertySet(), storm::exceptions::InvalidSettingsException, "Unable to perform model checking without a property.");
         std::shared_ptr<storm::properties::prctl::PrctlFilter<double>> filterFormula = storm::parser::PrctlParser::parsePrctlFormula(storm::settings::generalSettings().getPctlProperty());
-
+        std::cout << "Checking formula " << *filterFormula << " / " << typeid(*filterFormula).name() << std::endl;
+    
+        bool keepRewards = false;
+        std::shared_ptr<storm::properties::prctl::Ap<double>> phiStateFormulaApFormula;
+        std::shared_ptr<storm::properties::prctl::Ap<double>> psiStateFormulaApFormula;
     
         // Perform bisimulation minimization if requested.
         if (storm::settings::generalSettings().isBisimulationSet()) {
@@ -164,20 +168,28 @@ int main(const int argc, const char** argv) {
             std::shared_ptr<storm::properties::prctl::Until<double>> untilFormula = std::dynamic_pointer_cast<storm::properties::prctl::Until<double>>(filterFormula->getChild());
             std::shared_ptr<storm::properties::prctl::AbstractStateFormula<double>> phiStateFormula;
             std::shared_ptr<storm::properties::prctl::AbstractStateFormula<double>> psiStateFormula;
-            if (untilFormula.get() != nullptr) {
+            if (untilFormula != nullptr) {
                 phiStateFormula = untilFormula->getLeft();
                 psiStateFormula = untilFormula->getRight();
             } else {
                 std::shared_ptr<storm::properties::prctl::Eventually<double>> eventuallyFormula = std::dynamic_pointer_cast<storm::properties::prctl::Eventually<double>>(filterFormula->getChild());
-                STORM_LOG_THROW(eventuallyFormula.get() != nullptr, storm::exceptions::InvalidPropertyException, "Illegal formula " << *untilFormula << " for parametric model checking. Note that only unbounded reachability properties are admitted.");
+                if (eventuallyFormula != nullptr) {
                 
-                phiStateFormula = std::shared_ptr<storm::properties::prctl::Ap<double>>(new storm::properties::prctl::Ap<double>("true"));
-                psiStateFormula = eventuallyFormula->getChild();
+                    phiStateFormula = std::shared_ptr<storm::properties::prctl::Ap<double>>(new storm::properties::prctl::Ap<double>("true"));
+                    psiStateFormula = eventuallyFormula->getChild();
+                } else {
+                    std::shared_ptr<storm::properties::prctl::ReachabilityReward<double>> reachabilityRewardFormula = std::dynamic_pointer_cast<storm::properties::prctl::ReachabilityReward<double>>(filterFormula->getChild());
+                    
+                    STORM_LOG_THROW(reachabilityRewardFormula != nullptr, storm::exceptions::InvalidPropertyException, "Illegal formula " << *filterFormula << " for parametric model checking. Note that only unbounded reachability properties (probabilities/rewards) are admitted.");
+                    phiStateFormula = std::shared_ptr<storm::properties::prctl::Ap<double>>(new storm::properties::prctl::Ap<double>("true"));
+                    psiStateFormula = reachabilityRewardFormula->getChild();
+                    keepRewards = true;
+                }
             }
             
             // Now we need to make sure the formulas defining the phi and psi states are just labels.
-            std::shared_ptr<storm::properties::prctl::Ap<double>> phiStateFormulaApFormula = std::dynamic_pointer_cast<storm::properties::prctl::Ap<double>>(phiStateFormula);
-            std::shared_ptr<storm::properties::prctl::Ap<double>> psiStateFormulaApFormula = std::dynamic_pointer_cast<storm::properties::prctl::Ap<double>>(psiStateFormula);
+            phiStateFormulaApFormula = std::dynamic_pointer_cast<storm::properties::prctl::Ap<double>>(phiStateFormula);
+            psiStateFormulaApFormula = std::dynamic_pointer_cast<storm::properties::prctl::Ap<double>>(psiStateFormula);
             STORM_LOG_THROW(phiStateFormulaApFormula.get() != nullptr, storm::exceptions::InvalidPropertyException, "Illegal formula " << *phiStateFormula << " for parametric model checking. Note that only atomic propositions are admitted in that position.");
             STORM_LOG_THROW(psiStateFormulaApFormula.get() != nullptr, storm::exceptions::InvalidPropertyException, "Illegal formula " << *psiStateFormula << " for parametric model checking. Note that only atomic propositions are admitted in that position.");
             
@@ -193,7 +205,7 @@ int main(const int argc, const char** argv) {
     
         storm::modelchecker::reachability::SparseSccModelChecker<storm::RationalFunction> modelchecker;
 
-        storm::RationalFunction valueFunction = modelchecker.computeReachabilityProbability(*dtmc, filterFormula);
+        storm::RationalFunction valueFunction = modelchecker.computeReachabilityProbability(*dtmc, phiStateFormulaApFormula, psiStateFormulaApFormula);
 //        STORM_PRINT_AND_LOG(std::endl << "Result: (" << carl::computePolynomial(valueFunction.nominator()) << ") / (" << carl::computePolynomial(valueFunction.denominator()) << ")" << std::endl);
 //        STORM_PRINT_AND_LOG(std::endl << "Result: (" << valueFunction.nominator() << ") / (" << valueFunction.denominator() << ")" << std::endl);
         STORM_PRINT_AND_LOG(std::endl << "Result: " << valueFunction << std::endl);

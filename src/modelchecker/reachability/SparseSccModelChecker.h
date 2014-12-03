@@ -37,7 +37,8 @@ namespace storm {
             template<typename ValueType>
             class SparseSccModelChecker {
             public:
-                static ValueType computeReachabilityProbability(storm::models::Dtmc<ValueType> const& dtmc, std::shared_ptr<storm::properties::prctl::PrctlFilter<double>> const& filterFormula);
+                static ValueType computeReachabilityProbability(storm::models::Dtmc<ValueType> const& dtmc, std::shared_ptr<storm::properties::prctl::Ap<double>> const& phiFormula, std::shared_ptr<storm::properties::prctl::Ap<double>> const& psiFormula);
+//                static ValueType computeReachabilityReward(storm::models::Dtmc<ValueType> const& dtmc, std::shared_ptr<storm::properties::prctl::Ap<double>> const& phiFormula, std::shared_ptr<storm::properties::prctl::Ap<double>> const& psiFormula);
 
                 static ValueType computeReachabilityProbability(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType>& oneStepProbabilities, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, boost::optional<std::vector<std::size_t>> const& statePriorities = {});
 

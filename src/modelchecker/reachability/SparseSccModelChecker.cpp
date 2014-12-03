@@ -101,33 +101,44 @@ namespace storm {
                 return storm::utility::simplify(oneStepProbabilities[*initialStates.begin()]);
             }
             
+//            template<typename ValueType>
+//            ValueType SparseSccModelChecker<ValueType>::computeReachabilityReward(storm::models::Dtmc<ValueType> const& dtmc, std::shared_ptr<storm::properties::prctl::Ap<double>> const& phiFormula, std::shared_ptr<storm::properties::prctl::Ap<double>> const& psiFormula) {
+//                // Now retrieve the appropriate bitvectors from the atomic propositions.
+//                storm::storage::BitVector phiStates = phiFormula->getAp() != "true" ? dtmc.getLabeledStates(phiFormula->getAp()) : storm::storage::BitVector(dtmc.getNumberOfStates(), true);
+//                storm::storage::BitVector psiStates = dtmc.getLabeledStates(psiFormula->getAp());
+//                
+//                // Do some sanity checks to establish some required properties.
+//                STORM_LOG_THROW(!dtmc.hasTransitionRewards(), storm::exceptions::IllegalArgumentException, "Input model does have transition-based rewards, which are currently unsupported.");
+//                STORM_LOG_THROW(dtmc.hasStateRewards(), storm::exceptions::IllegalArgumentException, "Input model does not have a state-based reward model.");
+//                STORM_LOG_THROW(dtmc.getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::IllegalArgumentException, "Input model is required to have exactly one initial state.");
+//                
+//                // Then, compute the subset of states that has a reachability reward less than infinity.
+//                storm::storage::BitVector trueStates(dtmc.getNumberOfStates(), true);
+//                storm::storage::BitVector infinityStates = storm::utility::graph::performProb1(dtmc.getBackwardTransitions(), trueStates, psiStates);
+//                infinityStates.complement();
+//                storm::storage::BitVector maybeStates = ~psiStates & ~infinityStates;
+//                
+//                // If the initial state is known to have 0 reward or an infinite reward value, we can directly return the result.
+//                STORM_LOG_THROW(dtmc.getInitialStates().isDisjointFrom(infinityStates), storm::exceptions::IllegalArgumentException, "Initial state has infinite reward.");
+//                if (!dtmc.getInitialStates().isDisjointFrom(psiStates)) {
+//                    STORM_LOG_DEBUG("The reward of all initial states was found in a preprocessing step.");
+//                    return storm::utility::constantZero<ValueType>();
+//                }
+//                
+//                // Determine the set of states that is reachable from the initial state without jumping over a target state.
+//                storm::storage::BitVector reachableStates = storm::utility::graph::getReachableStates(dtmc.getTransitionMatrix(), dtmc.getInitialStates(), maybeStates, psiStates);
+//
+//                // Subtract from the maybe states the set of states that is not reachable (on a path from the initial to a target state).
+//                maybeStates &= reachableStates;
+//                
+//                
+//            }
+            
             template<typename ValueType>
-            ValueType SparseSccModelChecker<ValueType>::computeReachabilityProbability(storm::models::Dtmc<ValueType> const& dtmc, std::shared_ptr<storm::properties::prctl::PrctlFilter<double>> const& filterFormula) {
-                // The first thing we need to do is to make sure the formula is of the correct form and - if so - extract
-                // the bitvector representation of the atomic propositions.
-                std::shared_ptr<storm::properties::prctl::Until<double>> untilFormula = std::dynamic_pointer_cast<storm::properties::prctl::Until<double>>(filterFormula->getChild());
-                std::shared_ptr<storm::properties::prctl::AbstractStateFormula<double>> phiStateFormula;
-                std::shared_ptr<storm::properties::prctl::AbstractStateFormula<double>> psiStateFormula;
-                if (untilFormula.get() != nullptr) {
-                    phiStateFormula = untilFormula->getLeft();
-                    psiStateFormula = untilFormula->getRight();
-                } else {
-                    std::shared_ptr<storm::properties::prctl::Eventually<double>> eventuallyFormula = std::dynamic_pointer_cast<storm::properties::prctl::Eventually<double>>(filterFormula->getChild());
-                    STORM_LOG_THROW(eventuallyFormula.get() != nullptr, storm::exceptions::InvalidPropertyException, "Illegal formula " << *untilFormula << " for parametric model checking. Note that only unbounded reachability properties are admitted.");
-                    
-                    phiStateFormula = std::shared_ptr<storm::properties::prctl::Ap<double>>(new storm::properties::prctl::Ap<double>("true"));
-                    psiStateFormula = eventuallyFormula->getChild();
-                }
-                
-                // Now we need to make sure the formulas defining the phi and psi states are just labels.
-                std::shared_ptr<storm::properties::prctl::Ap<double>> phiStateFormulaApFormula = std::dynamic_pointer_cast<storm::properties::prctl::Ap<double>>(phiStateFormula);
-                std::shared_ptr<storm::properties::prctl::Ap<double>> psiStateFormulaApFormula = std::dynamic_pointer_cast<storm::properties::prctl::Ap<double>>(psiStateFormula);
-                STORM_LOG_THROW(phiStateFormulaApFormula.get() != nullptr, storm::exceptions::InvalidPropertyException, "Illegal formula " << *phiStateFormula << " for parametric model checking. Note that only atomic propositions are admitted in that position.");
-                STORM_LOG_THROW(psiStateFormulaApFormula.get() != nullptr, storm::exceptions::InvalidPropertyException, "Illegal formula " << *psiStateFormula << " for parametric model checking. Note that only atomic propositions are admitted in that position.");
-                
+            ValueType SparseSccModelChecker<ValueType>::computeReachabilityProbability(storm::models::Dtmc<ValueType> const& dtmc, std::shared_ptr<storm::properties::prctl::Ap<double>> const& phiFormula, std::shared_ptr<storm::properties::prctl::Ap<double>> const& psiFormula) {
                 // Now retrieve the appropriate bitvectors from the atomic propositions.
-                storm::storage::BitVector phiStates = phiStateFormulaApFormula->getAp() != "true" ? dtmc.getLabeledStates(phiStateFormulaApFormula->getAp()) : storm::storage::BitVector(dtmc.getNumberOfStates(), true);
-                storm::storage::BitVector psiStates = dtmc.getLabeledStates(psiStateFormulaApFormula->getAp());
+                storm::storage::BitVector phiStates = phiFormula->getAp() != "true" ? dtmc.getLabeledStates(phiFormula->getAp()) : storm::storage::BitVector(dtmc.getNumberOfStates(), true);
+                storm::storage::BitVector psiStates = dtmc.getLabeledStates(psiFormula->getAp());
                 
                 // Do some sanity checks to establish some required properties.
                 STORM_LOG_THROW(dtmc.getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::IllegalArgumentException, "Input model is required to have exactly one initial state.");
