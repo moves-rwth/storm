@@ -271,7 +271,7 @@ namespace storm {
                     std::shared_ptr<storm::models::Dtmc<double>> dtmc = result->template as<storm::models::Dtmc<double>>();
                     
                     STORM_PRINT(std::endl << "Performing bisimulation minimization..." << std::endl);
-                    storm::storage::DeterministicModelBisimulationDecomposition<double> bisimulationDecomposition(*dtmc, boost::optional<std::set<std::string>>(), storm::settings::bisimulationSettings().isWeakBisimulationSet(), true);
+                    storm::storage::DeterministicModelBisimulationDecomposition<double> bisimulationDecomposition(*dtmc, boost::optional<std::set<std::string>>(), true, storm::settings::bisimulationSettings().isWeakBisimulationSet(), true);
                     
                     result = bisimulationDecomposition.getQuotient();
                     
@@ -325,6 +325,11 @@ namespace storm {
                     if (model->getType() == storm::models::DTMC) {
                         std::shared_ptr<storm::models::Dtmc<double>> dtmc = model->as<storm::models::Dtmc<double>>();
                         modelchecker::prctl::SparseDtmcPrctlModelChecker<double> modelchecker(*dtmc);
+                        filterFormula->check(modelchecker);
+                    }
+                    if (model->getType() == storm::models::MDP) {
+                        std::shared_ptr<storm::models::Mdp<double>> mdp = model->as<storm::models::Mdp<double>>();
+                        modelchecker::prctl::SparseMdpPrctlModelChecker<double> modelchecker(*mdp);
                         filterFormula->check(modelchecker);
                     }
                 }
