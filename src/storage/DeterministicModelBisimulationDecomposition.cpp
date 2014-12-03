@@ -580,41 +580,41 @@ namespace storm {
         }
         
         template<typename ValueType>
-        DeterministicModelBisimulationDecomposition<ValueType>::DeterministicModelBisimulationDecomposition(storm::models::Dtmc<ValueType> const& model, boost::optional<std::set<std::string>> const& atomicPropositions, bool weak, bool buildQuotient) : comparator() {
+        DeterministicModelBisimulationDecomposition<ValueType>::DeterministicModelBisimulationDecomposition(storm::models::Dtmc<ValueType> const& model, boost::optional<std::set<std::string>> const& atomicPropositions, bool keepRewards, bool weak, bool buildQuotient) : comparator() {
             STORM_LOG_THROW(!model.hasTransitionRewards(), storm::exceptions::IllegalFunctionCallException, "Bisimulation is currently only supported for models without transition rewards.");
             storm::storage::SparseMatrix<ValueType> backwardTransitions = model.getBackwardTransitions();
             BisimulationType bisimulationType = weak ? BisimulationType::WeakDtmc : BisimulationType::Strong;
-            Partition initialPartition = getLabelBasedInitialPartition(model, backwardTransitions, bisimulationType, atomicPropositions);
-            partitionRefinement(model, atomicPropositions, backwardTransitions, initialPartition, bisimulationType, buildQuotient);
+            Partition initialPartition = getLabelBasedInitialPartition(model, backwardTransitions, bisimulationType, atomicPropositions, keepRewards);
+            partitionRefinement(model, atomicPropositions, backwardTransitions, initialPartition, bisimulationType, keepRewards, buildQuotient);
         }
 
         template<typename ValueType>
-        DeterministicModelBisimulationDecomposition<ValueType>::DeterministicModelBisimulationDecomposition(storm::models::Ctmc<ValueType> const& model, boost::optional<std::set<std::string>> const& atomicPropositions, bool weak, bool buildQuotient) {
-            STORM_LOG_THROW(!model.hasTransitionRewards(), storm::exceptions::IllegalFunctionCallException, "Bisimulation is currently only supported for models without transition rewards.");
+        DeterministicModelBisimulationDecomposition<ValueType>::DeterministicModelBisimulationDecomposition(storm::models::Ctmc<ValueType> const& model, boost::optional<std::set<std::string>> const& atomicPropositions, bool keepRewards, bool weak, bool buildQuotient) {
+            STORM_LOG_THROW(!keepRewards || !model.hasTransitionRewards(), storm::exceptions::IllegalFunctionCallException, "Bisimulation is currently only supported for models without transition rewards.");
             storm::storage::SparseMatrix<ValueType> backwardTransitions = model.getBackwardTransitions();
             BisimulationType bisimulationType = weak ? BisimulationType::WeakCtmc : BisimulationType::Strong;
-            Partition initialPartition = getLabelBasedInitialPartition(model, backwardTransitions, bisimulationType, atomicPropositions);
-            partitionRefinement(model, atomicPropositions, backwardTransitions, initialPartition, bisimulationType, buildQuotient);
+            Partition initialPartition = getLabelBasedInitialPartition(model, backwardTransitions, bisimulationType, atomicPropositions, keepRewards);
+            partitionRefinement(model, atomicPropositions, backwardTransitions, initialPartition, bisimulationType, keepRewards,buildQuotient);
         }
         
         template<typename ValueType>
-        DeterministicModelBisimulationDecomposition<ValueType>::DeterministicModelBisimulationDecomposition(storm::models::Dtmc<ValueType> const& model, std::string const& phiLabel, std::string const& psiLabel, bool weak, bool bounded, bool buildQuotient) {
-            STORM_LOG_THROW(!model.hasTransitionRewards(), storm::exceptions::IllegalFunctionCallException, "Bisimulation is currently only supported for models without transition rewards.");
+        DeterministicModelBisimulationDecomposition<ValueType>::DeterministicModelBisimulationDecomposition(storm::models::Dtmc<ValueType> const& model, std::string const& phiLabel, std::string const& psiLabel, bool keepRewards, bool weak, bool bounded, bool buildQuotient) {
+            STORM_LOG_THROW(!keepRewards || !model.hasTransitionRewards(), storm::exceptions::IllegalFunctionCallException, "Bisimulation is currently only supported for models without transition rewards.");
             STORM_LOG_THROW(!weak || !bounded, storm::exceptions::IllegalFunctionCallException, "Weak bisimulation does not preserve bounded properties.");
             storm::storage::SparseMatrix<ValueType> backwardTransitions = model.getBackwardTransitions();
             BisimulationType bisimulationType = weak ? BisimulationType::WeakDtmc : BisimulationType::Strong;
-            Partition initialPartition = getMeasureDrivenInitialPartition(model, backwardTransitions, phiLabel, psiLabel, bisimulationType, bounded);
-            partitionRefinement(model, std::set<std::string>({phiLabel, psiLabel}), model.getBackwardTransitions(), initialPartition, bisimulationType, buildQuotient);
+            Partition initialPartition = getMeasureDrivenInitialPartition(model, backwardTransitions, phiLabel, psiLabel, bisimulationType, keepRewards, bounded);
+            partitionRefinement(model, std::set<std::string>({phiLabel, psiLabel}), model.getBackwardTransitions(), initialPartition, bisimulationType, keepRewards, buildQuotient);
         }
         
         template<typename ValueType>
-        DeterministicModelBisimulationDecomposition<ValueType>::DeterministicModelBisimulationDecomposition(storm::models::Ctmc<ValueType> const& model, std::string const& phiLabel, std::string const& psiLabel, bool weak, bool bounded, bool buildQuotient) {
-            STORM_LOG_THROW(!model.hasTransitionRewards(), storm::exceptions::IllegalFunctionCallException, "Bisimulation is currently only supported for models without transition rewards.");
+        DeterministicModelBisimulationDecomposition<ValueType>::DeterministicModelBisimulationDecomposition(storm::models::Ctmc<ValueType> const& model, std::string const& phiLabel, std::string const& psiLabel, bool keepRewards, bool weak, bool bounded, bool buildQuotient) {
+            STORM_LOG_THROW(!keepRewards || !model.hasTransitionRewards(), storm::exceptions::IllegalFunctionCallException, "Bisimulation is currently only supported for models without transition rewards.");
             STORM_LOG_THROW(!weak || !bounded, storm::exceptions::IllegalFunctionCallException, "Weak bisimulation does not preserve bounded properties.");
             storm::storage::SparseMatrix<ValueType> backwardTransitions = model.getBackwardTransitions();
             BisimulationType bisimulationType = weak ? BisimulationType::WeakCtmc : BisimulationType::Strong;
-            Partition initialPartition = getMeasureDrivenInitialPartition(model, backwardTransitions, phiLabel, psiLabel, bisimulationType, bounded);
-            partitionRefinement(model, std::set<std::string>({phiLabel, psiLabel}), model.getBackwardTransitions(), initialPartition, bisimulationType, buildQuotient);
+            Partition initialPartition = getMeasureDrivenInitialPartition(model, backwardTransitions, phiLabel, psiLabel, bisimulationType, keepRewards, bounded);
+            partitionRefinement(model, std::set<std::string>({phiLabel, psiLabel}), model.getBackwardTransitions(), initialPartition, bisimulationType, keepRewards, buildQuotient);
         }
         
         template<typename ValueType>
@@ -625,7 +625,7 @@ namespace storm {
         
         template<typename ValueType>
         template<typename ModelType>
-        void DeterministicModelBisimulationDecomposition<ValueType>::buildQuotient(ModelType const& model, boost::optional<std::set<std::string>> const& selectedAtomicPropositions, Partition const& partition, BisimulationType bisimulationType) {
+        void DeterministicModelBisimulationDecomposition<ValueType>::buildQuotient(ModelType const& model, boost::optional<std::set<std::string>> const& selectedAtomicPropositions, Partition const& partition, BisimulationType bisimulationType, bool keepRewards) {
             // In order to create the quotient model, we need to construct
             // (a) the new transition matrix,
             // (b) the new labeling,
@@ -641,6 +641,12 @@ namespace storm {
             std::vector<std::string> atomicPropositions = std::vector<std::string>(atomicPropositionsSet.begin(), atomicPropositionsSet.end());
             for (auto const& ap : atomicPropositions) {
                 newLabeling.addAtomicProposition(ap);
+            }
+            
+            // If the model had state rewards, we need to build the state rewards for the quotient as well.
+            boost::optional<std::vector<ValueType>> stateRewards;
+            if (keepRewards && model.hasStateRewards()) {
+                stateRewards = std::vector<ValueType>(this->blocks.size());
             }
             
             // Now build (a) and (b) by traversing all blocks.
@@ -720,6 +726,12 @@ namespace storm {
                         }
                     }
                 }
+                
+                // If the model has state rewards, we simply copy the state reward of the representative state, because
+                // all states in a block are guaranteed to have the same state reward.
+                if (keepRewards && model.hasStateRewards()) {
+                    stateRewards.get()[blockIndex] = model.getStateRewardVector()[representativeState];
+                }
             }
             
             // Now check which of the blocks of the partition contain at least one initial state.
@@ -728,16 +740,13 @@ namespace storm {
                 newLabeling.addAtomicPropositionToState("init", initialBlock.getId());
             }
             
-            // FIXME:
-            // If reward structures are allowed, the quotient structures need to be built here.
-            
             // Finally construct the quotient model.
-            this->quotient = std::shared_ptr<storm::models::AbstractDeterministicModel<ValueType>>(new ModelType(builder.build(), std::move(newLabeling)));
+            this->quotient = std::shared_ptr<storm::models::AbstractDeterministicModel<ValueType>>(new ModelType(builder.build(), std::move(newLabeling), std::move(stateRewards)));
         }
         
         template<typename ValueType>
         template<typename ModelType>
-        void DeterministicModelBisimulationDecomposition<ValueType>::partitionRefinement(ModelType const& model, boost::optional<std::set<std::string>> const& atomicPropositions, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, Partition& partition, BisimulationType bisimulationType, bool buildQuotient) {
+        void DeterministicModelBisimulationDecomposition<ValueType>::partitionRefinement(ModelType const& model, boost::optional<std::set<std::string>> const& atomicPropositions, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, Partition& partition, BisimulationType bisimulationType, bool keepRewards, bool buildQuotient) {
             std::chrono::high_resolution_clock::time_point totalStart = std::chrono::high_resolution_clock::now();
 
             // Initially, all blocks are potential splitter, so we insert them in the splitterQueue.
@@ -775,7 +784,7 @@ namespace storm {
 
             // If we are required to build the quotient model, do so now.
             if (buildQuotient) {
-                this->buildQuotient(model, atomicPropositions, partition, bisimulationType);
+                this->buildQuotient(model, atomicPropositions, partition, bisimulationType, keepRewards);
             }
 
             std::chrono::high_resolution_clock::duration extractionTime = std::chrono::high_resolution_clock::now() - extractionStart;
@@ -1190,13 +1199,13 @@ namespace storm {
         
         template<typename ValueType>
         template<typename ModelType>
-        typename DeterministicModelBisimulationDecomposition<ValueType>::Partition DeterministicModelBisimulationDecomposition<ValueType>::getMeasureDrivenInitialPartition(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::string const& phiLabel, std::string const& psiLabel, BisimulationType bisimulationType, bool bounded) {
+        typename DeterministicModelBisimulationDecomposition<ValueType>::Partition DeterministicModelBisimulationDecomposition<ValueType>::getMeasureDrivenInitialPartition(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::string const& phiLabel, std::string const& psiLabel, BisimulationType bisimulationType, bool keepRewards, bool bounded) {
             std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(backwardTransitions, phiLabel == "true" ? storm::storage::BitVector(model.getNumberOfStates(), true) : model.getLabeledStates(phiLabel), model.getLabeledStates(psiLabel));
             Partition partition(model.getNumberOfStates(), statesWithProbability01.first, bounded ? model.getLabeledStates(psiLabel) : statesWithProbability01.second, phiLabel, psiLabel, bisimulationType == BisimulationType::WeakDtmc);
             
             // If the model has state rewards, we need to consider them, because otherwise reward properties are not
             // preserved.
-            if (model.hasStateRewards()) {
+            if (keepRewards && model.hasStateRewards()) {
                 this->splitRewards(model, partition);
             }
             
@@ -1280,7 +1289,7 @@ namespace storm {
         
         template<typename ValueType>
         template<typename ModelType>
-        typename DeterministicModelBisimulationDecomposition<ValueType>::Partition DeterministicModelBisimulationDecomposition<ValueType>::getLabelBasedInitialPartition(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, BisimulationType bisimulationType, boost::optional<std::set<std::string>> const& atomicPropositions) {
+        typename DeterministicModelBisimulationDecomposition<ValueType>::Partition DeterministicModelBisimulationDecomposition<ValueType>::getLabelBasedInitialPartition(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, BisimulationType bisimulationType, boost::optional<std::set<std::string>> const& atomicPropositions, bool keepRewards) {
             Partition partition(model.getNumberOfStates(), bisimulationType == BisimulationType::WeakDtmc);
             
             if (atomicPropositions) {
@@ -1301,7 +1310,7 @@ namespace storm {
             
             // If the model has state rewards, we need to consider them, because otherwise reward properties are not
             // preserved.
-            if (model.hasStateRewards()) {
+            if (keepRewards && model.hasStateRewards()) {
                 this->splitRewards(model, partition);
             }
             
@@ -1335,17 +1344,18 @@ namespace storm {
         template<typename ValueType>
         template<typename ModelType>
         void DeterministicModelBisimulationDecomposition<ValueType>::splitRewards(ModelType const& model, Partition& partition) {
-            if (model.hasStateRewards()) {
+            if (!model.hasStateRewards()) {
                 return;
             }
             
             for (auto& block : partition.getBlocks()) {
                 std::sort(partition.getBegin(block), partition.getEnd(block), [&model] (std::pair<storm::storage::sparse::state_type, ValueType> const& a, std::pair<storm::storage::sparse::state_type, ValueType> const& b) { return model.getStateRewardVector()[a.first] < model.getStateRewardVector()[b.first]; } );
                 
-                // Update the positions vector.
+                // Update the positions vector and put the (state) reward values next to the states so we can easily compare them later.
                 storm::storage::sparse::state_type position = block.getBegin();
                 for (auto stateIt = partition.getBegin(block), stateIte = partition.getEnd(block); stateIt != stateIte; ++stateIt, ++position) {
                     partition.setPosition(stateIt->first, position);
+                    stateIt->second = model.getStateRewardVector()[stateIt->first];
                 }
                 
                 // Finally, we need to scan the ranges of states that agree on the probability.
@@ -1356,7 +1366,6 @@ namespace storm {
                 
                 // Now we can check whether the block needs to be split, which is the case iff the rewards for the first
                 // and the last state are different.
-                bool blockSplit = !comparator.isEqual(begin->second, end->second);
                 while (!comparator.isEqual(begin->second, end->second)) {
                     // Now we scan for the first state in the block that disagrees on the reward value. Note that we do
                     // not have to check currentIndex for staying within bounds, because we know the matching state is
@@ -1369,6 +1378,9 @@ namespace storm {
                         ++begin;
                         ++currentIndex;
                     }
+                    
+                    // Now we split the block.
+                    partition.splitBlock(block, currentIndex);
                 }
             }
         }
