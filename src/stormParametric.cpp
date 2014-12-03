@@ -127,7 +127,7 @@
  * Main entry point of the executable storm.
  */
 int main(const int argc, const char** argv) {
-//    try {
+    try {
         storm::utility::cli::setUp();
         storm::utility::cli::printHeader(argc, argv);
         bool optionsCorrect = storm::utility::cli::parseOptions(argc, argv);
@@ -155,44 +155,43 @@ int main(const int argc, const char** argv) {
     
         STORM_LOG_THROW(storm::settings::generalSettings().isPctlPropertySet(), storm::exceptions::InvalidSettingsException, "Unable to perform model checking without a property.");
         std::shared_ptr<storm::properties::prctl::PrctlFilter<double>> filterFormula = storm::parser::PrctlParser::parsePrctlFormula(storm::settings::generalSettings().getPctlProperty());
-        std::cout << "Checking formula " << *filterFormula << " / " << typeid(*filterFormula).name() << std::endl;
+        std::cout << "Checking formula " << *filterFormula << std::endl;
     
         bool keepRewards = false;
-        std::shared_ptr<storm::properties::prctl::Ap<double>> phiStateFormulaApFormula;
-        std::shared_ptr<storm::properties::prctl::Ap<double>> psiStateFormulaApFormula;
+        std::shared_ptr<storm::properties::prctl::Ap<double>> phiStateFormulaApFormula = nullptr;
+        std::shared_ptr<storm::properties::prctl::Ap<double>> psiStateFormulaApFormula = nullptr;
     
+        // The first thing we need to do is to make sure the formula is of the correct form.
+        std::shared_ptr<storm::properties::prctl::Until<double>> untilFormula = std::dynamic_pointer_cast<storm::properties::prctl::Until<double>>(filterFormula->getChild());
+        std::shared_ptr<storm::properties::prctl::AbstractStateFormula<double>> phiStateFormula;
+        std::shared_ptr<storm::properties::prctl::AbstractStateFormula<double>> psiStateFormula;
+        if (untilFormula) {
+            phiStateFormula = untilFormula->getLeft();
+            psiStateFormula = untilFormula->getRight();
+        } else {
+            std::shared_ptr<storm::properties::prctl::Eventually<double>> eventuallyFormula = std::dynamic_pointer_cast<storm::properties::prctl::Eventually<double>>(filterFormula->getChild());
+            if (eventuallyFormula) {
+                
+                phiStateFormula = std::shared_ptr<storm::properties::prctl::Ap<double>>(new storm::properties::prctl::Ap<double>("true"));
+                psiStateFormula = eventuallyFormula->getChild();
+            } else {
+                std::shared_ptr<storm::properties::prctl::ReachabilityReward<double>> reachabilityRewardFormula = std::dynamic_pointer_cast<storm::properties::prctl::ReachabilityReward<double>>(filterFormula->getChild());
+                
+                STORM_LOG_THROW(reachabilityRewardFormula, storm::exceptions::InvalidPropertyException, "Illegal formula " << *filterFormula << " for parametric model checking. Note that only unbounded reachability properties (probabilities/rewards) are admitted.");
+                phiStateFormula = std::shared_ptr<storm::properties::prctl::Ap<double>>(new storm::properties::prctl::Ap<double>("true"));
+                psiStateFormula = reachabilityRewardFormula->getChild();
+                keepRewards = true;
+            }
+        }
+        
+        // Now we need to make sure the formulas defining the phi and psi states are just labels.
+        phiStateFormulaApFormula = std::dynamic_pointer_cast<storm::properties::prctl::Ap<double>>(phiStateFormula);
+        psiStateFormulaApFormula = std::dynamic_pointer_cast<storm::properties::prctl::Ap<double>>(psiStateFormula);
+        STORM_LOG_THROW(phiStateFormulaApFormula, storm::exceptions::InvalidPropertyException, "Illegal formula " << *phiStateFormula << " for parametric model checking. Note that only atomic propositions are admitted in that position.");
+        STORM_LOG_THROW(psiStateFormulaApFormula, storm::exceptions::InvalidPropertyException, "Illegal formula " << *psiStateFormula << " for parametric model checking. Note that only atomic propositions are admitted in that position.");
+        
         // Perform bisimulation minimization if requested.
         if (storm::settings::generalSettings().isBisimulationSet()) {
-            // The first thing we need to do is to make sure the formula is of the correct form and - if so - extract
-            // the bitvector representation of the atomic propositions.
-            std::shared_ptr<storm::properties::prctl::Until<double>> untilFormula = std::dynamic_pointer_cast<storm::properties::prctl::Until<double>>(filterFormula->getChild());
-            std::shared_ptr<storm::properties::prctl::AbstractStateFormula<double>> phiStateFormula;
-            std::shared_ptr<storm::properties::prctl::AbstractStateFormula<double>> psiStateFormula;
-            if (untilFormula != nullptr) {
-                phiStateFormula = untilFormula->getLeft();
-                psiStateFormula = untilFormula->getRight();
-            } else {
-                std::shared_ptr<storm::properties::prctl::Eventually<double>> eventuallyFormula = std::dynamic_pointer_cast<storm::properties::prctl::Eventually<double>>(filterFormula->getChild());
-                if (eventuallyFormula != nullptr) {
-                
-                    phiStateFormula = std::shared_ptr<storm::properties::prctl::Ap<double>>(new storm::properties::prctl::Ap<double>("true"));
-                    psiStateFormula = eventuallyFormula->getChild();
-                } else {
-                    std::shared_ptr<storm::properties::prctl::ReachabilityReward<double>> reachabilityRewardFormula = std::dynamic_pointer_cast<storm::properties::prctl::ReachabilityReward<double>>(filterFormula->getChild());
-                    
-                    STORM_LOG_THROW(reachabilityRewardFormula != nullptr, storm::exceptions::InvalidPropertyException, "Illegal formula " << *filterFormula << " for parametric model checking. Note that only unbounded reachability properties (probabilities/rewards) are admitted.");
-                    phiStateFormula = std::shared_ptr<storm::properties::prctl::Ap<double>>(new storm::properties::prctl::Ap<double>("true"));
-                    psiStateFormula = reachabilityRewardFormula->getChild();
-                    keepRewards = true;
-                }
-            }
-            
-            // Now we need to make sure the formulas defining the phi and psi states are just labels.
-            phiStateFormulaApFormula = std::dynamic_pointer_cast<storm::properties::prctl::Ap<double>>(phiStateFormula);
-            psiStateFormulaApFormula = std::dynamic_pointer_cast<storm::properties::prctl::Ap<double>>(psiStateFormula);
-            STORM_LOG_THROW(phiStateFormulaApFormula.get() != nullptr, storm::exceptions::InvalidPropertyException, "Illegal formula " << *phiStateFormula << " for parametric model checking. Note that only atomic propositions are admitted in that position.");
-            STORM_LOG_THROW(psiStateFormulaApFormula.get() != nullptr, storm::exceptions::InvalidPropertyException, "Illegal formula " << *psiStateFormula << " for parametric model checking. Note that only atomic propositions are admitted in that position.");
-            
             storm::storage::DeterministicModelBisimulationDecomposition<storm::RationalFunction> bisimulationDecomposition(*dtmc, phiStateFormulaApFormula->getAp(), psiStateFormulaApFormula->getAp(), true, storm::settings::bisimulationSettings().isWeakBisimulationSet(), false, true);
             dtmc = bisimulationDecomposition.getQuotient()->as<storm::models::Dtmc<storm::RationalFunction>>();
             
@@ -250,11 +249,11 @@ int main(const int argc, const char** argv) {
         // All operations have now been performed, so we clean up everything and terminate.
         storm::utility::cli::cleanUp();
         return 0;
-//    } catch (storm::exceptions::BaseException const& exception) {
-//        STORM_LOG_ERROR("An exception caused StoRM to terminate. The message of the exception is: " << exception.what());
-//    } catch (std::exception const& exception) {
-//        STORM_LOG_ERROR("An unexpected exception occurred and caused StoRM to terminate. The message of this exception is: " << exception.what());
-//    }
+    } catch (storm::exceptions::BaseException const& exception) {
+        STORM_LOG_ERROR("An exception caused StoRM to terminate. The message of the exception is: " << exception.what());
+    } catch (std::exception const& exception) {
+        STORM_LOG_ERROR("An unexpected exception occurred and caused StoRM to terminate. The message of this exception is: " << exception.what());
+    }
 }
 
 //#include <memory>
