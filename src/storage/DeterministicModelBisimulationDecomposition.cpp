@@ -757,7 +757,7 @@ namespace storm {
             // Then perform the actual splitting until there are no more splitters.
             while (!splitterQueue.empty()) {
                 // Optionally: sort the splitter queue according to some criterion (here: prefer small splitters).
-                std::sort(splitterQueue.begin(), splitterQueue.end(), [] (Block const* b1, Block const* b2) { return b1->getNumberOfStates() < b2->getNumberOfStates(); } );
+                std::sort(splitterQueue.begin(), splitterQueue.end(), [] (Block const* b1, Block const* b2) { return b1->getNumberOfStates() < b2->getNumberOfStates() || (b1->getNumberOfStates() == b2->getNumberOfStates() && b1->getId() < b2->getId()); } );
 
                 // Get and prepare the next splitter.
                 Block* splitter = splitterQueue.front();
