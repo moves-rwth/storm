@@ -420,9 +420,13 @@ namespace storm {
             
             return newBlock;
         }
-        
+
+        static std::chrono::high_resolution_clock::duration insertBlockTime(0);
+
         template<typename ValueType>
         typename DeterministicModelBisimulationDecomposition<ValueType>::Block& DeterministicModelBisimulationDecomposition<ValueType>::Partition::insertBlock(Block& block) {
+            std::chrono::high_resolution_clock::time_point insertBlockStart = std::chrono::high_resolution_clock::now();
+
             // Find the beginning of the new block.
             storm::storage::sparse::state_type begin;
             if (block.hasPreviousBlock()) {
@@ -440,6 +444,8 @@ namespace storm {
             for (auto it = this->getBegin(newBlock), ite = this->getEnd(newBlock); it != ite; ++it) {
                 stateToBlockMapping[it->first] = &newBlock;
             }
+            
+            insertBlockTime += std::chrono::high_resolution_clock::now() - insertBlockStart;
             
             return *it;
         }
@@ -810,6 +816,7 @@ namespace storm {
                 std::chrono::milliseconds refinePartitionTwoTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(refinePartitionTimeTwo);
                 std::chrono::milliseconds refinePartitionThreeTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(refinePartitionTimeThree);
                 std::chrono::milliseconds refinePartitionFourTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(refinePartitionTimeFour);
+                std::chrono::milliseconds insertBlockTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(insertBlockTime);
                 std::chrono::milliseconds refineBlockTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(refineBlockTime);
                 std::chrono::milliseconds extractionTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(extractionTime);
                 std::chrono::milliseconds totalTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(totalTime);
@@ -819,8 +826,9 @@ namespace storm {
                 std::cout << "        * time spent in refining partition: " << refinePartitionTimeInMilliseconds.count() << "ms" << std::endl;
                 std::cout << "            * time spent in refining partition (1): " << refinePartitionOneTimeInMilliseconds.count() << "ms" << std::endl;
                 std::cout << "            * time spent in refining partition (2): " << refinePartitionTwoTimeInMilliseconds.count() << "ms" << std::endl;
-                std::cout << "                * time spent in refining partition (1): " << refinePartitionThreeTimeInMilliseconds.count() << "ms" << std::endl;
-                std::cout << "                * time spent in refining partition (2): " << refinePartitionFourTimeInMilliseconds.count() << "ms" << std::endl;
+                std::cout << "                * time spent in refining partition (3): " << refinePartitionThreeTimeInMilliseconds.count() << "ms" << std::endl;
+                std::cout << "                * time spent in refining partition (4): " << refinePartitionFourTimeInMilliseconds.count() << "ms" << std::endl;
+                std::cout << "                    * time spent in insertBlock: " << insertBlockTimeInMilliseconds.count() << "ms" << std::endl;
                 std::cout << "                    * time spent in refining block based on probabilities: " << refineBlockTimeInMilliseconds.count() << "ms" << std::endl;
                 std::cout << "    * time for extraction: " << extractionTimeInMilliseconds.count() << "ms" << std::endl;
                 std::cout << "------------------------------------------" << std::endl;
@@ -1168,7 +1176,7 @@ namespace storm {
             if (bisimulationType == BisimulationType::Strong || bisimulationType == BisimulationType::WeakCtmc) {
                 std::chrono::high_resolution_clock::time_point refinePartitionStartThree = std::chrono::high_resolution_clock::now();
                 
-                std::list<Block*> blocksToSplit;
+                std::vector<Block*> blocksToSplit;
                 
                 // Now, we can iterate over the predecessor blocks and see whether we have to create a new block for
                 // predecessors of the splitter.
