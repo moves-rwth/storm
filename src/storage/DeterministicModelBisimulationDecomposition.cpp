@@ -744,6 +744,10 @@ namespace storm {
             this->quotient = std::shared_ptr<storm::models::AbstractDeterministicModel<ValueType>>(new ModelType(builder.build(), std::move(newLabeling), std::move(stateRewards)));
         }
         
+        static int callsToRefinePartition = 0;
+        static int statesIteratedOverInRefinePartition = 0;
+        static std::vector<int> refinementOrder;
+        
         template<typename ValueType>
         template<typename ModelType>
         void DeterministicModelBisimulationDecomposition<ValueType>::partitionRefinement(ModelType const& model, boost::optional<std::set<std::string>> const& atomicPropositions, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, Partition& partition, BisimulationType bisimulationType, bool keepRewards, bool buildQuotient) {
@@ -800,6 +804,14 @@ namespace storm {
                 std::cout << "    * time for extraction: " << extractionTimeInMilliseconds.count() << "ms" << std::endl;
                 std::cout << "------------------------------------------" << std::endl;
                 std::cout << "    * total time: " << totalTimeInMilliseconds.count() << "ms" << std::endl;
+                std::cout << std::endl;
+                std::cout << "Other:" << std::endl;
+                std::cout << "    * calls to refine partition: " << callsToRefinePartition << std::endl;
+                std::cout << "    * states iterated over: " << statesIteratedOverInRefinePartition << std::endl;
+                std::cout << "    * order: ";
+                for (auto const& element : refinementOrder) {
+                    std::cout << element << ", ";
+                }
                 std::cout << std::endl;
             }
         }
@@ -1028,12 +1040,15 @@ namespace storm {
         
         template<typename ValueType>
         void DeterministicModelBisimulationDecomposition<ValueType>::refinePartition(storm::storage::SparseMatrix<ValueType> const& forwardTransitions, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, Block& splitter, Partition& partition, BisimulationType bisimulationType, std::deque<Block*>& splitterQueue) {
+            ++callsToRefinePartition;
+            refinementOrder.push_back(splitter.getId());
             std::list<Block*> predecessorBlocks;
             
             // Iterate over all states of the splitter and check its predecessors.
             bool splitterIsPredecessor = false;
             storm::storage::sparse::state_type currentPosition = splitter.getBegin();
             for (auto stateIterator = partition.getBegin(splitter), stateIte = partition.getEnd(splitter); stateIterator != stateIte; ++stateIterator, ++currentPosition) {
+                ++statesIteratedOverInRefinePartition;
                 storm::storage::sparse::state_type currentState = stateIterator->first;
                 
                 uint_fast64_t elementsToSkip = 0;
