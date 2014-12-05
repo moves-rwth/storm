@@ -371,6 +371,10 @@ namespace storm {
                 // The list of blocks in the partition.
                 std::list<Block> blocks;
                 
+                // The number of blocks of the partition. Although this could be retrieved via block.size(), we want to
+                // guarantee constant access time (which is currently not guaranteed by gcc'c standard libary).
+                uint_fast64_t numberOfBlocks;
+                
                 // A mapping of states to their blocks.
                 std::vector<Block*> stateToBlockMapping;
                 
