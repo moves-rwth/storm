@@ -421,12 +421,8 @@ namespace storm {
             return newBlock;
         }
 
-        static std::chrono::high_resolution_clock::duration insertBlockTime(0);
-
         template<typename ValueType>
         typename DeterministicModelBisimulationDecomposition<ValueType>::Block& DeterministicModelBisimulationDecomposition<ValueType>::Partition::insertBlock(Block& block) {
-            std::chrono::high_resolution_clock::time_point insertBlockStart = std::chrono::high_resolution_clock::now();
-
             // Find the beginning of the new block.
             storm::storage::sparse::state_type begin;
             if (block.hasPreviousBlock()) {
@@ -444,8 +440,6 @@ namespace storm {
             for (auto it = this->getBegin(newBlock), ite = this->getEnd(newBlock); it != ite; ++it) {
                 stateToBlockMapping[it->first] = &newBlock;
             }
-            
-            insertBlockTime += std::chrono::high_resolution_clock::now() - insertBlockStart;
             
             return *it;
         }
@@ -750,14 +744,6 @@ namespace storm {
             this->quotient = std::shared_ptr<storm::models::AbstractDeterministicModel<ValueType>>(new ModelType(builder.build(), std::move(newLabeling), std::move(stateRewards)));
         }
         
-        static int callsToRefinePartition = 0;
-        static int statesIteratedOverInRefinePartition = 0;
-        static std::chrono::high_resolution_clock::duration refineBlockTime(0);
-        static std::chrono::high_resolution_clock::duration refinePartitionTimeOne(0);
-        static std::chrono::high_resolution_clock::duration refinePartitionTimeTwo(0);
-        static std::chrono::high_resolution_clock::duration refinePartitionTimeThree(0);
-        static std::chrono::high_resolution_clock::duration refinePartitionTimeFour(0);
-        
         template<typename ValueType>
         template<typename ModelType>
         void DeterministicModelBisimulationDecomposition<ValueType>::partitionRefinement(ModelType const& model, boost::optional<std::set<std::string>> const& atomicPropositions, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, Partition& partition, BisimulationType bisimulationType, bool keepRewards, bool buildQuotient) {
@@ -767,9 +753,6 @@ namespace storm {
             std::chrono::high_resolution_clock::time_point refinementStart = std::chrono::high_resolution_clock::now();
             std::deque<Block*> splitterQueue;
             std::for_each(partition.getBlocks().begin(), partition.getBlocks().end(), [&] (Block& a) { splitterQueue.push_back(&a); a.markAsSplitter(); });
-
-            std::chrono::high_resolution_clock::time_point refinePartitionStart;
-            std::chrono::high_resolution_clock::duration refinePartitionTime(0);
             
             // Then perform the actual splitting until there are no more splitters.
             while (!splitterQueue.empty()) {
@@ -782,9 +765,7 @@ namespace storm {
                 splitter->unmarkAsSplitter();
                 
                 // Now refine the partition using the current splitter.
-                std::chrono::high_resolution_clock::time_point refinePartitionStart = std::chrono::high_resolution_clock::now();
                 refinePartition(model.getTransitionMatrix(), backwardTransitions, *splitter, partition, bisimulationType, splitterQueue);
-                refinePartitionTime += std::chrono::high_resolution_clock::now() - refinePartitionStart;
             }
             std::chrono::high_resolution_clock::duration refinementTime = std::chrono::high_resolution_clock::now() - refinementStart;
 
@@ -811,39 +792,20 @@ namespace storm {
             
             if (storm::settings::generalSettings().isShowStatisticsSet()) {
                 std::chrono::milliseconds refinementTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(refinementTime);
-                std::chrono::milliseconds refinePartitionTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(refinePartitionTime);
-                std::chrono::milliseconds refinePartitionOneTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(refinePartitionTimeOne);
-                std::chrono::milliseconds refinePartitionTwoTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(refinePartitionTimeTwo);
-                std::chrono::milliseconds refinePartitionThreeTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(refinePartitionTimeThree);
-                std::chrono::milliseconds refinePartitionFourTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(refinePartitionTimeFour);
-                std::chrono::milliseconds insertBlockTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(insertBlockTime);
-                std::chrono::milliseconds refineBlockTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(refineBlockTime);
                 std::chrono::milliseconds extractionTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(extractionTime);
                 std::chrono::milliseconds totalTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(totalTime);
                 std::cout << std::endl;
                 std::cout << "Time breakdown:" << std::endl;
                 std::cout << "    * time for partitioning: " << refinementTimeInMilliseconds.count() << "ms" << std::endl;
-                std::cout << "        * time spent in refining partition: " << refinePartitionTimeInMilliseconds.count() << "ms" << std::endl;
-                std::cout << "            * time spent in refining partition (1): " << refinePartitionOneTimeInMilliseconds.count() << "ms" << std::endl;
-                std::cout << "            * time spent in refining partition (2): " << refinePartitionTwoTimeInMilliseconds.count() << "ms" << std::endl;
-                std::cout << "                * time spent in refining partition (3): " << refinePartitionThreeTimeInMilliseconds.count() << "ms" << std::endl;
-                std::cout << "                * time spent in refining partition (4): " << refinePartitionFourTimeInMilliseconds.count() << "ms" << std::endl;
-                std::cout << "                    * time spent in insertBlock: " << insertBlockTimeInMilliseconds.count() << "ms" << std::endl;
-                std::cout << "                    * time spent in refining block based on probabilities: " << refineBlockTimeInMilliseconds.count() << "ms" << std::endl;
                 std::cout << "    * time for extraction: " << extractionTimeInMilliseconds.count() << "ms" << std::endl;
                 std::cout << "------------------------------------------" << std::endl;
                 std::cout << "    * total time: " << totalTimeInMilliseconds.count() << "ms" << std::endl;
-                std::cout << std::endl;
-                std::cout << "Other:" << std::endl;
-                std::cout << "    * calls to refine partition: " << callsToRefinePartition << std::endl;
-                std::cout << "    * states iterated over: " << statesIteratedOverInRefinePartition << std::endl;
                 std::cout << std::endl;
             }
         }
         
         template<typename ValueType>
         void DeterministicModelBisimulationDecomposition<ValueType>::refineBlockProbabilities(Block& block, Partition& partition, BisimulationType bisimulationType, std::deque<Block*>& splitterQueue) {
-            std::chrono::high_resolution_clock::time_point refineBlockStart = std::chrono::high_resolution_clock::now();
             // Sort the states in the block based on their probabilities.
             std::sort(partition.getBegin(block), partition.getEnd(block), [&partition] (std::pair<storm::storage::sparse::state_type, ValueType> const& a, std::pair<storm::storage::sparse::state_type, ValueType> const& b) { return a.second < b.second; } );
             
@@ -890,8 +852,6 @@ namespace storm {
                     block.markAsSplitter();
                 }
             }
-            
-            refineBlockTime += std::chrono::high_resolution_clock::now() - refineBlockStart;
         }
         
         template<typename ValueType>
@@ -1068,16 +1028,12 @@ namespace storm {
         
         template<typename ValueType>
         void DeterministicModelBisimulationDecomposition<ValueType>::refinePartition(storm::storage::SparseMatrix<ValueType> const& forwardTransitions, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, Block& splitter, Partition& partition, BisimulationType bisimulationType, std::deque<Block*>& splitterQueue) {
-            std::chrono::high_resolution_clock::time_point refinePartitionStartOne = std::chrono::high_resolution_clock::now();
-
-            ++callsToRefinePartition;
             std::list<Block*> predecessorBlocks;
             
             // Iterate over all states of the splitter and check its predecessors.
             bool splitterIsPredecessor = false;
             storm::storage::sparse::state_type currentPosition = splitter.getBegin();
             for (auto stateIterator = partition.getBegin(splitter), stateIte = partition.getEnd(splitter); stateIterator != stateIte; ++stateIterator, ++currentPosition) {
-                ++statesIteratedOverInRefinePartition;
                 storm::storage::sparse::state_type currentState = stateIterator->first;
                 
                 uint_fast64_t elementsToSkip = 0;
@@ -1169,13 +1125,7 @@ namespace storm {
                 }
             }
 
-            refinePartitionTimeOne += std::chrono::high_resolution_clock::now() - refinePartitionStartOne;
-
-            std::chrono::high_resolution_clock::time_point refinePartitionStartTwo = std::chrono::high_resolution_clock::now();
-
             if (bisimulationType == BisimulationType::Strong || bisimulationType == BisimulationType::WeakCtmc) {
-                std::chrono::high_resolution_clock::time_point refinePartitionStartThree = std::chrono::high_resolution_clock::now();
-                
                 std::vector<Block*> blocksToSplit;
                 
                 // Now, we can iterate over the predecessor blocks and see whether we have to create a new block for
@@ -1203,10 +1153,6 @@ namespace storm {
                     }
                 }
                 
-                refinePartitionTimeThree += std::chrono::high_resolution_clock::now() - refinePartitionStartThree;
-                
-                std::chrono::high_resolution_clock::time_point refinePartitionStartFour = std::chrono::high_resolution_clock::now();
-                
                 // Finally, we walk through the blocks that have a transition to the splitter and split them using
                 // probabilistic information.
                 for (auto blockPtr : blocksToSplit) {
@@ -1222,9 +1168,6 @@ namespace storm {
                     
                     refineBlockProbabilities(*blockPtr, partition, bisimulationType, splitterQueue);
                 }
-                
-                refinePartitionTimeFour += std::chrono::high_resolution_clock::now() - refinePartitionStartFour;
-
             } else { // In this case, we are computing a weak bisimulation on a DTMC.
                 // If the splitter was a predecessor of itself and we are computing a weak bisimulation, we need to update
                 // the silent probabilities.
@@ -1250,7 +1193,6 @@ namespace storm {
                     block.resetMarkedPosition();
                 }
             }
-            refinePartitionTimeTwo += std::chrono::high_resolution_clock::now() - refinePartitionStartTwo;
             
             STORM_LOG_ASSERT(partition.check(), "Partition became inconsistent.");
         }
