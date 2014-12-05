@@ -242,9 +242,9 @@ namespace storm {
         }
         
         template<typename ValueType>
-        DeterministicModelBisimulationDecomposition<ValueType>::Partition::Partition(std::size_t numberOfStates, bool keepSilentProbabilities) : stateToBlockMapping(numberOfStates), statesAndValues(numberOfStates), positions(numberOfStates), keepSilentProbabilities(keepSilentProbabilities), silentProbabilities() {
+        DeterministicModelBisimulationDecomposition<ValueType>::Partition::Partition(std::size_t numberOfStates, bool keepSilentProbabilities) : numberOfBlocks(0), stateToBlockMapping(numberOfStates), statesAndValues(numberOfStates), positions(numberOfStates), keepSilentProbabilities(keepSilentProbabilities), silentProbabilities() {
             // Create the block and give it an iterator to itself.
-            typename std::list<Block>::iterator it = blocks.emplace(this->blocks.end(), 0, numberOfStates, nullptr, nullptr, this->blocks.size());
+            typename std::list<Block>::iterator it = blocks.emplace(this->blocks.end(), 0, numberOfStates, nullptr, nullptr, numberOfBlocks++);
             it->setIterator(it);
             
             // Set up the different parts of the internal structure.
@@ -261,8 +261,8 @@ namespace storm {
         }
         
         template<typename ValueType>
-        DeterministicModelBisimulationDecomposition<ValueType>::Partition::Partition(std::size_t numberOfStates, storm::storage::BitVector const& prob0States, storm::storage::BitVector const& prob1States, std::string const& otherLabel, std::string const& prob1Label, bool keepSilentProbabilities) : stateToBlockMapping(numberOfStates), statesAndValues(numberOfStates), positions(numberOfStates), keepSilentProbabilities(keepSilentProbabilities), silentProbabilities() {
-            typename std::list<Block>::iterator firstIt = blocks.emplace(this->blocks.end(), 0, prob0States.getNumberOfSetBits(), nullptr, nullptr, this->blocks.size());
+        DeterministicModelBisimulationDecomposition<ValueType>::Partition::Partition(std::size_t numberOfStates, storm::storage::BitVector const& prob0States, storm::storage::BitVector const& prob1States, std::string const& otherLabel, std::string const& prob1Label, bool keepSilentProbabilities) : numberOfBlocks(0), stateToBlockMapping(numberOfStates), statesAndValues(numberOfStates), positions(numberOfStates), keepSilentProbabilities(keepSilentProbabilities), silentProbabilities() {
+            typename std::list<Block>::iterator firstIt = blocks.emplace(this->blocks.end(), 0, prob0States.getNumberOfSetBits(), nullptr, nullptr, numberOfBlocks++);
             Block& firstBlock = *firstIt;
             firstBlock.setIterator(firstIt);
 
@@ -275,7 +275,7 @@ namespace storm {
             }
             firstBlock.setAbsorbing(true);
 
-            typename std::list<Block>::iterator secondIt = blocks.emplace(this->blocks.end(), position, position + prob1States.getNumberOfSetBits(), &firstBlock, nullptr, this->blocks.size(), std::shared_ptr<std::string>(new std::string(prob1Label)));
+            typename std::list<Block>::iterator secondIt = blocks.emplace(this->blocks.end(), position, position + prob1States.getNumberOfSetBits(), &firstBlock, nullptr, numberOfBlocks++, std::shared_ptr<std::string>(new std::string(prob1Label)));
             Block& secondBlock = *secondIt;
             secondBlock.setIterator(secondIt);
             
@@ -287,7 +287,7 @@ namespace storm {
             }
             secondBlock.setAbsorbing(true);
             
-            typename std::list<Block>::iterator thirdIt = blocks.emplace(this->blocks.end(), position, numberOfStates, &secondBlock, nullptr, this->blocks.size(), otherLabel == "true" ? std::shared_ptr<std::string>(nullptr) : std::shared_ptr<std::string>(new std::string(otherLabel)));
+            typename std::list<Block>::iterator thirdIt = blocks.emplace(this->blocks.end(), position, numberOfStates, &secondBlock, nullptr, numberOfBlocks++, otherLabel == "true" ? std::shared_ptr<std::string>(nullptr) : std::shared_ptr<std::string>(new std::string(otherLabel)));
             Block& thirdBlock = *thirdIt;
             thirdBlock.setIterator(thirdIt);
             
@@ -408,7 +408,7 @@ namespace storm {
             }
             
             // Actually create the new block and insert it at the correct position.
-            typename std::list<Block>::iterator selfIt = this->blocks.emplace(block.getIterator(), block.getBegin(), position, block.getPreviousBlockPointer(), &block, this->blocks.size(), block.getLabelPtr());
+            typename std::list<Block>::iterator selfIt = this->blocks.emplace(block.getIterator(), block.getBegin(), position, block.getPreviousBlockPointer(), &block, numberOfBlocks++, block.getLabelPtr());
             selfIt->setIterator(selfIt);
             Block& newBlock = *selfIt;
             
@@ -432,7 +432,7 @@ namespace storm {
             }
             
             // Actually insert the new block.
-            typename std::list<Block>::iterator it = this->blocks.emplace(block.getIterator(), begin, block.getBegin(), block.getPreviousBlockPointer(), &block, this->blocks.size());
+            typename std::list<Block>::iterator it = this->blocks.emplace(block.getIterator(), begin, block.getBegin(), block.getPreviousBlockPointer(), &block, numberOfBlocks++);
             Block& newBlock = *it;
             newBlock.setIterator(it);
             
@@ -570,13 +570,13 @@ namespace storm {
                 }
                 std::cout << std::endl;
             }
-            std::cout << "size: " << this->blocks.size() << std::endl;
+            std::cout << "size: " << numberOfBlocks << std::endl;
             assert(this->check());
         }
         
         template<typename ValueType>
         std::size_t DeterministicModelBisimulationDecomposition<ValueType>::Partition::size() const {
-            return this->blocks.size();
+            return numberOfBlocks;
         }
         
         template<typename ValueType>
