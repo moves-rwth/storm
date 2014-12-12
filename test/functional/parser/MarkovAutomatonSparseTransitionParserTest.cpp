@@ -7,14 +7,14 @@
 
 #include "gtest/gtest.h"
 #include "storm-config.h"
-#include "src/settings/Settings.h"
+#include "src/settings/SettingsManager.h"
 
 #include <vector>
 
 #include "src/parser/MarkovAutomatonSparseTransitionParser.h"
 #include "src/utility/cstring.h"
 #include "src/parser/MarkovAutomatonParser.h"
-#include "src/settings/InternalOptionMemento.h"
+#include "src/settings/SettingMemento.h"
 #include "src/exceptions/WrongFormatException.h"
 #include "src/exceptions/FileIoException.h"
 
@@ -186,7 +186,7 @@ TEST(MarkovAutomatonSparseTransitionParserTest, Whitespaces) {
 
 TEST(MarkovAutomatonSparseTransitionParserTest, FixDeadlocks) {
 	// Set the fixDeadlocks flag temporarily. It is set to its old value once the deadlockOption object is destructed.
-	storm::settings::InternalOptionMemento setDeadlockOption("fixDeadlocks", true);
+    std::unique_ptr<storm::settings::SettingMemento> fixDeadlocks = storm::settings::mutableGeneralSettings().overrideDontFixDeadlocksSet(false);
 
 	// Parse a Markov Automaton transition file with the fixDeadlocks Flag set and test if it works.
 	storm::parser::MarkovAutomatonSparseTransitionParser::Result result = storm::parser::MarkovAutomatonSparseTransitionParser::parseMarkovAutomatonTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/ma_deadlock.tra");
@@ -205,7 +205,7 @@ TEST(MarkovAutomatonSparseTransitionParserTest, FixDeadlocks) {
 
 TEST(MarkovAutomatonSparseTransitionParserTest, DontFixDeadlocks) {
 	// Try to parse a Markov Automaton transition file containing a deadlock state with the fixDeadlocksFlag unset. This should throw an exception.
-	storm::settings::InternalOptionMemento unsetDeadlockOption("fixDeadlocks", false);
+    std::unique_ptr<storm::settings::SettingMemento> dontFixDeadlocks = storm::settings::mutableGeneralSettings().overrideDontFixDeadlocksSet(true);
 
 	ASSERT_THROW(storm::parser::MarkovAutomatonSparseTransitionParser::parseMarkovAutomatonTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/ma_deadlock.tra"), storm::exceptions::WrongFormatException);
 }

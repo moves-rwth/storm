@@ -27,7 +27,7 @@
 	LOG4CPLUS_INFO(logger, "Starting counterexample generation.");
 	LOG4CPLUS_INFO(logger, "Testing inputs...");
 
-	storm::settings::Settings* s  = storm::settings::Settings::getInstance();
+	storm::settings::SettingsManager* s  = storm::settings::SettingsManager::getInstance();
 
 	// First test output directory.
 	std::string outPath = s->getOptionByLongName("counterExample").getArgument(0).getValueAsString();

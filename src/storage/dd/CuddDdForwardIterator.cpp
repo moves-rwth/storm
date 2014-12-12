@@ -1,7 +1,7 @@
 #include "src/storage/dd/CuddDdForwardIterator.h"
 #include "src/storage/dd/CuddDdManager.h"
 #include "src/storage/dd/DdMetaVariable.h"
-#include "src/exceptions/ExceptionMacros.h"
+#include "src/utility/macros.h"
 
 namespace storm {
     namespace dd {
@@ -63,7 +63,7 @@ namespace storm {
         }
         
         DdForwardIterator<DdType::CUDD>& DdForwardIterator<DdType::CUDD>::operator++() {
-            LOG_ASSERT(!this->isAtEnd, "Illegally incrementing iterator that is already at its end.");
+            STORM_LOG_ASSERT(!this->isAtEnd, "Illegally incrementing iterator that is already at its end.");
             
             // If there were no (relevant) don't cares or we have enumerated all combination, we need to eliminate the
             // found solutions and get the next "first" cube.

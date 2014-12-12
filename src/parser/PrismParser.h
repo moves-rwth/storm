@@ -11,7 +11,7 @@
 #include "src/storage/prism/Program.h"
 #include "src/storage/expressions/Expression.h"
 #include "src/storage/expressions/Expressions.h"
-#include "src/exceptions/ExceptionMacros.h"
+#include "src/utility/macros.h"
 #include "src/exceptions/WrongFormatException.h"
 
 namespace storm {

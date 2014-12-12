@@ -12,10 +12,12 @@
 
 #include "src/models/Mdp.h"
 #include "src/storage/prism/Program.h"
+#include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "src/exceptions/NotImplementedException.h"
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/exceptions/InvalidStateException.h"
 
+#include "src/utility/graph.h"
 #include "src/utility/counterexamples.h"
 #include "src/utility/solver.h"
 
@@ -154,7 +156,6 @@ namespace storm {
 
                 // Finally, determine the set of labels that are known to be taken.
                 result.knownLabels = storm::utility::counterexamples::getGuaranteedLabelSet(labeledMdp, psiStates, result.allRelevantLabels);
-                std::cout << "Found " << result.allRelevantLabels.size() << " relevant labels and " << result.knownLabels.size() << " known labels." << std::endl;
                 LOG4CPLUS_DEBUG(logger, "Found " << result.allRelevantLabels.size() << " relevant labels and " << result.knownLabels.size() << " known labels.");
 
                 return result;
@@ -946,7 +947,7 @@ namespace storm {
                     if ((strictBound && maximalReachabilityProbability < probabilityThreshold) || (!strictBound && maximalReachabilityProbability <= probabilityThreshold)) {
                         throw storm::exceptions::InvalidArgumentException() << "Given probability threshold " << probabilityThreshold << " can not be " << (strictBound ? "achieved" : "exceeded") << " in model with maximal reachability probability of " << maximalReachabilityProbability << ".";
                     }
-                    std::cout << "Maximal reachability in model determined to be " << maximalReachabilityProbability << "." << std::endl;
+                    std::cout << std::endl << "Maximal reachability in model is " << maximalReachabilityProbability << "." << std::endl << std::endl;
                 }
 
                 // (2) Identify relevant and problematic states.
@@ -985,19 +986,21 @@ namespace storm {
              * @param formulaPtr A pointer to a safety formula. The outermost operator must be a probabilistic bound operator with a strict upper bound. The nested
              * formula can be either an unbounded until formula or an eventually formula.
              */
-            static void computeCounterexample(storm::prism::Program const& program, storm::models::Mdp<T> const& labeledMdp, std::shared_ptr<storm::properties::prctl::AbstractPrctlFormula<double>> const & formulaPtr) {
-                std::cout << std::endl << "Generating minimal label counterexample for formula " << formulaPtr->toString() << std::endl;
+            static void computeCounterexample(storm::prism::Program const& program, storm::models::Mdp<T> const& labeledMdp, std::shared_ptr<storm::properties::prctl::AbstractPrctlFormula<double>> const& formula) {
+                std::cout << std::endl << "Generating minimal label counterexample for formula " << formula->toString() << std::endl;
                 // First, we need to check whether the current formula is an Until-Formula.
-                auto probBoundFormula = std::dynamic_pointer_cast<storm::properties::prctl::ProbabilisticBoundOperator<double>>(formulaPtr);
-                if (probBoundFormula == nullptr) {
+                std::shared_ptr<storm::properties::prctl::ProbabilisticBoundOperator<double>> probBoundFormula = std::dynamic_pointer_cast<storm::properties::prctl::ProbabilisticBoundOperator<double>>(formula);
+                if (probBoundFormula.get() == nullptr) {
                     LOG4CPLUS_ERROR(logger, "Illegal formula " << probBoundFormula->toString() << " for counterexample generation.");
                     throw storm::exceptions::InvalidPropertyException() << "Illegal formula " << probBoundFormula->toString() << " for counterexample generation.";
                 }
+                
+                // Check whether we were given an upper bound, because counterexample generation is limited to this case.
                 if (probBoundFormula->getComparisonOperator() != storm::properties::ComparisonType::LESS && probBoundFormula->getComparisonOperator() != storm::properties::ComparisonType::LESS_EQUAL) {
                     LOG4CPLUS_ERROR(logger, "Illegal comparison operator in formula " << probBoundFormula->toString() << ". Only upper bounds are supported for counterexample generation.");
                     throw storm::exceptions::InvalidPropertyException() << "Illegal comparison operator in formula " << probBoundFormula->toString() << ". Only upper bounds are supported for counterexample generation.";
                 }
-                bool strictBound = !(probBoundFormula->getComparisonOperator() == storm::properties::ComparisonType::LESS);
+                bool strictBound = probBoundFormula->getComparisonOperator() == storm::properties::ComparisonType::LESS;
 
                 // Now derive the probability threshold we need to exceed as well as the phi and psi states. Simultaneously, check whether the formula is of a valid shape.
                 double bound = probBoundFormula->getBound();
@@ -1005,27 +1008,27 @@ namespace storm {
                 storm::storage::BitVector phiStates;
                 storm::storage::BitVector psiStates;
                 storm::modelchecker::prctl::SparseMdpPrctlModelChecker<T> modelchecker(labeledMdp);
-                try {
-                    auto untilFormula = std::dynamic_pointer_cast<storm::properties::prctl::Until<double>>(pathFormula);
-                    
+                
+                std::shared_ptr<storm::properties::prctl::Until<double>> untilFormula = std::dynamic_pointer_cast<storm::properties::prctl::Until<double>>(pathFormula);
+                if(untilFormula.get() != nullptr) {
                     phiStates = untilFormula->getLeft()->check(modelchecker);
                     psiStates = untilFormula->getRight()->check(modelchecker);
-                } catch (std::bad_cast const&) {
+                    
+                } if (std::dynamic_pointer_cast<storm::properties::prctl::Eventually<double>>(pathFormula).get() != nullptr) {
                     // If the nested formula was not an until formula, it remains to check whether it's an eventually formula.
-                    try {
-                        auto eventuallyFormula = std::dynamic_pointer_cast<storm::properties::prctl::Eventually<double>>(pathFormula);
-                        
-                        phiStates = storm::storage::BitVector(labeledMdp.getNumberOfStates(), true);
-                        psiStates = eventuallyFormula->getChild()->check(modelchecker);
-                    } catch (std::bad_cast const&) {
-                        // If the nested formula is neither an until nor a finally formula, we throw an exception.
-                        throw storm::exceptions::InvalidPropertyException() << "Formula nested inside probability bound operator must be an until or eventually formula for counterexample generation.";
-                    }
+                    std::shared_ptr<storm::properties::prctl::Eventually<double>> eventuallyFormula = std::dynamic_pointer_cast<storm::properties::prctl::Eventually<double>>(pathFormula);
+                    
+                    phiStates = storm::storage::BitVector(labeledMdp.getNumberOfStates(), true);
+                    psiStates = eventuallyFormula->getChild()->check(modelchecker);
+                    
+                } else {
+                    // If the nested formula is neither an until nor a finally formula, we throw an exception.
+                    throw storm::exceptions::InvalidPropertyException() << "Formula nested inside probability bound operator must be an until or eventually formula for counterexample generation.";
                 }
                 
                 // Delegate the actual computation work to the function of equal name.
                 auto startTime = std::chrono::high_resolution_clock::now();
-                boost::container::flat_set<uint_fast64_t> usedLabelSet = getMinimalLabelSet(labeledMdp, phiStates, psiStates, bound, strictBound, true, storm::settings::Settings::getInstance()->isSet("schedcuts"));
+                boost::container::flat_set<uint_fast64_t> usedLabelSet = getMinimalLabelSet(labeledMdp, phiStates, psiStates, bound, strictBound, true, storm::settings::counterexampleGeneratorSettings().isUseSchedulerCutsSet());
                 auto endTime = std::chrono::high_resolution_clock::now();
                 std::cout << std::endl << "Computed minimal label set of size " << usedLabelSet.size() << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms." << std::endl;
 

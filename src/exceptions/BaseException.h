@@ -4,56 +4,51 @@
 #include <exception>
 #include <sstream>
 
+#include "utility/OsDetection.h"
+
 namespace storm {
-namespace exceptions {
+    namespace exceptions {
+        
+        /*!
+         * This class represents the base class of all exception classes.
+         */
+        class BaseException : public std::exception {
+        public:
+            /*!
+             * Creates a base exception without a message.
+             */
+            BaseException();
+            
+            /*!
+             * Creates a base expression from the given exception.
+             *
+             * @param other The expression from which to copy-construct.
+             */
+            BaseException(BaseException const& other);
+            
+            /*!
+             * Adds the given string to the message of this exception.
+             */
+            BaseException(char const* cstr);
+            
+			/*!
+			 * Declare a destructor to counter the "looser throw specificator" error
+			 */
+			virtual ~BaseException();
 
-template<typename E>
-class BaseException : public std::exception {
-	public:
-		BaseException() : exception() {}
-		BaseException(const BaseException& cp)
-			: exception(cp), stream(cp.stream.str()) {
-		}
-
-		BaseException(const char* cstr) {
-			stream << cstr;
-		}
-		
-		~BaseException() throw() { }
-		
-		template<class T>
-		E& operator<<(const T& var) {
-			this->stream << var;
-			return * dynamic_cast<E*>(this);
-		}
-		
-		virtual const char* what() const throw() {
-			std::string errorString = this->stream.str();
-			char* result = new char[errorString.size() + 1];
-			result[errorString.size()] = '\0';
-			std::copy(errorString.begin(), errorString.end(), result);
-			return result;
-		}
-	
-	private:
-		std::stringstream stream;
-};
-
-} // namespace exceptions
+            /*!
+             * Retrieves the message associated with this exception.
+             *
+             * @return The message associated with this exception.
+             */
+            virtual const char* what() const NOEXCEPT override;
+            
+        protected:
+            // This stream stores the message of this exception.
+            std::stringstream stream;
+        };
+        
+    } // namespace exceptions
 } // namespace storm
-
-/* Macro to generate descendant exception classes.
- * As all classes are nearly the same, this makes changing common features much easier.
- */
-#define STORM_EXCEPTION_DEFINE_NEW(exception_name) class exception_name : public BaseException<exception_name> { \
-public: \
-	exception_name() : BaseException() { \
-	} \
-	exception_name(const char* cstr) : BaseException(cstr) { \
-	} \
-	exception_name(const exception_name& cp) : BaseException(cp) { \
-	} \
-};
-
 
 #endif // STORM_EXCEPTIONS_BASEEXCEPTION_H_

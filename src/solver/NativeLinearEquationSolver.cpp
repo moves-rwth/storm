@@ -2,24 +2,9 @@
 
 #include <utility>
 
-#include "src/settings/Settings.h"
+#include "src/settings/SettingsManager.h"
 #include "src/utility/vector.h"
 #include "src/exceptions/InvalidStateException.h"
-
-bool NativeLinearEquationSolverOptionsRegistered = storm::settings::Settings::registerNewModule([] (storm::settings::Settings* instance) -> bool {
-    // Offer all available methods as a command line option.
-	std::vector<std::string> methods;
-	methods.push_back("jacobi");
-	instance->addOption(storm::settings::OptionBuilder("NativeLinearEquationSolver", "nativelin", "", "The method to be used for solving linear equation systems with the native engine. Available are: jacobi.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the method to use.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(methods)).setDefaultValueString("jacobi").build()).build());
-    
-	instance->addOption(storm::settings::OptionBuilder("NativeLinearEquationSolver", "maxiter", "i", "The maximal number of iterations to perform before iterative solving is aborted.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("count", "The maximal iteration count.").setDefaultValueUnsignedInteger(10000).build()).build());
-    
-	instance->addOption(storm::settings::OptionBuilder("NativeLinearEquationSolver", "precision", "", "The precision used for detecting convergence of iterative methods.").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to achieve.").setDefaultValueDouble(1e-06).addValidationFunctionDouble(storm::settings::ArgumentValidators::doubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
-    
-	instance->addOption(storm::settings::OptionBuilder("NativeLinearEquationSolver", "absolute", "", "Whether the relative or the absolute error is considered for deciding convergence.").build());
-    
-	return true;
-});
 
 namespace storm {
     namespace solver {
@@ -32,17 +17,17 @@ namespace storm {
         template<typename ValueType>
         NativeLinearEquationSolver<ValueType>::NativeLinearEquationSolver() {
             // Get the settings object to customize linear solving.
-            storm::settings::Settings* settings = storm::settings::Settings::getInstance();
+            storm::settings::modules::NativeEquationSolverSettings const& settings = storm::settings::nativeEquationSolverSettings();
             
             // Get appropriate settings.
-            maximalNumberOfIterations = settings->getOptionByLongName("maxiter").getArgument(0).getValueAsUnsignedInteger();
-            precision = settings->getOptionByLongName("precision").getArgument(0).getValueAsDouble();
-            relative = !settings->isSet("absolute");
+            maximalNumberOfIterations = settings.getMaximalIterationCount();
+            precision = settings.getPrecision();
+            relative = settings.getConvergenceCriterion() == storm::settings::modules::NativeEquationSolverSettings::ConvergenceCriterion::Relative;
             
             // Determine the method to be used.
-            std::string const& methodAsString = settings->getOptionByLongName("nativelin").getArgument(0).getValueAsString();
-            if (methodAsString == "jacobi") {
-                method = JACOBI;
+            storm::settings::modules::NativeEquationSolverSettings::LinearEquationTechnique methodAsSetting = settings.getLinearEquationSystemTechnique();
+            if (methodAsSetting == storm::settings::modules::NativeEquationSolverSettings::LinearEquationTechnique::Jacobi) {
+                method = SolutionMethod::Jacobi;
             }
         }
         
@@ -142,10 +127,8 @@ namespace storm {
 
         template<typename ValueType>
         std::string NativeLinearEquationSolver<ValueType>::methodToString() const {
-            if (method == JACOBI) {
-                return "jacobi";
-            } else {
-                throw storm::exceptions::InvalidStateException() << "Illegal method '" << method << "' set in NativeLinearEquationSolver.";
+            switch (method) {
+                case SolutionMethod::Jacobi: return "jacobi";
             }
         }
         

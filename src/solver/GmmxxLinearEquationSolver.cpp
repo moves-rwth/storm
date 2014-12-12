@@ -4,41 +4,13 @@
 #include <utility>
 
 #include "src/adapters/GmmxxAdapter.h"
-#include "src/settings/Settings.h"
+#include "src/settings/SettingsManager.h"
 #include "src/utility/vector.h"
 #include "src/utility/constants.h"
 #include "src/exceptions/InvalidStateException.h"
 
 #include "gmm/gmm_matrix.h"
 #include "gmm/gmm_iter_solvers.h"
-
-bool GmmxxLinearEquationSolverOptionsRegistered = storm::settings::Settings::registerNewModule([] (storm::settings::Settings* instance) -> bool {
-    // Offer all available methods as a command line option.
-	std::vector<std::string> methods;
-	methods.push_back("bicgstab");
-	methods.push_back("qmr");
-	methods.push_back("gmres");
-	methods.push_back("jacobi");
-	instance->addOption(storm::settings::OptionBuilder("GmmxxLinearEquationSolver", "gmmlin", "", "The method to be used for solving linear equation systems with the gmm++ engine. Available are: bicgstab, qmr, gmres, jacobi.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the method to use.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(methods)).setDefaultValueString("gmres").build()).build());
-
-    // Register available preconditioners.
-    std::vector<std::string> preconditioner;
-	preconditioner.push_back("ilu");
-	preconditioner.push_back("diagonal");
-	preconditioner.push_back("ildlt");
-	preconditioner.push_back("none");
-	instance->addOption(storm::settings::OptionBuilder("GmmxxLinearEquationSolver", "gmmpre", "", "The preconditioning technique used for solving linear equation systems with the gmm++ engine. Available are: ilu, diagonal, none.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the preconditioning method.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(preconditioner)).setDefaultValueString("ilu").build()).build());
-
-    instance->addOption(storm::settings::OptionBuilder("GmmxxLinearEquationSolver", "gmmrestart", "", "The number of iteration until restarted methods are actually restarted.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("count", "The number of iterations.").setDefaultValueUnsignedInteger(50).build()).build());
-
-	instance->addOption(storm::settings::OptionBuilder("GmmxxLinearEquationSolver", "maxiter", "i", "The maximal number of iterations to perform before iterative solving is aborted.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("count", "The maximal iteration count.").setDefaultValueUnsignedInteger(10000).build()).build());
-    
-	instance->addOption(storm::settings::OptionBuilder("GmmxxLinearEquationSolver", "precision", "", "The precision used for detecting convergence of iterative methods.").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to achieve.").setDefaultValueDouble(1e-06).addValidationFunctionDouble(storm::settings::ArgumentValidators::doubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
-    
-	instance->addOption(storm::settings::OptionBuilder("GmmxxLinearEquationSolver", "absolute", "", "Whether the relative or the absolute error is considered for deciding convergence.").build());
-
-	return true;
-});
 
 namespace storm {
     namespace solver {
@@ -52,34 +24,34 @@ namespace storm {
         template<typename ValueType>
         GmmxxLinearEquationSolver<ValueType>::GmmxxLinearEquationSolver() {
             // Get the settings object to customize linear solving.
-            storm::settings::Settings* settings = storm::settings::Settings::getInstance();
+            storm::settings::modules::GmmxxEquationSolverSettings const& settings = storm::settings::gmmxxEquationSolverSettings();
             
             // Get appropriate settings.
-            maximalNumberOfIterations = settings->getOptionByLongName("maxiter").getArgument(0).getValueAsUnsignedInteger();
-            precision = settings->getOptionByLongName("precision").getArgument(0).getValueAsDouble();
-            relative = !settings->isSet("absolute");
-            restart = settings->getOptionByLongName("gmmrestart").getArgument(0).getValueAsUnsignedInteger();
+            maximalNumberOfIterations = settings.getMaximalIterationCount();
+            precision = settings.getPrecision();
+            relative = settings.getConvergenceCriterion() == storm::settings::modules::GmmxxEquationSolverSettings::ConvergenceCriterion::Relative;
+            restart = settings.getRestartIterationCount();
             
             // Determine the method to be used.
-            std::string const& methodAsString = settings->getOptionByLongName("gmmlin").getArgument(0).getValueAsString();
-            if (methodAsString == "bicgstab") {
-                method = BICGSTAB;
-            } else if (methodAsString == "qmr") {
-                method = QMR;
-            } else if (methodAsString == "gmres") {
-                method = GMRES;
-            } else if (methodAsString == "jacobi") {
-                method = JACOBI;
+            storm::settings::modules::GmmxxEquationSolverSettings::LinearEquationTechnique methodAsSetting = settings.getLinearEquationSystemTechnique();
+            if (methodAsSetting == storm::settings::modules::GmmxxEquationSolverSettings::LinearEquationTechnique::Bicgstab) {
+                method = SolutionMethod::Bicgstab;
+            } else if (methodAsSetting == storm::settings::modules::GmmxxEquationSolverSettings::LinearEquationTechnique::Qmr) {
+                method = SolutionMethod::Qmr;
+            } else if (methodAsSetting == storm::settings::modules::GmmxxEquationSolverSettings::LinearEquationTechnique::Gmres) {
+                method = SolutionMethod::Gmres;
+            } else if (methodAsSetting == storm::settings::modules::GmmxxEquationSolverSettings::LinearEquationTechnique::Jacobi) {
+                method = SolutionMethod::Jacobi;
             }
             
             // Check which preconditioner to use.
-            std::string const& preconditionAsString = settings->getOptionByLongName("gmmpre").getArgument(0).getValueAsString();
-            if (preconditionAsString == "ilu") {
-                preconditioner = ILU;
-            } else if (preconditionAsString == "diagonal") {
-                preconditioner = DIAGONAL;
-            } else if (preconditionAsString == "none") {
-                preconditioner = NONE;
+            storm::settings::modules::GmmxxEquationSolverSettings::PreconditioningTechnique preconditionAsSetting = settings.getPreconditioningTechnique();
+            if (preconditionAsSetting == storm::settings::modules::GmmxxEquationSolverSettings::PreconditioningTechnique::Ilu) {
+                preconditioner = Preconditioner::Ilu;
+            } else if (preconditionAsSetting == storm::settings::modules::GmmxxEquationSolverSettings::PreconditioningTechnique::Diagonal) {
+                preconditioner = Preconditioner::Diagonal;
+            } else if (preconditionAsSetting == storm::settings::modules::GmmxxEquationSolverSettings::PreconditioningTechnique::None) {
+                preconditioner = Preconditioner::None;
             }
         }
         
@@ -91,38 +63,38 @@ namespace storm {
         template<typename ValueType>
         void GmmxxLinearEquationSolver<ValueType>::solveEquationSystem(storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult) const {
             LOG4CPLUS_INFO(logger, "Using method '" << methodToString() << "' with preconditioner " << preconditionerToString() << "'.");
-            if (method == JACOBI && preconditioner != NONE) {
+            if (method == SolutionMethod::Jacobi && preconditioner != Preconditioner::None) {
                 LOG4CPLUS_WARN(logger, "Jacobi method currently does not support preconditioners. The requested preconditioner will be ignored.");
             }
             
-            if (method == BICGSTAB || method == QMR || method == GMRES) {
+            if (method == SolutionMethod::Bicgstab || method == SolutionMethod::Qmr || method == SolutionMethod::Gmres) {
                 std::unique_ptr<gmm::csr_matrix<ValueType>> gmmA = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(A);
                 
                 // Prepare an iteration object that determines the accuracy and the maximum number of iterations.
                 gmm::iteration iter(precision, 0, maximalNumberOfIterations);
                 
-                if (method == BICGSTAB) {
-                    if (preconditioner == ILU) {
+                if (method == SolutionMethod::Bicgstab) {
+                    if (preconditioner == Preconditioner::Ilu) {
                         gmm::bicgstab(*gmmA, x, b, gmm::ilu_precond<gmm::csr_matrix<ValueType>>(*gmmA), iter);
-                    } else if (preconditioner == DIAGONAL) {
+                    } else if (preconditioner == Preconditioner::Diagonal) {
                         gmm::bicgstab(*gmmA, x, b, gmm::diagonal_precond<gmm::csr_matrix<ValueType>>(*gmmA), iter);
-                    } else if (preconditioner == NONE) {
+                    } else if (preconditioner == Preconditioner::None) {
                         gmm::bicgstab(*gmmA, x, b, gmm::identity_matrix(), iter);
                     }
-                } else if (method == QMR) {
-                    if (preconditioner == ILU) {
+                } else if (method == SolutionMethod::Qmr) {
+                    if (preconditioner == Preconditioner::Ilu) {
                         gmm::qmr(*gmmA, x, b, gmm::ilu_precond<gmm::csr_matrix<ValueType>>(*gmmA), iter);
-                    } else if (preconditioner == DIAGONAL) {
+                    } else if (preconditioner == Preconditioner::Diagonal) {
                         gmm::qmr(*gmmA, x, b, gmm::diagonal_precond<gmm::csr_matrix<ValueType>>(*gmmA), iter);
-                    } else if (preconditioner == NONE) {
+                    } else if (preconditioner == Preconditioner::None) {
                         gmm::qmr(*gmmA, x, b, gmm::identity_matrix(), iter);
                     }
-                } else if (method == GMRES) {
-                    if (preconditioner == ILU) {
+                } else if (method == SolutionMethod::Gmres) {
+                    if (preconditioner == Preconditioner::Ilu) {
                         gmm::gmres(*gmmA, x, b, gmm::ilu_precond<gmm::csr_matrix<ValueType>>(*gmmA), restart, iter);
-                    } else if (preconditioner == DIAGONAL) {
+                    } else if (preconditioner == Preconditioner::Diagonal) {
                         gmm::gmres(*gmmA, x, b, gmm::diagonal_precond<gmm::csr_matrix<ValueType>>(*gmmA), restart, iter);
-                    } else if (preconditioner == NONE) {
+                    } else if (preconditioner == Preconditioner::None) {
                         gmm::gmres(*gmmA, x, b, gmm::identity_matrix(), restart, iter);
                     }
                 }
@@ -133,7 +105,7 @@ namespace storm {
                 } else {
                     LOG4CPLUS_WARN(logger, "Iterative solver did not converge.");
                 }
-            } else if (method == JACOBI) {
+            } else if (method == SolutionMethod::Jacobi) {
                 uint_fast64_t iterations = solveLinearEquationSystemWithJacobi(A, x, b, multiplyResult);
                 
                 // Check if the solver converged and issue a warning otherwise.
@@ -244,29 +216,20 @@ namespace storm {
         
         template<typename ValueType>
         std::string GmmxxLinearEquationSolver<ValueType>::methodToString() const {
-            if (method == BICGSTAB) {
-                return "bicgstab";
-            } else if (method == QMR) {
-                return "qmr";
-            } else if (method == GMRES) {
-                return "gmres";
-            } else if (method == JACOBI) {
-                return "jacobi";
-            } else {
-                throw storm::exceptions::InvalidStateException() << "Illegal method '" << method << "' set in GmmxxLinearEquationSolver.";
+            switch (method) {
+                case SolutionMethod::Bicgstab: return "bicgstab";
+                case SolutionMethod::Qmr: return "qmr";
+                case SolutionMethod::Gmres: return "gmres";
+                case SolutionMethod::Jacobi: return "jacobi";
             }
         }
         
         template<typename ValueType>
         std::string GmmxxLinearEquationSolver<ValueType>::preconditionerToString() const {
-            if (preconditioner == ILU) {
-                return "ilu";
-            } else if (preconditioner == DIAGONAL) {
-                return "diagonal";
-            } else if (preconditioner == NONE) {
-                return "none";
-            } else {
-                throw storm::exceptions::InvalidStateException() << "Illegal preconditioner '" << preconditioner << "' set in GmmxxLinearEquationSolver.";
+            switch (preconditioner) {
+                case Preconditioner::Ilu: return "ilu";
+                case Preconditioner::Diagonal: return "diagonal";
+                case Preconditioner::None: return "none";
             }
         }
         

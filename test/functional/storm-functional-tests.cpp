@@ -6,8 +6,7 @@
 #include "log4cplus/consoleappender.h"
 #include "log4cplus/fileappender.h"
 
-#include "src/settings/Settings.h"
-#include "src/utility/StormOptions.h" // Registers all standard options
+#include "src/settings/SettingsManager.h"
 
 log4cplus::Logger logger;
 
@@ -30,37 +29,11 @@ void setUpLogging() {
 	// logger.addAppender(consoleLogAppender);
 }
 
-/*!
- * Creates an empty settings object as the standard instance of the Settings class.
- */
-void createEmptyOptions() {
-    const char* newArgv[] = {"storm-functional-tests"};
-	storm::settings::Settings* s = storm::settings::Settings::getInstance();
-	try {
-		storm::settings::Settings::parse(1, newArgv);
-	} catch (storm::exceptions::OptionParserException& e) {
-		std::cout << "Could not recover from settings error: " << e.what() << "." << std::endl;
-		std::cout << std::endl << s->getHelpText();
-	}
-}
-
 int main(int argc, char* argv[]) {
 	setUpLogging();
-	createEmptyOptions();
 	std::cout << "StoRM (Functional) Testing Suite" << std::endl;
 	
 	testing::InitGoogleTest(&argc, argv);
-    
-	// now all Google Test Options have been removed
-	storm::settings::Settings* instance = storm::settings::Settings::getInstance();
-
-	try {
-		storm::settings::Settings::parse(argc, argv);
-	} catch (storm::exceptions::OptionParserException& e) {
-		std::cout << "Could not recover from settings error: " << e.what() << "." << std::endl;
-		std::cout << std::endl << instance->getHelpText();
-		return false;
-	}
 
     int result = RUN_ALL_TESTS();
     

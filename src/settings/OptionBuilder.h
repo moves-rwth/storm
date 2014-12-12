@@ -1,10 +1,3 @@
-/*
- * OptionBuilder.h
- *
- *  Created on: 11.08.2013
- *      Author: Philipp Berger
- */
-
 #ifndef STORM_SETTINGS_OPTIONBUILDER_H_
 #define STORM_SETTINGS_OPTIONBUILDER_H_
 
@@ -14,124 +7,123 @@
 #include <vector>
 #include <memory>
 #include <unordered_set>
+#include <boost/algorithm/string.hpp>
 
-#include "ArgumentType.h"
-#include "ArgumentBase.h"
-#include "Option.h"
+#include "src/settings/ArgumentType.h"
+#include "src/settings/ArgumentBase.h"
+#include "src/settings/Option.h"
 
+#include "src/utility/macros.h"
 #include "src/exceptions/IllegalArgumentException.h"
 #include "src/exceptions/IllegalFunctionCallException.h"
 
 namespace storm {
 	namespace settings {
 
+        /*!
+         * This class provides the interface to create an option.
+         */
 		class OptionBuilder {
 		public:
-			OptionBuilder(std::string const& newOptionModuleName, std::string const& newOptionLongName, std::string const& newOptionShortName, std::string const& newOptionDescription): longName(newOptionLongName), shortName(newOptionShortName), description(newOptionDescription), moduleName(newOptionModuleName), isRequired(false), isBuild(false) {}
+            /*!
+             * Creates a new option builder for an option with the given module, name and description.
+             *
+             * @param moduleName The name of the module to which this option belongs.
+             * @param longName The long name of the option.
+             * @param requireModulePrefix Sets whether this option can only be set by specifying the module name as its prefix.
+             * @param description A description that explains the purpose of this option.
+             */
+			OptionBuilder(std::string const& moduleName, std::string const& longName, bool requireModulePrefix, std::string const& description) : longName(longName), shortName(""), hasShortName(false), description(description), moduleName(moduleName), requireModulePrefix(requireModulePrefix), isRequired(false), isBuild(false), arguments(), argumentNameSet() {
+                // Intentionally left empty.
+            }
 
-			~OptionBuilder() {}
-
-			OptionBuilder& setLongName(std::string const& newLongName) {
-				this->longName = newLongName;
-				
+            /*!
+             * Sets a short name for the option.
+             *
+             * @param shortName A short name for the option.
+             * @return A reference to the current builder.
+             */
+			OptionBuilder& setShortName(std::string const& shortName) {
+				this->shortName = shortName;
+                this->hasShortName = true;
 				return *this;
 			}
 
-			std::string const& getLongName() const {
-				return this->longName;
-			}
-
-			OptionBuilder& setShortName(std::string const& newShortName) {
-				this->shortName = newShortName;
-				
+            /*!
+             * Sets whether the option is required.
+             *
+             * @param isRequired A flag indicating whether the option is required.
+             * @return A reference to the current builder.
+             */
+			OptionBuilder& setIsRequired(bool isRequired) {
+				this->isRequired = isRequired;
 				return *this;
 			}
 
-			std::string const& getShortName() const {
-				return this->shortName;
-			}
+            /*!
+             * Adds the given argument to the arguments of this option.
+             *
+             * @param argument The argument to be added.
+             * @return A reference to the current builder.
+             */
+			OptionBuilder& addArgument(std::shared_ptr<ArgumentBase> argument) {
+                STORM_LOG_THROW(!this->isBuild, storm::exceptions::IllegalFunctionCallException, "Cannot add an argument to an option builder that was already used to build the option.");
+                STORM_LOG_THROW(this->arguments.empty() || argument->getIsOptional() || !this->arguments.back()->getIsOptional(), storm::exceptions::IllegalArgumentException, "Unable to add non-optional argument after an option that is optional.");
 
-			OptionBuilder& setDescription(std::string const& newDescription) {
-				this->description = newDescription;
-				
-				return *this;
-			}
+				std::string lowerArgumentName = boost::algorithm::to_lower_copy(argument->getName());
+                STORM_LOG_THROW(argumentNameSet.find(lowerArgumentName) == argumentNameSet.end(), storm::exceptions::IllegalArgumentException, "Unable to add argument to option, because it already has an argument with the same name.");
 
-			std::string const& getDescription() const {
-				return this->description;
-			}
-
-			OptionBuilder& setModuleName(std::string const& newModuleName) {
-				this->moduleName = newModuleName;
-				
-				return *this;
-			}
-
-			std::string const& getModuleName() const {
-				return this->moduleName;
-			}
-
-			OptionBuilder& setIsRequired(bool newIsRequired) {
-				this->isRequired = newIsRequired;
-				
-				return *this;
-			}
-
-			bool getIsRequired() const {
-				return this->isRequired;
-			}
-
-			OptionBuilder& addArgument(ArgumentBase* newArgument) {
-				// For automatic management of newArgument's lifetime
-				std::shared_ptr<ArgumentBase> argumentPtr(newArgument);
-				if (this->isBuild) {
-					LOG4CPLUS_ERROR(logger, "OptionBuilder::addArgument: Illegal call to addArgument() on an instance of OptionBuilder that has already built an instance.");
-					throw storm::exceptions::IllegalFunctionCallException() << "Illegal call to addArgument() on an instance of OptionBuilder that has already built an instance.";
-				}
-
-				if (newArgument->getArgumentType() == ArgumentType::Invalid) {
-					LOG4CPLUS_ERROR(logger, "OptionBuilder::addArgument: Unable to add argument to option \"" << getLongName() << "\" because its type is invalid.");
-					throw storm::exceptions::InternalTypeErrorException() << "Unable to add argument to option \"" << getLongName() << "\" because its type is invalid.";
-				}
-				
-				if (!newArgument->getIsOptional() && (this->arguments.size() > 0) && (this->arguments.at(this->arguments.size() - 1).get()->getIsOptional())) {
-					LOG4CPLUS_ERROR(logger, "OptionBuilder::addArgument: Unable to add a non-optional argument to option \"" << getLongName() << "\", because it already contains an optional argument.");
-					throw storm::exceptions::IllegalArgumentException() << "Unable to add non-optional argument to option \"" << getLongName() << "\", because it already contains an optional argument.";
-				}
-
-				std::string lowerArgumentName = storm::utility::StringHelper::stringToLower(newArgument->getArgumentName());
-				if (argumentNameSet.find(lowerArgumentName) != argumentNameSet.end()) {
-					LOG4CPLUS_ERROR(logger, "OptionBuilder::addArgument: Unable to add argument with name \"" << newArgument->getArgumentName() << "\" to option \"" << getLongName() << "\", because it already contains an argument with the same name.");
-					throw storm::exceptions::IllegalArgumentException() << "Unable to add argument with name \"" << newArgument->getArgumentName() << "\" to option \"" << getLongName() << "\", because it already contains an argument with the same name.";
-				}
 				argumentNameSet.insert(lowerArgumentName);
-
-				this->arguments.push_back(std::shared_ptr<ArgumentBase>(argumentPtr));
+				this->arguments.push_back(argument);
 
 				return *this;
 			}
 
-			Option* build() {
-				if (this->isBuild) {
-					LOG4CPLUS_ERROR(logger, "OptionBuilder::addArgument: Illegal call to build() on an instance of OptionBuilder that has already built an instance.");
-					throw storm::exceptions::IllegalFunctionCallException() << "Illegal call to build() on an instance of OptionBuilder that has already built an instance.";
-				}
-
+            /*!
+             * Builds an option from the data that was added to this builder.
+             *
+             * @return The resulting option.
+             */
+            std::shared_ptr<Option> build() {
+                STORM_LOG_THROW(!this->isBuild, storm::exceptions::IllegalFunctionCallException, "Cannot rebuild an option with one builder.")
 				this->isBuild = true;
 
-				return new storm::settings::Option(this->moduleName, this->longName, this->shortName, this->description, this->isRequired, this->arguments);
+                if (this->hasShortName) {
+                    return std::shared_ptr<Option>(new Option(this->moduleName, this->longName, this->shortName, this->description, this->isRequired, this->requireModulePrefix, this->arguments));
+                } else {
+                    return std::shared_ptr<Option>(new Option(this->moduleName, this->longName, this->description, this->isRequired, this->requireModulePrefix, this->arguments));
+                }
 			}
+            
 		private:
+            // The long name of the option.
 			std::string longName;
+            
+            // A possible short name of the option or the empty string in case the option does not have a short name.
 			std::string shortName;
+            
+            // A flag indicating whether the option has a short name.
+            bool hasShortName;
+            
+            // The description of the option.
 			std::string description;
+            
+            // The name of the module to which this option belongs.
 			std::string moduleName;
 
+            // A flag indicating whether the option has to be prefixed with the module name.
+            bool requireModulePrefix;
+            
+            // A flag indicating whether the option is required.
 			bool isRequired;
+            
+            // A flag indicating whether the builder has already been used to build an option.
 			bool isBuild;
 
+            // The arguments of the option that is being built.
 			std::vector<std::shared_ptr<ArgumentBase>> arguments;
 
+            // The names of the arguments of the option.
 			std::unordered_set<std::string> argumentNameSet;
 		};
 	}

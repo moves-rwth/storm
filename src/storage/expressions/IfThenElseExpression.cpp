@@ -1,6 +1,6 @@
 #include "src/storage/expressions/IfThenElseExpression.h"
 
-#include "src/exceptions/ExceptionMacros.h"
+#include "src/utility/macros.h"
 #include "src/exceptions/InvalidAccessException.h"
 
 namespace storm {
@@ -10,7 +10,7 @@ namespace storm {
         }
         
         std::shared_ptr<BaseExpression const> IfThenElseExpression::getOperand(uint_fast64_t operandIndex) const {
-            LOG_THROW(operandIndex < 3, storm::exceptions::InvalidAccessException, "Unable to access operand " << operandIndex << " in expression of arity 3.");
+            STORM_LOG_THROW(operandIndex < 3, storm::exceptions::InvalidAccessException, "Unable to access operand " << operandIndex << " in expression of arity 3.");
             if (operandIndex == 0) {
                 return this->getCondition();
             } else if (operandIndex == 1) {

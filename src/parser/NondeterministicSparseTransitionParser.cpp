@@ -10,7 +10,7 @@
 #include <string>
 
 #include "src/parser/MappedFile.h"
-#include "src/settings/Settings.h"
+#include "src/settings/SettingsManager.h"
 #include "src/exceptions/FileIoException.h"
 #include "src/exceptions/OutOfRangeException.h"
 #include "src/exceptions/WrongFormatException.h"
@@ -100,7 +100,7 @@ namespace storm {
 			// Initialize variables for the parsing run.
 			uint_fast64_t source = 0, target = 0, lastSource = 0, choice = 0, lastChoice = 0, curRow = 0;
 			double val = 0.0;
-			bool fixDeadlocks = storm::settings::Settings::getInstance()->isSet("fixDeadlocks");
+			bool dontFixDeadlocks = storm::settings::generalSettings().isDontFixDeadlocksSet();
 			bool hadDeadlocks = false;
 
 			// The first state already starts a new row group of the matrix.
@@ -145,7 +145,7 @@ namespace storm {
 					// Also begin a new rowGroup for the skipped state.
 					for (uint_fast64_t node = lastSource + 1; node < source; node++) {
 						hadDeadlocks = true;
-						if (fixDeadlocks) {
+						if (!dontFixDeadlocks) {
 							matrixBuilder.newRowGroup(curRow);
 							matrixBuilder.addNextValue(curRow, node, 1);
 							++curRow;
@@ -174,7 +174,7 @@ namespace storm {
 				buf = trimWhitespaces(buf);
 			}
 
-			if (!fixDeadlocks && hadDeadlocks && !isRewardFile) throw storm::exceptions::WrongFormatException() << "Some of the nodes had deadlocks. You can use --fixDeadlocks to insert self-loops on the fly.";
+			if (dontFixDeadlocks && hadDeadlocks && !isRewardFile) throw storm::exceptions::WrongFormatException() << "Some of the states do not have outgoing transitions.";
 
 			// Since we assume the transition rewards are for the transitions of the model, we copy the rowGroupIndices.
 			if(isRewardFile) {

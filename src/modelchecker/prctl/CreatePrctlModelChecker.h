@@ -13,20 +13,8 @@
  * @param dtmc A reference to the DTMC for which the model checker is to be created.
  * @return A pointer to the resulting model checker.
  */
-storm::modelchecker::prctl::AbstractModelChecker<double>* createPrctlModelChecker(storm::models::Dtmc<double> const & dtmc) {
-    // Create the appropriate model checker.
-	storm::settings::Settings* s = storm::settings::Settings::getInstance();
-	std::string const& linsolver = s->getOptionByLongName("linsolver").getArgument(0).getValueAsString();
-	if (linsolver == "gmm++") {
-		return new storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double>(dtmc, new storm::solver::GmmxxLinearEquationSolver<double>());
-	} else if (linsolver == "native") {
-		return new storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double>(dtmc, new storm::solver::NativeLinearEquationSolver<double>());
-    }
-    
-	// The control flow should never reach this point, as there is a default setting for matrixlib.
-	std::string message = "No matrix library suitable for DTMC model checking has been set.";
-	throw storm::exceptions::InvalidSettingsException() << message;
-	return nullptr;
+storm::modelchecker::prctl::AbstractModelChecker<double>* createPrctlModelChecker(storm::models::Dtmc<double> const& dtmc) {
+    return new storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double>(dtmc);
 }
 
 /*!

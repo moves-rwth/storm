@@ -1,7 +1,7 @@
 #include "src/storage/expressions/LinearCoefficientVisitor.h"
 
 #include "src/storage/expressions/Expressions.h"
-#include "src/exceptions/ExceptionMacros.h"
+#include "src/utility/macros.h"
 #include "src/exceptions/InvalidArgumentException.h"
 
 namespace storm {
@@ -12,11 +12,11 @@ namespace storm {
         }
         
         void LinearCoefficientVisitor::visit(IfThenElseExpression const* expression) {
-            LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression is non-linear.");
+            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression is non-linear.");
         }
         
         void LinearCoefficientVisitor::visit(BinaryBooleanFunctionExpression const* expression) {
-            LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression is non-linear.");
+            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression is non-linear.");
         }
         
         void LinearCoefficientVisitor::visit(BinaryNumericalFunctionExpression const* expression) {
@@ -67,7 +67,7 @@ namespace storm {
                 std::pair<SimpleValuation, double>& rightResult = resultStack.top();
                 
                 // If the expression is linear, either the left or the right side must not contain variables.
-                LOG_THROW(leftResult.first.getNumberOfIdentifiers() == 0 || rightResult.first.getNumberOfIdentifiers() == 0, storm::exceptions::InvalidArgumentException, "Expression is non-linear.");
+                STORM_LOG_THROW(leftResult.first.getNumberOfIdentifiers() == 0 || rightResult.first.getNumberOfIdentifiers() == 0, storm::exceptions::InvalidArgumentException, "Expression is non-linear.");
                 if (leftResult.first.getNumberOfIdentifiers() == 0) {
                     for (auto const& identifier : rightResult.first.getDoubleIdentifiers()) {
                         rightResult.first.setDoubleValue(identifier, leftResult.second * rightResult.first.getDoubleValue(identifier));
@@ -87,7 +87,7 @@ namespace storm {
                 std::pair<SimpleValuation, double>& rightResult = resultStack.top();
                 
                 // If the expression is linear, either the left or the right side must not contain variables.
-                LOG_THROW(leftResult.first.getNumberOfIdentifiers() == 0 || rightResult.first.getNumberOfIdentifiers() == 0, storm::exceptions::InvalidArgumentException, "Expression is non-linear.");
+                STORM_LOG_THROW(leftResult.first.getNumberOfIdentifiers() == 0 || rightResult.first.getNumberOfIdentifiers() == 0, storm::exceptions::InvalidArgumentException, "Expression is non-linear.");
                 if (leftResult.first.getNumberOfIdentifiers() == 0) {
                     for (auto const& identifier : rightResult.first.getDoubleIdentifiers()) {
                         rightResult.first.setDoubleValue(identifier, leftResult.second / rightResult.first.getDoubleValue(identifier));
@@ -100,28 +100,28 @@ namespace storm {
                 rightResult.second = leftResult.second / leftResult.second;
                 return;
             } else {
-                LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression is non-linear.");
+                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression is non-linear.");
             }
         }
         
         void LinearCoefficientVisitor::visit(BinaryRelationExpression const* expression) {
-            LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression is non-linear.");
+            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression is non-linear.");
         }
         
         void LinearCoefficientVisitor::visit(VariableExpression const* expression) {
             SimpleValuation valuation;
             switch (expression->getReturnType()) {
-                case ExpressionReturnType::Bool: LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression is non-linear."); break;
+                case ExpressionReturnType::Bool: STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression is non-linear."); break;
                 case ExpressionReturnType::Int:
                 case ExpressionReturnType::Double: valuation.addDoubleIdentifier(expression->getVariableName(), 1); break;
-                case ExpressionReturnType::Undefined: LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Illegal expression return type."); break;
+                case ExpressionReturnType::Undefined: STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Illegal expression return type."); break;
             }
             
             resultStack.push(std::make_pair(valuation, 0));
         }
         
         void LinearCoefficientVisitor::visit(UnaryBooleanFunctionExpression const* expression) {
-            LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression is non-linear.");
+            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression is non-linear.");
         }
         
         void LinearCoefficientVisitor::visit(UnaryNumericalFunctionExpression const* expression) {
@@ -132,12 +132,12 @@ namespace storm {
                     valuationConstantPair.first.setDoubleValue(identifier, -valuationConstantPair.first.getDoubleValue(identifier));
                 }
             } else {
-                LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression is non-linear.");
+                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression is non-linear.");
             }
         }
         
         void LinearCoefficientVisitor::visit(BooleanLiteralExpression const* expression) {
-            LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression is non-linear.");
+            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression is non-linear.");
         }
         
         void LinearCoefficientVisitor::visit(IntegerLiteralExpression const* expression) {

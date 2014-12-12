@@ -3,111 +3,169 @@
 
 #include <iostream>
 #include <string>
+#include <boost/algorithm/string.hpp>
 
-#include "ArgumentType.h"
-#include "src/utility/StringHelper.h"
-
-#include "log4cplus/logger.h"
-#include "log4cplus/loggingmacros.h"
-extern log4cplus::Logger logger;
+#include "src/settings/ArgumentType.h"
 
 namespace storm {
 	namespace settings {
 
-		typedef std::pair<bool, std::string> assignmentResult_t;
-
+        /*!
+         * This class serves as the (untemplated) base class of argument classes.
+         */
 		class ArgumentBase {
 		public:
-			ArgumentBase(std::string const& argumentName, std::string const& argumentDescription, bool isOptional) : isOptional(isOptional), hasBeenSet(false), argumentName(argumentName), argumentDescription(argumentDescription) {}
-			virtual ~ArgumentBase() {
-				//LOG4CPLUS_DEBUG(logger, "ArgumentBase::~ArgumentBase: Destructing ArgumentBase \"" << this->getArgumentName() << "\"");
-			}
-			virtual ArgumentType getArgumentType() const = 0;
+            /*!
+             * Constructs a new argument base with the given name, description and indication whether the argument is
+             * optional.
+             *
+             * @param name The name of the argument.
+             * @param description A description of the argument.
+             * @param isOptional A flag indicating whether the argument is optional.
+             */
+			ArgumentBase(std::string const& name, std::string const& description) : hasBeenSet(false), name(name), description(description) {
+                // Intentionally left empty.
+            }
+            
+            /*!
+             * Retrieves the type of the argument.
+             *
+             * @return The type of the argument.
+             */
+			virtual ArgumentType getType() const = 0;
 
-			virtual bool getIsOptional() const {
-				return this->isOptional;
+            /*!
+             * Retrieves whether the argument is optional.
+             *
+             * @return True iff the argument is optional.
+             */
+			virtual bool getIsOptional() const = 0;
+
+            /*!
+             * Retrieves the name of the argument.
+             *
+             * @return The name of the argument.
+             */
+			std::string const& getName() const {
+				return this->name;
 			}
 
-			std::string const& getArgumentName() const {
-				return this->argumentName;
+            /*!
+             * Retrieves the description of the argument.
+             *
+             * @return The description of the argument.
+             */
+			std::string const& getDescription() const {
+				return this->description;
 			}
 
-			std::string const& getArgumentDescription() const {
-				return this->argumentDescription;
-			}
-
+            /*!
+             * Retrieves whether the argument has a default value.
+             *
+             * @return True iff the argument has a default value.
+             */
 			virtual bool getHasDefaultValue() const = 0;
+            
+            /*!
+             * Retrieves whether the argument has been set.
+             *
+             * @return True iff the argument has been set.
+             */
 			virtual bool getHasBeenSet() const {
 				return this->hasBeenSet;
 			}
 
+            /*!
+             * Sets the value of the argument from the default value.
+             */
 			virtual void setFromDefaultValue() = 0;
-			virtual assignmentResult_t fromStringValue(std::string const& fromStringValue) = 0;
-			virtual ArgumentBase* clone() const = 0;
 
+            /*!
+             * Tries to set the value of the argument from the given string.
+             *
+             * @param stringValue The new value of the argument given as a string.
+             * @return True iff the assignment was successful.
+             */
+			virtual bool setFromStringValue(std::string const& stringValue) = 0;
+
+            /*!
+             * Retrieves the value of this argument as a string.
+             *
+             * @return The value of this argument as a string.
+             */
 			virtual std::string getValueAsString() const = 0;
+            
+            /*!
+             * Retrieves the value of this argument as an integer. If the conversion cannot be performed, an exception
+             * is thrown.
+             *
+             * @return The value of this argument as an integer.
+             */
 			virtual int_fast64_t getValueAsInteger() const = 0;
+            
+            /*!
+             * Retrieves the value of this argument as an unsigned integer. If the conversion cannot be performed, an
+             * exception is thrown.
+             *
+             * @return The value of this argument as an unsigned integer.
+             */
 			virtual uint_fast64_t getValueAsUnsignedInteger() const = 0;
+
+            /*!
+             * Retrieves the value of this argument as a double. If the conversion cannot be performed, an exception
+             * is thrown.
+             *
+             * @return The value of this argument as an double.
+             */
 			virtual double getValueAsDouble() const = 0;
+            
+            /*!
+             * Retrieves the value of this argument as a boolean. If the conversion cannot be performed, an exception
+             * is thrown.
+             *
+             * @return The value of this argument as an boolean.
+             */
 			virtual bool getValueAsBoolean() const = 0;
-		protected:
-			bool isOptional;
+            
+            /*!
+             * Retrieves the (print) length of the argument.
+             *
+             * @return The length of the argument.
+             */
+            uint_fast64_t getPrintLength() const;
+            
+            friend std::ostream& operator<<(std::ostream& out, ArgumentBase const& argument);
+            
+		protected:            
+            // A flag indicating whether the argument has been set.
 			bool hasBeenSet;
 
-			std::string argumentName;
-			std::string argumentDescription;
+            // The name of the argument.
+			std::string name;
+            
+            // The description of the argument.
+			std::string description;
 
-			class ArgumentHelper {
-			public:
-				template <typename S>
-				static S convertFromString(std::string const& s, bool* ok = nullptr);
-			private:
-				ArgumentHelper() {}
-				ArgumentHelper(ArgumentHelper& other) {}
-				~ArgumentHelper() {}
-			};
+            /*!
+             * Converts the given value represented as a string to the type of the template parameter. The second
+             * is used to signal that the conversion was successful (or not).
+             *
+             * @param valueAsString The value to convert.
+             * @param conversionSuccessful After a call to this function returned, the supplied boolean indicates
+             * whether the conversion was successful.
+             */
+            template <typename TargetType>
+            static TargetType convertFromString(std::string const& valueAsString, bool& conversionSuccessful);
+            
+            /*!
+             * Converts the given value to a string representation.
+             *
+             * @param value The value to convert.
+             * @return The string representation of the value.
+             */
+            template <typename ValueType>
+            static std::string convertToString(ValueType const& value);
 		};
-
-		template <typename S> S ArgumentBase::ArgumentHelper::convertFromString(std::string const& s, bool* ok) {
-			std::istringstream stream(s);
-			S t;
-			if (ok != nullptr) {
-				*ok = (stream >> t) && (stream >> std::ws).eof();
-			} else {
-				stream >> t;
-			}
-			return t;
-		}
-
-		template <> inline bool ArgumentBase::ArgumentHelper::convertFromString<bool>(std::string const& s, bool* ok) {
-			static const std::string lowerTrueString = "true";
-			static const std::string lowerFalseString = "false";
-			static const std::string lowerYesString = "yes";
-			static const std::string lowerNoString = "no";
-
-			std::string lowerInput = storm::utility::StringHelper::stringToLower(s);
-
-			if (s.compare(lowerTrueString) == 0 || s.compare(lowerYesString) == 0) {
-				if (ok != nullptr) {
-					*ok = true;
-				}
-				return true;
-			} else if (s.compare(lowerFalseString) == 0 || s.compare(lowerNoString) == 0) {
-				if (ok != nullptr) {
-					*ok = true;
-				}
-				return false;
-			}
-
-			std::istringstream stream(s);
-			bool t;
-			if (ok != nullptr) {
-				*ok = (stream >> t) && (stream >> std::ws).eof();
-			} else {
-				stream >> t;
-			}
-			return t;
-		}
 	}
 }
 

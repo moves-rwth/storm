@@ -1,216 +1,207 @@
-/*
- * And.h
- *
- *  Created on: 19.10.2012
- *      Author: Thomas Heinemann
- */
-
-#ifndef STORM_FORMULA_LTL_AND_H_
-#define STORM_FORMULA_LTL_AND_H_
+#ifndef STORM_PROPERTIES_LTL_AND_H_
+#define STORM_PROPERTIES_LTL_AND_H_
 
 #include "AbstractLtlFormula.h"
 #include "src/modelchecker/ltl/ForwardDeclarations.h"
 #include <string>
 
 namespace storm {
-namespace properties {
-namespace ltl {
+	namespace properties {
+		namespace ltl {
 
-// Forward declaration for the interface class.
-template <class T> class And;
+			// Forward declaration for the interface class.
+			template <class T> class And;
 
-/*!
- * Interface class for model checkers that support And.
- *
- * All model checkers that support the formula class And must inherit
- * this pure virtual class.
- */
-template <class T>
-class IAndModelChecker {
-	public:
+			/*!
+			 * Interface class for model checkers that support And.
+			 *
+			 * All model checkers that support the formula class And must inherit
+			 * this pure virtual class.
+			 */
+			template <class T>
+			class IAndModelChecker {
+				public:
 
-		/*!
-		 * Empty virtual destructor.
-		 */
-		virtual ~IAndModelChecker() {
-			// Intentionally left empty
-		}
+					/*!
+					 * Empty virtual destructor.
+					 */
+					virtual ~IAndModelChecker() {
+						// Intentionally left empty
+					}
 
-		/*!
-		 *	@brief Evaluates And formula within a model checker.
-		 *
-		 *	@param obj Formula object with subformulas.
-		 *	@return Result of the formula for every node.
-		 */
-		virtual std::vector<T> checkAnd(const And<T>& obj) const = 0;
-};
+					/*!
+					 *	@brief Evaluates And formula within a model checker.
+					 *
+					 *	@param obj Formula object with subformulas.
+					 *	@return Result of the formula for every node.
+					 */
+					virtual std::vector<T> checkAnd(And<T> const & obj) const = 0;
+			};
 
-/*!
- * Class for an Ltl formula tree with And node as root.
- *
- * Has two Ltl formulas as sub formulas/trees.
- *
- * As And is commutative, the order is \e theoretically not important, but will influence the order in which
- * the model checker works.
- *
- * The object has shared ownership of its subtrees. If this object is deleted and no other object has a shared
- * ownership of the subtrees they will be deleted as well.
- *
- * @see AbstractLtlFormula
- */
-template <class T>
-class And : public AbstractLtlFormula<T> {
+			/*!
+			 * Class for an Ltl formula tree with And node as root.
+			 *
+			 * Has two Ltl formulas as sub formulas/trees.
+			 *
+			 * As And is commutative, the order is \e theoretically not important, but will influence the order in which
+			 * the model checker works.
+			 *
+			 * The object has shared ownership of its subtrees. If this object is deleted and no other object has a shared
+			 * ownership of the subtrees they will be deleted as well.
+			 *
+			 * @see AbstractLtlFormula
+			 */
+			template <class T>
+			class And : public AbstractLtlFormula<T> {
 
-public:
+			public:
 
-	/*!
-	 * Creates an And node without subnodes.
-	 * The resulting object will not represent a complete formula!
-	 */
-	And() : left(nullptr), right(nullptr){
-		// Intentionally left empty.
-	}
+				/*!
+				 * Creates an And node without subnodes.
+				 * The resulting object will not represent a complete formula!
+				 */
+				And() : left(nullptr), right(nullptr){
+					// Intentionally left empty.
+				}
 
-	/*!
-	 * Creates an And node with the parameters as subtrees.
-	 *
-	 * @param left The left sub formula.
-	 * @param right The right sub formula.
-	 */
-	And(std::shared_ptr<AbstractLtlFormula<T>> left, std::shared_ptr<AbstractLtlFormula<T>> right) : left(left), right(right) {
-		// Intentionally left empty.
-	}
+				/*!
+				 * Creates an And node with the parameters as subtrees.
+				 *
+				 * @param left The left sub formula.
+				 * @param right The right sub formula.
+				 */
+				And(std::shared_ptr<AbstractLtlFormula<T>> left, std::shared_ptr<AbstractLtlFormula<T>> right) : left(left), right(right) {
+					// Intentionally left empty.
+				}
 
-	/*!
-	 * Empty virtual destructor.
-	 */
-	virtual ~And() {
-		// Intentionally left empty.
-	}
+				/*!
+				 * Empty virtual destructor.
+				 */
+				virtual ~And() {
+					// Intentionally left empty.
+				}
 
-	/*!
-	 * Clones the called object.
-	 *
-	 * Performs a "deep copy", i.e. the subtrees of the new object are clones of the original ones.
-	 *
-	 * @returns A new And object that is a deep copy of the called object.
-	 */
-	virtual std::shared_ptr<AbstractLtlFormula<T>> clone() const override {
-		std::shared_ptr<And<T>> result(new And());
-		if (this->isLeftSet()) {
-		  result->setLeft(left->clone());
-		}
-		if (this->isRightSet()) {
-		  result->setRight(right->clone());
-		}
-		return result;
-	}
+				/*!
+				 * Clones the called object.
+				 *
+				 * Performs a "deep copy", i.e. the subtrees of the new object are clones of the original ones.
+				 *
+				 * @returns A new And object that is a deep copy of the called object.
+				 */
+				virtual std::shared_ptr<AbstractLtlFormula<T>> clone() const override {
+					auto result = std::make_shared<And<T>>();
+					if (this->isLeftSet()) {
+					  result->setLeft(left->clone());
+					}
+					if (this->isRightSet()) {
+					  result->setRight(right->clone());
+					}
+					return result;
+				}
 
-	/*!
-	 * Calls the model checker to check this formula.
-	 * Needed to infer the correct type of formula class.
-	 *
-	 * @note This function should only be called in a generic check function of a model checker class. For other uses,
-	 *       the methods of the model checker should be used.
-	 *
-	 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
-	 */
-	virtual std::vector<T> check(const storm::modelchecker::ltl::AbstractModelChecker<T>& modelChecker) const override {
-		return modelChecker.template as<IAndModelChecker>()->checkAnd(*this);
-	}
+				/*!
+				 * Calls the model checker to check this formula.
+				 * Needed to infer the correct type of formula class.
+				 *
+				 * @note This function should only be called in a generic check function of a model checker class. For other uses,
+				 *       the methods of the model checker should be used.
+				 *
+				 * @returns A bit vector indicating all states that satisfy the formula represented by the called object.
+				 */
+				virtual std::vector<T> check(storm::modelchecker::ltl::AbstractModelChecker<T> const & modelChecker) const override {
+					return modelChecker.template as<IAndModelChecker>()->checkAnd(*this);
+				}
 
-	/*!
-	 * Returns a textual representation of the formula tree with this node as root.
-	 *
-	 * @returns A string representing the formula tree.
-	 */
-	virtual std::string toString() const override {
-		std::string result = "(";
-		result += left->toString();
-		result += " & ";
-		result += right->toString();
-		result += ")";
-		return result;
-	}
+				/*!
+				 * Returns a textual representation of the formula tree with this node as root.
+				 *
+				 * @returns A string representing the formula tree.
+				 */
+				virtual std::string toString() const override {
+					std::string result = "(";
+					result += left->toString();
+					result += " & ";
+					result += right->toString();
+					result += ")";
+					return result;
+				}
 
-	/*!
-	 * Returns whether the formula is a propositional logic formula.
-	 * That is, this formula and all its subformulas consist only of And, Or, Not and AP.
-	 *
-	 * @return True iff this is a propositional logic formula.
-	 */
-	virtual bool isPropositional() const override {
-		return left->isPropositional() && right->isPropositional();
-	}
+				/*!
+				 * Returns whether the formula is a propositional logic formula.
+				 * That is, this formula and all its subformulas consist only of And, Or, Not and AP.
+				 *
+				 * @return True iff this is a propositional logic formula.
+				 */
+				virtual bool isPropositional() const override {
+					return left->isPropositional() && right->isPropositional();
+				}
 
-	/*!
-	 * Gets the left child node.
-	 *
-	 * @returns The left child node.
-	 */
-	std::shared_ptr<AbstractLtlFormula<T>> const & getLeft() const {
-		return left;
-	}
+				/*!
+				 * Gets the left child node.
+				 *
+				 * @returns The left child node.
+				 */
+				std::shared_ptr<AbstractLtlFormula<T>> const & getLeft() const {
+					return left;
+				}
 
-	/*!
-	 * Gets the right child node.
-	 *
-	 * @returns The right child node.
-	 */
-	std::shared_ptr<AbstractLtlFormula<T>> const & getRight() const {
-		return right;
-	}
+				/*!
+				 * Gets the right child node.
+				 *
+				 * @returns The right child node.
+				 */
+				std::shared_ptr<AbstractLtlFormula<T>> const & getRight() const {
+					return right;
+				}
 
-	/*!
-	 * Sets the left child node.
-	 *
-	 * @param newLeft The new left child.
-	 */
-	void setLeft(std::shared_ptr<AbstractLtlFormula<T>> const & newLeft) {
-		left = newLeft;
-	}
+				/*!
+				 * Sets the left child node.
+				 *
+				 * @param newLeft The new left child.
+				 */
+				void setLeft(std::shared_ptr<AbstractLtlFormula<T>> const & newLeft) {
+					left = newLeft;
+				}
 
-	/*!
-	 * Sets the right child node.
-	 *
-	 * @param newRight The new right child.
-	 */
-	void setRight(std::shared_ptr<AbstractLtlFormula<T>> const & newRight) {
-		right = newRight;
-	}
+				/*!
+				 * Sets the right child node.
+				 *
+				 * @param newRight The new right child.
+				 */
+				void setRight(std::shared_ptr<AbstractLtlFormula<T>> const & newRight) {
+					right = newRight;
+				}
 
-	/*!
-	 * Checks if the left child is set, i.e. it does not point to null.
-	 *
-	 * @return True iff the left child is set.
-	 */
-	bool isLeftSet() const {
-		return left.get() != nullptr;
-	}
+				/*!
+				 * Checks if the left child is set, i.e. it does not point to null.
+				 *
+				 * @return True iff the left child is set.
+				 */
+				bool isLeftSet() const {
+					return left.get() != nullptr;
+				}
 
-	/*!
-	 * Checks if the right child is set, i.e. it does not point to null.
-	 *
-	 * @return True iff the right child is set.
-	 */
-	bool isRightSet() const {
-		return right.get() != nullptr;
-	}
+				/*!
+				 * Checks if the right child is set, i.e. it does not point to null.
+				 *
+				 * @return True iff the right child is set.
+				 */
+				bool isRightSet() const {
+					return right.get() != nullptr;
+				}
 
-private:
+			private:
 
-	// The left child node.
-	std::shared_ptr<AbstractLtlFormula<T>> left;
+				// The left child node.
+				std::shared_ptr<AbstractLtlFormula<T>> left;
 
-	// The right child node.
-	std::shared_ptr<AbstractLtlFormula<T>> right;
+				// The right child node.
+				std::shared_ptr<AbstractLtlFormula<T>> right;
 
-};
+			};
 
-} //namespace ltl
+		} // namespace ltl
+	} // namespace properties
+} // namespace storm
 
-} //namespace properties
-
-} //namespace storm
-
-#endif /* STORM_FORMULA_LTL_AND_H_ */
+#endif /* STORM_PROPERTIES_LTL_AND_H_ */

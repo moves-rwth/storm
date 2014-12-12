@@ -17,9 +17,10 @@
 #include "AtomicPropositionsLabeling.h"
 #include "src/storage/SparseMatrix.h"
 #include "src/exceptions/InvalidArgumentException.h"
-#include "src/settings/Settings.h"
+#include "src/settings/SettingsManager.h"
 #include "src/utility/vector.h"
 #include "src/utility/matrix.h"
+#include "src/utility/ConstantsComparator.h"
 
 namespace storm {
 
@@ -45,8 +46,9 @@ public:
 	 * @param optionalChoiceLabeling A vector that represents the labels associated with the choices of each state.
 	 */
 	Dtmc(storm::storage::SparseMatrix<T> const& probabilityMatrix, storm::models::AtomicPropositionsLabeling const& stateLabeling,
-				boost::optional<std::vector<T>> const& optionalStateRewardVector, boost::optional<storm::storage::SparseMatrix<T>> const& optionalTransitionRewardMatrix,
-                boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> const& optionalChoiceLabeling)
+				boost::optional<std::vector<T>> const& optionalStateRewardVector = boost::optional<std::vector<T>>(),
+                boost::optional<storm::storage::SparseMatrix<T>> const& optionalTransitionRewardMatrix = boost::optional<storm::storage::SparseMatrix<T>>(),
+                boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> const& optionalChoiceLabeling = boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>())
 			: AbstractDeterministicModel<T>(probabilityMatrix, stateLabeling, optionalStateRewardVector, optionalTransitionRewardMatrix, optionalChoiceLabeling) {
 		if (!this->checkValidityOfProbabilityMatrix()) {
 			LOG4CPLUS_ERROR(logger, "Probability matrix is invalid.");
@@ -72,8 +74,9 @@ public:
 	 * @param optionalChoiceLabeling A vector that represents the labels associated with the choices of each state.
 	 */
 	Dtmc(storm::storage::SparseMatrix<T>&& probabilityMatrix, storm::models::AtomicPropositionsLabeling&& stateLabeling,
-				boost::optional<std::vector<T>>&& optionalStateRewardVector, boost::optional<storm::storage::SparseMatrix<T>>&& optionalTransitionRewardMatrix,
-                boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>&& optionalChoiceLabeling)
+				boost::optional<std::vector<T>>&& optionalStateRewardVector = boost::optional<std::vector<T>>(),
+                boost::optional<storm::storage::SparseMatrix<T>>&& optionalTransitionRewardMatrix = boost::optional<storm::storage::SparseMatrix<T>>(),
+                boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>&& optionalChoiceLabeling = boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>())
 				// The std::move call must be repeated here because otherwise this calls the copy constructor of the Base Class
 			: AbstractDeterministicModel<T>(std::move(probabilityMatrix), std::move(stateLabeling), std::move(optionalStateRewardVector), std::move(optionalTransitionRewardMatrix),
                                             std::move(optionalChoiceLabeling)) {
@@ -297,23 +300,26 @@ private:
 	 *	Checks probability matrix if all rows sum up to one.
 	 */
 	bool checkValidityOfProbabilityMatrix() {
-		// Get the settings object to customize linear solving.
-		storm::settings::Settings* s = storm::settings::Settings::getInstance();
-		double precision = s->getOptionByLongName("precision").getArgument(0).getValueAsDouble();
-
 		if (this->getTransitionMatrix().getRowCount() != this->getTransitionMatrix().getColumnCount()) {
 			// not square
 			LOG4CPLUS_ERROR(logger, "Probability matrix is not square.");
 			return false;
 		}
 
+        storm::utility::ConstantsComparator<T> comparator;
 		for (uint_fast64_t row = 0; row < this->getTransitionMatrix().getRowCount(); ++row) {
 			T sum = this->getTransitionMatrix().getRowSum(row);
-                        
-			if (sum == 0) {
+            
+            // If the sum is not a constant, for example for parametric models, we cannot check whether the sum is one
+            // or not.
+            if (!comparator.isConstant(sum)) {
+                continue;
+            }
+            
+			if (comparator.isZero(sum)) {
 				return false;
 			}
-			if (std::abs(sum - 1) > precision) {
+			if (!comparator.isOne(sum)) {
 				LOG4CPLUS_ERROR(logger, "Row " << row << " has sum " << sum << ".");
 				return false;
 			}

@@ -1,5 +1,5 @@
 #include "src/storage/prism/Module.h"
-#include "src/exceptions/ExceptionMacros.h"
+#include "src/utility/macros.h"
 #include "src/exceptions/OutOfRangeException.h"
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/exceptions/InvalidAccessException.h"
@@ -25,7 +25,7 @@ namespace storm {
         
         storm::prism::BooleanVariable const& Module::getBooleanVariable(std::string const& variableName) const {
             auto const& nameIndexPair = this->booleanVariableToIndexMap.find(variableName);
-            LOG_THROW(nameIndexPair != this->booleanVariableToIndexMap.end(), storm::exceptions::InvalidArgumentException, "Unknown boolean variable '" << variableName << "'.");
+            STORM_LOG_THROW(nameIndexPair != this->booleanVariableToIndexMap.end(), storm::exceptions::InvalidArgumentException, "Unknown boolean variable '" << variableName << "'.");
             return this->getBooleanVariables()[nameIndexPair->second];
         }
         
@@ -35,7 +35,7 @@ namespace storm {
 
         storm::prism::IntegerVariable const& Module::getIntegerVariable(std::string const& variableName) const {
             auto const& nameIndexPair = this->integerVariableToIndexMap.find(variableName);
-            LOG_THROW(nameIndexPair != this->integerVariableToIndexMap.end(), storm::exceptions::InvalidArgumentException, "Unknown integer variable '" << variableName << "'.");
+            STORM_LOG_THROW(nameIndexPair != this->integerVariableToIndexMap.end(), storm::exceptions::InvalidArgumentException, "Unknown integer variable '" << variableName << "'.");
             return this->getIntegerVariables()[nameIndexPair->second];
         }
         
@@ -81,12 +81,12 @@ namespace storm {
         }
         
         std::string const& Module::getBaseModule() const {
-            LOG_THROW(this->isRenamedFromModule(), storm::exceptions::InvalidAccessException, "Unable to retrieve base module of module that was not created by renaming.");
+            STORM_LOG_THROW(this->isRenamedFromModule(), storm::exceptions::InvalidAccessException, "Unable to retrieve base module of module that was not created by renaming.");
             return this->renamedFromModule;
         }
         
         std::map<std::string, std::string> const& Module::getRenaming() const {
-            LOG_THROW(this->isRenamedFromModule(), storm::exceptions::InvalidAccessException, "Unable to retrieve renaming of module that was not created by renaming.");
+            STORM_LOG_THROW(this->isRenamedFromModule(), storm::exceptions::InvalidAccessException, "Unable to retrieve renaming of module that was not created by renaming.");
             return this->renaming;
         }
         
@@ -96,7 +96,7 @@ namespace storm {
                 return actionsCommandSetPair->second;
             }
             
-            LOG_THROW(false, storm::exceptions::OutOfRangeException, "Action name '" << action << "' does not exist in module.");
+            STORM_LOG_THROW(false, storm::exceptions::OutOfRangeException, "Action name '" << action << "' does not exist in module.");
         }
         
         void Module::createMappings() {

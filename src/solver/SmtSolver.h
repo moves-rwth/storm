@@ -15,6 +15,7 @@
 #include <unordered_set>
 #include <initializer_list>
 #include <functional>
+#include <vector>
 
 namespace storm {
 	namespace solver {

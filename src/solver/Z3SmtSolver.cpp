@@ -15,7 +15,7 @@ namespace storm {
 			z3::expr z3ExprValuation = m_model.eval(z3Expr, true);
 			return this->m_adapter.translateExpression(z3ExprValuation).evaluateAsBool();
 #else
-			LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without Z3 support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without Z3 support.");
 #endif
 		}
 
@@ -25,7 +25,7 @@ namespace storm {
 			z3::expr z3ExprValuation = m_model.eval(z3Expr, true);
 			return this->m_adapter.translateExpression(z3ExprValuation).evaluateAsInt();
 #else
-			LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without Z3 support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without Z3 support.");
 #endif
 		}
 
@@ -47,7 +47,7 @@ namespace storm {
 #ifdef STORM_HAVE_Z3
 			this->m_solver.push();
 #else
-			LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without Z3 support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without Z3 support.");
 #endif
 		}
 
@@ -56,7 +56,7 @@ namespace storm {
 #ifdef STORM_HAVE_Z3
 			this->m_solver.pop();
 #else
-			LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without Z3 support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without Z3 support.");
 #endif
 		}
 
@@ -65,7 +65,7 @@ namespace storm {
 #ifdef STORM_HAVE_Z3
 			this->m_solver.pop((unsigned int)n);
 #else
-			LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without Z3 support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without Z3 support.");
 #endif
 		}
 
@@ -74,7 +74,7 @@ namespace storm {
 #ifdef STORM_HAVE_Z3
 			this->m_solver.reset();
 #else
-			LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without Z3 support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without Z3 support.");
 #endif
 		}
 
@@ -83,7 +83,7 @@ namespace storm {
 #ifdef STORM_HAVE_Z3
 			this->m_solver.add(m_adapter.translateExpression(e, true));
 #else
-			LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without Z3 support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without Z3 support.");
 #endif
 		}
 
@@ -104,7 +104,7 @@ namespace storm {
 			}
 			return this->lastResult;
 #else
-			LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without Z3 support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without Z3 support.");
 #endif
 		}
 
@@ -131,7 +131,7 @@ namespace storm {
 			}
 			return this->lastResult;
 #else
-			LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without Z3 support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without Z3 support.");
 #endif
 		}
 
@@ -158,7 +158,7 @@ namespace storm {
 			}
 			return this->lastResult;
 #else
-			LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without Z3 support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without Z3 support.");
 #endif
 		}
 
@@ -166,11 +166,11 @@ namespace storm {
 		{
 #ifdef STORM_HAVE_Z3
 			
-			LOG_THROW(this->lastResult == SmtSolver::CheckResult::SAT, storm::exceptions::InvalidStateException, "Requested Model but last check result was not SAT.");
+			STORM_LOG_THROW(this->lastResult == SmtSolver::CheckResult::SAT, storm::exceptions::InvalidStateException, "Requested Model but last check result was not SAT.");
 
 			return this->z3ModelToStorm(this->m_solver.get_model());
 #else
-			LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without Z3 support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without Z3 support.");
 #endif
 		}
 
@@ -193,7 +193,7 @@ namespace storm {
 						stormModel.addDoubleIdentifier(var_i.name().str(), var_i_interp.evaluateAsDouble());
 						break;
 					default:
-						LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Variable interpretation in model is not of type bool, int or double.")
+						STORM_LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Variable interpretation in model is not of type bool, int or double.")
 							break;
 				}
 
@@ -214,7 +214,7 @@ namespace storm {
 			return valuations;
 
 #else
-			LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without Z3 support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without Z3 support.");
 #endif
 		}
 
@@ -263,7 +263,7 @@ namespace storm {
 
 			return numModels;
 #else
-			LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without Z3 support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without Z3 support.");
 #endif
 		}
 
@@ -294,7 +294,8 @@ namespace storm {
 					modelExpr = modelExpr && (z3ImportantAtom == z3ImportantAtomValuation);
 				}
 
-				proceed = callback(Z3ModelReference(m, m_adapter));
+				Z3ModelReference modelRef(m, m_adapter);
+				proceed = callback(modelRef);
 
 				this->m_solver.add(!modelExpr);
 			}
@@ -303,7 +304,7 @@ namespace storm {
 
 			return numModels;
 #else
-			LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without Z3 support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without Z3 support.");
 #endif
 		}
 
@@ -326,7 +327,7 @@ namespace storm {
 
 			return unsatAssumptions;
 #else
-			LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without Z3 support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without Z3 support.");
 #endif
 		}
 	}

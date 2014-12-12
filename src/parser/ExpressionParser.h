@@ -1,9 +1,11 @@
 #ifndef STORM_PARSER_EXPRESSIONPARSER_H_
 #define	STORM_PARSER_EXPRESSIONPARSER_H_
 
+#include <sstream>
+
 #include "src/parser/SpiritParserDefinitions.h"
 #include "src/storage/expressions/Expression.h"
-#include "src/exceptions/ExceptionMacros.h"
+#include "src/utility/macros.h"
 #include "src/exceptions/WrongFormatException.h"
 
 namespace storm {
@@ -223,7 +225,9 @@ namespace storm {
                 
                 template<typename T1, typename T2, typename T3, typename T4>
                 qi::error_handler_result operator()(T1 b, T2 e, T3 where, T4 const& what) const {
-                    LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(where) << ": " << " expecting " << what << ".");
+                    std::stringstream whatAsString;
+                    whatAsString << what;
+                    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(where) << ": " << " expecting " << whatAsString.str() << ".");
                     return qi::fail;
                 }
             };

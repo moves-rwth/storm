@@ -10,6 +10,10 @@ namespace storm {
             return this->rewardModelName;
         }
         
+        bool RewardModel::empty() const {
+            return !this->hasStateRewards() && !this->hasTransitionRewards();
+        }
+        
         bool RewardModel::hasStateRewards() const {
             return this->stateRewards.size() > 0;
         }
@@ -42,7 +46,11 @@ namespace storm {
         }
         
         std::ostream& operator<<(std::ostream& stream, RewardModel const& rewardModel) {
-            stream << "rewards \"" << rewardModel.getName() << "\"" << std::endl;
+            stream << "rewards";
+            if (rewardModel.getName() != "") {
+                std::cout << " \"" << rewardModel.getName() << "\"";
+            }
+            std::cout << std::endl;
             for (auto const& reward : rewardModel.getStateRewards()) {
                 stream << reward << std::endl;
             }

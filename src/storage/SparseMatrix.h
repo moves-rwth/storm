@@ -95,6 +95,15 @@ namespace storm {
              */
             std::pair<index_type, value_type> const& getColumnValuePair() const;
             
+            /*!
+             * Multiplies the entry with the given factor and returns the result.
+             *
+             * @param factor The factor with which to multiply the entry.
+             */
+            MatrixEntry operator*(value_type factor) const;
+            
+            template<typename IndexTypePrime, typename ValueTypePrime>
+            friend std::ostream& operator<<(std::ostream& out, MatrixEntry<IndexTypePrime, ValueTypePrime> const& entry);
         private:
             // The actual matrix entry.
             std::pair<index_type, value_type> entry;

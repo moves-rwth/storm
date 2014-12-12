@@ -3,85 +3,37 @@
 #include <algorithm>
 
 #include "src/storage/dd/CuddDdManager.h"
-#include "src/exceptions/ExceptionMacros.h"
+#include "src/utility/macros.h"
 #include "src/exceptions/InvalidArgumentException.h"
-#include "src/settings/Settings.h"
-
-bool CuddOptionsRegistered = storm::settings::Settings::registerNewModule([] (storm::settings::Settings* instance) -> bool {
-    // Set up options for precision and maximal memory available to Cudd.
-    instance->addOption(storm::settings::OptionBuilder("Cudd", "cuddprec", "", "Sets the precision used by Cudd.").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision up to which to constants are considered to be different.").setDefaultValueDouble(1e-15).addValidationFunctionDouble(storm::settings::ArgumentValidators::doubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
-
-    instance->addOption(storm::settings::OptionBuilder("Cudd", "cuddmaxmem", "", "Sets the upper bound of memory available to Cudd in MB.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("mb", "The memory available to Cudd (0 means unlimited).").setDefaultValueUnsignedInteger(2048).build()).build());
-    
-    // Set up option for reordering.
-    std::vector<std::string> reorderingTechniques;
-    reorderingTechniques.push_back("none");
-    reorderingTechniques.push_back("random");
-    reorderingTechniques.push_back("randompivot");
-    reorderingTechniques.push_back("sift");
-    reorderingTechniques.push_back("siftconv");
-    reorderingTechniques.push_back("ssift");
-    reorderingTechniques.push_back("ssiftconv");
-    reorderingTechniques.push_back("gsift");
-    reorderingTechniques.push_back("gsiftconv");
-    reorderingTechniques.push_back("win2");
-    reorderingTechniques.push_back("win2conv");
-    reorderingTechniques.push_back("win3");
-    reorderingTechniques.push_back("win3conv");
-    reorderingTechniques.push_back("win4");
-    reorderingTechniques.push_back("win4conv");
-    reorderingTechniques.push_back("annealing");
-    reorderingTechniques.push_back("genetic");
-    reorderingTechniques.push_back("exact");
-	instance->addOption(storm::settings::OptionBuilder("Cudd", "reorder", "", "Sets the reordering technique used by Cudd.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("method", "Sets which technique is used by Cudd's reordering routines. Must be in {\"none\", \"random\", \"randompivot\", \"sift\", \"siftconv\", \"ssift\", \"ssiftconv\", \"gsift\", \"gsiftconv\", \"win2\", \"win2conv\", \"win3\", \"win3conv\", \"win4\", \"win4conv\", \"annealing\", \"genetic\", \"exact\"}.").setDefaultValueString("gsift").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(reorderingTechniques)).build()).build());
-    
-    return true;
-});
+#include "src/settings/SettingsManager.h"
 
 namespace storm {
     namespace dd {
         DdManager<DdType::CUDD>::DdManager() : metaVariableMap(), cuddManager(), reorderingTechnique(CUDD_REORDER_NONE) {
-            this->cuddManager.SetMaxMemory(static_cast<unsigned long>(storm::settings::Settings::getInstance()->getOptionByLongName("cuddmaxmem").getArgument(0).getValueAsUnsignedInteger() * 1024ul * 1024ul));
-            this->cuddManager.SetEpsilon(storm::settings::Settings::getInstance()->getOptionByLongName("cuddprec").getArgument(0).getValueAsDouble());
+            this->cuddManager.SetMaxMemory(static_cast<unsigned long>(storm::settings::cuddSettings().getMaximalMemory() * 1024ul * 1024ul));
+            this->cuddManager.SetEpsilon(storm::settings::cuddSettings().getConstantPrecision());
             
             // Now set the selected reordering technique.
-            std::string const& reorderingTechnique = storm::settings::Settings::getInstance()->getOptionByLongName("reorder").getArgument(0).getValueAsString();
-            if (reorderingTechnique == "none") {
-                this->reorderingTechnique = CUDD_REORDER_NONE;
-            } else if (reorderingTechnique == "random") {
-                this->reorderingTechnique = CUDD_REORDER_RANDOM;
-            } else if (reorderingTechnique == "randompivot") {
-                this->reorderingTechnique = CUDD_REORDER_RANDOM_PIVOT;
-            } else if (reorderingTechnique == "sift") {
-                this->reorderingTechnique = CUDD_REORDER_SIFT;
-            } else if (reorderingTechnique == "siftconv") {
-                this->reorderingTechnique = CUDD_REORDER_SIFT_CONVERGE;
-            } else if (reorderingTechnique == "ssift") {
-                this->reorderingTechnique = CUDD_REORDER_SYMM_SIFT;
-            } else if (reorderingTechnique == "ssiftconv") {
-                this->reorderingTechnique = CUDD_REORDER_SYMM_SIFT_CONV;
-            } else if (reorderingTechnique == "gsift") {
-                this->reorderingTechnique = CUDD_REORDER_GROUP_SIFT;
-            } else if (reorderingTechnique == "gsiftconv") {
-                this->reorderingTechnique = CUDD_REORDER_GROUP_SIFT_CONV;
-            } else if (reorderingTechnique == "win2") {
-                this->reorderingTechnique = CUDD_REORDER_WINDOW2;
-            } else if (reorderingTechnique == "win2conv") {
-                this->reorderingTechnique = CUDD_REORDER_WINDOW2_CONV;
-            } else if (reorderingTechnique == "win3") {
-                this->reorderingTechnique = CUDD_REORDER_WINDOW3;
-            } else if (reorderingTechnique == "win3conv") {
-                this->reorderingTechnique = CUDD_REORDER_WINDOW3_CONV;
-            } else if (reorderingTechnique == "win4") {
-                this->reorderingTechnique = CUDD_REORDER_WINDOW4;
-            } else if (reorderingTechnique == "win4conv") {
-                this->reorderingTechnique = CUDD_REORDER_WINDOW4_CONV;
-            } else if (reorderingTechnique == "annealing") {
-                this->reorderingTechnique = CUDD_REORDER_ANNEALING;
-            } else if (reorderingTechnique == "genetic") {
-                this->reorderingTechnique = CUDD_REORDER_GENETIC;
-            } else if (reorderingTechnique == "exact") {
-                this->reorderingTechnique = CUDD_REORDER_EXACT;
+            storm::settings::modules::CuddSettings::ReorderingTechnique reorderingTechniqueAsSetting = storm::settings::cuddSettings().getReorderingTechnique();
+            switch (reorderingTechniqueAsSetting) {
+                case storm::settings::modules::CuddSettings::ReorderingTechnique::None: this->reorderingTechnique = CUDD_REORDER_NONE; break;
+                case storm::settings::modules::CuddSettings::ReorderingTechnique::Random: this->reorderingTechnique = CUDD_REORDER_RANDOM; break;
+                case storm::settings::modules::CuddSettings::ReorderingTechnique::RandomPivot: this->reorderingTechnique = CUDD_REORDER_RANDOM_PIVOT; break;
+                case storm::settings::modules::CuddSettings::ReorderingTechnique::Sift: this->reorderingTechnique = CUDD_REORDER_SIFT; break;
+                case storm::settings::modules::CuddSettings::ReorderingTechnique::SiftConv: this->reorderingTechnique = CUDD_REORDER_SIFT_CONVERGE; break;
+                case storm::settings::modules::CuddSettings::ReorderingTechnique::SymmetricSift: this->reorderingTechnique = CUDD_REORDER_SYMM_SIFT; break;
+                case storm::settings::modules::CuddSettings::ReorderingTechnique::SymmetricSiftConv: this->reorderingTechnique = CUDD_REORDER_SYMM_SIFT_CONV; break;
+                case storm::settings::modules::CuddSettings::ReorderingTechnique::GroupSift: this->reorderingTechnique = CUDD_REORDER_GROUP_SIFT; break;
+                case storm::settings::modules::CuddSettings::ReorderingTechnique::GroupSiftConv: this->reorderingTechnique = CUDD_REORDER_GROUP_SIFT_CONV; break;
+                case storm::settings::modules::CuddSettings::ReorderingTechnique::Win2: this->reorderingTechnique = CUDD_REORDER_WINDOW2; break;
+                case storm::settings::modules::CuddSettings::ReorderingTechnique::Win2Conv: this->reorderingTechnique = CUDD_REORDER_WINDOW2_CONV; break;
+                case storm::settings::modules::CuddSettings::ReorderingTechnique::Win3: this->reorderingTechnique = CUDD_REORDER_WINDOW3; break;
+                case storm::settings::modules::CuddSettings::ReorderingTechnique::Win3Conv: this->reorderingTechnique = CUDD_REORDER_WINDOW3_CONV; break;
+                case storm::settings::modules::CuddSettings::ReorderingTechnique::Win4: this->reorderingTechnique = CUDD_REORDER_WINDOW4; break;
+                case storm::settings::modules::CuddSettings::ReorderingTechnique::Win4Conv: this->reorderingTechnique = CUDD_REORDER_WINDOW4_CONV; break;
+                case storm::settings::modules::CuddSettings::ReorderingTechnique::Annealing: this->reorderingTechnique = CUDD_REORDER_ANNEALING; break;
+                case storm::settings::modules::CuddSettings::ReorderingTechnique::Genetic: this->reorderingTechnique = CUDD_REORDER_GENETIC; break;
+                case storm::settings::modules::CuddSettings::ReorderingTechnique::Exact: this->reorderingTechnique = CUDD_REORDER_EXACT; break;
             }
         }
         
@@ -100,7 +52,7 @@ namespace storm {
         Dd<DdType::CUDD> DdManager<DdType::CUDD>::getEncoding(std::string const& metaVariableName, int_fast64_t value) {
             DdMetaVariable<DdType::CUDD> const& metaVariable = this->getMetaVariable(metaVariableName);
             
-            LOG_THROW(value >= metaVariable.getLow() && value <= metaVariable.getHigh(), storm::exceptions::InvalidArgumentException, "Illegal value " << value << " for meta variable '" << metaVariableName << "'.");
+            STORM_LOG_THROW(value >= metaVariable.getLow() && value <= metaVariable.getHigh(), storm::exceptions::InvalidArgumentException, "Illegal value " << value << " for meta variable '" << metaVariableName << "'.");
             
             // Now compute the encoding relative to the low value of the meta variable.
             value -= metaVariable.getLow();
@@ -148,13 +100,13 @@ namespace storm {
 
         void DdManager<DdType::CUDD>::addMetaVariable(std::string const& name, int_fast64_t low, int_fast64_t high) {
             // Check whether the variable name is legal.
-            LOG_THROW(name != "" && name.back() != '\'', storm::exceptions::InvalidArgumentException, "Illegal name of meta variable: '" << name << "'.");
+            STORM_LOG_THROW(name != "" && name.back() != '\'', storm::exceptions::InvalidArgumentException, "Illegal name of meta variable: '" << name << "'.");
             
             // Check whether a meta variable already exists.
-            LOG_THROW(!this->hasMetaVariable(name), storm::exceptions::InvalidArgumentException, "A meta variable '" << name << "' already exists.");
+            STORM_LOG_THROW(!this->hasMetaVariable(name), storm::exceptions::InvalidArgumentException, "A meta variable '" << name << "' already exists.");
 
             // Check that the range is legal.
-            LOG_THROW(high != low, storm::exceptions::InvalidArgumentException, "Range of meta variable must be at least 2 elements.");
+            STORM_LOG_THROW(high != low, storm::exceptions::InvalidArgumentException, "Range of meta variable must be at least 2 elements.");
             
             std::size_t numberOfBits = static_cast<std::size_t>(std::ceil(std::log2(high - low + 1)));
             
@@ -176,10 +128,10 @@ namespace storm {
         
         void DdManager<DdType::CUDD>::addMetaVariable(std::string const& name) {
             // Check whether the variable name is legal.
-            LOG_THROW(name != "" && name.back() != '\'', storm::exceptions::InvalidArgumentException, "Illegal name of meta variable: '" << name << "'.");
+            STORM_LOG_THROW(name != "" && name.back() != '\'', storm::exceptions::InvalidArgumentException, "Illegal name of meta variable: '" << name << "'.");
             
             // Check whether a meta variable already exists.
-            LOG_THROW(!this->hasMetaVariable(name), storm::exceptions::InvalidArgumentException, "A meta variable '" << name << "' already exists.");
+            STORM_LOG_THROW(!this->hasMetaVariable(name), storm::exceptions::InvalidArgumentException, "A meta variable '" << name << "' already exists.");
             
             std::vector<Dd<DdType::CUDD>> variables;
             std::vector<Dd<DdType::CUDD>> variablesPrime;
@@ -197,7 +149,7 @@ namespace storm {
             auto const& nameVariablePair = metaVariableMap.find(metaVariableName);
             
             // Check whether the meta variable exists.
-            LOG_THROW(nameVariablePair != metaVariableMap.end(), storm::exceptions::InvalidArgumentException, "Unknown meta variable name '" << metaVariableName << "'.");
+            STORM_LOG_THROW(nameVariablePair != metaVariableMap.end(), storm::exceptions::InvalidArgumentException, "Unknown meta variable name '" << metaVariableName << "'.");
             
             return nameVariablePair->second;
         }

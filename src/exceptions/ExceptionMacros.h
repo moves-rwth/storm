@@ -1,36 +1,25 @@
 #ifndef STORM_EXCEPTIONS_EXCEPTIONMACROS_H_
 #define STORM_EXCEPTIONS_EXCEPTIONMACROS_H_
 
-#include <cassert>
-
-#include "log4cplus/logger.h"
-#include "log4cplus/loggingmacros.h"
-
-extern log4cplus::Logger logger;
-
-#ifndef NDEBUG
-#define LOG_ASSERT(cond, message)               \
-{                                               \
-    if (!(cond)) {                              \
-        LOG4CPLUS_ERROR(logger, message);       \
-        assert(cond);                           \
-    }                                           \
-} while (false)
-#define LOG_DEBUG(message)                      \
-{                                               \
-    LOG4CPLUS_DEBUG(logger, message);           \
-} while (false)
-#else
-#define LOG_ASSERT(cond, message) /* empty */
-#define LOG_DEBUG(message) /* empty */
-#endif
-
-#define LOG_THROW(cond, exception, message)     \
-{                                               \
-if (!(cond)) {                                  \
-LOG4CPLUS_ERROR(logger, message);               \
-throw exception() << message;                   \
-}                                               \
-} while (false)
+/*!
+ * Macro to generate descendant exception classes. As all classes are nearly the same, this makes changing common
+ * features much easier.
+ */
+#define STORM_NEW_EXCEPTION(exception_name) class exception_name : public BaseException { \
+public: \
+exception_name() : BaseException() { \
+} \
+exception_name(char const* cstr) : BaseException(cstr) { \
+} \
+exception_name(exception_name const& cp) : BaseException(cp) { \
+} \
+~exception_name() throw() { \
+} \
+template<typename T> \
+exception_name& operator<<(T const& var) { \
+    this->stream << var; \
+    return *this; \
+} \
+};
 
 #endif /* STORM_EXCEPTIONS_EXCEPTIONMACROS_H_ */

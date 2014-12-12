@@ -147,7 +147,8 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
          * @param decomposition A decomposition containing the blocks of the partition of the system.
          * @return A sparse matrix with bool entries that represents the dependency graph of the blocks of the partition.
          */
-        storm::storage::SparseMatrix<T> extractPartitionDependencyGraph(storm::storage::Decomposition<storm::storage::StateBlock> const& decomposition) const {
+        template <typename BlockType>
+        storm::storage::SparseMatrix<T> extractPartitionDependencyGraph(storm::storage::Decomposition<BlockType> const& decomposition) const {
             uint_fast64_t numberOfStates = decomposition.size();
             
             // First, we need to create a mapping of states to their SCC index, to ease the computation of dependency transitions later.
@@ -163,7 +164,7 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
             
             for (uint_fast64_t currentBlockIndex = 0; currentBlockIndex < decomposition.size(); ++currentBlockIndex) {
                 // Get the next block.
-                typename storm::storage::StateBlock const& block = decomposition[currentBlockIndex];
+                typename storm::storage::Decomposition<BlockType>::block_type const& block = decomposition[currentBlockIndex];
                 
                 // Now, we determine the blocks which are reachable (in one step) from the current block.
                 boost::container::flat_set<uint_fast64_t> allTargetBlocks;

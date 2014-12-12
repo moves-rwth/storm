@@ -56,7 +56,6 @@ namespace storm {
             endComponentStateSets.emplace_back(subsystem.begin(), subsystem.end());
             storm::storage::BitVector statesToCheck(model.getNumberOfStates());
             
-            
             // The iterator used here should really be a const_iterator.
             // However, gcc 4.8 (and assorted libraries) does not provide an erase(const_iterator) method for std::list
             // but only an erase(iterator). This is in compliance with the c++11 draft N3337, which specifies the change
@@ -88,7 +87,7 @@ namespace storm {
                             for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
                                 bool choiceContainedInMEC = true;
                                 for (auto const& entry : transitionMatrix.getRow(choice)) {
-                                    if (scc.find(entry.getColumn()) == scc.end()) {
+                                    if (!scc.containsState(entry.getColumn())) {
                                         choiceContainedInMEC = false;
                                         break;
                                     }
@@ -116,7 +115,7 @@ namespace storm {
                         statesToCheck.clear();
                         for (auto state : statesToRemove) {
                             for (auto const& entry : backwardTransitions.getRow(state)) {
-                                if (scc.find(entry.getColumn()) != scc.end()) {
+                                if (scc.containsState(entry.getColumn())) {
                                     statesToCheck.set(entry.getColumn());
                                 }
                             }
@@ -127,7 +126,7 @@ namespace storm {
                 // If the MEC changed, we delete it from the list of MECs and append the possible new MEC candidates to
                 // the list instead.
                 if (mecChanged) {
-                    for (StateBlock& scc : sccs) {
+                    for (StronglyConnectedComponent& scc : sccs) {
                         if (!scc.empty()) {
                             endComponentStateSets.push_back(std::move(scc));
                         }
@@ -142,7 +141,7 @@ namespace storm {
                 }
                 
             } // End of loop over all MEC candidates.
-                        
+            
             // Now that we computed the underlying state sets of the MECs, we need to properly identify the choices
             // contained in the MEC and store them as actual MECs.
             this->blocks.reserve(endComponentStateSets.size());
@@ -154,7 +153,7 @@ namespace storm {
                     for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
                         bool choiceContained = true;
                         for (auto const& entry : transitionMatrix.getRow(choice)) {
-                            if (mecStateSet.find(entry.getColumn()) == mecStateSet.end()) {
+                            if (!mecStateSet.containsState(entry.getColumn())) {
                                 choiceContained = false;
                                 break;
                             }

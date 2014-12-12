@@ -1,5 +1,5 @@
 #include "Update.h"
-#include "src/exceptions/ExceptionMacros.h"
+#include "src/utility/macros.h"
 #include "src/exceptions/OutOfRangeException.h"
 
 namespace storm {
@@ -22,7 +22,7 @@ namespace storm {
         
         storm::prism::Assignment const& Update::getAssignment(std::string const& variableName) const {
             auto const& variableIndexPair = this->variableToAssignmentIndexMap.find(variableName);
-            LOG_THROW(variableIndexPair != this->variableToAssignmentIndexMap.end(), storm::exceptions::OutOfRangeException, "Variable '" << variableName << "' is not assigned in update.");
+            STORM_LOG_THROW(variableIndexPair != this->variableToAssignmentIndexMap.end(), storm::exceptions::OutOfRangeException, "Variable '" << variableName << "' is not assigned in update.");
             return this->getAssignments()[variableIndexPair->second];
         }
         

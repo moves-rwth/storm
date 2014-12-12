@@ -19,7 +19,7 @@
 #include "src/parser/MappedFile.h"
 #include "src/exceptions/FileIoException.h"
 #include "src/exceptions/WrongFormatException.h"
-#include "src/settings/Settings.h"
+#include "src/settings/SettingsManager.h"
 
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
@@ -93,7 +93,7 @@ namespace storm {
 
 				uint_fast64_t row, col, lastRow = 0;
 				double val;
-				bool fixDeadlocks = storm::settings::Settings::getInstance()->isSet("fixDeadlocks");
+				bool dontFixDeadlocks = storm::settings::generalSettings().isDontFixDeadlocksSet();
 				bool hadDeadlocks = false;
 				bool rowHadDiagonalEntry = false;
 
@@ -122,7 +122,7 @@ namespace storm {
                     if (row > 0) {
                         for (uint_fast64_t skippedRow = 0; skippedRow < row; ++skippedRow) {
                             hadDeadlocks = true;
-                            if (fixDeadlocks) {
+                            if (!dontFixDeadlocks) {
                                 resultMatrix.addNextValue(skippedRow, skippedRow, storm::utility::constantOne<double>());
                                 LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << skippedRow << " has no outgoing transitions. A self-loop was inserted.");
                             } else {
@@ -154,7 +154,7 @@ namespace storm {
 							}
 							for (uint_fast64_t skippedRow = lastRow + 1; skippedRow < row; ++skippedRow) {
 								hadDeadlocks = true;
-								if (fixDeadlocks) {
+								if (!dontFixDeadlocks) {
 									resultMatrix.addNextValue(skippedRow, skippedRow, storm::utility::constantOne<double>());
 									LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << skippedRow << " has no outgoing transitions. A self-loop was inserted.");
 								} else {
@@ -194,7 +194,7 @@ namespace storm {
 					}
 
 					// If we encountered deadlock and did not fix them, now is the time to throw the exception.
-					if (!fixDeadlocks && hadDeadlocks) throw storm::exceptions::WrongFormatException() << "Some of the nodes had deadlocks. You can use --fixDeadlocks to insert self-loops on the fly.";
+					if (dontFixDeadlocks && hadDeadlocks) throw storm::exceptions::WrongFormatException() << "Some of the states do not have outgoing transitions.";
 				}
 
 				// Finally, build the actual matrix, test and return it.

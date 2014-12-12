@@ -1,7 +1,7 @@
 #include "src/storage/expressions/TypeCheckVisitor.h"
 #include "src/storage/expressions/Expressions.h"
 
-#include "src/exceptions/ExceptionMacros.h"
+#include "src/utility/macros.h"
 #include "src/exceptions/InvalidTypeException.h"
 
 namespace storm {
@@ -44,8 +44,8 @@ namespace storm {
         template<typename MapType>
         void TypeCheckVisitor<MapType>::visit(VariableExpression const* expression) {
 			auto identifierTypePair = this->identifierToTypeMap.find(expression->getVariableName());
-			LOG_THROW(identifierTypePair != this->identifierToTypeMap.end(), storm::exceptions::InvalidArgumentException, "No type available for identifier '" << expression->getVariableName() << "'.");
-            LOG_THROW(identifierTypePair->second == expression->getReturnType(), storm::exceptions::InvalidTypeException, "Type mismatch for variable '" << expression->getVariableName() << "': expected '" << identifierTypePair->first << "', but found '" << expression->getReturnType() << "'.");
+			STORM_LOG_THROW(identifierTypePair != this->identifierToTypeMap.end(), storm::exceptions::InvalidArgumentException, "No type available for identifier '" << expression->getVariableName() << "'.");
+            STORM_LOG_THROW(identifierTypePair->second == expression->getReturnType(), storm::exceptions::InvalidTypeException, "Type mismatch for variable '" << expression->getVariableName() << "': expected '" << identifierTypePair->first << "', but found '" << expression->getReturnType() << "'.");
         }
         
         template<typename MapType>

@@ -1,7 +1,9 @@
 #ifndef STORM_STORAGE_STRONGLYCONNECTEDCOMPONENTDECOMPOSITION_H_
 #define STORM_STORAGE_STRONGLYCONNECTEDCOMPONENTDECOMPOSITION_H_
 
+#include "src/storage/SparseMatrix.h"
 #include "src/storage/Decomposition.h"
+#include "src/storage/StronglyConnectedComponent.h"
 #include "src/storage/BitVector.h"
 
 namespace storm {
@@ -16,8 +18,8 @@ namespace storm {
          * This class represents the decomposition of a graph-like structure into its strongly connected components.
          */
         template <typename ValueType>
-        class StronglyConnectedComponentDecomposition : public Decomposition<StateBlock> {
-        public:
+        class StronglyConnectedComponentDecomposition : public Decomposition<StronglyConnectedComponent> {
+        public:            
             /*
              * Creates an empty SCC decomposition.
              */
@@ -57,6 +59,19 @@ namespace storm {
              * leaving the SCC), are kept.
              */
             StronglyConnectedComponentDecomposition(storm::models::AbstractModel<ValueType> const& model, storm::storage::BitVector const& subsystem, bool dropNaiveSccs = false, bool onlyBottomSccs = false);
+
+            /*
+             * Creates an SCC decomposition of the given subsystem in the given system (whose transition relation is 
+             * given by a sparse matrix).
+             *
+             * @param transitionMatrix The transition matrix of the system to decompose.
+             * @param subsystem A bit vector indicating which subsystem to consider for the decomposition into SCCs.
+             * @param dropNaiveSccs A flag that indicates whether trivial SCCs (i.e. SCCs consisting of just one state
+             * without a self-loop) are to be kept in the decomposition.
+             * @param onlyBottomSccs If set to true, only bottom SCCs, i.e. SCCs in which all states have no way of
+             * leaving the SCC), are kept.
+             */
+            StronglyConnectedComponentDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& subsystem, bool dropNaiveSccs = false, bool onlyBottomSccs = false);
             
             /*!
              * Creates an SCC decomposition by copying the given SCC decomposition.
@@ -103,21 +118,21 @@ namespace storm {
              * Performs the SCC decomposition of the given block in the given model. As a side-effect this fills
              * the vector of blocks of the decomposition.
              *
-             * @param model The model that contains the block.
+             * @param transitionMatrix The transition matrix of the system to decompose.
              * @param subsystem A bit vector indicating which subsystem to consider for the decomposition into SCCs.
              * @param dropNaiveSccs A flag that indicates whether trivial SCCs (i.e. SCCs consisting of just one state
              * without a self-loop) are to be kept in the decomposition.
              * @param onlyBottomSccs If set to true, only bottom SCCs, i.e. SCCs in which all states have no way of
              * leaving the SCC), are kept.
              */
-            void performSccDecomposition(storm::models::AbstractModel<ValueType> const& model, storm::storage::BitVector const& subsystem, bool dropNaiveSccs, bool onlyBottomSccs);
+            void performSccDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& subsystem, bool dropNaiveSccs, bool onlyBottomSccs);
             
             /*!
              * Uses the algorithm by Gabow/Cheriyan/Mehlhorn ("Path-based strongly connected component algorithm") to
              * compute a mapping of states to their SCCs. All arguments given by (non-const) reference are modified by
              * the function as a side-effect.
              *
-             * @param model The model to decompose into SCCs.
+             * @param transitionMatrix The transition matrix of the system to decompose.
              * @param startState The starting state for the search of Tarjan's algorithm.
              * @param statesWithSelfLoop A bit vector that is to be filled with all states that have a self-loop. This
              * is later needed for identification of the naive SCCs.
@@ -133,7 +148,7 @@ namespace storm {
              * @param sccCount The number of SCCs that have been computed. As a side effect of this function, this count
              * is increased.
              */
-            void performSccDecompositionGCM(storm::models::AbstractModel<ValueType> const& model, uint_fast64_t startState, storm::storage::BitVector& statesWithSelfLoop, storm::storage::BitVector const& subsystem, uint_fast64_t& currentIndex, storm::storage::BitVector& hasPreorderNumber, std::vector<uint_fast64_t>& preorderNumbers, std::vector<uint_fast64_t>& s, std::vector<uint_fast64_t>& p, storm::storage::BitVector& stateHasScc, std::vector<uint_fast64_t>& stateToSccMapping, uint_fast64_t& sccCount);
+            void performSccDecompositionGCM(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, uint_fast64_t startState, storm::storage::BitVector& statesWithSelfLoop, storm::storage::BitVector const& subsystem, uint_fast64_t& currentIndex, storm::storage::BitVector& hasPreorderNumber, std::vector<uint_fast64_t>& preorderNumbers, std::vector<uint_fast64_t>& s, std::vector<uint_fast64_t>& p, storm::storage::BitVector& stateHasScc, std::vector<uint_fast64_t>& stateToSccMapping, uint_fast64_t& sccCount);
         };
     }
 }

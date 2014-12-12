@@ -14,7 +14,7 @@
 #include "AtomicPropositionsLabeling.h"
 #include "AbstractNondeterministicModel.h"
 #include "src/storage/SparseMatrix.h"
-#include "src/settings/Settings.h"
+#include "src/settings/SettingsManager.h"
 
 namespace storm {
 
@@ -126,9 +126,7 @@ private:
 	 *	Checks probability matrix if all rows sum up to one.
 	 */
 	bool checkValidityOfProbabilityMatrix() {
-		// Get the settings object to customize linear solving.
-		storm::settings::Settings* s = storm::settings::Settings::getInstance();
-		double precision = s->getOptionByLongName("precision").getArgument(0).getValueAsDouble();
+		double precision = storm::settings::generalSettings().getPrecision();
 		for (uint_fast64_t row = 0; row < this->getTransitionMatrix().getRowCount(); row++) {
 			T sum = this->getTransitionMatrix().getRowSum(row);
 			if (sum == 0) continue;

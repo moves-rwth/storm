@@ -27,8 +27,8 @@
 #include "src/models/Ctmdp.h"
 #include "src/models/AtomicPropositionsLabeling.h"
 #include "src/storage/SparseMatrix.h"
-#include "src/settings/Settings.h"
-#include "src/exceptions/ExceptionMacros.h"
+#include "src/settings/SettingsManager.h"
+#include "src/utility/macros.h"
 #include "src/exceptions/WrongFormatException.h"
 
 namespace storm {
@@ -95,39 +95,49 @@ namespace storm {
              * @param program The program to translate.
              * @param constantDefinitionString A string that contains a comma-separated definition of all undefined
              * constants in the model.
-             * @param rewardModelName The name of reward model to be added to the model. This must be either a reward
-             * model of the program or the empty string. In the latter case, the constructed model will contain no 
-             * rewards.
+             * @param rewardModel The reward model that is to be built.
              * @return The explicit model that was given by the probabilistic program.
              */
-            static std::unique_ptr<storm::models::AbstractModel<ValueType>> translateProgram(storm::prism::Program program, std::string const& constantDefinitionString = "", std::string const& rewardModelName = "") {
+            static std::unique_ptr<storm::models::AbstractModel<ValueType>> translateProgram(storm::prism::Program program, bool rewards = true, std::string const& rewardModelName = "", std::string const& constantDefinitionString = "") {
                 // Start by defining the undefined constants in the model.
                 // First, we need to parse the constant definition string.
                 std::map<std::string, storm::expressions::Expression> constantDefinitions = storm::utility::prism::parseConstantDefinitionString(program, constantDefinitionString);
                 
                 storm::prism::Program preparedProgram = program.defineUndefinedConstants(constantDefinitions);
-                LOG_THROW(!preparedProgram.hasUndefinedConstants(), storm::exceptions::InvalidArgumentException, "Program still contains undefined constants.");
+                STORM_LOG_THROW(!preparedProgram.hasUndefinedConstants(), storm::exceptions::InvalidArgumentException, "Program still contains undefined constants.");
                 
                 // Now that we have defined all the constants in the program, we need to substitute their appearances in
                 // all expressions in the program so we can then evaluate them without having to store the values of the
                 // constants in the state (i.e., valuation).
                 preparedProgram = preparedProgram.substituteConstants();
+                storm::prism::RewardModel rewardModel = storm::prism::RewardModel();
                 
-                ModelComponents modelComponents = buildModelComponents(preparedProgram, rewardModelName);
+                // Select the appropriate reward model.
+                if (rewards) {
+                    // If a specific reward model was selected or one with the empty name exists, select it.
+                    if (rewardModelName != "" || preparedProgram.hasRewardModel(rewardModelName)) {
+                        rewardModel = preparedProgram.getRewardModel(rewardModelName);
+                    } else if (preparedProgram.hasRewardModel()) {
+                        // Otherwise, we select the first one.
+                        rewardModel = preparedProgram.getRewardModel(0);
+                    }
+                }
+
+                ModelComponents modelComponents = buildModelComponents(preparedProgram, rewardModel);
                 
                 std::unique_ptr<storm::models::AbstractModel<ValueType>> result;
                 switch (program.getModelType()) {
                     case storm::prism::Program::ModelType::DTMC:
-                        result = std::unique_ptr<storm::models::AbstractModel<ValueType>>(new storm::models::Dtmc<ValueType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), rewardModelName != "" ? std::move(modelComponents.stateRewards) : boost::optional<std::vector<ValueType>>(), rewardModelName != "" ? std::move(modelComponents.transitionRewardMatrix) : boost::optional<storm::storage::SparseMatrix<ValueType>>(), std::move(modelComponents.choiceLabeling)));
+                        result = std::unique_ptr<storm::models::AbstractModel<ValueType>>(new storm::models::Dtmc<ValueType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), rewardModel.hasStateRewards() ? std::move(modelComponents.stateRewards) : boost::optional<std::vector<ValueType>>(), rewardModel.hasTransitionRewards() ? std::move(modelComponents.transitionRewardMatrix) : boost::optional<storm::storage::SparseMatrix<ValueType>>(), std::move(modelComponents.choiceLabeling)));
                         break;
                     case storm::prism::Program::ModelType::CTMC:
-                        result = std::unique_ptr<storm::models::AbstractModel<ValueType>>(new storm::models::Ctmc<ValueType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), rewardModelName != "" ? std::move(modelComponents.stateRewards) : boost::optional<std::vector<ValueType>>(), rewardModelName != "" ? std::move(modelComponents.transitionRewardMatrix) : boost::optional<storm::storage::SparseMatrix<ValueType>>(), std::move(modelComponents.choiceLabeling)));
+                        result = std::unique_ptr<storm::models::AbstractModel<ValueType>>(new storm::models::Ctmc<ValueType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), rewardModel.hasStateRewards() ? std::move(modelComponents.stateRewards) : boost::optional<std::vector<ValueType>>(), rewardModel.hasTransitionRewards() ? std::move(modelComponents.transitionRewardMatrix) : boost::optional<storm::storage::SparseMatrix<ValueType>>(), std::move(modelComponents.choiceLabeling)));
                         break;
                     case storm::prism::Program::ModelType::MDP:
-                        result = std::unique_ptr<storm::models::AbstractModel<ValueType>>(new storm::models::Mdp<ValueType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), rewardModelName != "" ? std::move(modelComponents.stateRewards) : boost::optional<std::vector<ValueType>>(), rewardModelName != "" ? std::move(modelComponents.transitionRewardMatrix) : boost::optional<storm::storage::SparseMatrix<ValueType>>(), std::move(modelComponents.choiceLabeling)));
+                        result = std::unique_ptr<storm::models::AbstractModel<ValueType>>(new storm::models::Mdp<ValueType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), rewardModel.hasStateRewards() ? std::move(modelComponents.stateRewards) : boost::optional<std::vector<ValueType>>(), rewardModel.hasTransitionRewards() ? std::move(modelComponents.transitionRewardMatrix) : boost::optional<storm::storage::SparseMatrix<ValueType>>(), std::move(modelComponents.choiceLabeling)));
                         break;
                     case storm::prism::Program::ModelType::CTMDP:
-                        result = std::unique_ptr<storm::models::AbstractModel<ValueType>>(new storm::models::Ctmdp<ValueType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), rewardModelName != "" ? std::move(modelComponents.stateRewards) : boost::optional<std::vector<ValueType>>(), rewardModelName != "" ? std::move(modelComponents.transitionRewardMatrix) : boost::optional<storm::storage::SparseMatrix<ValueType>>(), std::move(modelComponents.choiceLabeling)));
+                        result = std::unique_ptr<storm::models::AbstractModel<ValueType>>(new storm::models::Ctmdp<ValueType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), rewardModel.hasStateRewards() ? std::move(modelComponents.stateRewards) : boost::optional<std::vector<ValueType>>(), rewardModel.hasTransitionRewards() ? std::move(modelComponents.transitionRewardMatrix) : boost::optional<storm::storage::SparseMatrix<ValueType>>(), std::move(modelComponents.choiceLabeling)));
                         break;
                     default:
                         LOG4CPLUS_ERROR(logger, "Error while creating model from probabilistic program: cannot handle this model type.");
@@ -173,10 +183,10 @@ namespace storm {
                         {
                             newValue = assignment.getExpression().evaluateAsInt(baseState);
                             auto const& boundsPair = variableInformation.variableToBoundsMap.find(assignment.getVariableName());
-                            LOG_THROW(boundsPair->second.first <= newValue && newValue <= boundsPair->second.second, storm::exceptions::InvalidArgumentException, "Invalid value " << newValue << " for variable '" << assignment.getVariableName() << "'.");
+                            STORM_LOG_THROW(boundsPair->second.first <= newValue && newValue <= boundsPair->second.second, storm::exceptions::InvalidArgumentException, "Invalid value " << newValue << " for variable '" << assignment.getVariableName() << "'.");
                             newState->setIntegerValue(assignment.getVariableName(), newValue); break;
                         }
-                        default: LOG_ASSERT(false, "Invalid type of assignment."); break;
+                        default: STORM_LOG_ASSERT(false, "Invalid type of assignment."); break;
                     }
                 }
                 return newState;
@@ -312,7 +322,7 @@ namespace storm {
                         }
                         
                         // Check that the resulting distribution is in fact a distribution.
-                        LOG_THROW(std::abs(1 - probabilitySum) < storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble(), storm::exceptions::WrongFormatException, "Probabilities do not sum to one for command '" << command << "'.");
+                        STORM_LOG_THROW(std::abs(1 - probabilitySum) < storm::settings::generalSettings().getPrecision(), storm::exceptions::WrongFormatException, "Probabilities do not sum to one for command '" << command << "'.");
                     }
                 }
                 
@@ -418,7 +428,7 @@ namespace storm {
                             }
                             
                             // Check that the resulting distribution is in fact a distribution.
-                            if (std::abs(1 - probabilitySum) > storm::settings::Settings::getInstance()->getOptionByLongName("precision").getArgument(0).getValueAsDouble()) {
+                            if (std::abs(1 - probabilitySum) > storm::settings::generalSettings().getPrecision()) {
                                 LOG4CPLUS_ERROR(logger, "Sum of update probabilities do not some to one for some command.");
                                 throw storm::exceptions::WrongFormatException() << "Sum of update probabilities do not some to one for some command.";
                             }
@@ -502,7 +512,7 @@ namespace storm {
                     // If the current state does not have a single choice, we equip it with a self-loop if that was
                     // requested and issue an error otherwise.
                     if (totalNumberOfChoices == 0) {
-                        if (storm::settings::Settings::getInstance()->isSet("fixDeadlocks")) {
+                        if (!storm::settings::generalSettings().isDontFixDeadlocksSet()) {
                             // Insert empty choice labeling for added self-loop transitions.
                             choiceLabels.push_back(boost::container::flat_set<uint_fast64_t>());
                             transitionMatrixBuilder.addNextValue(currentRow, currentState, storm::utility::constantOne<ValueType>());
@@ -634,11 +644,10 @@ namespace storm {
              * Explores the state space of the given program and returns the components of the model as a result.
              *
              * @param program The program whose state space to explore.
-             * @param rewardModelName The name of the reward model that is to be considered. If empty, no reward model
-             * is considered.
+             * @param rewardModel The reward model that is to be considered.
              * @return A structure containing the components of the resulting model.
              */
-            static ModelComponents buildModelComponents(storm::prism::Program const& program, std::string const& rewardModelName) {
+            static ModelComponents buildModelComponents(storm::prism::Program const& program, storm::prism::RewardModel const& rewardModel) {
                 ModelComponents modelComponents;
                 
                 VariableInformation variableInformation;
@@ -653,9 +662,6 @@ namespace storm {
                 
                 // Create the structure for storing the reachable state space.
                 StateInformation stateInformation;
-                
-                // Get the selected reward model or create an empty one if none is selected.
-                storm::prism::RewardModel const& rewardModel = rewardModelName != "" ? program.getRewardModel(rewardModelName) : storm::prism::RewardModel();
                 
                 // Determine whether we have to combine different choices to one or whether this model can have more than
                 // one choice per state.

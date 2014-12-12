@@ -11,111 +11,144 @@
 #include <memory>
 #include <string>
 
-#include "Argument.h"
+#include "src/settings/Argument.h"
+#include "src/utility/macros.h"
+#include "src/exceptions/InvalidArgumentException.h"
 
 namespace storm {
 	namespace settings {
 		class ArgumentValidators {
 		public:
-			// Integer - int_fast64_t
-			static std::function<bool (int_fast64_t const, std::string&)> integerRangeValidatorIncluding(int_fast64_t const lowerBound, int_fast64_t const upperBound) {
+			/*!
+             * Creates a validation function that checks whether an integer is in the given range (including the bounds).
+             *
+             * @param lowerBound The lower bound of the valid range.
+             * @param upperBound The upper bound of the valid range.
+             * @return The resulting validation function.
+             */
+			static std::function<bool (int_fast64_t const&)> integerRangeValidatorIncluding(int_fast64_t lowerBound, int_fast64_t upperBound) {
 				return rangeValidatorIncluding<int_fast64_t>(lowerBound, upperBound);
-			} 
-			static std::function<bool (int_fast64_t const, std::string&)> integerRangeValidatorExcluding(int_fast64_t const lowerBound, int_fast64_t const upperBound) {
+			}
+            
+			/*!
+             * Creates a validation function that checks whether an integer is in the given range (excluding the bounds).
+             *
+             * @param lowerBound The lower bound of the valid range.
+             * @param upperBound The upper bound of the valid range.
+             * @return The resulting validation function.
+             */
+			static std::function<bool (int_fast64_t const&)> integerRangeValidatorExcluding(int_fast64_t lowerBound, int_fast64_t upperBound) {
 				return rangeValidatorExcluding<int_fast64_t>(lowerBound, upperBound);
 			}
 
-			// UnsignedInteger - uint_fast64_t
-			static std::function<bool (uint_fast64_t const, std::string&)> unsignedIntegerRangeValidatorIncluding(uint_fast64_t const lowerBound, uint_fast64_t const upperBound) {
+			/*!
+             * Creates a validation function that checks whether an unsigned integer is in the given range (including the bounds).
+             *
+             * @param lowerBound The lower bound of the valid range.
+             * @param upperBound The upper bound of the valid range.
+             * @return The resulting validation function.
+             */
+			static std::function<bool (uint_fast64_t const&)> unsignedIntegerRangeValidatorIncluding(uint_fast64_t lowerBound, uint_fast64_t upperBound) {
 				return rangeValidatorIncluding<uint_fast64_t>(lowerBound, upperBound);
-			} 
-			static std::function<bool (uint_fast64_t const, std::string&)> unsignedIntegerRangeValidatorExcluding(uint_fast64_t const lowerBound, uint_fast64_t const upperBound) {
+			}
+            
+            /*!
+             * Creates a validation function that checks whether an unsigned integer is in the given range (excluding the bounds).
+             *
+             * @param lowerBound The lower bound of the valid range.
+             * @param upperBound The upper bound of the valid range.
+             * @return The resulting validation function.
+             */
+			static std::function<bool (uint_fast64_t const&)> unsignedIntegerRangeValidatorExcluding(uint_fast64_t lowerBound, uint_fast64_t upperBound) {
 				return rangeValidatorExcluding<uint_fast64_t>(lowerBound, upperBound);
 			}
 
-			// Double - double
-			static std::function<bool (double const, std::string&)> doubleRangeValidatorIncluding(double const lowerBound, double const upperBound) {
+			/*!
+             * Creates a validation function that checks whether a double is in the given range (including the bounds).
+             *
+             * @param lowerBound The lower bound of the valid range.
+             * @param upperBound The upper bound of the valid range.
+             * @return The resulting validation function.
+             */
+			static std::function<bool (double const&)> doubleRangeValidatorIncluding(double lowerBound, double upperBound) {
 				return rangeValidatorIncluding<double>(lowerBound, upperBound);
-			} 
-			static std::function<bool (double const, std::string&)> doubleRangeValidatorExcluding(double const lowerBound, double const upperBound) {
+			}
+            
+            /*!
+             * Creates a validation function that checks whether a double is in the given range (excluding the bounds).
+             *
+             * @param lowerBound The lower bound of the valid range.
+             * @param upperBound The upper bound of the valid range.
+             * @return The resulting validation function.
+             */
+			static std::function<bool (double const&)> doubleRangeValidatorExcluding(double lowerBound, double upperBound) {
 				return rangeValidatorExcluding<double>(lowerBound, upperBound);
 			}
 
-			static std::function<bool (std::string const, std::string&)> existingReadableFileValidator() {
-				return [] (std::string const fileName, std::string& errorMessageTarget) -> bool {
+            /*!
+             * Creates a validation function that checks whether a given string corresponds to an existing and readable
+             * file.
+             *
+             * @return The resulting validation function.
+             */
+			static std::function<bool (std::string const&)> existingReadableFileValidator() {
+				return [] (std::string const fileName) -> bool {
 					std::ifstream targetFile(fileName);
 					bool isFileGood = targetFile.good();
 
-					if (!isFileGood) {
-						std::ostringstream stream;
-						stream << "Given file does not exist or is not readable by this process: \"" << fileName << "\"" << std::endl; 
-						errorMessageTarget.append(stream.str());
-					}
+                    STORM_LOG_THROW(isFileGood, storm::exceptions::IllegalArgumentValueException, "The file " << fileName << " does not exist or is not readable.");
 					return isFileGood;
 				};
 			}
 
-			static std::function<bool (std::string const, std::string&)> stringInListValidator(std::vector<std::string> list) {
-				return [list] (std::string const inputString, std::string& errorMessageTarget) -> bool {
-					std::string const lowerInputString = storm::utility::StringHelper::stringToLower(inputString);
-					for (auto it = list.cbegin(); it != list.cend(); ++it) {
-						if (storm::utility::StringHelper::stringToLower(*it).compare(lowerInputString) == 0) {
+            /*!
+             * Creates a validation function that checks whether a given string is in a provided list of strings.
+             *
+             * @param list The list of valid strings.
+             * @return The resulting validation function.
+             */
+			static std::function<bool (std::string const&)> stringInListValidator(std::vector<std::string> const& list) {
+				return [list] (std::string const& inputString) -> bool {
+                    for (auto const& validString : list) {
+						if (inputString == validString) {
 							return true;
 						}
 					}
 
-					std::ostringstream stream;
-					stream << "The given Input \"" << inputString << "\" is not in the list of valid Items (";
-					bool first = true;
-					for (auto it = list.cbegin(); it != list.cend(); ++it) {
-						if (!first) {
-							stream << ", ";
-						}
-						stream << *it;
-						first = false;
-					}
-					stream << ")" << std::endl;
-					errorMessageTarget.append(stream.str());
-					
+                    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Value '" << inputString << "' does not match any entry in the list of valid items.");
 					return false;
 				};
 			}
+            
 		private:
+            /*!
+             * Creates a validation function that checks whether its argument is in a given range (including the bounds).
+             *
+             * @param lowerBound The lower bound of the valid range.
+             * @param upperBound The upper bound of the valid range.
+             * @return The resulting validation function.
+             */
 			template<typename T>
-			static std::function<bool (T const, std::string&)> rangeValidatorIncluding(T const lowerBound, T const upperBound) {
-				return std::bind([](T const lowerBound, T const upperBound, T const value, std::string& errorMessageTarget) -> bool {
-					bool lowerBoundCondition = (lowerBound <= value);
-					bool upperBoundCondition = (value <= upperBound);
-					if (!lowerBoundCondition) { 
-						std::ostringstream stream;
-						stream << " lower bound condition not met: " << lowerBound << " is not smaller or equal than " << value << ".";
-						errorMessageTarget.append(stream.str());
-					}
-					if (!upperBoundCondition) { 
-						std::ostringstream stream;
-						stream << " upper bound condition not met: " << value << " is not smaller or equal than " << upperBound << ".";
-						errorMessageTarget.append(stream.str());
-					}
-					return (lowerBoundCondition && upperBoundCondition);
-				}, lowerBound, upperBound, std::placeholders::_1, std::placeholders::_2);
+			static std::function<bool (T const&)> rangeValidatorIncluding(T lowerBound, T upperBound) {
+				return std::bind([](T lowerBound, T upperBound, T value) -> bool {
+                    STORM_LOG_THROW(lowerBound <= value && value <= upperBound, storm::exceptions::InvalidArgumentException, "Value " << value << " is out range.");
+                    return true;
+                }, lowerBound, upperBound, std::placeholders::_1);
 			}
+            
+            /*!
+             * Creates a validation function that checks whether its argument is in a given range (excluding the bounds).
+             *
+             * @param lowerBound The lower bound of the valid range.
+             * @param upperBound The upper bound of the valid range.
+             * @return The resulting validation function.
+             */
 			template<typename T>
-			static std::function<bool (T const, std::string&)> rangeValidatorExcluding(T const lowerBound, T const upperBound) {
-				return std::bind([](T const lowerBound, T const upperBound, T const value, std::string& errorMessageTarget) -> bool { 
-					bool lowerBoundCondition = (lowerBound < value);
-					bool upperBoundCondition = (value < upperBound);
-					if (!lowerBoundCondition) { 
-						std::ostringstream stream;
-						stream << " lower bound condition not met: " << lowerBound << " is not smaller than " << value << ".";
-						errorMessageTarget.append(stream.str());
-					}
-					if (!upperBoundCondition) { 
-						std::ostringstream stream;
-						stream << " upper bound condition not met: " << value << " is not smaller than < " << upperBound << ".";
-						errorMessageTarget.append(stream.str());
-					}
-					return (lowerBoundCondition && upperBoundCondition);
-				}, lowerBound, upperBound, std::placeholders::_1, std::placeholders::_2);
+			static std::function<bool (T const&)> rangeValidatorExcluding(T lowerBound, T upperBound) {
+				return std::bind([](T lowerBound, T upperBound, T value) -> bool {
+                    STORM_LOG_THROW(lowerBound < value && value < upperBound, storm::exceptions::InvalidArgumentException, "Value " << value << " is out range.");
+                    return true;
+				}, lowerBound, upperBound, std::placeholders::_1);
 			}
 		};
 	}

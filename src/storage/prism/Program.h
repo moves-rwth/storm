@@ -220,6 +220,21 @@ namespace storm {
             uint_fast64_t getModuleIndexByVariable(std::string const& variableName) const;
             
             /*!
+             * Retrieves whether the program has reward models.
+             *
+             * @return True iff the program has at least one reward model.
+             */
+            bool hasRewardModel() const;
+            
+            /*!
+             * Retrieves whether the program has a reward model with the given name.
+             *
+             * @param name The name of the reward model to look for.
+             * @return True iff the program has a reward model with the given name.
+             */
+            bool hasRewardModel(std::string const& name) const;
+            
+            /*!
              * Retrieves the reward models of the program.
              *
              * @return The reward models of the program.
@@ -240,6 +255,14 @@ namespace storm {
              * @return The reward model with the given name.
              */
             RewardModel const& getRewardModel(std::string const& rewardModelName) const;
+            
+            /*!
+             * Retrieves the reward model with the given index.
+             *
+             * @param index The index of the reward model to return.
+             * @return The reward model with the given index.
+             */
+            RewardModel const& getRewardModel(uint_fast64_t index) const;
             
             /*!
              * Retrieves all labels that are defined by the probabilitic program.
