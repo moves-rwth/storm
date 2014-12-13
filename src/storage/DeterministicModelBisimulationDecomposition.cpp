@@ -262,41 +262,50 @@ namespace storm {
         
         template<typename ValueType>
         DeterministicModelBisimulationDecomposition<ValueType>::Partition::Partition(std::size_t numberOfStates, storm::storage::BitVector const& prob0States, storm::storage::BitVector const& prob1States, std::string const& otherLabel, std::string const& prob1Label, bool keepSilentProbabilities) : numberOfBlocks(0), stateToBlockMapping(numberOfStates), statesAndValues(numberOfStates), positions(numberOfStates), keepSilentProbabilities(keepSilentProbabilities), silentProbabilities() {
-            typename std::list<Block>::iterator firstIt = blocks.emplace(this->blocks.end(), 0, prob0States.getNumberOfSetBits(), nullptr, nullptr, numberOfBlocks++);
-            Block& firstBlock = *firstIt;
-            firstBlock.setIterator(firstIt);
-
             storm::storage::sparse::state_type position = 0;
-            for (auto state : prob0States) {
-                statesAndValues[position] = std::make_pair(state, storm::utility::zero<ValueType>());
-                positions[state] = position;
-                stateToBlockMapping[state] = &firstBlock;
-                ++position;
-            }
-            firstBlock.setAbsorbing(true);
+            Block* firstBlock = nullptr;
+            Block* secondBlock = nullptr;
+            Block* thirdBlock = nullptr;
+            if (!prob0States.empty()) {
+                typename std::list<Block>::iterator firstIt = blocks.emplace(this->blocks.end(), 0, prob0States.getNumberOfSetBits(), nullptr, nullptr, numberOfBlocks++);
+                firstBlock = &(*firstIt);
+                firstBlock->setIterator(firstIt);
 
-            typename std::list<Block>::iterator secondIt = blocks.emplace(this->blocks.end(), position, position + prob1States.getNumberOfSetBits(), &firstBlock, nullptr, numberOfBlocks++, std::shared_ptr<std::string>(new std::string(prob1Label)));
-            Block& secondBlock = *secondIt;
-            secondBlock.setIterator(secondIt);
-            
-            for (auto state : prob1States) {
-                statesAndValues[position] = std::make_pair(state, storm::utility::zero<ValueType>());
-                positions[state] = position;
-                stateToBlockMapping[state] = &secondBlock;
-                ++position;
+                for (auto state : prob0States) {
+                    statesAndValues[position] = std::make_pair(state, storm::utility::zero<ValueType>());
+                    positions[state] = position;
+                    stateToBlockMapping[state] = firstBlock;
+                    ++position;
+                }
+                firstBlock->setAbsorbing(true);
             }
-            secondBlock.setAbsorbing(true);
-            
-            typename std::list<Block>::iterator thirdIt = blocks.emplace(this->blocks.end(), position, numberOfStates, &secondBlock, nullptr, numberOfBlocks++, otherLabel == "true" ? std::shared_ptr<std::string>(nullptr) : std::shared_ptr<std::string>(new std::string(otherLabel)));
-            Block& thirdBlock = *thirdIt;
-            thirdBlock.setIterator(thirdIt);
+
+            if (!prob1States.empty()) {
+                typename std::list<Block>::iterator secondIt = blocks.emplace(this->blocks.end(), position, position + prob1States.getNumberOfSetBits(), firstBlock, nullptr, numberOfBlocks++, std::shared_ptr<std::string>(new std::string(prob1Label)));
+                secondBlock = &(*secondIt);
+                secondBlock->setIterator(secondIt);
+                
+                for (auto state : prob1States) {
+                    statesAndValues[position] = std::make_pair(state, storm::utility::zero<ValueType>());
+                    positions[state] = position;
+                    stateToBlockMapping[state] = secondBlock;
+                    ++position;
+                }
+                secondBlock->setAbsorbing(true);
+            }
             
             storm::storage::BitVector otherStates = ~(prob0States | prob1States);
-            for (auto state : otherStates) {
-                statesAndValues[position] = std::make_pair(state, storm::utility::zero<ValueType>());
-                positions[state] = position;
-                stateToBlockMapping[state] = &thirdBlock;
-                ++position;
+            if (!otherStates.empty()) {
+                typename std::list<Block>::iterator thirdIt = blocks.emplace(this->blocks.end(), position, numberOfStates, secondBlock, nullptr, numberOfBlocks++, otherLabel == "true" ? std::shared_ptr<std::string>(nullptr) : std::shared_ptr<std::string>(new std::string(otherLabel)));
+                thirdBlock = &(*thirdIt);
+                thirdBlock->setIterator(thirdIt);
+                
+                for (auto state : otherStates) {
+                    statesAndValues[position] = std::make_pair(state, storm::utility::zero<ValueType>());
+                    positions[state] = position;
+                    stateToBlockMapping[state] = thirdBlock;
+                    ++position;
+                }
             }
             
             // If we are requested to store silent probabilities, we need to prepare the vector.
