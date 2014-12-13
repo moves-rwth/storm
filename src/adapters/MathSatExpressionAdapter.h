@@ -15,9 +15,10 @@
 
 #include "storage/expressions/Expressions.h"
 #include "storage/expressions/ExpressionVisitor.h"
-#include "src/exceptions/ExceptionMacros.h"
+#include "src/utility/macros.h"
 #include "src/exceptions/ExpressionEvaluationException.h"
 #include "src/exceptions/InvalidTypeException.h"
+#include "src/exceptions/InvalidArgumentException.h"
 #include "src/exceptions/NotImplementedException.h"
 
 namespace storm {
@@ -225,15 +226,13 @@ namespace storm {
 			}
 
 			virtual void visit(expressions::VariableExpression const* expression) override {
-				if (variableToDeclMap.count(expression->getVariableName()) == 0) {
-					LOG4CPLUS_ERROR(logger, "Variable " << expression->getVariableName() << " is unknown!");
-				}
+                STORM_LOG_THROW(variableToDeclMap.count(expression->getVariableName()) != 0, storm::exceptions::InvalidArgumentException, "Variable '" << expression->getVariableName() << "' is unknown.");
 				//LOG4CPLUS_TRACE(logger, "Variable "<<expression->getVariableName());
 				//char* repr = msat_decl_repr(variableToDeclMap.at(expression->getVariableName()));
 				//LOG4CPLUS_TRACE(logger, "Decl: "<<repr);
 				//msat_free(repr);
 				if (MSAT_ERROR_DECL(variableToDeclMap.at(expression->getVariableName()))) {
-					LOG4CPLUS_WARN(logger, "Encountered an invalid MathSAT declaration");
+                    STORM_LOG_WARN("Encountered an invalid MathSAT declaration.");
 				}
 				stack.push(msat_make_constant(env, variableToDeclMap.at(expression->getVariableName())));
 			}

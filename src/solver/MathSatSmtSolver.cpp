@@ -32,7 +32,7 @@ namespace storm {
 #ifdef STORM_HAVE_MSAT
 			msat_push_backtrack_point(m_env);
 #else
-			LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without MathSat support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without MathSat support.");
 #endif
 		}
 
@@ -41,7 +41,7 @@ namespace storm {
 #ifdef STORM_HAVE_MSAT
 			msat_pop_backtrack_point(m_env);
 #else
-			LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without MathSat support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without MathSat support.");
 #endif
 		}
 
@@ -52,7 +52,7 @@ namespace storm {
 				this->pop();
 			}
 #else
-			LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without MathSat support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without MathSat support.");
 #endif
 		}
 
@@ -61,7 +61,7 @@ namespace storm {
 #ifdef STORM_HAVE_MSAT
 			msat_reset_env(m_env);
 #else
-			LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without MathSat support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without MathSat support.");
 #endif
 		}
 
@@ -70,7 +70,7 @@ namespace storm {
 #ifdef STORM_HAVE_MSAT
 			msat_assert_formula(m_env, m_adapter->translateExpression(e, true));
 #else
-			LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without MathSat support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without MathSat support.");
 #endif
 		}
 
@@ -91,7 +91,7 @@ namespace storm {
 			}
 			return this->lastResult;
 #else
-			LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without MathSat support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without MathSat support.");
 #endif
 		}
 
@@ -119,7 +119,7 @@ namespace storm {
 			}
 			return this->lastResult;
 #else
-			LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without MathSat support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without MathSat support.");
 #endif
 		}
 
@@ -147,7 +147,7 @@ namespace storm {
 			}
 			return this->lastResult;
 #else
-			LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without MathSat support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without MathSat support.");
 #endif
 		}
 
@@ -155,11 +155,11 @@ namespace storm {
 		{
 #ifdef STORM_HAVE_MSAT
 			
-			LOG_THROW(this->lastResult == SmtSolver::CheckResult::SAT, storm::exceptions::InvalidStateException, "Requested Model but last check result was not SAT.");
+			STORM_LOG_THROW(this->lastResult == SmtSolver::CheckResult::SAT, storm::exceptions::InvalidStateException, "Requested Model but last check result was not SAT.");
 
 			return this->MathSatModelToStorm();
 #else
-			LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without MathSat support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without MathSat support.");
 #endif
 		}
 
@@ -188,7 +188,7 @@ namespace storm {
 						stormModel.addDoubleIdentifier(std::string(name), var_i_interp.evaluateAsDouble());
 						break;
 					default:
-						LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Variable interpretation in model is not of type bool, int or double.")
+						STORM_LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Variable interpretation in model is not of type bool, int or double.")
 							break;
 				}
 
@@ -211,7 +211,7 @@ namespace storm {
 			return valuations;
 
 #else
-			LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without MathSat support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without MathSat support.");
 #endif
 		}
 
@@ -281,9 +281,9 @@ namespace storm {
 		uint_fast64_t MathSatSmtSolver::allSat(std::function<bool(SmtSolver::ModelReference&)> callback, std::vector<storm::expressions::Expression> const& important)
 		{
 #ifdef STORM_HAVE_MSAT
-			LOG_THROW(false, storm::exceptions::NotImplementedException, "Not Implemented.");
+			STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not Implemented.");
 #else
-			LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without MathSat support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without MathSat support.");
 #endif
 		}
 
@@ -308,7 +308,7 @@ namespace storm {
 
 			return unsatAssumptions;
 #else
-			LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without MathSat support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without MathSat support.");
 #endif
 		}
 
@@ -325,7 +325,7 @@ namespace storm {
 			}
 			msat_set_itp_group(m_env, groupIter->second);
 #else
-			LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without MathSat support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without MathSat support.");
 #endif
 		}
 
@@ -351,7 +351,7 @@ namespace storm {
 
 			return this->m_adapter->translateTerm(interpolant);
 #else
-			LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without MathSat support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without MathSat support.");
 #endif
 		}
 	}
