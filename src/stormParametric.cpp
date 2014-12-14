@@ -157,7 +157,7 @@ int main(const int argc, const char** argv) {
         std::shared_ptr<storm::properties::prctl::PrctlFilter<double>> filterFormula = storm::parser::PrctlParser::parsePrctlFormula(storm::settings::generalSettings().getPctlProperty());
         std::cout << "Checking formula " << *filterFormula << std::endl;
     
-        bool keepRewards = false;
+        bool checkRewards = false;
         std::shared_ptr<storm::properties::prctl::Ap<double>> phiStateFormulaApFormula = nullptr;
         std::shared_ptr<storm::properties::prctl::Ap<double>> psiStateFormulaApFormula = nullptr;
     
@@ -180,7 +180,7 @@ int main(const int argc, const char** argv) {
                 STORM_LOG_THROW(reachabilityRewardFormula, storm::exceptions::InvalidPropertyException, "Illegal formula " << *filterFormula << " for parametric model checking. Note that only unbounded reachability properties (probabilities/rewards) are admitted.");
                 phiStateFormula = std::shared_ptr<storm::properties::prctl::Ap<double>>(new storm::properties::prctl::Ap<double>("true"));
                 psiStateFormula = reachabilityRewardFormula->getChild();
-                keepRewards = true;
+                checkRewards = true;
             }
         }
         
@@ -192,7 +192,7 @@ int main(const int argc, const char** argv) {
         
         // Perform bisimulation minimization if requested.
         if (storm::settings::generalSettings().isBisimulationSet()) {
-            storm::storage::DeterministicModelBisimulationDecomposition<storm::RationalFunction> bisimulationDecomposition(*dtmc, phiStateFormulaApFormula->getAp(), psiStateFormulaApFormula->getAp(), keepRewards, storm::settings::bisimulationSettings().isWeakBisimulationSet(), false, true);
+            storm::storage::DeterministicModelBisimulationDecomposition<storm::RationalFunction> bisimulationDecomposition(*dtmc, phiStateFormulaApFormula->getAp(), psiStateFormulaApFormula->getAp(), checkRewards, storm::settings::bisimulationSettings().isWeakBisimulationSet(), false, true);
             dtmc = bisimulationDecomposition.getQuotient()->as<storm::models::Dtmc<storm::RationalFunction>>();
             
             dtmc->printModelInformationToStream(std::cout);
@@ -204,7 +204,7 @@ int main(const int argc, const char** argv) {
     
         storm::modelchecker::reachability::SparseSccModelChecker<storm::RationalFunction> modelchecker;
 
-        storm::RationalFunction valueFunction = modelchecker.computeReachabilityProbability(*dtmc, phiStateFormulaApFormula, psiStateFormulaApFormula);
+        storm::RationalFunction valueFunction = checkRewards ? modelchecker.computeReachabilityReward(*dtmc, phiStateFormulaApFormula, psiStateFormulaApFormula) : modelchecker.computeReachabilityProbability(*dtmc, phiStateFormulaApFormula, psiStateFormulaApFormula);
 //        STORM_PRINT_AND_LOG(std::endl << "Result: (" << carl::computePolynomial(valueFunction.nominator()) << ") / (" << carl::computePolynomial(valueFunction.denominator()) << ")" << std::endl);
 //        STORM_PRINT_AND_LOG(std::endl << "Result: (" << valueFunction.nominator() << ") / (" << valueFunction.denominator() << ")" << std::endl);
         STORM_PRINT_AND_LOG(std::endl << "Result: " << valueFunction << std::endl);
