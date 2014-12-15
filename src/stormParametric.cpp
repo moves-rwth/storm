@@ -235,7 +235,7 @@ int main(const int argc, const char** argv) {
             }
         }
     
-        STORM_LOG_ASSERT(parameters == valueFunction.gatherVariables(), "Parameters in result and program definition do not coincide.");
+//        STORM_LOG_ASSERT(parameters == valueFunction.gatherVariables(), "Parameters in result and program definition do not coincide.");
         
         if(storm::settings::parametricSettings().exportResultToFile()) {
             storm::utility::exportParametricMcResult(valueFunction, constraintCollector);

@@ -28,6 +28,12 @@ namespace storm {
         ValueType infinity();
         
         template<typename ValueType>
+        ValueType pow(ValueType const& value, uint_fast64_t exponent);
+        
+        template<>
+        RationalFunction pow(RationalFunction const& value, uint_fast64_t exponent);
+
+        template<typename ValueType>
         ValueType simplify(ValueType value);
 
         // A class that can be used for comparing constants.
@@ -92,8 +98,6 @@ namespace storm {
             
             bool isConstant(storm::Polynomial const& value) const;
         };
-        
-        
 #endif
         
         template<typename IndexType, typename ValueType>

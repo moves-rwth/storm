@@ -66,8 +66,28 @@ namespace storm {
                 }
                 
                 // Finally eliminate initial state.
-                STORM_PRINT_AND_LOG("Eliminating initial state " << *initialStates.begin() << "." << std::endl);
-                eliminateState(flexibleMatrix, oneStepProbabilities, *initialStates.begin(), flexibleBackwardTransitions, stateRewards);
+                if (!stateRewards) {
+                    // If we are computing probabilities, then we can simply call the state elimination procedure. It
+                    // will scale the transition row of the initial state with 1/(1-loopProbability).
+                    STORM_PRINT_AND_LOG("Eliminating initial state " << *initialStates.begin() << "." << std::endl);
+                    eliminateState(flexibleMatrix, oneStepProbabilities, *initialStates.begin(), flexibleBackwardTransitions, stateRewards);
+                } else {
+                    // If we are computing rewards, we cannot call the state elimination procedure for technical reasons.
+                    // Instead, we need to get rid of a potential loop in this state explicitly.
+
+                    // Start by finding the self-loop element. Since it can only be the only remaining outgoing transition
+                    // of the initial state, this amounts to checking whether the outgoing transitions of the initial
+                    // state are non-empty.
+                    if (!flexibleMatrix.getRow(*initialStates.begin()).empty()) {
+                        STORM_LOG_ASSERT(flexibleMatrix.getRow(*initialStates.begin()).size() == 1, "At most one outgoing transition expected at this point, but found more.");
+                        STORM_LOG_ASSERT(flexibleMatrix.getRow(*initialStates.begin()).front().getColumn() == *initialStates.begin(), "Remaining entry should be a self-loop, but it is not.");
+                        ValueType loopProbability = flexibleMatrix.getRow(*initialStates.begin()).front().getValue();
+                        loopProbability = storm::utility::constantOne<ValueType>() / (storm::utility::constantOne<ValueType>() - loopProbability);
+                        loopProbability = storm::utility::pow(loopProbability, 2);
+                        STORM_PRINT_AND_LOG("Scaling the transition reward of the initial state.");
+                        stateRewards.get()[(*initialStates.begin())] *= loopProbability;
+                    }
+                }
                 
                 // Make sure that we have eliminated all transitions from the initial state.
                 STORM_LOG_ASSERT(flexibleMatrix.getRow(*initialStates.begin()).empty(), "The transitions of the initial states are non-empty.");
@@ -98,7 +118,11 @@ namespace storm {
                 }
                 
                 // Now, we return the value for the only initial state.
-                return storm::utility::simplify(oneStepProbabilities[*initialStates.begin()]);
+                if (stateRewards) {
+                    return storm::utility::simplify(stateRewards.get()[*initialStates.begin()]);
+                } else {
+                    return storm::utility::simplify(oneStepProbabilities[*initialStates.begin()]);
+                }
             }
             
             template<typename ValueType>
@@ -134,12 +158,16 @@ namespace storm {
                 // Create a vector for the probabilities to go to a state with probability 1 in one step.
                 std::vector<ValueType> oneStepProbabilities = dtmc.getTransitionMatrix().getConstrainedRowSumVector(maybeStates, psiStates);
                 
-                // Create a vector that holds the one-step rewards.
-                std::vector<ValueType> oneStepRewards = std::vector<ValueType>(maybeStates.getNumberOfSetBits(), storm::utility::zero<ValueType>());
-                
                 // Project the state reward vector to all maybe-states.
                 boost::optional<std::vector<ValueType>> stateRewards(maybeStates.getNumberOfSetBits());
                 storm::utility::vector::selectVectorValues(stateRewards.get(), maybeStates, dtmc.getStateRewardVector());
+                for (uint_fast64_t i = 0; i < dtmc.getStateRewardVector().size(); ++i) {
+                    std::cout << i << ": " << dtmc.getStateRewardVector()[i] << ", ";
+                }
+                std::cout << std::endl;
+                std::cout << maybeStates << std::endl;
+                std::cout << psiStates << std::endl;
+                std::cout << infinityStates << std::endl;
                 
                 // Determine the set of initial states of the sub-DTMC.
                 storm::storage::BitVector newInitialStates = dtmc.getInitialStates() % maybeStates;
@@ -152,7 +180,7 @@ namespace storm {
                 // impose ordering constraints later.
                 std::vector<std::size_t> statePriorities = getStatePriorities(submatrix, submatrixTransposed, newInitialStates, oneStepProbabilities);
 
-                return computeReachabilityValue(submatrix, oneStepRewards, submatrixTransposed, newInitialStates, phiStates, psiStates, stateRewards, statePriorities);
+                return computeReachabilityValue(submatrix, oneStepProbabilities, submatrixTransposed, newInitialStates, phiStates, psiStates, stateRewards, statePriorities);
             }
             
             template<typename ValueType>
@@ -402,7 +430,9 @@ namespace storm {
                             entry.setValue(storm::utility::simplify(entry.getValue() * loopProbability));
                         }
                     }
-                    oneStepProbabilities[state] = oneStepProbabilities[state] * loopProbability;
+                    if (!stateRewards) {
+                        oneStepProbabilities[state] = oneStepProbabilities[state] * loopProbability;
+                    }
                 }
                 
                 STORM_LOG_DEBUG((hasSelfLoop ? "State has self-loop." : "State does not have a self-loop."));
@@ -479,9 +509,15 @@ namespace storm {
                     // Now move the new transitions in place.
                     predecessorForwardTransitions = std::move(newSuccessors);
                     
-                    // Add the probabilities to go to a target state in just one step.
-                    oneStepProbabilities[predecessor] += storm::utility::simplify(multiplyFactor * oneStepProbabilities[state]);
-                    STORM_LOG_DEBUG("Fixed new next-state probabilities of predecessor states.");
+                    if (!stateRewards) {
+                        // Add the probabilities to go to a target state in just one step if we have to compute probabilities.
+                        oneStepProbabilities[predecessor] += storm::utility::simplify(multiplyFactor * oneStepProbabilities[state]);
+                        STORM_LOG_DEBUG("Fixed new next-state probabilities of predecessor states.");
+                    } else {
+                        // If we are computing rewards, we basically scale the state reward of the state to eliminate and
+                        // add the result to the state reward of the predecessor.
+                        stateRewards.get()[predecessor] += storm::utility::simplify(multiplyElement->getValue() * storm::utility::pow(loopProbability, 2) * stateRewards.get()[state]);
+                    }
                 }
                 
                 // Finally, we need to add the predecessor to the set of predecessors of every successor.

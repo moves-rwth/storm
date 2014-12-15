@@ -20,6 +20,11 @@ namespace storm {
             return std::numeric_limits<ValueType>::infinity();
         }
         
+        template<typename ValueType>
+        ValueType pow(ValueType const& value, uint_fast64_t exponent) {
+            return std::pow(value, exponent);
+        }
+        
         template<>
         double simplify(double value) {
             // In the general case, we don't to anything here, but merely return the value. If something else is
@@ -67,6 +72,11 @@ namespace storm {
         }
         
 #ifdef PARAMETRIC_SYSTEMS
+        template<>
+        RationalFunction pow(RationalFunction const& value, uint_fast64_t exponent) {
+            return carl::pow(exponent, value);
+        }
+
         template<>
         RationalFunction simplify(RationalFunction value) {
             value.simplify();
@@ -116,8 +126,8 @@ namespace storm {
         bool ConstantsComparator<storm::Polynomial>::isConstant(storm::Polynomial const& value) const {
             return value.isConstant();
         }
-        
 #endif
+
         template<typename IndexType, typename ValueType>
         storm::storage::MatrixEntry<IndexType, ValueType> simplify(storm::storage::MatrixEntry<IndexType, ValueType> matrixEntry) {
             simplify(matrixEntry.getValue());
@@ -141,6 +151,8 @@ namespace storm {
         template double one();
         template double zero();
         template double infinity();
+        
+        template double pow(double const& value, uint_fast64_t exponent);
 
         template double simplify(double value);
 
@@ -155,6 +167,8 @@ namespace storm {
         template RationalFunction one();
         template RationalFunction zero();
         
+        template RationalFunction pow(RationalFunction const& value, uint_fast64_t exponent);
+        
         template Polynomial one();
         template Polynomial zero();
         template RationalFunction simplify(RationalFunction value);
@@ -165,5 +179,6 @@ namespace storm {
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, RationalFunction>& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, RationalFunction>& matrixEntry);
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, RationalFunction>&& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, RationalFunction>&& matrixEntry);
 #endif
+        
     }
 }
