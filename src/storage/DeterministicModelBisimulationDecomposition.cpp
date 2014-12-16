@@ -1222,7 +1222,7 @@ namespace storm {
         template<typename ModelType>
         typename DeterministicModelBisimulationDecomposition<ValueType>::Partition DeterministicModelBisimulationDecomposition<ValueType>::getMeasureDrivenInitialPartition(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::string const& phiLabel, std::string const& psiLabel, BisimulationType bisimulationType, bool keepRewards, bool bounded) {
             std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(backwardTransitions, phiLabel == "true" ? storm::storage::BitVector(model.getNumberOfStates(), true) : model.getLabeledStates(phiLabel), model.getLabeledStates(psiLabel));
-            Partition partition(model.getNumberOfStates(), statesWithProbability01.first, bounded ? model.getLabeledStates(psiLabel) : statesWithProbability01.second, phiLabel, psiLabel, bisimulationType == BisimulationType::WeakDtmc);
+            Partition partition(model.getNumberOfStates(), statesWithProbability01.first, bounded || keepRewards ? model.getLabeledStates(psiLabel) : statesWithProbability01.second, phiLabel, psiLabel, bisimulationType == BisimulationType::WeakDtmc);
             
             // If the model has state rewards, we need to consider them, because otherwise reward properties are not
             // preserved.
