@@ -640,9 +640,6 @@ namespace storm {
             // (b) the new labeling,
             // (c) the new reward structures.
             
-            std::cout << model.getTransitionMatrix() << std::endl;
-            std::cout << model.getLabeledStates("end") << std::endl;;
-            
             // Prepare a matrix builder for (a).
             storm::storage::SparseMatrixBuilder<ValueType> builder(this->size(), this->size());
             
@@ -742,13 +739,6 @@ namespace storm {
                 // If the model has state rewards, we simply copy the state reward of the representative state, because
                 // all states in a block are guaranteed to have the same state reward.
                 if (keepRewards && model.hasStateRewards()) {
-                    std::cout << "is block absorbing? " << oldBlock.isAbsorbing() << std::endl;
-                    std::cout << "setting reward for block " << blockIndex << " to " << model.getStateRewardVector()[representativeState] << std::endl;
-                    std::cout << "block: " << std::endl;
-                    for (auto element : this->blocks[blockIndex]) {
-                        std::cout << element << ", ";
-                    }
-                    std::cout << std::endl;
                     stateRewards.get()[blockIndex] = model.getStateRewardVector()[representativeState];
                 }
             }
@@ -761,8 +751,6 @@ namespace storm {
             
             // Finally construct the quotient model.
             this->quotient = std::shared_ptr<storm::models::AbstractDeterministicModel<ValueType>>(new ModelType(builder.build(), std::move(newLabeling), std::move(stateRewards)));
-            
-            std::cout << quotient->getTransitionMatrix() << std::endl;
         }
         
         template<typename ValueType>
@@ -1236,8 +1224,6 @@ namespace storm {
                 this->splitOffDivergentStates(model, backwardTransitions, partition);
                 this->initializeSilentProbabilities(model, partition);
             }
-            
-            partition.print();
             
             return partition;
         }

@@ -739,7 +739,6 @@ namespace storm {
             static std::vector<ValueType> buildStateRewards(std::vector<storm::prism::StateReward> const& rewards, StateInformation const& stateInformation, expressions::ExpressionEvaluation<ValueType>& eval) {
                 std::vector<ValueType> result(stateInformation.reachableStates.size());
                 for (uint_fast64_t index = 0; index < stateInformation.reachableStates.size(); index++) {
-                    std::cout << index << ": " << *stateInformation.reachableStates[index] << std::endl;
                     result[index] = ValueType(0);
                     for (auto const& reward : rewards) {
                         // Add this reward to the state if the state is included in the state reward.

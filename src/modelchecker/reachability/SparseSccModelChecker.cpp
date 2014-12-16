@@ -161,13 +161,6 @@ namespace storm {
                 // Project the state reward vector to all maybe-states.
                 boost::optional<std::vector<ValueType>> stateRewards(maybeStates.getNumberOfSetBits());
                 storm::utility::vector::selectVectorValues(stateRewards.get(), maybeStates, dtmc.getStateRewardVector());
-                for (uint_fast64_t i = 0; i < dtmc.getStateRewardVector().size(); ++i) {
-                    std::cout << i << ": " << dtmc.getStateRewardVector()[i] << ", ";
-                }
-                std::cout << std::endl;
-                std::cout << maybeStates << std::endl;
-                std::cout << psiStates << std::endl;
-                std::cout << infinityStates << std::endl;
                 
                 // Determine the set of initial states of the sub-DTMC.
                 storm::storage::BitVector newInitialStates = dtmc.getInitialStates() % maybeStates;
@@ -516,7 +509,11 @@ namespace storm {
                     } else {
                         // If we are computing rewards, we basically scale the state reward of the state to eliminate and
                         // add the result to the state reward of the predecessor.
-                        stateRewards.get()[predecessor] += storm::utility::simplify(multiplyElement->getValue() * storm::utility::pow(loopProbability, 2) * stateRewards.get()[state]);
+                        if (hasSelfLoop) {
+                            stateRewards.get()[predecessor] += storm::utility::simplify(multiplyFactor * storm::utility::pow(loopProbability, 2) * stateRewards.get()[state]);
+                        } else {
+                            stateRewards.get()[predecessor] += storm::utility::simplify(multiplyFactor * stateRewards.get()[state]);
+                        }
                     }
                 }
                 
