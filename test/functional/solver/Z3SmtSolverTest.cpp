@@ -214,9 +214,9 @@ TEST(Z3SmtSolver, UnsatAssumptions) {
 	storm::expressions::Expression f2 = storm::expressions::Expression::createBooleanVariable("f2");
 	storm::expressions::Expression exprFormula2 = f2.implies(a >= storm::expressions::Expression::createIntegerLiteral(2));
 	
-	(s.assertExpression(exprFormula));
-	(s.assertExpression(exprFormula2));
-	(result = s.checkWithAssumptions({ f2 }));
+	s.assertExpression(exprFormula);
+	s.assertExpression(exprFormula2);
+	result = s.checkWithAssumptions({ f2 });
 	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::UNSAT);
 	std::vector<storm::expressions::Expression> unsatCore = s.getUnsatAssumptions();
 	ASSERT_EQ(unsatCore.size(), 1);

@@ -118,6 +118,9 @@ namespace storm {
 					case storm::expressions::BinaryBooleanFunctionExpression::OperatorType::Iff:
 						stack.push(msat_make_iff(env, leftResult, rightResult));
 						break;
+                    case storm::expressions::BinaryBooleanFunctionExpression::OperatorType::Implies:
+                        stack.push(msat_make_or(env, msat_make_not(env, leftResult), rightResult));
+                        break;
 					default: throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "
 						<< "Unknown boolean binary operator: '" << static_cast<uint_fast64_t>(expression->getOperatorType()) << "' in expression " << expression << ".";
 				}
