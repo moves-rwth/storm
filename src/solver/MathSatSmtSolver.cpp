@@ -2,6 +2,8 @@
 
 #include <vector>
 
+#include "src/exceptions/UnexpectedException.h"
+
 namespace storm {
 	namespace solver {
 
@@ -17,6 +19,9 @@ namespace storm {
 			if (static_cast<int>(options)& static_cast<int>(Options::InterpolantComputation)) {
 				msat_set_option(m_cfg, "interpolation", "true");
 			}
+            
+            msat_set_option(m_cfg, "model_generation", "true");
+            
 			m_env = msat_create_env(m_cfg);
 
 			m_adapter = new storm::adapters::MathSatExpressionAdapter(m_env, variableToDeclMap);
@@ -169,6 +174,8 @@ namespace storm {
 
 			msat_model_iterator model = msat_create_model_iterator(m_env);
 
+            STORM_LOG_THROW(!MSAT_ERROR_MODEL_ITERATOR(model), storm::exceptions::UnexpectedException, "MathSat returned an illegal model iterator.");
+            
 			while (msat_model_iterator_has_next(model)) {
 				msat_term t, v;
 				msat_model_iterator_next(model, &t, &v);

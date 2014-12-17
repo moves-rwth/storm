@@ -7,7 +7,7 @@
 
 TEST(Z3SmtSolver, CheckSat) {
 	storm::solver::Z3SmtSolver s;
-	storm::solver::Z3SmtSolver::CheckResult result = storm::solver::Z3SmtSolver::CheckResult::UNKNOWN;
+	storm::solver::SmtSolver::CheckResult result = storm::solver::SmtSolver::CheckResult::UNKNOWN;
 
 	storm::expressions::Expression exprDeMorgan = !(storm::expressions::Expression::createBooleanVariable("x") && storm::expressions::Expression::createBooleanVariable("y")).iff((!storm::expressions::Expression::createBooleanVariable("x") || !storm::expressions::Expression::createBooleanVariable("y")));
 
@@ -33,7 +33,7 @@ TEST(Z3SmtSolver, CheckSat) {
 
 TEST(Z3SmtSolver, CheckUnsat) {
 	storm::solver::Z3SmtSolver s;
-	storm::solver::Z3SmtSolver::CheckResult result = storm::solver::Z3SmtSolver::CheckResult::UNKNOWN;
+	storm::solver::SmtSolver::CheckResult result = storm::solver::SmtSolver::CheckResult::UNKNOWN;
 
 	storm::expressions::Expression exprDeMorgan = !(storm::expressions::Expression::createBooleanVariable("x") && storm::expressions::Expression::createBooleanVariable("y")).iff( (!storm::expressions::Expression::createBooleanVariable("x") || !storm::expressions::Expression::createBooleanVariable("y")));
 
@@ -60,7 +60,7 @@ TEST(Z3SmtSolver, CheckUnsat) {
 
 TEST(Z3SmtSolver, Backtracking) {
 	storm::solver::Z3SmtSolver s;
-	storm::solver::Z3SmtSolver::CheckResult result = storm::solver::Z3SmtSolver::CheckResult::UNKNOWN;
+	storm::solver::SmtSolver::CheckResult result = storm::solver::SmtSolver::CheckResult::UNKNOWN;
 
 	storm::expressions::Expression expr1 = storm::expressions::Expression::createTrue();
 	storm::expressions::Expression expr2 = storm::expressions::Expression::createFalse();
@@ -114,7 +114,7 @@ TEST(Z3SmtSolver, Backtracking) {
 
 TEST(Z3SmtSolver, Assumptions) {
 	storm::solver::Z3SmtSolver s;
-	storm::solver::Z3SmtSolver::CheckResult result = storm::solver::Z3SmtSolver::CheckResult::UNKNOWN;
+	storm::solver::SmtSolver::CheckResult result = storm::solver::SmtSolver::CheckResult::UNKNOWN;
 
 	storm::expressions::Expression a = storm::expressions::Expression::createIntegerVariable("a");
 	storm::expressions::Expression b = storm::expressions::Expression::createIntegerVariable("b");
@@ -143,7 +143,7 @@ TEST(Z3SmtSolver, Assumptions) {
 
 TEST(Z3SmtSolver, GenerateModel) {
 	storm::solver::Z3SmtSolver s;
-	storm::solver::Z3SmtSolver::CheckResult result;
+	storm::solver::SmtSolver::CheckResult result;
 
 	storm::expressions::Expression a = storm::expressions::Expression::createIntegerVariable("a");
 	storm::expressions::Expression b = storm::expressions::Expression::createIntegerVariable("b");
@@ -167,7 +167,7 @@ TEST(Z3SmtSolver, GenerateModel) {
 
 TEST(Z3SmtSolver, AllSat) {
 	storm::solver::Z3SmtSolver s;
-	storm::solver::Z3SmtSolver::CheckResult result;
+	storm::solver::SmtSolver::CheckResult result;
 
 	storm::expressions::Expression a = storm::expressions::Expression::createIntegerVariable("a");
 	storm::expressions::Expression b = storm::expressions::Expression::createIntegerVariable("b");
@@ -201,7 +201,7 @@ TEST(Z3SmtSolver, AllSat) {
 
 TEST(Z3SmtSolver, UnsatAssumptions) {
 	storm::solver::Z3SmtSolver s;
-	storm::solver::Z3SmtSolver::CheckResult result;
+	storm::solver::SmtSolver::CheckResult result;
 
 	storm::expressions::Expression a = storm::expressions::Expression::createIntegerVariable("a");
 	storm::expressions::Expression b = storm::expressions::Expression::createIntegerVariable("b");

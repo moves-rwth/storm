@@ -47,6 +47,37 @@ namespace storm {
 			* @return An equivalent term for MathSAT.
 			*/
 			msat_term translateExpression(storm::expressions::Expression const& expression, bool createMathSatVariables = false) {
+                if (createMathSatVariables) {
+					std::map<std::string, storm::expressions::ExpressionReturnType> variables;
+                    
+					try	{
+						variables = expression.getVariablesAndTypes();
+					}
+					catch (storm::exceptions::InvalidTypeException* e) {
+						STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Encountered variable with ambigious type while trying to autocreate solver variables: " << e);
+					}
+                    
+					for (auto variableAndType : variables) {
+						if (this->variableToDeclMap.find(variableAndType.first) == this->variableToDeclMap.end()) {
+							switch (variableAndType.second)
+							{
+								case storm::expressions::ExpressionReturnType::Bool:
+									this->variableToDeclMap.insert(std::make_pair(variableAndType.first, msat_declare_function(env, variableAndType.first.c_str(), msat_get_bool_type(env))));
+									break;
+								case storm::expressions::ExpressionReturnType::Int:
+									this->variableToDeclMap.insert(std::make_pair(variableAndType.first, msat_declare_function(env, variableAndType.first.c_str(), msat_get_integer_type(env))));
+									break;
+								case storm::expressions::ExpressionReturnType::Double:
+									this->variableToDeclMap.insert(std::make_pair(variableAndType.first, msat_declare_function(env, variableAndType.first.c_str(), msat_get_rational_type(env))));
+									break;
+								default:
+									STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Encountered variable with unknown type while trying to autocreate solver variables: " << variableAndType.first);
+									break;
+							}
+						}
+					}
+				}
+                
 				//LOG4CPLUS_TRACE(logger, "Translating expression:\n" << expression->toString());
 				expression.getBaseExpression().accept(this);
 				msat_term result = stack.top();
