@@ -74,7 +74,7 @@ namespace storm {
 #ifdef PARAMETRIC_SYSTEMS
         template<>
         RationalFunction pow(RationalFunction const& value, uint_fast64_t exponent) {
-            return carl::pow(exponent, value);
+            return carl::pow(value, exponent);
         }
 
         template<>
