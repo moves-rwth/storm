@@ -18,6 +18,15 @@ namespace storm {
 	namespace solver {
 		class MathSatSmtSolver : public SmtSolver {
 		public:
+            /*!
+             * A class that captures options that may be passed to Mathsat solver.
+             */
+			class Options {
+                bool enableModelGeneration = false;
+                bool enableUnsatCoreGeneration = false;
+                bool enableInterpolantGeneration = false;
+			};
+
 			class MathSatModelReference : public SmtSolver::ModelReference {
 			public:
 #ifdef STORM_HAVE_MSAT

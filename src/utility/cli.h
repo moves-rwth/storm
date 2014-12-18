@@ -22,6 +22,9 @@
 #ifdef STORM_HAVE_Z3
 #	include "z3.h"
 #endif
+#ifdef STORM_HAVE_MSAT
+#   include "mathsat.h"
+#endif
 
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
@@ -135,6 +138,11 @@ namespace storm {
                 unsigned int z3Major, z3Minor, z3BuildNumber, z3RevisionNumber;
                 Z3_get_version(&z3Major, &z3Minor, &z3BuildNumber, &z3RevisionNumber);
                 std::cout << "Linked with Microsoft Z3 Optimizer v" << z3Major << "." << z3Minor << " Build " << z3BuildNumber << " Rev " << z3RevisionNumber << "." << std::endl;
+#endif
+#ifdef STORM_HAVE_MSAT
+                char* msatVersion = msat_get_version();
+                std::cout << "Linked with MathSAT v" << msatVersion << "." << std::endl;
+                msat_free(msatVersion);
 #endif
                 
                 // "Compute" the command line argument string with which STORM was invoked.
