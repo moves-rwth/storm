@@ -329,7 +329,10 @@ namespace storm {
             template<class T>
             bool equalModuloPrecision(T const& val1, T const& val2, T precision, bool relativeError = true) {
                 if (relativeError) {
-                    if (std::abs(val1 - val2)/val2 > precision) return false;
+					if (val2 == 0) {
+						return (std::abs(val1) <= precision);
+					}
+                    if (std::abs((val1 - val2)/val2) > precision) return false;
                 } else {
                     if (std::abs(val1 - val2) > precision) return false;
                 }
@@ -419,6 +422,20 @@ namespace storm {
                 
                 return subVector;
             }
+
+			/*!
+			* Converts the given vector to the given ValueType
+			*/
+			template<typename NewValueType, typename ValueType>
+			std::vector<NewValueType> toValueType(std::vector<ValueType> const& oldVector) {
+				std::vector<NewValueType> resultVector;
+				resultVector.resize(oldVector.size());
+				for (size_t i = 0, size = oldVector.size(); i < size; ++i) {
+					resultVector.at(i) = static_cast<NewValueType>(oldVector.at(i));
+				}
+
+				return resultVector;
+			}
         } // namespace vector
     } // namespace utility
 } // namespace storm

@@ -34,7 +34,7 @@ namespace storm {
             
             virtual void solveEquationSystem(bool minimize, storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult = nullptr, std::vector<ValueType>* newX = nullptr) const override;
 
-        private:
+        protected:
             // The required precision for the iterative methods.
             double precision;
             

@@ -1,0 +1,21 @@
+/*
+ * StoRM - Build-in Options
+ *
+ * This file is parsed by CMake during makefile generation
+ */
+
+#ifndef STORM_CUDAPLUGIN_GENERATED_STORMCONFIG_H_
+#define STORM_CUDAPLUGIN_GENERATED_STORMCONFIG_H_
+
+// Version Information
+#define STORM_CUDAPLUGIN_VERSION_MAJOR @STORM_CUDAPLUGIN_VERSION_MAJOR@					// The major version of StoRM
+#define STORM_CUDAPLUGIN_VERSION_MINOR @STORM_CUDAPLUGIN_VERSION_MINOR@					// The minor version of StoRM
+#define STORM_CUDAPLUGIN_VERSION_PATCH @STORM_CUDAPLUGIN_VERSION_PATCH@					// The patch version of StoRM
+#define STORM_CUDAPLUGIN_VERSION_COMMITS_AHEAD @STORM_CUDAPLUGIN_VERSION_COMMITS_AHEAD@ 	// How many commits passed since the tag was last set
+#define STORM_CUDAPLUGIN_VERSION_HASH "@STORM_CUDAPLUGIN_VERSION_HASH@" 					// The short hash of the git commit this build is bases on
+#define STORM_CUDAPLUGIN_VERSION_DIRTY @STORM_CUDAPLUGIN_VERSION_DIRTY@ 					// 0 iff there no files were modified in the checkout, 1 else
+
+// Whether the size of float in a pair<uint_fast64_t, float> is expanded to 64bit
+#@STORM_CUDAPLUGIN_FLOAT_64BIT_ALIGN_DEF@ STORM_CUDAPLUGIN_HAVE_64BIT_FLOAT_ALIGNMENT
+
+#endif // STORM_CUDAPLUGIN_GENERATED_STORMCONFIG_H_

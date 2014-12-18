@@ -27,6 +27,7 @@ option(STORM_USE_INTELTBB "Sets whether the Intel TBB libraries should be used."
 option(STORM_USE_COTIRE "Sets whether Cotire should be used (for building precompiled headers)." OFF)
 option(LINK_LIBCXXABI "Sets whether libc++abi should be linked." OFF)
 option(USE_LIBCXX "Sets whether the standard library is libc++." OFF)
+option(STORM_USE_CUDAFORSTORM "Sets whether StoRM is built with its CUDA extension." OFF)
 set(GUROBI_ROOT "" CACHE STRING "The root directory of Gurobi (if available).")
 set(Z3_ROOT "" CACHE STRING "The root directory of Z3 (if available).")
 set(CUDA_ROOT "" CACHE STRING "The root directory of CUDA.")
@@ -212,6 +213,13 @@ endif()
 # glpk defines
 set(STORM_CPP_GLPK_DEF "define")
 
+# CUDA Defines
+if (STORM_USE_CUDAFORSTORM)
+	set(STORM_CPP_CUDAFORSTORM_DEF "define")
+else()
+	set(STORM_CPP_CUDAFORSTORM_DEF "undef")
+endif()
+
 # Z3 Defines
 if (ENABLE_Z3)
 	set(STORM_CPP_Z3_DEF "define")
@@ -352,6 +360,9 @@ endif()
 if (ENABLE_Z3)
     link_directories("${Z3_ROOT}/bin")
 endif()
+if (STORM_USE_CUDAFORSTORM)
+	link_directories("${PROJECT_BINARY_DIR}/cudaForStorm/lib")
+endif()
 if ((NOT Boost_LIBRARY_DIRS) OR ("${Boost_LIBRARY_DIRS}" STREQUAL ""))
 	set(Boost_LIBRARY_DIRS "${Boost_INCLUDE_DIRS}/stage/lib")
 endif ()
@@ -385,6 +396,20 @@ include_directories(${Boost_INCLUDE_DIRS})
 target_link_libraries(storm ${Boost_LIBRARIES})   
 #message(STATUS "BOOST_INCLUDE_DIRS is ${Boost_INCLUDE_DIRS}")
 #message(STATUS "BOOST_LIBRARY_DIRS is ${Boost_LIBRARY_DIRS}")
+
+#############################################################
+##
+##	CUDA For Storm
+##
+#############################################################
+if (STORM_USE_CUDAFORSTORM)
+    message (STATUS "StoRM - Linking with CudaForStorm")
+	include_directories("${PROJECT_BINARY_DIR}/cudaForStorm/include")
+	include_directories("${PROJECT_SOURCE_DIR}/resources/cudaForStorm")
+    target_link_libraries(storm cudaForStorm)
+    target_link_libraries(storm-functional-tests cudaForStorm)
+    target_link_libraries(storm-performance-tests cudaForStorm)
+endif(STORM_USE_CUDAFORSTORM)
 
 #############################################################
 ##
