@@ -50,15 +50,15 @@ namespace storm {
 
 			virtual CheckResult checkWithAssumptions(std::set<storm::expressions::Expression> const& assumptions) override;
 
-			virtual CheckResult checkWithAssumptions(std::initializer_list<storm::expressions::Expression> assumptions) override;
+			virtual CheckResult checkWithAssumptions(std::initializer_list<storm::expressions::Expression> const& assumptions) override;
 
 			virtual storm::expressions::SimpleValuation getModel() override;
 
 			virtual std::vector<storm::expressions::SimpleValuation> allSat(std::vector<storm::expressions::Expression> const& important) override;
 
-			virtual uint_fast64_t allSat(std::vector<storm::expressions::Expression> const& important, std::function<bool(storm::expressions::SimpleValuation&)> callback) override;
+			virtual uint_fast64_t allSat(std::vector<storm::expressions::Expression> const& important, std::function<bool(storm::expressions::SimpleValuation&)> const& callback) override;
 
-			virtual uint_fast64_t allSat(std::vector<storm::expressions::Expression> const& important, std::function<bool(ModelReference&)> callback) override;
+			virtual uint_fast64_t allSat(std::vector<storm::expressions::Expression> const& important, std::function<bool(ModelReference&)> const& callback) override;
 
 			virtual std::vector<storm::expressions::Expression> getUnsatAssumptions() override;
 

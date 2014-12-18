@@ -69,7 +69,7 @@ namespace storm {
              *
              * @param n The number of backtracking points to pop.
              */
-			virtual void pop(uint_fast64_t n) = 0;
+			virtual void pop(uint_fast64_t n);
             
             /*!
              * Removes all assertions from the solver's stack.
@@ -125,7 +125,7 @@ namespace storm {
              * @return Sat if the conjunction of the asserted expressions together with the provided assumptions is
              * satisfiable, Unsat if it is unsatisfiable and Unknown if the solver could not determine satisfiability.
              */
-			virtual CheckResult checkWithAssumptions(std::initializer_list<storm::expressions::Expression> assumptions) = 0;
+			virtual CheckResult checkWithAssumptions(std::initializer_list<storm::expressions::Expression> const& assumptions) = 0;
             
 			/*!
              * If the last call to check() or checkWithAssumptions() returned Sat, this method retrieves a model that
@@ -159,7 +159,7 @@ namespace storm {
              *
              * @return The number of models of the important atoms that where found.
              */
-			virtual uint_fast64_t allSat(std::vector<storm::expressions::Expression> const& important, std::function<bool(storm::expressions::SimpleValuation&)> callback);
+			virtual uint_fast64_t allSat(std::vector<storm::expressions::Expression> const& important, std::function<bool(storm::expressions::SimpleValuation&)> const& callback);
 
             /*!
              * Performs AllSat over the (provided) important atoms. That is, this function determines all models of the
@@ -172,7 +172,7 @@ namespace storm {
              *
              * @return The number of models of the important atoms that where found.
              */
-			virtual uint_fast64_t allSat(std::vector<storm::expressions::Expression> const& important, std::function<bool(ModelReference&)> callback);
+			virtual uint_fast64_t allSat(std::vector<storm::expressions::Expression> const& important, std::function<bool(ModelReference&)> const& callback);
             
 			/*!
              * If the last call to check() returned Unsat, this function can be used to retrieve the unsatisfiable core
@@ -217,7 +217,7 @@ namespace storm {
              * @return The interpolant for the formulas (A, B), i.e. an expression I that is implied by A but the
              * conjunction of I and B is inconsistent.
              */
-			virtual storm::expressions::Expression getInterpolant(std::vector<uint_fast64_t> groupsA);
+			virtual storm::expressions::Expression getInterpolant(std::vector<uint_fast64_t> const& groupsA);
 		};
 	}
 }

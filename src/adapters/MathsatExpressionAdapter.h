@@ -24,16 +24,16 @@
 namespace storm {
 	namespace adapters {
 
-		class MathSatExpressionAdapter : public storm::expressions::ExpressionVisitor {
+		class MathsatExpressionAdapter : public storm::expressions::ExpressionVisitor {
 		public:
 			/*!
-			* Creates a MathSatExpressionAdapter over the given MathSAT enviroment.
+			* Creates a MathsatExpressionAdapter over the given MathSAT enviroment.
 			*
 			* @param context A reference to the MathSAT enviroment over which to build the expressions. Be careful to guarantee
 			* the lifetime of the context as long as the instance of this adapter is used.
 			* @param variableToDeclMap A mapping from variable names to their corresponding MathSAT Declarations.
 			*/
-			MathSatExpressionAdapter(msat_env& env, std::map<std::string, msat_decl> const& variableToDeclMap) : env(env), stack(), variableToDeclMap(variableToDeclMap) {
+			MathsatExpressionAdapter(msat_env& env, std::map<std::string, msat_decl> const& variableToDeclarationMap = std::map<std::string, msat_decl>()) : env(env), stack(), variableToDeclarationMap(variableToDeclarationMap) {
 				// Intentionally left empty.
 			}
 
@@ -58,17 +58,17 @@ namespace storm {
 					}
                     
 					for (auto variableAndType : variables) {
-						if (this->variableToDeclMap.find(variableAndType.first) == this->variableToDeclMap.end()) {
+						if (this->variableToDeclarationMap.find(variableAndType.first) == this->variableToDeclarationMap.end()) {
 							switch (variableAndType.second)
 							{
 								case storm::expressions::ExpressionReturnType::Bool:
-									this->variableToDeclMap.insert(std::make_pair(variableAndType.first, msat_declare_function(env, variableAndType.first.c_str(), msat_get_bool_type(env))));
+									this->variableToDeclarationMap.insert(std::make_pair(variableAndType.first, msat_declare_function(env, variableAndType.first.c_str(), msat_get_bool_type(env))));
 									break;
 								case storm::expressions::ExpressionReturnType::Int:
-									this->variableToDeclMap.insert(std::make_pair(variableAndType.first, msat_declare_function(env, variableAndType.first.c_str(), msat_get_integer_type(env))));
+									this->variableToDeclarationMap.insert(std::make_pair(variableAndType.first, msat_declare_function(env, variableAndType.first.c_str(), msat_get_integer_type(env))));
 									break;
 								case storm::expressions::ExpressionReturnType::Double:
-									this->variableToDeclMap.insert(std::make_pair(variableAndType.first, msat_declare_function(env, variableAndType.first.c_str(), msat_get_rational_type(env))));
+									this->variableToDeclarationMap.insert(std::make_pair(variableAndType.first, msat_declare_function(env, variableAndType.first.c_str(), msat_get_rational_type(env))));
 									break;
 								default:
 									STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Encountered variable with unknown type while trying to autocreate solver variables: " << variableAndType.first);
@@ -260,15 +260,15 @@ namespace storm {
 			}
 
 			virtual void visit(expressions::VariableExpression const* expression) override {
-                STORM_LOG_THROW(variableToDeclMap.count(expression->getVariableName()) != 0, storm::exceptions::InvalidArgumentException, "Variable '" << expression->getVariableName() << "' is unknown.");
+                STORM_LOG_THROW(variableToDeclarationMap.count(expression->getVariableName()) != 0, storm::exceptions::InvalidArgumentException, "Variable '" << expression->getVariableName() << "' is unknown.");
 				//LOG4CPLUS_TRACE(logger, "Variable "<<expression->getVariableName());
 				//char* repr = msat_decl_repr(variableToDeclMap.at(expression->getVariableName()));
 				//LOG4CPLUS_TRACE(logger, "Decl: "<<repr);
 				//msat_free(repr);
-				if (MSAT_ERROR_DECL(variableToDeclMap.at(expression->getVariableName()))) {
+				if (MSAT_ERROR_DECL(variableToDeclarationMap.at(expression->getVariableName()))) {
                     STORM_LOG_WARN("Encountered an invalid MathSAT declaration.");
 				}
-				stack.push(msat_make_constant(env, variableToDeclMap.at(expression->getVariableName())));
+				stack.push(msat_make_constant(env, variableToDeclarationMap.at(expression->getVariableName())));
 			}
 
 			storm::expressions::Expression translateTerm(msat_term term) {
@@ -394,7 +394,7 @@ namespace storm {
 			msat_env& env;
 			std::stack<msat_term> stack;
 			std::stack<expressions::Expression> expression_stack;
-			std::map<std::string, msat_decl> variableToDeclMap;
+			std::map<std::string, msat_decl> variableToDeclarationMap;
 		};
 
 	} // namespace adapters

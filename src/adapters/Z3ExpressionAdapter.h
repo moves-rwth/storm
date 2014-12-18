@@ -39,7 +39,7 @@ namespace storm {
              * the lifetime of the context as long as the instance of this adapter is used.
              * @param variableToExpressionMap A mapping from variable names to their corresponding Z3 expressions.
              */
-            Z3ExpressionAdapter(z3::context& context, std::map<std::string, z3::expr> const& variableToExpressionMap)
+            Z3ExpressionAdapter(z3::context& context, std::map<std::string, z3::expr> const& variableToExpressionMap = std::map<std::string, z3::expr>())
 				: context(context)
 				, stack()
 				, additionalAssertions()

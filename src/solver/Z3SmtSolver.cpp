@@ -43,11 +43,7 @@ namespace storm {
         
 		Z3SmtSolver::Z3SmtSolver()
 #ifdef STORM_HAVE_Z3
-			: context()
-			, solver(context)
-			, expressionAdapter(context, std::map<std::string, z3::expr>())
-			, lastCheckAssumptions(false)
-            , lastResult(CheckResult::Unknown)
+			: context(), solver(context), expressionAdapter(context), lastCheckAssumptions(false), lastResult(CheckResult::Unknown)
 #endif
 		{
 			// Intentionally left empty.
@@ -227,7 +223,7 @@ namespace storm {
 #endif
 		}
 
-		uint_fast64_t Z3SmtSolver::allSat(std::vector<storm::expressions::Expression> const& important, std::function<bool(storm::expressions::SimpleValuation&)> callback)
+		uint_fast64_t Z3SmtSolver::allSat(std::vector<storm::expressions::Expression> const& important, std::function<bool(storm::expressions::SimpleValuation&)> const& callback)
 		{
 #ifdef STORM_HAVE_Z3
 			for (storm::expressions::Expression const& atom : important) {
@@ -278,7 +274,7 @@ namespace storm {
 #endif
 		}
 
-		uint_fast64_t Z3SmtSolver::allSat(std::vector<storm::expressions::Expression> const& important, std::function<bool(SmtSolver::ModelReference&)> callback)
+		uint_fast64_t Z3SmtSolver::allSat(std::vector<storm::expressions::Expression> const& important, std::function<bool(SmtSolver::ModelReference&)> const& callback)
 		{
 #ifdef STORM_HAVE_Z3
 			for (storm::expressions::Expression const& atom : important) {

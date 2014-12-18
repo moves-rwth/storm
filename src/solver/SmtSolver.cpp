@@ -26,6 +26,12 @@ namespace storm {
             }
         }
         
+        void SmtSolver::pop(uint_fast64_t n) {
+			for (uint_fast64_t i = 0; i < n; ++i) {
+				this->pop();
+			}
+		}
+        
         storm::expressions::SimpleValuation SmtSolver::getModel() {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This solver does not support model generation.");
         }
@@ -34,11 +40,11 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This solver does not support model generation.");
         }
         
-        uint_fast64_t SmtSolver::allSat(std::vector<storm::expressions::Expression> const& important, std::function<bool(storm::expressions::SimpleValuation&)> callback) {
+        uint_fast64_t SmtSolver::allSat(std::vector<storm::expressions::Expression> const& important, std::function<bool(storm::expressions::SimpleValuation&)> const& callback) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This solver does not support model generation.");
         }
         
-        uint_fast64_t SmtSolver::allSat(std::vector<storm::expressions::Expression> const& important, std::function<bool(ModelReference&)> callback) {
+        uint_fast64_t SmtSolver::allSat(std::vector<storm::expressions::Expression> const& important, std::function<bool(ModelReference&)> const& callback) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This solver does not support model generation.");
         }
         
@@ -54,7 +60,7 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This solver does not support generation of interpolants.");
         }
 
-        storm::expressions::Expression SmtSolver::getInterpolant(std::vector<uint_fast64_t> groupsA) {
+        storm::expressions::Expression SmtSolver::getInterpolant(std::vector<uint_fast64_t> const& groupsA) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This solver does not support generation of interpolants.");
         }
 
