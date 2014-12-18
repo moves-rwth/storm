@@ -223,4 +223,5 @@ TEST(Z3SmtSolver, UnsatAssumptions) {
 	ASSERT_TRUE(unsatCore[0].isVariable());
 	ASSERT_STREQ("f2", unsatCore[0].getIdentifier().c_str());
 }
+
 #endif

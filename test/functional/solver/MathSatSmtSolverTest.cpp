@@ -220,4 +220,40 @@ TEST(MathSatSmtSolver, UnsatAssumptions) {
     ASSERT_STREQ("f2", unsatCore[0].getIdentifier().c_str());
 }
 
+TEST(MathSatSmtSolver, InterpolationTest) {
+    storm::solver::MathSatSmtSolver s(storm::solver::SmtSolver::Options::InterpolantComputation);
+    storm::solver::SmtSolver::CheckResult result = storm::solver::SmtSolver::CheckResult::UNKNOWN;
+    
+    storm::expressions::Expression a = storm::expressions::Expression::createIntegerVariable("a");
+    storm::expressions::Expression b = storm::expressions::Expression::createIntegerVariable("b");
+    storm::expressions::Expression c = storm::expressions::Expression::createIntegerVariable("c");
+    storm::expressions::Expression exprFormula = a > b;
+    storm::expressions::Expression exprFormula2 = b > c;
+    storm::expressions::Expression exprFormula3 = c > a;
+    
+    s.setInterpolationGroup(0);
+    s.assertExpression(exprFormula);
+    s.setInterpolationGroup(1);
+    s.assertExpression(exprFormula2);
+    s.setInterpolationGroup(2);
+    s.assertExpression(exprFormula3);
+
+    ASSERT_NO_THROW(result = s.check());
+    ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::UNSAT);
+    
+    storm::expressions::Expression interpol;
+    ASSERT_NO_THROW(interpol = s.getInterpolant({0, 1}));
+    
+    storm::solver::MathSatSmtSolver s2;
+
+    ASSERT_NO_THROW(s2.assertExpression(!(exprFormula && exprFormula2).implies(interpol)));
+    ASSERT_NO_THROW(result = s2.check());
+    ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::UNSAT);
+
+    ASSERT_NO_THROW(s2.reset());
+    ASSERT_NO_THROW(s2.assertExpression(interpol && exprFormula3));
+    ASSERT_NO_THROW(result = s2.check());
+    ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::UNSAT);
+}
+
 #endif

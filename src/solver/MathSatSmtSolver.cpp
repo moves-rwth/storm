@@ -14,7 +14,7 @@ namespace storm {
 #endif
 		{
 #ifdef STORM_HAVE_MSAT
-			m_cfg = msat_create_config();
+			msat_config m_cfg = msat_create_config();
 			
 			if (static_cast<int>(options)& static_cast<int>(Options::InterpolantComputation)) {
 				msat_set_option(m_cfg, "interpolation", "true");
@@ -23,13 +23,15 @@ namespace storm {
             msat_set_option(m_cfg, "model_generation", "true");
             
 			m_env = msat_create_env(m_cfg);
+            STORM_LOG_THROW(!MSAT_ERROR_ENV(m_env), storm::exceptions::UnexpectedException, "Unable to create Mathsat environment.");
 
+            msat_destroy_config(m_cfg);
+            
 			m_adapter = new storm::adapters::MathSatExpressionAdapter(m_env, variableToDeclMap);
 #endif
 		}
 		MathSatSmtSolver::~MathSatSmtSolver() {
 			msat_destroy_env(m_env);
-			msat_destroy_config(m_cfg);
 		};
 
 		void MathSatSmtSolver::push()
@@ -356,6 +358,8 @@ namespace storm {
 			}
 			msat_term interpolant = msat_get_interpolant(m_env, msatInterpolationGroupsA.data(), msatInterpolationGroupsA.size());
 
+            STORM_LOG_THROW(!MSAT_ERROR_TERM(interpolant), storm::exceptions::UnexpectedException, "Unable to retrieve an interpolant.");
+            
 			return this->m_adapter->translateTerm(interpolant);
 #else
 			STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without MathSat support.");

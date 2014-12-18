@@ -72,7 +72,6 @@ namespace storm {
 		private:
 
 #ifdef STORM_HAVE_MSAT
-			msat_config m_cfg;
 			msat_env m_env;
 			storm::adapters::MathSatExpressionAdapter *m_adapter;
 
