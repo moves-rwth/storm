@@ -146,7 +146,7 @@ namespace storm {
 #endif
 		}
 
-		SmtSolver::CheckResult Z3SmtSolver::checkWithAssumptions(std::initializer_list<storm::expressions::Expression> assumptions)
+		SmtSolver::CheckResult Z3SmtSolver::checkWithAssumptions(std::initializer_list<storm::expressions::Expression> const& assumptions)
 		{
 #ifdef STORM_HAVE_Z3
 			lastCheckAssumptions = true;
@@ -216,7 +216,7 @@ namespace storm {
 		{
 #ifdef STORM_HAVE_Z3
 			std::vector<storm::expressions::SimpleValuation> valuations;
-			this->allSat(important, [&valuations](storm::expressions::SimpleValuation& valuation) -> bool { valuations.push_back(valuation); return true; });
+			this->allSat(important, [&valuations](storm::expressions::SimpleValuation const& valuation) -> bool { valuations.push_back(valuation); return true; });
 			return valuations;
 #else
 			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "StoRM is compiled without Z3 support.");
@@ -227,7 +227,7 @@ namespace storm {
 		{
 #ifdef STORM_HAVE_Z3
 			for (storm::expressions::Expression const& atom : important) {
-                STORM_LOG_THROW(atom.isVariable(), storm::exceptions::InvalidArgumentException, "The important atoms for AllSat must be atoms, i.e. variables.");
+                STORM_LOG_THROW(atom.isVariable() && atom.hasBooleanReturnType(), storm::exceptions::InvalidArgumentException, "The important atoms for AllSat must be boolean variables.");
 			}
 
 			uint_fast64_t numberOfModels = 0;
@@ -278,7 +278,7 @@ namespace storm {
 		{
 #ifdef STORM_HAVE_Z3
 			for (storm::expressions::Expression const& atom : important) {
-                STORM_LOG_THROW(atom.isVariable(), storm::exceptions::InvalidArgumentException, "The important atoms for AllSat must be atoms, i.e. variables.");
+                STORM_LOG_THROW(atom.isVariable() && atom.hasBooleanReturnType(), storm::exceptions::InvalidArgumentException, "The important atoms for AllSat must be boolean variables.");
 			}
 
 			uint_fast64_t numberOfModels = 0;

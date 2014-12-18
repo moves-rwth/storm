@@ -41,7 +41,7 @@ namespace storm {
 			class MathSatModelReference : public SmtSolver::ModelReference {
 			public:
 #ifdef STORM_HAVE_MSAT
-				MathSatModelReference(msat_env const& env, storm::adapters::MathsatExpressionAdapter& adapter);
+				MathSatModelReference(msat_env const& env, msat_term* model, std::unordered_map<std::string, uint_fast64_t> const& atomNameToSlotMapping);
 #endif
 				virtual bool getBooleanValue(std::string const& name) const override;
 				virtual int_fast64_t getIntegerValue(std::string const& name) const override;
@@ -50,11 +50,11 @@ namespace storm {
 			private:
 #ifdef STORM_HAVE_MSAT
 				msat_env const& env;
-				storm::adapters::MathsatExpressionAdapter& expressionAdapter;
+                msat_term* model;
+                std::unordered_map<std::string, uint_fast64_t> const& atomNameToSlotMapping;
 #endif
 			};
             
-		public:
 			MathsatSmtSolver(Options const& options = Options());
             
 			virtual ~MathsatSmtSolver();
@@ -63,6 +63,8 @@ namespace storm {
 
 			virtual void pop() override;
 
+            virtual void pop(uint_fast64_t n) override;
+            
 			virtual void reset() override;
 
 			virtual void add(storm::expressions::Expression const& assertion) override;

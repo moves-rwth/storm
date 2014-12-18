@@ -7,13 +7,13 @@
 
 TEST(Z3SmtSolver, CheckSat) {
 	storm::solver::Z3SmtSolver s;
-	storm::solver::SmtSolver::CheckResult result = storm::solver::SmtSolver::CheckResult::UNKNOWN;
+	storm::solver::SmtSolver::CheckResult result = storm::solver::SmtSolver::CheckResult::Unknown;
 
 	storm::expressions::Expression exprDeMorgan = !(storm::expressions::Expression::createBooleanVariable("x") && storm::expressions::Expression::createBooleanVariable("y")).iff((!storm::expressions::Expression::createBooleanVariable("x") || !storm::expressions::Expression::createBooleanVariable("y")));
 
-	ASSERT_NO_THROW(s.assertExpression(exprDeMorgan));
+	ASSERT_NO_THROW(s.add(exprDeMorgan));
 	ASSERT_NO_THROW(result = s.check());
-	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::SAT);
+	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::Sat);
 	ASSERT_NO_THROW(s.reset());
 
 	storm::expressions::Expression a = storm::expressions::Expression::createIntegerVariable("a");
@@ -25,21 +25,21 @@ TEST(Z3SmtSolver, CheckSat) {
 		&& c == (a * b)
 		&& b + a > c;
 
-	ASSERT_NO_THROW(s.assertExpression(exprFormula));
+	ASSERT_NO_THROW(s.add(exprFormula));
 	ASSERT_NO_THROW(result = s.check());
-	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::SAT);
+	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::Sat);
 	ASSERT_NO_THROW(s.reset());
 }
 
 TEST(Z3SmtSolver, CheckUnsat) {
 	storm::solver::Z3SmtSolver s;
-	storm::solver::SmtSolver::CheckResult result = storm::solver::SmtSolver::CheckResult::UNKNOWN;
+	storm::solver::SmtSolver::CheckResult result = storm::solver::SmtSolver::CheckResult::Unknown;
 
 	storm::expressions::Expression exprDeMorgan = !(storm::expressions::Expression::createBooleanVariable("x") && storm::expressions::Expression::createBooleanVariable("y")).iff( (!storm::expressions::Expression::createBooleanVariable("x") || !storm::expressions::Expression::createBooleanVariable("y")));
 
-	ASSERT_NO_THROW(s.assertExpression(!exprDeMorgan));
+	ASSERT_NO_THROW(s.add(!exprDeMorgan));
 	ASSERT_NO_THROW(result = s.check());
-	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::UNSAT);
+	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::Unsat);
 	ASSERT_NO_THROW(s.reset());
 
 
@@ -52,41 +52,41 @@ TEST(Z3SmtSolver, CheckUnsat) {
 		&& c == (a * b)
 		&& b + a > c;
 
-	ASSERT_NO_THROW(s.assertExpression(exprFormula));
+	ASSERT_NO_THROW(s.add(exprFormula));
 	ASSERT_NO_THROW(result = s.check());
-	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::UNSAT);
+	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::Unsat);
 }
 
 
 TEST(Z3SmtSolver, Backtracking) {
 	storm::solver::Z3SmtSolver s;
-	storm::solver::SmtSolver::CheckResult result = storm::solver::SmtSolver::CheckResult::UNKNOWN;
+	storm::solver::SmtSolver::CheckResult result = storm::solver::SmtSolver::CheckResult::Unknown;
 
 	storm::expressions::Expression expr1 = storm::expressions::Expression::createTrue();
 	storm::expressions::Expression expr2 = storm::expressions::Expression::createFalse();
 	storm::expressions::Expression expr3 = storm::expressions::Expression::createFalse();
 
-	ASSERT_NO_THROW(s.assertExpression(expr1));
+	ASSERT_NO_THROW(s.add(expr1));
 	ASSERT_NO_THROW(result = s.check());
-	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::SAT);
+	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::Sat);
 	ASSERT_NO_THROW(s.push());
-	ASSERT_NO_THROW(s.assertExpression(expr2));
+	ASSERT_NO_THROW(s.add(expr2));
 	ASSERT_NO_THROW(result = s.check());
-	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::UNSAT);
+	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::Unsat);
 	ASSERT_NO_THROW(s.pop());
 	ASSERT_NO_THROW(result = s.check());
-	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::SAT);
+	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::Sat);
 	ASSERT_NO_THROW(s.push());
-	ASSERT_NO_THROW(s.assertExpression(expr2));
+	ASSERT_NO_THROW(s.add(expr2));
 	ASSERT_NO_THROW(result = s.check());
-	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::UNSAT);
+	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::Unsat);
 	ASSERT_NO_THROW(s.push());
-	ASSERT_NO_THROW(s.assertExpression(expr3));
+	ASSERT_NO_THROW(s.add(expr3));
 	ASSERT_NO_THROW(result = s.check());
-	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::UNSAT);
+	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::Unsat);
 	ASSERT_NO_THROW(s.pop(2));
 	ASSERT_NO_THROW(result = s.check());
-	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::SAT);
+	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::Sat);
 	ASSERT_NO_THROW(s.reset());
 
 
@@ -100,21 +100,21 @@ TEST(Z3SmtSolver, Backtracking) {
 		&& b + a > c;
 	storm::expressions::Expression exprFormula2 = a >= storm::expressions::Expression::createIntegerLiteral(2);
 
-	ASSERT_NO_THROW(s.assertExpression(exprFormula));
+	ASSERT_NO_THROW(s.add(exprFormula));
 	ASSERT_NO_THROW(result = s.check());
-	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::SAT);
+	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::Sat);
 	ASSERT_NO_THROW(s.push());
-	ASSERT_NO_THROW(s.assertExpression(exprFormula2));
+	ASSERT_NO_THROW(s.add(exprFormula2));
 	ASSERT_NO_THROW(result = s.check());
-	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::UNSAT);
+	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::Unsat);
 	ASSERT_NO_THROW(s.pop());
 	ASSERT_NO_THROW(result = s.check());
-	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::SAT);
+	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::Sat);
 }
 
 TEST(Z3SmtSolver, Assumptions) {
 	storm::solver::Z3SmtSolver s;
-	storm::solver::SmtSolver::CheckResult result = storm::solver::SmtSolver::CheckResult::UNKNOWN;
+	storm::solver::SmtSolver::CheckResult result = storm::solver::SmtSolver::CheckResult::Unknown;
 
 	storm::expressions::Expression a = storm::expressions::Expression::createIntegerVariable("a");
 	storm::expressions::Expression b = storm::expressions::Expression::createIntegerVariable("b");
@@ -127,18 +127,18 @@ TEST(Z3SmtSolver, Assumptions) {
 	storm::expressions::Expression f2 = storm::expressions::Expression::createBooleanVariable("f2");
 	storm::expressions::Expression exprFormula2 = f2.implies(a >= storm::expressions::Expression::createIntegerLiteral(2));
 
-	ASSERT_NO_THROW(s.assertExpression(exprFormula));
+	ASSERT_NO_THROW(s.add(exprFormula));
 	ASSERT_NO_THROW(result = s.check());
-	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::SAT);
-	ASSERT_NO_THROW(s.assertExpression(exprFormula2));
+	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::Sat);
+	ASSERT_NO_THROW(s.add(exprFormula2));
 	ASSERT_NO_THROW(result = s.check());
-	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::SAT);
+	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::Sat);
 	ASSERT_NO_THROW(result = s.checkWithAssumptions({f2}));
-	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::UNSAT);
+	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::Unsat);
 	ASSERT_NO_THROW(result = s.check());
-	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::SAT);
+	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::Sat);
 	ASSERT_NO_THROW(result = s.checkWithAssumptions({ !f2 }));
-	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::SAT);
+	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::Sat);
 }
 
 TEST(Z3SmtSolver, GenerateModel) {
@@ -154,9 +154,9 @@ TEST(Z3SmtSolver, GenerateModel) {
 		&& c == (a * b)
 		&& b + a > c;
 
-	(s.assertExpression(exprFormula));
+	(s.add(exprFormula));
 	(result = s.check());
-	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::SAT);
+	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::Sat);
 	storm::expressions::SimpleValuation model;
 	(model = s.getModel());
 	int_fast64_t a_eval;
@@ -178,9 +178,9 @@ TEST(Z3SmtSolver, AllSat) {
 	storm::expressions::Expression exprFormula2 = y.implies(a < storm::expressions::Expression::createIntegerLiteral(5));
 	storm::expressions::Expression exprFormula3 = z.implies(b < storm::expressions::Expression::createIntegerLiteral(5));
 
-	(s.assertExpression(exprFormula1));
-	(s.assertExpression(exprFormula2));
-	(s.assertExpression(exprFormula3));
+	(s.add(exprFormula1));
+	(s.add(exprFormula2));
+	(s.add(exprFormula3));
 
 	std::vector<storm::expressions::SimpleValuation> valuations = s.allSat({x,y});
 
@@ -214,10 +214,10 @@ TEST(Z3SmtSolver, UnsatAssumptions) {
 	storm::expressions::Expression f2 = storm::expressions::Expression::createBooleanVariable("f2");
 	storm::expressions::Expression exprFormula2 = f2.implies(a >= storm::expressions::Expression::createIntegerLiteral(2));
 	
-	s.assertExpression(exprFormula);
-	s.assertExpression(exprFormula2);
+	s.add(exprFormula);
+	s.add(exprFormula2);
 	result = s.checkWithAssumptions({ f2 });
-	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::UNSAT);
+	ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::Unsat);
 	std::vector<storm::expressions::Expression> unsatCore = s.getUnsatAssumptions();
 	ASSERT_EQ(unsatCore.size(), 1);
 	ASSERT_TRUE(unsatCore[0].isVariable());

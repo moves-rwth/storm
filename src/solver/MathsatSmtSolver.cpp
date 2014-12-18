@@ -1,7 +1,6 @@
 #include "src/solver/MathsatSmtSolver.h"
 
-#include <vector>
-
+#include "src/exceptions/NotSupportedException.h"
 #include "src/exceptions/UnexpectedException.h"
 #include "src/exceptions/InvalidStateException.h"
 
@@ -44,7 +43,7 @@ namespace storm {
 #ifdef STORM_HAVE_MSAT
 			msat_push_backtrack_point(env);
 #else
-			STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without MathSat support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "StoRM is compiled without MathSAT support.");
 #endif
 		}
 
@@ -52,16 +51,20 @@ namespace storm {
 #ifdef STORM_HAVE_MSAT
 			msat_pop_backtrack_point(env);
 #else
-			STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without MathSat support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "StoRM is compiled without MathSAT support.");
 #endif
 		}
 
+        void MathsatSmtSolver::pop(uint_fast64_t n) {
+            SmtSolver::pop(n);
+        }
+        
 		void MathsatSmtSolver::reset()
 		{
 #ifdef STORM_HAVE_MSAT
 			msat_reset_env(env);
 #else
-			STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without MathSat support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "StoRM is compiled without MathSAT support.");
 #endif
 		}
 
@@ -70,7 +73,7 @@ namespace storm {
 #ifdef STORM_HAVE_MSAT
 			msat_assert_formula(env, expressionAdapter->translateExpression(e, true));
 #else
-			STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without MathSat support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "StoRM is compiled without MathSAT support.");
 #endif
 		}
 
@@ -91,7 +94,7 @@ namespace storm {
 			}
 			return this->lastResult;
 #else
-			STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without MathSat support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "StoRM is compiled without MathSAT support.");
 #endif
 		}
 
@@ -119,7 +122,7 @@ namespace storm {
 			}
 			return this->lastResult;
 #else
-			STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without MathSat support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "StoRM is compiled without MathSAT support.");
 #endif
 		}
 
@@ -147,18 +150,17 @@ namespace storm {
 			}
 			return this->lastResult;
 #else
-			STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without MathSat support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "StoRM is compiled without MathSAT support.");
 #endif
 		}
 
 		storm::expressions::SimpleValuation MathsatSmtSolver::getModel()
 		{
 #ifdef STORM_HAVE_MSAT
-			
-			STORM_LOG_THROW(this->lastResult == SmtSolver::CheckResult::Sat, storm::exceptions::InvalidStateException, "Requested Model but last check result was not SAT.");
+			STORM_LOG_THROW(this->lastResult == SmtSolver::CheckResult::Sat, storm::exceptions::InvalidStateException, "Unable to create model for formula that was not determined to be satisfiable.");
 			return this->convertMathsatModelToValuation();
 #else
-			STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without MathSat support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "StoRM is compiled without MathSAT support.");
 #endif
 		}
 
@@ -166,27 +168,25 @@ namespace storm {
 		storm::expressions::SimpleValuation MathsatSmtSolver::convertMathsatModelToValuation() {
 			storm::expressions::SimpleValuation stormModel;
 
-			msat_model_iterator model = msat_create_model_iterator(env);
-
-            STORM_LOG_THROW(!MSAT_ERROR_MODEL_ITERATOR(model), storm::exceptions::UnexpectedException, "MathSat returned an illegal model iterator.");
+			msat_model_iterator modelIterator = msat_create_model_iterator(env);
+            STORM_LOG_THROW(!MSAT_ERROR_MODEL_ITERATOR(modelIterator), storm::exceptions::UnexpectedException, "MathSat returned an illegal model iterator.");
             
-			while (msat_model_iterator_has_next(model)) {
+			while (msat_model_iterator_has_next(modelIterator)) {
 				msat_term t, v;
-				msat_model_iterator_next(model, &t, &v);
+				msat_model_iterator_next(modelIterator, &t, &v);
 
-				storm::expressions::Expression var_i_interp = this->expressionAdapter->translateTerm(v);
+				storm::expressions::Expression variableIInterpretation = this->expressionAdapter->translateTerm(v);
 				char* name = msat_decl_get_name(msat_term_get_decl(t));
 
-				switch (var_i_interp.getReturnType()) {
+				switch (variableIInterpretation.getReturnType()) {
 					case storm::expressions::ExpressionReturnType::Bool:
-						
-						stormModel.addBooleanIdentifier(std::string(name), var_i_interp.evaluateAsBool());
+						stormModel.addBooleanIdentifier(std::string(name), variableIInterpretation.evaluateAsBool());
 						break;
 					case storm::expressions::ExpressionReturnType::Int:
-						stormModel.addIntegerIdentifier(std::string(name), var_i_interp.evaluateAsInt());
+						stormModel.addIntegerIdentifier(std::string(name), variableIInterpretation.evaluateAsInt());
 						break;
 					case storm::expressions::ExpressionReturnType::Double:
-						stormModel.addDoubleIdentifier(std::string(name), var_i_interp.evaluateAsDouble());
+						stormModel.addDoubleIdentifier(std::string(name), variableIInterpretation.evaluateAsDouble());
 						break;
 					default:
 						STORM_LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Variable interpretation in model is not of type bool, int or double.")
@@ -204,99 +204,140 @@ namespace storm {
 		std::vector<storm::expressions::SimpleValuation> MathsatSmtSolver::allSat(std::vector<storm::expressions::Expression> const& important)
 		{
 #ifdef STORM_HAVE_MSAT
-			
 			std::vector<storm::expressions::SimpleValuation> valuations;
-
-			this->allSat(important, [&valuations](storm::expressions::SimpleValuation& valuation) -> bool {valuations.push_back(valuation); return true; });
-
+			this->allSat(important, [&valuations](storm::expressions::SimpleValuation const& valuation) -> bool { valuations.push_back(valuation); return true; });
 			return valuations;
-
 #else
-			STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without MathSat support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "StoRM is compiled without MathSAT support.");
 #endif
 		}
 
 
 #ifdef STORM_HAVE_MSAT
-		class AllsatValuationsCallbackUserData {
+		class AllsatValuationCallbackUserData {
 		public:
-			AllsatValuationsCallbackUserData(msat_env &env,
-				storm::adapters::MathsatExpressionAdapter &adapter,
-				std::function<bool(storm::expressions::SimpleValuation&)> const& callback)
-				: env(env), adapter(adapter), callback(callback) {
+			AllsatValuationCallbackUserData(msat_env& env, std::function<bool(storm::expressions::SimpleValuation&)> const& callback) : env(env), callback(callback) {
+                // Intentionally left empty.
 			}
-			msat_env &env;
-			storm::adapters::MathsatExpressionAdapter &adapter;
+
+            static int allsatValuationsCallback(msat_term* model, int size, void* user_data) {
+                AllsatValuationCallbackUserData* user = reinterpret_cast<AllsatValuationCallbackUserData*>(user_data);
+                
+                storm::expressions::SimpleValuation valuation;
+                for (int i = 0; i < size; ++i) {
+                    bool currentTermValue = true;
+                    msat_term currentTerm = model[i];
+                    if (msat_term_is_not(user->env, currentTerm)) {
+                        currentTerm = msat_term_get_arg(currentTerm, 0);
+                        currentTermValue = false;
+                    }
+                    char* name = msat_decl_get_name(msat_term_get_decl(currentTerm));
+                    std::string nameAsString(name);
+                    msat_free(name);
+                    valuation.addBooleanIdentifier(nameAsString, currentTermValue);
+                }
+                
+                if (user->callback(valuation)) {
+                    return 1;
+                } else {
+                    return 0;
+                }
+            }
+            
+        protected:
+            // The MathSAT environment. It is used to retrieve the values of the atoms in a model.
+			msat_env& env;
+            
+            // The function that is to be called when the MathSAT model has been translated to a valuation.
 			std::function<bool(storm::expressions::SimpleValuation&)> const& callback;
 		};
-
-		int allsatValuationsCallback(msat_term *model, int size, void *user_data) {
-			AllsatValuationsCallbackUserData* user = reinterpret_cast<AllsatValuationsCallbackUserData*>(user_data);
-
-			storm::expressions::SimpleValuation valuation;
-
-			for (int i = 0; i < size; ++i) {
-				bool currentTermValue = true;
-				msat_term currentTerm = model[i];
-				if (msat_term_is_not(user->env, currentTerm)) {
-					currentTerm = msat_term_get_arg(currentTerm, 0);
-					currentTermValue = false;
-				}
-				char* name = msat_decl_get_name(msat_term_get_decl(currentTerm));
-				std::string name_str(name);
-				valuation.addBooleanIdentifier(name_str, currentTermValue);
-				msat_free(name);
-			}
-
-			if (user->callback(valuation)) {
-				return 1;
-			} else {
-				return 0;
-			}
-		}
+        
+        class AllsatModelReferenceCallbackUserData {
+        public:
+            AllsatModelReferenceCallbackUserData(msat_env& env, std::unordered_map<std::string, uint_fast64_t> const& atomNameToSlotMapping, std::function<bool(storm::solver::SmtSolver::ModelReference&)> const& callback) : env(env), atomNameToSlotMapping(atomNameToSlotMapping), callback(callback) {
+                // Intentionally left empty.
+            }
+            
+            static int allsatModelReferenceCallback(msat_term* model, int size, void* user_data) {
+                AllsatModelReferenceCallbackUserData* user = reinterpret_cast<AllsatModelReferenceCallbackUserData*>(user_data);
+                MathsatSmtSolver::MathSatModelReference modelReference(user->env, model, user->atomNameToSlotMapping);
+                if (user->callback(modelReference)) {
+                    return 1;
+                } else {
+                    return 0;
+                }
+            }
+            
+        protected:
+            // The MathSAT environment. It is used to retrieve the values of the atoms in a model.
+            msat_env& env;
+            
+            // Store a mapping from the names of atoms to their slots in the model.
+            std::unordered_map<std::string, uint_fast64_t> const& atomNameToSlotMapping;
+            
+            // The function that is to be called when the MathSAT model has been translated to a valuation.
+            std::function<bool(storm::solver::SmtSolver::ModelReference&)> const& callback;
+        };
 #endif
 
 
 		uint_fast64_t MathsatSmtSolver::allSat(std::vector<storm::expressions::Expression> const& important, std::function<bool(storm::expressions::SimpleValuation&)> const& callback)
 		{
 #ifdef STORM_HAVE_MSAT
+            // Create a backtracking point, because MathSAT will modify the assertions stack during its AllSat procedure.
+            this->push();
+            
 			std::vector<msat_term> msatImportant;
 			msatImportant.reserve(important.size());
 
-			for (storm::expressions::Expression e : important) {
-				if (!e.isVariable()) {
-					throw storm::exceptions::InvalidArgumentException() << "The important expressions for AllSat must be atoms, i.e. variable expressions.";
-				}
-				msatImportant.push_back(expressionAdapter->translateExpression(e));
+			for (storm::expressions::Expression const& atom : important) {
+                STORM_LOG_THROW(atom.isVariable() && atom.hasBooleanReturnType(), storm::exceptions::InvalidArgumentException, "The important atoms for AllSat must be boolean variables.");
+				msatImportant.push_back(expressionAdapter->translateExpression(atom));
 			}
 
-			AllsatValuationsCallbackUserData allSatUserData(env, *expressionAdapter, callback);
-			int numModels = msat_all_sat(env, msatImportant.data(), msatImportant.size(), &allsatValuationsCallback, &allSatUserData);
+			AllsatValuationCallbackUserData allSatUserData(env, callback);
+            int numberOfModels = msat_all_sat(env, msatImportant.data(), msatImportant.size(), &AllsatValuationCallbackUserData::allsatValuationsCallback, &allSatUserData);
 
-			return numModels;
+            // Restore original assertion stack and return.
+            this->pop();
+			return static_cast<uint_fast64_t>(numberOfModels);
 #else
-			LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without MathSat support.");
+			LOG_THROW(false, storm::exceptions::NotSupportedException, "StoRM is compiled without MathSAT support.");
 #endif
 		}
 
 		uint_fast64_t MathsatSmtSolver::allSat(std::vector<storm::expressions::Expression> const& important, std::function<bool(SmtSolver::ModelReference&)> const& callback)
 		{
 #ifdef STORM_HAVE_MSAT
-			STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not Implemented.");
+            // Create a backtracking point, because MathSAT will modify the assertions stack during its AllSat procedure.
+            this->push();
+            
+            std::vector<msat_term> msatImportant;
+            msatImportant.reserve(important.size());
+            std::unordered_map<std::string, uint_fast64_t> atomNameToSlotMapping;
+            
+            for (storm::expressions::Expression const& atom : important) {
+                STORM_LOG_THROW(atom.isVariable() && atom.hasBooleanReturnType(), storm::exceptions::InvalidArgumentException, "The important atoms for AllSat must be boolean variables.");
+                msatImportant.push_back(expressionAdapter->translateExpression(atom));
+                atomNameToSlotMapping[atom.getIdentifier()] = msatImportant.size() - 1;
+            }
+            
+            AllsatModelReferenceCallbackUserData allSatUserData(env, atomNameToSlotMapping, callback);
+            int numberOfModels = msat_all_sat(env, msatImportant.data(), msatImportant.size(), &AllsatModelReferenceCallbackUserData::allsatModelReferenceCallback, &allSatUserData);
+            
+            // Restore original assertion stack and return.
+            this->pop();
+            return static_cast<uint_fast64_t>(numberOfModels);
 #else
-			STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without MathSat support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "StoRM is compiled without MathSAT support.");
 #endif
 		}
 
 		std::vector<storm::expressions::Expression> MathsatSmtSolver::getUnsatAssumptions() {
 #ifdef STORM_HAVE_MSAT
-			if (lastResult != SmtSolver::CheckResult::Unsat) {
-				throw storm::exceptions::InvalidStateException() << "Unsat Assumptions was called but last state is not unsat.";
-			}
-			if (!lastCheckAssumptions) {
-				throw storm::exceptions::InvalidStateException() << "Unsat Assumptions was called but last check had no assumptions.";
-			}
-
+            STORM_LOG_THROW(lastResult == SmtSolver::CheckResult::Unsat, storm::exceptions::InvalidStateException, "Unable to generate unsatisfiable core of assumptions, because the last check did not determine the formulas to be unsatisfiable.")
+            STORM_LOG_THROW(lastCheckAssumptions, storm::exceptions::InvalidStateException, "Unable to generate unsatisfiable core of assumptions, because the last check did not involve assumptions.");
+            
 			size_t numUnsatAssumpations;
 			msat_term* msatUnsatAssumptions = msat_get_unsat_assumptions(env, &numUnsatAssumpations);
 
@@ -309,43 +350,34 @@ namespace storm {
 
 			return unsatAssumptions;
 #else
-			STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without MathSat support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "StoRM is compiled without MathSAT support.");
 #endif
 		}
 
 		void MathsatSmtSolver::setInterpolationGroup(uint_fast64_t group) {
 #ifdef STORM_HAVE_MSAT
 			auto groupIter = this->interpolationGroups.find(group);
-			if( groupIter == this->interpolationGroups.end() ) {
+			if (groupIter == this->interpolationGroups.end() ) {
 				int newGroup = msat_create_itp_group(env);
 				auto insertResult = this->interpolationGroups.insert(std::make_pair(group, newGroup));
-				if (!insertResult.second) {
-					throw storm::exceptions::InvalidStateException() << "Internal error in MathSAT wrapper: Unable to insert newly created interpolation group.";
-				}
 				groupIter = insertResult.first;
 			}
 			msat_set_itp_group(env, groupIter->second);
 #else
-			STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without MathSat support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "StoRM is compiled without MathSAT support.");
 #endif
 		}
 
 		storm::expressions::Expression MathsatSmtSolver::getInterpolant(std::vector<uint_fast64_t> const& groupsA) {
 #ifdef STORM_HAVE_MSAT
-			if (lastResult != SmtSolver::CheckResult::Unsat) {
-				throw storm::exceptions::InvalidStateException() << "getInterpolant was called but last state is not unsat.";
-			}
-			if (lastCheckAssumptions) {
-				throw storm::exceptions::InvalidStateException() << "getInterpolant was called but last check had assumptions.";
-			}
+            STORM_LOG_THROW(lastResult == SmtSolver::CheckResult::Unsat, storm::exceptions::InvalidStateException, "Unable to generate interpolant, because the last check did not determine the formulas to be unsatisfiable.");
+            STORM_LOG_THROW(!lastCheckAssumptions, storm::exceptions::InvalidStateException, "Unable to generate interpolant, because the last check for satisfiability involved assumptions.");
 
 			std::vector<int> msatInterpolationGroupsA;
 			msatInterpolationGroupsA.reserve(groupsA.size());
 			for (auto groupOfA : groupsA) {
 				auto groupIter = this->interpolationGroups.find(groupOfA);
-				if (groupIter == this->interpolationGroups.end()) {
-					throw storm::exceptions::InvalidArgumentException() << "Requested interpolant for non existing interpolation group " << groupOfA;
-				}
+                STORM_LOG_THROW(groupIter != this->interpolationGroups.end(), storm::exceptions::InvalidArgumentException, "Unable to generate interpolant, because an unknown interpolation group was referenced.");
 				msatInterpolationGroupsA.push_back(groupIter->second);
 			}
 			msat_term interpolant = msat_get_interpolant(env, msatInterpolationGroupsA.data(), msatInterpolationGroupsA.size());
@@ -354,7 +386,7 @@ namespace storm {
             
 			return this->expressionAdapter->translateTerm(interpolant);
 #else
-			STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "StoRM is compiled without MathSat support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "StoRM is compiled without MathSAT support.");
 #endif
 		}
 	}
