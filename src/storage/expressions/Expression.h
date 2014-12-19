@@ -303,6 +303,13 @@ namespace storm {
             bool hasBooleanReturnType() const;
             
             /*!
+             * Retrieves whether the expression has an integral return type.
+             *
+             * @return True iff the expression has a integral return type.
+             */
+            bool hasIntegralReturnType() const;
+            
+            /*!
              * Accepts the given visitor.
              *
              * @param visitor The visitor to accept.

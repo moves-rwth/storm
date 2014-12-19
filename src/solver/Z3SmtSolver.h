@@ -17,15 +17,16 @@ namespace storm {
 			class Z3ModelReference : public SmtSolver::ModelReference {
 			public:
 #ifdef STORM_HAVE_Z3
-				Z3ModelReference(z3::model const& m, storm::adapters::Z3ExpressionAdapter& expressionAdapter);
+				Z3ModelReference(z3::model m, storm::adapters::Z3ExpressionAdapter& expressionAdapter);
 #endif
 				virtual bool getBooleanValue(std::string const& name) const override;
 				virtual int_fast64_t getIntegerValue(std::string const& name) const override;
                 virtual double getDoubleValue(std::string const& name) const override;
+                
 			private:
 #ifdef STORM_HAVE_Z3
                 // The Z3 model out of which the information can be extracted.
-				z3::model const& model;
+				z3::model model;
                 
                 // The expression adapter that is used to translate the variable names.
 				storm::adapters::Z3ExpressionAdapter& expressionAdapter;
@@ -52,7 +53,9 @@ namespace storm {
 
 			virtual CheckResult checkWithAssumptions(std::initializer_list<storm::expressions::Expression> const& assumptions) override;
 
-			virtual storm::expressions::SimpleValuation getModel() override;
+			virtual storm::expressions::SimpleValuation getModelAsValuation() override;
+            
+            virtual std::shared_ptr<SmtSolver::ModelReference> getModel() override;
 
 			virtual std::vector<storm::expressions::SimpleValuation> allSat(std::vector<storm::expressions::Expression> const& important) override;
 
@@ -73,13 +76,13 @@ namespace storm {
 			storm::expressions::SimpleValuation convertZ3ModelToValuation(z3::model const& model);
 
             // The context used by the solver.
-			z3::context context;
+            std::unique_ptr<z3::context> context;
             
             // The actual solver object.
-			z3::solver solver;
+            std::unique_ptr<z3::solver> solver;
             
             // An expression adapter that is used for translating the expression into Z3's format.
-			storm::adapters::Z3ExpressionAdapter expressionAdapter;
+            std::unique_ptr<storm::adapters::Z3ExpressionAdapter> expressionAdapter;
 
             // A flag storing whether the last call to a check method provided aussumptions.
 			bool lastCheckAssumptions;

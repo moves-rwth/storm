@@ -133,8 +133,21 @@ namespace storm {
              * solver was instantiated with support for model generation. Note that this function may throw an exception
              * if it is not called immediately after a call to check() or checkWithAssumptions() that returned Sat
              * depending on the implementation.
+             *
+             * @return A valuation that holds the values of the variables in the current model.
              */
-			virtual storm::expressions::SimpleValuation getModel();
+			virtual storm::expressions::SimpleValuation getModelAsValuation();
+
+            /*!
+             * If the last call to check() or checkWithAssumptions() returned Sat, this method retrieves a model that
+             * satisfies all assertions on the solver's stack (as well as provided assumptions), provided that the
+             * solver was instantiated with support for model generation. Note that this function may throw an exception
+             * if it is not called immediately after a call to check() or checkWithAssumptions() that returned Sat
+             * depending on the implementation.
+             *
+             * @return A reference to a model that can be queried for the values of specific variables.
+             */
+			virtual std::shared_ptr<ModelReference> getModel();
             
 			/*!
              * Performs AllSat over the (provided) important atoms. That is, this function returns all models of the

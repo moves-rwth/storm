@@ -25,11 +25,7 @@ namespace storm {
              */
 			class Options {
             public:
-                Options() : enableModelGeneration(false), enableUnsatCoreGeneration(false), enableInterpolantGeneration(false) {
-                    // Intentionally left empty.
-                }
-                
-                Options(bool enableModelGeneration, bool enableUnsatCoreGeneration, bool enableInterpolantGeneration) : enableModelGeneration(enableModelGeneration), enableUnsatCoreGeneration(enableUnsatCoreGeneration), enableInterpolantGeneration(enableInterpolantGeneration) {
+                Options(bool enableModelGeneration = true, bool enableUnsatCoreGeneration = false, bool enableInterpolantGeneration = false) : enableModelGeneration(enableModelGeneration), enableUnsatCoreGeneration(enableUnsatCoreGeneration), enableInterpolantGeneration(enableInterpolantGeneration) {
                     // Intentionally left empty.
                 }
                 
@@ -38,10 +34,10 @@ namespace storm {
                 bool enableInterpolantGeneration = false;
 			};
 
-			class MathSatModelReference : public SmtSolver::ModelReference {
+			class MathsatAllsatModelReference : public SmtSolver::ModelReference {
 			public:
 #ifdef STORM_HAVE_MSAT
-				MathSatModelReference(msat_env const& env, msat_term* model, std::unordered_map<std::string, uint_fast64_t> const& atomNameToSlotMapping);
+				MathsatAllsatModelReference(msat_env const& env, msat_term* model, std::unordered_map<std::string, uint_fast64_t> const& atomNameToSlotMapping);
 #endif
 				virtual bool getBooleanValue(std::string const& name) const override;
 				virtual int_fast64_t getIntegerValue(std::string const& name) const override;
@@ -52,6 +48,22 @@ namespace storm {
 				msat_env const& env;
                 msat_term* model;
                 std::unordered_map<std::string, uint_fast64_t> const& atomNameToSlotMapping;
+#endif
+			};
+            
+            class MathsatModelReference : public SmtSolver::ModelReference {
+			public:
+#ifdef STORM_HAVE_MSAT
+				MathsatModelReference(msat_env const& env, storm::adapters::MathsatExpressionAdapter& expressionAdapter);
+#endif
+				virtual bool getBooleanValue(std::string const& name) const override;
+				virtual int_fast64_t getIntegerValue(std::string const& name) const override;
+                virtual double getDoubleValue(std::string const& name) const override;
+                
+			private:
+#ifdef STORM_HAVE_MSAT
+				msat_env const& env;
+                storm::adapters::MathsatExpressionAdapter& expressionAdapter;
 #endif
 			};
             
@@ -75,8 +87,10 @@ namespace storm {
 
 			virtual CheckResult checkWithAssumptions(std::initializer_list<storm::expressions::Expression> const& assumptions) override;
 
-			virtual storm::expressions::SimpleValuation getModel() override;
+			virtual storm::expressions::SimpleValuation getModelAsValuation() override;
 
+            virtual std::shared_ptr<SmtSolver::ModelReference> getModel() override;
+            
 			virtual std::vector<storm::expressions::SimpleValuation> allSat(std::vector<storm::expressions::Expression> const& important) override;
 
 			virtual uint_fast64_t allSat(std::vector<storm::expressions::Expression> const& important, std::function<bool(storm::expressions::SimpleValuation&)> const& callback) override;

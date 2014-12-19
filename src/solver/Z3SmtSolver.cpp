@@ -1,4 +1,4 @@
-#include "src/solver/Z3SmtSolver.h"
+#include "src/solver/Z3Smtsolver.h"
 
 #include "src/exceptions/NotSupportedException.h"
 #include "src/exceptions/InvalidStateException.h"
@@ -6,7 +6,7 @@
 namespace storm {
 	namespace solver {
 #ifdef STORM_HAVE_Z3
-		Z3SmtSolver::Z3ModelReference::Z3ModelReference(z3::model const& model, storm::adapters::Z3ExpressionAdapter& expressionAdapter) : model(model), expressionAdapter(expressionAdapter) {
+		Z3SmtSolver::Z3ModelReference::Z3ModelReference(z3::model model, storm::adapters::Z3ExpressionAdapter& expressionAdapter) : model(model), expressionAdapter(expressionAdapter) {
             // Intentionally left empty.
 		}
 #endif
@@ -43,11 +43,15 @@ namespace storm {
         
 		Z3SmtSolver::Z3SmtSolver()
 #ifdef STORM_HAVE_Z3
-			: context(), solver(context), expressionAdapter(context), lastCheckAssumptions(false), lastResult(CheckResult::Unknown)
+        : context(nullptr), solver(nullptr), expressionAdapter(nullptr), lastCheckAssumptions(false), lastResult(CheckResult::Unknown)
 #endif
 		{
-			// Intentionally left empty.
-		}
+            z3::config config;
+            config.set("model", true);
+            context = std::unique_ptr<z3::context>(new z3::context(config));
+            solver = std::unique_ptr<z3::solver>(new z3::solver(*context));
+            expressionAdapter = std::unique_ptr<storm::adapters::Z3ExpressionAdapter>(new storm::adapters::Z3ExpressionAdapter(*context));
+        }
         
 		Z3SmtSolver::~Z3SmtSolver() {
             // Intentionally left empty.
@@ -56,7 +60,7 @@ namespace storm {
 		void Z3SmtSolver::push()
 		{
 #ifdef STORM_HAVE_Z3
-			this->solver.push();
+			this->solver->push();
 #else
 			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "StoRM is compiled without Z3 support.");
 #endif
@@ -65,7 +69,7 @@ namespace storm {
 		void Z3SmtSolver::pop()
 		{
 #ifdef STORM_HAVE_Z3
-			this->solver.pop();
+			this->solver->pop();
 #else
 			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "StoRM is compiled without Z3 support.");
 #endif
@@ -74,7 +78,7 @@ namespace storm {
 		void Z3SmtSolver::pop(uint_fast64_t n)
 		{
 #ifdef STORM_HAVE_Z3
-			this->solver.pop(static_cast<unsigned int>(n));
+			this->solver->pop(static_cast<unsigned int>(n));
 #else
 			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "StoRM is compiled without Z3 support.");
 #endif
@@ -83,7 +87,7 @@ namespace storm {
 		void Z3SmtSolver::reset()
 		{
 #ifdef STORM_HAVE_Z3
-			this->solver.reset();
+			this->solver->reset();
 #else
 			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "StoRM is compiled without Z3 support.");
 #endif
@@ -92,7 +96,7 @@ namespace storm {
 		void Z3SmtSolver::add(storm::expressions::Expression const& assertion)
 		{
 #ifdef STORM_HAVE_Z3
-			this->solver.add(expressionAdapter.translateExpression(assertion, true));
+			this->solver->add(expressionAdapter->translateExpression(assertion, true));
 #else
 			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "StoRM is compiled without Z3 support.");
 #endif
@@ -102,7 +106,7 @@ namespace storm {
 		{
 #ifdef STORM_HAVE_Z3
 			lastCheckAssumptions = false;
-			switch (this->solver.check()) {
+			switch (this->solver->check()) {
 				case z3::sat:
 					this->lastResult = SmtSolver::CheckResult::Sat;
 					break;
@@ -123,13 +127,13 @@ namespace storm {
 		{
 #ifdef STORM_HAVE_Z3
 			lastCheckAssumptions = true;
-			z3::expr_vector z3Assumptions(this->context);
+			z3::expr_vector z3Assumptions(*this->context);
 
 			for (storm::expressions::Expression assumption : assumptions) {
-				z3Assumptions.push_back(this->expressionAdapter.translateExpression(assumption));
+				z3Assumptions.push_back(this->expressionAdapter->translateExpression(assumption));
 			}
 
-			switch (this->solver.check(z3Assumptions)) {
+			switch (this->solver->check(z3Assumptions)) {
 				case z3::sat:
 					this->lastResult = SmtSolver::CheckResult::Sat;
 					break;
@@ -150,13 +154,13 @@ namespace storm {
 		{
 #ifdef STORM_HAVE_Z3
 			lastCheckAssumptions = true;
-			z3::expr_vector z3Assumptions(this->context);
+			z3::expr_vector z3Assumptions(*this->context);
 
 			for (storm::expressions::Expression assumption : assumptions) {
-				z3Assumptions.push_back(this->expressionAdapter.translateExpression(assumption));
+				z3Assumptions.push_back(this->expressionAdapter->translateExpression(assumption));
 			}
 
-			switch (this->solver.check(z3Assumptions)) {
+			switch (this->solver->check(z3Assumptions)) {
 				case z3::sat:
 					this->lastResult = SmtSolver::CheckResult::Sat;
 					break;
@@ -173,15 +177,24 @@ namespace storm {
 #endif
 		}
 
-		storm::expressions::SimpleValuation Z3SmtSolver::getModel()
+		storm::expressions::SimpleValuation Z3SmtSolver::getModelAsValuation()
 		{
 #ifdef STORM_HAVE_Z3
 			STORM_LOG_THROW(this->lastResult == SmtSolver::CheckResult::Sat, storm::exceptions::InvalidStateException, "Unable to create model for formula that was not determined to be satisfiable.");
-			return this->convertZ3ModelToValuation(this->solver.get_model());
+			return this->convertZ3ModelToValuation(this->solver->get_model());
 #else
 			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "StoRM is compiled without Z3 support.");
 #endif
 		}
+        
+        std::shared_ptr<SmtSolver::ModelReference> Z3SmtSolver::getModel() {
+#ifdef STORM_HAVE_Z3
+			STORM_LOG_THROW(this->lastResult == SmtSolver::CheckResult::Sat, storm::exceptions::InvalidStateException, "Unable to create model for formula that was not determined to be satisfiable.");
+            return std::shared_ptr<SmtSolver::ModelReference>(new Z3ModelReference(this->solver->get_model(), *this->expressionAdapter));
+#else
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "StoRM is compiled without Z3 support.");
+#endif
+        }
 
 #ifdef STORM_HAVE_Z3
 		storm::expressions::SimpleValuation Z3SmtSolver::convertZ3ModelToValuation(z3::model const& model) {
@@ -189,17 +202,17 @@ namespace storm {
 
 			for (unsigned i = 0; i < model.num_consts(); ++i) {
 				z3::func_decl variableI = model.get_const_decl(i);
-				storm::expressions::Expression variableIInterpretation = this->expressionAdapter.translateExpression(model.get_const_interp(variableI));
+				storm::expressions::Expression variableInterpretation = this->expressionAdapter->translateExpression(model.get_const_interp(variableI));
 
-				switch (variableIInterpretation.getReturnType()) {
+				switch (variableInterpretation.getReturnType()) {
 					case storm::expressions::ExpressionReturnType::Bool:
-						stormModel.addBooleanIdentifier(variableI.name().str(), variableIInterpretation.evaluateAsBool());
+						stormModel.addBooleanIdentifier(variableI.name().str(), variableInterpretation.evaluateAsBool());
 						break;
 					case storm::expressions::ExpressionReturnType::Int:
-						stormModel.addIntegerIdentifier(variableI.name().str(), variableIInterpretation.evaluateAsInt());
+						stormModel.addIntegerIdentifier(variableI.name().str(), variableInterpretation.evaluateAsInt());
 						break;
 					case storm::expressions::ExpressionReturnType::Double:
-						stormModel.addDoubleIdentifier(variableI.name().str(), variableIInterpretation.evaluateAsDouble());
+						stormModel.addDoubleIdentifier(variableI.name().str(), variableInterpretation.evaluateAsDouble());
 						break;
 					default:
 						STORM_LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Variable interpretation in model is not of type bool, int or double.")
@@ -239,21 +252,21 @@ namespace storm {
             // Enumerate models as long as the conjunction is satisfiable and the callback has not aborted the enumeration.
 			while (proceed && this->check() == CheckResult::Sat) {
 				++numberOfModels;
-				z3::model model = this->solver.get_model();
+				z3::model model = this->solver->get_model();
 
-				z3::expr modelExpr = this->context.bool_val(true);
+				z3::expr modelExpr = this->context->bool_val(true);
 				storm::expressions::SimpleValuation valuation;
 
 				for (storm::expressions::Expression const& importantAtom : important) {
-					z3::expr z3ImportantAtom = this->expressionAdapter.translateExpression(importantAtom);
+					z3::expr z3ImportantAtom = this->expressionAdapter->translateExpression(importantAtom);
 					z3::expr z3ImportantAtomValuation = model.eval(z3ImportantAtom, true);
 					modelExpr = modelExpr && (z3ImportantAtom == z3ImportantAtomValuation);
 					if (importantAtom.getReturnType() == storm::expressions::ExpressionReturnType::Bool) {
-						valuation.addBooleanIdentifier(importantAtom.getIdentifier(), this->expressionAdapter.translateExpression(z3ImportantAtomValuation).evaluateAsBool());
+						valuation.addBooleanIdentifier(importantAtom.getIdentifier(), this->expressionAdapter->translateExpression(z3ImportantAtomValuation).evaluateAsBool());
 					} else if (importantAtom.getReturnType() == storm::expressions::ExpressionReturnType::Int) {
-						valuation.addIntegerIdentifier(importantAtom.getIdentifier(), this->expressionAdapter.translateExpression(z3ImportantAtomValuation).evaluateAsInt());
+						valuation.addIntegerIdentifier(importantAtom.getIdentifier(), this->expressionAdapter->translateExpression(z3ImportantAtomValuation).evaluateAsInt());
 					} else if (importantAtom.getReturnType() == storm::expressions::ExpressionReturnType::Double) {
-						valuation.addDoubleIdentifier(importantAtom.getIdentifier(), this->expressionAdapter.translateExpression(z3ImportantAtomValuation).evaluateAsDouble());
+						valuation.addDoubleIdentifier(importantAtom.getIdentifier(), this->expressionAdapter->translateExpression(z3ImportantAtomValuation).evaluateAsDouble());
 					} else {
                         STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Important atom has invalid type.");
 					}
@@ -262,7 +275,7 @@ namespace storm {
                 // Check if we are required to proceed, and if so rule out the current model.
 				proceed = callback(valuation);
                 if (proceed) {
-                    this->solver.add(!modelExpr);
+                    this->solver->add(!modelExpr);
                 }
 			}
 
@@ -290,22 +303,22 @@ namespace storm {
             // Enumerate models as long as the conjunction is satisfiable and the callback has not aborted the enumeration.
 			while (proceed && this->check() == CheckResult::Sat) {
 				++numberOfModels;
-				z3::model model = this->solver.get_model();
+				z3::model model = this->solver->get_model();
 
-				z3::expr modelExpr = this->context.bool_val(true);
+				z3::expr modelExpr = this->context->bool_val(true);
 				storm::expressions::SimpleValuation valuation;
 
 				for (storm::expressions::Expression const& importantAtom : important) {
-					z3::expr z3ImportantAtom = this->expressionAdapter.translateExpression(importantAtom);
+					z3::expr z3ImportantAtom = this->expressionAdapter->translateExpression(importantAtom);
 					z3::expr z3ImportantAtomValuation = model.eval(z3ImportantAtom, true);
 					modelExpr = modelExpr && (z3ImportantAtom == z3ImportantAtomValuation);
 				}
-				Z3ModelReference modelRef(model, expressionAdapter);
+				Z3ModelReference modelRef(model, *expressionAdapter);
 
                 // Check if we are required to proceed, and if so rule out the current model.
 				proceed = callback(modelRef);
                 if (proceed) {
-                    this->solver.add(!modelExpr);
+                    this->solver->add(!modelExpr);
                 }
 			}
 
@@ -321,11 +334,11 @@ namespace storm {
             STORM_LOG_THROW(lastResult == SmtSolver::CheckResult::Unsat, storm::exceptions::InvalidStateException, "Unable to generate unsatisfiable core of assumptions, because the last check did not determine the formulas to be unsatisfiable.")
             STORM_LOG_THROW(lastCheckAssumptions, storm::exceptions::InvalidStateException, "Unable to generate unsatisfiable core of assumptions, because the last check did not involve assumptions.");
 
-			z3::expr_vector z3UnsatAssumptions = this->solver.unsat_core();
+			z3::expr_vector z3UnsatAssumptions = this->solver->unsat_core();
 			std::vector<storm::expressions::Expression> unsatAssumptions;
 			
 			for (unsigned int i = 0; i < z3UnsatAssumptions.size(); ++i) {
-				unsatAssumptions.push_back(this->expressionAdapter.translateExpression(z3UnsatAssumptions[i]));
+				unsatAssumptions.push_back(this->expressionAdapter->translateExpression(z3UnsatAssumptions[i]));
 			}
 
 			return unsatAssumptions;

@@ -145,6 +145,10 @@ namespace storm {
             return this->getReturnType() == ExpressionReturnType::Bool;
         }
         
+        bool Expression::hasIntegralReturnType() const {
+            return this->getReturnType() == ExpressionReturnType::Int;
+        }
+        
         Expression Expression::createBooleanLiteral(bool value) {
             return Expression(std::shared_ptr<BaseExpression>(new BooleanLiteralExpression(value)));
         }

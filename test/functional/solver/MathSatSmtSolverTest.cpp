@@ -150,15 +150,14 @@ TEST(MathsatSmtSolver, GenerateModel) {
     && c == (a + b - storm::expressions::Expression::createIntegerLiteral(1))
     && b + a > c;
     
-    (s.add(exprFormula));
-    (result = s.check());
+    s.add(exprFormula);
+    result = s.check();
     ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::Sat);
-    storm::expressions::SimpleValuation model;
-    (model = s.getModel());
-    int_fast64_t a_eval = model.getIntegerValue("a");
-    int_fast64_t b_eval = model.getIntegerValue("b");
-    int_fast64_t c_eval = model.getIntegerValue("c");
-    ASSERT_TRUE(c_eval == a_eval + b_eval - 1);
+    std::shared_ptr<storm::solver::SmtSolver::ModelReference> model = s.getModel();
+    int_fast64_t aEval = model->getIntegerValue("a");
+    int_fast64_t bEval = model->getIntegerValue("b");
+    int_fast64_t cEval = model->getIntegerValue("c");
+    ASSERT_TRUE(cEval == aEval + bEval - 1);
 }
 
 TEST(MathsatSmtSolver, AllSat) {
@@ -174,9 +173,9 @@ TEST(MathsatSmtSolver, AllSat) {
     storm::expressions::Expression exprFormula2 = y.implies(a < storm::expressions::Expression::createIntegerLiteral(5));
     storm::expressions::Expression exprFormula3 = z.implies(b < storm::expressions::Expression::createIntegerLiteral(5));
     
-    (s.add(exprFormula1));
-    (s.add(exprFormula2));
-    (s.add(exprFormula3));
+    s.add(exprFormula1);
+    s.add(exprFormula2);
+    s.add(exprFormula3);
     
     std::vector<storm::expressions::SimpleValuation> valuations = s.allSat({x,y});
     
@@ -196,7 +195,7 @@ TEST(MathsatSmtSolver, AllSat) {
 }
 
 TEST(MathsatSmtSolver, UnsatAssumptions) {
-    storm::solver::MathsatSmtSolver s;
+    storm::solver::MathsatSmtSolver s(storm::solver::MathsatSmtSolver::Options(false, true, false));
     storm::solver::SmtSolver::CheckResult result = storm::solver::SmtSolver::CheckResult::Unknown;
     
     storm::expressions::Expression a = storm::expressions::Expression::createIntegerVariable("a");
@@ -210,9 +209,9 @@ TEST(MathsatSmtSolver, UnsatAssumptions) {
     storm::expressions::Expression f2 = storm::expressions::Expression::createBooleanVariable("f2");
     storm::expressions::Expression exprFormula2 = f2.implies(c > a + b + storm::expressions::Expression::createIntegerLiteral(1));
     
-    (s.add(exprFormula));
-    (s.add(exprFormula2));
-    (result = s.checkWithAssumptions({ f2 }));
+    s.add(exprFormula);
+    s.add(exprFormula2);
+    result = s.checkWithAssumptions({ f2 });
     ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::Unsat);
     std::vector<storm::expressions::Expression> unsatCore = s.getUnsatAssumptions();
     ASSERT_EQ(unsatCore.size(), 1);
@@ -237,7 +236,7 @@ TEST(MathsatSmtSolver, InterpolationTest) {
     s.add(exprFormula2);
     s.setInterpolationGroup(2);
     s.add(exprFormula3);
-
+    
     ASSERT_NO_THROW(result = s.check());
     ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::Unsat);
     
@@ -245,11 +244,11 @@ TEST(MathsatSmtSolver, InterpolationTest) {
     ASSERT_NO_THROW(interpol = s.getInterpolant({0, 1}));
     
     storm::solver::MathsatSmtSolver s2;
-
+    
     ASSERT_NO_THROW(s2.add(!(exprFormula && exprFormula2).implies(interpol)));
     ASSERT_NO_THROW(result = s2.check());
     ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::Unsat);
-
+    
     ASSERT_NO_THROW(s2.reset());
     ASSERT_NO_THROW(s2.add(interpol && exprFormula3));
     ASSERT_NO_THROW(result = s2.check());

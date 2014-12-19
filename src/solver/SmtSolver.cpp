@@ -32,7 +32,11 @@ namespace storm {
 			}
 		}
         
-        storm::expressions::SimpleValuation SmtSolver::getModel() {
+        storm::expressions::SimpleValuation SmtSolver::getModelAsValuation() {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This solver does not support model generation.");
+        }
+        
+        std::shared_ptr<SmtSolver::ModelReference> SmtSolver::getModel() {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This solver does not support model generation.");
         }
         
