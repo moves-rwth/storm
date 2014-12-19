@@ -40,6 +40,7 @@ namespace storm {
         bool MathsatSmtSolver::MathsatModelReference::getBooleanValue(std::string const& name) const {
             msat_term msatVariable = expressionAdapter.translateExpression(storm::expressions::Expression::createBooleanVariable(name), false);
             msat_term msatValue = msat_get_model_value(env, msatVariable);
+            STORM_LOG_THROW(!MSAT_ERROR_TERM(msatValue), storm::exceptions::UnexpectedException, "Unable to retrieve value of variable in model. This could be caused by calls to the solver between checking for satisfiability and model retrieval.");
             storm::expressions::Expression value = expressionAdapter.translateTerm(msatValue);
             STORM_LOG_THROW(value.hasBooleanReturnType(), storm::exceptions::InvalidArgumentException, "Unable to retrieve boolean value of non-boolean variable '" << name << "'.");
             return value.evaluateAsBool();
@@ -48,6 +49,7 @@ namespace storm {
         int_fast64_t MathsatSmtSolver::MathsatModelReference::getIntegerValue(std::string const& name) const {
             msat_term msatVariable = expressionAdapter.translateExpression(storm::expressions::Expression::createBooleanVariable(name), false);
             msat_term msatValue = msat_get_model_value(env, msatVariable);
+            STORM_LOG_THROW(!MSAT_ERROR_TERM(msatValue), storm::exceptions::UnexpectedException, "Unable to retrieve value of variable in model. This could be caused by calls to the solver between checking for satisfiability and model retrieval.");
             storm::expressions::Expression value = expressionAdapter.translateTerm(msatValue);
             STORM_LOG_THROW(value.hasIntegralReturnType(), storm::exceptions::InvalidArgumentException, "Unable to retrieve integer value of non-integer variable '" << name << "'.");
             return value.evaluateAsInt();
@@ -56,6 +58,7 @@ namespace storm {
         double MathsatSmtSolver::MathsatModelReference::getDoubleValue(std::string const& name) const {
             msat_term msatVariable = expressionAdapter.translateExpression(storm::expressions::Expression::createBooleanVariable(name), false);
             msat_term msatValue = msat_get_model_value(env, msatVariable);
+            STORM_LOG_THROW(!MSAT_ERROR_TERM(msatValue), storm::exceptions::UnexpectedException, "Unable to retrieve value of variable in model. This could be caused by calls to the solver between checking for satisfiability and model retrieval.");
             storm::expressions::Expression value = expressionAdapter.translateTerm(msatValue);
             STORM_LOG_THROW(value.hasIntegralReturnType(), storm::exceptions::InvalidArgumentException, "Unable to retrieve double value of non-double variable '" << name << "'.");
             return value.evaluateAsDouble();
