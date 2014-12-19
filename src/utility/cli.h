@@ -141,7 +141,7 @@ namespace storm {
 #endif
 #ifdef STORM_HAVE_MSAT
                 char* msatVersion = msat_get_version();
-                std::cout << "Linked with MathSAT v" << msatVersion << "." << std::endl;
+                std::cout << "Linked with " << msatVersion << "." << std::endl;
                 msat_free(msatVersion);
 #endif
                 
