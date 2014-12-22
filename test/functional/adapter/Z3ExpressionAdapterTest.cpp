@@ -11,7 +11,8 @@ TEST(Z3ExpressionAdapter, StormToZ3Basic) {
 	z3::solver s(ctx);
 	z3::expr conjecture = ctx.bool_val(false);
 
-	storm::adapters::Z3ExpressionAdapter adapter(ctx, std::map<std::string, z3::expr>());
+	storm::adapters::Z3ExpressionAdapter adapter(ctx, std::map<std::string, z3::expr>(), true);
+	storm::adapters::Z3ExpressionAdapter adapter2(ctx, std::map<std::string, z3::expr>(), false);
 
 	storm::expressions::Expression exprTrue = storm::expressions::Expression::createTrue();
 	z3::expr z3True = ctx.bool_val(true);
@@ -29,16 +30,17 @@ TEST(Z3ExpressionAdapter, StormToZ3Basic) {
 
 	storm::expressions::Expression exprConjunction = (storm::expressions::Expression::createBooleanVariable("x") && storm::expressions::Expression::createBooleanVariable("y"));
 	z3::expr z3Conjunction = (ctx.bool_const("x") && ctx.bool_const("y"));
-	ASSERT_THROW( adapter.translateExpression(exprConjunction, false), std::out_of_range ); //variables not yet created in adapter
-	ASSERT_NO_THROW(conjecture = !z3::expr(ctx, Z3_mk_iff(ctx, adapter.translateExpression(exprConjunction, true), z3Conjunction)));
+    // Variables not yet created in adapter.
+	ASSERT_THROW( adapter2.translateExpression(exprConjunction), storm::exceptions::InvalidArgumentException );
+	ASSERT_NO_THROW(conjecture = !z3::expr(ctx, Z3_mk_iff(ctx, adapter.translateExpression(exprConjunction), z3Conjunction)));
 	s.add(conjecture);
 	ASSERT_TRUE(s.check() == z3::unsat);
 	s.reset();
 
 	storm::expressions::Expression exprNor = !(storm::expressions::Expression::createBooleanVariable("x") || storm::expressions::Expression::createBooleanVariable("y"));
 	z3::expr z3Nor = !(ctx.bool_const("x") || ctx.bool_const("y"));
-	ASSERT_NO_THROW(adapter.translateExpression(exprNor, false)); //variables already created in adapter
-	ASSERT_NO_THROW(conjecture = !z3::expr(ctx, Z3_mk_iff(ctx, adapter.translateExpression(exprNor, true), z3Nor)));
+	ASSERT_NO_THROW(adapter.translateExpression(exprNor)); // Variables already created in adapter.
+	ASSERT_NO_THROW(conjecture = !z3::expr(ctx, Z3_mk_iff(ctx, adapter.translateExpression(exprNor), z3Nor)));
 	s.add(conjecture);
 	ASSERT_TRUE(s.check() == z3::unsat);
 	s.reset();
@@ -49,18 +51,18 @@ TEST(Z3ExpressionAdapter, StormToZ3Integer) {
 	z3::solver s(ctx);
 	z3::expr conjecture = ctx.bool_val(false);
 
-	storm::adapters::Z3ExpressionAdapter adapter(ctx, std::map<std::string, z3::expr>());
+	storm::adapters::Z3ExpressionAdapter adapter(ctx, std::map<std::string, z3::expr>(), true);
 
 	storm::expressions::Expression exprAdd = (storm::expressions::Expression::createIntegerVariable("x") + storm::expressions::Expression::createIntegerVariable("y") < -storm::expressions::Expression::createIntegerVariable("y"));
 	z3::expr z3Add = (ctx.int_const("x") + ctx.int_const("y") < -ctx.int_const("y"));
-	ASSERT_NO_THROW(conjecture = !z3::expr(ctx, Z3_mk_iff(ctx, adapter.translateExpression(exprAdd, true), z3Add)));
+	ASSERT_NO_THROW(conjecture = !z3::expr(ctx, Z3_mk_iff(ctx, adapter.translateExpression(exprAdd), z3Add)));
 	s.add(conjecture);
 	ASSERT_TRUE(s.check() == z3::unsat);
 	s.reset();
 
 	storm::expressions::Expression exprMult = !(storm::expressions::Expression::createIntegerVariable("x") * storm::expressions::Expression::createIntegerVariable("y") == storm::expressions::Expression::createIntegerVariable("y"));
 	z3::expr z3Mult = !(ctx.int_const("x") * ctx.int_const("y") == ctx.int_const("y"));
-	ASSERT_NO_THROW(conjecture = !z3::expr(ctx, Z3_mk_iff(ctx, adapter.translateExpression(exprMult, true), z3Mult)));
+	ASSERT_NO_THROW(conjecture = !z3::expr(ctx, Z3_mk_iff(ctx, adapter.translateExpression(exprMult), z3Mult)));
 	s.add(conjecture);
 	ASSERT_TRUE(s.check() == z3::unsat);
 	s.reset();
@@ -71,32 +73,21 @@ TEST(Z3ExpressionAdapter, StormToZ3Real) {
 	z3::solver s(ctx);
 	z3::expr conjecture = ctx.bool_val(false);
 
-	storm::adapters::Z3ExpressionAdapter adapter(ctx, std::map<std::string, z3::expr>());
+	storm::adapters::Z3ExpressionAdapter adapter(ctx, std::map<std::string, z3::expr>(), true);
 
 	storm::expressions::Expression exprAdd = (storm::expressions::Expression::createDoubleVariable("x") + storm::expressions::Expression::createDoubleVariable("y") < -storm::expressions::Expression::createDoubleVariable("y"));
 	z3::expr z3Add = (ctx.real_const("x") + ctx.real_const("y") < -ctx.real_const("y"));
-	ASSERT_NO_THROW(conjecture = !z3::expr(ctx, Z3_mk_iff(ctx, adapter.translateExpression(exprAdd, true), z3Add)));
+	ASSERT_NO_THROW(conjecture = !z3::expr(ctx, Z3_mk_iff(ctx, adapter.translateExpression(exprAdd), z3Add)));
 	s.add(conjecture);
 	ASSERT_TRUE(s.check() == z3::unsat);
 	s.reset();
 
 	storm::expressions::Expression exprMult = !(storm::expressions::Expression::createDoubleVariable("x") * storm::expressions::Expression::createDoubleVariable("y") == storm::expressions::Expression::createDoubleVariable("y"));
 	z3::expr z3Mult = !(ctx.real_const("x") * ctx.real_const("y") == ctx.real_const("y"));
-	ASSERT_NO_THROW(conjecture = !z3::expr(ctx, Z3_mk_iff(ctx, adapter.translateExpression(exprMult, true), z3Mult)));
+	ASSERT_NO_THROW(conjecture = !z3::expr(ctx, Z3_mk_iff(ctx, adapter.translateExpression(exprMult), z3Mult)));
 	s.add(conjecture);
 	ASSERT_TRUE(s.check() == z3::unsat);
 	s.reset();
-}
-
-TEST(Z3ExpressionAdapter, StormToZ3TypeErrors) {
-	z3::context ctx;
-	z3::solver s(ctx);
-	z3::expr conjecture = ctx.bool_val(false);
-
-	storm::adapters::Z3ExpressionAdapter adapter(ctx, std::map<std::string, z3::expr>());
-
-	storm::expressions::Expression exprFail1 = (storm::expressions::Expression::createDoubleVariable("x") + storm::expressions::Expression::createIntegerVariable("y") < -storm::expressions::Expression::createDoubleVariable("y"));
-	ASSERT_THROW(conjecture = adapter.translateExpression(exprFail1, true), storm::exceptions::InvalidTypeException);
 }
 
 TEST(Z3ExpressionAdapter, StormToZ3FloorCeil) {
@@ -104,43 +95,42 @@ TEST(Z3ExpressionAdapter, StormToZ3FloorCeil) {
 	z3::solver s(ctx);
 	z3::expr conjecture = ctx.bool_val(false);
 
-	storm::adapters::Z3ExpressionAdapter adapter(ctx, std::map<std::string, z3::expr>());
+	storm::adapters::Z3ExpressionAdapter adapter(ctx, std::map<std::string, z3::expr>(), true);
 
 	storm::expressions::Expression exprFloor = ((storm::expressions::Expression::createDoubleVariable("d").floor()) == storm::expressions::Expression::createIntegerVariable("i") && storm::expressions::Expression::createDoubleVariable("d") > storm::expressions::Expression::createDoubleLiteral(4.1) && storm::expressions::Expression::createDoubleVariable("d") < storm::expressions::Expression::createDoubleLiteral(4.991));
 	z3::expr z3Floor = ctx.int_val(4) == ctx.int_const("i");
 
-	//try { adapter.translateExpression(exprFloor, true); }
-	//catch (std::exception &e) { std::cout << e.what() << std::endl; }
-
-	ASSERT_NO_THROW(conjecture = !z3::expr(ctx, Z3_mk_iff(ctx, adapter.translateExpression(exprFloor, true), z3Floor)));
+	ASSERT_NO_THROW(conjecture = !z3::expr(ctx, Z3_mk_iff(ctx, adapter.translateExpression(exprFloor), z3Floor)));
 	s.add(conjecture);
-	ASSERT_TRUE(s.check() == z3::sat); //it is NOT logical equivalent
+    
+    // It is not logically equivalent, so this should be satisfiable.
+	ASSERT_TRUE(s.check() == z3::sat);
 	s.reset();
-	ASSERT_NO_THROW(conjecture = !z3::expr(ctx, Z3_mk_implies(ctx, adapter.translateExpression(exprFloor, true), z3Floor)));
+	ASSERT_NO_THROW(conjecture = !z3::expr(ctx, Z3_mk_implies(ctx, adapter.translateExpression(exprFloor), z3Floor)));
 	s.add(conjecture);
-	ASSERT_TRUE(s.check() == z3::unsat); //it is NOT logical equivalent
+    
+    // However, the left part implies the right one, which is why this should be unsatisfiable.
+	ASSERT_TRUE(s.check() == z3::unsat);
 	s.reset();
-
 
 	storm::expressions::Expression exprCeil = ((storm::expressions::Expression::createDoubleVariable("d").ceil()) == storm::expressions::Expression::createIntegerVariable("i") && storm::expressions::Expression::createDoubleVariable("d") > storm::expressions::Expression::createDoubleLiteral(4.1) && storm::expressions::Expression::createDoubleVariable("d") < storm::expressions::Expression::createDoubleLiteral(4.991));
 	z3::expr z3Ceil = ctx.int_val(5) == ctx.int_const("i");
 
-	//try { adapter.translateExpression(exprFloor, true); }
-	//catch (std::exception &e) { std::cout << e.what() << std::endl; }
-
-	ASSERT_NO_THROW(conjecture = !z3::expr(ctx, Z3_mk_iff(ctx, adapter.translateExpression(exprCeil, true), z3Ceil)));
+	ASSERT_NO_THROW(conjecture = !z3::expr(ctx, Z3_mk_iff(ctx, adapter.translateExpression(exprCeil), z3Ceil)));
 	s.add(conjecture);
-	ASSERT_TRUE(s.check() == z3::sat); //it is NOT logical equivalent
+    // It is not logically equivalent, so this should be satisfiable.
+	ASSERT_TRUE(s.check() == z3::sat);
 	s.reset();
-	ASSERT_NO_THROW(conjecture = !z3::expr(ctx, Z3_mk_implies(ctx, adapter.translateExpression(exprCeil, true), z3Ceil)));
+	ASSERT_NO_THROW(conjecture = !z3::expr(ctx, Z3_mk_implies(ctx, adapter.translateExpression(exprCeil), z3Ceil)));
 	s.add(conjecture);
-	ASSERT_TRUE(s.check() == z3::unsat); //it is NOT logical equivalent
+    
+    // However, the left part implies the right one, which is why this should be unsatisfiable.
+	ASSERT_TRUE(s.check() == z3::unsat);
 	s.reset();
 }
 
 TEST(Z3ExpressionAdapter, Z3ToStormBasic) {
 	z3::context ctx;
-
 	unsigned args = 2;
 
 	storm::adapters::Z3ExpressionAdapter adapter(ctx, std::map<std::string, z3::expr>());

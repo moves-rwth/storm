@@ -50,7 +50,7 @@ namespace storm {
             config.set("model", true);
             context = std::unique_ptr<z3::context>(new z3::context(config));
             solver = std::unique_ptr<z3::solver>(new z3::solver(*context));
-            expressionAdapter = std::unique_ptr<storm::adapters::Z3ExpressionAdapter>(new storm::adapters::Z3ExpressionAdapter(*context));
+            expressionAdapter = std::unique_ptr<storm::adapters::Z3ExpressionAdapter>(new storm::adapters::Z3ExpressionAdapter(*context, std::map<std::string, z3::expr>(), true));
         }
         
 		Z3SmtSolver::~Z3SmtSolver() {
@@ -96,7 +96,7 @@ namespace storm {
 		void Z3SmtSolver::add(storm::expressions::Expression const& assertion)
 		{
 #ifdef STORM_HAVE_Z3
-			this->solver->add(expressionAdapter->translateExpression(assertion, true));
+			this->solver->add(expressionAdapter->translateExpression(assertion));
 #else
 			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "StoRM is compiled without Z3 support.");
 #endif
