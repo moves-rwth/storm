@@ -1,10 +1,3 @@
-/*
- * Z3ExpressionAdapter.h
- *
- *  Created on: 04.10.2013
- *      Author: Christian Dehnert
- */
-
 #ifndef STORM_ADAPTERS_Z3EXPRESSIONADAPTER_H_
 #define STORM_ADAPTERS_Z3EXPRESSIONADAPTER_H_
 
@@ -38,11 +31,11 @@ namespace storm {
              *
              * @param context A reference to the Z3 context over which to build the expressions. The lifetime of the
              * context needs to be guaranteed as long as the instance of this adapter is used.
-             * @param variableToExpressionMap A mapping from variable names to their corresponding Z3 expressions (if already existing).
              * @param createVariables If set to true, additional variables will be created for variables that appear in
              * expressions and are not yet known to the adapter.
+             * @param variableToExpressionMap A mapping from variable names to their corresponding Z3 expressions (if already existing).
              */
-            Z3ExpressionAdapter(z3::context& context, std::map<std::string, z3::expr> const& variableToExpressionMap = std::map<std::string, z3::expr>(), bool createVariables = false) : context(context) , stack() , additionalAssertions() , additionalVariableCounter(0), variableToExpressionMap(variableToExpressionMap), createVariables(createVariables) {
+            Z3ExpressionAdapter(z3::context& context, bool createVariables = true, std::map<std::string, z3::expr> const& variableToExpressionMap = std::map<std::string, z3::expr>()) : context(context) , stack() , additionalAssertions() , additionalVariableCounter(0), variableToExpressionMap(variableToExpressionMap), createVariables(createVariables) {
                 // Intentionally left empty.
             }
             
