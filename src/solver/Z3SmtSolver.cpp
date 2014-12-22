@@ -14,7 +14,7 @@ namespace storm {
 		bool Z3SmtSolver::Z3ModelReference::getBooleanValue(std::string const& name) const {
 #ifdef STORM_HAVE_Z3
 			z3::expr z3Expr = this->expressionAdapter.translateExpression(storm::expressions::Expression::createBooleanVariable(name));
-			z3::expr z3ExprValuation = model.eval(z3Expr, true);
+			z3::expr z3ExprValuation = model.eval(z3Expr);
 			return this->expressionAdapter.translateExpression(z3ExprValuation).evaluateAsBool();
 #else
 			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "StoRM is compiled without Z3 support.");
@@ -24,7 +24,7 @@ namespace storm {
 		int_fast64_t Z3SmtSolver::Z3ModelReference::getIntegerValue(std::string const& name) const {
 #ifdef STORM_HAVE_Z3
 			z3::expr z3Expr = this->expressionAdapter.translateExpression(storm::expressions::Expression::createIntegerVariable(name));
-			z3::expr z3ExprValuation = model.eval(z3Expr, true);
+			z3::expr z3ExprValuation = model.eval(z3Expr);
 			return this->expressionAdapter.translateExpression(z3ExprValuation).evaluateAsInt();
 #else
 			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "StoRM is compiled without Z3 support.");
@@ -34,7 +34,7 @@ namespace storm {
         double Z3SmtSolver::Z3ModelReference::getDoubleValue(std::string const& name) const {
 #ifdef STORM_HAVE_Z3
 			z3::expr z3Expr = this->expressionAdapter.translateExpression(storm::expressions::Expression::createDoubleVariable(name));
-			z3::expr z3ExprValuation = model.eval(z3Expr, true);
+			z3::expr z3ExprValuation = model.eval(z3Expr);
 			return this->expressionAdapter.translateExpression(z3ExprValuation).evaluateAsDouble();
 #else
 			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "StoRM is compiled without Z3 support.");
@@ -50,7 +50,7 @@ namespace storm {
             config.set("model", true);
             context = std::unique_ptr<z3::context>(new z3::context(config));
             solver = std::unique_ptr<z3::solver>(new z3::solver(*context));
-            expressionAdapter = std::unique_ptr<storm::adapters::Z3ExpressionAdapter>(new storm::adapters::Z3ExpressionAdapter(*context, std::map<std::string, z3::expr>(), true));
+            expressionAdapter = std::unique_ptr<storm::adapters::Z3ExpressionAdapter>(new storm::adapters::Z3ExpressionAdapter(*context, true));
         }
         
 		Z3SmtSolver::~Z3SmtSolver() {
