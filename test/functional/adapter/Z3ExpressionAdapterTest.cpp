@@ -30,6 +30,7 @@ TEST(Z3ExpressionAdapter, StormToZ3Basic) {
 
 	storm::expressions::Expression exprConjunction = (storm::expressions::Expression::createBooleanVariable("x") && storm::expressions::Expression::createBooleanVariable("y"));
 	z3::expr z3Conjunction = (ctx.bool_const("x") && ctx.bool_const("y"));
+    
     // Variables not yet created in adapter.
 	ASSERT_THROW( adapter2.translateExpression(exprConjunction), storm::exceptions::InvalidArgumentException );
 	ASSERT_NO_THROW(conjecture = !z3::expr(ctx, Z3_mk_iff(ctx, adapter.translateExpression(exprConjunction), z3Conjunction)));

@@ -207,6 +207,12 @@ namespace storm {
 					case storm::expressions::UnaryNumericalFunctionExpression::OperatorType::Minus:
 						stack.push(msat_make_times(env, msat_make_number(env, "-1"), childResult));
 						break;
+                    case storm::expressions::UnaryNumericalFunctionExpression::OperatorType::Floor:
+                        stack.push(msat_make_floor(env, childResult));
+                        break;
+                    case storm::expressions::UnaryNumericalFunctionExpression::OperatorType::Ceil:
+                        stack.push(msat_make_plus(env, msat_make_floor(env, childResult), msat_make_number(env, "1")));
+                        break;
 					default:
                         STORM_LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Cannot evaluate expression: unknown numerical unary operator: '" << static_cast<uint_fast64_t>(expression->getOperatorType()) << "' in expression " << expression << ".");
 				}
@@ -220,25 +226,26 @@ namespace storm {
                     std::pair<std::map<std::string, msat_decl>::iterator, bool> iteratorAndFlag;
                     switch (expression->getReturnType()) {
                         case storm::expressions::ExpressionReturnType::Bool:
-                        iteratorAndFlag = this->variableToDeclarationMap.insert(std::make_pair(expression->getVariableName(), msat_declare_function(env, expression->getVariableName().c_str(), msat_get_bool_type(env))));
-                        result = iteratorAndFlag.first->second;
-                        break;
+                            iteratorAndFlag = this->variableToDeclarationMap.insert(std::make_pair(expression->getVariableName(), msat_declare_function(env, expression->getVariableName().c_str(), msat_get_bool_type(env))));
+                            result = iteratorAndFlag.first->second;
+                            break;
                         case storm::expressions::ExpressionReturnType::Int:
-                        iteratorAndFlag = this->variableToDeclarationMap.insert(std::make_pair(expression->getVariableName(), msat_declare_function(env, expression->getVariableName().c_str(), msat_get_integer_type(env))));
-                        result = iteratorAndFlag.first->second;
-                        break;
+                            iteratorAndFlag = this->variableToDeclarationMap.insert(std::make_pair(expression->getVariableName(), msat_declare_function(env, expression->getVariableName().c_str(), msat_get_integer_type(env))));
+                            result = iteratorAndFlag.first->second;
+                            break;
                         case storm::expressions::ExpressionReturnType::Double:
-                        iteratorAndFlag = this->variableToDeclarationMap.insert(std::make_pair(expression->getVariableName(), msat_declare_function(env, expression->getVariableName().c_str(), msat_get_rational_type(env))));
-                        result = iteratorAndFlag.first->second;
-                        break;
+                            iteratorAndFlag = this->variableToDeclarationMap.insert(std::make_pair(expression->getVariableName(), msat_declare_function(env, expression->getVariableName().c_str(), msat_get_rational_type(env))));
+                            result = iteratorAndFlag.first->second;
+                            break;
                         default:
-                        STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Encountered variable '" << expression->getVariableName() << "' with unknown type while trying to create solver variables.");
+                            STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Encountered variable '" << expression->getVariableName() << "' with unknown type while trying to create solver variables.");
                     }
                 } else {
                     STORM_LOG_THROW(stringVariablePair != variableToDeclarationMap.end(), storm::exceptions::InvalidArgumentException, "Expression refers to unknown variable '" << expression->getVariableName() << "'.");
                     result = stringVariablePair->second;
                 }
-                
+
+                STORM_LOG_THROW(!MSAT_ERROR_DECL(result), storm::exceptions::ExpressionEvaluationException, "Unable to translate expression to MathSAT format, because a variable could not be translated.");
 				stack.push(msat_make_constant(env, result));
 			}
 
