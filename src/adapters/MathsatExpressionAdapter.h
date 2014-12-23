@@ -5,7 +5,9 @@
 
 #include <stack>
 
+#ifdef STORM_HAVE_MSAT
 #include "mathsat.h"
+#endif
 
 #include "storage/expressions/Expressions.h"
 #include "storage/expressions/ExpressionVisitor.h"

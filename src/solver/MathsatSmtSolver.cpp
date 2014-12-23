@@ -11,7 +11,7 @@ namespace storm {
         MathsatSmtSolver::MathsatAllsatModelReference::MathsatAllsatModelReference(msat_env const& env, msat_term* model, std::unordered_map<std::string, uint_fast64_t> const& atomNameToSlotMapping) : env(env), model(model), atomNameToSlotMapping(atomNameToSlotMapping) {
             // Intentionally left empty.
         }
-#endif
+
         bool MathsatSmtSolver::MathsatAllsatModelReference::getBooleanValue(std::string const& name) const {
             std::unordered_map<std::string, uint_fast64_t>::const_iterator nameSlotPair = atomNameToSlotMapping.find(name);
             STORM_LOG_THROW(nameSlotPair != atomNameToSlotMapping.end(), storm::exceptions::InvalidArgumentException, "Cannot retrieve value of unknown variable '" << name << "' from model.");
@@ -32,11 +32,10 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unable to retrieve double value from model that only contains boolean values.");
         }
         
-#ifdef STORM_HAVE_MSAT
         MathsatSmtSolver::MathsatModelReference::MathsatModelReference(msat_env const& env, storm::adapters::MathsatExpressionAdapter& expressionAdapter) : env(env), expressionAdapter(expressionAdapter) {
             // Intentionally left empty.
         }
-#endif
+
         bool MathsatSmtSolver::MathsatModelReference::getBooleanValue(std::string const& name) const {
             msat_term msatVariable = expressionAdapter.translateExpression(storm::expressions::Expression::createBooleanVariable(name));
             msat_term msatValue = msat_get_model_value(env, msatVariable);
@@ -63,7 +62,8 @@ namespace storm {
             STORM_LOG_THROW(value.hasIntegralReturnType(), storm::exceptions::InvalidArgumentException, "Unable to retrieve double value of non-double variable '" << name << "'.");
             return value.evaluateAsDouble();
         }
-        
+#endif
+
 		MathsatSmtSolver::MathsatSmtSolver(Options const& options)
 #ifdef STORM_HAVE_MSAT
 			: expressionAdapter(nullptr), lastCheckAssumptions(false), lastResult(CheckResult::Unknown)
@@ -92,8 +92,12 @@ namespace storm {
 		}
         
 		MathsatSmtSolver::~MathsatSmtSolver() {
+#ifdef STORM_HAVE_MSAT
             STORM_LOG_THROW(!MSAT_ERROR_ENV(env), storm::exceptions::UnexpectedException, "Illegal MathSAT environment.");
 			msat_destroy_env(env);
+#else
+            // Empty.
+#endif
 		}
 
 		void MathsatSmtSolver::push() {
@@ -113,7 +117,11 @@ namespace storm {
 		}
 
         void MathsatSmtSolver::pop(uint_fast64_t n) {
+#ifdef STORM_HAVE_MSAT
             SmtSolver::pop(n);
+#else
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "StoRM is compiled without MathSAT support.");
+#endif
         }
         
 		void MathsatSmtSolver::reset()
@@ -347,8 +355,7 @@ namespace storm {
 #endif
 
 
-		uint_fast64_t MathsatSmtSolver::allSat(std::vector<storm::expressions::Expression> const& important, std::function<bool(storm::expressions::SimpleValuation&)> const& callback)
-		{
+		uint_fast64_t MathsatSmtSolver::allSat(std::vector<storm::expressions::Expression> const& important, std::function<bool(storm::expressions::SimpleValuation&)> const& callback) {
 #ifdef STORM_HAVE_MSAT
             // Create a backtracking point, because MathSAT will modify the assertions stack during its AllSat procedure.
             this->push();
@@ -368,12 +375,11 @@ namespace storm {
             this->pop();
 			return static_cast<uint_fast64_t>(numberOfModels);
 #else
-			LOG_THROW(false, storm::exceptions::NotSupportedException, "StoRM is compiled without MathSAT support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "StoRM is compiled without MathSAT support.");
 #endif
 		}
 
-		uint_fast64_t MathsatSmtSolver::allSat(std::vector<storm::expressions::Expression> const& important, std::function<bool(SmtSolver::ModelReference&)> const& callback)
-		{
+		uint_fast64_t MathsatSmtSolver::allSat(std::vector<storm::expressions::Expression> const& important, std::function<bool(SmtSolver::ModelReference&)> const& callback) {
 #ifdef STORM_HAVE_MSAT
             // Create a backtracking point, because MathSAT will modify the assertions stack during its AllSat procedure.
             this->push();

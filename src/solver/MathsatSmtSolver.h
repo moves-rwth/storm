@@ -6,10 +6,6 @@
 #include "src/adapters/MathsatExpressionAdapter.h"
 #include <boost/container/flat_map.hpp>
 
-#ifndef STORM_HAVE_MSAT
-#define STORM_HAVE_MSAT
-#endif
-
 #ifdef STORM_HAVE_MSAT
 #include "mathsat.h"
 #endif
@@ -34,38 +30,36 @@ namespace storm {
                 bool enableInterpolantGeneration = false;
 			};
 
+#ifdef STORM_HAVE_MSAT
 			class MathsatAllsatModelReference : public SmtSolver::ModelReference {
 			public:
-#ifdef STORM_HAVE_MSAT
 				MathsatAllsatModelReference(msat_env const& env, msat_term* model, std::unordered_map<std::string, uint_fast64_t> const& atomNameToSlotMapping);
-#endif
-				virtual bool getBooleanValue(std::string const& name) const override;
+
+                virtual bool getBooleanValue(std::string const& name) const override;
 				virtual int_fast64_t getIntegerValue(std::string const& name) const override;
                 virtual double getDoubleValue(std::string const& name) const override;
                 
 			private:
-#ifdef STORM_HAVE_MSAT
 				msat_env const& env;
                 msat_term* model;
                 std::unordered_map<std::string, uint_fast64_t> const& atomNameToSlotMapping;
-#endif
 			};
+#endif
             
+#ifdef STORM_HAVE_MSAT
             class MathsatModelReference : public SmtSolver::ModelReference {
 			public:
-#ifdef STORM_HAVE_MSAT
 				MathsatModelReference(msat_env const& env, storm::adapters::MathsatExpressionAdapter& expressionAdapter);
-#endif
-				virtual bool getBooleanValue(std::string const& name) const override;
+
+                virtual bool getBooleanValue(std::string const& name) const override;
 				virtual int_fast64_t getIntegerValue(std::string const& name) const override;
                 virtual double getDoubleValue(std::string const& name) const override;
                 
 			private:
-#ifdef STORM_HAVE_MSAT
 				msat_env const& env;
                 storm::adapters::MathsatExpressionAdapter& expressionAdapter;
-#endif
 			};
+#endif
             
 			MathsatSmtSolver(Options const& options = Options());
             
@@ -104,15 +98,16 @@ namespace storm {
 			virtual storm::expressions::Expression getInterpolant(std::vector<uint_fast64_t> const& groupsA) override;
 
 		private:
-#ifdef STORM_HAVE_MSAT
 			storm::expressions::SimpleValuation convertMathsatModelToValuation();
 
+#ifdef STORM_HAVE_MSAT
             // The MathSAT environment.
 			msat_env env;
             
             // The expression adapter used to translate expressions to MathSAT's format. This has to be a pointer, since
             // it must be initialized after creating the environment, but the adapter class has no default constructor.
             std::unique_ptr<storm::adapters::MathsatExpressionAdapter> expressionAdapter;
+#endif
 
             // A flag storing whether the last call was a check involving assumptions.
 			bool lastCheckAssumptions;
@@ -123,7 +118,6 @@ namespace storm {
             // A mapping of interpolation group indices to their MathSAT identifier.
 			typedef	boost::container::flat_map<uint_fast64_t, int> InterpolationGroupMapType;
 			InterpolationGroupMapType interpolationGroups;
-#endif
 		};
 	}
 }

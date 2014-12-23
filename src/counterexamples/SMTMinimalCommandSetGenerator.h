@@ -620,7 +620,7 @@ namespace storm {
                     }
                 }
                 
-                storm::adapters::Z3ExpressionAdapter expressionAdapter(localContext, solverVariables);
+                storm::adapters::Z3ExpressionAdapter expressionAdapter(localContext, false, solverVariables);
 
                 // Then add the constraints for bounds of the integer variables..
                 for (auto const& integerVariable : program.getGlobalIntegerVariables()) {
