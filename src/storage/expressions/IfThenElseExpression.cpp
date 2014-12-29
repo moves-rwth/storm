@@ -99,8 +99,8 @@ namespace storm {
             }
         }
         
-        void IfThenElseExpression::accept(ExpressionVisitor* visitor) const {
-            visitor->visit(this);
+        boost::any IfThenElseExpression::accept(ExpressionVisitor& visitor) const {
+            return visitor.visit(*this);
         }
         
         std::shared_ptr<BaseExpression const> IfThenElseExpression::getCondition() const {

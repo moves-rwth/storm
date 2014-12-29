@@ -36,7 +36,7 @@ namespace storm {
             virtual storm::expressions::OperatorType getOperator() const override;
             virtual bool evaluateAsBool(Valuation const* valuation = nullptr) const override;
             virtual std::shared_ptr<BaseExpression const> simplify() const override;
-            virtual void accept(ExpressionVisitor* visitor) const override;
+            virtual boost::any accept(ExpressionVisitor& visitor) const override;
 
             /*!
              * Retrieves the relation associated with the expression.

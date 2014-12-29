@@ -4,7 +4,6 @@
 #include "src/storage/expressions/Expression.h"
 #include "src/storage/expressions/SubstitutionVisitor.h"
 #include "src/storage/expressions/IdentifierSubstitutionVisitor.h"
-#include "src/storage/expressions/TypeCheckVisitor.h"
 #include "src/storage/expressions/LinearityCheckVisitor.h"
 #include "src/storage/expressions/Expressions.h"
 #include "src/exceptions/InvalidTypeException.h"
@@ -31,14 +30,6 @@ namespace storm {
 		Expression Expression::substitute(std::unordered_map<std::string, std::string> const& identifierToIdentifierMap) const {
 			return IdentifierSubstitutionVisitor<std::unordered_map<std::string, std::string>>(identifierToIdentifierMap).substitute(*this);
 		}
-        
-        void Expression::check(std::map<std::string, storm::expressions::ExpressionReturnType> const& identifierToTypeMap) const {
-            return TypeCheckVisitor<std::map<std::string, storm::expressions::ExpressionReturnType>>(identifierToTypeMap).check(*this);
-        }
-
-        void Expression::check(std::unordered_map<std::string, storm::expressions::ExpressionReturnType> const& identifierToTypeMap) const {
-            return TypeCheckVisitor<std::unordered_map<std::string, storm::expressions::ExpressionReturnType>>(identifierToTypeMap).check(*this);
-        }
 
         bool Expression::evaluateAsBool(Valuation const* valuation) const {
             return this->getBaseExpression().evaluateAsBool(valuation);
@@ -98,17 +89,6 @@ namespace storm {
 
 		std::set<std::string> Expression::getVariables() const {
 			return this->getBaseExpression().getVariables();
-		}
-
-		std::map<std::string, ExpressionReturnType> Expression::getVariablesAndTypes(bool validate) const {
-			if (validate) {
-				std::map<std::string, ExpressionReturnType> result = this->getBaseExpression().getVariablesAndTypes();
-				this->check(result);
-				return result;
-			}
-			else {
-				return this->getBaseExpression().getVariablesAndTypes();
-			}
 		}
         
         bool Expression::isRelationalExpression() const {
@@ -298,6 +278,10 @@ namespace storm {
         Expression Expression::ceil() const {
             STORM_LOG_THROW(this->hasNumericalReturnType(), storm::exceptions::InvalidTypeException, "Operator 'ceil' requires numerical operand.");
             return Expression(std::shared_ptr<BaseExpression>(new UnaryNumericalFunctionExpression(ExpressionReturnType::Int, this->getBaseExpressionPointer(), UnaryNumericalFunctionExpression::OperatorType::Ceil)));
+        }
+        
+        boost::any Expression::accept(ExpressionVisitor& visitor) const {
+            return this->getBaseExpression().accept(visitor);
         }
         
         std::ostream& operator<<(std::ostream& stream, Expression const& expression) {

@@ -109,22 +109,6 @@ namespace storm {
 			Expression substitute(std::unordered_map<std::string, std::string> const& identifierToIdentifierMap) const;
             
             /*!
-             * Checks that all identifiers appearing in the expression have the types given by the map. An exception
-             * is thrown in case a violation is found.
-             *
-             * @param identifierToTypeMap A mapping from identifiers to the types that are supposed to have.
-             */
-            void check(std::map<std::string, storm::expressions::ExpressionReturnType> const& identifierToTypeMap) const;
-            
-            /*!
-             * Checks that all identifiers appearing in the expression have the types given by the map. An exception
-             * is thrown in case a violation is found.
-             *
-             * @param identifierToTypeMap A mapping from identifiers to the types that are supposed to have.
-             */
-            void check(std::unordered_map<std::string, storm::expressions::ExpressionReturnType> const& identifierToTypeMap) const;
-            
-            /*!
              * Evaluates the expression under the valuation of variables given by the valuation and returns the
              * resulting boolean value. If the return type of the expression is not a boolean an exception is thrown.
              *
@@ -314,7 +298,7 @@ namespace storm {
              *
              * @param visitor The visitor to accept.
              */
-            void accept(ExpressionVisitor* visitor) const;
+            boost::any accept(ExpressionVisitor& visitor) const;
             
             friend std::ostream& operator<<(std::ostream& stream, Expression const& expression);
 

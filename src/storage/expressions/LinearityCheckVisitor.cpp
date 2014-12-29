@@ -6,108 +6,84 @@
 
 namespace storm {
     namespace expressions {
-        LinearityCheckVisitor::LinearityCheckVisitor() : resultStack() {
+        LinearityCheckVisitor::LinearityCheckVisitor() {
             // Intentionally left empty.
         }
         
         bool LinearityCheckVisitor::check(Expression const& expression) {
-            expression.getBaseExpression().accept(this);
-            return resultStack.top() == LinearityStatus::LinearWithoutVariables || resultStack.top() == LinearityStatus::LinearContainsVariables;
+            LinearityStatus result = boost::any_cast<LinearityStatus>(expression.getBaseExpression().accept(*this));
+            return result == LinearityStatus::LinearWithoutVariables || result == LinearityStatus::LinearContainsVariables;
         }
         
-        void LinearityCheckVisitor::visit(IfThenElseExpression const* expression) {
+        boost::any LinearityCheckVisitor::visit(IfThenElseExpression const& expression) {
             // An if-then-else expression is never linear.
-            resultStack.push(LinearityStatus::NonLinear);
+            return LinearityStatus::NonLinear;
         }
         
-        void LinearityCheckVisitor::visit(BinaryBooleanFunctionExpression const* expression) {
+        boost::any LinearityCheckVisitor::visit(BinaryBooleanFunctionExpression const& expression) {
             // Boolean function applications are not allowed in linear expressions.
-            resultStack.push(LinearityStatus::NonLinear);
+            return LinearityStatus::NonLinear;
         }
         
-        void LinearityCheckVisitor::visit(BinaryNumericalFunctionExpression const* expression) {
-            LinearityStatus leftResult;
-            LinearityStatus rightResult;
-            switch (expression->getOperatorType()) {
+        boost::any LinearityCheckVisitor::visit(BinaryNumericalFunctionExpression const& expression) {
+            LinearityStatus leftResult = boost::any_cast<LinearityStatus>(expression.getFirstOperand()->accept(*this));
+            if (leftResult == LinearityStatus::NonLinear) {
+                return LinearityStatus::NonLinear;
+            }
+
+            LinearityStatus rightResult = boost::any_cast<LinearityStatus>(expression.getSecondOperand()->accept(*this));
+            if (rightResult == LinearityStatus::NonLinear) {
+                return LinearityStatus::NonLinear;
+            }
+            
+            switch (expression.getOperatorType()) {
                 case BinaryNumericalFunctionExpression::OperatorType::Plus:
                 case BinaryNumericalFunctionExpression::OperatorType::Minus:
-                    expression->getFirstOperand()->accept(this);
-                    leftResult = resultStack.top();
-                    
-                    if (leftResult == LinearityStatus::NonLinear) {
-                        return;
-                    } else {
-                        resultStack.pop();
-                        expression->getSecondOperand()->accept(this);
-                        rightResult = resultStack.top();
-                        if (rightResult == LinearityStatus::NonLinear) {
-                            return;
-                        }
-                        resultStack.pop();
-                    }
-                                        
-                    resultStack.push(leftResult == LinearityStatus::LinearContainsVariables || rightResult == LinearityStatus::LinearContainsVariables ? LinearityStatus::LinearContainsVariables : LinearityStatus::LinearWithoutVariables);
-                    break;
+                    return (leftResult == LinearityStatus::LinearContainsVariables || rightResult == LinearityStatus::LinearContainsVariables ? LinearityStatus::LinearContainsVariables : LinearityStatus::LinearWithoutVariables);
                 case BinaryNumericalFunctionExpression::OperatorType::Times:
                 case BinaryNumericalFunctionExpression::OperatorType::Divide:
-                    expression->getFirstOperand()->accept(this);
-                    leftResult = resultStack.top();
-                    
-                    if (leftResult == LinearityStatus::NonLinear) {
-                        return;
-                    } else {
-                        resultStack.pop();
-                        expression->getSecondOperand()->accept(this);
-                        rightResult = resultStack.top();
-                        if (rightResult == LinearityStatus::NonLinear) {
-                            return;
-                        }
-                        resultStack.pop();
-                    }
-                    
                     if (leftResult == LinearityStatus::LinearContainsVariables && rightResult == LinearityStatus::LinearContainsVariables) {
-                        resultStack.push(LinearityStatus::NonLinear);
+                        return LinearityStatus::NonLinear;
                     }
                     
-                    resultStack.push(leftResult == LinearityStatus::LinearContainsVariables || rightResult == LinearityStatus::LinearContainsVariables ? LinearityStatus::LinearContainsVariables : LinearityStatus::LinearWithoutVariables);
-                    break;
-                case BinaryNumericalFunctionExpression::OperatorType::Min: resultStack.push(LinearityStatus::NonLinear); break;
-                case BinaryNumericalFunctionExpression::OperatorType::Max: resultStack.push(LinearityStatus::NonLinear); break;
-                case BinaryNumericalFunctionExpression::OperatorType::Power: resultStack.push(LinearityStatus::NonLinear); break;
+                    return (leftResult == LinearityStatus::LinearContainsVariables || rightResult == LinearityStatus::LinearContainsVariables ? LinearityStatus::LinearContainsVariables : LinearityStatus::LinearWithoutVariables);
+                case BinaryNumericalFunctionExpression::OperatorType::Min: return LinearityStatus::NonLinear; break;
+                case BinaryNumericalFunctionExpression::OperatorType::Max: return LinearityStatus::NonLinear; break;
+                case BinaryNumericalFunctionExpression::OperatorType::Power: return LinearityStatus::NonLinear; break;
             }
         }
         
-        void LinearityCheckVisitor::visit(BinaryRelationExpression const* expression) {
-            resultStack.push(LinearityStatus::NonLinear);
+        boost::any LinearityCheckVisitor::visit(BinaryRelationExpression const& expression) {
+            return LinearityStatus::NonLinear;
         }
         
-        void LinearityCheckVisitor::visit(VariableExpression const* expression) {
-            resultStack.push(LinearityStatus::LinearContainsVariables);
+        boost::any LinearityCheckVisitor::visit(VariableExpression const& expression) {
+            return LinearityStatus::LinearContainsVariables;
         }
         
-        void LinearityCheckVisitor::visit(UnaryBooleanFunctionExpression const* expression) {
+        boost::any LinearityCheckVisitor::visit(UnaryBooleanFunctionExpression const& expression) {
             // Boolean function applications are not allowed in linear expressions.
-            resultStack.push(LinearityStatus::NonLinear);
+            return LinearityStatus::NonLinear;
         }
         
-        void LinearityCheckVisitor::visit(UnaryNumericalFunctionExpression const* expression) {
-            switch (expression->getOperatorType()) {
-                case UnaryNumericalFunctionExpression::OperatorType::Minus: break;
+        boost::any LinearityCheckVisitor::visit(UnaryNumericalFunctionExpression const& expression) {
+            switch (expression.getOperatorType()) {
+                case UnaryNumericalFunctionExpression::OperatorType::Minus: return expression.getOperand()->accept(*this);
                 case UnaryNumericalFunctionExpression::OperatorType::Floor:
-                case UnaryNumericalFunctionExpression::OperatorType::Ceil: resultStack.pop(); resultStack.push(LinearityStatus::NonLinear); break;
+                case UnaryNumericalFunctionExpression::OperatorType::Ceil: return LinearityStatus::NonLinear;
             }
         }
         
-        void LinearityCheckVisitor::visit(BooleanLiteralExpression const* expression) {
-            resultStack.push(LinearityStatus::NonLinear);
+        boost::any LinearityCheckVisitor::visit(BooleanLiteralExpression const& expression) {
+            return LinearityStatus::NonLinear;
         }
         
-        void LinearityCheckVisitor::visit(IntegerLiteralExpression const* expression) {
-            resultStack.push(LinearityStatus::LinearWithoutVariables);
+        boost::any LinearityCheckVisitor::visit(IntegerLiteralExpression const& expression) {
+            return LinearityStatus::LinearWithoutVariables;
         }
         
-        void LinearityCheckVisitor::visit(DoubleLiteralExpression const* expression) {
-            resultStack.push(LinearityStatus::LinearWithoutVariables);
+        boost::any LinearityCheckVisitor::visit(DoubleLiteralExpression const& expression) {
+            return LinearityStatus::LinearWithoutVariables;
         }
     }
 }

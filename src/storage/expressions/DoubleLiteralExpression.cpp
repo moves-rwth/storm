@@ -26,8 +26,8 @@ namespace storm {
             return this->shared_from_this();
         }
         
-        void DoubleLiteralExpression::accept(ExpressionVisitor* visitor) const {
-            visitor->visit(this);
+        boost::any DoubleLiteralExpression::accept(ExpressionVisitor& visitor) const {
+            return visitor.visit(*this);
         }
         
         double DoubleLiteralExpression::getValue() const {

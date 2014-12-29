@@ -1,6 +1,8 @@
 #ifndef STORM_STORAGE_EXPRESSIONS_EXPRESSIONVISITOR_H_
 #define STORM_STORAGE_EXPRESSIONS_EXPRESSIONVISITOR_H_
 
+#include <boost/any.hpp>
+
 namespace storm {
     namespace expressions {
         // Forward-declare all expression classes.
@@ -17,16 +19,16 @@ namespace storm {
         
         class ExpressionVisitor {
         public:
-            virtual void visit(IfThenElseExpression const* expression) = 0;
-            virtual void visit(BinaryBooleanFunctionExpression const* expression) = 0;
-            virtual void visit(BinaryNumericalFunctionExpression const* expression) = 0;
-            virtual void visit(BinaryRelationExpression const* expression) = 0;
-            virtual void visit(VariableExpression const* expression) = 0;
-            virtual void visit(UnaryBooleanFunctionExpression const* expression) = 0;
-            virtual void visit(UnaryNumericalFunctionExpression const* expression) = 0;
-            virtual void visit(BooleanLiteralExpression const* expression) = 0;
-            virtual void visit(IntegerLiteralExpression const* expression) = 0;
-            virtual void visit(DoubleLiteralExpression const* expression) = 0;
+            virtual boost::any visit(IfThenElseExpression const& expression) = 0;
+            virtual boost::any visit(BinaryBooleanFunctionExpression const& expression) = 0;
+            virtual boost::any visit(BinaryNumericalFunctionExpression const& expression) = 0;
+            virtual boost::any visit(BinaryRelationExpression const& expression) = 0;
+            virtual boost::any visit(VariableExpression const& expression) = 0;
+            virtual boost::any visit(UnaryBooleanFunctionExpression const& expression) = 0;
+            virtual boost::any visit(UnaryNumericalFunctionExpression const& expression) = 0;
+            virtual boost::any visit(BooleanLiteralExpression const& expression) = 0;
+            virtual boost::any visit(IntegerLiteralExpression const& expression) = 0;
+            virtual boost::any visit(DoubleLiteralExpression const& expression) = 0;
         };
     }
 }

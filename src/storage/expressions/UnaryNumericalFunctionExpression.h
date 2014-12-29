@@ -36,7 +36,7 @@ namespace storm {
             virtual int_fast64_t evaluateAsInt(Valuation const* valuation = nullptr) const override;
             virtual double evaluateAsDouble(Valuation const* valuation = nullptr) const override;
             virtual std::shared_ptr<BaseExpression const> simplify() const override;
-            virtual void accept(ExpressionVisitor* visitor) const override;
+            virtual boost::any accept(ExpressionVisitor& visitor) const override;
      
             /*!
              * Retrieves the operator associated with this expression.

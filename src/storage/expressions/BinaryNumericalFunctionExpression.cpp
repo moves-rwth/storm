@@ -70,8 +70,8 @@ namespace storm {
             }
         }
         
-        void BinaryNumericalFunctionExpression::accept(ExpressionVisitor* visitor) const {
-            visitor->visit(this);
+        boost::any BinaryNumericalFunctionExpression::accept(ExpressionVisitor& visitor) const {
+            return visitor.visit(*this);
         }
         
         void BinaryNumericalFunctionExpression::printToStream(std::ostream& stream) const {

@@ -36,219 +36,171 @@ namespace storm {
              * expressions and are not yet known to the adapter.
              * @param variableToDeclarationMap A mapping from variable names to their corresponding MathSAT declarations (if already existing).
              */
-			MathsatExpressionAdapter(msat_env& env, bool createVariables = true, std::map<std::string, msat_decl> const& variableToDeclarationMap = std::map<std::string, msat_decl>()) : env(env), stack(), variableToDeclarationMap(variableToDeclarationMap), createVariables(createVariables) {
+			MathsatExpressionAdapter(msat_env& env, bool createVariables = true, std::map<std::string, msat_decl> const& variableToDeclarationMap = std::map<std::string, msat_decl>()) : env(env), variableToDeclarationMap(variableToDeclarationMap), createVariables(createVariables) {
 				// Intentionally left empty.
 			}
 
 			/*!
-			* Translates the given expression to an equivalent term for MathSAT.
-			*
-			* @param expression The expression to be translated.
-			* @return An equivalent term for MathSAT.
-			*/
+             * Translates the given expression to an equivalent term for MathSAT.
+             *
+             * @param expression The expression to be translated.
+             * @return An equivalent term for MathSAT.
+             */
 			msat_term translateExpression(storm::expressions::Expression const& expression) {
-				expression.getBaseExpression().accept(this);
-				msat_term result = stack.top();
-				stack.pop();
+                msat_term result = boost::any_cast<msat_term>(expression.getBaseExpression().accept(*this));
                 STORM_LOG_THROW(!MSAT_ERROR_TERM(result), storm::exceptions::ExpressionEvaluationException, "Could not translate expression to MathSAT's format.");
 				return result;
 			}
 
-			virtual void visit(expressions::BinaryBooleanFunctionExpression const* expression) override {
-				expression->getFirstOperand()->accept(this);
-				expression->getSecondOperand()->accept(this);
+			virtual boost::any visit(expressions::BinaryBooleanFunctionExpression const& expression) override {
+                msat_term leftResult = boost::any_cast<msat_term>(expression.getFirstOperand()->accept(*this));
+				msat_term rightResult = boost::any_cast<msat_term>(expression.getSecondOperand()->accept(*this));
 
-				msat_term rightResult = stack.top();
-				stack.pop();
-				msat_term leftResult = stack.top();
-				stack.pop();
-
-				switch (expression->getOperatorType()) {
+				switch (expression.getOperatorType()) {
 					case storm::expressions::BinaryBooleanFunctionExpression::OperatorType::And:
-						stack.push(msat_make_and(env, leftResult, rightResult));
-						break;
+						return msat_make_and(env, leftResult, rightResult);
 					case storm::expressions::BinaryBooleanFunctionExpression::OperatorType::Or:
-						stack.push(msat_make_or(env, leftResult, rightResult));
-						break;
+						return msat_make_or(env, leftResult, rightResult);
 					case storm::expressions::BinaryBooleanFunctionExpression::OperatorType::Iff:
-						stack.push(msat_make_iff(env, leftResult, rightResult));
-						break;
+						return msat_make_iff(env, leftResult, rightResult);
                     case storm::expressions::BinaryBooleanFunctionExpression::OperatorType::Implies:
-                        stack.push(msat_make_or(env, msat_make_not(env, leftResult), rightResult));
-                        break;
+                        return msat_make_or(env, msat_make_not(env, leftResult), rightResult);
 					default:
-                    STORM_LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Cannot evaluate expression: unknown boolean binary operator '" << static_cast<uint_fast64_t>(expression->getOperatorType()) << "' in expression " << expression << ".");
+                        STORM_LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Cannot evaluate expression: unknown boolean binary operator '" << static_cast<uint_fast64_t>(expression.getOperatorType()) << "' in expression " << expression << ".");
 				}
-
 			}
 
-			virtual void visit(expressions::BinaryNumericalFunctionExpression const* expression) override {
-				expression->getFirstOperand()->accept(this);
-				expression->getSecondOperand()->accept(this);
+			virtual boost::any visit(expressions::BinaryNumericalFunctionExpression const& expression) override {
+                msat_term leftResult = boost::any_cast<msat_term>(expression.getFirstOperand()->accept(*this));
+                msat_term rightResult = boost::any_cast<msat_term>(expression.getSecondOperand()->accept(*this));
 
-				msat_term rightResult = stack.top();
-				stack.pop();
-				msat_term leftResult = stack.top();
-				stack.pop();
-
-				switch (expression->getOperatorType()) {
+				switch (expression.getOperatorType()) {
 					case storm::expressions::BinaryNumericalFunctionExpression::OperatorType::Plus:
-						stack.push(msat_make_plus(env, leftResult, rightResult));
-						break;
+						return msat_make_plus(env, leftResult, rightResult);
 					case storm::expressions::BinaryNumericalFunctionExpression::OperatorType::Minus:
-						stack.push(msat_make_plus(env, leftResult, msat_make_times(env, msat_make_number(env, "-1"), rightResult)));
-						break;
+						return msat_make_plus(env, leftResult, msat_make_times(env, msat_make_number(env, "-1"), rightResult));
 					case storm::expressions::BinaryNumericalFunctionExpression::OperatorType::Times:
-						stack.push(msat_make_times(env, leftResult, rightResult));
-						break;
+						return msat_make_times(env, leftResult, rightResult);
 					case storm::expressions::BinaryNumericalFunctionExpression::OperatorType::Divide:
-						throw storm::exceptions::ExpressionEvaluationException() << "Cannot evaluate expression: "
-							<< "Unsupported numerical binary operator: '/' (division) in expression " << expression << ".";
-						break;
+                        STORM_LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Cannot evaluate expression: unsupported numerical binary operator: '/' (division) in expression.");
 					case storm::expressions::BinaryNumericalFunctionExpression::OperatorType::Min:
-						stack.push(msat_make_term_ite(env, msat_make_leq(env, leftResult, rightResult), leftResult, rightResult));
-						break;
+						return msat_make_term_ite(env, msat_make_leq(env, leftResult, rightResult), leftResult, rightResult);
 					case storm::expressions::BinaryNumericalFunctionExpression::OperatorType::Max:
-						stack.push(msat_make_term_ite(env, msat_make_leq(env, leftResult, rightResult), rightResult, leftResult));
-						break;
+						return msat_make_term_ite(env, msat_make_leq(env, leftResult, rightResult), rightResult, leftResult);
 					default:
-                        STORM_LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Cannot evaluate expression: unknown numerical binary operator '" << static_cast<uint_fast64_t>(expression->getOperatorType()) << "' in expression " << expression << ".");
+                        STORM_LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Cannot evaluate expression: unknown numerical binary operator '" << static_cast<uint_fast64_t>(expression.getOperatorType()) << "' in expression " << expression << ".");
 				}
 			}
 
-			virtual void visit(expressions::BinaryRelationExpression const* expression) override {
-				expression->getFirstOperand()->accept(this);
-				expression->getSecondOperand()->accept(this);
+			virtual boost::any visit(expressions::BinaryRelationExpression const& expression) override {
+                msat_term leftResult = boost::any_cast<msat_term>(expression.getFirstOperand()->accept(*this));
+                msat_term rightResult = boost::any_cast<msat_term>(expression.getSecondOperand()->accept(*this));
 
-				msat_term rightResult = stack.top();
-				stack.pop();
-				msat_term leftResult = stack.top();
-				stack.pop();
-
-				switch (expression->getRelationType()) {
+				switch (expression.getRelationType()) {
 					case storm::expressions::BinaryRelationExpression::RelationType::Equal:
-						if (expression->getFirstOperand()->getReturnType() == storm::expressions::ExpressionReturnType::Bool && expression->getSecondOperand()->getReturnType() == storm::expressions::ExpressionReturnType::Bool) {
-							stack.push(msat_make_iff(env, leftResult, rightResult));
+						if (expression.getFirstOperand()->getReturnType() == storm::expressions::ExpressionReturnType::Bool && expression.getSecondOperand()->getReturnType() == storm::expressions::ExpressionReturnType::Bool) {
+							return msat_make_iff(env, leftResult, rightResult);
 						} else {
-							stack.push(msat_make_equal(env, leftResult, rightResult));
+							return msat_make_equal(env, leftResult, rightResult);
 						}
-						break;
 					case storm::expressions::BinaryRelationExpression::RelationType::NotEqual:
-						if (expression->getFirstOperand()->getReturnType() == storm::expressions::ExpressionReturnType::Bool && expression->getSecondOperand()->getReturnType() == storm::expressions::ExpressionReturnType::Bool) {
-							stack.push(msat_make_not(env, msat_make_iff(env, leftResult, rightResult)));
+						if (expression.getFirstOperand()->getReturnType() == storm::expressions::ExpressionReturnType::Bool && expression.getSecondOperand()->getReturnType() == storm::expressions::ExpressionReturnType::Bool) {
+							return msat_make_not(env, msat_make_iff(env, leftResult, rightResult));
 						} else {
-							stack.push(msat_make_not(env, msat_make_equal(env, leftResult, rightResult)));
+							return msat_make_not(env, msat_make_equal(env, leftResult, rightResult));
 						}
-						break;
 					case storm::expressions::BinaryRelationExpression::RelationType::Less:
-						stack.push(msat_make_and(env, msat_make_not(env, msat_make_equal(env, leftResult, rightResult)), msat_make_leq(env, leftResult, rightResult)));
-						break;
+						return msat_make_and(env, msat_make_not(env, msat_make_equal(env, leftResult, rightResult)), msat_make_leq(env, leftResult, rightResult));
 					case storm::expressions::BinaryRelationExpression::RelationType::LessOrEqual:
-						stack.push(msat_make_leq(env, leftResult, rightResult));
-						break;
+						return msat_make_leq(env, leftResult, rightResult);
 					case storm::expressions::BinaryRelationExpression::RelationType::Greater:
-						stack.push(msat_make_not(env, msat_make_leq(env, leftResult, rightResult)));
-						break;
+						return msat_make_not(env, msat_make_leq(env, leftResult, rightResult));
 					case storm::expressions::BinaryRelationExpression::RelationType::GreaterOrEqual:
-						stack.push(msat_make_or(env, msat_make_equal(env, leftResult, rightResult), msat_make_not(env, msat_make_leq(env, leftResult, rightResult))));
-						break;
+						return msat_make_or(env, msat_make_equal(env, leftResult, rightResult), msat_make_not(env, msat_make_leq(env, leftResult, rightResult)));
 					default:
-                        STORM_LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Cannot evaluate expression: unknown boolean binary operator '" << static_cast<uint_fast64_t>(expression->getRelationType()) << "' in expression " << expression << ".");
+                        STORM_LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Cannot evaluate expression: unknown boolean binary operator '" << static_cast<uint_fast64_t>(expression.getRelationType()) << "' in expression " << expression << ".");
 				}
 			}
 
-			virtual void visit(storm::expressions::IfThenElseExpression const* expression) override {
-				expression->getCondition()->accept(this);
-				expression->getThenExpression()->accept(this);
-				expression->getElseExpression()->accept(this);
-
-				msat_term conditionResult = stack.top();
-				stack.pop();
-				msat_term thenResult = stack.top();
-				stack.pop();
-				msat_term elseResult = stack.top();
-				stack.pop();
-
-				stack.push(msat_make_term_ite(env, conditionResult, thenResult, elseResult));
+			virtual boost::any visit(storm::expressions::IfThenElseExpression const& expression) override {
+                msat_term conditionResult = boost::any_cast<msat_term>(expression.getCondition()->accept(*this));
+				msat_term thenResult = boost::any_cast<msat_term>(expression.getThenExpression()->accept(*this));
+				msat_term elseResult = boost::any_cast<msat_term>(expression.getElseExpression()->accept(*this));
+				return msat_make_term_ite(env, conditionResult, thenResult, elseResult);
 			}
 
-			virtual void visit(expressions::BooleanLiteralExpression const* expression) override {
-				stack.push(expression->evaluateAsBool(nullptr) ? msat_make_true(env) : msat_make_false(env));
+			virtual boost::any visit(expressions::BooleanLiteralExpression const& expression) override {
+                return expression.getValue() ? msat_make_true(env) : msat_make_false(env);
 			}
 
-			virtual void visit(expressions::DoubleLiteralExpression const* expression) override {
-				stack.push(msat_make_number(env, std::to_string(expression->evaluateAsDouble(nullptr)).c_str()));
+			virtual boost::any visit(expressions::DoubleLiteralExpression const& expression) override {
+				return msat_make_number(env, std::to_string(expression.getValue()).c_str());
 			}
 
-			virtual void visit(expressions::IntegerLiteralExpression const* expression) override {
-				stack.push(msat_make_number(env, std::to_string(static_cast<int>(expression->evaluateAsInt(nullptr))).c_str()));
+			virtual boost::any visit(expressions::IntegerLiteralExpression const& expression) override {
+				return msat_make_number(env, std::to_string(static_cast<int>(expression.getValue())).c_str());
 			}
 
-			virtual void visit(expressions::UnaryBooleanFunctionExpression const* expression) override {
-				expression->getOperand()->accept(this);
+			virtual boost::any visit(expressions::UnaryBooleanFunctionExpression const& expression) override {
+                msat_term childResult = boost::any_cast<msat_term>(expression.getOperand()->accept(*this));
 
-				msat_term childResult = stack.top();
-				stack.pop();
-
-				switch (expression->getOperatorType()) {
+				switch (expression.getOperatorType()) {
 					case storm::expressions::UnaryBooleanFunctionExpression::OperatorType::Not:
-						stack.push(msat_make_not(env, childResult));
+						return msat_make_not(env, childResult);
 						break;
 					default:
-                    STORM_LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Cannot evaluate expression: unknown boolean unary operator: '" << static_cast<uint_fast64_t>(expression->getOperatorType()) << "' in expression " << expression << ".");
+                    STORM_LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Cannot evaluate expression: unknown boolean unary operator: '" << static_cast<uint_fast64_t>(expression.getOperatorType()) << "' in expression " << expression << ".");
 				}
 			}
 
-			virtual void visit(expressions::UnaryNumericalFunctionExpression const* expression) override {
-				expression->getOperand()->accept(this);
+			virtual boost::any visit(expressions::UnaryNumericalFunctionExpression const& expression) override {
+				msat_term childResult = boost::any_cast<msat_term>(expression.getOperand()->accept(*this));
 
-				msat_term childResult = stack.top();
-				stack.pop();
 
-				switch (expression->getOperatorType()) {
+				switch (expression.getOperatorType()) {
 					case storm::expressions::UnaryNumericalFunctionExpression::OperatorType::Minus:
-						stack.push(msat_make_times(env, msat_make_number(env, "-1"), childResult));
+						return msat_make_times(env, msat_make_number(env, "-1"), childResult);
 						break;
                     case storm::expressions::UnaryNumericalFunctionExpression::OperatorType::Floor:
-                        stack.push(msat_make_floor(env, childResult));
+                        return msat_make_floor(env, childResult);
                         break;
                     case storm::expressions::UnaryNumericalFunctionExpression::OperatorType::Ceil:
-                        stack.push(msat_make_plus(env, msat_make_floor(env, childResult), msat_make_number(env, "1")));
+                        return msat_make_plus(env, msat_make_floor(env, childResult), msat_make_number(env, "1"));
                         break;
 					default:
-                        STORM_LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Cannot evaluate expression: unknown numerical unary operator: '" << static_cast<uint_fast64_t>(expression->getOperatorType()) << "' in expression " << expression << ".");
+                        STORM_LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Cannot evaluate expression: unknown numerical unary operator: '" << static_cast<uint_fast64_t>(expression.getOperatorType()) << "' in expression " << expression << ".");
 				}
 			}
 
-			virtual void visit(expressions::VariableExpression const* expression) override {
-                std::map<std::string, msat_decl>::iterator stringVariablePair = variableToDeclarationMap.find(expression->getVariableName());
+			virtual boost::any visit(expressions::VariableExpression const& expression) override {
+                std::map<std::string, msat_decl>::iterator stringVariablePair = variableToDeclarationMap.find(expression.getVariableName());
                 msat_decl result;
                 
                 if (stringVariablePair == variableToDeclarationMap.end() && createVariables) {
                     std::pair<std::map<std::string, msat_decl>::iterator, bool> iteratorAndFlag;
-                    switch (expression->getReturnType()) {
+                    switch (expression.getReturnType()) {
                         case storm::expressions::ExpressionReturnType::Bool:
-                            iteratorAndFlag = this->variableToDeclarationMap.insert(std::make_pair(expression->getVariableName(), msat_declare_function(env, expression->getVariableName().c_str(), msat_get_bool_type(env))));
+                            iteratorAndFlag = this->variableToDeclarationMap.insert(std::make_pair(expression.getVariableName(), msat_declare_function(env, expression.getVariableName().c_str(), msat_get_bool_type(env))));
                             result = iteratorAndFlag.first->second;
                             break;
                         case storm::expressions::ExpressionReturnType::Int:
-                            iteratorAndFlag = this->variableToDeclarationMap.insert(std::make_pair(expression->getVariableName(), msat_declare_function(env, expression->getVariableName().c_str(), msat_get_integer_type(env))));
+                            iteratorAndFlag = this->variableToDeclarationMap.insert(std::make_pair(expression.getVariableName(), msat_declare_function(env, expression.getVariableName().c_str(), msat_get_integer_type(env))));
                             result = iteratorAndFlag.first->second;
                             break;
                         case storm::expressions::ExpressionReturnType::Double:
-                            iteratorAndFlag = this->variableToDeclarationMap.insert(std::make_pair(expression->getVariableName(), msat_declare_function(env, expression->getVariableName().c_str(), msat_get_rational_type(env))));
+                            iteratorAndFlag = this->variableToDeclarationMap.insert(std::make_pair(expression.getVariableName(), msat_declare_function(env, expression.getVariableName().c_str(), msat_get_rational_type(env))));
                             result = iteratorAndFlag.first->second;
                             break;
                         default:
-                            STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Encountered variable '" << expression->getVariableName() << "' with unknown type while trying to create solver variables.");
+                            STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Encountered variable '" << expression.getVariableName() << "' with unknown type while trying to create solver variables.");
                     }
                 } else {
-                    STORM_LOG_THROW(stringVariablePair != variableToDeclarationMap.end(), storm::exceptions::InvalidArgumentException, "Expression refers to unknown variable '" << expression->getVariableName() << "'.");
+                    STORM_LOG_THROW(stringVariablePair != variableToDeclarationMap.end(), storm::exceptions::InvalidArgumentException, "Expression refers to unknown variable '" << expression.getVariableName() << "'.");
                     result = stringVariablePair->second;
                 }
 
                 STORM_LOG_THROW(!MSAT_ERROR_DECL(result), storm::exceptions::ExpressionEvaluationException, "Unable to translate expression to MathSAT format, because a variable could not be translated.");
-				stack.push(msat_make_constant(env, result));
+				return msat_make_constant(env, result);
 			}
 
             storm::expressions::Expression translateExpression(msat_term const& term) {
@@ -309,9 +261,6 @@ namespace storm {
             // The MathSAT environment used.
 			msat_env& env;
                         
-            // A stack used for communicating results between different functions.
-			std::stack<msat_term> stack;
-            
             // A mapping of variable names to their declaration in the MathSAT environment.
             std::map<std::string, msat_decl> variableToDeclarationMap;
                     

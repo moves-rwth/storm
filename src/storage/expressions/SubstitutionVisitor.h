@@ -28,21 +28,18 @@ namespace storm {
              */
             Expression substitute(Expression const& expression);
             
-            virtual void visit(IfThenElseExpression const* expression) override;
-            virtual void visit(BinaryBooleanFunctionExpression const* expression) override;
-            virtual void visit(BinaryNumericalFunctionExpression const* expression) override;
-            virtual void visit(BinaryRelationExpression const* expression) override;
-            virtual void visit(VariableExpression const* expression) override;
-            virtual void visit(UnaryBooleanFunctionExpression const* expression) override;
-            virtual void visit(UnaryNumericalFunctionExpression const* expression) override;
-            virtual void visit(BooleanLiteralExpression const* expression) override;
-            virtual void visit(IntegerLiteralExpression const* expression) override;
-            virtual void visit(DoubleLiteralExpression const* expression) override;
+            virtual boost::any visit(IfThenElseExpression const& expression) override;
+            virtual boost::any visit(BinaryBooleanFunctionExpression const& expression) override;
+            virtual boost::any visit(BinaryNumericalFunctionExpression const& expression) override;
+            virtual boost::any visit(BinaryRelationExpression const& expression) override;
+            virtual boost::any visit(VariableExpression const& expression) override;
+            virtual boost::any visit(UnaryBooleanFunctionExpression const& expression) override;
+            virtual boost::any visit(UnaryNumericalFunctionExpression const& expression) override;
+            virtual boost::any visit(BooleanLiteralExpression const& expression) override;
+            virtual boost::any visit(IntegerLiteralExpression const& expression) override;
+            virtual boost::any visit(DoubleLiteralExpression const& expression) override;
             
         private:
-            // A stack of expression used to pass the results to the higher levels.
-            std::stack<std::shared_ptr<BaseExpression const>> expressionStack;
-            
             // A mapping of identifier names to expressions with which they shall be replaced.
             MapType const& identifierToExpressionMap;
         };

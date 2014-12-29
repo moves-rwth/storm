@@ -34,8 +34,8 @@ namespace storm {
             return this->shared_from_this();
         }
         
-        void BooleanLiteralExpression::accept(ExpressionVisitor* visitor) const {
-            visitor->visit(this);
+        boost::any BooleanLiteralExpression::accept(ExpressionVisitor& visitor) const {
+            return visitor.visit(*this);
         }
         
         bool BooleanLiteralExpression::getValue() const {

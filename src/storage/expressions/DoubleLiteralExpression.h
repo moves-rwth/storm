@@ -30,7 +30,7 @@ namespace storm {
 			virtual std::set<std::string> getVariables() const override;
 			virtual std::map<std::string, ExpressionReturnType> getVariablesAndTypes() const override;
             virtual std::shared_ptr<BaseExpression const> simplify() const override;
-            virtual void accept(ExpressionVisitor* visitor) const override;
+            virtual boost::any accept(ExpressionVisitor& visitor) const override;
 
             /*!
              * Retrieves the value of the double literal.

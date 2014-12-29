@@ -14,6 +14,7 @@ TEST(GlpkLpSolver, LPOptimizeMax) {
     ASSERT_NO_THROW(solver.addLowerBoundedContinuousVariable("z", 0, 1));
     ASSERT_NO_THROW(solver.update());
 
+    solver.addConstraint("", storm::expressions::Expression::createDoubleVariable("x") + storm::expressions::Expression::createDoubleVariable("y") + storm::expressions::Expression::createDoubleVariable("z") <= storm::expressions::Expression::createDoubleLiteral(12));
     ASSERT_NO_THROW(solver.addConstraint("", storm::expressions::Expression::createDoubleVariable("x") + storm::expressions::Expression::createDoubleVariable("y") + storm::expressions::Expression::createDoubleVariable("z") <= storm::expressions::Expression::createDoubleLiteral(12)));
     ASSERT_NO_THROW(solver.addConstraint("", storm::expressions::Expression::createDoubleLiteral(0.5) * storm::expressions::Expression::createDoubleVariable("y") + storm::expressions::Expression::createDoubleVariable("z") - storm::expressions::Expression::createDoubleVariable("x") == storm::expressions::Expression::createDoubleLiteral(5)));
     ASSERT_NO_THROW(solver.addConstraint("", storm::expressions::Expression::createDoubleVariable("y") - storm::expressions::Expression::createDoubleVariable("x") <= storm::expressions::Expression::createDoubleLiteral(5.5)));

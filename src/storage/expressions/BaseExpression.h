@@ -168,7 +168,7 @@ namespace storm {
              *
              * @param visitor The visitor that is to be accepted.
              */
-            virtual void accept(ExpressionVisitor* visitor) const = 0;
+            virtual boost::any accept(ExpressionVisitor& visitor) const = 0;
             
             /*!
              * Retrieves whether the expression has a numerical return type, i.e., integer or double.
