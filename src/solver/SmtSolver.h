@@ -3,8 +3,9 @@
 
 #include <cstdint>
 
-#include "storage/expressions/Expressions.h"
-#include "storage/expressions/SimpleValuation.h"
+#include "src/storage/expressions/Expressions.h"
+#include "src/storage/expressions/Valuation.h"
+#include "src/storage/expressions/ExpressionManager.h"
 
 #include <set>
 #include <unordered_set>
@@ -29,18 +30,39 @@ namespace storm {
              */
 			class ModelReference {
 			public:
-				virtual bool getBooleanValue(std::string const& name) const = 0;
-				virtual int_fast64_t getIntegerValue(std::string const& name) const = 0;
-                virtual double getDoubleValue(std::string const& name) const = 0;
+                /*!
+                 * Creates a model reference that uses the given expression manager.
+                 *
+                 * @param manager The manager responsible for the variables whose value can be requested.
+                 */
+                ModelReference(storm::expressions::ExpressionManager const& manager);
+                
+                virtual bool getBooleanValue(storm::expressions::Variable const& variable) const = 0;
+				virtual int_fast64_t getIntegerValue(storm::expressions::Variable const& variable) const = 0;
+                virtual double getRationalValue(storm::expressions::Variable const& variable) const = 0;
+                
+                /*!
+                 * Retrieves the expression manager associated with this model reference.
+                 *
+                 * @return The expression manager associated with this model reference.
+                 */
+                storm::expressions::ExpressionManager const& getManager() const;
+                
+            private:
+                // The expression manager responsible for the variableswhose value can be requested via this model
+                // reference.
+                storm::expressions::ExpressionManager const& manager;
 			};
             
 		public:
 			/*!
              * Constructs a new Smt solver with the given options.
              *
+             * @param manager The expression manager responsible for all expressions that in some way or another interact
+             * with this solver.
              * @throws storm::exceptions::IllegalArgumentValueException if an option is unsupported for the solver.
              */
-			SmtSolver();
+            SmtSolver(storm::expressions::ExpressionManager& manager);
             
             /*!
              * Destructs the solver instance
@@ -136,7 +158,7 @@ namespace storm {
              *
              * @return A valuation that holds the values of the variables in the current model.
              */
-			virtual storm::expressions::SimpleValuation getModelAsValuation();
+			virtual storm::expressions::Valuation getModelAsValuation();
 
             /*!
              * If the last call to check() or checkWithAssumptions() returned Sat, this method retrieves a model that
@@ -159,7 +181,7 @@ namespace storm {
              *
              * @returns the set of all valuations of the important atoms, such that the currently asserted formulas are satisfiable
              */
-			virtual std::vector<storm::expressions::SimpleValuation> allSat(std::vector<storm::expressions::Expression> const& important);
+			virtual std::vector<storm::expressions::Valuation> allSat(std::vector<storm::expressions::Variable> const& important);
             
 			/*!
              * Performs AllSat over the (provided) important atoms. That is, this function determines all models of the
@@ -172,7 +194,7 @@ namespace storm {
              *
              * @return The number of models of the important atoms that where found.
              */
-			virtual uint_fast64_t allSat(std::vector<storm::expressions::Expression> const& important, std::function<bool(storm::expressions::SimpleValuation&)> const& callback);
+			virtual uint_fast64_t allSat(std::vector<storm::expressions::Variable> const& important, std::function<bool(storm::expressions::Valuation&)> const& callback);
 
             /*!
              * Performs AllSat over the (provided) important atoms. That is, this function determines all models of the
@@ -185,7 +207,7 @@ namespace storm {
              *
              * @return The number of models of the important atoms that where found.
              */
-			virtual uint_fast64_t allSat(std::vector<storm::expressions::Expression> const& important, std::function<bool(ModelReference&)> const& callback);
+			virtual uint_fast64_t allSat(std::vector<storm::expressions::Variable> const& important, std::function<bool(ModelReference&)> const& callback);
             
 			/*!
              * If the last call to check() returned Unsat, this function can be used to retrieve the unsatisfiable core
@@ -231,6 +253,24 @@ namespace storm {
              * conjunction of I and B is inconsistent.
              */
 			virtual storm::expressions::Expression getInterpolant(std::vector<uint_fast64_t> const& groupsA);
+            
+            /*!
+             * Retrieves the expression manager associated with the solver.
+             *
+             * @return The expression manager associated with the solver.
+             */
+            storm::expressions::ExpressionManager const& getManager() const;
+
+            /*!
+             * Retrieves the expression manager associated with the solver.
+             *
+             * @return The expression manager associated with the solver.
+             */
+            storm::expressions::ExpressionManager& getManager();
+            
+        private:
+            // The manager responsible for the expressions that interact with this solver.
+            storm::expressions::ExpressionManager& manager;
 		};
 	}
 }

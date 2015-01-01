@@ -1,100 +1,138 @@
 #ifndef STORM_STORAGE_EXPRESSIONS_VALUATION_H_
 #define STORM_STORAGE_EXPRESSIONS_VALUATION_H_
 
-#include <string>
-#include <set>
+#include <cstdint>
+#include <vector>
 
 namespace storm {
     namespace expressions {
+        class ExpressionManager;
+        class Variable;
+        
         /*!
-         * The base class of all valuations where a valuation assigns a concrete value to all identifiers. This is, for
-         * example, used for evaluating expressions.
+         * A class to store a valuation of variables. This is, for example, used for evaluating expressions.
          */
         class Valuation {
         public:
-            /*!
-             * Retrieves the boolean value of the identifier with the given name.
-             *
-             * @param name The name of the boolean identifier whose value to retrieve.
-             * @return The value of the boolean identifier.
-             */
-            virtual bool getBooleanValue(std::string const& name) const = 0;
+            friend class ValuationPointerHash;
+            friend class ValuationPointerLess;
             
             /*!
-             * Retrieves the integer value of the identifier with the given name.
+             * Creates a valuation of all non-auxiliary variables managed by the given manager. If the manager is
+             * modified in the sense that additional variables are added, all valuations over its variables are
+             * invalidated.
              *
-             * @param name The name of the integer identifier whose value to retrieve.
-             * @return The value of the integer identifier.
+             * @param manager The manager of the variables.
              */
-            virtual int_fast64_t getIntegerValue(std::string const& name) const = 0;
+            Valuation(ExpressionManager const& manager);
             
             /*!
-             * Retrieves the double value of the identifier with the given name.
+             * Deep-copies the valuation.
              *
-             * @param name The name of the double identifier whose value to retrieve.
-             * @return The value of the double identifier.
+             * @param other The valuation to copy
              */
-            virtual double getDoubleValue(std::string const& name) const = 0;
+            Valuation(Valuation const& other);
             
             /*!
-             * Retrieves whether there exists a boolean identifier with the given name in the valuation.
+             * Checks whether the two valuations are semantically equivalent.
              *
-             * @param name The name of the boolean identifier to query.
-             * @return True iff the identifier exists and is of boolean type.
+             * @param other The valuation with which to compare.
+             * @return True iff the two valuations are semantically equivalent.
              */
-            virtual bool containsBooleanIdentifier(std::string const& name) const = 0;
+            bool operator==(Valuation const& other) const;
             
             /*!
-             * Retrieves whether there exists a integer identifier with the given name in the valuation.
+             * Retrieves the value of the given boolean variable.
              *
-             * @param name The name of the integer identifier to query.
-             * @return True iff the identifier exists and is of boolean type.
+             * @param booleanVariable The boolean variable whose value to retrieve.
+             * @return The value of the boolean variable.
              */
-            virtual bool containsIntegerIdentifier(std::string const& name) const = 0;
+            bool getBooleanValue(Variable const& booleanVariable) const;
             
             /*!
-             * Retrieves whether there exists a double identifier with the given name in the valuation.
+             * Sets the value of the given boolean variable to the provided value.
              *
-             * @param name The name of the double identifier to query.
-             * @return True iff the identifier exists and is of boolean type.
+             * @param booleanVariable The variable whose value to set.
+             * @param value The new value of the variable.
              */
-            virtual bool containsDoubleIdentifier(std::string const& name) const = 0;
+            void setBooleanValue(Variable const& booleanVariable, bool value);
             
             /*!
-             * Retrieves the number of identifiers in this valuation.
+             * Retrieves the value of the given integer variable.
              *
-             * @return The number of identifiers in this valuation.
+             * @param integerVariable The integer variable whose value to retrieve.
+             * @return The value of the integer variable.
              */
-            virtual std::size_t getNumberOfIdentifiers() const = 0;
-            
-            /*!
-             * Retrieves the set of all identifiers contained in this valuation.
-             *
-             * @return The set of all identifiers contained in this valuation.
-             */
-            virtual std::set<std::string> getIdentifiers() const = 0;
-            
-            /*!
-             * Retrieves the set of boolean identifiers contained in this valuation.
-             *
-             * @return The set of boolean identifiers contained in this valuation.
-             */
-            virtual std::set<std::string> getBooleanIdentifiers() const = 0;
+            int_fast64_t getIntegerValue(Variable const& integerVariable) const;
 
             /*!
-             * Retrieves the set of integer identifiers contained in this valuation.
+             * Sets the value of the given boolean variable to the provided value.
              *
-             * @return The set of integer identifiers contained in this valuation.
+             * @param integerVariable The variable whose value to set.
+             * @param value The new value of the variable.
              */
-            virtual std::set<std::string> getIntegerIdentifiers() const = 0;
-
+            void setIntegerValue(Variable const& integerVariable, int_fast64_t value);
+            
             /*!
-             * Retrieves the set of double identifiers contained in this valuation.
+             * Retrieves the value of the given rational variable.
              *
-             * @return The set of double identifiers contained in this valuation.
+             * @param rationalVariable The rational variable whose value to retrieve.
+             * @return The value of the rational variable.
              */
-            virtual std::set<std::string> getDoubleIdentifiers() const = 0;
+            double getRationalValue(Variable const& rationalVariable) const;
+            
+            /*!
+             * Sets the value of the given boolean variable to the provided value.
+             *
+             * @param integerVariable The variable whose value to set.
+             * @param value The new value of the variable.
+             */
+            void setRationalValue(Variable const& rationalVariable, double value);
+            
+            /*!
+             * Retrieves the manager responsible for the variables of this valuation.
+             *
+             * @return The manager.
+             */
+            ExpressionManager const& getManager() const;
 
+        private:
+            // The manager responsible for the variables of this valuation.
+            ExpressionManager const& manager;
+            
+            // Containers that store the values of the variables of the appropriate type.
+            std::unique_ptr<std::vector<bool>> booleanValues;
+            std::unique_ptr<std::vector<int_fast64_t>> integerValues;
+            std::unique_ptr<std::vector<double>> rationalValues;
+        };
+        
+        /*!
+         * A helper class that can pe used as the hash functor for data structures that need to hash valuations given
+         * via pointers.
+         */
+        class ValuationPointerHash {
+        public:
+            std::size_t operator()(Valuation* valuation) const;
+        };
+        
+        /*!
+         * A helper class that can be used as the comparison functor wrt. equality for data structures that need to
+         * store pointers to valuations and need to compare the elements wrt. their content (rather than pointer
+         * equality).
+         */
+        class ValuationPointerCompare {
+        public:
+            bool operator()(Valuation* valuation1, Valuation* valuation2) const;
+        };
+        
+        /*!
+         * A helper class that can be used as the comparison functor wrt. "<" for data structures that need to
+         * store pointers to valuations and need to compare the elements wrt. their content (rather than pointer
+         * equality).
+         */
+        class ValuationPointerLess {
+        public:
+            bool operator()(Valuation* valuation1, Valuation* valuation2) const;
         };
     }
 }

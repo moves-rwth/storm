@@ -11,16 +11,16 @@
 
 namespace storm {
     namespace expressions {
+        // Foward-declare expression manager class.
+        class ExpressionManager;
+        class Variable;
+        
         class Expression {
         public:
-            Expression() = default;
+            friend class ExpressionManager;
+            friend class Variable;
             
-            /*!
-             * Creates an expression with the given underlying base expression.
-             *
-             * @param expressionPtr A pointer to the underlying base expression.
-             */
-            Expression(std::shared_ptr<BaseExpression const> const& expressionPtr);
+            Expression() = default;
             
             // Instantiate constructors and assignments with their default implementations.
             Expression(Expression const& other) = default;
@@ -29,17 +29,6 @@ namespace storm {
             Expression(Expression&&) = default;
             Expression& operator=(Expression&&) = default;
 #endif
-            
-            // Static factory methods to create atomic expression parts.
-            static Expression createBooleanLiteral(bool value);
-            static Expression createTrue();
-            static Expression createFalse();
-            static Expression createIntegerLiteral(int_fast64_t value);
-            static Expression createDoubleLiteral(double value);
-            static Expression createBooleanVariable(std::string const& variableName);
-            static Expression createIntegerVariable(std::string const& variableName);
-            static Expression createDoubleVariable(std::string const& variableName);
-            static Expression createUndefinedVariable(std::string const& variableName);
             
             // Provide operator overloads to conveniently construct new expressions from other expressions.
             Expression operator+(Expression const& other) const;
@@ -236,19 +225,6 @@ namespace storm {
              * @return The set of all variables that appear in the expression.
              */
             std::set<std::string> getVariables() const;
-            
-			/*!
-			* Retrieves the mapping of all variables that appear in the expression to their return type.
-			*
-			* @param validate If this parameter is true, check() is called with the returnvalue before 
-			*                 it is returned.
-			*
-			* @throws storm::exceptions::InvalidTypeException If a variables with the same name but different
-			*                                                 types occur somewhere withing the expression.
-			*
-			* @return The mapping of all variables that appear in the expression to their return type.
-			*/
-			std::map<std::string, ExpressionReturnType> getVariablesAndTypes(bool validate = true) const;
 
             /*!
              * Retrieves the base expression underlying this expression object. Note that prior to calling this, the
@@ -303,8 +279,34 @@ namespace storm {
             friend std::ostream& operator<<(std::ostream& stream, Expression const& expression);
 
         private:
+            /*!
+             * Creates an expression with the given underlying base expression.
+             *
+             * @param expressionPtr A pointer to the underlying base expression.
+             */
+            Expression(std::shared_ptr<BaseExpression const> const& expressionPtr);
+            
+            /*!
+             * Creates an expression representing the given variable.
+             *
+             * @param variable The variable to represent.
+             */
+            Expression(Variable const& variable);
+            
+            /*!
+             * Checks whether the two expressions share the same expression manager.
+             *
+             * @param a The first expression.
+             * @param b The second expression.
+             * @return True iff the expressions share the same manager.
+             */
+            static void assertSameManager(BaseExpression const& a, BaseExpression const& b);
+            
             // A pointer to the underlying base expression.
             std::shared_ptr<BaseExpression const> expressionPtr;
+            
+            // A pointer to the responsible manager.
+            std::shared_ptr<ExpressionManager> manager;
         };
     }
 }

@@ -15,7 +15,10 @@
 #include "src/utility/OsDetection.h"
 
 namespace storm {
-    namespace expressions {        
+    namespace expressions {
+        // Forward-declare expression manager.
+        class ExpressionManager;
+        
         /*!
          * The base class of all expression classes.
          */
@@ -26,7 +29,7 @@ namespace storm {
              *
              * @param returnType The return type of the expression.
              */
-            BaseExpression(ExpressionReturnType returnType);
+            BaseExpression(ExpressionManager const& manager, ExpressionReturnType returnType);
             
             // Create default versions of constructors and assignments.
             BaseExpression(BaseExpression const&) = default;
@@ -149,13 +152,6 @@ namespace storm {
              */
             virtual std::set<std::string> getVariables() const = 0;
 
-			/*!
-			* Retrieves the mapping of all variables that appear in the expression to their return type.
-			*
-			* @return The mapping of all variables that appear in the expression to their return type.
-			*/
-			virtual std::map<std::string, ExpressionReturnType> getVariablesAndTypes() const = 0;
-
             /*!
              * Simplifies the expression according to some simple rules.
              *
@@ -199,6 +195,13 @@ namespace storm {
             std::shared_ptr<BaseExpression const> getSharedPointer() const;
             
             /*!
+             * Retrieves the manager responsible for this expression.
+             *
+             * @return The manager responsible for this expression.
+             */
+            ExpressionManager const& getManager() const;
+            
+            /*!
              * Retrieves the return type of the expression.
              *
              * @return The return type of the expression.
@@ -206,6 +209,7 @@ namespace storm {
             ExpressionReturnType getReturnType() const;
             
             friend std::ostream& operator<<(std::ostream& stream, BaseExpression const& expression);
+            
         protected:
             /*!
              * Prints the expression to the given stream.
@@ -215,6 +219,9 @@ namespace storm {
             virtual void printToStream(std::ostream& stream) const = 0;
             
         private:
+            // The manager responsible for this expression.
+            ExpressionManager const& manager;
+            
             // The return type of this expression.
             ExpressionReturnType returnType;
         };

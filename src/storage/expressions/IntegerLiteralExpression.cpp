@@ -2,7 +2,7 @@
 
 namespace storm {
     namespace expressions {
-        IntegerLiteralExpression::IntegerLiteralExpression(int_fast64_t value) : BaseExpression(ExpressionReturnType::Int), value(value) {
+        IntegerLiteralExpression::IntegerLiteralExpression(ExpressionManager const& manager, int_fast64_t value) : BaseExpression(manager, ExpressionReturnType::Int), value(value) {
             // Intentionally left empty.
         }
         
@@ -22,10 +22,6 @@ namespace storm {
 			return std::set<std::string>();
 		}
 
-		std::map<std::string,ExpressionReturnType> IntegerLiteralExpression::getVariablesAndTypes() const {
-			return std::map<std::string, ExpressionReturnType>();
-		}
-        
         std::shared_ptr<BaseExpression const> IntegerLiteralExpression::simplify() const {
             return this->shared_from_this();
         }

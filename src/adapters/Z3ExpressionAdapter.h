@@ -1,7 +1,7 @@
 #ifndef STORM_ADAPTERS_Z3EXPRESSIONADAPTER_H_
 #define STORM_ADAPTERS_Z3EXPRESSIONADAPTER_H_
 
-#include <stack>
+#include <unordered_map>
 
 // Include the headers of Z3 only if it is available.
 #ifdef STORM_HAVE_Z3
@@ -11,6 +11,7 @@
 
 #include "storm-config.h"
 #include "src/storage/expressions/Expressions.h"
+#include "src/storage/expressions/ExpressionManager.h"
 #include "src/utility/macros.h"
 #include "src/exceptions/ExpressionEvaluationException.h"
 #include "src/exceptions/InvalidTypeException.h"
@@ -25,26 +26,24 @@ namespace storm {
             /*!
              * Creates an expression adapter that can translate expressions to the format of Z3.
 			 *
-			 * @warning The adapter internally creates helper variables prefixed with `__z3adapter_`. As a consequence,
-             * having variables with this prefix in the variableToExpressionMap might lead to unexpected results and is
-             * strictly to be avoided.
-             *
+             * @param manager The manager that can be used to build expressions.
              * @param context A reference to the Z3 context over which to build the expressions. The lifetime of the
              * context needs to be guaranteed as long as the instance of this adapter is used.
-             * @param createVariables If set to true, additional variables will be created for variables that appear in
-             * expressions and are not yet known to the adapter.
-             * @param variableToExpressionMap A mapping from variable names to their corresponding Z3 expressions (if already existing).
              */
-            Z3ExpressionAdapter(z3::context& context, bool createVariables = true, std::map<std::string, z3::expr> const& variableToExpressionMap = std::map<std::string, z3::expr>()) : context(context), additionalAssertions(), additionalVariableCounter(0), variableToExpressionMap(variableToExpressionMap), createVariables(createVariables) {
-                // Intentionally left empty.
+            Z3ExpressionAdapter(storm::expressions::ExpressionManager& manager, z3::context& context) : manager(manager), context(context), additionalAssertions(), variableToExpressionMap() {
+                // Here, we need to create the mapping from all variables known to the manager to their z3 counterparts.
+                for (auto const& variableTypePair : manager) {
+                    switch (variableTypePair.second) {
+                        case storm::expressions::ExpressionReturnType::Bool: variableToExpressionMap.insert(std::make_pair(variableTypePair.first, context.bool_const(variableTypePair.first.getName().c_str()))); break;
+                        case storm::expressions::ExpressionReturnType::Int: variableToExpressionMap.insert(std::make_pair(variableTypePair.first, context.int_const(variableTypePair.first.getName().c_str()))); break;
+                        case storm::expressions::ExpressionReturnType::Double: variableToExpressionMap.insert(std::make_pair(variableTypePair.first, context.real_const(variableTypePair.first.getName().c_str()))); break;
+                        default: STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Encountered variable '" << variableTypePair.first.getName() << "' with unknown type while trying to create solver variables.");
+                    }
+                }
             }
             
             /*!
              * Translates the given expression to an equivalent expression for Z3.
-			 *
-			 * @warning The adapter internally creates helper variables prefixed with `__z3adapter_`. As a consequence,
-             * having variables with this prefix in the variableToExpressionMap might lead to unexpected results and is
-             * strictly to be aboost::anyed.
 			 *
              * @param expression The expression to translate.
              * @return An equivalent expression for Z3.
@@ -60,13 +59,25 @@ namespace storm {
                 return result;
             }
             
+            /*!
+             * Translates the given variable to an equivalent expression for Z3.
+             *
+             * @param variable The variable to translate.
+             * @return An equivalent expression for Z3.
+             */
+            z3::expr translateExpression(storm::expressions::Variable const& variable) {
+                auto const& variableExpressionPair = variableToExpressionMap.find(variable);
+                STORM_LOG_ASSERT(variableExpressionPair != variableToExpressionMap.end(), "Unable to find variable.");
+                return variableExpressionPair->second;
+            }
+            
 			storm::expressions::Expression translateExpression(z3::expr const& expr) {
 				if (expr.is_app()) {
 					switch (expr.decl().decl_kind()) {
 						case Z3_OP_TRUE:
-							return storm::expressions::Expression::createTrue();
+							return manager.boolean(true);
 						case Z3_OP_FALSE:
-							return storm::expressions::Expression::createFalse();
+							return manager.boolean(false);
 						case Z3_OP_EQ:
 							return this->translateExpression(expr.arg(0)) == this->translateExpression(expr.arg(1));
 						case Z3_OP_ITE:
@@ -130,7 +141,7 @@ namespace storm {
 							if (expr.is_int() && expr.is_const()) {
 								long long value;
 								if (Z3_get_numeral_int64(expr.ctx(), expr, &value)) {
-									return storm::expressions::Expression::createIntegerLiteral(value);
+									return manager.integer(value);
 								} else {
 									STORM_LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Failed to convert Z3 expression. Expression is constant integer and value does not fit into 64-bit integer.");
 								}
@@ -138,7 +149,7 @@ namespace storm {
 								long long num;
 								long long den;
 								if (Z3_get_numeral_rational_int64(expr.ctx(), expr, &num, &den)) {
-									return storm::expressions::Expression::createDoubleLiteral(static_cast<double>(num) / static_cast<double>(den));
+									return manager.rational(static_cast<double>(num) / static_cast<double>(den));
 								} else {
 									STORM_LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Failed to convert Z3 expression. Expression is constant real and value does not fit into a fraction with 64-bit integer numerator and denominator.");
 								}
@@ -146,16 +157,7 @@ namespace storm {
 						case Z3_OP_UNINTERPRETED:
 							// Currently, we only support uninterpreted constant functions.
 							STORM_LOG_THROW(expr.is_const(), storm::exceptions::ExpressionEvaluationException, "Failed to convert Z3 expression. Encountered non-constant uninterpreted function.");
-							if (expr.is_bool()) {
-								return storm::expressions::Expression::createBooleanVariable(expr.decl().name().str());
-							} else if (expr.is_int()) {
-								return storm::expressions::Expression::createIntegerVariable(expr.decl().name().str());
-							} else if (expr.is_real()) {
-								return storm::expressions::Expression::createDoubleVariable(expr.decl().name().str());
-							} else {
-								STORM_LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Failed to convert Z3 expression. Encountered constant uninterpreted function of unknown sort.");
-							}
-							
+                            return manager.getVariable(expr.decl().name().str()).getExpression();
 						default:
 							STORM_LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Failed to convert Z3 expression. Encountered unhandled Z3_decl_kind " << expr.decl().kind() <<".");
 							break;
@@ -262,12 +264,14 @@ namespace storm {
 					case storm::expressions::UnaryNumericalFunctionExpression::OperatorType::Minus:
                         return 0 - childResult;
 					case storm::expressions::UnaryNumericalFunctionExpression::OperatorType::Floor: {
-						z3::expr floorVariable = context.int_const(("__z3adapter_floor_" + std::to_string(additionalVariableCounter++)).c_str());
+                        storm::expressions::Variable freshAuxiliaryVariable = manager.declareFreshAuxiliaryVariable(storm::expressions::ExpressionReturnType::Int);
+                        z3::expr floorVariable = context.int_const(freshAuxiliaryVariable.getName().c_str());
 						additionalAssertions.push_back(z3::expr(context, Z3_mk_int2real(context, floorVariable)) <= childResult && childResult < (z3::expr(context, Z3_mk_int2real(context, floorVariable)) + 1));
 						return floorVariable;
 					}
 					case storm::expressions::UnaryNumericalFunctionExpression::OperatorType::Ceil:{
-						z3::expr ceilVariable = context.int_const(("__z3adapter_ceil_" + std::to_string(additionalVariableCounter++)).c_str());
+                        storm::expressions::Variable freshAuxiliaryVariable = manager.declareFreshAuxiliaryVariable(storm::expressions::ExpressionReturnType::Int);
+                        z3::expr ceilVariable = context.int_const(freshAuxiliaryVariable.getName().c_str());
 						additionalAssertions.push_back(z3::expr(context, Z3_mk_int2real(context, ceilVariable)) - 1 <= childResult && childResult < z3::expr(context, Z3_mk_int2real(context, ceilVariable)));
 						return ceilVariable;
 					}
@@ -283,50 +287,22 @@ namespace storm {
 			}
             
 			virtual boost::any visit(storm::expressions::VariableExpression const& expression) override {
-                std::map<std::string, z3::expr>::iterator stringVariablePair = variableToExpressionMap.find(expression.getVariableName());
-                z3::expr result(context);
-                
-				if (stringVariablePair == variableToExpressionMap.end() && createVariables) {
-                    std::pair<std::map<std::string, z3::expr>::iterator, bool> iteratorAndFlag;
-                    switch (expression.getReturnType()) {
-                        case storm::expressions::ExpressionReturnType::Bool:
-                            iteratorAndFlag = this->variableToExpressionMap.insert(std::make_pair(expression.getVariableName(), context.bool_const(expression.getVariableName().c_str())));
-                            result = iteratorAndFlag.first->second;
-                            break;
-                        case storm::expressions::ExpressionReturnType::Int:
-                            iteratorAndFlag = this->variableToExpressionMap.insert(std::make_pair(expression.getVariableName(), context.int_const(expression.getVariableName().c_str())));
-                            result = iteratorAndFlag.first->second;
-                            break;
-                        case storm::expressions::ExpressionReturnType::Double:
-                            iteratorAndFlag = this->variableToExpressionMap.insert(std::make_pair(expression.getVariableName(), context.real_const(expression.getVariableName().c_str())));
-                            result = iteratorAndFlag.first->second;
-                            break;
-                        default:
-                            STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Encountered variable '" << expression.getVariableName() << "' with unknown type while trying to create solver variables.");
-                    }
-                } else {
-                    STORM_LOG_THROW(stringVariablePair != variableToExpressionMap.end(), storm::exceptions::InvalidArgumentException, "Expression refers to unknown variable '" << expression.getVariableName() << "'.");
-                    result = stringVariablePair->second;
-                }
-                
-                return result;
+                return variableToExpressionMap.at(expression.getVariable());
             }
 
         private:
+            // The manager that can be used to build expressions.
+            storm::expressions::ExpressionManager& manager;
+
             // The context that is used to translate the expressions.
             z3::context& context;
 
-            // A stack of assertions that need to be kept separate, because they were only impliclty part of an assertion that was added.
+            // A vector of assertions that need to be kept separate, because they were only implicitly part of an
+            // assertion that was added.
 			std::vector<z3::expr> additionalAssertions;
 
-            // A counter for the variables that were created to identify the additional assertions.
-			uint_fast64_t additionalVariableCounter;
-
             // A mapping from variable names to their Z3 equivalent.
-            std::map<std::string, z3::expr> variableToExpressionMap;
-
-            // A flag that indicates whether new variables are to be created when an unkown variable is encountered.
-            bool createVariables;
+            std::unordered_map<storm::expressions::Variable, z3::expr> variableToExpressionMap;
         };
 #endif
     } // namespace adapters

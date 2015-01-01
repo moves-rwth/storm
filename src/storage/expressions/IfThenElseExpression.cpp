@@ -5,7 +5,7 @@
 
 namespace storm {
     namespace expressions {
-        IfThenElseExpression::IfThenElseExpression(ExpressionReturnType returnType, std::shared_ptr<BaseExpression const> const& condition, std::shared_ptr<BaseExpression const> const& thenExpression, std::shared_ptr<BaseExpression const> const& elseExpression) : BaseExpression(returnType), condition(condition), thenExpression(thenExpression), elseExpression(elseExpression) {
+        IfThenElseExpression::IfThenElseExpression(ExpressionManager const& manager, ExpressionReturnType returnType, std::shared_ptr<BaseExpression const> const& condition, std::shared_ptr<BaseExpression const> const& thenExpression, std::shared_ptr<BaseExpression const> const& elseExpression) : BaseExpression(manager, returnType), condition(condition), thenExpression(thenExpression), elseExpression(elseExpression) {
             // Intentionally left empty.
         }
         
@@ -71,15 +71,6 @@ namespace storm {
 			result.insert(tmp.begin(), tmp.end());
 			return result;
 		}
-
-		std::map<std::string, ExpressionReturnType> IfThenElseExpression::getVariablesAndTypes() const {
-			std::map<std::string, ExpressionReturnType>  result = this->condition->getVariablesAndTypes();
-			std::map<std::string, ExpressionReturnType>  tmp = this->thenExpression->getVariablesAndTypes();
-			result.insert(tmp.begin(), tmp.end());
-			tmp = this->elseExpression->getVariablesAndTypes();
-			result.insert(tmp.begin(), tmp.end());
-			return result;
-		}
         
         std::shared_ptr<BaseExpression const> IfThenElseExpression::simplify() const {
             std::shared_ptr<BaseExpression const> conditionSimplified;
@@ -94,7 +85,7 @@ namespace storm {
                 if (conditionSimplified.get() == this->condition.get() && thenExpressionSimplified.get() == this->thenExpression.get() && elseExpressionSimplified.get() == this->elseExpression.get()) {
                     return this->shared_from_this();
                 } else {
-                    return std::shared_ptr<BaseExpression>(new IfThenElseExpression(this->getReturnType(), conditionSimplified, thenExpressionSimplified, elseExpressionSimplified));
+                    return std::shared_ptr<BaseExpression>(new IfThenElseExpression(this->getManager(), this->getReturnType(), conditionSimplified, thenExpressionSimplified, elseExpressionSimplified));
                 }
             }
         }

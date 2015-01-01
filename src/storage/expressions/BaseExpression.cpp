@@ -5,7 +5,7 @@
 
 namespace storm {
     namespace expressions {        
-        BaseExpression::BaseExpression(ExpressionReturnType returnType) : returnType(returnType) {
+        BaseExpression::BaseExpression(ExpressionManager const& manager, ExpressionReturnType returnType) : manager(manager), returnType(returnType) {
             // Intentionally left empty.
         }
 
@@ -75,6 +75,10 @@ namespace storm {
         
         bool BaseExpression::isFunctionApplication() const {
             return false;
+        }
+        
+        ExpressionManager const& BaseExpression::getManager() const {
+            return manager;
         }
         
         std::shared_ptr<BaseExpression const> BaseExpression::getSharedPointer() const {

@@ -33,27 +33,27 @@ namespace storm {
 #ifdef STORM_HAVE_MSAT
 			class MathsatAllsatModelReference : public SmtSolver::ModelReference {
 			public:
-				MathsatAllsatModelReference(msat_env const& env, msat_term* model, std::unordered_map<std::string, uint_fast64_t> const& atomNameToSlotMapping);
+                MathsatAllsatModelReference(storm::expressions::ExpressionManager const& manager, msat_env const& env, msat_term* model, std::unordered_map<storm::expressions::Variable, uint_fast64_t> const& variableNameToSlotMapping);
 
-                virtual bool getBooleanValue(std::string const& name) const override;
-				virtual int_fast64_t getIntegerValue(std::string const& name) const override;
-                virtual double getDoubleValue(std::string const& name) const override;
+                virtual bool getBooleanValue(storm::expressions::Variable const& variable) const override;
+                virtual int_fast64_t getIntegerValue(storm::expressions::Variable const& variable) const override;
+                virtual double getRationalValue(storm::expressions::Variable const& variable) const override;
                 
 			private:
 				msat_env const& env;
                 msat_term* model;
-                std::unordered_map<std::string, uint_fast64_t> const& atomNameToSlotMapping;
+                std::unordered_map<storm::expressions::Variable, uint_fast64_t> const& variableNameToSlotMapping;
 			};
 #endif
             
 #ifdef STORM_HAVE_MSAT
             class MathsatModelReference : public SmtSolver::ModelReference {
 			public:
-				MathsatModelReference(msat_env const& env, storm::adapters::MathsatExpressionAdapter& expressionAdapter);
+				MathsatModelReference(storm::expressions::ExpressionManager const& manager, msat_env const& env, storm::adapters::MathsatExpressionAdapter& expressionAdapter);
 
-                virtual bool getBooleanValue(std::string const& name) const override;
-				virtual int_fast64_t getIntegerValue(std::string const& name) const override;
-                virtual double getDoubleValue(std::string const& name) const override;
+                virtual bool getBooleanValue(storm::expressions::Variable const& variable) const override;
+                virtual int_fast64_t getIntegerValue(storm::expressions::Variable const& variable) const override;
+                virtual double getRationalValue(storm::expressions::Variable const& variable) const override;
                 
 			private:
 				msat_env const& env;
@@ -61,7 +61,7 @@ namespace storm {
 			};
 #endif
             
-			MathsatSmtSolver(Options const& options = Options());
+			MathsatSmtSolver(storm::expressions::ExpressionManager const& manager, Options const& options = Options());
             
 			virtual ~MathsatSmtSolver();
 
@@ -81,15 +81,15 @@ namespace storm {
 
 			virtual CheckResult checkWithAssumptions(std::initializer_list<storm::expressions::Expression> const& assumptions) override;
 
-			virtual storm::expressions::SimpleValuation getModelAsValuation() override;
+			virtual storm::expressions::Valuation getModelAsValuation() override;
 
             virtual std::shared_ptr<SmtSolver::ModelReference> getModel() override;
             
-			virtual std::vector<storm::expressions::SimpleValuation> allSat(std::vector<storm::expressions::Expression> const& important) override;
+			virtual std::vector<storm::expressions::Valuation> allSat(std::vector<storm::expressions::Variable> const& important) override;
 
-			virtual uint_fast64_t allSat(std::vector<storm::expressions::Expression> const& important, std::function<bool(storm::expressions::SimpleValuation&)> const& callback) override;
+			virtual uint_fast64_t allSat(std::vector<storm::expressions::Variable> const& important, std::function<bool(storm::expressions::Valuation&)> const& callback) override;
 
-			virtual uint_fast64_t allSat(std::vector<storm::expressions::Expression> const& important, std::function<bool(ModelReference&)> const& callback) override;
+			virtual uint_fast64_t allSat(std::vector<storm::expressions::Variable> const& important, std::function<bool(ModelReference&)> const& callback) override;
 
 			virtual std::vector<storm::expressions::Expression> getUnsatAssumptions() override;
 
@@ -98,7 +98,7 @@ namespace storm {
 			virtual storm::expressions::Expression getInterpolant(std::vector<uint_fast64_t> const& groupsA) override;
 
 		private:
-			storm::expressions::SimpleValuation convertMathsatModelToValuation();
+			storm::expressions::Valuation convertMathsatModelToValuation();
 
 #ifdef STORM_HAVE_MSAT
             // The MathSAT environment.

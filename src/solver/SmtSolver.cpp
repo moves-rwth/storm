@@ -6,7 +6,15 @@
 namespace storm {
 	namespace solver {
 
-        SmtSolver::SmtSolver() {
+        SmtSolver::ModelReference::ModelReference(storm::expressions::ExpressionManager const& manager) : manager(manager) {
+            // Intentionally left empty.
+        }
+        
+        storm::expressions::ExpressionManager const& SmtSolver::ModelReference::getManager() const {
+            return manager;
+        }
+        
+        SmtSolver::SmtSolver(storm::expressions::ExpressionManager& manager) : manager(manager) {
             // Intentionally left empty.
         }
         
@@ -32,7 +40,7 @@ namespace storm {
 			}
 		}
         
-        storm::expressions::SimpleValuation SmtSolver::getModelAsValuation() {
+        storm::expressions::Valuation SmtSolver::getModelAsValuation() {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This solver does not support model generation.");
         }
         
@@ -40,15 +48,15 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This solver does not support model generation.");
         }
         
-        std::vector<storm::expressions::SimpleValuation> SmtSolver::allSat(std::vector<storm::expressions::Expression> const& important) {
+        std::vector<storm::expressions::Valuation> SmtSolver::allSat(std::vector<storm::expressions::Variable> const& important) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This solver does not support model generation.");
         }
         
-        uint_fast64_t SmtSolver::allSat(std::vector<storm::expressions::Expression> const& important, std::function<bool(storm::expressions::SimpleValuation&)> const& callback) {
+        uint_fast64_t SmtSolver::allSat(std::vector<storm::expressions::Variable> const& important, std::function<bool(storm::expressions::Valuation&)> const& callback) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This solver does not support model generation.");
         }
         
-        uint_fast64_t SmtSolver::allSat(std::vector<storm::expressions::Expression> const& important, std::function<bool(ModelReference&)> const& callback) {
+        uint_fast64_t SmtSolver::allSat(std::vector<storm::expressions::Variable> const& important, std::function<bool(ModelReference&)> const& callback) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This solver does not support model generation.");
         }
         
@@ -66,6 +74,14 @@ namespace storm {
 
         storm::expressions::Expression SmtSolver::getInterpolant(std::vector<uint_fast64_t> const& groupsA) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This solver does not support generation of interpolants.");
+        }
+
+        storm::expressions::ExpressionManager const& SmtSolver::getManager() const {
+            return manager;
+        }
+
+        storm::expressions::ExpressionManager& SmtSolver::getManager() {
+            return manager;
         }
 
     } // namespace solver

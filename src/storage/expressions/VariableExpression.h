@@ -2,6 +2,7 @@
 #define STORM_STORAGE_EXPRESSIONS_VARIABLEEXPRESSION_H_
 
 #include "src/storage/expressions/BaseExpression.h"
+#include "src/storage/expressions/Variable.h"
 #include "src/utility/OsDetection.h"
 
 namespace storm {
@@ -14,7 +15,7 @@ namespace storm {
              * @param returnType The return type of the variable expression.
              * @param variableName The name of the variable associated with this expression.
              */
-            VariableExpression(ExpressionReturnType returnType, std::string const& variableName);
+            VariableExpression(Variable const& variable);
             
             // Instantiate constructors and assignments with their default implementations.
             VariableExpression(VariableExpression const&) = default;
@@ -33,7 +34,6 @@ namespace storm {
             virtual bool containsVariables() const override;
 			virtual bool isVariable() const override;
 			virtual std::set<std::string> getVariables() const override;
-			virtual std::map<std::string, ExpressionReturnType> getVariablesAndTypes() const override;
             virtual std::shared_ptr<BaseExpression const> simplify() const override;
             virtual boost::any accept(ExpressionVisitor& visitor) const override;
 
@@ -44,13 +44,20 @@ namespace storm {
              */
             std::string const& getVariableName() const;
 
+            /*!
+             * Retrieves the variable associated with this expression.
+             *
+             * @return The variable associated with this expression.
+             */
+            Variable const& getVariable() const;
+            
         protected:
             // Override base class method.
             virtual void printToStream(std::ostream& stream) const override;
 
         private:
-            // The variable name associated with this expression.
-            std::string variableName;
+            // The variable that is represented by this expression.
+            Variable variable;
         };
     }
 }

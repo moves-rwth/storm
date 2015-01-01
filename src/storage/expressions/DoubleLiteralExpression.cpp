@@ -2,7 +2,7 @@
 
 namespace storm {
     namespace expressions {
-        DoubleLiteralExpression::DoubleLiteralExpression(double value) : BaseExpression(ExpressionReturnType::Double), value(value) {
+        DoubleLiteralExpression::DoubleLiteralExpression(ExpressionManager const& manager, double value) : BaseExpression(manager, ExpressionReturnType::Double), value(value) {
             // Intentionally left empty.
         }
         
@@ -16,10 +16,6 @@ namespace storm {
         
         std::set<std::string> DoubleLiteralExpression::getVariables() const {
             return std::set<std::string>();
-		}
-
-		std::map<std::string, ExpressionReturnType> DoubleLiteralExpression::getVariablesAndTypes() const {
-			return std::map<std::string, ExpressionReturnType>();
 		}
         
         std::shared_ptr<BaseExpression const> DoubleLiteralExpression::simplify() const {

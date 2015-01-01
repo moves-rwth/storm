@@ -8,14 +8,14 @@ namespace storm {
 	namespace solver {
 
 #ifdef STORM_HAVE_MSAT
-        MathsatSmtSolver::MathsatAllsatModelReference::MathsatAllsatModelReference(msat_env const& env, msat_term* model, std::unordered_map<std::string, uint_fast64_t> const& atomNameToSlotMapping) : env(env), model(model), atomNameToSlotMapping(atomNameToSlotMapping) {
+        MathsatSmtSolver::MathsatAllsatModelReference::MathsatAllsatModelReference(storm::expressions::ExpressionManager const& manager, msat_env const& env, msat_term* model, std::unordered_map<storm::expressions::Variable, uint_fast64_t> const& variableNameToSlotMapping) : ModelReference(manager), env(env), model(model), variableNameToSlotMapping(variableNameToSlotMapping) {
             // Intentionally left empty.
         }
 
-        bool MathsatSmtSolver::MathsatAllsatModelReference::getBooleanValue(std::string const& name) const {
-            std::unordered_map<std::string, uint_fast64_t>::const_iterator nameSlotPair = atomNameToSlotMapping.find(name);
-            STORM_LOG_THROW(nameSlotPair != atomNameToSlotMapping.end(), storm::exceptions::InvalidArgumentException, "Cannot retrieve value of unknown variable '" << name << "' from model.");
-            msat_term selectedTerm = model[nameSlotPair->second];
+        bool MathsatSmtSolver::MathsatAllsatModelReference::getBooleanValue(storm::expressions::Variable const& variable) const {
+            std::unordered_map<storm::expressions::Variable, uint_fast64_t>::const_iterator variableSlotPair = variableNameToSlotMapping.find(variable);
+            STORM_LOG_THROW(variableSlotPair != variableNameToSlotMapping.end(), storm::exceptions::InvalidArgumentException, "Cannot retrieve value of unknown variable '" << variable.getName() << "' from model.");
+            msat_term selectedTerm = model[variableSlotPair->second];
             
             if (msat_term_is_not(env, selectedTerm)) {
                 return false;
@@ -24,49 +24,49 @@ namespace storm {
             }
         }
         
-        int_fast64_t MathsatSmtSolver::MathsatAllsatModelReference::getIntegerValue(std::string const& name) const {
+        int_fast64_t MathsatSmtSolver::MathsatAllsatModelReference::getIntegerValue(storm::expressions::Variable const& variable) const {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unable to retrieve integer value from model that only contains boolean values.");
         }
         
-        double MathsatSmtSolver::MathsatAllsatModelReference::getDoubleValue(std::string const& name) const {
+        double MathsatSmtSolver::MathsatAllsatModelReference::getRationalValue(storm::expressions::Variable const& variable) const {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unable to retrieve double value from model that only contains boolean values.");
         }
         
-        MathsatSmtSolver::MathsatModelReference::MathsatModelReference(msat_env const& env, storm::adapters::MathsatExpressionAdapter& expressionAdapter) : env(env), expressionAdapter(expressionAdapter) {
+        MathsatSmtSolver::MathsatModelReference::MathsatModelReference(storm::expressions::ExpressionManager const& manager, msat_env const& env, storm::adapters::MathsatExpressionAdapter& expressionAdapter) : ModelReference(manager), env(env), expressionAdapter(expressionAdapter) {
             // Intentionally left empty.
         }
 
-        bool MathsatSmtSolver::MathsatModelReference::getBooleanValue(std::string const& name) const {
-            msat_term msatVariable = expressionAdapter.translateExpression(storm::expressions::Expression::createBooleanVariable(name));
+        bool MathsatSmtSolver::MathsatModelReference::getBooleanValue(storm::expressions::Variable const& variable) const {
+            STORM_LOG_ASSERT(variable.hasBooleanType(), "Variable is non-boolean type.");
+            msat_term msatVariable = expressionAdapter.translateExpression(variable);
             msat_term msatValue = msat_get_model_value(env, msatVariable);
-            STORM_LOG_THROW(!MSAT_ERROR_TERM(msatValue), storm::exceptions::UnexpectedException, "Unable to retrieve value of variable in model. This could be caused by calls to the solver between checking for satisfiability and model retrieval.");
+            STORM_LOG_ASSERT(!MSAT_ERROR_TERM(msatValue), "Unable to retrieve value of variable in model. This could be caused by calls to the solver between checking for satisfiability and model retrieval.");
             storm::expressions::Expression value = expressionAdapter.translateExpression(msatValue);
-            STORM_LOG_THROW(value.hasBooleanReturnType(), storm::exceptions::InvalidArgumentException, "Unable to retrieve boolean value of non-boolean variable '" << name << "'.");
             return value.evaluateAsBool();
         }
         
-        int_fast64_t MathsatSmtSolver::MathsatModelReference::getIntegerValue(std::string const& name) const {
-            msat_term msatVariable = expressionAdapter.translateExpression(storm::expressions::Expression::createBooleanVariable(name));
+        int_fast64_t MathsatSmtSolver::MathsatModelReference::getIntegerValue(storm::expressions::Variable const& variable) const {
+            STORM_LOG_ASSERT(variable.hasBooleanType(), "Variable is non-boolean type.");
+            msat_term msatVariable = expressionAdapter.translateExpression(variable);
             msat_term msatValue = msat_get_model_value(env, msatVariable);
-            STORM_LOG_THROW(!MSAT_ERROR_TERM(msatValue), storm::exceptions::UnexpectedException, "Unable to retrieve value of variable in model. This could be caused by calls to the solver between checking for satisfiability and model retrieval.");
+            STORM_LOG_ASSERT(!MSAT_ERROR_TERM(msatValue), "Unable to retrieve value of variable in model. This could be caused by calls to the solver between checking for satisfiability and model retrieval.");
             storm::expressions::Expression value = expressionAdapter.translateExpression(msatValue);
-            STORM_LOG_THROW(value.hasIntegralReturnType(), storm::exceptions::InvalidArgumentException, "Unable to retrieve integer value of non-integer variable '" << name << "'.");
             return value.evaluateAsInt();
         }
         
-        double MathsatSmtSolver::MathsatModelReference::getDoubleValue(std::string const& name) const {
+        double MathsatSmtSolver::MathsatModelReference::getRationalValue(storm::expressions::Variable const& variable) const {
+            STORM_LOG_ASSERT(variable.hasBooleanType(), "Variable is non-boolean type.");
             msat_term msatVariable = expressionAdapter.translateExpression(storm::expressions::Expression::createBooleanVariable(name));
             msat_term msatValue = msat_get_model_value(env, msatVariable);
-            STORM_LOG_THROW(!MSAT_ERROR_TERM(msatValue), storm::exceptions::UnexpectedException, "Unable to retrieve value of variable in model. This could be caused by calls to the solver between checking for satisfiability and model retrieval.");
+            STORM_LOG_ASSERT(!MSAT_ERROR_TERM(msatValue), "Unable to retrieve value of variable in model. This could be caused by calls to the solver between checking for satisfiability and model retrieval.");
             storm::expressions::Expression value = expressionAdapter.translateExpression(msatValue);
-            STORM_LOG_THROW(value.hasIntegralReturnType(), storm::exceptions::InvalidArgumentException, "Unable to retrieve double value of non-double variable '" << name << "'.");
             return value.evaluateAsDouble();
         }
 #endif
 
-		MathsatSmtSolver::MathsatSmtSolver(Options const& options)
+		MathsatSmtSolver::MathsatSmtSolver(storm::expressions::ExpressionManager const& manager, Options const& options)
 #ifdef STORM_HAVE_MSAT
-			: expressionAdapter(nullptr), lastCheckAssumptions(false), lastResult(CheckResult::Unknown)
+			: SmtSolver(manager), expressionAdapter(nullptr), lastCheckAssumptions(false), lastResult(CheckResult::Unknown)
 #endif
 		{
 #ifdef STORM_HAVE_MSAT
@@ -219,7 +219,7 @@ namespace storm {
 #endif
 		}
 
-		storm::expressions::SimpleValuation MathsatSmtSolver::getModelAsValuation()
+		storm::expressions::Valuation MathsatSmtSolver::getModelAsValuation()
 		{
 #ifdef STORM_HAVE_MSAT
 			STORM_LOG_THROW(this->lastResult == SmtSolver::CheckResult::Sat, storm::exceptions::InvalidStateException, "Unable to create model for formula that was not determined to be satisfiable.");
@@ -239,8 +239,8 @@ namespace storm {
         }
 
 #ifdef STORM_HAVE_MSAT
-		storm::expressions::SimpleValuation MathsatSmtSolver::convertMathsatModelToValuation() {
-			storm::expressions::SimpleValuation stormModel;
+		storm::expressions::Valuation MathsatSmtSolver::convertMathsatModelToValuation() {
+			storm::expressions::Valuation stormModel;
 
 			msat_model_iterator modelIterator = msat_create_model_iterator(env);
             STORM_LOG_THROW(!MSAT_ERROR_MODEL_ITERATOR(modelIterator), storm::exceptions::UnexpectedException, "MathSat returned an illegal model iterator.");
@@ -275,11 +275,11 @@ namespace storm {
 		}
 #endif
 
-		std::vector<storm::expressions::SimpleValuation> MathsatSmtSolver::allSat(std::vector<storm::expressions::Expression> const& important)
+		std::vector<storm::expressions::Valuation> MathsatSmtSolver::allSat(std::vector<storm::expressions::Expression> const& important)
 		{
 #ifdef STORM_HAVE_MSAT
-			std::vector<storm::expressions::SimpleValuation> valuations;
-			this->allSat(important, [&valuations](storm::expressions::SimpleValuation const& valuation) -> bool { valuations.push_back(valuation); return true; });
+			std::vector<storm::expressions::Valuation> valuations;
+			this->allSat(important, [&valuations](storm::expressions::Valuation const& valuation) -> bool { valuations.push_back(valuation); return true; });
 			return valuations;
 #else
 			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "StoRM is compiled without MathSAT support.");
@@ -290,14 +290,14 @@ namespace storm {
 #ifdef STORM_HAVE_MSAT
 		class AllsatValuationCallbackUserData {
 		public:
-			AllsatValuationCallbackUserData(msat_env& env, std::function<bool(storm::expressions::SimpleValuation&)> const& callback) : env(env), callback(callback) {
+			AllsatValuationCallbackUserData(msat_env& env, std::function<bool(storm::expressions::Valuation&)> const& callback) : env(env), callback(callback) {
                 // Intentionally left empty.
 			}
 
             static int allsatValuationsCallback(msat_term* model, int size, void* user_data) {
                 AllsatValuationCallbackUserData* user = reinterpret_cast<AllsatValuationCallbackUserData*>(user_data);
                 
-                storm::expressions::SimpleValuation valuation;
+                storm::expressions::Valuation valuation;
                 for (int i = 0; i < size; ++i) {
                     bool currentTermValue = true;
                     msat_term currentTerm = model[i];
@@ -323,7 +323,7 @@ namespace storm {
 			msat_env& env;
             
             // The function that is to be called when the MathSAT model has been translated to a valuation.
-			std::function<bool(storm::expressions::SimpleValuation&)> const& callback;
+			std::function<bool(storm::expressions::Valuation&)> const& callback;
 		};
         
         class AllsatModelReferenceCallbackUserData {
@@ -355,7 +355,7 @@ namespace storm {
 #endif
 
 
-		uint_fast64_t MathsatSmtSolver::allSat(std::vector<storm::expressions::Expression> const& important, std::function<bool(storm::expressions::SimpleValuation&)> const& callback) {
+		uint_fast64_t MathsatSmtSolver::allSat(std::vector<storm::expressions::Expression> const& important, std::function<bool(storm::expressions::Valuation&)> const& callback) {
 #ifdef STORM_HAVE_MSAT
             // Create a backtracking point, because MathSAT will modify the assertions stack during its AllSat procedure.
             this->push();

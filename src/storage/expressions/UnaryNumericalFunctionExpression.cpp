@@ -6,7 +6,7 @@
 
 namespace storm {
     namespace expressions {
-        UnaryNumericalFunctionExpression::UnaryNumericalFunctionExpression(ExpressionReturnType returnType, std::shared_ptr<BaseExpression const> const& operand, OperatorType operatorType) : UnaryExpression(returnType, operand), operatorType(operatorType) {
+        UnaryNumericalFunctionExpression::UnaryNumericalFunctionExpression(ExpressionManager const& manager, ExpressionReturnType returnType, std::shared_ptr<BaseExpression const> const& operand, OperatorType operatorType) : UnaryExpression(manager, returnType, operand), operatorType(operatorType) {
             // Intentionally left empty.
         }
         

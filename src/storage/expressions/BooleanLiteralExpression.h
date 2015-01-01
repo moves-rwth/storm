@@ -11,9 +11,10 @@ namespace storm {
             /*!
              * Creates a boolean literal expression with the given value.
              *
+             * @param manager The manager responsible for this expression.
              * @param value The value of the boolean literal.
              */
-            BooleanLiteralExpression(bool value);
+            BooleanLiteralExpression(ExpressionManager const& manager, bool value);
             
             // Instantiate constructors and assignments with their default implementations.
             BooleanLiteralExpression(BooleanLiteralExpression const& other) = default;
@@ -30,7 +31,6 @@ namespace storm {
             virtual bool isTrue() const override;
             virtual bool isFalse() const override;
 			virtual std::set<std::string> getVariables() const override;
-			virtual std::map<std::string, ExpressionReturnType> getVariablesAndTypes() const override;
             virtual std::shared_ptr<BaseExpression const> simplify() const override;
             virtual boost::any accept(ExpressionVisitor& visitor) const override;
             

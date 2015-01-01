@@ -4,26 +4,30 @@
 
 namespace storm {
     namespace expressions {
-        VariableExpression::VariableExpression(ExpressionReturnType returnType, std::string const& variableName) : BaseExpression(returnType), variableName(variableName) {
+        VariableExpression::VariableExpression(Variable const& variable) : BaseExpression(variable.getManager(), variable.getType()), variable(variable) {
             // Intentionally left empty.
         }
         
         std::string const& VariableExpression::getVariableName() const {
-            return this->variableName;
+            return variable.getName();
+        }
+        
+        Variable const& VariableExpression::getVariable() const {
+            return variable;
         }
         
         bool VariableExpression::evaluateAsBool(Valuation const* valuation) const {
             STORM_LOG_ASSERT(valuation != nullptr, "Evaluating expressions with unknowns without valuation.");
             STORM_LOG_THROW(this->hasBooleanReturnType(), storm::exceptions::InvalidTypeException, "Cannot evaluate expression as boolean: return type is not a boolean.");
             
-            return valuation->getBooleanValue(this->getVariableName());
+            return valuation->getBooleanValue(this->getVariable());
         }
 
         int_fast64_t VariableExpression::evaluateAsInt(Valuation const* valuation) const {
             STORM_LOG_ASSERT(valuation != nullptr, "Evaluating expressions with unknowns without valuation.");
             STORM_LOG_THROW(this->hasIntegralReturnType(), storm::exceptions::InvalidTypeException, "Cannot evaluate expression as integer: return type is not an integer.");
             
-            return valuation->getIntegerValue(this->getVariableName());
+            return valuation->getIntegerValue(this->getVariable());
         }
         
         double VariableExpression::evaluateAsDouble(Valuation const* valuation) const {
@@ -31,8 +35,8 @@ namespace storm {
             STORM_LOG_THROW(this->hasNumericalReturnType(), storm::exceptions::InvalidTypeException, "Cannot evaluate expression as double: return type is not a double.");
             
             switch (this->getReturnType()) {
-                case ExpressionReturnType::Int: return static_cast<double>(valuation->getIntegerValue(this->getVariableName())); break;
-                case ExpressionReturnType::Double: valuation->getDoubleValue(this->getVariableName()); break;
+                case ExpressionReturnType::Int: return static_cast<double>(valuation->getIntegerValue(this->getVariable())); break;
+                case ExpressionReturnType::Double: valuation->getRationalValue(this->getVariable()); break;
                 default: break;
             }
             STORM_LOG_ASSERT(false, "Type of variable is required to be numeric.");
@@ -56,10 +60,6 @@ namespace storm {
         std::set<std::string> VariableExpression::getVariables() const {
             return {this->getVariableName()};
         }
-        
-		std::map<std::string, ExpressionReturnType> VariableExpression::getVariablesAndTypes() const {
-			return{ std::make_pair(this->getVariableName(), this->getReturnType()) };
-		}
 
         std::shared_ptr<BaseExpression const> VariableExpression::simplify() const {
             return this->shared_from_this();

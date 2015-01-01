@@ -24,19 +24,12 @@ namespace storm {
 		class MathsatExpressionAdapter : public storm::expressions::ExpressionVisitor {
 		public:
             /*!
-             * Creates an expression adapter that can translate expressions to the format of Z3.
+             * Creates an expression adapter that can translate expressions to the format of MathSAT.
 			 *
-			 * @warning The adapter internally creates helper variables prefixed with `__z3adapter_`. As a consequence,
-             * having variables with this prefix in the variableToExpressionMap might lead to unexpected results and is
-             * strictly to be avoided.
-             *
-             * @param context A reference to the Z3 context over which to build the expressions. The lifetime of the
-             * context needs to be guaranteed as long as the instance of this adapter is used.
-             * @param createVariables If set to true, additional variables will be created for variables that appear in
-             * expressions and are not yet known to the adapter.
-             * @param variableToDeclarationMap A mapping from variable names to their corresponding MathSAT declarations (if already existing).
+             * @param manager The manager that can be used to build expressions.
+             * @param env The MathSAT environment in which to build the expressions.
              */
-			MathsatExpressionAdapter(msat_env& env, bool createVariables = true, std::map<std::string, msat_decl> const& variableToDeclarationMap = std::map<std::string, msat_decl>()) : env(env), variableToDeclarationMap(variableToDeclarationMap), createVariables(createVariables) {
+			MathsatExpressionAdapter(storm::expressions::ExpressionManager& manager, msat_env& env) : manager(manager), env(env), variableToDeclarationMap() {
 				// Intentionally left empty.
 			}
 
@@ -51,6 +44,16 @@ namespace storm {
                 STORM_LOG_THROW(!MSAT_ERROR_TERM(result), storm::exceptions::ExpressionEvaluationException, "Could not translate expression to MathSAT's format.");
 				return result;
 			}
+            
+            /*!
+             * Translates the given variable to an equivalent expression for Z3.
+             *
+             * @param variable The variable to translate.
+             * @return An equivalent term for MathSAT.
+             */
+            msat_term translateExpression(storm::expressions::Variable const& variable) {
+                return msat_make_constant(env, variableToDeclarationMap[variable]);
+            }
 
 			virtual boost::any visit(expressions::BinaryBooleanFunctionExpression const& expression) override {
                 msat_term leftResult = boost::any_cast<msat_term>(expression.getFirstOperand()->accept(*this));
@@ -173,34 +176,7 @@ namespace storm {
 			}
 
 			virtual boost::any visit(expressions::VariableExpression const& expression) override {
-                std::map<std::string, msat_decl>::iterator stringVariablePair = variableToDeclarationMap.find(expression.getVariableName());
-                msat_decl result;
-                
-                if (stringVariablePair == variableToDeclarationMap.end() && createVariables) {
-                    std::pair<std::map<std::string, msat_decl>::iterator, bool> iteratorAndFlag;
-                    switch (expression.getReturnType()) {
-                        case storm::expressions::ExpressionReturnType::Bool:
-                            iteratorAndFlag = this->variableToDeclarationMap.insert(std::make_pair(expression.getVariableName(), msat_declare_function(env, expression.getVariableName().c_str(), msat_get_bool_type(env))));
-                            result = iteratorAndFlag.first->second;
-                            break;
-                        case storm::expressions::ExpressionReturnType::Int:
-                            iteratorAndFlag = this->variableToDeclarationMap.insert(std::make_pair(expression.getVariableName(), msat_declare_function(env, expression.getVariableName().c_str(), msat_get_integer_type(env))));
-                            result = iteratorAndFlag.first->second;
-                            break;
-                        case storm::expressions::ExpressionReturnType::Double:
-                            iteratorAndFlag = this->variableToDeclarationMap.insert(std::make_pair(expression.getVariableName(), msat_declare_function(env, expression.getVariableName().c_str(), msat_get_rational_type(env))));
-                            result = iteratorAndFlag.first->second;
-                            break;
-                        default:
-                            STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Encountered variable '" << expression.getVariableName() << "' with unknown type while trying to create solver variables.");
-                    }
-                } else {
-                    STORM_LOG_THROW(stringVariablePair != variableToDeclarationMap.end(), storm::exceptions::InvalidArgumentException, "Expression refers to unknown variable '" << expression.getVariableName() << "'.");
-                    result = stringVariablePair->second;
-                }
-
-                STORM_LOG_THROW(!MSAT_ERROR_DECL(result), storm::exceptions::ExpressionEvaluationException, "Unable to translate expression to MathSAT format, because a variable could not be translated.");
-				return msat_make_constant(env, result);
+                return msat_make_constant(env, variableToDeclarationMap[expression.getVariable()]);
 			}
 
             storm::expressions::Expression translateExpression(msat_term const& term) {
@@ -221,32 +197,20 @@ namespace storm {
 				} else if (msat_term_is_leq(env, term)) {
                     return translateExpression(msat_term_get_arg(term, 0)) <= translateExpression(msat_term_get_arg(term, 1));
 				} else if (msat_term_is_true(env, term)) {
-                    return storm::expressions::Expression::createTrue();
+                    return manager.boolean(true);
 				} else if (msat_term_is_false(env, term)) {
-                    return storm::expressions::Expression::createFalse();
-				} else if (msat_term_is_boolean_constant(env, term)) {
-					char* name = msat_decl_get_name(msat_term_get_decl(term));
-					std::string name_str(name);
-                    storm::expressions::Expression result = expressions::Expression::createBooleanVariable(name_str.substr(0, name_str.find('/')));
-					msat_free(name);
-                    return result;
+                    return manager.boolean(false);
 				} else if (msat_term_is_constant(env, term)) {
-                    
 					char* name = msat_decl_get_name(msat_term_get_decl(term));
-					std::string name_str(name);
-                    storm::expressions::Expression result;
-					if (msat_is_integer_type(env, msat_term_get_type(term))) {
-                        result = expressions::Expression::createIntegerVariable(name_str.substr(0, name_str.find('/')));
-					} else if (msat_is_rational_type(env, msat_term_get_type(term))) {
-                        result = expressions::Expression::createDoubleVariable(name_str.substr(0, name_str.find('/')));
-					}
+					std::string nameString(name);
+                    storm::expressions::Expression result = manager.getVariableExpression(nameString.substr(0, nameString.find('/')));
 					msat_free(name);
                     return result;
 				} else if (msat_term_is_number(env, term)) {
 					if (msat_is_integer_type(env, msat_term_get_type(term))) {
-						return expressions::Expression::createIntegerLiteral(std::stoll(msat_term_repr(term)));
+                        return manager.integer(std::stoll(msat_term_repr(term)));
 					} else if (msat_is_rational_type(env, msat_term_get_type(term))) {
-                        return expressions::Expression::createDoubleLiteral(std::stod(msat_term_repr(term)));
+                        return manager.rational(std::stod(msat_term_repr(term)));
 					}
 				}
                 
@@ -258,14 +222,14 @@ namespace storm {
 			}
 
 		private:
+            // The expression manager to use.
+            storm::expressions::ExpressionManager& manager;
+
             // The MathSAT environment used.
 			msat_env& env;
                         
             // A mapping of variable names to their declaration in the MathSAT environment.
-            std::map<std::string, msat_decl> variableToDeclarationMap;
-                    
-            // A flag indicating whether variables are supposed to be created if they are not already known to the adapter.
-            bool createVariables;
+            std::unordered_map<storm::expressions::Variable, msat_decl> variableToDeclarationMap;
 		};
 #endif
 	} // namespace adapters

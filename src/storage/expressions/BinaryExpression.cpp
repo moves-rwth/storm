@@ -5,7 +5,7 @@
 
 namespace storm {
     namespace expressions {
-        BinaryExpression::BinaryExpression(ExpressionReturnType returnType, std::shared_ptr<BaseExpression const> const& firstOperand, std::shared_ptr<BaseExpression const> const& secondOperand) : BaseExpression(returnType), firstOperand(firstOperand), secondOperand(secondOperand) {
+        BinaryExpression::BinaryExpression(ExpressionManager const& manager, ExpressionReturnType returnType, std::shared_ptr<BaseExpression const> const& firstOperand, std::shared_ptr<BaseExpression const> const& secondOperand) : BaseExpression(manager, returnType), firstOperand(firstOperand), secondOperand(secondOperand) {
             // Intentionally left empty.
         }
         
@@ -20,13 +20,6 @@ namespace storm {
 		std::set<std::string> BinaryExpression::getVariables() const {
 			std::set<std::string> firstVariableSet = this->getFirstOperand()->getVariables();
 			std::set<std::string> secondVariableSet = this->getSecondOperand()->getVariables();
-			firstVariableSet.insert(secondVariableSet.begin(), secondVariableSet.end());
-			return firstVariableSet;
-		}
-
-		std::map<std::string, ExpressionReturnType> BinaryExpression::getVariablesAndTypes() const {
-			std::map<std::string, ExpressionReturnType> firstVariableSet = this->getFirstOperand()->getVariablesAndTypes();
-			std::map<std::string, ExpressionReturnType> secondVariableSet = this->getSecondOperand()->getVariablesAndTypes();
 			firstVariableSet.insert(secondVariableSet.begin(), secondVariableSet.end());
 			return firstVariableSet;
 		}

@@ -11,9 +11,10 @@ namespace storm {
             /*!
              * Creates an integer literal expression with the given value.
              *
+             * @param manager The manager responsible for this expression.
              * @param value The value of the integer literal.
              */
-            IntegerLiteralExpression(int_fast64_t value);
+            IntegerLiteralExpression(ExpressionManager const& manager, int_fast64_t value);
             
             // Instantiate constructors and assignments with their default implementations.
             IntegerLiteralExpression(IntegerLiteralExpression const& other) = default;
@@ -29,7 +30,6 @@ namespace storm {
             virtual double evaluateAsDouble(Valuation const* valuation = nullptr) const override;
             virtual bool isLiteral() const override;
 			virtual std::set<std::string> getVariables() const override;
-			virtual std::map<std::string, ExpressionReturnType> getVariablesAndTypes() const override;
             virtual std::shared_ptr<BaseExpression const> simplify() const override;
             virtual boost::any accept(ExpressionVisitor& visitor) const override;
             

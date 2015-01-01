@@ -7,7 +7,7 @@
 
 namespace storm {
     namespace expressions {
-        BinaryNumericalFunctionExpression::BinaryNumericalFunctionExpression(ExpressionReturnType returnType, std::shared_ptr<BaseExpression const> const& firstOperand, std::shared_ptr<BaseExpression const> const& secondOperand, OperatorType operatorType) : BinaryExpression(returnType, firstOperand, secondOperand), operatorType(operatorType) {
+        BinaryNumericalFunctionExpression::BinaryNumericalFunctionExpression(ExpressionManager const& manager, ExpressionReturnType returnType, std::shared_ptr<BaseExpression const> const& firstOperand, std::shared_ptr<BaseExpression const> const& secondOperand, OperatorType operatorType) : BinaryExpression(manager, returnType, firstOperand, secondOperand), operatorType(operatorType) {
             // Intentionally left empty.
         }
         

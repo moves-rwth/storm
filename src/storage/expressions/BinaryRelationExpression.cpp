@@ -5,7 +5,7 @@
 
 namespace storm {
     namespace expressions {
-        BinaryRelationExpression::BinaryRelationExpression(ExpressionReturnType returnType, std::shared_ptr<BaseExpression const> const& firstOperand, std::shared_ptr<BaseExpression const> const& secondOperand, RelationType relationType) : BinaryExpression(returnType, firstOperand, secondOperand), relationType(relationType) {
+        BinaryRelationExpression::BinaryRelationExpression(ExpressionManager const& manager, ExpressionReturnType returnType, std::shared_ptr<BaseExpression const> const& firstOperand, std::shared_ptr<BaseExpression const> const& secondOperand, RelationType relationType) : BinaryExpression(manager, returnType, firstOperand, secondOperand), relationType(relationType) {
             // Intentionally left empty.
         }
         

@@ -6,51 +6,54 @@
 namespace storm {
 	namespace solver {
 #ifdef STORM_HAVE_Z3
-		Z3SmtSolver::Z3ModelReference::Z3ModelReference(z3::model model, storm::adapters::Z3ExpressionAdapter& expressionAdapter) : model(model), expressionAdapter(expressionAdapter) {
+		Z3SmtSolver::Z3ModelReference::Z3ModelReference(storm::expressions::ExpressionManager const& manager, z3::model model, storm::adapters::Z3ExpressionAdapter& expressionAdapter) : ModelReference(manager), model(model), expressionAdapter(expressionAdapter) {
             // Intentionally left empty.
 		}
 #endif
 
-		bool Z3SmtSolver::Z3ModelReference::getBooleanValue(std::string const& name) const {
+        bool Z3SmtSolver::Z3ModelReference::getBooleanValue(storm::expressions::Variable const& variable) const {
 #ifdef STORM_HAVE_Z3
-			z3::expr z3Expr = this->expressionAdapter.translateExpression(storm::expressions::Expression::createBooleanVariable(name));
-			z3::expr z3ExprValuation = model.eval(z3Expr);
-			return this->expressionAdapter.translateExpression(z3ExprValuation).evaluateAsBool();
+            STORM_LOG_ASSERT(variable.getManager() == this->getManager(), "Requested variable is managed by a different manager.");
+			z3::expr z3Expr = this->expressionAdapter.translateExpression(variable);
+			z3::expr z3ExprValuation = model.eval(z3Expr, true);
+			return this->expressionAdapter.translateExpression(z3ExprValuation).isTrue();
 #else
 			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "StoRM is compiled without Z3 support.");
 #endif
 		}
 
-		int_fast64_t Z3SmtSolver::Z3ModelReference::getIntegerValue(std::string const& name) const {
+        int_fast64_t Z3SmtSolver::Z3ModelReference::getIntegerValue(storm::expressions::Variable const& variable) const {
 #ifdef STORM_HAVE_Z3
-			z3::expr z3Expr = this->expressionAdapter.translateExpression(storm::expressions::Expression::createIntegerVariable(name));
-			z3::expr z3ExprValuation = model.eval(z3Expr);
+            STORM_LOG_ASSERT(variable.getManager() == this->getManager(), "Requested variable is managed by a different manager.");
+			z3::expr z3Expr = this->expressionAdapter.translateExpression(variable);
+			z3::expr z3ExprValuation = model.eval(z3Expr, true);
 			return this->expressionAdapter.translateExpression(z3ExprValuation).evaluateAsInt();
 #else
 			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "StoRM is compiled without Z3 support.");
 #endif
 		}
 
-        double Z3SmtSolver::Z3ModelReference::getDoubleValue(std::string const& name) const {
+        double Z3SmtSolver::Z3ModelReference::getRationalValue(storm::expressions::Variable const& variable) const {
 #ifdef STORM_HAVE_Z3
-			z3::expr z3Expr = this->expressionAdapter.translateExpression(storm::expressions::Expression::createDoubleVariable(name));
-			z3::expr z3ExprValuation = model.eval(z3Expr);
+            STORM_LOG_ASSERT(variable.getManager() == this->getManager(), "Requested variable is managed by a different manager.");
+			z3::expr z3Expr = this->expressionAdapter.translateExpression(variable);
+			z3::expr z3ExprValuation = model.eval(z3Expr, true);
 			return this->expressionAdapter.translateExpression(z3ExprValuation).evaluateAsDouble();
 #else
 			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "StoRM is compiled without Z3 support.");
 #endif
 		}
         
-		Z3SmtSolver::Z3SmtSolver()
+		Z3SmtSolver::Z3SmtSolver(storm::expressions::ExpressionManager& manager)
 #ifdef STORM_HAVE_Z3
-        : context(nullptr), solver(nullptr), expressionAdapter(nullptr), lastCheckAssumptions(false), lastResult(CheckResult::Unknown)
+        : SmtSolver(manager), context(nullptr), solver(nullptr), expressionAdapter(nullptr), lastCheckAssumptions(false), lastResult(CheckResult::Unknown)
 #endif
 		{
             z3::config config;
             config.set("model", true);
             context = std::unique_ptr<z3::context>(new z3::context(config));
             solver = std::unique_ptr<z3::solver>(new z3::solver(*context));
-            expressionAdapter = std::unique_ptr<storm::adapters::Z3ExpressionAdapter>(new storm::adapters::Z3ExpressionAdapter(*context, true));
+            expressionAdapter = std::unique_ptr<storm::adapters::Z3ExpressionAdapter>(new storm::adapters::Z3ExpressionAdapter(this->getManager(), *context));
         }
         
 		Z3SmtSolver::~Z3SmtSolver() {
@@ -177,7 +180,7 @@ namespace storm {
 #endif
 		}
 
-		storm::expressions::SimpleValuation Z3SmtSolver::getModelAsValuation()
+		storm::expressions::Valuation Z3SmtSolver::getModelAsValuation()
 		{
 #ifdef STORM_HAVE_Z3
 			STORM_LOG_THROW(this->lastResult == SmtSolver::CheckResult::Sat, storm::exceptions::InvalidStateException, "Unable to create model for formula that was not determined to be satisfiable.");
@@ -190,15 +193,15 @@ namespace storm {
         std::shared_ptr<SmtSolver::ModelReference> Z3SmtSolver::getModel() {
 #ifdef STORM_HAVE_Z3
 			STORM_LOG_THROW(this->lastResult == SmtSolver::CheckResult::Sat, storm::exceptions::InvalidStateException, "Unable to create model for formula that was not determined to be satisfiable.");
-            return std::shared_ptr<SmtSolver::ModelReference>(new Z3ModelReference(this->solver->get_model(), *this->expressionAdapter));
+            return std::shared_ptr<SmtSolver::ModelReference>(new Z3ModelReference(this->getManager(), this->solver->get_model(), *this->expressionAdapter));
 #else
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "StoRM is compiled without Z3 support.");
 #endif
         }
 
 #ifdef STORM_HAVE_Z3
-		storm::expressions::SimpleValuation Z3SmtSolver::convertZ3ModelToValuation(z3::model const& model) {
-			storm::expressions::SimpleValuation stormModel;
+		storm::expressions::Valuation Z3SmtSolver::convertZ3ModelToValuation(z3::model const& model) {
+			storm::expressions::Valuation stormModel(this->getManager());
 
 			for (unsigned i = 0; i < model.num_consts(); ++i) {
 				z3::func_decl variableI = model.get_const_decl(i);
@@ -206,13 +209,13 @@ namespace storm {
 
 				switch (variableInterpretation.getReturnType()) {
 					case storm::expressions::ExpressionReturnType::Bool:
-						stormModel.addBooleanIdentifier(variableI.name().str(), variableInterpretation.evaluateAsBool());
+						stormModel.setBooleanValue(this->getManager().getVariable(variableI.name().str()), variableInterpretation.isTrue());
 						break;
 					case storm::expressions::ExpressionReturnType::Int:
-						stormModel.addIntegerIdentifier(variableI.name().str(), variableInterpretation.evaluateAsInt());
+                        stormModel.setIntegerValue(this->getManager().getVariable(variableI.name().str()), variableInterpretation.evaluateAsInt());
 						break;
 					case storm::expressions::ExpressionReturnType::Double:
-						stormModel.addDoubleIdentifier(variableI.name().str(), variableInterpretation.evaluateAsDouble());
+                        stormModel.setRationalValue(this->getManager().getVariable(variableI.name().str()), variableInterpretation.evaluateAsDouble());
 						break;
 					default:
 						STORM_LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Variable interpretation in model is not of type bool, int or double.")
@@ -225,22 +228,21 @@ namespace storm {
 		}
 #endif
 
-		std::vector<storm::expressions::SimpleValuation> Z3SmtSolver::allSat(std::vector<storm::expressions::Expression> const& important)
+		std::vector<storm::expressions::Valuation> Z3SmtSolver::allSat(std::vector<storm::expressions::Variable> const& important)
 		{
 #ifdef STORM_HAVE_Z3
-			std::vector<storm::expressions::SimpleValuation> valuations;
-			this->allSat(important, [&valuations](storm::expressions::SimpleValuation const& valuation) -> bool { valuations.push_back(valuation); return true; });
+			std::vector<storm::expressions::Valuation> valuations;
+			this->allSat(important, [&valuations](storm::expressions::Valuation const& valuation) -> bool { valuations.push_back(valuation); return true; });
 			return valuations;
 #else
 			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "StoRM is compiled without Z3 support.");
 #endif
 		}
 
-		uint_fast64_t Z3SmtSolver::allSat(std::vector<storm::expressions::Expression> const& important, std::function<bool(storm::expressions::SimpleValuation&)> const& callback)
-		{
+		uint_fast64_t Z3SmtSolver::allSat(std::vector<storm::expressions::Variable> const& important, std::function<bool(storm::expressions::Valuation&)> const& callback) {
 #ifdef STORM_HAVE_Z3
-			for (storm::expressions::Expression const& atom : important) {
-                STORM_LOG_THROW(atom.isVariable() && atom.hasBooleanReturnType(), storm::exceptions::InvalidArgumentException, "The important atoms for AllSat must be boolean variables.");
+			for (storm::expressions::Variable const& variable : important) {
+                STORM_LOG_THROW(variable.hasBooleanType(), storm::exceptions::InvalidArgumentException, "The important atoms for AllSat must be boolean variables.");
 			}
 
 			uint_fast64_t numberOfModels = 0;
@@ -255,21 +257,13 @@ namespace storm {
 				z3::model model = this->solver->get_model();
 
 				z3::expr modelExpr = this->context->bool_val(true);
-				storm::expressions::SimpleValuation valuation;
+				storm::expressions::Valuation valuation(this->getManager());
 
-				for (storm::expressions::Expression const& importantAtom : important) {
-					z3::expr z3ImportantAtom = this->expressionAdapter->translateExpression(importantAtom);
+				for (storm::expressions::Variable const& importantAtom : important) {
+					z3::expr z3ImportantAtom = this->expressionAdapter->translateExpression(importantAtom.getExpression());
 					z3::expr z3ImportantAtomValuation = model.eval(z3ImportantAtom, true);
 					modelExpr = modelExpr && (z3ImportantAtom == z3ImportantAtomValuation);
-					if (importantAtom.getReturnType() == storm::expressions::ExpressionReturnType::Bool) {
-						valuation.addBooleanIdentifier(importantAtom.getIdentifier(), this->expressionAdapter->translateExpression(z3ImportantAtomValuation).evaluateAsBool());
-					} else if (importantAtom.getReturnType() == storm::expressions::ExpressionReturnType::Int) {
-						valuation.addIntegerIdentifier(importantAtom.getIdentifier(), this->expressionAdapter->translateExpression(z3ImportantAtomValuation).evaluateAsInt());
-					} else if (importantAtom.getReturnType() == storm::expressions::ExpressionReturnType::Double) {
-						valuation.addDoubleIdentifier(importantAtom.getIdentifier(), this->expressionAdapter->translateExpression(z3ImportantAtomValuation).evaluateAsDouble());
-					} else {
-                        STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Important atom has invalid type.");
-					}
+                    valuation.setBooleanValue(importantAtom, this->expressionAdapter->translateExpression(z3ImportantAtomValuation).isTrue());
 				}
 
                 // Check if we are required to proceed, and if so rule out the current model.
@@ -287,12 +281,11 @@ namespace storm {
 #endif
 		}
 
-		uint_fast64_t Z3SmtSolver::allSat(std::vector<storm::expressions::Expression> const& important, std::function<bool(SmtSolver::ModelReference&)> const& callback)
-		{
+		uint_fast64_t Z3SmtSolver::allSat(std::vector<storm::expressions::Variable> const& important, std::function<bool(SmtSolver::ModelReference&)> const& callback) {
 #ifdef STORM_HAVE_Z3
-			for (storm::expressions::Expression const& atom : important) {
-                STORM_LOG_THROW(atom.isVariable() && atom.hasBooleanReturnType(), storm::exceptions::InvalidArgumentException, "The important atoms for AllSat must be boolean variables.");
-			}
+            for (storm::expressions::Variable const& variable : important) {
+                STORM_LOG_THROW(variable.hasBooleanType(), storm::exceptions::InvalidArgumentException, "The important atoms for AllSat must be boolean variables.");
+            }
 
 			uint_fast64_t numberOfModels = 0;
 			bool proceed = true;
@@ -306,14 +299,14 @@ namespace storm {
 				z3::model model = this->solver->get_model();
 
 				z3::expr modelExpr = this->context->bool_val(true);
-				storm::expressions::SimpleValuation valuation;
+				storm::expressions::Valuation valuation(this->getManager());
 
-				for (storm::expressions::Expression const& importantAtom : important) {
-					z3::expr z3ImportantAtom = this->expressionAdapter->translateExpression(importantAtom);
+				for (storm::expressions::Variable const& importantAtom : important) {
+					z3::expr z3ImportantAtom = this->expressionAdapter->translateExpression(importantAtom.getExpression());
 					z3::expr z3ImportantAtomValuation = model.eval(z3ImportantAtom, true);
 					modelExpr = modelExpr && (z3ImportantAtom == z3ImportantAtomValuation);
 				}
-				Z3ModelReference modelRef(model, *expressionAdapter);
+				Z3ModelReference modelRef(this->getManager(), model, *expressionAdapter);
 
                 // Check if we are required to proceed, and if so rule out the current model.
 				proceed = callback(modelRef);

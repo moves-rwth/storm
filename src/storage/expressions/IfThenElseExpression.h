@@ -11,11 +11,12 @@ namespace storm {
             /*!
              * Creates an if-then-else expression with the given return type, condition and operands.
              *
+             * @param manager The manager responsible for this expression.
              * @param returnType The return type of the expression.
              * @param thenExpression The expression evaluated if the condition evaluates true.
              * @param elseExpression The expression evaluated if the condition evaluates false.
              */
-            IfThenElseExpression(ExpressionReturnType returnType, std::shared_ptr<BaseExpression const> const& condition, std::shared_ptr<BaseExpression const> const& thenExpression, std::shared_ptr<BaseExpression const> const& elseExpression);
+            IfThenElseExpression(ExpressionManager const& manager, ExpressionReturnType returnType, std::shared_ptr<BaseExpression const> const& condition, std::shared_ptr<BaseExpression const> const& thenExpression, std::shared_ptr<BaseExpression const> const& elseExpression);
             
             // Instantiate constructors and assignments with their default implementations.
             IfThenElseExpression(IfThenElseExpression const& other) = default;
@@ -36,7 +37,6 @@ namespace storm {
             virtual int_fast64_t evaluateAsInt(Valuation const* valuation = nullptr) const override;
             virtual double evaluateAsDouble(Valuation const* valuation = nullptr) const override;
 			virtual std::set<std::string> getVariables() const override;
-			virtual std::map<std::string, ExpressionReturnType> getVariablesAndTypes() const override;
             virtual std::shared_ptr<BaseExpression const> simplify() const override;
             virtual boost::any accept(ExpressionVisitor& visitor) const override;
             

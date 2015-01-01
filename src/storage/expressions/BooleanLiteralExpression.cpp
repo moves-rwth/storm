@@ -2,7 +2,7 @@
 
 namespace storm {
     namespace expressions {
-        BooleanLiteralExpression::BooleanLiteralExpression(bool value) : BaseExpression(ExpressionReturnType::Bool), value(value) {
+        BooleanLiteralExpression::BooleanLiteralExpression(ExpressionManager const& manager, bool value) : BaseExpression(manager, ExpressionReturnType::Bool), value(value) {
             // Intentionally left empty.
         }
         
@@ -24,10 +24,6 @@ namespace storm {
         
         std::set<std::string> BooleanLiteralExpression::getVariables() const {
             return std::set<std::string>();
-		}
-
-		std::map<std::string, ExpressionReturnType> BooleanLiteralExpression::getVariablesAndTypes() const {
-			return std::map<std::string, ExpressionReturnType>();
 		}
         
         std::shared_ptr<BaseExpression const> BooleanLiteralExpression::simplify() const {

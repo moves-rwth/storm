@@ -16,12 +16,13 @@ namespace storm {
             /*!
              * Creates a binary relation expression with the given return type, operands and relation type.
              *
+             * @param manager The manager responsible for this expression.
              * @param returnType The return type of the expression.
              * @param firstOperand The first operand of the expression.
              * @param secondOperand The second operand of the expression.
              * @param relationType The operator of the expression.
              */
-            BinaryRelationExpression(ExpressionReturnType returnType, std::shared_ptr<BaseExpression const> const& firstOperand, std::shared_ptr<BaseExpression const> const& secondOperand, RelationType relationType);
+            BinaryRelationExpression(ExpressionManager const& manager, ExpressionReturnType returnType, std::shared_ptr<BaseExpression const> const& firstOperand, std::shared_ptr<BaseExpression const> const& secondOperand, RelationType relationType);
             
             // Instantiate constructors and assignments with their default implementations.
             BinaryRelationExpression(BinaryRelationExpression const& other) = default;
