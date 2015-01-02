@@ -14,9 +14,6 @@ namespace storm {
          */
         class Valuation {
         public:
-            friend class ValuationPointerHash;
-            friend class ValuationPointerLess;
-            
             /*!
              * Creates a valuation of all non-auxiliary variables managed by the given manager. If the manager is
              * modified in the sense that additional variables are added, all valuations over its variables are

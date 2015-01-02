@@ -59,11 +59,11 @@ namespace storm {
             (*rationalValues)[rationalVariable.getOffset()] = value;
         }
                 
-        std::size_t SimpleValuationPointerHash::operator()(SimpleValuation* SimpleValuation) const {
+        std::size_t SimpleValuationPointerHash::operator()(SimpleValuation* valuation) const {
             size_t seed = 0;
-            boost::hash_combine(seed, SimpleValuation->booleanValues);
-            boost::hash_combine(seed, SimpleValuation->integerValues);
-            boost::hash_combine(seed, SimpleValuation->rationalValues);
+            boost::hash_combine(seed, valuation->booleanValues);
+            boost::hash_combine(seed, valuation->integerValues);
+            boost::hash_combine(seed, valuation->rationalValues);
             return seed;
         }
         

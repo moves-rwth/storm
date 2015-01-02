@@ -53,13 +53,13 @@ namespace storm {
 
 			virtual CheckResult checkWithAssumptions(std::initializer_list<storm::expressions::Expression> const& assumptions) override;
 
-			virtual storm::expressions::Valuation getModelAsValuation() override;
+			virtual storm::expressions::SimpleValuation getModelAsValuation() override;
             
             virtual std::shared_ptr<SmtSolver::ModelReference> getModel() override;
 
-			virtual std::vector<storm::expressions::Valuation> allSat(std::vector<storm::expressions::Variable> const& important) override;
+			virtual std::vector<storm::expressions::SimpleValuation> allSat(std::vector<storm::expressions::Variable> const& important) override;
 
-			virtual uint_fast64_t allSat(std::vector<storm::expressions::Variable> const& important, std::function<bool(storm::expressions::Valuation&)> const& callback) override;
+			virtual uint_fast64_t allSat(std::vector<storm::expressions::Variable> const& important, std::function<bool(storm::expressions::SimpleValuation&)> const& callback) override;
 
 			virtual uint_fast64_t allSat(std::vector<storm::expressions::Variable> const& important, std::function<bool(ModelReference&)> const& callback) override;
 
@@ -73,7 +73,7 @@ namespace storm {
              * @param model The Z3 model to convert.
              * @return The valuation of variables corresponding to the given model.
              */
-			storm::expressions::Valuation convertZ3ModelToValuation(z3::model const& model);
+			storm::expressions::SimpleValuation convertZ3ModelToValuation(z3::model const& model);
 
             // The context used by the solver.
             std::unique_ptr<z3::context> context;

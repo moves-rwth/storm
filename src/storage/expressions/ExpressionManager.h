@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include "src/storage/expressions/Variable.h"
 #include "src/storage/expressions/Expression.h"
 #include "src/utility/OsDetection.h"
 

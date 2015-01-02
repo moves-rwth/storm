@@ -4,7 +4,7 @@
 #include <cstdint>
 
 #include "src/storage/expressions/Expressions.h"
-#include "src/storage/expressions/Valuation.h"
+#include "src/storage/expressions/SimpleValuation.h"
 #include "src/storage/expressions/ExpressionManager.h"
 
 #include <set>
@@ -158,7 +158,7 @@ namespace storm {
              *
              * @return A valuation that holds the values of the variables in the current model.
              */
-			virtual storm::expressions::Valuation getModelAsValuation();
+			virtual storm::expressions::SimpleValuation getModelAsValuation();
 
             /*!
              * If the last call to check() or checkWithAssumptions() returned Sat, this method retrieves a model that
@@ -181,7 +181,7 @@ namespace storm {
              *
              * @returns the set of all valuations of the important atoms, such that the currently asserted formulas are satisfiable
              */
-			virtual std::vector<storm::expressions::Valuation> allSat(std::vector<storm::expressions::Variable> const& important);
+			virtual std::vector<storm::expressions::SimpleValuation> allSat(std::vector<storm::expressions::Variable> const& important);
             
 			/*!
              * Performs AllSat over the (provided) important atoms. That is, this function determines all models of the
@@ -194,7 +194,7 @@ namespace storm {
              *
              * @return The number of models of the important atoms that where found.
              */
-			virtual uint_fast64_t allSat(std::vector<storm::expressions::Variable> const& important, std::function<bool(storm::expressions::Valuation&)> const& callback);
+			virtual uint_fast64_t allSat(std::vector<storm::expressions::Variable> const& important, std::function<bool(storm::expressions::SimpleValuation&)> const& callback);
 
             /*!
              * Performs AllSat over the (provided) important atoms. That is, this function determines all models of the

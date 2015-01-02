@@ -19,6 +19,7 @@ namespace storm {
         public:
             friend class ExpressionManager;
             friend class Variable;
+            template<typename MapType> friend class SubstitutionVisitor;
             
             Expression() = default;
             

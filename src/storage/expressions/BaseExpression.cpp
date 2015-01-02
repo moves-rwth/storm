@@ -1,4 +1,5 @@
 #include "src/storage/expressions/BaseExpression.h"
+#include "src/storage/expressions/ExpressionManager.h"
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidTypeException.h"
 #include "src/exceptions/InvalidAccessException.h"
@@ -14,15 +15,15 @@ namespace storm {
         }
         
         bool BaseExpression::hasIntegralType() const {
-            return this->getType() == manager.getIntegerType();
+            return this->getType().isIntegralType();
         }
         
         bool BaseExpression::hasNumericalType() const {
-            return this->getReturnType() == ExpressionReturnType::Double || this->getReturnType() == ExpressionReturnType::Int;
+            return this->getType().isNumericalType();
         }
         
         bool BaseExpression::hasBooleanType() const {
-            return this->getReturnType() == ExpressionReturnType::Bool;
+            return this->getType().isBooleanType();
         }
         
         int_fast64_t BaseExpression::evaluateAsInt(Valuation const* valuation) const {

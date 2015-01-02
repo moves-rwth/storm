@@ -40,7 +40,7 @@ namespace storm {
 			}
 		}
         
-        storm::expressions::Valuation SmtSolver::getModelAsValuation() {
+        storm::expressions::SimpleValuation SmtSolver::getModelAsValuation() {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This solver does not support model generation.");
         }
         
@@ -48,11 +48,11 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This solver does not support model generation.");
         }
         
-        std::vector<storm::expressions::Valuation> SmtSolver::allSat(std::vector<storm::expressions::Variable> const& important) {
+        std::vector<storm::expressions::SimpleValuation> SmtSolver::allSat(std::vector<storm::expressions::Variable> const& important) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This solver does not support model generation.");
         }
         
-        uint_fast64_t SmtSolver::allSat(std::vector<storm::expressions::Variable> const& important, std::function<bool(storm::expressions::Valuation&)> const& callback) {
+        uint_fast64_t SmtSolver::allSat(std::vector<storm::expressions::Variable> const& important, std::function<bool(storm::expressions::SimpleValuation&)> const& callback) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This solver does not support model generation.");
         }
         

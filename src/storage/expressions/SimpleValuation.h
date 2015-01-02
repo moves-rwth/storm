@@ -14,6 +14,9 @@ namespace storm {
          */
         class SimpleValuation : public Valuation {
         public:
+            friend class SimpleValuationPointerHash;
+            friend class SimpleValuationPointerLess;
+            
             /*!
              * Creates a new valuation over the non-auxiliary variables of the given manager.
              */
@@ -34,7 +37,7 @@ namespace storm {
              */
             bool operator==(SimpleValuation const& other) const;
             
-            //
+            // Override virtual functions of base class.
             virtual bool getBooleanValue(Variable const& booleanVariable) const override;
             virtual void setBooleanValue(Variable const& booleanVariable, bool value) override;
             virtual int_fast64_t getIntegerValue(Variable const& integerVariable) const override;

@@ -8,7 +8,7 @@
 namespace storm {
     namespace expressions  {
         template<typename MapType>
-        SubstitutionVisitor<MapType>::SubstitutionVisitor(MapType const& identifierToExpressionMap) : identifierToExpressionMap(identifierToExpressionMap) {
+        SubstitutionVisitor<MapType>::SubstitutionVisitor(MapType const& variableToExpressionMapping) : variableToExpressionMapping(variableToExpressionMapping) {
             // Intentionally left empty.
         }
 
@@ -27,7 +27,7 @@ namespace storm {
             if (conditionExpression.get() == expression.getCondition().get() && thenExpression.get() == expression.getThenExpression().get() && elseExpression.get() == expression.getElseExpression().get()) {
                 return expression.getSharedPointer();
             } else {
-                return static_cast<std::shared_ptr<BaseExpression const>>(std::shared_ptr<BaseExpression>(new IfThenElseExpression(expression.getReturnType(), conditionExpression, thenExpression, elseExpression)));
+                return static_cast<std::shared_ptr<BaseExpression const>>(std::shared_ptr<BaseExpression>(new IfThenElseExpression(expression.getManager(), expression.getType(), conditionExpression, thenExpression, elseExpression)));
             }
         }
         
@@ -40,7 +40,7 @@ namespace storm {
             if (firstExpression.get() == expression.getFirstOperand().get() && secondExpression.get() == expression.getSecondOperand().get()) {
                 return expression.getSharedPointer();
             } else {
-                return static_cast<std::shared_ptr<BaseExpression const>>(std::shared_ptr<BaseExpression>(new BinaryBooleanFunctionExpression(expression.getReturnType(), firstExpression, secondExpression, expression.getOperatorType())));
+                return static_cast<std::shared_ptr<BaseExpression const>>(std::shared_ptr<BaseExpression>(new BinaryBooleanFunctionExpression(expression.getManager(), expression.getType(), firstExpression, secondExpression, expression.getOperatorType())));
             }
         }
         
@@ -53,7 +53,7 @@ namespace storm {
             if (firstExpression.get() == expression.getFirstOperand().get() && secondExpression.get() == expression.getSecondOperand().get()) {
                 return expression.getSharedPointer();
             } else {
-                return static_cast<std::shared_ptr<BaseExpression const>>(std::shared_ptr<BaseExpression>(new BinaryNumericalFunctionExpression(expression.getReturnType(), firstExpression, secondExpression, expression.getOperatorType())));
+                return static_cast<std::shared_ptr<BaseExpression const>>(std::shared_ptr<BaseExpression>(new BinaryNumericalFunctionExpression(expression.getManager(), expression.getType(), firstExpression, secondExpression, expression.getOperatorType())));
             }
         }
         
@@ -66,15 +66,15 @@ namespace storm {
             if (firstExpression.get() == expression.getFirstOperand().get() && secondExpression.get() == expression.getSecondOperand().get()) {
                 return expression.getSharedPointer();
             } else {
-                return static_cast<std::shared_ptr<BaseExpression const>>(std::shared_ptr<BaseExpression>(new BinaryRelationExpression(expression.getReturnType(), firstExpression, secondExpression, expression.getRelationType())));
+                return static_cast<std::shared_ptr<BaseExpression const>>(std::shared_ptr<BaseExpression>(new BinaryRelationExpression(expression.getManager(), expression.getType(), firstExpression, secondExpression, expression.getRelationType())));
             }
         }
         
 		template<typename MapType>
         boost::any SubstitutionVisitor<MapType>::visit(VariableExpression const& expression) {
             // If the variable is in the key set of the substitution, we need to replace it.
-            auto const& nameExpressionPair = this->identifierToExpressionMap.find(expression.getVariableName());
-            if (nameExpressionPair != this->identifierToExpressionMap.end()) {
+            auto const& nameExpressionPair = this->variableToExpressionMapping.find(expression.getVariable());
+            if (nameExpressionPair != this->variableToExpressionMapping.end()) {
                 return nameExpressionPair->second.getBaseExpressionPointer();
             } else {
                 return expression.getSharedPointer();
@@ -89,7 +89,7 @@ namespace storm {
             if (operandExpression.get() == expression.getOperand().get()) {
                 return expression.getSharedPointer();
             } else {
-                return static_cast<std::shared_ptr<BaseExpression const>>(std::shared_ptr<BaseExpression>(new UnaryBooleanFunctionExpression(expression.getReturnType(), operandExpression, expression.getOperatorType())));
+                return static_cast<std::shared_ptr<BaseExpression const>>(std::shared_ptr<BaseExpression>(new UnaryBooleanFunctionExpression(expression.getManager(), expression.getType(), operandExpression, expression.getOperatorType())));
             }
         }
         
@@ -101,7 +101,7 @@ namespace storm {
             if (operandExpression.get() == expression.getOperand().get()) {
                 return expression.getSharedPointer();
             } else {
-                return static_cast<std::shared_ptr<BaseExpression const>>(std::shared_ptr<BaseExpression>(new UnaryNumericalFunctionExpression(expression.getReturnType(), operandExpression, expression.getOperatorType())));
+                return static_cast<std::shared_ptr<BaseExpression const>>(std::shared_ptr<BaseExpression>(new UnaryNumericalFunctionExpression(expression.getManager(), expression.getType(), operandExpression, expression.getOperatorType())));
             }
         }
         
@@ -121,7 +121,7 @@ namespace storm {
         }
         
         // Explicitly instantiate the class with map and unordered_map.
-		template class SubstitutionVisitor<std::map<std::string, Expression>>;
-		template class SubstitutionVisitor<std::unordered_map<std::string, Expression>>;
+		template class SubstitutionVisitor<std::map<Variable, Expression>>;
+		template class SubstitutionVisitor<std::unordered_map<Variable, Expression>>;
     }
 }

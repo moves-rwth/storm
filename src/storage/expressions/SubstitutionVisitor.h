@@ -12,11 +12,11 @@ namespace storm {
         class SubstitutionVisitor : public ExpressionVisitor {
         public:
             /*!
-             * Creates a new substitution visitor that uses the given map to replace identifiers.
+             * Creates a new substitution visitor that uses the given map to replace variables.
              *
-             * @param identifierToExpressionMap A mapping from identifiers to expressions.
+             * @param variableToExpressionMapping A mapping from variables to expressions.
              */
-            SubstitutionVisitor(MapType const& identifierToExpressionMap);
+            SubstitutionVisitor(MapType const& variableToExpressionMapping);
             
             /*!
              * Substitutes the identifiers in the given expression according to the previously given map and returns the
@@ -40,8 +40,8 @@ namespace storm {
             virtual boost::any visit(DoubleLiteralExpression const& expression) override;
             
         private:
-            // A mapping of identifier names to expressions with which they shall be replaced.
-            MapType const& identifierToExpressionMap;
+            // A mapping of variables to expressions with which they shall be replaced.
+            MapType const& variableToExpressionMapping;
         };
     }
 }

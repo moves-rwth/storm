@@ -180,7 +180,7 @@ namespace storm {
 #endif
 		}
 
-		storm::expressions::Valuation Z3SmtSolver::getModelAsValuation()
+		storm::expressions::SimpleValuation Z3SmtSolver::getModelAsValuation()
 		{
 #ifdef STORM_HAVE_Z3
 			STORM_LOG_THROW(this->lastResult == SmtSolver::CheckResult::Sat, storm::exceptions::InvalidStateException, "Unable to create model for formula that was not determined to be satisfiable.");
@@ -200,8 +200,8 @@ namespace storm {
         }
 
 #ifdef STORM_HAVE_Z3
-		storm::expressions::Valuation Z3SmtSolver::convertZ3ModelToValuation(z3::model const& model) {
-			storm::expressions::Valuation stormModel(this->getManager());
+		storm::expressions::SimpleValuation Z3SmtSolver::convertZ3ModelToValuation(z3::model const& model) {
+			storm::expressions::SimpleValuation stormModel(this->getManager());
 
 			for (unsigned i = 0; i < model.num_consts(); ++i) {
 				z3::func_decl variableI = model.get_const_decl(i);
@@ -223,18 +223,18 @@ namespace storm {
 		}
 #endif
 
-		std::vector<storm::expressions::Valuation> Z3SmtSolver::allSat(std::vector<storm::expressions::Variable> const& important)
+		std::vector<storm::expressions::SimpleValuation> Z3SmtSolver::allSat(std::vector<storm::expressions::Variable> const& important)
 		{
 #ifdef STORM_HAVE_Z3
-			std::vector<storm::expressions::Valuation> valuations;
-			this->allSat(important, [&valuations](storm::expressions::Valuation const& valuation) -> bool { valuations.push_back(valuation); return true; });
+			std::vector<storm::expressions::SimpleValuation> valuations;
+			this->allSat(important, [&valuations](storm::expressions::SimpleValuation const& valuation) -> bool { valuations.push_back(valuation); return true; });
 			return valuations;
 #else
 			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "StoRM is compiled without Z3 support.");
 #endif
 		}
 
-		uint_fast64_t Z3SmtSolver::allSat(std::vector<storm::expressions::Variable> const& important, std::function<bool(storm::expressions::Valuation&)> const& callback) {
+		uint_fast64_t Z3SmtSolver::allSat(std::vector<storm::expressions::Variable> const& important, std::function<bool(storm::expressions::SimpleValuation&)> const& callback) {
 #ifdef STORM_HAVE_Z3
 			for (storm::expressions::Variable const& variable : important) {
                 STORM_LOG_THROW(variable.hasBooleanType(), storm::exceptions::InvalidArgumentException, "The important atoms for AllSat must be boolean variables.");
@@ -252,7 +252,7 @@ namespace storm {
 				z3::model model = this->solver->get_model();
 
 				z3::expr modelExpr = this->context->bool_val(true);
-				storm::expressions::Valuation valuation(this->getManager());
+				storm::expressions::SimpleValuation valuation(this->getManager());
 
 				for (storm::expressions::Variable const& importantAtom : important) {
 					z3::expr z3ImportantAtom = this->expressionAdapter->translateExpression(importantAtom.getExpression());
@@ -294,7 +294,7 @@ namespace storm {
 				z3::model model = this->solver->get_model();
 
 				z3::expr modelExpr = this->context->bool_val(true);
-				storm::expressions::Valuation valuation(this->getManager());
+				storm::expressions::SimpleValuation valuation(this->getManager());
 
 				for (storm::expressions::Variable const& importantAtom : important) {
 					z3::expr z3ImportantAtom = this->expressionAdapter->translateExpression(importantAtom.getExpression());

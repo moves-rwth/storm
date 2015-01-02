@@ -5,7 +5,7 @@
 
 #include "src/storage/expressions/Expression.h"
 #include "src/storage/expressions/ExpressionVisitor.h"
-#include "src/storage/expressions/Valuation.h"
+#include "src/storage/expressions/SimpleValuation.h"
 
 namespace storm {
     namespace expressions {
@@ -24,7 +24,7 @@ namespace storm {
              * @return A pair consisting of a mapping from identifiers to their coefficients and the coefficient of
              * the constant atom.
              */
-            std::pair<Valuation, double> getLinearCoefficients(Expression const& expression);
+            std::pair<SimpleValuation, double> getLinearCoefficients(Expression const& expression);
             
             virtual boost::any visit(IfThenElseExpression const& expression) override;
             virtual boost::any visit(BinaryBooleanFunctionExpression const& expression) override;
