@@ -27,7 +27,7 @@ namespace storm {
             return manager.getVariableName(index);
         }
         
-        ExpressionReturnType Variable::getType() const {
+        Type const& Variable::getType() const {
             return manager.getVariableType(index);
         }
         
@@ -36,19 +36,19 @@ namespace storm {
         }
         
         bool Variable::hasBooleanType() const {
-            return this->getType() == ExpressionReturnType::Bool;
+            return this->getType().isBooleanType();
         }
         
         bool Variable::hasIntegralType() const {
-            return this->getType() == ExpressionReturnType::Int;
+            return this->getType().isIntegralType();
         }
 
         bool Variable::hasRationalType() const {
-            return this->getType() == ExpressionReturnType::Double;
+            return this->getType().isRationalType();
         }
 
         bool Variable::hasNumericType() const {
-            return this->getType() == ExpressionReturnType::Int || this->getType() == ExpressionReturnType::Double;
+            return this->getType().isNumericalType();
         }
     }
 }

@@ -6,7 +6,7 @@
 
 namespace storm {
     namespace expressions {
-        UnaryNumericalFunctionExpression::UnaryNumericalFunctionExpression(ExpressionManager const& manager, ExpressionReturnType returnType, std::shared_ptr<BaseExpression const> const& operand, OperatorType operatorType) : UnaryExpression(manager, returnType, operand), operatorType(operatorType) {
+        UnaryNumericalFunctionExpression::UnaryNumericalFunctionExpression(ExpressionManager const& manager, Type const& type, std::shared_ptr<BaseExpression const> const& operand, OperatorType operatorType) : UnaryExpression(manager, type, operand), operatorType(operatorType) {
             // Intentionally left empty.
         }
         
@@ -23,7 +23,7 @@ namespace storm {
         }
         
         int_fast64_t UnaryNumericalFunctionExpression::evaluateAsInt(Valuation const* valuation) const {
-            STORM_LOG_THROW(this->hasIntegralReturnType(), storm::exceptions::InvalidTypeException, "Unable to evaluate expression as integer.");
+            STORM_LOG_THROW(this->hasIntegralType(), storm::exceptions::InvalidTypeException, "Unable to evaluate expression as integer.");
 
             int_fast64_t operandEvaluated = this->getOperand()->evaluateAsInt(valuation);
             switch (this->getOperatorType()) {
@@ -34,7 +34,7 @@ namespace storm {
         }
         
         double UnaryNumericalFunctionExpression::evaluateAsDouble(Valuation const* valuation) const {
-            STORM_LOG_THROW(this->hasNumericalReturnType(), storm::exceptions::InvalidTypeException, "Unable to evaluate expression as double.");
+            STORM_LOG_THROW(this->hasNumericalType(), storm::exceptions::InvalidTypeException, "Unable to evaluate expression as double.");
 
             double operandEvaluated = this->getOperand()->evaluateAsDouble(valuation);
             switch (this->getOperatorType()) {
@@ -50,7 +50,7 @@ namespace storm {
             if (operandSimplified.get() == this->getOperand().get()) {
                 return this->shared_from_this();
             } else {
-                return std::shared_ptr<BaseExpression>(new UnaryNumericalFunctionExpression(this->getReturnType(), operandSimplified, this->getOperatorType()));
+                return std::shared_ptr<BaseExpression>(new UnaryNumericalFunctionExpression(this->getManager(), this->getType(), operandSimplified, this->getOperatorType()));
             }
         }
         

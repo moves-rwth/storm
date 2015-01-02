@@ -5,7 +5,7 @@
 
 namespace storm {
     namespace expressions {
-        UnaryExpression::UnaryExpression(ExpressionManager const& manager, ExpressionReturnType returnType, std::shared_ptr<BaseExpression const> const& operand) : BaseExpression(manager, returnType), operand(operand) {
+        UnaryExpression::UnaryExpression(ExpressionManager const& manager, Type const& type, std::shared_ptr<BaseExpression const> const& operand) : BaseExpression(manager, type), operand(operand) {
             // Intentionally left empty.
         }
 

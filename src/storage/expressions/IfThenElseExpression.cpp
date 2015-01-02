@@ -5,7 +5,7 @@
 
 namespace storm {
     namespace expressions {
-        IfThenElseExpression::IfThenElseExpression(ExpressionManager const& manager, ExpressionReturnType returnType, std::shared_ptr<BaseExpression const> const& condition, std::shared_ptr<BaseExpression const> const& thenExpression, std::shared_ptr<BaseExpression const> const& elseExpression) : BaseExpression(manager, returnType), condition(condition), thenExpression(thenExpression), elseExpression(elseExpression) {
+        IfThenElseExpression::IfThenElseExpression(ExpressionManager const& manager, Type const& type, std::shared_ptr<BaseExpression const> const& condition, std::shared_ptr<BaseExpression const> const& thenExpression, std::shared_ptr<BaseExpression const> const& elseExpression) : BaseExpression(manager, type), condition(condition), thenExpression(thenExpression), elseExpression(elseExpression) {
             // Intentionally left empty.
         }
         
@@ -85,7 +85,7 @@ namespace storm {
                 if (conditionSimplified.get() == this->condition.get() && thenExpressionSimplified.get() == this->thenExpression.get() && elseExpressionSimplified.get() == this->elseExpression.get()) {
                     return this->shared_from_this();
                 } else {
-                    return std::shared_ptr<BaseExpression>(new IfThenElseExpression(this->getManager(), this->getReturnType(), conditionSimplified, thenExpressionSimplified, elseExpressionSimplified));
+                    return std::shared_ptr<BaseExpression>(new IfThenElseExpression(this->getManager(), this->getType(), conditionSimplified, thenExpressionSimplified, elseExpressionSimplified));
                 }
             }
         }

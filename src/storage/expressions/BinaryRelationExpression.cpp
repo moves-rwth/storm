@@ -5,7 +5,7 @@
 
 namespace storm {
     namespace expressions {
-        BinaryRelationExpression::BinaryRelationExpression(ExpressionManager const& manager, ExpressionReturnType returnType, std::shared_ptr<BaseExpression const> const& firstOperand, std::shared_ptr<BaseExpression const> const& secondOperand, RelationType relationType) : BinaryExpression(manager, returnType, firstOperand, secondOperand), relationType(relationType) {
+        BinaryRelationExpression::BinaryRelationExpression(ExpressionManager const& manager, Type const& type, std::shared_ptr<BaseExpression const> const& firstOperand, std::shared_ptr<BaseExpression const> const& secondOperand, RelationType relationType) : BinaryExpression(manager, type, firstOperand, secondOperand), relationType(relationType) {
             // Intentionally left empty.
         }
         
@@ -21,7 +21,7 @@ namespace storm {
         }
         
         bool BinaryRelationExpression::evaluateAsBool(Valuation const* valuation) const {
-            STORM_LOG_THROW(this->hasBooleanReturnType(), storm::exceptions::InvalidTypeException, "Unable to evaluate expression as boolean.");
+            STORM_LOG_THROW(this->hasBooleanType(), storm::exceptions::InvalidTypeException, "Unable to evaluate expression as boolean.");
 
             double firstOperandEvaluated = this->getFirstOperand()->evaluateAsDouble(valuation);
             double secondOperandEvaluated = this->getSecondOperand()->evaluateAsDouble(valuation);
@@ -42,7 +42,7 @@ namespace storm {
             if (firstOperandSimplified.get() == this->getFirstOperand().get() && secondOperandSimplified.get() == this->getSecondOperand().get()) {
                 return this->shared_from_this();
             } else {
-                return std::shared_ptr<BaseExpression>(new BinaryRelationExpression(this->getReturnType(), firstOperandSimplified, secondOperandSimplified, this->getRelationType()));
+                return std::shared_ptr<BaseExpression>(new BinaryRelationExpression(this->getManager(), this->getType(), firstOperandSimplified, secondOperandSimplified, this->getRelationType()));
             }
         }
         

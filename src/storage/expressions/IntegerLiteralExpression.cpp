@@ -1,8 +1,9 @@
 #include "src/storage/expressions/IntegerLiteralExpression.h"
+#include "src/storage/expressions/ExpressionManager.h"
 
 namespace storm {
     namespace expressions {
-        IntegerLiteralExpression::IntegerLiteralExpression(ExpressionManager const& manager, int_fast64_t value) : BaseExpression(manager, ExpressionReturnType::Int), value(value) {
+        IntegerLiteralExpression::IntegerLiteralExpression(ExpressionManager const& manager, int_fast64_t value) : BaseExpression(manager, manager.getIntegerType()), value(value) {
             // Intentionally left empty.
         }
         

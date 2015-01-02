@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <iterator>
 #include <vector>
+#include <unordered_map>
+#include <unordered_set>
 
 #include "src/storage/expressions/Expression.h"
 #include "src/utility/OsDetection.h"
@@ -13,7 +15,7 @@ namespace storm {
         // Forward-declare manager class for iterator class.
         class ExpressionManager;
         
-        class VariableIterator : public std::iterator<std::input_iterator_tag, std::pair<storm::expressions::Variable, storm::expressions::ExpressionReturnType> const> {
+        class VariableIterator : public std::iterator<std::input_iterator_tag, std::pair<storm::expressions::Variable, storm::expressions::Type> const> {
         public:
             enum class VariableSelection { OnlyRegularVariables, OnlyAuxiliaryVariables, AllVariables };
             
@@ -49,7 +51,7 @@ namespace storm {
             VariableSelection selection;
             
             // The current element that is shown to the outside upon dereferencing.
-            std::pair<storm::expressions::Variable, storm::expressions::ExpressionReturnType> currentElement;
+            std::pair<storm::expressions::Variable, storm::expressions::Type> currentElement;
         };
         
         /*!
@@ -107,6 +109,35 @@ namespace storm {
             bool operator==(ExpressionManager const& other) const;
             
             /*!
+             * Retrieves the boolean type.
+             *
+             * @return The boolean type.
+             */
+            Type getBooleanType() const;
+            
+            /*!
+             * Retrieves the integer type.
+             *
+             * @return The integer type.
+             */
+            Type getIntegerType() const;
+            
+            /*!
+             * Retrieves the bounded integer type.
+             *
+             * @param width The bit width of the bounded type.
+             * @return The bounded integer type.
+             */
+            Type getBoundedIntegerType(std::size_t width) const;
+            
+            /*!
+             * Retrieves the rational type.
+             *
+             * @return The rational type.
+             */
+            Type getRationalType() const;
+            
+            /*!
              * Declares a variable with a name that must not yet exist and its corresponding type. Note that the name
              * must not start with two underscores since these variables are reserved for internal use only.
              *
@@ -114,7 +145,7 @@ namespace storm {
              * @param variableType The type of the variable.
              * @return The newly declared variable.
              */
-            Variable declareVariable(std::string const& name, storm::expressions::ExpressionReturnType const& variableType);
+            Variable declareVariable(std::string const& name, storm::expressions::Type const& variableType);
             
             /*!
              * Declares an auxiliary variable with a name that must not yet exist and its corresponding type.
@@ -123,7 +154,7 @@ namespace storm {
              * @param variableType The type of the variable.
              * @return The newly declared variable.
              */
-            Variable declareAuxiliaryVariable(std::string const& name, storm::expressions::ExpressionReturnType const& variableType);
+            Variable declareAuxiliaryVariable(std::string const& name, storm::expressions::Type const& variableType);
             
             /*!
              * Declares a variable with the given name if it does not yet exist.
@@ -132,7 +163,7 @@ namespace storm {
              * @param variableType The type of the variable to declare.
              * @return The variable.
              */
-            Variable declareOrGetVariable(std::string const& name, storm::expressions::ExpressionReturnType const& variableType);
+            Variable declareOrGetVariable(std::string const& name, storm::expressions::Type const& variableType);
 
             /*!
              * Declares a variable with the given name if it does not yet exist.
@@ -141,7 +172,7 @@ namespace storm {
              * @param variableType The type of the variable to declare.
              * @return The variable.
              */
-            Variable declareOrGetAuxiliaryVariable(std::string const& name, storm::expressions::ExpressionReturnType const& variableType);
+            Variable declareOrGetAuxiliaryVariable(std::string const& name, storm::expressions::Type const& variableType);
             
             /*!
              * Retrieves the expression that represents the variable with the given name.
@@ -164,7 +195,7 @@ namespace storm {
              * @param variableType The type of the variable to declare.
              * @return The variable.
              */
-            Variable declareFreshVariable(storm::expressions::ExpressionReturnType const& variableType);
+            Variable declareFreshVariable(storm::expressions::Type const& variableType);
             
             /*!
              * Declares an auxiliary variable with the given type whose name is guaranteed to be unique and not yet in use.
@@ -172,14 +203,14 @@ namespace storm {
              * @param variableType The type of the variable to declare.
              * @return The variable.
              */
-            Variable declareFreshAuxiliaryVariable(storm::expressions::ExpressionReturnType const& variableType);
+            Variable declareFreshAuxiliaryVariable(storm::expressions::Type const& variableType);
 
             /*!
              * Retrieves the number of variables with the given type.
              *
              * @return The number of variables with the given type.
              */
-            uint_fast64_t getNumberOfVariables(storm::expressions::ExpressionReturnType const& variableType) const;
+            uint_fast64_t getNumberOfVariables(storm::expressions::Type const& variableType) const;
             
             /*!
              * Retrieves the number of variables.
@@ -214,7 +245,7 @@ namespace storm {
              *
              * @return The number of auxiliary variables with the given type.
              */
-            uint_fast64_t getNumberOfAuxiliaryVariables(storm::expressions::ExpressionReturnType const& variableType) const;
+            uint_fast64_t getNumberOfAuxiliaryVariables(storm::expressions::Type const& variableType) const;
             
             /*!
              * Retrieves the number of auxiliary variables.
@@ -258,7 +289,7 @@ namespace storm {
              * @param index The index of the variable whose name to retrieve.
              * @return The type of the variable.
              */
-            ExpressionReturnType getVariableType(uint_fast64_t index) const;
+            Type const& getVariableType(uint_fast64_t index) const;
 
             /*!
              * Retrieves the offset of the variable with the given index within the group of equally typed variables.
@@ -305,14 +336,17 @@ namespace storm {
             // A mapping from all variable indices to their names.
             std::unordered_map<uint_fast64_t, std::string> indexToNameMapping;
 
+            // A mapping from all variable indices to their types.
+            std::unordered_map<uint_fast64_t, Type> indexToTypeMapping;
+            
             // Store counts for variables.
-            std::vector<uint_fast64_t> variableTypeToCountMapping;
+            std::unordered_map<Type, uint_fast64_t> variableTypeToCountMapping;
 
             // The number of declared variables.
             uint_fast64_t numberOfVariables;
             
             // Store counts for auxiliary variables.
-            std::vector<uint_fast64_t> auxiliaryVariableTypeToCountMapping;
+            std::unordered_map<Type, uint_fast64_t> auxiliaryVariableTypeToCountMapping;
 
             // The number of declared auxiliary variables.
             uint_fast64_t numberOfAuxiliaryVariables;
@@ -321,11 +355,10 @@ namespace storm {
             uint_fast64_t freshVariableCounter;
             
             // A mask that can be used to query whether a variable is an auxiliary variable.
-            static const uint_fast64_t auxiliaryMask = (1 << 63);
-            static const uint_fast64_t booleanMask = (1 << 62);
-            static const uint_fast64_t integerMask = (1 << 61);
-            static const uint_fast64_t rationalMask = (1 << 60);
-            static const uint_fast64_t offsetMask = (1 << 60) - 1;
+            static const uint64_t auxiliaryMask = (1 << 60);
+            
+            // A mask that can be used to project a variable index to its offset (with the group of equally typed variables).
+            static const uint64_t offsetMask = (1 << 60) - 1;
         };
     }
 }

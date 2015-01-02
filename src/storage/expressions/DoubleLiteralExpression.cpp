@@ -1,8 +1,9 @@
 #include "src/storage/expressions/DoubleLiteralExpression.h"
+#include "src/storage/expressions/ExpressionManager.h"
 
 namespace storm {
     namespace expressions {
-        DoubleLiteralExpression::DoubleLiteralExpression(ExpressionManager const& manager, double value) : BaseExpression(manager, ExpressionReturnType::Double), value(value) {
+        DoubleLiteralExpression::DoubleLiteralExpression(ExpressionManager const& manager, double value) : BaseExpression(manager, manager.getRationalType()), value(value) {
             // Intentionally left empty.
         }
         

@@ -42,7 +42,7 @@ namespace storm {
 			private:
 				msat_env const& env;
                 msat_term* model;
-                std::unordered_map<storm::expressions::Variable, uint_fast64_t> const& variableNameToSlotMapping;
+                std::unordered_map<storm::expressions::Variable, uint_fast64_t> const& variableToSlotMapping;
 			};
 #endif
             
@@ -61,7 +61,7 @@ namespace storm {
 			};
 #endif
             
-			MathsatSmtSolver(storm::expressions::ExpressionManager const& manager, Options const& options = Options());
+			MathsatSmtSolver(storm::expressions::ExpressionManager& manager, Options const& options = Options());
             
 			virtual ~MathsatSmtSolver();
 

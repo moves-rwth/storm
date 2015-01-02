@@ -5,23 +5,23 @@
 
 namespace storm {
     namespace expressions {        
-        BaseExpression::BaseExpression(ExpressionManager const& manager, ExpressionReturnType returnType) : manager(manager), returnType(returnType) {
+        BaseExpression::BaseExpression(ExpressionManager const& manager, Type const& type) : manager(manager), type(type) {
             // Intentionally left empty.
         }
 
-        ExpressionReturnType BaseExpression::getReturnType() const {
-            return this->returnType;
+        Type const& BaseExpression::getType() const {
+            return this->type;
         }
         
-        bool BaseExpression::hasIntegralReturnType() const {
-            return this->getReturnType() == ExpressionReturnType::Int;
+        bool BaseExpression::hasIntegralType() const {
+            return this->getType() == manager.getIntegerType();
         }
         
-        bool BaseExpression::hasNumericalReturnType() const {
+        bool BaseExpression::hasNumericalType() const {
             return this->getReturnType() == ExpressionReturnType::Double || this->getReturnType() == ExpressionReturnType::Int;
         }
         
-        bool BaseExpression::hasBooleanReturnType() const {
+        bool BaseExpression::hasBooleanType() const {
             return this->getReturnType() == ExpressionReturnType::Bool;
         }
         

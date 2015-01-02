@@ -7,7 +7,7 @@
 #include <map>
 #include <iostream>
 
-#include "src/storage/expressions/ExpressionReturnType.h"
+#include "src/storage/expressions/Type.h"
 #include "src/storage/expressions/Valuation.h"
 #include "src/storage/expressions/ExpressionVisitor.h"
 #include "src/storage/expressions/OperatorType.h"
@@ -27,9 +27,9 @@ namespace storm {
             /*!
              * Constructs a base expression with the given return type.
              *
-             * @param returnType The return type of the expression.
+             * @param type The type of the expression.
              */
-            BaseExpression(ExpressionManager const& manager, ExpressionReturnType returnType);
+            BaseExpression(ExpressionManager const& manager, Type const& type);
             
             // Create default versions of constructors and assignments.
             BaseExpression(BaseExpression const&) = default;
@@ -167,25 +167,25 @@ namespace storm {
             virtual boost::any accept(ExpressionVisitor& visitor) const = 0;
             
             /*!
-             * Retrieves whether the expression has a numerical return type, i.e., integer or double.
+             * Retrieves whether the expression has a numerical type, i.e., integer or double.
              *
-             * @return True iff the expression has a numerical return type.
+             * @return True iff the expression has a numerical type.
              */
-            bool hasNumericalReturnType() const;
+            bool hasNumericalType() const;
             
             /*!
-             * Retrieves whether the expression has an integral return type, i.e., integer.
+             * Retrieves whether the expression has an integral type, i.e., integer.
              *
-             * @return True iff the expression has an integral return type.
+             * @return True iff the expression has an integral type.
              */
-            bool hasIntegralReturnType() const;
+            bool hasIntegralType() const;
             
             /*!
-             * Retrieves whether the expression has a boolean return type.
+             * Retrieves whether the expression has a boolean type.
              *
-             * @return True iff the expression has a boolean return type.
+             * @return True iff the expression has a boolean type.
              */
-            bool hasBooleanReturnType() const;
+            bool hasBooleanType() const;
             
             /*!
              * Retrieves a shared pointer to this expression.
@@ -202,11 +202,11 @@ namespace storm {
             ExpressionManager const& getManager() const;
             
             /*!
-             * Retrieves the return type of the expression.
+             * Retrieves the type of the expression.
              *
-             * @return The return type of the expression.
+             * @return The type of the expression.
              */
-            ExpressionReturnType getReturnType() const;
+            Type const& getType() const;
             
             friend std::ostream& operator<<(std::ostream& stream, BaseExpression const& expression);
             
@@ -223,7 +223,7 @@ namespace storm {
             ExpressionManager const& manager;
             
             // The return type of this expression.
-            ExpressionReturnType returnType;
+            Type const& type;
         };
     }
 }

@@ -10,7 +10,7 @@ namespace storm {
         class Variable;
         
         /*!
-         * A class to store a valuation of variables. This is, for example, used for evaluating expressions.
+         * The base class of all valuations of variables. This is, for example, used for evaluating expressions.
          */
         class Valuation {
         public:
@@ -27,27 +27,12 @@ namespace storm {
             Valuation(ExpressionManager const& manager);
             
             /*!
-             * Deep-copies the valuation.
-             *
-             * @param other The valuation to copy
-             */
-            Valuation(Valuation const& other);
-            
-            /*!
-             * Checks whether the two valuations are semantically equivalent.
-             *
-             * @param other The valuation with which to compare.
-             * @return True iff the two valuations are semantically equivalent.
-             */
-            bool operator==(Valuation const& other) const;
-            
-            /*!
              * Retrieves the value of the given boolean variable.
              *
              * @param booleanVariable The boolean variable whose value to retrieve.
              * @return The value of the boolean variable.
              */
-            bool getBooleanValue(Variable const& booleanVariable) const;
+            virtual bool getBooleanValue(Variable const& booleanVariable) const = 0;
             
             /*!
              * Sets the value of the given boolean variable to the provided value.
@@ -55,7 +40,7 @@ namespace storm {
              * @param booleanVariable The variable whose value to set.
              * @param value The new value of the variable.
              */
-            void setBooleanValue(Variable const& booleanVariable, bool value);
+            virtual void setBooleanValue(Variable const& booleanVariable, bool value) = 0;
             
             /*!
              * Retrieves the value of the given integer variable.
@@ -63,7 +48,7 @@ namespace storm {
              * @param integerVariable The integer variable whose value to retrieve.
              * @return The value of the integer variable.
              */
-            int_fast64_t getIntegerValue(Variable const& integerVariable) const;
+            virtual int_fast64_t getIntegerValue(Variable const& integerVariable) const = 0;
 
             /*!
              * Sets the value of the given boolean variable to the provided value.
@@ -71,7 +56,7 @@ namespace storm {
              * @param integerVariable The variable whose value to set.
              * @param value The new value of the variable.
              */
-            void setIntegerValue(Variable const& integerVariable, int_fast64_t value);
+            virtual void setIntegerValue(Variable const& integerVariable, int_fast64_t value) = 0;
             
             /*!
              * Retrieves the value of the given rational variable.
@@ -79,7 +64,7 @@ namespace storm {
              * @param rationalVariable The rational variable whose value to retrieve.
              * @return The value of the rational variable.
              */
-            double getRationalValue(Variable const& rationalVariable) const;
+            virtual double getRationalValue(Variable const& rationalVariable) const = 0;
             
             /*!
              * Sets the value of the given boolean variable to the provided value.
@@ -87,7 +72,7 @@ namespace storm {
              * @param integerVariable The variable whose value to set.
              * @param value The new value of the variable.
              */
-            void setRationalValue(Variable const& rationalVariable, double value);
+            virtual void setRationalValue(Variable const& rationalVariable, double value) = 0;
             
             /*!
              * Retrieves the manager responsible for the variables of this valuation.
@@ -99,40 +84,6 @@ namespace storm {
         private:
             // The manager responsible for the variables of this valuation.
             ExpressionManager const& manager;
-            
-            // Containers that store the values of the variables of the appropriate type.
-            std::unique_ptr<std::vector<bool>> booleanValues;
-            std::unique_ptr<std::vector<int_fast64_t>> integerValues;
-            std::unique_ptr<std::vector<double>> rationalValues;
-        };
-        
-        /*!
-         * A helper class that can pe used as the hash functor for data structures that need to hash valuations given
-         * via pointers.
-         */
-        class ValuationPointerHash {
-        public:
-            std::size_t operator()(Valuation* valuation) const;
-        };
-        
-        /*!
-         * A helper class that can be used as the comparison functor wrt. equality for data structures that need to
-         * store pointers to valuations and need to compare the elements wrt. their content (rather than pointer
-         * equality).
-         */
-        class ValuationPointerCompare {
-        public:
-            bool operator()(Valuation* valuation1, Valuation* valuation2) const;
-        };
-        
-        /*!
-         * A helper class that can be used as the comparison functor wrt. "<" for data structures that need to
-         * store pointers to valuations and need to compare the elements wrt. their content (rather than pointer
-         * equality).
-         */
-        class ValuationPointerLess {
-        public:
-            bool operator()(Valuation* valuation1, Valuation* valuation2) const;
         };
     }
 }

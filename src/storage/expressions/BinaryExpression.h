@@ -15,11 +15,11 @@ namespace storm {
              * Constructs a binary expression with the given return type and operands.
              *
              * @param manager The manager responsible for this expression.
-             * @param returnType The return type of the expression.
+             * @param type The return type of the expression.
              * @param firstOperand The first operand of the expression.
              * @param secondOperand The second operand of the expression.
              */
-            BinaryExpression(ExpressionManager const& manager, ExpressionReturnType returnType, std::shared_ptr<BaseExpression const> const& firstOperand, std::shared_ptr<BaseExpression const> const& secondOperand);
+            BinaryExpression(ExpressionManager const& manager, Type const& type, std::shared_ptr<BaseExpression const> const& firstOperand, std::shared_ptr<BaseExpression const> const& secondOperand);
             
             // Instantiate constructors and assignments with their default implementations.
             BinaryExpression(BinaryExpression const& other) = default;

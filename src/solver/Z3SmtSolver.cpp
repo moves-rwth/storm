@@ -205,23 +205,18 @@ namespace storm {
 
 			for (unsigned i = 0; i < model.num_consts(); ++i) {
 				z3::func_decl variableI = model.get_const_decl(i);
+                storm::expressions::Variable stormVariable = this->expressionAdapter->getVariable(variableI);
 				storm::expressions::Expression variableInterpretation = this->expressionAdapter->translateExpression(model.get_const_interp(variableI));
 
-				switch (variableInterpretation.getReturnType()) {
-					case storm::expressions::ExpressionReturnType::Bool:
-						stormModel.setBooleanValue(this->getManager().getVariable(variableI.name().str()), variableInterpretation.isTrue());
-						break;
-					case storm::expressions::ExpressionReturnType::Int:
-                        stormModel.setIntegerValue(this->getManager().getVariable(variableI.name().str()), variableInterpretation.evaluateAsInt());
-						break;
-					case storm::expressions::ExpressionReturnType::Double:
-                        stormModel.setRationalValue(this->getManager().getVariable(variableI.name().str()), variableInterpretation.evaluateAsDouble());
-						break;
-					default:
-						STORM_LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Variable interpretation in model is not of type bool, int or double.")
-							break;
-				}
-
+                if (variableInterpretation.getType().isBooleanType()) {
+                    stormModel.setBooleanValue(this->getManager().getVariable(variableI.name().str()), variableInterpretation.isTrue());
+                } else if (variableInterpretation.getType().isIntegralType()) {
+                    stormModel.setIntegerValue(this->getManager().getVariable(variableI.name().str()), variableInterpretation.evaluateAsInt());
+                } else if (variableInterpretation.getType().isRationalType()) {
+                    stormModel.setRationalValue(this->getManager().getVariable(variableI.name().str()), variableInterpretation.evaluateAsDouble());
+                } else {
+                    STORM_LOG_ASSERT(false, "Variable interpretation in model is not of type bool, int or rational.");
+                }
 			}
 
 			return stormModel;

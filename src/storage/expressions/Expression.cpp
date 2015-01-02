@@ -117,62 +117,25 @@ namespace storm {
             return this->expressionPtr;
         }
         
-        ExpressionReturnType Expression::getReturnType() const {
-            return this->getBaseExpression().getReturnType();
+        Type Expression::getType() const {
+            return this->getBaseExpression().getType();
         }
         
         bool Expression::hasNumericalReturnType() const {
-            return this->getReturnType() == ExpressionReturnType::Int || this->getReturnType() == ExpressionReturnType::Double;
+            return this->getBaseExpression().hasNumericalType();
         }
         
         bool Expression::hasBooleanReturnType() const {
-            return this->getReturnType() == ExpressionReturnType::Bool;
+            return this->getBaseExpression().hasBooleanType();
         }
         
         bool Expression::hasIntegralReturnType() const {
-            return this->getReturnType() == ExpressionReturnType::Int;
+            return this->getBaseExpression().hasIntegralType();
         }
-        
-        Expression Expression::createBooleanLiteral(bool value) {
-            return Expression(std::shared_ptr<BaseExpression>(new BooleanLiteralExpression(value)));
-        }
-        
-        Expression Expression::createTrue() {
-            return createBooleanLiteral(true);
-        }
-        
-        Expression Expression::createFalse() {
-            return createBooleanLiteral(false);
-        }
-        
-        Expression Expression::createIntegerLiteral(int_fast64_t value) {
-            return Expression(std::shared_ptr<BaseExpression>(new IntegerLiteralExpression(value)));
-        }
-        
-        Expression Expression::createDoubleLiteral(double value) {
-            return Expression(std::shared_ptr<BaseExpression>(new DoubleLiteralExpression(value)));
-        }
-        
-        Expression Expression::createBooleanVariable(std::string const& variableName) {
-            return Expression(std::shared_ptr<BaseExpression>(new VariableExpression(ExpressionReturnType::Bool, variableName)));
-        }
-        
-        Expression Expression::createIntegerVariable(std::string const& variableName) {
-            return Expression(std::shared_ptr<BaseExpression>(new VariableExpression(ExpressionReturnType::Int, variableName)));
-        }
-        
-        Expression Expression::createDoubleVariable(std::string const& variableName) {
-            return Expression(std::shared_ptr<BaseExpression>(new VariableExpression(ExpressionReturnType::Double, variableName)));
-        }
-        
-        Expression Expression::createUndefinedVariable(std::string const& variableName) {
-            return Expression(std::shared_ptr<BaseExpression>(new VariableExpression(ExpressionReturnType::Undefined, variableName)));
-        }
-        
+                
         Expression Expression::operator+(Expression const& other) const {
             assertSameManager(this->getBaseExpression(), other.getBaseExpression());
-            STORM_LOG_THROW(this->hasNumericalReturnType() && other.hasNumericalReturnType(), storm::exceptions::InvalidTypeException, "Operator '+' requires numerical operands.");
-            return Expression(std::shared_ptr<BaseExpression>(new BinaryNumericalFunctionExpression(this->getBaseExpression().getManager(), this->getReturnType() == ExpressionReturnType::Int && other.getReturnType() == ExpressionReturnType::Int ? ExpressionReturnType::Int : ExpressionReturnType::Double, this->getBaseExpressionPointer(), other.getBaseExpressionPointer(), BinaryNumericalFunctionExpression::OperatorType::Plus)));
+            return Expression(std::shared_ptr<BaseExpression>(new BinaryNumericalFunctionExpression(this->getBaseExpression().getManager(), this->getType().plusMinusTimes(other.getType()), this->getBaseExpressionPointer(), other.getBaseExpressionPointer(), BinaryNumericalFunctionExpression::OperatorType::Plus)));
         }
         
         Expression Expression::operator-(Expression const& other) const {

@@ -12,11 +12,11 @@ namespace storm {
              * Creates an if-then-else expression with the given return type, condition and operands.
              *
              * @param manager The manager responsible for this expression.
-             * @param returnType The return type of the expression.
+             * @param type The return type of the expression.
              * @param thenExpression The expression evaluated if the condition evaluates true.
              * @param elseExpression The expression evaluated if the condition evaluates false.
              */
-            IfThenElseExpression(ExpressionManager const& manager, ExpressionReturnType returnType, std::shared_ptr<BaseExpression const> const& condition, std::shared_ptr<BaseExpression const> const& thenExpression, std::shared_ptr<BaseExpression const> const& elseExpression);
+            IfThenElseExpression(ExpressionManager const& manager, Type const& type, std::shared_ptr<BaseExpression const> const& condition, std::shared_ptr<BaseExpression const> const& thenExpression, std::shared_ptr<BaseExpression const> const& elseExpression);
             
             // Instantiate constructors and assignments with their default implementations.
             IfThenElseExpression(IfThenElseExpression const& other) = default;

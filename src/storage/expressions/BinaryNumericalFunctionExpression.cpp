@@ -7,7 +7,7 @@
 
 namespace storm {
     namespace expressions {
-        BinaryNumericalFunctionExpression::BinaryNumericalFunctionExpression(ExpressionManager const& manager, ExpressionReturnType returnType, std::shared_ptr<BaseExpression const> const& firstOperand, std::shared_ptr<BaseExpression const> const& secondOperand, OperatorType operatorType) : BinaryExpression(manager, returnType, firstOperand, secondOperand), operatorType(operatorType) {
+        BinaryNumericalFunctionExpression::BinaryNumericalFunctionExpression(ExpressionManager const& manager, Type const& type, std::shared_ptr<BaseExpression const> const& firstOperand, std::shared_ptr<BaseExpression const> const& secondOperand, OperatorType operatorType) : BinaryExpression(manager, type, firstOperand, secondOperand), operatorType(operatorType) {
             // Intentionally left empty.
         }
         
@@ -28,7 +28,7 @@ namespace storm {
         }
         
         int_fast64_t BinaryNumericalFunctionExpression::evaluateAsInt(Valuation const* valuation) const {
-            STORM_LOG_THROW(this->hasIntegralReturnType(), storm::exceptions::InvalidTypeException, "Unable to evaluate expression as integer.");
+            STORM_LOG_THROW(this->hasIntegralType(), storm::exceptions::InvalidTypeException, "Unable to evaluate expression as integer.");
             
             int_fast64_t firstOperandEvaluation = this->getFirstOperand()->evaluateAsInt(valuation);
             int_fast64_t secondOperandEvaluation = this->getSecondOperand()->evaluateAsInt(valuation);
@@ -44,7 +44,7 @@ namespace storm {
         }
         
         double BinaryNumericalFunctionExpression::evaluateAsDouble(Valuation const* valuation) const {
-            STORM_LOG_THROW(this->hasNumericalReturnType(), storm::exceptions::InvalidTypeException, "Unable to evaluate expression as double.");
+            STORM_LOG_THROW(this->hasNumericalType(), storm::exceptions::InvalidTypeException, "Unable to evaluate expression as double.");
             
             double firstOperandEvaluation = this->getFirstOperand()->evaluateAsDouble(valuation);
             double secondOperandEvaluation = this->getSecondOperand()->evaluateAsDouble(valuation);
@@ -66,7 +66,7 @@ namespace storm {
             if (firstOperandSimplified.get() == this->getFirstOperand().get() && secondOperandSimplified.get() == this->getSecondOperand().get()) {
                 return this->shared_from_this();
             } else {
-                return std::shared_ptr<BaseExpression>(new BinaryNumericalFunctionExpression(this->getReturnType(), firstOperandSimplified, secondOperandSimplified, this->getOperatorType()));
+                return std::shared_ptr<BaseExpression>(new BinaryNumericalFunctionExpression(this->getManager(), this->getType(), firstOperandSimplified, secondOperandSimplified, this->getOperatorType()));
             }
         }
         

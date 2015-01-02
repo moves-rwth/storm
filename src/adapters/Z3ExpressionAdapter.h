@@ -30,15 +30,23 @@ namespace storm {
              * @param context A reference to the Z3 context over which to build the expressions. The lifetime of the
              * context needs to be guaranteed as long as the instance of this adapter is used.
              */
-            Z3ExpressionAdapter(storm::expressions::ExpressionManager& manager, z3::context& context) : manager(manager), context(context), additionalAssertions(), variableToExpressionMap() {
+            Z3ExpressionAdapter(storm::expressions::ExpressionManager& manager, z3::context& context) : manager(manager), context(context), additionalAssertions(), variableToExpressionMapping() {
                 // Here, we need to create the mapping from all variables known to the manager to their z3 counterparts.
                 for (auto const& variableTypePair : manager) {
-                    switch (variableTypePair.second) {
-                        case storm::expressions::ExpressionReturnType::Bool: variableToExpressionMap.insert(std::make_pair(variableTypePair.first, context.bool_const(variableTypePair.first.getName().c_str()))); break;
-                        case storm::expressions::ExpressionReturnType::Int: variableToExpressionMap.insert(std::make_pair(variableTypePair.first, context.int_const(variableTypePair.first.getName().c_str()))); break;
-                        case storm::expressions::ExpressionReturnType::Double: variableToExpressionMap.insert(std::make_pair(variableTypePair.first, context.real_const(variableTypePair.first.getName().c_str()))); break;
-                        default: STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Encountered variable '" << variableTypePair.first.getName() << "' with unknown type while trying to create solver variables.");
+                    z3::expr z3Variable(context);
+                    if (variableTypePair.second.isBooleanType()) {
+                        z3Variable = context.bool_const(variableTypePair.first.getName().c_str());
+                    } else if (variableTypePair.second.isUnboundedIntegralType()) {
+                        z3Variable = context.int_const(variableTypePair.first.getName().c_str());
+                    } else if (variableTypePair.second.isBoundedIntegralType()) {
+                        z3Variable = context.bv_const(variableTypePair.first.getName().c_str(), variableTypePair.second.getWidth());
+                    } else if (variableTypePair.second.isRationalType()) {
+                        z3Variable = context.real_const(variableTypePair.first.getName().c_str());
+                    } else {
+                        STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Encountered variable '" << variableTypePair.first.getName() << "' with unknown type while trying to create solver variables.");
                     }
+                    variableToExpressionMapping.insert(std::make_pair(variableTypePair.first, z3Variable));
+                    declarationToVariableMapping.insert(std::make_pair(z3Variable.decl(), variableTypePair.first));
                 }
             }
             
@@ -66,9 +74,21 @@ namespace storm {
              * @return An equivalent expression for Z3.
              */
             z3::expr translateExpression(storm::expressions::Variable const& variable) {
-                auto const& variableExpressionPair = variableToExpressionMap.find(variable);
-                STORM_LOG_ASSERT(variableExpressionPair != variableToExpressionMap.end(), "Unable to find variable.");
+                auto const& variableExpressionPair = variableToExpressionMapping.find(variable);
+                STORM_LOG_ASSERT(variableExpressionPair != variableToExpressionMapping.end(), "Unable to find variable.");
                 return variableExpressionPair->second;
+            }
+            
+            /*!
+             * Finds the counterpart to the given z3 variable declaration.
+             *
+             * @param z3Declaration The declaration for which to find the equivalent.
+             * @return The equivalent counterpart.
+             */
+            storm::expressions::Variable const& getVariable(z3::func_decl z3Declaration) {
+                auto const& declarationVariablePair = declarationToVariableMapping.find(z3Declaration);
+                STORM_LOG_ASSERT(declarationVariablePair != declarationToVariableMapping.end(), "Unable to find declaration.");
+                return declarationVariablePair->second;
             }
             
 			storm::expressions::Expression translateExpression(z3::expr const& expr) {
@@ -264,13 +284,13 @@ namespace storm {
 					case storm::expressions::UnaryNumericalFunctionExpression::OperatorType::Minus:
                         return 0 - childResult;
 					case storm::expressions::UnaryNumericalFunctionExpression::OperatorType::Floor: {
-                        storm::expressions::Variable freshAuxiliaryVariable = manager.declareFreshAuxiliaryVariable(storm::expressions::ExpressionReturnType::Int);
+                        storm::expressions::Variable freshAuxiliaryVariable = manager.declareFreshAuxiliaryVariable(manager.getIntegerType());
                         z3::expr floorVariable = context.int_const(freshAuxiliaryVariable.getName().c_str());
 						additionalAssertions.push_back(z3::expr(context, Z3_mk_int2real(context, floorVariable)) <= childResult && childResult < (z3::expr(context, Z3_mk_int2real(context, floorVariable)) + 1));
 						return floorVariable;
 					}
 					case storm::expressions::UnaryNumericalFunctionExpression::OperatorType::Ceil:{
-                        storm::expressions::Variable freshAuxiliaryVariable = manager.declareFreshAuxiliaryVariable(storm::expressions::ExpressionReturnType::Int);
+                        storm::expressions::Variable freshAuxiliaryVariable = manager.declareFreshAuxiliaryVariable(manager.getIntegerType());
                         z3::expr ceilVariable = context.int_const(freshAuxiliaryVariable.getName().c_str());
 						additionalAssertions.push_back(z3::expr(context, Z3_mk_int2real(context, ceilVariable)) - 1 <= childResult && childResult < z3::expr(context, Z3_mk_int2real(context, ceilVariable)));
 						return ceilVariable;
@@ -287,7 +307,7 @@ namespace storm {
 			}
             
 			virtual boost::any visit(storm::expressions::VariableExpression const& expression) override {
-                return variableToExpressionMap.at(expression.getVariable());
+                return variableToExpressionMapping.at(expression.getVariable());
             }
 
         private:
@@ -301,8 +321,11 @@ namespace storm {
             // assertion that was added.
 			std::vector<z3::expr> additionalAssertions;
 
-            // A mapping from variable names to their Z3 equivalent.
-            std::unordered_map<storm::expressions::Variable, z3::expr> variableToExpressionMap;
+            // A mapping from variables to their Z3 equivalent.
+            std::unordered_map<storm::expressions::Variable, z3::expr> variableToExpressionMapping;
+
+            // A mapping from z3 declarations to the corresponding variables.
+            std::unordered_map<Z3_func_decl, storm::expressions::Variable> declarationToVariableMapping;
         };
 #endif
     } // namespace adapters

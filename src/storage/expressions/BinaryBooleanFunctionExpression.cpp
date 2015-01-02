@@ -5,7 +5,7 @@
 
 namespace storm {
     namespace expressions {
-        BinaryBooleanFunctionExpression::BinaryBooleanFunctionExpression(ExpressionManager const& manager, ExpressionReturnType returnType, std::shared_ptr<BaseExpression const> const& firstOperand, std::shared_ptr<BaseExpression const> const& secondOperand, OperatorType operatorType) : BinaryExpression(manager, returnType, firstOperand, secondOperand), operatorType(operatorType) {
+        BinaryBooleanFunctionExpression::BinaryBooleanFunctionExpression(ExpressionManager const& manager, Type const& type, std::shared_ptr<BaseExpression const> const& firstOperand, std::shared_ptr<BaseExpression const> const& secondOperand, OperatorType operatorType) : BinaryExpression(manager, type, firstOperand, secondOperand), operatorType(operatorType) {
             // Intentionally left empty.
         }
         
@@ -24,7 +24,7 @@ namespace storm {
         }
                 
         bool BinaryBooleanFunctionExpression::evaluateAsBool(Valuation const* valuation) const {
-            STORM_LOG_THROW(this->hasBooleanReturnType(), storm::exceptions::InvalidTypeException, "Unable to evaluate expression as boolean.");
+            STORM_LOG_THROW(this->hasBooleanType(), storm::exceptions::InvalidTypeException, "Unable to evaluate expression as boolean.");
             
             bool firstOperandEvaluation = this->getFirstOperand()->evaluateAsBool(valuation);
             bool secondOperandEvaluation = this->getSecondOperand()->evaluateAsBool(valuation);
@@ -70,15 +70,15 @@ namespace storm {
                 case OperatorType::Implies: if (firstOperandSimplified->isTrue()) {
                     return secondOperandSimplified;
                 } else if (firstOperandSimplified->isFalse()) {
-                    return std::shared_ptr<BaseExpression>(new BooleanLiteralExpression(true));
+                    return std::shared_ptr<BaseExpression>(new BooleanLiteralExpression(this->getManager(), true));
                 } else if (secondOperandSimplified->isTrue()) {
-                    return std::shared_ptr<BaseExpression>(new BooleanLiteralExpression(true));
+                    return std::shared_ptr<BaseExpression>(new BooleanLiteralExpression(this->getManager(), true));
                 }
                 break;
                 case OperatorType::Iff: if (firstOperandSimplified->isTrue() && secondOperandSimplified->isTrue()) {
-                    return std::shared_ptr<BaseExpression>(new BooleanLiteralExpression(true));
+                    return std::shared_ptr<BaseExpression>(new BooleanLiteralExpression(this->getManager(), true));
                 } else if (firstOperandSimplified->isFalse() && secondOperandSimplified->isFalse()) {
-                    return std::shared_ptr<BaseExpression>(new BooleanLiteralExpression(true));
+                    return std::shared_ptr<BaseExpression>(new BooleanLiteralExpression(this->getManager(), true));
                 }
                 break;
             }
@@ -87,7 +87,7 @@ namespace storm {
             if (firstOperandSimplified.get() == this->getFirstOperand().get() && secondOperandSimplified.get() == this->getSecondOperand().get()) {
                 return this->shared_from_this();
             } else {
-                return std::shared_ptr<BaseExpression>(new BinaryBooleanFunctionExpression(this->getReturnType(), firstOperandSimplified, secondOperandSimplified, this->getOperatorType()));
+                return std::shared_ptr<BaseExpression>(new BinaryBooleanFunctionExpression(this->getManager(), this->getType(), firstOperandSimplified, secondOperandSimplified, this->getOperatorType()));
             }
         }
         

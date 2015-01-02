@@ -1,8 +1,9 @@
 #include "src/storage/expressions/BooleanLiteralExpression.h"
+#include "src/storage/expressions/ExpressionManager.h"
 
 namespace storm {
     namespace expressions {
-        BooleanLiteralExpression::BooleanLiteralExpression(ExpressionManager const& manager, bool value) : BaseExpression(manager, ExpressionReturnType::Bool), value(value) {
+        BooleanLiteralExpression::BooleanLiteralExpression(ExpressionManager const& manager, bool value) : BaseExpression(manager, manager.getBooleanType()), value(value) {
             // Intentionally left empty.
         }
         

@@ -242,11 +242,11 @@ namespace storm {
             std::shared_ptr<BaseExpression const> const& getBaseExpressionPointer() const;
 
             /*!
-             * Retrieves the return type of the expression.
+             * Retrieves the type of the expression.
              *
-             * @return The return type of the expression.
+             * @return The type of the expression.
              */
-            ExpressionReturnType getReturnType() const;
+            Type getType() const;
             
             /*!
              * Retrieves whether the expression has a numerical return type, i.e., integer or double.

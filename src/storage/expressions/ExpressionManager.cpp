@@ -46,27 +46,13 @@ namespace storm {
                 ++nameIndexIterator;
             }
             
-            ExpressionReturnType type = ExpressionReturnType::Undefined;
-            if ((nameIndexIterator->second & ExpressionManager::booleanMask) != 0) {
-                type = ExpressionReturnType::Bool;
-            } else if ((nameIndexIterator->second & ExpressionManager::integerMask) != 0) {
-                type = ExpressionReturnType::Int;
-            } else if ((nameIndexIterator->second & ExpressionManager::rationalMask) != 0) {
-                type = ExpressionReturnType::Double;
-            }
-            
             if (nameIndexIterator != nameIndexIteratorEnd) {
-                currentElement = std::make_pair(Variable(manager, nameIndexIterator->second), type);
+                currentElement = std::make_pair(Variable(manager, nameIndexIterator->second), manager.getVariableType(nameIndexIterator->second));
             }
         }
         
-        ExpressionManager::ExpressionManager() : nameToIndexMapping(), variableTypeToCountMapping(), auxiliaryVariableTypeToCountMapping() {
-            variableTypeToCountMapping[static_cast<std::size_t>(storm::expressions::ExpressionReturnType::Bool)] = 0;
-            variableTypeToCountMapping[static_cast<std::size_t>(storm::expressions::ExpressionReturnType::Int)] = 0;
-            variableTypeToCountMapping[static_cast<std::size_t>(storm::expressions::ExpressionReturnType::Double)] = 0;
-            auxiliaryVariableTypeToCountMapping[static_cast<std::size_t>(storm::expressions::ExpressionReturnType::Bool)] = 0;
-            auxiliaryVariableTypeToCountMapping[static_cast<std::size_t>(storm::expressions::ExpressionReturnType::Int)] = 0;
-            auxiliaryVariableTypeToCountMapping[static_cast<std::size_t>(storm::expressions::ExpressionReturnType::Double)] = 0;
+        ExpressionManager::ExpressionManager() : nameToIndexMapping(), indexToNameMapping(), indexToTypeMapping(), variableTypeToCountMapping(), numberOfVariables(0), auxiliaryVariableTypeToCountMapping(), numberOfAuxiliaryVariables(0), freshVariableCounter(0) {
+            // Intentionally left empty.
         }
         
         Expression ExpressionManager::boolean(bool value) const {
@@ -85,6 +71,22 @@ namespace storm {
             return this == &other;
         }
         
+        Type ExpressionManager::getBooleanType() const {
+            return Type(std::shared_ptr<BaseType>(new BooleanType()));
+        }
+        
+        Type ExpressionManager::getIntegerType() const {
+            return Type(std::shared_ptr<BaseType>(new IntegerType()));
+        }
+        
+        Type ExpressionManager::getBoundedIntegerType(std::size_t width) const {
+            return Type(std::shared_ptr<BaseType>(new BoundedIntegerType(width)));
+        }
+        
+        Type ExpressionManager::getRationalType() const {
+            return Type(std::shared_ptr<BaseType>(new RationalType()));
+        }
+        
         bool ExpressionManager::isValidVariableName(std::string const& name) {
             return name.size() < 2 || name.at(0) != '_' || name.at(1) != '_';
         }
@@ -94,61 +96,52 @@ namespace storm {
             return nameIndexPair != nameToIndexMapping.end();
         }
         
-        Variable ExpressionManager::declareVariable(std::string const& name, storm::expressions::ExpressionReturnType const& variableType) {
+        Variable ExpressionManager::declareVariable(std::string const& name, storm::expressions::Type const& variableType) {
             STORM_LOG_THROW(!variableExists(name), storm::exceptions::InvalidArgumentException, "Variable with name '" << name << "' already exists.");
             return declareOrGetVariable(name, variableType);
         }
 
-        Variable ExpressionManager::declareAuxiliaryVariable(std::string const& name, storm::expressions::ExpressionReturnType const& variableType) {
+        Variable ExpressionManager::declareAuxiliaryVariable(std::string const& name, storm::expressions::Type const& variableType) {
             STORM_LOG_THROW(!variableExists(name), storm::exceptions::InvalidArgumentException, "Variable with name '" << name << "' already exists.");
             return declareOrGetAuxiliaryVariable(name, variableType);
         }
 
-        Variable ExpressionManager::declareOrGetVariable(std::string const& name, storm::expressions::ExpressionReturnType const& variableType) {
+        Variable ExpressionManager::declareOrGetVariable(std::string const& name, storm::expressions::Type const& variableType) {
             STORM_LOG_THROW(isValidVariableName(name), storm::exceptions::InvalidArgumentException, "Invalid variable name '" << name << "'.");
-            uint_fast64_t newIndex = 0;
-            switch (variableType) {
-                case ExpressionReturnType::Bool:
-                    newIndex = variableTypeToCountMapping[static_cast<std::size_t>(ExpressionReturnType::Bool)]++ | booleanMask;
-                    break;
-                case ExpressionReturnType::Int:
-                    newIndex = variableTypeToCountMapping[static_cast<std::size_t>(ExpressionReturnType::Int)]++ | integerMask;
-                    break;
-                case ExpressionReturnType::Double:
-                    newIndex = variableTypeToCountMapping[static_cast<std::size_t>(ExpressionReturnType::Double)]++ | rationalMask;
-                    break;
-                case ExpressionReturnType::Undefined:
-                    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Illegal variable type.");
-            }
-            
-            nameToIndexMapping[name] = newIndex;
-            indexToNameMapping[newIndex] = name;
-            return Variable(*this, newIndex);
-        }
-
-        Variable ExpressionManager::declareOrGetAuxiliaryVariable(std::string const& name, storm::expressions::ExpressionReturnType const& variableType) {
             auto nameIndexPair = nameToIndexMapping.find(name);
             if (nameIndexPair != nameToIndexMapping.end()) {
                 return Variable(*this, nameIndexPair->second);
             } else {
-                STORM_LOG_THROW(isValidVariableName(name), storm::exceptions::InvalidArgumentException, "Invalid variable name '" << name << "'.");
-                uint_fast64_t newIndex = auxiliaryMask;
-                switch (variableType) {
-                    case ExpressionReturnType::Bool:
-                        newIndex |= auxiliaryVariableTypeToCountMapping[static_cast<std::size_t>(ExpressionReturnType::Bool)]++ | booleanMask;
-                        break;
-                    case ExpressionReturnType::Int:
-                        newIndex |= auxiliaryVariableTypeToCountMapping[static_cast<std::size_t>(ExpressionReturnType::Int)]++ | integerMask;
-                        break;
-                    case ExpressionReturnType::Double:
-                        newIndex |= auxiliaryVariableTypeToCountMapping[static_cast<std::size_t>(ExpressionReturnType::Double)]++ | rationalMask;
-                        break;
-                    case ExpressionReturnType::Undefined:
-                        STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Illegal variable type.");
-                }
+                std::unordered_map<Type, uint_fast64_t>::iterator typeCountPair = variableTypeToCountMapping.find(variableType);
+                uint_fast64_t& oldCount = variableTypeToCountMapping[variableType];
                 
+                // Compute the index of the new variable.
+                uint_fast64_t newIndex = oldCount++ | variableType.getMask();
+                
+                // Properly insert the variable into the data structure.
                 nameToIndexMapping[name] = newIndex;
                 indexToNameMapping[newIndex] = name;
+                indexToTypeMapping[newIndex] = variableType;
+                return Variable(*this, newIndex);
+            }
+        }
+
+        Variable ExpressionManager::declareOrGetAuxiliaryVariable(std::string const& name, storm::expressions::Type const& variableType) {
+            STORM_LOG_THROW(isValidVariableName(name), storm::exceptions::InvalidArgumentException, "Invalid variable name '" << name << "'.");
+            auto nameIndexPair = nameToIndexMapping.find(name);
+            if (nameIndexPair != nameToIndexMapping.end()) {
+                return Variable(*this, nameIndexPair->second);
+            } else {
+                std::unordered_map<Type, uint_fast64_t>::iterator typeCountPair = auxiliaryVariableTypeToCountMapping.find(variableType);
+                uint_fast64_t& oldCount = auxiliaryVariableTypeToCountMapping[variableType];
+                
+                // Compute the index of the new variable.
+                uint_fast64_t newIndex = oldCount++ | variableType.getMask() | auxiliaryMask;
+                
+                // Properly insert the variable into the data structure.
+                nameToIndexMapping[name] = newIndex;
+                indexToNameMapping[newIndex] = name;
+                indexToTypeMapping[newIndex] = variableType;
                 return Variable(*this, newIndex);
             }
         }
@@ -163,18 +156,23 @@ namespace storm {
             return Expression(getVariable(name));
         }
 
-        Variable ExpressionManager::declareFreshVariable(storm::expressions::ExpressionReturnType const& variableType) {
+        Variable ExpressionManager::declareFreshVariable(storm::expressions::Type const& variableType) {
             std::string newName = "__x" + std::to_string(freshVariableCounter++);
             return declareVariable(newName, variableType);
         }
 
-        Variable ExpressionManager::declareFreshAuxiliaryVariable(storm::expressions::ExpressionReturnType const& variableType) {
+        Variable ExpressionManager::declareFreshAuxiliaryVariable(storm::expressions::Type const& variableType) {
             std::string newName = "__x" + std::to_string(freshVariableCounter++);
             return declareAuxiliaryVariable(newName, variableType);
         }
 
-        uint_fast64_t ExpressionManager::getNumberOfVariables(storm::expressions::ExpressionReturnType const& variableType) const {
-            return variableTypeToCountMapping[static_cast<std::size_t>(variableType)];
+        uint_fast64_t ExpressionManager::getNumberOfVariables(storm::expressions::Type const& variableType) const {
+            auto typeCountPair = variableTypeToCountMapping.find(variableType);
+            if (typeCountPair == variableTypeToCountMapping.end()) {
+                return 0;
+            } else {
+                return typeCountPair->second;
+            }
         }
         
         uint_fast64_t ExpressionManager::getNumberOfVariables() const {
@@ -182,19 +180,24 @@ namespace storm {
         }
         
         uint_fast64_t ExpressionManager::getNumberOfBooleanVariables() const {
-            return getNumberOfVariables(storm::expressions::ExpressionReturnType::Bool);
+            return getNumberOfVariables(getBooleanType());
         }
         
         uint_fast64_t ExpressionManager::getNumberOfIntegerVariables() const {
-            return getNumberOfVariables(storm::expressions::ExpressionReturnType::Int);
+            return getNumberOfVariables(getIntegerType());
         }
         
         uint_fast64_t ExpressionManager::getNumberOfRationalVariables() const {
-            return getNumberOfVariables(storm::expressions::ExpressionReturnType::Double);
+            return getNumberOfVariables(getRationalType());
         }
 
-        uint_fast64_t ExpressionManager::getNumberOfAuxiliaryVariables(storm::expressions::ExpressionReturnType const& variableType) const {
-            return auxiliaryVariableTypeToCountMapping[static_cast<std::size_t>(variableType)];
+        uint_fast64_t ExpressionManager::getNumberOfAuxiliaryVariables(storm::expressions::Type const& variableType) const {
+            auto typeCountPair = auxiliaryVariableTypeToCountMapping.find(variableType);
+            if (typeCountPair == auxiliaryVariableTypeToCountMapping.end()) {
+                return 0;
+            } else {
+                return typeCountPair->second;
+            }
         }
 
         uint_fast64_t ExpressionManager::getNumberOfAuxiliaryVariables() const {
@@ -202,15 +205,15 @@ namespace storm {
         }
 
         uint_fast64_t ExpressionManager::getNumberOfAuxiliaryBooleanVariables() const {
-            return getNumberOfAuxiliaryVariables(storm::expressions::ExpressionReturnType::Bool);
+            return getNumberOfAuxiliaryVariables(getBooleanType());
         }
         
         uint_fast64_t ExpressionManager::getNumberOfAuxiliaryIntegerVariables() const {
-            return getNumberOfAuxiliaryVariables(storm::expressions::ExpressionReturnType::Int);
+            return getNumberOfAuxiliaryVariables(getIntegerType());
         }
         
         uint_fast64_t ExpressionManager::getNumberOfAuxiliaryRationalVariables() const {
-            return getNumberOfAuxiliaryVariables(storm::expressions::ExpressionReturnType::Double);
+            return getNumberOfAuxiliaryVariables(getRationalType());
         }
         
         std::string const& ExpressionManager::getVariableName(uint_fast64_t index) const {
@@ -219,16 +222,10 @@ namespace storm {
             return indexTypeNamePair->second;
         }
         
-        ExpressionReturnType ExpressionManager::getVariableType(uint_fast64_t index) const {
-            if ((index & booleanMask) != 0) {
-                return ExpressionReturnType::Bool;
-            } else if ((index & integerMask) != 0) {
-                return ExpressionReturnType::Int;
-            } else if ((index & rationalMask) != 0) {
-                return ExpressionReturnType::Double;
-            } else {
-                return ExpressionReturnType::Undefined;
-            }
+        Type const& ExpressionManager::getVariableType(uint_fast64_t index) const {
+            auto indexTypePair = indexToTypeMapping.find(index);
+            STORM_LOG_ASSERT(indexTypePair != indexToTypeMapping.end(), "Unable to retrieve type of unknown variable index.");
+            return indexTypePair->second;
         }
         
         uint_fast64_t ExpressionManager::getOffset(uint_fast64_t index) const {

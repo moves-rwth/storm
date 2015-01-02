@@ -5,7 +5,7 @@
 #include <memory>
 
 #include "src/utility/OsDetection.h"
-#include "src/storage/expressions/ExpressionReturnType.h"
+#include "src/storage/expressions/Type.h"
 #include "src/storage/expressions/Expression.h"
 
 namespace storm {
@@ -51,7 +51,7 @@ namespace storm {
              *
              * @return The type of the variable.
              */
-            ExpressionReturnType getType() const;
+            Type const& getType() const;
             
             /*!
              * Retrieves an expression that represents the variable.
