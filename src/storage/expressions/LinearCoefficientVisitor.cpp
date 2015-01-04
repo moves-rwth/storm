@@ -6,8 +6,65 @@
 
 namespace storm {
     namespace expressions {
-        std::pair<SimpleValuation, double> LinearCoefficientVisitor::getLinearCoefficients(Expression const& expression) {
-            return boost::any_cast<std::pair<SimpleValuation, double>>(expression.getBaseExpression().accept(*this));
+        LinearCoefficientVisitor::VariableCoefficients::VariableCoefficients(double constantPart) : variableToCoefficientMapping(), constantPart(constantPart) {
+            // Intentionally left empty.
+        }
+        
+        LinearCoefficientVisitor::VariableCoefficients& LinearCoefficientVisitor::VariableCoefficients::operator+=(VariableCoefficients&& other) {
+            for (auto const& otherVariableCoefficientPair : other.variableToCoefficientMapping) {
+                this->variableToCoefficientMapping[otherVariableCoefficientPair.first] += otherVariableCoefficientPair.second;
+            }
+            constantPart += other.constantPart;
+            return *this;
+        }
+        
+        LinearCoefficientVisitor::VariableCoefficients& LinearCoefficientVisitor::VariableCoefficients::operator-=(VariableCoefficients&& other) {
+            for (auto const& otherVariableCoefficientPair : other.variableToCoefficientMapping) {
+                this->variableToCoefficientMapping[otherVariableCoefficientPair.first] -= otherVariableCoefficientPair.second;
+            }
+            constantPart -= other.constantPart;
+            return *this;
+        }
+        
+        LinearCoefficientVisitor::VariableCoefficients& LinearCoefficientVisitor::VariableCoefficients::operator*=(VariableCoefficients&& other) {
+            STORM_LOG_THROW(variableToCoefficientMapping.size() == 0 || other.variableToCoefficientMapping.size() == 0, storm::exceptions::InvalidArgumentException, "Expression is non-linear.");
+            if (other.variableToCoefficientMapping.size() > 0) {
+                variableToCoefficientMapping = std::move(other.variableToCoefficientMapping);
+                std::swap(constantPart, other.constantPart);
+            }
+            for (auto const& otherVariableCoefficientPair : other.variableToCoefficientMapping) {
+                this->variableToCoefficientMapping[otherVariableCoefficientPair.first] *= other.constantPart;
+            }
+            constantPart *= other.constantPart;
+            return *this;
+        }
+
+        LinearCoefficientVisitor::VariableCoefficients& LinearCoefficientVisitor::VariableCoefficients::operator/=(VariableCoefficients&& other) {
+            STORM_LOG_THROW(other.variableToCoefficientMapping.size() == 0, storm::exceptions::InvalidArgumentException, "Expression is non-linear.");
+            for (auto const& otherVariableCoefficientPair : other.variableToCoefficientMapping) {
+                this->variableToCoefficientMapping[otherVariableCoefficientPair.first] /= other.constantPart;
+            }
+            constantPart /= other.constantPart;
+            return *this;
+        }
+        
+        void LinearCoefficientVisitor::VariableCoefficients::negate() {
+            for (auto& variableCoefficientPair : variableToCoefficientMapping) {
+                variableCoefficientPair.second = -variableCoefficientPair.second;
+            }
+            constantPart = -constantPart;
+        }
+
+        void LinearCoefficientVisitor::VariableCoefficients::setCoefficient(storm::expressions::Variable const& variable, double coefficient) {
+            variableToCoefficientMapping[variable] = coefficient;
+        }
+        
+        double LinearCoefficientVisitor::VariableCoefficients::getCoefficient(storm::expressions::Variable const& variable) {
+            return variableToCoefficientMapping[variable];
+        }
+        
+        LinearCoefficientVisitor::VariableCoefficients LinearCoefficientVisitor::getLinearCoefficients(Expression const& expression) {
+            return boost::any_cast<VariableCoefficients>(expression.getBaseExpression().accept(*this));
         }
         
         boost::any LinearCoefficientVisitor::visit(IfThenElseExpression const& expression) {
@@ -19,60 +76,17 @@ namespace storm {
         }
         
         boost::any LinearCoefficientVisitor::visit(BinaryNumericalFunctionExpression const& expression) {
-            std::pair<SimpleValuation, double> leftResult = boost::any_cast<std::pair<SimpleValuation, double>>(expression.getFirstOperand()->accept(*this));
-            std::pair<SimpleValuation, double> rightResult = boost::any_cast<std::pair<SimpleValuation, double>>(expression.getSecondOperand()->accept(*this));
+            VariableCoefficients leftResult = boost::any_cast<VariableCoefficients>(expression.getFirstOperand()->accept(*this));
+            VariableCoefficients rightResult = boost::any_cast<VariableCoefficients>(expression.getSecondOperand()->accept(*this));
 
             if (expression.getOperatorType() == BinaryNumericalFunctionExpression::OperatorType::Plus) {
-                // Now add the left result to the right result.
-                for (auto const& identifier : leftResult.first.getDoubleIdentifiers()) {
-                    if (rightResult.first.containsDoubleIdentifier(identifier)) {
-                        rightResult.first.setDoubleValue(identifier, leftResult.first.getDoubleValue(identifier) + rightResult.first.getDoubleValue(identifier));
-                    } else {
-                        rightResult.first.setDoubleValue(identifier, leftResult.first.getDoubleValue(identifier));
-                    }
-                }
-                rightResult.second += leftResult.second;
+                leftResult += std::move(rightResult);
             } else if (expression.getOperatorType() == BinaryNumericalFunctionExpression::OperatorType::Minus) {
-                // Now subtract the right result from the left result.
-                for (auto const& identifier : leftResult.first.getDoubleIdentifiers()) {
-                    if (rightResult.first.containsDoubleIdentifier(identifier)) {
-                        rightResult.first.setDoubleValue(identifier, leftResult.first.getDoubleValue(identifier) - rightResult.first.getDoubleValue(identifier));
-                    } else {
-                        rightResult.first.setDoubleValue(identifier, leftResult.first.getDoubleValue(identifier));
-                    }
-                }
-                for (auto const& identifier : rightResult.first.getDoubleIdentifiers()) {
-                    if (!leftResult.first.containsDoubleIdentifier(identifier)) {
-                        rightResult.first.setDoubleValue(identifier, -rightResult.first.getDoubleValue(identifier));
-                    }
-                }
-                rightResult.second = leftResult.second - rightResult.second;
+                leftResult -= std::move(rightResult);
             } else if (expression.getOperatorType() == BinaryNumericalFunctionExpression::OperatorType::Times) {
-                // If the expression is linear, either the left or the right side must not contain variables.
-                STORM_LOG_THROW(leftResult.first.getNumberOfIdentifiers() == 0 || rightResult.first.getNumberOfIdentifiers() == 0, storm::exceptions::InvalidArgumentException, "Expression is non-linear.");
-                if (leftResult.first.getNumberOfIdentifiers() == 0) {
-                    for (auto const& identifier : rightResult.first.getDoubleIdentifiers()) {
-                        rightResult.first.setDoubleValue(identifier, leftResult.second * rightResult.first.getDoubleValue(identifier));
-                    }
-                } else {
-                    for (auto const& identifier : leftResult.first.getDoubleIdentifiers()) {
-                        rightResult.first.addDoubleIdentifier(identifier, rightResult.second * leftResult.first.getDoubleValue(identifier));
-                    }
-                }
-                rightResult.second *= leftResult.second;
+                leftResult *= std::move(rightResult);
             } else if (expression.getOperatorType() == BinaryNumericalFunctionExpression::OperatorType::Divide) {
-                // If the expression is linear, either the left or the right side must not contain variables.
-                STORM_LOG_THROW(leftResult.first.getNumberOfIdentifiers() == 0 || rightResult.first.getNumberOfIdentifiers() == 0, storm::exceptions::InvalidArgumentException, "Expression is non-linear.");
-                if (leftResult.first.getNumberOfIdentifiers() == 0) {
-                    for (auto const& identifier : rightResult.first.getDoubleIdentifiers()) {
-                        rightResult.first.setDoubleValue(identifier, leftResult.second / rightResult.first.getDoubleValue(identifier));
-                    }
-                } else {
-                    for (auto const& identifier : leftResult.first.getDoubleIdentifiers()) {
-                        rightResult.first.addDoubleIdentifier(identifier, leftResult.first.getDoubleValue(identifier) / rightResult.second);
-                    }
-                }
-                rightResult.second = leftResult.second / leftResult.second;
+                leftResult /= std::move(rightResult);
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression is non-linear.");
             }
@@ -84,15 +98,13 @@ namespace storm {
         }
         
         boost::any LinearCoefficientVisitor::visit(VariableExpression const& expression) {
-            SimpleValuation valuation;
-            switch (expression.getReturnType()) {
-                case ExpressionReturnType::Bool: STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression is non-linear."); break;
-                case ExpressionReturnType::Int:
-                case ExpressionReturnType::Double: valuation.addDoubleIdentifier(expression.getVariableName(), 1); break;
-                case ExpressionReturnType::Undefined: STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Illegal expression return type."); break;
+            VariableCoefficients coefficients;
+            if (expression.getType().isNumericalType()) {
+                coefficients.setCoefficient(expression.getVariable(), 1);
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression is non-linear.");
             }
-            
-            return std::make_pair(valuation, static_cast<double>(0));
+            return coefficients;
         }
         
         boost::any LinearCoefficientVisitor::visit(UnaryBooleanFunctionExpression const& expression) {
@@ -100,13 +112,10 @@ namespace storm {
         }
         
         boost::any LinearCoefficientVisitor::visit(UnaryNumericalFunctionExpression const& expression) {
-            std::pair<SimpleValuation, double> childResult = boost::any_cast<std::pair<SimpleValuation, double>>(expression.getOperand()->accept(*this));
+            VariableCoefficients childResult = boost::any_cast<VariableCoefficients>(expression.getOperand()->accept(*this));
             
             if (expression.getOperatorType() == UnaryNumericalFunctionExpression::OperatorType::Minus) {
-                // Here, we need to negate all double identifiers.
-                for (auto const& identifier : childResult.first.getDoubleIdentifiers()) {
-                    childResult.first.setDoubleValue(identifier, -childResult.first.getDoubleValue(identifier));
-                }
+                childResult.negate();
                 return childResult;
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression is non-linear.");
@@ -118,11 +127,11 @@ namespace storm {
         }
         
         boost::any LinearCoefficientVisitor::visit(IntegerLiteralExpression const& expression) {
-            return std::make_pair(SimpleValuation(), static_cast<double>(expression.getValue()));
+            return VariableCoefficients(static_cast<double>(expression.getValue()));
         }
         
         boost::any LinearCoefficientVisitor::visit(DoubleLiteralExpression const& expression) {
-            return std::make_pair(SimpleValuation(), expression.getValue());
+            return VariableCoefficients(expression.getValue());
         }
     }
 }

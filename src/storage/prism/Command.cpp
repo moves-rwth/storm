@@ -30,7 +30,7 @@ namespace storm {
             return this->globalIndex;
         }
         
-        Command Command::substitute(std::map<std::string, storm::expressions::Expression> const& substitution) const {
+        Command Command::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
             std::vector<Update> newUpdates;
             newUpdates.reserve(this->getNumberOfUpdates());
             for (auto const& update : this->getUpdates()) {

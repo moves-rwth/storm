@@ -3,7 +3,7 @@
 
 namespace storm {
     namespace expressions {
-        Variable::Variable(ExpressionManager const& manager, uint_fast64_t index) : manager(manager), index(index) {
+        Variable::Variable(std::shared_ptr<ExpressionManager const> const& manager, uint_fast64_t index) : manager(manager), index(index) {
             // Intentionally left empty.
         }
 
@@ -20,21 +20,21 @@ namespace storm {
         }
         
         uint_fast64_t Variable::getOffset() const {
-            return manager.getOffset(index);
+            return this->getManager().getOffset(index);
         }
         
         std::string const& Variable::getName() const {
-            return manager.getVariableName(index);
+            return this->getManager().getVariableName(index);
         }
         
         Type const& Variable::getType() const {
-            return manager.getVariableType(index);
+            return this->getManager().getVariableType(index);
         }
         
         ExpressionManager const& Variable::getManager() const {
-            return manager;
+            return *manager;
         }
-        
+
         bool Variable::hasBooleanType() const {
             return this->getType().isBooleanType();
         }
@@ -50,5 +50,15 @@ namespace storm {
         bool Variable::hasNumericType() const {
             return this->getType().isNumericalType();
         }
+    }
+}
+
+namespace std {
+    std::size_t hash<storm::expressions::Variable>::operator()(storm::expressions::Variable const& variable) const {
+        return std::hash<uint_fast64_t>()(variable.getIndex());
+    }
+    
+    std::size_t less<storm::expressions::Variable>::operator()(storm::expressions::Variable const& variable1, storm::expressions::Variable const& variable2) const {
+        return variable1.getIndex() < variable2.getIndex();
     }
 }

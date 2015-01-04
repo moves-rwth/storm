@@ -106,7 +106,15 @@ namespace storm {
         
         class Type {
         public:
-            Type(ExpressionManager const& manager, std::shared_ptr<BaseType> innerType);
+            Type() = default;
+            
+            /*!
+             * Constructs a new type of the given manager with the given encapsulated type.
+             *
+             * @param manager The manager responsible for this type.
+             * @param innerType The encapsulated type.
+             */
+            Type(std::shared_ptr<ExpressionManager const> const& manager, std::shared_ptr<BaseType> innerType);
 
             /*!
              * Checks whether two types are the same.
@@ -179,10 +187,18 @@ namespace storm {
              */
             bool isRationalType() const;
             
+            /*!
+             * Retrieves the manager of the type.
+             *
+             * @return The manager of the type.
+             */
+            storm::expressions::ExpressionManager const& getManager() const;
+            
             // Functions that, given the input types, produce the output type of the corresponding function application.
             Type plusMinusTimes(Type const& other) const;
             Type minus() const;
             Type divide(Type const& other) const;
+            Type power(Type const& other) const;
             Type logicalConnective(Type const& other) const;
             Type logicalConnective() const;
             Type numericalComparison(Type const& other) const;
@@ -192,7 +208,7 @@ namespace storm {
             
         private:
             // The manager responsible for the type.
-            ExpressionManager const& manager;
+            std::shared_ptr<ExpressionManager const> manager;
             
             // The encapsulated type.
             std::shared_ptr<BaseType> innerType;

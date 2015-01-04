@@ -47,7 +47,7 @@ namespace storm {
             }
             
             if (nameIndexIterator != nameIndexIteratorEnd) {
-                currentElement = std::make_pair(Variable(manager, nameIndexIterator->second), manager.getVariableType(nameIndexIterator->second));
+                currentElement = std::make_pair(Variable(manager.getSharedPointer(), nameIndexIterator->second), manager.getVariableType(nameIndexIterator->second));
             }
         }
         
@@ -56,15 +56,15 @@ namespace storm {
         }
         
         Expression ExpressionManager::boolean(bool value) const {
-            return Expression(std::shared_ptr<BaseExpression const>(new BooleanLiteralExpression(*this, value)));
+            return Expression(std::shared_ptr<BaseExpression>(new BooleanLiteralExpression(*this, value)));
         }
 
         Expression ExpressionManager::integer(int_fast64_t value) const {
-            return Expression(std::shared_ptr<BaseExpression const>(new IntegerLiteralExpression(*this, value)));
+            return Expression(std::shared_ptr<BaseExpression>(new IntegerLiteralExpression(*this, value)));
         }
 
         Expression ExpressionManager::rational(double value) const {
-            return Expression(std::shared_ptr<BaseExpression const>(new DoubleLiteralExpression(*this, value)));
+            return Expression(std::shared_ptr<BaseExpression>(new DoubleLiteralExpression(*this, value)));
         }
         
         bool ExpressionManager::operator==(ExpressionManager const& other) const {
@@ -72,19 +72,19 @@ namespace storm {
         }
         
         Type ExpressionManager::getBooleanType() const {
-            return Type(std::shared_ptr<BaseType>(new BooleanType()));
+            return Type(this->getSharedPointer(), std::shared_ptr<BaseType>(new BooleanType()));
         }
         
         Type ExpressionManager::getIntegerType() const {
-            return Type(std::shared_ptr<BaseType>(new IntegerType()));
+            return Type(this->getSharedPointer(), std::shared_ptr<BaseType>(new IntegerType()));
         }
         
         Type ExpressionManager::getBoundedIntegerType(std::size_t width) const {
-            return Type(std::shared_ptr<BaseType>(new BoundedIntegerType(width)));
+            return Type(this->getSharedPointer(), std::shared_ptr<BaseType>(new BoundedIntegerType(width)));
         }
         
         Type ExpressionManager::getRationalType() const {
-            return Type(std::shared_ptr<BaseType>(new RationalType()));
+            return Type(this->getSharedPointer(), std::shared_ptr<BaseType>(new RationalType()));
         }
         
         bool ExpressionManager::isValidVariableName(std::string const& name) {
@@ -110,7 +110,7 @@ namespace storm {
             STORM_LOG_THROW(isValidVariableName(name), storm::exceptions::InvalidArgumentException, "Invalid variable name '" << name << "'.");
             auto nameIndexPair = nameToIndexMapping.find(name);
             if (nameIndexPair != nameToIndexMapping.end()) {
-                return Variable(*this, nameIndexPair->second);
+                return Variable(this->getSharedPointer(), nameIndexPair->second);
             } else {
                 std::unordered_map<Type, uint_fast64_t>::iterator typeCountPair = variableTypeToCountMapping.find(variableType);
                 uint_fast64_t& oldCount = variableTypeToCountMapping[variableType];
@@ -122,7 +122,7 @@ namespace storm {
                 nameToIndexMapping[name] = newIndex;
                 indexToNameMapping[newIndex] = name;
                 indexToTypeMapping[newIndex] = variableType;
-                return Variable(*this, newIndex);
+                return Variable(this->getSharedPointer(), newIndex);
             }
         }
 
@@ -130,7 +130,7 @@ namespace storm {
             STORM_LOG_THROW(isValidVariableName(name), storm::exceptions::InvalidArgumentException, "Invalid variable name '" << name << "'.");
             auto nameIndexPair = nameToIndexMapping.find(name);
             if (nameIndexPair != nameToIndexMapping.end()) {
-                return Variable(*this, nameIndexPair->second);
+                return Variable(this->getSharedPointer(), nameIndexPair->second);
             } else {
                 std::unordered_map<Type, uint_fast64_t>::iterator typeCountPair = auxiliaryVariableTypeToCountMapping.find(variableType);
                 uint_fast64_t& oldCount = auxiliaryVariableTypeToCountMapping[variableType];
@@ -142,14 +142,14 @@ namespace storm {
                 nameToIndexMapping[name] = newIndex;
                 indexToNameMapping[newIndex] = name;
                 indexToTypeMapping[newIndex] = variableType;
-                return Variable(*this, newIndex);
+                return Variable(this->getSharedPointer(), newIndex);
             }
         }
 
         Variable ExpressionManager::getVariable(std::string const& name) const {
             auto nameIndexPair = nameToIndexMapping.find(name);
             STORM_LOG_THROW(nameIndexPair != nameToIndexMapping.end(),  storm::exceptions::InvalidArgumentException, "Unknown variable '" << name << "'.");
-            return Variable(*this, nameIndexPair->second);
+            return Variable(this->getSharedPointer(), nameIndexPair->second);
         }
         
         Expression ExpressionManager::getVariableExpression(std::string const& name) const {
@@ -238,6 +238,14 @@ namespace storm {
         
         ExpressionManager::const_iterator ExpressionManager::end() const {
             return ExpressionManager::const_iterator(*this, this->nameToIndexMapping.end(), this->nameToIndexMapping.end(), const_iterator::VariableSelection::OnlyRegularVariables);
+        }
+        
+        std::shared_ptr<ExpressionManager> ExpressionManager::getSharedPointer() {
+            return this->shared_from_this();
+        }
+
+        std::shared_ptr<ExpressionManager const> ExpressionManager::getSharedPointer() const {
+            return this->shared_from_this();
         }
         
     } // namespace expressions

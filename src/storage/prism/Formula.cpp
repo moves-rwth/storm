@@ -14,11 +14,11 @@ namespace storm {
             return this->expression;
         }
         
-        storm::expressions::ExpressionReturnType Formula::getType() const {
-            return this->getExpression().getReturnType();
+        storm::expressions::Type const& Formula::getType() const {
+            return this->getExpression().getType();
         }
         
-        Formula Formula::substitute(std::map<std::string, storm::expressions::Expression> const& substitution) const {
+        Formula Formula::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
             return Formula(this->getName(), this->getExpression().substitute(substitution), this->getFilename(), this->getLineNumber());
         }
         

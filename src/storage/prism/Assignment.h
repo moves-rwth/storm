@@ -5,6 +5,7 @@
 
 #include "src/storage/prism/LocatedInformation.h"
 #include "src/storage/expressions/Expression.h"
+#include "src/storage/expressions/Variable.h"
 #include "src/utility/OsDetection.h"
 
 namespace storm {
@@ -45,12 +46,12 @@ namespace storm {
             storm::expressions::Expression const& getExpression() const;
             
             /*!
-             * Substitutes all identifiers in the assignment according to the given map.
+             * Substitutes all variables in the assignment according to the given map.
              *
              * @param substitution The substitution to perform.
              * @return The resulting assignment.
              */
-            Assignment substitute(std::map<std::string, storm::expressions::Expression> const& substitution) const;
+            Assignment substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const;
             
             friend std::ostream& operator<<(std::ostream& stream, Assignment const& assignment);
             

@@ -18,31 +18,27 @@ namespace storm {
         
         bool VariableExpression::evaluateAsBool(Valuation const* valuation) const {
             STORM_LOG_ASSERT(valuation != nullptr, "Evaluating expressions with unknowns without valuation.");
-            STORM_LOG_THROW(this->hasBooleanReturnType(), storm::exceptions::InvalidTypeException, "Cannot evaluate expression as boolean: return type is not a boolean.");
+            STORM_LOG_THROW(this->hasBooleanType(), storm::exceptions::InvalidTypeException, "Cannot evaluate expression as boolean: return type is not a boolean.");
             
             return valuation->getBooleanValue(this->getVariable());
         }
 
         int_fast64_t VariableExpression::evaluateAsInt(Valuation const* valuation) const {
             STORM_LOG_ASSERT(valuation != nullptr, "Evaluating expressions with unknowns without valuation.");
-            STORM_LOG_THROW(this->hasIntegralReturnType(), storm::exceptions::InvalidTypeException, "Cannot evaluate expression as integer: return type is not an integer.");
+            STORM_LOG_THROW(this->hasIntegralType(), storm::exceptions::InvalidTypeException, "Cannot evaluate expression as integer: return type is not an integer.");
             
             return valuation->getIntegerValue(this->getVariable());
         }
         
         double VariableExpression::evaluateAsDouble(Valuation const* valuation) const {
             STORM_LOG_ASSERT(valuation != nullptr, "Evaluating expressions with unknowns without valuation.");
-            STORM_LOG_THROW(this->hasNumericalReturnType(), storm::exceptions::InvalidTypeException, "Cannot evaluate expression as double: return type is not a double.");
+            STORM_LOG_THROW(this->hasNumericalType(), storm::exceptions::InvalidTypeException, "Cannot evaluate expression as double: return type is not a double.");
             
-            switch (this->getReturnType()) {
-                case ExpressionReturnType::Int: return static_cast<double>(valuation->getIntegerValue(this->getVariable())); break;
-                case ExpressionReturnType::Double: valuation->getRationalValue(this->getVariable()); break;
-                default: break;
+            if (this->getType().isIntegralType()) {
+                return static_cast<double>(valuation->getIntegerValue(this->getVariable()));
+            } else {
+                return valuation->getRationalValue(this->getVariable());
             }
-            STORM_LOG_ASSERT(false, "Type of variable is required to be numeric.");
-            
-            // Silence warning. This point can never be reached.
-            return 0;
         }
         
         std::string const& VariableExpression::getIdentifier() const {

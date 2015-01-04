@@ -2,34 +2,35 @@
 
 #include <algorithm>
 
+#include "src/storage/expressions/ExpressionManager.h"
 #include "src/utility/macros.h"
-#include "exceptions/InvalidArgumentException.h"
+#include "src/exceptions/InvalidArgumentException.h"
 #include "src/exceptions/OutOfRangeException.h"
 #include "src/exceptions/WrongFormatException.h"
 #include "src/exceptions/InvalidTypeException.h"
 
 namespace storm {
     namespace prism {
-        Program::Program(ModelType modelType, std::vector<Constant> const& constants, std::vector<BooleanVariable> const& globalBooleanVariables, std::vector<IntegerVariable> const& globalIntegerVariables, std::vector<Formula> const& formulas, std::vector<Module> const& modules, std::vector<RewardModel> const& rewardModels, bool fixInitialConstruct, storm::prism::InitialConstruct const& initialConstruct, std::vector<Label> const& labels, std::string const& filename, uint_fast64_t lineNumber, bool checkValidity) : LocatedInformation(filename, lineNumber), modelType(modelType), constants(constants), constantToIndexMap(), globalBooleanVariables(globalBooleanVariables), globalBooleanVariableToIndexMap(), globalIntegerVariables(globalIntegerVariables), globalIntegerVariableToIndexMap(), formulas(formulas), formulaToIndexMap(), modules(modules), moduleToIndexMap(), rewardModels(rewardModels), rewardModelToIndexMap(), initialConstruct(initialConstruct), labels(labels), labelToIndexMap(), actions(), actionsToModuleIndexMap(), variableToModuleIndexMap() {
+        Program::Program(std::shared_ptr<storm::expressions::ExpressionManager> manager, ModelType modelType, std::vector<Constant> const& constants, std::vector<BooleanVariable> const& globalBooleanVariables, std::vector<IntegerVariable> const& globalIntegerVariables, std::vector<Formula> const& formulas, std::vector<Module> const& modules, std::vector<RewardModel> const& rewardModels, bool fixInitialConstruct, storm::prism::InitialConstruct const& initialConstruct, std::vector<Label> const& labels, std::string const& filename, uint_fast64_t lineNumber, bool checkValidity) : LocatedInformation(filename, lineNumber), manager(manager), modelType(modelType), constants(constants), constantToIndexMap(), globalBooleanVariables(globalBooleanVariables), globalBooleanVariableToIndexMap(), globalIntegerVariables(globalIntegerVariables), globalIntegerVariableToIndexMap(), formulas(formulas), formulaToIndexMap(), modules(modules), moduleToIndexMap(), rewardModels(rewardModels), rewardModelToIndexMap(), initialConstruct(initialConstruct), labels(labels), labelToIndexMap(), actions(), actionsToModuleIndexMap(), variableToModuleIndexMap() {
             this->createMappings();
             
             // Create a new initial construct if the corresponding flag was set.
             if (fixInitialConstruct) {
                 if (this->getInitialConstruct().getInitialStatesExpression().isFalse()) {
-                    storm::expressions::Expression newInitialExpression = storm::expressions::Expression::createTrue();
+                    storm::expressions::Expression newInitialExpression = manager->boolean(true);
                     
                     for (auto const& booleanVariable : this->getGlobalBooleanVariables()) {
-                        newInitialExpression = newInitialExpression && (storm::expressions::Expression::createBooleanVariable(booleanVariable.getName()).iff(booleanVariable.getInitialValueExpression()));
+                        newInitialExpression = newInitialExpression && booleanVariable.getExpression().iff(booleanVariable.getInitialValueExpression());
                     }
                     for (auto const& integerVariable : this->getGlobalIntegerVariables()) {
-                        newInitialExpression = newInitialExpression && (storm::expressions::Expression::createIntegerVariable(integerVariable.getName()) == integerVariable.getInitialValueExpression());
+                        newInitialExpression = newInitialExpression && integerVariable.getExpression() == integerVariable.getInitialValueExpression();
                     }
                     for (auto const& module : this->getModules()) {
                         for (auto const& booleanVariable : module.getBooleanVariables()) {
-                            newInitialExpression = newInitialExpression && (storm::expressions::Expression::createBooleanVariable(booleanVariable.getName()).iff(booleanVariable.getInitialValueExpression()));
+                            newInitialExpression = newInitialExpression && booleanVariable.getExpression().iff(booleanVariable.getInitialValueExpression());
                         }
                         for (auto const& integerVariable : module.getIntegerVariables()) {
-                            newInitialExpression = newInitialExpression && (storm::expressions::Expression::createIntegerVariable(integerVariable.getName()) == integerVariable.getInitialValueExpression());
+                            newInitialExpression = newInitialExpression && integerVariable.getExpression() == integerVariable.getInitialValueExpression();
                         }
                     }
                     this->initialConstruct = storm::prism::InitialConstruct(newInitialExpression, this->getInitialConstruct().getFilename(), this->getInitialConstruct().getLineNumber());
@@ -189,7 +190,7 @@ namespace storm {
                 newModules.push_back(module.restrictCommands(indexSet));
             }
             
-            return Program(this->getModelType(), this->getConstants(), this->getGlobalBooleanVariables(), this->getGlobalIntegerVariables(), this->getFormulas(), newModules, this->getRewardModels(), false, this->getInitialConstruct(), this->getLabels());
+            return Program(this->manager, this->getModelType(), this->getConstants(), this->getGlobalBooleanVariables(), this->getGlobalIntegerVariables(), this->getFormulas(), newModules, this->getRewardModels(), false, this->getInitialConstruct(), this->getLabels());
         }
         
         void Program::createMappings() {
@@ -240,10 +241,9 @@ namespace storm {
 
         }
         
-        Program Program::defineUndefinedConstants(std::map<std::string, storm::expressions::Expression> const& constantDefinitions) const {
-            // For sanity checking, we keep track of all undefined constants that we define in the course of this
-            // procedure.
-            std::set<std::string> definedUndefinedConstants;
+        Program Program::defineUndefinedConstants(std::map<storm::expressions::Variable, storm::expressions::Expression> const& constantDefinitions) const {
+            // For sanity checking, we keep track of all undefined constants that we define in the course of this procedure.
+            std::set<storm::expressions::Variable> definedUndefinedConstants;
             
             std::vector<Constant> newConstants;
             newConstants.reserve(this->getNumberOfConstants());
@@ -252,25 +252,25 @@ namespace storm {
                 // defining expression
                 if (constant.isDefined()) {
                     // Make sure we are not trying to define an already defined constant.
-                    STORM_LOG_THROW(constantDefinitions.find(constant.getName()) == constantDefinitions.end(), storm::exceptions::InvalidArgumentException, "Illegally defining already defined constant '" << constant.getName() << "'.");
+                    STORM_LOG_THROW(constantDefinitions.find(constant.getExpressionVariable()) == constantDefinitions.end(), storm::exceptions::InvalidArgumentException, "Illegally defining already defined constant '" << constant.getName() << "'.");
                     
                     // Now replace the occurrences of undefined constants in its defining expression.
                     newConstants.emplace_back(constant.getType(), constant.getName(), constant.getExpression().substitute(constantDefinitions), constant.getFilename(), constant.getLineNumber());
                 } else {
-                    auto const& variableExpressionPair = constantDefinitions.find(constant.getName());
+                    auto const& variableExpressionPair = constantDefinitions.find(constant.getExpressionVariable());
                     
                     // If the constant is not defined by the mapping, we leave it like it is.
                     if (variableExpressionPair == constantDefinitions.end()) {
                         newConstants.emplace_back(constant);
                     } else {
                         // Otherwise, we add it to the defined constants and assign it the appropriate expression.
-                        definedUndefinedConstants.insert(constant.getName());
+                        definedUndefinedConstants.insert(constant.getExpressionVariable());
                         
                         // Make sure the type of the constant is correct.
-                        STORM_LOG_THROW(variableExpressionPair->second.getReturnType() == constant.getType(), storm::exceptions::InvalidArgumentException, "Illegal type of expression defining constant '" << constant.getName() << "'.");
+                        STORM_LOG_THROW(variableExpressionPair->second.getType() == constant.getType(), storm::exceptions::InvalidArgumentException, "Illegal type of expression defining constant '" << constant.getName() << "'.");
                         
                         // Now create the defined constant.
-                        newConstants.emplace_back(constant.getType(), constant.getName(), variableExpressionPair->second, constant.getFilename(), constant.getLineNumber());
+                        newConstants.emplace_back(constant.getExpressionVariable(), variableExpressionPair->second, constant.getFilename(), constant.getLineNumber());
                     }
                 }
             }
@@ -281,19 +281,19 @@ namespace storm {
                 STORM_LOG_THROW(definedUndefinedConstants.find(constantExpressionPair.first) != definedUndefinedConstants.end(), storm::exceptions::InvalidArgumentException, "Unable to define non-existant constant.");
             }
             
-            return Program(this->getModelType(), newConstants, this->getGlobalBooleanVariables(), this->getGlobalIntegerVariables(), this->getFormulas(), this->getModules(), this->getRewardModels(), false, this->getInitialConstruct(), this->getLabels());
+            return Program(this->manager, this->getModelType(), newConstants, this->getGlobalBooleanVariables(), this->getGlobalIntegerVariables(), this->getFormulas(), this->getModules(), this->getRewardModels(), false, this->getInitialConstruct(), this->getLabels());
         }
         
         Program Program::substituteConstants() const {
             // We start by creating the appropriate substitution
-            std::map<std::string, storm::expressions::Expression> constantSubstitution;
+            std::map<storm::expressions::Variable, storm::expressions::Expression> constantSubstitution;
             std::vector<Constant> newConstants(this->getConstants());
             for (uint_fast64_t constantIndex = 0; constantIndex < newConstants.size(); ++constantIndex) {
                 auto const& constant = newConstants[constantIndex];
                 STORM_LOG_THROW(constant.isDefined(), storm::exceptions::InvalidArgumentException, "Cannot substitute constants in program that contains undefined constants.");
                 
                 // Put the corresponding expression in the substitution.
-                constantSubstitution.emplace(constant.getName(), constant.getExpression());
+                constantSubstitution.emplace(constant.getExpressionVariable(), constant.getExpression());
                 
                 // If there is at least one more constant to come, we substitute the costants we have so far.
                 if (constantIndex + 1 < newConstants.size()) {
@@ -340,7 +340,7 @@ namespace storm {
                 newLabels.emplace_back(label.substitute(constantSubstitution));
             }
             
-            return Program(this->getModelType(), newConstants, newBooleanVariables, newIntegerVariables, newFormulas, newModules, newRewardModels, false, newInitialConstruct, newLabels);
+            return Program(this->manager, this->getModelType(), newConstants, newBooleanVariables, newIntegerVariables, newFormulas, newModules, newRewardModels, false, newInitialConstruct, newLabels);
         }
         
         void Program::checkValidity() const {
@@ -571,6 +571,14 @@ namespace storm {
             }
         }
         
+        storm::expressions::ExpressionManager const& Program::getManager() const {
+            return this->manager;
+        }
+
+        storm::expressions::ExpressionManager& Program::getManager() {
+            return this->manager;
+        }
+
         std::ostream& operator<<(std::ostream& stream, Program const& program) {
             switch (program.getModelType()) {
                 case Program::ModelType::UNDEFINED: stream << "undefined"; break;

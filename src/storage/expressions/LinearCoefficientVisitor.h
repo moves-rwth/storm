@@ -4,6 +4,7 @@
 #include <stack>
 
 #include "src/storage/expressions/Expression.h"
+#include "src/storage/expressions/Variable.h"
 #include "src/storage/expressions/ExpressionVisitor.h"
 #include "src/storage/expressions/SimpleValuation.h"
 
@@ -11,6 +12,29 @@ namespace storm {
     namespace expressions {
         class LinearCoefficientVisitor : public ExpressionVisitor {
         public:
+            struct VariableCoefficients {
+            public:
+                VariableCoefficients(double constantPart = 0);
+
+                VariableCoefficients(VariableCoefficients const& other) = default;
+                VariableCoefficients& operator=(VariableCoefficients const& other) = default;
+                VariableCoefficients(VariableCoefficients&& other) = default;
+                VariableCoefficients& operator=(VariableCoefficients&& other) = default;
+                
+                VariableCoefficients& operator+=(VariableCoefficients&& other);
+                VariableCoefficients& operator-=(VariableCoefficients&& other);
+                VariableCoefficients& operator*=(VariableCoefficients&& other);
+                VariableCoefficients& operator/=(VariableCoefficients&& other);
+                
+                void negate();
+                void setCoefficient(storm::expressions::Variable const& variable, double coefficient);
+                double getCoefficient(storm::expressions::Variable const& variable);
+                
+            private:
+                std::map<storm::expressions::Variable, double> variableToCoefficientMapping;
+                double constantPart;
+            };
+            
             /*!
              * Creates a linear coefficient visitor.
              */
@@ -21,10 +45,9 @@ namespace storm {
              * was rewritten as a sum of atoms.. If the expression is not linear, an exception is thrown.
              *
              * @param expression The expression for which to compute the coefficients.
-             * @return A pair consisting of a mapping from identifiers to their coefficients and the coefficient of
-             * the constant atom.
+             * @return A structure representing the coefficients of the variables and the constant part.
              */
-            std::pair<SimpleValuation, double> getLinearCoefficients(Expression const& expression);
+            VariableCoefficients getLinearCoefficients(Expression const& expression);
             
             virtual boost::any visit(IfThenElseExpression const& expression) override;
             virtual boost::any visit(BinaryBooleanFunctionExpression const& expression) override;

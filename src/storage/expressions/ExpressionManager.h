@@ -58,7 +58,7 @@ namespace storm {
         /*!
          * This class is responsible for managing a set of typed variables and all expressions using these variables.
          */
-        class ExpressionManager {
+        class ExpressionManager : public std::enable_shared_from_this<ExpressionManager> {
         public:
             friend class VariableIterator;
             
@@ -315,6 +315,20 @@ namespace storm {
             const_iterator end() const;
             
         private:
+            /*!
+             * Retrieves a shared pointer to the expression manager.
+             *
+             * @return A shared pointer to the expression manager.
+             */
+            std::shared_ptr<ExpressionManager> getSharedPointer();
+
+            /*!
+             * Retrieves a shared pointer to the expression manager.
+             *
+             * @return A shared pointer to the expression manager.
+             */
+            std::shared_ptr<ExpressionManager const> getSharedPointer() const;
+            
             /*!
              * Checks whether the given variable name is valid.
              *

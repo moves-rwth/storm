@@ -18,7 +18,7 @@ namespace storm {
             return this->rewardValueExpression;
         }
         
-        TransitionReward TransitionReward::substitute(std::map<std::string, storm::expressions::Expression> const& substitution) const {
+        TransitionReward TransitionReward::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
             return TransitionReward(this->getActionName(), this->getStatePredicateExpression().substitute(substitution), this->getRewardValueExpression().substitute(substitution), this->getFilename(), this->getLineNumber());
         }
         

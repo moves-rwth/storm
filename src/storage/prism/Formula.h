@@ -5,6 +5,7 @@
 
 #include "src/storage/prism/LocatedInformation.h"
 #include "src/storage/expressions/Expression.h"
+#include "src/storage/expressions/Variable.h"
 #include "src/utility/OsDetection.h"
 
 namespace storm {
@@ -49,15 +50,15 @@ namespace storm {
              *
              * @return The return type of the formula.
              */
-            storm::expressions::ExpressionReturnType getType() const;
+            storm::expressions::Type const& getType() const;
             
             /*!
-             * Substitutes all identifiers in the expression of the formula according to the given map.
+             * Substitutes all variables in the expression of the formula according to the given map.
              *
              * @param substitution The substitution to perform.
              * @return The resulting formula.
              */
-            Formula substitute(std::map<std::string, storm::expressions::Expression> const& substitution) const;
+            Formula substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const;
             
             friend std::ostream& operator<<(std::ostream& stream, Formula const& formula);
             

@@ -50,7 +50,7 @@ namespace storm {
             return "rational";
         }
         
-        Type::Type(ExpressionManager const& manager, std::shared_ptr<BaseType> innerType) : manager(manager), innerType(innerType) {
+        Type::Type(std::shared_ptr<ExpressionManager const> const& manager, std::shared_ptr<BaseType> innerType) : manager(manager), innerType(innerType) {
             // Intentionally left empty.
         }
         
@@ -94,12 +94,16 @@ namespace storm {
             return typeid(*this->innerType) == typeid(RationalType);
         }
         
+        storm::expressions::ExpressionManager const& Type::getManager() const {
+            return *manager;
+        }
+        
         Type Type::plusMinusTimes(Type const& other) const {
             STORM_LOG_ASSERT(this->isNumericalType() && other.isNumericalType(), "Operator requires numerical operands.");
             if (this->isRationalType() || other.isRationalType()) {
-                return manager.getRationalType();
+                return this->getManager().getRationalType();
             }
-            return manager.getIntegerType();
+            return getManager().getIntegerType();
         }
         
         Type Type::minus() const {
@@ -109,7 +113,15 @@ namespace storm {
         
         Type Type::divide(Type const& other) const {
             STORM_LOG_ASSERT(this->isNumericalType() && other.isNumericalType(), "Operator requires numerical operands.");
-            return manager.getRationalType();
+            return this->getManager().getRationalType();
+        }
+        
+        Type Type::power(Type const& other) const {
+            STORM_LOG_ASSERT(this->isNumericalType() && other.isNumericalType(), "Operator requires numerical operands.");
+            if (this->isRationalType() || other.isRationalType()) {
+                return getManager().getRationalType();
+            }
+            return this->getManager().getIntegerType();
         }
         
         Type Type::logicalConnective(Type const& other) const {
@@ -125,27 +137,28 @@ namespace storm {
         Type Type::numericalComparison(Type const& other) const {
             STORM_LOG_ASSERT(this->isNumericalType() && other.isNumericalType(), "Operator requires numerical operands.");
             if (this->isRationalType() || other.isRationalType()) {
-                return manager.getRationalType();
+                return this->getManager().getRationalType();
             }
-            return manager.getIntegerType();
+            return this->getManager().getIntegerType();
         }
         
         Type Type::ite(Type const& thenType, Type const& elseType) const {
+            STORM_LOG_ASSERT(this->isBooleanType(), "Operator requires boolean condition.");
             STORM_LOG_ASSERT(thenType == elseType, "Operator requires equal types.");
             return thenType;
         }
         
         Type Type::floorCeil() const {
             STORM_LOG_ASSERT(this->isRationalType(), "Operator requires rational operand.");
-            return manager.getIntegerType();
+            return this->getManager().getIntegerType();
         }
         
         Type Type::minimumMaximum(Type const& other) const {
             STORM_LOG_ASSERT(this->isNumericalType() && other.isNumericalType(), "Operator requires numerical operands.");
             if (this->isRationalType() || other.isRationalType()) {
-                return manager.getRationalType();
+                return this->getManager().getRationalType();
             }
-            return manager.getIntegerType();
+            return this->getManager().getIntegerType();
         }
         
         std::ostream& operator<<(std::ostream& stream, Type const& type) {

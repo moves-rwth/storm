@@ -59,44 +59,26 @@ namespace storm {
             static Expression maximum(Expression const& lhs, Expression const& rhs);
             
             /*!
-             * Substitutes all occurrences of identifiers according to the given map. Note that this substitution is
-             * done simultaneously, i.e., identifiers appearing in the expressions that were "plugged in" are not
+             * Substitutes all occurrences of the variables according to the given map. Note that this substitution is
+             * done simultaneously, i.e., variables appearing in the expressions that were "plugged in" are not
              * substituted.
              *
-             * @param identifierToExpressionMap A mapping from identifiers to the expression they are substituted with.
+             * @param variableToExpressionMap A mapping from variables to the expression they are substituted with.
              * @return An expression in which all identifiers in the key set of the mapping are replaced by the
              * expression they are mapped to.
              */
-			Expression substitute(std::map<std::string, Expression> const& identifierToExpressionMap) const;
+			Expression substitute(std::map<Variable, Expression> const& variableToExpressionMap) const;
 
 			/*!
-			* Substitutes all occurrences of identifiers according to the given map. Note that this substitution is
-			* done simultaneously, i.e., identifiers appearing in the expressions that were "plugged in" are not
+			* Substitutes all occurrences of the variables according to the given map. Note that this substitution is
+			* done simultaneously, i.e., variables appearing in the expressions that were "plugged in" are not
 			* substituted.
 			*
-			* @param identifierToExpressionMap A mapping from identifiers to the expression they are substituted with.
+			* @param variableToExpressionMap A mapping from variables to the expression they are substituted with.
 			* @return An expression in which all identifiers in the key set of the mapping are replaced by the
 			* expression they are mapped to.
 			*/
-			Expression substitute(std::unordered_map<std::string, Expression> const& identifierToExpressionMap) const;
-            
-            /*!
-             * Substitutes all occurrences of identifiers with different names given by a mapping.
-             *
-             * @param identifierToIdentifierMap A mapping from identifiers to identifiers they are substituted with.
-             * @return An expression in which all identifiers in the key set of the mapping are replaced by the
-             * identifiers they are mapped to.
-             */
-			Expression substitute(std::map<std::string, std::string> const& identifierToIdentifierMap) const;
-
-			/*!
-			* Substitutes all occurrences of identifiers with different names given by a mapping.
-			*
-			* @param identifierToIdentifierMap A mapping from identifiers to identifiers they are substituted with.
-			* @return An expression in which all identifiers in the key set of the mapping are replaced by the
-			* identifiers they are mapped to.
-			*/
-			Expression substitute(std::unordered_map<std::string, std::string> const& identifierToIdentifierMap) const;
+			Expression substitute(std::unordered_map<Variable, Expression> const& variableToExpressionMap) const;
             
             /*!
              * Evaluates the expression under the valuation of variables given by the valuation and returns the
@@ -247,7 +229,7 @@ namespace storm {
              *
              * @return The type of the expression.
              */
-            Type getType() const;
+            Type const& getType() const;
             
             /*!
              * Retrieves whether the expression has a numerical return type, i.e., integer or double.

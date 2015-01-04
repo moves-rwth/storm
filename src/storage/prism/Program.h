@@ -28,6 +28,7 @@ namespace storm {
              * Creates a program with the given model type, undefined constants, global variables, modules, reward
              * models, labels and initial states.
              *
+             * @param manager The manager responsible for the variables and expressions of the program.
              * @param modelType The type of the program.
              * @param constants The constants of the program.
              * @param globalBooleanVariables The global boolean variables of the program.
@@ -45,7 +46,7 @@ namespace storm {
              * @param lineNumber The line number in which the program is defined.
              * @param checkValidity If set to true, the program is checked for validity.
              */
-            Program(ModelType modelType, std::vector<Constant> const& constants, std::vector<BooleanVariable> const& globalBooleanVariables, std::vector<IntegerVariable> const& globalIntegerVariables, std::vector<Formula> const& formulas, std::vector<Module> const& modules, std::vector<RewardModel> const& rewardModels, bool fixInitialConstruct, storm::prism::InitialConstruct const& initialConstruct, std::vector<Label> const& labels, std::string const& filename = "", uint_fast64_t lineNumber = 0, bool checkValidity = true);
+            Program(std::shared_ptr<storm::expressions::ExpressionManager> manager, ModelType modelType, std::vector<Constant> const& constants, std::vector<BooleanVariable> const& globalBooleanVariables, std::vector<IntegerVariable> const& globalIntegerVariables, std::vector<Formula> const& formulas, std::vector<Module> const& modules, std::vector<RewardModel> const& rewardModels, bool fixInitialConstruct, storm::prism::InitialConstruct const& initialConstruct, std::vector<Label> const& labels, std::string const& filename = "", uint_fast64_t lineNumber = 0, bool checkValidity = true);
             
             // Provide default implementations for constructors and assignments.
             Program() = default;
@@ -288,12 +289,12 @@ namespace storm {
             /*!
              * Defines the undefined constants according to the given map and returns the resulting program.
              *
-             * @param constantDefinitions A mapping from undefined constant names to the expressions they are supposed
+             * @param constantDefinitions A mapping from undefined constant to the expressions they are supposed
              * to be replaced with.
              * @return The program after all undefined constants in the given map have been replaced with their
              * definitions.
              */
-            Program defineUndefinedConstants(std::map<std::string, storm::expressions::Expression> const& constantDefinitions) const;
+            Program defineUndefinedConstants(std::map<storm::expressions::Variable, storm::expressions::Expression> const& constantDefinitions) const;
             
             /*!
              * Substitutes all constants appearing in the expressions of the program by their defining expressions. For
@@ -311,7 +312,24 @@ namespace storm {
             
             friend std::ostream& operator<<(std::ostream& stream, Program const& program);
             
+            /*!
+             * Retrieves the manager responsible for the expressions of this program.
+             *
+             * @return The manager responsible for the expressions of this program.
+             */
+            storm::expressions::ExpressionManager const& getManager() const;
+
+            /*!
+             * Retrieves the manager responsible for the expressions of this program.
+             *
+             * @return The manager responsible for the expressions of this program.
+             */
+            storm::expressions::ExpressionManager& getManager();
+            
         private:
+            // The manager responsible for the variables/expressions of the program.
+            std::shared_ptr<storm::expressions::ExpressionManager> manager;
+            
             // Creates the internal mappings.
             void createMappings();
             

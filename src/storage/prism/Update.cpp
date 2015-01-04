@@ -37,7 +37,7 @@ namespace storm {
             }
         }
         
-        Update Update::substitute(std::map<std::string, storm::expressions::Expression> const& substitution) const {
+        Update Update::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
             std::vector<Assignment> newAssignments;
             newAssignments.reserve(this->getNumberOfAssignments());
             for (auto const& assignment : this->getAssignments()) {
