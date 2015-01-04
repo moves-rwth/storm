@@ -10,26 +10,6 @@
 
 namespace storm {
     namespace expressions {
-        class Variable;
-    }
-}
-
-namespace std {
-    // Provide a hashing operator, so we can put variables in unordered collections.
-    template <>
-    struct hash<storm::expressions::Variable> {
-        std::size_t operator()(storm::expressions::Variable const& variable) const;
-    };
-    
-    // Provide a less operator, so we can put variables in ordered collections.
-    template <>
-    struct less<storm::expressions::Variable> {
-        std::size_t operator()(storm::expressions::Variable const& variable1, storm::expressions::Variable const& variable2) const;
-    };
-}
-
-namespace storm {
-    namespace expressions {
         class ExpressionManager;
         
         // This class captures a simple variable.
@@ -139,6 +119,24 @@ namespace storm {
             uint_fast64_t index;
         };
     }
+}
+
+namespace std {
+    // Provide a hashing operator, so we can put variables in unordered collections.
+    template <>
+    struct hash<storm::expressions::Variable> {
+        std::size_t operator()(storm::expressions::Variable const& variable) const {
+            return std::hash<uint_fast64_t>()(variable.getIndex());
+        }
+    };
+    
+    // Provide a less operator, so we can put variables in ordered collections.
+    template <>
+    struct less<storm::expressions::Variable> {
+        std::size_t operator()(storm::expressions::Variable const& variable1, storm::expressions::Variable const& variable2) const {
+            return variable1.getIndex() < variable2.getIndex();
+        }
+    };
 }
 
 #endif /* STORM_STORAGE_EXPRESSIONS_VARIABLE_H_ */

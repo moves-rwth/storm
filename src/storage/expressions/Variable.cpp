@@ -52,13 +52,3 @@ namespace storm {
         }
     }
 }
-
-namespace std {
-    std::size_t hash<storm::expressions::Variable>::operator()(storm::expressions::Variable const& variable) const {
-        return std::hash<uint_fast64_t>()(variable.getIndex());
-    }
-    
-    std::size_t less<storm::expressions::Variable>::operator()(storm::expressions::Variable const& variable1, storm::expressions::Variable const& variable2) const {
-        return variable1.getIndex() < variable2.getIndex();
-    }
-}
