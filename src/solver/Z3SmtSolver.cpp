@@ -201,7 +201,7 @@ namespace storm {
 
 #ifdef STORM_HAVE_Z3
 		storm::expressions::SimpleValuation Z3SmtSolver::convertZ3ModelToValuation(z3::model const& model) {
-			storm::expressions::SimpleValuation stormModel(this->getManager());
+			storm::expressions::SimpleValuation stormModel(this->getManager().getSharedPointer());
 
 			for (unsigned i = 0; i < model.num_consts(); ++i) {
 				z3::func_decl variableI = model.get_const_decl(i);
@@ -252,7 +252,7 @@ namespace storm {
 				z3::model model = this->solver->get_model();
 
 				z3::expr modelExpr = this->context->bool_val(true);
-				storm::expressions::SimpleValuation valuation(this->getManager());
+				storm::expressions::SimpleValuation valuation(this->getManager().getSharedPointer());
 
 				for (storm::expressions::Variable const& importantAtom : important) {
 					z3::expr z3ImportantAtom = this->expressionAdapter->translateExpression(importantAtom.getExpression());
@@ -294,7 +294,7 @@ namespace storm {
 				z3::model model = this->solver->get_model();
 
 				z3::expr modelExpr = this->context->bool_val(true);
-				storm::expressions::SimpleValuation valuation(this->getManager());
+				storm::expressions::SimpleValuation valuation(this->getManager().getSharedPointer());
 
 				for (storm::expressions::Variable const& importantAtom : important) {
 					z3::expr z3ImportantAtom = this->expressionAdapter->translateExpression(importantAtom.getExpression());

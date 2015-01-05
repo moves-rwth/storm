@@ -255,7 +255,7 @@ namespace storm {
                     STORM_LOG_THROW(constantDefinitions.find(constant.getExpressionVariable()) == constantDefinitions.end(), storm::exceptions::InvalidArgumentException, "Illegally defining already defined constant '" << constant.getName() << "'.");
                     
                     // Now replace the occurrences of undefined constants in its defining expression.
-                    newConstants.emplace_back(constant.getType(), constant.getName(), constant.getExpression().substitute(constantDefinitions), constant.getFilename(), constant.getLineNumber());
+                    newConstants.emplace_back(constant.getExpressionVariable(), constant.getExpression().substitute(constantDefinitions), constant.getFilename(), constant.getLineNumber());
                 } else {
                     auto const& variableExpressionPair = constantDefinitions.find(constant.getExpressionVariable());
                     
@@ -344,9 +344,6 @@ namespace storm {
         }
         
         void Program::checkValidity() const {
-            // We need to construct a mapping from identifiers to their types, so we can type-check the expressions later.
-            std::map<std::string, storm::expressions::ExpressionReturnType> identifierToTypeMap;
-            
             // Start by checking the constant declarations.
             std::set<std::string> allIdentifiers;
             std::set<std::string> globalIdentifiers;
@@ -361,9 +358,6 @@ namespace storm {
                     bool isValid = std::includes(constantNames.begin(), constantNames.end(), containedIdentifiers.begin(), containedIdentifiers.end());
                     STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << constant.getFilename() << ", line " << constant.getLineNumber() << ": defining expression refers to unknown identifiers.");
                 }
-                
-                // Finally, register the type of the constant for later type checks.
-                identifierToTypeMap.emplace(constant.getName(), constant.getType());
                 
                 // Record the new identifier for future checks.
                 constantNames.insert(constant.getName());
@@ -382,9 +376,6 @@ namespace storm {
                 bool isValid = std::includes(constantNames.begin(), constantNames.end(), containedIdentifiers.begin(), containedIdentifiers.end());
                 STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": initial value expression refers to unknown constants.");
 
-                // Register the type of the constant for later type checks.
-                identifierToTypeMap.emplace(variable.getName(), storm::expressions::ExpressionReturnType::Bool);
-                
                 // Record the new identifier for future checks.
                 variableNames.insert(variable.getName());
                 allIdentifiers.insert(variable.getName());
@@ -408,9 +399,6 @@ namespace storm {
                 isValid = std::includes(constantNames.begin(), constantNames.end(), containedIdentifiers.begin(), containedIdentifiers.end());
                 STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": initial value expression refers to unknown constants.");
                 
-                // Register the type of the constant for later type checks.
-                identifierToTypeMap.emplace(variable.getName(), storm::expressions::ExpressionReturnType::Int);
-
                 // Record the new identifier for future checks.
                 variableNames.insert(variable.getName());
                 allIdentifiers.insert(variable.getName());
@@ -428,9 +416,6 @@ namespace storm {
                     bool isValid = std::includes(constantNames.begin(), constantNames.end(), containedIdentifiers.begin(), containedIdentifiers.end());
                     STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": initial value expression refers to unknown constants.");
                     
-                    // Register the type of the constant for later type checks.
-                    identifierToTypeMap.emplace(variable.getName(), storm::expressions::ExpressionReturnType::Bool);
-                    
                     // Record the new identifier for future checks.
                     variableNames.insert(variable.getName());
                     allIdentifiers.insert(variable.getName());
@@ -438,9 +423,6 @@ namespace storm {
                 for (auto const& variable : module.getIntegerVariables()) {
                     // Check for duplicate identifiers.
                     STORM_LOG_THROW(allIdentifiers.find(variable.getName()) == allIdentifiers.end(), storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": duplicate identifier '" << variable.getName() << "'.");
-                    
-                    // Register the type of the constant for later type checks.
-                    identifierToTypeMap.emplace(variable.getName(), storm::expressions::ExpressionReturnType::Int);
                     
                     // Check that bound expressions of the range.
                     std::set<std::string> containedIdentifiers = variable.getLowerBoundExpression().getVariables();
@@ -500,8 +482,7 @@ namespace storm {
                                 }
                             }
                             STORM_LOG_THROW(alreadyAssignedIdentifiers.find(assignment.getVariableName()) == alreadyAssignedIdentifiers.end(), storm::exceptions::WrongFormatException, "Error in " << command.getFilename() << ", line " << command.getLineNumber() << ": duplicate assignment to variable '" << assignment.getVariableName() << "'.");
-                            auto variableTypePair = identifierToTypeMap.find(assignment.getVariableName());
-                            STORM_LOG_THROW(variableTypePair->second == assignment.getExpression().getReturnType(), storm::exceptions::WrongFormatException, "Error in " << command.getFilename() << ", line " << command.getLineNumber() << ": illegally assigning a value of type '" << assignment.getExpression().getReturnType() << "' to variable '" << variableTypePair->first << "' of type '" << variableTypePair->second << "'.");
+                            STORM_LOG_THROW(manager->getVariable(assignment.getVariableName()).getType() == assignment.getExpression().getType(), storm::exceptions::WrongFormatException, "Error in " << command.getFilename() << ", line " << command.getLineNumber() << ": illegally assigning a value of type '" << assignment.getExpression().getType() << "' to variable '" << assignment.getVariableName() << "' of type '" << manager->getVariable(assignment.getVariableName()).getType() << "'.");
                             
                             containedIdentifiers = assignment.getExpression().getVariables();
                             isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedIdentifiers.begin(), containedIdentifiers.end());
@@ -572,11 +553,11 @@ namespace storm {
         }
         
         storm::expressions::ExpressionManager const& Program::getManager() const {
-            return this->manager;
+            return *this->manager;
         }
 
         storm::expressions::ExpressionManager& Program::getManager() {
-            return this->manager;
+            return *this->manager;
         }
 
         std::ostream& operator<<(std::ostream& stream, Program const& program) {

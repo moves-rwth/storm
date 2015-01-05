@@ -303,10 +303,10 @@ namespace storm {
                 }
             }
             
-            std::set<std::string> unionOfMetaVariableNames;
-            std::set_union(this->getContainedMetaVariables().begin(), this->getContainedMetaVariables().end(), otherMatrix.getContainedMetaVariables().begin(), otherMatrix.getContainedMetaVariables().end(), std::inserter(unionOfMetaVariableNames, unionOfMetaVariableNames.begin()));
-            std::set<std::string> containedMetaVariableNames;
-            std::set_difference(unionOfMetaVariableNames.begin(), unionOfMetaVariableNames.end(), summationMetaVariables.begin(), summationMetaVariables.end(), std::inserter(containedMetaVariableNames, containedMetaVariableNames.begin()));
+            std::set<storm::expressions::Variable> unionOfMetaVariables;
+            std::set_union(this->getContainedMetaVariables().begin(), this->getContainedMetaVariables().end(), otherMatrix.getContainedMetaVariables().begin(), otherMatrix.getContainedMetaVariables().end(), std::inserter(unionOfMetaVariables, unionOfMetaVariables.begin()));
+            std::set<storm::expressions::Variable> containedMetaVariables;
+            std::set_difference(unionOfMetaVariables.begin(), unionOfMetaVariables.end(), summationMetaVariables.begin(), summationMetaVariables.end(), std::inserter(containedMetaVariables, containedMetaVariables.begin()));
             
             return Dd<DdType::CUDD>(this->getDdManager(), this->cuddAdd.MatrixMultiply(otherMatrix.getCuddAdd(), summationDdVariables), containedMetaVariables);
         }

@@ -40,6 +40,14 @@ namespace storm {
              * @return True iff the two variables are the same.
              */
             bool operator==(Variable const& other) const;
+
+            /*!
+             * Checks whether the variable appears earlier in the total ordering of variables.
+             *
+             * @param other The variable to compare with.
+             * @return True iff the first variable appears earlier than the given one.
+             */
+            bool operator<(Variable const& other) const;
             
             /*!
              * Retrieves the name of the variable.
@@ -127,14 +135,6 @@ namespace std {
     struct hash<storm::expressions::Variable> {
         std::size_t operator()(storm::expressions::Variable const& variable) const {
             return std::hash<uint_fast64_t>()(variable.getIndex());
-        }
-    };
-    
-    // Provide a less operator, so we can put variables in ordered collections.
-    template <>
-    struct less<storm::expressions::Variable> {
-        std::size_t operator()(storm::expressions::Variable const& variable1, storm::expressions::Variable const& variable2) const {
-            return variable1.getIndex() < variable2.getIndex();
         }
     };
 }

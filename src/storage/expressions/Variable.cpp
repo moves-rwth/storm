@@ -11,6 +11,10 @@ namespace storm {
             return manager == other.manager && index == other.index;
         }
         
+        bool Variable::operator<(Variable const& other) const {
+            return this->getIndex() < other.getIndex();
+        }
+        
         storm::expressions::Expression Variable::getExpression() const {
             return storm::expressions::Expression(*this);
         }

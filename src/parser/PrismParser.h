@@ -9,6 +9,7 @@
 #include "src/parser/SpiritParserDefinitions.h"
 #include "src/parser/ExpressionParser.h"
 #include "src/storage/prism/Program.h"
+#include "src/storage/expressions/ExpressionManager.h"
 #include "src/storage/expressions/Expression.h"
 #include "src/storage/expressions/Expressions.h"
 #include "src/utility/macros.h"
@@ -20,7 +21,7 @@ namespace storm {
         class GlobalProgramInformation {
         public:
             // Default construct the header information.
-			GlobalProgramInformation() : modelType(), constants(), formulas(), globalBooleanVariables(), globalIntegerVariables(), moduleToIndexMap(), modules(), rewardModels(), labels(),hasInitialConstruct(false), initialConstruct(storm::expressions::Expression::createFalse()), currentCommandIndex(0), currentUpdateIndex(0) {
+            GlobalProgramInformation() : modelType(), constants(), formulas(), globalBooleanVariables(), globalIntegerVariables(), moduleToIndexMap(), modules(), rewardModels(), labels(), hasInitialConstruct(false), initialConstruct(), currentCommandIndex(0), currentUpdateIndex(0) {
                 // Intentionally left empty.
             }
             
@@ -212,7 +213,8 @@ namespace storm {
             storm::parser::PrismParser::modelTypeStruct modelType_;
             qi::symbols<char, storm::expressions::Expression> identifiers_;
             
-            // Parser used for recognizing expressions.
+            // Parser and manager used for recognizing expressions.
+            std::shared_ptr<storm::expressions::ExpressionManager> manager;
             storm::parser::ExpressionParser expressionParser;
             
             // Helper methods used in the grammar.

@@ -189,12 +189,12 @@ namespace storm {
             Module restrictCommands(boost::container::flat_set<uint_fast64_t> const& indexSet) const;
             
             /*!
-             * Substitutes all identifiers in the module according to the given map.
+             * Substitutes all variables in the module according to the given map.
              *
              * @param substitution The substitution to perform.
              * @return The resulting module.
              */
-            Module substitute(std::map<std::string, storm::expressions::Expression> const& substitution) const;
+            Module substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const;
             
             friend std::ostream& operator<<(std::ostream& stream, Module const& module);
 

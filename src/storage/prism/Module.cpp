@@ -146,7 +146,7 @@ namespace storm {
             return Module(this->getName(), this->getBooleanVariables(), this->getIntegerVariables(), newCommands);
         }
         
-        Module Module::substitute(std::map<std::string, storm::expressions::Expression> const& substitution) const {
+        Module Module::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
             std::vector<BooleanVariable> newBooleanVariables;
             newBooleanVariables.reserve(this->getNumberOfBooleanVariables());
             for (auto const& booleanVariable : this->getBooleanVariables()) {
