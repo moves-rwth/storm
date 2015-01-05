@@ -5,6 +5,7 @@
 
 #include "src/parser/SpiritParserDefinitions.h"
 #include "src/storage/expressions/Expression.h"
+#include "src/storage/expressions/ExpressionManager.h"
 #include "src/utility/macros.h"
 #include "src/exceptions/WrongFormatException.h"
 

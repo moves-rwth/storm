@@ -242,6 +242,15 @@ namespace storm {
                 return modelSense;
             }
             
+            /*!
+             * Retrieves the manager for the variables created for this solver.
+             *
+             * @return The manager for the variables created for this solver.
+             */
+            storm::expressions::ExpressionManager const& getManager() const {
+                return *manager;
+            }
+            
         protected:
             // The manager responsible for the variables.
             std::shared_ptr<storm::expressions::ExpressionManager> manager;

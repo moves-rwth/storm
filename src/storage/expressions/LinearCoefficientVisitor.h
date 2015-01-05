@@ -29,6 +29,7 @@ namespace storm {
                 void negate();
                 void setCoefficient(storm::expressions::Variable const& variable, double coefficient);
                 double getCoefficient(storm::expressions::Variable const& variable);
+                double getConstantPart() const;
                 
                 /*!
                  * Brings all variables of the right-hand side coefficients to the left-hand side by negating them and

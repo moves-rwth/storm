@@ -225,6 +225,13 @@ namespace storm {
             std::shared_ptr<BaseExpression const> const& getBaseExpressionPointer() const;
 
             /*!
+             * Retrieves the manager responsible for this expression.
+             *
+             * @return The manager responsible for this expression.
+             */
+            ExpressionManager const& getManager() const;
+            
+            /*!
              * Retrieves the type of the expression.
              *
              * @return The type of the expression.

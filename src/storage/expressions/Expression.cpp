@@ -109,6 +109,10 @@ namespace storm {
             return this->expressionPtr;
         }
         
+        ExpressionManager const& Expression::getManager() const {
+            return *this->manager;
+        }
+        
         Type const& Expression::getType() const {
             return this->getBaseExpression().getType();
         }

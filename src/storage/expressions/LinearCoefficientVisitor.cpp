@@ -63,6 +63,10 @@ namespace storm {
             return variableToCoefficientMapping[variable];
         }
         
+        double LinearCoefficientVisitor::VariableCoefficients::getConstantPart() const {
+            return this->constantPart;
+        }
+        
         void LinearCoefficientVisitor::VariableCoefficients::separateVariablesFromConstantPart(VariableCoefficients& rhs) {
             for (auto const& rhsVariableCoefficientPair : rhs.variableToCoefficientMapping) {
                 this->variableToCoefficientMapping[rhsVariableCoefficientPair.first] -= rhsVariableCoefficientPair.second;
