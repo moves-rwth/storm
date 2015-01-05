@@ -19,15 +19,16 @@ namespace storm {
             
             /*!
              * Creates a new valuation over the non-auxiliary variables of the given manager.
-             */
-            SimpleValuation(storm::expressions::ExpressionManager const& manager);
-            
-            /*!
-             * Deep-copies the valuation.
              *
-             * @param other The valuation to copy
+             * @param manager The manager responsible for the variables of this valuation.
              */
+            SimpleValuation(std::shared_ptr<storm::expressions::ExpressionManager const> const& manager);
+            
+            // Define deep-copy and move operators.
             SimpleValuation(SimpleValuation const& other);
+            SimpleValuation& operator=(SimpleValuation const& other);
+            SimpleValuation(SimpleValuation&& other);
+            SimpleValuation& operator=(SimpleValuation&& other);
 
             /*!
              * Checks whether the two valuations are semantically equivalent.

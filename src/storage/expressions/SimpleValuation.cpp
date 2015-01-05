@@ -7,19 +7,19 @@
 
 namespace storm {
     namespace expressions {
-        SimpleValuation::SimpleValuation(ExpressionManager const& manager) : Valuation(manager), booleanValues(nullptr), integerValues(nullptr), rationalValues(nullptr) {
-            if (manager.getNumberOfBooleanVariables() > 0) {
-                booleanValues = std::unique_ptr<std::vector<bool>>(new std::vector<bool>(manager.getNumberOfBooleanVariables()));
+        SimpleValuation::SimpleValuation(std::shared_ptr<storm::expressions::ExpressionManager const> const& manager) : Valuation(manager), booleanValues(nullptr), integerValues(nullptr), rationalValues(nullptr) {
+            if (this->getManager().getNumberOfBooleanVariables() > 0) {
+                booleanValues = std::unique_ptr<std::vector<bool>>(new std::vector<bool>(this->getManager().getNumberOfBooleanVariables()));
             }
-            if (manager.getNumberOfIntegerVariables() > 0) {
-                integerValues = std::unique_ptr<std::vector<int_fast64_t>>(new std::vector<int_fast64_t>(manager.getNumberOfIntegerVariables()));
+            if (this->getManager().getNumberOfIntegerVariables() > 0) {
+                integerValues = std::unique_ptr<std::vector<int_fast64_t>>(new std::vector<int_fast64_t>(this->getManager().getNumberOfIntegerVariables()));
             }
-            if (manager.getNumberOfRationalVariables() > 0) {
-                rationalValues = std::unique_ptr<std::vector<double>>(new std::vector<double>(manager.getNumberOfRationalVariables()));
+            if (this->getManager().getNumberOfRationalVariables() > 0) {
+                rationalValues = std::unique_ptr<std::vector<double>>(new std::vector<double>(this->getManager().getNumberOfRationalVariables()));
             }
         }
         
-        SimpleValuation::SimpleValuation(SimpleValuation const& other) : Valuation(other.getManager()) {
+        SimpleValuation::SimpleValuation(SimpleValuation const& other) : Valuation(other.getManager().getSharedPointer()) {
             if (other.booleanValues != nullptr) {
                 booleanValues = std::unique_ptr<std::vector<bool>>(new std::vector<bool>(*other.booleanValues));
             }
@@ -29,6 +29,40 @@ namespace storm {
             if (other.booleanValues != nullptr) {
                 rationalValues = std::unique_ptr<std::vector<double>>(new std::vector<double>(*other.rationalValues));
             }
+        }
+                
+        SimpleValuation& SimpleValuation::operator=(SimpleValuation const& other) {
+            if (this != &other) {
+                this->setManager(other.getManager().getSharedPointer());
+                if (other.booleanValues != nullptr) {
+                    booleanValues = std::unique_ptr<std::vector<bool>>(new std::vector<bool>(*other.booleanValues));
+                }
+                if (other.integerValues != nullptr) {
+                    integerValues = std::unique_ptr<std::vector<int_fast64_t>>(new std::vector<int_fast64_t>(*other.integerValues));
+                }
+                if (other.booleanValues != nullptr) {
+                    rationalValues = std::unique_ptr<std::vector<double>>(new std::vector<double>(*other.rationalValues));
+                }
+            }
+            return *this;
+        }
+        
+        SimpleValuation::SimpleValuation(SimpleValuation&& other) : Valuation(other.getManager().getSharedPointer()) {
+            if (this != &other) {
+                booleanValues = std::move(other.booleanValues);
+                integerValues = std::move(other.integerValues);
+                rationalValues = std::move(other.rationalValues);
+            }
+        }
+        
+        SimpleValuation& SimpleValuation::operator=(SimpleValuation&& other) {
+            if (this != &other) {
+                this->setManager(other.getManager().getSharedPointer());
+                booleanValues = std::move(other.booleanValues);
+                integerValues = std::move(other.integerValues);
+                rationalValues = std::move(other.rationalValues);
+            }
+            return *this;
         }
         
         bool SimpleValuation::operator==(SimpleValuation const& other) const {

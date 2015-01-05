@@ -13,7 +13,7 @@
 
 namespace storm {
     namespace solver {
-        GlpkLpSolver::GlpkLpSolver(std::string const& name, ModelSense const& modelSense) : LpSolver(modelSense), lp(nullptr), variableNameToIndexMap(), nextVariableIndex(1), nextConstraintIndex(1), modelContainsIntegerVariables(false), isInfeasibleFlag(false), isUnboundedFlag(false), rowIndices(), columnIndices(), coefficientValues() {
+        GlpkLpSolver::GlpkLpSolver(std::string const& name, ModelSense const& modelSense) : LpSolver(modelSense), lp(nullptr), variableToIndexMap(), nextVariableIndex(1), nextConstraintIndex(1), modelContainsIntegerVariables(false), isInfeasibleFlag(false), isUnboundedFlag(false), rowIndices(), columnIndices(), coefficientValues() {
             // Create the LP problem for glpk.
             lp = glp_create_prob();
             
@@ -47,51 +47,60 @@ namespace storm {
             glp_free_env();
         }
         
-        void GlpkLpSolver::addBoundedContinuousVariable(std::string const& name, double lowerBound, double upperBound, double objectiveFunctionCoefficient) {
-            this->addVariable(name, GLP_CV, GLP_DB, lowerBound, upperBound, objectiveFunctionCoefficient);
+        storm::expressions::Variable GlpkLpSolver::addBoundedContinuousVariable(std::string const& name, double lowerBound, double upperBound, double objectiveFunctionCoefficient) {
+            storm::expressions::Variable newVariable = manager->declareVariable(name, manager->getRationalType());
+            this->addVariable(newVariable, GLP_CV, GLP_DB, lowerBound, upperBound, objectiveFunctionCoefficient);
+            return newVariable;
         }
         
-        void GlpkLpSolver::addLowerBoundedContinuousVariable(std::string const& name, double lowerBound, double objectiveFunctionCoefficient) {
-            this->addVariable(name, GLP_CV, GLP_LO, lowerBound, 0, objectiveFunctionCoefficient);
+        storm::expressions::Variable GlpkLpSolver::addLowerBoundedContinuousVariable(std::string const& name, double lowerBound, double objectiveFunctionCoefficient) {
+            storm::expressions::Variable newVariable = manager->declareVariable(name, manager->getRationalType());
+            this->addVariable(newVariable, GLP_CV, GLP_LO, lowerBound, 0, objectiveFunctionCoefficient);
+            return newVariable;
         }
         
-        void GlpkLpSolver::addUpperBoundedContinuousVariable(std::string const& name, double upperBound, double objectiveFunctionCoefficient) {
-            this->addVariable(name, GLP_CV, GLP_UP, 0, upperBound, objectiveFunctionCoefficient);
+        storm::expressions::Variable GlpkLpSolver::addUpperBoundedContinuousVariable(std::string const& name, double upperBound, double objectiveFunctionCoefficient) {
+            storm::expressions::Variable newVariable = manager->declareVariable(name, manager->getRationalType());
+            this->addVariable(newVariable, GLP_CV, GLP_UP, 0, upperBound, objectiveFunctionCoefficient);
+            return newVariable;
         }
         
-        void GlpkLpSolver::addUnboundedContinuousVariable(std::string const& name, double objectiveFunctionCoefficient) {
-            this->addVariable(name, GLP_CV, GLP_FR, 0, 0, objectiveFunctionCoefficient);
+        storm::expressions::Variable GlpkLpSolver::addUnboundedContinuousVariable(std::string const& name, double objectiveFunctionCoefficient) {
+            storm::expressions::Variable newVariable = manager->declareVariable(name, manager->getRationalType());
+            this->addVariable(newVariable, GLP_CV, GLP_FR, 0, 0, objectiveFunctionCoefficient);
+            return newVariable;
         }
         
-        void GlpkLpSolver::addBoundedIntegerVariable(std::string const& name, double lowerBound, double upperBound, double objectiveFunctionCoefficient) {
+        storm::expressions::Variable GlpkLpSolver::addBoundedIntegerVariable(std::string const& name, double lowerBound, double upperBound, double objectiveFunctionCoefficient) {
             this->addVariable(name, GLP_IV, GLP_DB, lowerBound, upperBound, objectiveFunctionCoefficient);
             this->modelContainsIntegerVariables = true;
+            return newVariable;
         }
         
-        void GlpkLpSolver::addLowerBoundedIntegerVariable(std::string const& name, double lowerBound, double objectiveFunctionCoefficient) {
+        storm::expressions::Variable GlpkLpSolver::addLowerBoundedIntegerVariable(std::string const& name, double lowerBound, double objectiveFunctionCoefficient) {
             this->addVariable(name, GLP_IV, GLP_LO, lowerBound, 0, objectiveFunctionCoefficient);
             this->modelContainsIntegerVariables = true;
         }
 
-        void GlpkLpSolver::addUpperBoundedIntegerVariable(std::string const& name, double upperBound, double objectiveFunctionCoefficient) {
+        storm::expressions::Variable GlpkLpSolver::addUpperBoundedIntegerVariable(std::string const& name, double upperBound, double objectiveFunctionCoefficient) {
             this->addVariable(name, GLP_IV, GLP_UP, 0, upperBound, objectiveFunctionCoefficient);
             this->modelContainsIntegerVariables = true;
         }
         
-        void GlpkLpSolver::addUnboundedIntegerVariable(std::string const& name, double objectiveFunctionCoefficient) {
+        storm::expressions::Variable GlpkLpSolver::addUnboundedIntegerVariable(std::string const& name, double objectiveFunctionCoefficient) {
             this->addVariable(name, GLP_IV, GLP_FR, 0, 0, objectiveFunctionCoefficient);
             this->modelContainsIntegerVariables = true;
         }
         
-        void GlpkLpSolver::addBinaryVariable(std::string const& name, double objectiveFunctionCoefficient) {
+        storm::expressions::Variable GlpkLpSolver::addBinaryVariable(std::string const& name, double objectiveFunctionCoefficient) {
             this->addVariable(name, GLP_BV, GLP_FR, 0, 0, objectiveFunctionCoefficient);
             this->modelContainsIntegerVariables = true;
         }
         
-        void GlpkLpSolver::addVariable(std::string const& name, int variableType, int boundType, double lowerBound, double upperBound, double objectiveFunctionCoefficient) {
+        void GlpkLpSolver::addVariable(storm::expressions::Variable const& variable, int variableType, int boundType, double lowerBound, double upperBound, double objectiveFunctionCoefficient) {
             // Check whether variable already exists.
-            auto nameIndexPair = this->variableNameToIndexMap.find(name);
-            STORM_LOG_THROW(nameIndexPair == this->variableNameToIndexMap.end(), storm::exceptions::InvalidArgumentException, "Variable '" << nameIndexPair->first << "' already exists.");
+            auto nameIndexPair = this->variableToIndexMap.find(name);
+            STORM_LOG_THROW(nameIndexPair == this->variableToIndexMap.end(), storm::exceptions::InvalidArgumentException, "Variable '" << nameIndexPair->first << "' already exists.");
             
             // Check for valid variable type.
             STORM_LOG_ASSERT(variableType == GLP_CV || variableType == GLP_IV || variableType == GLP_BV, "Illegal type '" << variableType << "' for glpk variable.");
@@ -105,7 +114,7 @@ namespace storm {
             glp_set_col_bnds(lp, nextVariableIndex, boundType, lowerBound, upperBound);
             glp_set_col_kind(this->lp, nextVariableIndex, variableType);
             glp_set_obj_coef(this->lp, nextVariableIndex, objectiveFunctionCoefficient);
-            this->variableNameToIndexMap.emplace(name, this->nextVariableIndex);
+            this->variableToIndexMap.emplace(name, this->nextVariableIndex);
             ++this->nextVariableIndex;
         }
         
@@ -121,23 +130,16 @@ namespace storm {
             STORM_LOG_THROW(constraint.isRelationalExpression(), storm::exceptions::InvalidArgumentException, "Illegal constraint is not a relational expression.");
             STORM_LOG_THROW(constraint.getOperator() != storm::expressions::OperatorType::NotEqual, storm::exceptions::InvalidArgumentException, "Illegal constraint uses inequality operator.");
             
-            std::pair<storm::expressions::SimpleValuation, double> leftCoefficients = storm::expressions::LinearCoefficientVisitor().getLinearCoefficients(constraint.getOperand(0));
-            std::pair<storm::expressions::SimpleValuation, double> rightCoefficients = storm::expressions::LinearCoefficientVisitor().getLinearCoefficients(constraint.getOperand(1));
-            for (auto const& identifier : rightCoefficients.first.getDoubleIdentifiers()) {
-                if (leftCoefficients.first.containsDoubleIdentifier(identifier)) {
-                    leftCoefficients.first.setDoubleValue(identifier, leftCoefficients.first.getDoubleValue(identifier) - rightCoefficients.first.getDoubleValue(identifier));
-                } else {
-                    leftCoefficients.first.addDoubleIdentifier(identifier, -rightCoefficients.first.getDoubleValue(identifier));
-                }
-            }
-            rightCoefficients.second -= leftCoefficients.second;
+            storm::expressions::LinearCoefficientVisitor::VariableCoefficients leftCoefficients = storm::expressions::LinearCoefficientVisitor().getLinearCoefficients(constraint.getOperand(0));
+            storm::expressions::LinearCoefficientVisitor::VariableCoefficients rightCoefficients = storm::expressions::LinearCoefficientVisitor().getLinearCoefficients(constraint.getOperand(1));
+            leftCoefficients.separateVariablesFromConstantPart(rightCoefficients);
             
             // Now we need to transform the coefficients to the vector representation.
             std::vector<int> variables;
             std::vector<double> coefficients;
-            for (auto const& identifier : leftCoefficients.first.getDoubleIdentifiers()) {
-                auto identifierIndexPair = this->variableNameToIndexMap.find(identifier);
-                STORM_LOG_THROW(identifierIndexPair != this->variableNameToIndexMap.end(), storm::exceptions::InvalidArgumentException, "Constraint contains illegal identifier '" << identifier << "'.");
+            for (auto const& variableCoefficientPair : leftCoefficients) {
+                auto variableIndexPair = this->variableToIndexMap.find(variableCoefficientPair.first);
+                STORM_LOG_THROW(identifierIndexPair != this->variableToIndexMap.end(), storm::exceptions::InvalidArgumentException, "Constraint contains illegal identifier '" << identifier << "'.");
                 variables.push_back(identifierIndexPair->second);
                 coefficients.push_back(leftCoefficients.first.getDoubleValue(identifier));
             }
@@ -255,8 +257,8 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidAccessException, "Unable to get glpk solution from unoptimized model.");
             }
             
-            auto variableIndexPair = this->variableNameToIndexMap.find(name);
-            STORM_LOG_THROW(variableIndexPair != this->variableNameToIndexMap.end(), storm::exceptions::InvalidAccessException, "Accessing value of unknown variable '" << name << "'.");
+            auto variableIndexPair = this->variableToIndexMap.find(name);
+            STORM_LOG_THROW(variableIndexPair != this->variableToIndexMap.end(), storm::exceptions::InvalidAccessException, "Accessing value of unknown variable '" << name << "'.");
             
             double value = 0;
             if (this->modelContainsIntegerVariables) {
@@ -274,8 +276,8 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidAccessException, "Unable to get glpk solution from unoptimized model.");
             }
            
-            auto variableIndexPair = this->variableNameToIndexMap.find(name);
-            STORM_LOG_THROW(variableIndexPair != this->variableNameToIndexMap.end(), storm::exceptions::InvalidAccessException, "Accessing value of unknown variable '" << name << "'.");
+            auto variableIndexPair = this->variableToIndexMap.find(name);
+            STORM_LOG_THROW(variableIndexPair != this->variableToIndexMap.end(), storm::exceptions::InvalidAccessException, "Accessing value of unknown variable '" << name << "'.");
 
             double value = 0;
             if (this->modelContainsIntegerVariables) {
@@ -297,8 +299,8 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidAccessException, "Unable to get glpk solution from unoptimized model.");
             }
 
-            auto variableIndexPair = this->variableNameToIndexMap.find(name);
-            STORM_LOG_THROW(variableIndexPair != this->variableNameToIndexMap.end(), storm::exceptions::InvalidAccessException, "Accessing value of unknown variable '" << name << "'.");
+            auto variableIndexPair = this->variableToIndexMap.find(name);
+            STORM_LOG_THROW(variableIndexPair != this->variableToIndexMap.end(), storm::exceptions::InvalidAccessException, "Accessing value of unknown variable '" << name << "'.");
             
             double value = 0;
             if (this->modelContainsIntegerVariables) {

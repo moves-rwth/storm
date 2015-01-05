@@ -240,7 +240,7 @@ namespace storm {
 
 #ifdef STORM_HAVE_MSAT
 		storm::expressions::SimpleValuation MathsatSmtSolver::convertMathsatModelToValuation() {
-			storm::expressions::SimpleValuation stormModel(this->getManager());
+			storm::expressions::SimpleValuation stormModel(this->getManager().getSharedPointer());
 
 			msat_model_iterator modelIterator = msat_create_model_iterator(env);
             STORM_LOG_THROW(!MSAT_ERROR_MODEL_ITERATOR(modelIterator), storm::exceptions::UnexpectedException, "MathSat returned an illegal model iterator.");
@@ -289,7 +289,7 @@ namespace storm {
             static int allsatValuationsCallback(msat_term* model, int size, void* user_data) {
                 AllsatValuationCallbackUserData* user = reinterpret_cast<AllsatValuationCallbackUserData*>(user_data);
                 
-                storm::expressions::SimpleValuation valuation(user->manager);
+                storm::expressions::SimpleValuation valuation(user->manager.getSharedPointer());
                 for (int i = 0; i < size; ++i) {
                     bool currentTermValue = true;
                     msat_term currentTerm = model[i];

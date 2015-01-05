@@ -10,6 +10,7 @@
 #include "src/storage/dd/CuddDdForwardIterator.h"
 #include "src/storage/SparseMatrix.h"
 #include "src/storage/expressions/Expression.h"
+#include "src/storage/expressions/Variable.h"
 #include "src/utility/OsDetection.h"
 
 // Include the C++-interface of CUDD.
@@ -233,37 +234,37 @@ namespace storm {
             /*!
              * Existentially abstracts from the given meta variables.
              *
-             * @param metaVariableNames The names of all meta variables from which to abstract.
+             * @param metaVariables The meta variables from which to abstract.
              */
-            Dd<DdType::CUDD> existsAbstract(std::set<std::string> const& metaVariableNames) const;
+            Dd<DdType::CUDD> existsAbstract(std::set<storm::expressions::Variable> const& metaVariables) const;
             
             /*!
              * Universally abstracts from the given meta variables.
              *
-             * @param metaVariableNames The names of all meta variables from which to abstract.
+             * @param metaVariables The meta variables from which to abstract.
              */
-            Dd<DdType::CUDD> universalAbstract(std::set<std::string> const& metaVariableNames) const;
+            Dd<DdType::CUDD> universalAbstract(std::set<storm::expressions::Variable> const& metaVariables) const;
             
             /*!
              * Sum-abstracts from the given meta variables.
              *
-             * @param metaVariableNames The names of all meta variables from which to abstract.
+             * @param metaVariables The meta variables from which to abstract.
              */
-            Dd<DdType::CUDD> sumAbstract(std::set<std::string> const& metaVariableNames) const;
+            Dd<DdType::CUDD> sumAbstract(std::set<storm::expressions::Variable> const& metaVariables) const;
             
             /*!
              * Min-abstracts from the given meta variables.
              *
-             * @param metaVariableNames The names of all meta variables from which to abstract.
+             * @param metaVariables The meta variables from which to abstract.
              */
-            Dd<DdType::CUDD> minAbstract(std::set<std::string> const& metaVariableNames) const;
+            Dd<DdType::CUDD> minAbstract(std::set<storm::expressions::Variable> const& metaVariables) const;
             
             /*!
              * Max-abstracts from the given meta variables.
              *
-             * @param metaVariableNames The names of all meta variables from which to abstract.
+             * @param metaVariables The meta variables from which to abstract.
              */
-            Dd<DdType::CUDD> maxAbstract(std::set<std::string> const& metaVariableNames) const;
+            Dd<DdType::CUDD> maxAbstract(std::set<storm::expressions::Variable> const& metaVariables) const;
             
             /*!
              * Checks whether the current and the given DD represent the same function modulo some given precision.
@@ -282,18 +283,18 @@ namespace storm {
              *
              * @param metaVariablePairs A vector of meta variable pairs that are to be swapped for one another.
              */
-            void swapVariables(std::vector<std::pair<std::string, std::string>> const& metaVariablePairs);
+            void swapVariables(std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& metaVariablePairs);
             
             /*!
              * Multiplies the current DD (representing a matrix) with the given matrix by summing over the given meta
              * variables.
              *
              * @param otherMatrix The matrix with which to multiply.
-             * @param summationMetaVariableNames The names of the meta variables over which to sum during the matrix-
+             * @param summationMetaVariables The names of the meta variables over which to sum during the matrix-
              * matrix multiplication.
              * @return A DD representing the result of the matrix-matrix multiplication.
              */
-            Dd<DdType::CUDD> multiplyMatrix(Dd<DdType::CUDD> const& otherMatrix, std::set<std::string> const& summationMetaVariableNames) const;
+            Dd<DdType::CUDD> multiplyMatrix(Dd<DdType::CUDD> const& otherMatrix, std::set<storm::expressions::Variable> const& summationMetaVariables) const;
             
             /*!
              * Computes a DD that represents the function in which all assignments with a function value strictly larger
@@ -387,47 +388,47 @@ namespace storm {
              * Sets the function values of all encodings that have the given value of the meta variable to the given
              * target value.
              *
-             * @param metaVariableName The name of the meta variable that has to be equal to the given value.
+             * @param metaVariable The meta variable that has to be equal to the given value.
              * @param variableValue The value that the meta variable is supposed to have. This must be within the range
              * of the meta variable.
              * @param targetValue The new function value of the modified encodings.
              */
-            void setValue(std::string const& metaVariableName, int_fast64_t variableValue, double targetValue);
+            void setValue(storm::expressions::Variable const& metaVariable, int_fast64_t variableValue, double targetValue);
             
             /*!
              * Sets the function values of all encodings that have the given values of the two meta variables to the
              * given target value.
              *
-             * @param metaVariableName1 The name of the first meta variable that has to be equal to the first given
+             * @param metaVariable1 The first meta variable that has to be equal to the first given
              * value.
              * @param variableValue1 The value that the first meta variable is supposed to have. This must be within the
              * range of the meta variable.
-             * @param metaVariableName2 The name of the first meta variable that has to be equal to the second given
+             * @param metaVariable2 The second meta variable that has to be equal to the second given
              * value.
              * @param variableValue2 The value that the second meta variable is supposed to have. This must be within
              * the range of the meta variable.
              * @param targetValue The new function value of the modified encodings.
              */
-            void setValue(std::string const& metaVariableName1, int_fast64_t variableValue1, std::string const& metaVariableName2, int_fast64_t variableValue2, double targetValue);
+            void setValue(storm::expressions::Variable const& metaVariable1, int_fast64_t variableValue1, storm::expressions::Variable const& metaVariable2, int_fast64_t variableValue2, double targetValue);
             
             /*!
              * Sets the function values of all encodings that have the given values of the given meta variables to the
              * given target value.
              *
-             * @param metaVariableNameToValueMap A mapping of meta variable names to the values they are supposed to
-             * have. All values must be within the range of the respective meta variable.
+             * @param metaVariableToValueMap A mapping of meta variables to the values they are supposed to have. All
+             * values must be within the range of the respective meta variable.
              * @param targetValue The new function value of the modified encodings.
              */
-            void setValue(std::map<std::string, int_fast64_t> const& metaVariableNameToValueMap = std::map<std::string, int_fast64_t>(), double targetValue = 0);
+            void setValue(std::map<storm::expressions::Variable, int_fast64_t> const& metaVariableToValueMap = std::map<storm::expressions::Variable, int_fast64_t>(), double targetValue = 0);
             
             /*!
              * Retrieves the value of the function when all meta variables are assigned the values of the given mapping.
              * Note that the mapping must specify values for all meta variables contained in the DD.
              *
-             * @param metaVariableNameToValueMap A mapping of meta variable names to their values.
+             * @param metaVariableToValueMap A mapping of meta variables to their values.
              * @return The value of the function evaluated with the given input.
              */
-            double getValue(std::map<std::string, int_fast64_t> const& metaVariableNameToValueMap = std::map<std::string, int_fast64_t>()) const;
+            double getValue(std::map<storm::expressions::Variable, int_fast64_t> const& metaVariableToValueMap = std::map<storm::expressions::Variable, int_fast64_t>()) const;
             
             /*!
              * Retrieves whether this DD represents the constant one function.
@@ -504,7 +505,7 @@ namespace storm {
              * @param columnOdd The ODD used for determining the correct column.
              * @return The matrix that is represented by this DD.
              */
-            storm::storage::SparseMatrix<double> toMatrix(std::set<std::string> const& rowMetaVariables, std::set<std::string> const& columnMetaVariables, storm::dd::Odd<DdType::CUDD> const& rowOdd, storm::dd::Odd<DdType::CUDD> const& columnOdd) const;
+            storm::storage::SparseMatrix<double> toMatrix(std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, storm::dd::Odd<DdType::CUDD> const& rowOdd, storm::dd::Odd<DdType::CUDD> const& columnOdd) const;
             
             /*!
              * Converts the DD to a row-grouped (sparse) double matrix. The given offset-labeled DDs are used to
@@ -518,37 +519,37 @@ namespace storm {
              * @param columnOdd The ODD used for determining the correct column.
              * @return The matrix that is represented by this DD.
              */
-            storm::storage::SparseMatrix<double> toMatrix(std::set<std::string> const& rowMetaVariables, std::set<std::string> const& columnMetaVariables, std::set<std::string> const& groupMetaVariables, storm::dd::Odd<DdType::CUDD> const& rowOdd, storm::dd::Odd<DdType::CUDD> const& columnOdd) const;
+            storm::storage::SparseMatrix<double> toMatrix(std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd<DdType::CUDD> const& rowOdd, storm::dd::Odd<DdType::CUDD> const& columnOdd) const;
             
             /*!
              * Retrieves whether the given meta variable is contained in the DD.
              *
-             * @param metaVariableName The name of the meta variable for which to query membership.
+             * @param metaVariable The meta variable for which to query membership.
              * @return True iff the meta variable is contained in the DD.
              */
-            bool containsMetaVariable(std::string const& metaVariableName) const;
+            bool containsMetaVariable(storm::expressions::Variable const& metaVariable) const;
             
             /*!
              * Retrieves whether the given meta variables are all contained in the DD.
              *
-             * @param metaVariableNames The names of the meta variable for which to query membership.
+             * @param metaVariables The meta variables for which to query membership.
              * @return True iff all meta variables are contained in the DD.
              */
-            bool containsMetaVariables(std::set<std::string> metaVariableNames) const;
+            bool containsMetaVariables(std::set<storm::expressions::Variable> const& metaVariables) const;
             
             /*!
-             * Retrieves the set of all names of meta variables contained in the DD.
+             * Retrieves the set of all meta variables contained in the DD.
              *
-             * @return The set of names of all meta variables contained in the DD.
+             * @return The set of all meta variables contained in the DD.
              */
-            std::set<std::string> const& getContainedMetaVariableNames() const;
+            std::set<storm::expressions::Variable> const& getContainedMetaVariables() const;
             
             /*!
-             * Retrieves the set of all names of meta variables contained in the DD.
+             * Retrieves the set of all meta variables contained in the DD.
              *
-             * @return The set of names of all meta variables contained in the DD.
+             * @return The set of all meta variables contained in the DD.
              */
-            std::set<std::string>& getContainedMetaVariableNames();
+            std::set<storm::expressions::Variable>& getContainedMetaVariables();
             
             /*!
              * Exports the DD to the given file in the dot format.
@@ -619,46 +620,46 @@ namespace storm {
             ADD const& getCuddAdd() const;
             
             /*!
-             * Adds the given meta variable name to the set of meta variables that are contained in this DD.
+             * Adds the given meta variable to the set of meta variables that are contained in this DD.
              *
-             * @param metaVariableName The name of the meta variable to add.
+             * @param metaVariable The name of the meta variable to add.
              */
-            void addContainedMetaVariable(std::string const& metaVariableName);
+            void addContainedMetaVariable(storm::expressions::Variable const& metaVariable);
             
             /*!
-             * Removes the given meta variable name to the set of meta variables that are contained in this DD.
+             * Removes the given meta variable to the set of meta variables that are contained in this DD.
              *
-             * @param metaVariableName The name of the meta variable to remove.
+             * @param metaVariable The name of the meta variable to remove.
              */
-            void removeContainedMetaVariable(std::string const& metaVariableName);
+            void removeContainedMetaVariable(storm::expressions::Variable const& metaVariable);
             
             /*!
              * Performs the recursive step of toExpression on the given DD.
              *
              * @param dd The dd to translate into an expression.
-             * @param variableNames The names of the variables to use in the expression.
+             * @param variables The variables to use in the expression.
              * @return The resulting expression.
              */
-            static storm::expressions::Expression toExpressionRecur(DdNode const* dd, std::vector<std::string> const& variableNames);
+            static storm::expressions::Expression toExpressionRecur(DdNode const* dd, std::vector<storm::expressions::Variable> const& variables);
             
             /*!
              * Performs the recursive step of getMintermExpression on the given DD.
              *
              * @param manager The manager of the DD.
              * @param dd The dd whose minterms to translate into an expression.
-             * @param variableNames The names of the variables to use in the expression.
+             * @param variables The variables to use in the expression.
              * @return The resulting expression.
              */
-            static storm::expressions::Expression getMintermExpressionRecur(::DdManager* manager, DdNode const* dd, std::vector<std::string> const& variableNames);
+            static storm::expressions::Expression getMintermExpressionRecur(::DdManager* manager, DdNode const* dd, std::vector<storm::expressions::Variable> const& variables);
             
             /*!
              * Creates a DD that encapsulates the given CUDD ADD.
              *
              * @param ddManager The manager responsible for this DD.
              * @param cuddAdd The CUDD ADD to store.
-             * @param containedMetaVariableNames The names of the meta variables that appear in the DD.
+             * @param containedMetaVariables The meta variables that appear in the DD.
              */
-            Dd(std::shared_ptr<DdManager<DdType::CUDD>> ddManager, ADD cuddAdd, std::set<std::string> const& containedMetaVariableNames = std::set<std::string>());
+            Dd(std::shared_ptr<DdManager<DdType::CUDD>> ddManager, ADD cuddAdd, std::set<storm::expressions::Variable> const& containedMetaVariables = std::set<storm::expressions::Variable>());
             
             /*!
              * Helper function to convert the DD into a (sparse) matrix.
@@ -697,7 +698,7 @@ namespace storm {
              * @param maxLevel The number of levels that need to be considered.
              * @param remainingMetaVariables The meta variables that remain in the DDs after the groups have been split.
              */
-            void splitGroupsRec(DdNode* dd, std::vector<Dd<DdType::CUDD>>& groups, std::vector<uint_fast64_t> const& ddGroupVariableIndices, uint_fast64_t currentLevel, uint_fast64_t maxLevel, std::set<std::string> const& remainingMetaVariables) const;
+            void splitGroupsRec(DdNode* dd, std::vector<Dd<DdType::CUDD>>& groups, std::vector<uint_fast64_t> const& ddGroupVariableIndices, uint_fast64_t currentLevel, uint_fast64_t maxLevel, std::set<storm::expressions::Variable> const& remainingMetaVariables) const;
             
             /*!
              * Performs a recursive step to add the given DD-based vector to the given explicit vector.
@@ -727,8 +728,8 @@ namespace storm {
             // The ADD created by CUDD.
             ADD cuddAdd;
             
-            // The names of all meta variables that appear in this DD.
-            std::set<std::string> containedMetaVariableNames;
+            // The meta variables that appear in this DD.
+            std::set<storm::expressions::Variable> containedMetaVariables;
         };
     }
 }

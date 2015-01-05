@@ -155,6 +155,10 @@ namespace storm {
         Expression ExpressionManager::getVariableExpression(std::string const& name) const {
             return Expression(getVariable(name));
         }
+        
+        bool ExpressionManager::hasVariable(std::string const& name) const {
+            return nameToIndexMapping.find(name) != nameToIndexMapping.end();
+        }
 
         Variable ExpressionManager::declareFreshVariable(storm::expressions::Type const& variableType) {
             std::string newName = "__x" + std::to_string(freshVariableCounter++);

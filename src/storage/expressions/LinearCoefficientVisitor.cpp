@@ -63,6 +63,22 @@ namespace storm {
             return variableToCoefficientMapping[variable];
         }
         
+        void LinearCoefficientVisitor::VariableCoefficients::separateVariablesFromConstantPart(VariableCoefficients& rhs) {
+            for (auto const& rhsVariableCoefficientPair : rhs.variableToCoefficientMapping) {
+                this->variableToCoefficientMapping[rhsVariableCoefficientPair.first] -= rhsVariableCoefficientPair.second;
+            }
+            rhs.variableToCoefficientMapping.clear();
+            rhs.constantPart -= this->constantPart;
+        }
+        
+        std::map<storm::expressions::Variable, double>::const_iterator LinearCoefficientVisitor::VariableCoefficients::begin() const {
+            return this->variableToCoefficientMapping.begin();
+        }
+        
+        std::map<storm::expressions::Variable, double>::const_iterator LinearCoefficientVisitor::VariableCoefficients::end() const {
+            return this->variableToCoefficientMapping.end();
+        }
+        
         LinearCoefficientVisitor::VariableCoefficients LinearCoefficientVisitor::getLinearCoefficients(Expression const& expression) {
             return boost::any_cast<VariableCoefficients>(expression.getBaseExpression().accept(*this));
         }

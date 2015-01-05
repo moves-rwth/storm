@@ -21,7 +21,7 @@ namespace storm {
              *
              * @param manager The manager of the variables.
              */
-            Valuation(ExpressionManager const& manager);
+            Valuation(std::shared_ptr<ExpressionManager const> const& manager);
             
             /*!
              * Retrieves the value of the given boolean variable.
@@ -78,9 +78,17 @@ namespace storm {
              */
             ExpressionManager const& getManager() const;
 
+        protected:
+            /*!
+             * Sets the manager responsible for the variables in this valuation.
+             *
+             * @param manager The manager to set.
+             */
+            void setManager(std::shared_ptr<ExpressionManager const> const& manager);
+            
         private:
             // The manager responsible for the variables of this valuation.
-            ExpressionManager const& manager;
+            std::shared_ptr<ExpressionManager const> manager;
         };
     }
 }

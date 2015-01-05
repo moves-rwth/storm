@@ -183,6 +183,14 @@ namespace storm {
             Variable getVariable(std::string const& name) const;
             
             /*!
+             * Retrieves whether a variable with the given name is known to the manager.
+             *
+             * @param name The name of the variable whose membership to query.
+             * @return True iff a variable with the given name is known to the manager.
+             */
+            bool hasVariable(std::string const& name) const;
+            
+            /*!
              * Retrieves an expression that represents the variable with the given name.
              *
              * @param name The name of the variable
@@ -314,21 +322,21 @@ namespace storm {
              */
             const_iterator end() const;
             
-        private:
             /*!
              * Retrieves a shared pointer to the expression manager.
              *
              * @return A shared pointer to the expression manager.
              */
             std::shared_ptr<ExpressionManager> getSharedPointer();
-
+            
             /*!
              * Retrieves a shared pointer to the expression manager.
              *
              * @return A shared pointer to the expression manager.
              */
             std::shared_ptr<ExpressionManager const> getSharedPointer() const;
-            
+
+        private:
             /*!
              * Checks whether the given variable name is valid.
              *

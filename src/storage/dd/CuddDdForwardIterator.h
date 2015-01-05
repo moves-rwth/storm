@@ -85,7 +85,7 @@ namespace storm {
              * @param enumerateDontCareMetaVariables If set to true, all meta variable assignments are enumerated, even
              * if a meta variable does not at all influence the the function value.
              */
-            DdForwardIterator(std::shared_ptr<DdManager<DdType::CUDD>> ddManager, DdGen* generator, int* cube, double value, bool isAtEnd, std::set<std::string> const* metaVariables = nullptr, bool enumerateDontCareMetaVariables = true);
+            DdForwardIterator(std::shared_ptr<DdManager<DdType::CUDD>> ddManager, DdGen* generator, int* cube, double value, bool isAtEnd, std::set<storm::expressions::Variable> const* metaVariables = nullptr, bool enumerateDontCareMetaVariables = true);
             
             /*!
              * Recreates the internal information when a new cube needs to be treated.
@@ -114,7 +114,7 @@ namespace storm {
             bool isAtEnd;
             
             // The set of meta variables appearing in the DD.
-            std::set<std::string> const* metaVariables;
+            std::set<storm::expressions::Variable> const* metaVariables;
             
             // A flag that indicates whether the iterator is supposed to enumerate meta variable valuations even if
             // they don't influence the function value.
@@ -124,8 +124,8 @@ namespace storm {
             // This is needed, because cubes may represent many assignments (if they have don't care variables).
             uint_fast64_t cubeCounter;
             
-            // A vector of tuples of the form <variable, metaVariableName, bitIndex>.
-            std::vector<std::tuple<ADD, std::string, uint_fast64_t>> relevantDontCareDdVariables;
+            // A vector of tuples of the form <variable, metaVariable, bitIndex>.
+            std::vector<std::tuple<ADD, storm::expressions::Variable, uint_fast64_t>> relevantDontCareDdVariables;
             
             // The current valuation of meta variables.
             storm::expressions::SimpleValuation currentValuation;

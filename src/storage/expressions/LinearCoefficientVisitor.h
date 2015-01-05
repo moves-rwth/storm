@@ -30,6 +30,20 @@ namespace storm {
                 void setCoefficient(storm::expressions::Variable const& variable, double coefficient);
                 double getCoefficient(storm::expressions::Variable const& variable);
                 
+                /*!
+                 * Brings all variables of the right-hand side coefficients to the left-hand side by negating them and
+                 * moves the constant part of the current coefficients to the right-hand side by subtracting it from the
+                 * constant part of the rhs. After performing this operation, the left-hand side has a constant part of
+                 * 0 and all variables and the right-hand side has no variables, but possibly a non-zero constant part.
+                 *
+                 * @param other The variable coefficients of the right-hand side.
+                 */
+                void separateVariablesFromConstantPart(VariableCoefficients& rhs);
+
+                // Propagate the iterators to variable-coefficient pairs.
+                std::map<storm::expressions::Variable, double>::const_iterator begin() const;
+                std::map<storm::expressions::Variable, double>::const_iterator end() const;
+                
             private:
                 std::map<storm::expressions::Variable, double> variableToCoefficientMapping;
                 double constantPart;
