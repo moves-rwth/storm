@@ -19,8 +19,8 @@ namespace storm {
             return true;
 		}
 
-		std::set<std::string> IntegerLiteralExpression::getVariables() const {
-			return std::set<std::string>();
+        void IntegerLiteralExpression::gatherVariables(std::set<storm::expressions::Variable>& variables) const {
+			return;
 		}
 
         std::shared_ptr<BaseExpression const> IntegerLiteralExpression::simplify() const {

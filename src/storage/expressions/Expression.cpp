@@ -11,6 +11,17 @@
 
 namespace storm {
     namespace expressions {
+        /*!
+         * Checks whether the two expressions share the same expression manager.
+         *
+         * @param a The first expression.
+         * @param b The second expression.
+         * @return True iff the expressions share the same manager.
+         */
+        static void assertSameManager(BaseExpression const& a, BaseExpression const& b) {
+            STORM_LOG_THROW(a.getManager() == b.getManager(), storm::exceptions::InvalidArgumentException, "Expressions are managed by different manager.");
+        }
+        
         Expression::Expression(std::shared_ptr<BaseExpression const> const& expressionPtr) : expressionPtr(expressionPtr) {
             // Intentionally left empty.
         }
@@ -83,8 +94,10 @@ namespace storm {
             return this->getBaseExpression().isFalse();
         }
 
-		std::set<std::string> Expression::getVariables() const {
-			return this->getBaseExpression().getVariables();
+		std::set<storm::expressions::Variable> Expression::getVariables() const {
+            std::set<storm::expressions::Variable> result;
+			this->getBaseExpression().gatherVariables(result);
+            return result;
 		}
         
         bool Expression::isRelationalExpression() const {
@@ -117,142 +130,142 @@ namespace storm {
             return this->getBaseExpression().getType();
         }
         
-        bool Expression::hasNumericalReturnType() const {
+        bool Expression::hasNumericalType() const {
             return this->getBaseExpression().hasNumericalType();
         }
         
-        bool Expression::hasBooleanReturnType() const {
+        bool Expression::hasRationalType() const {
+            return this->getBaseExpression().hasRationalType();
+        }
+        
+        bool Expression::hasBooleanType() const {
             return this->getBaseExpression().hasBooleanType();
         }
         
-        bool Expression::hasIntegralReturnType() const {
+        bool Expression::hasIntegralType() const {
             return this->getBaseExpression().hasIntegralType();
-        }
-                
-        Expression Expression::operator+(Expression const& other) const {
-            assertSameManager(this->getBaseExpression(), other.getBaseExpression());
-            return Expression(std::shared_ptr<BaseExpression>(new BinaryNumericalFunctionExpression(this->getBaseExpression().getManager(), this->getType().plusMinusTimes(other.getType()), this->getBaseExpressionPointer(), other.getBaseExpressionPointer(), BinaryNumericalFunctionExpression::OperatorType::Plus)));
-        }
-        
-        Expression Expression::operator-(Expression const& other) const {
-            assertSameManager(this->getBaseExpression(), other.getBaseExpression());
-            return Expression(std::shared_ptr<BaseExpression>(new BinaryNumericalFunctionExpression(this->getBaseExpression().getManager(), this->getType().plusMinusTimes(other.getType()), this->getBaseExpressionPointer(), other.getBaseExpressionPointer(), BinaryNumericalFunctionExpression::OperatorType::Minus)));
-        }
-        
-        Expression Expression::operator-() const {
-            return Expression(std::shared_ptr<BaseExpression>(new UnaryNumericalFunctionExpression(this->getBaseExpression().getManager(), this->getType(), this->getBaseExpressionPointer(), UnaryNumericalFunctionExpression::OperatorType::Minus)));
-        }
-        
-        Expression Expression::operator*(Expression const& other) const {
-            assertSameManager(this->getBaseExpression(), other.getBaseExpression());
-            return Expression(std::shared_ptr<BaseExpression>(new BinaryNumericalFunctionExpression(this->getBaseExpression().getManager(), this->getType().plusMinusTimes(other.getType()), this->getBaseExpressionPointer(), other.getBaseExpressionPointer(), BinaryNumericalFunctionExpression::OperatorType::Times)));
-        }
-        
-        Expression Expression::operator/(Expression const& other) const {
-            assertSameManager(this->getBaseExpression(), other.getBaseExpression());
-            return Expression(std::shared_ptr<BaseExpression>(new BinaryNumericalFunctionExpression(this->getBaseExpression().getManager(), this->getType().divide(other.getType()), this->getBaseExpressionPointer(), other.getBaseExpressionPointer(), BinaryNumericalFunctionExpression::OperatorType::Divide)));
-        }
-        
-        Expression Expression::operator^(Expression const& other) const {
-            assertSameManager(this->getBaseExpression(), other.getBaseExpression());
-            return Expression(std::shared_ptr<BaseExpression>(new BinaryNumericalFunctionExpression(this->getBaseExpression().getManager(), this->getType().power(other.getType()), this->getBaseExpressionPointer(), other.getBaseExpressionPointer(), BinaryNumericalFunctionExpression::OperatorType::Power)));
-        }
-        
-        Expression Expression::operator&&(Expression const& other) const {
-            assertSameManager(this->getBaseExpression(), other.getBaseExpression());
-            return Expression(std::shared_ptr<BaseExpression>(new BinaryBooleanFunctionExpression(this->getBaseExpression().getManager(), this->getType().logicalConnective(other.getType()), this->getBaseExpressionPointer(), other.getBaseExpressionPointer(), BinaryBooleanFunctionExpression::OperatorType::And)));
-        }
-        
-        Expression Expression::operator||(Expression const& other) const {
-            assertSameManager(this->getBaseExpression(), other.getBaseExpression());
-            return Expression(std::shared_ptr<BaseExpression>(new BinaryBooleanFunctionExpression(this->getBaseExpression().getManager(), this->getType().logicalConnective(other.getType()), this->getBaseExpressionPointer(), other.getBaseExpressionPointer(), BinaryBooleanFunctionExpression::OperatorType::Or)));
-        }
-        
-        Expression Expression::operator!() const {
-            return Expression(std::shared_ptr<BaseExpression>(new UnaryBooleanFunctionExpression(this->getBaseExpression().getManager(), this->getType().logicalConnective(), this->getBaseExpressionPointer(), UnaryBooleanFunctionExpression::OperatorType::Not)));
-        }
-        
-        Expression Expression::operator==(Expression const& other) const {
-            assertSameManager(this->getBaseExpression(), other.getBaseExpression());
-            return Expression(std::shared_ptr<BaseExpression>(new BinaryRelationExpression(this->getBaseExpression().getManager(), this->getType().numericalComparison(other.getType()), this->getBaseExpressionPointer(), other.getBaseExpressionPointer(), BinaryRelationExpression::RelationType::Equal)));
-        }
-        
-        Expression Expression::operator!=(Expression const& other) const {
-            assertSameManager(this->getBaseExpression(), other.getBaseExpression());
-            if (this->hasNumericalReturnType() && other.hasNumericalReturnType()) {
-                return Expression(std::shared_ptr<BaseExpression>(new BinaryRelationExpression(this->getBaseExpression().getManager(), this->getType().numericalComparison(other.getType()), this->getBaseExpressionPointer(), other.getBaseExpressionPointer(), BinaryRelationExpression::RelationType::NotEqual)));
-            } else {
-                return Expression(std::shared_ptr<BaseExpression>(new BinaryBooleanFunctionExpression(this->getBaseExpression().getManager(), this->getType().logicalConnective(other.getType()), this->getBaseExpressionPointer(), other.getBaseExpressionPointer(), BinaryBooleanFunctionExpression::OperatorType::Xor)));
-            }
-        }
-        
-        Expression Expression::operator>(Expression const& other) const {
-            assertSameManager(this->getBaseExpression(), other.getBaseExpression());
-            return Expression(std::shared_ptr<BaseExpression>(new BinaryRelationExpression(this->getBaseExpression().getManager(), this->getType().numericalComparison(other.getType()), this->getBaseExpressionPointer(), other.getBaseExpressionPointer(), BinaryRelationExpression::RelationType::Greater)));
-        }
-        
-        Expression Expression::operator>=(Expression const& other) const {
-            assertSameManager(this->getBaseExpression(), other.getBaseExpression());
-            return Expression(std::shared_ptr<BaseExpression>(new BinaryRelationExpression(this->getBaseExpression().getManager(), this->getType().numericalComparison(other.getType()), this->getBaseExpressionPointer(), other.getBaseExpressionPointer(), BinaryRelationExpression::RelationType::GreaterOrEqual)));
-        }
-        
-        Expression Expression::operator<(Expression const& other) const {
-            assertSameManager(this->getBaseExpression(), other.getBaseExpression());
-            return Expression(std::shared_ptr<BaseExpression>(new BinaryRelationExpression(this->getBaseExpression().getManager(), this->getType().numericalComparison(other.getType()), this->getBaseExpressionPointer(), other.getBaseExpressionPointer(), BinaryRelationExpression::RelationType::Less)));
-        }
-        
-        Expression Expression::operator<=(Expression const& other) const {
-            assertSameManager(this->getBaseExpression(), other.getBaseExpression());
-            return Expression(std::shared_ptr<BaseExpression>(new BinaryRelationExpression(this->getBaseExpression().getManager(), this->getType().numericalComparison(other.getType()), this->getBaseExpressionPointer(), other.getBaseExpressionPointer(), BinaryRelationExpression::RelationType::LessOrEqual)));
-        }
-        
-        Expression Expression::minimum(Expression const& lhs, Expression const& rhs) {
-            assertSameManager(lhs.getBaseExpression(), rhs.getBaseExpression());
-            return Expression(std::shared_ptr<BaseExpression>(new BinaryNumericalFunctionExpression(lhs.getBaseExpression().getManager(), lhs.getType().minimumMaximum(rhs.getType()), lhs.getBaseExpressionPointer(), rhs.getBaseExpressionPointer(), BinaryNumericalFunctionExpression::OperatorType::Min)));
-        }
-        
-        Expression Expression::maximum(Expression const& lhs, Expression const& rhs) {
-            assertSameManager(lhs.getBaseExpression(), rhs.getBaseExpression());
-            return Expression(std::shared_ptr<BaseExpression>(new BinaryNumericalFunctionExpression(lhs.getBaseExpression().getManager(), lhs.getType().minimumMaximum(rhs.getType()), lhs.getBaseExpressionPointer(), rhs.getBaseExpressionPointer(), BinaryNumericalFunctionExpression::OperatorType::Max)));
-        }
-        
-        Expression Expression::ite(Expression const& thenExpression, Expression const& elseExpression) {
-            assertSameManager(this->getBaseExpression(), thenExpression.getBaseExpression());
-            assertSameManager(thenExpression.getBaseExpression(), elseExpression.getBaseExpression());
-            return Expression(std::shared_ptr<BaseExpression>(new IfThenElseExpression(this->getBaseExpression().getManager(), this->getType().ite(thenExpression.getType(), elseExpression.getType()), this->getBaseExpressionPointer(), thenExpression.getBaseExpressionPointer(), elseExpression.getBaseExpressionPointer())));
-        }
-        
-        Expression Expression::implies(Expression const& other) const {
-            assertSameManager(this->getBaseExpression(), other.getBaseExpression());
-            return Expression(std::shared_ptr<BaseExpression>(new BinaryBooleanFunctionExpression(this->getBaseExpression().getManager(), this->getType().logicalConnective(other.getType()), this->getBaseExpressionPointer(), other.getBaseExpressionPointer(), BinaryBooleanFunctionExpression::OperatorType::Implies)));
-        }
-        
-        Expression Expression::iff(Expression const& other) const {
-            assertSameManager(this->getBaseExpression(), other.getBaseExpression());
-            return Expression(std::shared_ptr<BaseExpression>(new BinaryBooleanFunctionExpression(this->getBaseExpression().getManager(), this->getType().logicalConnective(other.getType()), this->getBaseExpressionPointer(), other.getBaseExpressionPointer(), BinaryBooleanFunctionExpression::OperatorType::Iff)));
-        }
-        
-        Expression Expression::floor() const {
-            STORM_LOG_THROW(this->hasNumericalReturnType(), storm::exceptions::InvalidTypeException, "Operator 'floor' requires numerical operand.");
-            return Expression(std::shared_ptr<BaseExpression>(new UnaryNumericalFunctionExpression(this->getBaseExpression().getManager(), this->getType().floorCeil(), this->getBaseExpressionPointer(), UnaryNumericalFunctionExpression::OperatorType::Floor)));
-        }
-        
-        Expression Expression::ceil() const {
-            STORM_LOG_THROW(this->hasNumericalReturnType(), storm::exceptions::InvalidTypeException, "Operator 'ceil' requires numerical operand.");
-            return Expression(std::shared_ptr<BaseExpression>(new UnaryNumericalFunctionExpression(this->getBaseExpression().getManager(), this->getType().floorCeil(), this->getBaseExpressionPointer(), UnaryNumericalFunctionExpression::OperatorType::Ceil)));
         }
         
         boost::any Expression::accept(ExpressionVisitor& visitor) const {
             return this->getBaseExpression().accept(visitor);
         }
         
-        void Expression::assertSameManager(BaseExpression const& a, BaseExpression const& b) {
-            STORM_LOG_THROW(a.getManager() == b.getManager(), storm::exceptions::InvalidArgumentException, "Expressions are managed by different manager.");
-        }
-        
         std::ostream& operator<<(std::ostream& stream, Expression const& expression) {
             stream << expression.getBaseExpression();
             return stream;
+        }
+        
+        Expression operator+(Expression const& first, Expression const& second) {
+            assertSameManager(first.getBaseExpression(), second.getBaseExpression());
+            return Expression(std::shared_ptr<BaseExpression>(new BinaryNumericalFunctionExpression(first.getManager(), first.getType().plusMinusTimes(second.getType()), first.getBaseExpressionPointer(), second.getBaseExpressionPointer(), BinaryNumericalFunctionExpression::OperatorType::Plus)));
+        }
+        
+        Expression operator-(Expression const& first, Expression const& second) {
+            assertSameManager(first.getBaseExpression(), second.getBaseExpression());
+            return Expression(std::shared_ptr<BaseExpression>(new BinaryNumericalFunctionExpression(first.getBaseExpression().getManager(), first.getType().plusMinusTimes(second.getType()), first.getBaseExpressionPointer(), second.getBaseExpressionPointer(), BinaryNumericalFunctionExpression::OperatorType::Minus)));
+        }
+        
+        Expression operator-(Expression const& first) {
+            return Expression(std::shared_ptr<BaseExpression>(new UnaryNumericalFunctionExpression(first.getBaseExpression().getManager(), first.getType(), first.getBaseExpressionPointer(), UnaryNumericalFunctionExpression::OperatorType::Minus)));
+        }
+        
+        Expression operator*(Expression const& first, Expression const& second) {
+            assertSameManager(first.getBaseExpression(), second.getBaseExpression());
+            return Expression(std::shared_ptr<BaseExpression>(new BinaryNumericalFunctionExpression(first.getBaseExpression().getManager(), first.getType().plusMinusTimes(second.getType()), first.getBaseExpressionPointer(), second.getBaseExpressionPointer(), BinaryNumericalFunctionExpression::OperatorType::Times)));
+        }
+        
+        Expression operator/(Expression const& first, Expression const& second) {
+            assertSameManager(first.getBaseExpression(), second.getBaseExpression());
+            return Expression(std::shared_ptr<BaseExpression>(new BinaryNumericalFunctionExpression(first.getBaseExpression().getManager(), first.getType().divide(second.getType()), first.getBaseExpressionPointer(), second.getBaseExpressionPointer(), BinaryNumericalFunctionExpression::OperatorType::Divide)));
+        }
+        
+        Expression operator^(Expression const& first, Expression const& second) {
+            assertSameManager(first.getBaseExpression(), second.getBaseExpression());
+            return Expression(std::shared_ptr<BaseExpression>(new BinaryNumericalFunctionExpression(first.getBaseExpression().getManager(), first.getType().power(second.getType()), first.getBaseExpressionPointer(), second.getBaseExpressionPointer(), BinaryNumericalFunctionExpression::OperatorType::Power)));
+        }
+        
+        Expression operator&&(Expression const& first, Expression const& second) {
+            assertSameManager(first.getBaseExpression(), second.getBaseExpression());
+            return Expression(std::shared_ptr<BaseExpression>(new BinaryBooleanFunctionExpression(first.getBaseExpression().getManager(), first.getType().logicalConnective(second.getType()), first.getBaseExpressionPointer(), second.getBaseExpressionPointer(), BinaryBooleanFunctionExpression::OperatorType::And)));
+        }
+        
+        Expression operator||(Expression const& first, Expression const& second) {
+            assertSameManager(first.getBaseExpression(), second.getBaseExpression());
+            return Expression(std::shared_ptr<BaseExpression>(new BinaryBooleanFunctionExpression(first.getBaseExpression().getManager(), first.getType().logicalConnective(second.getType()), first.getBaseExpressionPointer(), second.getBaseExpressionPointer(), BinaryBooleanFunctionExpression::OperatorType::Or)));
+        }
+        
+        Expression operator!(Expression const& first) {
+            return Expression(std::shared_ptr<BaseExpression>(new UnaryBooleanFunctionExpression(first.getBaseExpression().getManager(), first.getType().logicalConnective(), first.getBaseExpressionPointer(), UnaryBooleanFunctionExpression::OperatorType::Not)));
+        }
+        
+        Expression operator==(Expression const& first, Expression const& second) {
+            assertSameManager(first.getBaseExpression(), second.getBaseExpression());
+            return Expression(std::shared_ptr<BaseExpression>(new BinaryRelationExpression(first.getBaseExpression().getManager(), first.getType().numericalComparison(second.getType()), first.getBaseExpressionPointer(), second.getBaseExpressionPointer(), BinaryRelationExpression::RelationType::Equal)));
+        }
+        
+        Expression operator!=(Expression const& first, Expression const& second) {
+            assertSameManager(first.getBaseExpression(), second.getBaseExpression());
+            if (first.hasNumericalType() && second.hasNumericalType()) {
+                return Expression(std::shared_ptr<BaseExpression>(new BinaryRelationExpression(first.getBaseExpression().getManager(), first.getType().numericalComparison(second.getType()), first.getBaseExpressionPointer(), second.getBaseExpressionPointer(), BinaryRelationExpression::RelationType::NotEqual)));
+            } else {
+                return Expression(std::shared_ptr<BaseExpression>(new BinaryBooleanFunctionExpression(first.getBaseExpression().getManager(), first.getType().logicalConnective(second.getType()), first.getBaseExpressionPointer(), second.getBaseExpressionPointer(), BinaryBooleanFunctionExpression::OperatorType::Xor)));
+            }
+        }
+        
+        Expression operator>(Expression const& first, Expression const& second) {
+            assertSameManager(first.getBaseExpression(), second.getBaseExpression());
+            return Expression(std::shared_ptr<BaseExpression>(new BinaryRelationExpression(first.getBaseExpression().getManager(), first.getType().numericalComparison(second.getType()), first.getBaseExpressionPointer(), second.getBaseExpressionPointer(), BinaryRelationExpression::RelationType::Greater)));
+        }
+        
+        Expression operator>=(Expression const& first, Expression const& second) {
+            assertSameManager(first.getBaseExpression(), second.getBaseExpression());
+            return Expression(std::shared_ptr<BaseExpression>(new BinaryRelationExpression(first.getBaseExpression().getManager(), first.getType().numericalComparison(second.getType()), first.getBaseExpressionPointer(), second.getBaseExpressionPointer(), BinaryRelationExpression::RelationType::GreaterOrEqual)));
+        }
+        
+        Expression operator<(Expression const& first, Expression const& second) {
+            assertSameManager(first.getBaseExpression(), second.getBaseExpression());
+            return Expression(std::shared_ptr<BaseExpression>(new BinaryRelationExpression(first.getBaseExpression().getManager(), first.getType().numericalComparison(second.getType()), first.getBaseExpressionPointer(), second.getBaseExpressionPointer(), BinaryRelationExpression::RelationType::Less)));
+        }
+        
+        Expression operator<=(Expression const& first, Expression const& second) {
+            assertSameManager(first.getBaseExpression(), second.getBaseExpression());
+            return Expression(std::shared_ptr<BaseExpression>(new BinaryRelationExpression(first.getBaseExpression().getManager(), first.getType().numericalComparison(second.getType()), first.getBaseExpressionPointer(), second.getBaseExpressionPointer(), BinaryRelationExpression::RelationType::LessOrEqual)));
+        }
+
+        Expression minimum(Expression const& first, Expression const& second) {
+            assertSameManager(first.getBaseExpression(), second.getBaseExpression());
+            return Expression(std::shared_ptr<BaseExpression>(new BinaryNumericalFunctionExpression(first.getBaseExpression().getManager(), first.getType().minimumMaximum(second.getType()), first.getBaseExpressionPointer(), second.getBaseExpressionPointer(), BinaryNumericalFunctionExpression::OperatorType::Min)));
+        }
+        
+        Expression maximum(Expression const& first, Expression const& second) {
+            assertSameManager(first.getBaseExpression(), second.getBaseExpression());
+            return Expression(std::shared_ptr<BaseExpression>(new BinaryNumericalFunctionExpression(first.getBaseExpression().getManager(), first.getType().minimumMaximum(second.getType()), first.getBaseExpressionPointer(), second.getBaseExpressionPointer(), BinaryNumericalFunctionExpression::OperatorType::Max)));
+        }
+        
+        Expression ite(Expression const& condition, Expression const& thenExpression, Expression const& elseExpression) {
+            assertSameManager(condition.getBaseExpression(), thenExpression.getBaseExpression());
+            assertSameManager(thenExpression.getBaseExpression(), elseExpression.getBaseExpression());
+            return Expression(std::shared_ptr<BaseExpression>(new IfThenElseExpression(condition.getBaseExpression().getManager(), condition.getType().ite(thenExpression.getType(), elseExpression.getType()), condition.getBaseExpressionPointer(), thenExpression.getBaseExpressionPointer(), elseExpression.getBaseExpressionPointer())));
+        }
+        
+        Expression implies(Expression const& first, Expression const& second) {
+            assertSameManager(first.getBaseExpression(), second.getBaseExpression());
+            return Expression(std::shared_ptr<BaseExpression>(new BinaryBooleanFunctionExpression(first.getBaseExpression().getManager(), first.getType().logicalConnective(second.getType()), first.getBaseExpressionPointer(), second.getBaseExpressionPointer(), BinaryBooleanFunctionExpression::OperatorType::Implies)));
+        }
+        
+        Expression iff(Expression const& first, Expression const& second) {
+            assertSameManager(first.getBaseExpression(), second.getBaseExpression());
+            return Expression(std::shared_ptr<BaseExpression>(new BinaryBooleanFunctionExpression(first.getBaseExpression().getManager(), first.getType().logicalConnective(second.getType()), first.getBaseExpressionPointer(), second.getBaseExpressionPointer(), BinaryBooleanFunctionExpression::OperatorType::Iff)));
+        }
+        
+        Expression floor(Expression const& first) {
+            STORM_LOG_THROW(first.hasNumericalType(), storm::exceptions::InvalidTypeException, "Operator 'floor' requires numerical operand.");
+            return Expression(std::shared_ptr<BaseExpression>(new UnaryNumericalFunctionExpression(first.getBaseExpression().getManager(), first.getType().floorCeil(), first.getBaseExpressionPointer(), UnaryNumericalFunctionExpression::OperatorType::Floor)));
+        }
+        
+        Expression ceil(Expression const& first) {
+            STORM_LOG_THROW(first.hasNumericalType(), storm::exceptions::InvalidTypeException, "Operator 'ceil' requires numerical operand.");
+            return Expression(std::shared_ptr<BaseExpression>(new UnaryNumericalFunctionExpression(first.getBaseExpression().getManager(), first.getType().floorCeil(), first.getBaseExpressionPointer(), UnaryNumericalFunctionExpression::OperatorType::Ceil)));
         }
     }
 }

@@ -7,6 +7,10 @@
 
 namespace storm {
     namespace expressions {
+        SimpleValuation::SimpleValuation() : Valuation(nullptr) {
+            // Intentionally left empty.
+        }
+
         SimpleValuation::SimpleValuation(std::shared_ptr<storm::expressions::ExpressionManager const> const& manager) : Valuation(manager), booleanValues(nullptr), integerValues(nullptr), rationalValues(nullptr) {
             if (this->getManager().getNumberOfBooleanVariables() > 0) {
                 booleanValues = std::unique_ptr<std::vector<bool>>(new std::vector<bool>(this->getManager().getNumberOfBooleanVariables()));

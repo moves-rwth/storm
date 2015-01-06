@@ -100,6 +100,18 @@ namespace storm {
             STORM_LOG_THROW(!variableExists(name), storm::exceptions::InvalidArgumentException, "Variable with name '" << name << "' already exists.");
             return declareOrGetVariable(name, variableType);
         }
+        
+        Variable ExpressionManager::declareBooleanVariable(std::string const& name) {
+            return this->declareVariable(name, this->getBooleanType());
+        }
+        
+        Variable ExpressionManager::declareIntegerVariable(std::string const& name) {
+            return this->declareVariable(name, this->getIntegerType());
+        }
+
+        Variable ExpressionManager::declareRationalVariable(std::string const& name) {
+            return this->declareVariable(name, this->getRationalType());
+        }
 
         Variable ExpressionManager::declareAuxiliaryVariable(std::string const& name, storm::expressions::Type const& variableType) {
             STORM_LOG_THROW(!variableExists(name), storm::exceptions::InvalidArgumentException, "Variable with name '" << name << "' already exists.");

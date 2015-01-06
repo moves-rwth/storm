@@ -20,14 +20,14 @@ namespace storm {
                     storm::expressions::Expression newInitialExpression = manager->boolean(true);
                     
                     for (auto const& booleanVariable : this->getGlobalBooleanVariables()) {
-                        newInitialExpression = newInitialExpression && booleanVariable.getExpression().iff(booleanVariable.getInitialValueExpression());
+                        newInitialExpression = newInitialExpression && storm::expressions::iff(booleanVariable.getExpression(), booleanVariable.getInitialValueExpression());
                     }
                     for (auto const& integerVariable : this->getGlobalIntegerVariables()) {
                         newInitialExpression = newInitialExpression && integerVariable.getExpression() == integerVariable.getInitialValueExpression();
                     }
                     for (auto const& module : this->getModules()) {
                         for (auto const& booleanVariable : module.getBooleanVariables()) {
-                            newInitialExpression = newInitialExpression && booleanVariable.getExpression().iff(booleanVariable.getInitialValueExpression());
+                            newInitialExpression = newInitialExpression && storm::expressions::iff(booleanVariable.getExpression(), booleanVariable.getInitialValueExpression());
                         }
                         for (auto const& integerVariable : module.getIntegerVariables()) {
                             newInitialExpression = newInitialExpression && integerVariable.getExpression() == integerVariable.getInitialValueExpression();
@@ -345,151 +345,137 @@ namespace storm {
         
         void Program::checkValidity() const {
             // Start by checking the constant declarations.
-            std::set<std::string> allIdentifiers;
-            std::set<std::string> globalIdentifiers;
-            std::set<std::string> constantNames;
+            std::set<storm::expressions::Variable> all;
+            std::set<storm::expressions::Variable> global;
+            std::set<storm::expressions::Variable> constants;
             for (auto const& constant : this->getConstants()) {
-                // Check for duplicate identifiers.
-                STORM_LOG_THROW(allIdentifiers.find(constant.getName()) == allIdentifiers.end(), storm::exceptions::WrongFormatException, "Error in " << constant.getFilename() << ", line " << constant.getLineNumber() << ": duplicate identifier '" << constant.getName() << "'.");
-                
                 // Check defining expressions of defined constants.
                 if (constant.isDefined()) {
-                    std::set<std::string> containedIdentifiers = constant.getExpression().getVariables();
-                    bool isValid = std::includes(constantNames.begin(), constantNames.end(), containedIdentifiers.begin(), containedIdentifiers.end());
+                    std::set<storm::expressions::Variable> containedVariables = constant.getExpression().getVariables();
+                    bool isValid = std::includes(constants.begin(), constants.end(), containedVariables.begin(), containedVariables.end());
                     STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << constant.getFilename() << ", line " << constant.getLineNumber() << ": defining expression refers to unknown identifiers.");
                 }
                 
                 // Record the new identifier for future checks.
-                constantNames.insert(constant.getName());
-                allIdentifiers.insert(constant.getName());
-                globalIdentifiers.insert(constant.getName());
+                constants.insert(constant.getExpressionVariable());
+                all.insert(constant.getExpressionVariable());
+                global.insert(constant.getExpressionVariable());
             }
             
             // Now we check the variable declarations. We start with the global variables.
-            std::set<std::string> variableNames;
+            std::set<storm::expressions::Variable> variables;
             for (auto const& variable : this->getGlobalBooleanVariables()) {
-                // Check for duplicate identifiers.
-                STORM_LOG_THROW(allIdentifiers.find(variable.getName()) == allIdentifiers.end(), storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": duplicate identifier '" << variable.getName() << "'.");
-                
                 // Check the initial value of the variable.
-                std::set<std::string> containedIdentifiers = variable.getInitialValueExpression().getVariables();
-                bool isValid = std::includes(constantNames.begin(), constantNames.end(), containedIdentifiers.begin(), containedIdentifiers.end());
+                std::set<storm::expressions::Variable> containedVariables = variable.getInitialValueExpression().getVariables();
+                bool isValid = std::includes(constants.begin(), constants.end(), containedVariables.begin(), containedVariables.end());
                 STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": initial value expression refers to unknown constants.");
 
                 // Record the new identifier for future checks.
-                variableNames.insert(variable.getName());
-                allIdentifiers.insert(variable.getName());
-                globalIdentifiers.insert(variable.getName());
+                variables.insert(variable.getExpressionVariable());
+                all.insert(variable.getExpressionVariable());
+                global.insert(variable.getExpressionVariable());
             }
             for (auto const& variable : this->getGlobalIntegerVariables()) {
-                // Check for duplicate identifiers.
-                STORM_LOG_THROW(allIdentifiers.find(variable.getName()) == allIdentifiers.end(), storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": duplicate identifier '" << variable.getName() << "'.");
-                
                 // Check that bound expressions of the range.
-                std::set<std::string> containedIdentifiers = variable.getLowerBoundExpression().getVariables();
-                bool isValid = std::includes(constantNames.begin(), constantNames.end(), containedIdentifiers.begin(), containedIdentifiers.end());
+                std::set<storm::expressions::Variable> containedVariables = variable.getLowerBoundExpression().getVariables();
+                bool isValid = std::includes(constants.begin(), constants.end(), containedVariables.begin(), containedVariables.end());
                 STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": lower bound expression refers to unknown constants.");
 
-                containedIdentifiers = variable.getLowerBoundExpression().getVariables();
-                isValid = std::includes(constantNames.begin(), constantNames.end(), containedIdentifiers.begin(), containedIdentifiers.end());
+                containedVariables = variable.getLowerBoundExpression().getVariables();
+                isValid = std::includes(constants.begin(), constants.end(), containedVariables.begin(), containedVariables.end());
                 STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": upper bound expression refers to unknown constants.");
                 
                 // Check the initial value of the variable.
-                containedIdentifiers = variable.getInitialValueExpression().getVariables();
-                isValid = std::includes(constantNames.begin(), constantNames.end(), containedIdentifiers.begin(), containedIdentifiers.end());
+                containedVariables = variable.getInitialValueExpression().getVariables();
+                isValid = std::includes(constants.begin(), constants.end(), containedVariables.begin(), containedVariables.end());
                 STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": initial value expression refers to unknown constants.");
                 
                 // Record the new identifier for future checks.
-                variableNames.insert(variable.getName());
-                allIdentifiers.insert(variable.getName());
-                globalIdentifiers.insert(variable.getName());
+                variables.insert(variable.getExpressionVariable());
+                all.insert(variable.getExpressionVariable());
+                global.insert(variable.getExpressionVariable());
             }
 
             // Now go through the variables of the modules.
             for (auto const& module : this->getModules()) {
                 for (auto const& variable : module.getBooleanVariables()) {
-                    // Check for duplicate identifiers.
-                    STORM_LOG_THROW(allIdentifiers.find(variable.getName()) == allIdentifiers.end(), storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": duplicate identifier '" << variable.getName() << "'.");
-                    
                     // Check the initial value of the variable.
-                    std::set<std::string> containedIdentifiers = variable.getInitialValueExpression().getVariables();
-                    bool isValid = std::includes(constantNames.begin(), constantNames.end(), containedIdentifiers.begin(), containedIdentifiers.end());
+                    std::set<storm::expressions::Variable> containedVariables = variable.getInitialValueExpression().getVariables();
+                    bool isValid = std::includes(constants.begin(), constants.end(), containedVariables.begin(), containedVariables.end());
                     STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": initial value expression refers to unknown constants.");
                     
                     // Record the new identifier for future checks.
-                    variableNames.insert(variable.getName());
-                    allIdentifiers.insert(variable.getName());
+                    variables.insert(variable.getExpressionVariable());
+                    all.insert(variable.getExpressionVariable());
                 }
                 for (auto const& variable : module.getIntegerVariables()) {
-                    // Check for duplicate identifiers.
-                    STORM_LOG_THROW(allIdentifiers.find(variable.getName()) == allIdentifiers.end(), storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": duplicate identifier '" << variable.getName() << "'.");
-                    
                     // Check that bound expressions of the range.
-                    std::set<std::string> containedIdentifiers = variable.getLowerBoundExpression().getVariables();
-                    bool isValid = std::includes(constantNames.begin(), constantNames.end(), containedIdentifiers.begin(), containedIdentifiers.end());
+                    std::set<storm::expressions::Variable> containedVariables = variable.getLowerBoundExpression().getVariables();
+                    bool isValid = std::includes(constants.begin(), constants.end(), containedVariables.begin(), containedVariables.end());
                     STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": lower bound expression refers to unknown constants.");
 
-                    containedIdentifiers = variable.getLowerBoundExpression().getVariables();
-                    isValid = std::includes(constantNames.begin(), constantNames.end(), containedIdentifiers.begin(), containedIdentifiers.end());
+                    containedVariables = variable.getLowerBoundExpression().getVariables();
+                    isValid = std::includes(constants.begin(), constants.end(), containedVariables.begin(), containedVariables.end());
                     STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": upper bound expression refers to unknown constants.");
                     
                     // Check the initial value of the variable.
-                    containedIdentifiers = variable.getInitialValueExpression().getVariables();
-                    isValid = std::includes(constantNames.begin(), constantNames.end(), containedIdentifiers.begin(), containedIdentifiers.end());
+                    containedVariables = variable.getInitialValueExpression().getVariables();
+                    isValid = std::includes(constants.begin(), constants.end(), containedVariables.begin(), containedVariables.end());
                     STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": initial value expression refers to unknown constants.");
                     
                     // Record the new identifier for future checks.
-                    variableNames.insert(variable.getName());
-                    allIdentifiers.insert(variable.getName());
+                    variables.insert(variable.getExpressionVariable());
+                    all.insert(variable.getExpressionVariable());
                 }
             }
             
             // Create the set of valid identifiers for future checks.
-            std::set<std::string> variablesAndConstants;
-            std::set_union(variableNames.begin(), variableNames.end(), constantNames.begin(), constantNames.end(), std::inserter(variablesAndConstants, variablesAndConstants.begin()));
+            std::set<storm::expressions::Variable> variablesAndConstants;
+            std::set_union(variables.begin(), variables.end(), constants.begin(), constants.end(), std::inserter(variablesAndConstants, variablesAndConstants.begin()));
             
             // Check the commands of the modules.
             for (auto const& module : this->getModules()) {
-                std::set<std::string> legalIdentifiers = globalIdentifiers;
+                std::set<storm::expressions::Variable> legalVariables = global;
                 for (auto const& variable : module.getBooleanVariables()) {
-                    legalIdentifiers.insert(variable.getName());
+                    legalVariables.insert(variable.getExpressionVariable());
                 }
                 for (auto const& variable : module.getIntegerVariables()) {
-                    legalIdentifiers.insert(variable.getName());
+                    legalVariables.insert(variable.getExpressionVariable());
                 }
                 
                 for (auto const& command : module.getCommands()) {
                     // Check the guard.
-                    std::set<std::string> containedIdentifiers = command.getGuardExpression().getVariables();
-                    bool isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedIdentifiers.begin(), containedIdentifiers.end());
+                    std::set<storm::expressions::Variable> containedVariables = command.getGuardExpression().getVariables();
+                    bool isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedVariables.begin(), containedVariables.end());
                     STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << command.getFilename() << ", line " << command.getLineNumber() << ": guard refers to unknown identifiers.");
-                    STORM_LOG_THROW(command.getGuardExpression().hasBooleanReturnType(), storm::exceptions::WrongFormatException, "Error in " << command.getFilename() << ", line " << command.getLineNumber() << ": expression for guard must evaluate to type 'bool'.");
+                    STORM_LOG_THROW(command.getGuardExpression().hasBooleanType(), storm::exceptions::WrongFormatException, "Error in " << command.getFilename() << ", line " << command.getLineNumber() << ": expression for guard must evaluate to type 'bool'.");
                     
                     // Check all updates.
                     for (auto const& update : command.getUpdates()) {
-                        containedIdentifiers = update.getLikelihoodExpression().getVariables();
-                        isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedIdentifiers.begin(), containedIdentifiers.end());
+                        containedVariables = update.getLikelihoodExpression().getVariables();
+                        isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedVariables.begin(), containedVariables.end());
                         STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << command.getFilename() << ", line " << command.getLineNumber() << ": likelihood expression refers to unknown identifiers.");
                         
                         // Check all assignments.
-                        std::set<std::string> alreadyAssignedIdentifiers;
+                        std::set<storm::expressions::Variable> alreadyAssignedVariables;
                         for (auto const& assignment : update.getAssignments()) {
-                            if (legalIdentifiers.find(assignment.getVariableName()) == legalIdentifiers.end()) {
-                                if (allIdentifiers.find(assignment.getVariableName()) != allIdentifiers.end()) {
+                            storm::expressions::Variable assignedVariable = manager->getVariable(assignment.getVariableName());
+                            if (legalVariables.find(assignedVariable) == legalVariables.end()) {
+                                if (all.find(assignedVariable) != all.end()) {
                                     STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Error in " << command.getFilename() << ", line " << command.getLineNumber() << ": assignment illegally refers to variable '" << assignment.getVariableName() << "'.");
                                 } else {
                                     STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Error in " << command.getFilename() << ", line " << command.getLineNumber() << ": assignment refers to unknown variable '" << assignment.getVariableName() << "'.");
                                 }
                             }
-                            STORM_LOG_THROW(alreadyAssignedIdentifiers.find(assignment.getVariableName()) == alreadyAssignedIdentifiers.end(), storm::exceptions::WrongFormatException, "Error in " << command.getFilename() << ", line " << command.getLineNumber() << ": duplicate assignment to variable '" << assignment.getVariableName() << "'.");
-                            STORM_LOG_THROW(manager->getVariable(assignment.getVariableName()).getType() == assignment.getExpression().getType(), storm::exceptions::WrongFormatException, "Error in " << command.getFilename() << ", line " << command.getLineNumber() << ": illegally assigning a value of type '" << assignment.getExpression().getType() << "' to variable '" << assignment.getVariableName() << "' of type '" << manager->getVariable(assignment.getVariableName()).getType() << "'.");
+                            STORM_LOG_THROW(alreadyAssignedVariables.find(assignedVariable) == alreadyAssignedVariables.end(), storm::exceptions::WrongFormatException, "Error in " << command.getFilename() << ", line " << command.getLineNumber() << ": duplicate assignment to variable '" << assignment.getVariableName() << "'.");
+                            STORM_LOG_THROW(assignedVariable.getType() == assignment.getExpression().getType(), storm::exceptions::WrongFormatException, "Error in " << command.getFilename() << ", line " << command.getLineNumber() << ": illegally assigning a value of type '" << assignment.getExpression().getType() << "' to variable '" << assignment.getVariableName() << "' of type '" << assignedVariable.getType() << "'.");
                             
-                            containedIdentifiers = assignment.getExpression().getVariables();
-                            isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedIdentifiers.begin(), containedIdentifiers.end());
+                            containedVariables = assignment.getExpression().getVariables();
+                            isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedVariables.begin(), containedVariables.end());
                             STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << command.getFilename() << ", line " << command.getLineNumber() << ": likelihood expression refers to unknown identifiers.");
                             
                             // Add the current variable to the set of assigned variables (of this update).
-                            alreadyAssignedIdentifiers.insert(assignment.getVariableName());
+                            alreadyAssignedVariables.insert(assignedVariable);
                         }
                     }
                 }
@@ -498,57 +484,48 @@ namespace storm {
             // Now check the reward models.
             for (auto const& rewardModel : this->getRewardModels()) {
                 for (auto const& stateReward : rewardModel.getStateRewards()) {
-                    std::set<std::string> containedIdentifiers = stateReward.getStatePredicateExpression().getVariables();
-                    bool isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedIdentifiers.begin(), containedIdentifiers.end());
+                    std::set<storm::expressions::Variable> containedVariables = stateReward.getStatePredicateExpression().getVariables();
+                    bool isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedVariables.begin(), containedVariables.end());
                     STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << stateReward.getFilename() << ", line " << stateReward.getLineNumber() << ": state reward expression refers to unknown identifiers.");
-                    STORM_LOG_THROW(stateReward.getStatePredicateExpression().hasBooleanReturnType(), storm::exceptions::WrongFormatException, "Error in " << stateReward.getFilename() << ", line " << stateReward.getLineNumber() << ": state predicate must evaluate to type 'bool'.");
+                    STORM_LOG_THROW(stateReward.getStatePredicateExpression().hasBooleanType(), storm::exceptions::WrongFormatException, "Error in " << stateReward.getFilename() << ", line " << stateReward.getLineNumber() << ": state predicate must evaluate to type 'bool'.");
                     
-                    containedIdentifiers = stateReward.getRewardValueExpression().getVariables();
-                    isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedIdentifiers.begin(), containedIdentifiers.end());
+                    containedVariables = stateReward.getRewardValueExpression().getVariables();
+                    isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedVariables.begin(), containedVariables.end());
                     STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << stateReward.getFilename() << ", line " << stateReward.getLineNumber() << ": state reward value expression refers to unknown identifiers.");
-                    STORM_LOG_THROW(stateReward.getRewardValueExpression().hasNumericalReturnType(), storm::exceptions::WrongFormatException, "Error in " << stateReward.getFilename() << ", line " << stateReward.getLineNumber() << ": reward value expression must evaluate to numerical type.");
+                    STORM_LOG_THROW(stateReward.getRewardValueExpression().hasNumericalType(), storm::exceptions::WrongFormatException, "Error in " << stateReward.getFilename() << ", line " << stateReward.getLineNumber() << ": reward value expression must evaluate to numerical type.");
                 }
                 
                 for (auto const& transitionReward : rewardModel.getTransitionRewards()) {
-                    std::set<std::string> containedIdentifiers = transitionReward.getStatePredicateExpression().getVariables();
-                    bool isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedIdentifiers.begin(), containedIdentifiers.end());
+                    std::set<storm::expressions::Variable> containedVariables = transitionReward.getStatePredicateExpression().getVariables();
+                    bool isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedVariables.begin(), containedVariables.end());
                     STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << transitionReward.getFilename() << ", line " << transitionReward.getLineNumber() << ": state reward expression refers to unknown identifiers.");
-                    STORM_LOG_THROW(transitionReward.getStatePredicateExpression().hasBooleanReturnType(), storm::exceptions::WrongFormatException, "Error in " << transitionReward.getFilename() << ", line " << transitionReward.getLineNumber() << ": state predicate must evaluate to type 'bool'.");
+                    STORM_LOG_THROW(transitionReward.getStatePredicateExpression().hasBooleanType(), storm::exceptions::WrongFormatException, "Error in " << transitionReward.getFilename() << ", line " << transitionReward.getLineNumber() << ": state predicate must evaluate to type 'bool'.");
                     
-                    containedIdentifiers = transitionReward.getRewardValueExpression().getVariables();
-                    isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedIdentifiers.begin(), containedIdentifiers.end());
+                    containedVariables = transitionReward.getRewardValueExpression().getVariables();
+                    isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedVariables.begin(), containedVariables.end());
                     STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << transitionReward.getFilename() << ", line " << transitionReward.getLineNumber() << ": state reward value expression refers to unknown identifiers.");
-                    STORM_LOG_THROW(transitionReward.getRewardValueExpression().hasNumericalReturnType(), storm::exceptions::WrongFormatException, "Error in " << transitionReward.getFilename() << ", line " << transitionReward.getLineNumber() << ": reward value expression must evaluate to numerical type.");
+                    STORM_LOG_THROW(transitionReward.getRewardValueExpression().hasNumericalType(), storm::exceptions::WrongFormatException, "Error in " << transitionReward.getFilename() << ", line " << transitionReward.getLineNumber() << ": reward value expression must evaluate to numerical type.");
                 }
             }
             
             // Check the initial states expression.
-            std::set<std::string> containedIdentifiers = this->getInitialConstruct().getInitialStatesExpression().getVariables();
+            std::set<storm::expressions::Variable> containedIdentifiers = this->getInitialConstruct().getInitialStatesExpression().getVariables();
             bool isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedIdentifiers.begin(), containedIdentifiers.end());
             STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << this->getInitialConstruct().getFilename() << ", line " << this->getInitialConstruct().getLineNumber() << ": initial expression refers to unknown identifiers.");
             
             // Check the labels.
             for (auto const& label : this->getLabels()) {
-                // Check for duplicate identifiers.
-                STORM_LOG_THROW(allIdentifiers.find(label.getName()) == allIdentifiers.end(), storm::exceptions::WrongFormatException, "Error in " << label.getFilename() << ", line " << label.getLineNumber() << ": duplicate identifier '" << label.getName() << "'.");
-                
-                std::set<std::string> containedIdentifiers = label.getStatePredicateExpression().getVariables();
-                bool isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedIdentifiers.begin(), containedIdentifiers.end());
+                std::set<storm::expressions::Variable> containedVariables = label.getStatePredicateExpression().getVariables();
+                bool isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedVariables.begin(), containedVariables.end());
                 STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << label.getFilename() << ", line " << label.getLineNumber() << ": label expression refers to unknown identifiers.");
-                STORM_LOG_THROW(label.getStatePredicateExpression().hasBooleanReturnType(), storm::exceptions::WrongFormatException, "Error in " << label.getFilename() << ", line " << label.getLineNumber() << ": label predicate must evaluate to type 'bool'.");
+                STORM_LOG_THROW(label.getStatePredicateExpression().hasBooleanType(), storm::exceptions::WrongFormatException, "Error in " << label.getFilename() << ", line " << label.getLineNumber() << ": label predicate must evaluate to type 'bool'.");
             }
             
             // Check the formulas.
             for (auto const& formula : this->getFormulas()) {
-                // Check for duplicate identifiers.
-                STORM_LOG_THROW(allIdentifiers.find(formula.getName()) == allIdentifiers.end(), storm::exceptions::WrongFormatException, "Error in " << formula.getFilename() << ", line " << formula.getLineNumber() << ": duplicate identifier '" << formula.getName() << "'.");
-                
-                std::set<std::string> containedIdentifiers = formula.getExpression().getVariables();
-                bool isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedIdentifiers.begin(), containedIdentifiers.end());
+                std::set<storm::expressions::Variable> containedVariables = formula.getExpression().getVariables();
+                bool isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedVariables.begin(), containedVariables.end());
                 STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << formula.getFilename() << ", line " << formula.getLineNumber() << ": formula expression refers to unknown identifiers.");
-                
-                // Record the new identifier for future checks.
-                allIdentifiers.insert(formula.getName());
             }
         }
         

@@ -17,11 +17,9 @@ namespace storm {
             return this->getFirstOperand()->containsVariables() || this->getSecondOperand()->containsVariables();
 		}
 
-		std::set<std::string> BinaryExpression::getVariables() const {
-			std::set<std::string> firstVariableSet = this->getFirstOperand()->getVariables();
-			std::set<std::string> secondVariableSet = this->getSecondOperand()->getVariables();
-			firstVariableSet.insert(secondVariableSet.begin(), secondVariableSet.end());
-			return firstVariableSet;
+        void BinaryExpression::gatherVariables(std::set<storm::expressions::Variable>& variables) const {
+			this->getFirstOperand()->gatherVariables(variables);
+			this->getSecondOperand()->gatherVariables(variables);
 		}
         
         std::shared_ptr<BaseExpression const> const& BinaryExpression::getFirstOperand() const {

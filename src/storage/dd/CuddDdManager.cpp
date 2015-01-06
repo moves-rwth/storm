@@ -198,26 +198,54 @@ namespace storm {
         
         std::vector<std::string> DdManager<DdType::CUDD>::getDdVariableNames() const {
             // First, we initialize a list DD variables and their names.
-            std::vector<std::pair<ADD, std::string>> variableNamePairs;
-            for (auto const& nameMetaVariablePair : this->metaVariableMap) {
-                DdMetaVariable<DdType::CUDD> const& metaVariable = nameMetaVariablePair.second;
+            std::vector<std::pair<ADD, std::string>> variablePairs;
+            for (auto const& variablePair : this->metaVariableMap) {
+                DdMetaVariable<DdType::CUDD> const& metaVariable = variablePair.second;
                 // If the meta variable is of type bool, we don't need to suffix it with the bit number.
                 if (metaVariable.getType() == DdMetaVariable<storm::dd::DdType::CUDD>::MetaVariableType::Bool) {
-                    variableNamePairs.emplace_back(metaVariable.getDdVariables().front().getCuddAdd(), metaVariable.getName());
+                    variablePairs.emplace_back(metaVariable.getDdVariables().front().getCuddAdd(), variablePair.first.getName());
                 } else {
                     // For integer-valued meta variables, we, however, have to add the suffix.
                     for (uint_fast64_t variableIndex = 0; variableIndex < metaVariable.getNumberOfDdVariables(); ++variableIndex) {
-                        variableNamePairs.emplace_back(metaVariable.getDdVariables()[variableIndex].getCuddAdd(), metaVariable.getName() + "." + std::to_string(variableIndex));
+                        variablePairs.emplace_back(metaVariable.getDdVariables()[variableIndex].getCuddAdd(), variablePair.first.getName() + '.' + std::to_string(variableIndex));
                     }
                 }
             }
             
             // Then, we sort this list according to the indices of the ADDs.
-            std::sort(variableNamePairs.begin(), variableNamePairs.end(), [](std::pair<ADD, std::string> const& a, std::pair<ADD, std::string> const& b) { return a.first.NodeReadIndex() < b.first.NodeReadIndex(); });
+            std::sort(variablePairs.begin(), variablePairs.end(), [](std::pair<ADD, std::string> const& a, std::pair<ADD, std::string> const& b) { return a.first.NodeReadIndex() < b.first.NodeReadIndex(); });
             
             // Now, we project the sorted vector to its second component.
             std::vector<std::string> result;
-            for (auto const& element : variableNamePairs) {
+            for (auto const& element : variablePairs) {
+                result.push_back(element.second);
+            }
+            
+            return result;
+        }
+        
+        std::vector<storm::expressions::Variable> DdManager<DdType::CUDD>::getDdVariables() const {
+            // First, we initialize a list DD variables and their names.
+            std::vector<std::pair<ADD, storm::expressions::Variable>> variablePairs;
+            for (auto const& variablePair : this->metaVariableMap) {
+                DdMetaVariable<DdType::CUDD> const& metaVariable = variablePair.second;
+                // If the meta variable is of type bool, we don't need to suffix it with the bit number.
+                if (metaVariable.getType() == DdMetaVariable<storm::dd::DdType::CUDD>::MetaVariableType::Bool) {
+                    variablePairs.emplace_back(metaVariable.getDdVariables().front().getCuddAdd(), variablePair.first);
+                } else {
+                    // For integer-valued meta variables, we, however, have to add the suffix.
+                    for (uint_fast64_t variableIndex = 0; variableIndex < metaVariable.getNumberOfDdVariables(); ++variableIndex) {
+                        variablePairs.emplace_back(metaVariable.getDdVariables()[variableIndex].getCuddAdd(), variablePair);
+                    }
+                }
+            }
+            
+            // Then, we sort this list according to the indices of the ADDs.
+            std::sort(variablePairs.begin(), variablePairs.end(), [](std::pair<ADD, std::string> const& a, std::pair<ADD, std::string> const& b) { return a.first.NodeReadIndex() < b.first.NodeReadIndex(); });
+            
+            // Now, we project the sorted vector to its second component.
+            std::vector<storm::expressions::Variable> result;
+            for (auto const& element : variablePairs) {
                 result.push_back(element.second);
             }
             

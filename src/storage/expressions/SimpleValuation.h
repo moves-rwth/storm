@@ -18,6 +18,11 @@ namespace storm {
             friend class SimpleValuationPointerLess;
             
             /*!
+             * Creates an empty simple valuation that is associated to no manager and has no variables.
+             */
+            SimpleValuation();
+            
+            /*!
              * Creates a new valuation over the non-auxiliary variables of the given manager.
              *
              * @param manager The manager responsible for the variables of this valuation.

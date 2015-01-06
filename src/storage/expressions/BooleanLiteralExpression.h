@@ -30,7 +30,7 @@ namespace storm {
             virtual bool isLiteral() const override;
             virtual bool isTrue() const override;
             virtual bool isFalse() const override;
-			virtual std::set<std::string> getVariables() const override;
+            virtual void gatherVariables(std::set<storm::expressions::Variable>& variables) const override;
             virtual std::shared_ptr<BaseExpression const> simplify() const override;
             virtual boost::any accept(ExpressionVisitor& visitor) const override;
             

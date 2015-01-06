@@ -134,6 +134,16 @@ namespace storm {
             virtual storm::expressions::Variable addBinaryVariable(std::string const& name, double objectiveFunctionCoefficient = 0) = 0;
             
             /*!
+             * Retrieves an expression that characterizes the given constant value.
+             *
+             * @param value The value of the constant.
+             * @return The resulting expression.
+             */
+            storm::expressions::Expression getConstant(double value) const {
+                return manager->rational(value);
+            }
+            
+            /*!
              * Updates the model to make the variables that have been declared since the last call to <code>update</code>
              * usable.
              */

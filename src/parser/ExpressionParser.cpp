@@ -93,7 +93,7 @@ namespace storm {
         storm::expressions::Expression ExpressionParser::createIteExpression(storm::expressions::Expression e1, storm::expressions::Expression e2, storm::expressions::Expression e3) const {
             if (this->createExpressions) {
                 try {
-                    return e1.ite(e2, e3);
+                    return storm::expressions::ite(e1, e2, e3);
                 } catch (storm::exceptions::InvalidTypeException const& e) {
                     STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
                 }
@@ -106,7 +106,7 @@ namespace storm {
                 try {
                     switch (operatorType) {
                         case storm::expressions::OperatorType::Or: return e1 || e2; break;
-                        case storm::expressions::OperatorType::Implies: return e1.implies(e2); break;
+                        case storm::expressions::OperatorType::Implies: return storm::expressions::implies(e1, e2); break;
                         default: STORM_LOG_ASSERT(false, "Invalid operation."); break;
                     }
                 } catch (storm::exceptions::InvalidTypeException const& e) {
@@ -151,7 +151,7 @@ namespace storm {
             if (this->createExpressions) {
                 try {
                     switch (operatorType) {
-                        case storm::expressions::OperatorType::Equal: return e1.hasBooleanReturnType() && e2.hasBooleanReturnType() ? e1.iff(e2) : e1 == e2; break;
+                        case storm::expressions::OperatorType::Equal: return e1.hasBooleanType() && e2.hasBooleanType() ? storm::expressions::iff(e1, e2) : e1 == e2; break;
                         case storm::expressions::OperatorType::NotEqual: return e1 != e2; break;
                         default: STORM_LOG_ASSERT(false, "Invalid operation."); break;
                     }
@@ -250,8 +250,8 @@ namespace storm {
             if (this->createExpressions) {
                 try {
                     switch (operatorType) {
-                        case storm::expressions::OperatorType::Min: return storm::expressions::Expression::minimum(e1, e2); break;
-                        case storm::expressions::OperatorType::Max: return storm::expressions::Expression::maximum(e1, e2); break;
+                        case storm::expressions::OperatorType::Min: return storm::expressions::minimum(e1, e2); break;
+                        case storm::expressions::OperatorType::Max: return storm::expressions::maximum(e1, e2); break;
                         default: STORM_LOG_ASSERT(false, "Invalid operation."); break;
                     }
                 } catch (storm::exceptions::InvalidTypeException const& e) {
@@ -265,8 +265,8 @@ namespace storm {
             if (this->createExpressions) {
                 try {
                     switch (operatorType) {
-                        case storm::expressions::OperatorType::Floor: return e1.floor(); break;
-                        case storm::expressions::OperatorType::Ceil: return e1.ceil(); break;
+                        case storm::expressions::OperatorType::Floor: return storm::expressions::floor(e1); break;
+                        case storm::expressions::OperatorType::Ceil: return storm::expressions::ceil(e1); break;
                         default: STORM_LOG_ASSERT(false, "Invalid operation."); break;
                     }
                 } catch (storm::exceptions::InvalidTypeException const& e) {

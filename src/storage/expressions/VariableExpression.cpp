@@ -53,8 +53,8 @@ namespace storm {
 			return true;
 		}
         
-        std::set<std::string> VariableExpression::getVariables() const {
-            return {this->getVariableName()};
+        void VariableExpression::gatherVariables(std::set<storm::expressions::Variable>& variables) const {
+            variables.insert(this->getVariable());
         }
 
         std::shared_ptr<BaseExpression const> VariableExpression::simplify() const {

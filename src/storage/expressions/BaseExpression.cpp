@@ -26,6 +26,10 @@ namespace storm {
             return this->getType().isBooleanType();
         }
         
+        bool BaseExpression::hasRationalType() const {
+            return this->getType().isRationalType();
+        }
+        
         int_fast64_t BaseExpression::evaluateAsInt(Valuation const* valuation) const {
             STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Unable to evaluate expression as integer.");
         }

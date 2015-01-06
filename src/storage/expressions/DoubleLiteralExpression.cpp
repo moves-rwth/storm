@@ -15,8 +15,8 @@ namespace storm {
             return true;
         }
         
-        std::set<std::string> DoubleLiteralExpression::getVariables() const {
-            return std::set<std::string>();
+        void DoubleLiteralExpression::gatherVariables(std::set<storm::expressions::Variable>& variables) const {
+            return;
 		}
         
         std::shared_ptr<BaseExpression const> DoubleLiteralExpression::simplify() const {

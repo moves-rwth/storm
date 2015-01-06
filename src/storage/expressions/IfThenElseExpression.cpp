@@ -63,13 +63,10 @@ namespace storm {
             }
 		}
 
-		std::set<std::string> IfThenElseExpression::getVariables() const {
-			std::set<std::string> result = this->condition->getVariables();
-			std::set<std::string> tmp = this->thenExpression->getVariables();
-			result.insert(tmp.begin(), tmp.end());
-			tmp = this->elseExpression->getVariables();
-			result.insert(tmp.begin(), tmp.end());
-			return result;
+        void IfThenElseExpression::gatherVariables(std::set<storm::expressions::Variable>& variables) const {
+			this->condition->gatherVariables(variables);
+			this->thenExpression->gatherVariables(variables);
+			this->elseExpression->gatherVariables(variables);
 		}
         
         std::shared_ptr<BaseExpression const> IfThenElseExpression::simplify() const {

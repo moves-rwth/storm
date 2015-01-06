@@ -26,6 +26,11 @@ namespace storm {
             return "int";
         }
         
+        BoundedIntegerType::BoundedIntegerType(std::size_t width) : width(width) {
+            // Intentionally left empty.
+        }
+
+        
         uint64_t BoundedIntegerType::getMask() const {
             return BoundedIntegerType::mask;
         }

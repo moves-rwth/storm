@@ -21,7 +21,38 @@ namespace storm {
             friend class Variable;
             template<typename MapType> friend class SubstitutionVisitor;
             
+            friend Expression operator+(Expression const& first, Expression const& second);
+            friend Expression operator-(Expression const& first, Expression const& second);
+            friend Expression operator-(Expression const& first);
+            friend Expression operator*(Expression const& first, Expression const& second);
+            friend Expression operator/(Expression const& first, Expression const& second);
+            friend Expression operator^(Expression const& first, Expression const& second);
+            friend Expression operator&&(Expression const& first, Expression const& second);
+            friend Expression operator||(Expression const& first, Expression const& second);
+            friend Expression operator!(Expression const& first);
+            friend Expression operator==(Expression const& first, Expression const& second);
+            friend Expression operator!=(Expression const& first, Expression const& second);
+            friend Expression operator>(Expression const& first, Expression const& second);
+            friend Expression operator>=(Expression const& first, Expression const& second);
+            friend Expression operator<(Expression const& first, Expression const& second);
+            friend Expression operator<=(Expression const& first, Expression const& second);
+            friend Expression ite(Expression const& condition, Expression const& thenExpression, Expression const& elseExpression);
+            friend Expression implies(Expression const& first, Expression const& second);
+            friend Expression iff(Expression const& first, Expression const& second);
+            friend Expression floor(Expression const& first);
+            friend Expression ceil(Expression const& first);
+            friend Expression minimum(Expression const& first, Expression const& second);
+            friend Expression maximum(Expression const& first, Expression const& second);
+
+            
             Expression() = default;
+            
+            /*!
+             * Creates an expression representing the given variable.
+             *
+             * @param variable The variable to represent.
+             */
+            Expression(Variable const& variable);
             
             // Instantiate constructors and assignments with their default implementations.
             Expression(Expression const& other) = default;
@@ -30,33 +61,6 @@ namespace storm {
             Expression(Expression&&) = default;
             Expression& operator=(Expression&&) = default;
 #endif
-            
-            // Provide operator overloads to conveniently construct new expressions from other expressions.
-            Expression operator+(Expression const& other) const;
-            Expression operator-(Expression const& other) const;
-            Expression operator-() const;
-            Expression operator*(Expression const& other) const;
-            Expression operator/(Expression const& other) const;
-            Expression operator^(Expression const& other) const;
-            Expression operator&&(Expression const& other) const;
-            Expression operator||(Expression const& other) const;
-            Expression operator!() const;
-            Expression operator==(Expression const& other) const;
-            Expression operator!=(Expression const& other) const;
-            Expression operator>(Expression const& other) const;
-            Expression operator>=(Expression const& other) const;
-            Expression operator<(Expression const& other) const;
-            Expression operator<=(Expression const& other) const;
-            
-            Expression ite(Expression const& thenExpression, Expression const& elseExpression);
-            Expression implies(Expression const& other) const;
-            Expression iff(Expression const& other) const;
-            
-            Expression floor() const;
-            Expression ceil() const;
-
-            static Expression minimum(Expression const& lhs, Expression const& rhs);
-            static Expression maximum(Expression const& lhs, Expression const& rhs);
             
             /*!
              * Substitutes all occurrences of the variables according to the given map. Note that this substitution is
@@ -207,7 +211,7 @@ namespace storm {
              *
              * @return The set of all variables that appear in the expression.
              */
-            std::set<std::string> getVariables() const;
+            std::set<storm::expressions::Variable> getVariables() const;
 
             /*!
              * Retrieves the base expression underlying this expression object. Note that prior to calling this, the
@@ -243,21 +247,28 @@ namespace storm {
              *
              * @return True iff the expression has a numerical return type.
              */
-            bool hasNumericalReturnType() const;
+            bool hasNumericalType() const;
+
+            /*!
+             * Retrieves whether the expression has a rational return type.
+             *
+             * @return True iff the expression has a rational return type.
+             */
+            bool hasRationalType() const;
             
             /*!
              * Retrieves whether the expression has a boolean return type.
              *
              * @return True iff the expression has a boolean return type.
              */
-            bool hasBooleanReturnType() const;
+            bool hasBooleanType() const;
             
             /*!
              * Retrieves whether the expression has an integral return type.
              *
              * @return True iff the expression has a integral return type.
              */
-            bool hasIntegralReturnType() const;
+            bool hasIntegralType() const;
             
             /*!
              * Accepts the given visitor.
@@ -275,29 +286,38 @@ namespace storm {
              * @param expressionPtr A pointer to the underlying base expression.
              */
             Expression(std::shared_ptr<BaseExpression const> const& expressionPtr);
-            
-            /*!
-             * Creates an expression representing the given variable.
-             *
-             * @param variable The variable to represent.
-             */
-            Expression(Variable const& variable);
-            
-            /*!
-             * Checks whether the two expressions share the same expression manager.
-             *
-             * @param a The first expression.
-             * @param b The second expression.
-             * @return True iff the expressions share the same manager.
-             */
-            static void assertSameManager(BaseExpression const& a, BaseExpression const& b);
-            
+                        
             // A pointer to the underlying base expression.
             std::shared_ptr<BaseExpression const> expressionPtr;
             
             // A pointer to the responsible manager.
             std::shared_ptr<ExpressionManager> manager;
         };
+        
+        // Provide operator overloads to conveniently construct new expressions from other expressions.
+        Expression operator+(Expression const& first, Expression const& second);
+        Expression operator-(Expression const& first, Expression const& second);
+        Expression operator-(Expression const& first);
+        Expression operator*(Expression const& first, Expression const& second);
+        Expression operator/(Expression const& first, Expression const& second);
+        Expression operator^(Expression const& first, Expression const& second);
+        Expression operator&&(Expression const& first, Expression const& second);
+        Expression operator||(Expression const& first, Expression const& second);
+        Expression operator!(Expression const& first);
+        Expression operator==(Expression const& first, Expression const& second);
+        Expression operator!=(Expression const& first, Expression const& second);
+        Expression operator>(Expression const& first, Expression const& second);
+        Expression operator>=(Expression const& first, Expression const& second);
+        Expression operator<(Expression const& first, Expression const& second);
+        Expression operator<=(Expression const& first, Expression const& second);
+        Expression ite(Expression const& condition, Expression const& thenExpression, Expression const& elseExpression);
+        Expression implies(Expression const& first, Expression const& second);
+        Expression iff(Expression const& first, Expression const& second);
+        Expression floor(Expression const& first);
+        Expression ceil(Expression const& first);
+        Expression minimum(Expression const& first, Expression const& second);
+        Expression maximum(Expression const& first, Expression const& second);
+
     }
 }
 

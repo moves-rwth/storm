@@ -18,6 +18,7 @@ namespace storm {
     namespace expressions {
         // Forward-declare expression manager.
         class ExpressionManager;
+        class Variable;
         
         /*!
          * The base class of all expression classes.
@@ -148,9 +149,9 @@ namespace storm {
             /*!
              * Retrieves the set of all variables that appear in the expression.
              *
-             * @return The set of all variables that appear in the expression.
+             * @param The set into which all variables in this expresson are inserted.
              */
-            virtual std::set<std::string> getVariables() const = 0;
+            virtual void gatherVariables(std::set<storm::expressions::Variable>& variables) const = 0;
 
             /*!
              * Simplifies the expression according to some simple rules.
@@ -186,6 +187,13 @@ namespace storm {
              * @return True iff the expression has a boolean type.
              */
             bool hasBooleanType() const;
+            
+            /*!
+             * Retrieves whether the expression has a rational return type.
+             *
+             * @return True iff the expression has a rational return type.
+             */
+            bool hasRationalType() const;
             
             /*!
              * Retrieves a shared pointer to this expression.

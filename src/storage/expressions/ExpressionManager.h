@@ -147,6 +147,33 @@ namespace storm {
              * @return The newly declared variable.
              */
             Variable declareVariable(std::string const& name, storm::expressions::Type const& variableType);
+
+            /*!
+             * Declares a new boolean variable with a name that must not yet exist and its corresponding type. Note that
+             * the name must not start with two underscores since these variables are reserved for internal use only.
+             *
+             * @param name The name of the variable.
+             * @return The newly declared variable.
+             */
+            Variable declareBooleanVariable(std::string const& name);
+
+            /*!
+             * Declares a new integer variable with a name that must not yet exist and its corresponding type. Note that
+             * the name must not start with two underscores since these variables are reserved for internal use only.
+             *
+             * @param name The name of the variable.
+             * @return The newly declared variable.
+             */
+            Variable declareIntegerVariable(std::string const& name);
+
+            /*!
+             * Declares a new rational variable with a name that must not yet exist and its corresponding type. Note that
+             * the name must not start with two underscores since these variables are reserved for internal use only.
+             *
+             * @param name The name of the variable.
+             * @return The newly declared variable.
+             */
+            Variable declareRationalVariable(std::string const& name);
             
             /*!
              * Declares an auxiliary variable with a name that must not yet exist and its corresponding type.

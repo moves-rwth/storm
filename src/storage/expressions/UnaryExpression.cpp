@@ -17,8 +17,8 @@ namespace storm {
             return this->getOperand()->containsVariables();
         }
 
-		std::set<std::string> UnaryExpression::getVariables() const {
-			return this->getOperand()->getVariables();
+        void UnaryExpression::gatherVariables(std::set<storm::expressions::Variable>& variables) const {
+			return;
 		}
         
         std::shared_ptr<BaseExpression const> const& UnaryExpression::getOperand() const {

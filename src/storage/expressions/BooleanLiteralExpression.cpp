@@ -23,8 +23,8 @@ namespace storm {
             return this->getValue() == false;
         }
         
-        std::set<std::string> BooleanLiteralExpression::getVariables() const {
-            return std::set<std::string>();
+        void BooleanLiteralExpression::gatherVariables(std::set<storm::expressions::Variable>& variables) const {
+            return;
 		}
         
         std::shared_ptr<BaseExpression const> BooleanLiteralExpression::simplify() const {
