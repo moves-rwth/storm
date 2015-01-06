@@ -123,7 +123,7 @@ namespace storm {
         }
         
         ExpressionManager const& Expression::getManager() const {
-            return *this->manager;
+            return this->getBaseExpression().getManager();
         }
         
         Type const& Expression::getType() const {
@@ -151,7 +151,7 @@ namespace storm {
         }
         
         std::ostream& operator<<(std::ostream& stream, Expression const& expression) {
-            stream << expression.getBaseExpression();
+            stream << expression.getBaseExpression() << "[" << &expression.getManager() << "]";
             return stream;
         }
         

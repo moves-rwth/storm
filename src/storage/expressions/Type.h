@@ -14,6 +14,8 @@ namespace storm {
         
         class BaseType {
         public:
+            BaseType();
+            
             /*!
              * Retrieves the mask that is associated with this type.
              *
@@ -35,12 +37,18 @@ namespace storm {
              * @return A string representation of the type.
              */
             virtual std::string getStringRepresentation() const = 0;
+            
+            virtual bool isBooleanType() const;
+            virtual bool isIntegerType() const;
+            virtual bool isBoundedIntegerType() const;
+            virtual bool isRationalType() const;
         };
 
         class BooleanType : public BaseType {
         public:
             virtual uint64_t getMask() const override;
             virtual std::string getStringRepresentation() const override;
+            virtual bool isBooleanType() const override;
 
         private:
             static const uint64_t mask = (1 << 61);
@@ -50,7 +58,8 @@ namespace storm {
         public:
             virtual uint64_t getMask() const override;
             virtual std::string getStringRepresentation() const override;
-            
+            virtual bool isIntegerType() const override;
+
         private:
             static const uint64_t mask = (1 << 62);
         };
@@ -77,6 +86,8 @@ namespace storm {
 
             virtual std::string getStringRepresentation() const override;
 
+            virtual bool isBoundedIntegerType() const override;
+
         private:
             static const uint64_t mask = (1 << 61) | (1 << 62);
             
@@ -87,8 +98,8 @@ namespace storm {
         class RationalType : public BaseType {
         public:
             virtual uint64_t getMask() const override;
-            
             virtual std::string getStringRepresentation() const override;
+            virtual bool isRationalType() const override;
 
         private:
             static const uint64_t mask = (1 << 63);
@@ -106,7 +117,7 @@ namespace storm {
         
         class Type {
         public:
-            Type() = default;
+            Type();
             
             /*!
              * Constructs a new type of the given manager with the given encapsulated type.
@@ -114,7 +125,7 @@ namespace storm {
              * @param manager The manager responsible for this type.
              * @param innerType The encapsulated type.
              */
-            Type(std::shared_ptr<ExpressionManager const> const& manager, std::shared_ptr<BaseType> innerType);
+            Type(std::shared_ptr<ExpressionManager const> const& manager, std::shared_ptr<BaseType> const& innerType);
 
             /*!
              * Checks whether two types are the same.

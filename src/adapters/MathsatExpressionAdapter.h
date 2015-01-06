@@ -18,6 +18,7 @@
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/exceptions/NotImplementedException.h"
 
+#ifdef STORM_HAVE_MSAT
 namespace std {
     // Define hashing operator for MathSAT's declarations.
     template <>
@@ -29,9 +30,8 @@ namespace std {
 }
 
 // Define equality operator to make hashing work.
-bool operator==(msat_decl decl1, msat_decl decl2) {
-    return decl1.repr == decl2.repr;
-}
+bool operator==(msat_decl decl1, msat_decl decl2);
+#endif
 
 namespace storm {
 	namespace adapters {
@@ -72,7 +72,7 @@ namespace storm {
                 STORM_LOG_ASSERT(variable.getManager() == this->manager, "Invalid expression for solver.");
 
                 auto const& variableExpressionPair = variableToDeclarationMapping.find(variable);
-                if (variableExpressionPair != variableToDeclarationMapping.end()) {
+                if (variableExpressionPair == variableToDeclarationMapping.end()) {
                     return msat_make_constant(env, createVariable(variable));
                 }
                 return msat_make_constant(env, variableExpressionPair->second);
@@ -193,7 +193,6 @@ namespace storm {
 
 			virtual boost::any visit(expressions::UnaryNumericalFunctionExpression const& expression) override {
 				msat_term childResult = boost::any_cast<msat_term>(expression.getOperand()->accept(*this));
-
 
 				switch (expression.getOperatorType()) {
 					case storm::expressions::UnaryNumericalFunctionExpression::OperatorType::Minus:

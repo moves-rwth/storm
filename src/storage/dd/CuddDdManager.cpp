@@ -235,13 +235,13 @@ namespace storm {
                 } else {
                     // For integer-valued meta variables, we, however, have to add the suffix.
                     for (uint_fast64_t variableIndex = 0; variableIndex < metaVariable.getNumberOfDdVariables(); ++variableIndex) {
-                        variablePairs.emplace_back(metaVariable.getDdVariables()[variableIndex].getCuddAdd(), variablePair);
+                        variablePairs.emplace_back(metaVariable.getDdVariables()[variableIndex].getCuddAdd(), variablePair.first);
                     }
                 }
             }
             
             // Then, we sort this list according to the indices of the ADDs.
-            std::sort(variablePairs.begin(), variablePairs.end(), [](std::pair<ADD, std::string> const& a, std::pair<ADD, std::string> const& b) { return a.first.NodeReadIndex() < b.first.NodeReadIndex(); });
+            std::sort(variablePairs.begin(), variablePairs.end(), [](std::pair<ADD, storm::expressions::Variable> const& a, std::pair<ADD, storm::expressions::Variable> const& b) { return a.first.NodeReadIndex() < b.first.NodeReadIndex(); });
             
             // Now, we project the sorted vector to its second component.
             std::vector<storm::expressions::Variable> result;

@@ -1,13 +1,51 @@
 #include "src/storage/expressions/Type.h"
 
+#include <sstream>
+
 #include "src/storage/expressions/ExpressionManager.h"
 #include "src/utility/macros.h"
 
 namespace storm {
     namespace expressions {
         
+        BaseType::BaseType() {
+            // Intentionally left empty.
+        }
+        
         bool BaseType::operator==(BaseType const& other) const {
             return this->getMask() == other.getMask();
+        }
+        
+        bool BaseType::isBooleanType() const {
+            return false;
+        }
+        
+        bool BooleanType::isBooleanType() const {
+            return true;
+        }
+        
+        bool BaseType::isIntegerType() const {
+            return false;
+        }
+        
+        bool IntegerType::isIntegerType() const {
+            return true;
+        }
+        
+        bool BaseType::isBoundedIntegerType() const {
+            return false;
+        }
+        
+        bool BoundedIntegerType::isBoundedIntegerType() const {
+            return true;
+        }
+        
+        bool BaseType::isRationalType() const {
+            return false;
+        }
+        
+        bool RationalType::isRationalType() const {
+            return true;
         }
         
         uint64_t BooleanType::getMask() const {
@@ -29,7 +67,6 @@ namespace storm {
         BoundedIntegerType::BoundedIntegerType(std::size_t width) : width(width) {
             // Intentionally left empty.
         }
-
         
         uint64_t BoundedIntegerType::getMask() const {
             return BoundedIntegerType::mask;
@@ -55,7 +92,11 @@ namespace storm {
             return "rational";
         }
         
-        Type::Type(std::shared_ptr<ExpressionManager const> const& manager, std::shared_ptr<BaseType> innerType) : manager(manager), innerType(innerType) {
+        Type::Type() : manager(nullptr), innerType(nullptr) {
+            // Intentionally left empty.
+        }
+        
+        Type::Type(std::shared_ptr<ExpressionManager const> const& manager, std::shared_ptr<BaseType> const& innerType) : manager(manager), innerType(innerType) {
             // Intentionally left empty.
         }
         
@@ -80,15 +121,15 @@ namespace storm {
         }
         
         bool Type::isBooleanType() const {
-            return typeid(*this->innerType) == typeid(BooleanType);
+            return this->innerType->isBooleanType();
         }
         
         bool Type::isUnboundedIntegralType() const {
-            return typeid(*this->innerType) == typeid(IntegerType);
+            return this->innerType->isIntegerType();
         }
         
         bool Type::isBoundedIntegralType() const {
-            return typeid(*this->innerType) == typeid(BoundedIntegerType);
+            return this->innerType->isBoundedIntegerType();
         }
         
         std::size_t Type::getWidth() const {
@@ -96,7 +137,7 @@ namespace storm {
         }
 
         bool Type::isRationalType() const {
-            return typeid(*this->innerType) == typeid(RationalType);
+            return this->innerType->isRationalType();
         }
         
         storm::expressions::ExpressionManager const& Type::getManager() const {

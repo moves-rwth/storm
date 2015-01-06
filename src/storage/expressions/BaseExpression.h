@@ -231,7 +231,7 @@ namespace storm {
             ExpressionManager const& manager;
             
             // The return type of this expression.
-            Type const& type;
+            Type type;
         };
     }
 }

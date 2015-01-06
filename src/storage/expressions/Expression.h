@@ -44,7 +44,6 @@ namespace storm {
             friend Expression minimum(Expression const& first, Expression const& second);
             friend Expression maximum(Expression const& first, Expression const& second);
 
-            
             Expression() = default;
             
             /*!
@@ -289,9 +288,6 @@ namespace storm {
                         
             // A pointer to the underlying base expression.
             std::shared_ptr<BaseExpression const> expressionPtr;
-            
-            // A pointer to the responsible manager.
-            std::shared_ptr<ExpressionManager> manager;
         };
         
         // Provide operator overloads to conveniently construct new expressions from other expressions.

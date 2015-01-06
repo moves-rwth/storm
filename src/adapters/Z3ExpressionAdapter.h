@@ -62,7 +62,7 @@ namespace storm {
                 STORM_LOG_ASSERT(variable.getManager() == this->manager, "Invalid expression for solver.");
                 
                 auto const& variableExpressionPair = variableToExpressionMapping.find(variable);
-                if (variableExpressionPair != variableToExpressionMapping.end()) {
+                if (variableExpressionPair == variableToExpressionMapping.end()) {
                     return createVariable(variable);
                 }
                 return variableExpressionPair->second;

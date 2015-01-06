@@ -114,14 +114,14 @@ namespace storm {
              *
              * @return The boolean type.
              */
-            Type getBooleanType() const;
+            Type const& getBooleanType() const;
             
             /*!
              * Retrieves the integer type.
              *
              * @return The integer type.
              */
-            Type getIntegerType() const;
+            Type const& getIntegerType() const;
             
             /*!
              * Retrieves the bounded integer type.
@@ -129,14 +129,14 @@ namespace storm {
              * @param width The bit width of the bounded type.
              * @return The bounded integer type.
              */
-            Type getBoundedIntegerType(std::size_t width) const;
+            Type const& getBoundedIntegerType(std::size_t width) const;
             
             /*!
              * Retrieves the rational type.
              *
              * @return The rational type.
              */
-            Type getRationalType() const;
+            Type const& getRationalType() const;
             
             /*!
              * Declares a variable with a name that must not yet exist and its corresponding type. Note that the name
@@ -403,6 +403,12 @@ namespace storm {
             
             // A counter used to create fresh variables.
             uint_fast64_t freshVariableCounter;
+            
+            // The types managed by this manager.
+            mutable std::unique_ptr<Type> booleanType;
+            mutable std::unique_ptr<Type> integerType;
+            mutable std::unique_ptr<Type> rationalType;
+            mutable std::map<std::size_t, Type> boundedIntegerTypes;
             
             // A mask that can be used to query whether a variable is an auxiliary variable.
             static const uint64_t auxiliaryMask = (1 << 60);

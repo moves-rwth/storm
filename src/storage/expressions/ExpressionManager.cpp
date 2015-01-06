@@ -51,7 +51,7 @@ namespace storm {
             }
         }
         
-        ExpressionManager::ExpressionManager() : nameToIndexMapping(), indexToNameMapping(), indexToTypeMapping(), variableTypeToCountMapping(), numberOfVariables(0), auxiliaryVariableTypeToCountMapping(), numberOfAuxiliaryVariables(0), freshVariableCounter(0) {
+        ExpressionManager::ExpressionManager() : nameToIndexMapping(), indexToNameMapping(), indexToTypeMapping(), variableTypeToCountMapping(), numberOfVariables(0), auxiliaryVariableTypeToCountMapping(), numberOfAuxiliaryVariables(0), freshVariableCounter(0), booleanType(nullptr), integerType(nullptr), rationalType(nullptr) {
             // Intentionally left empty.
         }
         
@@ -71,20 +71,36 @@ namespace storm {
             return this == &other;
         }
         
-        Type ExpressionManager::getBooleanType() const {
-            return Type(this->getSharedPointer(), std::shared_ptr<BaseType>(new BooleanType()));
+        Type const& ExpressionManager::getBooleanType() const {
+            if (booleanType == nullptr) {
+                booleanType = std::unique_ptr<Type>(new Type(this->getSharedPointer(), std::shared_ptr<BaseType>(new BooleanType())));
+            }
+            return *booleanType;
         }
         
-        Type ExpressionManager::getIntegerType() const {
-            return Type(this->getSharedPointer(), std::shared_ptr<BaseType>(new IntegerType()));
+        Type const& ExpressionManager::getIntegerType() const {
+            if (integerType == nullptr) {
+                integerType = std::unique_ptr<Type>(new Type(this->getSharedPointer(), std::shared_ptr<BaseType>(new IntegerType())));
+            }
+            return *integerType;
         }
         
-        Type ExpressionManager::getBoundedIntegerType(std::size_t width) const {
-            return Type(this->getSharedPointer(), std::shared_ptr<BaseType>(new BoundedIntegerType(width)));
+        Type const& ExpressionManager::getBoundedIntegerType(std::size_t width) const {
+            auto boundedIntegerType = boundedIntegerTypes.find(width);
+            if (boundedIntegerType == boundedIntegerTypes.end()) {
+                Type newType = Type(this->getSharedPointer(), std::shared_ptr<BaseType>(new BoundedIntegerType(width)));
+                boundedIntegerTypes[width] = newType;
+                return boundedIntegerTypes[width];
+            } else {
+                return boundedIntegerType->second;
+            }
         }
         
-        Type ExpressionManager::getRationalType() const {
-            return Type(this->getSharedPointer(), std::shared_ptr<BaseType>(new RationalType()));
+        Type const& ExpressionManager::getRationalType() const {
+            if (rationalType == nullptr) {
+                rationalType = std::unique_ptr<Type>(new Type(this->getSharedPointer(), std::shared_ptr<BaseType>(new RationalType())));
+            }
+            return *rationalType;
         }
         
         bool ExpressionManager::isValidVariableName(std::string const& name) {
