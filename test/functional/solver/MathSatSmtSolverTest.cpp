@@ -24,7 +24,7 @@ TEST(MathsatSmtSolver, CheckSat) {
     storm::expressions::Variable b = manager->declareIntegerVariable("b");
     storm::expressions::Variable c = manager->declareIntegerVariable("c");
     
-	storm::expressions::Expression exprFormula = a >= manager->integer(0) && a < manager->integer(5) && b > manager->integer(7) && c == (a * b) && b + a > c;
+	storm::expressions::Expression exprFormula = a >= manager->integer(0) && a < manager->integer(5) && b > manager->integer(7) && c == (a + b - manager->integer(1)) && b + a > c;
     
 	ASSERT_NO_THROW(s.add(exprFormula));
 	ASSERT_NO_THROW(result = s.check());
@@ -240,7 +240,7 @@ TEST(MathsatSmtSolver, InterpolationTest) {
     
     storm::solver::MathsatSmtSolver s2(*manager);
     
-    ASSERT_NO_THROW(s2.add(storm::expressions::implies(!(exprFormula && exprFormula2), interpol)));
+    ASSERT_NO_THROW(s2.add(!storm::expressions::implies(exprFormula && exprFormula2, interpol)));
     ASSERT_NO_THROW(result = s2.check());
     ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::Unsat);
     

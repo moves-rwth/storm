@@ -182,10 +182,7 @@ namespace storm {
         
         Type Type::numericalComparison(Type const& other) const {
             STORM_LOG_ASSERT(this->isNumericalType() && other.isNumericalType(), "Operator requires numerical operands.");
-            if (this->isRationalType() || other.isRationalType()) {
-                return this->getManager().getRationalType();
-            }
-            return this->getManager().getIntegerType();
+            return this->getManager().getBooleanType();
         }
         
         Type Type::ite(Type const& thenType, Type const& elseType) const {

@@ -43,7 +43,7 @@ namespace storm {
             return this->getType().isBooleanType();
         }
         
-        bool Variable::hasIntegralType() const {
+        bool Variable::hasIntegerType() const {
             return this->getType().isIntegralType();
         }
 

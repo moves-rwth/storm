@@ -151,7 +151,7 @@ namespace storm {
         }
         
         std::ostream& operator<<(std::ostream& stream, Expression const& expression) {
-            stream << expression.getBaseExpression() << "[" << &expression.getManager() << "]";
+            stream << expression.getBaseExpression();
             return stream;
         }
         

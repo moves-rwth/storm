@@ -103,7 +103,7 @@ namespace storm {
              *
              * @return True iff the variable if of integral type.
              */
-            bool hasIntegralType() const;
+            bool hasIntegerType() const;
 
             /*!
              * Checks whether the variable is of rational type.

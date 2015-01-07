@@ -129,7 +129,7 @@ TEST(MathsatExpressionAdapter, StormToMathsatFloorCeil) {
     storm::adapters::MathsatExpressionAdapter adapter(*manager, env);
     
     storm::expressions::Variable d = manager->declareRationalVariable("d");
-    storm::expressions::Variable i = manager->declareIntegerVariable("d");
+    storm::expressions::Variable i = manager->declareIntegerVariable("i");
     
 	storm::expressions::Expression exprFloor = storm::expressions::floor(d) == i && d > manager->rational(4.1) && d < manager->rational(4.991);
     msat_decl iDecl = msat_declare_function(env, "i", msat_get_integer_type(env));

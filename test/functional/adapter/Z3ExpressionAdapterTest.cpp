@@ -111,7 +111,7 @@ TEST(Z3ExpressionAdapter, StormToZ3FloorCeil) {
 	storm::adapters::Z3ExpressionAdapter adapter(*manager, ctx);
 
     storm::expressions::Variable d = manager->declareRationalVariable("d");
-    storm::expressions::Variable i = manager->declareIntegerVariable("d");
+    storm::expressions::Variable i = manager->declareIntegerVariable("i");
     
 	storm::expressions::Expression exprFloor = storm::expressions::floor(d) == i && d > manager->rational(4.1) && d < manager->rational(4.991);
 	z3::expr z3Floor = ctx.int_val(4) == ctx.int_const("i");

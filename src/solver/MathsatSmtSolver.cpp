@@ -46,7 +46,7 @@ namespace storm {
         }
         
         int_fast64_t MathsatSmtSolver::MathsatModelReference::getIntegerValue(storm::expressions::Variable const& variable) const {
-            STORM_LOG_ASSERT(variable.hasBooleanType(), "Variable is non-boolean type.");
+            STORM_LOG_ASSERT(variable.hasIntegerType(), "Variable is non-boolean type.");
             msat_term msatVariable = expressionAdapter.translateExpression(variable);
             msat_term msatValue = msat_get_model_value(env, msatVariable);
             STORM_LOG_ASSERT(!MSAT_ERROR_TERM(msatValue), "Unable to retrieve value of variable in model. This could be caused by calls to the solver between checking for satisfiability and model retrieval.");
@@ -55,7 +55,7 @@ namespace storm {
         }
         
         double MathsatSmtSolver::MathsatModelReference::getRationalValue(storm::expressions::Variable const& variable) const {
-            STORM_LOG_ASSERT(variable.hasBooleanType(), "Variable is non-boolean type.");
+            STORM_LOG_ASSERT(variable.hasRationalType(), "Variable is non-boolean type.");
             msat_term msatVariable = expressionAdapter.translateExpression(variable);
             msat_term msatValue = msat_get_model_value(env, msatVariable);
             STORM_LOG_ASSERT(!MSAT_ERROR_TERM(msatValue), "Unable to retrieve value of variable in model. This could be caused by calls to the solver between checking for satisfiability and model retrieval.");
@@ -254,7 +254,7 @@ namespace storm {
 
                 if (stormVariable.hasBooleanType()) {
                     stormModel.setBooleanValue(stormVariable, variableInterpretation.isTrue());
-                } else if (stormVariable.hasIntegralType()) {
+                } else if (stormVariable.hasIntegerType()) {
                     stormModel.setIntegerValue(stormVariable, variableInterpretation.evaluateAsInt());
                 } else if (stormVariable.hasRationalType()) {
                     stormModel.setRationalValue(stormVariable, variableInterpretation.evaluateAsDouble());
