@@ -118,7 +118,8 @@ namespace storm {
         }
         
         Variable ExpressionManager::declareBooleanVariable(std::string const& name) {
-            return this->declareVariable(name, this->getBooleanType());
+            Variable var = this->declareVariable(name, this->getBooleanType());
+            return var;
         }
         
         Variable ExpressionManager::declareIntegerVariable(std::string const& name) {
@@ -135,36 +136,34 @@ namespace storm {
         }
 
         Variable ExpressionManager::declareOrGetVariable(std::string const& name, storm::expressions::Type const& variableType) {
-            STORM_LOG_THROW(isValidVariableName(name), storm::exceptions::InvalidArgumentException, "Invalid variable name '" << name << "'.");
-            auto nameIndexPair = nameToIndexMapping.find(name);
-            if (nameIndexPair != nameToIndexMapping.end()) {
-                return Variable(this->getSharedPointer(), nameIndexPair->second);
-            } else {
-                std::unordered_map<Type, uint_fast64_t>::iterator typeCountPair = variableTypeToCountMapping.find(variableType);
-                uint_fast64_t& oldCount = variableTypeToCountMapping[variableType];
-                
-                // Compute the index of the new variable.
-                uint_fast64_t newIndex = oldCount++ | variableType.getMask();
-                
-                // Properly insert the variable into the data structure.
-                nameToIndexMapping[name] = newIndex;
-                indexToNameMapping[newIndex] = name;
-                indexToTypeMapping[newIndex] = variableType;
-                return Variable(this->getSharedPointer(), newIndex);
-            }
+            return declareOrGetVariable(name, variableType, false, true);
         }
 
         Variable ExpressionManager::declareOrGetAuxiliaryVariable(std::string const& name, storm::expressions::Type const& variableType) {
-            STORM_LOG_THROW(isValidVariableName(name), storm::exceptions::InvalidArgumentException, "Invalid variable name '" << name << "'.");
+            return declareOrGetVariable(name, variableType, true, true);
+        }
+
+        Variable ExpressionManager::declareOrGetVariable(std::string const& name, storm::expressions::Type const& variableType, bool auxiliary, bool checkName) {
+            STORM_LOG_THROW(!checkName || isValidVariableName(name), storm::exceptions::InvalidArgumentException, "Invalid variable name '" << name << "'.");
             auto nameIndexPair = nameToIndexMapping.find(name);
             if (nameIndexPair != nameToIndexMapping.end()) {
                 return Variable(this->getSharedPointer(), nameIndexPair->second);
             } else {
-                std::unordered_map<Type, uint_fast64_t>::iterator typeCountPair = auxiliaryVariableTypeToCountMapping.find(variableType);
-                uint_fast64_t& oldCount = auxiliaryVariableTypeToCountMapping[variableType];
+                std::unordered_map<Type, uint_fast64_t>::iterator typeCountPair;
+                if (auxiliary) {
+                    typeCountPair = auxiliaryVariableTypeToCountMapping.find(variableType);
+                    if (typeCountPair == auxiliaryVariableTypeToCountMapping.end()) {
+                        typeCountPair = auxiliaryVariableTypeToCountMapping.insert(typeCountPair, std::make_pair(variableType, 0));
+                    }
+                } else {
+                    typeCountPair = variableTypeToCountMapping.find(variableType);
+                    if (typeCountPair == variableTypeToCountMapping.end()) {
+                        typeCountPair = variableTypeToCountMapping.insert(typeCountPair, std::make_pair(variableType, 0));
+                    }
+                }
                 
                 // Compute the index of the new variable.
-                uint_fast64_t newIndex = oldCount++ | variableType.getMask() | auxiliaryMask;
+                uint_fast64_t newIndex = typeCountPair->second++ | variableType.getMask() | (auxiliary ? auxiliaryMask : 0);
                 
                 // Properly insert the variable into the data structure.
                 nameToIndexMapping[name] = newIndex;
@@ -173,7 +172,7 @@ namespace storm {
                 return Variable(this->getSharedPointer(), newIndex);
             }
         }
-
+        
         Variable ExpressionManager::getVariable(std::string const& name) const {
             auto nameIndexPair = nameToIndexMapping.find(name);
             STORM_LOG_THROW(nameIndexPair != nameToIndexMapping.end(),  storm::exceptions::InvalidArgumentException, "Unknown variable '" << name << "'.");
@@ -190,12 +189,12 @@ namespace storm {
 
         Variable ExpressionManager::declareFreshVariable(storm::expressions::Type const& variableType) {
             std::string newName = "__x" + std::to_string(freshVariableCounter++);
-            return declareVariable(newName, variableType);
+            return declareOrGetVariable(newName, variableType, false, false);
         }
 
         Variable ExpressionManager::declareFreshAuxiliaryVariable(storm::expressions::Type const& variableType) {
             std::string newName = "__x" + std::to_string(freshVariableCounter++);
-            return declareAuxiliaryVariable(newName, variableType);
+            return declareOrGetVariable(newName, variableType, true, false);
         }
 
         uint_fast64_t ExpressionManager::getNumberOfVariables(storm::expressions::Type const& variableType) const {

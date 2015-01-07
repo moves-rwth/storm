@@ -65,6 +65,7 @@ namespace storm {
                 if (variableExpressionPair == variableToExpressionMapping.end()) {
                     return createVariable(variable);
                 }
+
                 return variableExpressionPair->second;
             }
             

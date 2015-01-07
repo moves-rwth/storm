@@ -30,7 +30,7 @@ namespace storm {
             if (other.integerValues != nullptr) {
                 integerValues = std::unique_ptr<std::vector<int_fast64_t>>(new std::vector<int_fast64_t>(*other.integerValues));
             }
-            if (other.booleanValues != nullptr) {
+            if (other.rationalValues != nullptr) {
                 rationalValues = std::unique_ptr<std::vector<double>>(new std::vector<double>(*other.rationalValues));
             }
         }

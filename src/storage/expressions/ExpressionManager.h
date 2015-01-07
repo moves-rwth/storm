@@ -380,6 +380,18 @@ namespace storm {
              */
             bool variableExists(std::string const& name) const;
             
+            /*!
+             * Declares a variable with the given name if it does not yet exist.
+             *
+             * @param name The name of the variable to declare.
+             * @param variableType The type of the variable to declare.
+             * @param auxiliary A flag indicating whether the variable is an auxiliary one.
+             * @param checkName If set to true, the variable's name is checked that prevents internal variables from
+             * being declared from the outside.
+             * @return The variable.
+             */
+            Variable declareOrGetVariable(std::string const& name, storm::expressions::Type const& variableType, bool auxiliary, bool checkName);
+            
             // A mapping from all variable names (auxiliary + normal) to their indices.
             std::unordered_map<std::string, uint_fast64_t> nameToIndexMapping;
             
@@ -411,10 +423,10 @@ namespace storm {
             mutable std::map<std::size_t, Type> boundedIntegerTypes;
             
             // A mask that can be used to query whether a variable is an auxiliary variable.
-            static const uint64_t auxiliaryMask = (1 << 60);
+            static const uint64_t auxiliaryMask = (1ull << 60);
             
             // A mask that can be used to project a variable index to its offset (with the group of equally typed variables).
-            static const uint64_t offsetMask = (1 << 60) - 1;
+            static const uint64_t offsetMask = (1ull << 60) - 1;
         };
     }
 }

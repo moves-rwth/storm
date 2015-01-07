@@ -51,7 +51,7 @@ namespace storm {
             virtual bool isBooleanType() const override;
 
         private:
-            static const uint64_t mask = (1 << 61);
+            static const uint64_t mask = (1ull << 61);
         };
         
         class IntegerType : public BaseType {
@@ -61,7 +61,7 @@ namespace storm {
             virtual bool isIntegerType() const override;
 
         private:
-            static const uint64_t mask = (1 << 62);
+            static const uint64_t mask = (1ull << 62);
         };
         
         class BoundedIntegerType : public BaseType {
@@ -89,7 +89,7 @@ namespace storm {
             virtual bool isBoundedIntegerType() const override;
 
         private:
-            static const uint64_t mask = (1 << 61) | (1 << 62);
+            static const uint64_t mask = (1ull << 61) | (1ull << 62);
             
             // The bit width of the type.
             std::size_t width;
@@ -102,7 +102,7 @@ namespace storm {
             virtual bool isRationalType() const override;
 
         private:
-            static const uint64_t mask = (1 << 63);
+            static const uint64_t mask = (1ull << 63);
         };
         
         class ErrorType : public BaseType {

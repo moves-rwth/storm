@@ -116,6 +116,7 @@ TEST(Z3ExpressionAdapter, StormToZ3FloorCeil) {
 	storm::expressions::Expression exprFloor = storm::expressions::floor(d) == i && d > manager->rational(4.1) && d < manager->rational(4.991);
 	z3::expr z3Floor = ctx.int_val(4) == ctx.int_const("i");
 
+    conjecture = !z3::expr(ctx, Z3_mk_iff(ctx, adapter.translateExpression(exprFloor), z3Floor));
 	ASSERT_NO_THROW(conjecture = !z3::expr(ctx, Z3_mk_iff(ctx, adapter.translateExpression(exprFloor), z3Floor)));
 	s.add(conjecture);
     
