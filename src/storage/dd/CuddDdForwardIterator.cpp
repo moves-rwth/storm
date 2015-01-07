@@ -5,7 +5,7 @@
 
 namespace storm {
     namespace dd {
-        DdForwardIterator<DdType::CUDD>::DdForwardIterator() : ddManager(), generator(), cube(), value(), isAtEnd(), metaVariables(), enumerateDontCareMetaVariables(), cubeCounter(), relevantDontCareDdVariables(), currentValuation(ddManager->getExpressionManager().getSharedPointer()) {
+        DdForwardIterator<DdType::CUDD>::DdForwardIterator() : ddManager(), generator(), cube(), value(), isAtEnd(), metaVariables(), enumerateDontCareMetaVariables(), cubeCounter(), relevantDontCareDdVariables(), currentValuation() {
             // Intentionally left empty.
         }
         
@@ -90,9 +90,9 @@ namespace storm {
                 } else {
                     storm::expressions::Variable const& metaVariable = std::get<1>(this->relevantDontCareDdVariables[index]);
                     if ((this->cubeCounter & (1ull << index)) != 0) {
-                        currentValuation.setIntegerValue(metaVariable, ((currentValuation.getIntegerValue(metaVariable) - ddMetaVariable.getLow()) | (1ull << std::get<2>(this->relevantDontCareDdVariables[index]))) + ddMetaVariable.getLow());
+                        currentValuation.setBoundedIntegerValue(metaVariable, ((currentValuation.getBoundedIntegerValue(metaVariable) - ddMetaVariable.getLow()) | (1ull << std::get<2>(this->relevantDontCareDdVariables[index]))) + ddMetaVariable.getLow());
                     } else {
-                        currentValuation.setIntegerValue(metaVariable, ((currentValuation.getIntegerValue(metaVariable) - ddMetaVariable.getLow()) & ~(1ull << std::get<2>(this->relevantDontCareDdVariables[index]))) + ddMetaVariable.getLow());
+                        currentValuation.setBoundedIntegerValue(metaVariable, ((currentValuation.getBoundedIntegerValue(metaVariable) - ddMetaVariable.getLow()) & ~(1ull << std::get<2>(this->relevantDontCareDdVariables[index]))) + ddMetaVariable.getLow());
                     }
                 }
             }
@@ -134,7 +134,7 @@ namespace storm {
                         }
                     }
                     if (this->enumerateDontCareMetaVariables || metaVariableAppearsInCube) {
-                        currentValuation.setIntegerValue(metaVariable, intValue + ddMetaVariable.getLow());
+                        currentValuation.setBoundedIntegerValue(metaVariable, intValue + ddMetaVariable.getLow());
                     }
                 }
                 

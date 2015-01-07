@@ -4,6 +4,7 @@
 
 #include "src/storage/expressions/ExpressionManager.h"
 #include "src/utility/macros.h"
+#include "src/exceptions/InvalidTypeException.h"
 
 namespace storm {
     namespace expressions {
@@ -145,7 +146,7 @@ namespace storm {
         }
         
         Type Type::plusMinusTimes(Type const& other) const {
-            STORM_LOG_ASSERT(this->isNumericalType() && other.isNumericalType(), "Operator requires numerical operands.");
+            STORM_LOG_THROW(this->isNumericalType() && other.isNumericalType(), storm::exceptions::InvalidTypeException, "Operator requires numerical operands.");
             if (this->isRationalType() || other.isRationalType()) {
                 return this->getManager().getRationalType();
             }
@@ -153,17 +154,20 @@ namespace storm {
         }
         
         Type Type::minus() const {
-            STORM_LOG_ASSERT(this->isNumericalType(), "Operator requires numerical operand.");
+            STORM_LOG_THROW(this->isNumericalType(), storm::exceptions::InvalidTypeException, "Operator requires numerical operand.");
             return *this;
         }
         
         Type Type::divide(Type const& other) const {
-            STORM_LOG_ASSERT(this->isNumericalType() && other.isNumericalType(), "Operator requires numerical operands.");
-            return this->getManager().getRationalType();
+            STORM_LOG_THROW(this->isNumericalType() && other.isNumericalType(), storm::exceptions::InvalidTypeException, "Operator requires numerical operands.");
+            if (this->isRationalType() || other.isRationalType()) {
+                return this->getManager().getRationalType();
+            }
+            return this->getManager().getIntegerType();
         }
         
         Type Type::power(Type const& other) const {
-            STORM_LOG_ASSERT(this->isNumericalType() && other.isNumericalType(), "Operator requires numerical operands.");
+            STORM_LOG_THROW(this->isNumericalType() && other.isNumericalType(), storm::exceptions::InvalidTypeException, "Operator requires numerical operands.");
             if (this->isRationalType() || other.isRationalType()) {
                 return getManager().getRationalType();
             }
@@ -171,33 +175,42 @@ namespace storm {
         }
         
         Type Type::logicalConnective(Type const& other) const {
-            STORM_LOG_ASSERT(this->isBooleanType() && other.isBooleanType(), "Operator requires boolean operands.");
+            STORM_LOG_THROW(this->isBooleanType() && other.isBooleanType(), storm::exceptions::InvalidTypeException, "Operator requires boolean operands.");
             return *this;
         }
         
         Type Type::logicalConnective() const {
-            STORM_LOG_ASSERT(this->isBooleanType(), "Operator requires boolean operand.");
+            STORM_LOG_THROW(this->isBooleanType(), storm::exceptions::InvalidTypeException, "Operator requires boolean operand.");
             return *this;
         }
         
         Type Type::numericalComparison(Type const& other) const {
-            STORM_LOG_ASSERT(this->isNumericalType() && other.isNumericalType(), "Operator requires numerical operands.");
+            STORM_LOG_THROW(this->isNumericalType() && other.isNumericalType(), storm::exceptions::InvalidTypeException, "Operator requires numerical operands.");
             return this->getManager().getBooleanType();
         }
         
         Type Type::ite(Type const& thenType, Type const& elseType) const {
-            STORM_LOG_ASSERT(this->isBooleanType(), "Operator requires boolean condition.");
-            STORM_LOG_ASSERT(thenType == elseType, "Operator requires equal types.");
+            STORM_LOG_THROW(this->isBooleanType(), storm::exceptions::InvalidTypeException, "Operator requires boolean condition.");
+            if (thenType == elseType) {
+                return thenType;
+            } else {
+                STORM_LOG_THROW(thenType.isNumericalType() == elseType.isNumericalType(), storm::exceptions::InvalidTypeException, "Operator 'ite' requires proper types.");
+                if (thenType.isRationalType() || elseType.isRationalType()) {
+                    return this->getManager().getRationalType();
+                } else {
+                    return this->getManager().getIntegerType();
+                }
+            }
             return thenType;
         }
         
         Type Type::floorCeil() const {
-            STORM_LOG_ASSERT(this->isRationalType(), "Operator requires rational operand.");
+            STORM_LOG_THROW(this->isNumericalType(), storm::exceptions::InvalidTypeException, "Operator requires rational operand.");
             return this->getManager().getIntegerType();
         }
         
         Type Type::minimumMaximum(Type const& other) const {
-            STORM_LOG_ASSERT(this->isNumericalType() && other.isNumericalType(), "Operator requires numerical operands.");
+            STORM_LOG_THROW(this->isNumericalType() && other.isNumericalType(), storm::exceptions::InvalidTypeException, "Operator requires numerical operands.");
             if (this->isRationalType() || other.isRationalType()) {
                 return this->getManager().getRationalType();
             }

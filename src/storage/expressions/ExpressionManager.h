@@ -167,6 +167,17 @@ namespace storm {
             Variable declareIntegerVariable(std::string const& name);
 
             /*!
+             * Declares a new bounded integer variable with a name that must not yet exist and the bounded type of the
+             * given bit width. Note that the name must not start with two underscores since these variables are
+             * reserved for internal use only.
+             *
+             * @param name The name of the variable.
+             * @param width The bit width of the bounded type.
+             * @return The newly declared variable.
+             */
+            Variable declareBoundedIntegerVariable(std::string const& name, std::size_t width);
+            
+            /*!
              * Declares a new rational variable with a name that must not yet exist and its corresponding type. Note that
              * the name must not start with two underscores since these variables are reserved for internal use only.
              *
@@ -240,13 +251,6 @@ namespace storm {
              * @return The variable.
              */
             Variable declareFreshAuxiliaryVariable(storm::expressions::Type const& variableType);
-
-            /*!
-             * Retrieves the number of variables with the given type.
-             *
-             * @return The number of variables with the given type.
-             */
-            uint_fast64_t getNumberOfVariables(storm::expressions::Type const& variableType) const;
             
             /*!
              * Retrieves the number of variables.
@@ -268,6 +272,13 @@ namespace storm {
              * @return The number of integer variables.
              */
             uint_fast64_t getNumberOfIntegerVariables() const;
+
+            /*!
+             * Retrieves the number of bounded integer variables.
+             *
+             * @return The number of bounded integer variables.
+             */
+            uint_fast64_t getNumberOfBoundedIntegerVariables() const;
             
             /*!
              * Retrieves the number of rational variables.
@@ -275,13 +286,6 @@ namespace storm {
              * @return The number of rational variables.
              */
             uint_fast64_t getNumberOfRationalVariables() const;
-
-            /*!
-             * Retrieves the number of auxiliary variables with the given type.
-             *
-             * @return The number of auxiliary variables with the given type.
-             */
-            uint_fast64_t getNumberOfAuxiliaryVariables(storm::expressions::Type const& variableType) const;
             
             /*!
              * Retrieves the number of auxiliary variables.
@@ -291,23 +295,30 @@ namespace storm {
             uint_fast64_t getNumberOfAuxiliaryVariables() const;
             
             /*!
-             * Retrieves the number of boolean variables.
+             * Retrieves the number of auxiliary boolean variables.
              *
-             * @return The number of boolean variables.
+             * @return The number of auxiliary boolean variables.
              */
             uint_fast64_t getNumberOfAuxiliaryBooleanVariables() const;
             
             /*!
-             * Retrieves the number of integer variables.
+             * Retrieves the number of auxiliary integer variables.
              *
-             * @return The number of integer variables.
+             * @return The number of auxiliary integer variables.
              */
             uint_fast64_t getNumberOfAuxiliaryIntegerVariables() const;
             
             /*!
-             * Retrieves the number of rational variables.
+             * Retrieves the number of auxiliary bounded integer variables.
              *
-             * @return The number of rational variables.
+             * @return The number of auxiliary bounded integer variables.
+             */
+            uint_fast64_t getNumberOfAuxiliaryBoundedIntegerVariables() const;
+            
+            /*!
+             * Retrieves the number of auxiliary rational variables.
+             *
+             * @return The number of auxiliary rational variables.
              */
             uint_fast64_t getNumberOfAuxiliaryRationalVariables() const;
             
@@ -364,6 +375,12 @@ namespace storm {
             std::shared_ptr<ExpressionManager const> getSharedPointer() const;
 
         private:
+            // A functor used for treating bit vector types of different bit widths equally when it comes to the variable
+            // count.
+            struct ManagerTypeEquality {
+                bool operator()(Type const& a, Type const& b) const;
+            };
+            
             /*!
              * Checks whether the given variable name is valid.
              *
@@ -392,23 +409,39 @@ namespace storm {
              */
             Variable declareOrGetVariable(std::string const& name, storm::expressions::Type const& variableType, bool auxiliary, bool checkName);
             
+            /*!
+             * Retrieves the number of variables with the given type. Note that this considers bounded integer variables
+             * to be of the same type, no matter which bit width they have.
+             *
+             * @param variableType The type for which to query the number of variables.
+             */
+            uint_fast64_t getNumberOfVariables(storm::expressions::Type const& variableType) const;
+            
+            /*!
+             * Retrieves the number of auxiliary variables with the given type. Note that this considers bounded integer
+             * variables to be of the same type, no matter which bit width they have.
+             *
+             * @param variableType The type for which to query the number of auxiliary variables.
+             */
+            uint_fast64_t getNumberOfAuxiliaryVariables(storm::expressions::Type const& variableType) const;
+            
             // A mapping from all variable names (auxiliary + normal) to their indices.
             std::unordered_map<std::string, uint_fast64_t> nameToIndexMapping;
             
             // A mapping from all variable indices to their names.
-            std::unordered_map<uint_fast64_t, std::string> indexToNameMapping;
+            std::unordered_map<uint64_t, std::string> indexToNameMapping;
 
             // A mapping from all variable indices to their types.
-            std::unordered_map<uint_fast64_t, Type> indexToTypeMapping;
+            std::unordered_map<uint64_t, Type> indexToTypeMapping;
             
-            // Store counts for variables.
-            std::unordered_map<Type, uint_fast64_t> variableTypeToCountMapping;
-
             // The number of declared variables.
             uint_fast64_t numberOfVariables;
-            
+
+            // Store counts for variables.
+            std::unordered_map<Type, uint_fast64_t, std::hash<Type>, ManagerTypeEquality> variableTypeToCountMapping;
+
             // Store counts for auxiliary variables.
-            std::unordered_map<Type, uint_fast64_t> auxiliaryVariableTypeToCountMapping;
+            std::unordered_map<Type, uint_fast64_t, std::hash<Type>, ManagerTypeEquality> auxiliaryVariableTypeToCountMapping;
 
             // The number of declared auxiliary variables.
             uint_fast64_t numberOfAuxiliaryVariables;

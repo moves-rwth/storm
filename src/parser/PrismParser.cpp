@@ -225,7 +225,7 @@ namespace storm {
         storm::prism::Constant PrismParser::createUndefinedBooleanConstant(std::string const& newConstant) const {
             if (!this->secondRun) {
                 try {
-                    storm::expressions::Variable newVariable = manager->declareVariable(newConstant, manager->getBooleanType());
+                    storm::expressions::Variable newVariable = manager->declareBooleanVariable(newConstant);
                     this->identifiers_.add(newConstant, newVariable.getExpression());
                 } catch (storm::exceptions::InvalidArgumentException const& e) {
                     if (manager->hasVariable(newConstant)) {
@@ -241,7 +241,7 @@ namespace storm {
         storm::prism::Constant PrismParser::createUndefinedIntegerConstant(std::string const& newConstant) const {
             if (!this->secondRun) {
                 try {
-                    storm::expressions::Variable newVariable = manager->declareVariable(newConstant, manager->getIntegerType());
+                    storm::expressions::Variable newVariable = manager->declareIntegerVariable(newConstant);
                     this->identifiers_.add(newConstant, newVariable.getExpression());
                 } catch (storm::exceptions::InvalidArgumentException const& e) {
                     if (manager->hasVariable(newConstant)) {
@@ -257,7 +257,7 @@ namespace storm {
         storm::prism::Constant PrismParser::createUndefinedDoubleConstant(std::string const& newConstant) const {
             if (!this->secondRun) {
                 try {
-                    storm::expressions::Variable newVariable = manager->declareVariable(newConstant, manager->getRationalType());
+                    storm::expressions::Variable newVariable = manager->declareRationalVariable(newConstant);
                     this->identifiers_.add(newConstant, newVariable.getExpression());
                 } catch (storm::exceptions::InvalidArgumentException const& e) {
                     if (manager->hasVariable(newConstant)) {
@@ -273,7 +273,7 @@ namespace storm {
         storm::prism::Constant PrismParser::createDefinedBooleanConstant(std::string const& newConstant, storm::expressions::Expression expression) const {
             if (!this->secondRun) {
                 try {
-                    storm::expressions::Variable newVariable = manager->declareVariable(newConstant, manager->getBooleanType());
+                    storm::expressions::Variable newVariable = manager->declareBooleanVariable(newConstant);
                     this->identifiers_.add(newConstant, newVariable.getExpression());
                 } catch (storm::exceptions::InvalidArgumentException const& e) {
                     if (manager->hasVariable(newConstant)) {
@@ -289,7 +289,7 @@ namespace storm {
         storm::prism::Constant PrismParser::createDefinedIntegerConstant(std::string const& newConstant, storm::expressions::Expression expression) const {
             if (!this->secondRun) {
                 try {
-                    storm::expressions::Variable newVariable = manager->declareVariable(newConstant, manager->getIntegerType());
+                    storm::expressions::Variable newVariable = manager->declareIntegerVariable(newConstant);
                     this->identifiers_.add(newConstant, newVariable.getExpression());
                 } catch (storm::exceptions::InvalidArgumentException const& e) {
                     if (manager->hasVariable(newConstant)) {
@@ -305,7 +305,7 @@ namespace storm {
         storm::prism::Constant PrismParser::createDefinedDoubleConstant(std::string const& newConstant, storm::expressions::Expression expression) const {
             if (!this->secondRun) {
                 try {
-                    storm::expressions::Variable newVariable = manager->declareVariable(newConstant, manager->getIntegerType());
+                    storm::expressions::Variable newVariable = manager->declareRationalVariable(newConstant);
                     this->identifiers_.add(newConstant, newVariable.getExpression());
                 } catch (storm::exceptions::InvalidArgumentException const& e) {
                     if (manager->hasVariable(newConstant)) {
@@ -361,7 +361,7 @@ namespace storm {
         storm::prism::BooleanVariable PrismParser::createBooleanVariable(std::string const& variableName, storm::expressions::Expression initialValueExpression) const {
             if (!this->secondRun) {
                 try {
-                    storm::expressions::Variable newVariable = manager->declareVariable(variableName, manager->getBooleanType());
+                    storm::expressions::Variable newVariable = manager->declareBooleanVariable(variableName);
                     this->identifiers_.add(variableName, newVariable.getExpression());
                 } catch (storm::exceptions::InvalidArgumentException const& e) {
                     if (manager->hasVariable(variableName)) {
@@ -377,7 +377,7 @@ namespace storm {
         storm::prism::IntegerVariable PrismParser::createIntegerVariable(std::string const& variableName, storm::expressions::Expression lowerBoundExpression, storm::expressions::Expression upperBoundExpression, storm::expressions::Expression initialValueExpression) const {
             if (!this->secondRun) {
                 try {
-                    storm::expressions::Variable newVariable = manager->declareVariable(variableName, manager->getIntegerType());
+                    storm::expressions::Variable newVariable = manager->declareIntegerVariable(variableName);
                     this->identifiers_.add(variableName, newVariable.getExpression());
                 } catch (storm::exceptions::InvalidArgumentException const& e) {
                     if (manager->hasVariable(variableName)) {
@@ -406,14 +406,14 @@ namespace storm {
                 for (auto const& variable : moduleToRename.getBooleanVariables()) {
                     auto const& renamingPair = renaming.find(variable.getName());
                     STORM_LOG_THROW(renamingPair != renaming.end(), storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": Boolean variable '" << variable.getName() << " was not renamed.");
-                    storm::expressions::Variable renamedVariable = manager->declareVariable(renamingPair->second, manager->getBooleanType());
-                    this->identifiers_.add(renamingPair->first, renamedVariable.getExpression());
+                    storm::expressions::Variable renamedVariable = manager->declareBooleanVariable(renamingPair->second);
+                    this->identifiers_.add(renamingPair->second, renamedVariable.getExpression());
                 }
                 for (auto const& variable : moduleToRename.getIntegerVariables()) {
                     auto const& renamingPair = renaming.find(variable.getName());
                     STORM_LOG_THROW(renamingPair != renaming.end(), storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": Integer variable '" << variable.getName() << " was not renamed.");
-                    storm::expressions::Variable renamedVariable = manager->declareVariable(renamingPair->second, manager->getBooleanType());
-                    this->identifiers_.add(renamingPair->first, renamedVariable.getExpression());
+                    storm::expressions::Variable renamedVariable = manager->declareIntegerVariable(renamingPair->second);
+                    this->identifiers_.add(renamingPair->second, renamedVariable.getExpression());
                 }
                 
                 // Return a dummy module in the first pass.

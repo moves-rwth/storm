@@ -32,8 +32,8 @@ namespace storm {
                 variableToCoefficientMapping = std::move(other.variableToCoefficientMapping);
                 std::swap(constantPart, other.constantPart);
             }
-            for (auto const& otherVariableCoefficientPair : other.variableToCoefficientMapping) {
-                this->variableToCoefficientMapping[otherVariableCoefficientPair.first] *= other.constantPart;
+            for (auto& variableCoefficientPair : this->variableToCoefficientMapping) {
+                variableCoefficientPair.second *= other.constantPart;
             }
             constantPart *= other.constantPart;
             return *this;
@@ -110,7 +110,7 @@ namespace storm {
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression is non-linear.");
             }
-            return rightResult;
+            return leftResult;
         }
         
         boost::any LinearCoefficientVisitor::visit(BinaryRelationExpression const& expression) {

@@ -11,12 +11,15 @@ namespace storm {
             // Intentionally left empty.
         }
 
-        SimpleValuation::SimpleValuation(std::shared_ptr<storm::expressions::ExpressionManager const> const& manager) : Valuation(manager), booleanValues(nullptr), integerValues(nullptr), rationalValues(nullptr) {
+        SimpleValuation::SimpleValuation(std::shared_ptr<storm::expressions::ExpressionManager const> const& manager) : Valuation(manager), booleanValues(nullptr), integerValues(nullptr), boundedIntegerValues(nullptr), rationalValues(nullptr) {
             if (this->getManager().getNumberOfBooleanVariables() > 0) {
                 booleanValues = std::unique_ptr<std::vector<bool>>(new std::vector<bool>(this->getManager().getNumberOfBooleanVariables()));
             }
             if (this->getManager().getNumberOfIntegerVariables() > 0) {
                 integerValues = std::unique_ptr<std::vector<int_fast64_t>>(new std::vector<int_fast64_t>(this->getManager().getNumberOfIntegerVariables()));
+            }
+            if (this->getManager().getNumberOfBoundedIntegerVariables() > 0) {
+                boundedIntegerValues = std::unique_ptr<std::vector<int_fast64_t>>(new std::vector<int_fast64_t>(this->getManager().getNumberOfBoundedIntegerVariables()));
             }
             if (this->getManager().getNumberOfRationalVariables() > 0) {
                 rationalValues = std::unique_ptr<std::vector<double>>(new std::vector<double>(this->getManager().getNumberOfRationalVariables()));
@@ -29,6 +32,9 @@ namespace storm {
             }
             if (other.integerValues != nullptr) {
                 integerValues = std::unique_ptr<std::vector<int_fast64_t>>(new std::vector<int_fast64_t>(*other.integerValues));
+            }
+            if (other.boundedIntegerValues != nullptr) {
+                boundedIntegerValues = std::unique_ptr<std::vector<int_fast64_t>>(new std::vector<int_fast64_t>(*other.boundedIntegerValues));
             }
             if (other.rationalValues != nullptr) {
                 rationalValues = std::unique_ptr<std::vector<double>>(new std::vector<double>(*other.rationalValues));
@@ -43,6 +49,9 @@ namespace storm {
                 }
                 if (other.integerValues != nullptr) {
                     integerValues = std::unique_ptr<std::vector<int_fast64_t>>(new std::vector<int_fast64_t>(*other.integerValues));
+                }
+                if (other.boundedIntegerValues != nullptr) {
+                    boundedIntegerValues = std::unique_ptr<std::vector<int_fast64_t>>(new std::vector<int_fast64_t>(*other.boundedIntegerValues));
                 }
                 if (other.booleanValues != nullptr) {
                     rationalValues = std::unique_ptr<std::vector<double>>(new std::vector<double>(*other.rationalValues));
@@ -80,6 +89,10 @@ namespace storm {
         int_fast64_t SimpleValuation::getIntegerValue(Variable const& integerVariable) const {
             return (*integerValues)[integerVariable.getOffset()];
         }
+
+        int_fast64_t SimpleValuation::getBoundedIntegerValue(Variable const& integerVariable) const {
+            return (*boundedIntegerValues)[integerVariable.getOffset()];
+        }
         
         double SimpleValuation::getRationalValue(Variable const& rationalVariable) const {
             return (*rationalValues)[rationalVariable.getOffset()];
@@ -91,6 +104,10 @@ namespace storm {
         
         void SimpleValuation::setIntegerValue(Variable const& integerVariable, int_fast64_t value) {
             (*integerValues)[integerVariable.getOffset()] = value;
+        }
+        
+        void SimpleValuation::setBoundedIntegerValue(Variable const& integerVariable, int_fast64_t value) {
+            (*boundedIntegerValues)[integerVariable.getOffset()] = value;
         }
         
         void SimpleValuation::setRationalValue(Variable const& rationalVariable, double value) {

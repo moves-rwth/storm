@@ -51,7 +51,7 @@ TEST(GlpkLpSolver, LPOptimizeMin) {
     ASSERT_NO_THROW(solver.update());
 
     ASSERT_NO_THROW(solver.addConstraint("", x + y + z <= solver.getConstant(12)));
-    ASSERT_NO_THROW(solver.addConstraint("", solver.getConstant(0.5) * y + z - x == solver.getConstant(5)));
+    ASSERT_NO_THROW(solver.addConstraint("", solver.getConstant(0.5) * y + z - x <= solver.getConstant(5)));
     ASSERT_NO_THROW(solver.addConstraint("", y - x <= solver.getConstant(5.5)));
     ASSERT_NO_THROW(solver.update());
 
@@ -117,7 +117,7 @@ TEST(GlpkLpSolver, MILPOptimizeMin) {
     ASSERT_NO_THROW(solver.update());
 
     ASSERT_NO_THROW(solver.addConstraint("", x + y + z <= solver.getConstant(12)));
-    ASSERT_NO_THROW(solver.addConstraint("", solver.getConstant(0.5) * y + z - x == solver.getConstant(5)));
+    ASSERT_NO_THROW(solver.addConstraint("", solver.getConstant(0.5) * y + z - x <= solver.getConstant(5)));
     ASSERT_NO_THROW(solver.addConstraint("", y - x <= solver.getConstant(5.5)));
     ASSERT_NO_THROW(solver.update());
 

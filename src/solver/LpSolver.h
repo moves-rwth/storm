@@ -34,7 +34,7 @@ namespace storm {
              * @param modelSense A value indicating whether the objective function of this model is to be minimized or
              * maximized.
              */
-            LpSolver(ModelSense const& modelSense) : currentModelHasBeenOptimized(false), modelSense(modelSense) {
+            LpSolver(ModelSense const& modelSense) : manager(new storm::expressions::ExpressionManager()), currentModelHasBeenOptimized(false), modelSense(modelSense) {
                 // Intentionally left empty.
             }
 

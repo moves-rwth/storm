@@ -58,7 +58,7 @@ TEST(PrismParser, ComplexTest) {
     
     formula test = a >= 10 & (max(a,b) > floor(e));
     formula test2 = a+b;
-    formula test3 = (a + b > 10 ? floor(a) : h) + a;
+    formula test3 = (a + b > 10 ? floor(e) : h) + a;
     
     global g : bool init false;
     global h : [0 .. b];
@@ -68,7 +68,7 @@ TEST(PrismParser, ComplexTest) {
         j : bool init c;
         k : [125..a] init a;
 
-        [a] test&false -> (i'=true)&(k'=1+1) + 1 : (k'=floor(a) + max(k, b) - 1 + k);
+        [a] test&false -> (i'=true)&(k'=1+1) + 1 : (k'=floor(e) + max(k, b) - 1 + k);
     endmodule
                                               
     module mod2

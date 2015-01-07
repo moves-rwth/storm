@@ -51,7 +51,7 @@ namespace storm {
             }
         }
         
-        ExpressionManager::ExpressionManager() : nameToIndexMapping(), indexToNameMapping(), indexToTypeMapping(), variableTypeToCountMapping(), numberOfVariables(0), auxiliaryVariableTypeToCountMapping(), numberOfAuxiliaryVariables(0), freshVariableCounter(0), booleanType(nullptr), integerType(nullptr), rationalType(nullptr) {
+        ExpressionManager::ExpressionManager() : nameToIndexMapping(), indexToNameMapping(), indexToTypeMapping(), numberOfVariables(0), variableTypeToCountMapping(), auxiliaryVariableTypeToCountMapping(), numberOfAuxiliaryVariables(0), freshVariableCounter(0), booleanType(nullptr), integerType(nullptr), rationalType(nullptr) {
             // Intentionally left empty.
         }
         
@@ -126,6 +126,10 @@ namespace storm {
             return this->declareVariable(name, this->getIntegerType());
         }
 
+        Variable ExpressionManager::declareBoundedIntegerVariable(std::string const& name, std::size_t width) {
+            return this->declareVariable(name, this->getBoundedIntegerType(width));
+        }
+        
         Variable ExpressionManager::declareRationalVariable(std::string const& name) {
             return this->declareVariable(name, this->getRationalType());
         }
@@ -218,6 +222,12 @@ namespace storm {
             return getNumberOfVariables(getIntegerType());
         }
         
+        uint_fast64_t ExpressionManager::getNumberOfBoundedIntegerVariables() const {
+            // The bit width of the type is not of importance here, since bit vector types are considered the same when
+            // it comes to counting.
+            return getNumberOfVariables(getBoundedIntegerType(0));
+        }
+        
         uint_fast64_t ExpressionManager::getNumberOfRationalVariables() const {
             return getNumberOfVariables(getRationalType());
         }
@@ -241,6 +251,12 @@ namespace storm {
         
         uint_fast64_t ExpressionManager::getNumberOfAuxiliaryIntegerVariables() const {
             return getNumberOfAuxiliaryVariables(getIntegerType());
+        }
+        
+        uint_fast64_t ExpressionManager::getNumberOfAuxiliaryBoundedIntegerVariables() const {
+            // The bit width of the type is not of importance here, since bit vector types are considered the same when
+            // it comes to counting.
+            return getNumberOfAuxiliaryVariables(getBoundedIntegerType(0));
         }
         
         uint_fast64_t ExpressionManager::getNumberOfAuxiliaryRationalVariables() const {
@@ -277,6 +293,10 @@ namespace storm {
 
         std::shared_ptr<ExpressionManager const> ExpressionManager::getSharedPointer() const {
             return this->shared_from_this();
+        }
+        
+        bool ExpressionManager::ManagerTypeEquality::operator()(Type const& a, Type const& b) const {
+            return a.getMask() == b.getMask();
         }
         
     } // namespace expressions

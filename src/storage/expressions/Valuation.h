@@ -48,13 +48,29 @@ namespace storm {
             virtual int_fast64_t getIntegerValue(Variable const& integerVariable) const = 0;
 
             /*!
-             * Sets the value of the given boolean variable to the provided value.
+             * Retrieves the value of the given bounded integer variable.
+             *
+             * @param integerVariable The bounded integer variable whose value to retrieve.
+             * @return The value of the bounded integer variable.
+             */
+            virtual int_fast64_t getBoundedIntegerValue(Variable const& integerVariable) const = 0;
+            
+            /*!
+             * Sets the value of the given integer variable to the provided value.
              *
              * @param integerVariable The variable whose value to set.
              * @param value The new value of the variable.
              */
             virtual void setIntegerValue(Variable const& integerVariable, int_fast64_t value) = 0;
-            
+
+            /*!
+             * Sets the value of the given bounded integer variable to the provided value.
+             *
+             * @param integerVariable The variable whose value to set.
+             * @param value The new value of the variable.
+             */
+            virtual void setBoundedIntegerValue(Variable const& integerVariable, int_fast64_t value) = 0;
+
             /*!
              * Retrieves the value of the given rational variable.
              *

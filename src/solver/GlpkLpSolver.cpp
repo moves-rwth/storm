@@ -48,59 +48,59 @@ namespace storm {
         }
         
         storm::expressions::Variable GlpkLpSolver::addBoundedContinuousVariable(std::string const& name, double lowerBound, double upperBound, double objectiveFunctionCoefficient) {
-            storm::expressions::Variable newVariable = manager->declareVariable(name, manager->getRationalType());
+            storm::expressions::Variable newVariable = manager->declareRationalVariable(name);
             this->addVariable(newVariable, GLP_CV, GLP_DB, lowerBound, upperBound, objectiveFunctionCoefficient);
             return newVariable;
         }
         
         storm::expressions::Variable GlpkLpSolver::addLowerBoundedContinuousVariable(std::string const& name, double lowerBound, double objectiveFunctionCoefficient) {
-            storm::expressions::Variable newVariable = manager->declareVariable(name, manager->getRationalType());
+            storm::expressions::Variable newVariable = manager->declareRationalVariable(name);
             this->addVariable(newVariable, GLP_CV, GLP_LO, lowerBound, 0, objectiveFunctionCoefficient);
             return newVariable;
         }
         
         storm::expressions::Variable GlpkLpSolver::addUpperBoundedContinuousVariable(std::string const& name, double upperBound, double objectiveFunctionCoefficient) {
-            storm::expressions::Variable newVariable = manager->declareVariable(name, manager->getRationalType());
+            storm::expressions::Variable newVariable = manager->declareRationalVariable(name);
             this->addVariable(newVariable, GLP_CV, GLP_UP, 0, upperBound, objectiveFunctionCoefficient);
             return newVariable;
         }
         
         storm::expressions::Variable GlpkLpSolver::addUnboundedContinuousVariable(std::string const& name, double objectiveFunctionCoefficient) {
-            storm::expressions::Variable newVariable = manager->declareVariable(name, manager->getRationalType());
+            storm::expressions::Variable newVariable = manager->declareRationalVariable(name);
             this->addVariable(newVariable, GLP_CV, GLP_FR, 0, 0, objectiveFunctionCoefficient);
             return newVariable;
         }
         
         storm::expressions::Variable GlpkLpSolver::addBoundedIntegerVariable(std::string const& name, double lowerBound, double upperBound, double objectiveFunctionCoefficient) {
-            storm::expressions::Variable newVariable = manager->declareVariable(name, manager->getIntegerType());
+            storm::expressions::Variable newVariable = manager->declareIntegerVariable(name);
             this->addVariable(newVariable, GLP_IV, GLP_DB, lowerBound, upperBound, objectiveFunctionCoefficient);
             this->modelContainsIntegerVariables = true;
             return newVariable;
         }
         
         storm::expressions::Variable GlpkLpSolver::addLowerBoundedIntegerVariable(std::string const& name, double lowerBound, double objectiveFunctionCoefficient) {
-            storm::expressions::Variable newVariable = manager->declareVariable(name, manager->getIntegerType());
+            storm::expressions::Variable newVariable = manager->declareIntegerVariable(name);
             this->addVariable(newVariable, GLP_IV, GLP_LO, lowerBound, 0, objectiveFunctionCoefficient);
             this->modelContainsIntegerVariables = true;
             return newVariable;
         }
 
         storm::expressions::Variable GlpkLpSolver::addUpperBoundedIntegerVariable(std::string const& name, double upperBound, double objectiveFunctionCoefficient) {
-            storm::expressions::Variable newVariable = manager->declareVariable(name, manager->getIntegerType());
+            storm::expressions::Variable newVariable = manager->declareIntegerVariable(name);
             this->addVariable(newVariable, GLP_IV, GLP_UP, 0, upperBound, objectiveFunctionCoefficient);
             this->modelContainsIntegerVariables = true;
             return newVariable;
         }
         
         storm::expressions::Variable GlpkLpSolver::addUnboundedIntegerVariable(std::string const& name, double objectiveFunctionCoefficient) {
-            storm::expressions::Variable newVariable = manager->declareVariable(name, manager->getIntegerType());
+            storm::expressions::Variable newVariable = manager->declareIntegerVariable(name);
             this->addVariable(newVariable, GLP_IV, GLP_FR, 0, 0, objectiveFunctionCoefficient);
             this->modelContainsIntegerVariables = true;
             return newVariable;
         }
         
         storm::expressions::Variable GlpkLpSolver::addBinaryVariable(std::string const& name, double objectiveFunctionCoefficient) {
-            storm::expressions::Variable newVariable = manager->declareVariable(name, manager->getIntegerType());
+            storm::expressions::Variable newVariable = manager->declareIntegerVariable(name);
             this->addVariable(newVariable, GLP_BV, GLP_FR, 0, 0, objectiveFunctionCoefficient);
             this->modelContainsIntegerVariables = true;
             return newVariable;

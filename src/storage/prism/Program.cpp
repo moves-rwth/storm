@@ -16,25 +16,23 @@ namespace storm {
             
             // Create a new initial construct if the corresponding flag was set.
             if (fixInitialConstruct) {
-                if (this->getInitialConstruct().getInitialStatesExpression().isFalse()) {
-                    storm::expressions::Expression newInitialExpression = manager->boolean(true);
-                    
-                    for (auto const& booleanVariable : this->getGlobalBooleanVariables()) {
+                storm::expressions::Expression newInitialExpression = manager->boolean(true);
+                
+                for (auto const& booleanVariable : this->getGlobalBooleanVariables()) {
+                    newInitialExpression = newInitialExpression && storm::expressions::iff(booleanVariable.getExpression(), booleanVariable.getInitialValueExpression());
+                }
+                for (auto const& integerVariable : this->getGlobalIntegerVariables()) {
+                    newInitialExpression = newInitialExpression && integerVariable.getExpression() == integerVariable.getInitialValueExpression();
+                }
+                for (auto const& module : this->getModules()) {
+                    for (auto const& booleanVariable : module.getBooleanVariables()) {
                         newInitialExpression = newInitialExpression && storm::expressions::iff(booleanVariable.getExpression(), booleanVariable.getInitialValueExpression());
                     }
-                    for (auto const& integerVariable : this->getGlobalIntegerVariables()) {
+                    for (auto const& integerVariable : module.getIntegerVariables()) {
                         newInitialExpression = newInitialExpression && integerVariable.getExpression() == integerVariable.getInitialValueExpression();
                     }
-                    for (auto const& module : this->getModules()) {
-                        for (auto const& booleanVariable : module.getBooleanVariables()) {
-                            newInitialExpression = newInitialExpression && storm::expressions::iff(booleanVariable.getExpression(), booleanVariable.getInitialValueExpression());
-                        }
-                        for (auto const& integerVariable : module.getIntegerVariables()) {
-                            newInitialExpression = newInitialExpression && integerVariable.getExpression() == integerVariable.getInitialValueExpression();
-                        }
-                    }
-                    this->initialConstruct = storm::prism::InitialConstruct(newInitialExpression, this->getInitialConstruct().getFilename(), this->getInitialConstruct().getLineNumber());
                 }
+                this->initialConstruct = storm::prism::InitialConstruct(newInitialExpression, this->getInitialConstruct().getFilename(), this->getInitialConstruct().getLineNumber());
             }
             
             if (checkValidity) {

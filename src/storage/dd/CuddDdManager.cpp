@@ -110,8 +110,8 @@ namespace storm {
             
             std::size_t numberOfBits = static_cast<std::size_t>(std::ceil(std::log2(high - low + 1)));
             
-            storm::expressions::Variable unprimed = manager->declareVariable(name, manager->getBoundedIntegerType(numberOfBits));
-            storm::expressions::Variable primed = manager->declareVariable(name + "'", manager->getBoundedIntegerType(numberOfBits));
+            storm::expressions::Variable unprimed = manager->declareBoundedIntegerVariable(name, numberOfBits);
+            storm::expressions::Variable primed = manager->declareBoundedIntegerVariable(name + "'", numberOfBits);
             
             std::vector<Dd<DdType::CUDD>> variables;
             std::vector<Dd<DdType::CUDD>> variablesPrime;
@@ -138,8 +138,8 @@ namespace storm {
             // Check whether a meta variable already exists.
             STORM_LOG_THROW(!this->hasMetaVariable(name), storm::exceptions::InvalidArgumentException, "A meta variable '" << name << "' already exists.");
             
-            storm::expressions::Variable unprimed = manager->declareVariable(name, manager->getBooleanType());
-            storm::expressions::Variable primed = manager->declareVariable(name + "'", manager->getBooleanType());
+            storm::expressions::Variable unprimed = manager->declareBooleanVariable(name);
+            storm::expressions::Variable primed = manager->declareBooleanVariable(name + "'");
 
             std::vector<Dd<DdType::CUDD>> variables;
             std::vector<Dd<DdType::CUDD>> variablesPrime;
