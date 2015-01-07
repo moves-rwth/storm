@@ -161,7 +161,7 @@ namespace storm {
              *
              * @return True iff the type is a integral one.
              */
-            bool isIntegralType() const;
+            bool isIntegerType() const;
 
             /*!
              * Checks whether this type is a boolean type.
@@ -175,14 +175,14 @@ namespace storm {
              *
              * @return True iff the type is a unbounded integral one.
              */
-            bool isUnboundedIntegralType() const;
+            bool isUnboundedIntegerType() const;
             
             /*!
              * Checks whether this type is a bounded integral type.
              *
              * @return True iff the type is a bounded integral one.
              */
-            bool isBoundedIntegralType() const;
+            bool isBoundedIntegerType() const;
             
             /*!
              * Retrieves the bit width of the type, provided that it is a bounded integral type.

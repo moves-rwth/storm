@@ -25,7 +25,7 @@ namespace storm {
 
         int_fast64_t VariableExpression::evaluateAsInt(Valuation const* valuation) const {
             STORM_LOG_ASSERT(valuation != nullptr, "Evaluating expressions with unknowns without valuation.");
-            STORM_LOG_THROW(this->hasIntegralType(), storm::exceptions::InvalidTypeException, "Cannot evaluate expression as integer: return type is not an integer.");
+            STORM_LOG_THROW(this->hasIntegerType(), storm::exceptions::InvalidTypeException, "Cannot evaluate expression as integer: return type is not an integer.");
             
             return valuation->getIntegerValue(this->getVariable());
         }
@@ -34,7 +34,7 @@ namespace storm {
             STORM_LOG_ASSERT(valuation != nullptr, "Evaluating expressions with unknowns without valuation.");
             STORM_LOG_THROW(this->hasNumericalType(), storm::exceptions::InvalidTypeException, "Cannot evaluate expression as double: return type is not a double.");
             
-            if (this->getType().isIntegralType()) {
+            if (this->getType().isIntegerType()) {
                 return static_cast<double>(valuation->getIntegerValue(this->getVariable()));
             } else {
                 return valuation->getRationalValue(this->getVariable());

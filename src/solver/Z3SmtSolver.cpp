@@ -210,7 +210,7 @@ namespace storm {
 
                 if (variableInterpretation.getType().isBooleanType()) {
                     stormModel.setBooleanValue(this->getManager().getVariable(variableI.name().str()), variableInterpretation.isTrue());
-                } else if (variableInterpretation.getType().isIntegralType()) {
+                } else if (variableInterpretation.getType().isIntegerType()) {
                     stormModel.setIntegerValue(this->getManager().getVariable(variableI.name().str()), variableInterpretation.evaluateAsInt());
                 } else if (variableInterpretation.getType().isRationalType()) {
                     stormModel.setRationalValue(this->getManager().getVariable(variableI.name().str()), variableInterpretation.evaluateAsDouble());

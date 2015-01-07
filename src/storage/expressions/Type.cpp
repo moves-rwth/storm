@@ -114,22 +114,22 @@ namespace storm {
         }
         
         bool Type::isNumericalType() const {
-            return this->isIntegralType() || this->isRationalType();
+            return this->isIntegerType() || this->isRationalType();
         }
         
-        bool Type::isIntegralType() const {
-            return this->isUnboundedIntegralType() || this->isBoundedIntegralType();
+        bool Type::isIntegerType() const {
+            return this->isUnboundedIntegerType() || this->isBoundedIntegerType();
         }
         
         bool Type::isBooleanType() const {
             return this->innerType->isBooleanType();
         }
         
-        bool Type::isUnboundedIntegralType() const {
+        bool Type::isUnboundedIntegerType() const {
             return this->innerType->isIntegerType();
         }
         
-        bool Type::isBoundedIntegralType() const {
+        bool Type::isBoundedIntegerType() const {
             return this->innerType->isBoundedIntegerType();
         }
         

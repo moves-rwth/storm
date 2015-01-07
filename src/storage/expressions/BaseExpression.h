@@ -175,12 +175,19 @@ namespace storm {
             bool hasNumericalType() const;
             
             /*!
-             * Retrieves whether the expression has an integral type, i.e., integer.
+             * Retrieves whether the expression has an integer type.
              *
-             * @return True iff the expression has an integral type.
+             * @return True iff the expression has an integer type.
              */
-            bool hasIntegralType() const;
+            bool hasIntegerType() const;
             
+            /*!
+             * Retrieves whether the expression has a bounded integer type.
+             *
+             * @return True iff the expression has a bounded integer type.
+             */
+            bool hasBoundedIntegerType() const;
+
             /*!
              * Retrieves whether the expression has a boolean type.
              *

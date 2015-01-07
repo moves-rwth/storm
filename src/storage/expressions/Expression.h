@@ -267,7 +267,14 @@ namespace storm {
              *
              * @return True iff the expression has a integral return type.
              */
-            bool hasIntegralType() const;
+            bool hasIntegerType() const;
+
+            /*!
+             * Retrieves whether the expression has an integral return type.
+             *
+             * @return True iff the expression has a integral return type.
+             */
+            bool hasBoundedIntegerType() const;
             
             /*!
              * Accepts the given visitor.

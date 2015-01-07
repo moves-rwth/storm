@@ -310,9 +310,9 @@ namespace storm {
                 z3::expr z3Variable(context);
                 if (variable.getType().isBooleanType()) {
                     z3Variable = context.bool_const(variable.getName().c_str());
-                } else if (variable.getType().isUnboundedIntegralType()) {
+                } else if (variable.getType().isUnboundedIntegerType()) {
                     z3Variable = context.int_const(variable.getName().c_str());
-                } else if (variable.getType().isBoundedIntegralType()) {
+                } else if (variable.getType().isBoundedIntegerType()) {
                     z3Variable = context.bv_const(variable.getName().c_str(), variable.getType().getWidth());
                 } else if (variable.getType().isRationalType()) {
                     z3Variable = context.real_const(variable.getName().c_str());

@@ -23,7 +23,7 @@ namespace storm {
         }
         
         int_fast64_t UnaryNumericalFunctionExpression::evaluateAsInt(Valuation const* valuation) const {
-            STORM_LOG_THROW(this->hasIntegralType(), storm::exceptions::InvalidTypeException, "Unable to evaluate expression as integer.");
+            STORM_LOG_THROW(this->hasIntegerType(), storm::exceptions::InvalidTypeException, "Unable to evaluate expression as integer.");
 
             int_fast64_t operandEvaluated = this->getOperand()->evaluateAsInt(valuation);
             switch (this->getOperatorType()) {

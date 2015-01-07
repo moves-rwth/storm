@@ -106,6 +106,13 @@ namespace storm {
             bool hasIntegerType() const;
 
             /*!
+             * Checks whether the variable is of integral type.
+             *
+             * @return True iff the variable if of integral type.
+             */
+            bool hasBoundedIntegerType() const;
+            
+            /*!
              * Checks whether the variable is of rational type.
              *
              * @return True iff the variable if of rational type.
@@ -117,7 +124,7 @@ namespace storm {
              *
              * @return True iff the variable if of boolean type.
              */
-            bool hasNumericType() const;
+            bool hasNumericalType() const;
 
         private:
             // The manager that is responsible for this variable.

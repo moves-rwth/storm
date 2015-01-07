@@ -142,8 +142,12 @@ namespace storm {
             return this->getBaseExpression().hasBooleanType();
         }
         
-        bool Expression::hasIntegralType() const {
-            return this->getBaseExpression().hasIntegralType();
+        bool Expression::hasIntegerType() const {
+            return this->getBaseExpression().hasIntegerType();
+        }
+        
+        bool Expression::hasBoundedIntegerType() const {
+            return this->getBaseExpression().hasBoundedIntegerType();
         }
         
         boost::any Expression::accept(ExpressionVisitor& visitor) const {

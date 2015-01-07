@@ -265,9 +265,9 @@ namespace storm {
                 msat_decl msatDeclaration;
                 if (variable.getType().isBooleanType()) {
                     msatDeclaration = msat_declare_function(env, variable.getName().c_str(), msat_get_bool_type(env));
-                } else if (variable.getType().isUnboundedIntegralType()) {
+                } else if (variable.getType().isUnboundedIntegerType()) {
                     msatDeclaration = msat_declare_function(env, variable.getName().c_str(), msat_get_integer_type(env));
-                } else if (variable.getType().isBoundedIntegralType()) {
+                } else if (variable.getType().isBoundedIntegerType()) {
                     msatDeclaration = msat_declare_function(env, variable.getName().c_str(), msat_get_bv_type(env, variable.getType().getWidth()));
                 } else if (variable.getType().isRationalType()) {
                     msatDeclaration = msat_declare_function(env, variable.getName().c_str(), msat_get_rational_type(env));

@@ -101,7 +101,7 @@ namespace storm {
             static std::unique_ptr<storm::models::AbstractModel<ValueType>> translateProgram(storm::prism::Program program, bool rewards = true, std::string const& rewardModelName = "", std::string const& constantDefinitionString = "") {
                 // Start by defining the undefined constants in the model.
                 // First, we need to parse the constant definition string.
-                std::map<std::string, storm::expressions::Expression> constantDefinitions = storm::utility::prism::parseConstantDefinitionString(program, constantDefinitionString);
+                std::map<storm::expressions::Variable, storm::expressions::Expression> constantDefinitions = storm::utility::prism::parseConstantDefinitionString(program, constantDefinitionString);
                 
                 storm::prism::Program preparedProgram = program.defineUndefinedConstants(constantDefinitions);
                 STORM_LOG_THROW(!preparedProgram.hasUndefinedConstants(), storm::exceptions::InvalidArgumentException, "Program still contains undefined constants.");

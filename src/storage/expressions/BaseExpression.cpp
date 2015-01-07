@@ -14,8 +14,12 @@ namespace storm {
             return this->type;
         }
         
-        bool BaseExpression::hasIntegralType() const {
-            return this->getType().isIntegralType();
+        bool BaseExpression::hasIntegerType() const {
+            return this->getType().isIntegerType();
+        }
+
+        bool BaseExpression::hasBoundedIntegerType() const {
+            return this->getType().isBoundedIntegerType();
         }
         
         bool BaseExpression::hasNumericalType() const {
