@@ -50,7 +50,7 @@ namespace storm {
             return this->getBaseExpression().evaluateAsDouble(valuation);
         }
         
-        Expression Expression::simplify() {
+        Expression Expression::simplify() const {
             return Expression(this->getBaseExpression().simplify());
         }
         

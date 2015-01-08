@@ -1,6 +1,10 @@
 #include <cmath>
 
+#include <boost/variant.hpp>
+
 #include "src/storage/expressions/UnaryNumericalFunctionExpression.h"
+#include "src/storage/expressions/IntegerLiteralExpression.h"
+#include "src/storage/expressions/DoubleLiteralExpression.h"
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidTypeException.h"
 
@@ -46,6 +50,29 @@ namespace storm {
         
         std::shared_ptr<BaseExpression const> UnaryNumericalFunctionExpression::simplify() const {
             std::shared_ptr<BaseExpression const> operandSimplified = this->getOperand()->simplify();
+            
+            if (operandSimplified->isLiteral()) {
+                boost::variant<int_fast64_t, double> operandEvaluation;
+
+                if (operandSimplified->hasIntegerType()) {
+                    operandEvaluation = operandSimplified->evaluateAsInt();
+                } else {
+                    operandEvaluation = operandSimplified->evaluateAsDouble();
+                }
+                
+                boost::variant<int_fast64_t, double> result;
+                switch (this->getOperatorType()) {
+                    case OperatorType::Minus: result = -(operandSimplified->hasIntegerType() ? boost::get<int_fast64_t>(operandEvaluation) : boost::get<double>(operandEvaluation)); break;
+                    case OperatorType::Floor: result = std::floor(operandSimplified->hasIntegerType() ? boost::get<int_fast64_t>(operandEvaluation) : boost::get<double>(operandEvaluation)); break;
+                    case OperatorType::Ceil: result = std::ceil(operandSimplified->hasIntegerType() ? boost::get<int_fast64_t>(operandEvaluation) : boost::get<double>(operandEvaluation)); break;
+                }
+                
+                if (result.type() == typeid(int_fast64_t)) {
+                    return std::shared_ptr<BaseExpression>(new IntegerLiteralExpression(this->getManager(), boost::get<int_fast64_t>(result)));
+                } else {
+                    return std::shared_ptr<BaseExpression>(new DoubleLiteralExpression(this->getManager(), boost::get<double>(result)));
+                }
+            }
             
             if (operandSimplified.get() == this->getOperand().get()) {
                 return this->shared_from_this();

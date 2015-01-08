@@ -2,6 +2,8 @@
 #include <cmath>
 
 #include "src/storage/expressions/BinaryNumericalFunctionExpression.h"
+#include "src/storage/expressions/IntegerLiteralExpression.h"
+#include "src/storage/expressions/DoubleLiteralExpression.h"
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidTypeException.h"
 
@@ -49,12 +51,12 @@ namespace storm {
             double firstOperandEvaluation = this->getFirstOperand()->evaluateAsDouble(valuation);
             double secondOperandEvaluation = this->getSecondOperand()->evaluateAsDouble(valuation);
             switch (this->getOperatorType()) {
-                case OperatorType::Plus: return static_cast<double>(firstOperandEvaluation + secondOperandEvaluation); break;
-                case OperatorType::Minus: return static_cast<double>(firstOperandEvaluation - secondOperandEvaluation); break;
-                case OperatorType::Times: return static_cast<double>(firstOperandEvaluation * secondOperandEvaluation); break;
-                case OperatorType::Divide: return static_cast<double>(firstOperandEvaluation / secondOperandEvaluation); break;
-                case OperatorType::Min: return static_cast<double>(std::min(firstOperandEvaluation, secondOperandEvaluation)); break;
-                case OperatorType::Max: return static_cast<double>(std::max(firstOperandEvaluation, secondOperandEvaluation)); break;
+                case OperatorType::Plus: return firstOperandEvaluation + secondOperandEvaluation; break;
+                case OperatorType::Minus: return firstOperandEvaluation - secondOperandEvaluation; break;
+                case OperatorType::Times: return firstOperandEvaluation * secondOperandEvaluation; break;
+                case OperatorType::Divide: return firstOperandEvaluation / secondOperandEvaluation; break;
+                case OperatorType::Min: return std::min(firstOperandEvaluation, secondOperandEvaluation); break;
+                case OperatorType::Max: return std::max(firstOperandEvaluation, secondOperandEvaluation); break;
                 case OperatorType::Power: return std::pow(firstOperandEvaluation, secondOperandEvaluation); break;
             }
         }
@@ -62,6 +64,38 @@ namespace storm {
         std::shared_ptr<BaseExpression const> BinaryNumericalFunctionExpression::simplify() const {
             std::shared_ptr<BaseExpression const> firstOperandSimplified = this->getFirstOperand()->simplify();
             std::shared_ptr<BaseExpression const> secondOperandSimplified = this->getSecondOperand()->simplify();
+            
+            if (firstOperandSimplified->isLiteral() && secondOperandSimplified->isLiteral()) {
+                if (this->hasIntegerType()) {
+                    int_fast64_t firstOperandEvaluation = firstOperandSimplified->evaluateAsInt();
+                    int_fast64_t secondOperandEvaluation = secondOperandSimplified->evaluateAsInt();
+                    int_fast64_t newValue = 0;
+                    switch (this->getOperatorType()) {
+                        case OperatorType::Plus: newValue = firstOperandEvaluation + secondOperandEvaluation; break;
+                        case OperatorType::Minus: newValue = firstOperandEvaluation - secondOperandEvaluation; break;
+                        case OperatorType::Times: newValue = firstOperandEvaluation * secondOperandEvaluation; break;
+                        case OperatorType::Divide: newValue = firstOperandEvaluation / secondOperandEvaluation; break;
+                        case OperatorType::Min: newValue = std::min(firstOperandEvaluation, secondOperandEvaluation); break;
+                        case OperatorType::Max: newValue = std::max(firstOperandEvaluation, secondOperandEvaluation); break;
+                        case OperatorType::Power: newValue = static_cast<int_fast64_t>(std::pow(firstOperandEvaluation, secondOperandEvaluation)); break;
+                    }
+                    return std::shared_ptr<BaseExpression>(new IntegerLiteralExpression(this->getManager(), newValue));
+                } else if (this->hasRationalType()) {
+                    double firstOperandEvaluation = firstOperandSimplified->evaluateAsDouble();
+                    double secondOperandEvaluation = secondOperandSimplified->evaluateAsDouble();
+                    double newValue = 0;
+                    switch (this->getOperatorType()) {
+                        case OperatorType::Plus: newValue = firstOperandEvaluation + secondOperandEvaluation; break;
+                        case OperatorType::Minus: newValue = firstOperandEvaluation - secondOperandEvaluation; break;
+                        case OperatorType::Times: newValue = firstOperandEvaluation * secondOperandEvaluation; break;
+                        case OperatorType::Divide: newValue = firstOperandEvaluation / secondOperandEvaluation; break;
+                        case OperatorType::Min: newValue = std::min(firstOperandEvaluation, secondOperandEvaluation); break;
+                        case OperatorType::Max: newValue = std::max(firstOperandEvaluation, secondOperandEvaluation); break;
+                        case OperatorType::Power: newValue = static_cast<int_fast64_t>(std::pow(firstOperandEvaluation, secondOperandEvaluation)); break;
+                    }
+                    return std::shared_ptr<BaseExpression>(new DoubleLiteralExpression(this->getManager(), newValue));
+                }
+            }
             
             if (firstOperandSimplified.get() == this->getFirstOperand().get() && secondOperandSimplified.get() == this->getSecondOperand().get()) {
                 return this->shared_from_this();

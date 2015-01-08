@@ -22,7 +22,7 @@ namespace storm {
                 case OperatorType::Iff: return storm::expressions::OperatorType::Iff; break;
             }
         }
-                
+        
         bool BinaryBooleanFunctionExpression::evaluateAsBool(Valuation const* valuation) const {
             STORM_LOG_THROW(this->hasBooleanType(), storm::exceptions::InvalidTypeException, "Unable to evaluate expression as boolean.");
             
@@ -40,47 +40,53 @@ namespace storm {
             
             return result;
         }
-                
+        
         std::shared_ptr<BaseExpression const> BinaryBooleanFunctionExpression::simplify() const {
             std::shared_ptr<BaseExpression const> firstOperandSimplified = this->getFirstOperand()->simplify();
             std::shared_ptr<BaseExpression const> secondOperandSimplified = this->getSecondOperand()->simplify();
             
-            switch (this->getOperatorType()) {
-                case OperatorType::And: if (firstOperandSimplified->isTrue()) {
-                    return secondOperandSimplified;
-                } else if (firstOperandSimplified->isFalse()) {
-                    return firstOperandSimplified;
-                } else if (secondOperandSimplified->isTrue()) {
-                    return firstOperandSimplified;
-                } else if (secondOperandSimplified->isFalse()) {
-                    return secondOperandSimplified;
+            if (firstOperandSimplified->isLiteral() && secondOperandSimplified->isLiteral()) {
+                switch (this->getOperatorType()) {
+                    case OperatorType::And:
+                        if (firstOperandSimplified->isTrue()) {
+                            return secondOperandSimplified;
+                        } else if (firstOperandSimplified->isFalse()) {
+                            return firstOperandSimplified;
+                        } else if (secondOperandSimplified->isTrue()) {
+                            return firstOperandSimplified;
+                        } else if (secondOperandSimplified->isFalse()) {
+                            return secondOperandSimplified;
+                        }
+                        break;
+                    case OperatorType::Or:
+                        if (firstOperandSimplified->isTrue()) {
+                            return firstOperandSimplified;
+                        } else if (firstOperandSimplified->isFalse()) {
+                            return secondOperandSimplified;
+                        } else if (secondOperandSimplified->isTrue()) {
+                            return secondOperandSimplified;
+                        } else if (secondOperandSimplified->isFalse()) {
+                            return firstOperandSimplified;
+                        }
+                        break;
+                    case OperatorType::Xor: break;
+                    case OperatorType::Implies:
+                        if (firstOperandSimplified->isTrue()) {
+                            return secondOperandSimplified;
+                        } else if (firstOperandSimplified->isFalse()) {
+                            return std::shared_ptr<BaseExpression>(new BooleanLiteralExpression(this->getManager(), true));
+                        } else if (secondOperandSimplified->isTrue()) {
+                            return std::shared_ptr<BaseExpression>(new BooleanLiteralExpression(this->getManager(), true));
+                        }
+                        break;
+                    case OperatorType::Iff:
+                        if (firstOperandSimplified->isTrue() && secondOperandSimplified->isTrue()) {
+                            return std::shared_ptr<BaseExpression>(new BooleanLiteralExpression(this->getManager(), true));
+                        } else if (firstOperandSimplified->isFalse() && secondOperandSimplified->isFalse()) {
+                            return std::shared_ptr<BaseExpression>(new BooleanLiteralExpression(this->getManager(), true));
+                        }
+                        break;
                 }
-                break;
-                case OperatorType::Or: if (firstOperandSimplified->isTrue()) {
-                    return firstOperandSimplified;
-                } else if (firstOperandSimplified->isFalse()) {
-                    return secondOperandSimplified;
-                } else if (secondOperandSimplified->isTrue()) {
-                    return secondOperandSimplified;
-                } else if (secondOperandSimplified->isFalse()) {
-                    return firstOperandSimplified;
-                }
-                break;
-                case OperatorType::Xor: break;
-                case OperatorType::Implies: if (firstOperandSimplified->isTrue()) {
-                    return secondOperandSimplified;
-                } else if (firstOperandSimplified->isFalse()) {
-                    return std::shared_ptr<BaseExpression>(new BooleanLiteralExpression(this->getManager(), true));
-                } else if (secondOperandSimplified->isTrue()) {
-                    return std::shared_ptr<BaseExpression>(new BooleanLiteralExpression(this->getManager(), true));
-                }
-                break;
-                case OperatorType::Iff: if (firstOperandSimplified->isTrue() && secondOperandSimplified->isTrue()) {
-                    return std::shared_ptr<BaseExpression>(new BooleanLiteralExpression(this->getManager(), true));
-                } else if (firstOperandSimplified->isFalse() && secondOperandSimplified->isFalse()) {
-                    return std::shared_ptr<BaseExpression>(new BooleanLiteralExpression(this->getManager(), true));
-                }
-                break;
             }
             
             // If the two successors remain unchanged, we can return a shared_ptr to this very object.

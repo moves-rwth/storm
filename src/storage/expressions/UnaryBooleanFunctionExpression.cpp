@@ -33,7 +33,7 @@ namespace storm {
             switch (this->getOperatorType()) {
                 case OperatorType::Not: if (operandSimplified->isTrue()) {
                     return std::shared_ptr<BaseExpression>(new BooleanLiteralExpression(this->getManager(), false));
-                } else {
+                } else if (operandSimplified->isFalse()) {
                     return std::shared_ptr<BaseExpression>(new BooleanLiteralExpression(this->getManager(), true));
                 }
             }

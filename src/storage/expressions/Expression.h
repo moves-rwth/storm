@@ -115,7 +115,7 @@ namespace storm {
              *
              * @return The simplified expression.
              */
-            Expression simplify();
+            Expression simplify() const;
             
             /*!
              * Retrieves the operator of a function application. This is only legal to call if the expression is
