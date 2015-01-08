@@ -51,7 +51,7 @@ namespace storm {
             }
         }
         
-        ExpressionManager::ExpressionManager() : nameToIndexMapping(), indexToNameMapping(), indexToTypeMapping(), numberOfVariables(0), variableTypeToCountMapping(), auxiliaryVariableTypeToCountMapping(), numberOfAuxiliaryVariables(0), freshVariableCounter(0), booleanType(nullptr), integerType(nullptr), rationalType(nullptr) {
+        ExpressionManager::ExpressionManager() : nameToIndexMapping(), indexToNameMapping(), indexToTypeMapping(), numberOfVariables(0), numberOfBooleanVariables(0), numberOfIntegerVariables(0), numberOfBitVectorVariables(0), numberOfRationalVariables(0), numberOfAuxiliaryVariables(0), numberOfAuxiliaryBooleanVariables(0), numberOfAuxiliaryIntegerVariables(0), numberOfAuxiliaryBitVectorVariables(0), numberOfAuxiliaryRationalVariables(0), freshVariableCounter(0), types() {
             // Intentionally left empty.
         }
         
@@ -72,35 +72,43 @@ namespace storm {
         }
         
         Type const& ExpressionManager::getBooleanType() const {
-            if (booleanType == nullptr) {
-                booleanType = std::unique_ptr<Type>(new Type(this->getSharedPointer(), std::shared_ptr<BaseType>(new BooleanType())));
+            Type type(this->getSharedPointer(), std::shared_ptr<BaseType>(new BooleanType()));
+            auto typeIterator = types.find(type);
+            if (typeIterator == types.end()) {
+                auto iteratorBoolPair = types.insert(type);
+                return *iteratorBoolPair.first;
             }
-            return *booleanType;
+            return *typeIterator;
         }
         
         Type const& ExpressionManager::getIntegerType() const {
-            if (integerType == nullptr) {
-                integerType = std::unique_ptr<Type>(new Type(this->getSharedPointer(), std::shared_ptr<BaseType>(new IntegerType())));
+            Type type(this->getSharedPointer(), std::shared_ptr<BaseType>(new IntegerType()));
+            auto typeIterator = types.find(type);
+            if (typeIterator == types.end()) {
+                auto iteratorBoolPair = types.insert(type);
+                return *iteratorBoolPair.first;
             }
-            return *integerType;
+            return *typeIterator;
         }
         
-        Type const& ExpressionManager::getBoundedIntegerType(std::size_t width) const {
-            auto boundedIntegerType = boundedIntegerTypes.find(width);
-            if (boundedIntegerType == boundedIntegerTypes.end()) {
-                Type newType = Type(this->getSharedPointer(), std::shared_ptr<BaseType>(new BoundedIntegerType(width)));
-                boundedIntegerTypes[width] = newType;
-                return boundedIntegerTypes[width];
-            } else {
-                return boundedIntegerType->second;
+        Type const& ExpressionManager::getBitVectorType(std::size_t width) const {
+            Type type(this->getSharedPointer(), std::shared_ptr<BaseType>(new BitVectorType(width)));
+            auto typeIterator = types.find(type);
+            if (typeIterator == types.end()) {
+                auto iteratorBoolPair = types.insert(type);
+                return *iteratorBoolPair.first;
             }
+            return *typeIterator;
         }
         
         Type const& ExpressionManager::getRationalType() const {
-            if (rationalType == nullptr) {
-                rationalType = std::unique_ptr<Type>(new Type(this->getSharedPointer(), std::shared_ptr<BaseType>(new RationalType())));
+            Type type(this->getSharedPointer(), std::shared_ptr<BaseType>(new RationalType()));
+            auto typeIterator = types.find(type);
+            if (typeIterator == types.end()) {
+                auto iteratorBoolPair = types.insert(type);
+                return *iteratorBoolPair.first;
             }
-            return *rationalType;
+            return *typeIterator;
         }
         
         bool ExpressionManager::isValidVariableName(std::string const& name) {
@@ -112,39 +120,30 @@ namespace storm {
             return nameIndexPair != nameToIndexMapping.end();
         }
         
-        Variable ExpressionManager::declareVariable(std::string const& name, storm::expressions::Type const& variableType) {
+        Variable ExpressionManager::declareVariable(std::string const& name, storm::expressions::Type const& variableType, bool auxiliary) {
             STORM_LOG_THROW(!variableExists(name), storm::exceptions::InvalidArgumentException, "Variable with name '" << name << "' already exists.");
-            return declareOrGetVariable(name, variableType);
+            return declareOrGetVariable(name, variableType, auxiliary);
         }
         
-        Variable ExpressionManager::declareBooleanVariable(std::string const& name) {
-            Variable var = this->declareVariable(name, this->getBooleanType());
+        Variable ExpressionManager::declareBooleanVariable(std::string const& name, bool auxiliary) {
+            Variable var = this->declareVariable(name, this->getBooleanType(), auxiliary);
             return var;
         }
         
-        Variable ExpressionManager::declareIntegerVariable(std::string const& name) {
-            return this->declareVariable(name, this->getIntegerType());
+        Variable ExpressionManager::declareIntegerVariable(std::string const& name, bool auxiliary) {
+            return this->declareVariable(name, this->getIntegerType(), auxiliary);
         }
 
-        Variable ExpressionManager::declareBoundedIntegerVariable(std::string const& name, std::size_t width) {
-            return this->declareVariable(name, this->getBoundedIntegerType(width));
+        Variable ExpressionManager::declareBitVectorVariable(std::string const& name, std::size_t width, bool auxiliary) {
+            return this->declareVariable(name, this->getBitVectorType(width), auxiliary);
         }
         
-        Variable ExpressionManager::declareRationalVariable(std::string const& name) {
-            return this->declareVariable(name, this->getRationalType());
+        Variable ExpressionManager::declareRationalVariable(std::string const& name, bool auxiliary) {
+            return this->declareVariable(name, this->getRationalType(), auxiliary);
         }
 
-        Variable ExpressionManager::declareAuxiliaryVariable(std::string const& name, storm::expressions::Type const& variableType) {
-            STORM_LOG_THROW(!variableExists(name), storm::exceptions::InvalidArgumentException, "Variable with name '" << name << "' already exists.");
-            return declareOrGetAuxiliaryVariable(name, variableType);
-        }
-
-        Variable ExpressionManager::declareOrGetVariable(std::string const& name, storm::expressions::Type const& variableType) {
-            return declareOrGetVariable(name, variableType, false, true);
-        }
-
-        Variable ExpressionManager::declareOrGetAuxiliaryVariable(std::string const& name, storm::expressions::Type const& variableType) {
-            return declareOrGetVariable(name, variableType, true, true);
+        Variable ExpressionManager::declareOrGetVariable(std::string const& name, storm::expressions::Type const& variableType, bool auxiliary) {
+            return declareOrGetVariable(name, variableType, auxiliary, true);
         }
 
         Variable ExpressionManager::declareOrGetVariable(std::string const& name, storm::expressions::Type const& variableType, bool auxiliary, bool checkName) {
@@ -153,21 +152,31 @@ namespace storm {
             if (nameIndexPair != nameToIndexMapping.end()) {
                 return Variable(this->getSharedPointer(), nameIndexPair->second);
             } else {
-                std::unordered_map<Type, uint_fast64_t>::iterator typeCountPair;
+                uint_fast64_t offset = 0;
                 if (auxiliary) {
-                    typeCountPair = auxiliaryVariableTypeToCountMapping.find(variableType);
-                    if (typeCountPair == auxiliaryVariableTypeToCountMapping.end()) {
-                        typeCountPair = auxiliaryVariableTypeToCountMapping.insert(typeCountPair, std::make_pair(variableType, 0));
+                    if (variableType.isBooleanType()) {
+                        offset = numberOfBooleanVariables++;
+                    } else if (variableType.isIntegerType()) {
+                        offset = numberOfIntegerVariables++ + numberOfBitVectorVariables;
+                    } else if (variableType.isBitVectorType()) {
+                        offset = numberOfBitVectorVariables++ + numberOfIntegerVariables;
+                    } else {
+                        offset = numberOfRationalVariables++;
                     }
                 } else {
-                    typeCountPair = variableTypeToCountMapping.find(variableType);
-                    if (typeCountPair == variableTypeToCountMapping.end()) {
-                        typeCountPair = variableTypeToCountMapping.insert(typeCountPair, std::make_pair(variableType, 0));
+                    if (variableType.isBooleanType()) {
+                        offset = numberOfBooleanVariables++;
+                    } else if (variableType.isIntegerType()) {
+                        offset = numberOfIntegerVariables++ + numberOfBitVectorVariables;
+                    } else if (variableType.isBitVectorType()) {
+                        offset = numberOfBitVectorVariables++ + numberOfIntegerVariables;
+                    } else {
+                        offset = numberOfRationalVariables++;
                     }
                 }
                 
                 // Compute the index of the new variable.
-                uint_fast64_t newIndex = typeCountPair->second++ | variableType.getMask() | (auxiliary ? auxiliaryMask : 0);
+                uint_fast64_t newIndex = offset | variableType.getMask() | (auxiliary ? auxiliaryMask : 0);
                 
                 // Properly insert the variable into the data structure.
                 nameToIndexMapping[name] = newIndex;
@@ -191,23 +200,22 @@ namespace storm {
             return nameToIndexMapping.find(name) != nameToIndexMapping.end();
         }
 
-        Variable ExpressionManager::declareFreshVariable(storm::expressions::Type const& variableType) {
+        Variable ExpressionManager::declareFreshVariable(storm::expressions::Type const& variableType, bool auxiliary) {
             std::string newName = "__x" + std::to_string(freshVariableCounter++);
-            return declareOrGetVariable(newName, variableType, false, false);
-        }
-
-        Variable ExpressionManager::declareFreshAuxiliaryVariable(storm::expressions::Type const& variableType) {
-            std::string newName = "__x" + std::to_string(freshVariableCounter++);
-            return declareOrGetVariable(newName, variableType, true, false);
+            return declareOrGetVariable(newName, variableType, auxiliary, false);
         }
 
         uint_fast64_t ExpressionManager::getNumberOfVariables(storm::expressions::Type const& variableType) const {
-            auto typeCountPair = variableTypeToCountMapping.find(variableType);
-            if (typeCountPair == variableTypeToCountMapping.end()) {
-                return 0;
-            } else {
-                return typeCountPair->second;
+            if (variableType.isBooleanType()) {
+                return numberOfBooleanVariables;
+            } else if (variableType.isIntegerType()) {
+                return numberOfIntegerVariables;
+            } else if (variableType.isBitVectorType()) {
+                return numberOfBitVectorVariables;
+            } else if (variableType.isRationalType()) {
+                return numberOfRationalVariables;
             }
+            return 0;
         }
         
         uint_fast64_t ExpressionManager::getNumberOfVariables() const {
@@ -215,52 +223,19 @@ namespace storm {
         }
         
         uint_fast64_t ExpressionManager::getNumberOfBooleanVariables() const {
-            return getNumberOfVariables(getBooleanType());
+            return numberOfBooleanVariables;
         }
         
         uint_fast64_t ExpressionManager::getNumberOfIntegerVariables() const {
-            return getNumberOfVariables(getIntegerType());
+            return numberOfIntegerVariables;
         }
         
-        uint_fast64_t ExpressionManager::getNumberOfBoundedIntegerVariables() const {
-            // The bit width of the type is not of importance here, since bit vector types are considered the same when
-            // it comes to counting.
-            return getNumberOfVariables(getBoundedIntegerType(0));
+        uint_fast64_t ExpressionManager::getNumberOfBitVectorVariables() const {
+            return numberOfBitVectorVariables;
         }
         
         uint_fast64_t ExpressionManager::getNumberOfRationalVariables() const {
-            return getNumberOfVariables(getRationalType());
-        }
-
-        uint_fast64_t ExpressionManager::getNumberOfAuxiliaryVariables(storm::expressions::Type const& variableType) const {
-            auto typeCountPair = auxiliaryVariableTypeToCountMapping.find(variableType);
-            if (typeCountPair == auxiliaryVariableTypeToCountMapping.end()) {
-                return 0;
-            } else {
-                return typeCountPair->second;
-            }
-        }
-
-        uint_fast64_t ExpressionManager::getNumberOfAuxiliaryVariables() const {
-            return numberOfAuxiliaryVariables;
-        }
-
-        uint_fast64_t ExpressionManager::getNumberOfAuxiliaryBooleanVariables() const {
-            return getNumberOfAuxiliaryVariables(getBooleanType());
-        }
-        
-        uint_fast64_t ExpressionManager::getNumberOfAuxiliaryIntegerVariables() const {
-            return getNumberOfAuxiliaryVariables(getIntegerType());
-        }
-        
-        uint_fast64_t ExpressionManager::getNumberOfAuxiliaryBoundedIntegerVariables() const {
-            // The bit width of the type is not of importance here, since bit vector types are considered the same when
-            // it comes to counting.
-            return getNumberOfAuxiliaryVariables(getBoundedIntegerType(0));
-        }
-        
-        uint_fast64_t ExpressionManager::getNumberOfAuxiliaryRationalVariables() const {
-            return getNumberOfAuxiliaryVariables(getRationalType());
+            return numberOfRationalVariables;
         }
         
         std::string const& ExpressionManager::getVariableName(uint_fast64_t index) const {
@@ -294,10 +269,6 @@ namespace storm {
         std::shared_ptr<ExpressionManager const> ExpressionManager::getSharedPointer() const {
             return this->shared_from_this();
         }
-        
-        bool ExpressionManager::ManagerTypeEquality::operator()(Type const& a, Type const& b) const {
-            return a.getMask() == b.getMask();
-        }
-        
+                
     } // namespace expressions
 } // namespace storm

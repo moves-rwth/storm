@@ -274,7 +274,7 @@ namespace storm {
              *
              * @return True iff the expression has a integral return type.
              */
-            bool hasBoundedIntegerType() const;
+            bool hasBitVectorType() const;
             
             /*!
              * Accepts the given visitor.

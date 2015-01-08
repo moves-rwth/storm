@@ -110,8 +110,8 @@ namespace storm {
             
             std::size_t numberOfBits = static_cast<std::size_t>(std::ceil(std::log2(high - low + 1)));
             
-            storm::expressions::Variable unprimed = manager->declareBoundedIntegerVariable(name, numberOfBits);
-            storm::expressions::Variable primed = manager->declareBoundedIntegerVariable(name + "'", numberOfBits);
+            storm::expressions::Variable unprimed = manager->declareBitVectorVariable(name, numberOfBits);
+            storm::expressions::Variable primed = manager->declareBitVectorVariable(name + "'", numberOfBits);
             
             std::vector<Dd<DdType::CUDD>> variables;
             std::vector<Dd<DdType::CUDD>> variablesPrime;

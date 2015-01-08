@@ -90,9 +90,9 @@ namespace storm {
                 } else {
                     storm::expressions::Variable const& metaVariable = std::get<1>(this->relevantDontCareDdVariables[index]);
                     if ((this->cubeCounter & (1ull << index)) != 0) {
-                        currentValuation.setBoundedIntegerValue(metaVariable, ((currentValuation.getBoundedIntegerValue(metaVariable) - ddMetaVariable.getLow()) | (1ull << std::get<2>(this->relevantDontCareDdVariables[index]))) + ddMetaVariable.getLow());
+                        currentValuation.setBitVectorValue(metaVariable, ((currentValuation.getBitVectorValue(metaVariable) - ddMetaVariable.getLow()) | (1ull << std::get<2>(this->relevantDontCareDdVariables[index]))) + ddMetaVariable.getLow());
                     } else {
-                        currentValuation.setBoundedIntegerValue(metaVariable, ((currentValuation.getBoundedIntegerValue(metaVariable) - ddMetaVariable.getLow()) & ~(1ull << std::get<2>(this->relevantDontCareDdVariables[index]))) + ddMetaVariable.getLow());
+                        currentValuation.setBitVectorValue(metaVariable, ((currentValuation.getBitVectorValue(metaVariable) - ddMetaVariable.getLow()) & ~(1ull << std::get<2>(this->relevantDontCareDdVariables[index]))) + ddMetaVariable.getLow());
                     }
                 }
             }
@@ -134,7 +134,7 @@ namespace storm {
                         }
                     }
                     if (this->enumerateDontCareMetaVariables || metaVariableAppearsInCube) {
-                        currentValuation.setBoundedIntegerValue(metaVariable, intValue + ddMetaVariable.getLow());
+                        currentValuation.setBitVectorValue(metaVariable, intValue + ddMetaVariable.getLow());
                     }
                 }
                 

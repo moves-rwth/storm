@@ -47,18 +47,17 @@ namespace storm {
             virtual bool getBooleanValue(Variable const& booleanVariable) const override;
             virtual void setBooleanValue(Variable const& booleanVariable, bool value) override;
             virtual int_fast64_t getIntegerValue(Variable const& integerVariable) const override;
-            virtual int_fast64_t getBoundedIntegerValue(Variable const& integerVariable) const override;
+            virtual int_fast64_t getBitVectorValue(Variable const& bitVectorVariable) const override;
             virtual void setIntegerValue(Variable const& integerVariable, int_fast64_t value) override;
-            virtual void setBoundedIntegerValue(Variable const& integerVariable, int_fast64_t value) override;
+            virtual void setBitVectorValue(Variable const& bitVectorVariable, int_fast64_t value) override;
             virtual double getRationalValue(Variable const& rationalVariable) const override;
             virtual void setRationalValue(Variable const& rationalVariable, double value) override;
             
         private:
             // Containers that store the values of the variables of the appropriate type.
-            std::unique_ptr<std::vector<bool>> booleanValues;
-            std::unique_ptr<std::vector<int_fast64_t>> integerValues;
-            std::unique_ptr<std::vector<int_fast64_t>> boundedIntegerValues;
-            std::unique_ptr<std::vector<double>> rationalValues;
+            std::vector<bool> booleanValues;
+            std::vector<int_fast64_t> integerValues;
+            std::vector<double> rationalValues;
         };
         
         /*!

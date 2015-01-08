@@ -274,13 +274,13 @@ namespace storm {
 					case storm::expressions::UnaryNumericalFunctionExpression::OperatorType::Minus:
                         return 0 - childResult;
 					case storm::expressions::UnaryNumericalFunctionExpression::OperatorType::Floor: {
-                        storm::expressions::Variable freshAuxiliaryVariable = manager.declareFreshAuxiliaryVariable(manager.getIntegerType());
+                        storm::expressions::Variable freshAuxiliaryVariable = manager.declareFreshVariable(manager.getIntegerType(), true);
                         z3::expr floorVariable = context.int_const(freshAuxiliaryVariable.getName().c_str());
 						additionalAssertions.push_back(z3::expr(context, Z3_mk_int2real(context, floorVariable)) <= childResult && childResult < (z3::expr(context, Z3_mk_int2real(context, floorVariable)) + 1));
 						return floorVariable;
 					}
 					case storm::expressions::UnaryNumericalFunctionExpression::OperatorType::Ceil:{
-                        storm::expressions::Variable freshAuxiliaryVariable = manager.declareFreshAuxiliaryVariable(manager.getIntegerType());
+                        storm::expressions::Variable freshAuxiliaryVariable = manager.declareFreshVariable(manager.getIntegerType(), true);
                         z3::expr ceilVariable = context.int_const(freshAuxiliaryVariable.getName().c_str());
 						additionalAssertions.push_back(z3::expr(context, Z3_mk_int2real(context, ceilVariable)) - 1 <= childResult && childResult < z3::expr(context, Z3_mk_int2real(context, ceilVariable)));
 						return ceilVariable;
@@ -310,9 +310,9 @@ namespace storm {
                 z3::expr z3Variable(context);
                 if (variable.getType().isBooleanType()) {
                     z3Variable = context.bool_const(variable.getName().c_str());
-                } else if (variable.getType().isUnboundedIntegerType()) {
+                } else if (variable.getType().isIntegerType()) {
                     z3Variable = context.int_const(variable.getName().c_str());
-                } else if (variable.getType().isBoundedIntegerType()) {
+                } else if (variable.getType().isBitVectorType()) {
                     z3Variable = context.bv_const(variable.getName().c_str(), variable.getType().getWidth());
                 } else if (variable.getType().isRationalType()) {
                     z3Variable = context.real_const(variable.getName().c_str());

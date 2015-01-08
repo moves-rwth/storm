@@ -177,16 +177,15 @@ namespace storm {
                 // This variable needs to be declared prior to the switch, because of C++ rules.
                 int_fast64_t newValue = 0;
                 for (auto const& assignment : update.getAssignments()) {
-                    switch (assignment.getExpression().getReturnType()) {
-                        case storm::expressions::ExpressionReturnType::Bool: newState->setBooleanValue(assignment.getVariableName(), assignment.getExpression().evaluateAsBool(baseState)); break;
-                        case storm::expressions::ExpressionReturnType::Int:
-                        {
-                            newValue = assignment.getExpression().evaluateAsInt(baseState);
-                            auto const& boundsPair = variableInformation.variableToBoundsMap.find(assignment.getVariableName());
-                            STORM_LOG_THROW(boundsPair->second.first <= newValue && newValue <= boundsPair->second.second, storm::exceptions::InvalidArgumentException, "Invalid value " << newValue << " for variable '" << assignment.getVariableName() << "'.");
-                            newState->setIntegerValue(assignment.getVariableName(), newValue); break;
-                        }
-                        default: STORM_LOG_ASSERT(false, "Invalid type of assignment."); break;
+                    if (assignment.getExpression().hasBooleanType()) {
+                        newState->setBooleanValue(assignment.getVariable(), assignment.getExpression().evaluateAsBool(baseState));
+                    } else if (assignment.getExpression().hasIntegerType()) {
+                        newValue = assignment.getExpression().evaluateAsInt(baseState);
+                        auto const& boundsPair = variableInformation.variableToBoundsMap.find(assignment.getVariableName());
+                        STORM_LOG_THROW(boundsPair->second.first <= newValue && newValue <= boundsPair->second.second, storm::exceptions::InvalidArgumentException, "Invalid value " << newValue << " for variable '" << assignment.getVariableName() << "'.");
+                        newState->setIntegerValue(assignment.getVariable(), newValue);
+                    } else {
+                        STORM_LOG_ASSERT(false, "Invalid type '" << assignment.getExpression().getType() << "' of assignment.");
                     }
                 }
                 return newState;
@@ -478,21 +477,7 @@ namespace storm {
                 
                 // Initialize a queue and insert the initial state.
                 std::queue<uint_fast64_t> stateQueue;
-                StateType* initialState = new StateType;
-                for (auto const& booleanVariable : program.getGlobalBooleanVariables()) {
-                    initialState->addBooleanIdentifier(booleanVariable.getName(), booleanVariable.getInitialValueExpression().evaluateAsBool());
-                }
-                for (auto const& integerVariable : program.getGlobalIntegerVariables()) {
-                    initialState->addIntegerIdentifier(integerVariable.getName(), integerVariable.getInitialValueExpression().evaluateAsInt());
-                }
-                for (auto const& module : program.getModules()) {
-                    for (auto const& booleanVariable : module.getBooleanVariables()) {
-                        initialState->addBooleanIdentifier(booleanVariable.getName(), booleanVariable.getInitialValueExpression().evaluateAsBool());
-                    }
-                    for (auto const& integerVariable : module.getIntegerVariables()) {
-                        initialState->addIntegerIdentifier(integerVariable.getName(), integerVariable.getInitialValueExpression().evaluateAsInt());
-                    }
-                }
+                StateType* initialState = new StateType(program.getManager().getSharedPointer());
         
                 std::pair<bool, uint_fast64_t> addIndexPair = getOrAddStateIndex(initialState, stateInformation);
                 stateInformation.initialStateIndices.push_back(addIndexPair.second);

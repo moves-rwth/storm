@@ -117,19 +117,19 @@ namespace storm {
             Type const& getBooleanType() const;
             
             /*!
-             * Retrieves the integer type.
+             * Retrieves the unbounded integer type.
              *
-             * @return The integer type.
+             * @return The unbounded integer type.
              */
             Type const& getIntegerType() const;
-            
+
             /*!
-             * Retrieves the bounded integer type.
+             * Retrieves the bit vector type of the given width.
              *
              * @param width The bit width of the bounded type.
              * @return The bounded integer type.
              */
-            Type const& getBoundedIntegerType(std::size_t width) const;
+            Type const& getBitVectorType(std::size_t width) const;
             
             /*!
              * Retrieves the rational type.
@@ -144,74 +144,62 @@ namespace storm {
              *
              * @param name The name of the variable.
              * @param variableType The type of the variable.
+             * @param auxiliary A flag indicating whether the new variable should be tagged as an auxiliary variable.
              * @return The newly declared variable.
              */
-            Variable declareVariable(std::string const& name, storm::expressions::Type const& variableType);
+            Variable declareVariable(std::string const& name, storm::expressions::Type const& variableType, bool auxiliary = false);
 
             /*!
              * Declares a new boolean variable with a name that must not yet exist and its corresponding type. Note that
              * the name must not start with two underscores since these variables are reserved for internal use only.
              *
              * @param name The name of the variable.
+             * @param auxiliary A flag indicating whether the new variable should be tagged as an auxiliary variable.
              * @return The newly declared variable.
              */
-            Variable declareBooleanVariable(std::string const& name);
+            Variable declareBooleanVariable(std::string const& name, bool auxiliary = false);
 
             /*!
              * Declares a new integer variable with a name that must not yet exist and its corresponding type. Note that
              * the name must not start with two underscores since these variables are reserved for internal use only.
              *
              * @param name The name of the variable.
+             * @param auxiliary A flag indicating whether the new variable should be tagged as an auxiliary variable.
              * @return The newly declared variable.
              */
-            Variable declareIntegerVariable(std::string const& name);
-
+            Variable declareIntegerVariable(std::string const& name, bool auxiliary = false);
+            
             /*!
-             * Declares a new bounded integer variable with a name that must not yet exist and the bounded type of the
+             * Declares a new bit vector variable with a name that must not yet exist and the bounded type of the
              * given bit width. Note that the name must not start with two underscores since these variables are
              * reserved for internal use only.
              *
              * @param name The name of the variable.
-             * @param width The bit width of the bounded type.
+             * @param width The bit width of the bit vector type.
+             * @param auxiliary A flag indicating whether the new variable should be tagged as an auxiliary variable.
              * @return The newly declared variable.
              */
-            Variable declareBoundedIntegerVariable(std::string const& name, std::size_t width);
+            Variable declareBitVectorVariable(std::string const& name, std::size_t width, bool auxiliary = false);
             
             /*!
              * Declares a new rational variable with a name that must not yet exist and its corresponding type. Note that
              * the name must not start with two underscores since these variables are reserved for internal use only.
              *
              * @param name The name of the variable.
+             * @param auxiliary A flag indicating whether the new variable should be tagged as an auxiliary variable.
              * @return The newly declared variable.
              */
-            Variable declareRationalVariable(std::string const& name);
-            
-            /*!
-             * Declares an auxiliary variable with a name that must not yet exist and its corresponding type.
-             *
-             * @param name The name of the variable.
-             * @param variableType The type of the variable.
-             * @return The newly declared variable.
-             */
-            Variable declareAuxiliaryVariable(std::string const& name, storm::expressions::Type const& variableType);
+            Variable declareRationalVariable(std::string const& name, bool auxiliary = false);
             
             /*!
              * Declares a variable with the given name if it does not yet exist.
              *
              * @param name The name of the variable to declare.
              * @param variableType The type of the variable to declare.
+             * @param auxiliary A flag indicating whether the new variable should be tagged as an auxiliary variable.
              * @return The variable.
              */
-            Variable declareOrGetVariable(std::string const& name, storm::expressions::Type const& variableType);
-
-            /*!
-             * Declares a variable with the given name if it does not yet exist.
-             *
-             * @param name The name of the variable to declare.
-             * @param variableType The type of the variable to declare.
-             * @return The variable.
-             */
-            Variable declareOrGetAuxiliaryVariable(std::string const& name, storm::expressions::Type const& variableType);
+            Variable declareOrGetVariable(std::string const& name, storm::expressions::Type const& variableType, bool auxiliary = false);
             
             /*!
              * Retrieves the expression that represents the variable with the given name.
@@ -240,17 +228,10 @@ namespace storm {
              * Declares a variable with the given type whose name is guaranteed to be unique and not yet in use.
              *
              * @param variableType The type of the variable to declare.
+             * @param auxiliary A flag indicating whether the new variable should be tagged as an auxiliary variable.
              * @return The variable.
              */
-            Variable declareFreshVariable(storm::expressions::Type const& variableType);
-            
-            /*!
-             * Declares an auxiliary variable with the given type whose name is guaranteed to be unique and not yet in use.
-             *
-             * @param variableType The type of the variable to declare.
-             * @return The variable.
-             */
-            Variable declareFreshAuxiliaryVariable(storm::expressions::Type const& variableType);
+            Variable declareFreshVariable(storm::expressions::Type const& variableType, bool auxiliary = false);
             
             /*!
              * Retrieves the number of variables.
@@ -272,13 +253,13 @@ namespace storm {
              * @return The number of integer variables.
              */
             uint_fast64_t getNumberOfIntegerVariables() const;
-
+            
             /*!
-             * Retrieves the number of bounded integer variables.
+             * Retrieves the number of bit vector variables.
              *
-             * @return The number of bounded integer variables.
+             * @return The number of bit vector variables.
              */
-            uint_fast64_t getNumberOfBoundedIntegerVariables() const;
+            uint_fast64_t getNumberOfBitVectorVariables() const;
             
             /*!
              * Retrieves the number of rational variables.
@@ -286,41 +267,6 @@ namespace storm {
              * @return The number of rational variables.
              */
             uint_fast64_t getNumberOfRationalVariables() const;
-            
-            /*!
-             * Retrieves the number of auxiliary variables.
-             *
-             * @return The number of auxiliary variables.
-             */
-            uint_fast64_t getNumberOfAuxiliaryVariables() const;
-            
-            /*!
-             * Retrieves the number of auxiliary boolean variables.
-             *
-             * @return The number of auxiliary boolean variables.
-             */
-            uint_fast64_t getNumberOfAuxiliaryBooleanVariables() const;
-            
-            /*!
-             * Retrieves the number of auxiliary integer variables.
-             *
-             * @return The number of auxiliary integer variables.
-             */
-            uint_fast64_t getNumberOfAuxiliaryIntegerVariables() const;
-            
-            /*!
-             * Retrieves the number of auxiliary bounded integer variables.
-             *
-             * @return The number of auxiliary bounded integer variables.
-             */
-            uint_fast64_t getNumberOfAuxiliaryBoundedIntegerVariables() const;
-            
-            /*!
-             * Retrieves the number of auxiliary rational variables.
-             *
-             * @return The number of auxiliary rational variables.
-             */
-            uint_fast64_t getNumberOfAuxiliaryRationalVariables() const;
             
             /*!
              * Retrieves the name of the variable with the given index.
@@ -375,12 +321,6 @@ namespace storm {
             std::shared_ptr<ExpressionManager const> getSharedPointer() const;
 
         private:
-            // A functor used for treating bit vector types of different bit widths equally when it comes to the variable
-            // count.
-            struct ManagerTypeEquality {
-                bool operator()(Type const& a, Type const& b) const;
-            };
-            
             /*!
              * Checks whether the given variable name is valid.
              *
@@ -438,28 +378,31 @@ namespace storm {
             uint_fast64_t numberOfVariables;
 
             // Store counts for variables.
-            std::unordered_map<Type, uint_fast64_t, std::hash<Type>, ManagerTypeEquality> variableTypeToCountMapping;
-
-            // Store counts for auxiliary variables.
-            std::unordered_map<Type, uint_fast64_t, std::hash<Type>, ManagerTypeEquality> auxiliaryVariableTypeToCountMapping;
-
+            uint_fast64_t numberOfBooleanVariables;
+            uint_fast64_t numberOfIntegerVariables;
+            uint_fast64_t numberOfBitVectorVariables;
+            uint_fast64_t numberOfRationalVariables;
+            
             // The number of declared auxiliary variables.
             uint_fast64_t numberOfAuxiliaryVariables;
+            
+            // Store counts for auxiliary variables.
+            uint_fast64_t numberOfAuxiliaryBooleanVariables;
+            uint_fast64_t numberOfAuxiliaryIntegerVariables;
+            uint_fast64_t numberOfAuxiliaryBitVectorVariables;
+            uint_fast64_t numberOfAuxiliaryRationalVariables;
             
             // A counter used to create fresh variables.
             uint_fast64_t freshVariableCounter;
             
             // The types managed by this manager.
-            mutable std::unique_ptr<Type> booleanType;
-            mutable std::unique_ptr<Type> integerType;
-            mutable std::unique_ptr<Type> rationalType;
-            mutable std::map<std::size_t, Type> boundedIntegerTypes;
+            mutable std::unordered_set<Type> types;
             
             // A mask that can be used to query whether a variable is an auxiliary variable.
-            static const uint64_t auxiliaryMask = (1ull << 60);
+            static const uint64_t auxiliaryMask = (1ull << 50);
             
             // A mask that can be used to project a variable index to its offset (with the group of equally typed variables).
-            static const uint64_t offsetMask = (1ull << 60) - 1;
+            static const uint64_t offsetMask = (1ull << 50) - 1;
         };
     }
 }

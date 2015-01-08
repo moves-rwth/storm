@@ -106,11 +106,11 @@ namespace storm {
             bool hasIntegerType() const;
 
             /*!
-             * Checks whether the variable is of integral type.
+             * Checks whether the variable is of a bit vector type.
              *
-             * @return True iff the variable if of integral type.
+             * @return True iff the variable is of a bit vector type.
              */
-            bool hasBoundedIntegerType() const;
+            bool hasBitVectorType() const;
             
             /*!
              * Checks whether the variable is of rational type.

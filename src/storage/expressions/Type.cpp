@@ -1,6 +1,7 @@
 #include "src/storage/expressions/Type.h"
 
 #include <sstream>
+#include <cmath>
 
 #include "src/storage/expressions/ExpressionManager.h"
 #include "src/utility/macros.h"
@@ -15,6 +16,10 @@ namespace storm {
         
         bool BaseType::operator==(BaseType const& other) const {
             return this->getMask() == other.getMask();
+        }
+        
+        bool BaseType::isErrorType() const {
+            return false;
         }
         
         bool BaseType::isBooleanType() const {
@@ -32,15 +37,19 @@ namespace storm {
         bool IntegerType::isIntegerType() const {
             return true;
         }
-        
-        bool BaseType::isBoundedIntegerType() const {
-            return false;
-        }
-        
-        bool BoundedIntegerType::isBoundedIntegerType() const {
+
+        bool BitVectorType::isIntegerType() const {
             return true;
         }
         
+        bool BaseType::isBitVectorType() const {
+            return false;
+        }
+
+        bool BitVectorType::isBitVectorType() const {
+            return true;
+        }
+
         bool BaseType::isRationalType() const {
             return false;
         }
@@ -65,24 +74,24 @@ namespace storm {
             return "int";
         }
         
-        BoundedIntegerType::BoundedIntegerType(std::size_t width) : width(width) {
+        BitVectorType::BitVectorType(std::size_t width) : width(width) {
             // Intentionally left empty.
         }
         
-        uint64_t BoundedIntegerType::getMask() const {
-            return BoundedIntegerType::mask;
+        uint64_t BitVectorType::getMask() const {
+            return BitVectorType::mask;
         }
         
-        std::string BoundedIntegerType::getStringRepresentation() const {
-            return "int[" + std::to_string(width) + "]";
+        std::string BitVectorType::getStringRepresentation() const {
+            return "bv[" + std::to_string(width) + "]";
         }
 
-        std::size_t BoundedIntegerType::getWidth() const {
+        std::size_t BitVectorType::getWidth() const {
             return width;
         }
         
-        bool BoundedIntegerType::operator==(BaseType const& other) const {
-            return this->getMask() == other.getMask() && this->width == static_cast<BoundedIntegerType const&>(other).width;
+        bool BitVectorType::operator==(BaseType const& other) const {
+            return BaseType::operator==(other) && this->width == static_cast<BitVectorType const&>(other).getWidth();
         }
 
         uint64_t RationalType::getMask() const {
@@ -92,6 +101,16 @@ namespace storm {
         std::string RationalType::getStringRepresentation() const {
             return "rational";
         }
+        
+        bool operator<(BaseType const& first, BaseType const& second) {
+            if (first.getMask() < second.getMask()) {
+                return true;
+            }
+            if (first.isBitVectorType() && second.isBitVectorType()) {
+                return static_cast<BitVectorType const&>(first).getWidth() < static_cast<BitVectorType const&>(second).getWidth();
+            }
+            return false;
+         }
         
         Type::Type() : manager(nullptr), innerType(nullptr) {
             // Intentionally left empty.
@@ -109,32 +128,28 @@ namespace storm {
             return this->innerType->getMask();
         }
         
-        std::string Type::getStringRepresentation() const {
-            return this->innerType->getStringRepresentation();
+        bool Type::isBooleanType() const {
+            return this->innerType->isBooleanType();
+        }
+        
+        bool Type::isIntegerType() const {
+            return this->innerType->isIntegerType();
+        }
+        
+        bool Type::isBitVectorType() const {
+            return this->innerType->isBitVectorType();
         }
         
         bool Type::isNumericalType() const {
             return this->isIntegerType() || this->isRationalType();
         }
         
-        bool Type::isIntegerType() const {
-            return this->isUnboundedIntegerType() || this->isBoundedIntegerType();
-        }
-        
-        bool Type::isBooleanType() const {
-            return this->innerType->isBooleanType();
-        }
-        
-        bool Type::isUnboundedIntegerType() const {
-            return this->innerType->isIntegerType();
-        }
-        
-        bool Type::isBoundedIntegerType() const {
-            return this->innerType->isBoundedIntegerType();
+        std::string Type::getStringRepresentation() const {
+            return this->innerType->getStringRepresentation();
         }
         
         std::size_t Type::getWidth() const {
-            return dynamic_cast<BoundedIntegerType const&>(*this->innerType).getWidth();
+            return static_cast<BitVectorType const&>(*this->innerType).getWidth();
         }
 
         bool Type::isRationalType() const {
@@ -147,10 +162,7 @@ namespace storm {
         
         Type Type::plusMinusTimes(Type const& other) const {
             STORM_LOG_THROW(this->isNumericalType() && other.isNumericalType(), storm::exceptions::InvalidTypeException, "Operator requires numerical operands.");
-            if (this->isRationalType() || other.isRationalType()) {
-                return this->getManager().getRationalType();
-            }
-            return getManager().getIntegerType();
+            return std::max(*this, other);
         }
         
         Type Type::minus() const {
@@ -160,18 +172,14 @@ namespace storm {
         
         Type Type::divide(Type const& other) const {
             STORM_LOG_THROW(this->isNumericalType() && other.isNumericalType(), storm::exceptions::InvalidTypeException, "Operator requires numerical operands.");
-            if (this->isRationalType() || other.isRationalType()) {
-                return this->getManager().getRationalType();
-            }
-            return this->getManager().getIntegerType();
+            STORM_LOG_THROW(!this->isBitVectorType() && !other.isBitVectorType(), storm::exceptions::InvalidTypeException, "Operator requires non-bitvector operands.");
+            return std::max(*this, other);
         }
         
         Type Type::power(Type const& other) const {
             STORM_LOG_THROW(this->isNumericalType() && other.isNumericalType(), storm::exceptions::InvalidTypeException, "Operator requires numerical operands.");
-            if (this->isRationalType() || other.isRationalType()) {
-                return getManager().getRationalType();
-            }
-            return this->getManager().getIntegerType();
+            STORM_LOG_THROW(!this->isBitVectorType() && !other.isBitVectorType(), storm::exceptions::InvalidTypeException, "Operator requires non-bitvector operands.");
+            return std::max(*this, other);
         }
         
         Type Type::logicalConnective(Type const& other) const {
@@ -194,12 +202,8 @@ namespace storm {
             if (thenType == elseType) {
                 return thenType;
             } else {
-                STORM_LOG_THROW(thenType.isNumericalType() == elseType.isNumericalType(), storm::exceptions::InvalidTypeException, "Operator 'ite' requires proper types.");
-                if (thenType.isRationalType() || elseType.isRationalType()) {
-                    return this->getManager().getRationalType();
-                } else {
-                    return this->getManager().getIntegerType();
-                }
+                STORM_LOG_THROW(thenType.isNumericalType() && elseType.isNumericalType(), storm::exceptions::InvalidTypeException, "Operator 'ite' requires proper types.");
+                return std::max(thenType, elseType);
             }
             return thenType;
         }
@@ -211,10 +215,11 @@ namespace storm {
         
         Type Type::minimumMaximum(Type const& other) const {
             STORM_LOG_THROW(this->isNumericalType() && other.isNumericalType(), storm::exceptions::InvalidTypeException, "Operator requires numerical operands.");
-            if (this->isRationalType() || other.isRationalType()) {
-                return this->getManager().getRationalType();
-            }
-            return this->getManager().getIntegerType();
+            return std::max(*this, other);
+        }
+        
+        bool operator<(storm::expressions::Type const& type1, storm::expressions::Type const& type2) {
+            return *type1.innerType < *type2.innerType;
         }
         
         std::ostream& operator<<(std::ostream& stream, Type const& type) {

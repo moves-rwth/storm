@@ -2,12 +2,16 @@
 
 namespace storm {
     namespace prism {
-        Assignment::Assignment(std::string const& variableName, storm::expressions::Expression const& expression, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), variableName(variableName), expression(expression) {
+        Assignment::Assignment(storm::expressions::Variable const& variable, storm::expressions::Expression const& expression, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), variable(variable), expression(expression) {
             // Intentionally left empty.
         }
         
         std::string const& Assignment::getVariableName() const {
-            return variableName;
+            return variable.getName();
+        }
+        
+        storm::expressions::Variable const& Assignment::getVariable() const {
+            return variable;
         }
         
         storm::expressions::Expression const& Assignment::getExpression() const {
@@ -15,7 +19,7 @@ namespace storm {
         }
         
         Assignment Assignment::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
-            return Assignment(this->getVariableName(), this->getExpression().substitute(substitution), this->getFilename(), this->getLineNumber());
+            return Assignment(this->getVariable(), this->getExpression().substitute(substitution), this->getFilename(), this->getLineNumber());
         }
         
         std::ostream& operator<<(std::ostream& stream, Assignment const& assignment) {

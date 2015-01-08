@@ -7,6 +7,10 @@ namespace storm {
             // Intentionally left empty.
         }
         
+        Valuation::~Valuation() {
+            // Intentionally left empty.
+        }
+        
         ExpressionManager const& Valuation::getManager() const {
             return *manager;
         }

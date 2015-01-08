@@ -182,11 +182,11 @@ namespace storm {
             bool hasIntegerType() const;
             
             /*!
-             * Retrieves whether the expression has a bounded integer type.
+             * Retrieves whether the expression has a bitvector type.
              *
-             * @return True iff the expression has a bounded integer type.
+             * @return True iff the expression has a bitvector type.
              */
-            bool hasBoundedIntegerType() const;
+            bool hasBitVectorType() const;
 
             /*!
              * Retrieves whether the expression has a boolean type.

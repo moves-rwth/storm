@@ -24,6 +24,11 @@ namespace storm {
             Valuation(std::shared_ptr<ExpressionManager const> const& manager);
             
             /*!
+             * Declare virtual destructor, so we can properly delete instances later.
+             */
+            virtual ~Valuation();
+            
+            /*!
              * Retrieves the value of the given boolean variable.
              *
              * @param booleanVariable The boolean variable whose value to retrieve.
@@ -48,12 +53,12 @@ namespace storm {
             virtual int_fast64_t getIntegerValue(Variable const& integerVariable) const = 0;
 
             /*!
-             * Retrieves the value of the given bounded integer variable.
+             * Retrieves the value of the given bit vector variable.
              *
-             * @param integerVariable The bounded integer variable whose value to retrieve.
-             * @return The value of the bounded integer variable.
+             * @param bitVectorVariable The bit vector variable whose value to retrieve.
+             * @return The value of the bit vector variable.
              */
-            virtual int_fast64_t getBoundedIntegerValue(Variable const& integerVariable) const = 0;
+            virtual int_fast64_t getBitVectorValue(Variable const& bitVectorVariable) const = 0;
             
             /*!
              * Sets the value of the given integer variable to the provided value.
@@ -64,12 +69,12 @@ namespace storm {
             virtual void setIntegerValue(Variable const& integerVariable, int_fast64_t value) = 0;
 
             /*!
-             * Sets the value of the given bounded integer variable to the provided value.
+             * Sets the value of the given bit vector variable to the provided value.
              *
-             * @param integerVariable The variable whose value to set.
+             * @param bitVectorVariable The variable whose value to set.
              * @param value The new value of the variable.
              */
-            virtual void setBoundedIntegerValue(Variable const& integerVariable, int_fast64_t value) = 0;
+            virtual void setBitVectorValue(Variable const& bitVectorVariable, int_fast64_t value) = 0;
 
             /*!
              * Retrieves the value of the given rational variable.

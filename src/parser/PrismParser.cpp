@@ -345,7 +345,7 @@ namespace storm {
         }
         
         storm::prism::Assignment PrismParser::createAssignment(std::string const& variableName, storm::expressions::Expression assignedExpression) const {
-            return storm::prism::Assignment(variableName, assignedExpression, this->getFilename());
+            return storm::prism::Assignment(manager->getVariable(variableName), assignedExpression, this->getFilename());
         }
         
         storm::prism::Update PrismParser::createUpdate(storm::expressions::Expression likelihoodExpression, std::vector<storm::prism::Assignment> const& assignments, GlobalProgramInformation& globalProgramInformation) const {
@@ -459,9 +459,9 @@ namespace storm {
                         for (auto const& assignment : update.getAssignments()) {
                             auto const& renamingPair = renaming.find(assignment.getVariableName());
                             if (renamingPair != renaming.end()) {
-                                assignments.emplace_back(renamingPair->second, assignment.getExpression().substitute(expressionRenaming), this->getFilename(), get_line(qi::_1));
+                                assignments.emplace_back(manager->getVariable(renamingPair->second), assignment.getExpression().substitute(expressionRenaming), this->getFilename(), get_line(qi::_1));
                             } else {
-                                assignments.emplace_back(assignment.getVariableName(), assignment.getExpression().substitute(expressionRenaming), this->getFilename(), get_line(qi::_1));
+                                assignments.emplace_back(assignment.getVariable(), assignment.getExpression().substitute(expressionRenaming), this->getFilename(), get_line(qi::_1));
                             }
                         }
                         updates.emplace_back(globalProgramInformation.currentUpdateIndex, update.getLikelihoodExpression().substitute(expressionRenaming), assignments, this->getFilename(), get_line(qi::_1));

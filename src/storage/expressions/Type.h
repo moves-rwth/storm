@@ -38,9 +38,10 @@ namespace storm {
              */
             virtual std::string getStringRepresentation() const = 0;
             
+            virtual bool isErrorType() const;
             virtual bool isBooleanType() const;
             virtual bool isIntegerType() const;
-            virtual bool isBoundedIntegerType() const;
+            virtual bool isBitVectorType() const;
             virtual bool isRationalType() const;
         };
 
@@ -51,7 +52,7 @@ namespace storm {
             virtual bool isBooleanType() const override;
 
         private:
-            static const uint64_t mask = (1ull << 61);
+            static const uint64_t mask = (1ull << 60);
         };
         
         class IntegerType : public BaseType {
@@ -64,14 +65,14 @@ namespace storm {
             static const uint64_t mask = (1ull << 62);
         };
         
-        class BoundedIntegerType : public BaseType {
+        class BitVectorType : public BaseType {
         public:
             /*!
-             * Creates a new bounded integer type with the given bit width.
+             * Creates a new bounded bitvector type with the given bit width.
              *
              * @param width The bit width of the type.
              */
-            BoundedIntegerType(std::size_t width);
+            BitVectorType(std::size_t width);
             
             /*!
              * Retrieves the bit width of the bounded type.
@@ -80,16 +81,14 @@ namespace storm {
              */
             std::size_t getWidth() const;
 
-            virtual uint64_t getMask() const override;
-
             virtual bool operator==(BaseType const& other) const override;
-
+            virtual uint64_t getMask() const override;
             virtual std::string getStringRepresentation() const override;
-
-            virtual bool isBoundedIntegerType() const override;
+            virtual bool isIntegerType() const override;
+            virtual bool isBitVectorType() const override;
 
         private:
-            static const uint64_t mask = (1ull << 61) | (1ull << 62);
+            static const uint64_t mask =  (1ull << 61);
             
             // The bit width of the type.
             std::size_t width;
@@ -108,15 +107,19 @@ namespace storm {
         class ErrorType : public BaseType {
         public:
             virtual uint64_t getMask() const override;
-            
             virtual std::string getStringRepresentation() const override;
+            virtual bool isErrorType() const override;
             
         private:
             static const uint64_t mask = 0;
         };
         
+        bool operator<(BaseType const& first, BaseType const& second);
+        
         class Type {
         public:
+            friend bool operator<(storm::expressions::Type const& type1, storm::expressions::Type const& type2);
+
             Type();
             
             /*!
@@ -150,20 +153,6 @@ namespace storm {
             std::string getStringRepresentation() const;
 
             /*!
-             * Checks whether this type is a numerical type.
-             *
-             * @return True iff the type is a numerical one.
-             */
-            bool isNumericalType() const;
-
-            /*!
-             * Checks whether this type is an integral type.
-             *
-             * @return True iff the type is a integral one.
-             */
-            bool isIntegerType() const;
-
-            /*!
              * Checks whether this type is a boolean type.
              *
              * @return True iff the type is a boolean one.
@@ -171,32 +160,39 @@ namespace storm {
             bool isBooleanType() const;
 
             /*!
-             * Checks whether this type is an unbounded integral type.
+             * Checks whether this type is an integral type.
              *
-             * @return True iff the type is a unbounded integral one.
+             * @return True iff the type is a integral one.
              */
-            bool isUnboundedIntegerType() const;
+            bool isIntegerType() const;
             
             /*!
-             * Checks whether this type is a bounded integral type.
+             * Checks whether this type is a bitvector type.
              *
-             * @return True iff the type is a bounded integral one.
+             * @return True iff the type is a bitvector one.
              */
-            bool isBoundedIntegerType() const;
+            bool isBitVectorType() const;
             
-            /*!
-             * Retrieves the bit width of the type, provided that it is a bounded integral type.
-             *
-             * @return The bit width of the bounded integral type.
-             */
-            std::size_t getWidth() const;
-
             /*!
              * Checks whether this type is a rational type.
              *
              * @return True iff the type is a rational one.
              */
             bool isRationalType() const;
+
+            /*!
+             * Checks whether this type is a numerical type.
+             *
+             * @return True iff the type is a numerical one.
+             */
+            bool isNumericalType() const;
+            
+            /*!
+             * Retrieves the bit width of the type, provided that it is a bitvector type.
+             *
+             * @return The bit width of the bitvector type.
+             */
+            std::size_t getWidth() const;
             
             /*!
              * Retrieves the manager of the type.
@@ -226,7 +222,8 @@ namespace storm {
         };
         
         std::ostream& operator<<(std::ostream& stream, Type const& type);
-        
+
+        bool operator<(storm::expressions::Type const& type1, storm::expressions::Type const& type2);
     }
 }
 
@@ -236,14 +233,6 @@ namespace std {
     struct hash<storm::expressions::Type> {
         std::size_t operator()(storm::expressions::Type const& type) const {
             return std::hash<uint64_t>()(type.getMask());
-        }
-    };
-    
-    // Provide a less operator, so we can put types in ordered collections.
-    template <>
-    struct less<storm::expressions::Type> {
-        std::size_t operator()(storm::expressions::Type const& type1, storm::expressions::Type const& type2) const {
-            return type1.getMask() < type2.getMask();
         }
     };
 }

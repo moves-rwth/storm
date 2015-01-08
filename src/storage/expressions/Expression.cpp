@@ -146,8 +146,8 @@ namespace storm {
             return this->getBaseExpression().hasIntegerType();
         }
         
-        bool Expression::hasBoundedIntegerType() const {
-            return this->getBaseExpression().hasBoundedIntegerType();
+        bool Expression::hasBitVectorType() const {
+            return this->getBaseExpression().hasBitVectorType();
         }
         
         boost::any Expression::accept(ExpressionVisitor& visitor) const {

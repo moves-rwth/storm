@@ -18,8 +18,8 @@ namespace storm {
             return this->getType().isIntegerType();
         }
 
-        bool BaseExpression::hasBoundedIntegerType() const {
-            return this->getType().isBoundedIntegerType();
+        bool BaseExpression::hasBitVectorType() const {
+            return this->getType().isBitVectorType();
         }
         
         bool BaseExpression::hasNumericalType() const {

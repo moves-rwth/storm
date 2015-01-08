@@ -47,8 +47,8 @@ namespace storm {
             return this->getType().isIntegerType();
         }
 
-        bool Variable::hasBoundedIntegerType() const {
-            return this->getType().isBoundedIntegerType();
+        bool Variable::hasBitVectorType() const {
+            return this->getType().isBitVectorType();
         }
         
         bool Variable::hasRationalType() const {

@@ -15,12 +15,12 @@ namespace storm {
             /*!
              * Constructs an assignment using the given variable name and expression.
              *
-             * @param variableName The variable that this assignment targets.
+             * @param variable The variable that this assignment targets.
              * @param expression The expression to assign to the variable.
              * @param filename The filename in which the assignment is defined.
              * @param lineNumber The line number in which the assignment is defined.
              */
-            Assignment(std::string const& variableName, storm::expressions::Expression const& expression, std::string const& filename = "", uint_fast64_t lineNumber = 0);
+            Assignment(storm::expressions::Variable const& variable, storm::expressions::Expression const& expression, std::string const& filename = "", uint_fast64_t lineNumber = 0);
                         
             // Create default implementations of constructors/assignment.
             Assignment() = default;
@@ -37,6 +37,13 @@ namespace storm {
              * @return The name of the variable that this assignment targets.
              */
             std::string const& getVariableName() const;
+            
+            /*!
+             * Retrieves the variable that is written to by this assignment.
+             *
+             * @return The variable that is written to by this assignment.
+             */
+            storm::expressions::Variable const& getVariable() const;
             
             /*!
              * Retrieves the expression that is assigned to the variable.
@@ -56,8 +63,8 @@ namespace storm {
             friend std::ostream& operator<<(std::ostream& stream, Assignment const& assignment);
             
         private:
-            // The name of the variable that this assignment targets.
-            std::string variableName;
+            // The variable written in this assignment.
+            storm::expressions::Variable variable;
             
             // The expression that is assigned to the variable.
             storm::expressions::Expression expression;
