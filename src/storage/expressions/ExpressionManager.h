@@ -6,6 +6,7 @@
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>
+#include <iostream>
 
 #include "src/storage/expressions/Variable.h"
 #include "src/storage/expressions/Expression.h"
@@ -320,6 +321,8 @@ namespace storm {
              */
             std::shared_ptr<ExpressionManager const> getSharedPointer() const;
 
+            friend std::ostream& operator<<(std::ostream& out, ExpressionManager const& manager);
+            
         private:
             /*!
              * Checks whether the given variable name is valid.
@@ -404,6 +407,8 @@ namespace storm {
             // A mask that can be used to project a variable index to its offset (with the group of equally typed variables).
             static const uint64_t offsetMask = (1ull << 50) - 1;
         };
+        
+        std::ostream& operator<<(std::ostream& out, ExpressionManager const& manager);
     }
 }
 

@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <vector>
+#include <iostream>
 
 #include "src/storage/expressions/Valuation.h"
 
@@ -53,12 +54,16 @@ namespace storm {
             virtual double getRationalValue(Variable const& rationalVariable) const override;
             virtual void setRationalValue(Variable const& rationalVariable, double value) override;
             
+            friend std::ostream& operator<<(std::ostream& out, SimpleValuation const& valuation);
+            
         private:
             // Containers that store the values of the variables of the appropriate type.
             std::vector<bool> booleanValues;
             std::vector<int_fast64_t> integerValues;
             std::vector<double> rationalValues;
         };
+        
+        std::ostream& operator<<(std::ostream& out, SimpleValuation const& valuation);
         
         /*!
          * A helper class that can pe used as the hash functor for data structures that need to hash valuations given

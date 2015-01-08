@@ -255,7 +255,7 @@ namespace storm {
         }
         
         ExpressionManager::const_iterator ExpressionManager::begin() const {
-            return ExpressionManager::const_iterator(*this, this->nameToIndexMapping.end(), this->nameToIndexMapping.begin(), const_iterator::VariableSelection::OnlyRegularVariables);
+            return ExpressionManager::const_iterator(*this, this->nameToIndexMapping.begin(), this->nameToIndexMapping.end(), const_iterator::VariableSelection::OnlyRegularVariables);
         }
         
         ExpressionManager::const_iterator ExpressionManager::end() const {
@@ -269,6 +269,18 @@ namespace storm {
         std::shared_ptr<ExpressionManager const> ExpressionManager::getSharedPointer() const {
             return this->shared_from_this();
         }
-                
+        
+        std::ostream& operator<<(std::ostream& out, ExpressionManager const& manager) {
+            out << "manager {" << std::endl;
+            
+            for (auto const& variableTypePair : manager) {
+                std::cout << "\t" << variableTypePair.second << " " << variableTypePair.first.getName() << " [offset " << variableTypePair.first.getOffset() << "]" << std::endl;
+            }
+            
+            out << "}" << std::endl;
+            
+            return out;
+        }
+        
     } // namespace expressions
 } // namespace storm

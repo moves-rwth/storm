@@ -194,7 +194,7 @@ namespace storm {
                 std::unordered_map<uint_fast64_t, std::list<storm::expressions::Variable>> resultingMap;
                 
                 for (auto state : stateInformation.relevantStates) {
-                    resultingMap.emplace(state, std::list<std::string>());
+                    resultingMap.emplace(state, std::list<storm::expressions::Variable>());
                     std::list<uint_fast64_t> const& relevantChoicesForState = choiceInformation.relevantChoicesForRelevantStates.at(state);
                     for (uint_fast64_t row : relevantChoicesForState) {
                         variableNameBuffer.str("");

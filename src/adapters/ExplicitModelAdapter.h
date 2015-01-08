@@ -174,7 +174,6 @@ namespace storm {
             static StateType* applyUpdate(VariableInformation const& variableInformation, StateType const* state, StateType const* baseState, storm::prism::Update const& update) {
                 StateType* newState = new StateType(*state);
                 
-                // This variable needs to be declared prior to the switch, because of C++ rules.
                 int_fast64_t newValue = 0;
                 for (auto const& assignment : update.getAssignments()) {
                     if (assignment.getExpression().hasBooleanType()) {
@@ -188,6 +187,7 @@ namespace storm {
                         STORM_LOG_ASSERT(false, "Invalid type '" << assignment.getExpression().getType() << "' of assignment.");
                     }
                 }
+                
                 return newState;
             }
                                     
@@ -478,6 +478,22 @@ namespace storm {
                 // Initialize a queue and insert the initial state.
                 std::queue<uint_fast64_t> stateQueue;
                 StateType* initialState = new StateType(program.getManager().getSharedPointer());
+                
+                // We need to initialize the values of the variables to their initial value.
+                for (auto const& booleanVariable : program.getGlobalBooleanVariables()) {
+                    initialState->setBooleanValue(booleanVariable.getExpressionVariable(), booleanVariable.getInitialValueExpression().evaluateAsBool());
+                }
+                for (auto const& integerVariable : program.getGlobalIntegerVariables()) {
+                    initialState->setIntegerValue(integerVariable.getExpressionVariable(), integerVariable.getInitialValueExpression().evaluateAsInt());
+                }
+                for (auto const& module : program.getModules()) {
+                    for (auto const& booleanVariable : module.getBooleanVariables()) {
+                        initialState->setBooleanValue(booleanVariable.getExpressionVariable(), booleanVariable.getInitialValueExpression().evaluateAsBool());
+                    }
+                    for (auto const& integerVariable : module.getIntegerVariables()) {
+                        initialState->setIntegerValue(integerVariable.getExpressionVariable(), integerVariable.getInitialValueExpression().evaluateAsInt());
+                    }
+                }
         
                 std::pair<bool, uint_fast64_t> addIndexPair = getOrAddStateIndex(initialState, stateInformation);
                 stateInformation.initialStateIndices.push_back(addIndexPair.second);

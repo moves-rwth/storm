@@ -977,7 +977,7 @@ namespace storm {
                     solver.add(labelExpression);
 
                     // Assert constraint for (2).
-                    storm::expressions::Expression orderExpression = !variableInformation.statePairVariables.at(statePairIndexPair.second) || variableInformation.stateOrderVariables.at(variableInformation.relevantStatesToOrderVariableIndexMap.at(sourceState)) < variableInformation.stateOrderVariables.at(variableInformation.relevantStatesToOrderVariableIndexMap.at(targetState));
+                    storm::expressions::Expression orderExpression = !variableInformation.statePairVariables.at(statePairIndexPair.second) || variableInformation.stateOrderVariables.at(variableInformation.relevantStatesToOrderVariableIndexMap.at(sourceState)).getExpression() < variableInformation.stateOrderVariables.at(variableInformation.relevantStatesToOrderVariableIndexMap.at(targetState)).getExpression();
                     solver.add(orderExpression);
                 }
             }
@@ -1286,17 +1286,10 @@ namespace storm {
             static boost::container::flat_set<uint_fast64_t> getUsedLabelSet(storm::solver::SmtSolver::ModelReference const& model, VariableInformation const& variableInformation) {
                 boost::container::flat_set<uint_fast64_t> result;
                 for (auto const& labelIndexPair : variableInformation.labelToIndexMap) {
-                    z3::expr auxValue = model.eval(variableInformation.labelVariables.at(labelIndexPair.second));
+                    bool commandIncluded = model.getBooleanValue(variableInformation.labelVariables.at(labelIndexPair.second));
                     
-                    // Check whether the auxiliary variable was set or not.
-                    if (eq(auxValue, context.bool_val(true))) {
+                    if (commandIncluded) {
                         result.insert(labelIndexPair.first);
-                    } else if (eq(auxValue, context.bool_val(false))) {
-                        // Nothing to do in this case.
-                    } else if (eq(auxValue, variableInformation.labelVariables.at(labelIndexPair.second))) {
-                        // If the auxiliary variable is a don't care, then we don't take the corresponding command.
-                    } else {
-                        throw storm::exceptions::InvalidStateException() << "Could not retrieve value of boolean variable from illegal value.";
                     }
                 }
                 return result;
@@ -1340,7 +1333,7 @@ namespace storm {
 
                 // As long as the constraints are unsatisfiable, we need to relax the last at-most-k constraint and
                 // try with an increased bound.
-                while (solver.checkWithAssumptions({assumption}) == storm::solver::SmtSolver::CheckResult::) {
+                while (solver.checkWithAssumptions({assumption}) == storm::solver::SmtSolver::CheckResult::Unsat) {
                     LOG4CPLUS_DEBUG(logger, "Constraint system is unsatisfiable with at most " << currentBound << " taken commands; increasing bound.");
                     solver.add(variableInformation.auxiliaryVariables.back());
                     variableInformation.auxiliaryVariables.push_back(assertLessOrEqualKRelaxed(solver, variableInformation, ++currentBound));
@@ -1355,7 +1348,6 @@ namespace storm {
             /*!
              * Analyzes the given sub-MDP that has a maximal reachability of zero (i.e. no psi states are reachable) and tries to construct assertions that aim to make at least one psi state reachable.
              *
-             * @param context The Z3 context in which to build the expressions.
              * @param solver The solver to use for the satisfiability evaluation.
              * @param subMdp The sub-MDP resulting from restricting the original MDP to the given command set.
              * @param originalMdp The original MDP.
@@ -1364,7 +1356,7 @@ namespace storm {
              * @param commandSet The currently chosen set of commands.
              * @param variableInformation A structure with information about the variables of the solver.
              */
-            static void analyzeZeroProbabilitySolution(z3::context& context, z3::solver& solver, storm::models::Mdp<T> const& subMdp, storm::models::Mdp<T> const& originalMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, boost::container::flat_set<uint_fast64_t> const& commandSet, VariableInformation& variableInformation, RelevancyInformation const& relevancyInformation) {
+            static void analyzeZeroProbabilitySolution(storm::solver::SmtSolver& solver, storm::models::Mdp<T> const& subMdp, storm::models::Mdp<T> const& originalMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, boost::container::flat_set<uint_fast64_t> const& commandSet, VariableInformation& variableInformation, RelevancyInformation const& relevancyInformation) {
                 storm::storage::BitVector reachableStates(subMdp.getNumberOfStates());
                 
                 LOG4CPLUS_DEBUG(logger, "Analyzing solution with zero probability.");
@@ -1459,14 +1451,14 @@ namespace storm {
                 }
                 
                 // Given the results of the previous analysis, we construct the implications.
-                std::vector<z3::expr> formulae;
+                std::vector<storm::expressions::Expression> formulae;
                 boost::container::flat_set<uint_fast64_t> unknownReachableLabels;
                 std::set_difference(reachableLabels.begin(), reachableLabels.end(), relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end(), std::inserter(unknownReachableLabels, unknownReachableLabels.end()));
                 for (auto label : unknownReachableLabels) {
                     formulae.push_back(!variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label)));
                 }
                 for (auto const& cutLabelSet : cutLabels) {
-                    z3::expr cube = context.bool_val(true);
+                    storm::expressions::Expression cube = variableInformation.manager->boolean(true);
                     for (auto cutLabel : cutLabelSet) {
                         cube = cube && variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(cutLabel));
                     }
@@ -1476,14 +1468,12 @@ namespace storm {
                 
                 LOG4CPLUS_DEBUG(logger, "Asserting reachability implications.");
                 assertDisjunction(solver, formulae, *variableInformation.manager);
-                
             }
             
             /*!
              * Analyzes the given sub-MDP that has a non-zero maximal reachability and tries to construct assertions that aim to guide the solver to solutions
              * with an improved probability value.
              *
-             * @param context The Z3 context in which to build the expressions.
              * @param solver The solver to use for the satisfiability evaluation.
              * @param subMdp The sub-MDP resulting from restricting the original MDP to the given command set.
              * @param originalMdp The original MDP.
@@ -1492,7 +1482,7 @@ namespace storm {
              * @param commandSet The currently chosen set of commands.
              * @param variableInformation A structure with information about the variables of the solver.
              */
-            static void analyzeInsufficientProbabilitySolution(z3::context& context, z3::solver& solver, storm::models::Mdp<T> const& subMdp, storm::models::Mdp<T> const& originalMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, boost::container::flat_set<uint_fast64_t> const& commandSet, VariableInformation& variableInformation, RelevancyInformation const& relevancyInformation) {
+            static void analyzeInsufficientProbabilitySolution(storm::solver::SmtSolver& solver, storm::models::Mdp<T> const& subMdp, storm::models::Mdp<T> const& originalMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, boost::container::flat_set<uint_fast64_t> const& commandSet, VariableInformation& variableInformation, RelevancyInformation const& relevancyInformation) {
 
                 LOG4CPLUS_DEBUG(logger, "Analyzing solution with insufficient probability.");
 
@@ -1569,14 +1559,14 @@ namespace storm {
                 }
                 
                 // Given the results of the previous analysis, we construct the implications
-                std::vector<z3::expr> formulae;
+                std::vector<storm::expressions::Expression> formulae;
                 boost::container::flat_set<uint_fast64_t> unknownReachableLabels;
                 std::set_difference(reachableLabels.begin(), reachableLabels.end(), relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end(), std::inserter(unknownReachableLabels, unknownReachableLabels.end()));
                 for (auto label : unknownReachableLabels) {
                     formulae.push_back(!variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label)));
                 }
                 for (auto const& cutLabelSet : cutLabels) {
-                    z3::expr cube = context.bool_val(true);
+                    storm::expressions::Expression cube = variableInformation.manager->boolean(true);
                     for (auto cutLabel : cutLabelSet) {
                         cube = cube && variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(cutLabel));
                     }
@@ -1694,7 +1684,7 @@ namespace storm {
                 do {
                     LOG4CPLUS_DEBUG(logger, "Computing minimal command set.");
                     solverClock = std::chrono::high_resolution_clock::now();
-                    commandSet = findSmallestCommandSet(solver, variableInformation, currentBound);
+                    commandSet = findSmallestCommandSet(*solver, variableInformation, currentBound);
                     totalSolverTime += std::chrono::high_resolution_clock::now() - solverClock;
                     LOG4CPLUS_DEBUG(logger, "Computed minimal command set of size " << (commandSet.size() + relevancyInformation.knownLabels.size()) << ".");
                     
@@ -1721,11 +1711,11 @@ namespace storm {
                             ++zeroProbabilityCount;
                             
                             // If there was no target state reachable, analyze the solution and guide the solver into the right direction.
-                            analyzeZeroProbabilitySolution(context, solver, subMdp, labeledMdp, phiStates, psiStates, commandSet, variableInformation, relevancyInformation);
+                            analyzeZeroProbabilitySolution(*solver, subMdp, labeledMdp, phiStates, psiStates, commandSet, variableInformation, relevancyInformation);
                         } else {
                             // If the reachability probability was greater than zero (i.e. there is a reachable target state), but the probability was insufficient to exceed
                             // the given threshold, we analyze the solution and try to guide the solver into the right direction.
-                            analyzeInsufficientProbabilitySolution(context, solver, subMdp, labeledMdp, phiStates, psiStates, commandSet, variableInformation, relevancyInformation);
+                            analyzeInsufficientProbabilitySolution(*solver, subMdp, labeledMdp, phiStates, psiStates, commandSet, variableInformation, relevancyInformation);
                         }
                     } else {
                         done = true;

@@ -87,6 +87,32 @@ namespace storm {
             rationalValues[rationalVariable.getOffset()] = value;
         }
         
+        std::ostream& operator<<(std::ostream& out, SimpleValuation const& valuation) {
+            out << "valuation {" << std::endl;
+            out << valuation.getManager() << std::endl;
+            if (!valuation.booleanValues.empty()) {
+                for (auto const& element : valuation.booleanValues) {
+                    out << element << " ";
+                }
+                out << std::endl;
+            }
+            if (!valuation.integerValues.empty()) {
+                for (auto const& element : valuation.integerValues) {
+                    out << element << " ";
+                }
+                out << std::endl;
+            }
+            if (!valuation.rationalValues.empty()) {
+                for (auto const& element : valuation.rationalValues) {
+                    out << element << " ";
+                }
+                out << std::endl;
+            }
+            out << "}" << std::endl;
+            
+            return out;
+        }
+        
         std::size_t SimpleValuationPointerHash::operator()(SimpleValuation* valuation) const {
             size_t seed = std::hash<std::vector<bool>>()(valuation->booleanValues);
             boost::hash_combine(seed, valuation->integerValues);
