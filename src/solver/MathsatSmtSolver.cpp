@@ -64,9 +64,9 @@ namespace storm {
         }
 #endif
 
-		MathsatSmtSolver::MathsatSmtSolver(storm::expressions::ExpressionManager& manager, Options const& options)
+		MathsatSmtSolver::MathsatSmtSolver(storm::expressions::ExpressionManager& manager, Options const& options) : SmtSolver(manager)
 #ifdef STORM_HAVE_MSAT
-			: SmtSolver(manager), expressionAdapter(nullptr), lastCheckAssumptions(false), lastResult(CheckResult::Unknown)
+			, expressionAdapter(nullptr), lastCheckAssumptions(false), lastResult(CheckResult::Unknown)
 #endif
 		{
 #ifdef STORM_HAVE_MSAT

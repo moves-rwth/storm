@@ -44,16 +44,18 @@ namespace storm {
 #endif
 		}
         
-		Z3SmtSolver::Z3SmtSolver(storm::expressions::ExpressionManager& manager)
+		Z3SmtSolver::Z3SmtSolver(storm::expressions::ExpressionManager& manager) : SmtSolver(manager)
 #ifdef STORM_HAVE_Z3
-        : SmtSolver(manager), context(nullptr), solver(nullptr), expressionAdapter(nullptr), lastCheckAssumptions(false), lastResult(CheckResult::Unknown)
+        , context(nullptr), solver(nullptr), expressionAdapter(nullptr), lastCheckAssumptions(false), lastResult(CheckResult::Unknown)
 #endif
 		{
+#ifdef STORM_HAVE_Z3
             z3::config config;
             config.set("model", true);
             context = std::unique_ptr<z3::context>(new z3::context(config));
             solver = std::unique_ptr<z3::solver>(new z3::solver(*context));
             expressionAdapter = std::unique_ptr<storm::adapters::Z3ExpressionAdapter>(new storm::adapters::Z3ExpressionAdapter(this->getManager(), *context));
+#endif
         }
         
 		Z3SmtSolver::~Z3SmtSolver() {
