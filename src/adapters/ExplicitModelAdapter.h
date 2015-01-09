@@ -233,8 +233,8 @@ namespace storm {
              * @param action The action label to select.
              * @return A list of lists of active commands or nothing.
              */
-            static boost::optional<std::vector<std::list<storm::prism::Command>>> getActiveCommandsByAction(storm::prism::Program const& program, StateType const* state, std::string const& action) {
-                boost::optional<std::vector<std::list<storm::prism::Command>>> result((std::vector<std::list<storm::prism::Command>>()));
+            static boost::optional<std::vector<std::list<std::reference_wrapper<storm::prism::Command const>>>> getActiveCommandsByAction(storm::prism::Program const& program, StateType const* state, std::string const& action) {
+                boost::optional<std::vector<std::list<std::reference_wrapper<storm::prism::Command const>>>> result((std::vector<std::list<std::reference_wrapper<storm::prism::Command const>>>()));
                 
                 // Iterate over all modules.
                 for (uint_fast64_t i = 0; i < program.getNumberOfModules(); ++i) {
@@ -250,10 +250,10 @@ namespace storm {
                     // If the module contains the action, but there is no command in the module that is labeled with
                     // this action, we don't have any feasible command combinations.
                     if (commandIndices.empty()) {
-                        return boost::optional<std::vector<std::list<storm::prism::Command>>>();
+                        return boost::optional<std::vector<std::list<std::reference_wrapper<storm::prism::Command const>>>>();
                     }
                     
-                    std::list<storm::prism::Command> commands;
+                    std::list<std::reference_wrapper<storm::prism::Command const>> commands;
                     
                     // Look up commands by their indices and add them if the guard evaluates to true in the given state.
                     for (uint_fast64_t commandIndex : commandIndices) {
@@ -266,7 +266,7 @@ namespace storm {
                     // If there was no enabled command although the module has some command with the required action label,
                     // we must not return anything.
                     if (commands.size() == 0) {
-                        return boost::optional<std::vector<std::list<storm::prism::Command>>>();
+                        return boost::optional<std::vector<std::list<std::reference_wrapper<storm::prism::Command const>>>>();
                     }
                     
                     result.get().push_back(std::move(commands));
@@ -333,12 +333,12 @@ namespace storm {
                 
                 for (std::string const& action : program.getActions()) {
                     StateType const* currentState = stateInformation.reachableStates[stateIndex];
-                    boost::optional<std::vector<std::list<storm::prism::Command>>> optionalActiveCommandLists = getActiveCommandsByAction(program, currentState, action);
+                    boost::optional<std::vector<std::list<std::reference_wrapper<storm::prism::Command const>>>> optionalActiveCommandLists = getActiveCommandsByAction(program, currentState, action);
                     
                     // Only process this action label, if there is at least one feasible solution.
                     if (optionalActiveCommandLists) {
-                        std::vector<std::list<storm::prism::Command>> const& activeCommandList = optionalActiveCommandLists.get();
-                        std::vector<std::list<storm::prism::Command>::const_iterator> iteratorList(activeCommandList.size());
+                        std::vector<std::list<std::reference_wrapper<storm::prism::Command const>>> const& activeCommandList = optionalActiveCommandLists.get();
+                        std::vector<std::list<std::reference_wrapper<storm::prism::Command const>>::const_iterator> iteratorList(activeCommandList.size());
                         
                         // Initialize the list of iterators.
                         for (size_t i = 0; i < activeCommandList.size(); ++i) {
@@ -408,7 +408,7 @@ namespace storm {
                             
                             // Add the labels of all commands to this choice.
                             for (uint_fast64_t i = 0; i < iteratorList.size(); ++i) {
-                                choice.addChoiceLabel(iteratorList[i]->getGlobalIndex());
+                                choice.addChoiceLabel(iteratorList[i]->get().getGlobalIndex());
                             }
                             
                             double probabilitySum = 0;
