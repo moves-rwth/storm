@@ -372,13 +372,13 @@ namespace storm {
         bool BitVector::full() const {
             // Check that all buckets except the last one have all bits set.
             for (uint_fast64_t index = 0; index < bucketVector.size() - 1; ++index) {
-                if (bucketVector[index] != -1ll) {
+                if (bucketVector[index] != -1ull) {
                     return false;
                 }
             }
             
             // Now check whether the relevant bits are set in the last bucket.
-            if ((bucketVector.back() & ((1ll << (bitCount & mod64mask)) - 1ll)) != ((1ll << (bitCount & mod64mask)) - 1ll)) {
+            if ((bucketVector.back() & ((1ull << (bitCount & mod64mask)) - 1ull)) != ((1ull << (bitCount & mod64mask)) - 1ull)) {
                 return false;
             }
             return true;
