@@ -230,10 +230,10 @@ namespace storm {
              *
              * @param The program in which to search for active commands.
              * @param state The current state.
-             * @param action The action label to select.
+             * @param actionIndex The index of the action label to select.
              * @return A list of lists of active commands or nothing.
              */
-            static boost::optional<std::vector<std::list<std::reference_wrapper<storm::prism::Command const>>>> getActiveCommandsByAction(storm::prism::Program const& program, StateType const* state, std::string const& action) {
+            static boost::optional<std::vector<std::list<std::reference_wrapper<storm::prism::Command const>>>> getActiveCommandsByAction(storm::prism::Program const& program, StateType const* state, uint_fast64_t const& actionIndex) {
                 boost::optional<std::vector<std::list<std::reference_wrapper<storm::prism::Command const>>>> result((std::vector<std::list<std::reference_wrapper<storm::prism::Command const>>>()));
                 
                 // Iterate over all modules.
@@ -241,11 +241,11 @@ namespace storm {
                     storm::prism::Module const& module = program.getModule(i);
                     
                     // If the module has no command labeled with the given action, we can skip this module.
-                    if (!module.hasAction(action)) {
+                    if (!module.hasActionIndex(actionIndex)) {
                         continue;
                     }
                     
-                    std::set<uint_fast64_t> const& commandIndices = module.getCommandIndicesByAction(action);
+                    std::set<uint_fast64_t> const& commandIndices = module.getCommandIndicesByActionIndex(actionIndex);
                     
                     // If the module contains the action, but there is no command in the module that is labeled with
                     // this action, we don't have any feasible command combinations.
@@ -288,7 +288,7 @@ namespace storm {
                         storm::prism::Command const& command = module.getCommand(j);
                         
                         // Only consider unlabeled commands.
-                        if (command.getActionName() != "") continue;
+                        if (!command.isLabeled()) continue;
 
                         // Skip the command, if it is not enabled.
                         if (!command.getGuardExpression().evaluateAsBool(currentState)) {
@@ -538,7 +538,7 @@ namespace storm {
                                     
                                     // Now add all rewards that match this choice.
                                     for (auto const& transitionReward : transitionRewards) {
-                                        if (transitionReward.getActionName() == "" && transitionReward.getStatePredicateExpression().evaluateAsBool(stateInformation.reachableStates.at(currentState))) {
+                                        if (!transitionReward.empty() && transitionReward.getStatePredicateExpression().evaluateAsBool(stateInformation.reachableStates.at(currentState))) {
                                             stateToRewardMap[stateProbabilityPair.first] += ValueType(transitionReward.getRewardValueExpression().evaluateAsDouble(stateInformation.reachableStates.at(currentState)));
                                         }
                                     }
@@ -551,7 +551,7 @@ namespace storm {
                                 
                                     // Now add all rewards that match this choice.
                                     for (auto const& transitionReward : transitionRewards) {
-                                        if (transitionReward.getActionName() == choice.getActionLabel() && transitionReward.getStatePredicateExpression().evaluateAsBool(stateInformation.reachableStates.at(currentState))) {
+                                        if (transitionReward.getActionIndex() == choice.getActionIndex() && transitionReward.getStatePredicateExpression().evaluateAsBool(stateInformation.reachableStates.at(currentState))) {
                                             stateToRewardMap[stateProbabilityPair.first] += ValueType(transitionReward.getRewardValueExpression().evaluateAsDouble(stateInformation.reachableStates.at(currentState)));
                                         }
                                     }
@@ -589,7 +589,7 @@ namespace storm {
                                     
                                     // Now add all rewards that match this choice.
                                     for (auto const& transitionReward : transitionRewards) {
-                                        if (transitionReward.getActionName() == "" && transitionReward.getStatePredicateExpression().evaluateAsBool(stateInformation.reachableStates.at(currentState))) {
+                                        if (!transitionReward.isLabeled() && transitionReward.getStatePredicateExpression().evaluateAsBool(stateInformation.reachableStates.at(currentState))) {
                                             stateToRewardMap[stateProbabilityPair.first] += ValueType(transitionReward.getRewardValueExpression().evaluateAsDouble(stateInformation.reachableStates.at(currentState)));
                                         }
                                     }
@@ -616,7 +616,7 @@ namespace storm {
                                     
                                     // Now add all rewards that match this choice.
                                     for (auto const& transitionReward : transitionRewards) {
-                                        if (transitionReward.getActionName() == choice.getActionLabel() && transitionReward.getStatePredicateExpression().evaluateAsBool(stateInformation.reachableStates.at(currentState))) {
+                                        if (transitionReward.getActionIndex() == choice.getActionIndex() && transitionReward.getStatePredicateExpression().evaluateAsBool(stateInformation.reachableStates.at(currentState))) {
                                             stateToRewardMap[stateProbabilityPair.first] += ValueType(transitionReward.getRewardValueExpression().evaluateAsDouble(stateInformation.reachableStates.at(currentState)));
                                         }
                                     }

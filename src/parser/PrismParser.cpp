@@ -139,7 +139,7 @@ namespace storm {
             updateListDefinition %= +updateDefinition(qi::_r1) % "+";
             updateListDefinition.name("update list");
             
-            commandDefinition = qi::lit("[") > +(qi::char_ - qi::lit(";")) > qi::lit(";")[qi::_val = phoenix::construct<storm::prism::Command>()];
+            commandDefinition = (qi::lit("[") > -(identifier[qi::_a = qi::_1]) > qi::lit("]") > +(qi::char_ - qi::lit(";")) > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createCommand, phoenix::ref(*this), qi::_a, qi::_r1)];
             commandDefinition.name("command definition");
             
             moduleDefinition = ((qi::lit("module") >> identifier >> *(variableDefinition(qi::_a, qi::_b))) > +commandDefinition(qi::_r1) > qi::lit("endmodule"))[qi::_val = phoenix::bind(&PrismParser::createModule, phoenix::ref(*this), qi::_1, qi::_a, qi::_b, qi::_2, qi::_r1)];
@@ -355,7 +355,21 @@ namespace storm {
         
         storm::prism::Command PrismParser::createCommand(std::string const& actionName, storm::expressions::Expression guardExpression, std::vector<storm::prism::Update> const& updates, GlobalProgramInformation& globalProgramInformation) const {
             ++globalProgramInformation.currentCommandIndex;
-            return storm::prism::Command(globalProgramInformation.currentCommandIndex - 1, actionName, guardExpression, updates, this->getFilename());
+            return storm::prism::Command(globalProgramInformation.currentCommandIndex - 1, globalProgramInformation.actionIndices[actionName], actionName, guardExpression, updates, this->getFilename());
+        }
+        
+        storm::prism::Command PrismParser::createCommand(std::string const& actionName, GlobalProgramInformation& globalProgramInformation) const {
+            STORM_LOG_ASSERT(!this->secondRun, "Dummy procedure must not be called in second run.");
+            
+            if (!actionName.empty()) {
+                // Register the action name if it has not appeared earlier.
+                auto const& nameIndexPair = globalProgramInformation.actionIndices.find(actionName);
+                if (nameIndexPair == globalProgramInformation.actionIndices.end()) {
+                    globalProgramInformation.actionIndices[actionName] = globalProgramInformation.actionIndices.size();
+                }
+            }
+            
+            return storm::prism::Command();
         }
         
         storm::prism::BooleanVariable PrismParser::createBooleanVariable(std::string const& variableName, storm::expressions::Expression initialValueExpression) const {
@@ -474,7 +488,12 @@ namespace storm {
                         newActionName = renamingPair->second;
                     }
                     
-                    commands.emplace_back(globalProgramInformation.currentCommandIndex, newActionName, command.getGuardExpression().substitute(expressionRenaming), updates, this->getFilename(), get_line(qi::_1));
+                    auto const& nameIndexPair = globalProgramInformation.actionIndices.find(newActionName);
+                    if (nameIndexPair == globalProgramInformation.actionIndices.end()) {
+                        globalProgramInformation.actionIndices[newActionName] = globalProgramInformation.actionIndices.size();
+                    }
+                    
+                    commands.emplace_back(globalProgramInformation.currentCommandIndex, globalProgramInformation.actionIndices[newActionName], newActionName, command.getGuardExpression().substitute(expressionRenaming), updates, this->getFilename(), get_line(qi::_1));
                     ++globalProgramInformation.currentCommandIndex;
                 }
                 

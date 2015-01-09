@@ -10,7 +10,7 @@ namespace storm {
             // Intentionally left empty.
         }
         
-        Module::Module(std::string const& moduleName, std::vector<storm::prism::BooleanVariable> const& booleanVariables, std::vector<storm::prism::IntegerVariable> const& integerVariables, std::vector<storm::prism::Command> const& commands, std::string const& renamedFromModule, std::map<std::string, std::string> const& renaming, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), moduleName(moduleName), booleanVariables(booleanVariables), booleanVariableToIndexMap(), integerVariables(integerVariables), integerVariableToIndexMap(), commands(commands), actions(), actionsToCommandIndexMap(), renamedFromModule(renamedFromModule), renaming(renaming) {
+        Module::Module(std::string const& moduleName, std::vector<storm::prism::BooleanVariable> const& booleanVariables, std::vector<storm::prism::IntegerVariable> const& integerVariables, std::vector<storm::prism::Command> const& commands, std::string const& renamedFromModule, std::map<std::string, std::string> const& renaming, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), moduleName(moduleName), booleanVariables(booleanVariables), booleanVariableToIndexMap(), integerVariables(integerVariables), integerVariableToIndexMap(), commands(commands), actions(), actionIndices(), actionsToCommandIndexMap(), renamedFromModule(renamedFromModule), renaming(renaming) {
             // Initialize the internal mappings for fast information retrieval.
             this->createMappings();
         }
@@ -76,6 +76,10 @@ namespace storm {
             return actionEntry != this->actions.end();
         }
         
+        bool Module::hasActionIndex(uint_fast64_t const& actionIndex) const {
+            return this->actionIndices.find(actionIndex) != this->actionIndices.end();
+        }
+        
         bool Module::isRenamedFromModule() const {
             return this->renamedFromModule != "";
         }
@@ -99,9 +103,19 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::OutOfRangeException, "Action name '" << action << "' does not exist in module.");
         }
         
+        std::set<uint_fast64_t> const& Module::getCommandIndicesByActionIndex(uint_fast64_t actionIndex) const {
+            auto actionIndicesCommandSetPair = this->actionIndicesToCommandIndexMap.find(actionIndex);
+            if (actionIndicesCommandSetPair != this->actionIndicesToCommandIndexMap.end()) {
+                return actionIndicesCommandSetPair->second;
+            }
+            
+            STORM_LOG_THROW(false, storm::exceptions::OutOfRangeException, "Action index '" << actionIndex << "' does not exist in module.");
+        }
+        
         void Module::createMappings() {
             // Clear the current mappings.
             this->actionsToCommandIndexMap.clear();
+            this->actionIndicesToCommandIndexMap.clear();
             this->booleanVariableToIndexMap.clear();
             this->integerVariableToIndexMap.clear();
             
@@ -116,12 +130,19 @@ namespace storm {
             // Add the mapping for all commands.
             for (uint_fast64_t i = 0; i < this->commands.size(); i++) {
                 std::string const& action = this->commands[i].getActionName();
+                uint_fast64_t actionIndex = this->commands[i].getActionIndex();
                 if (action != "") {
                     if (this->actionsToCommandIndexMap.find(action) == this->actionsToCommandIndexMap.end()) {
                         this->actionsToCommandIndexMap.emplace(action, std::set<uint_fast64_t>());
                     }
+                    if (this->actionIndicesToCommandIndexMap.find(actionIndex) == this->actionIndicesToCommandIndexMap.end()) {
+                        this->actionIndicesToCommandIndexMap.emplace(actionIndex, std::set<uint_fast64_t>());
+                    }
                     this->actionsToCommandIndexMap[action].insert(i);
+                    this->actionIndicesToCommandIndexMap[actionIndex].insert(i);
+                    
                     this->actions.insert(action);
+                    this->actionIndices.insert(this->commands[i].getActionIndex());
                 }
             }
             
@@ -130,6 +151,11 @@ namespace storm {
             for (auto const& action : this->actions) {
                 if (this->actionsToCommandIndexMap.find(action) == this->actionsToCommandIndexMap.end()) {
                     this->actionsToCommandIndexMap[action] = std::set<uint_fast64_t>();
+                }
+            }
+            for (auto const& actionIndex : this->actionIndices) {
+                if (this->actionIndicesToCommandIndexMap.find(actionIndex) == this->actionIndicesToCommandIndexMap.end()) {
+                    this->actionIndicesToCommandIndexMap[actionIndex] = std::set<uint_fast64_t>();
                 }
             }
         }

@@ -148,6 +148,14 @@ namespace storm {
              * @return True iff the module has at least one command labeled with the given action.
              */
             bool hasAction(std::string const& action) const;
+
+            /*!
+             * Retrieves whether or not this module contains a command labeled with the given action index.
+             *
+             * @param action The action name to look for in this module.
+             * @return True iff the module has at least one command labeled with the given action index.
+             */
+            bool hasActionIndex(uint_fast64_t const& actionIndex) const;
             
             /*!
              * Retrieves whether this module was created from another module via renaming.
@@ -179,6 +187,14 @@ namespace storm {
              * @return A set of indices of commands that are labelled with the given action.
              */
             std::set<uint_fast64_t> const& getCommandIndicesByAction(std::string const& action) const;
+            
+            /*!
+             * Retrieves the indices of all commands within this module that are labelled by the given action.
+             *
+             * @param actionIndex The index of the action with which the commands have to be labelled.
+             * @return A set of indices of commands that are labelled with the given action index.
+             */
+            std::set<uint_fast64_t> const& getCommandIndicesByActionIndex(uint_fast64_t actionIndex) const;
             
             /*!
              * Creates a new module that drops all commands whose indices are not in the given set.
@@ -225,8 +241,14 @@ namespace storm {
             // The set of actions present in this module.
             std::set<std::string> actions;
             
+            // The set of action indices present in this module.
+            std::set<uint_fast64_t> actionIndices;
+            
             // A map of actions to the set of commands labeled with this action.
             std::map<std::string, std::set<uint_fast64_t>> actionsToCommandIndexMap;
+
+            // A map of actions to the set of commands labeled with this action.
+            std::map<uint_fast64_t, std::set<uint_fast64_t>> actionIndicesToCommandIndexMap;
             
             // This string indicates whether and from what module this module was created via renaming.
             std::string renamedFromModule;
