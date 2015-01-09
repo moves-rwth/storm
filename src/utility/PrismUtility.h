@@ -13,7 +13,7 @@ namespace storm {
             template<typename ValueType, typename KeyType=uint_fast64_t, typename Compare=std::less<uint_fast64_t>>
             struct Choice {
             public:
-                Choice(std::string const& actionLabel) : distribution(), actionLabel(actionLabel), choiceLabels() {
+                Choice(uint_fast64_t actionIndex = 0) : distribution(), actionIndex(actionIndex), choiceLabels() {
                     // Intentionally left empty.
                 }
                 
@@ -108,12 +108,12 @@ namespace storm {
                 }
                 
                 /*!
-                 * Retrieves the action label of this choice.
+                 * Retrieves the index of the action of this choice.
                  *
-                 * @return The action label of this choice.
+                 * @return The index of the action of this choice.
                  */
-                std::string const& getActionLabel() const {
-                    return actionLabel;
+                uint_fast64_t getActionIndex() const {
+                    return actionIndex;
                 }
                 
                 /*!
@@ -152,8 +152,8 @@ namespace storm {
                 // The distribution that is associated with the choice.
                 std::map<KeyType, ValueType, Compare> distribution;
                 
-                // The label of the choice.
-                std::string actionLabel;
+                // The index of the action name.
+                uint_fast64_t actionIndex;
                 
                 // The labels that are associated with this choice.
                 boost::container::flat_set<uint_fast64_t> choiceLabels;

@@ -11,7 +11,7 @@
 
 namespace storm {
     namespace prism {
-        Program::Program(std::shared_ptr<storm::expressions::ExpressionManager> manager, ModelType modelType, std::vector<Constant> const& constants, std::vector<BooleanVariable> const& globalBooleanVariables, std::vector<IntegerVariable> const& globalIntegerVariables, std::vector<Formula> const& formulas, std::vector<Module> const& modules, std::vector<RewardModel> const& rewardModels, bool fixInitialConstruct, storm::prism::InitialConstruct const& initialConstruct, std::vector<Label> const& labels, std::string const& filename, uint_fast64_t lineNumber, bool checkValidity) : LocatedInformation(filename, lineNumber), manager(manager), modelType(modelType), constants(constants), constantToIndexMap(), globalBooleanVariables(globalBooleanVariables), globalBooleanVariableToIndexMap(), globalIntegerVariables(globalIntegerVariables), globalIntegerVariableToIndexMap(), formulas(formulas), formulaToIndexMap(), modules(modules), moduleToIndexMap(), rewardModels(rewardModels), rewardModelToIndexMap(), initialConstruct(initialConstruct), labels(labels), labelToIndexMap(), actions(), actionsToModuleIndexMap(), variableToModuleIndexMap() {
+        Program::Program(std::shared_ptr<storm::expressions::ExpressionManager> manager, ModelType modelType, std::vector<Constant> const& constants, std::vector<BooleanVariable> const& globalBooleanVariables, std::vector<IntegerVariable> const& globalIntegerVariables, std::vector<Formula> const& formulas, std::vector<Module> const& modules, std::map<std::string, uint_fast64_t> const& actionToIndexMap, std::vector<RewardModel> const& rewardModels, bool fixInitialConstruct, storm::prism::InitialConstruct const& initialConstruct, std::vector<Label> const& labels, std::string const& filename, uint_fast64_t lineNumber, bool checkValidity) : LocatedInformation(filename, lineNumber), manager(manager), modelType(modelType), constants(constants), constantToIndexMap(), globalBooleanVariables(globalBooleanVariables), globalBooleanVariableToIndexMap(), globalIntegerVariables(globalIntegerVariables), globalIntegerVariableToIndexMap(), formulas(formulas), formulaToIndexMap(), modules(modules), moduleToIndexMap(), rewardModels(rewardModels), rewardModelToIndexMap(), initialConstruct(initialConstruct), labels(labels), labelToIndexMap(), actionToIndexMap(actionToIndexMap), actions(), actionIndices(), actionIndicesToModuleIndexMap(), variableToModuleIndexMap() {
             this->createMappings();
             
             // Create a new initial construct if the corresponding flag was set.
@@ -124,6 +124,10 @@ namespace storm {
             return this->modules;
         }
         
+        std::map<std::string, uint_fast64_t> const& Program::getActionNameToIndexMapping() const {
+            return actionToIndexMap;
+        }
+        
         storm::prism::InitialConstruct const& Program::getInitialConstruct() const {
             return this->initialConstruct;
         }
@@ -132,9 +136,19 @@ namespace storm {
             return this->actions;
         }
         
+        std::set<uint_fast64_t> const& Program::getActionIndices() const {
+            return this->actionIndices;
+        }
+        
         std::set<uint_fast64_t> const& Program::getModuleIndicesByAction(std::string const& action) const {
-            auto const& actionModuleSetPair = this->actionsToModuleIndexMap.find(action);
-            STORM_LOG_THROW(actionModuleSetPair != this->actionsToModuleIndexMap.end(), storm::exceptions::OutOfRangeException, "Action name '" << action << "' does not exist.");
+            auto const& nameIndexPair = this->actionToIndexMap.find(action);
+            STORM_LOG_THROW(nameIndexPair != this->actionToIndexMap.end(), storm::exceptions::OutOfRangeException, "Action name '" << action << "' does not exist.");
+            return this->getModuleIndicesByActionIndex(nameIndexPair->second);
+        }
+        
+        std::set<uint_fast64_t> const& Program::getModuleIndicesByActionIndex(uint_fast64_t actionIndex) const {
+            auto const& actionModuleSetPair = this->actionIndicesToModuleIndexMap.find(actionIndex);
+            STORM_LOG_THROW(actionModuleSetPair != this->actionIndicesToModuleIndexMap.end(), storm::exceptions::OutOfRangeException, "Action name '" << actionIndex << "' does not exist.");
             return actionModuleSetPair->second;
         }
         
@@ -188,7 +202,7 @@ namespace storm {
                 newModules.push_back(module.restrictCommands(indexSet));
             }
             
-            return Program(this->manager, this->getModelType(), this->getConstants(), this->getGlobalBooleanVariables(), this->getGlobalIntegerVariables(), this->getFormulas(), newModules, this->getRewardModels(), false, this->getInitialConstruct(), this->getLabels());
+            return Program(this->manager, this->getModelType(), this->getConstants(), this->getGlobalBooleanVariables(), this->getGlobalIntegerVariables(), this->getFormulas(), newModules, this->getActionNameToIndexMapping(), this->getRewardModels(), false, this->getInitialConstruct(), this->getLabels());
         }
         
         void Program::createMappings() {
@@ -215,17 +229,21 @@ namespace storm {
                 this->labelToIndexMap[this->getLabels()[labelIndex].getName()] = labelIndex;
             }
             
+            for (auto const& actionIndexPair : this->getActionNameToIndexMapping()) {
+                this->actions.insert(actionIndexPair.first);
+                this->actionIndices.insert(actionIndexPair.second);
+            }
+            
             // Build the mapping from action names to module indices so that the lookup can later be performed quickly.
             for (unsigned int moduleIndex = 0; moduleIndex < this->getNumberOfModules(); moduleIndex++) {
                 Module const& module = this->getModule(moduleIndex);
                 
-                for (auto const& action : module.getActions()) {
-                    auto const& actionModuleIndicesPair = this->actionsToModuleIndexMap.find(action);
-                    if (actionModuleIndicesPair == this->actionsToModuleIndexMap.end()) {
-                        this->actionsToModuleIndexMap[action] = std::set<uint_fast64_t>();
+                for (auto const& actionIndex : module.getActionIndices()) {
+                    auto const& actionModuleIndicesPair = this->actionIndicesToModuleIndexMap.find(actionIndex);
+                    if (actionModuleIndicesPair == this->actionIndicesToModuleIndexMap.end()) {
+                        this->actionIndicesToModuleIndexMap[actionIndex] = std::set<uint_fast64_t>();
                     }
-                    this->actionsToModuleIndexMap[action].insert(moduleIndex);
-                    this->actions.insert(action);
+                    this->actionIndicesToModuleIndexMap[actionIndex].insert(moduleIndex);
                 }
                 
                 // Put in the appropriate entries for the mapping from variable names to module index.
@@ -279,7 +297,7 @@ namespace storm {
                 STORM_LOG_THROW(definedUndefinedConstants.find(constantExpressionPair.first) != definedUndefinedConstants.end(), storm::exceptions::InvalidArgumentException, "Unable to define non-existant constant.");
             }
             
-            return Program(this->manager, this->getModelType(), newConstants, this->getGlobalBooleanVariables(), this->getGlobalIntegerVariables(), this->getFormulas(), this->getModules(), this->getRewardModels(), false, this->getInitialConstruct(), this->getLabels());
+            return Program(this->manager, this->getModelType(), newConstants, this->getGlobalBooleanVariables(), this->getGlobalIntegerVariables(), this->getFormulas(), this->getModules(), this->getActionNameToIndexMapping(), this->getRewardModels(), false, this->getInitialConstruct(), this->getLabels());
         }
         
         Program Program::substituteConstants() const {
@@ -338,7 +356,7 @@ namespace storm {
                 newLabels.emplace_back(label.substitute(constantSubstitution));
             }
             
-            return Program(this->manager, this->getModelType(), newConstants, newBooleanVariables, newIntegerVariables, newFormulas, newModules, newRewardModels, false, newInitialConstruct, newLabels);
+            return Program(this->manager, this->getModelType(), newConstants, newBooleanVariables, newIntegerVariables, newFormulas, newModules, this->getActionNameToIndexMapping(), newRewardModels, false, newInitialConstruct, newLabels);
         }
         
         void Program::checkValidity() const {

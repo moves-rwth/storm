@@ -233,7 +233,7 @@ namespace storm {
              * @param actionIndex The index of the action label to select.
              * @return A list of lists of active commands or nothing.
              */
-            static boost::optional<std::vector<std::list<std::reference_wrapper<storm::prism::Command const>>>> getActiveCommandsByAction(storm::prism::Program const& program, StateType const* state, uint_fast64_t const& actionIndex) {
+            static boost::optional<std::vector<std::list<std::reference_wrapper<storm::prism::Command const>>>> getActiveCommandsByActionIndex(storm::prism::Program const& program, StateType const* state, uint_fast64_t const& actionIndex) {
                 boost::optional<std::vector<std::list<std::reference_wrapper<storm::prism::Command const>>>> result((std::vector<std::list<std::reference_wrapper<storm::prism::Command const>>>()));
                 
                 // Iterate over all modules.
@@ -288,14 +288,14 @@ namespace storm {
                         storm::prism::Command const& command = module.getCommand(j);
                         
                         // Only consider unlabeled commands.
-                        if (!command.isLabeled()) continue;
+                        if (command.isLabeled()) continue;
 
                         // Skip the command, if it is not enabled.
                         if (!command.getGuardExpression().evaluateAsBool(currentState)) {
                             continue;
                         }
                         
-                        result.push_back(Choice<ValueType>(""));
+                        result.push_back(Choice<ValueType>());
                         Choice<ValueType>& choice = result.back();
                         choice.addChoiceLabel(command.getGlobalIndex());
                         
@@ -331,9 +331,9 @@ namespace storm {
             static std::list<Choice<ValueType>> getLabeledTransitions(storm::prism::Program const& program, StateInformation& stateInformation, VariableInformation const& variableInformation, uint_fast64_t stateIndex, std::queue<uint_fast64_t>& stateQueue) {
                 std::list<Choice<ValueType>> result;
                 
-                for (std::string const& action : program.getActions()) {
+                for (uint_fast64_t actionIndex : program.getActionIndices()) {
                     StateType const* currentState = stateInformation.reachableStates[stateIndex];
-                    boost::optional<std::vector<std::list<std::reference_wrapper<storm::prism::Command const>>>> optionalActiveCommandLists = getActiveCommandsByAction(program, currentState, action);
+                    boost::optional<std::vector<std::list<std::reference_wrapper<storm::prism::Command const>>>> optionalActiveCommandLists = getActiveCommandsByActionIndex(program, currentState, actionIndex);
                     
                     // Only process this action label, if there is at least one feasible solution.
                     if (optionalActiveCommandLists) {
@@ -401,7 +401,7 @@ namespace storm {
                             // At this point, we applied all commands of the current command combination and newTargetStates
                             // contains all target states and their respective probabilities. That means we are now ready to
                             // add the choice to the list of transitions.
-                            result.push_back(Choice<ValueType>(action));
+                            result.push_back(Choice<ValueType>(actionIndex));
                             
                             // Now create the actual distribution.
                             Choice<ValueType>& choice = result.back();
@@ -526,7 +526,7 @@ namespace storm {
                         // Then, based on whether the model is deterministic or not, either add the choices individually
                         // or compose them to one choice.
                         if (deterministicModel) {
-                            Choice<ValueType> globalChoice("");
+                            Choice<ValueType> globalChoice;
                             std::map<uint_fast64_t, ValueType> stateToRewardMap;
                             boost::container::flat_set<uint_fast64_t> allChoiceLabels;
                             
@@ -538,7 +538,7 @@ namespace storm {
                                     
                                     // Now add all rewards that match this choice.
                                     for (auto const& transitionReward : transitionRewards) {
-                                        if (!transitionReward.empty() && transitionReward.getStatePredicateExpression().evaluateAsBool(stateInformation.reachableStates.at(currentState))) {
+                                        if (!transitionReward.isLabeled() && transitionReward.getStatePredicateExpression().evaluateAsBool(stateInformation.reachableStates.at(currentState))) {
                                             stateToRewardMap[stateProbabilityPair.first] += ValueType(transitionReward.getRewardValueExpression().evaluateAsDouble(stateInformation.reachableStates.at(currentState)));
                                         }
                                     }

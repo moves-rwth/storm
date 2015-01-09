@@ -135,27 +135,19 @@ namespace storm {
             std::string const& getName() const;
             
             /*!
-             * Retrieves the set of actions present in this module.
+             * Retrieves the set of action indices present in this module.
              *
-             * @return the set of actions present in this module.
+             * @return the set of action indices present in this module.
              */
-            std::set<std::string> const& getActions() const;
+            std::set<uint_fast64_t> const& getActionIndices() const;
             
-            /*!
-             * Retrieves whether or not this module contains a command labeled with the given action.
-             *
-             * @param action The action name to look for in this module.
-             * @return True iff the module has at least one command labeled with the given action.
-             */
-            bool hasAction(std::string const& action) const;
-
             /*!
              * Retrieves whether or not this module contains a command labeled with the given action index.
              *
-             * @param action The action name to look for in this module.
+             * @param actionIndex The index of the action to look for in this module.
              * @return True iff the module has at least one command labeled with the given action index.
              */
-            bool hasActionIndex(uint_fast64_t const& actionIndex) const;
+            bool hasActionIndex(uint_fast64_t actionIndex) const;
             
             /*!
              * Retrieves whether this module was created from another module via renaming.
@@ -179,14 +171,6 @@ namespace storm {
              * @return A mapping of identifiers to new identifiers that was used in the renaming process.
              */
             std::map<std::string, std::string> const& getRenaming() const;
-            
-            /*!
-             * Retrieves the indices of all commands within this module that are labelled by the given action.
-             *
-             * @param action The action with which the commands have to be labelled.
-             * @return A set of indices of commands that are labelled with the given action.
-             */
-            std::set<uint_fast64_t> const& getCommandIndicesByAction(std::string const& action) const;
             
             /*!
              * Retrieves the indices of all commands within this module that are labelled by the given action.
@@ -238,15 +222,9 @@ namespace storm {
             // The commands associated with the module.
             std::vector<storm::prism::Command> commands;
             
-            // The set of actions present in this module.
-            std::set<std::string> actions;
-            
             // The set of action indices present in this module.
             std::set<uint_fast64_t> actionIndices;
             
-            // A map of actions to the set of commands labeled with this action.
-            std::map<std::string, std::set<uint_fast64_t>> actionsToCommandIndexMap;
-
             // A map of actions to the set of commands labeled with this action.
             std::map<uint_fast64_t, std::set<uint_fast64_t>> actionIndicesToCommandIndexMap;
             

@@ -10,11 +10,11 @@ namespace storm {
             // Intentionally left empty.
         }
         
-        Module::Module(std::string const& moduleName, std::vector<storm::prism::BooleanVariable> const& booleanVariables, std::vector<storm::prism::IntegerVariable> const& integerVariables, std::vector<storm::prism::Command> const& commands, std::string const& renamedFromModule, std::map<std::string, std::string> const& renaming, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), moduleName(moduleName), booleanVariables(booleanVariables), booleanVariableToIndexMap(), integerVariables(integerVariables), integerVariableToIndexMap(), commands(commands), actions(), actionIndices(), actionsToCommandIndexMap(), renamedFromModule(renamedFromModule), renaming(renaming) {
+        Module::Module(std::string const& moduleName, std::vector<storm::prism::BooleanVariable> const& booleanVariables, std::vector<storm::prism::IntegerVariable> const& integerVariables, std::vector<storm::prism::Command> const& commands, std::string const& renamedFromModule, std::map<std::string, std::string> const& renaming, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), moduleName(moduleName), booleanVariables(booleanVariables), booleanVariableToIndexMap(), integerVariables(integerVariables), integerVariableToIndexMap(), commands(commands), actionIndices(), actionIndicesToCommandIndexMap(), renamedFromModule(renamedFromModule), renaming(renaming) {
             // Initialize the internal mappings for fast information retrieval.
             this->createMappings();
         }
-                
+        
         std::size_t Module::getNumberOfBooleanVariables() const {
             return this->booleanVariables.size();
         }
@@ -32,7 +32,7 @@ namespace storm {
         std::vector<storm::prism::BooleanVariable> const& Module::getBooleanVariables() const {
             return this->booleanVariables;
         }
-
+        
         storm::prism::IntegerVariable const& Module::getIntegerVariable(std::string const& variableName) const {
             auto const& nameIndexPair = this->integerVariableToIndexMap.find(variableName);
             STORM_LOG_THROW(nameIndexPair != this->integerVariableToIndexMap.end(), storm::exceptions::InvalidArgumentException, "Unknown integer variable '" << variableName << "'.");
@@ -67,16 +67,11 @@ namespace storm {
             return this->moduleName;
         }
         
-        std::set<std::string> const& Module::getActions() const {
-            return this->actions;
+        std::set<uint_fast64_t> const& Module::getActionIndices() const {
+            return this->actionIndices;
         }
         
-        bool Module::hasAction(std::string const& action) const {
-            auto const& actionEntry = this->actions.find(action);
-            return actionEntry != this->actions.end();
-        }
-        
-        bool Module::hasActionIndex(uint_fast64_t const& actionIndex) const {
+        bool Module::hasActionIndex(uint_fast64_t actionIndex) const {
             return this->actionIndices.find(actionIndex) != this->actionIndices.end();
         }
         
@@ -94,15 +89,6 @@ namespace storm {
             return this->renaming;
         }
         
-        std::set<uint_fast64_t> const& Module::getCommandIndicesByAction(std::string const& action) const {
-            auto actionsCommandSetPair = this->actionsToCommandIndexMap.find(action);
-            if (actionsCommandSetPair != this->actionsToCommandIndexMap.end()) {
-                return actionsCommandSetPair->second;
-            }
-            
-            STORM_LOG_THROW(false, storm::exceptions::OutOfRangeException, "Action name '" << action << "' does not exist in module.");
-        }
-        
         std::set<uint_fast64_t> const& Module::getCommandIndicesByActionIndex(uint_fast64_t actionIndex) const {
             auto actionIndicesCommandSetPair = this->actionIndicesToCommandIndexMap.find(actionIndex);
             if (actionIndicesCommandSetPair != this->actionIndicesToCommandIndexMap.end()) {
@@ -114,7 +100,6 @@ namespace storm {
         
         void Module::createMappings() {
             // Clear the current mappings.
-            this->actionsToCommandIndexMap.clear();
             this->actionIndicesToCommandIndexMap.clear();
             this->booleanVariableToIndexMap.clear();
             this->integerVariableToIndexMap.clear();
@@ -129,30 +114,18 @@ namespace storm {
             
             // Add the mapping for all commands.
             for (uint_fast64_t i = 0; i < this->commands.size(); i++) {
-                std::string const& action = this->commands[i].getActionName();
-                uint_fast64_t actionIndex = this->commands[i].getActionIndex();
-                if (action != "") {
-                    if (this->actionsToCommandIndexMap.find(action) == this->actionsToCommandIndexMap.end()) {
-                        this->actionsToCommandIndexMap.emplace(action, std::set<uint_fast64_t>());
-                    }
+                if (this->commands[i].isLabeled()) {
+                    uint_fast64_t actionIndex = this->commands[i].getActionIndex();
                     if (this->actionIndicesToCommandIndexMap.find(actionIndex) == this->actionIndicesToCommandIndexMap.end()) {
                         this->actionIndicesToCommandIndexMap.emplace(actionIndex, std::set<uint_fast64_t>());
                     }
-                    this->actionsToCommandIndexMap[action].insert(i);
                     this->actionIndicesToCommandIndexMap[actionIndex].insert(i);
-                    
-                    this->actions.insert(action);
-                    this->actionIndices.insert(this->commands[i].getActionIndex());
+                    this->actionIndices.insert(actionIndex);
                 }
             }
             
             // For all actions that are "in the module", but for which no command exists, we add the mapping to an empty
             // set of commands.
-            for (auto const& action : this->actions) {
-                if (this->actionsToCommandIndexMap.find(action) == this->actionsToCommandIndexMap.end()) {
-                    this->actionsToCommandIndexMap[action] = std::set<uint_fast64_t>();
-                }
-            }
             for (auto const& actionIndex : this->actionIndices) {
                 if (this->actionIndicesToCommandIndexMap.find(actionIndex) == this->actionIndicesToCommandIndexMap.end()) {
                     this->actionIndicesToCommandIndexMap[actionIndex] = std::set<uint_fast64_t>();
