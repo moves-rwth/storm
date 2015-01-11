@@ -8,6 +8,7 @@ TEST(PrismParser, StandardModelTest) {
     EXPECT_NO_THROW(result = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/parser/prism/coin2.nm"));
     EXPECT_NO_THROW(result = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/parser/prism/crowds5_5.pm"));
     EXPECT_NO_THROW(result = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/parser/prism/csma2_2.nm"));
+    result = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/parser/prism/die.pm");
     EXPECT_NO_THROW(result = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/parser/prism/die.pm"));
     EXPECT_NO_THROW(result = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/parser/prism/firewire.nm"));
     EXPECT_NO_THROW(result = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/parser/prism/leader3.nm"));
@@ -84,12 +85,12 @@ TEST(PrismParser, ComplexTest) {
     endinit
     
     rewards "testrewards"
-        [stateRew] true : a + 7;
+        [a] true : a + 7;
         max(f, a) <= 8 : 2*b;
     endrewards
                                                                
     rewards "testrewards2"
-        [stateRew] true : a + 7;
+        [b] true : a + 7;
         max(f, a) <= 8 : 2*b;
     endrewards)";
     

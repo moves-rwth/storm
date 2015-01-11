@@ -12,14 +12,14 @@
 
 namespace storm {
     namespace expressions {
-        class ExpressionEvaluator {
+        class ExprtkExpressionEvaluator {
         public:
             /*!
              * Creates an expression evaluator that is capable of evaluating expressions managed by the given manager.
              *
              * @param manager The manager responsible for the expressions.
              */
-            ExpressionEvaluator(storm::expressions::ExpressionManager const& manager);
+            ExprtkExpressionEvaluator(storm::expressions::ExpressionManager const& manager);
             
             bool asBool(Expression const& expression);
             int_fast64_t asInt(Expression const& expression);

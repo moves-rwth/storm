@@ -1,5 +1,6 @@
 #include "src/storage/expressions/BinaryBooleanFunctionExpression.h"
 #include "src/storage/expressions/BooleanLiteralExpression.h"
+#include "src/storage/expressions/ExpressionManager.h"
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidTypeException.h"
 
@@ -45,7 +46,7 @@ namespace storm {
             std::shared_ptr<BaseExpression const> firstOperandSimplified = this->getFirstOperand()->simplify();
             std::shared_ptr<BaseExpression const> secondOperandSimplified = this->getSecondOperand()->simplify();
             
-            if (firstOperandSimplified->isLiteral() && secondOperandSimplified->isLiteral()) {
+            if (firstOperandSimplified->isLiteral() || secondOperandSimplified->isLiteral()) {
                 switch (this->getOperatorType()) {
                     case OperatorType::And:
                         if (firstOperandSimplified->isTrue()) {
@@ -69,7 +70,21 @@ namespace storm {
                             return firstOperandSimplified;
                         }
                         break;
-                    case OperatorType::Xor: break;
+                    case OperatorType::Xor:
+                        if (firstOperandSimplified->isTrue()) {
+                            if (secondOperandSimplified->isFalse()) {
+                                return firstOperandSimplified;
+                            } else if (secondOperandSimplified->isTrue()) {
+                                return this->getManager().boolean(false).getBaseExpressionPointer();
+                            }
+                        } else if (firstOperandSimplified->isFalse()) {
+                            if (secondOperandSimplified->isTrue()) {
+                                return secondOperandSimplified;
+                            } else if (secondOperandSimplified->isFalse()) {
+                                return this->getManager().boolean(false).getBaseExpressionPointer();
+                            }
+                        }
+                        break;
                     case OperatorType::Implies:
                         if (firstOperandSimplified->isTrue()) {
                             return secondOperandSimplified;
@@ -84,6 +99,10 @@ namespace storm {
                             return std::shared_ptr<BaseExpression>(new BooleanLiteralExpression(this->getManager(), true));
                         } else if (firstOperandSimplified->isFalse() && secondOperandSimplified->isFalse()) {
                             return std::shared_ptr<BaseExpression>(new BooleanLiteralExpression(this->getManager(), true));
+                        } else if (firstOperandSimplified->isTrue() && secondOperandSimplified->isFalse()) {
+                            return std::shared_ptr<BaseExpression>(new BooleanLiteralExpression(this->getManager(), false));
+                        } else if (firstOperandSimplified->isFalse() && secondOperandSimplified->isTrue()) {
+                            return std::shared_ptr<BaseExpression>(new BooleanLiteralExpression(this->getManager(), false));
                         }
                         break;
                 }

@@ -275,7 +275,7 @@ TEST(Expression, SubstitutionTest) {
     storm::expressions::Expression tempExpression;
     ASSERT_NO_THROW(tempExpression = (intVarExpression < threeExpression || boolVarExpression) && boolVarExpression);
 
-    std::map<storm::expressions::Variable, storm::expressions::Expression> substution = { std::make_pair(manager->getVariable("y"), rationalVarExpression), std::make_pair(manager->getVariable("x"), manager->boolean(true)) };
+    std::map<storm::expressions::Variable, storm::expressions::Expression> substution = { std::make_pair(manager->getVariable("y"), manager->rational(2.7)), std::make_pair(manager->getVariable("x"), manager->boolean(true)) };
     storm::expressions::Expression substitutedExpression;
     ASSERT_NO_THROW(substitutedExpression = tempExpression.substitute(substution));
     EXPECT_TRUE(substitutedExpression.simplify().isTrue());

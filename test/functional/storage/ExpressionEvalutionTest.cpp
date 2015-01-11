@@ -2,7 +2,7 @@
 #include "src/storage/expressions/Expression.h"
 #include "src/storage/expressions/ExpressionManager.h"
 #include "src/storage/expressions/SimpleValuation.h"
-#include "src/storage/expressions/ExpressionEvaluator.h"
+#include "src/storage/expressions/ExprtkExpressionEvaluator.h"
 
 TEST(ExpressionEvaluation, NaiveEvaluation) {
     std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
@@ -44,7 +44,7 @@ TEST(ExpressionEvaluation, ExprTkEvaluation) {
     ASSERT_NO_THROW(z = manager->declareRationalVariable("z"));
 
     storm::expressions::Expression iteExpression = storm::expressions::ite(x, y + z, manager->integer(3) * z);
-    storm::expressions::ExpressionEvaluator eval(*manager);
+    storm::expressions::ExprtkExpressionEvaluator eval(*manager);
 
     eval.setRationalValue(z, 5.5);
     eval.setBooleanValue(x, true);
