@@ -233,8 +233,8 @@ namespace storm {
              * @param actionIndex The index of the action label to select.
              * @return A list of lists of active commands or nothing.
              */
-            static boost::optional<std::vector<std::list<std::reference_wrapper<storm::prism::Command const>>>> getActiveCommandsByActionIndex(storm::prism::Program const& program, StateType const* state, uint_fast64_t const& actionIndex) {
-                boost::optional<std::vector<std::list<std::reference_wrapper<storm::prism::Command const>>>> result((std::vector<std::list<std::reference_wrapper<storm::prism::Command const>>>()));
+            static boost::optional<std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>>> getActiveCommandsByActionIndex(storm::prism::Program const& program, StateType const* state, uint_fast64_t const& actionIndex) {
+                boost::optional<std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>>> result((std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>>()));
                 
                 // Iterate over all modules.
                 for (uint_fast64_t i = 0; i < program.getNumberOfModules(); ++i) {
@@ -250,10 +250,10 @@ namespace storm {
                     // If the module contains the action, but there is no command in the module that is labeled with
                     // this action, we don't have any feasible command combinations.
                     if (commandIndices.empty()) {
-                        return boost::optional<std::vector<std::list<std::reference_wrapper<storm::prism::Command const>>>>();
+                        return boost::optional<std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>>>();
                     }
                     
-                    std::list<std::reference_wrapper<storm::prism::Command const>> commands;
+                    std::vector<std::reference_wrapper<storm::prism::Command const>> commands;
                     
                     // Look up commands by their indices and add them if the guard evaluates to true in the given state.
                     for (uint_fast64_t commandIndex : commandIndices) {
@@ -266,7 +266,7 @@ namespace storm {
                     // If there was no enabled command although the module has some command with the required action label,
                     // we must not return anything.
                     if (commands.size() == 0) {
-                        return boost::optional<std::vector<std::list<std::reference_wrapper<storm::prism::Command const>>>>();
+                        return boost::optional<std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>>>();
                     }
                     
                     result.get().push_back(std::move(commands));
@@ -274,8 +274,8 @@ namespace storm {
                 return result;
             }
                         
-            static std::list<Choice<ValueType>> getUnlabeledTransitions(storm::prism::Program const& program, StateInformation& stateInformation, VariableInformation const& variableInformation, uint_fast64_t stateIndex, std::queue<uint_fast64_t>& stateQueue) {
-                std::list<Choice<ValueType>> result;
+            static std::vector<Choice<ValueType>> getUnlabeledTransitions(storm::prism::Program const& program, StateInformation& stateInformation, VariableInformation const& variableInformation, uint_fast64_t stateIndex, std::queue<uint_fast64_t>& stateQueue) {
+                std::vector<Choice<ValueType>> result;
                 
                 StateType const* currentState = stateInformation.reachableStates[stateIndex];
 
@@ -328,17 +328,17 @@ namespace storm {
                 return result;
             }
             
-            static std::list<Choice<ValueType>> getLabeledTransitions(storm::prism::Program const& program, StateInformation& stateInformation, VariableInformation const& variableInformation, uint_fast64_t stateIndex, std::queue<uint_fast64_t>& stateQueue) {
-                std::list<Choice<ValueType>> result;
+            static std::vector<Choice<ValueType>> getLabeledTransitions(storm::prism::Program const& program, StateInformation& stateInformation, VariableInformation const& variableInformation, uint_fast64_t stateIndex, std::queue<uint_fast64_t>& stateQueue) {
+                std::vector<Choice<ValueType>> result;
                 
                 for (uint_fast64_t actionIndex : program.getActionIndices()) {
                     StateType const* currentState = stateInformation.reachableStates[stateIndex];
-                    boost::optional<std::vector<std::list<std::reference_wrapper<storm::prism::Command const>>>> optionalActiveCommandLists = getActiveCommandsByActionIndex(program, currentState, actionIndex);
+                    boost::optional<std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>>> optionalActiveCommandLists = getActiveCommandsByActionIndex(program, currentState, actionIndex);
                     
                     // Only process this action label, if there is at least one feasible solution.
                     if (optionalActiveCommandLists) {
-                        std::vector<std::list<std::reference_wrapper<storm::prism::Command const>>> const& activeCommandList = optionalActiveCommandLists.get();
-                        std::vector<std::list<std::reference_wrapper<storm::prism::Command const>>::const_iterator> iteratorList(activeCommandList.size());
+                        std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>> const& activeCommandList = optionalActiveCommandLists.get();
+                        std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>::const_iterator> iteratorList(activeCommandList.size());
                         
                         // Initialize the list of iterators.
                         for (size_t i = 0; i < activeCommandList.size(); ++i) {
@@ -505,8 +505,8 @@ namespace storm {
                     uint_fast64_t currentState = stateQueue.front();
             
                     // Retrieve all choices for the current state.
-                    std::list<Choice<ValueType>> allUnlabeledChoices = getUnlabeledTransitions(program, stateInformation, variableInformation, currentState, stateQueue);
-                    std::list<Choice<ValueType>> allLabeledChoices = getLabeledTransitions(program, stateInformation, variableInformation, currentState, stateQueue);
+                    std::vector<Choice<ValueType>> allUnlabeledChoices = getUnlabeledTransitions(program, stateInformation, variableInformation, currentState, stateQueue);
+                    std::vector<Choice<ValueType>> allLabeledChoices = getLabeledTransitions(program, stateInformation, variableInformation, currentState, stateQueue);
                     
                     uint_fast64_t totalNumberOfChoices = allUnlabeledChoices.size() + allLabeledChoices.size();
                     

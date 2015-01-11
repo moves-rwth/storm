@@ -225,7 +225,7 @@ namespace storm {
         storm::prism::Constant PrismParser::createUndefinedBooleanConstant(std::string const& newConstant) const {
             if (!this->secondRun) {
                 try {
-                    storm::expressions::Variable newVariable = manager->declareBooleanVariable(newConstant);
+                    storm::expressions::Variable newVariable = manager->declareBooleanVariable(newConstant, true);
                     this->identifiers_.add(newConstant, newVariable.getExpression());
                 } catch (storm::exceptions::InvalidArgumentException const& e) {
                     if (manager->hasVariable(newConstant)) {
@@ -241,7 +241,7 @@ namespace storm {
         storm::prism::Constant PrismParser::createUndefinedIntegerConstant(std::string const& newConstant) const {
             if (!this->secondRun) {
                 try {
-                    storm::expressions::Variable newVariable = manager->declareIntegerVariable(newConstant);
+                    storm::expressions::Variable newVariable = manager->declareIntegerVariable(newConstant, true);
                     this->identifiers_.add(newConstant, newVariable.getExpression());
                 } catch (storm::exceptions::InvalidArgumentException const& e) {
                     if (manager->hasVariable(newConstant)) {
@@ -257,7 +257,7 @@ namespace storm {
         storm::prism::Constant PrismParser::createUndefinedDoubleConstant(std::string const& newConstant) const {
             if (!this->secondRun) {
                 try {
-                    storm::expressions::Variable newVariable = manager->declareRationalVariable(newConstant);
+                    storm::expressions::Variable newVariable = manager->declareRationalVariable(newConstant, true);
                     this->identifiers_.add(newConstant, newVariable.getExpression());
                 } catch (storm::exceptions::InvalidArgumentException const& e) {
                     if (manager->hasVariable(newConstant)) {
@@ -273,7 +273,7 @@ namespace storm {
         storm::prism::Constant PrismParser::createDefinedBooleanConstant(std::string const& newConstant, storm::expressions::Expression expression) const {
             if (!this->secondRun) {
                 try {
-                    storm::expressions::Variable newVariable = manager->declareBooleanVariable(newConstant);
+                    storm::expressions::Variable newVariable = manager->declareBooleanVariable(newConstant, true);
                     this->identifiers_.add(newConstant, newVariable.getExpression());
                 } catch (storm::exceptions::InvalidArgumentException const& e) {
                     if (manager->hasVariable(newConstant)) {
@@ -289,7 +289,7 @@ namespace storm {
         storm::prism::Constant PrismParser::createDefinedIntegerConstant(std::string const& newConstant, storm::expressions::Expression expression) const {
             if (!this->secondRun) {
                 try {
-                    storm::expressions::Variable newVariable = manager->declareIntegerVariable(newConstant);
+                    storm::expressions::Variable newVariable = manager->declareIntegerVariable(newConstant, true);
                     this->identifiers_.add(newConstant, newVariable.getExpression());
                 } catch (storm::exceptions::InvalidArgumentException const& e) {
                     if (manager->hasVariable(newConstant)) {
@@ -305,7 +305,7 @@ namespace storm {
         storm::prism::Constant PrismParser::createDefinedDoubleConstant(std::string const& newConstant, storm::expressions::Expression expression) const {
             if (!this->secondRun) {
                 try {
-                    storm::expressions::Variable newVariable = manager->declareRationalVariable(newConstant);
+                    storm::expressions::Variable newVariable = manager->declareRationalVariable(newConstant, true);
                     this->identifiers_.add(newConstant, newVariable.getExpression());
                 } catch (storm::exceptions::InvalidArgumentException const& e) {
                     if (manager->hasVariable(newConstant)) {

@@ -1,8 +1,6 @@
 #ifndef STORM_STORAGE_EXPRESSIONS_LINEARITYCHECKVISITOR_H_
 #define STORM_STORAGE_EXPRESSIONS_LINEARITYCHECKVISITOR_H_
 
-#include <stack>
-
 #include "src/storage/expressions/Expression.h"
 #include "src/storage/expressions/ExpressionVisitor.h"
 

@@ -1,5 +1,6 @@
 #include <boost/container/flat_set.hpp>
 #include <iostream>
+#include <algorithm>
 
 #include "src/storage/BitVector.h"
 #include "src/exceptions/InvalidArgumentException.h"
@@ -7,10 +8,7 @@
 
 #include "src/utility/OsDetection.h"
 #include "src/utility/Hash.h"
-#include "log4cplus/logger.h"
-#include "log4cplus/loggingmacros.h"
-
-extern log4cplus::Logger logger;
+#include "src/utility/macros.h"
 
 namespace storm {
     namespace storage {
@@ -78,6 +76,10 @@ namespace storm {
         template<typename InputIterator>
         BitVector::BitVector(uint_fast64_t length, InputIterator begin, InputIterator end) : BitVector(length) {
             set(begin, end);
+        }
+        
+        BitVector::BitVector(uint_fast64_t bucketCount, uint_fast64_t bitCount) : bitCount(bitCount), bucketVector(bucketCount) {
+            STORM_LOG_ASSERT((bucketCount << 6) == bitCount, "Bit count does not match number of buckets.");
         }
         
         BitVector::BitVector(BitVector const& other) : bitCount(other.bitCount), bucketVector(other.bucketVector) {
@@ -360,6 +362,52 @@ namespace storm {
             return true;
         }
         
+        bool BitVector::matches(uint_fast64_t bitIndex, BitVector const& other) const {
+            STORM_LOG_ASSERT((bitIndex & mod64mask) == 0, "Bit index must be a multiple of 64.");
+            STORM_LOG_ASSERT(other.size() <= this->size() - bitIndex, "Bit vector argument is too long.");
+
+            // Compute the first bucket that needs to be checked and the number of buckets.
+            uint64_t index = bitIndex >> 6;
+            
+            std::vector<uint64_t>::const_iterator first1 = bucketVector.begin() + index;
+            std::vector<uint64_t>::const_iterator first2 = other.bucketVector.begin();
+            std::vector<uint64_t>::const_iterator last2 = other.bucketVector.end();
+            
+            for (; first2 != last2; ++first1, ++first2) {
+                if (*first1 != *first2) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        
+        void BitVector::set(uint_fast64_t bitIndex, BitVector const& other) {
+            STORM_LOG_ASSERT((bitIndex & mod64mask) == 0, "Bit index must be a multiple of 64.");
+            STORM_LOG_ASSERT(other.size() <= this->size() - bitIndex, "Bit vector argument is too long.");
+            
+            // Compute the first bucket that needs to be checked and the number of buckets.
+            uint64_t index = bitIndex >> 6;
+            
+            std::vector<uint64_t>::iterator first1 = bucketVector.begin() + index;
+            std::vector<uint64_t>::const_iterator first2 = other.bucketVector.begin();
+            std::vector<uint64_t>::const_iterator last2 = other.bucketVector.end();
+            
+            for (; first2 != last2; ++first1, ++first2) {
+                *first1 = *first2;
+            }
+        }
+        
+        storm::storage::BitVector BitVector::get(uint_fast64_t bitIndex, uint_fast64_t numberOfBits) {
+            uint64_t numberOfBuckets = numberOfBits >> 6;
+            uint64_t index = bitIndex >> 6;
+            STORM_LOG_ASSERT(index + numberOfBuckets <= this->bucketCount(), "Argument is out-of-range.");
+            
+            storm::storage::BitVector result(numberOfBuckets, numberOfBits);
+            std::copy(this->bucketVector.begin() + index, this->bucketVector.begin() + index + numberOfBuckets, result.bucketVector.begin());
+            
+            return result;
+        }
+        
         bool BitVector::empty() const {
             for (auto& element : bucketVector) {
                 if (element != 0) {
@@ -508,7 +556,11 @@ namespace storm {
                 bucketVector.back() &= (1ll << (bitCount & mod64mask)) - 1ll;
             }
         }
-                
+        
+        size_t BitVector::bucketCount() const {
+            return bucketVector.size();
+        }
+        
         std::ostream& operator<<(std::ostream& out, BitVector const& bitVector) {
             out << "bit vector(" << bitVector.getNumberOfSetBits() << "/" << bitVector.bitCount << ") [";
             for (auto index : bitVector) {
@@ -528,5 +580,11 @@ namespace storm {
         template void BitVector::set(std::vector<uint_fast64_t>::const_iterator begin, std::vector<uint_fast64_t>::const_iterator end);
         template void BitVector::set(boost::container::flat_set<uint_fast64_t>::iterator begin, boost::container::flat_set<uint_fast64_t>::iterator end);
         template void BitVector::set(boost::container::flat_set<uint_fast64_t>::const_iterator begin, boost::container::flat_set<uint_fast64_t>::const_iterator end);
+    }
+}
+
+namespace std {
+    std::size_t hash<storm::storage::BitVector>::operator()(storm::storage::BitVector const& bv) {
+        return boost::hash_range(bv.bucketVector.begin(), bv.bucketVector.end());
     }
 }
