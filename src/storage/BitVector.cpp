@@ -152,9 +152,9 @@ namespace storm {
         
         void BitVector::set(uint_fast64_t index, bool value) {
             if (index >= bitCount) throw storm::exceptions::OutOfRangeException() << "Invalid call to BitVector::set: written index " << index << " out of bounds.";
-            uint_fast64_t bucket = index >> 6;
+            uint64_t bucket = index >> 6;
             
-            uint_fast64_t mask = static_cast<uint_fast64_t>(1) << (index & mod64mask);
+            uint64_t mask = 1ull << (index & mod64mask);
             if (value) {
                 bucketVector[bucket] |= mask;
             } else {
@@ -412,11 +412,11 @@ namespace storm {
             uint64_t bucket = bitIndex >> 6;
             uint64_t bitIndexInBucket = bitIndex & mod64mask;
             
-            uint64_t mask = (1ull << (64 - bitIndexInBucket + 1)) - 1;
+            uint64_t mask = (1ull << (64 - bitIndexInBucket)) - 1;
             
             if (bitIndexInBucket + numberOfBits < 64) {
                 // If the value stops before the end of the bucket, we need to erase some lower bits.
-                mask &= !((1ull << (64 - (bitIndexInBucket - numberOfBits + 1))) - 1);
+                mask &= ~((1ull << (64 - (bitIndexInBucket - numberOfBits + 2))) - 1);
                 return bucketVector[bucket] & mask;
             } else if (bitIndexInBucket + numberOfBits > 64) {
                 // In this case, the integer "crosses" the bucket line.

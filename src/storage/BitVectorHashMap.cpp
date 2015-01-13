@@ -55,7 +55,12 @@ namespace storm {
         }
         
         template<class ValueType, class Hash1, class Hash2>
-        std::pair<ValueType, std::size_t> BitVectorHashMap<ValueType, Hash1, Hash2>::findOrAdd(storm::storage::BitVector const& key, ValueType value) {
+        ValueType BitVectorHashMap<ValueType, Hash1, Hash2>::findOrAdd(storm::storage::BitVector const& key, ValueType value) {
+            return findOrAddAndGetBucket(key, value).first;
+        }
+        
+        template<class ValueType, class Hash1, class Hash2>
+        std::pair<ValueType, std::size_t> BitVectorHashMap<ValueType, Hash1, Hash2>::findOrAddAndGetBucket(storm::storage::BitVector const& key, ValueType value) {
             // If the load of the map is too high, we increase the size.
             if (numberOfElements >= loadFactor * *currentSizeIterator) {
                 this->increaseSize();
@@ -70,7 +75,7 @@ namespace storm {
                 }
                 bucket += hasher2(key);
                 bucket %= *currentSizeIterator;
-
+                
                 // If we arrived at the original position, this means that we have visited all possible locations, but
                 // could not find a suitable position. This implies that we have to enlarge the map in order to resolve
                 // the issue.

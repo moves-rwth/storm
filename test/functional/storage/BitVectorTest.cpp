@@ -51,6 +51,27 @@ TEST(BitVectorTest, GetSet) {
 	}
 }
 
+TEST(BitVectorTest, GetAsInt) {
+    storm::storage::BitVector vector(77);
+    
+    vector.set(62);
+    vector.set(63);
+    vector.set(64);
+    vector.set(65);
+
+    EXPECT_EQ(1, vector.getAsInt(62, 1));
+    EXPECT_EQ(3, vector.getAsInt(62, 2));
+    EXPECT_EQ(7, vector.getAsInt(62, 3));
+    EXPECT_EQ(15, vector.getAsInt(62, 4));
+    
+    vector.set(64, false);
+
+    EXPECT_EQ(1, vector.getAsInt(62, 1));
+    EXPECT_EQ(3, vector.getAsInt(62, 2));
+    EXPECT_EQ(5, vector.getAsInt(62, 3));
+    EXPECT_EQ(13, vector.getAsInt(62, 4));
+}
+
 TEST(BitVectorTest, GetSetException) {
 	storm::storage::BitVector vector(32);
     

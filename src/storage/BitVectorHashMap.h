@@ -35,7 +35,19 @@ namespace storm {
              * @param value The value that is inserted if the key is not already found in the map.
              * @return The found value if the key is already contained in the map and the provided new value otherwise.
              */
-            std::pair<ValueType, std::size_t> findOrAdd(storm::storage::BitVector const& key, ValueType value);
+            ValueType findOrAdd(storm::storage::BitVector const& key, ValueType value);
+
+            /*!
+             * Searches for the given key in the map. If it is found, the mapped-to value is returned. Otherwise, the
+             * key is inserted with the given value.
+             *
+             * @param key The key to search or insert.
+             * @param value The value that is inserted if the key is not already found in the map.
+             * @return A pair whose first component is the found value if the key is already contained in the map and
+             * the provided new value otherwise and whose second component is the index of the bucket into which the key
+             * was inserted.
+             */
+            std::pair<ValueType, std::size_t> findOrAddAndGetBucket(storm::storage::BitVector const& key, ValueType value);
             
             /*!
              * Retrieves the key stored in the given bucket (if any).
