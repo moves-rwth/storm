@@ -397,7 +397,7 @@ namespace storm {
             }
         }
         
-        storm::storage::BitVector BitVector::get(uint_fast64_t bitIndex, uint_fast64_t numberOfBits) {
+        storm::storage::BitVector BitVector::get(uint_fast64_t bitIndex, uint_fast64_t numberOfBits) const {
             uint64_t numberOfBuckets = numberOfBits >> 6;
             uint64_t index = bitIndex >> 6;
             STORM_LOG_ASSERT(index + numberOfBuckets <= this->bucketCount(), "Argument is out-of-range.");
@@ -406,6 +406,34 @@ namespace storm {
             std::copy(this->bucketVector.begin() + index, this->bucketVector.begin() + index + numberOfBuckets, result.bucketVector.begin());
             
             return result;
+        }
+        
+        uint_fast64_t BitVector::getAsInt(uint_fast64_t bitIndex, uint_fast64_t numberOfBits) const {
+            uint64_t bucket = bitIndex >> 6;
+            uint64_t bitIndexInBucket = bitIndex & mod64mask;
+            
+            uint64_t mask = (1ull << (64 - bitIndexInBucket + 1)) - 1;
+            
+            if (bitIndexInBucket + numberOfBits < 64) {
+                // If the value stops before the end of the bucket, we need to erase some lower bits.
+                mask &= !((1ull << (64 - (bitIndexInBucket - numberOfBits + 1))) - 1);
+                return bucketVector[bucket] & mask;
+            } else if (bitIndexInBucket + numberOfBits > 64) {
+                // In this case, the integer "crosses" the bucket line.
+                uint64_t result = bucketVector[bucket] & mask;
+                result <<= (64 - bitIndexInBucket);
+                
+                ++bucket;
+                numberOfBits -= (64 - bitIndexInBucket);
+                mask = !(1ull << (64 - numberOfBits));
+                uint64_t lowerBits = bucketVector[bucket] & mask;
+                result |= (lowerBits >> (64 - numberOfBits));
+                
+                return result;
+            } else {
+                // In this case, it suffices to take the current mask.
+                return bucketVector[bucket] & mask;
+            }
         }
         
         bool BitVector::empty() const {

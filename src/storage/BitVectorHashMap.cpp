@@ -55,7 +55,7 @@ namespace storm {
         }
         
         template<class ValueType, class Hash1, class Hash2>
-        ValueType BitVectorHashMap<ValueType, Hash1, Hash2>::findOrAdd(storm::storage::BitVector const& key, ValueType value) {
+        std::pair<ValueType, std::size_t> BitVectorHashMap<ValueType, Hash1, Hash2>::findOrAdd(storm::storage::BitVector const& key, ValueType value) {
             // If the load of the map is too high, we increase the size.
             if (numberOfElements >= loadFactor * *currentSizeIterator) {
                 this->increaseSize();
@@ -66,7 +66,7 @@ namespace storm {
             
             while (isBucketOccupied(bucket)) {
                 if (buckets.matches(bucket * bucketSize, key)) {
-                    return values[bucket];
+                    return std::make_pair(values[bucket], bucket);
                 }
                 bucket += hasher2(key);
                 bucket %= *currentSizeIterator;
@@ -84,7 +84,12 @@ namespace storm {
             occupied.set(bucket);
             values[bucket] = value;
             ++numberOfElements;
-            return value;
+            return std::make_pair(value, bucket);
+        }
+        
+        template<class ValueType, class Hash1, class Hash2>
+        storm::storage::BitVector BitVectorHashMap<ValueType, Hash1, Hash2>::getBucket(std::size_t bucket) const {
+            return buckets.get(bucket * bucketSize, bucketSize);
         }
         
         template class BitVectorHashMap<uint_fast64_t>;

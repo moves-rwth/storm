@@ -347,7 +347,16 @@ namespace storm {
              * @param numberOfBits The number of bits to get. This value must be a multiple of 64.
              * @return A new bit vector holding the selected bits.
              */
-            storm::storage::BitVector get(uint_fast64_t bitIndex, uint_fast64_t numberOfBits);
+            storm::storage::BitVector get(uint_fast64_t bitIndex, uint_fast64_t numberOfBits) const;
+            
+            /*!
+             * Retrieves the content of the current bit vector at the given index for the given number of bits as an
+             * unsigned integer value.
+             *
+             * @param bitIndex The index of the first bit to get.
+             * @param numberOfBits The number of bits to get. This value must be less or equal than 64.
+             */
+            uint_fast64_t getAsInt(uint_fast64_t bitIndex, uint_fast64_t numberOfBits) const;
             
             /*!
              * Retrieves whether no bits are set to true in this bit vector.

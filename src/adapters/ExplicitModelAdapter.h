@@ -1,10 +1,3 @@
-/* 
- * File:   ExplicitModelAdapter.h
- * Author: Christian Dehnert
- *
- * Created on March 15, 2013, 11:42 AM
- */
-
 #ifndef STORM_ADAPTERS_EXPLICITMODELADAPTER_H
 #define	STORM_ADAPTERS_EXPLICITMODELADAPTER_H
 
@@ -13,12 +6,15 @@
 #include <utility>
 #include <vector>
 #include <queue>
+#include <cstdint>
 #include <boost/functional/hash.hpp>
 #include <boost/container/flat_set.hpp>
 #include <boost/algorithm/string.hpp>
 
 #include "src/storage/prism/Program.h"
 #include "src/storage/expressions/SimpleValuation.h"
+#include "storm/storage/expressions/ExprTkEvaluator.h"
+#include "src/storage/BitVectorHashMap.h"
 #include "src/utility/PrismUtility.h"
 #include "src/models/AbstractModel.h"
 #include "src/models/Dtmc.h"
@@ -39,31 +35,60 @@ namespace storm {
         template<typename ValueType>
         class ExplicitModelAdapter {
         public:
-            typedef storm::expressions::SimpleValuation StateType;
-            typedef storm::expressions::SimpleValuationPointerHash StateHash;
-            typedef storm::expressions::SimpleValuationPointerCompare StateCompare;
-            typedef storm::expressions::SimpleValuationPointerLess StateLess;
+            typedef storm::storage::BitVector StateType;
             
             // A structure holding information about the reachable state space.
             struct StateInformation {
-                StateInformation() : reachableStates(), stateToIndexMap() {
+                StateInformation(uint64_t bitsPerState) : reachableStates(), stateToIndexMap(bitsPerState, 100000) {
                     // Intentionally left empty.
                 }
                 
-                // A list of reachable states.
-                std::vector<StateType*> reachableStates;
+                // The number of bits of each state.
+                uint64_t bitsPerState;
                 
-                // A list of initial states.
-                std::vector<uint_fast64_t> initialStateIndices;
+                // A list of reachable states as indices in the stateToIndexMap.
+                std::vector<std::size_t> reachableStates;
                 
-                // A mapping from states to indices in the list of reachable states.
-                std::unordered_map<StateType*, uint_fast64_t, StateHash, StateCompare> stateToIndexMap;
+                // A list of initial states in terms of their global indices.
+                std::vector<uint32_t> initialStateIndices;
+                
+                // A mapping from reachable states to their indices.
+                storm::storage::BitVectorHashMap<uint32_t> stateToIndexMap;
             };
             
             // A structure storing information about the used variables of the program.
             struct VariableInformation {
-                // A mapping of (integer) variable to their lower/upper bounds.
-                std::map<std::string, std::pair<int_fast64_t, int_fast64_t>> variableToBoundsMap;
+                uint_fast64_t getBitOffset(storm::expressions::Variable const& variable) {
+                    auto const& booleanIndex = booleanVariableToIndexMap.find(variable);
+                    if (booleanIndex != booleanVariableToIndexMap.end()) {
+                        return std::get<2>(booleanVariables[booleanIndex]);
+                    }
+                    auto const& integerIndex = integerVariableToIndexMap.find(variable);
+                    if (integerIndex != integerVariableToIndexMap.end()) {
+                        return std::get<4>(integerVariables[integerIndex]);
+                    }
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Cannot look-up bit index of unknown variable.");
+                }
+                
+                uint_fast64_t getBitWidth(storm::expressions::Variable const& variable) {
+                    auto const& integerIndex = integerVariableToIndexMap.find(variable);
+                    if (integerIndex != integerVariableToIndexMap.end()) {
+                        return std::get<5>(integerVariables[integerIndex]);
+                    }
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Cannot look-up bit width of unknown variable.");
+                }
+                
+                std::map<storm::expressions::Variable, uint_fast64_t> booleanVariableToIndexMap;
+                
+                // The list of boolean variables. Along with the variable we store its initial value and bit offset in
+                // the state.
+                std::vector<std::tuple<storm::expressions::Variable, bool, uint_fast64_t>> booleanVariables;
+
+                std::map<storm::expressions::Variable, uint_fast64_t> integerVariableToIndexMap;
+
+                // The list of integer variables. Along with the variable, we store its initial value, lower and upper
+                // bound, the bit offset in the state and the bit width.
+                std::vector<std::tuple<storm::expressions::Variable, int_fast64_t, int_fast64_t, int_fast64_t, uint_fast64_t, uint_fast64_t>> integerVariables;
             };
             
             // A structure holding the individual components of a model.
@@ -149,6 +174,20 @@ namespace storm {
             }
             
         private:
+            void unpackState(storm::storage::BitVector const& currentState, VariableInformation const& variableInformation, storm::expressions::ExprTkEvaluator& evaluator) {
+                for (auto const& booleanVariable : variableInformation.booleanVariables) {
+                    if (currentState.get(std::get<2>(booleanVariable))) {
+                        evaluator.setBoolean(std::get<0>(booleanVariable), true);
+                    } else {
+                        evaluator.setBooleanValue(std::get<0>(booleanVariable), false);
+                    }
+                }
+                for (auto const& integerVariable : variableInformation.integerVariables) {
+                    int_fast64_t value = currentState.getAsInt(std::get<4>(integerVariable), std::get<5>(integerVariable));
+                    evaluator.setIntegerValue(std::get<0>(integerVariable), value);
+                }
+            }
+            
             /*!
              * Applies an update to the given state and returns the resulting new state object. This methods does not
              * modify the given state but returns a new one.
@@ -201,20 +240,18 @@ namespace storm {
              * @param stateInformation The information about the already explored part of the reachable state space.
              * @return A pair indicating whether the state was already discovered before and the state id of the state.
              */
-            static std::pair<bool, uint_fast64_t> getOrAddStateIndex(StateType* state, StateInformation& stateInformation) {
-                // Check, if the state was already registered.
-                auto indexIt = stateInformation.stateToIndexMap.find(state);
+            static uint32_t getOrAddStateIndex(StateType const& state, StateInformation& stateInformation, std::queue<std::size_t>& stateQueue) {
+                uint32_t newIndex = stateInformation.reachableStates.size();
                 
-                if (indexIt == stateInformation.stateToIndexMap.end()) {
-                    // The state has not been seen, yet, so add it to the list of all reachable states.
-                    stateInformation.stateToIndexMap[state] = stateInformation.reachableStates.size();
-                    stateInformation.reachableStates.push_back(state);
-                    return std::make_pair(false, stateInformation.stateToIndexMap[state]);
-                } else {
-                    // The state was already encountered. Delete the copy of the old state and return its index.
-                    delete state;
-                    return std::make_pair(true, indexIt->second);
+                // Check, if the state was already registered.
+                std::pair<uint32_t, std::size_t> actualIndexBucketPair = stateInformation.stateToIndexMap.findOrAdd(state, newIndex);
+                
+                if (actualIndexBucketPair.first == newIndex) {
+                    stateQueue.insert(actualIndexBucketPair.second);
+                    reachableStates.push_back(actualIndexBucketPair.second);
                 }
+                
+                return actualIndexBucketPair.first;
             }
     
             /*!
@@ -476,33 +513,36 @@ namespace storm {
                 std::vector<boost::container::flat_set<uint_fast64_t>> choiceLabels;
                 
                 // Initialize a queue and insert the initial state.
-                std::queue<uint_fast64_t> stateQueue;
-                StateType* initialState = new StateType(program.getManager().getSharedPointer());
+                std::queue<std::size_t> stateQueue;
+                StateType initialState(stateInformation.bitsPerState);
                 
                 // We need to initialize the values of the variables to their initial value.
-                for (auto const& booleanVariable : program.getGlobalBooleanVariables()) {
-                    initialState->setBooleanValue(booleanVariable.getExpressionVariable(), booleanVariable.getInitialValueExpression().evaluateAsBool());
+                for (auto const& booleanVariable : variableInformation.booleanVariables) {
+                    initialState.set(std::get<2>(booleanVariable), std::get<1>(booleanVariable));
                 }
-                for (auto const& integerVariable : program.getGlobalIntegerVariables()) {
-                    initialState->setIntegerValue(integerVariable.getExpressionVariable(), integerVariable.getInitialValueExpression().evaluateAsInt());
+                for (auto const& integerVariable : variableInformation.integerVariables) {
+                    initialState.set(std::get<4>(integerVariable), std::get<5>(integerVariable), std::get<1>(integerVariable) - std::get<2>(integerVariable));
                 }
                 for (auto const& module : program.getModules()) {
                     for (auto const& booleanVariable : module.getBooleanVariables()) {
-                        initialState->setBooleanValue(booleanVariable.getExpressionVariable(), booleanVariable.getInitialValueExpression().evaluateAsBool());
+                        initialState.set(std::get<2>(booleanVariable), std::get<1>(booleanVariable));
                     }
                     for (auto const& integerVariable : module.getIntegerVariables()) {
-                        initialState->setIntegerValue(integerVariable.getExpressionVariable(), integerVariable.getInitialValueExpression().evaluateAsInt());
+                        initialState.set(std::get<4>(integerVariable), std::get<5>(integerVariable), std::get<1>(integerVariable) - std::get<2>(integerVariable));
                     }
                 }
         
-                std::pair<bool, uint_fast64_t> addIndexPair = getOrAddStateIndex(initialState, stateInformation);
-                stateInformation.initialStateIndices.push_back(addIndexPair.second);
-                stateQueue.push(stateInformation.stateToIndexMap[initialState]);
+                // Insert the initial state in the global state to index mapping and state queue.
+                getOrAddStateIndex(initialState, stateInformation, stateQueue);
                 
                 // Now explore the current state until there is no more reachable state.
                 uint_fast64_t currentRow = 0;
+                storm::expressions::ExprTkEvaluator evaluator(program.getManager());
                 while (!stateQueue.empty()) {
-                    uint_fast64_t currentState = stateQueue.front();
+                    // Get the current state and unpack it.
+                    std::size_t currentStateIndex = stateQueue.front();
+                    storm::storage::BitVector currentState = stateInformation.stateToIndexMap.getBucket(currentStateIndex);
+                    unpackState(currentState, variableInformation, evaluator);
             
                     // Retrieve all choices for the current state.
                     std::vector<Choice<ValueType>> allUnlabeledChoices = getUnlabeledTransitions(program, stateInformation, variableInformation, currentState, stateQueue);
@@ -651,18 +691,40 @@ namespace storm {
             static ModelComponents buildModelComponents(storm::prism::Program const& program, storm::prism::RewardModel const& rewardModel) {
                 ModelComponents modelComponents;
                 
+                uint_fast64_t bitOffset = 0;
                 VariableInformation variableInformation;
+                for (auto const& booleanVariable : program.getGlobalBooleanVariables()) {
+                    variableInformation.booleanVariables.emplace_back(booleanVariable.getExpressionVariable(), booleanVariable.getInitialValueExpression().evaluateAsBool(), bitOffset);
+                    ++bitOffset;
+                    booleanVariableToIndexMap[booleanVariable.getExpressionVariable()] = variableInformation.booleanVariables.size() - 1;
+                }
                 for (auto const& integerVariable : program.getGlobalIntegerVariables()) {
-                    variableInformation.variableToBoundsMap[integerVariable.getName()] = std::make_pair(integerVariable.getLowerBoundExpression().evaluateAsInt(), integerVariable.getUpperBoundExpression().evaluateAsInt());
+                    int_fast64_t lowerBound = integerVariable.getLowerBoundExpression().evaluateAsInt();
+                    int_fast64_t upperBound = integerVariable.getUpperBoundExpression().evaluateAsInt();
+                    uint_fast64_t bitwidth = static_cast<uint_fast64_t>(std::ceil(std::log2(upperBound - lowerBound)));
+                    variableInformation.integerVariables.emplace_back(integerVariable.getExpressionVariable(), integerVariable.getInitialValueExpression().evaluateAsInt(), lowerBound, upperBound, bitOffset, bitwidth);
+                    bitOffset += bitwidth;
+                    integerVariableToIndexMap[integerVariable.getExpressionVariable()] = variableInformation.integerVariables.size() - 1;
                 }
                 for (auto const& module : program.getModules()) {
+                    for (auto const& booleanVariable : module.getBooleanVariables()) {
+                        variableInformation.booleanVariables.emplace_back(booleanVariable.getExpressionVariable(), booleanVariable.getInitialValueExpression().evaluateAsBool(), bitOffset);
+                        ++bitOffset;
+                        booleanVariableToIndexMap[booleanVariable.getExpressionVariable()] = variableInformation.booleanVariables.size() - 1;
+                    }
                     for (auto const& integerVariable : module.getIntegerVariables()) {
-                        variableInformation.variableToBoundsMap[integerVariable.getName()] = std::make_pair(integerVariable.getLowerBoundExpression().evaluateAsInt(), integerVariable.getUpperBoundExpression().evaluateAsInt());
+                        int_fast64_t lowerBound = integerVariable.getLowerBoundExpression().evaluateAsInt();
+                        int_fast64_t upperBound = integerVariable.getUpperBoundExpression().evaluateAsInt();
+                        uint_fast64_t bitwidth = static_cast<uint_fast64_t>(std::ceil(std::log2(upperBound - lowerBound)));
+                        variableInformation.integerVariables.emplace_back(integerVariable.getExpressionVariable(), integerVariable.getInitialValueExpression().evaluateAsInt(), lowerBound, upperBound, bitOffset, bitwidth);
+                        bitOffset += bitwidth;
+                        integerVariableToIndexMap[integerVariable.getExpressionVariable()] = variableInformation.integerVariables.size() - 1;
                     }
                 }
                 
                 // Create the structure for storing the reachable state space.
-                StateInformation stateInformation;
+                uint64_t bitsPerState = ((bitOffset / 64) + 1) * 64;
+                StateInformation stateInformation(bitsPerState);
                 
                 // Determine whether we have to combine different choices to one or whether this model can have more than
                 // one choice per state.

@@ -5,6 +5,7 @@
 namespace storm {
     namespace prism {
         Update::Update(uint_fast64_t globalIndex, storm::expressions::Expression const& likelihoodExpression, std::vector<storm::prism::Assignment> const& assignments, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), likelihoodExpression(likelihoodExpression), assignments(assignments), variableToAssignmentIndexMap(), globalIndex(globalIndex) {
+            std::sort(assignments.begin(), assignments.end(), [] (storm::prism::Assignment const& assignment1, storm::prism::Assignment const& assignment2) { return assignment1.getVariable() < assignment2.getVariable(); } );
             this->createAssignmentMapping();
         }
         
