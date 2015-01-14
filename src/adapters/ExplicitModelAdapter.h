@@ -39,7 +39,7 @@ namespace storm {
             
             // A structure holding information about the reachable state space.
             struct StateInformation {
-                StateInformation(uint64_t bitsPerState) : reachableStates(), stateToIndexMap(bitsPerState, 100000) {
+                StateInformation(uint64_t bitsPerState) : bitsPerState(bitsPerState), reachableStates(), stateToIndexMap(bitsPerState, 100000) {
                     // Intentionally left empty.
                 }
                 
@@ -194,11 +194,14 @@ namespace storm {
             
         private:
             static void unpackStateIntoEvaluator(storm::storage::BitVector const& currentState, VariableInformation const& variableInformation, storm::expressions::ExprtkExpressionEvaluator& evaluator) {
+                std::cout << "unpacking state... " << std::endl;
                 for (auto const& booleanVariable : variableInformation.booleanVariables) {
                     evaluator.setBooleanValue(booleanVariable.variable, currentState.get(booleanVariable.bitOffset));
+                    std::cout << booleanVariable.variable.getName() << " -> " << currentState.get(booleanVariable.bitOffset) << std::endl;
                 }
                 for (auto const& integerVariable : variableInformation.integerVariables) {
                     evaluator.setIntegerValue(integerVariable.variable, currentState.getAsInt(integerVariable.bitOffset, integerVariable.bitWidth) + integerVariable.lowerBound);
+                    std::cout << integerVariable.variable.getName() << " -> " << currentState.getAsInt(integerVariable.bitOffset, integerVariable.bitWidth) + integerVariable.lowerBound << std::endl;
                 }
             }
             
@@ -504,6 +507,7 @@ namespace storm {
                 for (auto const& integerVariable : variableInformation.integerVariables) {
                     initialState.setFromInt(integerVariable.bitOffset, integerVariable.bitWidth, static_cast<uint_fast64_t>(integerVariable.initialValue - integerVariable.lowerBound));
                 }
+                std::cout << "initial state: " << initialState << std::endl;
         
                 // Insert the initial state in the global state to index mapping and state queue.
                 getOrAddStateIndex(initialState, stateInformation, stateQueue);
@@ -516,6 +520,7 @@ namespace storm {
                     std::size_t currentStateBucket = stateQueue.front();
                     std::pair<storm::storage::BitVector, uint32_t> stateValuePair = stateInformation.stateToIndexMap.getBucketAndValue(currentStateBucket);
                     storm::storage::BitVector const& currentState = stateValuePair.first;
+                    std::cout << "current state: " << initialState << std::endl;
                     unpackStateIntoEvaluator(currentState, variableInformation, evaluator);
             
                     // Retrieve all choices for the current state.
@@ -697,6 +702,7 @@ namespace storm {
                 
                 // Create the structure for storing the reachable state space.
                 uint64_t bitsPerState = ((bitOffset / 64) + 1) * 64;
+                std::cout << "states have " << bitsPerState << " bits" << std::endl;
                 StateInformation stateInformation(bitsPerState);
                 
                 // Determine whether we have to combine different choices to one or whether this model can have more than
