@@ -1,4 +1,7 @@
 #include "Update.h"
+
+#include <algorithm>
+
 #include "src/utility/macros.h"
 #include "src/exceptions/OutOfRangeException.h"
 

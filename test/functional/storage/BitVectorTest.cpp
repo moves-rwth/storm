@@ -68,15 +68,15 @@ TEST(BitVectorTest, GetAsInt) {
 
     EXPECT_EQ(1, vector.getAsInt(62, 1));
     EXPECT_EQ(3, vector.getAsInt(62, 2));
-    EXPECT_EQ(5, vector.getAsInt(62, 3));
+    EXPECT_EQ(6, vector.getAsInt(62, 3));
     EXPECT_EQ(13, vector.getAsInt(62, 4));
 }
 
-TEST(BitVectorTest, GetSetException) {
+TEST(BitVectorDeathTest, GetSetAssertion) {
 	storm::storage::BitVector vector(32);
     
-    ASSERT_THROW(vector.get(32), storm::exceptions::OutOfRangeException);
-    ASSERT_THROW(vector.set(32), storm::exceptions::OutOfRangeException);
+    EXPECT_DEATH_IF_SUPPORTED(vector.get(32), "");
+    EXPECT_DEATH_IF_SUPPORTED(vector.set(32), "");
 }
 
 TEST(BitVectorTest, Resize) {
@@ -258,7 +258,7 @@ TEST(BitVectorTest, OperatorModulo) {
 		vector3.set(i, i % 2 == 0);
     }
     
-    ASSERT_THROW(vector1 % vector3, storm::exceptions::InvalidArgumentException);
+    EXPECT_DEATH_IF_SUPPORTED(vector1 % vector3, "");
 }
 
 TEST(BitVectorTest, OperatorNot) {
@@ -399,7 +399,7 @@ TEST(BitVectorTest, BeginEnd) {
     ASSERT_TRUE(vector.begin() == vector.end());
     
     vector.set(17);
-    
+
     ASSERT_FALSE(vector.begin() == vector.end());
     
     vector.set(17, false);
