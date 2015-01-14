@@ -26,37 +26,37 @@ namespace storm {
         boost::any ToExprtkStringVisitor::visit(BinaryBooleanFunctionExpression const& expression) {
             switch (expression.getOperatorType()) {
                 case BinaryBooleanFunctionExpression::OperatorType::And:
-                    stream << "and(";
+                    stream << "(";
                     expression.getFirstOperand()->accept(*this);
-                    stream << ",";
-                    expression.getFirstOperand()->accept(*this);
+                    stream << " and ";
+                    expression.getSecondOperand()->accept(*this);
                     stream << ")";
                     break;
                 case BinaryBooleanFunctionExpression::OperatorType::Or:
-                    stream << "or(";
+                    stream << "(";
                     expression.getFirstOperand()->accept(*this);
-                    stream << ",";
-                    expression.getFirstOperand()->accept(*this);
+                    stream << " or ";
+                    expression.getSecondOperand()->accept(*this);
                     stream << ")";
                     break;
                 case BinaryBooleanFunctionExpression::OperatorType::Xor:
-                    stream << "xor(";
+                    stream << "(";
                     expression.getFirstOperand()->accept(*this);
-                    stream << ",";
-                    expression.getFirstOperand()->accept(*this);
+                    stream << " xor ";
+                    expression.getSecondOperand()->accept(*this);
                     stream << ")";
                     break;
                 case BinaryBooleanFunctionExpression::OperatorType::Implies:
-                    stream << "or(not(";
+                    stream << "(not(";
                     expression.getFirstOperand()->accept(*this);
-                    stream << "),";
-                    expression.getFirstOperand()->accept(*this);
+                    stream << ") or ";
+                    expression.getSecondOperand()->accept(*this);
                     stream << ")";
                     break;
                 case BinaryBooleanFunctionExpression::OperatorType::Iff:
                     expression.getFirstOperand()->accept(*this);
                     stream << "==";
-                    expression.getFirstOperand()->accept(*this);
+                    expression.getSecondOperand()->accept(*this);
                     break;
             }
             return boost::any();
@@ -65,29 +65,39 @@ namespace storm {
         boost::any ToExprtkStringVisitor::visit(BinaryNumericalFunctionExpression const& expression) {
             switch (expression.getOperatorType()) {
                 case BinaryNumericalFunctionExpression::OperatorType::Plus:
+                    stream << "(";
                     expression.getFirstOperand()->accept(*this);
                     stream << "+";
                     expression.getSecondOperand()->accept(*this);
+                    stream << ")";
                     break;
                 case BinaryNumericalFunctionExpression::OperatorType::Minus:
+                    stream << "(";
                     expression.getFirstOperand()->accept(*this);
                     stream << "-";
                     expression.getSecondOperand()->accept(*this);
+                    stream << ")";
                     break;
                 case BinaryNumericalFunctionExpression::OperatorType::Times:
+                    stream << "(";
                     expression.getFirstOperand()->accept(*this);
                     stream << "*";
                     expression.getSecondOperand()->accept(*this);
+                    stream << ")";
                     break;
                 case BinaryNumericalFunctionExpression::OperatorType::Divide:
+                    stream << "(";
                     expression.getFirstOperand()->accept(*this);
                     stream << "/";
                     expression.getSecondOperand()->accept(*this);
+                    stream << ")";
                     break;
                 case BinaryNumericalFunctionExpression::OperatorType::Power:
+                    stream << "(";
                     expression.getFirstOperand()->accept(*this);
                     stream << "^";
                     expression.getSecondOperand()->accept(*this);
+                    stream << ")";
                     break;
                 case BinaryNumericalFunctionExpression::OperatorType::Max:
                     stream << "max(";
@@ -110,34 +120,46 @@ namespace storm {
         boost::any ToExprtkStringVisitor::visit(BinaryRelationExpression const& expression) {
             switch (expression.getRelationType()) {
                 case BinaryRelationExpression::RelationType::Equal:
+                    stream << "(";
                     expression.getFirstOperand()->accept(*this);
                     stream << "==";
                     expression.getSecondOperand()->accept(*this);
+                    stream << ")";
                     break;
                 case BinaryRelationExpression::RelationType::NotEqual:
+                    stream << "(";
                     expression.getFirstOperand()->accept(*this);
                     stream << "!=";
                     expression.getSecondOperand()->accept(*this);
+                    stream << ")";
                     break;
                 case BinaryRelationExpression::RelationType::Less:
+                    stream << "(";
                     expression.getFirstOperand()->accept(*this);
                     stream << "<";
                     expression.getSecondOperand()->accept(*this);
+                    stream << ")";
                     break;
                 case BinaryRelationExpression::RelationType::LessOrEqual:
+                    stream << "(";
                     expression.getFirstOperand()->accept(*this);
                     stream << "<=";
                     expression.getSecondOperand()->accept(*this);
+                    stream << ")";
                     break;
                 case BinaryRelationExpression::RelationType::Greater:
+                    stream << "(";
                     expression.getFirstOperand()->accept(*this);
                     stream << ">";
                     expression.getSecondOperand()->accept(*this);
+                    stream << ")";
                     break;
                 case BinaryRelationExpression::RelationType::GreaterOrEqual:
+                    stream << "(";
                     expression.getFirstOperand()->accept(*this);
                     stream << ">=";
                     expression.getSecondOperand()->accept(*this);
+                    stream << ")";
                     break;
             }
             return boost::any();

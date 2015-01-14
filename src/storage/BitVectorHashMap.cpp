@@ -81,6 +81,7 @@ namespace storm {
         
         template<class ValueType, class Hash1, class Hash2>
         ValueType BitVectorHashMap<ValueType, Hash1, Hash2>::getValue(storm::storage::BitVector const& key) const {
+            std::cout << "calling getValue with key " << key << std::endl;
             std::pair<bool, std::size_t> flagBucketPair = this->findBucket(key);
             STORM_LOG_ASSERT(flagBucketPair.first, "Unknown key.");
             return flagBucketPair.second;

@@ -1,6 +1,8 @@
 #include "src/storage/expressions/ExprtkExpressionEvaluator.h"
 #include "src/storage/expressions/ExpressionManager.h"
 
+#include "src/utility/macros.h"
+
 namespace storm {
     namespace expressions {
         ExprtkExpressionEvaluator::ExprtkExpressionEvaluator(storm::expressions::ExpressionManager const& manager) : manager(manager.getSharedPointer()), booleanValues(manager.getNumberOfBooleanVariables()), integerValues(manager.getNumberOfIntegerVariables()), rationalValues(manager.getNumberOfRationalVariables()) {
@@ -52,6 +54,7 @@ namespace storm {
             CompiledExpressionType& compiledExpression = result.first->second;
             compiledExpression.register_symbol_table(symbolTable);
             bool parsingOk = parser.compile(ToExprtkStringVisitor().toString(expression), compiledExpression);
+            STORM_LOG_ASSERT(parsingOk, "Expression was not properly parsed by ExprTk.");
             return compiledExpression;
         }
         

@@ -48,6 +48,7 @@ namespace storm {
                 newAssignments.emplace_back(assignment.substitute(substitution));
             }
             
+            // FIXME: The expression could be simplified, but 1/K (where K is an int) is then resolved to 0, which is incorrect (for probabilities).
             return Update(this->getGlobalIndex(), this->getLikelihoodExpression().substitute(substitution), newAssignments, this->getFilename(), this->getLineNumber());
         }
         

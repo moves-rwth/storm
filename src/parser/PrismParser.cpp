@@ -357,7 +357,13 @@ namespace storm {
         
         storm::prism::Command PrismParser::createCommand(std::string const& actionName, storm::expressions::Expression guardExpression, std::vector<storm::prism::Update> const& updates, GlobalProgramInformation& globalProgramInformation) const {
             ++globalProgramInformation.currentCommandIndex;
-            return storm::prism::Command(globalProgramInformation.currentCommandIndex - 1, globalProgramInformation.actionIndices[actionName], actionName, guardExpression, updates, this->getFilename());
+            if (!actionName.empty()) {
+                auto const& nameIndexPair = globalProgramInformation.actionIndices.find(actionName);
+                if (nameIndexPair == globalProgramInformation.actionIndices.end()) {
+                    globalProgramInformation.actionIndices[actionName] = globalProgramInformation.actionIndices.size();
+                }
+            }
+            return storm::prism::Command(globalProgramInformation.currentCommandIndex - 1, actionName.empty() ? 0 : globalProgramInformation.actionIndices[actionName], actionName, guardExpression, updates, this->getFilename());
         }
         
         storm::prism::Command PrismParser::createCommand(std::string const& actionName, GlobalProgramInformation& globalProgramInformation) const {
@@ -490,12 +496,14 @@ namespace storm {
                         newActionName = renamingPair->second;
                     }
                     
-                    auto const& nameIndexPair = globalProgramInformation.actionIndices.find(newActionName);
-                    if (nameIndexPair == globalProgramInformation.actionIndices.end()) {
-                        globalProgramInformation.actionIndices[newActionName] = globalProgramInformation.actionIndices.size();
+                    if (!newActionName.empty()) {
+                        auto const& nameIndexPair = globalProgramInformation.actionIndices.find(newActionName);
+                        if (nameIndexPair == globalProgramInformation.actionIndices.end()) {
+                            globalProgramInformation.actionIndices[newActionName] = globalProgramInformation.actionIndices.size();
+                        }
                     }
                     
-                    commands.emplace_back(globalProgramInformation.currentCommandIndex, globalProgramInformation.actionIndices[newActionName], newActionName, command.getGuardExpression().substitute(expressionRenaming), updates, this->getFilename(), get_line(qi::_1));
+                    commands.emplace_back(globalProgramInformation.currentCommandIndex, newActionName.empty() ? 0 : globalProgramInformation.actionIndices[newActionName], newActionName, command.getGuardExpression().substitute(expressionRenaming), updates, this->getFilename(), get_line(qi::_1));
                     ++globalProgramInformation.currentCommandIndex;
                 }
                 
