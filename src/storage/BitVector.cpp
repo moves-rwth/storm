@@ -131,7 +131,7 @@ namespace storm {
             return *this;
         }
         
-        bool BitVector::operator==(BitVector const& other) {
+        bool BitVector::operator==(BitVector const& other) const {
             // If the lengths of the vectors do not match, they are considered unequal.
             if (this->bitCount != other.bitCount) return false;
             
@@ -146,7 +146,7 @@ namespace storm {
             return true;
         }
         
-        bool BitVector::operator!=(BitVector const& other) {
+        bool BitVector::operator!=(BitVector const& other) const {
             return !(*this == other);
         }
         
@@ -648,7 +648,7 @@ namespace storm {
 }
 
 namespace std {
-    std::size_t hash<storm::storage::BitVector>::operator()(storm::storage::BitVector const& bv) {
+    std::size_t hash<storm::storage::BitVector>::operator()(storm::storage::BitVector const& bv) const {
         return boost::hash_range(bv.bucketVector.begin(), bv.bucketVector.end());
     }
 }

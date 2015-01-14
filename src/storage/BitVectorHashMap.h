@@ -50,12 +50,20 @@ namespace storm {
             std::pair<ValueType, std::size_t> findOrAddAndGetBucket(storm::storage::BitVector const& key, ValueType value);
             
             /*!
-             * Retrieves the key stored in the given bucket (if any).
+             * Retrieves the key stored in the given bucket (if any) and the value it is mapped to.
              *
              * @param bucket The index of the bucket.
-             * @return The content of the named bucket.
+             * @return The content and value of the named bucket.
              */
-            storm::storage::BitVector getBucket(std::size_t bucket) const;
+            std::pair<storm::storage::BitVector, ValueType> getBucketAndValue(std::size_t bucket) const;
+            
+            /*!
+             * Retrieves the value associated with the given key (if any). If the key does not exist, the behaviour is
+             * undefined.
+             *
+             * @return The value associated with the given key (if any).
+             */
+            ValueType getValue(storm::storage::BitVector const& key) const;
             
             /*!
              * Retrieves the size of the map in terms of the number of key-value pairs it stores.
@@ -78,7 +86,16 @@ namespace storm {
              * @param bucket The bucket to check.
              * @return True iff the bucket is occupied.
              */
-            bool isBucketOccupied(uint_fast64_t bucket);
+            bool isBucketOccupied(uint_fast64_t bucket) const;
+            
+            /*!
+             * Searches for the bucket into which the given key can be inserted.
+             *
+             * @param key The key to search for.
+             * @return A pair whose first component indicates whether the key is already contained in the map and whose
+             * second component indicates in which bucket the key is stored/is supposed to be stored.
+             */
+            std::pair<bool, std::size_t> findBucket(storm::storage::BitVector const& key) const;
             
             /*!
              * Increases the size of the hash map and performs the necessary rehashing of all entries.

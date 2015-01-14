@@ -1,7 +1,6 @@
 #ifndef STORM_UTILITY_PRISMUTILITY
 #define STORM_UTILITY_PRISMUTILITY
 
-#include "src/storage/LabeledValues.h"
 #include "src/storage/prism/Program.h"
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidArgumentException.h"
@@ -10,7 +9,7 @@ namespace storm {
     namespace utility {
         namespace prism {
             // A structure holding information about a particular choice.
-            template<typename ValueType, typename KeyType=uint_fast64_t, typename Compare=std::less<uint_fast64_t>>
+            template<typename ValueType, typename KeyType=uint32_t, typename Compare=std::less<uint32_t>>
             struct Choice {
             public:
                 Choice(uint_fast64_t actionIndex = 0) : distribution(), actionIndex(actionIndex), choiceLabels() {
@@ -148,6 +147,10 @@ namespace storm {
                     return distribution.at(state);
                 }
                 
+                void addProbability(KeyType state, ValueType value) {
+                    distribution[state] += value;
+                }
+                
             private:
                 // The distribution that is associated with the choice.
                 std::map<KeyType, ValueType, Compare> distribution;
@@ -158,36 +161,6 @@ namespace storm {
                 // The labels that are associated with this choice.
                 boost::container::flat_set<uint_fast64_t> choiceLabels;
             };
-            
-            /*!
-             * Adds the target state and probability to the given choice and ignores the labels. This function overloads with
-             * other functions to ensure the proper treatment of labels.
-             *
-             * @param choice The choice to which to add the target state and probability.
-             * @param state The target state of the probability.
-             * @param probability The probability to reach the target state in one step.
-             * @param labels A set of labels that is supposed to be associated with this state and probability. NOTE: this
-             * is ignored by this particular function but not by the overloaded functions.
-             */
-            template<typename ValueType>
-            void addProbabilityToChoice(Choice<ValueType>& choice, uint_fast64_t state, ValueType probability, boost::container::flat_set<uint_fast64_t> const& labels) {
-                choice.getOrAddEntry(state) += probability;
-            }
-            
-            /*!
-             * Adds the target state and probability to the given choice and labels it accordingly. This function overloads
-             * with other functions to ensure the proper treatment of labels.
-             *
-             * @param choice The choice to which to add the target state and probability.
-             * @param state The target state of the probability.
-             * @param probability The probability to reach the target state in one step.
-             * @param labels A set of labels that is supposed to be associated with this state and probability.
-             */
-            template<typename ValueType>
-            void addProbabilityToChoice(Choice<storm::storage::LabeledValues<ValueType>>& choice, uint_fast64_t state, ValueType probability, boost::container::flat_set<uint_fast64_t> const& labels) {
-                auto& labeledEntry = choice.getOrAddEntry(state);
-                labeledEntry.addValue(probability, labels);
-            }
             
             static std::map<storm::expressions::Variable, storm::expressions::Expression> parseConstantDefinitionString(storm::prism::Program const& program, std::string const& constantDefinitionString) {
                 std::map<storm::expressions::Variable, storm::expressions::Expression> constantDefinitions;

@@ -21,7 +21,7 @@ namespace storm {
         }
         
         template<class ValueType, class Hash1, class Hash2>
-        bool BitVectorHashMap<ValueType, Hash1, Hash2>::isBucketOccupied(uint_fast64_t bucket) {
+        bool BitVectorHashMap<ValueType, Hash1, Hash2>::isBucketOccupied(uint_fast64_t bucket) const {
             return occupied.get(bucket);
         }
         
@@ -66,37 +66,48 @@ namespace storm {
                 this->increaseSize();
             }
             
+            std::pair<bool, std::size_t> flagBucketPair = this->findBucket(key);
+            if (flagBucketPair.first) {
+                return std::make_pair(values[flagBucketPair.second], flagBucketPair.second);
+            } else {
+                // Insert the new bits into the bucket.
+                buckets.set(flagBucketPair.second * bucketSize, key);
+                occupied.set(flagBucketPair.second);
+                values[flagBucketPair.second] = value;
+                ++numberOfElements;
+                return std::make_pair(value, flagBucketPair.second);
+            }
+        }
+        
+        template<class ValueType, class Hash1, class Hash2>
+        ValueType BitVectorHashMap<ValueType, Hash1, Hash2>::getValue(storm::storage::BitVector const& key) const {
+            std::pair<bool, std::size_t> flagBucketPair = this->findBucket(key);
+            STORM_LOG_ASSERT(flagBucketPair.first, "Unknown key.");
+            return flagBucketPair.second;
+        }
+        
+        template<class ValueType, class Hash1, class Hash2>
+        std::pair<bool, std::size_t> BitVectorHashMap<ValueType, Hash1, Hash2>::findBucket(storm::storage::BitVector const& key) const {
             uint_fast64_t initialHash = hasher1(key) % *currentSizeIterator;
             uint_fast64_t bucket = initialHash;
             
             while (isBucketOccupied(bucket)) {
                 if (buckets.matches(bucket * bucketSize, key)) {
-                    return std::make_pair(values[bucket], bucket);
+                    return std::make_pair(true, bucket);
                 }
                 bucket += hasher2(key);
                 bucket %= *currentSizeIterator;
-                
-                // If we arrived at the original position, this means that we have visited all possible locations, but
-                // could not find a suitable position. This implies that we have to enlarge the map in order to resolve
-                // the issue.
-                if (bucket == initialHash) {
-                    this->increaseSize();
-                }
             }
-            
-            // Insert the new bits into the bucket.
-            buckets.set(bucket * bucketSize, key);
-            occupied.set(bucket);
-            values[bucket] = value;
-            ++numberOfElements;
-            return std::make_pair(value, bucket);
+
+            return std::make_pair(false, bucket);
         }
         
         template<class ValueType, class Hash1, class Hash2>
-        storm::storage::BitVector BitVectorHashMap<ValueType, Hash1, Hash2>::getBucket(std::size_t bucket) const {
-            return buckets.get(bucket * bucketSize, bucketSize);
+        std::pair<storm::storage::BitVector, ValueType> BitVectorHashMap<ValueType, Hash1, Hash2>::getBucketAndValue(std::size_t bucket) const {
+            return std::make_pair(buckets.get(bucket * bucketSize, bucketSize), values[bucket]);
         }
         
         template class BitVectorHashMap<uint_fast64_t>;
+        template class BitVectorHashMap<uint32_t>;
     }
 }

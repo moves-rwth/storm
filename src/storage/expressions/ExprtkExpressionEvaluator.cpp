@@ -17,7 +17,7 @@ namespace storm {
             symbolTable.add_constants();
         }
         
-        bool ExprtkExpressionEvaluator::asBool(Expression const& expression) {
+        bool ExprtkExpressionEvaluator::asBool(Expression const& expression) const {
             BaseExpression const* expressionPtr = expression.getBaseExpressionPointer().get();
             auto const& expressionPair = this->compiledExpressions.find(expression.getBaseExpressionPointer().get());
             if (expressionPair == this->compiledExpressions.end()) {
@@ -27,7 +27,7 @@ namespace storm {
             return expressionPair->second.value() == ValueType(1);
         }
         
-        int_fast64_t ExprtkExpressionEvaluator::asInt(Expression const& expression) {
+        int_fast64_t ExprtkExpressionEvaluator::asInt(Expression const& expression) const {
             BaseExpression const* expressionPtr = expression.getBaseExpressionPointer().get();
             auto const& expressionPair = this->compiledExpressions.find(expression.getBaseExpressionPointer().get());
             if (expressionPair == this->compiledExpressions.end()) {
@@ -37,7 +37,7 @@ namespace storm {
             return static_cast<int_fast64_t>(expressionPair->second.value());
         }
         
-        double ExprtkExpressionEvaluator::asDouble(Expression const& expression) {
+        double ExprtkExpressionEvaluator::asDouble(Expression const& expression) const {
             BaseExpression const* expressionPtr = expression.getBaseExpressionPointer().get();
             auto const& expressionPair = this->compiledExpressions.find(expression.getBaseExpressionPointer().get());
             if (expressionPair == this->compiledExpressions.end()) {
@@ -47,11 +47,11 @@ namespace storm {
             return static_cast<double>(expressionPair->second.value());
         }
         
-        ExprtkExpressionEvaluator::CompiledExpressionType& ExprtkExpressionEvaluator::getCompiledExpression(BaseExpression const* expression) {
+        ExprtkExpressionEvaluator::CompiledExpressionType& ExprtkExpressionEvaluator::getCompiledExpression(BaseExpression const* expression) const {
             std::pair<CacheType::iterator, bool> result = this->compiledExpressions.emplace(expression, CompiledExpressionType());
             CompiledExpressionType& compiledExpression = result.first->second;
             compiledExpression.register_symbol_table(symbolTable);
-            bool parsingOk = parser.compile(stringTranslator.toString(expression), compiledExpression);
+            bool parsingOk = parser.compile(ToExprtkStringVisitor().toString(expression), compiledExpression);
             return compiledExpression;
         }
         

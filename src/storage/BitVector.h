@@ -138,7 +138,7 @@ namespace storm {
              * @param other The bitvector with which to compare the current one.
              * @return True iff the other bit vector is semantically the same as the current one.
              */
-            bool operator==(BitVector const& other);
+            bool operator==(BitVector const& other) const;
             
             /*!
              * Compares the given bit vector with the current one.
@@ -146,7 +146,7 @@ namespace storm {
              * @param other The bitvector with which to compare the current one.
              * @return True iff the other bit vector is semantically not the same as the current one.
              */
-            bool operator!=(BitVector const& other);
+            bool operator!=(BitVector const& other) const;
             
             /*!
              * Assigns the contents of the given bit vector to the current bit vector via a deep copy.
@@ -494,7 +494,7 @@ namespace storm {
 namespace std {
     template <>
     struct hash<storm::storage::BitVector> {
-        std::size_t operator()(storm::storage::BitVector const& bv);
+        std::size_t operator()(storm::storage::BitVector const& bv) const;
     };
 }
 

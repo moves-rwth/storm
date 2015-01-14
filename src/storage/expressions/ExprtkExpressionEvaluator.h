@@ -21,9 +21,9 @@ namespace storm {
              */
             ExprtkExpressionEvaluator(storm::expressions::ExpressionManager const& manager);
             
-            bool asBool(Expression const& expression);
-            int_fast64_t asInt(Expression const& expression);
-            double asDouble(Expression const& expression);
+            bool asBool(Expression const& expression) const;
+            int_fast64_t asInt(Expression const& expression) const;
+            double asDouble(Expression const& expression) const;
 
             void setBooleanValue(storm::expressions::Variable const& variable, bool value);
             void setIntegerValue(storm::expressions::Variable const& variable, int_fast64_t value);
@@ -39,16 +39,16 @@ namespace storm {
              *
              * @param expression The expression that is to be compiled.
              */
-            CompiledExpressionType& getCompiledExpression(BaseExpression const* expression);
+            CompiledExpressionType& getCompiledExpression(BaseExpression const* expression) const;
             
             // The expression manager that is used by this evaluator.
             std::shared_ptr<storm::expressions::ExpressionManager const> manager;
             
             // The parser used.
-            exprtk::parser<ValueType> parser;
+            mutable exprtk::parser<ValueType> parser;
             
             // The symbol table used.
-            exprtk::symbol_table<ValueType> symbolTable;
+            mutable exprtk::symbol_table<ValueType> symbolTable;
             
             // The actual data that is fed into the expression.
             std::vector<ValueType> booleanValues;
@@ -56,10 +56,7 @@ namespace storm {
             std::vector<ValueType> rationalValues;
             
             // A mapping of expressions to their compiled counterpart.
-            CacheType compiledExpressions;
-
-            // A translator that can be used for transforming an expression into the correct string format.
-            ToExprtkStringVisitor stringTranslator;
+            mutable CacheType compiledExpressions;
         };
     }
 }

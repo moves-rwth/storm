@@ -42,6 +42,14 @@ namespace storm {
             bool operator==(Variable const& other) const;
 
             /*!
+             * Checks the two variables for inequality.
+             *
+             * @param other The variable to compare with.
+             * @return True iff the two variables are different.
+             */
+            bool operator!=(Variable const& other) const;
+            
+            /*!
              * Checks whether the variable appears earlier in the total ordering of variables.
              *
              * @param other The variable to compare with.

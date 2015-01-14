@@ -10,6 +10,10 @@ namespace storm {
         bool Variable::operator==(Variable const& other) const {
             return manager == other.manager && index == other.index;
         }
+
+        bool Variable::operator!=(Variable const& other) const {
+            return !(*this == other);
+        }
         
         bool Variable::operator<(Variable const& other) const {
             return this->getIndex() < other.getIndex();
