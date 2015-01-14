@@ -414,8 +414,8 @@ namespace storm {
             
             if (bitIndexInBucket + numberOfBits < 64) {
                 // If the value stops before the end of the bucket, we need to erase some lower bits.
-                mask &= ~((1ull << (64 - (bitIndexInBucket - numberOfBits + 2))) - 1);
-                return (bucketVector[bucket] & mask) >> (64 - (bitIndexInBucket - numberOfBits + 2));
+                mask &= ~((1ull << (64 - (bitIndexInBucket + numberOfBits))) - 1ull);
+                return (bucketVector[bucket] & mask) >> (64 - (bitIndexInBucket + numberOfBits));
             } else if (bitIndexInBucket + numberOfBits > 64) {
                 // In this case, the integer "crosses" the bucket line.
                 uint64_t result = (bucketVector[bucket] & mask);
@@ -437,6 +437,42 @@ namespace storm {
             } else {
                 // In this case, it suffices to take the current mask.
                 return bucketVector[bucket] & mask;
+            }
+        }
+        
+        void BitVector::setFromInt(uint_fast64_t bitIndex, uint_fast64_t numberOfBits, uint64_t value) {
+            STORM_LOG_ASSERT((value >> numberOfBits) == 0, "Integer value to large to fit in the given number of bits.");
+            
+            uint64_t bucket = bitIndex >> 6;
+            uint64_t bitIndexInBucket = bitIndex & mod64mask;
+            
+            uint64_t mask;
+            if (bitIndexInBucket == 0) {
+                mask = -1ull;
+            } else {
+                mask = (1ull << (64 - bitIndexInBucket)) - 1ull;
+            }
+            
+            if (bitIndexInBucket + numberOfBits < 64) {
+                // If the value stops before the end of the bucket, we need to erase some lower bits.
+                mask &= ~((1ull << (64 - (bitIndexInBucket + numberOfBits))) - 1ull);
+                bucketVector[bucket] = (bucketVector[bucket] & ~mask) | (value << (64 - (bitIndexInBucket + numberOfBits)));
+            } else if (bitIndexInBucket + numberOfBits > 64) {
+                // Write the part of the value that falls into the first bucket.
+                bucketVector[bucket] = (bucketVector[bucket] & ~mask) | (value >> (64 - bitIndexInBucket));
+                ++bucket;
+                
+                // Compute the remaining number of bits.
+                numberOfBits -= (64 - bitIndexInBucket);
+
+                // Shift the bits of the value such that the already set bits disappear.
+                value <<= (64 - numberOfBits);
+                
+                // Put the remaining bits in their place.
+                mask = ((1ull << (64 - numberOfBits)) - 1ull);
+                bucketVector[bucket] = (bucketVector[bucket] & mask) | value;
+            } else {
+                bucketVector[bucket] = (bucketVector[bucket] & ~mask) | value;
             }
         }
         

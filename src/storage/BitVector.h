@@ -359,6 +359,15 @@ namespace storm {
             uint_fast64_t getAsInt(uint_fast64_t bitIndex, uint_fast64_t numberOfBits) const;
             
             /*!
+             * Sets the selected number of lowermost bits of the provided value at the given bit index.
+             *
+             * @param bitIndex The index of the first bit to set.
+             * @param numberOfBits The number of bits to set.
+             * @param value The integer whose lowermost bits to set.
+             */
+            void setFromInt(uint_fast64_t bitIndex, uint_fast64_t numberOfBits, uint64_t value);
+            
+            /*!
              * Retrieves whether no bits are set to true in this bit vector.
              *
              * @return False iff there is at least one bit set in this vector.

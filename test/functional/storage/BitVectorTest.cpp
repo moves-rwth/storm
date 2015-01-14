@@ -70,6 +70,42 @@ TEST(BitVectorTest, GetAsInt) {
     EXPECT_EQ(3, vector.getAsInt(62, 2));
     EXPECT_EQ(6, vector.getAsInt(62, 3));
     EXPECT_EQ(13, vector.getAsInt(62, 4));
+    
+    vector.set(61);
+    vector.set(62, false);
+    EXPECT_EQ(2, vector.getAsInt(61, 2));
+}
+
+TEST(BitVectorTest, SetFromInt) {
+    storm::storage::BitVector vector(77);
+
+    vector.setFromInt(62, 1, 1);
+    
+    EXPECT_TRUE(vector.get(62));
+    EXPECT_FALSE(vector.get(63));
+    EXPECT_FALSE(vector.get(64));
+    EXPECT_FALSE(vector.get(65));
+    
+    vector.setFromInt(61, 2, 2);
+
+    EXPECT_TRUE(vector.get(61));
+    EXPECT_FALSE(vector.get(62));
+    EXPECT_FALSE(vector.get(63));
+    
+    vector.setFromInt(61, 3, 5);
+
+    EXPECT_TRUE(vector.get(61));
+    EXPECT_FALSE(vector.get(62));
+    EXPECT_TRUE(vector.get(63));
+    
+    vector.setFromInt(62, 4, 15);
+
+    EXPECT_TRUE(vector.get(62));
+    EXPECT_TRUE(vector.get(63));
+    EXPECT_TRUE(vector.get(64));
+    EXPECT_TRUE(vector.get(65));
+    
+    vector.setFromInt(62, 5, 17);
 }
 
 TEST(BitVectorDeathTest, GetSetAssertion) {
