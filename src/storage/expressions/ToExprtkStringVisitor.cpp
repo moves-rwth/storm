@@ -7,7 +7,8 @@ namespace storm {
         }
         
         std::string ToExprtkStringVisitor::toString(BaseExpression const* expression) {
-            stream = std::stringstream();
+            stream.str("");
+            stream.clear();
             expression->accept(*this);
             return std::move(stream.str());
         }
