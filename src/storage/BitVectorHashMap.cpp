@@ -63,7 +63,7 @@ namespace storm {
             uint_fast64_t failCount = 0;
             while (fail) {
                 ++failCount;
-                STORM_LOG_ASSERT(failCount < 10, "Increasing size failed too often.");
+                STORM_LOG_ASSERT(failCount < 2, "Increasing size failed too often.");
                 
                 ++currentSizeIterator;
                 STORM_LOG_ASSERT(currentSizeIterator != sizes.end(), "Hash map became to big.");

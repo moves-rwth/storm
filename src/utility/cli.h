@@ -45,8 +45,8 @@ log4cplus::Logger logger;
 // Model headers.
 #include "src/models/AbstractModel.h"
 
-// Headers of adapters.
-#include "src/adapters/ExplicitModelAdapter.h"
+// Headers of builders.
+#include "src/builder/ExplicitPrismModelBuilder.h"
 
 // Headers for model processing.
 #include "src/storage/NaiveDeterministicModelBisimulationDecomposition.h"
@@ -266,7 +266,7 @@ namespace storm {
                     storm::prism::Program program = storm::parser::PrismParser::parse(programFile);
                     
                     // Then, build the model from the symbolic description.
-                    result = storm::adapters::ExplicitModelAdapter<double>::translateProgram(program, true, settings.isSymbolicRewardModelNameSet() ? settings.getSymbolicRewardModelName() : "", constants);
+                    result = storm::adapters::ExplicitPrismModelBuilder<double>::translateProgram(program, true, settings.isSymbolicRewardModelNameSet() ? settings.getSymbolicRewardModelName() : "", constants);
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No input model.");
                 }
