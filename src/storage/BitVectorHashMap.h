@@ -14,7 +14,7 @@ namespace storm {
          * queries and insertions are supported. Also, the keys must be bit vectors with a length that is a multiple of
          * 64.
          */
-        template<class ValueType, class Hash1 = std::hash<storm::storage::BitVector>, class Hash2 = std::hash<storm::storage::BitVector>>
+        template<class ValueType, class Hash1 = std::hash<storm::storage::BitVector>, class Hash2 = storm::storage::NonZeroBitVectorHash>
         class BitVectorHashMap {
         public:
             /*!
@@ -35,7 +35,7 @@ namespace storm {
              * @param value The value that is inserted if the key is not already found in the map.
              * @return The found value if the key is already contained in the map and the provided new value otherwise.
              */
-            ValueType findOrAdd(storm::storage::BitVector const& key, ValueType value);
+            ValueType findOrAdd(storm::storage::BitVector const& key, ValueType const& value);
 
             /*!
              * Searches for the given key in the map. If it is found, the mapped-to value is returned. Otherwise, the
@@ -47,7 +47,7 @@ namespace storm {
              * the provided new value otherwise and whose second component is the index of the bucket into which the key
              * was inserted.
              */
-            std::pair<ValueType, std::size_t> findOrAddAndGetBucket(storm::storage::BitVector const& key, ValueType value);
+            std::pair<ValueType, std::size_t> findOrAddAndGetBucket(storm::storage::BitVector const& key, ValueType const& value);
             
             /*!
              * Retrieves the key stored in the given bucket (if any) and the value it is mapped to.
@@ -89,13 +89,37 @@ namespace storm {
             bool isBucketOccupied(uint_fast64_t bucket) const;
             
             /*!
-             * Searches for the bucket into which the given key can be inserted.
+             * Searches for the bucket with the given key.
              *
              * @param key The key to search for.
              * @return A pair whose first component indicates whether the key is already contained in the map and whose
-             * second component indicates in which bucket the key is stored/is supposed to be stored.
+             * second component indicates in which bucket the key is stored.
              */
             std::pair<bool, std::size_t> findBucket(storm::storage::BitVector const& key) const;
+            
+            /*!
+             * Searches for the bucket into which the given key can be inserted. If no empty bucket can be found, the
+             * size of the underlying data structure is increased.
+             *
+             * @param key The key to search for.
+             * @param increaseStorage A flag indicating whether the storage should be increased if no bucket can be found.
+             * @return A tuple whose first component indicates whether the key is already contained in the map, whose
+             * second component indicates in which bucket the key is supposed to be stored and whose third component is
+             * an error flag indicating that the bucket could not be found (e.g. due to the restriction that the storage
+             * must not be increased).
+             */
+            template<bool increaseStorage>
+            std::tuple<bool, std::size_t, bool> findBucketToInsert(storm::storage::BitVector const& key);
+            
+            /*!
+             * Inserts the given key-value pair without resizing the underlying storage. If that fails, this is
+             * indicated by the return value.
+             *
+             * @param key The key to insert.
+             * @param value The value to insert.
+             * @return True iff the key-value pair could be inserted without resizing the storage.
+             */
+            bool insertWithoutIncreasingSize(storm::storage::BitVector const& key, ValueType const& value);
             
             /*!
              * Increases the size of the hash map and performs the necessary rehashing of all entries.

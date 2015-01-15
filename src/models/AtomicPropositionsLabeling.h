@@ -331,7 +331,7 @@ public:
 		}
 
 		for (auto it = singleLabelings.begin(); it != singleLabelings.end(); ++it) {
-			boost::hash_combine(result, it->hash());
+			boost::hash_combine(result, std::hash<storm::storage::BitVector>()(*it));
 		}
 
 		return result;

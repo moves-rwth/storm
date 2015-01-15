@@ -39,7 +39,7 @@ namespace storm {
             
             // A structure holding information about the reachable state space.
             struct StateInformation {
-                StateInformation(uint64_t bitsPerState) : bitsPerState(bitsPerState), reachableStates(), stateToIndexMap(bitsPerState, 100000) {
+                StateInformation(uint64_t bitsPerState) : bitsPerState(bitsPerState), reachableStates(), stateToIndexMap(bitsPerState, 1000000) {
                     // Intentionally left empty.
                 }
                 
@@ -47,7 +47,7 @@ namespace storm {
                 uint64_t bitsPerState;
                 
                 // A list of reachable states as indices in the stateToIndexMap.
-                std::vector<std::size_t> reachableStates;
+                std::vector<storm::storage::BitVector> reachableStates;
                 
                 // A list of initial states in terms of their global indices.
                 std::vector<uint32_t> initialStateIndices;
@@ -264,15 +264,15 @@ namespace storm {
              * @param stateInformation The information about the already explored part of the reachable state space.
              * @return A pair indicating whether the state was already discovered before and the state id of the state.
              */
-            static uint32_t getOrAddStateIndex(StateType const& state, StateInformation& stateInformation, std::queue<std::size_t>& stateQueue) {
+            static uint32_t getOrAddStateIndex(StateType const& state, StateInformation& stateInformation, std::queue<storm::storage::BitVector>& stateQueue) {
                 uint32_t newIndex = stateInformation.reachableStates.size();
                 
                 // Check, if the state was already registered.
                 std::pair<uint32_t, std::size_t> actualIndexBucketPair = stateInformation.stateToIndexMap.findOrAddAndGetBucket(state, newIndex);
                 
                 if (actualIndexBucketPair.first == newIndex) {
-                    stateQueue.push(actualIndexBucketPair.second);
-                    stateInformation.reachableStates.push_back(actualIndexBucketPair.second);
+                    stateQueue.push(state);
+                    stateInformation.reachableStates.push_back(state);
                 }
                 
                 return actualIndexBucketPair.first;
@@ -336,7 +336,7 @@ namespace storm {
                 return result;
             }
                         
-            static std::vector<Choice<ValueType>> getUnlabeledTransitions(storm::prism::Program const& program, StateInformation& stateInformation, VariableInformation const& variableInformation, storm::storage::BitVector const& currentState, storm::expressions::ExprtkExpressionEvaluator const& evaluator, std::queue<std::size_t>& stateQueue) {
+            static std::vector<Choice<ValueType>> getUnlabeledTransitions(storm::prism::Program const& program, StateInformation& stateInformation, VariableInformation const& variableInformation, storm::storage::BitVector const& currentState, storm::expressions::ExprtkExpressionEvaluator const& evaluator, std::queue<storm::storage::BitVector>& stateQueue) {
                 std::vector<Choice<ValueType>> result;
 
                 // Iterate over all modules.
@@ -382,7 +382,7 @@ namespace storm {
                 return result;
             }
             
-            static std::vector<Choice<ValueType>> getLabeledTransitions(storm::prism::Program const& program, StateInformation& stateInformation, VariableInformation const& variableInformation, storm::storage::BitVector const& currentState, storm::expressions::ExprtkExpressionEvaluator const& evaluator, std::queue<std::size_t>& stateQueue) {
+            static std::vector<Choice<ValueType>> getLabeledTransitions(storm::prism::Program const& program, StateInformation& stateInformation, VariableInformation const& variableInformation, storm::storage::BitVector const& currentState, storm::expressions::ExprtkExpressionEvaluator const& evaluator, std::queue<storm::storage::BitVector>& stateQueue) {
                 std::vector<Choice<ValueType>> result;
                 
                 for (uint_fast64_t actionIndex : program.getActionIndices()) {
@@ -495,7 +495,7 @@ namespace storm {
                 std::vector<boost::container::flat_set<uint_fast64_t>> choiceLabels;
                 
                 // Initialize a queue and insert the initial state.
-                std::queue<std::size_t> stateQueue;
+                std::queue<storm::storage::BitVector> stateQueue;
                 StateType initialState(stateInformation.bitsPerState);
                 
                 // We need to initialize the values of the variables to their initial value.
@@ -515,9 +515,9 @@ namespace storm {
                 storm::expressions::ExprtkExpressionEvaluator evaluator(program.getManager());
                 while (!stateQueue.empty()) {
                     // Get the current state and unpack it.
-                    std::size_t currentStateBucket = stateQueue.front();
-                    std::pair<storm::storage::BitVector, uint32_t> stateValuePair = stateInformation.stateToIndexMap.getBucketAndValue(currentStateBucket);
-                    storm::storage::BitVector const& currentState = stateValuePair.first;
+                    storm::storage::BitVector currentState = stateQueue.front();
+                    stateQueue.pop();
+                    ValueType stateIndex = stateInformation.stateToIndexMap.getValue(currentState);
                     unpackStateIntoEvaluator(currentState, variableInformation, evaluator);
             
                     // Retrieve all choices for the current state.
@@ -532,7 +532,7 @@ namespace storm {
                         if (!storm::settings::generalSettings().isDontFixDeadlocksSet()) {
                             // Insert empty choice labeling for added self-loop transitions.
                             choiceLabels.push_back(boost::container::flat_set<uint_fast64_t>());
-                            transitionMatrixBuilder.addNextValue(currentRow, stateValuePair.second, storm::utility::one<ValueType>());
+                            transitionMatrixBuilder.addNextValue(currentRow, stateIndex, storm::utility::one<ValueType>());
                             ++currentRow;
                         } else {
                             LOG4CPLUS_ERROR(logger, "Error while creating sparse matrix from probabilistic program: found deadlock state. For fixing these, please provide the appropriate option.");
@@ -649,8 +649,6 @@ namespace storm {
                             }
                         }
                     }
-                    
-                    stateQueue.pop();
                 }
                 
                 return choiceLabels;
@@ -743,7 +741,7 @@ namespace storm {
                     result.addAtomicProposition(label.getName());
                 }
                 for (uint_fast64_t index = 0; index < stateInformation.reachableStates.size(); index++) {
-                    unpackStateIntoEvaluator(stateInformation.stateToIndexMap.getBucketAndValue(stateInformation.reachableStates[index]).first, variableInformation, evaluator);
+                    unpackStateIntoEvaluator(stateInformation.reachableStates[index], variableInformation, evaluator);
                     for (auto const& label : labels) {
                         // Add label to state, if the corresponding expression is true.
                         if (evaluator.asBool(label.getStatePredicateExpression())) {
@@ -774,7 +772,7 @@ namespace storm {
                 std::vector<ValueType> result(stateInformation.reachableStates.size());
                 for (uint_fast64_t index = 0; index < stateInformation.reachableStates.size(); index++) {
                     result[index] = storm::utility::zero<ValueType>();
-                    unpackStateIntoEvaluator(stateInformation.stateToIndexMap.getBucketAndValue(stateInformation.reachableStates[index]).first, variableInformation, evaluator);
+                    unpackStateIntoEvaluator(stateInformation.reachableStates[index], variableInformation, evaluator);
                     for (auto const& reward : rewards) {
                         
                         // Add this reward to the state if the state is included in the state reward.

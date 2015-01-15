@@ -40,6 +40,8 @@ namespace storm {
             ++currentSizeIterator;
             STORM_LOG_ASSERT(currentSizeIterator != sizes.end(), "Hash map became to big.");
             
+            // Create new containers and swap them with the old ones.
+            numberOfElements = 0;
             storm::storage::BitVector oldBuckets(bucketSize * *currentSizeIterator);
             std::swap(oldBuckets, buckets);
             storm::storage::BitVector oldOccupied = storm::storage::BitVector(*currentSizeIterator);
@@ -48,40 +50,87 @@ namespace storm {
             std::swap(oldValues, values);
             
             // Now iterate through the elements and reinsert them in the new storage.
-            numberOfElements = 0;
-            for (auto const& bucketIndex : oldOccupied) {
-                this->findOrAdd(oldBuckets.get(bucketIndex * bucketSize, bucketSize), oldValues[bucketIndex]);
+            bool fail = false;
+            for (auto bucketIndex : oldOccupied) {
+                fail = !this->insertWithoutIncreasingSize(oldBuckets.get(bucketIndex * bucketSize, bucketSize), oldValues[bucketIndex]);
+                
+                // If we failed to insert just one element, we have to redo the procedure with a larger container size.
+                if (fail) {
+                    break;
+                }
+            }
+            
+            uint_fast64_t failCount = 0;
+            while (fail) {
+                ++failCount;
+                STORM_LOG_ASSERT(failCount < 10, "Increasing size failed too often.");
+                
+                ++currentSizeIterator;
+                STORM_LOG_ASSERT(currentSizeIterator != sizes.end(), "Hash map became to big.");
+                
+                numberOfElements = 0;
+                buckets = storm::storage::BitVector(bucketSize * *currentSizeIterator);
+                occupied  = storm::storage::BitVector(*currentSizeIterator);
+                values = std::vector<ValueType>(*currentSizeIterator);
+                
+                for (auto bucketIndex : oldOccupied) {
+                    fail = !this->insertWithoutIncreasingSize(oldBuckets.get(bucketIndex * bucketSize, bucketSize), oldValues[bucketIndex]);
+                    
+                    // If we failed to insert just one element, we have to redo the procedure with a larger container size.
+                    if (fail) {
+                        continue;
+                    }
+                }
             }
         }
         
         template<class ValueType, class Hash1, class Hash2>
-        ValueType BitVectorHashMap<ValueType, Hash1, Hash2>::findOrAdd(storm::storage::BitVector const& key, ValueType value) {
+        bool BitVectorHashMap<ValueType, Hash1, Hash2>::insertWithoutIncreasingSize(storm::storage::BitVector const& key, ValueType const& value) {
+            std::tuple<bool, std::size_t, bool> flagBucketTuple = this->findBucketToInsert<false>(key);
+            if (std::get<2>(flagBucketTuple)) {
+                return false;
+            }
+            
+            if (std::get<0>(flagBucketTuple)) {
+                return true;
+            } else {
+                // Insert the new bits into the bucket.
+                buckets.set(std::get<1>(flagBucketTuple) * bucketSize, key);
+                occupied.set(std::get<1>(flagBucketTuple));
+                values[std::get<1>(flagBucketTuple)] = value;
+                ++numberOfElements;
+                return true;
+            }
+        }
+        
+        template<class ValueType, class Hash1, class Hash2>
+        ValueType BitVectorHashMap<ValueType, Hash1, Hash2>::findOrAdd(storm::storage::BitVector const& key, ValueType const& value) {
             return findOrAddAndGetBucket(key, value).first;
         }
         
         template<class ValueType, class Hash1, class Hash2>
-        std::pair<ValueType, std::size_t> BitVectorHashMap<ValueType, Hash1, Hash2>::findOrAddAndGetBucket(storm::storage::BitVector const& key, ValueType value) {
+        std::pair<ValueType, std::size_t> BitVectorHashMap<ValueType, Hash1, Hash2>::findOrAddAndGetBucket(storm::storage::BitVector const& key, ValueType const& value) {
             // If the load of the map is too high, we increase the size.
             if (numberOfElements >= loadFactor * *currentSizeIterator) {
                 this->increaseSize();
             }
             
-            std::pair<bool, std::size_t> flagBucketPair = this->findBucket(key);
-            if (flagBucketPair.first) {
-                return std::make_pair(values[flagBucketPair.second], flagBucketPair.second);
+            std::tuple<bool, std::size_t, bool> flagBucketTuple = this->findBucketToInsert<true>(key);
+            STORM_LOG_ASSERT(!std::get<2>(flagBucketTuple), "Failed to find bucket for insertion.");
+            if (std::get<0>(flagBucketTuple)) {
+                return std::make_pair(values[std::get<1>(flagBucketTuple)], std::get<1>(flagBucketTuple));
             } else {
                 // Insert the new bits into the bucket.
-                buckets.set(flagBucketPair.second * bucketSize, key);
-                occupied.set(flagBucketPair.second);
-                values[flagBucketPair.second] = value;
+                buckets.set(std::get<1>(flagBucketTuple) * bucketSize, key);
+                occupied.set(std::get<1>(flagBucketTuple));
+                values[std::get<1>(flagBucketTuple)] = value;
                 ++numberOfElements;
-                return std::make_pair(value, flagBucketPair.second);
+                return std::make_pair(value, std::get<1>(flagBucketTuple));
             }
         }
         
         template<class ValueType, class Hash1, class Hash2>
         ValueType BitVectorHashMap<ValueType, Hash1, Hash2>::getValue(storm::storage::BitVector const& key) const {
-            std::cout << "calling getValue with key " << key << std::endl;
             std::pair<bool, std::size_t> flagBucketPair = this->findBucket(key);
             STORM_LOG_ASSERT(flagBucketPair.first, "Unknown key.");
             return flagBucketPair.second;
@@ -91,16 +140,50 @@ namespace storm {
         std::pair<bool, std::size_t> BitVectorHashMap<ValueType, Hash1, Hash2>::findBucket(storm::storage::BitVector const& key) const {
             uint_fast64_t initialHash = hasher1(key) % *currentSizeIterator;
             uint_fast64_t bucket = initialHash;
-            
+
+            uint_fast64_t counter = 0;
             while (isBucketOccupied(bucket)) {
+                ++counter;
                 if (buckets.matches(bucket * bucketSize, key)) {
                     return std::make_pair(true, bucket);
                 }
                 bucket += hasher2(key);
                 bucket %= *currentSizeIterator;
+                
+                if (bucket == initialHash) {
+                    return std::make_pair(false, bucket);
+                }
             }
 
             return std::make_pair(false, bucket);
+        }
+        
+        template<class ValueType, class Hash1, class Hash2>
+        template<bool increaseStorage>
+        std::tuple<bool, std::size_t, bool> BitVectorHashMap<ValueType, Hash1, Hash2>::findBucketToInsert(storm::storage::BitVector const& key) {
+            uint_fast64_t initialHash = hasher1(key) % *currentSizeIterator;
+            uint_fast64_t bucket = initialHash;
+            
+            uint_fast64_t counter = 0;
+            while (isBucketOccupied(bucket)) {
+                ++counter;
+                if (buckets.matches(bucket * bucketSize, key)) {
+                    return std::make_tuple(true, bucket, false);
+                }
+                bucket += hasher2(key);
+                bucket %= *currentSizeIterator;
+                
+                if (bucket == initialHash) {
+                    if (increaseStorage) {
+                        this->increaseSize();
+                        bucket = initialHash = hasher1(key) % *currentSizeIterator;
+                    } else {
+                        return std::make_tuple(false, bucket, true);
+                    }
+                }
+            }
+            
+            return std::make_tuple(false, bucket, false);
         }
         
         template<class ValueType, class Hash1, class Hash2>

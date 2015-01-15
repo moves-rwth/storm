@@ -105,7 +105,7 @@ namespace storm {
              * @param length The number of bits the bit vector should be able to hold.
              * @param init The initial value of the first |length| bits.
              */
-            BitVector(uint_fast64_t length, bool init = false);
+            explicit BitVector(uint_fast64_t length, bool init = false);
             
             /*!
              * Creates a bit vector that has exactly the bits set that are given by the provided input iterator range
@@ -425,13 +425,6 @@ namespace storm {
              */
             const_iterator end() const;
             
-            /*!
-             * Calculates a hash value for this bit vector.
-             *
-             * @return The hash value of this bit vector.
-             */
-            std::size_t hash() const;
-            
             /*
              * Retrieves the index of the bit that is the next bit set to true in the bit vector. If there is none,
              * this function returns the number of bits this vector holds in total. Put differently, if the return
@@ -445,6 +438,7 @@ namespace storm {
             
             friend std::ostream& operator<<(std::ostream& out, BitVector const& bitVector);
             friend struct std::hash<storm::storage::BitVector>;
+            friend struct NonZeroBitVectorHash;
             
         private:
             /*!
@@ -486,6 +480,11 @@ namespace storm {
             
             // A bit mask that can be used to reduce a modulo 64 operation to a logical "and".
             static const uint_fast64_t mod64mask = (1 << 6) - 1;
+        };
+        
+        // A hashing functor that guarantees that the result of the hash is never going to be -1.
+        struct NonZeroBitVectorHash {
+            std::size_t operator()(storm::storage::BitVector const& bv) const;
         };
         
     } // namespace storage
