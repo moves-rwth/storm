@@ -133,7 +133,7 @@ namespace storm {
         ValueType BitVectorHashMap<ValueType, Hash1, Hash2>::getValue(storm::storage::BitVector const& key) const {
             std::pair<bool, std::size_t> flagBucketPair = this->findBucket(key);
             STORM_LOG_ASSERT(flagBucketPair.first, "Unknown key.");
-            return flagBucketPair.second;
+            return values[flagBucketPair.second];
         }
         
         template<class ValueType, class Hash1, class Hash2>

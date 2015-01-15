@@ -2,7 +2,6 @@
 #define	STORM_ADAPTERS_EXPLICITPRISMMODELBUILDER_H
 
 #include <memory>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 #include <queue>
@@ -10,23 +9,18 @@
 #include <boost/functional/hash.hpp>
 #include <boost/container/flat_set.hpp>
 #include <boost/container/flat_map.hpp>
-#include <boost/algorithm/string.hpp>
 
 #include "src/storage/prism/Program.h"
 #include "src/storage/expressions/SimpleValuation.h"
 #include "src/storage/expressions/ExprtkExpressionEvaluator.h"
 #include "src/storage/BitVectorHashMap.h"
-#include "src/utility/PrismUtility.h"
 #include "src/models/AbstractModel.h"
-#include "src/models/Dtmc.h"
-#include "src/models/Ctmc.h"
-#include "src/models/Mdp.h"
-#include "src/models/Ctmdp.h"
 #include "src/models/AtomicPropositionsLabeling.h"
 #include "src/storage/SparseMatrix.h"
 #include "src/settings/SettingsManager.h"
-#include "src/utility/macros.h"
-#include "src/exceptions/WrongFormatException.h"
+
+#include "src/utility/ConstantsComparator.h"
+#include "src/utility/PrismUtility.h"
 
 namespace storm {
     namespace builder {
@@ -122,7 +116,7 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> transitionRewardMatrix;
                 
                 // A vector that stores a labeling for each choice.
-                std::vector<boost::container::flat_set<uint_fast64_t>> choiceLabeling;
+                boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> choiceLabeling;
             };
             
             /*!
@@ -135,7 +129,7 @@ namespace storm {
              * @param rewardModel The reward model that is to be built.
              * @return The explicit model that was given by the probabilistic program.
              */
-            static std::unique_ptr<storm::models::AbstractModel<ValueType>> translateProgram(storm::prism::Program program, bool rewards = true, std::string const& rewardModelName = "", std::string const& constantDefinitionString = "");
+            static std::unique_ptr<storm::models::AbstractModel<ValueType>> translateProgram(storm::prism::Program program, bool commandLabels = false, bool rewards = true, std::string const& rewardModelName = "", std::string const& constantDefinitionString = "");
             
         private:
             static void unpackStateIntoEvaluator(storm::storage::BitVector const& currentState, VariableInformation const& variableInformation, storm::expressions::ExprtkExpressionEvaluator& evaluator);
@@ -192,9 +186,9 @@ namespace storm {
              */
             static boost::optional<std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>>> getActiveCommandsByActionIndex(storm::prism::Program const& program,storm::expressions::ExprtkExpressionEvaluator const& evaluator, uint_fast64_t const& actionIndex);
                         
-            static std::vector<Choice<ValueType>> getUnlabeledTransitions(storm::prism::Program const& program, StateInformation& stateInformation, VariableInformation const& variableInformation, storm::storage::BitVector const& currentState, storm::expressions::ExprtkExpressionEvaluator const& evaluator, std::queue<storm::storage::BitVector>& stateQueue);
+            static std::vector<Choice<ValueType>> getUnlabeledTransitions(storm::prism::Program const& program, bool discreteTimeModel, StateInformation& stateInformation, VariableInformation const& variableInformation, storm::storage::BitVector const& currentState, bool choiceLabeling, storm::expressions::ExprtkExpressionEvaluator const& evaluator, std::queue<storm::storage::BitVector>& stateQueue, storm::utility::ConstantsComparator<ValueType> const& comparator);
             
-            static std::vector<Choice<ValueType>> getLabeledTransitions(storm::prism::Program const& program, StateInformation& stateInformation, VariableInformation const& variableInformation, storm::storage::BitVector const& currentState, storm::expressions::ExprtkExpressionEvaluator const& evaluator, std::queue<storm::storage::BitVector>& stateQueue);
+            static std::vector<Choice<ValueType>> getLabeledTransitions(storm::prism::Program const& program, bool discreteTimeModel, StateInformation& stateInformation, VariableInformation const& variableInformation, storm::storage::BitVector const& currentState, bool choiceLabeling, storm::expressions::ExprtkExpressionEvaluator const& evaluator, std::queue<storm::storage::BitVector>& stateQueue, storm::utility::ConstantsComparator<ValueType> const& comparator);
             /*!
              * Builds the transition matrix and the transition reward matrix based for the given program.
              *
@@ -211,7 +205,7 @@ namespace storm {
              * @return A tuple containing a vector with all rows at which the nondeterministic choices of each state begin
              * and a vector containing the labels associated with each choice.
              */
-            static std::vector<boost::container::flat_set<uint_fast64_t>> buildMatrices(storm::prism::Program const& program, VariableInformation const& variableInformation, std::vector<storm::prism::TransitionReward> const& transitionRewards, StateInformation& stateInformation, bool deterministicModel, storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, storm::storage::SparseMatrixBuilder<ValueType>& transitionRewardMatrixBuilder);
+            static boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> buildMatrices(storm::prism::Program const& program, VariableInformation const& variableInformation, std::vector<storm::prism::TransitionReward> const& transitionRewards, StateInformation& stateInformation, bool commandLabels, bool deterministicModel, bool discreteTimeModel, storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, storm::storage::SparseMatrixBuilder<ValueType>& transitionRewardMatrixBuilder);
             
             /*!
              * Explores the state space of the given program and returns the components of the model as a result.
@@ -220,7 +214,7 @@ namespace storm {
              * @param rewardModel The reward model that is to be considered.
              * @return A structure containing the components of the resulting model.
              */
-            static ModelComponents buildModelComponents(storm::prism::Program const& program, storm::prism::RewardModel const& rewardModel);
+            static ModelComponents buildModelComponents(storm::prism::Program const& program, storm::prism::RewardModel const& rewardModel, bool commandLabels = false);
             
             /*!
              * Builds the state labeling for the given program.

@@ -266,7 +266,7 @@ namespace storm {
                     storm::prism::Program program = storm::parser::PrismParser::parse(programFile);
                     
                     // Then, build the model from the symbolic description.
-                    result = storm::adapters::ExplicitPrismModelBuilder<double>::translateProgram(program, true, settings.isSymbolicRewardModelNameSet() ? settings.getSymbolicRewardModelName() : "", constants);
+                    result = storm::builder::ExplicitPrismModelBuilder<double>::translateProgram(program, storm::settings::counterexampleGeneratorSettings().isMinimalCommandSetGenerationSet(), true, settings.isSymbolicRewardModelNameSet() ? settings.getSymbolicRewardModelName() : "", constants);
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No input model.");
                 }

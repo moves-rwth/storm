@@ -1,7 +1,12 @@
 #ifndef STORM_UTILITY_PRISMUTILITY
 #define STORM_UTILITY_PRISMUTILITY
 
+#include <memory>
+#include <boost/algorithm/string.hpp>
+
+#include "src/storage/expressions/ExpressionManager.h"
 #include "src/storage/prism/Program.h"
+#include "src/utility/OsDetection.h"
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidArgumentException.h"
 
@@ -12,9 +17,18 @@ namespace storm {
             template<typename ValueType, typename KeyType=uint32_t, typename Compare=std::less<uint32_t>>
             struct Choice {
             public:
-                Choice(uint_fast64_t actionIndex = 0) : distribution(), actionIndex(actionIndex), choiceLabels() {
-                    // Intentionally left empty.
+                Choice(uint_fast64_t actionIndex = 0, bool createChoiceLabels = false) : distribution(), actionIndex(actionIndex), choiceLabels(nullptr) {
+                    if (createChoiceLabels) {
+                        choiceLabels = std::shared_ptr<boost::container::flat_set<uint_fast64_t>>(new boost::container::flat_set<uint_fast64_t>());
+                    }
                 }
+                
+                Choice(Choice const& other) = default;
+                Choice& operator=(Choice const& other) = default;
+#ifndef WINDOWS
+                Choice(Choice&& other) = default;
+                Choice& operator=(Choice&& other) = default;
+#endif
                 
                 /*!
                  * Returns an iterator to the first element of this choice.
@@ -83,7 +97,7 @@ namespace storm {
                  * @param label The label to associate with this choice.
                  */
                 void addChoiceLabel(uint_fast64_t label) {
-                    choiceLabels.insert(label);
+                    choiceLabels->insert(label);
                 }
                 
                 /*!
@@ -103,7 +117,7 @@ namespace storm {
                  * @return The set of labels associated with this choice.
                  */
                 boost::container::flat_set<uint_fast64_t> const& getChoiceLabels() const {
-                    return choiceLabels;
+                    return *choiceLabels;
                 }
                 
                 /*!
@@ -159,7 +173,7 @@ namespace storm {
                 uint_fast64_t actionIndex;
                 
                 // The labels that are associated with this choice.
-                boost::container::flat_set<uint_fast64_t> choiceLabels;
+                std::shared_ptr<boost::container::flat_set<uint_fast64_t>> choiceLabels;
             };
             
             static std::map<storm::expressions::Variable, storm::expressions::Expression> parseConstantDefinitionString(storm::prism::Program const& program, std::string const& constantDefinitionString) {
