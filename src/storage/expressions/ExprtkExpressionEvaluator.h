@@ -1,18 +1,17 @@
-#ifndef STORM_STORAGE_EXPRESSIONS_EXPRESSIONEVALUATOR_H_
-#define STORM_STORAGE_EXPRESSIONS_EXPRESSIONEVALUATOR_H_
+#ifndef STORM_STORAGE_EXPRESSIONS_EXPRTKEXPRESSIONEVALUATOR_H_
+#define STORM_STORAGE_EXPRESSIONS_EXPRTKEXPRESSIONEVALUATOR_H_
 
 #include <unordered_map>
 #include <vector>
 
-#include "exprtk.hpp"
+#include "src/storage/expressions/ExpressionEvaluatorBase.h"
 
-#include "src/storage/expressions/Expression.h"
-#include "src/storage/expressions/ExpressionVisitor.h"
+#include "exprtk.hpp"
 #include "src/storage/expressions/ToExprtkStringVisitor.h"
 
 namespace storm {
     namespace expressions {
-        class ExprtkExpressionEvaluator {
+        class ExprtkExpressionEvaluator : public ExpressionEvaluatorBase {
         public:
             /*!
              * Creates an expression evaluator that is capable of evaluating expressions managed by the given manager.
@@ -40,10 +39,7 @@ namespace storm {
              * @param expression The expression that is to be compiled.
              */
             CompiledExpressionType& getCompiledExpression(BaseExpression const* expression) const;
-            
-            // The expression manager that is used by this evaluator.
-            std::shared_ptr<storm::expressions::ExpressionManager const> manager;
-            
+                        
             // The parser used.
             mutable exprtk::parser<ValueType> parser;
             
@@ -61,4 +57,4 @@ namespace storm {
     }
 }
 
-#endif /* STORM_STORAGE_EXPRESSIONS_EXPRESSIONEVALUATOR_H_ */
+#endif /* STORM_STORAGE_EXPRESSIONS_EXPRTKEXPRESSIONEVALUATOR_H_ */
