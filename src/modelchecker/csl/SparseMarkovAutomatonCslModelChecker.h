@@ -476,13 +476,12 @@ namespace storm {
                     solver->setModelSense(min ? storm::solver::LpSolver::ModelSense::Maximize : storm::solver::LpSolver::ModelSense::Minimize);
                     
                     // First, we need to create the variables for the problem.
-                    std::map<uint_fast64_t, std::string> stateToVariableNameMap;
+                    std::map<uint_fast64_t, storm::expressions::Variable> stateToVariableMap;
                     for (auto const& stateChoicesPair : mec) {
                         std::string variableName = "x" + std::to_string(stateChoicesPair.first);
-                        stateToVariableNameMap[stateChoicesPair.first] = variableName;
-                        solver->addUnboundedContinuousVariable(variableName);
+                        stateToVariableMap[stateChoicesPair.first] = solver->addUnboundedContinuousVariable(variableName);
                     }
-                    solver->addUnboundedContinuousVariable("k", 1);
+                    storm::expressions::Variable k = solver->addUnboundedContinuousVariable("k", 1);
                     solver->update();
                     
                     // Now we encode the problem as constraints.
@@ -491,14 +490,14 @@ namespace storm {
                         
                         // Now, based on the type of the state, create a suitable constraint.
                         if (markovianStates.get(state)) {
-                            storm::expressions::Expression constraint = storm::expressions::Expression::createDoubleVariable(stateToVariableNameMap.at(state));
+                            storm::expressions::Expression constraint = stateToVariableMap.at(state);
                             
                             for (auto element : transitionMatrix.getRow(nondeterministicChoiceIndices[state])) {
-                                constraint = constraint - storm::expressions::Expression::createDoubleVariable(stateToVariableNameMap.at(element.getColumn())) * storm::expressions::Expression::createDoubleLiteral(element.getValue());
+                                constraint = constraint - stateToVariableMap.at(element.getColumn()) * solver->getConstant(element.getValue());
                             }
                             
-                            constraint = constraint + storm::expressions::Expression::createDoubleLiteral(storm::utility::constantOne<ValueType>() / exitRates[state]) * storm::expressions::Expression::createDoubleVariable("k");
-                            storm::expressions::Expression rightHandSide = goalStates.get(state) ? storm::expressions::Expression::createDoubleLiteral(storm::utility::constantOne<ValueType>() / exitRates[state]) : storm::expressions::Expression::createDoubleLiteral(storm::utility::constantZero<ValueType>());
+                            constraint = constraint + solver->getConstant(storm::utility::constantOne<ValueType>() / exitRates[state]) * k;
+                            storm::expressions::Expression rightHandSide = goalStates.get(state) ? solver->getConstant(storm::utility::constantOne<ValueType>() / exitRates[state]) : solver->getConstant(0);
                             if (min) {
                                 constraint = constraint <= rightHandSide;
                             } else {
@@ -509,13 +508,13 @@ namespace storm {
                             // For probabilistic states, we want to add the constraint x_s <= sum P(s, a, s') * x_s' where a is the current action
                             // and the sum ranges over all states s'.
                             for (auto choice : stateChoicesPair.second) {
-                                storm::expressions::Expression constraint = storm::expressions::Expression::createDoubleVariable(stateToVariableNameMap.at(state));
+                                storm::expressions::Expression constraint = stateToVariableMap.at(state);
 
                                 for (auto element : transitionMatrix.getRow(choice)) {
-                                    constraint = constraint - storm::expressions::Expression::createDoubleVariable(stateToVariableNameMap.at(element.getColumn())) *  storm::expressions::Expression::createDoubleLiteral(element.getValue());
+                                    constraint = constraint - stateToVariableMap.at(element.getColumn()) * solver->getConstant(element.getValue());
                                 }
                                 
-                                storm::expressions::Expression rightHandSide = storm::expressions::Expression::createDoubleLiteral(storm::utility::constantZero<ValueType>());
+                                storm::expressions::Expression rightHandSide = solver->getConstant(storm::utility::constantZero<ValueType>());
                                 if (min) {
                                     constraint = constraint <= rightHandSide;
                                 } else {
@@ -527,7 +526,7 @@ namespace storm {
                     }
                     
                     solver->optimize();
-                    return solver->getContinuousValue("k");
+                    return solver->getContinuousValue(k);
                 }
                 
                 /*!

@@ -19,10 +19,8 @@
 #include <limits>
 
 #include "src/exceptions/InvalidArgumentException.h"
-#include "src/storage/BitVector.h"
-#include "src/storage/LabeledValues.h"
+
 #include "src/settings/SettingsManager.h"
-#include "src/storage/parameters.h"
 
 namespace storm {
 
@@ -75,15 +73,6 @@ inline double constantZero() {
    return 0.0;
 }
     
-/*!
- * Template specialization for LabeledValues.
- * @return A LabeledValues object that represents a value of 0.
- */
-template<>
-inline storm::storage::LabeledValues<double> constantZero() {
-    return storm::storage::LabeledValues<double>(0.0);
-}
-
 /*! @endcond */
 
 /*!
@@ -133,15 +122,6 @@ inline double constantOne() {
    return 1.0;
 }
 
-/*!
- * Template specialization for LabeledValues.
- * @return A LabeledValues object that represents a value of 1.
- */
-template<>
-inline storm::storage::LabeledValues<double> constantOne() {
-    return storm::storage::LabeledValues<double>(1.0);
-}
-    
 /*! @endcond */
 
 /*!
@@ -193,15 +173,6 @@ inline double constantInfinity() {
    return std::numeric_limits<double>::infinity();
 }
 
-/*!
- * Template specialization for LabeledValues.
- * @return Value Infinity, fit to the type LabeledValues.
- */
-template<>
-inline storm::storage::LabeledValues<double> constantInfinity() {
-    return storm::storage::LabeledValues<double>(std::numeric_limits<double>::infinity());
-}
-    
 /*! @endcond */
 
 template<typename T>
@@ -209,78 +180,6 @@ inline bool isConstant(T const& v)
 {
 	return true;
 }
-
-
-#ifdef PARAMETRIC_SYSTEMS
-template<>
-inline bool isConstant(storm::RationalFunction const& r)
-{
-	return r.isConstant();
-}
-
-template<>
-inline bool isConstant(storm::Polynomial const& p)
-{
-	return p.isConstant();
-}
-#endif
-
-
-
-template<typename T>
-inline bool isZero(T const& v)
-{
-	return v == T(0);
-}
-
-template<>
-inline bool isZero(double const& d)
-{
-	double precision = storm::settings::generalSettings().getPrecision();
-	return std::abs(d) < precision;
-}
-
-#ifdef PARAMETRIC_SYSTEMS
-template<>
-inline bool isZero(storm::RationalFunction const& r)
-{
-	return r.isZero();
-}
-
-template<>
-inline bool isZero(storm::Polynomial const& p)
-{
-	return p.isZero();
-}
-#endif
-
-template<typename T>
-inline bool isOne(T const& sum)
-{
-	return sum == T(1);
-}
-
-#ifdef PARAMETRIC_SYSTEMS
-template<>
-inline bool isOne(storm::RationalFunction const& r)
-{
-	return r.isOne();
-}
-
-template<>
-inline bool isOne(storm::Polynomial const& p)
-{
-	return p.isOne();
-}
-#endif
-
-template<>
-inline bool isOne(double const& sum)
-{
-	double precision = storm::settings::generalSettings().getPrecision();
-	return std::abs(sum - 1) < precision;
-}
-
 
 } //namespace utility
 

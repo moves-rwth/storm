@@ -1,124 +1,73 @@
 #ifndef STORM_STORAGE_EXPRESSIONS_SIMPLEVALUATION_H_
 #define STORM_STORAGE_EXPRESSIONS_SIMPLEVALUATION_H_
 
-#include <boost/container/flat_map.hpp>
-#include <boost/variant.hpp>
+#include <cstdint>
+#include <vector>
 #include <iostream>
 
 #include "src/storage/expressions/Valuation.h"
-#include "src/storage/expressions/ExpressionReturnType.h"
-#include "src/utility/OsDetection.h"
 
 namespace storm {
     namespace expressions {
+        
+        /*!
+         * A simple implementation of the valuation interface.
+         */
         class SimpleValuation : public Valuation {
         public:
             friend class SimpleValuationPointerHash;
             friend class SimpleValuationPointerLess;
-            
-            typedef boost::container::flat_map<std::string, boost::variant<bool, int_fast64_t, double>> map_type;
-            
-            // Instantiate some constructors and assignments with their default implementations.
-            SimpleValuation() = default;
-            SimpleValuation(SimpleValuation const&) = default;
-            SimpleValuation& operator=(SimpleValuation const&) = default;
-#ifndef WINDOWS            
-			SimpleValuation(SimpleValuation&&) = default;
-            SimpleValuation& operator=(SimpleValuation&&) = default;
-#endif
-            virtual ~SimpleValuation() = default;
 
             /*!
-             * Compares two simple valuations wrt. equality.
+             * Creates an empty simple valuation that is associated to no manager and has no variables.
+             */
+            SimpleValuation();
+            
+            /*!
+             * Creates a new valuation over the non-auxiliary variables of the given manager.
+             *
+             * @param manager The manager responsible for the variables of this valuation.
+             */
+            SimpleValuation(std::shared_ptr<storm::expressions::ExpressionManager const> const& manager);
+            
+            // Define deep-copy and move operators.
+            SimpleValuation(SimpleValuation const& other);
+            SimpleValuation& operator=(SimpleValuation const& other);
+            SimpleValuation(SimpleValuation&& other);
+            SimpleValuation& operator=(SimpleValuation&& other);
+
+            /*!
+             * Checks whether the two valuations are semantically equivalent.
+             *
+             * @param other The valuation with which to compare.
+             * @return True iff the two valuations are semantically equivalent.
              */
             bool operator==(SimpleValuation const& other) const;
             
-            /*!
-             * Adds a boolean identifier with the given name.
-             *
-             * @param name The name of the boolean identifier to add.
-             * @param initialValue The initial value of the identifier.
-             */
-            void addBooleanIdentifier(std::string const& name, bool initialValue = false);
+            // Override virtual functions of base class.
+            virtual bool getBooleanValue(Variable const& booleanVariable) const override;
+            virtual void setBooleanValue(Variable const& booleanVariable, bool value) override;
+            virtual int_fast64_t getIntegerValue(Variable const& integerVariable) const override;
+            virtual int_fast64_t getBitVectorValue(Variable const& bitVectorVariable) const override;
+            virtual void setIntegerValue(Variable const& integerVariable, int_fast64_t value) override;
+            virtual void setBitVectorValue(Variable const& bitVectorVariable, int_fast64_t value) override;
+            virtual double getRationalValue(Variable const& rationalVariable) const override;
+            virtual void setRationalValue(Variable const& rationalVariable, double value) override;
             
-            /*!
-             * Adds a integer identifier with the given name.
-             *
-             * @param name The name of the integer identifier to add.
-             * @param initialValue The initial value of the identifier.
-             */
-            void addIntegerIdentifier(std::string const& name, int_fast64_t initialValue = 0);
-
-            /*!
-             * Adds a double identifier with the given name.
-             *
-             * @param name The name of the double identifier to add.
-             * @param initialValue The initial value of the identifier.
-             */
-            void addDoubleIdentifier(std::string const& name, double initialValue = 0);
+            friend std::ostream& operator<<(std::ostream& out, SimpleValuation const& valuation);
             
-            /*!
-             * Sets the value of the boolean identifier with the given name to the given value.
-             *
-             * @param name The name of the boolean identifier whose value to set.
-             * @param value The new value of the boolean identifier.
-             */
-            void setBooleanValue(std::string const& name, bool value);
-
-            /*!
-             * Sets the value of the integer identifier with the given name to the given value.
-             *
-             * @param name The name of the integer identifier whose value to set.
-             * @param value The new value of the integer identifier.
-             */
-            void setIntegerValue(std::string const& name, int_fast64_t value);
-
-            /*!
-             * Sets the value of the double identifier with the given name to the given value.
-             *
-             * @param name The name of the double identifier whose value to set.
-             * @param value The new value of the double identifier.
-             */
-            void setDoubleValue(std::string const& name, double value);
-            
-            /*!
-             * Removes the given identifier from this valuation.
-             *
-             * @param name The name of the identifier that is to be removed.
-             */
-            void removeIdentifier(std::string const& name);
-
-            /*!
-             * Retrieves the type of the identifier with the given name.
-             *
-             * @param name The name of the identifier whose type to retrieve.
-             * @return The type of the identifier with the given name.
-             */
-            ExpressionReturnType getIdentifierType(std::string const& name) const;
-            
-            // Override base class methods.
-            virtual bool containsBooleanIdentifier(std::string const& name) const override;
-            virtual bool containsIntegerIdentifier(std::string const& name) const override;
-            virtual bool containsDoubleIdentifier(std::string const& name) const override;
-            virtual std::size_t getNumberOfIdentifiers() const override;
-            virtual std::set<std::string> getIdentifiers() const override;
-            virtual std::set<std::string> getBooleanIdentifiers() const override;
-            virtual std::set<std::string> getIntegerIdentifiers() const override;
-            virtual std::set<std::string> getDoubleIdentifiers() const override;
-            virtual bool getBooleanValue(std::string const& name) const override;
-            virtual int_fast64_t getIntegerValue(std::string const& name) const override;
-            virtual double getDoubleValue(std::string const& name) const override;
-            
-            friend std::ostream& operator<<(std::ostream& stream, SimpleValuation const& valuation);
-
         private:
-            // A mapping of boolean identifiers to their local indices in the value container.
-            boost::container::flat_map<std::string, boost::variant<bool, int_fast64_t, double>> identifierToValueMap;
+            // Containers that store the values of the variables of the appropriate type.
+            std::vector<bool> booleanValues;
+            std::vector<int_fast64_t> integerValues;
+            std::vector<double> rationalValues;
         };
         
+        std::ostream& operator<<(std::ostream& out, SimpleValuation const& valuation);
+        
         /*!
-         * A helper class that can pe used as the hash functor for data structures that need to hash a simple valuations
-         * given via pointers.
+         * A helper class that can pe used as the hash functor for data structures that need to hash valuations given
+         * via pointers.
          */
         class SimpleValuationPointerHash {
         public:
@@ -127,8 +76,8 @@ namespace storm {
         
         /*!
          * A helper class that can be used as the comparison functor wrt. equality for data structures that need to
-         * store pointers to a simple valuations and need to compare the elements wrt. their content (rather than
-         * pointer equality).
+         * store pointers to valuations and need to compare the elements wrt. their content (rather than pointer
+         * equality).
          */
         class SimpleValuationPointerCompare {
         public:
@@ -137,8 +86,8 @@ namespace storm {
         
         /*!
          * A helper class that can be used as the comparison functor wrt. "<" for data structures that need to
-         * store pointers to a simple valuations and need to compare the elements wrt. their content (rather than
-         * pointer equality).
+         * store pointers to valuations and need to compare the elements wrt. their content (rather than pointer
+         * equality).
          */
         class SimpleValuationPointerLess {
         public:

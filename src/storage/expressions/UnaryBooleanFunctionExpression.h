@@ -16,11 +16,12 @@ namespace storm {
             /*!
              * Creates a unary boolean function expression with the given return type, operand and operator.
              *
-             * @param returnType The return type of the expression.
+             * @param manager The manager responsible for this expression.
+             * @param type The return type of the expression.
              * @param operand The operand of the expression.
              * @param operatorType The operator of the expression.
              */
-            UnaryBooleanFunctionExpression(ExpressionReturnType returnType, std::shared_ptr<BaseExpression const> const& operand, OperatorType operatorType);
+            UnaryBooleanFunctionExpression(ExpressionManager const& manager, Type const& type, std::shared_ptr<BaseExpression const> const& operand, OperatorType operatorType);
 
             // Instantiate constructors and assignments with their default implementations.
             UnaryBooleanFunctionExpression(UnaryBooleanFunctionExpression const& other) = default;
@@ -35,7 +36,7 @@ namespace storm {
             virtual storm::expressions::OperatorType getOperator() const override;
             virtual bool evaluateAsBool(Valuation const* valuation = nullptr) const override;
             virtual std::shared_ptr<BaseExpression const> simplify() const override;
-            virtual void accept(ExpressionVisitor* visitor) const override;
+            virtual boost::any accept(ExpressionVisitor& visitor) const override;
 
             /*!
              * Retrieves the operator associated with this expression.

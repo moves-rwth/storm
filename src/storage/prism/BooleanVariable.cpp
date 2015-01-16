@@ -2,16 +2,12 @@
 
 namespace storm {
     namespace prism {
-        BooleanVariable::BooleanVariable(std::string const& variableName, std::string const& filename, uint_fast64_t lineNumber) : Variable(variableName, storm::expressions::Expression::createFalse(), true, filename, lineNumber) {
-            // Nothing to do here.
-        }
-
-        BooleanVariable::BooleanVariable(std::string const& variableName, storm::expressions::Expression const& initialValueExpression, std::string const& filename, uint_fast64_t lineNumber) : Variable(variableName, initialValueExpression, false, filename, lineNumber) {
+        BooleanVariable::BooleanVariable(storm::expressions::Variable const& variable, storm::expressions::Expression const& initialValueExpression, std::string const& filename, uint_fast64_t lineNumber) : Variable(variable, initialValueExpression, false, filename, lineNumber) {
             // Nothing to do here.
         }
         
-        BooleanVariable BooleanVariable::substitute(std::map<std::string, storm::expressions::Expression> const& substitution) const {
-            return BooleanVariable(this->getName(), this->getInitialValueExpression().substitute(substitution), this->getFilename(), this->getLineNumber());
+        BooleanVariable BooleanVariable::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
+            return BooleanVariable(this->getExpressionVariable(), this->getInitialValueExpression().substitute(substitution), this->getFilename(), this->getLineNumber());
         }
         
         std::ostream& operator<<(std::ostream& stream, BooleanVariable const& variable) {

@@ -11,6 +11,7 @@
 #include "src/storage/SparseMatrix.h"
 #include "src/storage/Scheduler.h"
 #include "src/storage/StronglyConnectedComponentDecomposition.h"
+#include "src/utility/ConstantsComparator.h"
 #include "src/utility/Hash.h"
 
 namespace storm {
@@ -181,7 +182,7 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
                 
                 // Now we can just enumerate all the target SCCs and insert the corresponding transitions.
                 for (auto targetBlock : allTargetBlocks) {
-                    dependencyGraphBuilder.addNextValue(currentBlockIndex, targetBlock, storm::utility::constantOne<T>());
+                    dependencyGraphBuilder.addNextValue(currentBlockIndex, targetBlock, storm::utility::one<T>());
                 }
             }
             

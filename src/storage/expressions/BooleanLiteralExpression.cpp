@@ -1,8 +1,9 @@
 #include "src/storage/expressions/BooleanLiteralExpression.h"
+#include "src/storage/expressions/ExpressionManager.h"
 
 namespace storm {
     namespace expressions {
-        BooleanLiteralExpression::BooleanLiteralExpression(bool value) : BaseExpression(ExpressionReturnType::Bool), value(value) {
+        BooleanLiteralExpression::BooleanLiteralExpression(ExpressionManager const& manager, bool value) : BaseExpression(manager, manager.getBooleanType()), value(value) {
             // Intentionally left empty.
         }
         
@@ -22,20 +23,16 @@ namespace storm {
             return this->getValue() == false;
         }
         
-        std::set<std::string> BooleanLiteralExpression::getVariables() const {
-            return std::set<std::string>();
-		}
-
-		std::map<std::string, ExpressionReturnType> BooleanLiteralExpression::getVariablesAndTypes() const {
-			return std::map<std::string, ExpressionReturnType>();
+        void BooleanLiteralExpression::gatherVariables(std::set<storm::expressions::Variable>& variables) const {
+            return;
 		}
         
         std::shared_ptr<BaseExpression const> BooleanLiteralExpression::simplify() const {
             return this->shared_from_this();
         }
         
-        void BooleanLiteralExpression::accept(ExpressionVisitor* visitor) const {
-            visitor->visit(this);
+        boost::any BooleanLiteralExpression::accept(ExpressionVisitor& visitor) const {
+            return visitor.visit(*this);
         }
         
         bool BooleanLiteralExpression::getValue() const {

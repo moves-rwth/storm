@@ -1,10 +1,14 @@
 #include "Update.h"
+
+#include <algorithm>
+
 #include "src/utility/macros.h"
 #include "src/exceptions/OutOfRangeException.h"
 
 namespace storm {
     namespace prism {
         Update::Update(uint_fast64_t globalIndex, storm::expressions::Expression const& likelihoodExpression, std::vector<storm::prism::Assignment> const& assignments, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), likelihoodExpression(likelihoodExpression), assignments(assignments), variableToAssignmentIndexMap(), globalIndex(globalIndex) {
+            std::sort(this->assignments.begin(), this->assignments.end(), [] (storm::prism::Assignment const& assignment1, storm::prism::Assignment const& assignment2) { return assignment1.getVariable() < assignment2.getVariable(); } );
             this->createAssignmentMapping();
         }
         
@@ -37,13 +41,14 @@ namespace storm {
             }
         }
         
-        Update Update::substitute(std::map<std::string, storm::expressions::Expression> const& substitution) const {
+        Update Update::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
             std::vector<Assignment> newAssignments;
             newAssignments.reserve(this->getNumberOfAssignments());
             for (auto const& assignment : this->getAssignments()) {
                 newAssignments.emplace_back(assignment.substitute(substitution));
             }
             
+            // FIXME: The expression could be simplified, but 1/K (where K is an int) is then resolved to 0, which is incorrect (for probabilities).
             return Update(this->getGlobalIndex(), this->getLikelihoodExpression().substitute(substitution), newAssignments, this->getFilename(), this->getLineNumber());
         }
         

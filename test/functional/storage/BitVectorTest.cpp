@@ -51,11 +51,68 @@ TEST(BitVectorTest, GetSet) {
 	}
 }
 
-TEST(BitVectorTest, GetSetException) {
+TEST(BitVectorTest, GetAsInt) {
+    storm::storage::BitVector vector(77);
+    
+    vector.set(62);
+    vector.set(63);
+    vector.set(64);
+    vector.set(65);
+
+    EXPECT_EQ(1, vector.getAsInt(62, 1));
+    EXPECT_EQ(3, vector.getAsInt(62, 2));
+    EXPECT_EQ(7, vector.getAsInt(62, 3));
+    EXPECT_EQ(15, vector.getAsInt(62, 4));
+    
+    vector.set(64, false);
+
+    EXPECT_EQ(1, vector.getAsInt(62, 1));
+    EXPECT_EQ(3, vector.getAsInt(62, 2));
+    EXPECT_EQ(6, vector.getAsInt(62, 3));
+    EXPECT_EQ(13, vector.getAsInt(62, 4));
+    
+    vector.set(61);
+    vector.set(62, false);
+    EXPECT_EQ(2, vector.getAsInt(61, 2));
+}
+
+TEST(BitVectorTest, SetFromInt) {
+    storm::storage::BitVector vector(77);
+
+    vector.setFromInt(62, 1, 1);
+    
+    EXPECT_TRUE(vector.get(62));
+    EXPECT_FALSE(vector.get(63));
+    EXPECT_FALSE(vector.get(64));
+    EXPECT_FALSE(vector.get(65));
+    
+    vector.setFromInt(61, 2, 2);
+
+    EXPECT_TRUE(vector.get(61));
+    EXPECT_FALSE(vector.get(62));
+    EXPECT_FALSE(vector.get(63));
+    
+    vector.setFromInt(61, 3, 5);
+
+    EXPECT_TRUE(vector.get(61));
+    EXPECT_FALSE(vector.get(62));
+    EXPECT_TRUE(vector.get(63));
+    
+    vector.setFromInt(62, 4, 15);
+
+    EXPECT_TRUE(vector.get(62));
+    EXPECT_TRUE(vector.get(63));
+    EXPECT_TRUE(vector.get(64));
+    EXPECT_TRUE(vector.get(65));
+    
+    vector.setFromInt(62, 5, 17);
+}
+
+TEST(BitVectorDeathTest, GetSetAssertion) {
 	storm::storage::BitVector vector(32);
     
-    ASSERT_THROW(vector.get(32), storm::exceptions::OutOfRangeException);
-    ASSERT_THROW(vector.set(32), storm::exceptions::OutOfRangeException);
+    EXPECT_DEATH_IF_SUPPORTED(vector.get(32), "");
+    EXPECT_DEATH_IF_SUPPORTED(vector.set(32), "");
 }
 
 TEST(BitVectorTest, Resize) {
@@ -237,7 +294,7 @@ TEST(BitVectorTest, OperatorModulo) {
 		vector3.set(i, i % 2 == 0);
     }
     
-    ASSERT_THROW(vector1 % vector3, storm::exceptions::InvalidArgumentException);
+    EXPECT_DEATH_IF_SUPPORTED(vector1 % vector3, "");
 }
 
 TEST(BitVectorTest, OperatorNot) {
@@ -378,7 +435,7 @@ TEST(BitVectorTest, BeginEnd) {
     ASSERT_TRUE(vector.begin() == vector.end());
     
     vector.set(17);
-    
+
     ASSERT_FALSE(vector.begin() == vector.end());
     
     vector.set(17, false);

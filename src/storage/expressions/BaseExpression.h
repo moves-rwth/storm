@@ -7,7 +7,7 @@
 #include <map>
 #include <iostream>
 
-#include "src/storage/expressions/ExpressionReturnType.h"
+#include "src/storage/expressions/Type.h"
 #include "src/storage/expressions/Valuation.h"
 #include "src/storage/expressions/ExpressionVisitor.h"
 #include "src/storage/expressions/OperatorType.h"
@@ -15,7 +15,11 @@
 #include "src/utility/OsDetection.h"
 
 namespace storm {
-    namespace expressions {        
+    namespace expressions {
+        // Forward-declare expression manager.
+        class ExpressionManager;
+        class Variable;
+        
         /*!
          * The base class of all expression classes.
          */
@@ -24,9 +28,9 @@ namespace storm {
             /*!
              * Constructs a base expression with the given return type.
              *
-             * @param returnType The return type of the expression.
+             * @param type The type of the expression.
              */
-            BaseExpression(ExpressionReturnType returnType);
+            BaseExpression(ExpressionManager const& manager, Type const& type);
             
             // Create default versions of constructors and assignments.
             BaseExpression(BaseExpression const&) = default;
@@ -145,16 +149,9 @@ namespace storm {
             /*!
              * Retrieves the set of all variables that appear in the expression.
              *
-             * @return The set of all variables that appear in the expression.
+             * @param The set into which all variables in this expresson are inserted.
              */
-            virtual std::set<std::string> getVariables() const = 0;
-
-			/*!
-			* Retrieves the mapping of all variables that appear in the expression to their return type.
-			*
-			* @return The mapping of all variables that appear in the expression to their return type.
-			*/
-			virtual std::map<std::string, ExpressionReturnType> getVariablesAndTypes() const = 0;
+            virtual void gatherVariables(std::set<storm::expressions::Variable>& variables) const = 0;
 
             /*!
              * Simplifies the expression according to some simple rules.
@@ -168,28 +165,42 @@ namespace storm {
              *
              * @param visitor The visitor that is to be accepted.
              */
-            virtual void accept(ExpressionVisitor* visitor) const = 0;
+            virtual boost::any accept(ExpressionVisitor& visitor) const = 0;
             
             /*!
-             * Retrieves whether the expression has a numerical return type, i.e., integer or double.
+             * Retrieves whether the expression has a numerical type, i.e., integer or double.
              *
-             * @return True iff the expression has a numerical return type.
+             * @return True iff the expression has a numerical type.
              */
-            bool hasNumericalReturnType() const;
+            bool hasNumericalType() const;
             
             /*!
-             * Retrieves whether the expression has an integral return type, i.e., integer.
+             * Retrieves whether the expression has an integer type.
              *
-             * @return True iff the expression has an integral return type.
+             * @return True iff the expression has an integer type.
              */
-            bool hasIntegralReturnType() const;
+            bool hasIntegerType() const;
             
             /*!
-             * Retrieves whether the expression has a boolean return type.
+             * Retrieves whether the expression has a bitvector type.
              *
-             * @return True iff the expression has a boolean return type.
+             * @return True iff the expression has a bitvector type.
              */
-            bool hasBooleanReturnType() const;
+            bool hasBitVectorType() const;
+
+            /*!
+             * Retrieves whether the expression has a boolean type.
+             *
+             * @return True iff the expression has a boolean type.
+             */
+            bool hasBooleanType() const;
+            
+            /*!
+             * Retrieves whether the expression has a rational return type.
+             *
+             * @return True iff the expression has a rational return type.
+             */
+            bool hasRationalType() const;
             
             /*!
              * Retrieves a shared pointer to this expression.
@@ -199,13 +210,21 @@ namespace storm {
             std::shared_ptr<BaseExpression const> getSharedPointer() const;
             
             /*!
-             * Retrieves the return type of the expression.
+             * Retrieves the manager responsible for this expression.
              *
-             * @return The return type of the expression.
+             * @return The manager responsible for this expression.
              */
-            ExpressionReturnType getReturnType() const;
+            ExpressionManager const& getManager() const;
+            
+            /*!
+             * Retrieves the type of the expression.
+             *
+             * @return The type of the expression.
+             */
+            Type const& getType() const;
             
             friend std::ostream& operator<<(std::ostream& stream, BaseExpression const& expression);
+            
         protected:
             /*!
              * Prints the expression to the given stream.
@@ -215,8 +234,11 @@ namespace storm {
             virtual void printToStream(std::ostream& stream) const = 0;
             
         private:
+            // The manager responsible for this expression.
+            ExpressionManager const& manager;
+            
             // The return type of this expression.
-            ExpressionReturnType returnType;
+            Type type;
         };
     }
 }

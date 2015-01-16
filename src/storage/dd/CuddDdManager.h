@@ -2,9 +2,12 @@
 #define STORM_STORAGE_DD_CUDDDDMANAGER_H_
 
 #include <unordered_map>
+#include <memory>
 
 #include "src/storage/dd/DdManager.h"
 #include "src/storage/dd/CuddDdMetaVariable.h"
+#include "src/storage/expressions/ExpressionManager.h"
+#include "src/storage/expressions/Variable.h"
 #include "src/utility/OsDetection.h"
 
 // Include the C++-interface of CUDD.
@@ -57,46 +60,46 @@ namespace storm {
              * Retrieves the DD representing the function that maps all inputs which have the given meta variable equal
              * to the given value one.
              *
-             * @param metaVariableName The meta variable that is supposed to have the given value.
+             * @param variable The expression variable associated with the meta variable.
              * @param value The value the meta variable is supposed to have.
              * @return The DD representing the function that maps all inputs which have the given meta variable equal
              * to the given value one.
              */
-            Dd<DdType::CUDD> getEncoding(std::string const& metaVariableName, int_fast64_t value);
+            Dd<DdType::CUDD> getEncoding(storm::expressions::Variable const& variable, int_fast64_t value);
             
             /*!
              * Retrieves the DD representing the range of the meta variable, i.e., a function that maps all legal values
              * of the range of the meta variable to one.
              *
-             * @param metaVariableName The name of the meta variable whose range to retrieve.
+             * @param variable The expression variable associated with the meta variable.
              * @return The range of the meta variable.
              */
-            Dd<DdType::CUDD> getRange(std::string const& metaVariableName);
+            Dd<DdType::CUDD> getRange(storm::expressions::Variable const& variable);
 
             /*!
              * Retrieves the DD representing the identity of the meta variable, i.e., a function that maps all legal
              * values of the range of the meta variable to themselves.
              *
-             * @param metaVariableName The name of the meta variable whose identity to retrieve.
+             * @param variable The expression variable associated with the meta variable.
              * @return The identity of the meta variable.
              */
-            Dd<DdType::CUDD> getIdentity(std::string const& metaVariableName);
+            Dd<DdType::CUDD> getIdentity(storm::expressions::Variable const& variable);
             
             /*!
-             * Adds an integer meta variable with the given name and range.
+             * Adds an integer meta variable with the given range.
              *
-             * @param name The (non-empty) name of the meta variable.
+             * @param variableName The name of the new variable.
              * @param low The lowest value of the range of the variable.
              * @param high The highest value of the range of the variable.
              */
-            void addMetaVariable(std::string const& name, int_fast64_t low, int_fast64_t high);
+            std::pair<storm::expressions::Variable, storm::expressions::Variable> addMetaVariable(std::string const& variableName, int_fast64_t low, int_fast64_t high);
             
             /*!
-             * Adds a boolean meta variable with the given name.
+             * Adds a boolean meta variable.
              *
-             * @param name The (non-empty) name of the meta variable.
+             * @param variableName The name of the new variable.
              */
-            void addMetaVariable(std::string const& name);
+            std::pair<storm::expressions::Variable, storm::expressions::Variable> addMetaVariable(std::string const& variableName);
             
             /*!
              * Retrieves the names of all meta variables that have been added to the manager.
@@ -115,10 +118,10 @@ namespace storm {
             /*!
              * Retrieves whether the given meta variable name is already in use.
              *
-             * @param metaVariableName The meta variable name whose membership to query.
+             * @param variableName The name of the variable.
              * @return True if the given meta variable name is managed by this manager.
              */
-            bool hasMetaVariable(std::string const& metaVariableName) const;
+            bool hasMetaVariable(std::string const& variableName) const;
             
             /*!
              * Sets whether or not dynamic reordering is allowed for the DDs managed by this manager.
@@ -142,10 +145,10 @@ namespace storm {
             /*!
              * Retrieves the meta variable with the given name if it exists.
              *
-             * @param metaVariableName The name of the meta variable to retrieve.
-             * @return The meta variable with the given name.
+             * @param variable The expression variable associated with the meta variable.
+             * @return The corresponding meta variable.
              */
-            DdMetaVariable<DdType::CUDD> const& getMetaVariable(std::string const& metaVariableName) const;
+            DdMetaVariable<DdType::CUDD> const& getMetaVariable(storm::expressions::Variable const& variable) const;
             
         private:
             /*!
@@ -154,6 +157,13 @@ namespace storm {
              * @return A list of DD variable names.
              */
             std::vector<std::string> getDdVariableNames() const;
+            
+            /*!
+             * Retrieves a list of expression variables in the order of their index.
+             *
+             * @return A list of DD variables.
+             */
+            std::vector<storm::expressions::Variable> getDdVariables() const;
             
             /*!
              * Retrieves the underlying CUDD manager.
@@ -169,14 +179,31 @@ namespace storm {
              */
             Cudd const& getCuddManager() const;
             
-            // A mapping from variable names to the meta variable information.
-            std::unordered_map<std::string, DdMetaVariable<DdType::CUDD>> metaVariableMap;
+            /*!
+             * Retrieves the underlying expression manager.
+             *
+             * @return The underlying expression manager.
+             */
+            storm::expressions::ExpressionManager const& getExpressionManager() const;
+
+            /*!
+             * Retrieves the underlying expression manager.
+             *
+             * @return The underlying expression manager.
+             */
+            storm::expressions::ExpressionManager& getExpressionManager();
+            
+            // A mapping from variables to the meta variable information.
+            std::unordered_map<storm::expressions::Variable, DdMetaVariable<DdType::CUDD>> metaVariableMap;
             
             // The manager responsible for the DDs created/modified with this DdManager.
             Cudd cuddManager;
             
             // The technique that is used for dynamic reordering.
             Cudd_ReorderingType reorderingTechnique;
+
+            // The manager responsible for the variables.
+            std::shared_ptr<storm::expressions::ExpressionManager> manager;
         };
     }
 }

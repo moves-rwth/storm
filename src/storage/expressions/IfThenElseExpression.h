@@ -11,11 +11,12 @@ namespace storm {
             /*!
              * Creates an if-then-else expression with the given return type, condition and operands.
              *
-             * @param returnType The return type of the expression.
+             * @param manager The manager responsible for this expression.
+             * @param type The return type of the expression.
              * @param thenExpression The expression evaluated if the condition evaluates true.
              * @param elseExpression The expression evaluated if the condition evaluates false.
              */
-            IfThenElseExpression(ExpressionReturnType returnType, std::shared_ptr<BaseExpression const> const& condition, std::shared_ptr<BaseExpression const> const& thenExpression, std::shared_ptr<BaseExpression const> const& elseExpression);
+            IfThenElseExpression(ExpressionManager const& manager, Type const& type, std::shared_ptr<BaseExpression const> const& condition, std::shared_ptr<BaseExpression const> const& thenExpression, std::shared_ptr<BaseExpression const> const& elseExpression);
             
             // Instantiate constructors and assignments with their default implementations.
             IfThenElseExpression(IfThenElseExpression const& other) = default;
@@ -35,10 +36,9 @@ namespace storm {
             virtual bool evaluateAsBool(Valuation const* valuation = nullptr) const override;
             virtual int_fast64_t evaluateAsInt(Valuation const* valuation = nullptr) const override;
             virtual double evaluateAsDouble(Valuation const* valuation = nullptr) const override;
-			virtual std::set<std::string> getVariables() const override;
-			virtual std::map<std::string, ExpressionReturnType> getVariablesAndTypes() const override;
+            virtual void gatherVariables(std::set<storm::expressions::Variable>& variables) const override;
             virtual std::shared_ptr<BaseExpression const> simplify() const override;
-            virtual void accept(ExpressionVisitor* visitor) const override;
+            virtual boost::any accept(ExpressionVisitor& visitor) const override;
             
             /*!
              * Retrieves the condition expression of the if-then-else expression.

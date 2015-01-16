@@ -22,6 +22,9 @@
 #ifdef STORM_HAVE_Z3
 #	include "z3.h"
 #endif
+#ifdef STORM_HAVE_MSAT
+#   include "mathsat.h"
+#endif
 
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
@@ -43,8 +46,8 @@ log4cplus::Logger printer;
 // Model headers.
 #include "src/models/AbstractModel.h"
 
-// Headers of adapters.
-#include "src/adapters/ExplicitModelAdapter.h"
+// Headers of builders.
+#include "src/builder/ExplicitPrismModelBuilder.h"
 
 // Headers for model processing.
 #include "src/storage/NaiveDeterministicModelBisimulationDecomposition.h"
@@ -139,6 +142,11 @@ namespace storm {
                 unsigned int z3Major, z3Minor, z3BuildNumber, z3RevisionNumber;
                 Z3_get_version(&z3Major, &z3Minor, &z3BuildNumber, &z3RevisionNumber);
                 std::cout << "Linked with Microsoft Z3 Optimizer v" << z3Major << "." << z3Minor << " Build " << z3BuildNumber << " Rev " << z3RevisionNumber << "." << std::endl;
+#endif
+#ifdef STORM_HAVE_MSAT
+                char* msatVersion = msat_get_version();
+                std::cout << "Linked with " << msatVersion << "." << std::endl;
+                msat_free(msatVersion);
 #endif
                 
                 // "Compute" the command line argument string with which STORM was invoked.
@@ -262,7 +270,7 @@ namespace storm {
                     storm::prism::Program program = storm::parser::PrismParser::parse(programFile);
                     
                     // Then, build the model from the symbolic description.
-                    result = storm::adapters::ExplicitModelAdapter<double>::translateProgram(program, true, settings.isSymbolicRewardModelNameSet() ? settings.getSymbolicRewardModelName() : "", constants);
+                    result = storm::builder::ExplicitPrismModelBuilder<double>::translateProgram(program, storm::settings::counterexampleGeneratorSettings().isMinimalCommandSetGenerationSet(), true, settings.isSymbolicRewardModelNameSet() ? settings.getSymbolicRewardModelName() : "", constants);
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No input model.");
                 }

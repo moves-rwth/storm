@@ -7,14 +7,13 @@
 #include <iterator>
 
 #include "src/storage/BitVector.h"
-#include "src/utility/constants.h"
+#include "src/utility/ConstantsComparator.h"
 #include "src/utility/OsDetection.h"
 
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/exceptions/OutOfRangeException.h"
 
 #include <boost/functional/hash.hpp>
-#include <boost/container/flat_map.hpp>
 
 // Forward declaration for adapter classes.
 namespace storm {
@@ -811,6 +810,9 @@ namespace storm {
             
             // A vector indicating the row groups of the matrix.
             std::vector<index_type> rowGroupIndices;
+            
+            // A comparator that can be used to check whether some values satisfy some conditions.
+            storm::utility::ConstantsComparator<value_type> comparator;
         };
 
     } // namespace storage

@@ -28,12 +28,14 @@ namespace storm {
              * Creates a program with the given model type, undefined constants, global variables, modules, reward
              * models, labels and initial states.
              *
+             * @param manager The manager responsible for the variables and expressions of the program.
              * @param modelType The type of the program.
              * @param constants The constants of the program.
              * @param globalBooleanVariables The global boolean variables of the program.
              * @param globalIntegerVariables The global integer variables of the program.
              * @param formulas The formulas defined in the program.
              * @param modules The modules of the program.
+             * @param actionToIndexMap A mapping of action names to their indices.
              * @param fixInitialConstruct A flag that indicates whether the given initial construct is to be ignored and
              * replaced by a new one created from the initial values of the variables.
              * @param initialConstruct The initial construct of the program. If the initial construct specifies "false"
@@ -45,7 +47,7 @@ namespace storm {
              * @param lineNumber The line number in which the program is defined.
              * @param checkValidity If set to true, the program is checked for validity.
              */
-            Program(ModelType modelType, std::vector<Constant> const& constants, std::vector<BooleanVariable> const& globalBooleanVariables, std::vector<IntegerVariable> const& globalIntegerVariables, std::vector<Formula> const& formulas, std::vector<Module> const& modules, std::vector<RewardModel> const& rewardModels, bool fixInitialConstruct, storm::prism::InitialConstruct const& initialConstruct, std::vector<Label> const& labels, std::string const& filename = "", uint_fast64_t lineNumber = 0, bool checkValidity = true);
+            Program(std::shared_ptr<storm::expressions::ExpressionManager> manager, ModelType modelType, std::vector<Constant> const& constants, std::vector<BooleanVariable> const& globalBooleanVariables, std::vector<IntegerVariable> const& globalIntegerVariables, std::vector<Formula> const& formulas, std::vector<Module> const& modules, std::map<std::string, uint_fast64_t> const& actionToIndexMap, std::vector<RewardModel> const& rewardModels, bool fixInitialConstruct, storm::prism::InitialConstruct const& initialConstruct, std::vector<Label> const& labels, std::string const& filename = "", uint_fast64_t lineNumber = 0, bool checkValidity = true);
             
             // Provide default implementations for constructors and assignments.
             Program() = default;
@@ -189,6 +191,13 @@ namespace storm {
             std::vector<Module> const& getModules() const;
             
             /*!
+             * Retrieves the mapping of action names to their indices.
+             *
+             * @return The mapping of action names to their indices.
+             */
+            std::map<std::string, uint_fast64_t> const& getActionNameToIndexMapping() const;
+            
+            /*!
              * Retrieves the initial construct of the program.
              *
              * @return The initial construct of the program.
@@ -203,6 +212,13 @@ namespace storm {
             std::set<std::string> const& getActions() const;
             
             /*!
+             * Retrieves the set of action indices present in the program.
+             *
+             * @return The set of action indices present in the program.
+             */
+            std::set<uint_fast64_t> const& getActionIndices() const;
+            
+            /*!
              * Retrieves the indices of all modules within this program that contain commands that are labelled with the
              * given action.
              *
@@ -210,6 +226,15 @@ namespace storm {
              * @return A set of indices of all matching modules.
              */
             std::set<uint_fast64_t> const& getModuleIndicesByAction(std::string const& action) const;
+
+            /*!
+             * Retrieves the indices of all modules within this program that contain commands that are labelled with the
+             * given action index.
+             *
+             * @param actionIndex The index of the action the modules are supposed to possess.
+             * @return A set of indices of all matching modules.
+             */
+            std::set<uint_fast64_t> const& getModuleIndicesByActionIndex(uint_fast64_t actionIndex) const;
             
             /*!
              * Retrieves the index of the module in which the given variable name was declared.
@@ -288,12 +313,12 @@ namespace storm {
             /*!
              * Defines the undefined constants according to the given map and returns the resulting program.
              *
-             * @param constantDefinitions A mapping from undefined constant names to the expressions they are supposed
+             * @param constantDefinitions A mapping from undefined constant to the expressions they are supposed
              * to be replaced with.
              * @return The program after all undefined constants in the given map have been replaced with their
              * definitions.
              */
-            Program defineUndefinedConstants(std::map<std::string, storm::expressions::Expression> const& constantDefinitions) const;
+            Program defineUndefinedConstants(std::map<storm::expressions::Variable, storm::expressions::Expression> const& constantDefinitions) const;
             
             /*!
              * Substitutes all constants appearing in the expressions of the program by their defining expressions. For
@@ -311,7 +336,24 @@ namespace storm {
             
             friend std::ostream& operator<<(std::ostream& stream, Program const& program);
             
+            /*!
+             * Retrieves the manager responsible for the expressions of this program.
+             *
+             * @return The manager responsible for the expressions of this program.
+             */
+            storm::expressions::ExpressionManager const& getManager() const;
+
+            /*!
+             * Retrieves the manager responsible for the expressions of this program.
+             *
+             * @return The manager responsible for the expressions of this program.
+             */
+            storm::expressions::ExpressionManager& getManager();
+            
         private:
+            // The manager responsible for the variables/expressions of the program.
+            std::shared_ptr<storm::expressions::ExpressionManager> manager;
+            
             // Creates the internal mappings.
             void createMappings();
             
@@ -363,11 +405,17 @@ namespace storm {
             // A mapping from label names to their corresponding indices.
             std::map<std::string, uint_fast64_t> labelToIndexMap;
             
+            // A mapping from action names to their indices.
+            std::map<std::string, uint_fast64_t> actionToIndexMap;
+            
             // The set of actions present in this program.
             std::set<std::string> actions;
+
+            // The set of actions present in this program.
+            std::set<uint_fast64_t> actionIndices;
             
             // A map of actions to the set of modules containing commands labelled with this action.
-            std::map<std::string, std::set<uint_fast64_t>> actionsToModuleIndexMap;
+            std::map<uint_fast64_t, std::set<uint_fast64_t>> actionIndicesToModuleIndexMap;
             
             // A mapping from variable names to the modules in which they were declared.
             std::map<std::string, uint_fast64_t> variableToModuleIndexMap;

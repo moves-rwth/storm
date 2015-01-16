@@ -74,55 +74,69 @@ namespace storm {
             this->currentModelHasBeenOptimized = false;
         }
         
-        void GurobiLpSolver::addBoundedContinuousVariable(std::string const& name, double lowerBound, double upperBound, double objectiveFunctionCoefficient) {
-            this->addVariable(name, GRB_CONTINUOUS, lowerBound, upperBound, objectiveFunctionCoefficient);
+        storm::expressions::Variable GurobiLpSolver::addBoundedContinuousVariable(std::string const& name, double lowerBound, double upperBound, double objectiveFunctionCoefficient) {
+            storm::expressions::Variable newVariable = manager->declareVariable(name, manager->getRationalType());
+            this->addVariable(newVariable, GRB_CONTINUOUS, lowerBound, upperBound, objectiveFunctionCoefficient);
+            return newVariable;
         }
         
-        void GurobiLpSolver::addLowerBoundedContinuousVariable(std::string const& name, double lowerBound, double objectiveFunctionCoefficient) {
-            this->addVariable(name, GRB_CONTINUOUS, lowerBound, GRB_INFINITY, objectiveFunctionCoefficient);
+        storm::expressions::Variable GurobiLpSolver::addLowerBoundedContinuousVariable(std::string const& name, double lowerBound, double objectiveFunctionCoefficient) {
+            storm::expressions::Variable newVariable = manager->declareVariable(name, manager->getRationalType());
+            this->addVariable(newVariable, GRB_CONTINUOUS, lowerBound, GRB_INFINITY, objectiveFunctionCoefficient);
+            return newVariable;
         }
 
-        void GurobiLpSolver::addUpperBoundedContinuousVariable(std::string const& name, double upperBound, double objectiveFunctionCoefficient) {
-            this->addVariable(name, GRB_CONTINUOUS, -GRB_INFINITY, upperBound, objectiveFunctionCoefficient);
+        storm::expressions::Variable GurobiLpSolver::addUpperBoundedContinuousVariable(std::string const& name, double upperBound, double objectiveFunctionCoefficient) {
+            storm::expressions::Variable newVariable = manager->declareVariable(name, manager->getRationalType());
+            this->addVariable(newVariable, GRB_CONTINUOUS, -GRB_INFINITY, upperBound, objectiveFunctionCoefficient);
+            return newVariable;
         }
 
-        void GurobiLpSolver::addUnboundedContinuousVariable(std::string const& name, double objectiveFunctionCoefficient) {
-            this->addVariable(name, GRB_CONTINUOUS, -GRB_INFINITY, GRB_INFINITY, objectiveFunctionCoefficient);
+        storm::expressions::Variable GurobiLpSolver::addUnboundedContinuousVariable(std::string const& name, double objectiveFunctionCoefficient) {
+            storm::expressions::Variable newVariable = manager->declareVariable(name, manager->getRationalType());
+            this->addVariable(newVariable, GRB_CONTINUOUS, -GRB_INFINITY, GRB_INFINITY, objectiveFunctionCoefficient);
+            return newVariable;
         }
         
-        void GurobiLpSolver::addBoundedIntegerVariable(std::string const& name, double lowerBound, double upperBound, double objectiveFunctionCoefficient) {
-            this->addVariable(name, GRB_INTEGER, lowerBound, upperBound, objectiveFunctionCoefficient);
+        storm::expressions::Variable GurobiLpSolver::addBoundedIntegerVariable(std::string const& name, double lowerBound, double upperBound, double objectiveFunctionCoefficient) {
+            storm::expressions::Variable newVariable = manager->declareVariable(name, manager->getIntegerType());
+            this->addVariable(newVariable, GRB_INTEGER, lowerBound, upperBound, objectiveFunctionCoefficient);
+            return newVariable;
         }
         
-        void GurobiLpSolver::addLowerBoundedIntegerVariable(std::string const& name, double lowerBound, double objectiveFunctionCoefficient) {
-            this->addVariable(name, GRB_INTEGER, lowerBound, GRB_INFINITY, objectiveFunctionCoefficient);
+        storm::expressions::Variable GurobiLpSolver::addLowerBoundedIntegerVariable(std::string const& name, double lowerBound, double objectiveFunctionCoefficient) {
+            storm::expressions::Variable newVariable = manager->declareVariable(name, manager->getIntegerType());
+            this->addVariable(newVariable, GRB_INTEGER, lowerBound, GRB_INFINITY, objectiveFunctionCoefficient);
+            return newVariable;
         }
         
-        void GurobiLpSolver::addUpperBoundedIntegerVariable(std::string const& name, double upperBound, double objectiveFunctionCoefficient) {
-            this->addVariable(name, GRB_INTEGER, -GRB_INFINITY, upperBound, objectiveFunctionCoefficient);
+        storm::expressions::Variable GurobiLpSolver::addUpperBoundedIntegerVariable(std::string const& name, double upperBound, double objectiveFunctionCoefficient) {
+            storm::expressions::Variable newVariable = manager->declareVariable(name, manager->getIntegerType());
+            this->addVariable(newVariable, GRB_INTEGER, -GRB_INFINITY, upperBound, objectiveFunctionCoefficient);
+            return newVariable;
         }
         
-        void GurobiLpSolver::addUnboundedIntegerVariable(std::string const& name, double objectiveFunctionCoefficient) {
-            this->addVariable(name, GRB_INTEGER, -GRB_INFINITY, GRB_INFINITY, objectiveFunctionCoefficient);
+        storm::expressions::Variable GurobiLpSolver::addUnboundedIntegerVariable(std::string const& name, double objectiveFunctionCoefficient) {
+            storm::expressions::Variable newVariable = manager->declareVariable(name, manager->getIntegerType());
+            this->addVariable(newVariable, GRB_INTEGER, -GRB_INFINITY, GRB_INFINITY, objectiveFunctionCoefficient);
+            return newVariable;
         }
         
-        void GurobiLpSolver::addBinaryVariable(std::string const& name, double objectiveFunctionCoefficient) {
-            this->addVariable(name, GRB_BINARY, 0, 1, objectiveFunctionCoefficient);
+        storm::expressions::Variable GurobiLpSolver::addBinaryVariable(std::string const& name, double objectiveFunctionCoefficient) {
+            storm::expressions::Variable newVariable = manager->declareVariable(name, manager->getIntegerType());
+            this->addVariable(newVariable, GRB_BINARY, 0, 1, objectiveFunctionCoefficient);
+            return newVariable;
         }
 
-        void GurobiLpSolver::addVariable(std::string const& name, char variableType, double lowerBound, double upperBound, double objectiveFunctionCoefficient) {
-            // Check whether variable already exists.
-            auto nameIndexPair = this->variableNameToIndexMap.find(name);
-            STORM_LOG_THROW(nameIndexPair == this->variableNameToIndexMap.end(), storm::exceptions::InvalidArgumentException, "Variable '" << nameIndexPair->first << "' already exists.");
-            
+        void GurobiLpSolver::addVariable(storm::expressions::Variable const& variable, char variableType, double lowerBound, double upperBound, double objectiveFunctionCoefficient) {
             // Check for valid variable type.
             STORM_LOG_ASSERT(variableType == GRB_CONTINUOUS || variableType == GRB_INTEGER || variableType == GRB_BINARY, "Illegal type '" << variableType << "' for Gurobi variable.");
             
             // Finally, create the actual variable.
             int error = 0;
-            error = GRBaddvar(model, 0, nullptr, nullptr, objectiveFunctionCoefficient, lowerBound, upperBound, variableType, name.c_str());
+            error = GRBaddvar(model, 0, nullptr, nullptr, objectiveFunctionCoefficient, lowerBound, upperBound, variableType, variable.getName().c_str());
             STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException, "Could not create binary Gurobi variable (" << GRBgeterrormsg(env) << ", error code " << error << ").");
-            this->variableNameToIndexMap.emplace(name, nextVariableIndex);
+            this->variableToIndexMap.emplace(variable, nextVariableIndex);
             ++nextVariableIndex;
         }
                 
@@ -130,44 +144,36 @@ namespace storm {
             STORM_LOG_THROW(constraint.isRelationalExpression(), storm::exceptions::InvalidArgumentException, "Illegal constraint is not a relational expression.");
             STORM_LOG_THROW(constraint.getOperator() != storm::expressions::OperatorType::NotEqual, storm::exceptions::InvalidArgumentException, "Illegal constraint uses inequality operator.");
             
-            std::pair<storm::expressions::SimpleValuation, double> leftCoefficients = storm::expressions::LinearCoefficientVisitor().getLinearCoefficients(constraint.getOperand(0));
-            std::pair<storm::expressions::SimpleValuation, double> rightCoefficients = storm::expressions::LinearCoefficientVisitor().getLinearCoefficients(constraint.getOperand(1));
-            for (auto const& identifier : rightCoefficients.first.getDoubleIdentifiers()) {
-                if (leftCoefficients.first.containsDoubleIdentifier(identifier)) {
-                    leftCoefficients.first.setDoubleValue(identifier, leftCoefficients.first.getDoubleValue(identifier) - rightCoefficients.first.getDoubleValue(identifier));
-                } else {
-                    leftCoefficients.first.addDoubleIdentifier(identifier, -rightCoefficients.first.getDoubleValue(identifier));
-                }
-            }
-            rightCoefficients.second -= leftCoefficients.second;
+            storm::expressions::LinearCoefficientVisitor::VariableCoefficients leftCoefficients = storm::expressions::LinearCoefficientVisitor().getLinearCoefficients(constraint.getOperand(0));
+            storm::expressions::LinearCoefficientVisitor::VariableCoefficients rightCoefficients = storm::expressions::LinearCoefficientVisitor().getLinearCoefficients(constraint.getOperand(1));
+            leftCoefficients.separateVariablesFromConstantPart(rightCoefficients);
             
             // Now we need to transform the coefficients to the vector representation.
             std::vector<int> variables;
             std::vector<double> coefficients;
-            for (auto const& identifier : leftCoefficients.first.getDoubleIdentifiers()) {
-                auto identifierIndexPair = this->variableNameToIndexMap.find(identifier);
-                STORM_LOG_THROW(identifierIndexPair != this->variableNameToIndexMap.end(), storm::exceptions::InvalidArgumentException, "Constraint contains illegal identifier '" << identifier << "'.");
-                variables.push_back(identifierIndexPair->second);
-                coefficients.push_back(leftCoefficients.first.getDoubleValue(identifier));
+            for (auto const& variableCoefficientPair : leftCoefficients) {
+                auto variableIndexPair = this->variableToIndexMap.find(variableCoefficientPair.first);
+                variables.push_back(variableIndexPair->second);
+                coefficients.push_back(leftCoefficients.getCoefficient(variableIndexPair->first));
             }
             
             // Determine the type of the constraint and add it properly.
             int error = 0;
             switch (constraint.getOperator()) {
                 case storm::expressions::OperatorType::Less:
-                    error = GRBaddconstr(model, variables.size(), variables.data(), coefficients.data(), GRB_LESS_EQUAL, rightCoefficients.second - storm::settings::gurobiSettings().getIntegerTolerance(), name == "" ? nullptr : name.c_str());
+                    error = GRBaddconstr(model, variables.size(), variables.data(), coefficients.data(), GRB_LESS_EQUAL, rightCoefficients.getConstantPart() - storm::settings::gurobiSettings().getIntegerTolerance(), name == "" ? nullptr : name.c_str());
                     break;
                 case storm::expressions::OperatorType::LessOrEqual:
-                    error = GRBaddconstr(model, variables.size(), variables.data(), coefficients.data(), GRB_LESS_EQUAL, rightCoefficients.second, name == "" ? nullptr : name.c_str());
+                    error = GRBaddconstr(model, variables.size(), variables.data(), coefficients.data(), GRB_LESS_EQUAL, rightCoefficients.getConstantPart(), name == "" ? nullptr : name.c_str());
                     break;
                 case storm::expressions::OperatorType::Greater:
-                    error = GRBaddconstr(model, variables.size(), variables.data(), coefficients.data(), GRB_GREATER_EQUAL, rightCoefficients.second + storm::settings::gurobiSettings().getIntegerTolerance(), name == "" ? nullptr : name.c_str());
+                    error = GRBaddconstr(model, variables.size(), variables.data(), coefficients.data(), GRB_GREATER_EQUAL, rightCoefficients.getConstantPart() + storm::settings::gurobiSettings().getIntegerTolerance(), name == "" ? nullptr : name.c_str());
                     break;
                 case storm::expressions::OperatorType::GreaterOrEqual:
-                    error = GRBaddconstr(model, variables.size(), variables.data(), coefficients.data(), GRB_GREATER_EQUAL, rightCoefficients.second, name == "" ? nullptr : name.c_str());
+                    error = GRBaddconstr(model, variables.size(), variables.data(), coefficients.data(), GRB_GREATER_EQUAL, rightCoefficients.getConstantPart(), name == "" ? nullptr : name.c_str());
                     break;
                 case storm::expressions::OperatorType::Equal:
-                    error = GRBaddconstr(model, variables.size(), variables.data(), coefficients.data(), GRB_EQUAL, rightCoefficients.second, name == "" ? nullptr : name.c_str());
+                    error = GRBaddconstr(model, variables.size(), variables.data(), coefficients.data(), GRB_EQUAL, rightCoefficients.getConstantPart(), name == "" ? nullptr : name.c_str());
                     break;
                 default:
                     STORM_LOG_ASSERT(false, "Illegal operator in LP solver constraint.");
@@ -258,15 +264,15 @@ namespace storm {
             return optimalityStatus == GRB_OPTIMAL;
         }
         
-        double GurobiLpSolver::getContinuousValue(std::string const& name) const {
+        double GurobiLpSolver::getContinuousValue(storm::expressions::Variable const& variable) const {
             if (!this->isOptimal()) {
                 STORM_LOG_THROW(!this->isInfeasible(), storm::exceptions::InvalidAccessException, "Unable to get Gurobi solution from infeasible model (" << GRBgeterrormsg(env) << ").");
                 STORM_LOG_THROW(!this->isUnbounded(), storm::exceptions::InvalidAccessException, "Unable to get Gurobi solution from unbounded model (" << GRBgeterrormsg(env) << ").");
                 STORM_LOG_THROW(false, storm::exceptions::InvalidAccessException, "Unable to get Gurobi solution from unoptimized model (" << GRBgeterrormsg(env) << ").");
             }
             
-            auto variableIndexPair = this->variableNameToIndexMap.find(name);
-            STORM_LOG_THROW(variableIndexPair != this->variableNameToIndexMap.end(), storm::exceptions::InvalidAccessException, "Accessing value of unknown variable '" << name << "'.");
+            auto variableIndexPair = this->variableToIndexMap.find(variable);
+            STORM_LOG_THROW(variableIndexPair != this->variableToIndexMap.end(), storm::exceptions::InvalidAccessException, "Accessing value of unknown variable '" << variable.getName() << "'.");
             
             double value = 0;
             int error = GRBgetdblattrelement(model, GRB_DBL_ATTR_X, variableIndexPair->second, &value);
@@ -275,15 +281,15 @@ namespace storm {
             return value;
         }
         
-        int_fast64_t GurobiLpSolver::getIntegerValue(std::string const& name) const {
+        int_fast64_t GurobiLpSolver::getIntegerValue(storm::expressions::Variable const& variable) const {
             if (!this->isOptimal()) {
                 STORM_LOG_THROW(!this->isInfeasible(), storm::exceptions::InvalidAccessException, "Unable to get Gurobi solution from infeasible model (" << GRBgeterrormsg(env) << ").");
                 STORM_LOG_THROW(!this->isUnbounded(), storm::exceptions::InvalidAccessException, "Unable to get Gurobi solution from unbounded model (" << GRBgeterrormsg(env) << ").");
                 STORM_LOG_THROW(false, storm::exceptions::InvalidAccessException, "Unable to get Gurobi solution from unoptimized model (" << GRBgeterrormsg(env) << ").");
             }
             
-            auto variableIndexPair = this->variableNameToIndexMap.find(name);
-            STORM_LOG_THROW(variableIndexPair != this->variableNameToIndexMap.end(), storm::exceptions::InvalidAccessException, "Accessing value of unknown variable '" << name << "'.");
+            auto variableIndexPair = this->variableToIndexMap.find(variable);
+            STORM_LOG_THROW(variableIndexPair != this->variableToIndexMap.end(), storm::exceptions::InvalidAccessException, "Accessing value of unknown variable '" << variable.getName() << "'.");
             
             double value = 0;
             int error = GRBgetdblattrelement(model, GRB_DBL_ATTR_X, variableIndexPair->second, &value);
@@ -293,15 +299,15 @@ namespace storm {
             return static_cast<int_fast64_t>(value);
         }
         
-        bool GurobiLpSolver::getBinaryValue(std::string const& name) const {
+        bool GurobiLpSolver::getBinaryValue(storm::expressions::Variable const& variable) const {
             if (!this->isOptimal()) {
                 STORM_LOG_THROW(!this->isInfeasible(), storm::exceptions::InvalidAccessException, "Unable to get Gurobi solution from infeasible model (" << GRBgeterrormsg(env) << ").");
                 STORM_LOG_THROW(!this->isUnbounded(), storm::exceptions::InvalidAccessException, "Unable to get Gurobi solution from unbounded model (" << GRBgeterrormsg(env) << ").");
                 STORM_LOG_THROW(false, storm::exceptions::InvalidAccessException, "Unable to get Gurobi solution from unoptimized model (" << GRBgeterrormsg(env) << ").");
             }
 
-            auto variableIndexPair = this->variableNameToIndexMap.find(name);
-            STORM_LOG_THROW(variableIndexPair != this->variableNameToIndexMap.end(), storm::exceptions::InvalidAccessException, "Accessing value of unknown variable '" << name << "'.");
+            auto variableIndexPair = this->variableToIndexMap.find(variable);
+            STORM_LOG_THROW(variableIndexPair != this->variableToIndexMap.end(), storm::exceptions::InvalidAccessException, "Accessing value of unknown variable '" << variable.getName() << "'.");
             
             double value = 0;
             int error = GRBgetdblattrelement(model, GRB_DBL_ATTR_X, variableIndexPair->second, &value);

@@ -1,28 +1,37 @@
 #include "src/storage/expressions/BaseExpression.h"
+#include "src/storage/expressions/ExpressionManager.h"
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidTypeException.h"
 #include "src/exceptions/InvalidAccessException.h"
 
 namespace storm {
     namespace expressions {        
-        BaseExpression::BaseExpression(ExpressionReturnType returnType) : returnType(returnType) {
+        BaseExpression::BaseExpression(ExpressionManager const& manager, Type const& type) : manager(manager), type(type) {
             // Intentionally left empty.
         }
 
-        ExpressionReturnType BaseExpression::getReturnType() const {
-            return this->returnType;
+        Type const& BaseExpression::getType() const {
+            return this->type;
         }
         
-        bool BaseExpression::hasIntegralReturnType() const {
-            return this->getReturnType() == ExpressionReturnType::Int;
+        bool BaseExpression::hasIntegerType() const {
+            return this->getType().isIntegerType();
+        }
+
+        bool BaseExpression::hasBitVectorType() const {
+            return this->getType().isBitVectorType();
         }
         
-        bool BaseExpression::hasNumericalReturnType() const {
-            return this->getReturnType() == ExpressionReturnType::Double || this->getReturnType() == ExpressionReturnType::Int;
+        bool BaseExpression::hasNumericalType() const {
+            return this->getType().isNumericalType();
         }
         
-        bool BaseExpression::hasBooleanReturnType() const {
-            return this->getReturnType() == ExpressionReturnType::Bool;
+        bool BaseExpression::hasBooleanType() const {
+            return this->getType().isBooleanType();
+        }
+        
+        bool BaseExpression::hasRationalType() const {
+            return this->getType().isRationalType();
         }
         
         int_fast64_t BaseExpression::evaluateAsInt(Valuation const* valuation) const {
@@ -75,6 +84,10 @@ namespace storm {
         
         bool BaseExpression::isFunctionApplication() const {
             return false;
+        }
+        
+        ExpressionManager const& BaseExpression::getManager() const {
+            return manager;
         }
         
         std::shared_ptr<BaseExpression const> BaseExpression::getSharedPointer() const {

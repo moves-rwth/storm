@@ -1,28 +1,13 @@
-/*
- * SMTMinimalCommandSetGenerator.h
- *
- *  Created on: 01.10.2013
- *      Author: Christian Dehnert
- */
-
 #ifndef STORM_COUNTEREXAMPLES_SMTMINIMALCOMMANDSETGENERATOR_MDP_H_
 #define STORM_COUNTEREXAMPLES_SMTMINIMALCOMMANDSETGENERATOR_MDP_H_
 
 #include <queue>
 #include <chrono>
 
-// To detect whether the usage of Z3 is possible, this include is neccessary.
-#include "storm-config.h"
-
-// If we have Z3 available, we have to include the C++ header.
-#ifdef STORM_HAVE_Z3
-#include "z3++.h"
-#include "src/adapters/Z3ExpressionAdapter.h"
-#endif
+#include "src/solver/Z3SmtSolver.h"
 
 #include "src/storage/prism/Program.h"
 #include "src/storage/expressions/Expression.h"
-#include "src/adapters/ExplicitModelAdapter.h"
 #include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "src/solver/GmmxxNondeterministicLinearEquationSolver.h"
 
@@ -55,20 +40,23 @@ namespace storm {
             };
             
             struct VariableInformation {
+                // The manager responsible for the constraints we are building.
+                std::shared_ptr<storm::expressions::ExpressionManager> manager;
+                
                 // The variables associated with the relevant labels.
-                std::vector<z3::expr> labelVariables;
+                std::vector<storm::expressions::Variable> labelVariables;
                 
                 // A mapping from relevant labels to their indices in the variable vector.
                 std::map<uint_fast64_t, uint_fast64_t> labelToIndexMap;
 
                 // A set of original auxiliary variables needed for the Fu-Malik procedure.
-                std::vector<z3::expr> originalAuxiliaryVariables;
+                std::vector<storm::expressions::Variable> originalAuxiliaryVariables;
                 
                 // A set of auxiliary variables that may be modified by the MaxSAT procedure.
-                std::vector<z3::expr> auxiliaryVariables;
+                std::vector<storm::expressions::Variable> auxiliaryVariables;
                 
                 // A vector of variables that can be used to constrain the number of variables that are set to true.
-                std::vector<z3::expr> adderVariables;
+                std::vector<storm::expressions::Variable> adderVariables;
                 
                 // A flag whether or not there are variables reserved for encoding reachability of a target state.
                 bool hasReachabilityVariables;
@@ -80,13 +68,13 @@ namespace storm {
                 
                 // A vector of variables associated with each pair of relevant states (s, s') such that s' is
                 // a successor of s.
-                std::vector<z3::expr> statePairVariables;
+                std::vector<storm::expressions::Variable> statePairVariables;
                 
                 // A mapping from relevant states to the index with the corresponding order variable in the state order variable vector.
                 std::map<uint_fast64_t, uint_fast64_t> relevantStatesToOrderVariableIndexMap;
                 
                 // A vector of variables that holds all state order variables.
-                std::vector<z3::expr> stateOrderVariables;
+                std::vector<storm::expressions::Variable> stateOrderVariables;
             };
             
             /*!
@@ -155,14 +143,15 @@ namespace storm {
             }
             
             /*!
-             * Creates all necessary base expressions for the relevant labels.
+             * Creates all necessary variables.
              *
-             * @param context The Z3 context in which to create the expressions.
+             * @param manager The manager in which to create the variables.
              * @param relevantCommands A set of relevant labels for which to create the expressions.
              * @return A mapping from relevant labels to their corresponding expressions.
              */
-            static VariableInformation createVariables(z3::context& context, storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& psiStates, RelevancyInformation const& relevancyInformation, bool createReachabilityVariables) {
+            static VariableInformation createVariables(std::shared_ptr<storm::expressions::ExpressionManager> const& manager, storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& psiStates, RelevancyInformation const& relevancyInformation, bool createReachabilityVariables) {
                 VariableInformation variableInformation;
+                variableInformation.manager = manager;
                 
                 // Create stringstream to build expression names.
                 std::stringstream variableName;
@@ -176,14 +165,14 @@ namespace storm {
                     variableName.str("");
                     variableName << "c" << label;
                     
-                    variableInformation.labelVariables.push_back(context.bool_const(variableName.str().c_str()));
+                    variableInformation.labelVariables.push_back(manager->declareBooleanVariable(variableName.str()));
                     
                     // Clear contents of the stream to construct new expression name.
                     variableName.clear();
                     variableName.str("");
                     variableName << "h" << label;
                     
-                    variableInformation.originalAuxiliaryVariables.push_back(context.bool_const(variableName.str().c_str()));
+                    variableInformation.originalAuxiliaryVariables.push_back(manager->declareBooleanVariable(variableName.str()));
                 }
                 
                 // A mapping from each pair of adjacent relevant states to their index in the corresponding variable vector.
@@ -191,7 +180,7 @@ namespace storm {
                 
                 // A vector of variables associated with each pair of relevant states (s, s') such that s' is
                 // a successor of s.
-                std::vector<z3::expr> statePairVariables;
+                std::vector<storm::expressions::Variable> statePairVariables;
                 
                 // Create variables needed for encoding reachability of a target state if requested.
                 if (createReachabilityVariables) {
@@ -208,7 +197,7 @@ namespace storm {
                         variableName.str("");
                         variableName << "o" << state;
                         
-                        variableInformation.stateOrderVariables.push_back(context.real_const(variableName.str().c_str()));
+                        variableInformation.stateOrderVariables.push_back(manager->declareRationalVariable(variableName.str()));
                         
                         for (auto const& relevantChoice : relevancyInformation.relevantChoicesForRelevantStates.at(state)) {
                             for (auto const& entry : transitionMatrix.getRow(relevantChoice)) {
@@ -230,7 +219,7 @@ namespace storm {
                                     variableName.str("");
                                     variableName << "t" << state << "_" << entry.getColumn();
                                     
-                                    variableInformation.statePairVariables.push_back(context.bool_const(variableName.str().c_str()));
+                                    variableInformation.statePairVariables.push_back(manager->declareBooleanVariable(variableName.str()));
                                 }
                             }
                         }
@@ -244,7 +233,7 @@ namespace storm {
                         variableName.str("");
                         variableName << "o" << psiState;
                         
-                        variableInformation.stateOrderVariables.push_back(context.real_const(variableName.str().c_str()));
+                        variableInformation.stateOrderVariables.push_back(manager->declareRationalVariable(variableName.str()));
                     }
                 }
                 
@@ -277,7 +266,7 @@ namespace storm {
              * @param context The Z3 context in which to build the expressions.
              * @param solver The solver to use for the satisfiability evaluation.
              */
-            static void assertExplicitCuts(storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& psiStates, VariableInformation const& variableInformation, RelevancyInformation const& relevancyInformation, z3::context& context, z3::solver& solver) {
+            static void assertExplicitCuts(storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& psiStates, VariableInformation const& variableInformation, RelevancyInformation const& relevancyInformation, storm::solver::SmtSolver& solver) {
                 // Walk through the MDP and
                 // * identify labels enabled in initial states
                 // * identify labels that can directly precede a given action
@@ -364,7 +353,7 @@ namespace storm {
                 
                 LOG4CPLUS_DEBUG(logger, "Asserting initial combination is taken.");
                 {
-                    std::vector<z3::expr> formulae;
+                    std::vector<storm::expressions::Expression> formulae;
                     
                     // Start by asserting that we take at least one initial label. We may do so only if there is no initial
                     // combination that is already known. Otherwise this condition would be too strong.
@@ -376,7 +365,7 @@ namespace storm {
                             initialCombinationKnown = true;
                             break;
                         } else {
-                            z3::expr conj = context.bool_val(true);
+                            storm::expressions::Expression conj = variableInformation.manager->boolean(true);
                             for (auto label : tmpSet) {
                                 conj = conj && variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label));
                             }
@@ -384,13 +373,13 @@ namespace storm {
                         }
                     }
                     if (!initialCombinationKnown) {
-                        assertDisjunction(context, solver, formulae);
+                        assertDisjunction(solver, formulae, *variableInformation.manager);
                     }
                 }
                 
                 LOG4CPLUS_DEBUG(logger, "Asserting target combination is taken.");
                 {
-                    std::vector<z3::expr> formulae;
+                    std::vector<storm::expressions::Expression> formulae;
 
                     // Likewise, if no target combination is known, we may assert that there is at least one.
                     bool targetCombinationKnown = false;
@@ -401,7 +390,7 @@ namespace storm {
                             targetCombinationKnown = true;
                             break;
                         } else {
-                            z3::expr conj = context.bool_val(true);
+                            storm::expressions::Expression conj = variableInformation.manager->boolean(true);
                             for (auto label : tmpSet) {
                                 conj = conj && variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label));
                             }
@@ -409,7 +398,7 @@ namespace storm {
                         }
                     }
                     if (!targetCombinationKnown) {
-                        assertDisjunction(context, solver, formulae);
+                        assertDisjunction(solver, formulae, *variableInformation.manager);
                     }
                 }
                 
@@ -427,7 +416,7 @@ namespace storm {
                 LOG4CPLUS_DEBUG(logger, "Asserting taken labels are followed by another label if they are not a target label.");
                 // Now assert that for each non-target label, we take a following label.
                 for (auto const& labelSetFollowingSetsPair : followingLabels) {
-                    std::vector<z3::expr> formulae;
+                    std::vector<storm::expressions::Expression> formulae;
                     
                     // Only build a constraint if the combination does not lead to a target state and
                     // no successor set is already known.
@@ -448,7 +437,7 @@ namespace storm {
                             std::set_difference(followingSet.begin(), followingSet.end(), relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end(), std::inserter(tmpSet, tmpSet.end()));
                             
                             // Construct an expression that enables all unknown labels of the current following set.
-                            z3::expr conj = context.bool_val(true);
+                            storm::expressions::Expression conj = variableInformation.manager->boolean(true);
                             for (auto label : tmpSet) {
                                 conj = conj && variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label));
                             }
@@ -460,13 +449,13 @@ namespace storm {
                             // This is because it could be that the commands are taken to enable other synchronizations. Therefore, we need
                             // to add an additional clause that says that the right-hand side of the implication is also true if all commands
                             // of the current choice have enabled synchronization options.
-                            z3::expr finalDisjunct = context.bool_val(false);
+                            storm::expressions::Expression finalDisjunct = variableInformation.manager->boolean(false);
                             for (auto label : labelSetFollowingSetsPair.first) {
-                                z3::expr alternativeExpressionForLabel = context.bool_val(false);
+                                storm::expressions::Expression alternativeExpressionForLabel = variableInformation.manager->boolean(false);
                                 std::set<boost::container::flat_set<uint_fast64_t>> const& synchsForCommand = synchronizingLabels.at(label);
                                 
                                 for (auto const& synchSet : synchsForCommand) {
-                                    z3::expr alternativeExpression = context.bool_val(true);
+                                    storm::expressions::Expression alternativeExpression = variableInformation.manager->boolean(true);
                                     
                                     // If the current synchSet is the same as left-hand side of the implication, we need to skip it.
                                     if (synchSet == labelSetFollowingSetsPair.first) continue;
@@ -483,9 +472,9 @@ namespace storm {
                                             alternativeExpression = alternativeExpression && variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label));
                                         }
                                     
-                                        z3::expr disjunctionOverSuccessors = context.bool_val(false);
+                                        storm::expressions::Expression disjunctionOverSuccessors = variableInformation.manager->boolean(false);
                                         for (auto successorSet : followingLabels.at(synchSet)) {
-                                            z3::expr conjunctionOverLabels = context.bool_val(true);
+                                            storm::expressions::Expression conjunctionOverLabels = variableInformation.manager->boolean(true);
                                             for (auto label : successorSet) {
                                                 if (relevancyInformation.knownLabels.find(label) == relevancyInformation.knownLabels.end()) {
                                                     conjunctionOverLabels = conjunctionOverLabels && variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label));
@@ -507,7 +496,7 @@ namespace storm {
                         }
 
                         if (formulae.size() > 0) {
-                            assertDisjunction(context, solver, formulae);
+                            assertDisjunction(solver, formulae, *variableInformation.manager);
                         }
                     }
                 }
@@ -516,7 +505,7 @@ namespace storm {
                 // Finally, assert that if we take one of the synchronizing labels, we also take one of the combinations
                 // the label appears in.
                 for (auto const& labelSynchronizingSetsPair : synchronizingLabels) {
-                    std::vector<z3::expr> formulae;
+                    std::vector<storm::expressions::Expression> formulae;
 
                     if (relevancyInformation.knownLabels.find(labelSynchronizingSetsPair.first) == relevancyInformation.knownLabels.end()) {
                         formulae.push_back(!variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(labelSynchronizingSetsPair.first)));
@@ -526,7 +515,7 @@ namespace storm {
                     // known, which means we must not assert anything.
                     bool allImplicantsKnownForOneSet = false;
                     for (auto const& synchronizingSet : labelSynchronizingSetsPair.second) {
-                        z3::expr currentCombination = context.bool_val(true);
+                        storm::expressions::Expression currentCombination = variableInformation.manager->boolean(true);
                         bool allImplicantsKnownForCurrentSet = true;
                         for (auto label : synchronizingSet) {
                             if (relevancyInformation.knownLabels.find(label) == relevancyInformation.knownLabels.end() && label != labelSynchronizingSetsPair.first) {
@@ -543,7 +532,7 @@ namespace storm {
                     }
                     
                     if (!allImplicantsKnownForOneSet) {
-                        assertDisjunction(context, solver, formulae);
+                        assertDisjunction(solver, formulae, *variableInformation.manager);
                     }
                 }
             }
@@ -553,10 +542,9 @@ namespace storm {
              * suboptimal solutions.
              *
              * @param program The symbolic representation of the model in terms of a program.
-             * @param context The Z3 context in which to build the expressions.
              * @param solver The solver to use for the satisfiability evaluation.
              */
-            static void assertSymbolicCuts(storm::prism::Program const& program, storm::models::Mdp<T> const& labeledMdp, VariableInformation const& variableInformation, RelevancyInformation const& relevancyInformation, z3::context& context, z3::solver& solver) {
+            static void assertSymbolicCuts(storm::prism::Program& program, storm::models::Mdp<T> const& labeledMdp, VariableInformation const& variableInformation, RelevancyInformation const& relevancyInformation, storm::solver::SmtSolver& solver) {
                 // A container storing the label sets that may precede a given label set.
                 std::map<boost::container::flat_set<uint_fast64_t>, std::set<boost::container::flat_set<uint_fast64_t>>> precedingLabelSets;
 
@@ -600,45 +588,42 @@ namespace storm {
                     }
                 }
                 
-                // Create a context and register all variables of the program with their correct type.
-                z3::context localContext;
-                z3::solver localSolver(localContext);
-                std::map<std::string, z3::expr> solverVariables;
-                for (auto const& booleanVariable : program.getGlobalBooleanVariables()) {
-                    solverVariables.emplace(booleanVariable.getName(), localContext.bool_const(booleanVariable.getName().c_str()));
-                }
-                for (auto const& integerVariable : program.getGlobalIntegerVariables()) {
-                    solverVariables.emplace(integerVariable.getName(), localContext.int_const(integerVariable.getName().c_str()));
-                }
-                
-                for (auto const& module : program.getModules()) {
-                    for (auto const& booleanVariable : module.getBooleanVariables()) {
-                        solverVariables.emplace(booleanVariable.getName(), localContext.bool_const(booleanVariable.getName().c_str()));
-                    }
-                    for (auto const& integerVariable : module.getIntegerVariables()) {
-                        solverVariables.emplace(integerVariable.getName(), localContext.int_const(integerVariable.getName().c_str()));
-                    }
-                }
-                
-                storm::adapters::Z3ExpressionAdapter expressionAdapter(localContext, solverVariables);
+                // Create a new solver over the same variables as the given program to use it for determining the symbolic
+                // cuts.
+                std::unique_ptr<storm::solver::SmtSolver> localSolver(new storm::solver::Z3SmtSolver(program.getManager()));
+                storm::expressions::ExpressionManager const& localManager = program.getManager();
+//
+//                // Create a context and register all variables of the program with their correct type.
+//                z3::context localContext;
+//                z3::solver localSolver(localContext);
+//                std::map<std::string, z3::expr> solverVariables;
+//                for (auto const& booleanVariable : program.getGlobalBooleanVariables()) {
+//                    solverVariables.emplace(booleanVariable.getName(), localContext.bool_const(booleanVariable.getName().c_str()));
+//                }
+//                for (auto const& integerVariable : program.getGlobalIntegerVariables()) {
+//                    solverVariables.emplace(integerVariable.getName(), localContext.int_const(integerVariable.getName().c_str()));
+//                }
+//                
+//                for (auto const& module : program.getModules()) {
+//                    for (auto const& booleanVariable : module.getBooleanVariables()) {
+//                        solverVariables.emplace(booleanVariable.getName(), localContext.bool_const(booleanVariable.getName().c_str()));
+//                    }
+//                    for (auto const& integerVariable : module.getIntegerVariables()) {
+//                        solverVariables.emplace(integerVariable.getName(), localContext.int_const(integerVariable.getName().c_str()));
+//                    }
+//                }
+//                
+//                storm::adapters::Z3ExpressionAdapter expressionAdapter(localContext, false, solverVariables);
 
                 // Then add the constraints for bounds of the integer variables..
                 for (auto const& integerVariable : program.getGlobalIntegerVariables()) {
-                    z3::expr lowerBound = expressionAdapter.translateExpression(integerVariable.getLowerBoundExpression());
-                    lowerBound = solverVariables.at(integerVariable.getName()) >= lowerBound;
-                    localSolver.add(lowerBound);
-                    z3::expr upperBound = expressionAdapter.translateExpression(integerVariable.getUpperBoundExpression());
-                    upperBound = solverVariables.at(integerVariable.getName()) <= upperBound;
-                    localSolver.add(upperBound);
+                    localSolver->add(integerVariable.getExpressionVariable() >= integerVariable.getLowerBoundExpression());
+                    localSolver->add(integerVariable.getExpressionVariable() <= integerVariable.getUpperBoundExpression());
                 }
                 for (auto const& module : program.getModules()) {
                     for (auto const& integerVariable : module.getIntegerVariables()) {
-                        z3::expr lowerBound = expressionAdapter.translateExpression(integerVariable.getLowerBoundExpression());
-                        lowerBound = solverVariables.at(integerVariable.getName()) >= lowerBound;
-                        localSolver.add(lowerBound);
-                        z3::expr upperBound = expressionAdapter.translateExpression(integerVariable.getUpperBoundExpression());
-                        upperBound = solverVariables.at(integerVariable.getName()) <= upperBound;
-                        localSolver.add(upperBound);
+                        localSolver->add(integerVariable.getExpressionVariable() >= integerVariable.getLowerBoundExpression());
+                        localSolver->add(integerVariable.getExpressionVariable() <= integerVariable.getUpperBoundExpression());
                     }
                 }
                 
@@ -667,20 +652,20 @@ namespace storm {
                     }
                     
                     // Save the state of the solver so we can easily backtrack.
-                    localSolver.push();
+                    localSolver->push();
                     
                     // Check if the command set is enabled in the initial state.
                     for (auto const& command : currentCommandVector) {
-                        localSolver.add(expressionAdapter.translateExpression(command.get().getGuardExpression()));
+                        localSolver->add(command.get().getGuardExpression());
                     }
-                    localSolver.add(expressionAdapter.translateExpression(initialStateExpression));
+                    localSolver->add(initialStateExpression);
                     
-                    z3::check_result checkResult = localSolver.check();
-                    localSolver.pop();
-                    localSolver.push();
+                    storm::solver::SmtSolver::CheckResult checkResult = localSolver->check();
+                    localSolver->pop();
+                    localSolver->push();
 
                     // If the solver reports unsat, then we know that the current selection is not enabled in the initial state.
-                    if (checkResult == z3::unsat) {
+                    if (checkResult == storm::solver::SmtSolver::CheckResult::Unsat) {
                         LOG4CPLUS_DEBUG(logger, "Selection not enabled in initial state.");
                         storm::expressions::Expression guardConjunction;
                         if (currentCommandVector.size() == 1) {
@@ -703,22 +688,22 @@ namespace storm {
                         }
                         
                         LOG4CPLUS_DEBUG(logger, "About to assert disjunction of negated guards.");
-                        z3::expr guardExpression = localContext.bool_val(false);
+                        storm::expressions::Expression guardExpression = localManager.boolean(false);
                         bool firstAssignment = true;
                         for (auto const& command : currentCommandVector) {
                             if (firstAssignment) {
-                                guardExpression = !expressionAdapter.translateExpression(command.get().getGuardExpression());
+                                guardExpression = !command.get().getGuardExpression();
                             } else {
-                                guardExpression = guardExpression | !expressionAdapter.translateExpression(command.get().getGuardExpression());
+                                guardExpression = guardExpression || !command.get().getGuardExpression();
                             }
                         }
-                        localSolver.add(guardExpression);
+                        localSolver->add(guardExpression);
                         LOG4CPLUS_DEBUG(logger, "Asserted disjunction of negated guards.");
                         
                         // Now check the possible preceding label sets for the essential ones.
                         for (auto const& precedingLabelSet : labelSetAndPrecedingLabelSetsPair.second) {
                             // Create a restore point so we can easily pop-off all weakest precondition expressions.
-                            localSolver.push();
+                            localSolver->push();
                             
                             // Find out the commands for the currently considered preceding label set.
                             std::vector<std::reference_wrapper<storm::prism::Command const>> currentPrecedingCommandVector;
@@ -737,7 +722,7 @@ namespace storm {
                             
                             // Assert all the guards of the preceding command set.
                             for (auto const& command : currentPrecedingCommandVector) {
-                                localSolver.add(expressionAdapter.translateExpression(command.get().getGuardExpression()));
+                                localSolver->add(command.get().getGuardExpression());
                             }
                             
                             std::vector<std::vector<storm::prism::Update>::const_iterator> iteratorVector;
@@ -746,19 +731,19 @@ namespace storm {
                             }
                             
                             // Iterate over all possible combinations of updates of the preceding command set.
-                            std::vector<z3::expr> formulae;
+                            std::vector<storm::expressions::Expression> formulae;
                             bool done = false;
                             while (!done) {
-                                std::map<std::string, storm::expressions::Expression> currentUpdateCombinationMap;
+                                std::map<storm::expressions::Variable, storm::expressions::Expression> currentUpdateCombinationMap;
                                 for (auto const& updateIterator : iteratorVector) {
                                     for (auto const& assignment : updateIterator->getAssignments()) {
-                                        currentUpdateCombinationMap.emplace(assignment.getVariableName(), assignment.getExpression());
+                                        currentUpdateCombinationMap.emplace(assignment.getVariable(), assignment.getExpression());
                                     }
                                 }
                                 
                                 LOG4CPLUS_DEBUG(logger, "About to assert a weakest precondition.");
                                 storm::expressions::Expression wp = guardConjunction.substitute(currentUpdateCombinationMap);
-                                formulae.push_back(expressionAdapter.translateExpression(wp));
+                                formulae.push_back(wp);
                                 LOG4CPLUS_DEBUG(logger, "Asserted weakest precondition.");
                                 
                                 // Now try to move iterators to the next position if possible. If we could properly move it, we can directly
@@ -780,19 +765,19 @@ namespace storm {
                             }
 
                             // Now assert the disjunction of all weakest preconditions of all considered update combinations.
-                            assertDisjunction(localContext, localSolver, formulae);
+                            assertDisjunction(*localSolver, formulae, localManager);
                             
                             LOG4CPLUS_DEBUG(logger, "Asserted disjunction of all weakest preconditions.");
                             
-                            if (localSolver.check() == z3::sat) {
+                            if (localSolver->check() == storm::solver::SmtSolver::CheckResult::Sat) {
                                 backwardImplications[labelSetAndPrecedingLabelSetsPair.first].insert(precedingLabelSet);
                             }
                             
-                            localSolver.pop();
+                            localSolver->pop();
                         }
                         
                         // Popping the disjunction of negated guards from the solver stack.
-                        localSolver.pop();
+                        localSolver->pop();
                     }
                 }
                 
@@ -810,7 +795,7 @@ namespace storm {
                 LOG4CPLUS_DEBUG(logger, "Asserting taken labels are preceded by another label if they are not an initial label.");
                 // Now assert that for each non-target label, we take a following label.
                 for (auto const& labelSetImplicationsPair : backwardImplications) {
-                    std::vector<z3::expr> formulae;
+                    std::vector<storm::expressions::Expression> formulae;
                     
                     // Only build a constraint if the combination no predecessor set is already known.
                     if (hasKnownPredecessor.find(labelSetImplicationsPair.first) == hasKnownPredecessor.end()) {
@@ -830,7 +815,7 @@ namespace storm {
                             std::set_difference(precedingSet.begin(), precedingSet.end(), relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end(), std::inserter(tmpSet, tmpSet.end()));
                             
                             // Construct an expression that enables all unknown labels of the current following set.
-                            z3::expr conj = context.bool_val(true);
+                            storm::expressions::Expression conj = variableInformation.manager->boolean(true);
                             for (auto label : tmpSet) {
                                 conj = conj && variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label));
                             }
@@ -842,13 +827,13 @@ namespace storm {
                             // This is because it could be that the commands are taken to enable other synchronizations. Therefore, we need
                             // to add an additional clause that says that the right-hand side of the implication is also true if all commands
                             // of the current choice have enabled synchronization options.
-                            z3::expr finalDisjunct = context.bool_val(false);
+                            storm::expressions::Expression finalDisjunct = variableInformation.manager->boolean(false);
                             for (auto label : labelSetImplicationsPair.first) {
-                                z3::expr alternativeExpressionForLabel = context.bool_val(false);
+                                storm::expressions::Expression alternativeExpressionForLabel = variableInformation.manager->boolean(false);
                                 std::set<boost::container::flat_set<uint_fast64_t>> const& synchsForCommand = synchronizingLabels.at(label);
                                 
                                 for (auto const& synchSet : synchsForCommand) {
-                                    z3::expr alternativeExpression = context.bool_val(true);
+                                    storm::expressions::Expression alternativeExpression = variableInformation.manager->boolean(true);
 
                                     // If the current synchSet is the same as left-hand side of the implication, we need to skip it.
                                     if (synchSet == labelSetImplicationsPair.first) continue;
@@ -865,11 +850,11 @@ namespace storm {
                                             alternativeExpression = alternativeExpression && variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label));
                                         }
                                         
-                                        z3::expr disjunctionOverPredecessors = context.bool_val(false);
+                                        storm::expressions::Expression disjunctionOverPredecessors = variableInformation.manager->boolean(false);
                                         auto precedingLabelSetsIterator = precedingLabelSets.find(synchSet);
                                         if (precedingLabelSetsIterator != precedingLabelSets.end()) {
                                             for (auto precedingSet : precedingLabelSetsIterator->second) {
-                                                z3::expr conjunctionOverLabels = context.bool_val(true);
+                                                storm::expressions::Expression conjunctionOverLabels = variableInformation.manager->boolean(true);
                                                 for (auto label : precedingSet) {
                                                     if (relevancyInformation.knownLabels.find(label) == relevancyInformation.knownLabels.end()) {
                                                         conjunctionOverLabels = conjunctionOverLabels && variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label));
@@ -892,7 +877,7 @@ namespace storm {
                         }
                         
                         if (formulae.size() > 0) {
-                            assertDisjunction(context, solver, formulae);
+                            assertDisjunction(solver, formulae, *variableInformation.manager);
                         }
                     }
                 }
@@ -901,7 +886,7 @@ namespace storm {
             /*!
              * Asserts constraints necessary to encode the reachability of at least one target state from the initial states.
              */
-            static void assertReachabilityCuts(storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& psiStates, VariableInformation const& variableInformation, RelevancyInformation const& relevancyInformation, z3::context& context, z3::solver& solver) {
+            static void assertReachabilityCuts(storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& psiStates, VariableInformation const& variableInformation, RelevancyInformation const& relevancyInformation, storm::solver::SmtSolver& solver) {
                 
                 if (!variableInformation.hasReachabilityVariables) {
                     throw storm::exceptions::InvalidStateException() << "Impossible to assert reachability cuts without the necessary variables.";
@@ -915,7 +900,7 @@ namespace storm {
                 // First, we add the formulas that encode
                 // (1) if an incoming transition is chosen, an outgoing one is chosen as well (for non-initial states)
                 // (2) an outgoing transition out of the initial states is taken.
-                z3::expr initialStateExpression = context.bool_val(false);
+                storm::expressions::Expression initialStateExpression = variableInformation.manager->boolean(false);
                 for (auto relevantState : relevancyInformation.relevantStates) {
                     if (!labeledMdp.getInitialStates().get(relevantState)) {
                         // Assert the constraints (1).
@@ -935,7 +920,7 @@ namespace storm {
                             }
                         }
                         
-                        z3::expr expression = context.bool_val(true);
+                        storm::expressions::Expression expression = variableInformation.manager->boolean(true);
                         for (auto predecessor : relevantPredecessors) {
                             expression = expression && !variableInformation.statePairVariables.at(variableInformation.statePairToIndexMap.at(std::make_pair(predecessor, relevantState)));
                         }
@@ -978,9 +963,9 @@ namespace storm {
                             }
                         }
                     }
-                    z3::expr labelExpression = !variableInformation.statePairVariables.at(statePairIndexPair.second);
+                    storm::expressions::Expression labelExpression = !variableInformation.statePairVariables.at(statePairIndexPair.second);
                     for (auto choice : choicesForStatePair) {
-                        z3::expr choiceExpression = context.bool_val(true);
+                        storm::expressions::Expression choiceExpression = variableInformation.manager->boolean(true);
                         for (auto element : choiceLabeling.at(choice)) {
                             if (relevancyInformation.knownLabels.find(element) == relevancyInformation.knownLabels.end()) {
                                 choiceExpression = choiceExpression && variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(element));
@@ -991,7 +976,7 @@ namespace storm {
                     solver.add(labelExpression);
 
                     // Assert constraint for (2).
-                    z3::expr orderExpression = !variableInformation.statePairVariables.at(statePairIndexPair.second) || variableInformation.stateOrderVariables.at(variableInformation.relevantStatesToOrderVariableIndexMap.at(sourceState)) < variableInformation.stateOrderVariables.at(variableInformation.relevantStatesToOrderVariableIndexMap.at(targetState));
+                    storm::expressions::Expression orderExpression = !variableInformation.statePairVariables.at(statePairIndexPair.second) || variableInformation.stateOrderVariables.at(variableInformation.relevantStatesToOrderVariableIndexMap.at(sourceState)).getExpression() < variableInformation.stateOrderVariables.at(variableInformation.relevantStatesToOrderVariableIndexMap.at(targetState)).getExpression();
                     solver.add(orderExpression);
                 }
             }
@@ -1000,12 +985,12 @@ namespace storm {
              * Asserts that the disjunction of the given formulae holds. If the content of the disjunction is empty,
              * this corresponds to asserting false.
              *
-             * @param context The Z3 context in which to build the expressions.
              * @param solver The solver to use for the satisfiability evaluation.
              * @param formulaVector A vector of expressions that shall form the disjunction.
+             * @param manager The expression manager to use.
              */
-            static void assertDisjunction(z3::context& context, z3::solver& solver, std::vector<z3::expr> const& formulaVector) {
-                z3::expr disjunction = context.bool_val(false);
+            static void assertDisjunction(storm::solver::SmtSolver& solver, std::vector<storm::expressions::Expression> const& formulaVector, storm::expressions::ExpressionManager const& manager) {
+                storm::expressions::Expression disjunction = manager.boolean(false);
                 for (auto expr : formulaVector) {
                     disjunction = disjunction || expr;
                 }
@@ -1037,9 +1022,9 @@ namespace storm {
              * @return A pair whose first component represents the carry bit and whose second component represents the
              * result bit.
              */
-            static std::pair<z3::expr, z3::expr> createFullAdder(z3::expr in1, z3::expr in2, z3::expr carryIn) {
-                z3::expr resultBit = (in1 && !in2 && !carryIn) || (!in1 && in2 && !carryIn) || (!in1 && !in2 && carryIn) || (in1 && in2 && carryIn);
-                z3::expr carryBit = in1 && in2 || in1 && carryIn || in2 && carryIn;
+            static std::pair<storm::expressions::Expression, storm::expressions::Expression> createFullAdder(storm::expressions::Expression in1, storm::expressions::Expression in2, storm::expressions::Expression carryIn) {
+                storm::expressions::Expression resultBit = (in1 && !in2 && !carryIn) || (!in1 && in2 && !carryIn) || (!in1 && !in2 && carryIn) || (in1 && in2 && carryIn);
+                storm::expressions::Expression carryBit = in1 && in2 || in1 && carryIn || in2 && carryIn;
                 
                 return std::make_pair(carryBit, resultBit);
             }
@@ -1048,12 +1033,12 @@ namespace storm {
              * Creates an adder for the two inputs of equal size. The resulting vector represents the different bits of
              * the sum (and is thus one bit longer than the two inputs).
              *
-             * @param context The Z3 context in which to build the expressions.
+             * @param variableInformation The variable information structure.
              * @param in1 The first input to the adder.
              * @param in2 The second input to the adder.
              * @return A vector representing the bits of the sum of the two inputs.
              */
-            static std::vector<z3::expr> createAdder(z3::context& context, std::vector<z3::expr> const& in1, std::vector<z3::expr> const& in2) {
+            static std::vector<storm::expressions::Expression> createAdder(VariableInformation const& variableInformation, std::vector<storm::expressions::Expression> const& in1, std::vector<storm::expressions::Expression> const& in2) {
                 // Sanity check for sizes of input.
                 if (in1.size() != in2.size() || in1.size() == 0) {
                     LOG4CPLUS_ERROR(logger, "Illegal input to adder (" << in1.size() << ", " << in2.size() << ").");
@@ -1061,13 +1046,13 @@ namespace storm {
                 }
                 
                 // Prepare result.
-                std::vector<z3::expr> result;
+                std::vector<storm::expressions::Expression> result;
                 result.reserve(in1.size() + 1);
                 
                 // Add all bits individually and pass on carry bit appropriately.
-                z3::expr carryBit = context.bool_val(false);
+                storm::expressions::Expression carryBit = variableInformation.manager->boolean(false);
                 for (uint_fast64_t currentBit = 0; currentBit < in1.size(); ++currentBit) {
-                    std::pair<z3::expr, z3::expr> localResult = createFullAdder(in1[currentBit], in2[currentBit], carryBit);
+                    std::pair<storm::expressions::Expression, storm::expressions::Expression> localResult = createFullAdder(in1[currentBit], in2[currentBit], carryBit);
                     
                     result.push_back(localResult.second);
                     carryBit = localResult.first;
@@ -1082,22 +1067,22 @@ namespace storm {
              * consecutive numbers of the input. If the number if input numbers is odd, the last number is simply added
              * to the output.
              *
-             * @param context The Z3 context in which to build the expressions.
+             * @param variableInformation The variable information structure.
              * @param in A vector or binary encoded numbers.
              * @return A vector of numbers that each correspond to the sum of two consecutive elements of the input.
              */
-            static std::vector<std::vector<z3::expr>> createAdderPairs(z3::context& context, std::vector<std::vector<z3::expr>> const& in) {
-                std::vector<std::vector<z3::expr>> result;
+            static std::vector<std::vector<storm::expressions::Expression>> createAdderPairs(VariableInformation const& variableInformation, std::vector<std::vector<storm::expressions::Expression>> const& in) {
+                std::vector<std::vector<storm::expressions::Expression>> result;
                 
                 result.reserve(in.size() / 2 + in.size() % 2);
                 
                 for (uint_fast64_t index = 0; index < in.size() / 2; ++index) {
-                    result.push_back(createAdder(context, in[2 * index], in[2 * index + 1]));
+                    result.push_back(createAdder(variableInformation, in[2 * index], in[2 * index + 1]));
                 }
                 
                 if (in.size() % 2 != 0) {
                     result.push_back(in.back());
-                    result.back().push_back(context.bool_val(false));
+                    result.back().push_back(variableInformation.manager->boolean(false));
                 }
                 
                 return result;
@@ -1106,25 +1091,25 @@ namespace storm {
             /*!
              * Creates a counter circuit that returns the number of literals out of the given vector that are set to true.
              *
-             * @param context The Z3 context in which to build the expressions.
+             * @param variableInformation The variable information structure.
              * @param literals The literals for which to create the adder circuit.
              * @return A bit vector representing the number of literals that are set to true.
              */
-            static std::vector<z3::expr> createCounterCircuit(z3::context& context, std::vector<z3::expr> const& literals) {
+            static std::vector<storm::expressions::Expression> createCounterCircuit(VariableInformation const& variableInformation, std::vector<storm::expressions::Variable> const& literals) {
                 LOG4CPLUS_DEBUG(logger, "Creating counter circuit for " << literals.size() << " literals.");
 
                 // Create the auxiliary vector.
-                std::vector<std::vector<z3::expr>> aux;
+                std::vector<std::vector<storm::expressions::Expression>> aux;
                 for (uint_fast64_t index = 0; index < literals.size(); ++index) {
                     aux.emplace_back();
                     aux.back().push_back(literals[index]);
                 }
                 
                 while (aux.size() > 1) {
-                    aux = createAdderPairs(context, aux);
+                    aux = createAdderPairs(variableInformation, aux);
                 }
                 
-                return aux[0];
+                return aux.front();
             }
             
             /*!
@@ -1144,38 +1129,39 @@ namespace storm {
              * may at most represent the number k. The constraint is associated with a relaxation variable, that is
              * returned by this function and may be used to deactivate the constraint.
              *
-             * @param context The Z3 context in which to build the expressions.
              * @param solver The solver to use for the satisfiability evaluation.
-             * @param input The variables that encode the value to restrict.
+             * @param variableInformation The struct that holds the variable information.
              * @param k The bound for the binary-encoded value.
              * @return The relaxation variable associated with the constraint.
              */
-             static z3::expr assertLessOrEqualKRelaxed(z3::context& context, z3::solver& solver, std::vector<z3::expr> const& input, uint64_t k) {
+            static storm::expressions::Variable assertLessOrEqualKRelaxed(storm::solver::SmtSolver& solver, VariableInformation const& variableInformation, uint64_t k) {
                 LOG4CPLUS_DEBUG(logger, "Asserting solution has size less or equal " << k << ".");
-
-                z3::expr result(context);
+                
+                std::vector<storm::expressions::Variable> const& input = variableInformation.adderVariables;
+                
+                storm::expressions::Expression result;
                 if (bitIsSet(k, 0)) {
-                    result = context.bool_val(true);
+                    result = variableInformation.manager->boolean(true);
                 } else {
                     result = !input.at(0);
                 }
                 for (uint_fast64_t index = 1; index < input.size(); ++index) {
-                    z3::expr i1(context);
-                    z3::expr i2(context);
+                    storm::expressions::Expression i1;
+                    storm::expressions::Expression i2;
                     
                     if (bitIsSet(k, index)) {
                         i1 = !input.at(index);
                         i2 = result;
                     } else {
-                        i1 = context.bool_val(false);
-                        i2 = context.bool_val(false);
+                        i1 = variableInformation.manager->boolean(false);
+                        i2 = variableInformation.manager->boolean(false);
                     }
                     result = i1 || i2 || (!input.at(index) && result);
                 }
                 
                 std::stringstream variableName;
                 variableName << "relaxed" << k;
-                z3::expr relaxingVariable = context.bool_const(variableName.str().c_str());
+                storm::expressions::Variable relaxingVariable = variableInformation.manager->declareBooleanVariable(variableName.str());
                 result = result || relaxingVariable;
                 
                 solver.add(result);
@@ -1293,24 +1279,16 @@ namespace storm {
             /*!
              * Determines the set of labels that was chosen by the given model.
              *
-             * @param context The Z3 context in which to build the expressions.
-             * @param model The Z3 model from which to extract the information.
+             * @param model The model from which to extract the information.
              * @param variableInformation A structure with information about the variables of the solver.
              */
-            static boost::container::flat_set<uint_fast64_t> getUsedLabelSet(z3::context& context, z3::model const& model, VariableInformation const& variableInformation) {
+            static boost::container::flat_set<uint_fast64_t> getUsedLabelSet(storm::solver::SmtSolver::ModelReference const& model, VariableInformation const& variableInformation) {
                 boost::container::flat_set<uint_fast64_t> result;
                 for (auto const& labelIndexPair : variableInformation.labelToIndexMap) {
-                    z3::expr auxValue = model.eval(variableInformation.labelVariables.at(labelIndexPair.second));
+                    bool commandIncluded = model.getBooleanValue(variableInformation.labelVariables.at(labelIndexPair.second));
                     
-                    // Check whether the auxiliary variable was set or not.
-                    if (eq(auxValue, context.bool_val(true))) {
+                    if (commandIncluded) {
                         result.insert(labelIndexPair.first);
-                    } else if (eq(auxValue, context.bool_val(false))) {
-                        // Nothing to do in this case.
-                    } else if (eq(auxValue, variableInformation.labelVariables.at(labelIndexPair.second))) {
-                        // If the auxiliary variable is a don't care, then we don't take the corresponding command.
-                    } else {
-                        throw storm::exceptions::InvalidStateException() << "Could not retrieve value of boolean variable from illegal value.";
                     }
                 }
                 return result;
@@ -1320,21 +1298,20 @@ namespace storm {
              * Asserts an adder structure in the given solver that counts the number of variables that are set to true
              * out of the given variables.
              *
-             * @param context The Z3 context in which to build the expressions.
              * @param solver The solver for which to add the adder.
              * @param variableInformation A structure with information about the variables of the solver.
              */
-            static std::vector<z3::expr> assertAdder(z3::context& context, z3::solver& solver, VariableInformation const& variableInformation) {
+            static std::vector<storm::expressions::Variable> assertAdder(storm::solver::SmtSolver& solver, VariableInformation const& variableInformation) {
                 std::stringstream variableName;
-                std::vector<z3::expr> result;
+                std::vector<storm::expressions::Variable> result;
                 
-                std::vector<z3::expr> adderVariables = createCounterCircuit(context, variableInformation.labelVariables);
+                std::vector<storm::expressions::Expression> adderVariables = createCounterCircuit(variableInformation, variableInformation.labelVariables);
                 for (uint_fast64_t i = 0; i < adderVariables.size(); ++i) {
                     variableName.str("");
                     variableName.clear();
                     variableName << "adder" << i;
-                    result.push_back(context.bool_const(variableName.str().c_str()));
-                    solver.add(implies(adderVariables[i], result.back()));
+                    result.push_back(variableInformation.manager->declareBooleanVariable(variableName.str()));
+                    solver.add(storm::expressions::implies(adderVariables[i], result.back()));
                 }
                 
                 return result;
@@ -1343,35 +1320,33 @@ namespace storm {
             /*!
              * Finds the smallest set of labels such that the constraint system of the solver is still satisfiable.
              *
-             * @param context The Z3 context in which to build the expressions.
              * @param solver The solver to use for the satisfiability evaluation.
              * @param variableInformation A structure with information about the variables of the solver.
              * @param currentBound The currently known lower bound for the number of labels that need to be enabled
              * in order to satisfy the constraint system.
              * @return The smallest set of labels such that the constraint system of the solver is satisfiable.
              */
-            static boost::container::flat_set<uint_fast64_t> findSmallestCommandSet(z3::context& context, z3::solver& solver, VariableInformation& variableInformation, uint_fast64_t& currentBound) {
+            static boost::container::flat_set<uint_fast64_t> findSmallestCommandSet(storm::solver::SmtSolver& solver, VariableInformation& variableInformation, uint_fast64_t& currentBound) {
                 // Check if we can find a solution with the current bound.
-                z3::expr assumption = !variableInformation.auxiliaryVariables.back();
+                storm::expressions::Expression assumption = !variableInformation.auxiliaryVariables.back();
 
                 // As long as the constraints are unsatisfiable, we need to relax the last at-most-k constraint and
                 // try with an increased bound.
-                while (solver.check(1, &assumption) == z3::unsat) {
+                while (solver.checkWithAssumptions({assumption}) == storm::solver::SmtSolver::CheckResult::Unsat) {
                     LOG4CPLUS_DEBUG(logger, "Constraint system is unsatisfiable with at most " << currentBound << " taken commands; increasing bound.");
                     solver.add(variableInformation.auxiliaryVariables.back());
-                    variableInformation.auxiliaryVariables.push_back(assertLessOrEqualKRelaxed(context, solver, variableInformation.adderVariables, ++currentBound));
+                    variableInformation.auxiliaryVariables.push_back(assertLessOrEqualKRelaxed(solver, variableInformation, ++currentBound));
                     assumption = !variableInformation.auxiliaryVariables.back();
                 }
                 
                 // At this point we know that the constraint system was satisfiable, so compute the induced label
                 // set and return it.
-                return getUsedLabelSet(context, solver.get_model(), variableInformation);
+                return getUsedLabelSet(*solver.getModel(), variableInformation);
             }
             
             /*!
              * Analyzes the given sub-MDP that has a maximal reachability of zero (i.e. no psi states are reachable) and tries to construct assertions that aim to make at least one psi state reachable.
              *
-             * @param context The Z3 context in which to build the expressions.
              * @param solver The solver to use for the satisfiability evaluation.
              * @param subMdp The sub-MDP resulting from restricting the original MDP to the given command set.
              * @param originalMdp The original MDP.
@@ -1380,7 +1355,7 @@ namespace storm {
              * @param commandSet The currently chosen set of commands.
              * @param variableInformation A structure with information about the variables of the solver.
              */
-            static void analyzeZeroProbabilitySolution(z3::context& context, z3::solver& solver, storm::models::Mdp<T> const& subMdp, storm::models::Mdp<T> const& originalMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, boost::container::flat_set<uint_fast64_t> const& commandSet, VariableInformation& variableInformation, RelevancyInformation const& relevancyInformation) {
+            static void analyzeZeroProbabilitySolution(storm::solver::SmtSolver& solver, storm::models::Mdp<T> const& subMdp, storm::models::Mdp<T> const& originalMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, boost::container::flat_set<uint_fast64_t> const& commandSet, VariableInformation& variableInformation, RelevancyInformation const& relevancyInformation) {
                 storm::storage::BitVector reachableStates(subMdp.getNumberOfStates());
                 
                 LOG4CPLUS_DEBUG(logger, "Analyzing solution with zero probability.");
@@ -1475,14 +1450,14 @@ namespace storm {
                 }
                 
                 // Given the results of the previous analysis, we construct the implications.
-                std::vector<z3::expr> formulae;
+                std::vector<storm::expressions::Expression> formulae;
                 boost::container::flat_set<uint_fast64_t> unknownReachableLabels;
                 std::set_difference(reachableLabels.begin(), reachableLabels.end(), relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end(), std::inserter(unknownReachableLabels, unknownReachableLabels.end()));
                 for (auto label : unknownReachableLabels) {
                     formulae.push_back(!variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label)));
                 }
                 for (auto const& cutLabelSet : cutLabels) {
-                    z3::expr cube = context.bool_val(true);
+                    storm::expressions::Expression cube = variableInformation.manager->boolean(true);
                     for (auto cutLabel : cutLabelSet) {
                         cube = cube && variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(cutLabel));
                     }
@@ -1491,15 +1466,13 @@ namespace storm {
                 }
                 
                 LOG4CPLUS_DEBUG(logger, "Asserting reachability implications.");
-                assertDisjunction(context, solver, formulae);
-                
+                assertDisjunction(solver, formulae, *variableInformation.manager);
             }
             
             /*!
              * Analyzes the given sub-MDP that has a non-zero maximal reachability and tries to construct assertions that aim to guide the solver to solutions
              * with an improved probability value.
              *
-             * @param context The Z3 context in which to build the expressions.
              * @param solver The solver to use for the satisfiability evaluation.
              * @param subMdp The sub-MDP resulting from restricting the original MDP to the given command set.
              * @param originalMdp The original MDP.
@@ -1508,7 +1481,7 @@ namespace storm {
              * @param commandSet The currently chosen set of commands.
              * @param variableInformation A structure with information about the variables of the solver.
              */
-            static void analyzeInsufficientProbabilitySolution(z3::context& context, z3::solver& solver, storm::models::Mdp<T> const& subMdp, storm::models::Mdp<T> const& originalMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, boost::container::flat_set<uint_fast64_t> const& commandSet, VariableInformation& variableInformation, RelevancyInformation const& relevancyInformation) {
+            static void analyzeInsufficientProbabilitySolution(storm::solver::SmtSolver& solver, storm::models::Mdp<T> const& subMdp, storm::models::Mdp<T> const& originalMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, boost::container::flat_set<uint_fast64_t> const& commandSet, VariableInformation& variableInformation, RelevancyInformation const& relevancyInformation) {
 
                 LOG4CPLUS_DEBUG(logger, "Analyzing solution with insufficient probability.");
 
@@ -1585,14 +1558,14 @@ namespace storm {
                 }
                 
                 // Given the results of the previous analysis, we construct the implications
-                std::vector<z3::expr> formulae;
+                std::vector<storm::expressions::Expression> formulae;
                 boost::container::flat_set<uint_fast64_t> unknownReachableLabels;
                 std::set_difference(reachableLabels.begin(), reachableLabels.end(), relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end(), std::inserter(unknownReachableLabels, unknownReachableLabels.end()));
                 for (auto label : unknownReachableLabels) {
                     formulae.push_back(!variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(label)));
                 }
                 for (auto const& cutLabelSet : cutLabels) {
-                    z3::expr cube = context.bool_val(true);
+                    storm::expressions::Expression cube = variableInformation.manager->boolean(true);
                     for (auto cutLabel : cutLabelSet) {
                         cube = cube && variableInformation.labelVariables.at(variableInformation.labelToIndexMap.at(cutLabel));
                     }
@@ -1601,7 +1574,7 @@ namespace storm {
                 }
                 
                 LOG4CPLUS_DEBUG(logger, "Asserting reachability implications.");
-                assertDisjunction(context, solver, formulae);
+                assertDisjunction(solver, formulae, *variableInformation.manager);
             }
 #endif
             
@@ -1640,7 +1613,7 @@ namespace storm {
                 auto analysisClock = std::chrono::high_resolution_clock::now();
                 decltype(std::chrono::high_resolution_clock::now() - analysisClock) totalAnalysisTime(0);
 
-                std::map<std::string, storm::expressions::Expression> constantDefinitions = storm::utility::prism::parseConstantDefinitionString(program, constantDefinitionString);
+                std::map<storm::expressions::Variable, storm::expressions::Expression> constantDefinitions = storm::utility::prism::parseConstantDefinitionString(program, constantDefinitionString);
                 storm::prism::Program preparedProgram = program.defineUndefinedConstants(constantDefinitions);
                 preparedProgram = preparedProgram.substituteConstants();
 
@@ -1666,37 +1639,35 @@ namespace storm {
                 // (2) Identify all states and commands that are relevant, because only these need to be considered later.
                 RelevancyInformation relevancyInformation = determineRelevantStatesAndLabels(labeledMdp, phiStates, psiStates);
                 
-                // (3) Create context for solver.
-                z3::context context;
+                // (3) Create a solver.
+                std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
+                std::unique_ptr<storm::solver::SmtSolver> solver(new storm::solver::Z3SmtSolver(*manager));
                 
                 // (4) Create the variables for the relevant commands.
-                VariableInformation variableInformation = createVariables(context, labeledMdp, psiStates, relevancyInformation, includeReachabilityEncoding);
+                VariableInformation variableInformation = createVariables(manager, labeledMdp, psiStates, relevancyInformation, includeReachabilityEncoding);
                 LOG4CPLUS_DEBUG(logger, "Created variables.");
 
-                // (5) After all variables have been created, create a solver for that context.
-                z3::solver solver(context);
-
-                // (6) Now assert an adder whose result variables can later be used to constrain the nummber of label
+                // (5) Now assert an adder whose result variables can later be used to constrain the nummber of label
                 // variables that were set to true. Initially, we are looking for a solution that has no label enabled
                 // and subsequently relax that.
-                variableInformation.adderVariables = assertAdder(context, solver, variableInformation);
-                variableInformation.auxiliaryVariables.push_back(assertLessOrEqualKRelaxed(context, solver, variableInformation.adderVariables, 0));
+                variableInformation.adderVariables = assertAdder(*solver, variableInformation);
+                variableInformation.auxiliaryVariables.push_back(assertLessOrEqualKRelaxed(*solver, variableInformation, 0));
                 
-                // (7) Add constraints that cut off a lot of suboptimal solutions.
+                // (6) Add constraints that cut off a lot of suboptimal solutions.
                 LOG4CPLUS_DEBUG(logger, "Asserting cuts.");
-                assertExplicitCuts(labeledMdp, psiStates, variableInformation, relevancyInformation, context, solver);
+                assertExplicitCuts(labeledMdp, psiStates, variableInformation, relevancyInformation, *solver);
                 LOG4CPLUS_DEBUG(logger, "Asserted explicit cuts.");
-                assertSymbolicCuts(preparedProgram, labeledMdp, variableInformation, relevancyInformation, context, solver);
+                assertSymbolicCuts(preparedProgram, labeledMdp, variableInformation, relevancyInformation, *solver);
                 LOG4CPLUS_DEBUG(logger, "Asserted symbolic cuts.");
                 if (includeReachabilityEncoding) {
-                    assertReachabilityCuts(labeledMdp, psiStates, variableInformation, relevancyInformation, context, solver);
+                    assertReachabilityCuts(labeledMdp, psiStates, variableInformation, relevancyInformation, *solver);
                     LOG4CPLUS_DEBUG(logger, "Asserted reachability cuts.");
                 }
                 
                 // As we are done with the setup at this point, stop the clock for the setup time.
                 totalSetupTime = std::chrono::high_resolution_clock::now() - setupTimeClock;
                 
-                // (8) Find the smallest set of commands that satisfies all constraints. If the probability of
+                // (7) Find the smallest set of commands that satisfies all constraints. If the probability of
                 // satisfying phi until psi exceeds the given threshold, the set of labels is minimal and can be returned.
                 // Otherwise, the current solution has to be ruled out and the next smallest solution is retrieved from
                 // the solver.
@@ -1712,7 +1683,7 @@ namespace storm {
                 do {
                     LOG4CPLUS_DEBUG(logger, "Computing minimal command set.");
                     solverClock = std::chrono::high_resolution_clock::now();
-                    commandSet = findSmallestCommandSet(context, solver, variableInformation, currentBound);
+                    commandSet = findSmallestCommandSet(*solver, variableInformation, currentBound);
                     totalSolverTime += std::chrono::high_resolution_clock::now() - solverClock;
                     LOG4CPLUS_DEBUG(logger, "Computed minimal command set of size " << (commandSet.size() + relevancyInformation.knownLabels.size()) << ".");
                     
@@ -1739,11 +1710,11 @@ namespace storm {
                             ++zeroProbabilityCount;
                             
                             // If there was no target state reachable, analyze the solution and guide the solver into the right direction.
-                            analyzeZeroProbabilitySolution(context, solver, subMdp, labeledMdp, phiStates, psiStates, commandSet, variableInformation, relevancyInformation);
+                            analyzeZeroProbabilitySolution(*solver, subMdp, labeledMdp, phiStates, psiStates, commandSet, variableInformation, relevancyInformation);
                         } else {
                             // If the reachability probability was greater than zero (i.e. there is a reachable target state), but the probability was insufficient to exceed
                             // the given threshold, we analyze the solution and try to guide the solver into the right direction.
-                            analyzeInsufficientProbabilitySolution(context, solver, subMdp, labeledMdp, phiStates, psiStates, commandSet, variableInformation, relevancyInformation);
+                            analyzeInsufficientProbabilitySolution(*solver, subMdp, labeledMdp, phiStates, psiStates, commandSet, variableInformation, relevancyInformation);
                         }
                     } else {
                         done = true;

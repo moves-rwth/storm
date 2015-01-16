@@ -6,6 +6,7 @@
 #include <ostream>
 #include <vector>
 #include <iterator>
+#include <functional>
 
 namespace storm {
     namespace storage {
@@ -104,7 +105,7 @@ namespace storm {
              * @param length The number of bits the bit vector should be able to hold.
              * @param init The initial value of the first |length| bits.
              */
-            BitVector(uint_fast64_t length, bool init = false);
+            explicit BitVector(uint_fast64_t length, bool init = false);
             
             /*!
              * Creates a bit vector that has exactly the bits set that are given by the provided input iterator range
@@ -137,7 +138,7 @@ namespace storm {
              * @param other The bitvector with which to compare the current one.
              * @return True iff the other bit vector is semantically the same as the current one.
              */
-            bool operator==(BitVector const& other);
+            bool operator==(BitVector const& other) const;
             
             /*!
              * Compares the given bit vector with the current one.
@@ -145,7 +146,7 @@ namespace storm {
              * @param other The bitvector with which to compare the current one.
              * @return True iff the other bit vector is semantically not the same as the current one.
              */
-            bool operator!=(BitVector const& other);
+            bool operator!=(BitVector const& other) const;
             
             /*!
              * Assigns the contents of the given bit vector to the current bit vector via a deep copy.
@@ -319,6 +320,54 @@ namespace storm {
             bool isDisjointFrom(BitVector const& other) const;
             
             /*!
+             * Checks whether the given bit vector matches the bits starting from the given index in the current bit
+             * vector. Note: the given bit vector must be shorter than the current one minus the given index.
+             *
+             * @param bitIndex The index of the first bit that it supposed to match. This value must be a multiple of 64.
+             * @param other The bit vector with which to compare.
+             * @return bool True iff the bits match exactly.
+             */
+            bool matches(uint_fast64_t bitIndex, BitVector const& other) const;
+            
+            /*!
+             * Sets the exact bit pattern of the given bit vector starting at the given bit index. Note: the given bit
+             * vector must be shorter than the current one minus the given index.
+             *
+             * @param bitIndex The index of the first bit that it supposed to be set. This value must be a multiple of
+             * 64.
+             * @param other The bit vector whose pattern to set.
+             */
+            void set(uint_fast64_t bitIndex, BitVector const& other);
+            
+            /*!
+             * Retrieves the content of the current bit vector at the given index for the given number of bits as a new
+             * bit vector.
+             *
+             * @param bitIndex The index of the first bit to get. This value must be a multiple of 64.
+             * @param numberOfBits The number of bits to get. This value must be a multiple of 64.
+             * @return A new bit vector holding the selected bits.
+             */
+            storm::storage::BitVector get(uint_fast64_t bitIndex, uint_fast64_t numberOfBits) const;
+            
+            /*!
+             * Retrieves the content of the current bit vector at the given index for the given number of bits as an
+             * unsigned integer value.
+             *
+             * @param bitIndex The index of the first bit to get.
+             * @param numberOfBits The number of bits to get. This value must be less or equal than 64.
+             */
+            uint_fast64_t getAsInt(uint_fast64_t bitIndex, uint_fast64_t numberOfBits) const;
+            
+            /*!
+             * Sets the selected number of lowermost bits of the provided value at the given bit index.
+             *
+             * @param bitIndex The index of the first bit to set.
+             * @param numberOfBits The number of bits to set.
+             * @param value The integer whose lowermost bits to set.
+             */
+            void setFromInt(uint_fast64_t bitIndex, uint_fast64_t numberOfBits, uint64_t value);
+            
+            /*!
              * Retrieves whether no bits are set to true in this bit vector.
              *
              * @return False iff there is at least one bit set in this vector.
@@ -376,13 +425,6 @@ namespace storm {
              */
             const_iterator end() const;
             
-            /*!
-             * Calculates a hash value for this bit vector.
-             *
-             * @return The hash value of this bit vector.
-             */
-            std::size_t hash() const;
-            
             /*
              * Retrieves the index of the bit that is the next bit set to true in the bit vector. If there is none,
              * this function returns the number of bits this vector holds in total. Put differently, if the return
@@ -395,8 +437,18 @@ namespace storm {
             uint_fast64_t getNextSetIndex(uint_fast64_t startingIndex) const;
             
             friend std::ostream& operator<<(std::ostream& out, BitVector const& bitVector);
+            friend struct std::hash<storm::storage::BitVector>;
+            friend struct NonZeroBitVectorHash;
             
         private:
+            /*!
+             * Creates an empty bit vector with the given number of buckets.
+             *
+             * @param bucketCount The number of buckets to create.
+             * @param bitCount This must be the number of buckets times 64.
+             */
+            BitVector(uint_fast64_t bucketCount, uint_fast64_t bitCount);
+            
             /*!
              * Retrieves the index of the next bit that is set to true after (and including) the given starting index.
              *
@@ -412,7 +464,14 @@ namespace storm {
              * Truncate the last bucket so that no bits are set starting from bitCount.
              */
             void truncateLastBucket();
-                        
+            
+            /*!
+             * Retrieves the number of buckets of the underlying storage.
+             *
+             * @return The number of buckets of the underlying storage.
+             */
+            size_t bucketCount() const;
+            
             // The number of bits that this bit vector can hold.
             uint_fast64_t bitCount;
             
@@ -423,7 +482,19 @@ namespace storm {
             static const uint_fast64_t mod64mask = (1 << 6) - 1;
         };
         
+        // A hashing functor that guarantees that the result of the hash is never going to be -1.
+        struct NonZeroBitVectorHash {
+            std::size_t operator()(storm::storage::BitVector const& bv) const;
+        };
+        
     } // namespace storage
 } // namespace storm
+
+namespace std {
+    template <>
+    struct hash<storm::storage::BitVector> {
+        std::size_t operator()(storm::storage::BitVector const& bv) const;
+    };
+}
 
 #endif // STORM_STORAGE_BITVECTOR_H_

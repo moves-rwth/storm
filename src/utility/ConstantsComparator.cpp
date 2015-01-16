@@ -1,5 +1,6 @@
 #include "src/utility/ConstantsComparator.h"
 
+#include "src/storage/SparseMatrix.h"
 #include "src/storage/sparse/StateType.h"
 
 namespace storm {
@@ -27,6 +28,13 @@ namespace storm {
         
         template<>
         double simplify(double value) {
+            // In the general case, we don't to anything here, but merely return the value. If something else is
+            // supposed to happen here, the templated function can be specialized for this particular type.
+            return value;
+        }
+
+        template<>
+        int simplify(int value) {
             // In the general case, we don't to anything here, but merely return the value. If something else is
             // supposed to happen here, the templated function can be specialized for this particular type.
             return value;
@@ -159,6 +167,20 @@ namespace storm {
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, double> simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, double> matrixEntry);
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, double>& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, double>& matrixEntry);
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, double>&& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, double>&& matrixEntry);
+        
+        template class ConstantsComparator<int>;
+        
+        template int one();
+        template int zero();
+        template int infinity();
+        
+        template int pow(int const& value, uint_fast64_t exponent);
+        
+        template int simplify(int value);
+        
+        template storm::storage::MatrixEntry<storm::storage::sparse::state_type, int> simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, int> matrixEntry);
+        template storm::storage::MatrixEntry<storm::storage::sparse::state_type, int>& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, int>& matrixEntry);
+        template storm::storage::MatrixEntry<storm::storage::sparse::state_type, int>&& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, int>&& matrixEntry);
         
 #ifdef PARAMETRIC_SYSTEMS
         template class ConstantsComparator<RationalFunction>;

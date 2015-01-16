@@ -5,7 +5,7 @@
 
 namespace storm {
     namespace expressions {
-        UnaryExpression::UnaryExpression(ExpressionReturnType returnType, std::shared_ptr<BaseExpression const> const& operand) : BaseExpression(returnType), operand(operand) {
+        UnaryExpression::UnaryExpression(ExpressionManager const& manager, Type const& type, std::shared_ptr<BaseExpression const> const& operand) : BaseExpression(manager, type), operand(operand) {
             // Intentionally left empty.
         }
 
@@ -17,12 +17,8 @@ namespace storm {
             return this->getOperand()->containsVariables();
         }
 
-		std::set<std::string> UnaryExpression::getVariables() const {
-			return this->getOperand()->getVariables();
-		}
-
-		std::map<std::string, ExpressionReturnType> UnaryExpression::getVariablesAndTypes() const {
-			return this->getOperand()->getVariablesAndTypes();
+        void UnaryExpression::gatherVariables(std::set<storm::expressions::Variable>& variables) const {
+			return;
 		}
         
         std::shared_ptr<BaseExpression const> const& UnaryExpression::getOperand() const {

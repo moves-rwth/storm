@@ -16,12 +16,13 @@ namespace storm {
             /*!
              * Constructs a binary numerical function expression with the given return type, operands and operator.
              *
-             * @param returnType The return type of the expression.
+             * @param manager The manager responsible for this expression.
+             * @param type The return type of the expression.
              * @param firstOperand The first operand of the expression.
              * @param secondOperand The second operand of the expression.
              * @param functionType The operator of the expression.
              */
-            BinaryNumericalFunctionExpression(ExpressionReturnType returnType, std::shared_ptr<BaseExpression const> const& firstOperand, std::shared_ptr<BaseExpression const> const& secondOperand, OperatorType operatorType);
+            BinaryNumericalFunctionExpression(ExpressionManager const& manager, Type const& type, std::shared_ptr<BaseExpression const> const& firstOperand, std::shared_ptr<BaseExpression const> const& secondOperand, OperatorType operatorType);
             
             // Instantiate constructors and assignments with their default implementations.
             BinaryNumericalFunctionExpression(BinaryNumericalFunctionExpression const& other) = default;
@@ -37,7 +38,7 @@ namespace storm {
             virtual int_fast64_t evaluateAsInt(Valuation const* valuation = nullptr) const override;
             virtual double evaluateAsDouble(Valuation const* valuation = nullptr) const override;
             virtual std::shared_ptr<BaseExpression const> simplify() const override;
-            virtual void accept(ExpressionVisitor* visitor) const override;
+            virtual boost::any accept(ExpressionVisitor& visitor) const override;
 
             /*!
              * Retrieves the operator associated with the expression.

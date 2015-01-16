@@ -76,12 +76,12 @@ namespace storm {
             std::vector<storm::prism::TransitionReward> const& getTransitionRewards() const;
             
             /*!
-             * Substitutes all identifiers in the reward model according to the given map.
+             * Substitutes all variables in the reward model according to the given map.
              *
              * @param substitution The substitution to perform.
              * @return The resulting reward model.
              */
-            RewardModel substitute(std::map<std::string, storm::expressions::Expression> const& substitution) const;
+            RewardModel substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const;
             
             friend std::ostream& operator<<(std::ostream& stream, RewardModel const& rewardModel);
 

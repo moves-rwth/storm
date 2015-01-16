@@ -5,6 +5,7 @@
 
 #include "src/parser/SpiritParserDefinitions.h"
 #include "src/storage/expressions/Expression.h"
+#include "src/storage/expressions/ExpressionManager.h"
 #include "src/utility/macros.h"
 #include "src/exceptions/WrongFormatException.h"
 
@@ -18,16 +19,17 @@ namespace storm {
              * generate the actual expressions, a mapping of valid identifiers to their expressions need to be provided
              * later.
              *
+             * @param manager The manager responsible for the expressions.
              * @param invalidIdentifiers_ A symbol table of identifiers that are to be rejected.
              */
-            ExpressionParser(qi::symbols<char, uint_fast64_t> const& invalidIdentifiers_);
+            ExpressionParser(storm::expressions::ExpressionManager& manager, qi::symbols<char, uint_fast64_t> const& invalidIdentifiers_);
             
             /*!
              * Sets an identifier mapping that is used to determine valid variables in the expression. The mapped-to
              * expressions will be substituted wherever the key value appears in the parsed expression. After setting
              * this, the parser will generate expressions.
              *
-             * @param identifiers A pointer to a mapping from identifiers to expressions.
+             * @param identifiers_ A pointer to a mapping from identifiers to expressions.
              */
             void setIdentifierMapping(qi::symbols<char, storm::expressions::Expression> const* identifiers_);
             
@@ -156,15 +158,18 @@ namespace storm {
             minMaxOperatorStruct minMaxOperator_;
 
             struct trueFalseOperatorStruct : qi::symbols<char, storm::expressions::Expression> {
-                trueFalseOperatorStruct() {
+                trueFalseOperatorStruct(storm::expressions::ExpressionManager& manager) {
                     add
-                    ("true", storm::expressions::Expression::createTrue())
-                    ("false", storm::expressions::Expression::createFalse());
+                    ("true", manager.boolean(true))
+                    ("false", manager.boolean(false));
                 }
             };
             
             // A parser used for recognizing the literals true and false.
             trueFalseOperatorStruct trueFalse_;
+            
+            // The manager responsible for the expressions.
+            storm::expressions::ExpressionManager& manager;
             
             // A flag that indicates whether expressions should actually be generated or just a syntax check shall be
             // performed.

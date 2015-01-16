@@ -2,11 +2,7 @@
 
 namespace storm {
     namespace prism {
-        IntegerVariable::IntegerVariable(std::string const& name, storm::expressions::Expression const& lowerBoundExpression, storm::expressions::Expression const& upperBoundExpression, std::string const& filename, uint_fast64_t lineNumber) : Variable(name, lowerBoundExpression, true, filename, lineNumber), lowerBoundExpression(lowerBoundExpression), upperBoundExpression(upperBoundExpression) {
-            // Intentionally left empty.
-        }
-
-        IntegerVariable::IntegerVariable(std::string const& name, storm::expressions::Expression const& lowerBoundExpression, storm::expressions::Expression const& upperBoundExpression, storm::expressions::Expression const& initialValueExpression, std::string const& filename, uint_fast64_t lineNumber) : Variable(name, initialValueExpression, false, filename, lineNumber), lowerBoundExpression(lowerBoundExpression), upperBoundExpression(upperBoundExpression) {
+        IntegerVariable::IntegerVariable(storm::expressions::Variable const& variable, storm::expressions::Expression const& lowerBoundExpression, storm::expressions::Expression const& upperBoundExpression, storm::expressions::Expression const& initialValueExpression, std::string const& filename, uint_fast64_t lineNumber) : Variable(variable, initialValueExpression, false, filename, lineNumber), lowerBoundExpression(lowerBoundExpression), upperBoundExpression(upperBoundExpression) {
             // Intentionally left empty.
         }
         
@@ -18,8 +14,8 @@ namespace storm {
             return this->upperBoundExpression;
         }
         
-        IntegerVariable IntegerVariable::substitute(std::map<std::string, storm::expressions::Expression> const& substitution) const {
-            return IntegerVariable(this->getName(), this->getLowerBoundExpression().substitute(substitution), this->getUpperBoundExpression().substitute(substitution), this->getInitialValueExpression().substitute(substitution), this->getFilename(), this->getLineNumber());
+        IntegerVariable IntegerVariable::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
+            return IntegerVariable(this->getExpressionVariable(), this->getLowerBoundExpression().substitute(substitution), this->getUpperBoundExpression().substitute(substitution), this->getInitialValueExpression().substitute(substitution), this->getFilename(), this->getLineNumber());
         }
         
         std::ostream& operator<<(std::ostream& stream, IntegerVariable const& variable) {

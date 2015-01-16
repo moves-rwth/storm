@@ -13,9 +13,15 @@
 #include <cstdint>
 
 #include "src/settings/SettingsManager.h"
-#include "src/storage/SparseMatrix.h"
+#include "src/storage/parameters.h"
 
 namespace storm {
+    
+    // Forward-declare MatrixEntry class.
+    namespace storage {
+        template<typename IndexType, typename ValueType> class MatrixEntry;
+    }
+    
     namespace utility {
         
         template<typename ValueType>
@@ -30,9 +36,11 @@ namespace storm {
         template<typename ValueType>
         ValueType pow(ValueType const& value, uint_fast64_t exponent);
         
+#ifdef PARAMETRIC_SYSTEMS
         template<>
         RationalFunction pow(RationalFunction const& value, uint_fast64_t exponent);
-
+#endif
+        
         template<typename ValueType>
         ValueType simplify(ValueType value);
 

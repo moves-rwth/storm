@@ -11,9 +11,10 @@ namespace storm {
             /*!
              * Creates an double literal expression with the given value.
              *
+             * @param manager The manager responsible for this expression.
              * @param value The value of the double literal.
              */
-            DoubleLiteralExpression(double value);
+            DoubleLiteralExpression(ExpressionManager const& manager, double value);
             
             // Instantiate constructors and assignments with their default implementations.
             DoubleLiteralExpression(DoubleLiteralExpression const& other) = default;
@@ -27,10 +28,9 @@ namespace storm {
             // Override base class methods.
             virtual double evaluateAsDouble(Valuation const* valuation = nullptr) const override;
             virtual bool isLiteral() const override;
-			virtual std::set<std::string> getVariables() const override;
-			virtual std::map<std::string, ExpressionReturnType> getVariablesAndTypes() const override;
+            virtual void gatherVariables(std::set<storm::expressions::Variable>& variables) const override;
             virtual std::shared_ptr<BaseExpression const> simplify() const override;
-            virtual void accept(ExpressionVisitor* visitor) const override;
+            virtual boost::any accept(ExpressionVisitor& visitor) const override;
 
             /*!
              * Retrieves the value of the double literal.

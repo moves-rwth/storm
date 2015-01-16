@@ -20,7 +20,7 @@ namespace storm {
 		DeterministicModelParser::Result DeterministicModelParser::parseDeterministicModel(std::string const & transitionsFilename, std::string const & labelingFilename, std::string const & stateRewardFilename, std::string const & transitionRewardFilename) {
 
 			// Parse the transitions.
-			storm::storage::SparseMatrix<double> transitions(std::move(storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitions<double>(transitionsFilename)));
+			storm::storage::SparseMatrix<double> transitions(std::move(storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitions(transitionsFilename)));
 
 			uint_fast64_t stateCount = transitions.getColumnCount();
 

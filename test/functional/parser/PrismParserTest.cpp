@@ -8,6 +8,7 @@ TEST(PrismParser, StandardModelTest) {
     EXPECT_NO_THROW(result = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/parser/prism/coin2.nm"));
     EXPECT_NO_THROW(result = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/parser/prism/crowds5_5.pm"));
     EXPECT_NO_THROW(result = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/parser/prism/csma2_2.nm"));
+    result = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/parser/prism/die.pm");
     EXPECT_NO_THROW(result = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/parser/prism/die.pm"));
     EXPECT_NO_THROW(result = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/parser/prism/firewire.nm"));
     EXPECT_NO_THROW(result = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/parser/prism/leader3.nm"));
@@ -58,7 +59,7 @@ TEST(PrismParser, ComplexTest) {
     
     formula test = a >= 10 & (max(a,b) > floor(e));
     formula test2 = a+b;
-    formula test3 = (a + b > 10 ? floor(a) : h) + a;
+    formula test3 = (a + b > 10 ? floor(e) : h) + a;
     
     global g : bool init false;
     global h : [0 .. b];
@@ -68,7 +69,7 @@ TEST(PrismParser, ComplexTest) {
         j : bool init c;
         k : [125..a] init a;
 
-        [a] test&false -> (i'=true)&(k'=1+1) + 1 : (k'=floor(a) + max(k, b) - 1 + k);
+        [a] test&false -> (i'=true)&(k'=1+1) + 1 : (k'=floor(e) + max(k, b) - 1 + k);
     endmodule
                                               
     module mod2
@@ -84,12 +85,12 @@ TEST(PrismParser, ComplexTest) {
     endinit
     
     rewards "testrewards"
-        [stateRew] true : a + 7;
+        [a] true : a + 7;
         max(f, a) <= 8 : 2*b;
     endrewards
                                                                
     rewards "testrewards2"
-        [stateRew] true : a + 7;
+        [b] true : a + 7;
         max(f, a) <= 8 : 2*b;
     endrewards)";
     

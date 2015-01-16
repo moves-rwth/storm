@@ -21,8 +21,6 @@
 #include "src/exceptions/WrongFormatException.h"
 #include "src/settings/SettingsManager.h"
 
-#include "ReadValues.h"
-
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
 extern log4cplus::Logger logger;
@@ -32,22 +30,19 @@ namespace storm {
 
 		using namespace storm::utility::cstring;
 
-        template<typename T>
-		storm::storage::SparseMatrix<T> DeterministicSparseTransitionParser::parseDeterministicTransitions(std::string const& filename) {
+		storm::storage::SparseMatrix<double> DeterministicSparseTransitionParser::parseDeterministicTransitions(std::string const& filename) {
 
-			storm::storage::SparseMatrix<T> emptyMatrix;            
+			storm::storage::SparseMatrix<double> emptyMatrix;
+
 			return DeterministicSparseTransitionParser::parse(filename, false, emptyMatrix);
-            
 		}
 
-        template<typename T>
-		storm::storage::SparseMatrix<T> DeterministicSparseTransitionParser::parseDeterministicTransitionRewards(std::string const& filename, storm::storage::SparseMatrix<T> const & transitionMatrix) {
+		storm::storage::SparseMatrix<double> DeterministicSparseTransitionParser::parseDeterministicTransitionRewards(std::string const& filename, storm::storage::SparseMatrix<double> const & transitionMatrix) {
 
 			return DeterministicSparseTransitionParser::parse(filename, true, transitionMatrix);
 		}
 
-        template<typename T>
-		storm::storage::SparseMatrix<T> DeterministicSparseTransitionParser::parse(std::string const& filename, bool isRewardFile, storm::storage::SparseMatrix<T> const & transitionMatrix) {
+		storm::storage::SparseMatrix<double> DeterministicSparseTransitionParser::parse(std::string const& filename, bool isRewardFile, storm::storage::SparseMatrix<double> const & transitionMatrix) {
 			// Enforce locale where decimal point is '.'.
 				setlocale(LC_NUMERIC, "C");
 
@@ -72,7 +67,15 @@ namespace storm {
 					throw storm::exceptions::WrongFormatException();
 				}
 
-                
+				// Perform second pass.
+
+				// Skip the format hint if it is there.
+				buf = trimWhitespaces(buf);
+				if(buf[0] < '0' || buf[0] > '9') {
+					buf = forwardToLineEnd(buf);
+					buf = trimWhitespaces(buf);
+				}
+
 				if(isRewardFile) {
 					// The reward matrix should match the size of the transition matrix.
 					if (firstPass.highestStateIndex + 1 > transitionMatrix.getRowCount() || firstPass.highestStateIndex + 1 > transitionMatrix.getColumnCount()) {
@@ -83,18 +86,13 @@ namespace storm {
 						firstPass.highestStateIndex = transitionMatrix.getRowCount() - 1;
 					}
 				}
-				// Perform second pass.
-
-				// Skip the format hint if it is there.
-				buf = skipFormatHint(buf);
-
 
 				// Creating matrix builder here.
 				// The actual matrix will be build once all contents are inserted.
-				storm::storage::SparseMatrixBuilder<T> resultMatrix(firstPass.highestStateIndex + 1, firstPass.highestStateIndex + 1, firstPass.numberOfNonzeroEntries);
+				storm::storage::SparseMatrixBuilder<double> resultMatrix(firstPass.highestStateIndex + 1, firstPass.highestStateIndex + 1, firstPass.numberOfNonzeroEntries);
 
-				uint_fast64_t lastRow = 0;
-				DeterministicTransitionEntry<T> trans;
+				uint_fast64_t row, col, lastRow = 0;
+				double val;
 				bool dontFixDeadlocks = storm::settings::generalSettings().isDontFixDeadlocksSet();
 				bool hadDeadlocks = false;
 				bool rowHadDiagonalEntry = false;
@@ -107,17 +105,22 @@ namespace storm {
 				// Different parsing routines for transition systems and transition rewards.
 				if(isRewardFile) {
 					while (buf[0] != '\0') {
+
 						// Read next transition.
-                        readNextTransition(&buf, &trans);
-						addTransitionToMatrix(trans, &resultMatrix);
+						row = checked_strtol(buf, &buf);
+						col = checked_strtol(buf, &buf);
+						val = checked_strtod(buf, &buf);
+
+						resultMatrix.addNextValue(row, col, val);
+						buf = trimWhitespaces(buf);
 					}
 				} else {
                     // Read first row and add self-loops if necessary.
+                    char const* tmp;
+                    row = checked_strtol(buf, &tmp);
                     
-                    readNextTransition(&buf, &trans);
-                    
-                    if (trans.row > 0) {
-                        for (uint_fast64_t skippedRow = 0; skippedRow < trans.row; ++skippedRow) {
+                    if (row > 0) {
+                        for (uint_fast64_t skippedRow = 0; skippedRow < row; ++skippedRow) {
                             hadDeadlocks = true;
                             if (!dontFixDeadlocks) {
                                 resultMatrix.addNextValue(skippedRow, skippedRow, storm::utility::constantOne<double>());
@@ -128,20 +131,20 @@ namespace storm {
                             }
                         }
                     }
-                    addTransitionToMatrix(trans, &resultMatrix);
-					
                     
 					while (buf[0] != '\0') {
 
 						// Read next transition.
-						readNextTransition(&buf, &trans);
+						row = checked_strtol(buf, &buf);
+						col = checked_strtol(buf, &buf);
+						val = checked_strtod(buf, &buf);
 
 						// Test if we moved to a new row.
 						// Handle all incomplete or skipped rows.
-						if (lastRow != trans.row) {
+						if (lastRow != row) {
 							if (!rowHadDiagonalEntry) {
 								if (insertDiagonalEntriesIfMissing) {
-									resultMatrix.addNextValue(lastRow, lastRow, storm::utility::constantZero<T>());
+									resultMatrix.addNextValue(lastRow, lastRow, storm::utility::constantZero<double>());
 									LOG4CPLUS_DEBUG(logger, "While parsing " << filename << ": state " << lastRow << " has no transition to itself. Inserted a 0-transition. (1)");
 								} else {
 									LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << lastRow << " has no transition to itself.");
@@ -149,7 +152,7 @@ namespace storm {
 								// No increment for lastRow.
 								rowHadDiagonalEntry = true;
 							}
-							for (uint_fast64_t skippedRow = lastRow + 1; skippedRow < trans.row; ++skippedRow) {
+							for (uint_fast64_t skippedRow = lastRow + 1; skippedRow < row; ++skippedRow) {
 								hadDeadlocks = true;
 								if (!dontFixDeadlocks) {
 									resultMatrix.addNextValue(skippedRow, skippedRow, storm::utility::constantOne<double>());
@@ -159,30 +162,31 @@ namespace storm {
 									// Before throwing the appropriate exception we will give notice of all deadlock states.
 								}
 							}
-							lastRow = trans.row;
+							lastRow = row;
 							rowHadDiagonalEntry = false;
 						}
 
-						if (trans.col == trans.row) {
+						if (col == row) {
 							rowHadDiagonalEntry = true;
 						}
 
-						if (trans.col > trans.row && !rowHadDiagonalEntry) {
+						if (col > row && !rowHadDiagonalEntry) {
 							if (insertDiagonalEntriesIfMissing) {
-								resultMatrix.addNextValue(trans.row, trans.row, storm::utility::constantZero<T>());
-								LOG4CPLUS_DEBUG(logger, "While parsing " << filename << ": state " << trans.row << " has no transition to itself. Inserted a 0-transition. (2)");
+								resultMatrix.addNextValue(row, row, storm::utility::constantZero<double>());
+								LOG4CPLUS_DEBUG(logger, "While parsing " << filename << ": state " << row << " has no transition to itself. Inserted a 0-transition. (2)");
 							} else {
-								LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << trans.row << " has no transition to itself.");
+								LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << row << " has no transition to itself.");
 							}
 							rowHadDiagonalEntry = true;
 						}
 
-						addTransitionToMatrix(trans, &resultMatrix);
+						resultMatrix.addNextValue(row, col, val);
+						buf = trimWhitespaces(buf);
 					}
 
 					if (!rowHadDiagonalEntry) {
 						if (insertDiagonalEntriesIfMissing) {
-							resultMatrix.addNextValue(lastRow, lastRow, storm::utility::constantZero<T>());
+							resultMatrix.addNextValue(lastRow, lastRow, storm::utility::constantZero<double>());
 							LOG4CPLUS_DEBUG(logger, "While parsing " << filename << ": state " << lastRow << " has no transition to itself. Inserted a 0-transition. (3)");
 						} else {
 							LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << lastRow << " has no transition to itself.");
@@ -194,7 +198,7 @@ namespace storm {
 				}
 
 				// Finally, build the actual matrix, test and return it.
-				storm::storage::SparseMatrix<T> result = resultMatrix.build();
+				storm::storage::SparseMatrix<double> result = resultMatrix.build();
 
 				// Since we cannot do the testing if each transition for which there is a reward in the reward file also exists in the transition matrix during parsing, we have to do it afterwards.
 				if(isRewardFile && !result.isSubmatrixOf(transitionMatrix)) {
@@ -210,7 +214,11 @@ namespace storm {
 			DeterministicSparseTransitionParser::FirstPassResult result;
 
 			// Skip the format hint if it is there.
-			buf = skipFormatHint(buf);
+			buf = trimWhitespaces(buf);
+			if(buf[0] < '0' || buf[0] > '9') {
+				buf = forwardToLineEnd(buf);
+				buf = trimWhitespaces(buf);
+			}
 
 			 // Check all transitions for non-zero diagonal entries and deadlock states.
 			uint_fast64_t row, col, lastRow = 0, lastCol = -1;
@@ -231,8 +239,7 @@ namespace storm {
 				row = checked_strtol(buf, &buf);
 				col = checked_strtol(buf, &buf);
 				// The actual read value is not needed here.
-				buf = forwardToLineEnd(buf);
-                buf = trimWhitespaces(buf);
+				checked_strtod(buf, &buf);
 
 				// Compensate for missing diagonal entries if desired.
 				if (insertDiagonalEntriesIfMissing) {
@@ -273,7 +280,7 @@ namespace storm {
 				lastRow = row;
 				lastCol = col;
 
-				
+				buf = trimWhitespaces(buf);
 			}
 
 			if(insertDiagonalEntriesIfMissing) {
@@ -289,38 +296,6 @@ namespace storm {
 
 			return result;
 		}
-        
-        template<typename T>
-        void DeterministicSparseTransitionParser::readNextTransition(char const** buf, DeterministicTransitionEntry<T>* trans)
-        {
-            trans->row = checked_strtol(*buf, buf);
-            trans->col = checked_strtol(*buf, buf);
-            trans->val = checked_strtod(*buf, buf);
-            
-            *buf = trimWhitespaces(*buf);
-        }
-        
-        
-        
-        template<typename T>
-        void DeterministicSparseTransitionParser::addTransitionToMatrix(DeterministicTransitionEntry<T> const& trans, storm::storage::SparseMatrixBuilder<T>* mat)
-        {
-            mat->addNextValue(trans.row, trans.col, trans.val);
-        }
-
-        char const* DeterministicSparseTransitionParser::skipFormatHint(char const* buf)
-        {
-            // Skip the format hint if it is there.
-			buf = trimWhitespaces(buf);
-			if(buf[0] < '0' || buf[0] > '9') {
-				buf = forwardToLineEnd(buf);
-				buf = trimWhitespaces(buf);
-			}
-            return buf;
-        }
-
-        template storm::storage::SparseMatrix<double> DeterministicSparseTransitionParser::parseDeterministicTransitions<double>(std::string const& filename);
-        template storm::storage::SparseMatrix<double> DeterministicSparseTransitionParser::parseDeterministicTransitionRewards(std::string const& filename, storm::storage::SparseMatrix<double> const & transitionMatrix);
 
 	}  // namespace parser
 }  // namespace storm

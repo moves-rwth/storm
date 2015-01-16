@@ -10,7 +10,7 @@ namespace storm {
             return this->initialStatesExpression;
         }
         
-        InitialConstruct InitialConstruct::substitute(std::map<std::string, storm::expressions::Expression> const& substitution) const {
+        InitialConstruct InitialConstruct::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
             return InitialConstruct(this->getInitialStatesExpression().substitute(substitution));
         }
         

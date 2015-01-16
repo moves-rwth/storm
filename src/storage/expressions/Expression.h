@@ -12,16 +12,47 @@
 
 namespace storm {
     namespace expressions {
+        // Foward-declare expression manager class.
+        class ExpressionManager;
+        class Variable;
+        
         class Expression {
         public:
+            friend class ExpressionManager;
+            friend class Variable;
+            template<typename MapType> friend class SubstitutionVisitor;
+            
+            friend Expression operator+(Expression const& first, Expression const& second);
+            friend Expression operator-(Expression const& first, Expression const& second);
+            friend Expression operator-(Expression const& first);
+            friend Expression operator*(Expression const& first, Expression const& second);
+            friend Expression operator/(Expression const& first, Expression const& second);
+            friend Expression operator^(Expression const& first, Expression const& second);
+            friend Expression operator&&(Expression const& first, Expression const& second);
+            friend Expression operator||(Expression const& first, Expression const& second);
+            friend Expression operator!(Expression const& first);
+            friend Expression operator==(Expression const& first, Expression const& second);
+            friend Expression operator!=(Expression const& first, Expression const& second);
+            friend Expression operator>(Expression const& first, Expression const& second);
+            friend Expression operator>=(Expression const& first, Expression const& second);
+            friend Expression operator<(Expression const& first, Expression const& second);
+            friend Expression operator<=(Expression const& first, Expression const& second);
+            friend Expression ite(Expression const& condition, Expression const& thenExpression, Expression const& elseExpression);
+            friend Expression implies(Expression const& first, Expression const& second);
+            friend Expression iff(Expression const& first, Expression const& second);
+            friend Expression floor(Expression const& first);
+            friend Expression ceil(Expression const& first);
+            friend Expression minimum(Expression const& first, Expression const& second);
+            friend Expression maximum(Expression const& first, Expression const& second);
+
             Expression() = default;
             
             /*!
-             * Creates an expression with the given underlying base expression.
+             * Creates an expression representing the given variable.
              *
-             * @param expressionPtr A pointer to the underlying base expression.
+             * @param variable The variable to represent.
              */
-            Expression(std::shared_ptr<BaseExpression const> const& expressionPtr);
+            Expression(Variable const& variable);
             
             // Instantiate constructors and assignments with their default implementations.
             Expression(Expression const& other) = default;
@@ -31,108 +62,27 @@ namespace storm {
             Expression& operator=(Expression&&) = default;
 #endif
             
-            // Static factory methods to create atomic expression parts.
-            static Expression createBooleanLiteral(bool value);
-            static Expression createTrue();
-            static Expression createFalse();
-            static Expression createIntegerLiteral(int_fast64_t value);
-            static Expression createDoubleLiteral(double value);
-            static Expression createBooleanVariable(std::string const& variableName);
-            static Expression createIntegerVariable(std::string const& variableName);
-            static Expression createDoubleVariable(std::string const& variableName);
-            static Expression createUndefinedVariable(std::string const& variableName);
-            
-            // Provide operator overloads to conveniently construct new expressions from other expressions.
-            Expression operator+(Expression const& other) const;
-            Expression operator-(Expression const& other) const;
-            Expression operator-() const;
-            Expression operator*(Expression const& other) const;
-            Expression operator/(Expression const& other) const;
-            Expression operator^(Expression const& other) const;
-            Expression operator&&(Expression const& other) const;
-            Expression operator||(Expression const& other) const;
-            Expression operator!() const;
-            Expression operator==(Expression const& other) const;
-            Expression operator!=(Expression const& other) const;
-            Expression operator>(Expression const& other) const;
-            Expression operator>=(Expression const& other) const;
-            Expression operator<(Expression const& other) const;
-            Expression operator<=(Expression const& other) const;
-            
-            Expression ite(Expression const& thenExpression, Expression const& elseExpression);
-            Expression implies(Expression const& other) const;
-            Expression iff(Expression const& other) const;
-            
-            Expression floor() const;
-            Expression ceil() const;
-
-            static Expression minimum(Expression const& lhs, Expression const& rhs);
-            static Expression maximum(Expression const& lhs, Expression const& rhs);
-            
             /*!
-             * Substitutes all occurrences of identifiers according to the given map. Note that this substitution is
-             * done simultaneously, i.e., identifiers appearing in the expressions that were "plugged in" are not
+             * Substitutes all occurrences of the variables according to the given map. Note that this substitution is
+             * done simultaneously, i.e., variables appearing in the expressions that were "plugged in" are not
              * substituted.
              *
-             * @param identifierToExpressionMap A mapping from identifiers to the expression they are substituted with.
+             * @param variableToExpressionMap A mapping from variables to the expression they are substituted with.
              * @return An expression in which all identifiers in the key set of the mapping are replaced by the
              * expression they are mapped to.
              */
-			Expression substitute(std::map<std::string, Expression> const& identifierToExpressionMap) const;
+			Expression substitute(std::map<Variable, Expression> const& variableToExpressionMap) const;
 
 			/*!
-			* Substitutes all occurrences of identifiers according to the given map. Note that this substitution is
-			* done simultaneously, i.e., identifiers appearing in the expressions that were "plugged in" are not
+			* Substitutes all occurrences of the variables according to the given map. Note that this substitution is
+			* done simultaneously, i.e., variables appearing in the expressions that were "plugged in" are not
 			* substituted.
 			*
-			* @param identifierToExpressionMap A mapping from identifiers to the expression they are substituted with.
+			* @param variableToExpressionMap A mapping from variables to the expression they are substituted with.
 			* @return An expression in which all identifiers in the key set of the mapping are replaced by the
 			* expression they are mapped to.
 			*/
-			Expression substitute(std::unordered_map<std::string, Expression> const& identifierToExpressionMap) const;
-            
-            /*!
-             * Substitutes all occurrences of identifiers with different names given by a mapping.
-             *
-             * @param identifierToIdentifierMap A mapping from identifiers to identifiers they are substituted with.
-             * @return An expression in which all identifiers in the key set of the mapping are replaced by the
-             * identifiers they are mapped to.
-             */
-			Expression substitute(std::map<std::string, std::string> const& identifierToIdentifierMap) const;
-
-			/*!
-			* Substitutes all occurrences of identifiers with different names given by a mapping.
-			*
-			* @param identifierToIdentifierMap A mapping from identifiers to identifiers they are substituted with.
-			* @return An expression in which all identifiers in the key set of the mapping are replaced by the
-			* identifiers they are mapped to.
-			*/
-			Expression substitute(std::unordered_map<std::string, std::string> const& identifierToIdentifierMap) const;
-            
-            /*!
-             * Substitutes all occurrences of identifiers for which the given valuation specifies a concrete value by
-             * the corresponding value.
-             *
-             * @param valuation The valuation that is used to replace the identifiers.
-             * @return The resulting expression.
-             */
-            Expression substitute(SimpleValuation const& valuation) const;
-            
-            /*!
-             * Checks that all identifiers appearing in the expression have the types given by the map. An exception
-             * is thrown in case a violation is found.
-             *
-             * @param identifierToTypeMap A mapping from identifiers to the types that are supposed to have.
-             */
-            void check(std::map<std::string, storm::expressions::ExpressionReturnType> const& identifierToTypeMap) const;
-            
-            /*!
-             * Checks that all identifiers appearing in the expression have the types given by the map. An exception
-             * is thrown in case a violation is found.
-             *
-             * @param identifierToTypeMap A mapping from identifiers to the types that are supposed to have.
-             */
-            void check(std::unordered_map<std::string, storm::expressions::ExpressionReturnType> const& identifierToTypeMap) const;
+			Expression substitute(std::unordered_map<Variable, Expression> const& variableToExpressionMap) const;
             
             /*!
              * Evaluates the expression under the valuation of variables given by the valuation and returns the
@@ -166,7 +116,7 @@ namespace storm {
              *
              * @return The simplified expression.
              */
-            Expression simplify();
+            Expression simplify() const;
             
             /*!
              * Retrieves the operator of a function application. This is only legal to call if the expression is
@@ -261,20 +211,7 @@ namespace storm {
              *
              * @return The set of all variables that appear in the expression.
              */
-            std::set<std::string> getVariables() const;
-            
-			/*!
-			* Retrieves the mapping of all variables that appear in the expression to their return type.
-			*
-			* @param validate If this parameter is true, check() is called with the returnvalue before 
-			*                 it is returned.
-			*
-			* @throws storm::exceptions::InvalidTypeException If a variables with the same name but different
-			*                                                 types occur somewhere withing the expression.
-			*
-			* @return The mapping of all variables that appear in the expression to their return type.
-			*/
-			std::map<std::string, ExpressionReturnType> getVariablesAndTypes(bool validate = true) const;
+            std::set<storm::expressions::Variable> getVariables() const;
 
             /*!
              * Retrieves the base expression underlying this expression object. Note that prior to calling this, the
@@ -292,39 +229,99 @@ namespace storm {
             std::shared_ptr<BaseExpression const> const& getBaseExpressionPointer() const;
 
             /*!
-             * Retrieves the return type of the expression.
+             * Retrieves the manager responsible for this expression.
              *
-             * @return The return type of the expression.
+             * @return The manager responsible for this expression.
              */
-            ExpressionReturnType getReturnType() const;
+            ExpressionManager const& getManager() const;
+            
+            /*!
+             * Retrieves the type of the expression.
+             *
+             * @return The type of the expression.
+             */
+            Type const& getType() const;
             
             /*!
              * Retrieves whether the expression has a numerical return type, i.e., integer or double.
              *
              * @return True iff the expression has a numerical return type.
              */
-            bool hasNumericalReturnType() const;
+            bool hasNumericalType() const;
+
+            /*!
+             * Retrieves whether the expression has a rational return type.
+             *
+             * @return True iff the expression has a rational return type.
+             */
+            bool hasRationalType() const;
             
             /*!
              * Retrieves whether the expression has a boolean return type.
              *
              * @return True iff the expression has a boolean return type.
              */
-            bool hasBooleanReturnType() const;
+            bool hasBooleanType() const;
+            
+            /*!
+             * Retrieves whether the expression has an integral return type.
+             *
+             * @return True iff the expression has a integral return type.
+             */
+            bool hasIntegerType() const;
+
+            /*!
+             * Retrieves whether the expression has an integral return type.
+             *
+             * @return True iff the expression has a integral return type.
+             */
+            bool hasBitVectorType() const;
             
             /*!
              * Accepts the given visitor.
              *
              * @param visitor The visitor to accept.
              */
-            void accept(ExpressionVisitor* visitor) const;
+            boost::any accept(ExpressionVisitor& visitor) const;
             
             friend std::ostream& operator<<(std::ostream& stream, Expression const& expression);
 
         private:
+            /*!
+             * Creates an expression with the given underlying base expression.
+             *
+             * @param expressionPtr A pointer to the underlying base expression.
+             */
+            Expression(std::shared_ptr<BaseExpression const> const& expressionPtr);
+                        
             // A pointer to the underlying base expression.
             std::shared_ptr<BaseExpression const> expressionPtr;
         };
+        
+        // Provide operator overloads to conveniently construct new expressions from other expressions.
+        Expression operator+(Expression const& first, Expression const& second);
+        Expression operator-(Expression const& first, Expression const& second);
+        Expression operator-(Expression const& first);
+        Expression operator*(Expression const& first, Expression const& second);
+        Expression operator/(Expression const& first, Expression const& second);
+        Expression operator^(Expression const& first, Expression const& second);
+        Expression operator&&(Expression const& first, Expression const& second);
+        Expression operator||(Expression const& first, Expression const& second);
+        Expression operator!(Expression const& first);
+        Expression operator==(Expression const& first, Expression const& second);
+        Expression operator!=(Expression const& first, Expression const& second);
+        Expression operator>(Expression const& first, Expression const& second);
+        Expression operator>=(Expression const& first, Expression const& second);
+        Expression operator<(Expression const& first, Expression const& second);
+        Expression operator<=(Expression const& first, Expression const& second);
+        Expression ite(Expression const& condition, Expression const& thenExpression, Expression const& elseExpression);
+        Expression implies(Expression const& first, Expression const& second);
+        Expression iff(Expression const& first, Expression const& second);
+        Expression floor(Expression const& first);
+        Expression ceil(Expression const& first);
+        Expression minimum(Expression const& first, Expression const& second);
+        Expression maximum(Expression const& first, Expression const& second);
+
     }
 }
 

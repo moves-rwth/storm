@@ -2,10 +2,14 @@
 
 namespace storm {
     namespace prism {
-        Command::Command(uint_fast64_t globalIndex, std::string const& actionName, storm::expressions::Expression const& guardExpression, std::vector<storm::prism::Update> const& updates, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), actionName(actionName), guardExpression(guardExpression), updates(updates), globalIndex(globalIndex) {
+        Command::Command(uint_fast64_t globalIndex, uint_fast64_t actionIndex, std::string const& actionName, storm::expressions::Expression const& guardExpression, std::vector<storm::prism::Update> const& updates, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), actionIndex(actionIndex), actionName(actionName), guardExpression(guardExpression), updates(updates), globalIndex(globalIndex), labeled(actionName != "") {
             // Nothing to do here.
         }
 
+        uint_fast64_t Command::getActionIndex() const {
+            return this->actionIndex;
+        }
+        
         std::string const& Command::getActionName() const {
             return this->actionName;
         }
@@ -30,14 +34,18 @@ namespace storm {
             return this->globalIndex;
         }
         
-        Command Command::substitute(std::map<std::string, storm::expressions::Expression> const& substitution) const {
+        Command Command::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
             std::vector<Update> newUpdates;
             newUpdates.reserve(this->getNumberOfUpdates());
             for (auto const& update : this->getUpdates()) {
                 newUpdates.emplace_back(update.substitute(substitution));
             }
             
-            return Command(this->getGlobalIndex(), this->getActionName(), this->getGuardExpression().substitute(substitution), newUpdates, this->getFilename(), this->getLineNumber());
+            return Command(this->getGlobalIndex(), this->getActionIndex(), this->getActionName(), this->getGuardExpression().substitute(substitution), newUpdates, this->getFilename(), this->getLineNumber());
+        }
+        
+        bool Command::isLabeled() const {
+            return labeled;
         }
         
         std::ostream& operator<<(std::ostream& stream, Command const& command) {

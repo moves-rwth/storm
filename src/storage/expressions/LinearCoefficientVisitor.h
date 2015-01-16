@@ -4,6 +4,7 @@
 #include <stack>
 
 #include "src/storage/expressions/Expression.h"
+#include "src/storage/expressions/Variable.h"
 #include "src/storage/expressions/ExpressionVisitor.h"
 #include "src/storage/expressions/SimpleValuation.h"
 
@@ -11,6 +12,44 @@ namespace storm {
     namespace expressions {
         class LinearCoefficientVisitor : public ExpressionVisitor {
         public:
+            struct VariableCoefficients {
+            public:
+                VariableCoefficients(double constantPart = 0);
+
+                VariableCoefficients(VariableCoefficients const& other) = default;
+                VariableCoefficients& operator=(VariableCoefficients const& other) = default;
+                VariableCoefficients(VariableCoefficients&& other) = default;
+                VariableCoefficients& operator=(VariableCoefficients&& other) = default;
+                
+                VariableCoefficients& operator+=(VariableCoefficients&& other);
+                VariableCoefficients& operator-=(VariableCoefficients&& other);
+                VariableCoefficients& operator*=(VariableCoefficients&& other);
+                VariableCoefficients& operator/=(VariableCoefficients&& other);
+                
+                void negate();
+                void setCoefficient(storm::expressions::Variable const& variable, double coefficient);
+                double getCoefficient(storm::expressions::Variable const& variable);
+                double getConstantPart() const;
+                
+                /*!
+                 * Brings all variables of the right-hand side coefficients to the left-hand side by negating them and
+                 * moves the constant part of the current coefficients to the right-hand side by subtracting it from the
+                 * constant part of the rhs. After performing this operation, the left-hand side has a constant part of
+                 * 0 and all variables and the right-hand side has no variables, but possibly a non-zero constant part.
+                 *
+                 * @param other The variable coefficients of the right-hand side.
+                 */
+                void separateVariablesFromConstantPart(VariableCoefficients& rhs);
+
+                // Propagate the iterators to variable-coefficient pairs.
+                std::map<storm::expressions::Variable, double>::const_iterator begin() const;
+                std::map<storm::expressions::Variable, double>::const_iterator end() const;
+                
+            private:
+                std::map<storm::expressions::Variable, double> variableToCoefficientMapping;
+                double constantPart;
+            };
+            
             /*!
              * Creates a linear coefficient visitor.
              */
@@ -21,24 +60,20 @@ namespace storm {
              * was rewritten as a sum of atoms.. If the expression is not linear, an exception is thrown.
              *
              * @param expression The expression for which to compute the coefficients.
-             * @return A pair consisting of a mapping from identifiers to their coefficients and the coefficient of
-             * the constant atom.
+             * @return A structure representing the coefficients of the variables and the constant part.
              */
-            std::pair<SimpleValuation, double> getLinearCoefficients(Expression const& expression);
+            VariableCoefficients getLinearCoefficients(Expression const& expression);
             
-            virtual void visit(IfThenElseExpression const* expression) override;
-            virtual void visit(BinaryBooleanFunctionExpression const* expression) override;
-            virtual void visit(BinaryNumericalFunctionExpression const* expression) override;
-            virtual void visit(BinaryRelationExpression const* expression) override;
-            virtual void visit(VariableExpression const* expression) override;
-            virtual void visit(UnaryBooleanFunctionExpression const* expression) override;
-            virtual void visit(UnaryNumericalFunctionExpression const* expression) override;
-            virtual void visit(BooleanLiteralExpression const* expression) override;
-            virtual void visit(IntegerLiteralExpression const* expression) override;
-            virtual void visit(DoubleLiteralExpression const* expression) override;
-            
-        private:
-            std::stack<std::pair<SimpleValuation, double>> resultStack;
+            virtual boost::any visit(IfThenElseExpression const& expression) override;
+            virtual boost::any visit(BinaryBooleanFunctionExpression const& expression) override;
+            virtual boost::any visit(BinaryNumericalFunctionExpression const& expression) override;
+            virtual boost::any visit(BinaryRelationExpression const& expression) override;
+            virtual boost::any visit(VariableExpression const& expression) override;
+            virtual boost::any visit(UnaryBooleanFunctionExpression const& expression) override;
+            virtual boost::any visit(UnaryNumericalFunctionExpression const& expression) override;
+            virtual boost::any visit(BooleanLiteralExpression const& expression) override;
+            virtual boost::any visit(IntegerLiteralExpression const& expression) override;
+            virtual boost::any visit(DoubleLiteralExpression const& expression) override;
         };
     }
 }

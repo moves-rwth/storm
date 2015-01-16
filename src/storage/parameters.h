@@ -1,7 +1,5 @@
-//#ifndef STORM_STORAGE_PARAMETERS_H_
-//#define STORM_STORAGE_PARAMETERS_H_
-
-#pragma once
+#ifndef STORM_STORAGE_PARAMETERS_H_
+#define STORM_STORAGE_PARAMETERS_H_
 
 #include "storm-config.h"
 #ifdef STORM_HAVE_CARL
@@ -22,5 +20,4 @@ namespace storm
 }
 #endif
 
-//#endif
-
+#endif /* STORM_STORAGE_PARAMETERS_H_ */

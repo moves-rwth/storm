@@ -18,6 +18,7 @@
 #include "src/storage/SparseMatrix.h"
 #include "src/settings/SettingsManager.h"
 #include "src/models/AbstractNondeterministicModel.h"
+#include "src/utility/ConstantsComparator.h"
 #include "src/utility/matrix.h"
 
 namespace storm {
@@ -166,7 +167,7 @@ public:
             // If no choice of the current state may be taken, we insert a self-loop to the state instead.
             if (!stateHasValidChoice) {
                 transitionMatrixBuilder.newRowGroup(currentRow);
-                transitionMatrixBuilder.addNextValue(currentRow, state, storm::utility::constantOne<T>());
+                transitionMatrixBuilder.addNextValue(currentRow, state, storm::utility::one<T>());
                 newChoiceLabeling.emplace_back();
                 ++currentRow;
             }
@@ -197,15 +198,15 @@ private:
 	 *	Checks probability matrix if all rows sum up to one.
 	 */
 	bool checkValidityOfProbabilityMatrix() {
+        storm::utility::ConstantsComparator<T> comparator;
 		// Get the settings object to customize linear solving.
 		for (uint_fast64_t row = 0; row < this->getTransitionMatrix().getRowCount(); row++) {
 			T sum = this->getTransitionMatrix().getRowSum(row);
-                        
-			if (sum == T(0)) continue;
-			if (!storm::utility::isOne(sum))  {
+            
+			if (!comparator.isOne(sum))  {
 				return false;
-			}
-																																																																																																																																											}
+            }
+        }
 		return true;
 	}
 };

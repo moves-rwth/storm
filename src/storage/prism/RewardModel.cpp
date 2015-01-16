@@ -30,7 +30,7 @@ namespace storm {
             return this->transitionRewards;
         }
         
-        RewardModel RewardModel::substitute(std::map<std::string, storm::expressions::Expression> const& substitution) const {
+        RewardModel RewardModel::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
             std::vector<StateReward> newStateRewards;
             newStateRewards.reserve(this->getStateRewards().size());
             for (auto const& stateReward : this->getStateRewards()) {
