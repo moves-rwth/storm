@@ -23,6 +23,7 @@ namespace carl
         std::hash<carl::MultivariatePolynomial<C,O,P>> h;
         return h(p);
     }
+    
     template<typename Pol>
     inline size_t hash_value(carl::RationalFunction<Pol> const& f)
     {

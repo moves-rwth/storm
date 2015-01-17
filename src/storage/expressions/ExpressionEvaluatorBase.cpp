@@ -1,15 +1,23 @@
 #include "src/storage/expressions/ExpressionEvaluatorBase.h"
 
 #include "src/storage/expressions/ExpressionManager.h"
+#include "src/storage/parameters.h"
 
 namespace storm {
     namespace expressions {
-        ExpressionEvaluatorBase::ExpressionEvaluatorBase(storm::expressions::ExpressionManager const& manager) : manager(manager.getSharedPointer()) {
+        template<typename RationalType>
+        ExpressionEvaluatorBase<RationalType>::ExpressionEvaluatorBase(storm::expressions::ExpressionManager const& manager) : manager(manager.getSharedPointer()) {
             // Intentionally left empty.
         }
         
-        storm::expressions::ExpressionManager const& ExpressionEvaluatorBase::getManager() const {
+        template<typename RationalType>
+        storm::expressions::ExpressionManager const& ExpressionEvaluatorBase<RationalType>::getManager() const {
             return *manager;
         }
+        
+        template class ExpressionEvaluatorBase<double>;
+#ifdef STORM_HAVE_CARL
+        template class ExpressionEvaluatorBase<RationalFunction>;
+#endif
     }
 }

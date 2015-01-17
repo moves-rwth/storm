@@ -354,9 +354,7 @@ private:
 		}
 		return true;
 	}
-	
-	
-	
+
 	
 };
 

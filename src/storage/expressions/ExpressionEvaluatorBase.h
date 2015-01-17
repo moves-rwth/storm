@@ -5,13 +5,14 @@
 
 namespace storm {
     namespace expressions {
+        template<typename RationalReturnType>
         class ExpressionEvaluatorBase {
         public:
             ExpressionEvaluatorBase(storm::expressions::ExpressionManager const& manager);
             
             virtual bool asBool(Expression const& expression) const = 0;
             virtual int_fast64_t asInt(Expression const& expression) const = 0;
-            virtual double asDouble(Expression const& expression) const = 0;
+            virtual RationalReturnType asRational(Expression const& expression) const = 0;
             
             virtual void setBooleanValue(storm::expressions::Variable const& variable, bool value) = 0;
             virtual void setIntegerValue(storm::expressions::Variable const& variable, int_fast64_t value) = 0;

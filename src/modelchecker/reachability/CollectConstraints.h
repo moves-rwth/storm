@@ -8,7 +8,6 @@
 #pragma once
 #include "src/models/Dtmc.h"
 
-
 namespace storm {
 namespace modelchecker {
 	namespace reachability {
@@ -18,6 +17,7 @@ namespace modelchecker {
 			private:
 				std::unordered_set<carl::Constraint<ValueType>> wellformedConstraintSet;
 				std::unordered_set<carl::Constraint<ValueType>> graphPreservingConstraintSet;
+            storm::utility::ConstantsComparator<ValueType> comparator;
 
 			public:
 				std::unordered_set<carl::Constraint<ValueType>> const&  wellformedConstraints() const {
@@ -33,7 +33,7 @@ namespace modelchecker {
 					for(uint_fast64_t state = 0; state < dtmc.getNumberOfStates(); ++state)
 					{
 						ValueType sum;
-						assert(storm::utility::isZero(sum));
+						assert(comparator.isZero(sum));
 						for(auto const& transition : dtmc.getRows(state))
 						{
 							sum += transition.getValue();
@@ -44,7 +44,7 @@ namespace modelchecker {
 								graphPreservingConstraintSet.emplace(transition.getValue(), storm::CompareRelation::GT);
 							}
 						}
-						assert(!sum.isConstant() || storm::utility::isOne(sum));
+						assert(!comparator.isConstant(sum) || comparator.isOne(sum));
 						if(!sum.isConstant()) {
 							wellformedConstraintSet.emplace(sum - 1, storm::CompareRelation::EQ);
 						}

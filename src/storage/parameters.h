@@ -2,13 +2,11 @@
 #define STORM_STORAGE_PARAMETERS_H_
 
 #include "storm-config.h"
-#ifdef STORM_HAVE_CARL
 
+#ifdef STORM_HAVE_CARL
 #include "../adapters/extendedCarl.h"
 
-namespace storm
-{
-//	typedef carl::MultivariatePolynomial<cln::cl_RA> Polynomial;
+namespace storm {
 	typedef carl::Variable  Variable;
     typedef carl::MultivariatePolynomial<cln::cl_RA> RawPolynomial;
     typedef carl::FactorizedPolynomial<RawPolynomial> Polynomial;
