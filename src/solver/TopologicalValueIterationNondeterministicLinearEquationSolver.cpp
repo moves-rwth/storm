@@ -3,7 +3,7 @@
 #include <utility>
 #include <chrono>
 
-#include "src/settings/Settings.h"
+#include "src/settings/SettingsManager.h"
 #include "src/utility/vector.h"
 #include "src/utility/graph.h"
 #include "src/models/PseudoModel.h"
@@ -26,12 +26,16 @@ namespace storm {
         template<typename ValueType>
 		TopologicalValueIterationNondeterministicLinearEquationSolver<ValueType>::TopologicalValueIterationNondeterministicLinearEquationSolver() {
 			// Get the settings object to customize solving.
-			storm::settings::Settings* settings = storm::settings::Settings::getInstance();
-
+			
+			//storm::settings::Settings* settings = storm::settings::Settings::getInstance();
+			auto settings = storm::settings::topologicalValueIterationEquationSolverSettings();
 			// Get appropriate settings.
-			this->maximalNumberOfIterations = settings->getOptionByLongName("maxiter").getArgument(0).getValueAsUnsignedInteger();
-			this->precision = settings->getOptionByLongName("precision").getArgument(0).getValueAsDouble();
-			this->relative = !settings->isSet("absolute");
+			//this->maximalNumberOfIterations = settings->getOptionByLongName("maxiter").getArgument(0).getValueAsUnsignedInteger();
+			//this->precision = settings->getOptionByLongName("precision").getArgument(0).getValueAsDouble();
+			//this->relative = !settings->isSet("absolute");
+			this->maximalNumberOfIterations = settings.getMaximalIterationCount();
+			this->precision = settings.getPrecision();
+			this->relative = (settings.getConvergenceCriterion() == TopologicalValueIterationEquationSolverSettings::ConvergenceCriterion::Relative);
         }
         
         template<typename ValueType>

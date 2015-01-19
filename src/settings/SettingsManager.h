@@ -28,6 +28,7 @@
 #include "src/settings/modules/BisimulationSettings.h"
 #include "src/settings/modules/GlpkSettings.h"
 #include "src/settings/modules/GurobiSettings.h"
+#include "src/settings/modules/TopologicalValueIterationEquationSolverSettings.h"
 
 #include "src/utility/macros.h"
 #include "src/exceptions/OptionParserException.h"
@@ -307,7 +308,14 @@ namespace storm {
          *
          * @return An object that allows accessing the settings of Gurobi.
          */
-        storm::settings::modules::GurobiSettings const& gurobiSettings();
+		storm::settings::modules::GurobiSettings const& gurobiSettings();
+
+		/*!
+		* Retrieves the settings of the topological value iteration-based equation solver.
+		*
+		* @return An object that allows accessing the settings of the topological value iteration-based equation solver.
+		*/
+		storm::settings::modules::TopologicalValueIterationEquationSolverSettings const& topologicalValueIterationEquationSolverSettings();
         
     } // namespace settings
 } // namespace storm
