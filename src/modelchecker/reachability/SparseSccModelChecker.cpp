@@ -273,7 +273,15 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> submatrixTransposed = submatrix.transpose();
                 
                 // The states we want to eliminate are those that are tagged with "maybe" but are not a phi or psi state.
-                storm::storage::BitVector statesToEliminate = (~(phiStates | psiStates) % maybeStates) & ~newInitialStates;
+                phiStates = phiStates % maybeStates;
+                psiStates = psiStates % maybeStates;
+
+                // Keep only the states that we do not eliminate in the maybe states.
+                maybeStates = phiStates | psiStates;
+
+                STORM_LOG_DEBUG("Phi states in reduced model " << phiStates);
+                STORM_LOG_DEBUG("Psi states in reduced model " << psiStates);
+                storm::storage::BitVector statesToEliminate = ~maybeStates & ~newInitialStates;
                 STORM_LOG_DEBUG("Eliminating the states " << statesToEliminate);
                 
                 // Before starting the model checking process, we assign priorities to states so we can use them to
@@ -294,6 +302,67 @@ namespace storm {
                     eliminateState(flexibleMatrix, oneStepProbabilities, state, flexibleBackwardTransitions, missingStateRewards);
                 }
                 STORM_PRINT_AND_LOG("Eliminated " << states.size() << " states." << std::endl);
+                
+                flexibleMatrix.print();
+                
+                // FIXME: Eliminate backward transitions to initial state.
+                
+                // At this point, the initial state has one of the following three scenarios:
+                // (a) only phi successors
+                // (b) only psi successors
+                // (c) phi and psi successors
+                //
+                // Case (a): ???
+                // Case (b): then we can add the probability of all transitions emanating from the initial state (=: p)
+                // and then use the regular scheme to compute the probability to reach a phi state (=: q) and then
+                // compute the result to be q/p.
+                // Case (c): 
+                
+                
+                // Find first occurring representatives.
+                bool foundPhiRepresentative = false;
+                storm::storage::sparse::state_type phiRepresentative;
+                bool foundPsiRepresentative = false;
+                storm::storage::sparse::state_type psiRepresentative;
+                for (auto initialState : newInitialStates) {
+                    for (auto const& trans : flexibleMatrix.getRow(initialState)) {
+                        if (!foundPhiRepresentative && phiStates.get(trans.getColumn())) {
+                            foundPhiRepresentative = true;
+                            phiRepresentative = trans.getColumn();
+                            STORM_LOG_DEBUG("Found phi representative " << phiRepresentative);
+                        } else if (!foundPsiRepresentative && psiStates.get(trans.getColumn())) {
+                            foundPsiRepresentative = true;
+                            psiRepresentative = trans.getColumn();
+                            STORM_LOG_DEBUG("Found psi representative " << phiRepresentative);
+                        }
+                        if (foundPhiRepresentative && foundPsiRepresentative) {
+                            break;
+                        }
+                    }
+                }
+                
+                STORM_LOG_THROW(foundPhiRepresentative, storm::exceptions::InvalidStateException, "Found no phi representative.");
+                STORM_LOG_THROW(foundPsiRepresentative, storm::exceptions::InvalidStateException, "Found no psi representative.");
+                
+                // Redirect all transitions to the phi states to their representative and do the same for the psi states.
+                for (auto state : maybeStates) {
+                    std::map<storm::storage::sparse::state_type, ValueType> newSuccessors;
+                    for (auto const& trans : submatrix.getRow(state)) {
+                        if (phiStates.get(trans.getColumn())) {
+                            newSuccessors[phiRepresentative] += trans.getValue();
+                        } else if (psiStates.get(trans.getColumn())) {
+                            newSuccessors[psiRepresentative] += trans.getValue();
+                        } else {
+                            newSuccessors[trans.getColumn()] += trans.getValue();
+                        }
+                    }
+                    
+                    std::vector<storm::storage::MatrixEntry<storm::storage::sparse::state_type, ValueType>> newTransitions;
+                    for (auto const& stateValuePair : newSuccessors) {
+                        newTransitions.emplace_back(stateValuePair);
+                    }
+                    flexibleMatrix.getRow(state) = newTransitions;
+                }
                 
                 flexibleMatrix.print();
                 
