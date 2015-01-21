@@ -37,6 +37,8 @@ namespace storm {
             template<typename ValueType>
             class SparseSccModelChecker {
             public:
+                static ValueType computeConditionalProbability(storm::models::Dtmc<ValueType> const& dtmc, std::shared_ptr<storm::properties::prctl::Ap<double>> const& phiFormula, std::shared_ptr<storm::properties::prctl::Ap<double>> const& psiFormula);
+                
                 static ValueType computeReachabilityProbability(storm::models::Dtmc<ValueType> const& dtmc, std::shared_ptr<storm::properties::prctl::Ap<double>> const& phiFormula, std::shared_ptr<storm::properties::prctl::Ap<double>> const& psiFormula);
                 static ValueType computeReachabilityReward(storm::models::Dtmc<ValueType> const& dtmc, std::shared_ptr<storm::properties::prctl::Ap<double>> const& phiFormula, std::shared_ptr<storm::properties::prctl::Ap<double>> const& psiFormula);
 

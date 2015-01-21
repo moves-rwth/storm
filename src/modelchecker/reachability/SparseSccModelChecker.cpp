@@ -7,6 +7,7 @@
 #include "src/properties/Prctl.h"
 
 #include "src/exceptions/InvalidStateException.h"
+#include "src/exceptions/InvalidPropertyException.h"
 #include "src/utility/graph.h"
 #include "src/utility/vector.h"
 #include "src/utility/macros.h"
@@ -219,6 +220,84 @@ namespace storm {
                 
                 boost::optional<std::vector<ValueType>> missingStateRewards;
                 return computeReachabilityValue(submatrix, oneStepProbabilities, submatrixTransposed, newInitialStates, phiStates, psiStates, missingStateRewards, statePriorities);
+            }
+            
+            template<typename ValueType>
+            ValueType SparseSccModelChecker<ValueType>::computeConditionalProbability(storm::models::Dtmc<ValueType> const& dtmc, std::shared_ptr<storm::properties::prctl::Ap<double>> const& phiFormula, std::shared_ptr<storm::properties::prctl::Ap<double>> const& psiFormula) {
+                // Now retrieve the appropriate bitvectors from the atomic propositions.
+                storm::storage::BitVector phiStates = phiFormula->getAp() != "true" ? dtmc.getLabeledStates(phiFormula->getAp()) : storm::storage::BitVector(dtmc.getNumberOfStates(), true);
+                storm::storage::BitVector psiStates = psiFormula->getAp() != "true" ? dtmc.getLabeledStates(psiFormula->getAp()) : storm::storage::BitVector(dtmc.getNumberOfStates(), true);
+                storm::storage::BitVector trueStates = storm::storage::BitVector(dtmc.getNumberOfStates(), true);
+                
+                // Do some sanity checks to establish some required properties.
+                STORM_LOG_THROW(dtmc.getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::IllegalArgumentException, "Input model is required to have exactly one initial state.");
+                STORM_LOG_THROW(storm::settings::parametricSettings().getEliminationMethod() != storm::settings::modules::ParametricSettings::EliminationMethod::State, storm::exceptions::InvalidArgumentException, "Unsupported elimination method for conditional probabilities.");
+
+                storm::storage::SparseMatrix<ValueType> backwardTransitions = dtmc.getBackwardTransitions();
+                
+                std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(backwardTransitions, trueStates, psiStates);
+                storm::storage::BitVector statesWithProbabilityGreater0 = ~statesWithProbability01.first;
+                storm::storage::BitVector statesWithProbability1 = std::move(statesWithProbability01.second);
+                
+                STORM_LOG_THROW(dtmc.getInitialStates().isSubsetOf(statesWithProbabilityGreater0), storm::exceptions::InvalidPropertyException, "The condition of the conditional probability has zero probability.");
+                
+                // If the initial state is known to have probability 1 of satisfying the condition, we can apply regular model checking.
+                if (dtmc.getInitialStates().isSubsetOf(statesWithProbability1)) {
+                    return computeConditionalProbability(dtmc, std::shared_ptr<storm::properties::prctl::Ap<double>>(new storm::properties::prctl::Ap<double>("true")), phiFormula);
+                }
+                
+                // From now on, we know the condition does not have a trivial probability in the initial state.
+                
+                // Compute the states that can be reached on a path that has a psi state in it.
+                storm::storage::BitVector statesWithPsiPredecessor = storm::utility::graph::performProbGreater0(dtmc.getTransitionMatrix(), trueStates, psiStates);
+                storm::storage::BitVector statesReachingPhi = storm::utility::graph::performProbGreater0(backwardTransitions, trueStates, phiStates);
+                
+                // The set of states we need to consider are those that have a non-zero probability to satisfy the condition or are on some path that has a psi state in it.
+                STORM_LOG_DEBUG("Initial state: " << dtmc.getInitialStates());
+                STORM_LOG_DEBUG("Phi states: " << phiStates);
+                STORM_LOG_DEBUG("Psi state: " << psiStates);
+                STORM_LOG_DEBUG("States with probability greater 0 of satisfying the condition: " << statesWithProbabilityGreater0);
+                STORM_LOG_DEBUG("States with psi predecessor: " << statesWithPsiPredecessor);
+                STORM_LOG_DEBUG("States reaching phi: " << statesReachingPhi);
+                storm::storage::BitVector maybeStates = statesWithProbabilityGreater0 | (statesWithPsiPredecessor & statesReachingPhi);
+                STORM_LOG_DEBUG("Found " << maybeStates.getNumberOfSetBits() << " relevant states: " << maybeStates);
+                
+                // Determine the set of initial states of the sub-DTMC.
+                storm::storage::BitVector newInitialStates = dtmc.getInitialStates() % maybeStates;
+                
+                // Create a vector for the probabilities to go to a state with probability 1 in one step.
+                std::vector<ValueType> oneStepProbabilities = dtmc.getTransitionMatrix().getConstrainedRowSumVector(maybeStates, statesWithProbability1);
+                
+                // We then build the submatrix that only has the transitions of the maybe states.
+                storm::storage::SparseMatrix<ValueType> submatrix = dtmc.getTransitionMatrix().getSubmatrix(false, maybeStates, maybeStates);
+                storm::storage::SparseMatrix<ValueType> submatrixTransposed = submatrix.transpose();
+                
+                // The states we want to eliminate are those that are tagged with "maybe" but are not a phi or psi state.
+                storm::storage::BitVector statesToEliminate = (~(phiStates | psiStates) % maybeStates) & ~newInitialStates;
+                STORM_LOG_DEBUG("Eliminating the states " << statesToEliminate);
+                
+                // Before starting the model checking process, we assign priorities to states so we can use them to
+                // impose ordering constraints later.
+                std::vector<std::size_t> statePriorities = getStatePriorities(submatrix, submatrixTransposed, newInitialStates, oneStepProbabilities);
+                
+                std::vector<storm::storage::sparse::state_type> states(statesToEliminate.begin(), statesToEliminate.end());
+                
+                // Sort the states according to the priorities.
+                std::sort(states.begin(), states.end(), [&statePriorities] (storm::storage::sparse::state_type const& a, storm::storage::sparse::state_type const& b) { return statePriorities[a] < statePriorities[b]; });
+
+                STORM_PRINT_AND_LOG("Computing conditional probilities." << std::endl);
+                STORM_PRINT_AND_LOG("Eliminating " << states.size() << " states using the state elimination technique." << std::endl);
+                boost::optional<std::vector<ValueType>> missingStateRewards;
+                FlexibleSparseMatrix<ValueType> flexibleMatrix = getFlexibleSparseMatrix(submatrix);
+                FlexibleSparseMatrix<ValueType> flexibleBackwardTransitions = getFlexibleSparseMatrix(submatrixTransposed, true);
+                for (auto const& state : states) {
+                    eliminateState(flexibleMatrix, oneStepProbabilities, state, flexibleBackwardTransitions, missingStateRewards);
+                }
+                STORM_PRINT_AND_LOG("Eliminated " << states.size() << " states." << std::endl);
+                
+                flexibleMatrix.print();
+                
+                return storm::utility::zero<ValueType>();
             }
             
             template<typename ValueType>
@@ -633,10 +712,10 @@ namespace storm {
             
             template class FlexibleSparseMatrix<double>;
             template class SparseSccModelChecker<double>;
-            #ifdef PARAMETRIC_SYSTEMS
+#ifdef PARAMETRIC_SYSTEMS
             template class FlexibleSparseMatrix<RationalFunction>;
             template class SparseSccModelChecker<RationalFunction>;
-            #endif
+#endif
         } // namespace reachability
     } // namespace modelchecker
 } // namespace storm

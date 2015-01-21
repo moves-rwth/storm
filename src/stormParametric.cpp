@@ -204,7 +204,11 @@ int main(const int argc, const char** argv) {
     
         storm::modelchecker::reachability::SparseSccModelChecker<storm::RationalFunction> modelchecker;
 
-        storm::RationalFunction valueFunction = checkRewards ? modelchecker.computeReachabilityReward(*dtmc, phiStateFormulaApFormula, psiStateFormulaApFormula) : modelchecker.computeReachabilityProbability(*dtmc, phiStateFormulaApFormula, psiStateFormulaApFormula);
+        storm::RationalFunction valueFunction = modelchecker.computeConditionalProbability(*dtmc, phiStateFormulaApFormula, psiStateFormulaApFormula);
+        
+//        storm::RationalFunction valueFunction = checkRewards ? modelchecker.computeReachabilityReward(*dtmc, phiStateFormulaApFormula, psiStateFormulaApFormula) : modelchecker.computeReachabilityProbability(*dtmc, phiStateFormulaApFormula, psiStateFormulaApFormula);
+        
+        
 //        STORM_PRINT_AND_LOG(std::endl << "Result: (" << carl::computePolynomial(valueFunction.nominator()) << ") / (" << carl::computePolynomial(valueFunction.denominator()) << ")" << std::endl);
 //        STORM_PRINT_AND_LOG(std::endl << "Result: (" << valueFunction.nominator() << ") / (" << valueFunction.denominator() << ")" << std::endl);
         STORM_PRINT_AND_LOG(std::endl << "Result: " << valueFunction << std::endl);
