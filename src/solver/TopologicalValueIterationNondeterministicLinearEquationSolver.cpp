@@ -82,7 +82,6 @@ namespace storm {
 
 			// Now, we need to determine the SCCs of the MDP and perform a topological sort.
 			std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = A.getRowGroupIndices();
-			storm::models::NonDeterministicMatrixBasedPseudoModel<ValueType> const pseudoModel(A, nondeterministicChoiceIndices);
 			
 			// Check if the decomposition is necessary
 #ifdef STORM_HAVE_CUDAFORSTORM
@@ -141,13 +140,14 @@ namespace storm {
 #endif
 			} else {
 				std::chrono::high_resolution_clock::time_point sccStartTime = std::chrono::high_resolution_clock::now();
-				storm::storage::StronglyConnectedComponentDecomposition<ValueType> sccDecomposition(pseudoModel, false, false);
+				storm::storage::StronglyConnectedComponentDecomposition<ValueType> sccDecomposition(A, false, false);
 
 				if (sccDecomposition.size() == 0) {
 					LOG4CPLUS_ERROR(logger, "Can not solve given Equation System as the SCC Decomposition returned no SCCs.");
 					throw storm::exceptions::IllegalArgumentException() << "Can not solve given Equation System as the SCC Decomposition returned no SCCs.";
 				}
 
+				storm::models::NonDeterministicMatrixBasedPseudoModel<ValueType> const pseudoModel(A, nondeterministicChoiceIndices);
 				storm::storage::SparseMatrix<ValueType> stronglyConnectedComponentsDependencyGraph = pseudoModel.extractPartitionDependencyGraph(sccDecomposition);
 				std::vector<uint_fast64_t> topologicalSort = storm::utility::graph::getTopologicalSort(stronglyConnectedComponentsDependencyGraph);
 
