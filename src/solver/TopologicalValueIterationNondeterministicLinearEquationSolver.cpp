@@ -35,7 +35,7 @@ namespace storm {
 			//this->relative = !settings->isSet("absolute");
 			this->maximalNumberOfIterations = settings.getMaximalIterationCount();
 			this->precision = settings.getPrecision();
-			this->relative = (settings.getConvergenceCriterion() == TopologicalValueIterationEquationSolverSettings::ConvergenceCriterion::Relative);
+			this->relative = (settings.getConvergenceCriterion() == storm::settings::modules::TopologicalValueIterationEquationSolverSettings::ConvergenceCriterion::Relative);
         }
         
         template<typename ValueType>

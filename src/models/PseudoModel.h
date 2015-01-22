@@ -4,6 +4,7 @@
 #include <cstdint> 
 #include "src/storage/SparseMatrix.h"
 #include "src/storage/Decomposition.h"
+#include "src/storage/StateBlock.h"
 
 namespace storm {
 	namespace models {
