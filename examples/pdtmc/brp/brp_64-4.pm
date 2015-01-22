@@ -135,3 +135,5 @@ module	channelL
 endmodule
 
 label "target" = s=5;
+label "finished_with_success" = srep=3&rrep=3;
+label "two_fragments_transmitted" = s=1&i=2+1;
