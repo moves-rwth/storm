@@ -10,6 +10,10 @@ namespace storm {
             return true;
         }
         
+        bool BinaryBooleanStateFormula::isPropositionalFormula() const {
+            return this->getLeftSubformula().isPropositionalFormula() && this->getRightSubformula().isPropositionalFormula();
+        }
+        
         std::ostream& BinaryBooleanStateFormula::writeToStream(std::ostream& out) const {
             out << "(";
             this->getLeftSubformula().writeToStream(out);

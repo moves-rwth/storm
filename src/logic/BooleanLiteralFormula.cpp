@@ -14,6 +14,10 @@ namespace storm {
             return !value;
         }
         
+        bool BooleanLiteralFormula::isPropositionalFormula() const {
+            return true;
+        }
+        
         std::ostream& BooleanLiteralFormula::writeToStream(std::ostream& out) const {
             if (value) {
                 out << "true";

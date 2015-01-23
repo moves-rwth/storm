@@ -14,25 +14,36 @@ namespace storm {
         
         class FormulaParser : public qi::grammar<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> {
         public:
-            
+            FormulaParser(std::shared_ptr<storm::expressions::ExpressionManager const> const& manager = std::shared_ptr<storm::expressions::ExpressionManager>(new storm::expressions::ExpressionManager()));
+
             /*!
              * Parses the formula given by the provided string.
              *
              * @param formulaString The formula as a string.
              * @return The resulting formula representation.
              */
-            static std::shared_ptr<storm::logic::Formula> parseFromString(std::string const& formulaString, std::shared_ptr<storm::expressions::ExpressionManager const> const& manager = std::shared_ptr<storm::expressions::ExpressionManager>(new storm::expressions::ExpressionManager()));
+            std::shared_ptr<storm::logic::Formula> parseFromString(std::string const& formulaString);
+            
+            /*!
+             * Adds an identifier and the expression it is supposed to be replaced with. This can, for example be used
+             * to substitute special identifiers in the formula by expressions.
+             *
+             * @param identifier The identifier that is supposed to be substituted.
+             * @param expression The expression it is to be substituted with.
+             */
+            void addIdentifierExpression(std::string const& identifier, storm::expressions::Expression const& expression);
             
         private:
-            FormulaParser(std::shared_ptr<storm::expressions::ExpressionManager const> const& manager);
-            
             struct keywordsStruct : qi::symbols<char, uint_fast64_t> {
                 keywordsStruct() {
                     add
                     ("true", 1)
                     ("false", 2)
                     ("min", 3)
-                    ("max", 4);
+                    ("max", 4)
+                    ("F", 5)
+                    ("G", 6)
+                    ("X", 7);
                 }
             };
             
@@ -52,16 +63,26 @@ namespace storm {
             // A parser used for recognizing the operators at the "relational" precedence level.
             relationalOperatorStruct relationalOperator_;
             
-            struct booleanOperatorStruct : qi::symbols<char, storm::logic::BinaryBooleanStateFormula::OperatorType> {
-                booleanOperatorStruct() {
+            struct binaryBooleanOperatorStruct : qi::symbols<char, storm::logic::BinaryBooleanStateFormula::OperatorType> {
+                binaryBooleanOperatorStruct() {
                     add
                     ("&", storm::logic::BinaryBooleanStateFormula::OperatorType::And)
                     ("|", storm::logic::BinaryBooleanStateFormula::OperatorType::Or);
                 }
             };
             
-            // A parser used for recognizing the operators at the "boolean" precedence level.
-            booleanOperatorStruct booleanOperator_;
+            // A parser used for recognizing the operators at the "binary" precedence level.
+            binaryBooleanOperatorStruct binaryBooleanOperator_;
+            
+            struct unaryBooleanOperatorStruct : qi::symbols<char, storm::logic::UnaryBooleanStateFormula::OperatorType> {
+                unaryBooleanOperatorStruct() {
+                    add
+                    ("!", storm::logic::UnaryBooleanStateFormula::OperatorType::Not);
+                }
+            };
+            
+            // A parser used for recognizing the operators at the "unary" precedence level.
+            unaryBooleanOperatorStruct unaryBooleanOperator_;
             
             struct optimalityOperatorStruct : qi::symbols<char, storm::logic::OptimalityType> {
                 optimalityOperatorStruct() {
@@ -93,7 +114,12 @@ namespace storm {
             // An error handler function.
             phoenix::function<ErrorHandler> handler;
             
+            // A symbol table that is a mapping from identifiers that can be used in expressions to the expressions
+            // they are to be replaced with.
+            qi::symbols<char, storm::expressions::Expression> identifiers_;
+            
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> start;
+            qi::rule<Iterator, qi::unused_type(), Skipper> comments;
             
             qi::rule<Iterator, std::tuple<boost::optional<storm::logic::OptimalityType>, boost::optional<storm::logic::ComparisonType>, boost::optional<double>>(), qi::locals<boost::optional<storm::logic::OptimalityType>, boost::optional<storm::logic::ComparisonType>, boost::optional<double>>, Skipper> operatorInformation;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> probabilityOperator;
@@ -101,9 +127,10 @@ namespace storm {
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> steadyStateOperator;
             
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> formula;
+            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> simpleFormula;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> stateFormula;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> pathFormula;
-            
+            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> simplePathFormula;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> atomicStateFormula;
             qi::rule<Iterator, std::string(), Skipper> label;
             
@@ -143,7 +170,7 @@ namespace storm {
             std::shared_ptr<storm::logic::Formula> createRewardOperatorFormula(std::tuple<boost::optional<storm::logic::OptimalityType>, boost::optional<storm::logic::ComparisonType>, boost::optional<double>> const& operatorInformation, std::shared_ptr<storm::logic::Formula> const& subformula) const;
             std::shared_ptr<storm::logic::Formula> createProbabilityOperatorFormula(std::tuple<boost::optional<storm::logic::OptimalityType>, boost::optional<storm::logic::ComparisonType>, boost::optional<double>> const& operatorInformation, std::shared_ptr<storm::logic::Formula> const& subformula);
             std::shared_ptr<storm::logic::Formula> createBinaryBooleanStateFormula(std::shared_ptr<storm::logic::Formula> const& leftSubformula, std::shared_ptr<storm::logic::Formula> const& rightSubformula, storm::logic::BinaryBooleanStateFormula::OperatorType operatorType);
-            
+            std::shared_ptr<storm::logic::Formula> createUnaryBooleanStateFormula(std::shared_ptr<storm::logic::Formula> const& subformula, boost::optional<storm::logic::UnaryBooleanStateFormula::OperatorType> const& operatorType);
         };
         
     } // namespace parser

@@ -10,6 +10,10 @@ namespace storm {
             return true;
         }
         
+        bool AtomicLabelFormula::isPropositionalFormula() const {
+            return true;
+        }
+        
         std::string const& AtomicLabelFormula::getLabel() const {
             return label;
         }

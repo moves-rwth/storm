@@ -10,6 +10,10 @@ namespace storm {
             return true;
         }
         
+        bool AtomicExpressionFormula::isPropositionalFormula() const {
+            return true;
+        }
+        
         storm::expressions::Expression const& AtomicExpressionFormula::getExpression() const {
             return expression;
         }

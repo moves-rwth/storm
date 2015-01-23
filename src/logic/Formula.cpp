@@ -118,6 +118,10 @@ namespace storm {
             return false;
         }
         
+        bool Formula::isPropositionalFormula() const {
+            return false;
+        }
+        
         PathFormula& Formula::asPathFormula() {
             return dynamic_cast<PathFormula&>(*this);
         }

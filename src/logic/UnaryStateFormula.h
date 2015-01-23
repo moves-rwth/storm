@@ -14,7 +14,8 @@ namespace storm {
             }
             
             virtual bool isUnaryStateFormula() const override;
-            
+            virtual bool isPropositionalFormula() const override;
+
             Formula& getSubformula();
             Formula const& getSubformula() const;
             

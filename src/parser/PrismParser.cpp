@@ -39,7 +39,7 @@ namespace storm {
             storm::parser::PrismParser grammar(filename, first);
             try {
                 // Start first run.
-                bool succeeded = qi::phrase_parse(iter, last, grammar, boost::spirit::ascii::space | qi::lit("//") >> *(qi::char_ - qi::eol) >> qi::eol, result);
+                bool succeeded = qi::phrase_parse(iter, last, grammar, boost::spirit::ascii::space | qi::lit("//") >> *(qi::char_ - (qi::eol | qi::eoi)) >> (qi::eol | qi::eoi), result);
                 STORM_LOG_THROW(succeeded,  storm::exceptions::WrongFormatException, "Parsing failed in first pass.");
                 STORM_LOG_DEBUG("First pass of parsing PRISM input finished.");
                 
@@ -48,7 +48,7 @@ namespace storm {
                 iter = first;
                 last = PositionIteratorType(input.end());
                 grammar.moveToSecondRun();
-                succeeded = qi::phrase_parse(iter, last, grammar, boost::spirit::ascii::space | qi::lit("//") >> *(qi::char_ - qi::eol) >> qi::eol, result);
+                succeeded = qi::phrase_parse(iter, last, grammar, boost::spirit::ascii::space | qi::lit("//") >> *(qi::char_ - (qi::eol | qi::eoi)) >> (qi::eol | qi::eoi), result);
                 STORM_LOG_THROW(succeeded,  storm::exceptions::WrongFormatException, "Parsing failed in second pass.");
             } catch (qi::expectation_failure<PositionIteratorType> const& e) {
                 // If the parser expected content different than the one provided, display information about the location of the error.

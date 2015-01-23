@@ -16,6 +16,7 @@ namespace storm {
             }
             
             virtual bool isAtomicLabelFormula() const override;
+            virtual bool isPropositionalFormula() const override;
 
             std::string const& getLabel() const;
             

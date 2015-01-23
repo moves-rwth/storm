@@ -77,6 +77,7 @@ namespace storm {
             virtual bool isPctlPathFormula() const;
             virtual bool isPctlStateFormula() const;
             virtual bool isPltlFormula() const;
+            virtual bool isPropositionalFormula() const;
             
             PathFormula& asPathFormula();
             PathFormula const& asPathFormula() const;

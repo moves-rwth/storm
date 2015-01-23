@@ -10,6 +10,10 @@ namespace storm {
             return true;
         }
         
+        bool UnaryStateFormula::isPropositionalFormula() const {
+            return this->getSubformula().isPropositionalFormula();
+        }
+        
         Formula& UnaryStateFormula::getSubformula() {
             return *subformula;
         }
