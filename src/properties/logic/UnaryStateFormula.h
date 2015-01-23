@@ -6,7 +6,20 @@
 namespace storm {
     namespace logic {
         class UnaryStateFormula : public StateFormula {
+        public:
+            UnaryStateFormula(std::shared_ptr<Formula> subformula);
             
+            virtual ~UnaryStateFormula() {
+                // Intentionally left empty.
+            }
+            
+            virtual bool isUnaryStateFormula() const override;
+            
+            Formula& getSubformula();
+            Formula const& getSubformula() const;
+            
+        private:
+            std::shared_ptr<Formula> subformula;
         };
     }
 }

@@ -22,6 +22,8 @@
 #include "src/properties/logic/UnaryStateFormula.h"
 #include "src/properties/logic/UntilFormula.h"
 #include "src/properties/logic/ConditionalPathFormula.h"
+#include "src/properties/logic/ProbabilityOperatorFormula.h"
+#include "src/properties/logic/RewardOperatorFormula.h"
 
 
 

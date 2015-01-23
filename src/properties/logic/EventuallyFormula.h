@@ -6,7 +6,16 @@
 namespace storm {
     namespace logic {
         class EventuallyFormula : public UnaryPathFormula {
+        public:
+            EventuallyFormula(std::shared_ptr<Formula> const& subformula);
             
+            virtual ~EventuallyFormula() {
+                // Intentionally left empty.
+            }
+            
+            virtual bool isEventuallyFormula() const override;
+            
+            virtual std::ostream& writeToStream(std::ostream& out) const override;
         };
     }
 }

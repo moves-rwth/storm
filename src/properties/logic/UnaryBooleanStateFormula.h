@@ -6,7 +6,12 @@
 namespace storm {
     namespace logic {
         class UnaryBooleanStateFormula : public UnaryStateFormula {
+        public:
+            virtual ~UnaryBooleanStateFormula() {
+                // Intentionally left empty.
+            };
             
+            virtual bool isUnaryBooleanStateFormula() const override;
         };
     }
 }

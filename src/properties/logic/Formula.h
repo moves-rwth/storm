@@ -2,6 +2,7 @@
 #define STORM_LOGIC_FORMULA_H_
 
 #include <memory>
+#include <iostream>
 
 #include "src/modelchecker/CheckResult.h"
 
@@ -39,7 +40,11 @@ namespace storm {
         class Formula {
         public:
             // Make the destructor virtual to allow deletion of objects of subclasses via a pointer to this class.
-            virtual ~Formula();
+            virtual ~Formula() {
+                // Intentionally left empty.
+            };
+            
+            friend std::ostream& operator<<(std::ostream& out, Formula const& formula);
             
             // Methods for querying the exact formula type.
             virtual bool isPathFormula() const;
@@ -49,6 +54,8 @@ namespace storm {
             virtual bool isBinaryBooleanStateFormula() const;
             virtual bool isUnaryBooleanStateFormula() const;
             virtual bool isBooleanLiteralFormula() const;
+            virtual bool isTrue() const;
+            virtual bool isFalse() const;
             virtual bool isAtomicExpressionFormula() const;
             virtual bool isAtomicLabelFormula() const;
             virtual bool isUntilFormula() const;
@@ -64,9 +71,13 @@ namespace storm {
             virtual bool isCumulativeRewardFormula() const;
             virtual bool isInstantaneousRewardFormula() const;
             virtual bool isReachabilityRewardFormula() const;
-            virtual bool isProbabilisticOperator() const;
+            virtual bool isProbabilityOperator() const;
             virtual bool isRewardOperator() const;
 
+            virtual bool isPctlPathFormula() const;
+            virtual bool isPctlStateFormula() const;
+            virtual bool isPltlFormula() const;
+            
             PathFormula& asPathFormula();
             PathFormula const& asPathFormula() const;
         
@@ -139,9 +150,13 @@ namespace storm {
             RewardOperatorFormula& asRewardOperatorFormula();
             RewardOperatorFormula const& asRewardOperatorFormula() const;
             
+            virtual std::ostream& writeToStream(std::ostream& out) const = 0;
+            
         private:
             // Currently empty.
         };
+        
+        std::ostream& operator<<(std::ostream& out, Formula const& formula);
     }
 }
 

@@ -2,10 +2,6 @@
 
 namespace storm {
     namespace logic {
-        Formula::~Formula() {
-            // Intentionally left empty.
-        }
-        
         bool Formula::isPathFormula() const {
             return false;
         }
@@ -31,6 +27,14 @@ namespace storm {
         }
         
         bool Formula::isBooleanLiteralFormula() const {
+            return false;
+        }
+        
+        bool Formula::isTrue() const {
+            return false;
+        }
+        
+        bool Formula::isFalse() const {
             return false;
         }
         
@@ -94,11 +98,23 @@ namespace storm {
             return false;
         }
         
-        bool Formula::isProbabilisticOperator() const {
+        bool Formula::isProbabilityOperator() const {
             return false;
         }
         
         bool Formula::isRewardOperator() const {
+            return false;
+        }
+        
+        bool Formula::isPctlPathFormula() const {
+            return false;
+        }
+        
+        bool Formula::isPctlStateFormula() const {
+            return false;
+        }
+        
+        bool Formula::isPltlFormula() const {
             return false;
         }
         
@@ -292,6 +308,10 @@ namespace storm {
         
         RewardOperatorFormula const& Formula::asRewardOperatorFormula() const {
             return dynamic_cast<RewardOperatorFormula const&>(*this);
+        }
+        
+        std::ostream& operator<<(std::ostream& out, Formula const& formula) {
+            return formula.writeToStream(out);
         }
     }
 }

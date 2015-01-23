@@ -6,7 +6,16 @@
 namespace storm {
     namespace logic {
         class GloballyFormula : public UnaryPathFormula {
+        public:
+            GloballyFormula(std::shared_ptr<Formula> const& subformula);
             
+            virtual ~GloballyFormula() {
+                // Intentionally left empty.
+            }
+            
+            virtual bool isGloballyFormula() const override;
+            
+            virtual std::ostream& writeToStream(std::ostream& out) const override;
         };
     }
 }

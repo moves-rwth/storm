@@ -6,7 +6,12 @@
 namespace storm {
     namespace logic {
         class PathRewardFormula : public PathFormula {
+        public:
+            virtual ~PathRewardFormula() {
+                // Intentionally left empty.
+            }
             
+            virtual bool isPathRewardFormula() const override;
         };
     }
 }

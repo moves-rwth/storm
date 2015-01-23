@@ -6,7 +6,20 @@
 namespace storm {
     namespace logic {
         class BooleanLiteralFormula : public StateFormula {
+        public:
+            BooleanLiteralFormula(bool value);
             
+            virtual ~BooleanLiteralFormula() {
+                // Intentionally left empty.
+            }
+            
+            virtual bool isTrue() const;
+            virtual bool isFalse() const;
+            
+            virtual std::ostream& writeToStream(std::ostream& out) const override;
+            
+        private:
+            bool value;
         };
     }
 }
