@@ -5,7 +5,7 @@
 
 namespace storm {
     namespace parser {
-        ExpressionParser::ExpressionParser(storm::expressions::ExpressionManager& manager, qi::symbols<char, uint_fast64_t> const& invalidIdentifiers_) : ExpressionParser::base_type(expression), orOperator_(), andOperator_(), equalityOperator_(), relationalOperator_(), plusOperator_(), multiplicationOperator_(), powerOperator_(), unaryOperator_(), floorCeilOperator_(), minMaxOperator_(), trueFalse_(manager), manager(manager), createExpressions(false), acceptDoubleLiterals(true), identifiers_(nullptr), invalidIdentifiers_(invalidIdentifiers_) {
+        ExpressionParser::ExpressionParser(storm::expressions::ExpressionManager const& manager, qi::symbols<char, uint_fast64_t> const& invalidIdentifiers_) : ExpressionParser::base_type(expression), orOperator_(), andOperator_(), equalityOperator_(), relationalOperator_(), plusOperator_(), multiplicationOperator_(), powerOperator_(), unaryOperator_(), floorCeilOperator_(), minMaxOperator_(), trueFalse_(manager), manager(manager), createExpressions(false), acceptDoubleLiterals(true), identifiers_(nullptr), invalidIdentifiers_(invalidIdentifiers_) {
             identifier %= qi::as_string[qi::raw[qi::lexeme[((qi::alpha | qi::char_('_')) >> *(qi::alnum | qi::char_('_')))]]][qi::_pass = phoenix::bind(&ExpressionParser::isValidIdentifier, phoenix::ref(*this), qi::_1)];
             identifier.name("identifier");
             
