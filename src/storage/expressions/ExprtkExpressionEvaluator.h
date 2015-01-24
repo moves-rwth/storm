@@ -18,7 +18,7 @@ namespace storm {
             
             bool asBool(Expression const& expression) const override;
             int_fast64_t asInt(Expression const& expression) const override;
-            
+
             void setBooleanValue(storm::expressions::Variable const& variable, bool value) override;
             void setIntegerValue(storm::expressions::Variable const& variable, int_fast64_t value) override;
             void setRationalValue(storm::expressions::Variable const& variable, double value) override;
