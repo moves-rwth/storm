@@ -95,10 +95,7 @@ namespace storm {
             stateFormula = (probabilityOperator | rewardOperator | steadyStateOperator | orStateFormula);
             stateFormula.name("state formula");
             
-            comments = qi::skip(boost::spirit::ascii::space | qi::lit("//") >> *(qi::char_ - (qi::eol | qi::eoi)))[qi::eps];
-            comments.name("comment");
-            
-            start = qi::eps > stateFormula >> comments >> qi::eoi;
+            start = qi::eps > stateFormula >> qi::skip(boost::spirit::ascii::space | qi::lit("//") >> *(qi::char_ - (qi::eol | qi::eoi)))[qi::eps] >> qi::eoi;
             start.name("start");
             
             /*!

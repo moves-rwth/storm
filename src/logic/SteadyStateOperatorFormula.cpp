@@ -2,19 +2,19 @@
 
 namespace storm {
     namespace logic {
-        SteadyStateOperatorFormula::SteadyStateOperatorFormula(std::shared_ptr<Formula> const& subformula) : SteadyStateOperatorFormula(boost::optional<OptimalityType>(), boost::optional<ComparisonType>(), boost::optional<double>(), subformula) {
+        SteadyStateOperatorFormula::SteadyStateOperatorFormula(std::shared_ptr<Formula const> const& subformula) : SteadyStateOperatorFormula(boost::optional<OptimalityType>(), boost::optional<ComparisonType>(), boost::optional<double>(), subformula) {
             // Intentionally left empty.
         }
         
-        SteadyStateOperatorFormula::SteadyStateOperatorFormula(ComparisonType comparisonType, double bound, std::shared_ptr<Formula> const& subformula) : SteadyStateOperatorFormula(boost::optional<OptimalityType>(), boost::optional<ComparisonType>(comparisonType), boost::optional<double>(bound), subformula) {
+        SteadyStateOperatorFormula::SteadyStateOperatorFormula(ComparisonType comparisonType, double bound, std::shared_ptr<Formula const> const& subformula) : SteadyStateOperatorFormula(boost::optional<OptimalityType>(), boost::optional<ComparisonType>(comparisonType), boost::optional<double>(bound), subformula) {
             // Intentionally left empty.
         }
         
-        SteadyStateOperatorFormula::SteadyStateOperatorFormula(OptimalityType optimalityType, ComparisonType comparisonType, double bound, std::shared_ptr<Formula> const& subformula) : SteadyStateOperatorFormula(boost::optional<OptimalityType>(optimalityType), boost::optional<ComparisonType>(comparisonType), boost::optional<double>(bound), subformula) {
+        SteadyStateOperatorFormula::SteadyStateOperatorFormula(OptimalityType optimalityType, ComparisonType comparisonType, double bound, std::shared_ptr<Formula const> const& subformula) : SteadyStateOperatorFormula(boost::optional<OptimalityType>(optimalityType), boost::optional<ComparisonType>(comparisonType), boost::optional<double>(bound), subformula) {
             // Intentionally left empty.
         }
         
-        SteadyStateOperatorFormula::SteadyStateOperatorFormula(OptimalityType optimalityType, std::shared_ptr<Formula> const& subformula) : SteadyStateOperatorFormula(boost::optional<OptimalityType>(optimalityType), boost::optional<ComparisonType>(), boost::optional<double>(), subformula) {
+        SteadyStateOperatorFormula::SteadyStateOperatorFormula(OptimalityType optimalityType, std::shared_ptr<Formula const> const& subformula) : SteadyStateOperatorFormula(boost::optional<OptimalityType>(optimalityType), boost::optional<ComparisonType>(), boost::optional<double>(), subformula) {
             // Intentionally left empty.
         }
                 
@@ -22,7 +22,7 @@ namespace storm {
             return true;
         }
         
-        SteadyStateOperatorFormula::SteadyStateOperatorFormula(boost::optional<OptimalityType> optimalityType, boost::optional<ComparisonType> comparisonType, boost::optional<double> bound, std::shared_ptr<Formula> const& subformula) : OperatorFormula(optimalityType, comparisonType, bound, subformula) {
+        SteadyStateOperatorFormula::SteadyStateOperatorFormula(boost::optional<OptimalityType> optimalityType, boost::optional<ComparisonType> comparisonType, boost::optional<double> bound, std::shared_ptr<Formula const> const& subformula) : OperatorFormula(optimalityType, comparisonType, bound, subformula) {
             // Intentionally left empty.
         }
         

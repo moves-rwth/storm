@@ -2,7 +2,7 @@
 
 namespace storm {
     namespace logic {
-        UnaryBooleanStateFormula::UnaryBooleanStateFormula(OperatorType operatorType, std::shared_ptr<Formula> const& subformula) : UnaryStateFormula(subformula), operatorType(operatorType) {
+        UnaryBooleanStateFormula::UnaryBooleanStateFormula(OperatorType operatorType, std::shared_ptr<Formula const> const& subformula) : UnaryStateFormula(subformula), operatorType(operatorType) {
             // Intentionally left empty.
         }
         

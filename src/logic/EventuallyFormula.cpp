@@ -2,7 +2,7 @@
 
 namespace storm {
     namespace logic {
-        EventuallyFormula::EventuallyFormula(std::shared_ptr<Formula> const& subformula) : UnaryPathFormula(subformula) {
+        EventuallyFormula::EventuallyFormula(std::shared_ptr<Formula const> const& subformula) : UnaryPathFormula(subformula) {
             // Intentionally left empty.
         }
         

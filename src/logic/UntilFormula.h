@@ -7,7 +7,7 @@ namespace storm {
     namespace logic {
         class UntilFormula : public BinaryPathFormula {
         public:
-            UntilFormula(std::shared_ptr<Formula> const& leftSubformula, std::shared_ptr<Formula> const& rightSubformula);
+            UntilFormula(std::shared_ptr<Formula const> const& leftSubformula, std::shared_ptr<Formula const> const& rightSubformula);
             
             virtual ~UntilFormula() {
                 // Intentionally left empty.

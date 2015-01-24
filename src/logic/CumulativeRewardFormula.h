@@ -1,11 +1,11 @@
 #ifndef STORM_LOGIC_CUMULATIVEREWARDFORMULA_H_
 #define STORM_LOGIC_CUMULATIVEREWARDFORMULA_H_
 
-#include "src/logic/PathRewardFormula.h"
+#include "src/logic/RewardPathFormula.h"
 
 namespace storm {
     namespace logic {
-        class CumulativeRewardFormula : public PathRewardFormula {
+        class CumulativeRewardFormula : public RewardPathFormula {
         public:
             CumulativeRewardFormula(uint_fast64_t stepBound);
             
@@ -16,6 +16,8 @@ namespace storm {
             virtual bool isCumulativeRewardFormula() const override;
             
             virtual std::ostream& writeToStream(std::ostream& out) const override;
+            
+            uint_fast64_t getStepBound() const;
             
         private:
             uint_fast64_t stepBound;

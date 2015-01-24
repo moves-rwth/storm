@@ -64,7 +64,7 @@ TEST(FormulaParserTest, ProbabilityOperatorTest) {
     std::shared_ptr<storm::logic::Formula> formula(nullptr);
 	ASSERT_NO_THROW(formula = parser.parseFromString(input));
 
-    EXPECT_TRUE(formula->isProbabilityOperator());
+    EXPECT_TRUE(formula->isProbabilityOperatorFormula());
     EXPECT_TRUE(formula->asProbabilityOperatorFormula().hasBound());
     EXPECT_FALSE(formula->asProbabilityOperatorFormula().hasOptimalityType());
 }
@@ -76,14 +76,14 @@ TEST(FormulaParserTest, RewardOperatorTest) {
     std::shared_ptr<storm::logic::Formula> formula(nullptr);
     ASSERT_NO_THROW(formula = parser.parseFromString(input));
     
-    EXPECT_TRUE(formula->isRewardOperator());
+    EXPECT_TRUE(formula->isRewardOperatorFormula());
     EXPECT_TRUE(formula->asRewardOperatorFormula().hasBound());
     EXPECT_TRUE(formula->asRewardOperatorFormula().hasOptimalityType());
     
     input = "R=? [I=10]";
     ASSERT_NO_THROW(formula = parser.parseFromString(input));
     
-    EXPECT_TRUE(formula->isRewardOperator());
+    EXPECT_TRUE(formula->isRewardOperatorFormula());
     EXPECT_FALSE(formula->asRewardOperatorFormula().hasBound());
     EXPECT_FALSE(formula->asRewardOperatorFormula().hasOptimalityType());
     EXPECT_TRUE(formula->asRewardOperatorFormula().getSubformula().isInstantaneousRewardFormula());
@@ -96,7 +96,7 @@ TEST(FormulaParserTest, ConditionalProbabilityTest) {
     std::shared_ptr<storm::logic::Formula> formula(nullptr);
     ASSERT_NO_THROW(formula = parser.parseFromString(input));
     
-    EXPECT_TRUE(formula->isProbabilityOperator());
+    EXPECT_TRUE(formula->isRewardOperatorFormula());
     storm::logic::ProbabilityOperatorFormula const& probFormula = formula->asProbabilityOperatorFormula();
     EXPECT_TRUE(probFormula.getSubformula().isConditionalPathFormula());
 }
@@ -108,7 +108,7 @@ TEST(FormulaParserTest, NestedPathFormulaTest) {
     std::shared_ptr<storm::logic::Formula> formula(nullptr);
     ASSERT_NO_THROW(formula = parser.parseFromString(input));
     
-    EXPECT_TRUE(formula->isProbabilityOperator());
+    EXPECT_TRUE(formula->isProbabilityOperatorFormula());
     ASSERT_TRUE(formula->asProbabilityOperatorFormula().getSubformula().isEventuallyFormula());
     ASSERT_TRUE(formula->asProbabilityOperatorFormula().getSubformula().asEventuallyFormula().getSubformula().isNextFormula());
 }
@@ -119,7 +119,7 @@ TEST(FormulaParserTest, CommentTest) {
     std::string input = "// This is a comment. And this is a commented out formula: P<=0.5 [ F \"a\" ] The next line contains the actual formula. \n P<=0.5 [ X \"b\" ] // Another comment \n // And again: another comment.";
     std::shared_ptr<storm::logic::Formula> formula(nullptr);
 	ASSERT_NO_THROW(formula = parser.parseFromString(input));
-    EXPECT_TRUE(formula->isProbabilityOperator());
+    EXPECT_TRUE(formula->isProbabilityOperatorFormula());
     ASSERT_TRUE(formula->asProbabilityOperatorFormula().getSubformula().isNextFormula());
     ASSERT_TRUE(formula->asProbabilityOperatorFormula().getSubformula().asNextFormula().getSubformula().isAtomicLabelFormula());
 }

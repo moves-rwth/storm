@@ -2,27 +2,27 @@
 
 namespace storm {
     namespace logic {
-        ProbabilityOperatorFormula::ProbabilityOperatorFormula(std::shared_ptr<Formula> const& subformula) : ProbabilityOperatorFormula(boost::optional<OptimalityType>(), boost::optional<ComparisonType>(), boost::optional<double>(), subformula) {
+        ProbabilityOperatorFormula::ProbabilityOperatorFormula(std::shared_ptr<Formula const> const& subformula) : ProbabilityOperatorFormula(boost::optional<OptimalityType>(), boost::optional<ComparisonType>(), boost::optional<double>(), subformula) {
             // Intentionally left empty.
         }
         
-        ProbabilityOperatorFormula::ProbabilityOperatorFormula(ComparisonType comparisonType, double bound, std::shared_ptr<Formula> const& subformula) : ProbabilityOperatorFormula(boost::optional<OptimalityType>(), boost::optional<ComparisonType>(comparisonType), boost::optional<double>(bound), subformula) {
+        ProbabilityOperatorFormula::ProbabilityOperatorFormula(ComparisonType comparisonType, double bound, std::shared_ptr<Formula const> const& subformula) : ProbabilityOperatorFormula(boost::optional<OptimalityType>(), boost::optional<ComparisonType>(comparisonType), boost::optional<double>(bound), subformula) {
             // Intentionally left empty.
         }
         
-        ProbabilityOperatorFormula::ProbabilityOperatorFormula(OptimalityType optimalityType, ComparisonType comparisonType, double bound, std::shared_ptr<Formula> const& subformula) : ProbabilityOperatorFormula(boost::optional<OptimalityType>(optimalityType), boost::optional<ComparisonType>(comparisonType), boost::optional<double>(bound), subformula) {
+        ProbabilityOperatorFormula::ProbabilityOperatorFormula(OptimalityType optimalityType, ComparisonType comparisonType, double bound, std::shared_ptr<Formula const> const& subformula) : ProbabilityOperatorFormula(boost::optional<OptimalityType>(optimalityType), boost::optional<ComparisonType>(comparisonType), boost::optional<double>(bound), subformula) {
             // Intentionally left empty.
         }
         
-        ProbabilityOperatorFormula::ProbabilityOperatorFormula(OptimalityType optimalityType, std::shared_ptr<Formula> const& subformula) : ProbabilityOperatorFormula(boost::optional<OptimalityType>(optimalityType), boost::optional<ComparisonType>(), boost::optional<double>(), subformula) {
+        ProbabilityOperatorFormula::ProbabilityOperatorFormula(OptimalityType optimalityType, std::shared_ptr<Formula const> const& subformula) : ProbabilityOperatorFormula(boost::optional<OptimalityType>(optimalityType), boost::optional<ComparisonType>(), boost::optional<double>(), subformula) {
             // Intentionally left empty.
         }
         
-        bool ProbabilityOperatorFormula::isProbabilityOperator() const {
+        bool ProbabilityOperatorFormula::isProbabilityOperatorFormula() const {
             return true;
         }
         
-        ProbabilityOperatorFormula::ProbabilityOperatorFormula(boost::optional<OptimalityType> optimalityType, boost::optional<ComparisonType> comparisonType, boost::optional<double> bound, std::shared_ptr<Formula> const& subformula) : OperatorFormula(optimalityType, comparisonType, bound, subformula) {
+        ProbabilityOperatorFormula::ProbabilityOperatorFormula(boost::optional<OptimalityType> optimalityType, boost::optional<ComparisonType> comparisonType, boost::optional<double> bound, std::shared_ptr<Formula const> const& subformula) : OperatorFormula(optimalityType, comparisonType, bound, subformula) {
             // Intentionally left empty.
         }
         

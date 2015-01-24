@@ -9,7 +9,7 @@ namespace storm {
     namespace logic {
         class UnaryPathFormula : public PathFormula {
         public:
-            UnaryPathFormula(std::shared_ptr<Formula> const& subformula);
+            UnaryPathFormula(std::shared_ptr<Formula const> const& subformula);
             
             virtual ~UnaryPathFormula() {
                 // Intentionally left empty.
@@ -17,11 +17,10 @@ namespace storm {
 
             virtual bool isUnaryPathFormula() const override;
             
-            Formula& getSubformula();
             Formula const& getSubformula() const;
             
         private:
-            std::shared_ptr<Formula> subformula;
+            std::shared_ptr<Formula const> subformula;
         };
     }
 }

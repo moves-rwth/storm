@@ -119,7 +119,6 @@ namespace storm {
             qi::symbols<char, storm::expressions::Expression> identifiers_;
             
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> start;
-            qi::rule<Iterator, qi::unused_type(), Skipper> comments;
             
             qi::rule<Iterator, std::tuple<boost::optional<storm::logic::OptimalityType>, boost::optional<storm::logic::ComparisonType>, boost::optional<double>>(), qi::locals<boost::optional<storm::logic::OptimalityType>, boost::optional<storm::logic::ComparisonType>, boost::optional<double>>, Skipper> operatorInformation;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> probabilityOperator;

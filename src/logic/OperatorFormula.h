@@ -11,7 +11,7 @@ namespace storm {
     namespace logic {
         class OperatorFormula : public UnaryStateFormula {
         public:
-            OperatorFormula(boost::optional<OptimalityType> optimalityType, boost::optional<ComparisonType> comparisonType, boost::optional<double> bound, std::shared_ptr<Formula> const& subformula);
+            OperatorFormula(boost::optional<OptimalityType> optimalityType, boost::optional<ComparisonType> comparisonType, boost::optional<double> bound, std::shared_ptr<Formula const> const& subformula);
             
             virtual ~OperatorFormula() {
                 // Intentionally left empty.

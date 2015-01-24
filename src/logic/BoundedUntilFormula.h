@@ -9,8 +9,8 @@ namespace storm {
     namespace logic {
         class BoundedUntilFormula : public BinaryPathFormula {
         public:
-            BoundedUntilFormula(std::shared_ptr<Formula> const& leftSubformula, std::shared_ptr<Formula> const& rightSubformula, double lowerBound, double upperBound);
-            BoundedUntilFormula(std::shared_ptr<Formula> const& leftSubformula, std::shared_ptr<Formula> const& rightSubformula, uint_fast64_t upperBound);
+            BoundedUntilFormula(std::shared_ptr<Formula const> const& leftSubformula, std::shared_ptr<Formula const> const& rightSubformula, double lowerBound, double upperBound);
+            BoundedUntilFormula(std::shared_ptr<Formula const> const& leftSubformula, std::shared_ptr<Formula const> const& rightSubformula, uint_fast64_t upperBound);
             
             virtual bool isBoundedUntilFormula() const override;
 

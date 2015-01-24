@@ -6,15 +6,19 @@ namespace storm {
             // Intenionally left empty.
         }
         
-        bool BooleanLiteralFormula::isTrue() const {
+        bool BooleanLiteralFormula::isTrueFormula() const {
             return value;
         }
         
-        bool BooleanLiteralFormula::isFalse() const {
+        bool BooleanLiteralFormula::isFalseFormula() const {
             return !value;
         }
         
         bool BooleanLiteralFormula::isPropositionalFormula() const {
+            return true;
+        }
+        
+        bool BooleanLiteralFormula::isBooleanLiteralFormula() const {
             return true;
         }
         

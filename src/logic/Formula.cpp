@@ -30,11 +30,11 @@ namespace storm {
             return false;
         }
         
-        bool Formula::isTrue() const {
+        bool Formula::isTrueFormula() const {
             return false;
         }
         
-        bool Formula::isFalse() const {
+        bool Formula::isFalseFormula() const {
             return false;
         }
         
@@ -82,7 +82,7 @@ namespace storm {
             return false;
         }
         
-        bool Formula::isPathRewardFormula() const {
+        bool Formula::isRewardPathFormula() const {
             return false;
         }
         
@@ -98,11 +98,11 @@ namespace storm {
             return false;
         }
         
-        bool Formula::isProbabilityOperator() const {
+        bool Formula::isProbabilityOperatorFormula() const {
             return false;
         }
         
-        bool Formula::isRewardOperator() const {
+        bool Formula::isRewardOperatorFormula() const {
             return false;
         }
         
@@ -120,6 +120,10 @@ namespace storm {
         
         bool Formula::isPropositionalFormula() const {
             return false;
+        }
+        
+        std::shared_ptr<Formula const> Formula::getTrueFormula() {
+            return std::shared_ptr<Formula const>(new BooleanLiteralFormula(true));
         }
         
         PathFormula& Formula::asPathFormula() {
@@ -258,20 +262,20 @@ namespace storm {
             return dynamic_cast<NextFormula const&>(*this);
         }
         
-        SteadyStateOperatorFormula& Formula::asSteadyStateFormula() {
+        SteadyStateOperatorFormula& Formula::asSteadyStateOperatorFormula() {
             return dynamic_cast<SteadyStateOperatorFormula&>(*this);
         }
         
-        SteadyStateOperatorFormula const& Formula::asSteadyStateFormula() const {
+        SteadyStateOperatorFormula const& Formula::asSteadyStateOperatorFormula() const {
             return dynamic_cast<SteadyStateOperatorFormula const&>(*this);
         }
         
-        PathRewardFormula& Formula::asPathRewardFormula() {
-            return dynamic_cast<PathRewardFormula&>(*this);
+        RewardPathFormula& Formula::asRewardPathFormula() {
+            return dynamic_cast<RewardPathFormula&>(*this);
         }
         
-        PathRewardFormula const& Formula::asPathRewardFormula() const {
-            return dynamic_cast<PathRewardFormula const&>(*this);
+        RewardPathFormula const& Formula::asRewardPathFormula() const {
+            return dynamic_cast<RewardPathFormula const&>(*this);
         }
         
         CumulativeRewardFormula& Formula::asCumulativeRewardFormula() {
@@ -312,6 +316,14 @@ namespace storm {
         
         RewardOperatorFormula const& Formula::asRewardOperatorFormula() const {
             return dynamic_cast<RewardOperatorFormula const&>(*this);
+        }
+        
+        std::shared_ptr<Formula const> Formula::asSharedPointer() {
+            return this->shared_from_this();
+        }
+        
+        std::shared_ptr<Formula const> Formula::asSharedPointer() const {
+            return this->shared_from_this();
         }
         
         std::ostream& operator<<(std::ostream& out, Formula const& formula) {

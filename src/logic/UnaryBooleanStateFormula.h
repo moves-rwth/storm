@@ -9,7 +9,7 @@ namespace storm {
         public:
             enum class OperatorType { Not };
 
-            UnaryBooleanStateFormula(OperatorType operatorType, std::shared_ptr<Formula> const& subformula);
+            UnaryBooleanStateFormula(OperatorType operatorType, std::shared_ptr<Formula const> const& subformula);
             
             virtual ~UnaryBooleanStateFormula() {
                 // Intentionally left empty.

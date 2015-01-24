@@ -7,7 +7,7 @@ namespace storm {
     namespace logic {
         class EventuallyFormula : public UnaryPathFormula {
         public:
-            EventuallyFormula(std::shared_ptr<Formula> const& subformula);
+            EventuallyFormula(std::shared_ptr<Formula const> const& subformula);
             
             virtual ~EventuallyFormula() {
                 // Intentionally left empty.

@@ -27,7 +27,7 @@ namespace storm {
         class ConditionalPathFormula;
         class NextFormula;
         class SteadyStateOperatorFormula;
-        class PathRewardFormula;
+        class RewardPathFormula;
         class CumulativeRewardFormula;
         class InstantaneousRewardFormula;
         class ReachabilityRewardFormula;
@@ -37,7 +37,7 @@ namespace storm {
         // Also foward-declare base model checker class.
         class ModelChecker;
         
-        class Formula {
+        class Formula : public std::enable_shared_from_this<Formula const> {
         public:
             // Make the destructor virtual to allow deletion of objects of subclasses via a pointer to this class.
             virtual ~Formula() {
@@ -54,8 +54,8 @@ namespace storm {
             virtual bool isBinaryBooleanStateFormula() const;
             virtual bool isUnaryBooleanStateFormula() const;
             virtual bool isBooleanLiteralFormula() const;
-            virtual bool isTrue() const;
-            virtual bool isFalse() const;
+            virtual bool isTrueFormula() const;
+            virtual bool isFalseFormula() const;
             virtual bool isAtomicExpressionFormula() const;
             virtual bool isAtomicLabelFormula() const;
             virtual bool isUntilFormula() const;
@@ -67,17 +67,19 @@ namespace storm {
             virtual bool isConditionalPathFormula() const;
             virtual bool isNextFormula() const;
             virtual bool isSteadyStateOperatorFormula() const;
-            virtual bool isPathRewardFormula() const;
+            virtual bool isRewardPathFormula() const;
             virtual bool isCumulativeRewardFormula() const;
             virtual bool isInstantaneousRewardFormula() const;
             virtual bool isReachabilityRewardFormula() const;
-            virtual bool isProbabilityOperator() const;
-            virtual bool isRewardOperator() const;
+            virtual bool isProbabilityOperatorFormula() const;
+            virtual bool isRewardOperatorFormula() const;
 
             virtual bool isPctlPathFormula() const;
             virtual bool isPctlStateFormula() const;
             virtual bool isPltlFormula() const;
             virtual bool isPropositionalFormula() const;
+            
+            static std::shared_ptr<Formula const> getTrueFormula();
             
             PathFormula& asPathFormula();
             PathFormula const& asPathFormula() const;
@@ -130,11 +132,11 @@ namespace storm {
             NextFormula& asNextFormula();
             NextFormula const& asNextFormula() const;
             
-            SteadyStateOperatorFormula& asSteadyStateFormula();
-            SteadyStateOperatorFormula const& asSteadyStateFormula() const;
+            SteadyStateOperatorFormula& asSteadyStateOperatorFormula();
+            SteadyStateOperatorFormula const& asSteadyStateOperatorFormula() const;
             
-            PathRewardFormula& asPathRewardFormula();
-            PathRewardFormula const& asPathRewardFormula() const;
+            RewardPathFormula& asRewardPathFormula();
+            RewardPathFormula const& asRewardPathFormula() const;
             
             CumulativeRewardFormula& asCumulativeRewardFormula();
             CumulativeRewardFormula const& asCumulativeRewardFormula() const;
@@ -150,6 +152,9 @@ namespace storm {
             
             RewardOperatorFormula& asRewardOperatorFormula();
             RewardOperatorFormula const& asRewardOperatorFormula() const;
+            
+            std::shared_ptr<Formula const> asSharedPointer();
+            std::shared_ptr<Formula const> asSharedPointer() const;
             
             virtual std::ostream& writeToStream(std::ostream& out) const = 0;
             

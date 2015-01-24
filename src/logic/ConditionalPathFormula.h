@@ -7,7 +7,7 @@ namespace storm {
     namespace logic {
         class ConditionalPathFormula : public BinaryPathFormula {
         public:
-            ConditionalPathFormula(std::shared_ptr<Formula> const& leftSubformula, std::shared_ptr<Formula> const& rightSubformula);
+            ConditionalPathFormula(std::shared_ptr<Formula const> const& leftSubformula, std::shared_ptr<Formula const> const& rightSubformula);
             
             virtual ~ConditionalPathFormula() {
                 // Intentionally left empty.

@@ -13,8 +13,9 @@ namespace storm {
                 // Intentionally left empty.
             }
             
-            virtual bool isTrue() const override;
-            virtual bool isFalse() const override;
+            virtual bool isBooleanLiteralFormula() const override;
+            virtual bool isTrueFormula() const override;
+            virtual bool isFalseFormula() const override;
             virtual bool isPropositionalFormula() const override;
 
             virtual std::ostream& writeToStream(std::ostream& out) const override;

@@ -2,7 +2,7 @@
 
 namespace storm {
     namespace logic {
-        OperatorFormula::OperatorFormula(boost::optional<OptimalityType> optimalityType, boost::optional<ComparisonType> comparisonType, boost::optional<double> bound, std::shared_ptr<Formula> const& subformula) : UnaryStateFormula(subformula), comparisonType(comparisonType), bound(bound), optimalityType(optimalityType) {
+        OperatorFormula::OperatorFormula(boost::optional<OptimalityType> optimalityType, boost::optional<ComparisonType> comparisonType, boost::optional<double> bound, std::shared_ptr<Formula const> const& subformula) : UnaryStateFormula(subformula), comparisonType(comparisonType), bound(bound), optimalityType(optimalityType) {
             // Intentionally left empty.
         }
         

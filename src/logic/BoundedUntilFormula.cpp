@@ -2,11 +2,11 @@
 
 namespace storm {
     namespace logic {
-        BoundedUntilFormula::BoundedUntilFormula(std::shared_ptr<Formula> const& leftSubformula, std::shared_ptr<Formula> const& rightSubformula, double lowerBound, double upperBound) : BinaryPathFormula(leftSubformula, rightSubformula), bounds(std::make_pair(lowerBound, upperBound)) {
+        BoundedUntilFormula::BoundedUntilFormula(std::shared_ptr<Formula const> const& leftSubformula, std::shared_ptr<Formula const> const& rightSubformula, double lowerBound, double upperBound) : BinaryPathFormula(leftSubformula, rightSubformula), bounds(std::make_pair(lowerBound, upperBound)) {
             // Intentionally left empty.
         }
         
-        BoundedUntilFormula::BoundedUntilFormula(std::shared_ptr<Formula> const& leftSubformula, std::shared_ptr<Formula> const& rightSubformula, uint_fast64_t upperBound) : BinaryPathFormula(leftSubformula, rightSubformula), bounds(upperBound) {
+        BoundedUntilFormula::BoundedUntilFormula(std::shared_ptr<Formula const> const& leftSubformula, std::shared_ptr<Formula const> const& rightSubformula, uint_fast64_t upperBound) : BinaryPathFormula(leftSubformula, rightSubformula), bounds(upperBound) {
             // Intentionally left empty.
         }
         

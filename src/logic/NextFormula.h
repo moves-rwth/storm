@@ -7,7 +7,7 @@ namespace storm {
     namespace logic {
         class NextFormula : public UnaryPathFormula {
         public:
-            NextFormula(std::shared_ptr<Formula> const& subformula);
+            NextFormula(std::shared_ptr<Formula const> const& subformula);
             
             virtual ~NextFormula() {
                 // Intentionally left empty.

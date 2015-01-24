@@ -9,7 +9,7 @@ namespace storm {
         public:
             enum class OperatorType {And, Or};
 
-            BinaryBooleanStateFormula(OperatorType operatorType, std::shared_ptr<Formula> const& leftSubformula, std::shared_ptr<Formula> const& rightSubformula);
+            BinaryBooleanStateFormula(OperatorType operatorType, std::shared_ptr<Formula const> const& leftSubformula, std::shared_ptr<Formula const> const& rightSubformula);
             
             virtual ~BinaryBooleanStateFormula() {
                 // Intentionally left empty.

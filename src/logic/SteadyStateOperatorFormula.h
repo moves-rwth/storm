@@ -7,11 +7,11 @@ namespace storm {
     namespace logic {
         class SteadyStateOperatorFormula : public OperatorFormula {
         public:
-            SteadyStateOperatorFormula(std::shared_ptr<Formula> const& subformula);
-            SteadyStateOperatorFormula(ComparisonType comparisonType, double bound, std::shared_ptr<Formula> const& subformula);
-            SteadyStateOperatorFormula(OptimalityType optimalityType, ComparisonType comparisonType, double bound, std::shared_ptr<Formula> const& subformula);
-            SteadyStateOperatorFormula(OptimalityType optimalityType, std::shared_ptr<Formula> const& subformula);
-            SteadyStateOperatorFormula(boost::optional<OptimalityType> optimalityType, boost::optional<ComparisonType> comparisonType, boost::optional<double> bound, std::shared_ptr<Formula> const& subformula);
+            SteadyStateOperatorFormula(std::shared_ptr<Formula const> const& subformula);
+            SteadyStateOperatorFormula(ComparisonType comparisonType, double bound, std::shared_ptr<Formula const> const& subformula);
+            SteadyStateOperatorFormula(OptimalityType optimalityType, ComparisonType comparisonType, double bound, std::shared_ptr<Formula const> const& subformula);
+            SteadyStateOperatorFormula(OptimalityType optimalityType, std::shared_ptr<Formula const> const& subformula);
+            SteadyStateOperatorFormula(boost::optional<OptimalityType> optimalityType, boost::optional<ComparisonType> comparisonType, boost::optional<double> bound, std::shared_ptr<Formula const> const& subformula);
             
             virtual ~SteadyStateOperatorFormula() {
                 // Intentionally left empty.

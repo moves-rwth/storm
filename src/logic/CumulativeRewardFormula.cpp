@@ -10,6 +10,10 @@ namespace storm {
             return true;
         }
         
+        uint_fast64_t CumulativeRewardFormula::getStepBound() const {
+            return stepBound;
+        }
+        
         std::ostream& CumulativeRewardFormula::writeToStream(std::ostream& out) const {
             out << "C<=" << stepBound;
             return out;

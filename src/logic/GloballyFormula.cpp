@@ -2,7 +2,7 @@
 
 namespace storm {
     namespace logic {
-        GloballyFormula::GloballyFormula(std::shared_ptr<Formula> const& subformula) : UnaryPathFormula(subformula) {
+        GloballyFormula::GloballyFormula(std::shared_ptr<Formula const> const& subformula) : UnaryPathFormula(subformula) {
             // Intentionally left empty.
         }
         

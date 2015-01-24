@@ -2,7 +2,7 @@
 
 namespace storm {
     namespace logic {
-        UnaryStateFormula::UnaryStateFormula(std::shared_ptr<Formula> subformula) : subformula(subformula) {
+        UnaryStateFormula::UnaryStateFormula(std::shared_ptr<Formula const> subformula) : subformula(subformula) {
             // Intentionally left empty.
         }
         
@@ -12,10 +12,6 @@ namespace storm {
         
         bool UnaryStateFormula::isPropositionalFormula() const {
             return this->getSubformula().isPropositionalFormula();
-        }
-        
-        Formula& UnaryStateFormula::getSubformula() {
-            return *subformula;
         }
         
         Formula const& UnaryStateFormula::getSubformula() const {

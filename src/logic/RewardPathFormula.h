@@ -5,13 +5,13 @@
 
 namespace storm {
     namespace logic {
-        class PathRewardFormula : public PathFormula {
+        class RewardPathFormula : public Formula {
         public:
-            virtual ~PathRewardFormula() {
+            virtual ~RewardPathFormula() {
                 // Intentionally left empty.
             }
             
-            virtual bool isPathRewardFormula() const override;
+            virtual bool isRewardPathFormula() const override;
         };
     }
 }

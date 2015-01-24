@@ -7,17 +7,17 @@ namespace storm {
     namespace logic {
         class ProbabilityOperatorFormula : public OperatorFormula {
         public:
-            ProbabilityOperatorFormula(std::shared_ptr<Formula> const& subformula);
-            ProbabilityOperatorFormula(ComparisonType comparisonType, double bound, std::shared_ptr<Formula> const& subformula);
-            ProbabilityOperatorFormula(OptimalityType optimalityType, ComparisonType comparisonType, double bound, std::shared_ptr<Formula> const& subformula);
-            ProbabilityOperatorFormula(OptimalityType optimalityType, std::shared_ptr<Formula> const& subformula);
-            ProbabilityOperatorFormula(boost::optional<OptimalityType> optimalityType, boost::optional<ComparisonType> comparisonType, boost::optional<double> bound, std::shared_ptr<Formula> const& subformula);
+            ProbabilityOperatorFormula(std::shared_ptr<Formula const> const& subformula);
+            ProbabilityOperatorFormula(ComparisonType comparisonType, double bound, std::shared_ptr<Formula const> const& subformula);
+            ProbabilityOperatorFormula(OptimalityType optimalityType, ComparisonType comparisonType, double bound, std::shared_ptr<Formula const> const& subformula);
+            ProbabilityOperatorFormula(OptimalityType optimalityType, std::shared_ptr<Formula const> const& subformula);
+            ProbabilityOperatorFormula(boost::optional<OptimalityType> optimalityType, boost::optional<ComparisonType> comparisonType, boost::optional<double> bound, std::shared_ptr<Formula const> const& subformula);
 
             virtual ~ProbabilityOperatorFormula() {
                 // Intentionally left empty.
             }
             
-            virtual bool isProbabilityOperator() const override;
+            virtual bool isProbabilityOperatorFormula() const override;
             
             virtual std::ostream& writeToStream(std::ostream& out) const override;
         };

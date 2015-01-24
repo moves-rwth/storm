@@ -2,27 +2,27 @@
 
 namespace storm {
     namespace logic {
-        RewardOperatorFormula::RewardOperatorFormula(std::shared_ptr<Formula> const& subformula) : RewardOperatorFormula(boost::optional<OptimalityType>(), boost::optional<ComparisonType>(), boost::optional<double>(), subformula) {
+        RewardOperatorFormula::RewardOperatorFormula(std::shared_ptr<Formula const> const& subformula) : RewardOperatorFormula(boost::optional<OptimalityType>(), boost::optional<ComparisonType>(), boost::optional<double>(), subformula) {
             // Intentionally left empty.
         }
         
-        RewardOperatorFormula::RewardOperatorFormula(ComparisonType comparisonType, double bound, std::shared_ptr<Formula> const& subformula) : RewardOperatorFormula(boost::optional<OptimalityType>(), boost::optional<ComparisonType>(comparisonType), boost::optional<double>(bound), subformula) {
+        RewardOperatorFormula::RewardOperatorFormula(ComparisonType comparisonType, double bound, std::shared_ptr<Formula const> const& subformula) : RewardOperatorFormula(boost::optional<OptimalityType>(), boost::optional<ComparisonType>(comparisonType), boost::optional<double>(bound), subformula) {
             // Intentionally left empty.
         }
         
-        RewardOperatorFormula::RewardOperatorFormula(OptimalityType optimalityType, ComparisonType comparisonType, double bound, std::shared_ptr<Formula> const& subformula) : RewardOperatorFormula(boost::optional<OptimalityType>(optimalityType), boost::optional<ComparisonType>(comparisonType), boost::optional<double>(bound), subformula) {
+        RewardOperatorFormula::RewardOperatorFormula(OptimalityType optimalityType, ComparisonType comparisonType, double bound, std::shared_ptr<Formula const> const& subformula) : RewardOperatorFormula(boost::optional<OptimalityType>(optimalityType), boost::optional<ComparisonType>(comparisonType), boost::optional<double>(bound), subformula) {
             // Intentionally left empty.
         }
         
-        RewardOperatorFormula::RewardOperatorFormula(OptimalityType optimalityType, std::shared_ptr<Formula> const& subformula) : RewardOperatorFormula(boost::optional<OptimalityType>(optimalityType), boost::optional<ComparisonType>(), boost::optional<double>(), subformula) {
+        RewardOperatorFormula::RewardOperatorFormula(OptimalityType optimalityType, std::shared_ptr<Formula const> const& subformula) : RewardOperatorFormula(boost::optional<OptimalityType>(optimalityType), boost::optional<ComparisonType>(), boost::optional<double>(), subformula) {
             // Intentionally left empty.
         }
         
-        bool RewardOperatorFormula::isRewardOperator() const {
+        bool RewardOperatorFormula::isRewardOperatorFormula() const {
             return true;
         }
         
-        RewardOperatorFormula::RewardOperatorFormula(boost::optional<OptimalityType> optimalityType, boost::optional<ComparisonType> comparisonType, boost::optional<double> bound, std::shared_ptr<Formula> const& subformula) : OperatorFormula(optimalityType, comparisonType, bound, subformula) {
+        RewardOperatorFormula::RewardOperatorFormula(boost::optional<OptimalityType> optimalityType, boost::optional<ComparisonType> comparisonType, boost::optional<double> bound, std::shared_ptr<Formula const> const& subformula) : OperatorFormula(optimalityType, comparisonType, bound, subformula) {
             // Intentionally left empty.
         }
         

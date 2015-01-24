@@ -1,53 +1,59 @@
-//#include "gtest/gtest.h"
-//#include "storm-config.h"
-//
-//#include "src/solver/GmmxxLinearEquationSolver.h"
-//#include "src/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
-//#include "src/settings/SettingsManager.h"
-//#include "src/settings/SettingMemento.h"
-//#include "src/parser/AutoParser.h"
-//
-//TEST(GmmxxDtmcPrctlModelCheckerTest, Die) {
-//	std::shared_ptr<storm::models::AbstractModel<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/dtmc/die/die.tra", STORM_CPP_BASE_PATH "/examples/dtmc/die/die.lab", "", STORM_CPP_BASE_PATH "/examples/dtmc/die/die.coin_flips.trans.rew");
-//
-//	ASSERT_EQ(abstractModel->getType(), storm::models::DTMC);
-//
-//	std::shared_ptr<storm::models::Dtmc<double>> dtmc = abstractModel->as<storm::models::Dtmc<double>>();
-//
-//	ASSERT_EQ(dtmc->getNumberOfStates(), 13ull);
-//	ASSERT_EQ(dtmc->getNumberOfTransitions(), 20ull);
-//
-//	storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double> mc(*dtmc, std::unique_ptr<storm::solver::LinearEquationSolver<double>>(new storm::solver::GmmxxLinearEquationSolver<double>()));
-//
-//	auto apFormula = std::make_shared<storm::properties::prctl::Ap<double>>("one");
-//	auto eventuallyFormula = std::make_shared<storm::properties::prctl::Eventually<double>>(apFormula);
-//
-//	std::vector<double> result = eventuallyFormula->check(mc, false);
-//
-//	ASSERT_LT(std::abs(result[0] - ((double)1.0/6.0)), storm::settings::gmmxxEquationSolverSettings().getPrecision());
-//
-//	apFormula = std::make_shared<storm::properties::prctl::Ap<double>>("two");
-//	eventuallyFormula = std::make_shared<storm::properties::prctl::Eventually<double>>(apFormula);
-//
-//	result = eventuallyFormula->check(mc, false);
-//
-//	ASSERT_LT(std::abs(result[0] - ((double)1.0/6.0)), storm::settings::gmmxxEquationSolverSettings().getPrecision());
-//
-//	apFormula = std::make_shared<storm::properties::prctl::Ap<double>>("three");
-//	eventuallyFormula = std::make_shared<storm::properties::prctl::Eventually<double>>(apFormula);
-//
-//	result = eventuallyFormula->check(mc, false);
-//
-//	ASSERT_LT(std::abs(result[0] - ((double)1.0/6.0)), storm::settings::gmmxxEquationSolverSettings().getPrecision());
-//
-//	auto done = std::make_shared<storm::properties::prctl::Ap<double>>("done");
-//	auto reachabilityRewardFormula = std::make_shared<storm::properties::prctl::ReachabilityReward<double>>(done);
-//
-//	result = reachabilityRewardFormula->check(mc, false);
-//
-//	ASSERT_LT(std::abs(result[0] - ((double)11/3)), storm::settings::gmmxxEquationSolverSettings().getPrecision());
-//}
-//
+#include "gtest/gtest.h"
+#include "storm-config.h"
+
+#include "src/logic/Formulas.h"
+#include "src/solver/GmmxxLinearEquationSolver.h"
+#include "src/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
+#include "src/modelchecker/ExplicitQuantitativeCheckResult.h"
+#include "src/settings/SettingsManager.h"
+#include "src/settings/SettingMemento.h"
+#include "src/parser/AutoParser.h"
+
+TEST(GmmxxDtmcPrctlModelCheckerTest, Die) {
+	std::shared_ptr<storm::models::AbstractModel<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/dtmc/die/die.tra", STORM_CPP_BASE_PATH "/examples/dtmc/die/die.lab", "", STORM_CPP_BASE_PATH "/examples/dtmc/die/die.coin_flips.trans.rew");
+
+	ASSERT_EQ(abstractModel->getType(), storm::models::DTMC);
+
+	std::shared_ptr<storm::models::Dtmc<double>> dtmc = abstractModel->as<storm::models::Dtmc<double>>();
+
+	ASSERT_EQ(dtmc->getNumberOfStates(), 13ull);
+	ASSERT_EQ(dtmc->getNumberOfTransitions(), 20ull);
+
+	storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double> checker(*dtmc, std::unique_ptr<storm::solver::LinearEquationSolver<double>>(new storm::solver::GmmxxLinearEquationSolver<double>()));
+    
+    auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("one");
+    auto eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(labelFormula);
+
+    std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*eventuallyFormula);
+    storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
+    
+	ASSERT_LT(std::abs(quantitativeResult1[0] - ((double)1.0/6.0)), storm::settings::gmmxxEquationSolverSettings().getPrecision());
+
+    labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("two");
+    eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(labelFormula);
+    
+    result = checker.check(*eventuallyFormula);
+    storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult2 = result->asExplicitQuantitativeCheckResult<double>();
+    
+	ASSERT_LT(std::abs(quantitativeResult2[0] - ((double)1.0/6.0)), storm::settings::gmmxxEquationSolverSettings().getPrecision());
+
+    labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("three");
+    eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(labelFormula);
+
+    result = checker.check(*eventuallyFormula);
+    storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult3 = result->asExplicitQuantitativeCheckResult<double>();
+    
+	ASSERT_LT(std::abs(quantitativeResult3[0] - ((double)1.0/6.0)), storm::settings::gmmxxEquationSolverSettings().getPrecision());
+
+    auto done = std::make_shared<storm::logic::AtomicLabelFormula>("done");
+    auto reachabilityRewardFormula = std::make_shared<storm::logic::ReachabilityRewardFormula>(done);
+    
+    result = checker.check(*reachabilityRewardFormula);
+    storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult4 = result->asExplicitQuantitativeCheckResult<double>();
+    
+	ASSERT_LT(std::abs(quantitativeResult4[0] - ((double)11/3)), storm::settings::gmmxxEquationSolverSettings().getPrecision());
+}
+
 //TEST(GmmxxDtmcPrctlModelCheckerTest, Crowds) {
 //	std::shared_ptr<storm::models::AbstractModel<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/dtmc/crowds/crowds5_5.tra", STORM_CPP_BASE_PATH "/examples/dtmc/crowds/crowds5_5.lab", "", "");
 //
