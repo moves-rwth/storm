@@ -26,15 +26,15 @@ namespace storm {
             virtual std::unique_ptr<CheckResult> checkBooleanLiteralFormula(storm::logic::BooleanLiteralFormula const& stateFormula) override;
             virtual std::unique_ptr<CheckResult> checkAtomicLabelFormula(storm::logic::AtomicLabelFormula const& stateFormula) override;
             
+        private:
             // The methods that perform the actual checking.
-            std::vector<ValueType> computeBoundedUntilProbabilitiesHelper(storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, uint_fast64_t stepBound);
+            std::vector<ValueType> computeBoundedUntilProbabilitiesHelper(storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, uint_fast64_t stepBound) const;
             std::vector<ValueType> computeNextProbabilitiesHelper(storm::storage::BitVector const& nextStates);
             std::vector<ValueType> computeUntilProbabilitiesHelper(storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative) const;
             std::vector<ValueType> computeInstantaneousRewardsHelper(uint_fast64_t stepCount) const;
             std::vector<ValueType> computeCumulativeRewardsHelper(uint_fast64_t stepBound) const;
             std::vector<ValueType> computeReachabilityRewardsHelper(storm::storage::BitVector const& targetStates, bool qualitative) const;
             
-        private:
             // The model this model checker is supposed to analyze.
             storm::models::Dtmc<ValueType> const& model;
             

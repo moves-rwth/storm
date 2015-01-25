@@ -30,7 +30,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        std::vector<ValueType> SparseMdpPrctlModelChecker<ValueType>::computeBoundedUntilProbabilitiesHelper(bool minimize, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, uint_fast64_t stepBound) {
+        std::vector<ValueType> SparseMdpPrctlModelChecker<ValueType>::computeBoundedUntilProbabilitiesHelper(bool minimize, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, uint_fast64_t stepBound) const {
             std::vector<ValueType> result(model.getNumberOfStates(), storm::utility::zero<ValueType>());
             
             // Determine the states that have 0 probability of reaching the target states.

@@ -9,9 +9,15 @@
 namespace storm {
     namespace modelchecker {
         
+        // Forward-declare other model checkers to make them friend classes.
+        template<typename ValueType>
+        class SparseMarkovAutomatonCslModelChecker;
+        
         template<class ValueType>
         class SparseMdpPrctlModelChecker : public AbstractModelChecker {
         public:
+            friend class SparseMarkovAutomatonCslModelChecker<ValueType>;
+            
             explicit SparseMdpPrctlModelChecker(storm::models::Mdp<ValueType> const& model);
             explicit SparseMdpPrctlModelChecker(storm::models::Mdp<ValueType> const& model, std::shared_ptr<storm::solver::NondeterministicLinearEquationSolver<ValueType>> nondeterministicLinearEquationSolver);
             
@@ -26,8 +32,9 @@ namespace storm {
             virtual std::unique_ptr<CheckResult> checkBooleanLiteralFormula(storm::logic::BooleanLiteralFormula const& stateFormula) override;
             virtual std::unique_ptr<CheckResult> checkAtomicLabelFormula(storm::logic::AtomicLabelFormula const& stateFormula) override;
             
+        private:
             // The methods that perform the actual checking.
-            std::vector<ValueType> computeBoundedUntilProbabilitiesHelper(bool minimize, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, uint_fast64_t stepBound);
+            std::vector<ValueType> computeBoundedUntilProbabilitiesHelper(bool minimize, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, uint_fast64_t stepBound) const;
             std::vector<ValueType> computeNextProbabilitiesHelper(bool minimize, storm::storage::BitVector const& nextStates);
             std::vector<ValueType> computeUntilProbabilitiesHelper(bool minimize, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative) const;
             static std::vector<ValueType> computeUntilProbabilitiesHelper(bool minimize, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, std::shared_ptr<storm::solver::NondeterministicLinearEquationSolver<ValueType>> nondeterministicLinearEquationSolver, bool qualitative);
@@ -35,7 +42,6 @@ namespace storm {
             std::vector<ValueType> computeCumulativeRewardsHelper(bool minimize, uint_fast64_t stepBound) const;
             std::vector<ValueType> computeReachabilityRewardsHelper(bool minimize, storm::storage::BitVector const& targetStates, bool qualitative) const;
             
-        protected:
             // The model this model checker is supposed to analyze.
             storm::models::Mdp<ValueType> const& model;
             

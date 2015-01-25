@@ -1,9 +1,13 @@
 #include "src/logic/BoundedUntilFormula.h"
 
+#include "src/utility/macros.h"
+#include "src/exceptions/InvalidArgumentException.h"
+
 namespace storm {
     namespace logic {
         BoundedUntilFormula::BoundedUntilFormula(std::shared_ptr<Formula const> const& leftSubformula, std::shared_ptr<Formula const> const& rightSubformula, double lowerBound, double upperBound) : BinaryPathFormula(leftSubformula, rightSubformula), bounds(std::make_pair(lowerBound, upperBound)) {
-            // Intentionally left empty.
+            STORM_LOG_THROW(lowerBound >= 0 && upperBound >= 0, storm::exceptions::InvalidArgumentException, "Bounded until formula requires non-negative time bounds.");
+            STORM_LOG_THROW(lowerBound <= upperBound, storm::exceptions::InvalidArgumentException, "Lower bound of bounded until formula is required to be smaller than the upper bound.");
         }
         
         BoundedUntilFormula::BoundedUntilFormula(std::shared_ptr<Formula const> const& leftSubformula, std::shared_ptr<Formula const> const& rightSubformula, uint_fast64_t upperBound) : BinaryPathFormula(leftSubformula, rightSubformula), bounds(upperBound) {

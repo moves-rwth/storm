@@ -29,7 +29,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        std::vector<ValueType> SparseDtmcPrctlModelChecker<ValueType>::computeBoundedUntilProbabilitiesHelper(storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, uint_fast64_t stepBound) {
+        std::vector<ValueType> SparseDtmcPrctlModelChecker<ValueType>::computeBoundedUntilProbabilitiesHelper(storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, uint_fast64_t stepBound) const {
             std::vector<ValueType> result(model.getNumberOfStates(), storm::utility::zero<ValueType>());
             
             // If we identify the states that have probability 0 of reaching the target states, we can exclude them in the further analysis.
