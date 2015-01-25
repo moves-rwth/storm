@@ -47,9 +47,9 @@ namespace storm {
 
             storm::storage::BitVector const& getTruthValues() const;
             
-        protected:
             virtual std::ostream& writeToStream(std::ostream& out) const override;
-            
+            virtual std::ostream& writeToStream(std::ostream& out, storm::storage::BitVector const& filter) const override;
+
         private:
             // The values of the quantitative check result.
             storm::storage::BitVector truthValues;

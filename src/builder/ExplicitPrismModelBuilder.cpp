@@ -61,7 +61,22 @@ namespace storm {
             std::map<storm::expressions::Variable, storm::expressions::Expression> constantDefinitions = storm::utility::prism::parseConstantDefinitionString(program, constantDefinitionString);
             
             storm::prism::Program preparedProgram = program.defineUndefinedConstants(constantDefinitions);
-            STORM_LOG_THROW(!preparedProgram.hasUndefinedConstants(), storm::exceptions::InvalidArgumentException, "Program still contains undefined constants.");
+            
+            if (preparedProgram.hasUndefinedConstants()) {
+                std::vector<std::reference_wrapper<storm::prism::Constant const>> undefinedConstants = preparedProgram.getUndefinedConstants();
+                std::stringstream stream;
+                bool printComma = false;
+                for (auto const& constant : undefinedConstants) {
+                    if (printComma) {
+                        stream << ", ";
+                    } else {
+                        printComma = true;
+                    }
+                    stream << constant.get().getName() << " (" << constant.get().getType() << ")";
+                }
+                stream << ".";
+                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Program still contains these undefined constants: " + stream.str());
+            }
             
             // Now that we have defined all the constants in the program, we need to substitute their appearances in
             // all expressions in the program so we can then evaluate them without having to store the values of the

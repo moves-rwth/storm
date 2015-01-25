@@ -19,6 +19,11 @@ namespace storm {
             
             virtual bool isPropositionalFormula() const override;
             
+            OperatorType getOperator() const;
+            
+            virtual bool isAnd() const;
+            virtual bool isOr() const;
+            
             virtual std::ostream& writeToStream(std::ostream& out) const override;
             
         private:

@@ -15,7 +15,7 @@ namespace storm {
             } else if (formula.isRewardPathFormula()) {
                 return this->computeRewards(formula.asRewardPathFormula());
             }
-            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The given formula is invalid.");
+            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The given formula '" << formula << "' is invalid.");
         }
         
         std::unique_ptr<CheckResult> AbstractModelChecker::computeProbabilities(storm::logic::PathFormula const& pathFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
@@ -30,7 +30,7 @@ namespace storm {
             } else if (pathFormula.isUntilFormula()) {
                 return this->computeUntilProbabilities(pathFormula.asUntilFormula(), qualitative, optimalityType);
             }
-            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The given formula is invalid.");
+            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The given formula '" << pathFormula << "' is invalid.");
         }
         
         std::unique_ptr<CheckResult> AbstractModelChecker::computeBoundedUntilProbabilities(storm::logic::BoundedUntilFormula const& pathFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
@@ -66,7 +66,7 @@ namespace storm {
             } else if (rewardPathFormula.isReachabilityRewardFormula()) {
                 return this->computeReachabilityRewards(rewardPathFormula.asReachabilityRewardFormula(), qualitative, optimalityType);
             }
-            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The given formula is invalid.");
+            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The given formula '" << rewardPathFormula << "' is invalid.");
         }
         
         std::unique_ptr<CheckResult> AbstractModelChecker::computeCumulativeRewards(storm::logic::CumulativeRewardFormula const& rewardPathFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
@@ -84,6 +84,8 @@ namespace storm {
         std::unique_ptr<CheckResult> AbstractModelChecker::checkStateFormula(storm::logic::StateFormula const& stateFormula) {
             if (stateFormula.isBinaryBooleanStateFormula()) {
                 return this->checkBinaryBooleanStateFormula(stateFormula.asBinaryBooleanStateFormula());
+            } else if (stateFormula.isUnaryBooleanStateFormula()) {
+                return this->checkUnaryBooleanStateFormula(stateFormula.asUnaryBooleanStateFormula());
             } else if (stateFormula.isBooleanLiteralFormula()) {
                 return this->checkBooleanLiteralFormula(stateFormula.asBooleanLiteralFormula());
             } else if (stateFormula.isProbabilityOperatorFormula()) {
@@ -116,7 +118,14 @@ namespace storm {
             std::unique_ptr<CheckResult> leftResult = this->check(stateFormula.getLeftSubformula().asStateFormula());
             std::unique_ptr<CheckResult> rightResult = this->check(stateFormula.getRightSubformula().asStateFormula());
             
-            *leftResult &= *rightResult;
+            if (stateFormula.isAnd()) {
+                *leftResult &= *rightResult;
+            } else if (stateFormula.isOr()) {
+                *leftResult |= *rightResult;
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The given formula '" << stateFormula << "' is invalid.");
+            }
+            
             return leftResult;
         }
         
@@ -172,7 +181,11 @@ namespace storm {
         
         std::unique_ptr<CheckResult> AbstractModelChecker::checkUnaryBooleanStateFormula(storm::logic::UnaryBooleanStateFormula const& stateFormula) {
             std::unique_ptr<CheckResult> subResult = this->check(stateFormula.getSubformula());
-            subResult->complement();
+            if (stateFormula.isNot()) {
+                subResult->complement();
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The given formula '" << stateFormula << "' is invalid.");
+            }
             return subResult;
         }
     }

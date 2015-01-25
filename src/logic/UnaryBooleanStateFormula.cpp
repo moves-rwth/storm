@@ -10,6 +10,14 @@ namespace storm {
             return true;
         }
         
+        UnaryBooleanStateFormula::OperatorType UnaryBooleanStateFormula::getOperator() const {
+            return operatorType;
+        }
+        
+        bool UnaryBooleanStateFormula::isNot() const {
+            return this->getOperator() == OperatorType::Not;
+        }
+        
         std::ostream& UnaryBooleanStateFormula::writeToStream(std::ostream& out) const {
             switch (operatorType) {
                 case OperatorType::Not: out << "!("; break;

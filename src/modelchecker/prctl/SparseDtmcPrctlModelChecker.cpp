@@ -308,6 +308,7 @@ namespace storm {
         
         template<typename ValueType>
         std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<ValueType>::checkAtomicLabelFormula(storm::logic::AtomicLabelFormula const& stateFormula) {
+            STORM_LOG_THROW(model.hasAtomicProposition(stateFormula.getLabel()), storm::exceptions::InvalidPropertyException, "The property refers to unknown label '" << stateFormula.getLabel() << "'.");
             return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult(model.getLabeledStates(stateFormula.getLabel())));
         }
         

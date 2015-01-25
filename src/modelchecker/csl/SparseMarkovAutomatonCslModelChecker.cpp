@@ -13,6 +13,7 @@
 
 #include "src/solver/LpSolver.h"
 
+#include "src/exceptions/InvalidPropertyException.h"
 #include "src/exceptions/NotImplementedException.h"
 
 namespace storm {
@@ -210,7 +211,7 @@ namespace storm {
         
         template<typename ValueType>
         std::vector<ValueType> SparseMarkovAutomatonCslModelChecker<ValueType>::computeReachabilityRewardsHelper(bool minimize, storm::storage::BitVector const& targetStates, bool qualitative) const {
-
+            // FIXME
         }
         
         template<typename ValueType>
@@ -232,6 +233,7 @@ namespace storm {
         
         template<typename ValueType>
         std::unique_ptr<CheckResult> SparseMarkovAutomatonCslModelChecker<ValueType>::checkAtomicLabelFormula(storm::logic::AtomicLabelFormula const& stateFormula) {
+            STORM_LOG_THROW(model.hasAtomicProposition(stateFormula.getLabel()), storm::exceptions::InvalidPropertyException, "The property refers to unknown label '" << stateFormula.getLabel() << "'.");
             return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult(model.getLabeledStates(stateFormula.getLabel())));
         }
         

@@ -47,5 +47,27 @@ namespace storm {
             out << truthValues;
             return out;
         }
+        
+        std::ostream& ExplicitQualitativeCheckResult::writeToStream(std::ostream& out, storm::storage::BitVector const& filter) const {
+            std::ios::fmtflags oldflags(std::cout.flags());
+            
+            out << "[";
+            storm::storage::BitVector::const_iterator it = filter.begin();
+            storm::storage::BitVector::const_iterator itPlusOne = filter.begin();
+            ++itPlusOne;
+            storm::storage::BitVector::const_iterator ite = filter.end();
+            
+            out << std::boolalpha;
+            for (; it != ite; ++itPlusOne, ++it) {
+                out << truthValues[*it];
+                if (itPlusOne != ite) {
+                    out << ", ";
+                }
+            }
+            out << "]";
+            
+            std::cout.flags(oldflags);
+            return out;
+        }
     }
 }

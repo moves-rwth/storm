@@ -14,6 +14,18 @@ namespace storm {
             return this->getLeftSubformula().isPropositionalFormula() && this->getRightSubformula().isPropositionalFormula();
         }
         
+        BinaryBooleanStateFormula::OperatorType BinaryBooleanStateFormula::getOperator() const {
+            return operatorType;
+        }
+        
+        bool BinaryBooleanStateFormula::isAnd() const {
+            return this->getOperator() == OperatorType::And;
+        }
+        
+        bool BinaryBooleanStateFormula::isOr() const {
+            return this->getOperator() == OperatorType::Or;
+        }
+        
         std::ostream& BinaryBooleanStateFormula::writeToStream(std::ostream& out) const {
             out << "(";
             this->getLeftSubformula().writeToStream(out);

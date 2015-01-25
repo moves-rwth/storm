@@ -4,6 +4,7 @@
 #include <iostream>
 #include <memory>
 
+#include "src/storage/BitVector.h"
 #include "src/logic/ComparisonType.h"
 
 namespace storm {
@@ -23,8 +24,6 @@ namespace storm {
             
             virtual std::unique_ptr<CheckResult> compareAgainstBound(storm::logic::ComparisonType comparisonType, double bound) const;
             
-            friend std::ostream& operator<<(std::ostream& out, CheckResult& checkResult);
-
             virtual bool isExplicit() const;
             virtual bool isQuantitative() const;
             virtual bool isQualitative() const;
@@ -42,8 +41,8 @@ namespace storm {
             template<typename ValueType>
             ExplicitQuantitativeCheckResult<ValueType> const& asExplicitQuantitativeCheckResult() const;
             
-        protected:
             virtual std::ostream& writeToStream(std::ostream& out) const = 0;
+            virtual std::ostream& writeToStream(std::ostream& out, storm::storage::BitVector const& filter) const = 0;
         };
         
         std::ostream& operator<<(std::ostream& out, CheckResult& checkResult);

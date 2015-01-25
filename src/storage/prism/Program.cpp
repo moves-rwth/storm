@@ -53,6 +53,16 @@ namespace storm {
             return false;
         }
         
+        std::vector<std::reference_wrapper<storm::prism::Constant const>> Program::getUndefinedConstants() const {
+            std::vector<std::reference_wrapper<storm::prism::Constant const>> result;
+            for (auto const& constant : this->getConstants()) {
+                if (!constant.isDefined()) {
+                    result.push_back(constant);
+                }
+            }
+            return result;
+        }
+        
         bool Program::hasConstant(std::string const& constantName) const {
             return this->constantToIndexMap.find(constantName) != this->constantToIndexMap.end();
         }

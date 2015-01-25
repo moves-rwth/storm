@@ -73,6 +73,13 @@ namespace storm {
             bool hasUndefinedConstants() const;
 
             /*!
+             * Retrieves the undefined constants in the program.
+             *
+             * @return The undefined constants in the program.
+             */
+            std::vector<std::reference_wrapper<storm::prism::Constant const>> getUndefinedConstants() const;
+            
+            /*!
              * Retrieves whether the given constant exists in the program.
              *
              * @param constantName The name of the constant to search.

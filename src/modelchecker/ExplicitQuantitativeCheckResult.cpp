@@ -13,6 +13,24 @@ namespace storm {
         }
         
         template<typename ValueType>
+        std::ostream& ExplicitQuantitativeCheckResult<ValueType>::writeToStream(std::ostream& out, storm::storage::BitVector const& filter) const {
+            out << "[";
+            storm::storage::BitVector::const_iterator it = filter.begin();
+            storm::storage::BitVector::const_iterator itPlusOne = filter.begin();
+            ++itPlusOne;
+            storm::storage::BitVector::const_iterator ite = filter.end();
+            
+            for (; it != ite; ++itPlusOne, ++it) {
+                out << values[*it];
+                if (itPlusOne != ite) {
+                    out << ", ";
+                }
+            }
+            out << "]";
+            return out;
+        }
+        
+        template<typename ValueType>
         std::ostream& ExplicitQuantitativeCheckResult<ValueType>::writeToStream(std::ostream& out) const {
             out << "[";
             if (!values.empty()) {

@@ -47,8 +47,8 @@ namespace storm {
             
             std::vector<ValueType> const& getValues() const;
             
-        protected:
             virtual std::ostream& writeToStream(std::ostream& out) const override;
+            virtual std::ostream& writeToStream(std::ostream& out, storm::storage::BitVector const& filter) const override;
             
         private:
             // The values of the quantitative check result.

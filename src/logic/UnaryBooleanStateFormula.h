@@ -17,6 +17,10 @@ namespace storm {
             
             virtual bool isUnaryBooleanStateFormula() const override;
 
+            OperatorType getOperator() const;
+            
+            virtual bool isNot() const;
+            
             virtual std::ostream& writeToStream(std::ostream& out) const override;
 
         private:

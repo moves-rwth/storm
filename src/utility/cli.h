@@ -40,7 +40,10 @@ log4cplus::Logger logger;
 // Headers related to parsing.
 #include "src/parser/AutoParser.h"
 #include "src/parser/PrismParser.h"
-#include "src/parser/PrctlParser.h"
+#include "src/parser/FormulaParser.h"
+
+// Formula headers.
+#include "src/logic/Formulas.h"
 
 // Model headers.
 #include "src/models/AbstractModel.h"
@@ -61,6 +64,7 @@ log4cplus::Logger logger;
 #include "src/counterexamples/SMTMinimalCommandSetGenerator.h"
 
 // Headers related to exception handling.
+#include "src/exceptions/InvalidArgumentException.h"
 #include "src/exceptions/InvalidSettingsException.h"
 #include "src/exceptions/InvalidTypeException.h"
 
@@ -290,7 +294,7 @@ namespace storm {
                 return result;
             }
             
-            void generateCounterexample(std::shared_ptr<storm::models::AbstractModel<double>> model, std::shared_ptr<storm::properties::prctl::AbstractPrctlFormula<double>> const& formula) {
+            void generateCounterexample(std::shared_ptr<storm::models::AbstractModel<double>> model, std::shared_ptr<storm::logic::Formula> const& formula) {
                 if (storm::settings::counterexampleGeneratorSettings().isMinimalCommandSetGenerationSet()) {
                     STORM_LOG_THROW(model->getType() == storm::models::MDP, storm::exceptions::InvalidTypeException, "Minimal command set generation is only available for MDPs.");
                     STORM_LOG_THROW(storm::settings::generalSettings().isSymbolicSet(), storm::exceptions::InvalidSettingsException, "Minimal command set generation is only available for symbolic models.");
@@ -324,21 +328,32 @@ namespace storm {
                 
                 // If we were requested to generate a counterexample, we now do so.
                 if (settings.isCounterexampleSet()) {
-                    STORM_LOG_THROW(settings.isPctlPropertySet(), storm::exceptions::InvalidSettingsException, "Unable to generate counterexample without a property.");
-                    std::shared_ptr<storm::properties::prctl::PrctlFilter<double>> filterFormula = storm::parser::PrctlParser::parsePrctlFormula(settings.getPctlProperty());
-                    generateCounterexample(model, filterFormula->getChild());
-                } else if (settings.isPctlPropertySet()) {
-                    std::shared_ptr<storm::properties::prctl::PrctlFilter<double>> filterFormula = storm::parser::PrctlParser::parsePrctlFormula(storm::settings::generalSettings().getPctlProperty());
-
+                    STORM_LOG_THROW(settings.isPropertySet(), storm::exceptions::InvalidSettingsException, "Unable to generate counterexample without a property.");
+                    storm::parser::FormulaParser formulaParser;
+                    std::shared_ptr<storm::logic::Formula> formula = formulaParser.parseFromString(settings.getProperty());
+                    generateCounterexample(model, formula);
+                } else if (settings.isPropertySet()) {
+                    storm::parser::FormulaParser formulaParser;
+                    std::shared_ptr<storm::logic::Formula> formula = formulaParser.parseFromString(storm::settings::generalSettings().getProperty());
+                    
+                    std::cout << "Model checking property: " << *formula << " ...";
+                    std::unique_ptr<storm::modelchecker::CheckResult> result;
                     if (model->getType() == storm::models::DTMC) {
                         std::shared_ptr<storm::models::Dtmc<double>> dtmc = model->as<storm::models::Dtmc<double>>();
-                        modelchecker::prctl::SparseDtmcPrctlModelChecker<double> modelchecker(*dtmc);
-                        filterFormula->check(modelchecker);
-                    }
-                    if (model->getType() == storm::models::MDP) {
+                        storm::modelchecker::SparseDtmcPrctlModelChecker<double> modelchecker(*dtmc);
+                        result = modelchecker.check(*formula);
+                    } else if (model->getType() == storm::models::MDP) {
                         std::shared_ptr<storm::models::Mdp<double>> mdp = model->as<storm::models::Mdp<double>>();
-                        modelchecker::prctl::SparseMdpPrctlModelChecker<double> modelchecker(*mdp);
-                        filterFormula->check(modelchecker);
+                        storm::modelchecker::SparseMdpPrctlModelChecker<double> modelchecker(*mdp);
+                        result = modelchecker.check(*formula);
+                    }
+                    if (result) {
+                        std::cout << " done." << std::endl;
+                        std::cout << "Result (initial states): ";
+                        result->writeToStream(std::cout, model->getInitialStates());
+                        std::cout << std::endl << std::endl;
+                    } else {
+                        std::cout << " skipped, because the modelling formalism is currently unsupported." << std::endl;
                     }
                 }
             }
