@@ -9,7 +9,23 @@ namespace storm {
         bool UnaryPathFormula::isUnaryPathFormula() const {
             return true;
         }
-                
+        
+        bool UnaryPathFormula::isPctlPathFormula() const {
+            return this->getSubformula().isPctlStateFormula();
+        }
+        
+        bool UnaryPathFormula::isLtlFormula() const {
+            return this->getSubformula().isLtlFormula();
+        }
+        
+        bool UnaryPathFormula::hasProbabilityOperator() const {
+            return this->getSubformula().hasProbabilityOperator();
+        }
+        
+        bool UnaryPathFormula::hasNestedProbabilityOperators() const {
+            return this->getSubformula().hasNestedProbabilityOperators();
+        }
+        
         Formula const& UnaryPathFormula::getSubformula() const {
             return *subformula;
         }

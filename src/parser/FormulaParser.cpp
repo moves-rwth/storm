@@ -38,7 +38,7 @@ namespace storm {
             booleanLiteralFormula = (qi::lit("true")[qi::_a = true] | qi::lit("false")[qi::_a = false])[qi::_val = phoenix::bind(&FormulaParser::createBooleanLiteralFormula, phoenix::ref(*this), qi::_a)];
             booleanLiteralFormula.name("boolean literal formula");
             
-            atomicStateFormula = booleanLiteralFormula | labelFormula | expressionFormula | qi::lit("(") > stateFormula > qi::lit(")");
+            atomicStateFormula = booleanLiteralFormula | labelFormula | expressionFormula | (qi::lit("(") > stateFormula > qi::lit(")"));
             atomicStateFormula.name("atomic state formula");
 
             notStateFormula = (-unaryBooleanOperator_ >> atomicStateFormula)[qi::_val = phoenix::bind(&FormulaParser::createUnaryBooleanStateFormula, phoenix::ref(*this), qi::_2, qi::_1)];
@@ -74,7 +74,7 @@ namespace storm {
             formula = stateFormula | pathFormula;
             formula.name("formula");
             
-            operatorInformation = (-optimalityOperator_[qi::_a = qi::_1] >> ((relationalOperator_[qi::_b = qi::_1] > qi::double_[qi::_c = qi::_1]) | qi::lit("=") > qi::lit("?")))[qi::_val = phoenix::construct<std::tuple<boost::optional<storm::logic::OptimalityType>, boost::optional<storm::logic::ComparisonType>, boost::optional<double>>>(qi::_a, qi::_b, qi::_c)];
+            operatorInformation = (-optimalityOperator_[qi::_a = qi::_1] >> ((relationalOperator_[qi::_b = qi::_1] > qi::double_[qi::_c = qi::_1]) | (qi::lit("=") > qi::lit("?"))))[qi::_val = phoenix::construct<std::tuple<boost::optional<storm::logic::OptimalityType>, boost::optional<storm::logic::ComparisonType>, boost::optional<double>>>(qi::_a, qi::_b, qi::_c)];
             operatorInformation.name("operator information");
             
             steadyStateOperator = (qi::lit("S") > operatorInformation > qi::lit("[") > stateFormula > qi::lit("]"))[qi::_val = phoenix::bind(&FormulaParser::createSteadyStateOperatorFormula, phoenix::ref(*this), qi::_1, qi::_2)];

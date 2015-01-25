@@ -19,6 +19,8 @@ namespace storm {
             
             virtual bool isRewardOperatorFormula() const override;
             
+            virtual bool isPctlStateFormula() const override;
+            
             virtual std::ostream& writeToStream(std::ostream& out) const override;
         };
     }

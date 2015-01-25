@@ -76,8 +76,13 @@ namespace storm {
 
             virtual bool isPctlPathFormula() const;
             virtual bool isPctlStateFormula() const;
+            virtual bool isCslPathFormula() const;
+            virtual bool isCslStateFormula() const;
             virtual bool isPltlFormula() const;
+            virtual bool isLtlFormula() const;
             virtual bool isPropositionalFormula() const;
+            virtual bool hasProbabilityOperator() const;
+            virtual bool hasNestedProbabilityOperators() const;
             
             static std::shared_ptr<Formula const> getTrueFormula();
             

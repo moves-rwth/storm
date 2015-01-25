@@ -10,6 +10,22 @@ namespace storm {
             return true;
         }
         
+        bool BinaryPathFormula::isPctlPathFormula() const {
+            return this->getLeftSubformula().isPctlStateFormula() && this->getRightSubformula().isPctlStateFormula();
+        }
+        
+        bool BinaryPathFormula::isLtlFormula() const {
+            return this->getLeftSubformula().isLtlFormula() && this->getRightSubformula().isLtlFormula();
+        }
+        
+        bool BinaryPathFormula::hasProbabilityOperator() const {
+            return this->getLeftSubformula().hasProbabilityOperator() || this->getRightSubformula().hasProbabilityOperator();
+        }
+        
+        bool BinaryPathFormula::hasNestedProbabilityOperators() const {
+            return this->getLeftSubformula().Formula::hasNestedProbabilityOperators() || this->getRightSubformula().hasNestedProbabilityOperators();
+        }
+        
         Formula const& BinaryPathFormula::getLeftSubformula() const {
             return *leftSubformula;
         }

@@ -14,6 +14,22 @@ namespace storm {
             return this->getSubformula().isPropositionalFormula();
         }
         
+        bool UnaryStateFormula::isPctlStateFormula() const {
+            return this->getSubformula().isPctlStateFormula();
+        }
+        
+        bool UnaryStateFormula::isLtlFormula() const {
+            return this->getSubformula().isLtlFormula();
+        }
+        
+        bool UnaryStateFormula::hasProbabilityOperator() const {
+            return getSubformula().hasProbabilityOperator();
+        }
+        
+        bool UnaryStateFormula::hasNestedProbabilityOperators() const {
+            return getSubformula().hasNestedProbabilityOperators();
+        }
+        
         Formula const& UnaryStateFormula::getSubformula() const {
             return *subformula;
         }

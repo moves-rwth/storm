@@ -15,8 +15,11 @@ namespace storm {
             }
             
             virtual bool isAtomicExpressionFormula() const override;
+            
+            virtual bool isPctlStateFormula() const override;
+            virtual bool isLtlFormula() const override;
             virtual bool isPropositionalFormula() const override;
-
+            
             storm::expressions::Expression const& getExpression() const;
             
             virtual std::ostream& writeToStream(std::ostream& out) const override;

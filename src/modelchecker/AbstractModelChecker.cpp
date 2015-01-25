@@ -7,7 +7,7 @@
 namespace storm {
     namespace modelchecker {
         std::unique_ptr<CheckResult> AbstractModelChecker::check(storm::logic::Formula const& formula) {
-            STORM_LOG_THROW(this->canHandle(formula), storm::exceptions::InvalidArgumentException, "The model checker is not able to check this formula.");
+            STORM_LOG_THROW(this->canHandle(formula), storm::exceptions::InvalidArgumentException, "The model checker is not able to check the formula '" << formula << "'.");
             if (formula.isStateFormula()) {
                 return this->checkStateFormula(formula.asStateFormula());
             } else if (formula.isPathFormula()) {
@@ -20,15 +20,15 @@ namespace storm {
         
         std::unique_ptr<CheckResult> AbstractModelChecker::computeProbabilities(storm::logic::PathFormula const& pathFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
             if (pathFormula.isBoundedUntilFormula()) {
-                return this->computeBoundedUntilProbabilities(pathFormula.asBoundedUntilFormula());
+                return this->computeBoundedUntilProbabilities(pathFormula.asBoundedUntilFormula(), qualitative, optimalityType);
             } else if (pathFormula.isConditionalPathFormula()) {
-                return this->computeConditionalProbabilities(pathFormula.asConditionalPathFormula());
+                return this->computeConditionalProbabilities(pathFormula.asConditionalPathFormula(), qualitative, optimalityType);
             } else if (pathFormula.isEventuallyFormula()) {
-                return this->computeEventuallyProbabilities(pathFormula.asEventuallyFormula());
+                return this->computeEventuallyProbabilities(pathFormula.asEventuallyFormula(), qualitative, optimalityType);
             } else if (pathFormula.isGloballyFormula()) {
-                return this->computeGloballyProbabilities(pathFormula.asGloballyFormula());
+                return this->computeGloballyProbabilities(pathFormula.asGloballyFormula(), qualitative, optimalityType);
             } else if (pathFormula.isUntilFormula()) {
-                return this->computeUntilProbabilities(pathFormula.asUntilFormula());
+                return this->computeUntilProbabilities(pathFormula.asUntilFormula(), qualitative, optimalityType);
             }
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The given formula is invalid.");
         }
@@ -43,7 +43,7 @@ namespace storm {
         
         std::unique_ptr<CheckResult> AbstractModelChecker::computeEventuallyProbabilities(storm::logic::EventuallyFormula const& pathFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
             storm::logic::UntilFormula newFormula(storm::logic::Formula::getTrueFormula(), pathFormula.getSubformula().asSharedPointer());
-            return this->check(newFormula);
+            return this->computeUntilProbabilities(newFormula, qualitative, optimalityType);
         }
         
         std::unique_ptr<CheckResult> AbstractModelChecker::computeGloballyProbabilities(storm::logic::GloballyFormula const& pathFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
@@ -60,11 +60,11 @@ namespace storm {
         
         std::unique_ptr<CheckResult> AbstractModelChecker::computeRewards(storm::logic::RewardPathFormula const& rewardPathFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
             if (rewardPathFormula.isCumulativeRewardFormula()) {
-                return this->computeCumulativeRewards(rewardPathFormula.asCumulativeRewardFormula());
+                return this->computeCumulativeRewards(rewardPathFormula.asCumulativeRewardFormula(), qualitative, optimalityType);
             } else if (rewardPathFormula.isInstantaneousRewardFormula()) {
-                return this->computeInstantaneousRewards(rewardPathFormula.asInstantaneousRewardFormula());
+                return this->computeInstantaneousRewards(rewardPathFormula.asInstantaneousRewardFormula(), qualitative, optimalityType);
             } else if (rewardPathFormula.isReachabilityRewardFormula()) {
-                return this->computeReachabilityRewards(rewardPathFormula.asReachabilityRewardFormula());
+                return this->computeReachabilityRewards(rewardPathFormula.asReachabilityRewardFormula(), qualitative, optimalityType);
             }
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The given formula is invalid.");
         }
@@ -134,15 +134,23 @@ namespace storm {
                     qualitative = true;
                 }
             }
+            
+            std::unique_ptr<CheckResult> result;
             if (stateFormula.hasOptimalityType()) {
-                return this->computeProbabilities(stateFormula.getSubformula().asPathFormula(), qualitative, stateFormula.getOptimalityType());
+                result = this->computeProbabilities(stateFormula.getSubformula().asPathFormula(), qualitative, stateFormula.getOptimalityType());
             } else {
-                return this->computeProbabilities(stateFormula.getSubformula().asPathFormula(), qualitative);
+                result = this->computeProbabilities(stateFormula.getSubformula().asPathFormula(), qualitative);
+            }
+            
+            if (stateFormula.hasBound()) {
+                return result->compareAgainstBound(stateFormula.getComparisonType(), stateFormula.getBound());
+            } else {
+                return result;
             }
         }
         
         std::unique_ptr<CheckResult> AbstractModelChecker::checkRewardOperatorFormula(storm::logic::RewardOperatorFormula const& stateFormula) {
-            STORM_LOG_THROW(stateFormula.getSubformula().isRewardOperatorFormula(), storm::exceptions::InvalidArgumentException, "The given formula is invalid.");
+            STORM_LOG_THROW(stateFormula.getSubformula().isRewardPathFormula(), storm::exceptions::InvalidArgumentException, "The given formula is invalid.");
             
             // If the probability bound is 0, is suffices to do qualitative model checking.
             bool qualitative = false;

@@ -2,6 +2,9 @@
 #define STORM_MODELCHECKER_CHECKRESULT_H_
 
 #include <iostream>
+#include <memory>
+
+#include "src/logic/ComparisonType.h"
 
 namespace storm {
     namespace modelchecker {
@@ -17,6 +20,8 @@ namespace storm {
             virtual CheckResult& operator&=(CheckResult const& other);
             virtual CheckResult& operator|=(CheckResult const& other);
             virtual void complement();
+            
+            virtual std::unique_ptr<CheckResult> compareAgainstBound(storm::logic::ComparisonType comparisonType, double bound) const;
             
             friend std::ostream& operator<<(std::ostream& out, CheckResult& checkResult);
 

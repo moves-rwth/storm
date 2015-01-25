@@ -22,6 +22,18 @@ namespace storm {
             return true;
         }
         
+        bool SteadyStateOperatorFormula::isPctlStateFormula() const {
+            return this->getSubformula().isPctlStateFormula();
+        }
+        
+        bool SteadyStateOperatorFormula::hasProbabilityOperator() const {
+            return this->getSubformula().hasProbabilityOperator();
+        }
+        
+        bool SteadyStateOperatorFormula::hasNestedProbabilityOperators() const {
+            return this->getSubformula().hasNestedProbabilityOperators();
+        }
+        
         SteadyStateOperatorFormula::SteadyStateOperatorFormula(boost::optional<OptimalityType> optimalityType, boost::optional<ComparisonType> comparisonType, boost::optional<double> bound, std::shared_ptr<Formula const> const& subformula) : OperatorFormula(optimalityType, comparisonType, bound, subformula) {
             // Intentionally left empty.
         }

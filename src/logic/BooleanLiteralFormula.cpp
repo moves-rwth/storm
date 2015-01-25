@@ -14,6 +14,14 @@ namespace storm {
             return !value;
         }
         
+        bool BooleanLiteralFormula::isPctlStateFormula() const {
+            return true;
+        }
+        
+        bool BooleanLiteralFormula::isLtlFormula() const {
+            return true;
+        }
+        
         bool BooleanLiteralFormula::isPropositionalFormula() const {
             return true;
         }

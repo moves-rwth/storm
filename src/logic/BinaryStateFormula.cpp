@@ -9,6 +9,23 @@ namespace storm {
         bool BinaryStateFormula::isBinaryStateFormula() const {
             return true;
         }
+        
+        bool BinaryStateFormula::isPctlStateFormula() const {
+            return this->getLeftSubformula().isPctlStateFormula() && this->getRightSubformula().isPctlStateFormula();
+        }
+        
+        bool BinaryStateFormula::isLtlFormula() const {
+            return this->getLeftSubformula().isLtlFormula() && this->getRightSubformula().isLtlFormula();
+        }
+        
+        bool BinaryStateFormula::hasProbabilityOperator() const {
+            return this->getLeftSubformula().hasProbabilityOperator() || this->getRightSubformula().hasProbabilityOperator();
+        }
+        
+        bool BinaryStateFormula::hasNestedProbabilityOperators() const {
+            return this->getLeftSubformula().hasNestedProbabilityOperators() || this->getRightSubformula().hasNestedProbabilityOperators();
+        }
+        
         Formula const& BinaryStateFormula::getLeftSubformula() const {
             return *leftSubformula;
         }

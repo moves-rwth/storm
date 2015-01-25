@@ -22,6 +22,10 @@ namespace storm {
             return true;
         }
         
+        bool RewardOperatorFormula::isPctlStateFormula() const {
+            return this->getSubformula().isRewardPathFormula();
+        }
+        
         RewardOperatorFormula::RewardOperatorFormula(boost::optional<OptimalityType> optimalityType, boost::optional<ComparisonType> comparisonType, boost::optional<double> bound, std::shared_ptr<Formula const> const& subformula) : OperatorFormula(optimalityType, comparisonType, bound, subformula) {
             // Intentionally left empty.
         }

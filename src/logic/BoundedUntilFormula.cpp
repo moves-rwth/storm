@@ -22,6 +22,14 @@ namespace storm {
             return bounds.which() == 0;
         }
         
+        bool BoundedUntilFormula::isPctlPathFormula() const {
+            return this->isIntegerUpperBounded() && this->getLeftSubformula().isPctlStateFormula() && this->getRightSubformula().isPctlStateFormula();
+        }
+        
+        bool BoundedUntilFormula::isCslPathFormula() const {
+            return this->getLeftSubformula().isCslStateFormula() && this->getRightSubformula().isCslStateFormula();
+        }
+        
         std::pair<double, double> const& BoundedUntilFormula::getIntervalBounds() const {
             return boost::get<std::pair<double, double>>(bounds);
         }

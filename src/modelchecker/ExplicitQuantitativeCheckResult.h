@@ -36,6 +36,8 @@ namespace storm {
             ExplicitQuantitativeCheckResult& operator=(ExplicitQuantitativeCheckResult&& other) = default;
 #endif
             
+            virtual std::unique_ptr<CheckResult> compareAgainstBound(storm::logic::ComparisonType comparisonType, double bound) const override;
+            
             ValueType operator[](uint_fast64_t index) const;
             
             virtual bool isExplicit() const override;

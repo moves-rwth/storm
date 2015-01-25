@@ -16,8 +16,9 @@ namespace storm {
             };
             
             virtual bool isBinaryBooleanStateFormula() const override;
+            
             virtual bool isPropositionalFormula() const override;
-
+            
             virtual std::ostream& writeToStream(std::ostream& out) const override;
             
         private:

@@ -114,11 +114,31 @@ namespace storm {
             return false;
         }
         
+        bool Formula::isCslPathFormula() const {
+            return this->isPctlPathFormula();
+        }
+        
+        bool Formula::isCslStateFormula() const {
+            return this->isPctlStateFormula();
+        }
+        
         bool Formula::isPltlFormula() const {
             return false;
         }
         
+        bool Formula::isLtlFormula() const {
+            return false;
+        }
+        
         bool Formula::isPropositionalFormula() const {
+            return false;
+        }
+        
+        bool Formula::hasProbabilityOperator() const {
+            return false;
+        }
+        
+        bool Formula::hasNestedProbabilityOperators() const {
             return false;
         }
         

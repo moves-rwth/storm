@@ -16,8 +16,11 @@ namespace storm {
             }
             
             virtual bool isAtomicLabelFormula() const override;
-            virtual bool isPropositionalFormula() const override;
 
+            virtual bool isPctlStateFormula() const override;
+            virtual bool isLtlFormula() const override;
+            virtual bool isPropositionalFormula() const override;
+            
             std::string const& getLabel() const;
             
             virtual std::ostream& writeToStream(std::ostream& out) const override;

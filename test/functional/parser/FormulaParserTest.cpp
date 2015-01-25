@@ -96,7 +96,7 @@ TEST(FormulaParserTest, ConditionalProbabilityTest) {
     std::shared_ptr<storm::logic::Formula> formula(nullptr);
     ASSERT_NO_THROW(formula = parser.parseFromString(input));
     
-    EXPECT_TRUE(formula->isRewardOperatorFormula());
+    EXPECT_TRUE(formula->isProbabilityOperatorFormula());
     storm::logic::ProbabilityOperatorFormula const& probFormula = formula->asProbabilityOperatorFormula();
     EXPECT_TRUE(probFormula.getSubformula().isConditionalPathFormula());
 }

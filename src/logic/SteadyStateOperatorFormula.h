@@ -19,6 +19,10 @@ namespace storm {
             
             virtual bool isSteadyStateOperatorFormula() const override;
             
+            virtual bool isPctlStateFormula() const override;
+            virtual bool hasProbabilityOperator() const override;
+            virtual bool hasNestedProbabilityOperators() const override;
+            
             virtual std::ostream& writeToStream(std::ostream& out) const override;
         };
     }
