@@ -1000,8 +1000,8 @@ namespace storm {
                     storm::modelchecker::ExplicitQualitativeCheckResult const& leftQualitativeResult = leftResult->asExplicitQualitativeCheckResult();
                     storm::modelchecker::ExplicitQualitativeCheckResult const& rightQualitativeResult = rightResult->asExplicitQualitativeCheckResult();
                     
-                    phiStates = leftQualitativeResult.getTruthValues();
-                    psiStates = rightQualitativeResult.getTruthValues();
+                    phiStates = leftQualitativeResult.getTruthValuesVector();
+                    psiStates = rightQualitativeResult.getTruthValuesVector();
                 } else if (probabilityOperator.getSubformula().isEventuallyFormula()) {
                     storm::logic::EventuallyFormula const& eventuallyFormula = probabilityOperator.getSubformula().asEventuallyFormula();
                     
@@ -1010,7 +1010,7 @@ namespace storm {
                     storm::modelchecker::ExplicitQualitativeCheckResult const& subQualitativeResult = subResult->asExplicitQualitativeCheckResult();
                     
                     phiStates = storm::storage::BitVector(labeledMdp.getNumberOfStates(), true);
-                    psiStates = subQualitativeResult.getTruthValues();
+                    psiStates = subQualitativeResult.getTruthValuesVector();
                 }
                 
                 // Delegate the actual computation work to the function of equal name.

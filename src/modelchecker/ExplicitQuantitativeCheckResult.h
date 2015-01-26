@@ -2,8 +2,11 @@
 #define STORM_MODELCHECKER_EXPLICITQUANTITATIVECHECKRESULT_H_
 
 #include <vector>
+#include <map>
+#include <boost/variant.hpp>
 
 #include "src/modelchecker/QuantitativeCheckResult.h"
+#include "src/storage/sparse/StateType.h"
 #include "src/utility/OsDetection.h"
 
 namespace storm {
@@ -11,23 +14,15 @@ namespace storm {
         template<typename ValueType>
         class ExplicitQuantitativeCheckResult : public QuantitativeCheckResult<ValueType> {
         public:
-            /*!
-             * Constructs a check result with the provided values.
-             *
-             * @param values The values of the result.
-             */
-            ExplicitQuantitativeCheckResult(std::vector<ValueType> const& values) : values(values) {
-                // Intentionally left empty.
-            }
+            typedef std::vector<ValueType> vector_type;
+            typedef std::map<storm::storage::sparse::state_type, ValueType> map_type;
             
-            /*!
-             * Constructs a check result with the provided values.
-             *
-             * @param values The values of the result.
-             */
-            ExplicitQuantitativeCheckResult(std::vector<ValueType>&& values) : values(std::move(values)) {
-                // Intentionally left empty.
-            }
+            ExplicitQuantitativeCheckResult();
+            ExplicitQuantitativeCheckResult(map_type const& values);
+            ExplicitQuantitativeCheckResult(map_type&& values);
+            ExplicitQuantitativeCheckResult(storm::storage::sparse::state_type const& state, ValueType const& value);
+            ExplicitQuantitativeCheckResult(vector_type const& values);
+            ExplicitQuantitativeCheckResult(vector_type&& values);
             
             ExplicitQuantitativeCheckResult(ExplicitQuantitativeCheckResult const& other) = default;
             ExplicitQuantitativeCheckResult& operator=(ExplicitQuantitativeCheckResult const& other) = default;
@@ -36,23 +31,25 @@ namespace storm {
             ExplicitQuantitativeCheckResult& operator=(ExplicitQuantitativeCheckResult&& other) = default;
 #endif
             
+            ValueType& operator[](storm::storage::sparse::state_type state);
+            ValueType const& operator[](storm::storage::sparse::state_type state) const;
+
             virtual std::unique_ptr<CheckResult> compareAgainstBound(storm::logic::ComparisonType comparisonType, double bound) const override;
-            
-            ValueType operator[](uint_fast64_t index) const;
             
             virtual bool isExplicit() const override;
             virtual bool isResultForAllStates() const override;
             
             virtual bool isExplicitQuantitativeCheckResult() const override;
             
-            std::vector<ValueType> const& getValues() const;
+            vector_type const& getValueVector() const;
+            map_type const& getValueMap() const;
             
             virtual std::ostream& writeToStream(std::ostream& out) const override;
             virtual std::ostream& writeToStream(std::ostream& out, storm::storage::BitVector const& filter) const override;
             
         private:
             // The values of the quantitative check result.
-            std::vector<ValueType> values;
+            boost::variant<vector_type, map_type> values;
         };
     }
 }

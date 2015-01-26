@@ -28,6 +28,7 @@
 #include "src/settings/modules/BisimulationSettings.h"
 #include "src/settings/modules/GlpkSettings.h"
 #include "src/settings/modules/GurobiSettings.h"
+#include "src/settings/modules/SparseDtmcEliminationModelCheckerSettings.h"
 
 #include "src/utility/macros.h"
 #include "src/exceptions/OptionParserException.h"
@@ -308,6 +309,13 @@ namespace storm {
          * @return An object that allows accessing the settings of Gurobi.
          */
         storm::settings::modules::GurobiSettings const& gurobiSettings();
+        
+        /*!
+         * Retrieves the settings of the elimination-based DTMC model checker.
+         *
+         * @return An object that allows accessing the settings of the elimination-based DTMC model checker.
+         */
+        storm::settings::modules::SparseDtmcEliminationModelCheckerSettings const& sparseDtmcEliminationModelCheckerSettings();
         
     } // namespace settings
 } // namespace storm

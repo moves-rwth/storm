@@ -31,6 +31,7 @@ namespace storm {
             
             virtual bool isExplicitQualitativeCheckResult() const;
             virtual bool isExplicitQuantitativeCheckResult() const;
+            virtual bool isExplicitSingleStateQuantitativeCheckResult() const;
             
             ExplicitQualitativeCheckResult& asExplicitQualitativeCheckResult();
             ExplicitQualitativeCheckResult const& asExplicitQualitativeCheckResult() const;

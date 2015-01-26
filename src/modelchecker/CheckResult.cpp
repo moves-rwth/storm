@@ -52,7 +52,7 @@ namespace storm {
         bool CheckResult::isExplicitQuantitativeCheckResult() const {
             return false;
         }
-        
+                
         ExplicitQualitativeCheckResult& CheckResult::asExplicitQualitativeCheckResult() {
             return dynamic_cast<ExplicitQualitativeCheckResult&>(*this);
         }

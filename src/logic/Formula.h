@@ -26,7 +26,8 @@ namespace storm {
         class UnaryPathFormula;
         class ConditionalPathFormula;
         class NextFormula;
-        class SteadyStateOperatorFormula;
+        class LongRunAverageOperatorFormula;
+        class ExpectedTimeOperatorFormula;
         class RewardPathFormula;
         class CumulativeRewardFormula;
         class InstantaneousRewardFormula;
@@ -66,7 +67,8 @@ namespace storm {
             virtual bool isUnaryPathFormula() const;
             virtual bool isConditionalPathFormula() const;
             virtual bool isNextFormula() const;
-            virtual bool isSteadyStateOperatorFormula() const;
+            virtual bool isLongRunAverageOperatorFormula() const;
+            virtual bool isExpectedTimeOperatorFormula() const;
             virtual bool isRewardPathFormula() const;
             virtual bool isCumulativeRewardFormula() const;
             virtual bool isInstantaneousRewardFormula() const;
@@ -137,8 +139,11 @@ namespace storm {
             NextFormula& asNextFormula();
             NextFormula const& asNextFormula() const;
             
-            SteadyStateOperatorFormula& asSteadyStateOperatorFormula();
-            SteadyStateOperatorFormula const& asSteadyStateOperatorFormula() const;
+            LongRunAverageOperatorFormula& asLongRunAverageOperatorFormula();
+            LongRunAverageOperatorFormula const& asLongRunAverageOperatorFormula() const;
+
+            ExpectedTimeOperatorFormula& asExpectedTimeOperatorFormula();
+            ExpectedTimeOperatorFormula const& asExpectedTimeOperatorFormula() const;
             
             RewardPathFormula& asRewardPathFormula();
             RewardPathFormula const& asRewardPathFormula() const;

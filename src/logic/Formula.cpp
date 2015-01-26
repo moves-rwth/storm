@@ -78,7 +78,11 @@ namespace storm {
             return false;
         }
         
-        bool Formula::isSteadyStateOperatorFormula() const {
+        bool Formula::isLongRunAverageOperatorFormula() const {
+            return false;
+        }
+        
+        bool Formula::isExpectedTimeOperatorFormula() const {
             return false;
         }
         
@@ -282,12 +286,20 @@ namespace storm {
             return dynamic_cast<NextFormula const&>(*this);
         }
         
-        SteadyStateOperatorFormula& Formula::asSteadyStateOperatorFormula() {
-            return dynamic_cast<SteadyStateOperatorFormula&>(*this);
+        LongRunAverageOperatorFormula& Formula::asLongRunAverageOperatorFormula() {
+            return dynamic_cast<LongRunAverageOperatorFormula&>(*this);
         }
         
-        SteadyStateOperatorFormula const& Formula::asSteadyStateOperatorFormula() const {
-            return dynamic_cast<SteadyStateOperatorFormula const&>(*this);
+        LongRunAverageOperatorFormula const& Formula::asLongRunAverageOperatorFormula() const {
+            return dynamic_cast<LongRunAverageOperatorFormula const&>(*this);
+        }
+        
+        ExpectedTimeOperatorFormula& Formula::asExpectedTimeOperatorFormula() {
+            return dynamic_cast<ExpectedTimeOperatorFormula&>(*this);
+        }
+        
+        ExpectedTimeOperatorFormula const& Formula::asExpectedTimeOperatorFormula() const {
+            return dynamic_cast<ExpectedTimeOperatorFormula const&>(*this);
         }
         
         RewardPathFormula& Formula::asRewardPathFormula() {
