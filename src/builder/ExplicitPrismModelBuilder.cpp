@@ -156,7 +156,9 @@ namespace storm {
                 while (assignmentIt->getVariable() != integerIt->variable) {
                     ++integerIt;
                 }
-                newState.setFromInt(integerIt->bitOffset, integerIt->bitWidth, evaluator.asInt(assignmentIt->getExpression()) - integerIt->lowerBound);
+                int_fast64_t assignedValue = evaluator.asInt(assignmentIt->getExpression());
+                STORM_LOG_THROW(assignedValue <= integerIt->upperBound, storm::exceptions::WrongFormatException, "The update " << update << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getVariableName() << "'.");
+                newState.setFromInt(integerIt->bitOffset, integerIt->bitWidth, assignedValue - integerIt->lowerBound);
             }
             
             // Check that we processed all assignments.

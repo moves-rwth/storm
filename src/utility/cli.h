@@ -57,6 +57,7 @@ log4cplus::Logger logger;
 
 // Headers for model checking.
 #include "src/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
+#include "src/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
 #include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 
 // Headers for counterexample generation.
@@ -340,7 +341,8 @@ namespace storm {
                     std::unique_ptr<storm::modelchecker::CheckResult> result;
                     if (model->getType() == storm::models::DTMC) {
                         std::shared_ptr<storm::models::Dtmc<double>> dtmc = model->as<storm::models::Dtmc<double>>();
-                        storm::modelchecker::SparseDtmcPrctlModelChecker<double> modelchecker(*dtmc);
+//                        storm::modelchecker::SparseDtmcPrctlModelChecker<double> modelchecker(*dtmc);
+                        storm::modelchecker::SparseDtmcEliminationModelChecker<double> modelchecker(*dtmc);
                         result = modelchecker.check(*formula);
                     } else if (model->getType() == storm::models::MDP) {
                         std::shared_ptr<storm::models::Mdp<double>> mdp = model->as<storm::models::Mdp<double>>();

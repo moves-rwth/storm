@@ -280,6 +280,7 @@ namespace storm {
             }
             STORM_LOG_INFO("Eliminated " << states.size() << " states." << std::endl);
             
+            // Eliminate the transitions going into the initial state.
             eliminateState(flexibleMatrix, oneStepProbabilities, *newInitialStates.begin(), flexibleBackwardTransitions, missingStateRewards, false);
             
             // Now eliminate all chains of phi or psi states.
@@ -309,12 +310,14 @@ namespace storm {
             ValueType numerator = storm::utility::zero<ValueType>();
             ValueType denominator = storm::utility::zero<ValueType>();
             
+            flexibleMatrix.print();
+            
             for (auto const& trans1 : flexibleMatrix.getRow(*newInitialStates.begin())) {
                 auto initialStateSuccessor = trans1.getColumn();
                 if (phiStates.get(initialStateSuccessor)) {
                     ValueType additiveTerm = storm::utility::zero<ValueType>();
                     for (auto const& trans2 : flexibleMatrix.getRow(initialStateSuccessor)) {
-                        STORM_LOG_ASSERT(psiStates.get(trans2.getColumn()), "Expected psi state.");
+                        STORM_LOG_ASSERT(psiStates.get(trans2.getColumn()), "Expected " << trans2.getColumn() << " to be a psi state.");
                         additiveTerm += trans2.getValue();
                     }
                     additiveTerm *= trans1.getValue();
@@ -325,7 +328,7 @@ namespace storm {
                     denominator += trans1.getValue();
                     ValueType additiveTerm = storm::utility::zero<ValueType>();
                     for (auto const& trans2 : flexibleMatrix.getRow(initialStateSuccessor)) {
-                        STORM_LOG_ASSERT(phiStates.get(trans2.getColumn()), "Expected phi state.");
+                        STORM_LOG_ASSERT(phiStates.get(trans2.getColumn()), "Expected " << trans2.getColumn() << " to be a phi state.");
                         additiveTerm += trans2.getValue();
                     }
                     numerator += trans1.getValue() * additiveTerm;
@@ -625,11 +628,17 @@ namespace storm {
             
             // Start by finding loop probability.
             typename FlexibleSparseMatrix::row_type& currentStateSuccessors = matrix.getRow(state);
-            for (auto const& entry : currentStateSuccessors) {
-                if (entry.getColumn() >= state) {
-                    if (entry.getColumn() == state) {
-                        loopProbability = entry.getValue();
+            for (auto entryIt = currentStateSuccessors.begin(), entryIte = currentStateSuccessors.end(); entryIt != entryIte; ++entryIt) {
+                if (entryIt->getColumn() >= state) {
+                    if (entryIt->getColumn() == state) {
+                        loopProbability = entryIt->getValue();
                         hasSelfLoop = true;
+                        
+                        // If we do not clear the forward transitions completely, we need to remove the self-loop,
+                        // because we scale all the other outgoing transitions with it anyway..
+                        if (!removeForwardTransitions) {
+                            currentStateSuccessors.erase(entryIt);
+                        }
                     }
                     break;
                 }
@@ -679,6 +688,9 @@ namespace storm {
                 typename FlexibleSparseMatrix::row_type::iterator multiplyElement = std::find_if(predecessorForwardTransitions.begin(), predecessorForwardTransitions.end(), [&](storm::storage::MatrixEntry<typename FlexibleSparseMatrix::index_type, typename FlexibleSparseMatrix::value_type> const& a) { return a.getColumn() == state; });
                 
                 // Make sure we have found the probability and set it to zero.
+                if (multiplyElement == predecessorForwardTransitions.end()) {
+                    
+                }
                 STORM_LOG_THROW(multiplyElement != predecessorForwardTransitions.end(), storm::exceptions::InvalidStateException, "No probability for successor found.");
                 ValueType multiplyFactor = multiplyElement->getValue();
                 multiplyElement->setValue(storm::utility::zero<ValueType>());
@@ -739,7 +751,6 @@ namespace storm {
                     // If we are computing rewards, we basically scale the state reward of the state to eliminate and
                     // add the result to the state reward of the predecessor.
                     if (hasSelfLoop) {
-//                        stateRewards.get()[predecessor] += storm::utility::simplify(multiplyFactor * storm::utility::pow(loopProbability, 2) * stateRewards.get()[state]);
                         stateRewards.get()[predecessor] += storm::utility::simplify(multiplyFactor * loopProbability * stateRewards.get()[state]);
                     } else {
                         stateRewards.get()[predecessor] += storm::utility::simplify(multiplyFactor * stateRewards.get()[state]);
@@ -791,7 +802,6 @@ namespace storm {
                 
                 // Now move the new predecessors in place.
                 successorBackwardTransitions = std::move(newPredecessors);
-                
             }
             STORM_LOG_DEBUG("Fixed predecessor lists of successor states.");
             
