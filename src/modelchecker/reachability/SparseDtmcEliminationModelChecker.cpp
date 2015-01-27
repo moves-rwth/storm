@@ -283,28 +283,69 @@ namespace storm {
             // Eliminate the transitions going into the initial state.
             eliminateState(flexibleMatrix, oneStepProbabilities, *newInitialStates.begin(), flexibleBackwardTransitions, missingStateRewards, false);
             
-            // Now eliminate all chains of phi or psi states.
-            for (auto phiState : phiStates) {
-                // Only eliminate the state if it has a successor that is not itself.
-                auto const& currentRow = flexibleMatrix.getRow(phiState);
-                if (currentRow.size() == 1) {
-                    auto const& firstEntry = currentRow.front();
-                    if (firstEntry.getColumn() == phiState) {
-                        break;
+            // Now we need to eliminate the chains of phi and psi states.
+            
+            for (auto const& trans1 : flexibleMatrix.getRow(*newInitialStates.begin())) {
+                auto initialStateSuccessor = trans1.getColumn();
+                if (phiStates.get(initialStateSuccessor)) {
+                    bool hasPhiSuccessor = true;
+                    
+                    while (hasPhiSuccessor) {
+                        hasPhiSuccessor = false;
+
+                        // Only treat the state if it has an outgoing transition other than a self-loop.
+                        auto const currentRow = flexibleMatrix.getRow(initialStateSuccessor);
+                        if (currentRow.size() > 1 || (!currentRow.empty() && currentRow.front().getColumn() != initialStateSuccessor)) {
+                            bool elementToEliminate = false;
+                            for (auto const& element : currentRow) {
+                                if (phiStates.get(element.getColumn())) {
+                                    std::cout << "found element to eliminate: " << element.getColumn() << std::endl;
+                                    elementToEliminate = true;
+                                    break;
+                                }
+                            }
+                            if (elementToEliminate) {
+                                std::cout << "before elimination" << std::endl;
+                                for (auto const& element : currentRow) {
+                                    std::cout << element.getColumn() << " -> " << element.getValue() << " ";
+                                }
+                                std::cout << std::endl;
+                                for (auto const& element : currentRow) {
+                                    // If any of the successors is a phi state, we eliminate it (wrt. all its phi predecessors).
+                                    if (phiStates.get(element.getColumn())) {
+                                        eliminateState(flexibleMatrix, oneStepProbabilities, element.getColumn(), flexibleBackwardTransitions, missingStateRewards, false, true, phiStates);
+                                        hasPhiSuccessor = true;
+                                    }
+                                }
+                                std::cout << "after elimination" << std::endl;
+                                for (auto const& element : currentRow) {
+                                    std::cout << element.getColumn() << " -> " << element.getValue() << " ";
+                                }
+                                std::cout << std::endl;
+                            }
+                        }
+                    }
+                } else {
+                    STORM_LOG_ASSERT(psiStates.get(initialStateSuccessor), "Expected psi state.");
+                    
+                    bool hasPsiSuccessor = true;
+                    
+                    while (hasPsiSuccessor) {
+                        hasPsiSuccessor = false;
+                        
+                        // Only treat the state if it has an outgoing transition other than a self-loop.
+                        auto const currentRow = flexibleMatrix.getRow(initialStateSuccessor);
+                        if (currentRow.size() > 1 || (!currentRow.empty() && currentRow.front().getColumn() != initialStateSuccessor)) {
+                            for (auto const& element : currentRow) {
+                                // If any of the successors is a psi state, we eliminate it (wrt. all its psi predecessors).
+                                if (psiStates.get(element.getColumn())) {
+                                    eliminateState(flexibleMatrix, oneStepProbabilities, element.getColumn(), flexibleBackwardTransitions, missingStateRewards, false, true, psiStates);
+                                    hasPsiSuccessor = true;
+                                }
+                            }
+                        }
                     }
                 }
-                eliminateState(flexibleMatrix, oneStepProbabilities, phiState, flexibleBackwardTransitions, missingStateRewards, false, true, phiStates);
-            }
-            for (auto psiState : psiStates) {
-                // Only eliminate the state if it has a successor that is not itself.
-                auto const& currentRow = flexibleMatrix.getRow(psiState);
-                if (currentRow.size() == 1) {
-                    auto const& firstEntry = currentRow.front();
-                    if (firstEntry.getColumn() == psiState) {
-                        break;
-                    }
-                }
-                eliminateState(flexibleMatrix, oneStepProbabilities, psiState, flexibleBackwardTransitions, missingStateRewards, false, true, psiStates);
             }
             
             ValueType numerator = storm::utility::zero<ValueType>();
@@ -317,9 +358,11 @@ namespace storm {
                 if (phiStates.get(initialStateSuccessor)) {
                     ValueType additiveTerm = storm::utility::zero<ValueType>();
                     for (auto const& trans2 : flexibleMatrix.getRow(initialStateSuccessor)) {
+                        std::cout << "(1) " << trans2.getColumn() << " -> " << trans2.getValue() << std::endl;
                         STORM_LOG_ASSERT(psiStates.get(trans2.getColumn()), "Expected " << trans2.getColumn() << " to be a psi state.");
                         additiveTerm += trans2.getValue();
                     }
+                    std::cout << "(1) trans1.getValue: " << trans1.getValue() << " and additive term " << additiveTerm << std::endl;
                     additiveTerm *= trans1.getValue();
                     numerator += additiveTerm;
                     denominator += additiveTerm;
@@ -328,9 +371,11 @@ namespace storm {
                     denominator += trans1.getValue();
                     ValueType additiveTerm = storm::utility::zero<ValueType>();
                     for (auto const& trans2 : flexibleMatrix.getRow(initialStateSuccessor)) {
+                        std::cout << "(2) " << trans2.getColumn() << " -> " << trans2.getValue() << std::endl;
                         STORM_LOG_ASSERT(phiStates.get(trans2.getColumn()), "Expected " << trans2.getColumn() << " to be a phi state.");
                         additiveTerm += trans2.getValue();
                     }
+                    std::cout << "(2) trans1.getValue: " << trans1.getValue() << " and additive term " << additiveTerm << std::endl;
                     numerator += trans1.getValue() * additiveTerm;
                 }
             }
@@ -687,10 +732,13 @@ namespace storm {
                 predecessorForwardTransitionCount += predecessorForwardTransitions.size();
                 typename FlexibleSparseMatrix::row_type::iterator multiplyElement = std::find_if(predecessorForwardTransitions.begin(), predecessorForwardTransitions.end(), [&](storm::storage::MatrixEntry<typename FlexibleSparseMatrix::index_type, typename FlexibleSparseMatrix::value_type> const& a) { return a.getColumn() == state; });
                 
-                // Make sure we have found the probability and set it to zero.
                 if (multiplyElement == predecessorForwardTransitions.end()) {
-                    
+                    for (auto const& entry : predecessorForwardTransitions) {
+                        std::cout << entry << " ";
+                    }
+                    std::cout << std::endl;
                 }
+                // Make sure we have found the probability and set it to zero.
                 STORM_LOG_THROW(multiplyElement != predecessorForwardTransitions.end(), storm::exceptions::InvalidStateException, "No probability for successor found.");
                 ValueType multiplyFactor = multiplyElement->getValue();
                 multiplyElement->setValue(storm::utility::zero<ValueType>());
@@ -811,8 +859,7 @@ namespace storm {
                 currentStateSuccessors.shrink_to_fit();
             }
             if (!constrained) {
-                // FIXME: is this safe? If the elimination is constrained, we might have to repair the predecessor
-                // relation.
+                // FIXME: is this safe? If the elimination is constrained, we might have to repair the predecessor relation.
                 currentStatePredecessors.clear();
                 currentStatePredecessors.shrink_to_fit();
             }
