@@ -270,15 +270,15 @@ namespace storm {
             // Sort the states according to the priorities.
             std::sort(states.begin(), states.end(), [&statePriorities] (storm::storage::sparse::state_type const& a, storm::storage::sparse::state_type const& b) { return statePriorities[a] < statePriorities[b]; });
             
-            STORM_PRINT_AND_LOG("Computing conditional probilities." << std::endl);
-            STORM_PRINT_AND_LOG("Eliminating " << states.size() << " states using the state elimination technique." << std::endl);
+            STORM_LOG_INFO("Computing conditional probilities." << std::endl);
+            STORM_LOG_INFO("Eliminating " << states.size() << " states using the state elimination technique." << std::endl);
             boost::optional<std::vector<ValueType>> missingStateRewards;
             FlexibleSparseMatrix flexibleMatrix = getFlexibleSparseMatrix(submatrix);
             FlexibleSparseMatrix flexibleBackwardTransitions = getFlexibleSparseMatrix(submatrixTransposed, true);
             for (auto const& state : states) {
                 eliminateState(flexibleMatrix, oneStepProbabilities, state, flexibleBackwardTransitions, missingStateRewards);
             }
-            STORM_PRINT_AND_LOG("Eliminated " << states.size() << " states." << std::endl);
+            STORM_LOG_INFO("Eliminated " << states.size() << " states." << std::endl);
             
             eliminateState(flexibleMatrix, oneStepProbabilities, *newInitialStates.begin(), flexibleBackwardTransitions, missingStateRewards, false);
             
@@ -363,8 +363,6 @@ namespace storm {
             FlexibleSparseMatrix flexibleBackwardTransitions = getFlexibleSparseMatrix(backwardTransitions, true);
             auto conversionEnd = std::chrono::high_resolution_clock::now();
             
-            flexibleMatrix.print();
-            
             std::chrono::high_resolution_clock::time_point modelCheckingStart = std::chrono::high_resolution_clock::now();
             uint_fast64_t maximalDepth = 0;
             if (storm::settings::sparseDtmcEliminationModelCheckerSettings().getEliminationMethod() == storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::EliminationMethod::State) {
@@ -379,16 +377,16 @@ namespace storm {
                     std::sort(states.begin(), states.end(), [&statePriorities] (storm::storage::sparse::state_type const& a, storm::storage::sparse::state_type const& b) { return statePriorities.get()[a] < statePriorities.get()[b]; });
                 }
                 
-                STORM_PRINT_AND_LOG("Eliminating " << states.size() << " states using the state elimination technique." << std::endl);
+                STORM_LOG_INFO("Eliminating " << states.size() << " states using the state elimination technique." << std::endl);
                 for (auto const& state : states) {
                     eliminateState(flexibleMatrix, oneStepProbabilities, state, flexibleBackwardTransitions, stateRewards);
                 }
-                STORM_PRINT_AND_LOG("Eliminated " << states.size() << " states." << std::endl);
+                STORM_LOG_INFO("Eliminated " << states.size() << " states." << std::endl);
             } else if (storm::settings::sparseDtmcEliminationModelCheckerSettings().getEliminationMethod() == storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::EliminationMethod::Hybrid) {
                 // When using the hybrid technique, we recursively treat the SCCs up to some size.
                 storm::utility::ConstantsComparator<ValueType> comparator;
                 std::vector<storm::storage::sparse::state_type> entryStateQueue;
-                STORM_PRINT_AND_LOG("Eliminating " << subsystem.size() << " states using the hybrid elimination technique." << std::endl);
+                STORM_LOG_INFO("Eliminating " << subsystem.size() << " states using the hybrid elimination technique." << std::endl);
                 maximalDepth = treatScc(flexibleMatrix, oneStepProbabilities, initialStates, subsystem, transitionMatrix, flexibleBackwardTransitions, false, 0, storm::settings::sparseDtmcEliminationModelCheckerSettings().getMaximalSccSize(), entryStateQueue, comparator, stateRewards, statePriorities);
                 
                 // If the entry states were to be eliminated last, we need to do so now.
@@ -398,14 +396,14 @@ namespace storm {
                         eliminateState(flexibleMatrix, oneStepProbabilities, state, flexibleBackwardTransitions, stateRewards);
                     }
                 }
-                STORM_PRINT_AND_LOG("Eliminated " << subsystem.size() << " states." << std::endl);
+                STORM_LOG_INFO("Eliminated " << subsystem.size() << " states." << std::endl);
             }
             
             // Finally eliminate initial state.
             if (!stateRewards) {
                 // If we are computing probabilities, then we can simply call the state elimination procedure. It
                 // will scale the transition row of the initial state with 1/(1-loopProbability).
-                STORM_PRINT_AND_LOG("Eliminating initial state " << *initialStates.begin() << "." << std::endl);
+                STORM_LOG_INFO("Eliminating initial state " << *initialStates.begin() << "." << std::endl);
                 eliminateState(flexibleMatrix, oneStepProbabilities, *initialStates.begin(), flexibleBackwardTransitions, stateRewards);
             } else {
                 // If we are computing rewards, we cannot call the state elimination procedure for technical reasons.
@@ -415,20 +413,17 @@ namespace storm {
                 // of the initial state, this amounts to checking whether the outgoing transitions of the initial
                 // state are non-empty.
                 if (!flexibleMatrix.getRow(*initialStates.begin()).empty()) {
-                    flexibleMatrix.print();
                     STORM_LOG_ASSERT(flexibleMatrix.getRow(*initialStates.begin()).size() == 1, "At most one outgoing transition expected at this point, but found more.");
                     STORM_LOG_ASSERT(flexibleMatrix.getRow(*initialStates.begin()).front().getColumn() == *initialStates.begin(), "Remaining entry should be a self-loop, but it is not.");
                     ValueType loopProbability = flexibleMatrix.getRow(*initialStates.begin()).front().getValue();
                     loopProbability = storm::utility::one<ValueType>() / (storm::utility::one<ValueType>() - loopProbability);
-                    loopProbability = storm::utility::pow(loopProbability, 2);
-                    STORM_PRINT_AND_LOG("Scaling the transition reward of the initial state.");
+                    STORM_LOG_INFO("Scaling the reward of the initial state " << stateRewards.get()[(*initialStates.begin())] << " with " << loopProbability);
                     stateRewards.get()[(*initialStates.begin())] *= loopProbability;
                     flexibleMatrix.getRow(*initialStates.begin()).clear();
                 }
             }
             
             // Make sure that we have eliminated all transitions from the initial state.
-            flexibleMatrix.print();
             STORM_LOG_ASSERT(flexibleMatrix.getRow(*initialStates.begin()).empty(), "The transitions of the initial states are non-empty.");
             
             std::chrono::high_resolution_clock::time_point modelCheckingEnd = std::chrono::high_resolution_clock::now();
@@ -621,7 +616,7 @@ namespace storm {
             STORM_LOG_DEBUG("Eliminating state " << state << ".");
             if (counter > matrix.getNumberOfRows() / 10) {
                 ++chunkCounter;
-                STORM_PRINT_AND_LOG("Eliminated " << (chunkCounter * 10) << "% of the states." << std::endl);
+                STORM_LOG_INFO("Eliminated " << (chunkCounter * 10) << "% of the states." << std::endl);
                 counter = 0;
             }
             
@@ -744,7 +739,8 @@ namespace storm {
                     // If we are computing rewards, we basically scale the state reward of the state to eliminate and
                     // add the result to the state reward of the predecessor.
                     if (hasSelfLoop) {
-                        stateRewards.get()[predecessor] += storm::utility::simplify(multiplyFactor * storm::utility::pow(loopProbability, 2) * stateRewards.get()[state]);
+//                        stateRewards.get()[predecessor] += storm::utility::simplify(multiplyFactor * storm::utility::pow(loopProbability, 2) * stateRewards.get()[state]);
+                        stateRewards.get()[predecessor] += storm::utility::simplify(multiplyFactor * loopProbability * stateRewards.get()[state]);
                     } else {
                         stateRewards.get()[predecessor] += storm::utility::simplify(multiplyFactor * stateRewards.get()[state]);
                     }

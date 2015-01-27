@@ -116,5 +116,5 @@ TEST(SparseDtmcEliminationModelCheckerTest, SynchronousLeader) {
     result = checker.check(*reachabilityRewardFormula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult3 = result->asExplicitQuantitativeCheckResult<double>();
     
-    EXPECT_NEAR(1.044879046, quantitativeResult3[0], storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(1.0448979, quantitativeResult3[0], storm::settings::gmmxxEquationSolverSettings().getPrecision());
 }
