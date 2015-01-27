@@ -14,7 +14,6 @@
 #include "src/utility/graph.h"
 #include "src/utility/vector.h"
 #include "src/utility/macros.h"
-#include "src/utility/ConstantsComparator.h"
 
 #include "src/exceptions/InvalidPropertyException.h"
 #include "src/exceptions/InvalidStateException.h"
@@ -63,6 +62,8 @@ namespace storm {
                 if (conditionalPathFormula.getLeftSubformula().isEventuallyFormula() && conditionalPathFormula.getRightSubformula().isEventuallyFormula()) {
                     return this->canHandle(conditionalPathFormula.getLeftSubformula()) && this->canHandle(conditionalPathFormula.getRightSubformula());
                 }
+            } else if (formula.isPropositionalFormula()) {
+                return true;
             }
             return false;
         }
@@ -77,6 +78,7 @@ namespace storm {
             
             // Do some sanity checks to establish some required properties.
             STORM_LOG_THROW(model.getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::IllegalArgumentException, "Input model is required to have exactly one initial state.");
+            storm::storage::sparse::state_type initialState = *model.getInitialStates().begin();
             
             // Then, compute the subset of states that has a probability of 0 or 1, respectively.
             std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(model, phiStates, psiStates);
@@ -87,7 +89,7 @@ namespace storm {
             // If the initial state is known to have either probability 0 or 1, we can directly return the result.
             if (model.getInitialStates().isDisjointFrom(maybeStates)) {
                 STORM_LOG_DEBUG("The probability of all initial states was found in a preprocessing step.");
-                return statesWithProbability0.get(*model.getInitialStates().begin()) ? storm::utility::zero<ValueType>() : storm::utility::one<ValueType>();
+                return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(initialState, statesWithProbability0.get(*model.getInitialStates().begin()) ? storm::utility::zero<ValueType>() : storm::utility::one<ValueType>()));
             }
             
             // Determine the set of states that is reachable from the initial state without jumping over a target state.
@@ -111,7 +113,7 @@ namespace storm {
             std::vector<std::size_t> statePriorities = getStatePriorities(submatrix, submatrixTransposed, newInitialStates, oneStepProbabilities);
             
             boost::optional<std::vector<ValueType>> missingStateRewards;
-            return computeReachabilityValue(submatrix, oneStepProbabilities, submatrixTransposed, newInitialStates, phiStates, psiStates, missingStateRewards, statePriorities);
+            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(initialState, computeReachabilityValue(submatrix, oneStepProbabilities, submatrixTransposed, newInitialStates, phiStates, psiStates, missingStateRewards, statePriorities)));
         }
         
         template<typename ValueType>
@@ -122,10 +124,10 @@ namespace storm {
             storm::storage::BitVector const& psiStates = subResultPointer->asExplicitQualitativeCheckResult().getTruthValuesVector();
             
             // Do some sanity checks to establish some required properties.
-            STORM_LOG_THROW(!model.hasTransitionRewards(), storm::exceptions::IllegalArgumentException, "Input model does have transition-based rewards, which are currently unsupported.");
-            STORM_LOG_THROW(model.hasStateRewards(), storm::exceptions::IllegalArgumentException, "Input model does not have a state-based reward model.");
+            STORM_LOG_THROW(model.hasStateRewards() || model.hasTransitionRewards(), storm::exceptions::IllegalArgumentException, "Input model does not have a reward model.");
             STORM_LOG_THROW(model.getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::IllegalArgumentException, "Input model is required to have exactly one initial state.");
-            
+            storm::storage::sparse::state_type initialState = *model.getInitialStates().begin();
+
             // Then, compute the subset of states that has a reachability reward less than infinity.
             storm::storage::BitVector trueStates(model.getNumberOfStates(), true);
             storm::storage::BitVector infinityStates = storm::utility::graph::performProb1(model.getBackwardTransitions(), trueStates, psiStates);
@@ -136,7 +138,7 @@ namespace storm {
             STORM_LOG_THROW(model.getInitialStates().isDisjointFrom(infinityStates), storm::exceptions::IllegalArgumentException, "Initial state has infinite reward.");
             if (!model.getInitialStates().isDisjointFrom(psiStates)) {
                 STORM_LOG_DEBUG("The reward of all initial states was found in a preprocessing step.");
-                return storm::utility::zero<ValueType>();
+                return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(initialState, storm::utility::zero<ValueType>()));
             }
             
             // Determine the set of states that is reachable from the initial state without jumping over a target state.
@@ -148,10 +150,6 @@ namespace storm {
             // Create a vector for the probabilities to go to a state with probability 1 in one step.
             std::vector<ValueType> oneStepProbabilities = model.getTransitionMatrix().getConstrainedRowSumVector(maybeStates, psiStates);
             
-            // Project the state reward vector to all maybe-states.
-            boost::optional<std::vector<ValueType>> stateRewards(maybeStates.getNumberOfSetBits());
-            storm::utility::vector::selectVectorValues(stateRewards.get(), maybeStates, model.getStateRewardVector());
-            
             // Determine the set of initial states of the sub-model.
             storm::storage::BitVector newInitialStates = model.getInitialStates() % maybeStates;
             
@@ -162,8 +160,35 @@ namespace storm {
             // Before starting the model checking process, we assign priorities to states so we can use them to
             // impose ordering constraints later.
             std::vector<std::size_t> statePriorities = getStatePriorities(submatrix, submatrixTransposed, newInitialStates, oneStepProbabilities);
+
+            // Project the state reward vector to all maybe-states.
+            boost::optional<std::vector<ValueType>> optionalStateRewards(maybeStates.getNumberOfSetBits());
+            std::vector<ValueType>& stateRewards = optionalStateRewards.get();
+            if (model.hasTransitionRewards()) {
+                // If a transition-based reward model is available, we initialize the right-hand
+                // side to the vector resulting from summing the rows of the pointwise product
+                // of the transition probability matrix and the transition reward matrix.
+                std::vector<ValueType> pointwiseProductRowSumVector = model.getTransitionMatrix().getPointwiseProductRowSumVector(model.getTransitionRewardMatrix());
+                storm::utility::vector::selectVectorValues(stateRewards, maybeStates, pointwiseProductRowSumVector);
+
+                if (model.hasStateRewards()) {
+                    // If a state-based reward model is also available, we need to add this vector
+                    // as well. As the state reward vector contains entries not just for the states
+                    // that we still consider (i.e. maybeStates), we need to extract these values
+                    // first.
+                    std::vector<ValueType> subStateRewards(stateRewards.size());
+                    storm::utility::vector::selectVectorValues(subStateRewards, maybeStates, model.getStateRewardVector());
+                    storm::utility::vector::addVectorsInPlace(stateRewards, subStateRewards);
+                }
+            } else {
+                // If only a state-based reward model is  available, we take this vector as the
+                // right-hand side. As the state reward vector contains entries not just for the
+                // states that we still consider (i.e. maybeStates), we need to extract these values
+                // first.
+                storm::utility::vector::selectVectorValues(stateRewards, maybeStates, model.getStateRewardVector());
+            }
             
-            return computeReachabilityValue(submatrix, oneStepProbabilities, submatrixTransposed, newInitialStates, phiStates, psiStates, stateRewards, statePriorities);
+            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(initialState, computeReachabilityValue(submatrix, oneStepProbabilities, submatrixTransposed, newInitialStates, phiStates, psiStates, optionalStateRewards, statePriorities)));
         }
         
         template<typename ValueType>
@@ -179,8 +204,9 @@ namespace storm {
             storm::storage::BitVector trueStates(model.getNumberOfStates(), true);
             
             // Do some sanity checks to establish some required properties.
-            STORM_LOG_THROW(model.getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::IllegalArgumentException, "Input model is required to have exactly one initial state.");
             STORM_LOG_THROW(storm::settings::sparseDtmcEliminationModelCheckerSettings().getEliminationMethod() != storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::EliminationMethod::State, storm::exceptions::InvalidArgumentException, "Unsupported elimination method for conditional probabilities.");
+            STORM_LOG_THROW(model.getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::IllegalArgumentException, "Input model is required to have exactly one initial state.");
+            storm::storage::sparse::state_type initialState = *model.getInitialStates().begin();
             
             storm::storage::SparseMatrix<ValueType> backwardTransitions = model.getBackwardTransitions();
             
@@ -194,7 +220,7 @@ namespace storm {
             if (model.getInitialStates().isSubsetOf(statesWithProbability1)) {
                 std::shared_ptr<storm::logic::BooleanLiteralFormula> trueFormula = std::make_shared<storm::logic::BooleanLiteralFormula>(true);
                 std::shared_ptr<storm::logic::UntilFormula> untilFormula = std::make_shared<storm::logic::UntilFormula>(trueFormula, pathFormula.getLeftSubformula().asSharedPointer());
-                return this->computeUntilProbabilities(untilFormula);
+                return this->computeUntilProbabilities(*untilFormula);
             }
             
             // From now on, we know the condition does not have a trivial probability in the initial state.
@@ -306,7 +332,7 @@ namespace storm {
                 }
             }
             
-            return numerator / denominator;
+            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(initialState, numerator / denominator));
         }
         
         template<typename ValueType>
@@ -336,6 +362,8 @@ namespace storm {
             FlexibleSparseMatrix flexibleMatrix = getFlexibleSparseMatrix(transitionMatrix);
             FlexibleSparseMatrix flexibleBackwardTransitions = getFlexibleSparseMatrix(backwardTransitions, true);
             auto conversionEnd = std::chrono::high_resolution_clock::now();
+            
+            flexibleMatrix.print();
             
             std::chrono::high_resolution_clock::time_point modelCheckingStart = std::chrono::high_resolution_clock::now();
             uint_fast64_t maximalDepth = 0;
@@ -387,6 +415,7 @@ namespace storm {
                 // of the initial state, this amounts to checking whether the outgoing transitions of the initial
                 // state are non-empty.
                 if (!flexibleMatrix.getRow(*initialStates.begin()).empty()) {
+                    flexibleMatrix.print();
                     STORM_LOG_ASSERT(flexibleMatrix.getRow(*initialStates.begin()).size() == 1, "At most one outgoing transition expected at this point, but found more.");
                     STORM_LOG_ASSERT(flexibleMatrix.getRow(*initialStates.begin()).front().getColumn() == *initialStates.begin(), "Remaining entry should be a self-loop, but it is not.");
                     ValueType loopProbability = flexibleMatrix.getRow(*initialStates.begin()).front().getValue();
@@ -394,10 +423,12 @@ namespace storm {
                     loopProbability = storm::utility::pow(loopProbability, 2);
                     STORM_PRINT_AND_LOG("Scaling the transition reward of the initial state.");
                     stateRewards.get()[(*initialStates.begin())] *= loopProbability;
+                    flexibleMatrix.getRow(*initialStates.begin()).clear();
                 }
             }
             
             // Make sure that we have eliminated all transitions from the initial state.
+            flexibleMatrix.print();
             STORM_LOG_ASSERT(flexibleMatrix.getRow(*initialStates.begin()).empty(), "The transitions of the initial states are non-empty.");
             
             std::chrono::high_resolution_clock::time_point modelCheckingEnd = std::chrono::high_resolution_clock::now();
@@ -595,7 +626,7 @@ namespace storm {
             }
             
             bool hasSelfLoop = false;
-            ValueType loopProbability = storm::utility::    <ValueType>();
+            ValueType loopProbability = storm::utility::zero<ValueType>();
             
             // Start by finding loop probability.
             typename FlexibleSparseMatrix::row_type& currentStateSuccessors = matrix.getRow(state);
@@ -838,11 +869,19 @@ namespace storm {
         typename SparseDtmcEliminationModelChecker<ValueType>::FlexibleSparseMatrix SparseDtmcEliminationModelChecker<ValueType>::getFlexibleSparseMatrix(storm::storage::SparseMatrix<ValueType> const& matrix, bool setAllValuesToOne) {
             FlexibleSparseMatrix flexibleMatrix(matrix.getRowCount());
             
+            // A comparator used for comparing probabilities.
+            storm::utility::ConstantsComparator<ValueType> comparator;
+            
             for (typename FlexibleSparseMatrix::index_type rowIndex = 0; rowIndex < matrix.getRowCount(); ++rowIndex) {
                 typename storm::storage::SparseMatrix<ValueType>::const_rows row = matrix.getRow(rowIndex);
                 flexibleMatrix.reserveInRow(rowIndex, row.getNumberOfEntries());
                 
                 for (auto const& element : row) {
+                    // If the probability is zero, we skip this entry.
+                    if (comparator.isZero(element.getValue())) {
+                        continue;
+                    }
+                    
                     if (setAllValuesToOne) {
                         flexibleMatrix.getRow(rowIndex).emplace_back(element.getColumn(), storm::utility::one<ValueType>());
                     } else {

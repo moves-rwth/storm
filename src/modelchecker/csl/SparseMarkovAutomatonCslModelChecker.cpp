@@ -235,56 +235,6 @@ namespace storm {
         
         template<typename ValueType>
         std::vector<ValueType> SparseMarkovAutomatonCslModelChecker<ValueType>::computeLongRunAverageHelper(bool minimize, storm::storage::BitVector const& psiStates, bool qualitative) const {
-            // FIXME
-        }
-        
-        template<typename ValueType>
-        std::unique_ptr<CheckResult> SparseMarkovAutomatonCslModelChecker<ValueType>::computeLongRunAverage(storm::logic::StateFormula const& stateFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
-            STORM_LOG_THROW(optimalityType, storm::exceptions::InvalidArgumentException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
-            STORM_LOG_THROW(model.isClosed(), storm::exceptions::InvalidArgumentException, "Unable to compute long-run average in non-closed Markov automaton.");
-            std::unique_ptr<CheckResult> subResultPointer = this->check(stateFormula);
-            ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();
-            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(this->computeLongRunAverageHelper(optimalityType.get() == storm::logic::OptimalityType::Minimize, subResult.getTruthValuesVector(), qualitative)));
-        }
-        
-        template<typename ValueType>
-        std::vector<ValueType> SparseMarkovAutomatonCslModelChecker<ValueType>::computeExpectedTimesHelper(bool minimize, storm::storage::BitVector const& psiStates, bool qualitative) const {
-            std::vector<ValueType> rewardValues(model.getNumberOfStates(), storm::utility::zero<ValueType>());
-            storm::utility::vector::setVectorValues(rewardValues, model.getMarkovianStates(), storm::utility::one<ValueType>());
-            return this->computeExpectedRewards(minimize, psiStates, rewardValues);
-        }
-        
-        template<typename ValueType>
-        std::unique_ptr<CheckResult> SparseMarkovAutomatonCslModelChecker<ValueType>::computeExpectedTimes(storm::logic::EventuallyFormula const& eventuallyFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
-            STORM_LOG_THROW(optimalityType, storm::exceptions::InvalidArgumentException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
-            STORM_LOG_THROW(model.isClosed(), storm::exceptions::InvalidArgumentException, "Unable to compute expected times in non-closed Markov automaton.");
-            std::unique_ptr<CheckResult> subResultPointer = this->check(eventuallyFormula.getSubformula());
-            ExplicitQualitativeCheckResult& subResult = subResultPointer->asExplicitQualitativeCheckResult();
-            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(this->computeExpectedTimesHelper(optimalityType.get() == storm::logic::OptimalityType::Minimize, subResult.getTruthValuesVector(), qualitative)));
-        }
-        
-        template<typename ValueType>
-        std::unique_ptr<CheckResult> SparseMarkovAutomatonCslModelChecker<ValueType>::checkBooleanLiteralFormula(storm::logic::BooleanLiteralFormula const& stateFormula) {
-            if (stateFormula.isTrueFormula()) {
-                return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult(storm::storage::BitVector(model.getNumberOfStates(), true)));
-            } else {
-                return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult(storm::storage::BitVector(model.getNumberOfStates())));
-            }
-        }
-        
-        template<typename ValueType>
-        std::unique_ptr<CheckResult> SparseMarkovAutomatonCslModelChecker<ValueType>::checkAtomicLabelFormula(storm::logic::AtomicLabelFormula const& stateFormula) {
-            STORM_LOG_THROW(model.hasAtomicProposition(stateFormula.getLabel()), storm::exceptions::InvalidPropertyException, "The property refers to unknown label '" << stateFormula.getLabel() << "'.");
-            return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult(model.getLabeledStates(stateFormula.getLabel())));
-        }
-        
-        template<typename ValueType>
-        std::vector<ValueType> SparseMarkovAutomatonCslModelChecker<ValueType>::computeLongRunAverage(bool minimize, storm::storage::BitVector const& psiStates) const {
-            // Check whether the automaton is closed.
-            if (!model.isClosed()) {
-                throw storm::exceptions::InvalidArgumentException() << "Unable to compute long-run average on non-closed Markov automaton.";
-            }
-            
             // If there are no goal states, we avoid the computation and directly return zero.
             if (psiStates.empty()) {
                 return std::vector<ValueType>(model.getNumberOfStates(), storm::utility::zero<ValueType>());
@@ -443,6 +393,46 @@ namespace storm {
             return result;
         }
         
+        template<typename ValueType>
+        std::unique_ptr<CheckResult> SparseMarkovAutomatonCslModelChecker<ValueType>::computeLongRunAverage(storm::logic::StateFormula const& stateFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
+            STORM_LOG_THROW(optimalityType, storm::exceptions::InvalidArgumentException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
+            STORM_LOG_THROW(model.isClosed(), storm::exceptions::InvalidArgumentException, "Unable to compute long-run average in non-closed Markov automaton.");
+            std::unique_ptr<CheckResult> subResultPointer = this->check(stateFormula);
+            ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();
+            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(this->computeLongRunAverageHelper(optimalityType.get() == storm::logic::OptimalityType::Minimize, subResult.getTruthValuesVector(), qualitative)));
+        }
+        
+        template<typename ValueType>
+        std::vector<ValueType> SparseMarkovAutomatonCslModelChecker<ValueType>::computeExpectedTimesHelper(bool minimize, storm::storage::BitVector const& psiStates, bool qualitative) const {
+            std::vector<ValueType> rewardValues(model.getNumberOfStates(), storm::utility::zero<ValueType>());
+            storm::utility::vector::setVectorValues(rewardValues, model.getMarkovianStates(), storm::utility::one<ValueType>());
+            return this->computeExpectedRewards(minimize, psiStates, rewardValues);
+        }
+        
+        template<typename ValueType>
+        std::unique_ptr<CheckResult> SparseMarkovAutomatonCslModelChecker<ValueType>::computeExpectedTimes(storm::logic::EventuallyFormula const& eventuallyFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
+            STORM_LOG_THROW(optimalityType, storm::exceptions::InvalidArgumentException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
+            STORM_LOG_THROW(model.isClosed(), storm::exceptions::InvalidArgumentException, "Unable to compute expected times in non-closed Markov automaton.");
+            std::unique_ptr<CheckResult> subResultPointer = this->check(eventuallyFormula.getSubformula());
+            ExplicitQualitativeCheckResult& subResult = subResultPointer->asExplicitQualitativeCheckResult();
+            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(this->computeExpectedTimesHelper(optimalityType.get() == storm::logic::OptimalityType::Minimize, subResult.getTruthValuesVector(), qualitative)));
+        }
+        
+        template<typename ValueType>
+        std::unique_ptr<CheckResult> SparseMarkovAutomatonCslModelChecker<ValueType>::checkBooleanLiteralFormula(storm::logic::BooleanLiteralFormula const& stateFormula) {
+            if (stateFormula.isTrueFormula()) {
+                return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult(storm::storage::BitVector(model.getNumberOfStates(), true)));
+            } else {
+                return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult(storm::storage::BitVector(model.getNumberOfStates())));
+            }
+        }
+        
+        template<typename ValueType>
+        std::unique_ptr<CheckResult> SparseMarkovAutomatonCslModelChecker<ValueType>::checkAtomicLabelFormula(storm::logic::AtomicLabelFormula const& stateFormula) {
+            STORM_LOG_THROW(model.hasAtomicProposition(stateFormula.getLabel()), storm::exceptions::InvalidPropertyException, "The property refers to unknown label '" << stateFormula.getLabel() << "'.");
+            return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult(model.getLabeledStates(stateFormula.getLabel())));
+        }
+                
         template<typename ValueType>
         ValueType SparseMarkovAutomatonCslModelChecker<ValueType>::computeLraForMaximalEndComponent(bool minimize, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::BitVector const& markovianStates, std::vector<ValueType> const& exitRates, storm::storage::BitVector const& psiStates, storm::storage::MaximalEndComponent const& mec, uint_fast64_t mecIndex) {
             std::shared_ptr<storm::solver::LpSolver> solver = storm::utility::solver::getLpSolver("LRA for MEC");

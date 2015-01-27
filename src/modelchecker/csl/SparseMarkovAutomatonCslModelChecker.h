@@ -36,7 +36,6 @@ namespace storm {
             std::vector<ValueType> computeReachabilityRewardsHelper(bool minimize, storm::storage::BitVector const& psiStates, bool qualitative) const;
             std::vector<ValueType> computeLongRunAverageHelper(bool minimize, storm::storage::BitVector const& psiStates, bool qualitative) const;
             std::vector<ValueType> computeExpectedTimesHelper(bool minimize, storm::storage::BitVector const& psiStates, bool qualitative) const;
-            std::vector<ValueType> computeLongRunAverage(bool minimize, storm::storage::BitVector const& psiStates) const;
 
             /*!
              * Computes the long-run average value for the given maximal end component of a Markov automaton.

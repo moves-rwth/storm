@@ -4,6 +4,7 @@
 #include "src/storage/sparse/StateType.h"
 #include "src/models/Dtmc.h"
 #include "src/modelchecker/AbstractModelChecker.h"
+#include "src/utility/ConstantsComparator.h"
 
 namespace storm {
     namespace modelchecker {
