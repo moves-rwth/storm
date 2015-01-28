@@ -115,7 +115,9 @@ namespace storm {
         }
         
         std::unique_ptr<CheckResult> AbstractModelChecker::checkAtomicExpressionFormula(storm::logic::AtomicExpressionFormula const& stateFormula) {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the formula: " << stateFormula << ".");
+            std::stringstream stream;
+            stream << stateFormula.getExpression();
+            return this->checkAtomicLabelFormula(storm::logic::AtomicLabelFormula(stream.str()));
         }
         
         std::unique_ptr<CheckResult> AbstractModelChecker::checkAtomicLabelFormula(storm::logic::AtomicLabelFormula const& stateFormula) {

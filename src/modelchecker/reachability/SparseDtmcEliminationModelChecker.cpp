@@ -58,6 +58,8 @@ namespace storm {
                 }
             } else if (formula.isPropositionalFormula()) {
                 return true;
+            } else {
+                std::cout << formula << " and type " << typeid(formula).name() << std::endl;
             }
             return false;
         }
