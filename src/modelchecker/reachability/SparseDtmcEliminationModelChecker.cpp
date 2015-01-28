@@ -127,7 +127,7 @@ namespace storm {
             STORM_LOG_THROW(model.hasStateRewards() || model.hasTransitionRewards(), storm::exceptions::IllegalArgumentException, "Input model does not have a reward model.");
             STORM_LOG_THROW(model.getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::IllegalArgumentException, "Input model is required to have exactly one initial state.");
             storm::storage::sparse::state_type initialState = *model.getInitialStates().begin();
-
+            
             // Then, compute the subset of states that has a reachability reward less than infinity.
             storm::storage::BitVector trueStates(model.getNumberOfStates(), true);
             storm::storage::BitVector infinityStates = storm::utility::graph::performProb1(model.getBackwardTransitions(), trueStates, psiStates);
@@ -160,7 +160,7 @@ namespace storm {
             // Before starting the model checking process, we assign priorities to states so we can use them to
             // impose ordering constraints later.
             std::vector<std::size_t> statePriorities = getStatePriorities(submatrix, submatrixTransposed, newInitialStates, oneStepProbabilities);
-
+            
             // Project the state reward vector to all maybe-states.
             boost::optional<std::vector<ValueType>> optionalStateRewards(maybeStates.getNumberOfSetBits());
             std::vector<ValueType>& stateRewards = optionalStateRewards.get();
@@ -170,7 +170,7 @@ namespace storm {
                 // of the transition probability matrix and the transition reward matrix.
                 std::vector<ValueType> pointwiseProductRowSumVector = model.getTransitionMatrix().getPointwiseProductRowSumVector(model.getTransitionRewardMatrix());
                 storm::utility::vector::selectVectorValues(stateRewards, maybeStates, pointwiseProductRowSumVector);
-
+                
                 if (model.hasStateRewards()) {
                     // If a state-based reward model is also available, we need to add this vector
                     // as well. As the state reward vector contains entries not just for the states
@@ -224,6 +224,9 @@ namespace storm {
             }
             
             // From now on, we know the condition does not have a trivial probability in the initial state.
+            
+            // Compute the 'true' psi states, i.e. those psi states that can be reached without passing through another psi state first.
+            psiStates = storm::utility::graph::getReachableStates(model.getTransitionMatrix(), model.getInitialStates(), trueStates, psiStates) & psiStates;
             
             // Compute the states that can be reached on a path that has a psi state in it.
             storm::storage::BitVector statesWithPsiPredecessor = storm::utility::graph::performProbGreater0(model.getTransitionMatrix(), trueStates, psiStates);
@@ -283,64 +286,56 @@ namespace storm {
             // Eliminate the transitions going into the initial state.
             eliminateState(flexibleMatrix, oneStepProbabilities, *newInitialStates.begin(), flexibleBackwardTransitions, missingStateRewards, false);
             
-            // Now we need to eliminate the chains of phi and psi states.
-            
+            // Now we need to basically eliminate all chains of not-psi states after phi states and chains of not-phi
+            // states after psi states.
             for (auto const& trans1 : flexibleMatrix.getRow(*newInitialStates.begin())) {
                 auto initialStateSuccessor = trans1.getColumn();
                 if (phiStates.get(initialStateSuccessor)) {
-                    bool hasPhiSuccessor = true;
                     
-                    while (hasPhiSuccessor) {
-                        hasPhiSuccessor = false;
-
+                    // If the state is both a phi and a psi state, we do not need to eliminate chains.
+                    if (psiStates.get(initialStateSuccessor)) {
+                        continue;
+                    }
+                    
+                    // At this point, we know that the state satisfies phi and not psi.
+                    // This means, we must compute the probability to reach psi states, which in turn means that we need
+                    // to eliminate all chains of non-psi states between the current state and psi states.
+                    bool hasNonPsiSuccessor = true;
+                    while (hasNonPsiSuccessor) {
+                        hasNonPsiSuccessor = false;
+                        
                         // Only treat the state if it has an outgoing transition other than a self-loop.
                         auto const currentRow = flexibleMatrix.getRow(initialStateSuccessor);
                         if (currentRow.size() > 1 || (!currentRow.empty() && currentRow.front().getColumn() != initialStateSuccessor)) {
-                            bool elementToEliminate = false;
                             for (auto const& element : currentRow) {
-                                if (phiStates.get(element.getColumn())) {
-                                    std::cout << "found element to eliminate: " << element.getColumn() << std::endl;
-                                    elementToEliminate = true;
-                                    break;
+                                // If any of the successors is a phi state, we eliminate it (wrt. all its phi predecessors).
+                                if (!psiStates.get(element.getColumn())) {
+                                    eliminateState(flexibleMatrix, oneStepProbabilities, element.getColumn(), flexibleBackwardTransitions, missingStateRewards, false, true, phiStates);
+                                    hasNonPsiSuccessor = true;
                                 }
                             }
-                            if (elementToEliminate) {
-                                std::cout << "before elimination" << std::endl;
-                                for (auto const& element : currentRow) {
-                                    std::cout << element.getColumn() << " -> " << element.getValue() << " ";
-                                }
-                                std::cout << std::endl;
-                                for (auto const& element : currentRow) {
-                                    // If any of the successors is a phi state, we eliminate it (wrt. all its phi predecessors).
-                                    if (phiStates.get(element.getColumn())) {
-                                        eliminateState(flexibleMatrix, oneStepProbabilities, element.getColumn(), flexibleBackwardTransitions, missingStateRewards, false, true, phiStates);
-                                        hasPhiSuccessor = true;
-                                    }
-                                }
-                                std::cout << "after elimination" << std::endl;
-                                for (auto const& element : currentRow) {
-                                    std::cout << element.getColumn() << " -> " << element.getValue() << " ";
-                                }
-                                std::cout << std::endl;
-                            }
+                            STORM_LOG_ASSERT(!flexibleMatrix.getRow(initialStateSuccessor).empty(), "(1) New transitions expected to be non-empty.");
                         }
                     }
                 } else {
                     STORM_LOG_ASSERT(psiStates.get(initialStateSuccessor), "Expected psi state.");
                     
-                    bool hasPsiSuccessor = true;
+                    // At this point, we know that the state satisfies psi and not phi.
+                    // This means, we must compute the probability to reach phi states, which in turn means that we need
+                    // to eliminate all chains of non-phi states between the current state and phi states.
                     
-                    while (hasPsiSuccessor) {
-                        hasPsiSuccessor = false;
+                    bool hasNonPhiSuccessor = true;
+                    while (hasNonPhiSuccessor) {
+                        hasNonPhiSuccessor = false;
                         
                         // Only treat the state if it has an outgoing transition other than a self-loop.
                         auto const currentRow = flexibleMatrix.getRow(initialStateSuccessor);
                         if (currentRow.size() > 1 || (!currentRow.empty() && currentRow.front().getColumn() != initialStateSuccessor)) {
                             for (auto const& element : currentRow) {
                                 // If any of the successors is a psi state, we eliminate it (wrt. all its psi predecessors).
-                                if (psiStates.get(element.getColumn())) {
+                                if (!phiStates.get(element.getColumn())) {
                                     eliminateState(flexibleMatrix, oneStepProbabilities, element.getColumn(), flexibleBackwardTransitions, missingStateRewards, false, true, psiStates);
-                                    hasPsiSuccessor = true;
+                                    hasNonPhiSuccessor = true;
                                 }
                             }
                         }
@@ -351,31 +346,30 @@ namespace storm {
             ValueType numerator = storm::utility::zero<ValueType>();
             ValueType denominator = storm::utility::zero<ValueType>();
             
-            flexibleMatrix.print();
-            
             for (auto const& trans1 : flexibleMatrix.getRow(*newInitialStates.begin())) {
                 auto initialStateSuccessor = trans1.getColumn();
                 if (phiStates.get(initialStateSuccessor)) {
-                    ValueType additiveTerm = storm::utility::zero<ValueType>();
-                    for (auto const& trans2 : flexibleMatrix.getRow(initialStateSuccessor)) {
-                        std::cout << "(1) " << trans2.getColumn() << " -> " << trans2.getValue() << std::endl;
-                        STORM_LOG_ASSERT(psiStates.get(trans2.getColumn()), "Expected " << trans2.getColumn() << " to be a psi state.");
-                        additiveTerm += trans2.getValue();
+                    if (psiStates.get(initialStateSuccessor)) {
+                        numerator += trans1.getValue();
+                        denominator += trans1.getValue();
+                    } else {
+                        ValueType additiveTerm = storm::utility::zero<ValueType>();
+                        for (auto const& trans2 : flexibleMatrix.getRow(initialStateSuccessor)) {
+                            STORM_LOG_ASSERT(psiStates.get(trans2.getColumn()), "Expected " << trans2.getColumn() << " to be a psi state.");
+                            additiveTerm += trans2.getValue();
+                        }
+                        additiveTerm *= trans1.getValue();
+                        numerator += additiveTerm;
+                        denominator += additiveTerm;
                     }
-                    std::cout << "(1) trans1.getValue: " << trans1.getValue() << " and additive term " << additiveTerm << std::endl;
-                    additiveTerm *= trans1.getValue();
-                    numerator += additiveTerm;
-                    denominator += additiveTerm;
                 } else {
                     STORM_LOG_ASSERT(psiStates.get(initialStateSuccessor), "Expected psi state.");
                     denominator += trans1.getValue();
                     ValueType additiveTerm = storm::utility::zero<ValueType>();
                     for (auto const& trans2 : flexibleMatrix.getRow(initialStateSuccessor)) {
-                        std::cout << "(2) " << trans2.getColumn() << " -> " << trans2.getValue() << std::endl;
                         STORM_LOG_ASSERT(phiStates.get(trans2.getColumn()), "Expected " << trans2.getColumn() << " to be a phi state.");
                         additiveTerm += trans2.getValue();
                     }
-                    std::cout << "(2) trans1.getValue: " << trans1.getValue() << " and additive term " << additiveTerm << std::endl;
                     numerator += trans1.getValue() * additiveTerm;
                 }
             }
@@ -732,12 +726,6 @@ namespace storm {
                 predecessorForwardTransitionCount += predecessorForwardTransitions.size();
                 typename FlexibleSparseMatrix::row_type::iterator multiplyElement = std::find_if(predecessorForwardTransitions.begin(), predecessorForwardTransitions.end(), [&](storm::storage::MatrixEntry<typename FlexibleSparseMatrix::index_type, typename FlexibleSparseMatrix::value_type> const& a) { return a.getColumn() == state; });
                 
-                if (multiplyElement == predecessorForwardTransitions.end()) {
-                    for (auto const& entry : predecessorForwardTransitions) {
-                        std::cout << entry << " ";
-                    }
-                    std::cout << std::endl;
-                }
                 // Make sure we have found the probability and set it to zero.
                 STORM_LOG_THROW(multiplyElement != predecessorForwardTransitions.end(), storm::exceptions::InvalidStateException, "No probability for successor found.");
                 ValueType multiplyFactor = multiplyElement->getValue();

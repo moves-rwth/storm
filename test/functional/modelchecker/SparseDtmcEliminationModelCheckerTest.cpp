@@ -89,6 +89,30 @@ TEST(SparseDtmcEliminationModelCheckerTest, Crowds) {
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult3 = result->asExplicitQuantitativeCheckResult<double>();
     
     EXPECT_NEAR(0.32153724292835045, quantitativeResult3[0], storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    
+    labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("observe0Greater1");
+    eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(labelFormula);
+    
+    auto labelFormula2 = std::make_shared<storm::logic::AtomicLabelFormula>("observeIGreater1");
+    auto eventuallyFormula2 = std::make_shared<storm::logic::EventuallyFormula>(labelFormula2);
+    auto conditionalFormula = std::make_shared<storm::logic::ConditionalPathFormula>(eventuallyFormula, eventuallyFormula2);
+    
+    result = checker.check(*conditionalFormula);
+    storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult4 = result->asExplicitQuantitativeCheckResult<double>();
+    
+    EXPECT_NEAR(0.15330064292476167, quantitativeResult4[0], storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    
+    labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("observeOnlyTrueSender");
+    eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(labelFormula);
+    
+    labelFormula2 = std::make_shared<storm::logic::AtomicLabelFormula>("observe0Greater1");
+    eventuallyFormula2 = std::make_shared<storm::logic::EventuallyFormula>(labelFormula2);
+    conditionalFormula = std::make_shared<storm::logic::ConditionalPathFormula>(eventuallyFormula, eventuallyFormula2);
+    
+    result = checker.check(*conditionalFormula);
+    storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult5 = result->asExplicitQuantitativeCheckResult<double>();
+    
+    EXPECT_NEAR(0.96592521978041668, quantitativeResult5[0], storm::settings::gmmxxEquationSolverSettings().getPrecision());
 }
 
 TEST(SparseDtmcEliminationModelCheckerTest, SynchronousLeader) {
