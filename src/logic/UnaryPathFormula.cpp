@@ -29,5 +29,13 @@ namespace storm {
         Formula const& UnaryPathFormula::getSubformula() const {
             return *subformula;
         }
+        
+        void UnaryPathFormula::gatherAtomicExpressionFormulas(std::vector<std::shared_ptr<AtomicExpressionFormula const>>& atomicExpressionFormulas) const {
+            this->getSubformula().gatherAtomicExpressionFormulas(atomicExpressionFormulas);
+        }
+        
+        void UnaryPathFormula::gatherAtomicLabelFormulas(std::vector<std::shared_ptr<AtomicLabelFormula const>>& atomicLabelFormulas) const {
+            this->getSubformula().gatherAtomicLabelFormulas(atomicLabelFormulas);
+        }
     }
 }

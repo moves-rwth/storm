@@ -26,6 +26,10 @@ namespace storm {
             return expression;
         }
         
+        void AtomicExpressionFormula::gatherAtomicExpressionFormulas(std::vector<std::shared_ptr<AtomicExpressionFormula const>>& atomicExpressionFormulas) const {
+            atomicExpressionFormulas.push_back(std::dynamic_pointer_cast<AtomicExpressionFormula const>(this->shared_from_this()));
+        }
+            
         std::ostream& AtomicExpressionFormula::writeToStream(std::ostream& out) const {
             out << expression;
             return out;

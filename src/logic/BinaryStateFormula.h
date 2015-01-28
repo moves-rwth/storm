@@ -23,6 +23,9 @@ namespace storm {
             Formula const& getLeftSubformula() const;
             Formula const& getRightSubformula() const;
             
+            virtual void gatherAtomicExpressionFormulas(std::vector<std::shared_ptr<AtomicExpressionFormula const>>& atomicExpressionFormulas) const override;
+            virtual void gatherAtomicLabelFormulas(std::vector<std::shared_ptr<AtomicLabelFormula const>>& atomicLabelFormulas) const override;
+            
         private:
             std::shared_ptr<Formula const> leftSubformula;
             std::shared_ptr<Formula const> rightSubformula;

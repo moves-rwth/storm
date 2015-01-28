@@ -33,5 +33,13 @@ namespace storm {
         Formula const& BinaryStateFormula::getRightSubformula() const {
             return *rightSubformula;
         }
+        
+        void BinaryStateFormula::gatherAtomicExpressionFormulas(std::vector<std::shared_ptr<AtomicExpressionFormula const>>& atomicExpressionFormulas) const {
+            this->getLeftSubformula().gatherAtomicExpressionFormulas(atomicExpressionFormulas);
+        }
+        
+        void BinaryStateFormula::gatherAtomicLabelFormulas(std::vector<std::shared_ptr<AtomicLabelFormula const>>& atomicLabelFormulas) const {
+            this->getLeftSubformula().gatherAtomicLabelFormulas(atomicLabelFormulas);
+        }
     }
 }

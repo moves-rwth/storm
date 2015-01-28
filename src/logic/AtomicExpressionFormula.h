@@ -24,6 +24,8 @@ namespace storm {
             
             virtual std::ostream& writeToStream(std::ostream& out) const override;
             
+            virtual void gatherAtomicExpressionFormulas(std::vector<std::shared_ptr<AtomicExpressionFormula const>>& atomicExpressionFormulas) const override;
+            
         private:
             // The atomic expression represented by this node in the formula tree.
             storm::expressions::Expression expression;

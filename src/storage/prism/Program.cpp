@@ -11,7 +11,7 @@
 
 namespace storm {
     namespace prism {
-        Program::Program(std::shared_ptr<storm::expressions::ExpressionManager> manager, ModelType modelType, std::vector<Constant> const& constants, std::vector<BooleanVariable> const& globalBooleanVariables, std::vector<IntegerVariable> const& globalIntegerVariables, std::vector<Formula> const& formulas, std::vector<Module> const& modules, std::map<std::string, uint_fast64_t> const& actionToIndexMap, std::vector<RewardModel> const& rewardModels, bool fixInitialConstruct, storm::prism::InitialConstruct const& initialConstruct, std::vector<Label> const& labels, std::string const& filename, uint_fast64_t lineNumber, bool checkValidity) : LocatedInformation(filename, lineNumber), manager(manager), modelType(modelType), constants(constants), constantToIndexMap(), globalBooleanVariables(globalBooleanVariables), globalBooleanVariableToIndexMap(), globalIntegerVariables(globalIntegerVariables), globalIntegerVariableToIndexMap(), formulas(formulas), formulaToIndexMap(), modules(modules), moduleToIndexMap(), rewardModels(rewardModels), rewardModelToIndexMap(), initialConstruct(initialConstruct), labels(labels), labelToIndexMap(), actionToIndexMap(actionToIndexMap), actions(), actionIndices(), actionIndicesToModuleIndexMap(), variableToModuleIndexMap() {
+        Program::Program(std::shared_ptr<storm::expressions::ExpressionManager> manager, ModelType modelType, std::vector<Constant> const& constants, std::vector<BooleanVariable> const& globalBooleanVariables, std::vector<IntegerVariable> const& globalIntegerVariables, std::vector<Formula> const& formulas, std::vector<Module> const& modules, std::map<std::string, uint_fast64_t> const& actionToIndexMap, std::vector<RewardModel> const& rewardModels, bool fixInitialConstruct, storm::prism::InitialConstruct const& initialConstruct, std::vector<Label> const& labels, std::string const& filename, uint_fast64_t lineNumber, bool checkValidity) : LocatedInformation(filename, lineNumber), manager(manager), modelType(modelType), constants(constants), constantToIndexMap(), globalBooleanVariables(globalBooleanVariables), globalBooleanVariableToIndexMap(), globalIntegerVariables(globalIntegerVariables), globalIntegerVariableToIndexMap(), formulas(formulas), formulaToIndexMap(), modules(modules), moduleToIndexMap(), rewardModels(rewardModels), rewardModelToIndexMap(), initialConstruct(initialConstruct), labels(labels), actionToIndexMap(actionToIndexMap), actions(), actionIndices(), actionIndicesToModuleIndexMap(), variableToModuleIndexMap() {
             this->createMappings();
             
             // Create a new initial construct if the corresponding flag was set.
@@ -204,6 +204,31 @@ namespace storm {
             return this->getLabels().size();
         }
         
+        void Program::addLabel(std::string const& name, storm::expressions::Expression const& statePredicateExpression) {
+            auto it = std::find_if(this->labels.begin(), this->labels.end(), [&name] (storm::prism::Label const& label) { return label.getName() == name; });
+            STORM_LOG_THROW(it == this->labels.end(), storm::exceptions::InvalidArgumentException, "Cannot add a label '" << name << "', because a label with that name already exists.");
+            this->labels.emplace_back(name, statePredicateExpression);
+        }
+
+        void Program::removeLabel(std::string const& name) {
+            auto it = std::find_if(this->labels.begin(), this->labels.end(), [&name] (storm::prism::Label const& label) { return label.getName() == name; });
+            STORM_LOG_THROW(it != this->labels.end(), storm::exceptions::InvalidArgumentException, "Canno remove unknown label '" << name << "'.");
+            this->labels.erase(it);
+        }
+        
+        void Program::filterLabels(std::set<std::string> const& labelSet) {
+            std::vector<storm::prism::Label> newLabels;
+            newLabels.reserve(labelSet.size());
+            
+            // Now filter the labels by the criterion whether or not their name appears in the given label set.
+            for (auto it = labels.begin(), ite = labels.end(); it != ite; ++it) {
+                auto setIt = labelSet.find(it->getName());
+                if (setIt != labelSet.end()) {
+                    newLabels.emplace_back(*it);
+                }
+            }
+        }
+        
         Program Program::restrictCommands(boost::container::flat_set<uint_fast64_t> const& indexSet) const {
             std::vector<storm::prism::Module> newModules;
             newModules.reserve(this->getNumberOfModules());
@@ -234,9 +259,6 @@ namespace storm {
             }
             for (uint_fast64_t rewardModelIndex = 0; rewardModelIndex < this->getNumberOfRewardModels(); ++rewardModelIndex) {
                 this->rewardModelToIndexMap[this->getRewardModels()[rewardModelIndex].getName()] = rewardModelIndex;
-            }
-            for (uint_fast64_t labelIndex = 0; labelIndex < this->getNumberOfLabels(); ++labelIndex) {
-                this->labelToIndexMap[this->getLabels()[labelIndex].getName()] = labelIndex;
             }
             
             for (auto const& actionIndexPair : this->getActionNameToIndexMapping()) {

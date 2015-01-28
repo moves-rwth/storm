@@ -20,6 +20,9 @@ namespace storm {
             
             Formula const& getSubformula() const;
             
+            virtual void gatherAtomicExpressionFormulas(std::vector<std::shared_ptr<AtomicExpressionFormula const>>& atomicExpressionFormulas) const override;
+            virtual void gatherAtomicLabelFormulas(std::vector<std::shared_ptr<AtomicLabelFormula const>>& atomicLabelFormulas) const override;
+            
             virtual std::ostream& writeToStream(std::ostream& out) const override;
             
         private:

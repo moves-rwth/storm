@@ -252,60 +252,57 @@ namespace storm {
             }
             
             template<typename ValueType>
-            std::shared_ptr<storm::models::AbstractModel<ValueType>> buildModel() {
+            std::shared_ptr<storm::models::AbstractModel<ValueType>> buildExplicitModel(std::string const& transitionsFile, std::string const& labelingFile, boost::optional<std::string> const& stateRewardsFile = boost::optional<std::string>(), boost::optional<std::string> const& transitionRewardsFile = boost::optional<std::string>()) {
+                return storm::parser::AutoParser::parseModel(transitionsFile, labelingFile, stateRewardsFile ? stateRewardsFile.get() : "", transitionRewardsFile ? transitionRewardsFile.get() : "");
+            }
+            
+            template<typename ValueType>
+            std::shared_ptr<storm::models::AbstractModel<ValueType>> buildSymbolicModel(storm::prism::Program const& program, boost::optional<std::shared_ptr<storm::logic::Formula>> const& formula) {
                 std::shared_ptr<storm::models::AbstractModel<ValueType>> result(nullptr);
                 
                 storm::settings::modules::GeneralSettings settings = storm::settings::generalSettings();
 
-                if (settings.isExplicitSet()) {
-                    std::string const transitionFile = settings.getTransitionFilename();
-                    std::string const labelingFile = settings.getLabelingFilename();
-                    
-                    // Parse (and therefore build) the model.
-                    result = storm::parser::AutoParser::parseModel(transitionFile, labelingFile, settings.isStateRewardsSet() ? settings.getStateRewardsFilename() : "", settings.isTransitionRewardsSet() ? settings.getTransitionRewardsFilename() : "");
-                } else if (settings.isSymbolicSet()) {
-                    std::string const programFile = settings.getSymbolicModelFilename();
-                    std::string const constants = settings.getConstantDefinitionString();
-                    
-                    // Start by parsing the symbolic model file.
-                    storm::prism::Program program = storm::parser::PrismParser::parse(programFile);
-                    
-                    // Then, build the model from the symbolic description.
-                    result = storm::builder::ExplicitPrismModelBuilder<double>::translateProgram(program, storm::settings::counterexampleGeneratorSettings().isMinimalCommandSetGenerationSet(), true, settings.isSymbolicRewardModelNameSet() ? settings.getSymbolicRewardModelName() : "", constants);
+                // Get the string that assigns values to the unknown currently undefined constants in the model.
+                std::string constants = settings.getConstantDefinitionString();
+                
+                bool buildRewards = false;
+                if (formula) {
+                    buildRewards = formula.get()->isRewardOperatorFormula() || formula.get()->isRewardPathFormula();
+                }
+                
+                // Customize model-building.
+                typename storm::builder::ExplicitPrismModelBuilder<double>::Options options;
+                if (formula) {
+                    options = storm::builder::ExplicitPrismModelBuilder<double>::Options(*formula.get());
                 } else {
-                    STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No input model.");
+                    options.addConstantDefinitionsFromString(program, settings.getConstantDefinitionString());
                 }
                 
-                // Print some information about the model.
-                result->printModelInformationToStream(std::cout);
-                
-                if (settings.isBisimulationSet()) {
-                    STORM_LOG_THROW(result->getType() == storm::models::DTMC, storm::exceptions::InvalidSettingsException, "Bisimulation minimization is currently only compatible with DTMCs.");
-                    std::shared_ptr<storm::models::Dtmc<double>> dtmc = result->template as<storm::models::Dtmc<double>>();
-                    
-                    STORM_PRINT(std::endl << "Performing bisimulation minimization..." << std::endl);
-                    storm::storage::DeterministicModelBisimulationDecomposition<double> bisimulationDecomposition(*dtmc, boost::optional<std::set<std::string>>(), true, storm::settings::bisimulationSettings().isWeakBisimulationSet(), true);
-                    
-                    result = bisimulationDecomposition.getQuotient();
-                    
-                    STORM_PRINT_AND_LOG(std::endl << "Model after minimization:" << std::endl);
-                    result->printModelInformationToStream(std::cout);
-                }
-                
+                // Then, build the model from the symbolic description.
+                result = storm::builder::ExplicitPrismModelBuilder<double>::translateProgram(program, options);
                 return result;
             }
             
-            void generateCounterexample(std::shared_ptr<storm::models::AbstractModel<double>> model, std::shared_ptr<storm::logic::Formula> const& formula) {
+            template<typename ValueType>
+            std::shared_ptr<storm::models::AbstractModel<ValueType>> preprocessModel(std::shared_ptr<storm::models::AbstractModel<ValueType>> model, boost::optional<std::shared_ptr<storm::logic::Formula>> const& formula) {
+                if (storm::settings::generalSettings().isBisimulationSet()) {
+                    STORM_LOG_THROW(model->getType() == storm::models::DTMC, storm::exceptions::InvalidSettingsException, "Bisimulation minimization is currently only available for DTMCs.");
+                    std::shared_ptr<storm::models::Dtmc<double>> dtmc = model->template as<storm::models::Dtmc<double>>();
+                    
+                    std::cout << "Performing bisimulation minimization... ";
+                    storm::storage::DeterministicModelBisimulationDecomposition<double> bisimulationDecomposition(*dtmc, boost::optional<std::set<std::string>>(), true, storm::settings::bisimulationSettings().isWeakBisimulationSet(), true);
+                    model = bisimulationDecomposition.getQuotient();
+                    std::cout << "done." << std::endl << std::endl;
+                }
+                return model;
+            }
+            
+            void generateCounterexample(storm::prism::Program const& program, std::shared_ptr<storm::models::AbstractModel<double>> model, std::shared_ptr<storm::logic::Formula> const& formula) {
                 if (storm::settings::counterexampleGeneratorSettings().isMinimalCommandSetGenerationSet()) {
                     STORM_LOG_THROW(model->getType() == storm::models::MDP, storm::exceptions::InvalidTypeException, "Minimal command set generation is only available for MDPs.");
                     STORM_LOG_THROW(storm::settings::generalSettings().isSymbolicSet(), storm::exceptions::InvalidSettingsException, "Minimal command set generation is only available for symbolic models.");
                     
                     std::shared_ptr<storm::models::Mdp<double>> mdp = model->as<storm::models::Mdp<double>>();
-
-                    // FIXME: do not re-parse the program.
-                    std::string const programFile = storm::settings::generalSettings().getSymbolicModelFilename();
-                    std::string const constants = storm::settings::generalSettings().getConstantDefinitionString();
-                    storm::prism::Program program = storm::parser::PrismParser::parse(programFile);
 
                     // Determine whether we are required to use the MILP-version or the SAT-version.
                     bool useMILP = storm::settings::counterexampleGeneratorSettings().isUseMilpBasedMinimalCommandSetGenerationSet();
@@ -313,7 +310,7 @@ namespace storm {
                     if (useMILP) {
                         storm::counterexamples::MILPMinimalLabelSetGenerator<double>::computeCounterexample(program, *mdp, formula);
                     } else {
-                        storm::counterexamples::SMTMinimalCommandSetGenerator<double>::computeCounterexample(program, constants, *mdp, formula);
+                        storm::counterexamples::SMTMinimalCommandSetGenerator<double>::computeCounterexample(program, storm::settings::generalSettings().getConstantDefinitionString(), *mdp, formula);
                     }
 
                 } else {
@@ -324,30 +321,59 @@ namespace storm {
             void processOptions() {
                 storm::settings::modules::GeneralSettings settings = storm::settings::generalSettings();
                 
-                // Start by parsing/building the model.
-                std::shared_ptr<storm::models::AbstractModel<double>> model = buildModel<double>();
+                // If we have to build the model from a symbolic representation, we need to parse the representation first.
+                boost::optional<storm::prism::Program> program;
+                if (settings.isSymbolicSet()) {
+                    std::string const& programFile = settings.getSymbolicModelFilename();
+                    program = storm::parser::PrismParser::parse(programFile);
+                }
+                
+                // Then proceed to parsing the property (if given), since the model we are building may depend on the property.
+                boost::optional<std::shared_ptr<storm::logic::Formula>> formula;
+                if (settings.isPropertySet()) {
+                    if (program) {
+                        storm::parser::FormulaParser formulaParser(program.get().getManager().getSharedPointer());
+                        formula = formulaParser.parseFromString(settings.getProperty());
+                    } else {
+                        storm::parser::FormulaParser formulaParser;
+                        formula = formulaParser.parseFromString(settings.getProperty());
+                    }
+                }
+                
+                // Now we are ready to actually build the model.
+                std::shared_ptr<storm::models::AbstractModel<double>> model;
+                if (settings.isExplicitSet()) {
+                    model = buildExplicitModel<double>(settings.getTransitionFilename(), settings.getLabelingFilename(), settings.isStateRewardsSet() ? settings.getStateRewardsFilename() : boost::optional<std::string>(), settings.isTransitionRewardsSet() ? settings.getTransitionRewardsFilename() : boost::optional<std::string>());
+                } else if (settings.isSymbolicSet()) {
+                    STORM_LOG_THROW(program, storm::exceptions::InvalidStateException, "Program has not been successfully parsed.");
+                    model = buildSymbolicModel<double>(program.get(), formula);
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No input model.");
+                }
+                
+                // Now, we can do the preprocessing on the model, if it was requested.
+                model = preprocessModel(model, formula);
+
+                // Print some information about the model.
+                model->printModelInformationToStream(std::cout);
                 
                 // If we were requested to generate a counterexample, we now do so.
                 if (settings.isCounterexampleSet()) {
                     STORM_LOG_THROW(settings.isPropertySet(), storm::exceptions::InvalidSettingsException, "Unable to generate counterexample without a property.");
-                    storm::parser::FormulaParser formulaParser;
-                    std::shared_ptr<storm::logic::Formula> formula = formulaParser.parseFromString(settings.getProperty());
-                    generateCounterexample(model, formula);
-                } else if (settings.isPropertySet()) {
-                    storm::parser::FormulaParser formulaParser;
-                    std::shared_ptr<storm::logic::Formula> formula = formulaParser.parseFromString(storm::settings::generalSettings().getProperty());
-                    
-                    std::cout << "Model checking property: " << *formula << " ...";
+                    STORM_LOG_THROW(program, storm::exceptions::InvalidSettingsException, "Unable to generate counterexample for non-symbolic model.");
+                    generateCounterexample(program.get(), model, formula.get());
+                } else if (formula) {
+                    std::cout << std::endl << "Model checking property: " << *formula.get() << " ...";
                     std::unique_ptr<storm::modelchecker::CheckResult> result;
                     if (model->getType() == storm::models::DTMC) {
                         std::shared_ptr<storm::models::Dtmc<double>> dtmc = model->as<storm::models::Dtmc<double>>();
 //                        storm::modelchecker::SparseDtmcPrctlModelChecker<double> modelchecker(*dtmc);
                         storm::modelchecker::SparseDtmcEliminationModelChecker<double> modelchecker(*dtmc);
-                        result = modelchecker.check(*formula);
+                        result = modelchecker.check(*formula.get());
                     } else if (model->getType() == storm::models::MDP) {
                         std::shared_ptr<storm::models::Mdp<double>> mdp = model->as<storm::models::Mdp<double>>();
                         storm::modelchecker::SparseMdpPrctlModelChecker<double> modelchecker(*mdp);
-                        result = modelchecker.check(*formula);
+                        result = modelchecker.check(*formula.get());
                     }
                     if (result) {
                         std::cout << " done." << std::endl;

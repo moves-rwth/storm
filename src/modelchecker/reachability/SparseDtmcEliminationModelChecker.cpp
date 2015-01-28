@@ -30,16 +30,10 @@ namespace storm {
         bool SparseDtmcEliminationModelChecker<ValueType>::canHandle(storm::logic::Formula const& formula) const {
             if (formula.isProbabilityOperatorFormula()) {
                 storm::logic::ProbabilityOperatorFormula const& probabilityOperatorFormula = formula.asProbabilityOperatorFormula();
-                // The probability operator must not have a bound.
-                if (!probabilityOperatorFormula.hasBound()) {
-                    return this->canHandle(probabilityOperatorFormula.getSubformula());
-                }
+                return this->canHandle(probabilityOperatorFormula.getSubformula());
             } else if (formula.isRewardOperatorFormula()) {
                 storm::logic::RewardOperatorFormula const& rewardOperatorFormula = formula.asRewardOperatorFormula();
-                // The reward operator must not have a bound.
-                if (!rewardOperatorFormula.hasBound()) {
-                    return this->canHandle(rewardOperatorFormula.getSubformula());
-                }
+                return this->canHandle(rewardOperatorFormula.getSubformula());
             } else if (formula.isUntilFormula() || formula.isEventuallyFormula()) {
                 if (formula.isUntilFormula()) {
                     storm::logic::UntilFormula const& untilFormula = formula.asUntilFormula();
@@ -193,6 +187,8 @@ namespace storm {
         
         template<typename ValueType>
         std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<ValueType>::computeConditionalProbabilities(storm::logic::ConditionalPathFormula const& pathFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
+            std::chrono::high_resolution_clock::time_point totalTimeStart = std::chrono::high_resolution_clock::now();
+            
             // Retrieve the appropriate bitvectors by model checking the subformulas.
             STORM_LOG_THROW(pathFormula.getLeftSubformula().isEventuallyFormula(), storm::exceptions::InvalidPropertyException, "Expected 'eventually' formula.");
             STORM_LOG_THROW(pathFormula.getRightSubformula().isEventuallyFormula(), storm::exceptions::InvalidPropertyException, "Expected 'eventually' formula.");
@@ -218,6 +214,7 @@ namespace storm {
             
             // If the initial state is known to have probability 1 of satisfying the condition, we can apply regular model checking.
             if (model.getInitialStates().isSubsetOf(statesWithProbability1)) {
+                STORM_LOG_INFO("The condition holds with probability 1, so the regular reachability probability is computed.");
                 std::shared_ptr<storm::logic::BooleanLiteralFormula> trueFormula = std::make_shared<storm::logic::BooleanLiteralFormula>(true);
                 std::shared_ptr<storm::logic::UntilFormula> untilFormula = std::make_shared<storm::logic::UntilFormula>(trueFormula, pathFormula.getLeftSubformula().asSharedPointer());
                 return this->computeUntilProbabilities(*untilFormula);
@@ -276,8 +273,11 @@ namespace storm {
             STORM_LOG_INFO("Computing conditional probilities." << std::endl);
             STORM_LOG_INFO("Eliminating " << states.size() << " states using the state elimination technique." << std::endl);
             boost::optional<std::vector<ValueType>> missingStateRewards;
+            std::chrono::high_resolution_clock::time_point conversionStart = std::chrono::high_resolution_clock::now();
             FlexibleSparseMatrix flexibleMatrix = getFlexibleSparseMatrix(submatrix);
             FlexibleSparseMatrix flexibleBackwardTransitions = getFlexibleSparseMatrix(submatrixTransposed, true);
+            std::chrono::high_resolution_clock::time_point conversionEnd = std::chrono::high_resolution_clock::now();
+            std::chrono::high_resolution_clock::time_point modelCheckingStart = std::chrono::high_resolution_clock::now();
             for (auto const& state : states) {
                 eliminateState(flexibleMatrix, oneStepProbabilities, state, flexibleBackwardTransitions, missingStateRewards);
             }
@@ -373,6 +373,25 @@ namespace storm {
                     numerator += trans1.getValue() * additiveTerm;
                 }
             }
+            std::chrono::high_resolution_clock::time_point modelCheckingEnd = std::chrono::high_resolution_clock::now();
+            std::chrono::high_resolution_clock::time_point totalTimeEnd = std::chrono::high_resolution_clock::now();
+            
+            if (storm::settings::generalSettings().isShowStatisticsSet()) {
+                std::chrono::high_resolution_clock::duration conversionTime = conversionEnd - conversionStart;
+                std::chrono::milliseconds conversionTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(conversionTime);
+                std::chrono::high_resolution_clock::duration modelCheckingTime = modelCheckingEnd - modelCheckingStart;
+                std::chrono::milliseconds modelCheckingTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(modelCheckingTime);
+                std::chrono::high_resolution_clock::duration totalTime = totalTimeEnd - totalTimeStart;
+                std::chrono::milliseconds totalTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(totalTime);
+                
+                STORM_PRINT_AND_LOG(std::endl);
+                STORM_PRINT_AND_LOG("Time breakdown:" << std::endl);
+                STORM_PRINT_AND_LOG("    * time for conversion: " << conversionTimeInMilliseconds.count() << "ms" << std::endl);
+                STORM_PRINT_AND_LOG("    * time for checking: " << modelCheckingTimeInMilliseconds.count() << "ms" << std::endl);
+                STORM_PRINT_AND_LOG("------------------------------------------" << std::endl);
+                STORM_PRINT_AND_LOG("    * total time: " << totalTimeInMilliseconds.count() << "ms" << std::endl);
+                STORM_PRINT_AND_LOG(std::endl);
+            }
             
             return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(initialState, numerator / denominator));
         }
@@ -395,11 +414,11 @@ namespace storm {
         template<typename ValueType>
         ValueType SparseDtmcEliminationModelChecker<ValueType>::computeReachabilityValue(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType>& oneStepProbabilities, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, boost::optional<std::vector<ValueType>>& stateRewards, boost::optional<std::vector<std::size_t>> const& statePriorities) {
             std::chrono::high_resolution_clock::time_point totalTimeStart = std::chrono::high_resolution_clock::now();
-            std::chrono::high_resolution_clock::time_point conversionStart = std::chrono::high_resolution_clock::now();
             
             // Create a bit vector that represents the subsystem of states we still have to eliminate.
             storm::storage::BitVector subsystem = storm::storage::BitVector(transitionMatrix.getRowCount(), true);
             
+            std::chrono::high_resolution_clock::time_point conversionStart = std::chrono::high_resolution_clock::now();
             // Then, we convert the reduced matrix to a more flexible format to be able to perform state elimination more easily.
             FlexibleSparseMatrix flexibleMatrix = getFlexibleSparseMatrix(transitionMatrix);
             FlexibleSparseMatrix flexibleBackwardTransitions = getFlexibleSparseMatrix(backwardTransitions, true);

@@ -350,12 +350,32 @@ namespace storm {
             return dynamic_cast<RewardOperatorFormula const&>(*this);
         }
         
+        std::vector<std::shared_ptr<AtomicExpressionFormula const>> Formula::getAtomicExpressionFormulas() const {
+            std::vector<std::shared_ptr<AtomicExpressionFormula const>> result;
+            this->gatherAtomicExpressionFormulas(result);
+            return result;
+        }
+        
+        std::vector<std::shared_ptr<AtomicLabelFormula const>> Formula::getAtomicLabelFormulas() const {
+            std::vector<std::shared_ptr<AtomicLabelFormula const>> result;
+            this->gatherAtomicLabelFormulas(result);
+            return result;
+        }
+        
         std::shared_ptr<Formula const> Formula::asSharedPointer() {
             return this->shared_from_this();
         }
         
         std::shared_ptr<Formula const> Formula::asSharedPointer() const {
             return this->shared_from_this();
+        }
+        
+        void Formula::gatherAtomicExpressionFormulas(std::vector<std::shared_ptr<AtomicExpressionFormula const>>& atomicExpressionFormulas) const {
+            return;
+        }
+        
+        void Formula::gatherAtomicLabelFormulas(std::vector<std::shared_ptr<AtomicLabelFormula const>>& atomicExpressionFormulas) const {
+            return;
         }
         
         std::ostream& operator<<(std::ostream& out, Formula const& formula) {

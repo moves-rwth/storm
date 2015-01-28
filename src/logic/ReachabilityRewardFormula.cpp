@@ -14,6 +14,14 @@ namespace storm {
             return *subformula;
         }
         
+        void ReachabilityRewardFormula::gatherAtomicExpressionFormulas(std::vector<std::shared_ptr<AtomicExpressionFormula const>>& atomicExpressionFormulas) const {
+            this->getSubformula().gatherAtomicExpressionFormulas(atomicExpressionFormulas);
+        }
+        
+        void ReachabilityRewardFormula::gatherAtomicLabelFormulas(std::vector<std::shared_ptr<AtomicLabelFormula const>>& atomicLabelFormulas) const {
+            this->getSubformula().gatherAtomicLabelFormulas(atomicLabelFormulas);
+        }
+        
         std::ostream& ReachabilityRewardFormula::writeToStream(std::ostream& out) const {
             out << "F ";
             this->getSubformula().writeToStream(out);

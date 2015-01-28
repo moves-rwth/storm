@@ -54,14 +54,46 @@ namespace storm {
             // Intentionally left empty.
         }
 
+
         template <typename ValueType, typename IndexType>
-        std::unique_ptr<storm::models::AbstractModel<ValueType>> ExplicitPrismModelBuilder<ValueType, IndexType>::translateProgram(storm::prism::Program program, bool commandLabels, bool rewards, std::string const& rewardModelName, std::string const& constantDefinitionString) {
+        ExplicitPrismModelBuilder<ValueType, IndexType>::Options::Options() : buildCommandLabels(false), buildRewards(false), rewardModelName(), constantDefinitions() {
+            // Intentionally left empty.
+        }
+            
+
+        template <typename ValueType, typename IndexType>
+        ExplicitPrismModelBuilder<ValueType, IndexType>::Options::Options(storm::logic::Formula const& formula) : buildCommandLabels(false), buildRewards(false), rewardModelName(), constantDefinitions() {
+            // FIXME: buildRewards should be something like formula.containsRewardOperator()
+            // FIXME: The necessary labels need to be computed properly.
+        }
+
+        template <typename ValueType, typename IndexType>
+        void ExplicitPrismModelBuilder<ValueType, IndexType>::Options::addConstantDefinitionsFromString(storm::prism::Program const& program, std::string const& constantDefinitionString) {
+            std::map<storm::expressions::Variable, storm::expressions::Expression> newConstantDefinitions = storm::utility::prism::parseConstantDefinitionString(program, constantDefinitionString);
+            
+            // If there is at least one constant that is defined, and the constant definition map does not yet exist,
+            // we need to create it.
+            if (!constantDefinitions && !newConstantDefinitions.empty()) {
+                constantDefinitions = std::map<storm::expressions::Variable, storm::expressions::Expression>();
+            }
+            
+            // Now insert all the entries that need to be defined.
+            for (auto const& entry : newConstantDefinitions) {
+                constantDefinitions.get().insert(entry);
+            }
+        }
+        
+        template <typename ValueType, typename IndexType>
+        std::unique_ptr<storm::models::AbstractModel<ValueType>> ExplicitPrismModelBuilder<ValueType, IndexType>::translateProgram(storm::prism::Program program, Options const& options) {
             // Start by defining the undefined constants in the model.
-            // First, we need to parse the constant definition string.
-            std::map<storm::expressions::Variable, storm::expressions::Expression> constantDefinitions = storm::utility::prism::parseConstantDefinitionString(program, constantDefinitionString);
+            storm::prism::Program preparedProgram;
+            if (options.constantDefinitions) {
+                 preparedProgram = program.defineUndefinedConstants(options.constantDefinitions.get());
+            } else {
+                preparedProgram = program;
+            }
             
-            storm::prism::Program preparedProgram = program.defineUndefinedConstants(constantDefinitions);
-            
+            // If the program still contains undefined constants, assemble an appropriate error message.
             if (preparedProgram.hasUndefinedConstants()) {
                 std::vector<std::reference_wrapper<storm::prism::Constant const>> undefinedConstants = preparedProgram.getUndefinedConstants();
                 std::stringstream stream;
@@ -85,17 +117,19 @@ namespace storm {
             storm::prism::RewardModel rewardModel = storm::prism::RewardModel();
             
             // Select the appropriate reward model.
-            if (rewards) {
+            if (options.buildRewards) {
                 // If a specific reward model was selected or one with the empty name exists, select it.
-                if (rewardModelName != "" || preparedProgram.hasRewardModel(rewardModelName)) {
-                    rewardModel = preparedProgram.getRewardModel(rewardModelName);
+                if (options.rewardModelName) {
+                    rewardModel = preparedProgram.getRewardModel(options.rewardModelName.get());
+                } else if (preparedProgram.hasRewardModel("")) {
+                    rewardModel = preparedProgram.getRewardModel("");
                 } else if (preparedProgram.hasRewardModel()) {
                     // Otherwise, we select the first one.
                     rewardModel = preparedProgram.getRewardModel(0);
                 }
             }
             
-            ModelComponents modelComponents = buildModelComponents(preparedProgram, rewardModel, commandLabels);
+            ModelComponents modelComponents = buildModelComponents(preparedProgram, rewardModel, options.buildCommandLabels);
             
             std::unique_ptr<storm::models::AbstractModel<ValueType>> result;
             switch (program.getModelType()) {
