@@ -196,6 +196,11 @@ namespace storm {
             return this->rewardModels[index];
         }
         
+        bool Program::hasLabel(std::string const& labelName) const {
+            auto it = std::find_if(labels.begin(), labels.end(), [&labelName] (storm::prism::Label const& label) { return label.getName() == labelName; } );
+            return it != labels.end();
+        }
+        
         std::vector<Label> const& Program::getLabels() const {
             return this->labels;
         }
@@ -227,6 +232,9 @@ namespace storm {
                     newLabels.emplace_back(*it);
                 }
             }
+            
+            // Move the new labels in place.
+            this->labels = std::move(newLabels);
         }
         
         Program Program::restrictCommands(boost::container::flat_set<uint_fast64_t> const& indexSet) const {

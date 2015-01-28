@@ -62,9 +62,18 @@ namespace storm {
             
 
         template <typename ValueType, typename IndexType>
-        ExplicitPrismModelBuilder<ValueType, IndexType>::Options::Options(storm::logic::Formula const& formula) : buildCommandLabels(false), buildRewards(false), rewardModelName(), constantDefinitions() {
-            // FIXME: buildRewards should be something like formula.containsRewardOperator()
-            // FIXME: The necessary labels need to be computed properly.
+        ExplicitPrismModelBuilder<ValueType, IndexType>::Options::Options(storm::logic::Formula const& formula) : buildCommandLabels(false), buildRewards(formula.containsRewardOperator()), rewardModelName(), constantDefinitions(), labelsToBuild(std::set<std::string>()), expressionLabels(std::vector<storm::expressions::Expression>()) {
+            // Extract all the labels used in the formula.
+            std::vector<std::shared_ptr<storm::logic::AtomicLabelFormula const>> atomicLabelFormulas = formula.getAtomicLabelFormulas();
+            for (auto const& formula : atomicLabelFormulas) {
+                labelsToBuild.get().insert(formula.get()->getLabel());
+            }
+            
+            // Extract all the expressions used in the formula.
+            std::vector<std::shared_ptr<storm::logic::AtomicExpressionFormula const>> atomicExpressionFormulas = formula.getAtomicExpressionFormulas();
+            for (auto const& formula : atomicExpressionFormulas) {
+                expressionLabels.get().push_back(formula.get()->getExpression());
+            }
         }
 
         template <typename ValueType, typename IndexType>
@@ -129,7 +138,25 @@ namespace storm {
                 }
             }
             
-            ModelComponents modelComponents = buildModelComponents(preparedProgram, rewardModel, options.buildCommandLabels);
+            // If the set of labels we are supposed to built is restricted, we need to remove the other labels from the program.
+            if (options.labelsToBuild) {
+                preparedProgram.filterLabels(options.labelsToBuild.get());
+            }
+            
+            // If we need to build labels for expressions that may appear in some formula, we need to add appropriate
+            // labels to the program.
+            if (options.expressionLabels) {
+                for (auto const& expression : options.expressionLabels.get()) {
+                    std::stringstream stream;
+                    stream << expression;
+                    std::string name = stream.str();
+                    if (!preparedProgram.hasLabel(name)) {
+                        preparedProgram.addLabel(name, expression);
+                    }
+                }
+            }
+            
+            ModelComponents modelComponents = buildModelComponents(preparedProgram, rewardModel, options);
             
             std::unique_ptr<storm::models::AbstractModel<ValueType>> result;
             switch (program.getModelType()) {
@@ -647,7 +674,7 @@ namespace storm {
         }
         
         template <typename ValueType, typename IndexType>
-        typename ExplicitPrismModelBuilder<ValueType, IndexType>::ModelComponents ExplicitPrismModelBuilder<ValueType, IndexType>::buildModelComponents(storm::prism::Program const& program, storm::prism::RewardModel const& rewardModel, bool commandLabels) {
+        typename ExplicitPrismModelBuilder<ValueType, IndexType>::ModelComponents ExplicitPrismModelBuilder<ValueType, IndexType>::buildModelComponents(storm::prism::Program const& program, storm::prism::RewardModel const& rewardModel, Options const& options) {
             ModelComponents modelComponents;
             
             uint_fast64_t bitOffset = 0;
@@ -693,7 +720,7 @@ namespace storm {
             // Build the transition and reward matrices.
             storm::storage::SparseMatrixBuilder<ValueType> transitionMatrixBuilder(0, 0, 0, false, !deterministicModel, 0);
             storm::storage::SparseMatrixBuilder<ValueType> transitionRewardMatrixBuilder(0, 0, 0, false, !deterministicModel, 0);
-            modelComponents.choiceLabeling = buildMatrices(program, variableInformation, rewardModel.getTransitionRewards(), stateInformation, commandLabels, deterministicModel, discreteTimeModel, transitionMatrixBuilder, transitionRewardMatrixBuilder);
+            modelComponents.choiceLabeling = buildMatrices(program, variableInformation, rewardModel.getTransitionRewards(), stateInformation, options.buildCommandLabels, deterministicModel, discreteTimeModel, transitionMatrixBuilder, transitionRewardMatrixBuilder);
             
             // Finalize the resulting matrices.
             modelComponents.transitionMatrix = transitionMatrixBuilder.build();

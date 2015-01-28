@@ -18,12 +18,20 @@ namespace storm {
             return this->getSubformula().isLtlFormula();
         }
         
-        bool UnaryPathFormula::hasProbabilityOperator() const {
-            return this->getSubformula().hasProbabilityOperator();
+        bool UnaryPathFormula::containsProbabilityOperator() const {
+            return this->getSubformula().containsProbabilityOperator();
         }
         
-        bool UnaryPathFormula::hasNestedProbabilityOperators() const {
-            return this->getSubformula().hasNestedProbabilityOperators();
+        bool UnaryPathFormula::containsNestedProbabilityOperators() const {
+            return this->getSubformula().containsNestedProbabilityOperators();
+        }
+        
+        bool UnaryPathFormula::containsRewardOperator() const {
+            return this->getSubformula().containsRewardOperator();
+        }
+        
+        bool UnaryPathFormula::containsNestedRewardOperators() const {
+            return this->getSubformula().containsNestedRewardOperators();
         }
         
         Formula const& UnaryPathFormula::getSubformula() const {

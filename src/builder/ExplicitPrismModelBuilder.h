@@ -154,6 +154,12 @@ namespace storm {
                 
                 // An optional mapping that, if given, contains defining expressions for undefined constants.
                 boost::optional<std::map<storm::expressions::Variable, storm::expressions::Expression>> constantDefinitions;
+                
+                // An optional set of labels that, if given, restricts the labels that are built.
+                boost::optional<std::set<std::string>> labelsToBuild;
+                
+                // An optional set of expressions for which labels need to be built.
+                boost::optional<std::vector<storm::expressions::Expression>> expressionLabels;
             };
             
             /*!
@@ -249,9 +255,10 @@ namespace storm {
              *
              * @param program The program whose state space to explore.
              * @param rewardModel The reward model that is to be considered.
+             * @param options A set of options used to customize the building process.
              * @return A structure containing the components of the resulting model.
              */
-            static ModelComponents buildModelComponents(storm::prism::Program const& program, storm::prism::RewardModel const& rewardModel, bool commandLabels = false);
+            static ModelComponents buildModelComponents(storm::prism::Program const& program, storm::prism::RewardModel const& rewardModel, Options const& options);
             
             /*!
              * Builds the state labeling for the given program.

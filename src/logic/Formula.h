@@ -83,8 +83,10 @@ namespace storm {
             virtual bool isPltlFormula() const;
             virtual bool isLtlFormula() const;
             virtual bool isPropositionalFormula() const;
-            virtual bool hasProbabilityOperator() const;
-            virtual bool hasNestedProbabilityOperators() const;
+            virtual bool containsProbabilityOperator() const;
+            virtual bool containsNestedProbabilityOperators() const;
+            virtual bool containsRewardOperator() const;
+            virtual bool containsNestedRewardOperators() const;
             
             static std::shared_ptr<Formula const> getTrueFormula();
             

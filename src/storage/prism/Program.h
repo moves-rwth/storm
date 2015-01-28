@@ -297,6 +297,14 @@ namespace storm {
             RewardModel const& getRewardModel(uint_fast64_t index) const;
             
             /*!
+             * Checks whether the program has a label with the given name.
+             *
+             * @param labelName The label of the program.
+             * @return True iff the label of the program.
+             */
+            bool hasLabel(std::string const& labelName) const;
+            
+            /*!
              * Retrieves all labels that are defined by the probabilitic program.
              *
              * @return A set of labels that are defined in the program.

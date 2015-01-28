@@ -26,6 +26,14 @@ namespace storm {
             return this->getSubformula().isRewardPathFormula();
         }
         
+        bool RewardOperatorFormula::containsRewardOperator() const {
+            return true;
+        }
+        
+        bool RewardOperatorFormula::containsNestedRewardOperators() const {
+            return this->getSubformula().containsRewardOperator();
+        }
+        
         RewardOperatorFormula::RewardOperatorFormula(boost::optional<OptimalityType> optimalityType, boost::optional<ComparisonType> comparisonType, boost::optional<double> bound, std::shared_ptr<Formula const> const& subformula) : OperatorFormula(optimalityType, comparisonType, bound, subformula) {
             // Intentionally left empty.
         }

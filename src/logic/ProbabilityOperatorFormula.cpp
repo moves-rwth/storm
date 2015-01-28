@@ -30,12 +30,12 @@ namespace storm {
             return this->getSubformula().isLtlFormula();
         }
         
-        bool ProbabilityOperatorFormula::hasProbabilityOperator() const {
+        bool ProbabilityOperatorFormula::containsProbabilityOperator() const {
             return true;
         }
         
-        bool ProbabilityOperatorFormula::hasNestedProbabilityOperators() const {
-            return this->getSubformula().hasProbabilityOperator();
+        bool ProbabilityOperatorFormula::containsNestedProbabilityOperators() const {
+            return this->getSubformula().containsProbabilityOperator();
         }
         
         ProbabilityOperatorFormula::ProbabilityOperatorFormula(boost::optional<OptimalityType> optimalityType, boost::optional<ComparisonType> comparisonType, boost::optional<double> bound, std::shared_ptr<Formula const> const& subformula) : OperatorFormula(optimalityType, comparisonType, bound, subformula) {

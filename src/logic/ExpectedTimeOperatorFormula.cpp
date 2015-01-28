@@ -26,12 +26,12 @@ namespace storm {
             return this->getSubformula().isPctlStateFormula();
         }
         
-        bool ExpectedTimeOperatorFormula::hasProbabilityOperator() const {
-            return this->getSubformula().hasProbabilityOperator();
+        bool ExpectedTimeOperatorFormula::containsProbabilityOperator() const {
+            return this->getSubformula().containsProbabilityOperator();
         }
         
-        bool ExpectedTimeOperatorFormula::hasNestedProbabilityOperators() const {
-            return this->getSubformula().hasNestedProbabilityOperators();
+        bool ExpectedTimeOperatorFormula::containsNestedProbabilityOperators() const {
+            return this->getSubformula().containsNestedProbabilityOperators();
         }
         
         ExpectedTimeOperatorFormula::ExpectedTimeOperatorFormula(boost::optional<OptimalityType> optimalityType, boost::optional<ComparisonType> comparisonType, boost::optional<double> bound, std::shared_ptr<Formula const> const& subformula) : OperatorFormula(optimalityType, comparisonType, bound, subformula) {

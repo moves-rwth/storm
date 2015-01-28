@@ -26,12 +26,12 @@ namespace storm {
             return this->getSubformula().isPctlStateFormula();
         }
         
-        bool LongRunAverageOperatorFormula::hasProbabilityOperator() const {
-            return this->getSubformula().hasProbabilityOperator();
+        bool LongRunAverageOperatorFormula::containsProbabilityOperator() const {
+            return this->getSubformula().containsProbabilityOperator();
         }
         
-        bool LongRunAverageOperatorFormula::hasNestedProbabilityOperators() const {
-            return this->getSubformula().hasNestedProbabilityOperators();
+        bool LongRunAverageOperatorFormula::containsNestedProbabilityOperators() const {
+            return this->getSubformula().containsNestedProbabilityOperators();
         }
         
         LongRunAverageOperatorFormula::LongRunAverageOperatorFormula(boost::optional<OptimalityType> optimalityType, boost::optional<ComparisonType> comparisonType, boost::optional<double> bound, std::shared_ptr<Formula const> const& subformula) : OperatorFormula(optimalityType, comparisonType, bound, subformula) {

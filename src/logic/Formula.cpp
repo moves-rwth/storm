@@ -138,11 +138,19 @@ namespace storm {
             return false;
         }
         
-        bool Formula::hasProbabilityOperator() const {
+        bool Formula::containsProbabilityOperator() const {
             return false;
         }
         
-        bool Formula::hasNestedProbabilityOperators() const {
+        bool Formula::containsNestedProbabilityOperators() const {
+            return false;
+        }
+        
+        bool Formula::containsRewardOperator() const {
+            return false;
+        }
+        
+        bool Formula::containsNestedRewardOperators() const {
             return false;
         }
         
