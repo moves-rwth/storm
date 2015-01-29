@@ -278,9 +278,8 @@ namespace storm {
                 typename storm::builder::ExplicitPrismModelBuilder<double>::Options options;
                 if (formula) {
                     options = storm::builder::ExplicitPrismModelBuilder<double>::Options(*formula.get());
-                } else {
-                    options.addConstantDefinitionsFromString(program, settings.getConstantDefinitionString());
                 }
+                options.addConstantDefinitionsFromString(program, settings.getConstantDefinitionString());
                 
                 // Then, build the model from the symbolic description.
                 result = storm::builder::ExplicitPrismModelBuilder<double>::translateProgram(program, options);
