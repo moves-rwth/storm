@@ -20,23 +20,14 @@ namespace storm {
 #endif
 
             /*!
-             * Creates a boolean variable with the given name and the default initial value expression.
+             * Creates a boolean variable with the given constant initial value expression.
              *
-             * @param variableName The name of the variable.
-             * @param filename The filename in which the variable is defined.
-             * @param lineNumber The line number in which the variable is defined.
-             */
-            BooleanVariable(std::string const& variableName, std::string const& filename = "", uint_fast64_t lineNumber = 0);
-
-            /*!
-             * Creates a boolean variable with the given name and the given constant initial value expression.
-             *
-             * @param variableName The name of the variable.
+             * @param variable The expression variable associated with this variable.
              * @param initialValueExpression The constant expression that defines the initial value of the variable.
              * @param filename The filename in which the variable is defined.
              * @param lineNumber The line number in which the variable is defined.
              */
-            BooleanVariable(std::string const& variableName, storm::expressions::Expression const& initialValueExpression, std::string const& filename = "", uint_fast64_t lineNumber = 0);
+            BooleanVariable(storm::expressions::Variable const& variable, storm::expressions::Expression const& initialValueExpression, std::string const& filename = "", uint_fast64_t lineNumber = 0);
             
             /*!
              * Substitutes all identifiers in the boolean variable according to the given map.
@@ -44,7 +35,7 @@ namespace storm {
              * @param substitution The substitution to perform.
              * @return The resulting boolean variable.
              */
-            BooleanVariable substitute(std::map<std::string, storm::expressions::Expression> const& substitution) const;
+            BooleanVariable substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const;
             
             friend std::ostream& operator<<(std::ostream& stream, BooleanVariable const& variable);
         };

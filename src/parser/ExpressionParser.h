@@ -5,6 +5,7 @@
 
 #include "src/parser/SpiritParserDefinitions.h"
 #include "src/storage/expressions/Expression.h"
+#include "src/storage/expressions/ExpressionManager.h"
 #include "src/utility/macros.h"
 #include "src/exceptions/WrongFormatException.h"
 
@@ -18,16 +19,20 @@ namespace storm {
              * generate the actual expressions, a mapping of valid identifiers to their expressions need to be provided
              * later.
              *
+             * @param manager The manager responsible for the expressions.
              * @param invalidIdentifiers_ A symbol table of identifiers that are to be rejected.
+             * @param allowBacktracking A flag that indicates whether or not the parser is supposed to backtrack beyond
+             * points it would typically allow. This can, for example, be used to prevent errors if the outer grammar
+             * also parses boolean conjuncts that are erroneously consumed by the expression parser.
              */
-            ExpressionParser(qi::symbols<char, uint_fast64_t> const& invalidIdentifiers_);
+            ExpressionParser(storm::expressions::ExpressionManager const& manager, qi::symbols<char, uint_fast64_t> const& invalidIdentifiers_, bool allowBacktracking = false);
             
             /*!
              * Sets an identifier mapping that is used to determine valid variables in the expression. The mapped-to
              * expressions will be substituted wherever the key value appears in the parsed expression. After setting
              * this, the parser will generate expressions.
              *
-             * @param identifiers A pointer to a mapping from identifiers to expressions.
+             * @param identifiers_ A pointer to a mapping from identifiers to expressions.
              */
             void setIdentifierMapping(qi::symbols<char, storm::expressions::Expression> const* identifiers_);
             
@@ -156,15 +161,18 @@ namespace storm {
             minMaxOperatorStruct minMaxOperator_;
 
             struct trueFalseOperatorStruct : qi::symbols<char, storm::expressions::Expression> {
-                trueFalseOperatorStruct() {
+                trueFalseOperatorStruct(storm::expressions::ExpressionManager const& manager) {
                     add
-                    ("true", storm::expressions::Expression::createTrue())
-                    ("false", storm::expressions::Expression::createFalse());
+                    ("true", manager.boolean(true))
+                    ("false", manager.boolean(false));
                 }
             };
             
             // A parser used for recognizing the literals true and false.
             trueFalseOperatorStruct trueFalse_;
+            
+            // The manager responsible for the expressions.
+            storm::expressions::ExpressionManager const& manager;
             
             // A flag that indicates whether expressions should actually be generated or just a syntax check shall be
             // performed.

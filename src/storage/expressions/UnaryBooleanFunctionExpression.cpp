@@ -5,7 +5,7 @@
 
 namespace storm {
     namespace expressions {
-        UnaryBooleanFunctionExpression::UnaryBooleanFunctionExpression(ExpressionReturnType returnType, std::shared_ptr<BaseExpression const> const& operand, OperatorType operatorType) : UnaryExpression(returnType, operand), operatorType(operatorType) {
+        UnaryBooleanFunctionExpression::UnaryBooleanFunctionExpression(ExpressionManager const& manager, Type const& type, std::shared_ptr<BaseExpression const> const& operand, OperatorType operatorType) : UnaryExpression(manager, type, operand), operatorType(operatorType) {
             // Intentionally left empty.
         }
         
@@ -20,7 +20,7 @@ namespace storm {
         }
         
         bool UnaryBooleanFunctionExpression::evaluateAsBool(Valuation const* valuation) const {
-            STORM_LOG_THROW(this->hasBooleanReturnType(), storm::exceptions::InvalidTypeException, "Unable to evaluate expression as boolean.");
+            STORM_LOG_THROW(this->hasBooleanType(), storm::exceptions::InvalidTypeException, "Unable to evaluate expression as boolean.");
 
             bool operandEvaluated = this->getOperand()->evaluateAsBool(valuation);
             switch (this->getOperatorType()) {
@@ -32,21 +32,21 @@ namespace storm {
             std::shared_ptr<BaseExpression const> operandSimplified = this->getOperand()->simplify();
             switch (this->getOperatorType()) {
                 case OperatorType::Not: if (operandSimplified->isTrue()) {
-                    return std::shared_ptr<BaseExpression>(new BooleanLiteralExpression(false));
-                } else {
-                    return std::shared_ptr<BaseExpression>(new BooleanLiteralExpression(true));
+                    return std::shared_ptr<BaseExpression>(new BooleanLiteralExpression(this->getManager(), false));
+                } else if (operandSimplified->isFalse()) {
+                    return std::shared_ptr<BaseExpression>(new BooleanLiteralExpression(this->getManager(), true));
                 }
             }
             
             if (operandSimplified.get() == this->getOperand().get()) {
                 return this->shared_from_this();
             } else {
-                return std::shared_ptr<BaseExpression>(new UnaryBooleanFunctionExpression(this->getReturnType(), operandSimplified, this->getOperatorType()));
+                return std::shared_ptr<BaseExpression>(new UnaryBooleanFunctionExpression(this->getManager(), this->getType(), operandSimplified, this->getOperatorType()));
             }
         }
         
-        void UnaryBooleanFunctionExpression::accept(ExpressionVisitor* visitor) const {
-            visitor->visit(this);
+        boost::any UnaryBooleanFunctionExpression::accept(ExpressionVisitor& visitor) const {
+            return visitor.visit(*this);
         }
         
         void UnaryBooleanFunctionExpression::printToStream(std::ostream& stream) const {

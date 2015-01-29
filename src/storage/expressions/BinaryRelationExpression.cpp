@@ -1,11 +1,14 @@
 #include "src/storage/expressions/BinaryRelationExpression.h"
 
+#include <boost/variant.hpp>
+
+#include "src/storage/expressions/BooleanLiteralExpression.h"
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidTypeException.h"
 
 namespace storm {
     namespace expressions {
-        BinaryRelationExpression::BinaryRelationExpression(ExpressionReturnType returnType, std::shared_ptr<BaseExpression const> const& firstOperand, std::shared_ptr<BaseExpression const> const& secondOperand, RelationType relationType) : BinaryExpression(returnType, firstOperand, secondOperand), relationType(relationType) {
+        BinaryRelationExpression::BinaryRelationExpression(ExpressionManager const& manager, Type const& type, std::shared_ptr<BaseExpression const> const& firstOperand, std::shared_ptr<BaseExpression const> const& secondOperand, RelationType relationType) : BinaryExpression(manager, type, firstOperand, secondOperand), relationType(relationType) {
             // Intentionally left empty.
         }
         
@@ -21,8 +24,8 @@ namespace storm {
         }
         
         bool BinaryRelationExpression::evaluateAsBool(Valuation const* valuation) const {
-            STORM_LOG_THROW(this->hasBooleanReturnType(), storm::exceptions::InvalidTypeException, "Unable to evaluate expression as boolean.");
-
+            STORM_LOG_THROW(this->hasBooleanType(), storm::exceptions::InvalidTypeException, "Unable to evaluate expression as boolean.");
+            
             double firstOperandEvaluated = this->getFirstOperand()->evaluateAsDouble(valuation);
             double secondOperandEvaluated = this->getSecondOperand()->evaluateAsDouble(valuation);
             switch (this->getRelationType()) {
@@ -39,15 +42,42 @@ namespace storm {
             std::shared_ptr<BaseExpression const> firstOperandSimplified = this->getFirstOperand()->simplify();
             std::shared_ptr<BaseExpression const> secondOperandSimplified = this->getSecondOperand()->simplify();
             
+            if (firstOperandSimplified->isLiteral() && secondOperandSimplified->isLiteral()) {
+                boost::variant<int_fast64_t, double> firstOperandEvaluation;
+                boost::variant<int_fast64_t, double> secondOperandEvaluation;
+                
+                if (firstOperandSimplified->hasIntegerType()) {
+                    firstOperandEvaluation = firstOperandSimplified->evaluateAsInt();
+                } else {
+                    firstOperandEvaluation = firstOperandSimplified->evaluateAsDouble();
+                }
+                if (secondOperandSimplified->hasIntegerType()) {
+                    secondOperandEvaluation = secondOperandSimplified->evaluateAsInt();
+                } else {
+                    secondOperandEvaluation = secondOperandSimplified->evaluateAsDouble();
+                }
+                
+                bool truthValue = false;
+                switch (this->getRelationType()) {
+                    case RelationType::Equal: truthValue = (firstOperandSimplified->hasIntegerType() ? boost::get<int_fast64_t>(firstOperandEvaluation) : boost::get<double>(firstOperandEvaluation)) == (secondOperandSimplified->hasIntegerType() ? boost::get<int_fast64_t>(secondOperandEvaluation) : boost::get<double>(secondOperandEvaluation)); break;
+                    case RelationType::NotEqual: truthValue = (firstOperandSimplified->hasIntegerType() ? boost::get<int_fast64_t>(firstOperandEvaluation) : boost::get<double>(firstOperandEvaluation)) != (secondOperandSimplified->hasIntegerType() ? boost::get<int_fast64_t>(secondOperandEvaluation) : boost::get<double>(secondOperandEvaluation)); break;
+                    case RelationType::Greater: truthValue = (firstOperandSimplified->hasIntegerType() ? boost::get<int_fast64_t>(firstOperandEvaluation) : boost::get<double>(firstOperandEvaluation)) > (secondOperandSimplified->hasIntegerType() ? boost::get<int_fast64_t>(secondOperandEvaluation) : boost::get<double>(secondOperandEvaluation)); break;
+                    case RelationType::GreaterOrEqual: truthValue = (firstOperandSimplified->hasIntegerType() ? boost::get<int_fast64_t>(firstOperandEvaluation) : boost::get<double>(firstOperandEvaluation)) >= (secondOperandSimplified->hasIntegerType() ? boost::get<int_fast64_t>(secondOperandEvaluation) : boost::get<double>(secondOperandEvaluation)); break;
+                    case RelationType::Less: truthValue = (firstOperandSimplified->hasIntegerType() ? boost::get<int_fast64_t>(firstOperandEvaluation) : boost::get<double>(firstOperandEvaluation)) < (secondOperandSimplified->hasIntegerType() ? boost::get<int_fast64_t>(secondOperandEvaluation) : boost::get<double>(secondOperandEvaluation)); break;
+                    case RelationType::LessOrEqual: truthValue = (firstOperandSimplified->hasIntegerType() ? boost::get<int_fast64_t>(firstOperandEvaluation) : boost::get<double>(firstOperandEvaluation)) <= (secondOperandSimplified->hasIntegerType() ? boost::get<int_fast64_t>(secondOperandEvaluation) : boost::get<double>(secondOperandEvaluation)); break;
+                }
+                return std::shared_ptr<BaseExpression>(new BooleanLiteralExpression(this->getManager(), truthValue));
+            }
+            
             if (firstOperandSimplified.get() == this->getFirstOperand().get() && secondOperandSimplified.get() == this->getSecondOperand().get()) {
                 return this->shared_from_this();
             } else {
-                return std::shared_ptr<BaseExpression>(new BinaryRelationExpression(this->getReturnType(), firstOperandSimplified, secondOperandSimplified, this->getRelationType()));
+                return std::shared_ptr<BaseExpression>(new BinaryRelationExpression(this->getManager(), this->getType(), firstOperandSimplified, secondOperandSimplified, this->getRelationType()));
             }
         }
         
-        void BinaryRelationExpression::accept(ExpressionVisitor* visitor) const {
-            visitor->visit(this);
+        boost::any BinaryRelationExpression::accept(ExpressionVisitor& visitor) const {
+            return visitor.visit(*this);
         }
         
         BinaryRelationExpression::RelationType BinaryRelationExpression::getRelationType() const {

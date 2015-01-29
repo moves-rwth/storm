@@ -9,28 +9,31 @@
 
 TEST(GurobiLpSolver, LPOptimizeMax) {
     storm::solver::GurobiLpSolver solver(storm::solver::LpSolver::ModelSense::Maximize);
-    ASSERT_NO_THROW(solver.addBoundedContinuousVariable("x", 0, 1, -1));
-    ASSERT_NO_THROW(solver.addLowerBoundedContinuousVariable("y", 0, 2));
-    ASSERT_NO_THROW(solver.addLowerBoundedContinuousVariable("z", 0, 1));
+    storm::expressions::Variable x;
+    storm::expressions::Variable y;
+    storm::expressions::Variable z;
+    ASSERT_NO_THROW(x = solver.addBoundedContinuousVariable("x", 0, 1, -1));
+    ASSERT_NO_THROW(y = solver.addLowerBoundedContinuousVariable("y", 0, 2));
+    ASSERT_NO_THROW(z = solver.addLowerBoundedContinuousVariable("z", 0, 1));
     ASSERT_NO_THROW(solver.update());
     
-    ASSERT_NO_THROW(solver.addConstraint("", storm::expressions::Expression::createDoubleVariable("x") + storm::expressions::Expression::createDoubleVariable("y") + storm::expressions::Expression::createDoubleVariable("z") <= storm::expressions::Expression::createDoubleLiteral(12)));
-    ASSERT_NO_THROW(solver.addConstraint("", storm::expressions::Expression::createDoubleLiteral(0.5) * storm::expressions::Expression::createDoubleVariable("y") + storm::expressions::Expression::createDoubleVariable("z") - storm::expressions::Expression::createDoubleVariable("x") == storm::expressions::Expression::createDoubleLiteral(5)));
-    ASSERT_NO_THROW(solver.addConstraint("", storm::expressions::Expression::createDoubleVariable("y") - storm::expressions::Expression::createDoubleVariable("x") <= storm::expressions::Expression::createDoubleLiteral(5.5)));
+    ASSERT_NO_THROW(solver.addConstraint("", x + y + z <= solver.getConstant(12)));
+    ASSERT_NO_THROW(solver.addConstraint("", solver.getConstant(0.5) * y + z - x == solver.getConstant(5)));
+    ASSERT_NO_THROW(solver.addConstraint("", y - x <= solver.getConstant(5.5)));
     ASSERT_NO_THROW(solver.update());
-
+    
     ASSERT_NO_THROW(solver.optimize());
     ASSERT_TRUE(solver.isOptimal());
     ASSERT_FALSE(solver.isUnbounded());
     ASSERT_FALSE(solver.isInfeasible());
     double xValue = 0;
-    ASSERT_NO_THROW(xValue = solver.getContinuousValue("x"));
+    ASSERT_NO_THROW(xValue = solver.getContinuousValue(x));
     ASSERT_LT(std::abs(xValue - 1), storm::settings::generalSettings().getPrecision());
     double yValue = 0;
-    ASSERT_NO_THROW(yValue = solver.getContinuousValue("y"));
+    ASSERT_NO_THROW(yValue = solver.getContinuousValue(y));
     ASSERT_LT(std::abs(yValue - 6.5), storm::settings::generalSettings().getPrecision());
     double zValue = 0;
-    ASSERT_NO_THROW(zValue = solver.getContinuousValue("z"));
+    ASSERT_NO_THROW(zValue = solver.getContinuousValue(z));
     ASSERT_LT(std::abs(zValue - 2.75), storm::settings::generalSettings().getPrecision());
     double objectiveValue = 0;
     ASSERT_NO_THROW(objectiveValue = solver.getObjectiveValue());
@@ -39,28 +42,31 @@ TEST(GurobiLpSolver, LPOptimizeMax) {
 
 TEST(GurobiLpSolver, LPOptimizeMin) {
     storm::solver::GurobiLpSolver solver(storm::solver::LpSolver::ModelSense::Minimize);
-    ASSERT_NO_THROW(solver.addBoundedContinuousVariable("x", 0, 1, -1));
-    ASSERT_NO_THROW(solver.addLowerBoundedIntegerVariable("y", 0, 2));
-    ASSERT_NO_THROW(solver.addBoundedContinuousVariable("z", 1, 5.7, -1));
+    storm::expressions::Variable x;
+    storm::expressions::Variable y;
+    storm::expressions::Variable z;
+    ASSERT_NO_THROW(x = solver.addBoundedContinuousVariable("x", 0, 1, -1));
+    ASSERT_NO_THROW(y = solver.addLowerBoundedContinuousVariable("y", 0, 2));
+    ASSERT_NO_THROW(z = solver.addBoundedContinuousVariable("z", 1, 5.7, -1));
     ASSERT_NO_THROW(solver.update());
-
-    ASSERT_NO_THROW(solver.addConstraint("", storm::expressions::Expression::createDoubleVariable("x") + storm::expressions::Expression::createDoubleVariable("y") + storm::expressions::Expression::createDoubleVariable("z") <= storm::expressions::Expression::createDoubleLiteral(12)));
-    ASSERT_NO_THROW(solver.addConstraint("", storm::expressions::Expression::createDoubleLiteral(0.5) * storm::expressions::Expression::createDoubleVariable("y") + storm::expressions::Expression::createDoubleVariable("z") - storm::expressions::Expression::createDoubleVariable("x") <= storm::expressions::Expression::createDoubleLiteral(5)));
-    ASSERT_NO_THROW(solver.addConstraint("", storm::expressions::Expression::createDoubleVariable("y") - storm::expressions::Expression::createDoubleVariable("x") <= storm::expressions::Expression::createDoubleLiteral(5.5)));
+    
+    ASSERT_NO_THROW(solver.addConstraint("", x + y + z <= solver.getConstant(12)));
+    ASSERT_NO_THROW(solver.addConstraint("", solver.getConstant(0.5) * y + z - x <= solver.getConstant(5)));
+    ASSERT_NO_THROW(solver.addConstraint("", y - x <= solver.getConstant(5.5)));
     ASSERT_NO_THROW(solver.update());
-
+    
     ASSERT_NO_THROW(solver.optimize());
     ASSERT_TRUE(solver.isOptimal());
     ASSERT_FALSE(solver.isUnbounded());
     ASSERT_FALSE(solver.isInfeasible());
     double xValue = 0;
-    ASSERT_NO_THROW(xValue = solver.getContinuousValue("x"));
+    ASSERT_NO_THROW(xValue = solver.getContinuousValue(x));
     ASSERT_LT(std::abs(xValue - 1), storm::settings::generalSettings().getPrecision());
     double yValue = 0;
-    ASSERT_NO_THROW(yValue = solver.getContinuousValue("y"));
+    ASSERT_NO_THROW(yValue = solver.getContinuousValue(y));
     ASSERT_LT(std::abs(yValue - 0), storm::settings::generalSettings().getPrecision());
     double zValue = 0;
-    ASSERT_NO_THROW(zValue = solver.getContinuousValue("z"));
+    ASSERT_NO_THROW(zValue = solver.getContinuousValue(z));
     ASSERT_LT(std::abs(zValue - 5.7), storm::settings::generalSettings().getPrecision());
     double objectiveValue = 0;
     ASSERT_NO_THROW(objectiveValue = solver.getObjectiveValue());
@@ -69,28 +75,31 @@ TEST(GurobiLpSolver, LPOptimizeMin) {
 
 TEST(GurobiLpSolver, MILPOptimizeMax) {
     storm::solver::GurobiLpSolver solver(storm::solver::LpSolver::ModelSense::Maximize);
-    ASSERT_NO_THROW(solver.addBinaryVariable("x", -1));
-    ASSERT_NO_THROW(solver.addLowerBoundedIntegerVariable("y", 0, 2));
-    ASSERT_NO_THROW(solver.addLowerBoundedContinuousVariable("z", 0, 1));
+    storm::expressions::Variable x;
+    storm::expressions::Variable y;
+    storm::expressions::Variable z;
+    ASSERT_NO_THROW(x = solver.addBinaryVariable("x", -1));
+    ASSERT_NO_THROW(y = solver.addLowerBoundedIntegerVariable("y", 0, 2));
+    ASSERT_NO_THROW(z = solver.addLowerBoundedContinuousVariable("z", 0, 1));
     ASSERT_NO_THROW(solver.update());
-
-    ASSERT_NO_THROW(solver.addConstraint("", storm::expressions::Expression::createDoubleVariable("x") + storm::expressions::Expression::createDoubleVariable("y") + storm::expressions::Expression::createDoubleVariable("z") <= storm::expressions::Expression::createDoubleLiteral(12)));
-    ASSERT_NO_THROW(solver.addConstraint("", storm::expressions::Expression::createDoubleLiteral(0.5) * storm::expressions::Expression::createDoubleVariable("y") + storm::expressions::Expression::createDoubleVariable("z") - storm::expressions::Expression::createDoubleVariable("x") == storm::expressions::Expression::createDoubleLiteral(5)));
-    ASSERT_NO_THROW(solver.addConstraint("", storm::expressions::Expression::createDoubleVariable("y") - storm::expressions::Expression::createDoubleVariable("x") <= storm::expressions::Expression::createDoubleLiteral(5.5)));
+    
+    ASSERT_NO_THROW(solver.addConstraint("", x + y + z <= solver.getConstant(12)));
+    ASSERT_NO_THROW(solver.addConstraint("", solver.getConstant(0.5) * y + z - x == solver.getConstant(5)));
+    ASSERT_NO_THROW(solver.addConstraint("", y - x <= solver.getConstant(5.5)));
     ASSERT_NO_THROW(solver.update());
-
+    
     ASSERT_NO_THROW(solver.optimize());
     ASSERT_TRUE(solver.isOptimal());
     ASSERT_FALSE(solver.isUnbounded());
     ASSERT_FALSE(solver.isInfeasible());
     bool xValue = false;
-    ASSERT_NO_THROW(xValue = solver.getBinaryValue("x"));
+    ASSERT_NO_THROW(xValue = solver.getBinaryValue(x));
     ASSERT_EQ(true, xValue);
     int_fast64_t yValue = 0;
-    ASSERT_NO_THROW(yValue = solver.getIntegerValue("y"));
+    ASSERT_NO_THROW(yValue = solver.getIntegerValue(y));
     ASSERT_EQ(6, yValue);
     double zValue = 0;
-    ASSERT_NO_THROW(zValue = solver.getContinuousValue("z"));
+    ASSERT_NO_THROW(zValue = solver.getContinuousValue(z));
     ASSERT_LT(std::abs(zValue - 3), storm::settings::generalSettings().getPrecision());
     double objectiveValue = 0;
     ASSERT_NO_THROW(objectiveValue = solver.getObjectiveValue());
@@ -99,28 +108,31 @@ TEST(GurobiLpSolver, MILPOptimizeMax) {
 
 TEST(GurobiLpSolver, MILPOptimizeMin) {
     storm::solver::GurobiLpSolver solver(storm::solver::LpSolver::ModelSense::Minimize);
-    ASSERT_NO_THROW(solver.addBinaryVariable("x", -1));
-    ASSERT_NO_THROW(solver.addLowerBoundedIntegerVariable("y", 0, 2));
-    ASSERT_NO_THROW(solver.addBoundedContinuousVariable("z", 0, 5, -1));
+    storm::expressions::Variable x;
+    storm::expressions::Variable y;
+    storm::expressions::Variable z;
+    ASSERT_NO_THROW(x = solver.addBinaryVariable("x", -1));
+    ASSERT_NO_THROW(y = solver.addLowerBoundedIntegerVariable("y", 0, 2));
+    ASSERT_NO_THROW(z = solver.addBoundedContinuousVariable("z", 0, 5, -1));
     ASSERT_NO_THROW(solver.update());
-
-    ASSERT_NO_THROW(solver.addConstraint("", storm::expressions::Expression::createDoubleVariable("x") + storm::expressions::Expression::createDoubleVariable("y") + storm::expressions::Expression::createDoubleVariable("z") <= storm::expressions::Expression::createDoubleLiteral(12)));
-    ASSERT_NO_THROW(solver.addConstraint("", storm::expressions::Expression::createDoubleLiteral(0.5) * storm::expressions::Expression::createDoubleVariable("y") + storm::expressions::Expression::createDoubleVariable("z") - storm::expressions::Expression::createDoubleVariable("x") <= storm::expressions::Expression::createDoubleLiteral(5)));
-    ASSERT_NO_THROW(solver.addConstraint("", storm::expressions::Expression::createDoubleVariable("y") - storm::expressions::Expression::createDoubleVariable("x") <= storm::expressions::Expression::createDoubleLiteral(5.5)));
+    
+    ASSERT_NO_THROW(solver.addConstraint("", x + y + z <= solver.getConstant(12)));
+    ASSERT_NO_THROW(solver.addConstraint("", solver.getConstant(0.5) * y + z - x <= solver.getConstant(5)));
+    ASSERT_NO_THROW(solver.addConstraint("", y - x <= solver.getConstant(5.5)));
     ASSERT_NO_THROW(solver.update());
-
+    
     ASSERT_NO_THROW(solver.optimize());
     ASSERT_TRUE(solver.isOptimal());
     ASSERT_FALSE(solver.isUnbounded());
     ASSERT_FALSE(solver.isInfeasible());
     bool xValue = false;
-    ASSERT_NO_THROW(xValue = solver.getBinaryValue("x"));
+    ASSERT_NO_THROW(xValue = solver.getBinaryValue(x));
     ASSERT_EQ(true, xValue);
     int_fast64_t yValue = 0;
-    ASSERT_NO_THROW(yValue = solver.getIntegerValue("y"));
+    ASSERT_NO_THROW(yValue = solver.getIntegerValue(y));
     ASSERT_EQ(0, yValue);
     double zValue = 0;
-    ASSERT_NO_THROW(zValue = solver.getContinuousValue("z"));
+    ASSERT_NO_THROW(zValue = solver.getContinuousValue(z));
     ASSERT_LT(std::abs(zValue - 5), storm::settings::generalSettings().getPrecision());
     double objectiveValue = 0;
     ASSERT_NO_THROW(objectiveValue = solver.getObjectiveValue());
@@ -129,103 +141,116 @@ TEST(GurobiLpSolver, MILPOptimizeMin) {
 
 TEST(GurobiLpSolver, LPInfeasible) {
     storm::solver::GurobiLpSolver solver(storm::solver::LpSolver::ModelSense::Maximize);
-    ASSERT_NO_THROW(solver.addBoundedContinuousVariable("x", 0, 1, -1));
-    ASSERT_NO_THROW(solver.addLowerBoundedContinuousVariable("y", 0, 2));
-    ASSERT_NO_THROW(solver.addLowerBoundedContinuousVariable("z", 0, 1));
+    storm::expressions::Variable x;
+    storm::expressions::Variable y;
+    storm::expressions::Variable z;
+    ASSERT_NO_THROW(x = solver.addBoundedContinuousVariable("x", 0, 1, -1));
+    ASSERT_NO_THROW(y = solver.addLowerBoundedContinuousVariable("y", 0, 2));
+    ASSERT_NO_THROW(z = solver.addLowerBoundedContinuousVariable("z", 0, 1));
     ASSERT_NO_THROW(solver.update());
-
-    ASSERT_NO_THROW(solver.addConstraint("", storm::expressions::Expression::createDoubleVariable("x") + storm::expressions::Expression::createDoubleVariable("y") + storm::expressions::Expression::createDoubleVariable("z") <= storm::expressions::Expression::createDoubleLiteral(12)));
-    ASSERT_NO_THROW(solver.addConstraint("", storm::expressions::Expression::createDoubleLiteral(0.5) * storm::expressions::Expression::createDoubleVariable("y") + storm::expressions::Expression::createDoubleVariable("z") - storm::expressions::Expression::createDoubleVariable("x") == storm::expressions::Expression::createDoubleLiteral(5)));
-    ASSERT_NO_THROW(solver.addConstraint("", storm::expressions::Expression::createDoubleVariable("y") - storm::expressions::Expression::createDoubleVariable("x") <= storm::expressions::Expression::createDoubleLiteral(5.5)));
-    ASSERT_NO_THROW(solver.addConstraint("", storm::expressions::Expression::createDoubleVariable("y") > storm::expressions::Expression::createDoubleLiteral(7)));
+    
+    ASSERT_NO_THROW(solver.addConstraint("", x + y + z <= solver.getConstant(12)));
+    ASSERT_NO_THROW(solver.addConstraint("", solver.getConstant(0.5) * y + z - x == solver.getConstant(5)));
+    ASSERT_NO_THROW(solver.addConstraint("", y - x <= solver.getConstant(5.5)));
+    ASSERT_NO_THROW(solver.addConstraint("", y > solver.getConstant(7)));
     ASSERT_NO_THROW(solver.update());
-
+    
     ASSERT_NO_THROW(solver.optimize());
     ASSERT_FALSE(solver.isOptimal());
     ASSERT_FALSE(solver.isUnbounded());
     ASSERT_TRUE(solver.isInfeasible());
     double xValue = 0;
-    ASSERT_THROW(xValue = solver.getContinuousValue("x"), storm::exceptions::InvalidAccessException);
+    ASSERT_THROW(xValue = solver.getContinuousValue(x), storm::exceptions::InvalidAccessException);
     double yValue = 0;
-    ASSERT_THROW(yValue = solver.getContinuousValue("y"), storm::exceptions::InvalidAccessException);
+    ASSERT_THROW(yValue = solver.getContinuousValue(y), storm::exceptions::InvalidAccessException);
     double zValue = 0;
-    ASSERT_THROW(zValue = solver.getContinuousValue("z"), storm::exceptions::InvalidAccessException);
+    ASSERT_THROW(zValue = solver.getContinuousValue(z), storm::exceptions::InvalidAccessException);
     double objectiveValue = 0;
     ASSERT_THROW(objectiveValue = solver.getObjectiveValue(), storm::exceptions::InvalidAccessException);
 }
 
 TEST(GurobiLpSolver, MILPInfeasible) {
     storm::solver::GurobiLpSolver solver(storm::solver::LpSolver::ModelSense::Maximize);
-    ASSERT_NO_THROW(solver.addBinaryVariable("x", -1));
-    ASSERT_NO_THROW(solver.addLowerBoundedContinuousVariable("y", 0, 2));
-    ASSERT_NO_THROW(solver.addLowerBoundedContinuousVariable("z", 0, 1));
+    storm::expressions::Variable x;
+    storm::expressions::Variable y;
+    storm::expressions::Variable z;
+    ASSERT_NO_THROW(x = solver.addBoundedContinuousVariable("x", 0, 1, -1));
+    ASSERT_NO_THROW(y = solver.addLowerBoundedContinuousVariable("y", 0, 2));
+    ASSERT_NO_THROW(z = solver.addLowerBoundedContinuousVariable("z", 0, 1));
     ASSERT_NO_THROW(solver.update());
-
-    ASSERT_NO_THROW(solver.addConstraint("", storm::expressions::Expression::createDoubleVariable("x") + storm::expressions::Expression::createDoubleVariable("y") + storm::expressions::Expression::createDoubleVariable("z") <= storm::expressions::Expression::createDoubleLiteral(12)));
-    ASSERT_NO_THROW(solver.addConstraint("", storm::expressions::Expression::createDoubleLiteral(0.5) * storm::expressions::Expression::createDoubleVariable("y") + storm::expressions::Expression::createDoubleVariable("z") - storm::expressions::Expression::createDoubleVariable("x") == storm::expressions::Expression::createDoubleLiteral(5)));
-    ASSERT_NO_THROW(solver.addConstraint("", storm::expressions::Expression::createDoubleVariable("y") - storm::expressions::Expression::createDoubleVariable("x") <= storm::expressions::Expression::createDoubleLiteral(5.5)));
-    ASSERT_NO_THROW(solver.addConstraint("", storm::expressions::Expression::createDoubleVariable("y") > storm::expressions::Expression::createDoubleLiteral(7)));
+    
+    ASSERT_NO_THROW(solver.addConstraint("", x + y + z <= solver.getConstant(12)));
+    ASSERT_NO_THROW(solver.addConstraint("", solver.getConstant(0.5) * y + z - x == solver.getConstant(5)));
+    ASSERT_NO_THROW(solver.addConstraint("", y - x <= solver.getConstant(5.5)));
+    ASSERT_NO_THROW(solver.addConstraint("", y > solver.getConstant(7)));
     ASSERT_NO_THROW(solver.update());
-
+    
     ASSERT_NO_THROW(solver.optimize());
     ASSERT_FALSE(solver.isOptimal());
     ASSERT_FALSE(solver.isUnbounded());
     ASSERT_TRUE(solver.isInfeasible());
-    bool xValue = false;
-    ASSERT_THROW(xValue = solver.getBinaryValue("x"), storm::exceptions::InvalidAccessException);
-    int_fast64_t yValue = 0;
-    ASSERT_THROW(yValue = solver.getIntegerValue("y"), storm::exceptions::InvalidAccessException);
+    double xValue = 0;
+    ASSERT_THROW(xValue = solver.getContinuousValue(x), storm::exceptions::InvalidAccessException);
+    double yValue = 0;
+    ASSERT_THROW(yValue = solver.getContinuousValue(y), storm::exceptions::InvalidAccessException);
     double zValue = 0;
-    ASSERT_THROW(zValue = solver.getContinuousValue("z"), storm::exceptions::InvalidAccessException);
+    ASSERT_THROW(zValue = solver.getContinuousValue(z), storm::exceptions::InvalidAccessException);
     double objectiveValue = 0;
     ASSERT_THROW(objectiveValue = solver.getObjectiveValue(), storm::exceptions::InvalidAccessException);
 }
 
 TEST(GurobiLpSolver, LPUnbounded) {
     storm::solver::GurobiLpSolver solver(storm::solver::LpSolver::ModelSense::Maximize);
-    ASSERT_NO_THROW(solver.addBoundedContinuousVariable("x", 0, 1, -1));
-    ASSERT_NO_THROW(solver.addLowerBoundedContinuousVariable("y", 0, 2));
-    ASSERT_NO_THROW(solver.addLowerBoundedContinuousVariable("z", 0, 1));
+    storm::expressions::Variable x;
+    storm::expressions::Variable y;
+    storm::expressions::Variable z;
+    ASSERT_NO_THROW(x = solver.addBoundedContinuousVariable("x", 0, 1, -1));
+    ASSERT_NO_THROW(y = solver.addLowerBoundedContinuousVariable("y", 0, 2));
+    ASSERT_NO_THROW(z = solver.addLowerBoundedContinuousVariable("z", 0, 1));
     ASSERT_NO_THROW(solver.update());
-
-    ASSERT_NO_THROW(solver.addConstraint("", storm::expressions::Expression::createDoubleVariable("x") + storm::expressions::Expression::createDoubleVariable("y") - storm::expressions::Expression::createDoubleVariable("z") <= storm::expressions::Expression::createDoubleLiteral(12)));
-    ASSERT_NO_THROW(solver.addConstraint("", storm::expressions::Expression::createDoubleVariable("y") - storm::expressions::Expression::createDoubleVariable("x") <= storm::expressions::Expression::createDoubleLiteral(5.5)));
+    
+    ASSERT_NO_THROW(solver.addConstraint("", x + y - z <= solver.getConstant(12)));
+    ASSERT_NO_THROW(solver.addConstraint("", y - x <= solver.getConstant(5.5)));
     ASSERT_NO_THROW(solver.update());
-
+    
     ASSERT_NO_THROW(solver.optimize());
     ASSERT_FALSE(solver.isOptimal());
     ASSERT_TRUE(solver.isUnbounded());
     ASSERT_FALSE(solver.isInfeasible());
     double xValue = 0;
-    ASSERT_THROW(xValue = solver.getContinuousValue("x"), storm::exceptions::InvalidAccessException);
+    ASSERT_THROW(xValue = solver.getContinuousValue(x), storm::exceptions::InvalidAccessException);
     double yValue = 0;
-    ASSERT_THROW(yValue = solver.getContinuousValue("y"), storm::exceptions::InvalidAccessException);
+    ASSERT_THROW(yValue = solver.getContinuousValue(y), storm::exceptions::InvalidAccessException);
     double zValue = 0;
-    ASSERT_THROW(zValue = solver.getContinuousValue("z"), storm::exceptions::InvalidAccessException);
+    ASSERT_THROW(zValue = solver.getContinuousValue(z), storm::exceptions::InvalidAccessException);
     double objectiveValue = 0;
     ASSERT_THROW(objectiveValue = solver.getObjectiveValue(), storm::exceptions::InvalidAccessException);
 }
 
 TEST(GurobiLpSolver, MILPUnbounded) {
     storm::solver::GurobiLpSolver solver(storm::solver::LpSolver::ModelSense::Maximize);
-    ASSERT_NO_THROW(solver.addBinaryVariable("x", -1));
-    ASSERT_NO_THROW(solver.addLowerBoundedContinuousVariable("y", 0, 2));
-    ASSERT_NO_THROW(solver.addLowerBoundedContinuousVariable("z", 0, 1));
+    storm::expressions::Variable x;
+    storm::expressions::Variable y;
+    storm::expressions::Variable z;
+    ASSERT_NO_THROW(x = solver.addBinaryVariable("x", -1));
+    ASSERT_NO_THROW(y = solver.addLowerBoundedContinuousVariable("y", 0, 2));
+    ASSERT_NO_THROW(z = solver.addLowerBoundedContinuousVariable("z", 0, 1));
     ASSERT_NO_THROW(solver.update());
-
-    ASSERT_NO_THROW(solver.addConstraint("", storm::expressions::Expression::createDoubleVariable("x") + storm::expressions::Expression::createDoubleVariable("y") - storm::expressions::Expression::createDoubleVariable("z") <= storm::expressions::Expression::createDoubleLiteral(12)));
-    ASSERT_NO_THROW(solver.addConstraint("", storm::expressions::Expression::createDoubleVariable("y") - storm::expressions::Expression::createDoubleVariable("x") <= storm::expressions::Expression::createDoubleLiteral(5.5)));
+    
+    ASSERT_NO_THROW(solver.addConstraint("", x + y - z <= solver.getConstant(12)));
+    ASSERT_NO_THROW(solver.addConstraint("", y - x <= solver.getConstant(5.5)));
+    ASSERT_NO_THROW(solver.update());
     
     ASSERT_NO_THROW(solver.optimize());
     ASSERT_FALSE(solver.isOptimal());
     ASSERT_TRUE(solver.isUnbounded());
     ASSERT_FALSE(solver.isInfeasible());
     bool xValue = false;
-    ASSERT_THROW(xValue = solver.getBinaryValue("x"), storm::exceptions::InvalidAccessException);
+    ASSERT_THROW(xValue = solver.getBinaryValue(x), storm::exceptions::InvalidAccessException);
     int_fast64_t yValue = 0;
-    ASSERT_THROW(yValue = solver.getIntegerValue("y"), storm::exceptions::InvalidAccessException);
+    ASSERT_THROW(yValue = solver.getIntegerValue(y), storm::exceptions::InvalidAccessException);
     double zValue = 0;
-    ASSERT_THROW(zValue = solver.getContinuousValue("z"), storm::exceptions::InvalidAccessException);
+    ASSERT_THROW(zValue = solver.getContinuousValue(z), storm::exceptions::InvalidAccessException);
     double objectiveValue = 0;
     ASSERT_THROW(objectiveValue = solver.getObjectiveValue(), storm::exceptions::InvalidAccessException);
 }

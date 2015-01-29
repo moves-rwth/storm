@@ -20,7 +20,6 @@
 
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/storage/BitVector.h"
-#include "src/storage/LabeledValues.h"
 
 namespace storm {
 
@@ -73,15 +72,6 @@ inline double constantZero() {
    return 0.0;
 }
     
-/*!
- * Template specialization for LabeledValues.
- * @return A LabeledValues object that represents a value of 0.
- */
-template<>
-inline storm::storage::LabeledValues<double> constantZero() {
-    return storm::storage::LabeledValues<double>(0.0);
-}
-
 /*! @endcond */
 
 /*!
@@ -131,15 +121,6 @@ inline double constantOne() {
    return 1.0;
 }
 
-/*!
- * Template specialization for LabeledValues.
- * @return A LabeledValues object that represents a value of 1.
- */
-template<>
-inline storm::storage::LabeledValues<double> constantOne() {
-    return storm::storage::LabeledValues<double>(1.0);
-}
-    
 /*! @endcond */
 
 /*!
@@ -191,15 +172,6 @@ inline double constantInfinity() {
    return std::numeric_limits<double>::infinity();
 }
 
-/*!
- * Template specialization for LabeledValues.
- * @return Value Infinity, fit to the type LabeledValues.
- */
-template<>
-inline storm::storage::LabeledValues<double> constantInfinity() {
-    return storm::storage::LabeledValues<double>(std::numeric_limits<double>::infinity());
-}
-    
 /*! @endcond */
 
     

@@ -302,6 +302,8 @@ private:
 	bool checkValidityOfProbabilityMatrix() {
 		if (this->getTransitionMatrix().getRowCount() != this->getTransitionMatrix().getColumnCount()) {
 			// not square
+            std::cout << "rows: " << this->getTransitionMatrix().getRowCount() << std::endl;
+            std::cout << "cols: " << this->getTransitionMatrix().getColumnCount() << std::endl;
 			LOG4CPLUS_ERROR(logger, "Probability matrix is not square.");
 			return false;
 		}

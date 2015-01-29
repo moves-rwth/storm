@@ -7,10 +7,10 @@
 
 #ifndef STORM_GENERATED_STORMCONFIG_H_
 #define STORM_GENERATED_STORMCONFIG_H_
- 
 
 // The path of the sources from which StoRM will be/was build
 #define STORM_CPP_BASE_PATH "@PROJECT_SOURCE_DIR@"
+
 // The path used in the functional and performance tests to load the supplied example files
 #define STORM_CPP_TESTS_BASE_PATH "@STORM_CPP_TESTS_BASE_PATH@"
 
@@ -28,6 +28,9 @@
 
 // Whether Z3 is available and to be used (define/undef)
 #@STORM_CPP_Z3_DEF@ STORM_HAVE_Z3
+
+// Whether MathSAT is available and to be used (define/undef)
+#@STORM_CPP_MSAT_DEF@ STORM_HAVE_MSAT
 
 // Whether Intel Threading Building Blocks are available and to be used (define/undef)
 #@STORM_CPP_INTELTBB_DEF@ STORM_HAVE_INTELTBB

@@ -20,27 +20,16 @@ namespace storm {
 #endif
 
             /*!
-             * Creates an integer variable with the given name and a default initial value.
+             * Creates an integer variable with the given initial value expression.
              *
-             * @param name The name of the variable.
-             * @param lowerBoundExpression A constant expression defining the lower bound of the domain of the variable.
-             * @param upperBoundExpression A constant expression defining the upper bound of the domain of the variable.
-             * @param filename The filename in which the variable is defined.
-             * @param lineNumber The line number in which the variable is defined.
-             */
-            IntegerVariable(std::string const& name, storm::expressions::Expression const& lowerBoundExpression, storm::expressions::Expression const& upperBoundExpression, std::string const& filename = "", uint_fast64_t lineNumber = 0);
-
-            /*!
-             * Creates an integer variable with the given name and the given initial value expression.
-             *
-             * @param name The name of the variable.
+             * @param variable The expression variable associated with this variable.
              * @param lowerBoundExpression A constant expression defining the lower bound of the domain of the variable.
              * @param upperBoundExpression A constant expression defining the upper bound of the domain of the variable.
              * @param initialValueExpression A constant expression that defines the initial value of the variable.
              * @param filename The filename in which the variable is defined.
              * @param lineNumber The line number in which the variable is defined.
              */
-            IntegerVariable(std::string const& name, storm::expressions::Expression const& lowerBoundExpression, storm::expressions::Expression const& upperBoundExpression, storm::expressions::Expression const& initialValueExpression, std::string const& filename = "", uint_fast64_t lineNumber = 0);
+            IntegerVariable(storm::expressions::Variable const& variable, storm::expressions::Expression const& lowerBoundExpression, storm::expressions::Expression const& upperBoundExpression, storm::expressions::Expression const& initialValueExpression, std::string const& filename = "", uint_fast64_t lineNumber = 0);
             
             /*!
              * Retrieves an expression defining the lower bound for this integer variable.
@@ -62,7 +51,7 @@ namespace storm {
              * @param substitution The substitution to perform.
              * @return The resulting boolean variable.
              */
-            IntegerVariable substitute(std::map<std::string, storm::expressions::Expression> const& substitution) const;
+            IntegerVariable substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const;
             
             friend std::ostream& operator<<(std::ostream& stream, IntegerVariable const& variable);
             

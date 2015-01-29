@@ -5,6 +5,7 @@
 
 #include "src/storage/prism/LocatedInformation.h"
 #include "src/storage/expressions/Expression.h"
+#include "src/storage/expressions/Variable.h"
 #include "src/utility/OsDetection.h"
 
 namespace storm {
@@ -51,7 +52,7 @@ namespace storm {
              * @param substitution The substitution to perform.
              * @return The resulting label.
              */
-            Label substitute(std::map<std::string, storm::expressions::Expression> const& substitution) const;
+            Label substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const;
             
             friend std::ostream& operator<<(std::ostream& stream, Label const& label);
             

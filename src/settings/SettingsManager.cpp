@@ -28,6 +28,7 @@ namespace storm {
             this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::GlpkSettings(*this)));
 			this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::GurobiSettings(*this)));
 			this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::TopologicalValueIterationEquationSolverSettings(*this)));
+            this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::SparseDtmcEliminationModelCheckerSettings(*this)));
         }
         
         SettingsManager::~SettingsManager() {
@@ -512,5 +513,9 @@ namespace storm {
 		storm::settings::modules::TopologicalValueIterationEquationSolverSettings const& topologicalValueIterationEquationSolverSettings() {
 			return dynamic_cast<storm::settings::modules::TopologicalValueIterationEquationSolverSettings const&>(manager().getModule(storm::settings::modules::TopologicalValueIterationEquationSolverSettings::moduleName));
 		}
+        
+        storm::settings::modules::SparseDtmcEliminationModelCheckerSettings const& sparseDtmcEliminationModelCheckerSettings() {
+            return dynamic_cast<storm::settings::modules::SparseDtmcEliminationModelCheckerSettings const&>(manager().getModule(storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::moduleName));
+        }
     }
 }

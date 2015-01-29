@@ -1,8 +1,9 @@
 #include "src/storage/expressions/DoubleLiteralExpression.h"
+#include "src/storage/expressions/ExpressionManager.h"
 
 namespace storm {
     namespace expressions {
-        DoubleLiteralExpression::DoubleLiteralExpression(double value) : BaseExpression(ExpressionReturnType::Double), value(value) {
+        DoubleLiteralExpression::DoubleLiteralExpression(ExpressionManager const& manager, double value) : BaseExpression(manager, manager.getRationalType()), value(value) {
             // Intentionally left empty.
         }
         
@@ -14,20 +15,16 @@ namespace storm {
             return true;
         }
         
-        std::set<std::string> DoubleLiteralExpression::getVariables() const {
-            return std::set<std::string>();
-		}
-
-		std::map<std::string, ExpressionReturnType> DoubleLiteralExpression::getVariablesAndTypes() const {
-			return std::map<std::string, ExpressionReturnType>();
+        void DoubleLiteralExpression::gatherVariables(std::set<storm::expressions::Variable>& variables) const {
+            return;
 		}
         
         std::shared_ptr<BaseExpression const> DoubleLiteralExpression::simplify() const {
             return this->shared_from_this();
         }
         
-        void DoubleLiteralExpression::accept(ExpressionVisitor* visitor) const {
-            visitor->visit(this);
+        boost::any DoubleLiteralExpression::accept(ExpressionVisitor& visitor) const {
+            return visitor.visit(*this);
         }
         
         double DoubleLiteralExpression::getValue() const {

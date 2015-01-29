@@ -1,100 +1,116 @@
 #ifndef STORM_STORAGE_EXPRESSIONS_VALUATION_H_
 #define STORM_STORAGE_EXPRESSIONS_VALUATION_H_
 
-#include <string>
-#include <set>
+#include <cstdint>
+#include <vector>
+#include <memory>
 
 namespace storm {
     namespace expressions {
+        class ExpressionManager;
+        class Variable;
+        
         /*!
-         * The base class of all valuations where a valuation assigns a concrete value to all identifiers. This is, for
-         * example, used for evaluating expressions.
+         * The base class of all valuations of variables. This is, for example, used for evaluating expressions.
          */
         class Valuation {
         public:
             /*!
-             * Retrieves the boolean value of the identifier with the given name.
+             * Creates a valuation of all non-auxiliary variables managed by the given manager. If the manager is
+             * modified in the sense that additional variables are added, all valuations over its variables are
+             * invalidated.
              *
-             * @param name The name of the boolean identifier whose value to retrieve.
-             * @return The value of the boolean identifier.
+             * @param manager The manager of the variables.
              */
-            virtual bool getBooleanValue(std::string const& name) const = 0;
+            Valuation(std::shared_ptr<ExpressionManager const> const& manager);
             
             /*!
-             * Retrieves the integer value of the identifier with the given name.
-             *
-             * @param name The name of the integer identifier whose value to retrieve.
-             * @return The value of the integer identifier.
+             * Declare virtual destructor, so we can properly delete instances later.
              */
-            virtual int_fast64_t getIntegerValue(std::string const& name) const = 0;
+            virtual ~Valuation();
             
             /*!
-             * Retrieves the double value of the identifier with the given name.
+             * Retrieves the value of the given boolean variable.
              *
-             * @param name The name of the double identifier whose value to retrieve.
-             * @return The value of the double identifier.
+             * @param booleanVariable The boolean variable whose value to retrieve.
+             * @return The value of the boolean variable.
              */
-            virtual double getDoubleValue(std::string const& name) const = 0;
+            virtual bool getBooleanValue(Variable const& booleanVariable) const = 0;
             
             /*!
-             * Retrieves whether there exists a boolean identifier with the given name in the valuation.
+             * Sets the value of the given boolean variable to the provided value.
              *
-             * @param name The name of the boolean identifier to query.
-             * @return True iff the identifier exists and is of boolean type.
+             * @param booleanVariable The variable whose value to set.
+             * @param value The new value of the variable.
              */
-            virtual bool containsBooleanIdentifier(std::string const& name) const = 0;
+            virtual void setBooleanValue(Variable const& booleanVariable, bool value) = 0;
             
             /*!
-             * Retrieves whether there exists a integer identifier with the given name in the valuation.
+             * Retrieves the value of the given integer variable.
              *
-             * @param name The name of the integer identifier to query.
-             * @return True iff the identifier exists and is of boolean type.
+             * @param integerVariable The integer variable whose value to retrieve.
+             * @return The value of the integer variable.
              */
-            virtual bool containsIntegerIdentifier(std::string const& name) const = 0;
-            
-            /*!
-             * Retrieves whether there exists a double identifier with the given name in the valuation.
-             *
-             * @param name The name of the double identifier to query.
-             * @return True iff the identifier exists and is of boolean type.
-             */
-            virtual bool containsDoubleIdentifier(std::string const& name) const = 0;
-            
-            /*!
-             * Retrieves the number of identifiers in this valuation.
-             *
-             * @return The number of identifiers in this valuation.
-             */
-            virtual std::size_t getNumberOfIdentifiers() const = 0;
-            
-            /*!
-             * Retrieves the set of all identifiers contained in this valuation.
-             *
-             * @return The set of all identifiers contained in this valuation.
-             */
-            virtual std::set<std::string> getIdentifiers() const = 0;
-            
-            /*!
-             * Retrieves the set of boolean identifiers contained in this valuation.
-             *
-             * @return The set of boolean identifiers contained in this valuation.
-             */
-            virtual std::set<std::string> getBooleanIdentifiers() const = 0;
+            virtual int_fast64_t getIntegerValue(Variable const& integerVariable) const = 0;
 
             /*!
-             * Retrieves the set of integer identifiers contained in this valuation.
+             * Retrieves the value of the given bit vector variable.
              *
-             * @return The set of integer identifiers contained in this valuation.
+             * @param bitVectorVariable The bit vector variable whose value to retrieve.
+             * @return The value of the bit vector variable.
              */
-            virtual std::set<std::string> getIntegerIdentifiers() const = 0;
+            virtual int_fast64_t getBitVectorValue(Variable const& bitVectorVariable) const = 0;
+            
+            /*!
+             * Sets the value of the given integer variable to the provided value.
+             *
+             * @param integerVariable The variable whose value to set.
+             * @param value The new value of the variable.
+             */
+            virtual void setIntegerValue(Variable const& integerVariable, int_fast64_t value) = 0;
 
             /*!
-             * Retrieves the set of double identifiers contained in this valuation.
+             * Sets the value of the given bit vector variable to the provided value.
              *
-             * @return The set of double identifiers contained in this valuation.
+             * @param bitVectorVariable The variable whose value to set.
+             * @param value The new value of the variable.
              */
-            virtual std::set<std::string> getDoubleIdentifiers() const = 0;
+            virtual void setBitVectorValue(Variable const& bitVectorVariable, int_fast64_t value) = 0;
 
+            /*!
+             * Retrieves the value of the given rational variable.
+             *
+             * @param rationalVariable The rational variable whose value to retrieve.
+             * @return The value of the rational variable.
+             */
+            virtual double getRationalValue(Variable const& rationalVariable) const = 0;
+            
+            /*!
+             * Sets the value of the given boolean variable to the provided value.
+             *
+             * @param integerVariable The variable whose value to set.
+             * @param value The new value of the variable.
+             */
+            virtual void setRationalValue(Variable const& rationalVariable, double value) = 0;
+            
+            /*!
+             * Retrieves the manager responsible for the variables of this valuation.
+             *
+             * @return The manager.
+             */
+            ExpressionManager const& getManager() const;
+
+        protected:
+            /*!
+             * Sets the manager responsible for the variables in this valuation.
+             *
+             * @param manager The manager to set.
+             */
+            void setManager(std::shared_ptr<ExpressionManager const> const& manager);
+            
+        private:
+            // The manager responsible for the variables of this valuation.
+            std::shared_ptr<ExpressionManager const> manager;
         };
     }
 }

@@ -5,6 +5,7 @@
 
 #include "src/storage/prism/LocatedInformation.h"
 #include "src/storage/expressions/Expression.h"
+#include "src/storage/expressions/Variable.h"
 #include "src/utility/OsDetection.h"
 
 namespace storm {
@@ -12,25 +13,23 @@ namespace storm {
         class Constant : public LocatedInformation {
         public:
             /*!
-             * Creates a constant with the given type, name and defining expression.
+             * Creates a defined constant.
              *
-             * @param type The type of the constant.
-             * @param name The name of the constant.
+             * @param variable The expression variable associated with the constant.
              * @param expression The expression that defines the constant.
              * @param filename The filename in which the transition reward is defined.
              * @param lineNumber The line number in which the transition reward is defined.
              */
-            Constant(storm::expressions::ExpressionReturnType type, std::string const& name, storm::expressions::Expression const& expression, std::string const& filename = "", uint_fast64_t lineNumber = 0);
+            Constant(storm::expressions::Variable const& variable, storm::expressions::Expression const& expression, std::string const& filename = "", uint_fast64_t lineNumber = 0);
 
             /*!
-             * Creates an undefined constant with the given type and name.
+             * Creates an undefined constant.
              *
-             * @param constantType The type of the constant.
-             * @param constantName The name of the constant.
+             * @param variable The expression variable associated with the constant.
              * @param filename The filename in which the transition reward is defined.
              * @param lineNumber The line number in which the transition reward is defined.
              */
-            Constant(storm::expressions::ExpressionReturnType constantType, std::string const& constantName, std::string const& filename = "", uint_fast64_t lineNumber = 0);
+            Constant(storm::expressions::Variable const& variable, std::string const& filename = "", uint_fast64_t lineNumber = 0);
             
             // Create default implementations of constructors/assignment.
             Constant() = default;
@@ -53,7 +52,14 @@ namespace storm {
              *
              * @return The type of the constant;
              */
-            storm::expressions::ExpressionReturnType getType() const;
+            storm::expressions::Type const& getType() const;
+            
+            /*!
+             * Retrieves the expression variable associated with this constant.
+             *
+             * @return The expression variable associated with this constant.
+             */
+            storm::expressions::Variable const& getExpressionVariable() const;
             
             /*!
              * Retrieves whether the constant is defined, i.e., whether there is an expression defining its value.
@@ -76,16 +82,13 @@ namespace storm {
              * @param substitution The substitution to perform.
              * @return The resulting constant.
              */
-            Constant substitute(std::map<std::string, storm::expressions::Expression> const& substitution) const;
+            Constant substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const;
             
             friend std::ostream& operator<<(std::ostream& stream, Constant const& constant);
             
         private:
-            // The type of the constant.
-            storm::expressions::ExpressionReturnType type;
-            
-            // The name of the constant.
-            std::string name;
+            // The expression variable associated with the constant.
+            storm::expressions::Variable variable;
             
             // A flag that stores whether or not the constant is defined.
             bool defined;

@@ -9,19 +9,10 @@ namespace storm {
             // Intentionally left empty.
         }
         
-        DdForwardIterator<DdType::CUDD>::DdForwardIterator(std::shared_ptr<DdManager<DdType::CUDD>> ddManager, DdGen* generator, int* cube, double value, bool isAtEnd, std::set<std::string> const* metaVariables, bool enumerateDontCareMetaVariables) : ddManager(ddManager), generator(generator), cube(cube), value(value), isAtEnd(isAtEnd), metaVariables(metaVariables), enumerateDontCareMetaVariables(enumerateDontCareMetaVariables), cubeCounter(), relevantDontCareDdVariables(), currentValuation() {
+        DdForwardIterator<DdType::CUDD>::DdForwardIterator(std::shared_ptr<DdManager<DdType::CUDD>> ddManager, DdGen* generator, int* cube, double value, bool isAtEnd, std::set<storm::expressions::Variable> const* metaVariables, bool enumerateDontCareMetaVariables) : ddManager(ddManager), generator(generator), cube(cube), value(value), isAtEnd(isAtEnd), metaVariables(metaVariables), enumerateDontCareMetaVariables(enumerateDontCareMetaVariables), cubeCounter(), relevantDontCareDdVariables(), currentValuation(ddManager->getExpressionManager().getSharedPointer()) {
             // If the given generator is not yet at its end, we need to create the current valuation from the cube from
             // scratch.
             if (!this->isAtEnd) {
-                // Start by registering all meta variables in the valuation with the appropriate type.
-                for (auto const& metaVariableName : *this->metaVariables) {
-                    auto const& metaVariable = this->ddManager->getMetaVariable(metaVariableName);
-                    switch (metaVariable.getType()) {
-                        case DdMetaVariable<DdType::CUDD>::MetaVariableType::Bool: currentValuation.addBooleanIdentifier(metaVariableName); break;
-                        case DdMetaVariable<DdType::CUDD>::MetaVariableType::Int: currentValuation.addIntegerIdentifier(metaVariableName); break;
-                    }
-                }
-
                 // And then get ready for treating the first cube.
                 this->treatNewCube();
             }
@@ -89,18 +80,19 @@ namespace storm {
             ++this->cubeCounter;
             
             for (uint_fast64_t index = 0; index < this->relevantDontCareDdVariables.size(); ++index) {
-                auto const& metaVariable = this->ddManager->getMetaVariable(std::get<1>(this->relevantDontCareDdVariables[index]));
-                if (metaVariable.getType() == DdMetaVariable<DdType::CUDD>::MetaVariableType::Bool) {
+                auto const& ddMetaVariable = this->ddManager->getMetaVariable(std::get<1>(this->relevantDontCareDdVariables[index]));
+                if (ddMetaVariable.getType() == DdMetaVariable<DdType::CUDD>::MetaVariableType::Bool) {
                     if ((this->cubeCounter & (1ull << index)) != 0) {
-                        currentValuation.setBooleanValue(metaVariable.getName(), true);
+                        currentValuation.setBooleanValue(std::get<1>(this->relevantDontCareDdVariables[index]), true);
                     } else {
-                        currentValuation.setBooleanValue(metaVariable.getName(), false);
+                        currentValuation.setBooleanValue(std::get<1>(this->relevantDontCareDdVariables[index]), false);
                     }
                 } else {
+                    storm::expressions::Variable const& metaVariable = std::get<1>(this->relevantDontCareDdVariables[index]);
                     if ((this->cubeCounter & (1ull << index)) != 0) {
-                        currentValuation.setIntegerValue(metaVariable.getName(), ((currentValuation.getIntegerValue(metaVariable.getName()) - metaVariable.getLow()) | (1ull << std::get<2>(this->relevantDontCareDdVariables[index]))) + metaVariable.getLow());
+                        currentValuation.setBitVectorValue(metaVariable, ((currentValuation.getBitVectorValue(metaVariable) - ddMetaVariable.getLow()) | (1ull << std::get<2>(this->relevantDontCareDdVariables[index]))) + ddMetaVariable.getLow());
                     } else {
-                        currentValuation.setIntegerValue(metaVariable.getName(), ((currentValuation.getIntegerValue(metaVariable.getName()) - metaVariable.getLow()) & ~(1ull << std::get<2>(this->relevantDontCareDdVariables[index]))) + metaVariable.getLow());
+                        currentValuation.setBitVectorValue(metaVariable, ((currentValuation.getBitVectorValue(metaVariable) - ddMetaVariable.getLow()) & ~(1ull << std::get<2>(this->relevantDontCareDdVariables[index]))) + ddMetaVariable.getLow());
                     }
                 }
             }
@@ -112,48 +104,37 @@ namespace storm {
             // Now loop through the bits of all meta variables and check whether they need to be set, not set or are
             // don't cares. In the latter case, we add them to a special list, so we can iterate over their concrete
             // valuations later.
-            for (auto const& metaVariableName : *this->metaVariables) {
+            for (auto const& metaVariable : *this->metaVariables) {
                 bool metaVariableAppearsInCube = false;
-                std::vector<std::tuple<ADD, std::string, uint_fast64_t>> localRelenvantDontCareDdVariables;
-                auto const& metaVariable = this->ddManager->getMetaVariable(metaVariableName);
-                if (metaVariable.getType() == DdMetaVariable<DdType::CUDD>::MetaVariableType::Bool) {
-                    if (this->cube[metaVariable.getDdVariables()[0].getCuddAdd().NodeReadIndex()] == 0) {
+                std::vector<std::tuple<ADD, storm::expressions::Variable, uint_fast64_t>> localRelenvantDontCareDdVariables;
+                auto const& ddMetaVariable = this->ddManager->getMetaVariable(metaVariable);
+                if (ddMetaVariable.getType() == DdMetaVariable<DdType::CUDD>::MetaVariableType::Bool) {
+                    if (this->cube[ddMetaVariable.getDdVariables()[0].getCuddAdd().NodeReadIndex()] == 0) {
                         metaVariableAppearsInCube = true;
-                        if (!currentValuation.containsBooleanIdentifier(metaVariableName)) {
-                            currentValuation.addBooleanIdentifier(metaVariableName, false);
-                        } else {
-                            currentValuation.setBooleanValue(metaVariableName, false);
-                        }
-                    } else if (this->cube[metaVariable.getDdVariables()[0].getCuddAdd().NodeReadIndex()] == 1) {
+                        currentValuation.setBooleanValue(metaVariable, false);
+                    } else if (this->cube[ddMetaVariable.getDdVariables()[0].getCuddAdd().NodeReadIndex()] == 1) {
                         metaVariableAppearsInCube = true;
-                        if (!currentValuation.containsBooleanIdentifier(metaVariableName)) {
-                            currentValuation.addBooleanIdentifier(metaVariableName, true);
-                        } else {
-                            currentValuation.setBooleanValue(metaVariableName, true);
-                        }
+                        currentValuation.setBooleanValue(metaVariable, true);
                     } else {
-                        localRelenvantDontCareDdVariables.push_back(std::make_tuple(metaVariable.getDdVariables()[0].getCuddAdd(), metaVariableName, 0));
+                        localRelenvantDontCareDdVariables.push_back(std::make_tuple(ddMetaVariable.getDdVariables()[0].getCuddAdd(), metaVariable, 0));
                     }
                 } else {
                     int_fast64_t intValue = 0;
-                    for (uint_fast64_t bitIndex = 0; bitIndex < metaVariable.getNumberOfDdVariables(); ++bitIndex) {
-                        if (cube[metaVariable.getDdVariables()[bitIndex].getCuddAdd().NodeReadIndex()] == 0) {
+                    for (uint_fast64_t bitIndex = 0; bitIndex < ddMetaVariable.getNumberOfDdVariables(); ++bitIndex) {
+                        if (cube[ddMetaVariable.getDdVariables()[bitIndex].getCuddAdd().NodeReadIndex()] == 0) {
                             // Leave bit unset.
                             metaVariableAppearsInCube = true;
-                        } else if (cube[metaVariable.getDdVariables()[bitIndex].getCuddAdd().NodeReadIndex()] == 1) {
-                            intValue |= 1ull << (metaVariable.getNumberOfDdVariables() - bitIndex - 1);
+                        } else if (cube[ddMetaVariable.getDdVariables()[bitIndex].getCuddAdd().NodeReadIndex()] == 1) {
+                            intValue |= 1ull << (ddMetaVariable.getNumberOfDdVariables() - bitIndex - 1);
                             metaVariableAppearsInCube = true;
                         } else {
                             // Temporarily leave bit unset so we can iterate trough the other option later.
                             // Add the bit to the relevant don't care bits.
-                            localRelenvantDontCareDdVariables.push_back(std::make_tuple(metaVariable.getDdVariables()[bitIndex].getCuddAdd(), metaVariableName, metaVariable.getNumberOfDdVariables() - bitIndex - 1));
+                            localRelenvantDontCareDdVariables.push_back(std::make_tuple(ddMetaVariable.getDdVariables()[bitIndex].getCuddAdd(), metaVariable, ddMetaVariable.getNumberOfDdVariables() - bitIndex - 1));
                         }
                     }
                     if (this->enumerateDontCareMetaVariables || metaVariableAppearsInCube) {
-                        if (!currentValuation.containsIntegerIdentifier(metaVariableName)) {
-                            currentValuation.addIntegerIdentifier(metaVariableName);
-                        }
-                        currentValuation.setIntegerValue(metaVariableName, intValue + metaVariable.getLow());
+                        currentValuation.setBitVectorValue(metaVariable, intValue + ddMetaVariable.getLow());
                     }
                 }
                 
@@ -161,12 +142,6 @@ namespace storm {
                 // missing bits to later enumerate all possible valuations.
                 if (this->enumerateDontCareMetaVariables || metaVariableAppearsInCube) {
                     relevantDontCareDdVariables.insert(relevantDontCareDdVariables.end(), localRelenvantDontCareDdVariables.begin(), localRelenvantDontCareDdVariables.end());
-                }
-                
-                // If the meta variable does not appear in the cube and we're not supposed to enumerate such meta variables
-                // we remove the meta variable from the valuation.
-                if (!this->enumerateDontCareMetaVariables && !metaVariableAppearsInCube) {
-                    currentValuation.removeIdentifier(metaVariableName);
                 }
             }
             

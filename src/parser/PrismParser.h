@@ -9,6 +9,7 @@
 #include "src/parser/SpiritParserDefinitions.h"
 #include "src/parser/ExpressionParser.h"
 #include "src/storage/prism/Program.h"
+#include "src/storage/expressions/ExpressionManager.h"
 #include "src/storage/expressions/Expression.h"
 #include "src/storage/expressions/Expressions.h"
 #include "src/utility/macros.h"
@@ -20,7 +21,7 @@ namespace storm {
         class GlobalProgramInformation {
         public:
             // Default construct the header information.
-			GlobalProgramInformation() : modelType(), constants(), formulas(), globalBooleanVariables(), globalIntegerVariables(), moduleToIndexMap(), modules(), rewardModels(), labels(),hasInitialConstruct(false), initialConstruct(storm::expressions::Expression::createFalse()), currentCommandIndex(0), currentUpdateIndex(0) {
+            GlobalProgramInformation() : modelType(), constants(), formulas(), globalBooleanVariables(), globalIntegerVariables(), moduleToIndexMap(), actionIndices(), modules(), rewardModels(), labels(), hasInitialConstruct(false), initialConstruct(), currentCommandIndex(0), currentUpdateIndex(0) {
                 // Intentionally left empty.
             }
             
@@ -31,6 +32,7 @@ namespace storm {
             std::vector<storm::prism::BooleanVariable> globalBooleanVariables;
             std::vector<storm::prism::IntegerVariable> globalIntegerVariables;
             std::map<std::string, uint_fast64_t> moduleToIndexMap;
+            std::map<std::string, uint_fast64_t> actionIndices;
             std::vector<storm::prism::Module> modules;
             std::vector<storm::prism::RewardModel> rewardModels;
             std::vector<storm::prism::Label> labels;
@@ -89,12 +91,13 @@ namespace storm {
                     ("rewards", 11)
                     ("endrewards", 12)
                     ("true", 13)
-                    ("min", 14)
-                    ("max", 15)
-                    ("floor", 16)
-                    ("ceil", 17)
-                    ("init", 18)
-                    ("endinit", 19);
+                    ("false", 14)
+                    ("min", 15)
+                    ("max", 16)
+                    ("floor", 17)
+                    ("ceil", 18)
+                    ("init", 19)
+                    ("endinit", 20);
                 }
             };
             
@@ -191,9 +194,9 @@ namespace storm {
             qi::rule<Iterator, storm::prism::Assignment(), Skipper> assignmentDefinition;
             
             // Rules for reward definitions.
-            qi::rule<Iterator, storm::prism::RewardModel(), qi::locals<std::string, std::vector<storm::prism::StateReward>, std::vector<storm::prism::TransitionReward>>, Skipper> rewardModelDefinition;
+            qi::rule<Iterator, storm::prism::RewardModel(GlobalProgramInformation&), qi::locals<std::string, std::vector<storm::prism::StateReward>, std::vector<storm::prism::TransitionReward>>, Skipper> rewardModelDefinition;
             qi::rule<Iterator, storm::prism::StateReward(), Skipper> stateRewardDefinition;
-            qi::rule<Iterator, storm::prism::TransitionReward(), qi::locals<std::string>, Skipper> transitionRewardDefinition;
+            qi::rule<Iterator, storm::prism::TransitionReward(GlobalProgramInformation&), qi::locals<std::string>, Skipper> transitionRewardDefinition;
             
             // Rules for initial states expression.
             qi::rule<Iterator, qi::unused_type(GlobalProgramInformation&), Skipper> initialStatesConstruct;
@@ -212,7 +215,8 @@ namespace storm {
             storm::parser::PrismParser::modelTypeStruct modelType_;
             qi::symbols<char, storm::expressions::Expression> identifiers_;
             
-            // Parser used for recognizing expressions.
+            // Parser and manager used for recognizing expressions.
+            std::shared_ptr<storm::expressions::ExpressionManager> manager;
             storm::parser::ExpressionParser expressionParser;
             
             // Helper methods used in the grammar.
@@ -229,10 +233,11 @@ namespace storm {
             storm::prism::Label createLabel(std::string const& labelName, storm::expressions::Expression expression) const;
             storm::prism::RewardModel createRewardModel(std::string const& rewardModelName, std::vector<storm::prism::StateReward> const& stateRewards, std::vector<storm::prism::TransitionReward> const& transitionRewards) const;
             storm::prism::StateReward createStateReward(storm::expressions::Expression statePredicateExpression, storm::expressions::Expression rewardValueExpression) const;
-            storm::prism::TransitionReward createTransitionReward(std::string const& actionName, storm::expressions::Expression statePredicateExpression, storm::expressions::Expression rewardValueExpression) const;
+            storm::prism::TransitionReward createTransitionReward(std::string const& actionName, storm::expressions::Expression statePredicateExpression, storm::expressions::Expression rewardValueExpression, GlobalProgramInformation& globalProgramInformation) const;
             storm::prism::Assignment createAssignment(std::string const& variableName, storm::expressions::Expression assignedExpression) const;
             storm::prism::Update createUpdate(storm::expressions::Expression likelihoodExpression, std::vector<storm::prism::Assignment> const& assignments, GlobalProgramInformation& globalProgramInformation) const;
             storm::prism::Command createCommand(std::string const& actionName, storm::expressions::Expression guardExpression, std::vector<storm::prism::Update> const& updates, GlobalProgramInformation& globalProgramInformation) const;
+            storm::prism::Command createCommand(std::string const& actionName, GlobalProgramInformation& globalProgramInformation) const;
             storm::prism::BooleanVariable createBooleanVariable(std::string const& variableName, storm::expressions::Expression initialValueExpression) const;
             storm::prism::IntegerVariable createIntegerVariable(std::string const& variableName, storm::expressions::Expression lowerBoundExpression, storm::expressions::Expression upperBoundExpression, storm::expressions::Expression initialValueExpression) const;
             storm::prism::Module createModule(std::string const& moduleName, std::vector<storm::prism::BooleanVariable> const& booleanVariables, std::vector<storm::prism::IntegerVariable> const& integerVariables, std::vector<storm::prism::Command> const& commands, GlobalProgramInformation& globalProgramInformation) const;

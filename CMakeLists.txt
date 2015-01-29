@@ -31,6 +31,7 @@ option(STORM_USE_CUDAFORSTORM "Sets whether StoRM is built with its CUDA extensi
 set(GUROBI_ROOT "" CACHE STRING "The root directory of Gurobi (if available).")
 set(Z3_ROOT "" CACHE STRING "The root directory of Z3 (if available).")
 set(CUDA_ROOT "" CACHE STRING "The root directory of CUDA.")
+set(MSAT_ROOT "" CACHE STRING "The root directory of MathSAT (if available).")
 set(ADDITIONAL_INCLUDE_DIRS "" CACHE STRING "Additional directories added to the include directories.")
 set(ADDITIONAL_LINK_DIRS "" CACHE STRING "Additional directories added to the link directories.")
 set(CUSTOM_BOOST_ROOT "" CACHE STRING "A custom path to the Boost root directory.")
@@ -60,6 +61,7 @@ find_package(Boost REQUIRED)
 find_package(Doxygen REQUIRED)
 find_package(TBB)
 find_package(Threads REQUIRED)
+find_package(GMP)
 
 # If the DEBUG option was turned on, we will target a debug version and a release version otherwise.
 if (STORM_DEBUG)
@@ -86,6 +88,12 @@ if ("${Z3_ROOT}" STREQUAL "")
 else()
     set(ENABLE_Z3 ON)
 	set(Z3_LIB_NAME "z3")
+endif()
+
+if ("${MSAT_ROOT}" STREQUAL "")
+    set(ENABLE_MSAT OFF)
+else()
+    set(ENABLE_MSAT ON)
 endif()
 
 message(STATUS "StoRM - CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
@@ -227,6 +235,13 @@ else()
 	set(STORM_CPP_Z3_DEF "undef")
 endif()
 
+# MathSAT Defines
+if (ENABLE_MSAT)
+	set(STORM_CPP_MSAT_DEF "define")
+else()
+	set(STORM_CPP_MSAT_DEF "undef")
+endif()
+
 # Intel TBB Defines
 if (TBB_FOUND AND STORM_USE_INTELTBB)
 	set(STORM_CPP_INTELTBB_DEF "define")
@@ -281,13 +296,13 @@ file(GLOB_RECURSE STORM_SOURCES_WITHOUT_MAIN ${PROJECT_SOURCE_DIR}/src/*/*.cpp)
 file(GLOB_RECURSE STORM_MAIN_FILE ${PROJECT_SOURCE_DIR}/src/storm.cpp)
 set(STORM_SOURCES "${STORM_SOURCES_WITHOUT_MAIN};${STORM_MAIN_FILE}")
 file(GLOB_RECURSE STORM_ADAPTERS_FILES ${PROJECT_SOURCE_DIR}/src/adapters/*.h ${PROJECT_SOURCE_DIR}/src/adapters/*.cpp)
+file(GLOB_RECURSE STORM_BUILDER_FILES ${PROJECT_SOURCE_DIR}/src/builder/*.h ${PROJECT_SOURCE_DIR}/src/builder/*.cpp)
 file(GLOB_RECURSE STORM_EXCEPTIONS_FILES ${PROJECT_SOURCE_DIR}/src/exceptions/*.h ${PROJECT_SOURCE_DIR}/src/exceptions/*.cpp)
-file(GLOB STORM_PROPERTIES_FILES ${PROJECT_SOURCE_DIR}/src/properties/*.h ${PROJECT_SOURCE_DIR}/src/properties/*.cpp)
-file(GLOB_RECURSE STORM_PROPERTIES_CSL_FILES ${PROJECT_SOURCE_DIR}/src/properties/csl/*.h ${PROJECT_SOURCE_DIR}/src/properties/csl/*.cpp)
-file(GLOB_RECURSE STORM_PROPERTIES_LTL_FILES ${PROJECT_SOURCE_DIR}/src/properties/ltl/*.h ${PROJECT_SOURCE_DIR}/src/properties/ltl/*.cpp)
-file(GLOB_RECURSE STORM_PROPERTIES_PRCTL_FILES ${PROJECT_SOURCE_DIR}/src/properties/prctl/*.h ${PROJECT_SOURCE_DIR}/src/properties/prctl/*.cpp)
-file(GLOB_RECURSE STORM_PROPERTIES_ACTIONS_FILES ${PROJECT_SOURCE_DIR}/src/properties/actions/*.h ${PROJECT_SOURCE_DIR}/src/properties/actions/*.cpp)
-file(GLOB_RECURSE STORM_MODELCHECKER_FILES ${PROJECT_SOURCE_DIR}/src/modelchecker/*.h ${PROJECT_SOURCE_DIR}/src/modelchecker/*.cpp)
+file(GLOB_RECURSE STORM_LOGIC_FILES ${PROJECT_SOURCE_DIR}/src/logic/*.h ${PROJECT_SOURCE_DIR}/src/logic/*.cpp)
+file(GLOB STORM_MODELCHECKER_FILES ${PROJECT_SOURCE_DIR}/src/modelchecker/*.h ${PROJECT_SOURCE_DIR}/src/modelchecker/*.cpp)
+file(GLOB_RECURSE STORM_MODELCHECKER_PRCTL_FILES ${PROJECT_SOURCE_DIR}/src/modelchecker/prctl/*.h ${PROJECT_SOURCE_DIR}/src/modelchecker/prctl/*.cpp)
+file(GLOB_RECURSE STORM_MODELCHECKER_CSL_FILES ${PROJECT_SOURCE_DIR}/src/modelchecker/csl/*.h ${PROJECT_SOURCE_DIR}/src/modelchecker/csl/*.cpp)
+file(GLOB_RECURSE STORM_MODELCHECKER_REACHABILITY_FILES ${PROJECT_SOURCE_DIR}/src/modelchecker/reachability/*.h ${PROJECT_SOURCE_DIR}/src/modelchecker/reachability/*.cpp)
 file(GLOB_RECURSE STORM_COUNTEREXAMPLES_FILES ${PROJECT_SOURCE_DIR}/src/counterexamples/*.h ${PROJECT_SOURCE_DIR}/src/counterexamples/*.cpp)
 file(GLOB_RECURSE STORM_MODELS_FILES ${PROJECT_SOURCE_DIR}/src/models/*.h ${PROJECT_SOURCE_DIR}/src/models/*.cpp)
 file(GLOB STORM_PARSER_FILES ${PROJECT_SOURCE_DIR}/src/parser/*.h ${PROJECT_SOURCE_DIR}/src/parser/*.cpp)
@@ -315,14 +330,14 @@ file(GLOB_RECURSE STORM_BUILD_HEADERS ${PROJECT_BINARY_DIR}/include/*.h)
 # Group the headers and sources
 source_group(main FILES ${STORM_MAIN_FILE})
 source_group(adapters FILES ${STORM_ADAPTERS_FILES})
+source_group(builder FILES ${STORM_BUILDER_FILES})
 source_group(exceptions FILES ${STORM_EXCEPTIONS_FILES})
-source_group(properties FILES ${STORM_PROPERTIES_FILES})
-source_group(properties\\csl FILES ${STORM_PROPERTIES_CSL_FILES})
-source_group(properties\\ltl FILES ${STORM_PROPERTIES_LTL_FILES})
-source_group(properties\\prctl FILES ${STORM_PROPERTIES_PRCTL_FILES})
-source_group(properties\\actions FILES ${STORM_PROPERTIES_ACTIONS_FILES})
+source_group(logic FILES ${STORM_LOGIC_FILES})
 source_group(generated FILES ${STORM_BUILD_HEADERS} ${STORM_BUILD_SOURCES})
 source_group(modelchecker FILES ${STORM_MODELCHECKER_FILES})
+source_group(modelchecker\\prctl FILES ${STORM_MODELCHECKER_PRCTL_FILES})
+source_group(modelchecker\\csl FILES ${STORM_MODELCHECKER_CSL_FILES})
+source_group(modelchecker\\reachability FILES ${STORM_MODELCHECKER_REACHABILITY_FILES})
 source_group(counterexamples FILES ${STORM_COUNTEREXAMPLES_FILES})
 source_group(models FILES ${STORM_MODELS_FILES})
 source_group(parser FILES ${STORM_PARSER_FILES})
@@ -360,6 +375,19 @@ endif()
 if (ENABLE_Z3)
     link_directories("${Z3_ROOT}/bin")
 endif()
+if (ENABLE_MSAT)
+    link_directories("${MSAT_ROOT}/lib")
+endif()
+if(GMP_FOUND)
+	link_directories(${GMP_LIBRARY_DIR})
+elseif(MPIR_FOUND)
+	link_directories(${GMP_MPIR_LIBRARY_DIR} ${GMP_MPIRXX_LIBRARY_DIR})
+else(GMP_FOUND)
+    if (ENABLE_MSAT)
+        message(FATAL_ERROR "GMP is required for MathSAT, but was not found!")
+    endif(ENABLE_MSAT)
+endif(GMP_FOUND)
+
 if (STORM_USE_CUDAFORSTORM)
 	link_directories("${PROJECT_BINARY_DIR}/cudaForStorm/lib")
 endif()
@@ -470,6 +498,14 @@ target_link_libraries(storm "glpk")
 
 #############################################################
 ##
+##	ExprTk
+##
+#############################################################
+message (STATUS "StoRM - Including ExprTk")
+include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/exprtk")
+
+#############################################################
+##
 ##	Z3 (optional)
 ##
 #############################################################
@@ -478,6 +514,32 @@ if (ENABLE_Z3)
 	include_directories("${Z3_ROOT}/include")
     target_link_libraries(storm ${Z3_LIB_NAME})
 endif(ENABLE_Z3)
+
+#############################################################
+##
+##	MathSAT (optional)
+##
+#############################################################
+if (ENABLE_MSAT)
+    message (STATUS "StoRM - Linking with MathSAT")
+	include_directories("${MSAT_ROOT}/include")
+    target_link_libraries(storm "mathsat")
+    target_link_libraries(storm-functional-tests "mathsat")
+    target_link_libraries(storm-performance-tests "mathsat")
+	if(GMP_FOUND)
+		include_directories("${GMP_INCLUDE_DIR}")
+		target_link_libraries(storm "gmp")
+		target_link_libraries(storm-functional-tests "gmp")
+		target_link_libraries(storm-performance-tests "gmp")
+	elseif(MPIR_FOUND)
+		include_directories("${GMP_INCLUDE_DIR}")
+		target_link_libraries(storm "mpir" "mpirxx")
+		target_link_libraries(storm-functional-tests "mpir" "mpirxx")
+		target_link_libraries(storm-performance-tests "mpir" "mpirxx")
+	else(GMP_FOUND)
+		message(FATAL_ERROR "GMP is required for MathSAT, but was not found!")
+	endif(GMP_FOUND)
+endif(ENABLE_MSAT)
 
 #############################################################
 ##

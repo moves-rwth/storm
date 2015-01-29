@@ -1,8 +1,12 @@
 #ifndef STORM_UTILITY_PRISMUTILITY
 #define STORM_UTILITY_PRISMUTILITY
 
-#include "src/storage/LabeledValues.h"
+#include <memory>
+#include <boost/algorithm/string.hpp>
+
+#include "src/storage/expressions/ExpressionManager.h"
 #include "src/storage/prism/Program.h"
+#include "src/utility/OsDetection.h"
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidArgumentException.h"
 
@@ -10,12 +14,21 @@ namespace storm {
     namespace utility {
         namespace prism {
             // A structure holding information about a particular choice.
-            template<typename ValueType, typename KeyType=uint_fast64_t, typename Compare=std::less<uint_fast64_t>>
+            template<typename ValueType, typename KeyType=uint32_t, typename Compare=std::less<uint32_t>>
             struct Choice {
             public:
-                Choice(std::string const& actionLabel) : distribution(), actionLabel(actionLabel), choiceLabels() {
-                    // Intentionally left empty.
+                Choice(uint_fast64_t actionIndex = 0, bool createChoiceLabels = false) : distribution(), actionIndex(actionIndex), choiceLabels(nullptr) {
+                    if (createChoiceLabels) {
+                        choiceLabels = std::shared_ptr<boost::container::flat_set<uint_fast64_t>>(new boost::container::flat_set<uint_fast64_t>());
+                    }
                 }
+                
+                Choice(Choice const& other) = default;
+                Choice& operator=(Choice const& other) = default;
+#ifndef WINDOWS
+                Choice(Choice&& other) = default;
+                Choice& operator=(Choice&& other) = default;
+#endif
                 
                 /*!
                  * Returns an iterator to the first element of this choice.
@@ -84,7 +97,7 @@ namespace storm {
                  * @param label The label to associate with this choice.
                  */
                 void addChoiceLabel(uint_fast64_t label) {
-                    choiceLabels.insert(label);
+                    choiceLabels->insert(label);
                 }
                 
                 /*!
@@ -104,16 +117,16 @@ namespace storm {
                  * @return The set of labels associated with this choice.
                  */
                 boost::container::flat_set<uint_fast64_t> const& getChoiceLabels() const {
-                    return choiceLabels;
+                    return *choiceLabels;
                 }
                 
                 /*!
-                 * Retrieves the action label of this choice.
+                 * Retrieves the index of the action of this choice.
                  *
-                 * @return The action label of this choice.
+                 * @return The index of the action of this choice.
                  */
-                std::string const& getActionLabel() const {
-                    return actionLabel;
+                uint_fast64_t getActionIndex() const {
+                    return actionIndex;
                 }
                 
                 /*!
@@ -148,50 +161,24 @@ namespace storm {
                     return distribution.at(state);
                 }
                 
+                void addProbability(KeyType state, ValueType value) {
+                    distribution[state] += value;
+                }
+                
             private:
                 // The distribution that is associated with the choice.
                 std::map<KeyType, ValueType, Compare> distribution;
                 
-                // The label of the choice.
-                std::string actionLabel;
+                // The index of the action name.
+                uint_fast64_t actionIndex;
                 
                 // The labels that are associated with this choice.
-                boost::container::flat_set<uint_fast64_t> choiceLabels;
+                std::shared_ptr<boost::container::flat_set<uint_fast64_t>> choiceLabels;
             };
             
-            /*!
-             * Adds the target state and probability to the given choice and ignores the labels. This function overloads with
-             * other functions to ensure the proper treatment of labels.
-             *
-             * @param choice The choice to which to add the target state and probability.
-             * @param state The target state of the probability.
-             * @param probability The probability to reach the target state in one step.
-             * @param labels A set of labels that is supposed to be associated with this state and probability. NOTE: this
-             * is ignored by this particular function but not by the overloaded functions.
-             */
-            template<typename ValueType>
-            void addProbabilityToChoice(Choice<ValueType>& choice, uint_fast64_t state, ValueType probability, boost::container::flat_set<uint_fast64_t> const& labels) {
-                choice.getOrAddEntry(state) += probability;
-            }
-            
-            /*!
-             * Adds the target state and probability to the given choice and labels it accordingly. This function overloads
-             * with other functions to ensure the proper treatment of labels.
-             *
-             * @param choice The choice to which to add the target state and probability.
-             * @param state The target state of the probability.
-             * @param probability The probability to reach the target state in one step.
-             * @param labels A set of labels that is supposed to be associated with this state and probability.
-             */
-            template<typename ValueType>
-            void addProbabilityToChoice(Choice<storm::storage::LabeledValues<ValueType>>& choice, uint_fast64_t state, ValueType probability, boost::container::flat_set<uint_fast64_t> const& labels) {
-                auto& labeledEntry = choice.getOrAddEntry(state);
-                labeledEntry.addValue(probability, labels);
-            }
-            
-            static std::map<std::string, storm::expressions::Expression> parseConstantDefinitionString(storm::prism::Program const& program, std::string const& constantDefinitionString) {
-                std::map<std::string, storm::expressions::Expression> constantDefinitions;
-                std::set<std::string> definedConstants;
+            static std::map<storm::expressions::Variable, storm::expressions::Expression> parseConstantDefinitionString(storm::prism::Program const& program, std::string const& constantDefinitionString) {
+                std::map<storm::expressions::Variable, storm::expressions::Expression> constantDefinitions;
+                std::set<storm::expressions::Variable> definedConstants;
                 
                 if (!constantDefinitionString.empty()) {
                     // Parse the string that defines the undefined constants of the model and make sure that it contains exactly
@@ -217,24 +204,25 @@ namespace storm {
                         if (program.hasConstant(constantName)) {
                             // Get the actual constant and check whether it's in fact undefined.
                             auto const& constant = program.getConstant(constantName);
+                            storm::expressions::Variable variable = constant.getExpressionVariable();
                             STORM_LOG_THROW(!constant.isDefined(), storm::exceptions::InvalidArgumentException, "Illegally trying to define already defined constant '" << constantName <<"'.");
-                            STORM_LOG_THROW(definedConstants.find(constantName) == definedConstants.end(), storm::exceptions::InvalidArgumentException, "Illegally trying to define constant '" << constantName <<"' twice.");
-                            definedConstants.insert(constantName);
+                            STORM_LOG_THROW(definedConstants.find(variable) == definedConstants.end(), storm::exceptions::InvalidArgumentException, "Illegally trying to define constant '" << constantName <<"' twice.");
+                            definedConstants.insert(variable);
                             
-                            if (constant.getType() == storm::expressions::ExpressionReturnType::Bool) {
+                            if (constant.getType().isBooleanType()) {
                                 if (value == "true") {
-                                    constantDefinitions[constantName] = storm::expressions::Expression::createTrue();
+                                    constantDefinitions[variable] = program.getManager().boolean(true);
                                 } else if (value == "false") {
-                                    constantDefinitions[constantName] = storm::expressions::Expression::createFalse();
+                                    constantDefinitions[variable] = program.getManager().boolean(false);
                                 } else {
                                     throw storm::exceptions::InvalidArgumentException() << "Illegal value for boolean constant: " << value << ".";
                                 }
-                            } else if (constant.getType() == storm::expressions::ExpressionReturnType::Int) {
+                            } else if (constant.getType().isIntegerType()) {
                                 int_fast64_t integerValue = std::stoi(value);
-                                constantDefinitions[constantName] = storm::expressions::Expression::createIntegerLiteral(integerValue);
-                            } else if (constant.getType() == storm::expressions::ExpressionReturnType::Double) {
+                                constantDefinitions[variable] = program.getManager().integer(integerValue);
+                            } else if (constant.getType().isRationalType()) {
                                 double doubleValue = std::stod(value);
-                                constantDefinitions[constantName] = storm::expressions::Expression::createDoubleLiteral(doubleValue);
+                                constantDefinitions[variable] = program.getManager().rational(doubleValue);
                             }
                         } else {
                             throw storm::exceptions::InvalidArgumentException() << "Illegal constant definition string: unknown undefined constant " << constantName << ".";

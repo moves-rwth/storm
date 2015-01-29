@@ -142,88 +142,32 @@ namespace storm {
                 std::string getSymbolicRewardModelName() const;
 
                 /*!
-                 * Retrieves whether the pctl option was set.
+                 * Retrieves whether the property option was set.
                  *
-                 * @return True if the pctl option was set.
+                 * @return True if the property option was set.
                  */
-                bool isPctlPropertySet() const;
+                bool isPropertySet() const;
                 
                 /*!
-                 * Retrieves the property specified with the pctl option.
+                 * Retrieves the property specified with the property option.
                  *
-                 * @return The property specified with the pctl option.
+                 * @return The property specified with the property option.
                  */
-                std::string getPctlProperty() const;
+                std::string getProperty() const;
                 
                 /*!
-                 * Retrieves whether the pctl-file option was set.
+                 * Retrieves whether a property file was set.
                  *
-                 * @return True iff the pctl-file option was set.
+                 * @return True iff a property was set.
                  */
-                bool isPctlFileSet() const;
+                bool isPropertyFileSet() const;
                 
                 /*!
-                 * Retrieves the name of the file that contains the PCTL properties to be checked on the model.
+                 * Retrieves the name of the file that contains the properties to be checked on the model.
                  *
-                 * @return The name of the file that contains the PCTL properties to be checked on the model.
+                 * @return The name of the file that contains the properties to be checked on the model.
                  */
-                std::string getPctlPropertiesFilename() const;
-
-                /*!
-                 * Retrieves whether the csl option was set.
-                 *
-                 * @return True if the csl option was set.
-                 */
-                bool isCslPropertySet() const;
-
-                /*!
-                 * Retrieves the property specified with the csl option.
-                 *
-                 * @return The property specified with the csl option.
-                 */
-                std::string getCslProperty() const;
-                
-                /*!
-                 * Retrieves whether the csl-file option was set.
-                 *
-                 * @return True iff the csl-file option was set.
-                 */
-                bool isCslFileSet() const;
-                
-                /*!
-                 * Retrieves the name of the file that contains the CSL properties to be checked on the model.
-                 *
-                 * @return The name of the file that contains the CSL properties to be checked on the model.
-                 */
-                std::string getCslPropertiesFilename() const;
-                
-                /*!
-                 * Retrieves whether the ltl option was set.
-                 *
-                 * @return True if the ltl option was set.
-                 */
-                bool isLtlPropertySet() const;
-
-                /*!
-                 * Retrieves the property specified with the ltl option.
-                 *
-                 * @return The property specified with the ltl option.
-                 */
-                std::string getLtlProperty() const;
-                
-                /*!
-                 * Retrieves whether the ltl-file option was set.
-                 *
-                 * @return True iff the ltl-file option was set.
-                 */
-                bool isLtlFileSet() const;
-                
-                /*!
-                 * Retrieves the name of the file that contains the LTL properties to be checked on the model.
-                 *
-                 * @return The name of the file that contains the LTL properties to be checked on the model.
-                 */
-                std::string getLtlPropertiesFilename() const;
+                std::string getPropertiesFilename() const;
 
                 /*!
                  * Retrieves whether the transition reward option was set.
@@ -370,12 +314,8 @@ namespace storm {
                 static const std::string explicitOptionShortName;
                 static const std::string symbolicOptionName;
                 static const std::string symbolicOptionShortName;
-                static const std::string pctlOptionName;
-                static const std::string pctlFileOptionName;
-                static const std::string cslOptionName;
-                static const std::string cslFileOptionName;
-                static const std::string ltlOptionName;
-                static const std::string ltlFileOptionName;
+                static const std::string propertyOptionName;
+                static const std::string propertyFileOptionName;
                 static const std::string transitionRewardsOptionName;
                 static const std::string stateRewardsOptionName;
                 static const std::string counterexampleOptionName;

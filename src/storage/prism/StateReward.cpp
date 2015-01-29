@@ -14,7 +14,7 @@ namespace storm {
             return this->rewardValueExpression;
         }
         
-        StateReward StateReward::substitute(std::map<std::string, storm::expressions::Expression> const& substitution) const {
+        StateReward StateReward::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
             return StateReward(this->getStatePredicateExpression().substitute(substitution), this->getRewardValueExpression().substitute(substitution), this->getFilename(), this->getLineNumber());
         }
         

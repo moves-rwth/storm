@@ -1,8 +1,9 @@
 #include "src/storage/expressions/IntegerLiteralExpression.h"
+#include "src/storage/expressions/ExpressionManager.h"
 
 namespace storm {
     namespace expressions {
-        IntegerLiteralExpression::IntegerLiteralExpression(int_fast64_t value) : BaseExpression(ExpressionReturnType::Int), value(value) {
+        IntegerLiteralExpression::IntegerLiteralExpression(ExpressionManager const& manager, int_fast64_t value) : BaseExpression(manager, manager.getIntegerType()), value(value) {
             // Intentionally left empty.
         }
         
@@ -18,20 +19,16 @@ namespace storm {
             return true;
 		}
 
-		std::set<std::string> IntegerLiteralExpression::getVariables() const {
-			return std::set<std::string>();
+        void IntegerLiteralExpression::gatherVariables(std::set<storm::expressions::Variable>& variables) const {
+			return;
 		}
 
-		std::map<std::string,ExpressionReturnType> IntegerLiteralExpression::getVariablesAndTypes() const {
-			return std::map<std::string, ExpressionReturnType>();
-		}
-        
         std::shared_ptr<BaseExpression const> IntegerLiteralExpression::simplify() const {
             return this->shared_from_this();
         }
         
-        void IntegerLiteralExpression::accept(ExpressionVisitor* visitor) const {
-            visitor->visit(this);
+        boost::any IntegerLiteralExpression::accept(ExpressionVisitor& visitor) const {
+            return visitor.visit(*this);
         }
         
         int_fast64_t IntegerLiteralExpression::getValue() const {

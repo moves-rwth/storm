@@ -100,7 +100,7 @@ namespace storm {
                 
                 lastRow = row;
             }
-            
+                        
             lastColumn = column;
             
             // Finally, set the element and increase the current size.

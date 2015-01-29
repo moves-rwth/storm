@@ -23,12 +23,8 @@ namespace storm {
             const std::string GeneralSettings::explicitOptionShortName = "e";
             const std::string GeneralSettings::symbolicOptionName = "symbolic";
             const std::string GeneralSettings::symbolicOptionShortName = "s";
-            const std::string GeneralSettings::pctlOptionName = "pctl";
-            const std::string GeneralSettings::pctlFileOptionName = "pctlfile";
-            const std::string GeneralSettings::cslOptionName = "csl";
-            const std::string GeneralSettings::cslFileOptionName = "cslfile";
-            const std::string GeneralSettings::ltlOptionName = "ltl";
-            const std::string GeneralSettings::ltlFileOptionName = "ltlfile";
+            const std::string GeneralSettings::propertyOptionName = "prop";
+            const std::string GeneralSettings::propertyFileOptionName = "propfile";
             const std::string GeneralSettings::transitionRewardsOptionName = "transrew";
             const std::string GeneralSettings::stateRewardsOptionName = "staterew";
             const std::string GeneralSettings::counterexampleOptionName = "counterexample";
@@ -64,18 +60,10 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, symbolicOptionName, false, "Parses the model given in a symbolic representation.").setShortName(symbolicOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file from which to read the symbolic model.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build())
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("rewardmodel", "The name of the reward model to use.").setDefaultValueString("").setIsOptional(true).build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, pctlOptionName, false, "Specifies a PCTL formula that is to be checked on the model.")
+                this->addOption(storm::settings::OptionBuilder(moduleName, propertyOptionName, false, "Specifies a PCTL formula that is to be checked on the model.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("formula", "The formula to check.").build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, pctlFileOptionName, false, "Specifies the PCTL formulas that are to be checked on the model.")
+                this->addOption(storm::settings::OptionBuilder(moduleName, propertyFileOptionName, false, "Specifies the PCTL formulas that are to be checked on the model.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The file from which to read the PCTL formulas.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, cslOptionName, false, "Specifies a CSL formula that is to be checked on the model.")
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("formula", "The formula to check.").build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, cslFileOptionName, false, "Specifies the CSL formulas that are to be checked on the model.")
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The file from which to read the CSL formulas.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, ltlOptionName, false, "Specifies an LTL formula that is to be checked on the model.")
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("formula", "The formula to check.").build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, ltlFileOptionName, false, "Specifies the LTL formulas that are to be checked on the model.")
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The file from which to read the LTL formulas.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, counterexampleOptionName, false, "Generates a counterexample for the given PRCTL formulas if not satisfied by the model")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file to which the counterexample is to be written.").setDefaultValueString("-").setIsOptional(true).build()).setShortName(counterexampleOptionShortName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, bisimulationOptionName, false, "Sets whether to perform bisimulation minimization.").setShortName(bisimulationOptionShortName).build());
@@ -165,52 +153,20 @@ namespace storm {
                 return this->getOption(symbolicOptionName).getArgumentByName("rewardmodel").getValueAsString();
             }
             
-            bool GeneralSettings::isPctlPropertySet() const {
-                return this->getOption(pctlOptionName).getHasOptionBeenSet();
+            bool GeneralSettings::isPropertySet() const {
+                return this->getOption(propertyOptionName).getHasOptionBeenSet();
             }
             
-            std::string GeneralSettings::getPctlProperty() const {
-                return this->getOption(pctlOptionName).getArgumentByName("formula").getValueAsString();
+            std::string GeneralSettings::getProperty() const {
+                return this->getOption(propertyOptionName).getArgumentByName("formula").getValueAsString();
             }
             
-            bool GeneralSettings::isPctlFileSet() const {
-                return this->getOption(pctlFileOptionName).getHasOptionBeenSet();
+            bool GeneralSettings::isPropertyFileSet() const {
+                return this->getOption(propertyFileOptionName).getHasOptionBeenSet();
             }
             
-            std::string GeneralSettings::getPctlPropertiesFilename() const {
-                return this->getOption(pctlFileOptionName).getArgumentByName("filename").getValueAsString();
-            }
-            
-            bool GeneralSettings::isCslPropertySet() const {
-                return this->getOption(cslOptionName).getHasOptionBeenSet();
-            }
-            
-            std::string GeneralSettings::getCslProperty() const {
-                return this->getOption(cslOptionName).getArgumentByName("formula").getValueAsString();
-            }
-            
-            bool GeneralSettings::isCslFileSet() const {
-                return this->getOption(cslFileOptionName).getHasOptionBeenSet();
-            }
-            
-            std::string GeneralSettings::getCslPropertiesFilename() const {
-                return this->getOption(cslOptionName).getArgumentByName("filename").getValueAsString();
-            }
-            
-            bool GeneralSettings::isLtlPropertySet() const {
-                return this->getOption(ltlOptionName).getHasOptionBeenSet();
-            }
-            
-            std::string GeneralSettings::getLtlProperty() const {
-                return this->getOption(ltlOptionName).getArgumentByName("formula").getValueAsString();
-            }
-            
-            bool GeneralSettings::isLtlFileSet() const {
-                return this->getOption(ltlFileOptionName).getHasOptionBeenSet();
-            }
-            
-            std::string GeneralSettings::getLtlPropertiesFilename() const {
-                return this->getOption(ltlOptionName).getArgumentByName("filename").getValueAsString();
+            std::string GeneralSettings::getPropertiesFilename() const {
+                return this->getOption(propertyFileOptionName).getArgumentByName("filename").getValueAsString();
             }
             
             bool GeneralSettings::isTransitionRewardsSet() const {
@@ -290,8 +246,8 @@ namespace storm {
                 STORM_LOG_THROW(!isSymbolicSet() || !isExplicitSet(), storm::exceptions::InvalidSettingsException, "The model may be either given in an explicit or a symbolic format, but not both.");
                 
                 // Make sure that one "source" for properties is given.
-                uint_fast64_t propertySources = 0 + (isPctlPropertySet() ? 1 : 0) + (isPctlFileSet() ? 1 : 0) + (isCslPropertySet() ? + 1 : 0) + (isCslFileSet() ? 1 : 0) + (isLtlPropertySet() ? 1 : 0) + (isLtlFileSet() ? 1 : 0);
-                STORM_LOG_THROW(propertySources <= 1, storm::exceptions::InvalidSettingsException, "Please specify exactly one source of properties.");
+                uint_fast64_t propertySources = 0 + (isPropertySet() ? 1 : 0) + (isPropertyFileSet() ? 1 : 0);
+                STORM_LOG_THROW(propertySources <= 1, storm::exceptions::InvalidSettingsException, "Please specify either a file that contains the properties or a property on the command line, but not both.");
                 
                 return true;
             }

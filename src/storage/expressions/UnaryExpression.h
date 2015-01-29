@@ -11,10 +11,11 @@ namespace storm {
             /*!
              * Creates a unary expression with the given return type and operand.
              *
-             * @param returnType The return type of the expression.
+             * @param manager The manager responsible for this expression.
+             * @param type The return type of the expression.
              * @param operand The operand of the unary expression.
              */
-            UnaryExpression(ExpressionReturnType returnType, std::shared_ptr<BaseExpression const> const& operand);
+            UnaryExpression(ExpressionManager const& manager, Type const& type, std::shared_ptr<BaseExpression const> const& operand);
 
             // Instantiate constructors and assignments with their default implementations.
             UnaryExpression(UnaryExpression const& other);
@@ -30,8 +31,7 @@ namespace storm {
             virtual bool containsVariables() const override;
             virtual uint_fast64_t getArity() const override;
             virtual std::shared_ptr<BaseExpression const> getOperand(uint_fast64_t operandIndex) const override;
-			virtual std::set<std::string> getVariables() const override;
-			virtual std::map<std::string, ExpressionReturnType> getVariablesAndTypes() const override;
+            virtual void gatherVariables(std::set<storm::expressions::Variable>& variables) const override;
             
             /*!
              * Retrieves the operand of the unary expression.

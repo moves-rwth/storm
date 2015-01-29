@@ -17,18 +17,19 @@ namespace storm {
              * Creates a command with the given action name, guard and updates.
              *
              * @param globalIndex The global index of the command.
+             * @param actionIndex The index of the action of the command.
              * @param actionName The action name of the command.
              * @param guardExpression the expression that defines the guard of the command.
              * @param updates A list of updates that is associated with this command.
              * @param filename The filename in which the command is defined.
              * @param lineNumber The line number in which the command is defined.
              */
-            Command(uint_fast64_t globalIndex, std::string const& actionName, storm::expressions::Expression const& guardExpression, std::vector<storm::prism::Update> const& updates, std::string const& filename = "", uint_fast64_t lineNumber = 0);
+            Command(uint_fast64_t globalIndex, uint_fast64_t actionIndex, std::string const& actionName, storm::expressions::Expression const& guardExpression, std::vector<storm::prism::Update> const& updates, std::string const& filename = "", uint_fast64_t lineNumber = 0);
             
             // Create default implementations of constructors/assignment.
             Command() = default;
             Command(Command const& other) = default;
-            Command& operator=(Command const& other)= default;
+            Command& operator=(Command const& other) = default;
 #ifndef WINDOWS
             Command(Command&& other) = default;
             Command& operator=(Command&& other) = default;
@@ -40,6 +41,13 @@ namespace storm {
              * @return The action name of this command.
              */
             std::string const& getActionName() const;
+            
+            /*!
+             * Retrieves the action index of this command.
+             *
+             * @return The action index of the command.
+             */
+            uint_fast64_t getActionIndex() const;
             
             /*!
              * Retrieves a reference to the guard of the command.
@@ -82,11 +90,21 @@ namespace storm {
              * @param substitution The substitution to perform.
              * @return The resulting command.
              */
-            Command substitute(std::map<std::string, storm::expressions::Expression> const& substitution) const;
+            Command substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const;
+            
+            /*!
+             * Retrieves whether the command possesses a synchronization label.
+             *
+             * @return True iff the command is labeled.
+             */
+            bool isLabeled() const;
             
             friend std::ostream& operator<<(std::ostream& stream, Command const& command);
             
         private:
+            //  The index of the action associated with this command.
+            uint_fast64_t actionIndex;
+
             // The name of the command.
             std::string actionName;
             
@@ -98,6 +116,9 @@ namespace storm {
             
             // The global index of the command.
             uint_fast64_t globalIndex;
+            
+            // A flag indicating whether the command is labeled.
+            bool labeled;
         };
         
     } // namespace prism

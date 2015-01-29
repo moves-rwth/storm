@@ -72,7 +72,7 @@ namespace storm {
              * @param substitution The substitution to perform.
              * @return The resulting update.
              */
-            Update substitute(std::map<std::string, storm::expressions::Expression> const& substitution) const;
+            Update substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const;
             
             friend std::ostream& operator<<(std::ostream& stream, Update const& assignment);
             
