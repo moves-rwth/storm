@@ -70,9 +70,15 @@ namespace storm {
 			virtual ~SmtSolver();
             
 			SmtSolver(SmtSolver const& other) = default;
+
+#ifndef WINDOWS
 			SmtSolver(SmtSolver&& other) = default;
+#endif
 			SmtSolver& operator=(SmtSolver const& other) = default;
+
+#ifndef WINDOWS
 			SmtSolver& operator=(SmtSolver&& other) = default;
+#endif
             
 			/*!
              * Pushes a backtracking point on the solver's stack. A following call to pop() deletes exactly those

@@ -18,8 +18,10 @@ namespace storm {
 
                 VariableCoefficients(VariableCoefficients const& other) = default;
                 VariableCoefficients& operator=(VariableCoefficients const& other) = default;
+#ifndef WINDOWS
                 VariableCoefficients(VariableCoefficients&& other) = default;
                 VariableCoefficients& operator=(VariableCoefficients&& other) = default;
+#endif
                 
                 VariableCoefficients& operator+=(VariableCoefficients&& other);
                 VariableCoefficients& operator-=(VariableCoefficients&& other);
