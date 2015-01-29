@@ -208,10 +208,10 @@ void check() {
     if (storm::settings::generalSettings().isBisimulationSet()) {
         if (measureDrivenBisimulation) {
             storm::storage::DeterministicModelBisimulationDecomposition<ValueType> bisimulationDecomposition(*dtmc, phiLabel, psiLabel, checkRewards, storm::settings::bisimulationSettings().isWeakBisimulationSet(), false, true);
-            dtmc = bisimulationDecomposition.getQuotient()->template as<storm::models::Dtmc<ValueType>>();
+            *dtmc = std::move(*bisimulationDecomposition.getQuotient()->template as<storm::models::Dtmc<ValueType>>());
         } else {
             storm::storage::DeterministicModelBisimulationDecomposition<ValueType> bisimulationDecomposition(*dtmc, boost::optional<std::set<std::string>>(), checkRewards, storm::settings::bisimulationSettings().isWeakBisimulationSet(), true);
-            dtmc = bisimulationDecomposition.getQuotient()->template as<storm::models::Dtmc<ValueType>>();
+            *dtmc = std::move(*bisimulationDecomposition.getQuotient()->template as<storm::models::Dtmc<ValueType>>());
         }
         
         dtmc->printModelInformationToStream(std::cout);
@@ -231,6 +231,7 @@ void check() {
     if (std::is_same<ValueType, storm::RationalFunction>::value) {
         printApproximateResult(result->asExplicitQuantitativeCheckResult<ValueType>()[*model->getInitialStates().begin()]);
     }
+    std::cout << std::endl;
 }
 
 /*!

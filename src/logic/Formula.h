@@ -4,7 +4,7 @@
 #include <memory>
 #include <iostream>
 
-#include "src/modelchecker/CheckResult.h"
+#include "src/modelchecker/results/CheckResult.h"
 
 namespace storm {
     namespace logic {

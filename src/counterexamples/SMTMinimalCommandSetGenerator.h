@@ -9,7 +9,7 @@
 #include "src/storage/prism/Program.h"
 #include "src/storage/expressions/Expression.h"
 #include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
-#include "src/modelchecker/ExplicitQuantitativeCheckResult.h"
+#include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "src/solver/GmmxxNondeterministicLinearEquationSolver.h"
 
 #include "src/utility/counterexamples.h"

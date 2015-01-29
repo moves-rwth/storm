@@ -106,6 +106,13 @@ public:
 	Dtmc(Dtmc<T>&& dtmc) : AbstractDeterministicModel<T>(std::move(dtmc)) {
 		// Intentionally left empty.
 	}
+    
+    Dtmc<T>& operator=(Dtmc<T>&& dtmc) {
+        if (this != &dtmc) {
+            AbstractDeterministicModel<T>::operator=(std::move(dtmc));
+        }
+        return *this;
+    }
 
 	//! Destructor
 	/*!

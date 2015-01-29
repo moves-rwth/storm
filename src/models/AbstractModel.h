@@ -105,6 +105,17 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
                 transitionRewardMatrix(std::move(optionalTransitionRewardMatrix)) {
             // Intentionally left empty.
         }
+    
+    AbstractModel<T>& operator=(AbstractModel<T>&& model) {
+        if (this != &model) {
+            this->transitionMatrix = std::move(model.transitionMatrix);
+            this->choiceLabeling = std::move(model.choiceLabeling);
+            this->stateLabeling = std::move(model.stateLabeling);
+            this->stateRewardVector = std::move(model.stateRewardVector);
+            this->transitionRewardMatrix = std::move(model.transitionRewardMatrix);
+        }
+        return *this;
+    }
 
 		/*!
 		 * Destructor.

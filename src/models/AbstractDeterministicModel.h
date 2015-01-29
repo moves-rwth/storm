@@ -70,7 +70,14 @@ class AbstractDeterministicModel: public AbstractModel<T> {
 		AbstractDeterministicModel(AbstractDeterministicModel && other) : AbstractModel<T>(std::move(other)) {
 			// Intentionally left empty.
 		}
-        
+    
+    AbstractDeterministicModel<T>& operator=(AbstractDeterministicModel<T>&& model) {
+        if (this != &model) {
+            AbstractModel<T>::operator=(std::move(model));
+        }
+        return *this;
+    }
+    
 		/*!
 		 * Calculates a hash over all values contained in this Model.
 		 * @return size_t A Hash Value

@@ -1,6 +1,6 @@
-#include "src/modelchecker/ExplicitQuantitativeCheckResult.h"
+#include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
-#include "src/modelchecker/ExplicitQualitativeCheckResult.h"
+#include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "src/storage/BitVector.h"
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidOperationException.h"

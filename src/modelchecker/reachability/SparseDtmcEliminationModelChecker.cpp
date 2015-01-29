@@ -9,8 +9,8 @@
 
 #include "src/storage/StronglyConnectedComponentDecomposition.h"
 
-#include "src/modelchecker/ExplicitQualitativeCheckResult.h"
-#include "src/modelchecker/ExplicitQuantitativeCheckResult.h"
+#include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
+#include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
 #include "src/utility/graph.h"
 #include "src/utility/vector.h"

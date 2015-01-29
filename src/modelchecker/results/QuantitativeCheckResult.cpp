@@ -1,4 +1,4 @@
-#include "src/modelchecker/QuantitativeCheckResult.h"
+#include "src/modelchecker/results/QuantitativeCheckResult.h"
 
 #include "storm-config.h"
 #include "src/storage/parameters.h"

@@ -5,7 +5,7 @@
 #include <functional>
 #include <boost/variant.hpp>
 
-#include "src/modelchecker/QualitativeCheckResult.h"
+#include "src/modelchecker/results/QualitativeCheckResult.h"
 #include "src/storage/sparse/StateType.h"
 #include "src/storage/BitVector.h"
 #include "src/utility/OsDetection.h"
