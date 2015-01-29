@@ -7,6 +7,11 @@
 #include "src/solver/NondeterministicLinearEquationSolver.h"
 
 namespace storm {
+    namespace counterexamples {
+        template<typename ValueType>
+        class SMTMinimalCommandSetGenerator;
+    }
+    
     namespace modelchecker {
         
         // Forward-declare other model checkers to make them friend classes.
@@ -17,6 +22,7 @@ namespace storm {
         class SparseMdpPrctlModelChecker : public AbstractModelChecker {
         public:
             friend class SparseMarkovAutomatonCslModelChecker<ValueType>;
+            friend class counterexamples::SMTMinimalCommandSetGenerator<ValueType>;
             
             explicit SparseMdpPrctlModelChecker(storm::models::Mdp<ValueType> const& model);
             explicit SparseMdpPrctlModelChecker(storm::models::Mdp<ValueType> const& model, std::shared_ptr<storm::solver::NondeterministicLinearEquationSolver<ValueType>> nondeterministicLinearEquationSolver);
