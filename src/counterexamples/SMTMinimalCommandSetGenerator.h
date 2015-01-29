@@ -1691,7 +1691,7 @@ namespace storm {
                     modelCheckingClock = std::chrono::high_resolution_clock::now();
                     commandSet.insert(relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end());
                     storm::models::Mdp<T> subMdp = labeledMdp.restrictChoiceLabels(commandSet);
-                    storm::modelchecker::prctl::SparseMdpPrctlModelChecker<T> modelchecker(subMdp);
+                    storm::modelchecker::SparseMdpPrctlModelChecker<T> modelchecker(subMdp);
                     LOG4CPLUS_DEBUG(logger, "Invoking model checker.");
                     std::vector<T> result = modelchecker.checkUntil(false, phiStates, psiStates, false).first;
                     LOG4CPLUS_DEBUG(logger, "Computed model checking results.");
@@ -1776,20 +1776,20 @@ namespace storm {
                     std::unique_ptr<storm::modelchecker::CheckResult> leftResult = modelchecker.check(untilFormula.getLeftSubformula());
                     std::unique_ptr<storm::modelchecker::CheckResult> rightResult = modelchecker.check(untilFormula.getRightSubformula());
                     
-                    storm::modelchecker::ExplicitQualitativeCheckResult const& leftQualitativeResult = leftResult.asExplicitQualitativeCheckResult();
-                    storm::modelchecker::ExplicitQualitativeCheckResult const& rightQualitativeResult = rightResult.asExplicitQualitativeCheckResult();
+                    storm::modelchecker::ExplicitQualitativeCheckResult const& leftQualitativeResult = leftResult->asExplicitQualitativeCheckResult();
+                    storm::modelchecker::ExplicitQualitativeCheckResult const& rightQualitativeResult = rightResult->asExplicitQualitativeCheckResult();
                     
                     phiStates = leftQualitativeResult.getTruthValuesVector();
                     psiStates = rightQualitativeResult.getTruthValuesVector();
                 } else if (probabilityOperator.getSubformula().isEventuallyFormula()) {
                     storm::logic::EventuallyFormula const& eventuallyFormula = probabilityOperator.getSubformula().asEventuallyFormula();
                     
-                    std::unique_ptr<storm::modelchecker::CheckResult> subResult = modelchecker.check(untilFormula.getSubformula());
+                    std::unique_ptr<storm::modelchecker::CheckResult> subResult = modelchecker.check(eventuallyFormula.getSubformula());
                     
                     storm::modelchecker::ExplicitQualitativeCheckResult const& subQualitativeResult = subResult.asExplicitQualitativeCheckResult();
                     
                     phiStates = storm::storage::BitVector(labeledMdp.getNumberOfStates(), true);
-                    psiStates = subResult.getTruthValuesVector();
+                    psiStates = subResult->getTruthValuesVector();
                 }
                 
                 // Delegate the actual computation work to the function of equal name.

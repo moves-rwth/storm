@@ -166,7 +166,7 @@ namespace storm {
             
             if (stateFormula.hasBound()) {
                 STORM_LOG_THROW(result->isQuantitative(), storm::exceptions::InvalidOperationException, "Unable to perform comparison operation on non-quantitative result.");
-                return result->asQuantativeResult<>().compareAgainstBound(stateFormula.getComparisonType(), stateFormula.getBound());
+                return result->compareAgainstBound(stateFormula.getComparisonType(), stateFormula.getBound());
             } else {
                 return result;
             }
@@ -192,7 +192,7 @@ namespace storm {
             
             if (stateFormula.hasBound()) {
                 STORM_LOG_THROW(result->isQuantitative(), storm::exceptions::InvalidOperationException, "Unable to perform comparison operation on non-quantitative result.");
-                return result->asQuantativeResult().compareAgainstBound(stateFormula.getComparisonType(), stateFormula.getBound());
+                return result->compareAgainstBound(stateFormula.getComparisonType(), stateFormula.getBound());
             } else {
                 return result;
             }
@@ -218,7 +218,7 @@ namespace storm {
             
             if (stateFormula.hasBound()) {
                 STORM_LOG_THROW(result->isQuantitative(), storm::exceptions::InvalidOperationException, "Unable to perform comparison operation on non-quantitative result.");
-                return result->asQuantativeResult().compareAgainstBound(stateFormula.getComparisonType(), stateFormula.getBound());
+                return result->compareAgainstBound(stateFormula.getComparisonType(), stateFormula.getBound());
             } else {
                 return result;
             }

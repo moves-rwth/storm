@@ -155,6 +155,7 @@ namespace storm {
 #endif
 		}
 
+#ifndef WINDOWS
 		SmtSolver::CheckResult Z3SmtSolver::checkWithAssumptions(std::initializer_list<storm::expressions::Expression> const& assumptions)
 		{
 #ifdef STORM_HAVE_Z3
@@ -181,7 +182,7 @@ namespace storm {
 			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "StoRM is compiled without Z3 support.");
 #endif
 		}
-
+#endif
 		storm::expressions::SimpleValuation Z3SmtSolver::getModelAsValuation()
 		{
 #ifdef STORM_HAVE_Z3
@@ -229,7 +230,7 @@ namespace storm {
 		{
 #ifdef STORM_HAVE_Z3
 			std::vector<storm::expressions::SimpleValuation> valuations;
-			this->allSat(important, [&valuations](storm::expressions::SimpleValuation const& valuation) -> bool { valuations.push_back(valuation); return true; });
+			this->allSat(important, static_cast<std::function<bool(storm::expressions::SimpleValuation&)>>([&valuations](storm::expressions::SimpleValuation const& valuation) -> bool { valuations.push_back(valuation); return true; }));
 			return valuations;
 #else
 			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "StoRM is compiled without Z3 support.");

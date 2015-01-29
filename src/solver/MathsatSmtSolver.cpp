@@ -191,6 +191,7 @@ namespace storm {
 #endif
 		}
 
+#ifndef WINDOWS
 		SmtSolver::CheckResult MathsatSmtSolver::checkWithAssumptions(std::initializer_list<storm::expressions::Expression> const& assumptions)
 		{
 #ifdef STORM_HAVE_MSAT
@@ -218,6 +219,7 @@ namespace storm {
 			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "StoRM is compiled without MathSAT support.");
 #endif
 		}
+#endif
 
 		storm::expressions::SimpleValuation MathsatSmtSolver::getModelAsValuation()
 		{

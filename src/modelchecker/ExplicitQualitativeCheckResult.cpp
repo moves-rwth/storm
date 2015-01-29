@@ -111,10 +111,18 @@ namespace storm {
                 out << std::boolalpha;
 
                 map_type const& map = boost::get<map_type>(truthValues);
+
+#ifndef WINDOWS
                 typename map_type::const_iterator it = map.begin();
                 typename map_type::const_iterator itPlusOne = map.begin();
                 ++itPlusOne;
                 typename map_type::const_iterator ite = map.end();
+#else
+				map_type::const_iterator it = map.begin();
+				map_type::const_iterator itPlusOne = map.begin();
+				++itPlusOne;
+				map_type::const_iterator ite = map.end();
+#endif
                 
                 for (; it != ite; ++itPlusOne, ++it) {
                     out << it->second;

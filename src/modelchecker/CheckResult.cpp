@@ -22,7 +22,11 @@ namespace storm {
         void CheckResult::complement() {
             STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Unable to perform logical 'not' on the check result.");
         }
-                
+        
+        std::unique_ptr<CheckResult> CheckResult::compareAgainstBound(storm::logic::ComparisonType comparisonType, double bound) const {
+            STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Unable to perform comparison against bound on the check result.");
+        }
+        
         bool CheckResult::isExplicit() const {
             return false;
         }

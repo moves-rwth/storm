@@ -2,6 +2,7 @@
 #include "storm-config.h"
 
 #include <tuple>
+#include <sstream>
 
 // Include other headers.
 #include "src/exceptions/BaseException.h"
@@ -12,10 +13,9 @@
 
 //#include "src/modelchecker/reachability/DirectEncoding.h"
 #include "src/storage/DeterministicModelBisimulationDecomposition.h"
-#include "src/modelchecker/reachability/SparseSccModelChecker.h"
+#include "src/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
 #include "src/storage/parameters.h"
 #include "src/models/Dtmc.h"
-#include "src/properties/prctl/PrctlFilter.h"
 
 //std::tuple<storm::RationalFunction, boost::optional<storm::storage::SparseMatrix<storm::RationalFunction>>, boost::optional<std::vector<storm::RationalFunction>>, boost::optional<storm::storage::BitVector>, boost::optional<double>, boost::optional<bool>> computeReachabilityProbability(storm::models::Dtmc<storm::RationalFunction> const& dtmc, std::shared_ptr<storm::properties::prctl::PrctlFilter<double>> const& filterFormula) {
 //    // The first thing we need to do is to make sure the formula is of the correct form and - if so - extract
@@ -145,7 +145,14 @@ void check() {
     std::string const& programFile = storm::settings::generalSettings().getSymbolicModelFilename();
     std::string const& constants = storm::settings::generalSettings().getConstantDefinitionString();
     storm::prism::Program program = storm::parser::PrismParser::parse(programFile);
-    std::shared_ptr<storm::models::AbstractModel<ValueType>> model = storm::builder::ExplicitPrismModelBuilder<ValueType>::translateProgram(program, true, false, storm::settings::generalSettings().isSymbolicRewardModelNameSet() ? storm::settings::generalSettings().getSymbolicRewardModelName() : "", constants);
+
+    STORM_LOG_THROW(storm::settings::generalSettings().isPropertySet(), storm::exceptions::InvalidSettingsException, "Unable to perform model checking without a property.");
+    std::shared_ptr<storm::logic::Formula> formula = storm::parser::FormulaParser(program.getManager().getSharedPointer()).parseFromString(storm::settings::generalSettings().getProperty());
+    
+    typename storm::builder::ExplicitPrismModelBuilder<ValueType>::Options options(*formula);
+    options.addConstantDefinitionsFromString(program, storm::settings::generalSettings().getConstantDefinitionString());
+    
+    std::shared_ptr<storm::models::AbstractModel<ValueType>> model = storm::builder::ExplicitPrismModelBuilder<ValueType>::translateProgram(program, options);
     
     model->printModelInformationToStream(std::cout);
     
@@ -155,47 +162,57 @@ void check() {
     
     std::shared_ptr<storm::models::Dtmc<ValueType>> dtmc = model->template as<storm::models::Dtmc<ValueType>>();
         
-    STORM_LOG_THROW(storm::settings::generalSettings().isPctlPropertySet(), storm::exceptions::InvalidSettingsException, "Unable to perform model checking without a property.");
-    std::shared_ptr<storm::properties::prctl::PrctlFilter<double>> filterFormula = storm::parser::PrctlParser::parsePrctlFormula(storm::settings::generalSettings().getPctlProperty());
-    std::cout << "Checking formula " << *filterFormula << std::endl;
+    storm::modelchecker::SparseDtmcEliminationModelChecker<ValueType> modelchecker(*dtmc);
+    STORM_LOG_THROW(modelchecker.canHandle(*formula), storm::exceptions::InvalidPropertyException, "Model checker cannot handle the property: '" << *formula << "'.");
     
-    bool checkRewards = false;
-    std::shared_ptr<storm::properties::prctl::Ap<double>> phiStateFormulaApFormula = nullptr;
-    std::shared_ptr<storm::properties::prctl::Ap<double>> psiStateFormulaApFormula = nullptr;
+    std::cout << "Checking formula " << *formula << std::endl;
     
-    // The first thing we need to do is to make sure the formula is of the correct form.
-    std::shared_ptr<storm::properties::prctl::Until<double>> untilFormula = std::dynamic_pointer_cast<storm::properties::prctl::Until<double>>(filterFormula->getChild());
-    std::shared_ptr<storm::properties::prctl::AbstractStateFormula<double>> phiStateFormula;
-    std::shared_ptr<storm::properties::prctl::AbstractStateFormula<double>> psiStateFormula;
-    if (untilFormula) {
-        phiStateFormula = untilFormula->getLeft();
-        psiStateFormula = untilFormula->getRight();
-    } else {
-        std::shared_ptr<storm::properties::prctl::Eventually<double>> eventuallyFormula = std::dynamic_pointer_cast<storm::properties::prctl::Eventually<double>>(filterFormula->getChild());
-        if (eventuallyFormula) {
-            
-            phiStateFormula = std::shared_ptr<storm::properties::prctl::Ap<double>>(new storm::properties::prctl::Ap<double>("true"));
-            psiStateFormula = eventuallyFormula->getChild();
-        } else {
-            std::shared_ptr<storm::properties::prctl::ReachabilityReward<double>> reachabilityRewardFormula = std::dynamic_pointer_cast<storm::properties::prctl::ReachabilityReward<double>>(filterFormula->getChild());
-            
-            STORM_LOG_THROW(reachabilityRewardFormula, storm::exceptions::InvalidPropertyException, "Illegal formula " << *filterFormula << " for parametric model checking. Note that only unbounded reachability properties (probabilities/rewards) are admitted.");
-            phiStateFormula = std::shared_ptr<storm::properties::prctl::Ap<double>>(new storm::properties::prctl::Ap<double>("true"));
-            psiStateFormula = reachabilityRewardFormula->getChild();
-            checkRewards = true;
+    bool checkRewards = formula->isRewardOperatorFormula();
+    
+    std::string phiLabel;
+    std::string psiLabel;
+    
+    bool measureDrivenBisimulation = false;
+    if (formula->isProbabilityOperatorFormula()) {
+        storm::logic::Formula const& subformula = formula->asProbabilityOperatorFormula().getSubformula();
+        
+        if (subformula.isEventuallyFormula()) {
+            phiLabel = "true";
+            std::stringstream stream;
+            stream << subformula.asEventuallyFormula().getSubformula();
+            psiLabel = stream.str();
+            measureDrivenBisimulation = true;
+        } else if (subformula.isUntilFormula()) {
+            std::stringstream stream;
+            stream << subformula.asUntilFormula().getLeftSubformula();
+            phiLabel = stream.str();
+
+            std::stringstream stream2;
+            stream2 << subformula.asUntilFormula().getRightSubformula();
+            psiLabel = stream2.str();
+            measureDrivenBisimulation = true;
+        }
+    } else if (formula->isRewardOperatorFormula()) {
+        storm::logic::Formula const& subformula = formula->asRewardOperatorFormula().getSubformula();
+        
+        if (subformula.isReachabilityRewardFormula()) {
+            phiLabel = "true";
+            std::stringstream stream;
+            stream << subformula.asReachabilityRewardFormula().getSubformula();
+            psiLabel = stream.str();
+            measureDrivenBisimulation = true;
         }
     }
     
-    // Now we need to make sure the formulas defining the phi and psi states are just labels.
-    phiStateFormulaApFormula = std::dynamic_pointer_cast<storm::properties::prctl::Ap<double>>(phiStateFormula);
-    psiStateFormulaApFormula = std::dynamic_pointer_cast<storm::properties::prctl::Ap<double>>(psiStateFormula);
-    STORM_LOG_THROW(phiStateFormulaApFormula, storm::exceptions::InvalidPropertyException, "Illegal formula " << *phiStateFormula << " for parametric model checking. Note that only atomic propositions are admitted in that position.");
-    STORM_LOG_THROW(psiStateFormulaApFormula, storm::exceptions::InvalidPropertyException, "Illegal formula " << *psiStateFormula << " for parametric model checking. Note that only atomic propositions are admitted in that position.");
-    
     // Perform bisimulation minimization if requested.
     if (storm::settings::generalSettings().isBisimulationSet()) {
-        storm::storage::DeterministicModelBisimulationDecomposition<ValueType> bisimulationDecomposition(*dtmc, phiStateFormulaApFormula->getAp(), psiStateFormulaApFormula->getAp(), checkRewards, storm::settings::bisimulationSettings().isWeakBisimulationSet(), false, true);
-        dtmc = bisimulationDecomposition.getQuotient()->template as<storm::models::Dtmc<ValueType>>();
+        if (measureDrivenBisimulation) {
+            storm::storage::DeterministicModelBisimulationDecomposition<ValueType> bisimulationDecomposition(*dtmc, phiLabel, psiLabel, checkRewards, storm::settings::bisimulationSettings().isWeakBisimulationSet(), false, true);
+            dtmc = bisimulationDecomposition.getQuotient()->template as<storm::models::Dtmc<ValueType>>();
+        } else {
+            storm::storage::DeterministicModelBisimulationDecomposition<ValueType> bisimulationDecomposition(*dtmc, boost::optional<std::set<std::string>>(), checkRewards, storm::settings::bisimulationSettings().isWeakBisimulationSet(), true);
+            dtmc = bisimulationDecomposition.getQuotient()->template as<storm::models::Dtmc<ValueType>>();
+        }
         
         dtmc->printModelInformationToStream(std::cout);
     }
@@ -205,15 +222,14 @@ void check() {
 //    storm::modelchecker::reachability::CollectConstraints<ValueType> constraintCollector;
 //    constraintCollector(*dtmc);
     
-    storm::modelchecker::reachability::SparseSccModelChecker<ValueType> modelchecker;
     
-    ValueType valueFunction = modelchecker.computeConditionalProbability(*dtmc, phiStateFormulaApFormula, psiStateFormulaApFormula);
-    
-    //        storm::RationalFunction valueFunction = checkRewards ? modelchecker.computeReachabilityReward(*dtmc, phiStateFormulaApFormula, psiStateFormulaApFormula) : modelchecker.computeReachabilityProbability(*dtmc, phiStateFormulaApFormula, psiStateFormulaApFormula);
-    
-    STORM_PRINT_AND_LOG(std::endl << "Result: " << valueFunction << std::endl);
+    std::unique_ptr<storm::modelchecker::CheckResult> result = modelchecker.check(*formula);
+
+    // Report the result.
+    STORM_PRINT_AND_LOG(std::endl << "Result: " << std::endl);
+    result->writeToStream(std::cout, model->getInitialStates());
     if (std::is_same<ValueType, storm::RationalFunction>::value) {
-        printApproximateResult(valueFunction);
+        printApproximateResult(result->asExplicitQuantitativeCheckResult<ValueType>()[*model->getInitialStates().begin()]);
     }
 }
 

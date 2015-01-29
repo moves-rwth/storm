@@ -123,7 +123,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        std::unique_ptr<CheckResult> ExplicitQuantitativeCheckResult<ValueType>::compareAgainstBound(storm::logic::ComparisonType comparisonType, ValueType const& bound) const {
+        std::unique_ptr<CheckResult> ExplicitQuantitativeCheckResult<ValueType>::compareAgainstBound(storm::logic::ComparisonType comparisonType, double bound) const {
             if (this->isResultForAllStates()) {
                 vector_type const& valuesAsVector = boost::get<vector_type>(values);
                 storm::storage::BitVector result(valuesAsVector.size());
@@ -188,9 +188,9 @@ namespace storm {
         }
         
         template<>
-        std::unique_ptr<CheckResult> ExplicitQuantitativeCheckResult<storm::RationalFunction>::compareAgainstBound(storm::logic::ComparisonType comparisonType, storm::RationalFunction const& bound) const {
+        std::unique_ptr<CheckResult> ExplicitQuantitativeCheckResult<storm::RationalFunction>::compareAgainstBound(storm::logic::ComparisonType comparisonType, double bound) const {
             // Since it is not possible to compare rational functions against bounds, we simply call the base class method.
-            QuantitativeCheckResult::compareAgainstBound(comparisonType, bound);
+            return QuantitativeCheckResult::compareAgainstBound(comparisonType, bound);
         }
         
         template<typename ValueType>

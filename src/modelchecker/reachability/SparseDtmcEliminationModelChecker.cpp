@@ -1,6 +1,7 @@
 #include "src/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
 
 #include <algorithm>
+#include <chrono>
 
 #ifdef PARAMETRIC_SYSTEMS
 #include "src/storage/parameters.h"

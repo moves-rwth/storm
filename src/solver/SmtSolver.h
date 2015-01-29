@@ -70,9 +70,15 @@ namespace storm {
 			virtual ~SmtSolver();
             
 			SmtSolver(SmtSolver const& other) = default;
+
+#ifndef WINDOWS
 			SmtSolver(SmtSolver&& other) = default;
+#endif
 			SmtSolver& operator=(SmtSolver const& other) = default;
+
+#ifndef WINDOWS
 			SmtSolver& operator=(SmtSolver&& other) = default;
+#endif
             
 			/*!
              * Pushes a backtracking point on the solver's stack. A following call to pop() deletes exactly those
@@ -146,8 +152,10 @@ namespace storm {
              * @param assumptions The assumptions to add to the call.
              * @return Sat if the conjunction of the asserted expressions together with the provided assumptions is
              * satisfiable, Unsat if it is unsatisfiable and Unknown if the solver could not determine satisfiability.
-             */
+			 */
+#ifndef WINDOWS
 			virtual CheckResult checkWithAssumptions(std::initializer_list<storm::expressions::Expression> const& assumptions) = 0;
+#endif
             
 			/*!
              * If the last call to check() or checkWithAssumptions() returned Sat, this method retrieves a model that

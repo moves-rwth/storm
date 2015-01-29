@@ -8,8 +8,6 @@ namespace storm {
         template<typename ValueType>
         class QuantitativeCheckResult : public CheckResult {
         public:
-            virtual std::unique_ptr<CheckResult> compareAgainstBound(storm::logic::ComparisonType comparisonType, ValueType const& bound) const;
-            
             virtual bool isQuantitative() const override;
         };
     }
