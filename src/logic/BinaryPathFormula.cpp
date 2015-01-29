@@ -44,7 +44,7 @@ namespace storm {
         
         void BinaryPathFormula::gatherAtomicExpressionFormulas(std::vector<std::shared_ptr<AtomicExpressionFormula const>>& atomicExpressionFormulas) const {
             this->getLeftSubformula().gatherAtomicExpressionFormulas(atomicExpressionFormulas);
-            this->getLeftSubformula().gatherAtomicExpressionFormulas(atomicExpressionFormulas);
+            this->getRightSubformula().gatherAtomicExpressionFormulas(atomicExpressionFormulas);
         }
         
         void BinaryPathFormula::gatherAtomicLabelFormulas(std::vector<std::shared_ptr<AtomicLabelFormula const>>& atomicLabelFormulas) const {
