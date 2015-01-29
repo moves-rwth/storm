@@ -152,8 +152,10 @@ namespace storm {
              * @param assumptions The assumptions to add to the call.
              * @return Sat if the conjunction of the asserted expressions together with the provided assumptions is
              * satisfiable, Unsat if it is unsatisfiable and Unknown if the solver could not determine satisfiability.
-             */
+			 */
+#ifndef WINDOWS
 			virtual CheckResult checkWithAssumptions(std::initializer_list<storm::expressions::Expression> const& assumptions) = 0;
+#endif
             
 			/*!
              * If the last call to check() or checkWithAssumptions() returned Sat, this method retrieves a model that

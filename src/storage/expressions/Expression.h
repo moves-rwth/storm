@@ -324,4 +324,14 @@ namespace storm {
     }
 }
 
+//specialize 
+namespace std {
+	template<>
+	struct less < storm::expressions::Expression > {
+		bool operator()(const storm::expressions::Expression& lhs, const storm::expressions::Expression& rhs) const {
+			return lhs.getBaseExpressionPointer() < rhs.getBaseExpressionPointer();
+		}
+	};
+}
+
 #endif /* STORM_STORAGE_EXPRESSIONS_EXPRESSION_H_ */
