@@ -14,6 +14,7 @@
 #include "src/storage/expressions/SimpleValuation.h"
 #include "src/storage/expressions/ExpressionEvaluator.h"
 #include "src/storage/BitVectorHashMap.h"
+#include "src/logic/Formulas.h"
 #include "src/models/AbstractModel.h"
 #include "src/models/AtomicPropositionsLabeling.h"
 #include "src/storage/SparseMatrix.h"
@@ -119,6 +120,48 @@ namespace storm {
                 boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> choiceLabeling;
             };
             
+            struct Options {
+                /*!
+                 * Creates an object representing the default building options.
+                 */
+                Options();
+                
+                /*! Creates an object representing the suggested building options assuming that the given formula is the
+                 * only one to check.
+                 *
+                 * @param formula The formula based on which to choose the building options.
+                 */
+                Options(storm::logic::Formula const& formula);
+                
+                /*!
+                 * Sets the constants definitions from the given string. The string must be of the form 'X=a,Y=b,Z=c',
+                 * etc. where X,Y,Z are the variable names and a,b,c are the values of the constants.
+                 *
+                 * @param program The program managing the constants that shall be defined. Note that the program itself
+                 * is not modified whatsoever.
+                 * @param constantDefinitionString The string from which to parse the constants' values.
+                 */
+                void addConstantDefinitionsFromString(storm::prism::Program const& program, std::string const& constantDefinitionString);
+                
+                // A flag that indicates whether or not command labels are to be built.
+                bool buildCommandLabels;
+                
+                // A flag that indicates whether or not a reward model is to be built.
+                bool buildRewards;
+                
+                // An optional string, that, if given, indicates which of the reward models is to be built.
+                boost::optional<std::string> rewardModelName;
+                
+                // An optional mapping that, if given, contains defining expressions for undefined constants.
+                boost::optional<std::map<storm::expressions::Variable, storm::expressions::Expression>> constantDefinitions;
+                
+                // An optional set of labels that, if given, restricts the labels that are built.
+                boost::optional<std::set<std::string>> labelsToBuild;
+                
+                // An optional set of expressions for which labels need to be built.
+                boost::optional<std::vector<storm::expressions::Expression>> expressionLabels;
+            };
+            
             /*!
              * Convert the program given at construction time to an abstract model. The type of the model is the one
              * specified in the program. The given reward model name selects the rewards that the model will contain.
@@ -129,7 +172,7 @@ namespace storm {
              * @param rewardModel The reward model that is to be built.
              * @return The explicit model that was given by the probabilistic program.
              */
-            static std::unique_ptr<storm::models::AbstractModel<ValueType>> translateProgram(storm::prism::Program program, bool commandLabels = false, bool rewards = true, std::string const& rewardModelName = "", std::string const& constantDefinitionString = "");
+            static std::unique_ptr<storm::models::AbstractModel<ValueType>> translateProgram(storm::prism::Program program, Options const& options = Options());
             
         private:
             static void unpackStateIntoEvaluator(storm::storage::BitVector const& currentState, VariableInformation const& variableInformation, storm::expressions::ExpressionEvaluator<ValueType>& evaluator);
@@ -212,9 +255,10 @@ namespace storm {
              *
              * @param program The program whose state space to explore.
              * @param rewardModel The reward model that is to be considered.
+             * @param options A set of options used to customize the building process.
              * @return A structure containing the components of the resulting model.
              */
-            static ModelComponents buildModelComponents(storm::prism::Program const& program, storm::prism::RewardModel const& rewardModel, bool commandLabels = false);
+            static ModelComponents buildModelComponents(storm::prism::Program const& program, storm::prism::RewardModel const& rewardModel, Options const& options);
             
             /*!
              * Builds the state labeling for the given program.

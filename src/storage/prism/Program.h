@@ -73,6 +73,13 @@ namespace storm {
             bool hasUndefinedConstants() const;
 
             /*!
+             * Retrieves the undefined constants in the program.
+             *
+             * @return The undefined constants in the program.
+             */
+            std::vector<std::reference_wrapper<storm::prism::Constant const>> getUndefinedConstants() const;
+            
+            /*!
              * Retrieves whether the given constant exists in the program.
              *
              * @param constantName The name of the constant to search.
@@ -290,6 +297,14 @@ namespace storm {
             RewardModel const& getRewardModel(uint_fast64_t index) const;
             
             /*!
+             * Checks whether the program has a label with the given name.
+             *
+             * @param labelName The label of the program.
+             * @return True iff the label of the program.
+             */
+            bool hasLabel(std::string const& labelName) const;
+            
+            /*!
              * Retrieves all labels that are defined by the probabilitic program.
              *
              * @return A set of labels that are defined in the program.
@@ -303,6 +318,29 @@ namespace storm {
              */
             std::size_t getNumberOfLabels() const;
 
+            /*!
+             * Adds a label with the given name and defining expression to the program.
+             *
+             * @param name The name of the label. This name must not yet exist as a label name in the program.
+             * @param statePredicateExpression The predicate that is described by the label.
+             */
+            void addLabel(std::string const& name, storm::expressions::Expression const& statePredicateExpression);
+            
+            /*!
+             * Removes the label with the given name from the program.
+             *
+             * @param name The name of a label that exists within the program.
+             */
+            void removeLabel(std::string const& name);
+            
+            /*!
+             * Removes all labels that are not contained in the given set from the program. Note: no check is performed
+             * as to whether or not the given label names actually exist.
+             *
+             * @param labelSet The label set that is to be kept.
+             */
+            void filterLabels(std::set<std::string> const& labelSet);
+            
             /*!
              * Creates a new program that drops all commands whose indices are not in the given set.
              *
@@ -401,9 +439,6 @@ namespace storm {
             
             // The labels that are defined for this model.
             std::vector<Label> labels;
-            
-            // A mapping from label names to their corresponding indices.
-            std::map<std::string, uint_fast64_t> labelToIndexMap;
             
             // A mapping from action names to their indices.
             std::map<std::string, uint_fast64_t> actionToIndexMap;

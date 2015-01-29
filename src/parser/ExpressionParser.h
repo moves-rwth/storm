@@ -21,8 +21,11 @@ namespace storm {
              *
              * @param manager The manager responsible for the expressions.
              * @param invalidIdentifiers_ A symbol table of identifiers that are to be rejected.
+             * @param allowBacktracking A flag that indicates whether or not the parser is supposed to backtrack beyond
+             * points it would typically allow. This can, for example, be used to prevent errors if the outer grammar
+             * also parses boolean conjuncts that are erroneously consumed by the expression parser.
              */
-            ExpressionParser(storm::expressions::ExpressionManager& manager, qi::symbols<char, uint_fast64_t> const& invalidIdentifiers_);
+            ExpressionParser(storm::expressions::ExpressionManager const& manager, qi::symbols<char, uint_fast64_t> const& invalidIdentifiers_, bool allowBacktracking = false);
             
             /*!
              * Sets an identifier mapping that is used to determine valid variables in the expression. The mapped-to
@@ -158,7 +161,7 @@ namespace storm {
             minMaxOperatorStruct minMaxOperator_;
 
             struct trueFalseOperatorStruct : qi::symbols<char, storm::expressions::Expression> {
-                trueFalseOperatorStruct(storm::expressions::ExpressionManager& manager) {
+                trueFalseOperatorStruct(storm::expressions::ExpressionManager const& manager) {
                     add
                     ("true", manager.boolean(true))
                     ("false", manager.boolean(false));
@@ -169,7 +172,7 @@ namespace storm {
             trueFalseOperatorStruct trueFalse_;
             
             // The manager responsible for the expressions.
-            storm::expressions::ExpressionManager& manager;
+            storm::expressions::ExpressionManager const& manager;
             
             // A flag that indicates whether expressions should actually be generated or just a syntax check shall be
             // performed.

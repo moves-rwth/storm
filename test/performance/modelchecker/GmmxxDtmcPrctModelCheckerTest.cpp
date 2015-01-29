@@ -3,6 +3,7 @@
 #include "src/settings/SettingsManager.h"
 #include "src/settings/SettingMemento.h"
 #include "src/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
+#include "src/modelchecker/ExplicitQuantitativeCheckResult.h"
 #include "src/solver/GmmxxLinearEquationSolver.h"
 #include "src/parser/AutoParser.h"
 
@@ -16,34 +17,31 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, Crowds) {
 	ASSERT_EQ(2036647ull, dtmc->getNumberOfStates());
 	ASSERT_EQ(7362293ull, dtmc->getNumberOfTransitions());
 
-    storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double> mc(*dtmc, std::unique_ptr<storm::solver::LinearEquationSolver<double>>(new storm::solver::GmmxxLinearEquationSolver<double>()));
+    storm::modelchecker::SparseDtmcPrctlModelChecker<double> checker(*dtmc, std::unique_ptr<storm::solver::LinearEquationSolver<double>>(new storm::solver::GmmxxLinearEquationSolver<double>()));
 
-	auto apFormula = std::make_shared<storm::properties::prctl::Ap<double>>("observe0Greater1");
-	auto eventuallyFormula = std::make_shared<storm::properties::prctl::Eventually<double>>(apFormula);
+	auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("observe0Greater1");
+    auto eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(labelFormula);
 
-    LOG4CPLUS_WARN(logger, "Model Checking P=? [F observe0Greater1] on crowds/crowds20_5...");
-	std::vector<double> result = eventuallyFormula->check(mc, false);
-    LOG4CPLUS_WARN(logger, "Done.");
+    std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*eventuallyFormula);
+    storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
 
-    ASSERT_LT(std::abs(result[0] - 0.2296800237), storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(0.2296800237, quantitativeResult1[0], storm::settings::gmmxxEquationSolverSettings().getPrecision());
 
-	apFormula = std::make_shared<storm::properties::prctl::Ap<double>>("observeIGreater1");
-	eventuallyFormula = std::make_shared<storm::properties::prctl::Eventually<double>>(apFormula);
+    labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("observeIGreater1");
+    eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(labelFormula);
 
-    LOG4CPLUS_WARN(logger, "Model Checking P=? [F observeIGreater1] on crowds/crowds20_5...");
-    result = eventuallyFormula->check(mc, false);
-    LOG4CPLUS_WARN(logger, "Done.");
+    result = checker.check(*eventuallyFormula);
+    storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeResult2 = result->asExplicitQuantitativeCheckResult<double>();
     
-	ASSERT_LT(std::abs(result[0] - 0.05073232193), storm::settings::gmmxxEquationSolverSettings().getPrecision());
+	EXPECT_NEAR(0.05073232193, quantitativeResult2[0], storm::settings::gmmxxEquationSolverSettings().getPrecision());
 
-	apFormula = std::make_shared<storm::properties::prctl::Ap<double>>("observeOnlyTrueSender");
-	eventuallyFormula = std::make_shared<storm::properties::prctl::Eventually<double>>(apFormula);
+    labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("observeOnlyTrueSender");
+    eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(labelFormula);
 
-    LOG4CPLUS_WARN(logger, "Model Checking P=? [F observeOnlyTrueSender] on crowds/crowds20_5...");
-    result = eventuallyFormula->check(mc, false);
-    LOG4CPLUS_WARN(logger, "Done.");
-
-	ASSERT_LT(std::abs(result[0] - 0.22742171078), storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    result = checker.check(*eventuallyFormula);
+    storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeResult3 = result->asExplicitQuantitativeCheckResult<double>();
+    
+	EXPECT_NEAR(0.22742171078, quantitativeResult3[0], storm::settings::gmmxxEquationSolverSettings().getPrecision());
 }
 
 
@@ -57,32 +55,30 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, SynchronousLeader) {
 	ASSERT_EQ(1312334ull, dtmc->getNumberOfStates());
 	ASSERT_EQ(1574477ull, dtmc->getNumberOfTransitions());
 
-	storm::modelchecker::prctl::SparseDtmcPrctlModelChecker<double> mc(*dtmc, std::unique_ptr<storm::solver::LinearEquationSolver<double>>(new storm::solver::GmmxxLinearEquationSolver<double>()));
+	storm::modelchecker::SparseDtmcPrctlModelChecker<double> checker(*dtmc, std::unique_ptr<storm::solver::LinearEquationSolver<double>>(new storm::solver::GmmxxLinearEquationSolver<double>()));
 
-	auto apFormula = std::make_shared<storm::properties::prctl::Ap<double>>("elected");
-	auto eventuallyFormula = std::make_shared<storm::properties::prctl::Eventually<double>>(apFormula);
+    auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("elected");
+    auto eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(labelFormula);
 
-    LOG4CPLUS_WARN(logger, "Model Checking P=? [F elected] on synchronous_leader/leader6_8...");
-	std::vector<double> result = eventuallyFormula->check(mc, false);
-    LOG4CPLUS_WARN(logger, "Done.");
+    std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*eventuallyFormula);
+    storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
+    
+	EXPECT_NEAR(1.0, quantitativeResult1[0], storm::settings::gmmxxEquationSolverSettings().getPrecision());
 
-	ASSERT_LT(std::abs(result[0] - 1.0), storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("elected");
+    auto trueFormula = std::make_shared<storm::logic::BooleanLiteralFormula>(true);
+    auto boundedUntilFormula = std::make_shared<storm::logic::BoundedUntilFormula>(trueFormula, labelFormula, 20);
 
-	apFormula = std::make_shared<storm::properties::prctl::Ap<double>>("elected");
-	auto boundedUntilFormula = std::make_shared<storm::properties::prctl::BoundedUntil<double>>(std::make_shared<storm::properties::prctl::Ap<double>>("true"), apFormula, 20);
+    result = checker.check(*boundedUntilFormula);
+    storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeResult2 = result->asExplicitQuantitativeCheckResult<double>();
+    
+	EXPECT_NEAR(0.9993949793, quantitativeResult2[0], storm::settings::gmmxxEquationSolverSettings().getPrecision());
 
-    LOG4CPLUS_WARN(logger, "Model Checking P=? [F<=20 elected] on synchronous_leader/leader6_8...");
-    result = boundedUntilFormula->check(mc, false);
-    LOG4CPLUS_WARN(logger, "Done.");
+    labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("elected");
+    auto reachabilityRewardFormula = std::make_shared<storm::logic::ReachabilityRewardFormula>(labelFormula);
 
-	ASSERT_LT(std::abs(result[0] - 0.9993949793), storm::settings::gmmxxEquationSolverSettings().getPrecision());
-
-	apFormula = std::make_shared<storm::properties::prctl::Ap<double>>("elected");
-	auto reachabilityRewardFormula = std::make_shared<storm::properties::prctl::ReachabilityReward<double>>(apFormula);
-
-    LOG4CPLUS_WARN(logger, "Model Checking R=? [F elected] on synchronous_leader/leader6_8...");
-	result = reachabilityRewardFormula->check(mc, false);
-    LOG4CPLUS_WARN(logger, "Done.");
-
-	ASSERT_LT(std::abs(result[0] - 1.025106273), storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    result = checker.check(*reachabilityRewardFormula);
+    storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeResult3 = result->asExplicitQuantitativeCheckResult<double>();
+    
+	EXPECT_NEAR(1.025106273, quantitativeResult3[0], storm::settings::gmmxxEquationSolverSettings().getPrecision());
 }

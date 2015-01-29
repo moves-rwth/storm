@@ -6,6 +6,7 @@
 #include <iomanip>
 #include <boost/iterator/transform_iterator.hpp>
 
+#include "src/storage/parameters.h"
 #include "src/utility/graph.h"
 #include "src/exceptions/IllegalFunctionCallException.h"
 

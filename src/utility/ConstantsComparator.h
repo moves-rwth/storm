@@ -13,7 +13,12 @@
 #include <cstdint>
 
 #include "src/settings/SettingsManager.h"
+
+#include "storm-config.h"
+
+#ifdef PARAMETRIC_SYSTEMS
 #include "src/storage/parameters.h"
+#endif
 
 namespace storm {
     
@@ -43,7 +48,7 @@ namespace storm {
         
         template<typename ValueType>
         ValueType simplify(ValueType value);
-
+        
         // A class that can be used for comparing constants.
         template<typename ValueType>
         class ConstantsComparator {
@@ -60,7 +65,7 @@ namespace storm {
         class ConstantsComparator<double> {
         public:
             ConstantsComparator();
-
+            
             ConstantsComparator(double precision);
             
             bool isOne(double const& value) const;
@@ -79,7 +84,7 @@ namespace storm {
 #ifdef PARAMETRIC_SYSTEMS
         template<>
         RationalFunction& simplify(RationalFunction& value);
-
+        
         template<>
         RationalFunction&& simplify(RationalFunction&& value);
 

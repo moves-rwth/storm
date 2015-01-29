@@ -54,15 +54,69 @@ namespace storm {
             // Intentionally left empty.
         }
 
+
         template <typename ValueType, typename IndexType>
-        std::unique_ptr<storm::models::AbstractModel<ValueType>> ExplicitPrismModelBuilder<ValueType, IndexType>::translateProgram(storm::prism::Program program, bool commandLabels, bool rewards, std::string const& rewardModelName, std::string const& constantDefinitionString) {
-            // Start by defining the undefined constants in the model.
-            // First, we need to parse the constant definition string.
-            std::map<storm::expressions::Variable, storm::expressions::Expression> constantDefinitions = storm::utility::prism::parseConstantDefinitionString(program, constantDefinitionString);
+        ExplicitPrismModelBuilder<ValueType, IndexType>::Options::Options() : buildCommandLabels(false), buildRewards(false), rewardModelName(), constantDefinitions() {
+            // Intentionally left empty.
+        }
             
-            storm::prism::Program preparedProgram = program.defineUndefinedConstants(constantDefinitions);
-            if (!std::is_same<ValueType, RationalFunction>::value) {
-                STORM_LOG_THROW(!preparedProgram.hasUndefinedConstants(), storm::exceptions::InvalidArgumentException, "Program still contains undefined constants.");
+
+        template <typename ValueType, typename IndexType>
+        ExplicitPrismModelBuilder<ValueType, IndexType>::Options::Options(storm::logic::Formula const& formula) : buildCommandLabels(false), buildRewards(formula.containsRewardOperator()), rewardModelName(), constantDefinitions(), labelsToBuild(std::set<std::string>()), expressionLabels(std::vector<storm::expressions::Expression>()) {
+            // Extract all the labels used in the formula.
+            std::vector<std::shared_ptr<storm::logic::AtomicLabelFormula const>> atomicLabelFormulas = formula.getAtomicLabelFormulas();
+            for (auto const& formula : atomicLabelFormulas) {
+                labelsToBuild.get().insert(formula.get()->getLabel());
+            }
+            
+            // Extract all the expressions used in the formula.
+            std::vector<std::shared_ptr<storm::logic::AtomicExpressionFormula const>> atomicExpressionFormulas = formula.getAtomicExpressionFormulas();
+            for (auto const& formula : atomicExpressionFormulas) {
+                expressionLabels.get().push_back(formula.get()->getExpression());
+            }
+        }
+
+        template <typename ValueType, typename IndexType>
+        void ExplicitPrismModelBuilder<ValueType, IndexType>::Options::addConstantDefinitionsFromString(storm::prism::Program const& program, std::string const& constantDefinitionString) {
+            std::map<storm::expressions::Variable, storm::expressions::Expression> newConstantDefinitions = storm::utility::prism::parseConstantDefinitionString(program, constantDefinitionString);
+            
+            // If there is at least one constant that is defined, and the constant definition map does not yet exist,
+            // we need to create it.
+            if (!constantDefinitions && !newConstantDefinitions.empty()) {
+                constantDefinitions = std::map<storm::expressions::Variable, storm::expressions::Expression>();
+            }
+            
+            // Now insert all the entries that need to be defined.
+            for (auto const& entry : newConstantDefinitions) {
+                constantDefinitions.get().insert(entry);
+            }
+        }
+        
+        template <typename ValueType, typename IndexType>
+        std::unique_ptr<storm::models::AbstractModel<ValueType>> ExplicitPrismModelBuilder<ValueType, IndexType>::translateProgram(storm::prism::Program program, Options const& options) {
+            // Start by defining the undefined constants in the model.
+            storm::prism::Program preparedProgram;
+            if (options.constantDefinitions) {
+                 preparedProgram = program.defineUndefinedConstants(options.constantDefinitions.get());
+            } else {
+                preparedProgram = program;
+            }
+            
+            // If the program still contains undefined constants and we are not in a parametric setting, assemble an appropriate error message.
+            if (!std::is_same<ValueType, RationalFunction>::value && preparedProgram.hasUndefinedConstants()) {
+                std::vector<std::reference_wrapper<storm::prism::Constant const>> undefinedConstants = preparedProgram.getUndefinedConstants();
+                std::stringstream stream;
+                bool printComma = false;
+                for (auto const& constant : undefinedConstants) {
+                    if (printComma) {
+                        stream << ", ";
+                    } else {
+                        printComma = true;
+                    }
+                    stream << constant.get().getName() << " (" << constant.get().getType() << ")";
+                }
+                stream << ".";
+                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Program still contains these undefined constants: " + stream.str());
             }
             
             // Now that we have defined all the constants in the program, we need to substitute their appearances in
@@ -72,17 +126,37 @@ namespace storm {
             storm::prism::RewardModel rewardModel = storm::prism::RewardModel();
             
             // Select the appropriate reward model.
-            if (rewards) {
+            if (options.buildRewards) {
                 // If a specific reward model was selected or one with the empty name exists, select it.
-                if (rewardModelName != "" || preparedProgram.hasRewardModel(rewardModelName)) {
-                    rewardModel = preparedProgram.getRewardModel(rewardModelName);
+                if (options.rewardModelName) {
+                    rewardModel = preparedProgram.getRewardModel(options.rewardModelName.get());
+                } else if (preparedProgram.hasRewardModel("")) {
+                    rewardModel = preparedProgram.getRewardModel("");
                 } else if (preparedProgram.hasRewardModel()) {
                     // Otherwise, we select the first one.
                     rewardModel = preparedProgram.getRewardModel(0);
                 }
             }
             
-            ModelComponents modelComponents = buildModelComponents(preparedProgram, rewardModel, commandLabels);
+            // If the set of labels we are supposed to built is restricted, we need to remove the other labels from the program.
+            if (options.labelsToBuild) {
+                preparedProgram.filterLabels(options.labelsToBuild.get());
+            }
+            
+            // If we need to build labels for expressions that may appear in some formula, we need to add appropriate
+            // labels to the program.
+            if (options.expressionLabels) {
+                for (auto const& expression : options.expressionLabels.get()) {
+                    std::stringstream stream;
+                    stream << expression;
+                    std::string name = stream.str();
+                    if (!preparedProgram.hasLabel(name)) {
+                        preparedProgram.addLabel(name, expression);
+                    }
+                }
+            }
+            
+            ModelComponents modelComponents = buildModelComponents(preparedProgram, rewardModel, options);
             
             std::unique_ptr<storm::models::AbstractModel<ValueType>> result;
             switch (program.getModelType()) {
@@ -143,7 +217,9 @@ namespace storm {
                 while (assignmentIt->getVariable() != integerIt->variable) {
                     ++integerIt;
                 }
-                newState.setFromInt(integerIt->bitOffset, integerIt->bitWidth, evaluator.asInt(assignmentIt->getExpression()) - integerIt->lowerBound);
+                int_fast64_t assignedValue = evaluator.asInt(assignmentIt->getExpression());
+                STORM_LOG_THROW(assignedValue <= integerIt->upperBound, storm::exceptions::WrongFormatException, "The update " << update << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getVariableName() << "'.");
+                newState.setFromInt(integerIt->bitOffset, integerIt->bitWidth, assignedValue - integerIt->lowerBound);
             }
             
             // Check that we processed all assignments.
@@ -598,7 +674,7 @@ namespace storm {
         }
         
         template <typename ValueType, typename IndexType>
-        typename ExplicitPrismModelBuilder<ValueType, IndexType>::ModelComponents ExplicitPrismModelBuilder<ValueType, IndexType>::buildModelComponents(storm::prism::Program const& program, storm::prism::RewardModel const& rewardModel, bool commandLabels) {
+        typename ExplicitPrismModelBuilder<ValueType, IndexType>::ModelComponents ExplicitPrismModelBuilder<ValueType, IndexType>::buildModelComponents(storm::prism::Program const& program, storm::prism::RewardModel const& rewardModel, Options const& options) {
             ModelComponents modelComponents;
             
             uint_fast64_t bitOffset = 0;
@@ -644,7 +720,7 @@ namespace storm {
             // Build the transition and reward matrices.
             storm::storage::SparseMatrixBuilder<ValueType> transitionMatrixBuilder(0, 0, 0, false, !deterministicModel, 0);
             storm::storage::SparseMatrixBuilder<ValueType> transitionRewardMatrixBuilder(0, 0, 0, false, !deterministicModel, 0);
-            modelComponents.choiceLabeling = buildMatrices(program, variableInformation, rewardModel.getTransitionRewards(), stateInformation, commandLabels, deterministicModel, discreteTimeModel, transitionMatrixBuilder, transitionRewardMatrixBuilder);
+            modelComponents.choiceLabeling = buildMatrices(program, variableInformation, rewardModel.getTransitionRewards(), stateInformation, options.buildCommandLabels, deterministicModel, discreteTimeModel, transitionMatrixBuilder, transitionRewardMatrixBuilder);
             
             // Finalize the resulting matrices.
             modelComponents.transitionMatrix = transitionMatrixBuilder.build();

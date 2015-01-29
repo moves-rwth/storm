@@ -16,6 +16,6 @@ typedef std::string::const_iterator BaseIteratorType;
 typedef boost::spirit::line_pos_iterator<BaseIteratorType> PositionIteratorType;
 typedef PositionIteratorType Iterator;
 
-typedef BOOST_TYPEOF(boost::spirit::ascii::space | qi::lit("//") >> *(qi::char_ - qi::eol) >> qi::eol) Skipper;
+typedef BOOST_TYPEOF(boost::spirit::ascii::space | qi::lit("//") >> *(qi::char_ - (qi::eol | qi::eoi)) >> (qi::eol | qi::eoi)) Skipper;
 
 #endif /* STORM_PARSER_SPIRITPARSERDEFINITIONS_H_ */

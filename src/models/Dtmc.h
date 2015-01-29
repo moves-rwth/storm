@@ -22,7 +22,6 @@
 #include "src/utility/matrix.h"
 #include "src/utility/ConstantsComparator.h"
 
-
 namespace storm {
 
 namespace models {

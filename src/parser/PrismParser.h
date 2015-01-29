@@ -91,12 +91,13 @@ namespace storm {
                     ("rewards", 11)
                     ("endrewards", 12)
                     ("true", 13)
-                    ("min", 14)
-                    ("max", 15)
-                    ("floor", 16)
-                    ("ceil", 17)
-                    ("init", 18)
-                    ("endinit", 19);
+                    ("false", 14)
+                    ("min", 15)
+                    ("max", 16)
+                    ("floor", 17)
+                    ("ceil", 18)
+                    ("init", 19)
+                    ("endinit", 20);
                 }
             };
             
