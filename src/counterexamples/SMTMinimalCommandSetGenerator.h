@@ -1693,7 +1693,7 @@ namespace storm {
                     storm::models::Mdp<T> subMdp = labeledMdp.restrictChoiceLabels(commandSet);
                     storm::modelchecker::SparseMdpPrctlModelChecker<T> modelchecker(subMdp);
                     LOG4CPLUS_DEBUG(logger, "Invoking model checker.");
-                    std::vector<T> result = modelchecker.computeUntilProbabilitiesHelper(false, phiStates, psiStates, false)
+                    std::vector<T> result = modelchecker.computeUntilProbabilitiesHelper(false, phiStates, psiStates, false);
                     LOG4CPLUS_DEBUG(logger, "Computed model checking results.");
                     totalModelCheckingTime += std::chrono::high_resolution_clock::now() - modelCheckingClock;
 
@@ -1786,10 +1786,10 @@ namespace storm {
                     
                     std::unique_ptr<storm::modelchecker::CheckResult> subResult = modelchecker.check(eventuallyFormula.getSubformula());
                     
-                    storm::modelchecker::ExplicitQualitativeCheckResult const& subQualitativeResult = subResult.asExplicitQualitativeCheckResult();
+                    storm::modelchecker::ExplicitQualitativeCheckResult const& subQualitativeResult = subResult->asExplicitQualitativeCheckResult();
                     
                     phiStates = storm::storage::BitVector(labeledMdp.getNumberOfStates(), true);
-                    psiStates = subResult->getTruthValuesVector();
+                    psiStates = subQualitativeResult.getTruthValuesVector();
                 }
                 
                 // Delegate the actual computation work to the function of equal name.
