@@ -226,7 +226,7 @@ void check() {
     std::unique_ptr<storm::modelchecker::CheckResult> result = modelchecker.check(*formula);
 
     // Report the result.
-    STORM_PRINT_AND_LOG(std::endl << "Result: " << std::endl);
+    STORM_PRINT_AND_LOG(std::endl << "Result (initial state): ");
     result->writeToStream(std::cout, model->getInitialStates());
     if (std::is_same<ValueType, storm::RationalFunction>::value) {
         printApproximateResult(result->asExplicitQuantitativeCheckResult<ValueType>()[*model->getInitialStates().begin()]);
