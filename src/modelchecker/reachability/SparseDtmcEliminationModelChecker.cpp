@@ -254,6 +254,12 @@ namespace storm {
             
             // The states we want to eliminate are those that are tagged with "maybe" but are not a phi or psi state.
             phiStates = phiStates % maybeStates;
+            
+            // If there are no phi states in the reduced model, the conditional probability is trivially zero.
+            if (phiStates.empty()) {
+                return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(initialState, storm::utility::zero<ValueType>()));
+            }
+            
             psiStates = psiStates % maybeStates;
             
             // Keep only the states that we do not eliminate in the maybe states.
