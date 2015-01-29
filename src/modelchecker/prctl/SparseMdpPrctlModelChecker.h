@@ -1,7 +1,7 @@
 #ifndef STORM_MODELCHECKER_SPARSEMDPPRCTLMODELCHECKER_H_
 #define STORM_MODELCHECKER_SPARSEMDPPRCTLMODELCHECKER_H_
 
-#include "src/modelchecker/AbstractModelChecker.h"
+#include "src/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "src/models/Mdp.h"
 #include "src/utility/solver.h"
 #include "src/solver/NondeterministicLinearEquationSolver.h"
@@ -19,7 +19,7 @@ namespace storm {
         class SparseMarkovAutomatonCslModelChecker;
         
         template<class ValueType>
-        class SparseMdpPrctlModelChecker : public AbstractModelChecker {
+        class SparseMdpPrctlModelChecker : public SparsePropositionalModelChecker<ValueType> {
         public:
             friend class SparseMarkovAutomatonCslModelChecker<ValueType>;
             friend class counterexamples::SMTMinimalCommandSetGenerator<ValueType>;
@@ -35,8 +35,9 @@ namespace storm {
             virtual std::unique_ptr<CheckResult> computeCumulativeRewards(storm::logic::CumulativeRewardFormula const& rewardPathFormula, bool qualitative = false, boost::optional<storm::logic::OptimalityType> const& optimalityType = boost::optional<storm::logic::OptimalityType>()) override;
             virtual std::unique_ptr<CheckResult> computeInstantaneousRewards(storm::logic::InstantaneousRewardFormula const& rewardPathFormula, bool qualitative = false, boost::optional<storm::logic::OptimalityType> const& optimalityType = boost::optional<storm::logic::OptimalityType>()) override;
             virtual std::unique_ptr<CheckResult> computeReachabilityRewards(storm::logic::ReachabilityRewardFormula const& rewardPathFormula, bool qualitative = false, boost::optional<storm::logic::OptimalityType> const& optimalityType = boost::optional<storm::logic::OptimalityType>()) override;
-            virtual std::unique_ptr<CheckResult> checkBooleanLiteralFormula(storm::logic::BooleanLiteralFormula const& stateFormula) override;
-            virtual std::unique_ptr<CheckResult> checkAtomicLabelFormula(storm::logic::AtomicLabelFormula const& stateFormula) override;
+            
+        protected:
+            storm::models::Mdp<ValueType> const& getModel() const override;
             
         private:
             // The methods that perform the actual checking.
@@ -47,9 +48,6 @@ namespace storm {
             std::vector<ValueType> computeInstantaneousRewardsHelper(bool minimize, uint_fast64_t stepCount) const;
             std::vector<ValueType> computeCumulativeRewardsHelper(bool minimize, uint_fast64_t stepBound) const;
             std::vector<ValueType> computeReachabilityRewardsHelper(bool minimize, storm::storage::BitVector const& targetStates, bool qualitative) const;
-            
-            // The model this model checker is supposed to analyze.
-            storm::models::Mdp<ValueType> const& model;
             
             // A solver that is used for solving systems of linear equations that are the result of nondeterministic choices.
             std::shared_ptr<storm::solver::NondeterministicLinearEquationSolver<ValueType>> nondeterministicLinearEquationSolver;

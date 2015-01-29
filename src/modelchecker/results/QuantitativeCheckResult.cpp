@@ -1,4 +1,4 @@
-#include "src/modelchecker/QuantitativeCheckResult.h"
+#include "src/modelchecker/results/QuantitativeCheckResult.h"
 
 namespace storm {
     namespace modelchecker {
