@@ -74,27 +74,41 @@ namespace storm {
              * @return An iterator to the states in this SCC.
              */
             iterator begin();
-            
-            /*!
-             * Returns a const iterator to the states in this SCC.
-             *
-             * @return A const iterator to the states in this SCC.
-             */
-            const_iterator begin() const;
+
+			/*!
+			* Returns a const iterator to the states in this SCC.
+			*
+			* @return A const iterator to the states in this SCC.
+			*/
+			const_iterator begin() const;
+
+			/*!
+			* Returns a const iterator to the states in this SCC.
+			*
+			* @return A const iterator to the states in this SCC.
+			*/
+			const_iterator cbegin() const { return this->begin(); };
             
             /*!
              * Returns an iterator that points one past the end of the states in this SCC.
              *
              * @return An iterator that points one past the end of the states in this SCC.
              */
-            iterator end();
-            
-            /*!
-             * Returns a const iterator that points one past the end of the states in this SCC.
-             *
-             * @return A const iterator that points one past the end of the states in this SCC.
-             */
-            const_iterator end() const;
+			iterator end();
+
+			/*!
+			* Returns a const iterator that points one past the end of the states in this SCC.
+			*
+			* @return A const iterator that points one past the end of the states in this SCC.
+			*/
+			const_iterator end() const;
+
+			/*!
+			* Returns a const iterator that points one past the end of the states in this SCC.
+			*
+			* @return A const iterator that points one past the end of the states in this SCC.
+			*/
+			const_iterator cend() const { return this->end(); };
             
             /*!
              * Retrieves whether the given state is in the SCC.

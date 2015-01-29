@@ -58,7 +58,7 @@ namespace storm {
 
 		template<typename ValueType>
 		storm::storage::SparseMatrix<ValueType>
-		AbstractPseudoModel<ValueType>::extractPartitionDependencyGraph(storm::storage::Decomposition<storm::storage::StateBlock> const& decomposition) const {
+			AbstractPseudoModel<ValueType>::extractPartitionDependencyGraph(storm::storage::Decomposition<storm::storage::StronglyConnectedComponent> const& decomposition) const {
 			uint_fast64_t numberOfStates = decomposition.size();
 
 			// First, we need to create a mapping of states to their SCC index, to ease the computation of dependency transitions later.

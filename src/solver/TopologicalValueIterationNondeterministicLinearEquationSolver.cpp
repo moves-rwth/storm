@@ -140,7 +140,8 @@ namespace storm {
 #endif
 			} else {
 				std::chrono::high_resolution_clock::time_point sccStartTime = std::chrono::high_resolution_clock::now();
-				storm::storage::StronglyConnectedComponentDecomposition<ValueType> sccDecomposition(A, false, false);
+				storm::storage::BitVector fullSystem(A.getRowGroupCount(), true);
+				storm::storage::StronglyConnectedComponentDecomposition<ValueType> sccDecomposition(A, fullSystem, false, false);
 
 				if (sccDecomposition.size() == 0) {
 					LOG4CPLUS_ERROR(logger, "Can not solve given Equation System as the SCC Decomposition returned no SCCs.");

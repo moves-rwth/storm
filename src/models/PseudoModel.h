@@ -5,6 +5,7 @@
 #include "src/storage/SparseMatrix.h"
 #include "src/storage/Decomposition.h"
 #include "src/storage/StateBlock.h"
+#include "src/storage/StronglyConnectedComponent.h"
 
 namespace storm {
 	namespace models {
@@ -40,7 +41,7 @@ namespace storm {
 			 * @param decomposition A decomposition containing the blocks of the partition of the system.
 			 * @return A sparse matrix with bool entries that represents the dependency graph of the blocks of the partition.
 			 */
-			virtual storm::storage::SparseMatrix<ValueType> extractPartitionDependencyGraph(storm::storage::Decomposition<storm::storage::StateBlock> const& decomposition) const;
+			virtual storm::storage::SparseMatrix<ValueType> extractPartitionDependencyGraph(storm::storage::Decomposition<storm::storage::StronglyConnectedComponent> const& decomposition) const;
 		};
 
 		template <typename ValueType>
