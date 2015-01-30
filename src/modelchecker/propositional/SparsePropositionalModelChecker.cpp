@@ -19,6 +19,11 @@ namespace storm {
         }
         
         template<typename ValueType>
+        bool SparsePropositionalModelChecker<ValueType>::canHandle(storm::logic::Formula const& formula) const {
+            return formula.isPropositionalFormula();
+        }
+        
+        template<typename ValueType>
         std::unique_ptr<CheckResult> SparsePropositionalModelChecker<ValueType>::checkBooleanLiteralFormula(storm::logic::BooleanLiteralFormula const& stateFormula) {
             if (stateFormula.isTrueFormula()) {
                 return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult(storm::storage::BitVector(model.getNumberOfStates(), true)));

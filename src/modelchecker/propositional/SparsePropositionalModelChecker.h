@@ -14,6 +14,7 @@ namespace storm {
             explicit SparsePropositionalModelChecker(storm::models::AbstractModel<ValueType> const& model);
             
             // The implemented methods of the AbstractModelChecker interface.
+            virtual bool canHandle(storm::logic::Formula const& formula) const override;
             virtual std::unique_ptr<CheckResult> checkBooleanLiteralFormula(storm::logic::BooleanLiteralFormula const& stateFormula) override;
             virtual std::unique_ptr<CheckResult> checkAtomicLabelFormula(storm::logic::AtomicLabelFormula const& stateFormula) override;
             

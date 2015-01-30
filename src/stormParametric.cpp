@@ -169,51 +169,14 @@ void check() {
     
     bool checkRewards = formula->isRewardOperatorFormula();
     
-    std::string phiLabel;
-    std::string psiLabel;
-    
-    bool measureDrivenBisimulation = false;
-    if (formula->isProbabilityOperatorFormula()) {
-        storm::logic::Formula const& subformula = formula->asProbabilityOperatorFormula().getSubformula();
-        
-        if (subformula.isEventuallyFormula()) {
-            phiLabel = "true";
-            std::stringstream stream;
-            stream << subformula.asEventuallyFormula().getSubformula();
-            psiLabel = stream.str();
-            measureDrivenBisimulation = true;
-        } else if (subformula.isUntilFormula()) {
-            std::stringstream stream;
-            stream << subformula.asUntilFormula().getLeftSubformula();
-            phiLabel = stream.str();
-
-            std::stringstream stream2;
-            stream2 << subformula.asUntilFormula().getRightSubformula();
-            psiLabel = stream2.str();
-            measureDrivenBisimulation = true;
-        }
-    } else if (formula->isRewardOperatorFormula()) {
-        storm::logic::Formula const& subformula = formula->asRewardOperatorFormula().getSubformula();
-        
-        if (subformula.isReachabilityRewardFormula()) {
-            phiLabel = "true";
-            std::stringstream stream;
-            stream << subformula.asReachabilityRewardFormula().getSubformula();
-            psiLabel = stream.str();
-            measureDrivenBisimulation = true;
-        }
-    }
-    
     // Perform bisimulation minimization if requested.
     if (storm::settings::generalSettings().isBisimulationSet()) {
-        if (measureDrivenBisimulation) {
-            storm::storage::DeterministicModelBisimulationDecomposition<ValueType> bisimulationDecomposition(*dtmc, phiLabel, psiLabel, checkRewards, storm::settings::bisimulationSettings().isWeakBisimulationSet(), false, true);
-            *dtmc = std::move(*bisimulationDecomposition.getQuotient()->template as<storm::models::Dtmc<ValueType>>());
-        } else {
-            storm::storage::DeterministicModelBisimulationDecomposition<ValueType> bisimulationDecomposition(*dtmc, boost::optional<std::set<std::string>>(), checkRewards, storm::settings::bisimulationSettings().isWeakBisimulationSet(), true);
-            *dtmc = std::move(*bisimulationDecomposition.getQuotient()->template as<storm::models::Dtmc<ValueType>>());
-        }
+        typename storm::storage::DeterministicModelBisimulationDecomposition<ValueType>::Options options(*dtmc, *formula);
+        options.weak = storm::settings::bisimulationSettings().isWeakBisimulationSet();
         
+        storm::storage::DeterministicModelBisimulationDecomposition<ValueType> bisimulationDecomposition(*dtmc, options);
+        *dtmc = std::move(*bisimulationDecomposition.getQuotient()->template as<storm::models::Dtmc<ValueType>>());
+
         dtmc->printModelInformationToStream(std::cout);
     }
     

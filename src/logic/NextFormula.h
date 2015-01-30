@@ -15,6 +15,8 @@ namespace storm {
             
             virtual bool isNextFormula() const override;
             
+            virtual bool containsNextFormula() const override;
+            
             virtual std::ostream& writeToStream(std::ostream& out) const override;
         };
     }
