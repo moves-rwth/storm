@@ -615,7 +615,7 @@ namespace storm {
             }
             for (auto const& expressionFormula : atomicExpressionFormulas) {
                 std::stringstream stream;
-                stream << expressionFormula;
+                stream << *expressionFormula;
                 labelsToRespect.insert(stream.str());
             }
             respectedAtomicPropositions = labelsToRespect;
@@ -722,7 +722,7 @@ namespace storm {
         
         template<typename ValueType>
         template<typename ModelType>
-        void DeterministicModelBisimulationDecomposition<ValueType>::buildQuotient(ModelType const& model, boost::optional<std::set<std::string>> const& selectedAtomicPropositions, Partition const& partition, BisimulationType bisimulationType, bool keepRewards) {
+        void DeterministicModelBisimulationDecomposition<ValueType>::buildQuotient(ModelType const& model, std::set<std::string> const& selectedAtomicPropositions, Partition const& partition, BisimulationType bisimulationType, bool keepRewards) {
             // In order to create the quotient model, we need to construct
             // (a) the new transition matrix,
             // (b) the new labeling,
@@ -733,7 +733,7 @@ namespace storm {
             
             // Prepare the new state labeling for (b).
             storm::models::AtomicPropositionsLabeling newLabeling(this->size(), model.getStateLabeling().getNumberOfAtomicPropositions());
-            std::set<std::string> atomicPropositionsSet = selectedAtomicPropositions ? selectedAtomicPropositions.get() : model.getStateLabeling().getAtomicPropositions();
+            std::set<std::string> atomicPropositionsSet = selectedAtomicPropositions;
             atomicPropositionsSet.insert("init");
             std::vector<std::string> atomicPropositions = std::vector<std::string>(atomicPropositionsSet.begin(), atomicPropositionsSet.end());
             for (auto const& ap : atomicPropositions) {
@@ -839,7 +839,7 @@ namespace storm {
         
         template<typename ValueType>
         template<typename ModelType>
-        void DeterministicModelBisimulationDecomposition<ValueType>::partitionRefinement(ModelType const& model, boost::optional<std::set<std::string>> const& atomicPropositions, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, Partition& partition, BisimulationType bisimulationType, bool keepRewards, bool buildQuotient) {
+        void DeterministicModelBisimulationDecomposition<ValueType>::partitionRefinement(ModelType const& model, std::set<std::string> const& atomicPropositions, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, Partition& partition, BisimulationType bisimulationType, bool keepRewards, bool buildQuotient) {
             std::chrono::high_resolution_clock::time_point totalStart = std::chrono::high_resolution_clock::now();
             
             // Initially, all blocks are potential splitter, so we insert them in the splitterQueue.
