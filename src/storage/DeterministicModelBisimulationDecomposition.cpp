@@ -195,6 +195,22 @@ namespace storm {
         }
         
         template<typename ValueType>
+        void DeterministicModelBisimulationDecomposition<ValueType>::Block::setRepresentativeState(storm::storage::sparse::state_type representativeState) {
+            this->representativeState = representativeState;
+        }
+        
+        template<typename ValueType>
+        bool DeterministicModelBisimulationDecomposition<ValueType>::Block::hasRepresentativeState() const {
+            return static_cast<bool>(representativeState);
+        }
+        
+        template<typename ValueType>
+        storm::storage::sparse::state_type DeterministicModelBisimulationDecomposition<ValueType>::Block::getRepresentativeState() const {
+            STORM_LOG_THROW(representativeState, storm::exceptions::InvalidOperationException, "Unable to retrieve representative state for block.");
+            return representativeState.get();
+        }
+        
+        template<typename ValueType>
         storm::storage::sparse::state_type DeterministicModelBisimulationDecomposition<ValueType>::Block::getMarkedPosition() const {
             return this->markedPosition;
         }
@@ -249,7 +265,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        DeterministicModelBisimulationDecomposition<ValueType>::Partition::Partition(std::size_t numberOfStates, storm::storage::BitVector const& prob0States, storm::storage::BitVector const& prob1States, bool keepSilentProbabilities) : numberOfBlocks(0), stateToBlockMapping(numberOfStates), statesAndValues(numberOfStates), positions(numberOfStates), keepSilentProbabilities(keepSilentProbabilities), silentProbabilities() {
+        DeterministicModelBisimulationDecomposition<ValueType>::Partition::Partition(std::size_t numberOfStates, storm::storage::BitVector const& prob0States, storm::storage::BitVector const& prob1States, boost::optional<storm::storage::sparse::state_type> representativeProb1State, bool keepSilentProbabilities) : numberOfBlocks(0), stateToBlockMapping(numberOfStates), statesAndValues(numberOfStates), positions(numberOfStates), keepSilentProbabilities(keepSilentProbabilities), silentProbabilities() {
             storm::storage::sparse::state_type position = 0;
             Block* firstBlock = nullptr;
             Block* secondBlock = nullptr;
@@ -280,6 +296,7 @@ namespace storm {
                     ++position;
                 }
                 secondBlock->setAbsorbing(true);
+                secondBlock->setRepresentativeState(representativeProb1State.get());
             }
             
             storm::storage::BitVector otherStates = ~(prob0States | prob1States);
@@ -577,7 +594,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        DeterministicModelBisimulationDecomposition<ValueType>::Options::Options(storm::logic::Formula const& formula) : Options() {
+        DeterministicModelBisimulationDecomposition<ValueType>::Options::Options(storm::models::AbstractModel<ValueType> const& model, storm::logic::Formula const& formula) : Options() {
             if (!formula.containsRewardOperator()) {
                 this->keepRewards = false;
             }
@@ -632,13 +649,16 @@ namespace storm {
             }
             
             if (measureDrivenInitialPartition) {
-                phiStateFormula = leftSubformula;
-                psiStateFormula = rightSubformula;
+                storm::modelchecker::SparsePropositionalModelChecker<ValueType> checker(model);
+                std::unique_ptr<storm::modelchecker::CheckResult> phiStatesCheckResult = checker.check(*leftSubformula);
+                std::unique_ptr<storm::modelchecker::CheckResult> psiStatesCheckResult = checker.check(*rightSubformula);
+                phiStates = phiStatesCheckResult->asExplicitQualitativeCheckResult().getTruthValuesVector();
+                psiStates = psiStatesCheckResult->asExplicitQualitativeCheckResult().getTruthValuesVector();
             }
         }
         
         template<typename ValueType>
-        DeterministicModelBisimulationDecomposition<ValueType>::Options::Options() : measureDrivenInitialPartition(false), phiStateFormula(), psiStateFormula(), respectedAtomicPropositions(), keepRewards(true), weak(false), bounded(true), buildQuotient(true) {
+        DeterministicModelBisimulationDecomposition<ValueType>::Options::Options() : measureDrivenInitialPartition(false), phiStates(), psiStates(), respectedAtomicPropositions(), keepRewards(true), weak(false), bounded(true), buildQuotient(true) {
             // Intentionally left empty.
         }
         
@@ -658,9 +678,9 @@ namespace storm {
             
             Partition initialPartition;
             if (options.measureDrivenInitialPartition) {
-                STORM_LOG_THROW(options.phiStateFormula, storm::exceptions::InvalidOptionException, "Unable to compute measure-driven initial partition without phi and psi states.");
-                STORM_LOG_THROW(options.psiStateFormula, storm::exceptions::InvalidOptionException, "Unable to compute measure-driven initial partition without phi and psi states.");
-                initialPartition = getMeasureDrivenInitialPartition(model, backwardTransitions, options.phiStateFormula.get(), options.psiStateFormula.get(), bisimulationType, options.keepRewards, options.bounded);
+                STORM_LOG_THROW(options.phiStates, storm::exceptions::InvalidOptionException, "Unable to compute measure-driven initial partition without phi and psi states.");
+                STORM_LOG_THROW(options.psiStates, storm::exceptions::InvalidOptionException, "Unable to compute measure-driven initial partition without phi and psi states.");
+                initialPartition = getMeasureDrivenInitialPartition(model, backwardTransitions, options.phiStates.get(), options.psiStates.get(), bisimulationType, options.keepRewards, options.bounded);
             } else {
                 initialPartition = getLabelBasedInitialPartition(model, backwardTransitions, bisimulationType, atomicPropositions, options.keepRewards);
             }
@@ -684,9 +704,9 @@ namespace storm {
             
             Partition initialPartition;
             if (options.measureDrivenInitialPartition) {
-                STORM_LOG_THROW(options.phiStateFormula, storm::exceptions::InvalidOptionException, "Unable to compute measure-driven initial partition without phi and psi states.");
-                STORM_LOG_THROW(options.psiStateFormula, storm::exceptions::InvalidOptionException, "Unable to compute measure-driven initial partition without phi and psi states.");
-                initialPartition = getMeasureDrivenInitialPartition(model, backwardTransitions, options.phiStateFormula.get(), options.psiStateFormula.get(), bisimulationType, options.keepRewards, options.bounded);
+                STORM_LOG_THROW(options.phiStates, storm::exceptions::InvalidOptionException, "Unable to compute measure-driven initial partition without phi and psi states.");
+                STORM_LOG_THROW(options.psiStates, storm::exceptions::InvalidOptionException, "Unable to compute measure-driven initial partition without phi and psi states.");
+                initialPartition = getMeasureDrivenInitialPartition(model, backwardTransitions, options.phiStates.get(), options.psiStates.get(), bisimulationType, options.keepRewards, options.bounded);
             } else {
                 initialPartition = getLabelBasedInitialPartition(model, backwardTransitions, bisimulationType, atomicPropositions, options.keepRewards);
             }
@@ -751,8 +771,13 @@ namespace storm {
                 if (oldBlock.isAbsorbing()) {
                     builder.addNextValue(blockIndex, blockIndex, storm::utility::constantOne<ValueType>());
                     
-                    // Otherwise add all atomic propositions to the equivalence class that the representative state
-                    // satisfies.
+                    // If the block has a special representative state, we retrieve it now.
+                    if (oldBlock.hasRepresentativeState()) {
+                        representativeState = oldBlock.getRepresentativeState();
+                    }
+
+                    // Add all of the selected atomic propositions that hold in the representative state to the state
+                    // representing the block.
                     for (auto const& ap : atomicPropositions) {
                         if (model.getStateLabeling().getStateHasAtomicProposition(ap, representativeState)) {
                             newLabeling.addAtomicPropositionToState(ap, blockIndex);
@@ -1264,13 +1289,15 @@ namespace storm {
         
         template<typename ValueType>
         template<typename ModelType>
-        typename DeterministicModelBisimulationDecomposition<ValueType>::Partition DeterministicModelBisimulationDecomposition<ValueType>::getMeasureDrivenInitialPartition(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::shared_ptr<storm::logic::Formula const> const& phiStateFormula, std::shared_ptr<storm::logic::Formula const> const& psiStateFormula, BisimulationType bisimulationType, bool keepRewards, bool bounded) {
-            storm::modelchecker::SparsePropositionalModelChecker<ValueType> checker(model);
-            std::unique_ptr<storm::modelchecker::CheckResult> phiStates = checker.check(*phiStateFormula);
-            std::unique_ptr<storm::modelchecker::CheckResult> psiStates = checker.check(*psiStateFormula);
+        typename DeterministicModelBisimulationDecomposition<ValueType>::Partition DeterministicModelBisimulationDecomposition<ValueType>::getMeasureDrivenInitialPartition(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, BisimulationType bisimulationType, bool keepRewards, bool bounded) {
+            std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(backwardTransitions, phiStates, psiStates);
             
-            std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(backwardTransitions, phiStates->asExplicitQualitativeCheckResult().getTruthValuesVector(), psiStates->asExplicitQualitativeCheckResult().getTruthValuesVector());
-            Partition partition(model.getNumberOfStates(), statesWithProbability01.first, bounded || keepRewards ? psiStates->asExplicitQualitativeCheckResult().getTruthValuesVector() : statesWithProbability01.second, bisimulationType == BisimulationType::WeakDtmc);
+            boost::optional<storm::storage::sparse::state_type> representativePsiState;
+            if (!psiStates.empty()) {
+                representativePsiState = *psiStates.begin();
+            }
+            
+            Partition partition(model.getNumberOfStates(), statesWithProbability01.first, bounded || keepRewards ? psiStates : statesWithProbability01.second, representativePsiState, bisimulationType == BisimulationType::WeakDtmc);
             
             // If the model has state rewards, we need to consider them, because otherwise reward properties are not
             // preserved.

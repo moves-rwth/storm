@@ -36,6 +36,16 @@ TEST(DeterministicModelBisimulationDecomposition, Die) {
     EXPECT_EQ(storm::models::DTMC, result->getType());
     EXPECT_EQ(5, result->getNumberOfStates());
     EXPECT_EQ(8, result->getNumberOfTransitions());
+    
+    auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("one");
+    auto eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(labelFormula);
+    
+    typename storm::storage::DeterministicModelBisimulationDecomposition<double>::Options options2(*dtmc, *eventuallyFormula);
+    storm::storage::DeterministicModelBisimulationDecomposition<double> bisim4(*dtmc, options2);
+    ASSERT_NO_THROW(result = bisim4.getQuotient());
+    EXPECT_EQ(storm::models::DTMC, result->getType());
+    EXPECT_EQ(5, result->getNumberOfStates());
+    EXPECT_EQ(8, result->getNumberOfTransitions());
 }
 
 TEST(DeterministicModelBisimulationDecomposition, Crowds) {
@@ -71,4 +81,35 @@ TEST(DeterministicModelBisimulationDecomposition, Crowds) {
     EXPECT_EQ(storm::models::DTMC, result->getType());
     EXPECT_EQ(43, result->getNumberOfStates());
     EXPECT_EQ(83, result->getNumberOfTransitions());
+    
+    auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("observe0Greater1");
+    auto eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(labelFormula);
+    
+    typename storm::storage::DeterministicModelBisimulationDecomposition<double>::Options options2(*dtmc, *eventuallyFormula);
+    storm::storage::DeterministicModelBisimulationDecomposition<double> bisim4(*dtmc, options2);
+    ASSERT_NO_THROW(result = bisim4.getQuotient());
+
+    EXPECT_EQ(storm::models::DTMC, result->getType());
+    EXPECT_EQ(64, result->getNumberOfStates());
+    EXPECT_EQ(104, result->getNumberOfTransitions());
+    
+    auto probabilityOperatorFormula = std::make_shared<storm::logic::ProbabilityOperatorFormula>(eventuallyFormula);
+    
+    typename storm::storage::DeterministicModelBisimulationDecomposition<double>::Options options3(*dtmc, *probabilityOperatorFormula);
+    storm::storage::DeterministicModelBisimulationDecomposition<double> bisim5(*dtmc, options3);
+    ASSERT_NO_THROW(result = bisim5.getQuotient());
+
+    EXPECT_EQ(storm::models::DTMC, result->getType());
+    EXPECT_EQ(64, result->getNumberOfStates());
+    EXPECT_EQ(104, result->getNumberOfTransitions());
+    
+    auto boundedUntilFormula = std::make_shared<storm::logic::BoundedUntilFormula>(std::make_shared<storm::logic::BooleanLiteralFormula>(true), labelFormula, 50);
+    
+    typename storm::storage::DeterministicModelBisimulationDecomposition<double>::Options options4(*dtmc, *boundedUntilFormula);
+    storm::storage::DeterministicModelBisimulationDecomposition<double> bisim6(*dtmc, options4);
+    ASSERT_NO_THROW(result = bisim6.getQuotient());
+    
+    EXPECT_EQ(storm::models::DTMC, result->getType());
+    EXPECT_EQ(65, result->getNumberOfStates());
+    EXPECT_EQ(105, result->getNumberOfTransitions());
 }

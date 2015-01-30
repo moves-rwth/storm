@@ -31,16 +31,18 @@ namespace storm {
                  * Creates an object representing the options necessary to obtain the smallest quotient while still
                  * preserving the given formula.
                  *
+                 * @param The model for which the quotient model shall be computed. This needs to be given in order to
+                 * derive a suitable initial partition.
                  * @param formula The formula that is to be preserved.
                  */
-                Options(storm::logic::Formula const& formula);
+                Options(storm::models::AbstractModel<ValueType> const& model, storm::logic::Formula const& formula);
                 
                 // A flag that indicates whether a measure driven initial partition is to be used. If this flag is set
                 // to true, the two optional pairs phiStatesAndLabel and psiStatesAndLabel must be set. Then, the
                 // measure driven initial partition wrt. to the states phi and psi is taken.
                 bool measureDrivenInitialPartition;
-                boost::optional<std::shared_ptr<storm::logic::Formula const>> phiStateFormula;
-                boost::optional<std::shared_ptr<storm::logic::Formula const>> psiStateFormula;
+                boost::optional<storm::storage::BitVector> phiStates;
+                boost::optional<storm::storage::BitVector> psiStates;
                 
                 // An optional set of strings that indicate which of the atomic propositions of the model are to be
                 // respected and which may be ignored. If not given, all atomic propositions of the model are respected.
@@ -201,6 +203,15 @@ namespace storm {
                 // Retrieves whether the block is to be interpreted as absorbing.
                 bool isAbsorbing() const;
                 
+                // Sets the representative state of this block
+                void setRepresentativeState(storm::storage::sparse::state_type representativeState);
+                
+                // Retrieves the representative state for this block.
+                bool hasRepresentativeState() const;
+
+                // Retrieves the representative state for this block.
+                storm::storage::sparse::state_type getRepresentativeState() const;
+                
             private:
                 // An iterator to itself. This is needed to conveniently insert elements in the overall list of blocks
                 // kept by the partition.
@@ -228,6 +239,10 @@ namespace storm {
                 
                 // The ID of the block. This is only used for debugging purposes.
                 std::size_t id;
+                
+                // An optional representative state for the block. If this is set, this state is used to derive the
+                // atomic propositions of the meta state in the quotient model.
+                boost::optional<storm::storage::sparse::state_type> representativeState;
             };
             
             class Partition {
@@ -250,9 +265,12 @@ namespace storm {
                  * @param numberOfStates The number of states the partition holds.
                  * @param prob0States The states which have probability 0 of satisfying phi until psi.
                  * @param prob1States The states which have probability 1 of satisfying phi until psi.
+                 * @param representativeProb1State If the set of prob1States is non-empty, this needs to be a state
+                 * that is representative for this block in the sense that the state representing this block in the quotient
+                 * model will receive exactly the atomic propositions of the representative state.
                  * @param keepSilentProbabilities A flag indicating whether or not silent probabilities are to be tracked.
                  */
-                Partition(std::size_t numberOfStates, storm::storage::BitVector const& prob0States, storm::storage::BitVector const& prob1States, bool keepSilentProbabilities = false);
+                Partition(std::size_t numberOfStates, storm::storage::BitVector const& prob0States, storm::storage::BitVector const& prob1States, boost::optional<storm::storage::sparse::state_type> representativeProb1State, bool keepSilentProbabilities = false);
                 
                 Partition() = default;
                 Partition(Partition const& other) = default;
@@ -464,15 +482,15 @@ namespace storm {
              * @param model The model whose state space is partitioned based on reachability of psi states from phi
              * states.
              * @param backwardTransitions The backward transitions of the model.
-             * @param phiStateFormula The formula that defines the phi states in the model.
-             * @param psiStateFormula The formula that defines the psi states in the model.
+             * @param phiStates The phi states in the model.
+             * @param psiStates The psi states in the model.
              * @param bisimulationType The kind of bisimulation that is to be computed.
              * @param bounded If set to true, the initial partition will be chosen in such a way that preserves bounded
              * reachability queries.
              * @return The resulting partition.
              */
             template<typename ModelType>
-            Partition getMeasureDrivenInitialPartition(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::shared_ptr<storm::logic::Formula const> const& phiStateFormula, std::shared_ptr<storm::logic::Formula const> const& psiStateFormula, BisimulationType bisimulationType, bool keepRewards = true, bool bounded = false);
+            Partition getMeasureDrivenInitialPartition(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, BisimulationType bisimulationType, bool keepRewards = true, bool bounded = false);
             
             /*!
              * Creates the initial partition based on all the labels in the given model.
