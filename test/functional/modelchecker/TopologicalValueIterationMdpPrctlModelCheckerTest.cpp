@@ -26,9 +26,10 @@ TEST(TopologicalValueIterationMdpPrctlModelCheckerTest, Dice) {
     //storm::property::prctl::Ap<double>* apFormula = new storm::property::prctl::Ap<double>("two");
 	auto eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(apFormula);
 	//storm::property::prctl::Eventually<double>* eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
+	auto minProbabilityOperatorFormula = std::make_shared<storm::logic::ProbabilityOperatorFormula>(storm::logic::OptimalityType::Minimize, eventuallyFormula);
 	//storm::property::prctl::ProbabilisticNoBoundOperator<double>* probFormula = new storm::property::prctl::ProbabilisticNoBoundOperator<double>(eventuallyFormula, true);
     
-	std::unique_ptr<storm::modelchecker::CheckResult> result = mc.check(*eventuallyFormula);
+	std::unique_ptr<storm::modelchecker::CheckResult> result = mc.check(*minProbabilityOperatorFormula);
 	//std::vector<double> result = mc.checkNoBoundOperator(*probFormula);
 	
 	ASSERT_LT(std::abs(result->asExplicitQuantitativeCheckResult<double>()[0] - 0.0277777612209320068),
