@@ -9,7 +9,7 @@ TEST(DeterministicModelBisimulationDecomposition, Die) {
     ASSERT_EQ(abstractModel->getType(), storm::models::DTMC);
 	std::shared_ptr<storm::models::Dtmc<double>> dtmc = abstractModel->as<storm::models::Dtmc<double>>();
 
-    storm::storage::DeterministicModelBisimulationDecomposition<double> bisim(*dtmc, boost::optional<std::set<std::string>>(), true, false, true);
+    storm::storage::DeterministicModelBisimulationDecomposition<double> bisim(*dtmc);
     std::shared_ptr<storm::models::AbstractModel<double>> result;
     ASSERT_NO_THROW(result = bisim.getQuotient());
 
@@ -17,14 +17,20 @@ TEST(DeterministicModelBisimulationDecomposition, Die) {
     EXPECT_EQ(13, result->getNumberOfStates());
     EXPECT_EQ(20, result->getNumberOfTransitions());
 
-    storm::storage::DeterministicModelBisimulationDecomposition<double> bisim2(*dtmc, std::set<std::string>({"one"}), true, false, true);
+    typename storm::storage::DeterministicModelBisimulationDecomposition<double>::Options options;
+    options.respectedAtomicPropositions = std::set<std::string>({"one"});
+    
+    storm::storage::DeterministicModelBisimulationDecomposition<double> bisim2(*dtmc, options);
     ASSERT_NO_THROW(result = bisim2.getQuotient());
     
     EXPECT_EQ(storm::models::DTMC, result->getType());
     EXPECT_EQ(5, result->getNumberOfStates());
     EXPECT_EQ(8, result->getNumberOfTransitions());
+
+    options.bounded = false;
+    options.weak = true;
     
-    storm::storage::DeterministicModelBisimulationDecomposition<double> bisim3(*dtmc, std::set<std::string>({"one"}), true, true, true);
+    storm::storage::DeterministicModelBisimulationDecomposition<double> bisim3(*dtmc, options);
     ASSERT_NO_THROW(result = bisim3.getQuotient());
     
     EXPECT_EQ(storm::models::DTMC, result->getType());
@@ -38,7 +44,7 @@ TEST(DeterministicModelBisimulationDecomposition, Crowds) {
     ASSERT_EQ(abstractModel->getType(), storm::models::DTMC);
 	std::shared_ptr<storm::models::Dtmc<double>> dtmc = abstractModel->as<storm::models::Dtmc<double>>();
 
-    storm::storage::DeterministicModelBisimulationDecomposition<double> bisim(*dtmc, boost::optional<std::set<std::string>>(), true, false, true);
+    storm::storage::DeterministicModelBisimulationDecomposition<double> bisim(*dtmc);
     std::shared_ptr<storm::models::AbstractModel<double>> result;
     ASSERT_NO_THROW(result = bisim.getQuotient());
     
@@ -46,14 +52,20 @@ TEST(DeterministicModelBisimulationDecomposition, Crowds) {
     EXPECT_EQ(334, result->getNumberOfStates());
     EXPECT_EQ(546, result->getNumberOfTransitions());
     
-    storm::storage::DeterministicModelBisimulationDecomposition<double> bisim2(*dtmc, std::set<std::string>({"observe0Greater1"}), true, false, true);
+    typename storm::storage::DeterministicModelBisimulationDecomposition<double>::Options options;
+    options.respectedAtomicPropositions = std::set<std::string>({"observe0Greater1"});
+    
+    storm::storage::DeterministicModelBisimulationDecomposition<double> bisim2(*dtmc, options);
     ASSERT_NO_THROW(result = bisim2.getQuotient());
     
     EXPECT_EQ(storm::models::DTMC, result->getType());
     EXPECT_EQ(65, result->getNumberOfStates());
     EXPECT_EQ(105, result->getNumberOfTransitions());
 
-    storm::storage::DeterministicModelBisimulationDecomposition<double> bisim3(*dtmc, std::set<std::string>({"observe0Greater1"}), true, true, true);
+    options.bounded = false;
+    options.weak = true;
+    
+    storm::storage::DeterministicModelBisimulationDecomposition<double> bisim3(*dtmc, options);
     ASSERT_NO_THROW(result = bisim3.getQuotient());
     
     EXPECT_EQ(storm::models::DTMC, result->getType());

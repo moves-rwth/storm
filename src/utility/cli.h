@@ -293,7 +293,10 @@ namespace storm {
                     }
                     
                     std::cout << "Performing bisimulation minimization... ";
-                    storm::storage::DeterministicModelBisimulationDecomposition<double> bisimulationDecomposition(*dtmc, boost::optional<std::set<std::string>>(), true, storm::settings::bisimulationSettings().isWeakBisimulationSet(), true);
+                    typename storm::storage::DeterministicModelBisimulationDecomposition<double>::Options options;
+                    options.weak = storm::settings::bisimulationSettings().isWeakBisimulationSet();
+                    
+                    storm::storage::DeterministicModelBisimulationDecomposition<double> bisimulationDecomposition(*dtmc, options);
                     model = bisimulationDecomposition.getQuotient();
                     std::cout << "done." << std::endl << std::endl;
                 }
