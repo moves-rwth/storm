@@ -160,6 +160,10 @@ void check() {
     std::chrono::high_resolution_clock::time_point programTranslationEnd = std::chrono::high_resolution_clock::now();
     std::cout << "Parsing and translating the model took " << std::chrono::duration_cast<std::chrono::milliseconds>(programTranslationEnd - programTranslationStart).count() << "ms." << std::endl << std::endl;
     
+    if (model->hasTransitionRewards()) {
+        model->convertTransitionRewardsToStateRewards();
+    }
+    
     std::shared_ptr<storm::models::Dtmc<ValueType>> dtmc = model->template as<storm::models::Dtmc<ValueType>>();
         
     storm::modelchecker::SparseDtmcEliminationModelChecker<ValueType> modelchecker(*dtmc);
