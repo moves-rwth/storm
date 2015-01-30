@@ -614,6 +614,13 @@ namespace storm {
             storm::storage::SparseMatrix<ValueType> backwardTransitions = model.getBackwardTransitions();
             BisimulationType bisimulationType = weak ? BisimulationType::WeakDtmc : BisimulationType::Strong;
             Partition initialPartition = getMeasureDrivenInitialPartition(model, backwardTransitions, phiLabel, psiLabel, bisimulationType, keepRewards, bounded);
+            std::set<std::string> atomicPropositions;
+            if (phiLabel != "true" && phiLabel != "false") {
+                atomicPropositions.insert(phiLabel);
+            }
+            if (psiLabel != "true" && phiLabel != "false") {
+                atomicPropositions.insert(psiLabel);
+            }
             partitionRefinement(model, std::set<std::string>({phiLabel, psiLabel}), model.getBackwardTransitions(), initialPartition, bisimulationType, keepRewards, buildQuotient);
         }
         
