@@ -340,6 +340,7 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
         } else {
             this->stateRewardVector = transitionMatrix.getPointwiseProductRowSumVector(transitionRewardMatrix.get());
         }
+        this->transitionRewardMatrix.reset();
     }
     
 		/*!
