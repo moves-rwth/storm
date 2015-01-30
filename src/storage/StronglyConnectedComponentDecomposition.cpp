@@ -209,6 +209,7 @@ namespace storm {
         }
         
         // Explicitly instantiate the SCC decomposition.
-        template class StronglyConnectedComponentDecomposition<double>;
+		template class StronglyConnectedComponentDecomposition<double>;
+		template class StronglyConnectedComponentDecomposition<float>;
     } // namespace storage
 } // namespace storm
