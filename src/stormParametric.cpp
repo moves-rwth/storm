@@ -154,6 +154,11 @@ void check() {
     
     std::shared_ptr<storm::models::AbstractModel<ValueType>> model = storm::builder::ExplicitPrismModelBuilder<ValueType>::translateProgram(program, options);
     
+    // Convert the transition rewards to state rewards if necessary.
+    if (model->hasTransitionRewards()) {
+        model->convertTransitionRewardsToStateRewards();
+    }
+    
     model->printModelInformationToStream(std::cout);
     
     // Program Translation Time Measurement, End
