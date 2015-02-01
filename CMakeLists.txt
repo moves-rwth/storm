@@ -57,6 +57,7 @@ set(TBB_INSTALL_DIR "${PROJECT_SOURCE_DIR}/resources/3rdparty/tbb42_20140122_mer
 
 find_package(Boost REQUIRED)
 find_package(Doxygen REQUIRED)
+find_package(Gurobi)
 find_package(TBB)
 find_package(Threads REQUIRED)
 find_package(GMP)
@@ -69,7 +70,7 @@ else()
 endif()
 message(STATUS "StoRM - Building ${CMAKE_BUILD_TYPE} version.")
 
-if ("${GUROBI_ROOT}" STREQUAL "")
+if ("${GUROBI_ROOT}" STREQUAL "" AND NOT GUROBI_FOUND)
     set(ENABLE_GUROBI OFF)
 else()
     set(ENABLE_GUROBI ON)
@@ -330,7 +331,10 @@ endif(ADDITIONAL_LINK_DIRS)
 ##
 #############################################################
 if (ENABLE_GUROBI)
-	link_directories("${GUROBI_ROOT}/lib")
+	if (NOT GUROBI_FOUND)
+		message(FATAL_ERROR "Gurobi was requested, but not found!")
+	endif()
+	#link_directories("${GUROBI_ROOT}/lib")
 endif()
 if (ENABLE_Z3)
     link_directories("${Z3_ROOT}/bin")
@@ -413,10 +417,10 @@ target_link_libraries(storm ltl2dstar)
 #############################################################
 if (ENABLE_GUROBI)
     message (STATUS "StoRM - Linking with Gurobi")
-	include_directories("${GUROBI_ROOT}/include")
-    target_link_libraries(storm "gurobi56")
-    target_link_libraries(storm-functional-tests "gurobi56")
-    target_link_libraries(storm-performance-tests "gurobi56")
+	include_directories(GUROBI_INCLUDE_DIRS)
+    target_link_libraries(storm GUROBI_LIBRARY)
+    target_link_libraries(storm-functional-tests GUROBI_LIBRARY)
+    target_link_libraries(storm-performance-tests GUROBI_LIBRARY)
 endif(ENABLE_GUROBI)
 
 #############################################################
