@@ -416,11 +416,11 @@ target_link_libraries(storm ltl2dstar)
 ##
 #############################################################
 if (ENABLE_GUROBI)
-    message (STATUS "StoRM - Linking with Gurobi")
-	include_directories(GUROBI_INCLUDE_DIRS)
-    target_link_libraries(storm GUROBI_LIBRARY)
-    target_link_libraries(storm-functional-tests GUROBI_LIBRARY)
-    target_link_libraries(storm-performance-tests GUROBI_LIBRARY)
+    message (STATUS "StoRM - Linking with Gurobi (include: ${GUROBI_INCLUDE_DIRS})")
+	include_directories(${GUROBI_INCLUDE_DIRS})
+    target_link_libraries(storm ${GUROBI_LIBRARY})
+    target_link_libraries(storm-functional-tests ${GUROBI_LIBRARY})
+    target_link_libraries(storm-performance-tests ${GUROBI_LIBRARY})
 endif(ENABLE_GUROBI)
 
 #############################################################
