@@ -207,6 +207,9 @@ namespace storm {
             
             storm::storage::SparseMatrix<ValueType> backwardTransitions = model.getBackwardTransitions();
             
+            // Compute the 'true' psi states, i.e. those psi states that can be reached without passing through another psi state first.
+            psiStates = storm::utility::graph::getReachableStates(model.getTransitionMatrix(), model.getInitialStates(), trueStates, psiStates) & psiStates;
+            
             std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(backwardTransitions, trueStates, psiStates);
             storm::storage::BitVector statesWithProbabilityGreater0 = ~statesWithProbability01.first;
             storm::storage::BitVector statesWithProbability1 = std::move(statesWithProbability01.second);
@@ -222,9 +225,6 @@ namespace storm {
             }
             
             // From now on, we know the condition does not have a trivial probability in the initial state.
-            
-            // Compute the 'true' psi states, i.e. those psi states that can be reached without passing through another psi state first.
-            psiStates = storm::utility::graph::getReachableStates(model.getTransitionMatrix(), model.getInitialStates(), trueStates, psiStates) & psiStates;
             
             // Compute the states that can be reached on a path that has a psi state in it.
             storm::storage::BitVector statesWithPsiPredecessor = storm::utility::graph::performProbGreater0(model.getTransitionMatrix(), trueStates, psiStates);
@@ -471,10 +471,9 @@ namespace storm {
                 STORM_LOG_INFO("Eliminated " << states.size() << " states." << std::endl);
             } else if (storm::settings::sparseDtmcEliminationModelCheckerSettings().getEliminationMethod() == storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::EliminationMethod::Hybrid) {
                 // When using the hybrid technique, we recursively treat the SCCs up to some size.
-                storm::utility::ConstantsComparator<ValueType> comparator;
                 std::vector<storm::storage::sparse::state_type> entryStateQueue;
                 STORM_LOG_INFO("Eliminating " << subsystem.size() << " states using the hybrid elimination technique." << std::endl);
-                maximalDepth = treatScc(flexibleMatrix, oneStepProbabilities, initialStates, subsystem, transitionMatrix, flexibleBackwardTransitions, false, 0, storm::settings::sparseDtmcEliminationModelCheckerSettings().getMaximalSccSize(), entryStateQueue, comparator, stateRewards, statePriorities);
+                maximalDepth = treatScc(flexibleMatrix, oneStepProbabilities, initialStates, subsystem, transitionMatrix, flexibleBackwardTransitions, false, 0, storm::settings::sparseDtmcEliminationModelCheckerSettings().getMaximalSccSize(), entryStateQueue, stateRewards, statePriorities);
                 
                 // If the entry states were to be eliminated last, we need to do so now.
                 STORM_LOG_DEBUG("Eliminating " << entryStateQueue.size() << " entry states as a last step.");
@@ -562,7 +561,6 @@ namespace storm {
                 } else if (storm::settings::sparseDtmcEliminationModelCheckerSettings().getEliminationOrder() == storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::EliminationOrder::Backward || storm::settings::sparseDtmcEliminationModelCheckerSettings().getEliminationOrder() == storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::EliminationOrder::BackwardReversed) {
                     // Since the target states were eliminated from the matrix already, we construct a replacement by
                     // treating all states that have some non-zero probability to go to a target state in one step.
-                    storm::utility::ConstantsComparator<ValueType> comparator;
                     storm::storage::BitVector pseudoTargetStates(transitionMatrix.getRowCount());
                     for (std::size_t index = 0; index < oneStepProbabilities.size(); ++index) {
                         if (!comparator.isZero(oneStepProbabilities[index])) {
@@ -593,7 +591,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        uint_fast64_t SparseDtmcEliminationModelChecker<ValueType>::treatScc(FlexibleSparseMatrix& matrix, std::vector<ValueType>& oneStepProbabilities, storm::storage::BitVector const& entryStates, storm::storage::BitVector const& scc, storm::storage::SparseMatrix<ValueType> const& forwardTransitions, FlexibleSparseMatrix& backwardTransitions, bool eliminateEntryStates, uint_fast64_t level, uint_fast64_t maximalSccSize, std::vector<storm::storage::sparse::state_type>& entryStateQueue, storm::utility::ConstantsComparator<ValueType> const& comparator, boost::optional<std::vector<ValueType>>& stateRewards, boost::optional<std::vector<std::size_t>> const& statePriorities) {
+        uint_fast64_t SparseDtmcEliminationModelChecker<ValueType>::treatScc(FlexibleSparseMatrix& matrix, std::vector<ValueType>& oneStepProbabilities, storm::storage::BitVector const& entryStates, storm::storage::BitVector const& scc, storm::storage::SparseMatrix<ValueType> const& forwardTransitions, FlexibleSparseMatrix& backwardTransitions, bool eliminateEntryStates, uint_fast64_t level, uint_fast64_t maximalSccSize, std::vector<storm::storage::sparse::state_type>& entryStateQueue, boost::optional<std::vector<ValueType>>& stateRewards, boost::optional<std::vector<std::size_t>> const& statePriorities) {
             uint_fast64_t maximalDepth = level;
             
             // If the SCCs are large enough, we try to split them further.
@@ -649,7 +647,7 @@ namespace storm {
                     }
                     
                     // Recursively descend in SCC-hierarchy.
-                    uint_fast64_t depth = treatScc(matrix, oneStepProbabilities, entryStates, newSccAsBitVector, forwardTransitions, backwardTransitions, !storm::settings::sparseDtmcEliminationModelCheckerSettings().isEliminateEntryStatesLastSet(), level + 1, maximalSccSize, entryStateQueue, comparator, stateRewards, statePriorities);
+                    uint_fast64_t depth = treatScc(matrix, oneStepProbabilities, entryStates, newSccAsBitVector, forwardTransitions, backwardTransitions, !storm::settings::sparseDtmcEliminationModelCheckerSettings().isEliminateEntryStatesLastSet(), level + 1, maximalSccSize, entryStateQueue, stateRewards, statePriorities);
                     maximalDepth = std::max(maximalDepth, depth);
                 }
                 
@@ -731,6 +729,7 @@ namespace storm {
             // Scale all entries in this row with (1 / (1 - loopProbability)) only in case there was a self-loop.
             std::size_t scaledSuccessors = 0;
             if (hasSelfLoop) {
+                STORM_LOG_ASSERT(!comparator.isOne(loopProbability), "Must not eliminate state with probability 1 self-loop.");
                 loopProbability = storm::utility::one<ValueType>() / (storm::utility::one<ValueType>() - loopProbability);
                 storm::utility::simplify(loopProbability);
                 for (auto& entry : matrix.getRow(state)) {
