@@ -282,7 +282,6 @@ if(ENABLE_CUDA)
 
 	cuda_add_library(${STORM_CUDA_LIB_NAME}
 	    ${STORM_CUDA_KERNEL_FILES}
-	    SHARED
 	)
 endif()
 
@@ -484,6 +483,8 @@ endif(ENABLE_GUROBI)
 if (ENABLE_CUDA)
     message (STATUS "StoRM - Linking with CUDA")
 	target_link_libraries(storm ${STORM_CUDA_LIB_NAME})
+    target_link_libraries(storm-functional-tests ${STORM_CUDA_LIB_NAME})
+    target_link_libraries(storm-performance-tests ${STORM_CUDA_LIB_NAME})
 endif(ENABLE_CUDA)
 
 #############################################################
