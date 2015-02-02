@@ -203,7 +203,7 @@ namespace storm {
             storm::storage::BitVector trueStates(model.getNumberOfStates(), true);
             
             // Do some sanity checks to establish some required properties.
-            STORM_LOG_THROW(storm::settings::sparseDtmcEliminationModelCheckerSettings().getEliminationMethod() != storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::EliminationMethod::State, storm::exceptions::InvalidArgumentException, "Unsupported elimination method for conditional probabilities.");
+            STORM_LOG_THROW(storm::settings::sparseDtmcEliminationModelCheckerSettings().getEliminationMethod() == storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::EliminationMethod::State, storm::exceptions::InvalidArgumentException, "Unsupported elimination method for conditional probabilities.");
             STORM_LOG_THROW(model.getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::IllegalArgumentException, "Input model is required to have exactly one initial state.");
             storm::storage::sparse::state_type initialState = *model.getInitialStates().begin();
             
