@@ -18,6 +18,14 @@ namespace storm {
             return this->getLeftSubformula().isLtlFormula() && this->getRightSubformula().isLtlFormula();
         }
         
+        bool BinaryStateFormula::containsBoundedUntilFormula() const {
+            return this->getLeftSubformula().containsBoundedUntilFormula() || this->getRightSubformula().containsBoundedUntilFormula();
+        }
+        
+        bool BinaryStateFormula::containsNextFormula() const {
+            return this->getLeftSubformula().containsNextFormula() || this->getRightSubformula().containsNextFormula();
+        }
+        
         bool BinaryStateFormula::containsProbabilityOperator() const {
             return this->getLeftSubformula().containsProbabilityOperator() || this->getRightSubformula().containsProbabilityOperator();
         }

@@ -98,6 +98,7 @@ TEST(BitVectorTest, SetFromInt) {
     EXPECT_FALSE(vector.get(62));
     EXPECT_TRUE(vector.get(63));
     
+    vector = storm::storage::BitVector(77);
     vector.setFromInt(62, 4, 15);
 
     EXPECT_TRUE(vector.get(62));
@@ -107,6 +108,14 @@ TEST(BitVectorTest, SetFromInt) {
     
     vector.setFromInt(62, 5, 17);
 }
+
+TEST(BitVectorTest, GetSetInt) {
+    storm::storage::BitVector vector(77);
+
+    vector.setFromInt(63, 3, 2);
+    EXPECT_EQ(2, vector.getAsInt(63, 3));
+}
+
 
 TEST(BitVectorDeathTest, GetSetAssertion) {
 	storm::storage::BitVector vector(32);

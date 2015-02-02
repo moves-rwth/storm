@@ -13,7 +13,7 @@
 namespace storm {
     namespace builder {
         template <typename ValueType, typename IndexType>
-        ExplicitPrismModelBuilder<ValueType, IndexType>::StateInformation::StateInformation(uint64_t bitsPerState) : stateStorage(bitsPerState, 1000000), bitsPerState(bitsPerState), reachableStates() {
+        ExplicitPrismModelBuilder<ValueType, IndexType>::StateInformation::StateInformation(uint64_t bitsPerState) : stateStorage(bitsPerState, 10000000), bitsPerState(bitsPerState), reachableStates() {
             // Intentionally left empty.
         }
         
@@ -97,7 +97,7 @@ namespace storm {
             // Start by defining the undefined constants in the model.
             storm::prism::Program preparedProgram;
             if (options.constantDefinitions) {
-                 preparedProgram = program.defineUndefinedConstants(options.constantDefinitions.get());
+                preparedProgram = program.defineUndefinedConstants(options.constantDefinitions.get());
             } else {
                 preparedProgram = program;
             }
@@ -220,6 +220,7 @@ namespace storm {
                 int_fast64_t assignedValue = evaluator.asInt(assignmentIt->getExpression());
                 STORM_LOG_THROW(assignedValue <= integerIt->upperBound, storm::exceptions::WrongFormatException, "The update " << update << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getVariableName() << "'.");
                 newState.setFromInt(integerIt->bitOffset, integerIt->bitWidth, assignedValue - integerIt->lowerBound);
+                STORM_LOG_ASSERT(newState.getAsInt(integerIt->bitOffset, integerIt->bitWidth) + integerIt->lowerBound == assignedValue, "Writing to the bit vector bucket failed (read " << newState.getAsInt(integerIt->bitOffset, integerIt->bitWidth) << " but wrote " << assignedValue << ").");
             }
             
             // Check that we processed all assignments.
@@ -328,7 +329,7 @@ namespace storm {
                         choice.addProbability(stateIndex, probability);
                         probabilitySum += probability;
                     }
-                    
+
                     // Check that the resulting distribution is in fact a distribution.
                     STORM_LOG_THROW(!discreteTimeModel || comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException, "Probabilities do not sum to one for command '" << command << "' (actually sum to " << probabilitySum << ").");
                 }
