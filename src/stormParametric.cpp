@@ -211,6 +211,7 @@ void check() {
  */
 int main(const int argc, const char** argv) {
     try {
+        std::chrono::high_resolution_clock::time_point totalTimeStart = std::chrono::high_resolution_clock::now();
         storm::utility::cli::setUp();
         storm::utility::cli::printHeader(argc, argv);
         bool optionsCorrect = storm::utility::cli::parseOptions(argc, argv);
@@ -219,7 +220,9 @@ int main(const int argc, const char** argv) {
         }
         
         check<storm::RationalFunction>();
-
+        std::chrono::high_resolution_clock::time_point totalTimeEnd = std::chrono::high_resolution_clock::now();
+        std::cout << std::endl << "Total time: " << std::chrono::duration_cast<std::chrono::milliseconds>(totalTimeEnd - totalTimeStart).count() << "ms." << std::endl << std::endl;
+        
 //    // Perform bisimulation minimization if requested.
 //    if (storm::settings::generalSettings().isBisimulationSet()) {
 //        storm::storage::DeterministicModelStrongBisimulationDecomposition<storm::RationalFunction> bisimulationDecomposition(*dtmc, true);
