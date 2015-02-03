@@ -220,7 +220,7 @@ namespace storm {
                 int_fast64_t assignedValue = evaluator.asInt(assignmentIt->getExpression());
                 STORM_LOG_THROW(assignedValue <= integerIt->upperBound, storm::exceptions::WrongFormatException, "The update " << update << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getVariableName() << "'.");
                 newState.setFromInt(integerIt->bitOffset, integerIt->bitWidth, assignedValue - integerIt->lowerBound);
-                STORM_LOG_ASSERT(newState.getAsInt(integerIt->bitOffset, integerIt->bitWidth) == assignedValue, "Writing to the bit vector bucket failed.");
+                STORM_LOG_ASSERT(newState.getAsInt(integerIt->bitOffset, integerIt->bitWidth) + integerIt->lowerBound == assignedValue, "Writing to the bit vector bucket failed.");
             }
             
             // Check that we processed all assignments.

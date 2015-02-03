@@ -642,7 +642,7 @@ namespace storm {
                     measureDrivenInitialPartition = true;
                 }
             } else if (newFormula->isReachabilityRewardFormula()) {
-                rightSubformula = newFormula->asEventuallyFormula().getSubformula().asSharedPointer();
+                rightSubformula = newFormula->asReachabilityRewardFormula().getSubformula().asSharedPointer();
                 if (rightSubformula->isPropositionalFormula()) {
                     measureDrivenInitialPartition = true;
                 }
