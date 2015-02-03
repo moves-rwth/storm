@@ -129,16 +129,16 @@ namespace storm {
              * Prints the header including information about the linked libraries.
              */
             void printHeader(const int argc, const char* argv[]) {
-                std::cout << "StoRM" << std::endl;
-                std::cout << "-----" << std::endl << std::endl;
+                std::cout << "PROPhESY" << std::endl;
+                std::cout << "--------" << std::endl << std::endl;
              	
 			 
-				std::cout << storm::utility::StormVersion::longVersionString() << std::endl;
+//				std::cout << storm::utility::StormVersion::longVersionString() << std::endl;
 #ifdef STORM_HAVE_INTELTBB
                 std::cout << "Linked with Intel Threading Building Blocks v" << TBB_VERSION_MAJOR << "." << TBB_VERSION_MINOR << " (Interface version " << TBB_INTERFACE_VERSION << ")." << std::endl;
 #endif
 #ifdef STORM_HAVE_GLPK
-                std::cout << "Linked with GNU Linear Programming Kit v" << GLP_MAJOR_VERSION << "." << GLP_MINOR_VERSION << "." << std::endl;
+//                std::cout << "Linked with GNU Linear Programming Kit v" << GLP_MAJOR_VERSION << "." << GLP_MINOR_VERSION << "." << std::endl;
 #endif
 #ifdef STORM_HAVE_GUROBI
                 std::cout << "Linked with Gurobi Optimizer v" << GRB_VERSION_MAJOR << "." << GRB_VERSION_MINOR << "." << GRB_VERSION_TECHNICAL << "." << std::endl;
@@ -156,11 +156,11 @@ namespace storm {
                 
                 // "Compute" the command line argument string with which STORM was invoked.
                 std::stringstream commandStream;
-                for (int i = 0; i < argc; ++i) {
+                for (int i = 1; i < argc; ++i) {
                     commandStream << argv[i] << " ";
                 }
-                std::cout << "Command line: " << commandStream.str() << std::endl;
-                std::cout << "Current working directory: " << getCurrentWorkingDirectory() << std::endl << std::endl;
+                std::cout << "Command line arguments: " << commandStream.str() << std::endl;
+//                std::cout << "Current working directory: " << getCurrentWorkingDirectory() << std::endl << std::endl;
             }
             
             
