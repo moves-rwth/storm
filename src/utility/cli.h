@@ -331,6 +331,7 @@ namespace storm {
             }
             
             void processOptions() {
+                std::chrono::high_resolution_clock::time_point totalTimeStart = std::chrono::high_resolution_clock::now();
                 storm::settings::modules::GeneralSettings settings = storm::settings::generalSettings();
                 
                 // If we have to build the model from a symbolic representation, we need to parse the representation first.
@@ -353,7 +354,6 @@ namespace storm {
                 }
                 
                 // Now we are ready to actually build the model.
-                std::chrono::high_resolution_clock::time_point totalTimeStart = std::chrono::high_resolution_clock::now();
                 std::chrono::high_resolution_clock::time_point buildingTimeStart = std::chrono::high_resolution_clock::now();
                 std::shared_ptr<storm::models::AbstractModel<double>> model;
                 if (settings.isExplicitSet()) {
@@ -370,28 +370,11 @@ namespace storm {
                 std::chrono::high_resolution_clock::time_point preprocessingTimeStart = std::chrono::high_resolution_clock::now();
                 model = preprocessModel(model, formula);
                 std::chrono::high_resolution_clock::time_point preprocessingTimeEnd = std::chrono::high_resolution_clock::now();
-                std::chrono::high_resolution_clock::time_point totalTimeEnd = std::chrono::high_resolution_clock::now();
 
                 // Print some information about the model.
                 model->printModelInformationToStream(std::cout);
                 
-                if (storm::settings::generalSettings().isShowStatisticsSet()) {
-                    std::chrono::high_resolution_clock::duration totalTime = totalTimeEnd - totalTimeStart;
-                    std::chrono::milliseconds totalTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(totalTime);
-                    std::chrono::high_resolution_clock::duration buildingTime = buildingTimeEnd - buildingTimeStart;
-                    std::chrono::milliseconds buildingTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(buildingTime);
-                    std::chrono::high_resolution_clock::duration preprocessingTime = preprocessingTimeEnd - preprocessingTimeStart;
-                    std::chrono::milliseconds preprocessingTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(preprocessingTime);
-
-                    STORM_PRINT_AND_LOG(std::endl);
-                    STORM_PRINT_AND_LOG("Time breakdown:" << std::endl);
-                    STORM_PRINT_AND_LOG("    * time for building: " << buildingTimeInMilliseconds.count() << "ms" << std::endl);
-                    STORM_PRINT_AND_LOG("    * time for preprocessing: " << preprocessingTimeInMilliseconds.count() << "ms" << std::endl);
-                    STORM_PRINT_AND_LOG("------------------------------------------" << std::endl);
-                    STORM_PRINT_AND_LOG("    * total time: " << totalTimeInMilliseconds.count() << "ms" << std::endl);
-                    STORM_PRINT_AND_LOG(std::endl);
-                }
-                
+                std::chrono::high_resolution_clock::time_point checkingTimeStart = std::chrono::high_resolution_clock::now();
                 // If we were requested to generate a counterexample, we now do so.
                 if (settings.isCounterexampleSet()) {
                     STORM_LOG_THROW(settings.isPropertySet(), storm::exceptions::InvalidSettingsException, "Unable to generate counterexample without a property.");
@@ -418,6 +401,28 @@ namespace storm {
                     } else {
                         std::cout << " skipped, because the modelling formalism is currently unsupported." << std::endl;
                     }
+                }
+                std::chrono::high_resolution_clock::time_point checkingTimeEnd = std::chrono::high_resolution_clock::now();
+                std::chrono::high_resolution_clock::time_point totalTimeEnd = std::chrono::high_resolution_clock::now();
+
+                if (storm::settings::generalSettings().isShowStatisticsSet()) {
+                    std::chrono::high_resolution_clock::duration totalTime = totalTimeEnd - totalTimeStart;
+                    std::chrono::milliseconds totalTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(totalTime);
+                    std::chrono::high_resolution_clock::duration buildingTime = buildingTimeEnd - buildingTimeStart;
+                    std::chrono::milliseconds buildingTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(buildingTime);
+                    std::chrono::high_resolution_clock::duration preprocessingTime = preprocessingTimeEnd - preprocessingTimeStart;
+                    std::chrono::milliseconds preprocessingTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(preprocessingTime);
+                    std::chrono::high_resolution_clock::duration checkingTime = checkingTimeEnd - checkingTimeStart;
+                    std::chrono::milliseconds checkingTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(checkingTime);
+                    
+                    STORM_PRINT_AND_LOG(std::endl);
+                    STORM_PRINT_AND_LOG("Time breakdown:" << std::endl);
+                    STORM_PRINT_AND_LOG("    * time for building: " << buildingTimeInMilliseconds.count() << "ms" << std::endl);
+                    STORM_PRINT_AND_LOG("    * time for preprocessing: " << preprocessingTimeInMilliseconds.count() << "ms" << std::endl);
+                    STORM_PRINT_AND_LOG("    * time for checking: " << checkingTimeInMilliseconds.count() << "ms" << std::endl);
+                    STORM_PRINT_AND_LOG("------------------------------------------" << std::endl);
+                    STORM_PRINT_AND_LOG("    * total time: " << totalTimeInMilliseconds.count() << "ms" << std::endl);
+                    STORM_PRINT_AND_LOG(std::endl);
                 }
             }
         }
