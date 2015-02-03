@@ -161,7 +161,10 @@ namespace storm {
             std::vector<Command> newCommands;
             newCommands.reserve(this->getNumberOfCommands());
             for (auto const& command : this->getCommands()) {
-                newCommands.emplace_back(command.substitute(substitution));
+                Command newCommand = command.substitute(substitution);
+                if (!newCommand.getGuardExpression().isFalse()) {
+                    newCommands.emplace_back(newCommand);
+                }
             }
             
             return Module(this->getName(), newBooleanVariables, newIntegerVariables, newCommands, this->getFilename(), this->getLineNumber());
