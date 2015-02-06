@@ -209,77 +209,86 @@ TEST(TopologicalValueIterationMdpPrctlModelCheckerTest, Dice) {
 }
 
 TEST(TopologicalValueIterationMdpPrctlModelCheckerTest, AsynchronousLeader) {
-	//storm::settings::Settings* s = storm::settings::Settings::getInstance();
 	std::shared_ptr<storm::models::Mdp<double>> mdp = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader4.tra", STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader4.lab", "", STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader4.trans.rew")->as<storm::models::Mdp<double>>();
 
-	//ASSERT_EQ(mdp->getNumberOfStates(), 3172ull);
-	//ASSERT_EQ(mdp->getNumberOfTransitions(), 7144ull);
+	ASSERT_EQ(mdp->getNumberOfStates(), 3172ull);
+	ASSERT_EQ(mdp->getNumberOfTransitions(), 7144ull);
 
-	//storm::modelchecker::prctl::TopologicalValueIterationMdpPrctlModelChecker<double> mc(*mdp);
+	storm::modelchecker::prctl::TopologicalValueIterationMdpPrctlModelChecker<double> mc(*mdp);
 
-	//storm::property::prctl::Ap<double>* apFormula = new storm::property::prctl::Ap<double>("elected");
-	//storm::property::prctl::Eventually<double>* eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
-	//storm::property::prctl::ProbabilisticNoBoundOperator<double>* probFormula = new storm::property::prctl::ProbabilisticNoBoundOperator<double>(eventuallyFormula, true);
+	auto apFormula = std::make_shared<storm::logic::AtomicLabelFormula>("elected");
+	auto eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(apFormula);
+	auto probabilityOperatorFormula = std::make_shared<storm::logic::ProbabilityOperatorFormula>(storm::logic::OptimalityType::Minimize, eventuallyFormula);
+	
+	std::unique_ptr<storm::modelchecker::CheckResult> result = mc.check(*probabilityOperatorFormula);
 
-	//std::vector<double> result = mc.checkNoBoundOperator(*probFormula);
+	ASSERT_LT(std::abs(result->asExplicitQuantitativeCheckResult<double>()[0] - 1),
+		storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
 
-	//ASSERT_LT(std::abs(result[0] - 1), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	probabilityOperatorFormula.reset();
 
-	//delete probFormula;
+	apFormula = std::make_shared<storm::logic::AtomicLabelFormula>("elected");
+	eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(apFormula);
+	probabilityOperatorFormula = std::make_shared<storm::logic::ProbabilityOperatorFormula>(storm::logic::OptimalityType::Maximize, eventuallyFormula);
 
-	//apFormula = new storm::property::prctl::Ap<double>("elected");
-	//eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
-	//probFormula = new storm::property::prctl::ProbabilisticNoBoundOperator<double>(eventuallyFormula, false);
+	result = mc.check(*probabilityOperatorFormula);
 
-	//result = mc.checkNoBoundOperator(*probFormula);
+	ASSERT_LT(std::abs(result->asExplicitQuantitativeCheckResult<double>()[0] - 1),
+		storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
 
-	//ASSERT_LT(std::abs(result[0] - 1), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	probabilityOperatorFormula.reset();
 
-	//delete probFormula;
+	apFormula = std::make_shared<storm::logic::AtomicLabelFormula>("elected");
+	auto boundedEventuallyFormula = std::make_shared<storm::logic::BoundedUntilFormula>(std::make_shared<storm::logic::BooleanLiteralFormula>(true), apFormula, 25);
+	probabilityOperatorFormula = std::make_shared<storm::logic::ProbabilityOperatorFormula>(storm::logic::OptimalityType::Maximize, boundedEventuallyFormula);
 
-	//apFormula = new storm::property::prctl::Ap<double>("elected");
-	//storm::property::prctl::BoundedEventually<double>* boundedEventuallyFormula = new storm::property::prctl::BoundedEventually<double>(apFormula, 25);
-	//probFormula = new storm::property::prctl::ProbabilisticNoBoundOperator<double>(boundedEventuallyFormula, false);
+	result = mc.check(*probabilityOperatorFormula);
 
-	//result = mc.checkNoBoundOperator(*probFormula);
+	ASSERT_LT(std::abs(result->asExplicitQuantitativeCheckResult<double>()[0] - 0.0625),
+		storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
 
-	//ASSERT_LT(std::abs(result[0] - 0.0625), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	probabilityOperatorFormula.reset();
 
-	//delete probFormula;
+	apFormula = std::make_shared<storm::logic::AtomicLabelFormula>("elected");
+	boundedEventuallyFormula = std::make_shared<storm::logic::BoundedUntilFormula>(std::make_shared<storm::logic::BooleanLiteralFormula>(true), apFormula, 25);
+	probabilityOperatorFormula = std::make_shared<storm::logic::ProbabilityOperatorFormula>(storm::logic::OptimalityType::Minimize, boundedEventuallyFormula);
 
-	//apFormula = new storm::property::prctl::Ap<double>("elected");
-	//boundedEventuallyFormula = new storm::property::prctl::BoundedEventually<double>(apFormula, 25);
-	//probFormula = new storm::property::prctl::ProbabilisticNoBoundOperator<double>(boundedEventuallyFormula, true);
+	result = mc.check(*probabilityOperatorFormula);
 
-	//result = mc.checkNoBoundOperator(*probFormula);
+	ASSERT_LT(std::abs(result->asExplicitQuantitativeCheckResult<double>()[0] - 0.0625),
+		storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
 
-	//ASSERT_LT(std::abs(result[0] - 0.0625), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	probabilityOperatorFormula.reset();
 
-	//delete probFormula;
+	apFormula = std::make_shared<storm::logic::AtomicLabelFormula>("elected");
+	auto reachabilityRewardFormula = std::make_shared<storm::logic::ReachabilityRewardFormula>(apFormula);
+	auto rewardFormula = std::make_shared<storm::logic::RewardOperatorFormula>(storm::logic::OptimalityType::Minimize, reachabilityRewardFormula);
 
-	//apFormula = new storm::property::prctl::Ap<double>("elected");
-	//storm::property::prctl::ReachabilityReward<double>* reachabilityRewardFormula = new storm::property::prctl::ReachabilityReward<double>(apFormula);
-	//storm::property::prctl::RewardNoBoundOperator<double>* rewardFormula = new storm::property::prctl::RewardNoBoundOperator<double>(reachabilityRewardFormula, true);
-
-	//result = mc.checkNoBoundOperator(*rewardFormula);
-
-#ifdef STORM_HAVE_CUDAFORSTORM
-	//ASSERT_LT(std::abs(result[0] - 4.285689611), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
-#else
-	//ASSERT_LT(std::abs(result[0] - 4.285701547), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
-#endif
-	//delete rewardFormula;
-
-	//apFormula = new storm::property::prctl::Ap<double>("elected");
-	//reachabilityRewardFormula = new storm::property::prctl::ReachabilityReward<double>(apFormula);
-	//rewardFormula = new storm::property::prctl::RewardNoBoundOperator<double>(reachabilityRewardFormula, false);
-
-	//result = mc.checkNoBoundOperator(*rewardFormula);
+	result = mc.check(*rewardFormula);
 
 #ifdef STORM_HAVE_CUDAFORSTORM
-	//ASSERT_LT(std::abs(result[0] - 4.285689611), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs(result->asExplicitQuantitativeCheckResult<double>()[0] - 4.285689611),
+		storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
 #else
-	//ASSERT_LT(std::abs(result[0] - 4.285703591), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
+	ASSERT_LT(std::abs(result->asExplicitQuantitativeCheckResult<double>()[0] - 4.285701547),
+		storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
 #endif
-	//delete rewardFormula;
+
+	probabilityOperatorFormula.reset();
+
+	apFormula = std::make_shared<storm::logic::AtomicLabelFormula>("elected");
+	reachabilityRewardFormula = std::make_shared<storm::logic::ReachabilityRewardFormula>(apFormula);
+	rewardFormula = std::make_shared<storm::logic::RewardOperatorFormula>(storm::logic::OptimalityType::Maximize, reachabilityRewardFormula);
+
+	result = mc.check(*rewardFormula);
+
+#ifdef STORM_HAVE_CUDAFORSTORM
+	ASSERT_LT(std::abs(result->asExplicitQuantitativeCheckResult<double>()[0] - 4.285689611),
+		storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
+#else
+	ASSERT_LT(std::abs(result->asExplicitQuantitativeCheckResult<double>()[0] - 4.285703591),
+		storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
+#endif
+
+	probabilityOperatorFormula.reset();
 }

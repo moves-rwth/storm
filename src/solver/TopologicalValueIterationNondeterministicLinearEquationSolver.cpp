@@ -73,10 +73,10 @@ namespace storm {
 			
 			// For testing only
 			if (sizeof(ValueType) == sizeof(double)) {
-				std::cout << "<<< Using CUDA-DOUBLE Kernels >>>" << std::endl;
+				//std::cout << "<<< Using CUDA-DOUBLE Kernels >>>" << std::endl;
 				LOG4CPLUS_INFO(logger, "<<< Using CUDA-DOUBLE Kernels >>>");
 			} else {
-				std::cout << "<<< Using CUDA-FLOAT Kernels >>>" << std::endl;
+				//std::cout << "<<< Using CUDA-FLOAT Kernels >>>" << std::endl;
 				LOG4CPLUS_INFO(logger, "<<< Using CUDA-FLOAT Kernels >>>");
 			}
 
@@ -96,7 +96,7 @@ namespace storm {
 			std::vector<std::pair<bool, storm::storage::StateBlock>> sccDecomposition;
 			if (__USE_CUDAFORSTORM_OPT && (gpuSizeOfCompleteSystem < cudaFreeMemory)) {
 				// Dummy output for SCC Times
-				std::cout << "Computing the SCC Decomposition took 0ms" << std::endl;
+				//std::cout << "Computing the SCC Decomposition took 0ms" << std::endl;
 
 #ifdef STORM_HAVE_CUDAFORSTORM
 				if (!resetCudaDevice()) {
@@ -124,9 +124,9 @@ namespace storm {
 				}
 
 				std::chrono::high_resolution_clock::time_point calcEndTime = std::chrono::high_resolution_clock::now();
-				std::cout << "Obtaining the fixpoint solution took " << std::chrono::duration_cast<std::chrono::milliseconds>(calcEndTime - calcStartTime).count() << "ms." << std::endl;
+				//std::cout << "Obtaining the fixpoint solution took " << std::chrono::duration_cast<std::chrono::milliseconds>(calcEndTime - calcStartTime).count() << "ms." << std::endl;
 
-				std::cout << "Used a total of " << globalIterations << " iterations with a maximum of " << globalIterations << " iterations in a single block." << std::endl;
+				//std::cout << "Used a total of " << globalIterations << " iterations with a maximum of " << globalIterations << " iterations in a single block." << std::endl;
 
 				// Check if the solver converged and issue a warning otherwise.
 				if (converged) {
@@ -157,7 +157,7 @@ namespace storm {
 				LOG4CPLUS_INFO(logger, "Optimized SCC Decomposition, originally " << topologicalSort.size() << " SCCs, optimized to " << optimalSccs.size() << " SCCs.");
 
 				std::chrono::high_resolution_clock::time_point sccEndTime = std::chrono::high_resolution_clock::now();
-				std::cout << "Computing the SCC Decomposition took " << std::chrono::duration_cast<std::chrono::milliseconds>(sccEndTime - sccStartTime).count() << "ms." << std::endl;
+				//std::cout << "Computing the SCC Decomposition took " << std::chrono::duration_cast<std::chrono::milliseconds>(sccEndTime - sccStartTime).count() << "ms." << std::endl;
 
 				std::chrono::high_resolution_clock::time_point calcStartTime = std::chrono::high_resolution_clock::now();
 
@@ -255,7 +255,8 @@ namespace storm {
 						throw storm::exceptions::InvalidStateException() << "The useGpu Flag of a SCC was set, but this version of StoRM does not support CUDA acceleration. Internal Error!";
 #endif
 					} else {
-						std::cout << "WARNING: Using CPU based TopoSolver! (double)" << std::endl;
+						//std::cout << "WARNING: Using CPU based TopoSolver! (double)" << std::endl;
+						LOG4CPLUS_INFO(logger, "Performance Warning: Using CPU based TopoSolver! (double)");
 						localIterations = 0;
 						converged = false;
 						while (!converged && localIterations < this->maximalNumberOfIterations) {
@@ -313,7 +314,7 @@ namespace storm {
 					}
 				}
 
-				std::cout << "Used a total of " << globalIterations << " iterations with a maximum of " << localIterations << " iterations in a single block." << std::endl;
+				//std::cout << "Used a total of " << globalIterations << " iterations with a maximum of " << localIterations << " iterations in a single block." << std::endl;
 
 				// Check if the solver converged and issue a warning otherwise.
 				if (converged) {
@@ -323,7 +324,7 @@ namespace storm {
 				}
 
 				std::chrono::high_resolution_clock::time_point calcEndTime = std::chrono::high_resolution_clock::now();
-				std::cout << "Obtaining the fixpoint solution took " << std::chrono::duration_cast<std::chrono::milliseconds>(calcEndTime - calcStartTime).count() << "ms." << std::endl;
+				//std::cout << "Obtaining the fixpoint solution took " << std::chrono::duration_cast<std::chrono::milliseconds>(calcEndTime - calcStartTime).count() << "ms." << std::endl;
 			}
         }
 
