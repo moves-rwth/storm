@@ -193,14 +193,19 @@ void check() {
     
     storm::modelchecker::reachability::CollectConstraints<ValueType> constraintCollector;
     constraintCollector(*dtmc);
-    
+
     std::unique_ptr<storm::modelchecker::CheckResult> result = modelchecker.check(*formula);
+    ValueType valueFunction = result->asExplicitQuantitativeCheckResult<ValueType>()[*model->getInitialStates().begin()];
+    
+    if (storm::settings::parametricSettings().exportResultToFile()) {
+        storm::utility::exportParametricMcResult(valueFunction, constraintCollector);
+    }
 
     // Report the result.
     STORM_PRINT_AND_LOG(std::endl << "Result (initial state): ");
     result->writeToStream(std::cout, model->getInitialStates());
     if (std::is_same<ValueType, storm::RationalFunction>::value) {
-        printApproximateResult(result->asExplicitQuantitativeCheckResult<ValueType>()[*model->getInitialStates().begin()]);
+        printApproximateResult(valueFunction);
     }
     std::cout << std::endl;
 }
