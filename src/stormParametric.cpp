@@ -191,9 +191,8 @@ void check() {
     
     assert(dtmc);
     
-//    storm::modelchecker::reachability::CollectConstraints<ValueType> constraintCollector;
-//    constraintCollector(*dtmc);
-    
+    storm::modelchecker::reachability::CollectConstraints<ValueType> constraintCollector;
+    constraintCollector(*dtmc);
     
     std::unique_ptr<storm::modelchecker::CheckResult> result = modelchecker.check(*formula);
 

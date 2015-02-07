@@ -218,6 +218,8 @@ namespace storm {
                 storm::settings::SettingsManager& manager = storm::settings::mutableManager();
                 try {
                     manager.setFromCommandLine(argc, argv);
+//                    std::vector<std::string> arguments = {"--symbolic", "/Users/chris/work/prism-trunk/prism-examples/self-stabilisation/herman/herman7.mod", "--prop", "R=? [F \"stable\"]"};
+//                    manager.setFromExplodedString(arguments);
                 } catch (storm::exceptions::OptionParserException& e) {
                     manager.printHelp();
                     throw e;
@@ -233,7 +235,6 @@ namespace storm {
 					storm::settings::manager().printVersion();
 					return false;
 				}
-				
                 
                 if (storm::settings::generalSettings().isVerboseSet()) {
                     logger.getAppender("mainConsoleAppender")->setThreshold(log4cplus::INFO_LOG_LEVEL);
