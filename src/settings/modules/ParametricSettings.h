@@ -58,6 +58,13 @@ namespace storm {
                  * @return The encoding strategy to be used.
                  */
 				Smt2EncodingStrategy smt2EncodingStrategy() const;
+                
+                /*!
+                 * Retrieves whether or not derivatives of the resulting rational function are to be generated.
+                 *
+                 * @return True if the derivatives are to be generated.
+                 */
+                bool isDerivativesSet() const;
 				
                 const static std::string moduleName;
                 
@@ -65,6 +72,7 @@ namespace storm {
 				const static std::string encodeSmt2StrategyOptionName;
 				const static std::string exportSmt2DestinationPathOptionName;
 				const static std::string exportResultDestinationPathOptionName;
+                const static std::string derivativesOptionName;
             };
             
         } // namespace modules
