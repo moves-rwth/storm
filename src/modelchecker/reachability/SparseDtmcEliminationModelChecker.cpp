@@ -543,7 +543,7 @@ namespace storm {
 //                if (storm::settings::parametricSettings().isSimplifySet()) {
 //                    return storm::utility::simplify(stateRewards.get()[*initialStates.begin()]);
 //                } else {
-                    return stateRewards.get()[*initialStates.begin()];
+                    return storm::utility::simplify(stateRewards.get()[*initialStates.begin()]);
 //                }
             } else {
 //                if (storm::settings::parametricSettings().isSimplifySet()) {

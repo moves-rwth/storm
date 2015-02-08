@@ -194,8 +194,15 @@ void check() {
     storm::modelchecker::reachability::CollectConstraints<ValueType> constraintCollector;
     constraintCollector(*dtmc);
 
+    STORM_LOG_DEBUG("Computing function...");
+
     std::unique_ptr<storm::modelchecker::CheckResult> result = modelchecker.check(*formula);
+    
+    STORM_LOG_DEBUG("Computed the final result.");
+    
     ValueType valueFunction = result->asExplicitQuantitativeCheckResult<ValueType>()[*model->getInitialStates().begin()];
+    
+    STORM_LOG_DEBUG("Extracted value function.");
     
     // Report the result.
     STORM_PRINT_AND_LOG(std::endl << "Result (initial state): ");
