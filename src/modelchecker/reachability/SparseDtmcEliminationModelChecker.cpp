@@ -538,6 +538,7 @@ namespace storm {
             }
             
             // Now, we return the value for the only initial state.
+            STORM_LOG_DEBUG("Simplifying and returning result.");
             if (stateRewards) {
                 return storm::utility::simplify(stateRewards.get()[*initialStates.begin()]);
             } else {
