@@ -536,13 +536,21 @@ namespace storm {
                     STORM_PRINT_AND_LOG("    * maximal depth of SCC decomposition: " << maximalDepth << std::endl);
                 }
             }
-            
+
             // Now, we return the value for the only initial state.
             STORM_LOG_DEBUG("Simplifying and returning result.");
             if (stateRewards) {
-                return storm::utility::simplify(stateRewards.get()[*initialStates.begin()]);
+//                if (storm::settings::parametricSettings().isSimplifySet()) {
+//                    return storm::utility::simplify(stateRewards.get()[*initialStates.begin()]);
+//                } else {
+                    return stateRewards.get()[*initialStates.begin()];
+//                }
             } else {
-                return storm::utility::simplify(oneStepProbabilities[*initialStates.begin()]);
+//                if (storm::settings::parametricSettings().isSimplifySet()) {
+//                    return storm::utility::simplify(oneStepProbabilities[*initialStates.begin()]);
+//                } else {
+                    return oneStepProbabilities[*initialStates.begin()];
+//                }
             }
         }
         
