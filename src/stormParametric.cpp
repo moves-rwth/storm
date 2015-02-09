@@ -35,88 +35,89 @@ void check() {
     // Program Translation Time Measurement, Start
     std::chrono::high_resolution_clock::time_point programTranslationStart = std::chrono::high_resolution_clock::now();
     
-    // First, we build the model using the given symbolic model description and constant definitions.
-    std::string const& programFile = storm::settings::generalSettings().getSymbolicModelFilename();
-    std::string const& constants = storm::settings::generalSettings().getConstantDefinitionString();
-    storm::prism::Program program = storm::parser::PrismParser::parse(programFile);
-
-    boost::optional<std::shared_ptr<storm::logic::Formula>> formula;
-    if (storm::settings::generalSettings().isPropertySet()) {
-        formula = storm::parser::FormulaParser(program.getManager().getSharedPointer()).parseFromString(storm::settings::generalSettings().getProperty());
-    }
-    
-    typename storm::builder::ExplicitPrismModelBuilder<ValueType>::Options options;
-    if (formula) {
-        options = typename storm::builder::ExplicitPrismModelBuilder<ValueType>::Options(*formula.get());
-    }
-    options.addConstantDefinitionsFromString(program, storm::settings::generalSettings().getConstantDefinitionString());
-    
-    std::shared_ptr<storm::models::AbstractModel<ValueType>> model = storm::builder::ExplicitPrismModelBuilder<ValueType>::translateProgram(program, options);
-    
-    // Convert the transition rewards to state rewards if necessary.
-    if (model->hasTransitionRewards()) {
-        model->convertTransitionRewardsToStateRewards();
-    }
-
-    // Program Translation Time Measurement, End
-    std::chrono::high_resolution_clock::time_point programTranslationEnd = std::chrono::high_resolution_clock::now();
-    std::cout << "Parsing and translating the model took " << std::chrono::duration_cast<std::chrono::milliseconds>(programTranslationEnd - programTranslationStart).count() << "ms." << std::endl << std::endl;
-    
-    model->printModelInformationToStream(std::cout);
-    
-    if (formula) {
-        STORM_LOG_THROW(model->getType() == storm::models::DTMC, storm::exceptions::InvalidArgumentException, "The given model is not a DTMC and, hence, not currently supported.");
-        std::shared_ptr<storm::models::Dtmc<ValueType>> dtmc = model->template as<storm::models::Dtmc<ValueType>>();
-    
-        storm::modelchecker::SparseDtmcEliminationModelChecker<ValueType> modelchecker(*dtmc);
-        STORM_LOG_THROW(modelchecker.canHandle(*formula.get()), storm::exceptions::InvalidPropertyException, "Model checker cannot handle the property: '" << *formula.get() << "'.");
-    
-        std::cout << "Checking formula " << *formula.get() << std::endl;
+    if (storm::settings::generalSettings().isSymbolicSet()) {
+        std::string programFile = storm::settings::generalSettings().getSymbolicModelFilename();
+        std::string constants = storm::settings::generalSettings().getConstantDefinitionString();
+        storm::prism::Program program = storm::parser::PrismParser::parse(programFile);
         
-        // Perform bisimulation minimization if requested.
-        if (storm::settings::generalSettings().isBisimulationSet()) {
-            typename storm::storage::DeterministicModelBisimulationDecomposition<ValueType>::Options options(*dtmc, *formula.get());
-            options.weak = storm::settings::bisimulationSettings().isWeakBisimulationSet();
-            
-            storm::storage::DeterministicModelBisimulationDecomposition<ValueType> bisimulationDecomposition(*dtmc, options);
-            *dtmc = std::move(*bisimulationDecomposition.getQuotient()->template as<storm::models::Dtmc<ValueType>>());
-            
-            dtmc->printModelInformationToStream(std::cout);
+        boost::optional<std::shared_ptr<storm::logic::Formula>> formula;
+        if (storm::settings::generalSettings().isPropertySet()) {
+            formula = storm::parser::FormulaParser(program.getManager().getSharedPointer()).parseFromString(storm::settings::generalSettings().getProperty());
         }
         
-        STORM_LOG_THROW(dtmc, storm::exceptions::InvalidStateException, "Preprocessing went wrong.");
+        typename storm::builder::ExplicitPrismModelBuilder<ValueType>::Options options;
+        if (formula) {
+            options = typename storm::builder::ExplicitPrismModelBuilder<ValueType>::Options(*formula.get());
+        }
+        options.addConstantDefinitionsFromString(program, storm::settings::generalSettings().getConstantDefinitionString());
         
-        storm::modelchecker::reachability::CollectConstraints<ValueType> constraintCollector;
-        constraintCollector(*dtmc);
+        std::shared_ptr<storm::models::AbstractModel<ValueType>> model = storm::builder::ExplicitPrismModelBuilder<ValueType>::translateProgram(program, options);
         
-        std::unique_ptr<storm::modelchecker::CheckResult> result = modelchecker.check(*formula.get());
-        ValueType valueFunction = result->asExplicitQuantitativeCheckResult<ValueType>()[*model->getInitialStates().begin()];
-        
-        if (storm::settings::parametricSettings().exportResultToFile()) {
-            storm::utility::exportParametricMcResult(valueFunction, constraintCollector);
+        // Convert the transition rewards to state rewards if necessary.
+        if (model->hasTransitionRewards()) {
+            model->convertTransitionRewardsToStateRewards();
         }
         
-        // Report the result.
-        STORM_PRINT_AND_LOG(std::endl << "Result (initial state): ");
-        result->writeToStream(std::cout, model->getInitialStates());
-        if (std::is_same<ValueType, storm::RationalFunction>::value) {
-            printApproximateResult(valueFunction);
-        }
-        std::cout << std::endl;
+        // Program Translation Time Measurement, End
+        std::chrono::high_resolution_clock::time_point programTranslationEnd = std::chrono::high_resolution_clock::now();
+        std::cout << "Parsing and translating the model took " << std::chrono::duration_cast<std::chrono::milliseconds>(programTranslationEnd - programTranslationStart).count() << "ms." << std::endl << std::endl;
         
-        // Generate derivatives for sensitivity analysis if requested.
-        if (std::is_same<ValueType, storm::RationalFunction>::value && storm::settings::parametricSettings().isDerivativesSet()) {
-            auto allVariables = valueFunction.gatherVariables();
+        model->printModelInformationToStream(std::cout);
+        
+        if (formula) {
+            STORM_LOG_THROW(model->getType() == storm::models::DTMC, storm::exceptions::InvalidArgumentException, "The given model is not a DTMC and, hence, not currently supported.");
+            std::shared_ptr<storm::models::Dtmc<ValueType>> dtmc = model->template as<storm::models::Dtmc<ValueType>>();
             
-            if (!allVariables.empty()) {
-                std::map<storm::Variable, storm::RationalFunction> derivatives;
-                for (auto const& variable : allVariables) {
-                    derivatives[variable] = valueFunction.derivative(variable);
-                }
+            storm::modelchecker::SparseDtmcEliminationModelChecker<ValueType> modelchecker(*dtmc);
+            STORM_LOG_THROW(modelchecker.canHandle(*formula.get()), storm::exceptions::InvalidPropertyException, "Model checker cannot handle the property: '" << *formula.get() << "'.");
+            
+            std::cout << "Checking formula " << *formula.get() << std::endl;
+            
+            // Perform bisimulation minimization if requested.
+            if (storm::settings::generalSettings().isBisimulationSet()) {
+                typename storm::storage::DeterministicModelBisimulationDecomposition<ValueType>::Options options(*dtmc, *formula.get());
+                options.weak = storm::settings::bisimulationSettings().isWeakBisimulationSet();
                 
-                std::cout << std::endl << "Derivatives (variable; derivative):" << std::endl;
-                for (auto const& variableDerivativePair : derivatives) {
-                    std::cout << "(" << variableDerivativePair.first << "; " << variableDerivativePair.second << ")" << std::endl;
+                storm::storage::DeterministicModelBisimulationDecomposition<ValueType> bisimulationDecomposition(*dtmc, options);
+                *dtmc = std::move(*bisimulationDecomposition.getQuotient()->template as<storm::models::Dtmc<ValueType>>());
+                
+                dtmc->printModelInformationToStream(std::cout);
+            }
+            
+            STORM_LOG_THROW(dtmc, storm::exceptions::InvalidStateException, "Preprocessing went wrong.");
+            
+            storm::modelchecker::reachability::CollectConstraints<ValueType> constraintCollector;
+            constraintCollector(*dtmc);
+            
+            std::unique_ptr<storm::modelchecker::CheckResult> result = modelchecker.check(*formula.get());
+            ValueType valueFunction = result->asExplicitQuantitativeCheckResult<ValueType>()[*model->getInitialStates().begin()];
+            
+            if (storm::settings::parametricSettings().exportResultToFile()) {
+                storm::utility::exportParametricMcResult(valueFunction, constraintCollector);
+            }
+            
+            // Report the result.
+            STORM_PRINT_AND_LOG(std::endl << "Result (initial state): ");
+            result->writeToStream(std::cout, model->getInitialStates());
+            if (std::is_same<ValueType, storm::RationalFunction>::value) {
+                printApproximateResult(valueFunction);
+            }
+            std::cout << std::endl;
+            
+            // Generate derivatives for sensitivity analysis if requested.
+            if (std::is_same<ValueType, storm::RationalFunction>::value && storm::settings::parametricSettings().isDerivativesSet()) {
+                auto allVariables = valueFunction.gatherVariables();
+                
+                if (!allVariables.empty()) {
+                    std::map<storm::Variable, storm::RationalFunction> derivatives;
+                    for (auto const& variable : allVariables) {
+                        derivatives[variable] = valueFunction.derivative(variable);
+                    }
+                    
+                    std::cout << std::endl << "Derivatives (variable; derivative):" << std::endl;
+                    for (auto const& variableDerivativePair : derivatives) {
+                        std::cout << "(" << variableDerivativePair.first << "; " << variableDerivativePair.second << ")" << std::endl;
+                    }
                 }
             }
         }
@@ -128,17 +129,11 @@ void check() {
  */
 int main(const int argc, const char** argv) {
     try {
-        std::chrono::high_resolution_clock::time_point totalTimeStart = std::chrono::high_resolution_clock::now();
         storm::utility::cli::setUp();
         storm::utility::cli::printHeader(argc, argv);
         bool optionsCorrect = storm::utility::cli::parseOptions(argc, argv);
-        if (!optionsCorrect) {
-            return -1;
-        }
         
         check<storm::RationalFunction>();
-        std::chrono::high_resolution_clock::time_point totalTimeEnd = std::chrono::high_resolution_clock::now();
-        std::cout << std::endl << "Total time: " << std::chrono::duration_cast<std::chrono::milliseconds>(totalTimeEnd - totalTimeStart).count() << "ms." << std::endl << std::endl;
         
         // All operations have now been performed, so we clean up everything and terminate.
         storm::utility::cli::cleanUp();

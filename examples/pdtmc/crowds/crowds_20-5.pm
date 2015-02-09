@@ -36,7 +36,7 @@ module crowds
 	runCount: [0..TotalRuns] init TotalRuns;   // Counts protocol instances
 	start:    bool init false;      // Start the protocol?
 	run:      bool init false;      // Run the protocol?
-	lastSeen: [0..MaxGood] init 0;   // Last crowd member to touch msg
+	lastSeen: [0..MaxGood] init MaxGood;   // Last crowd member to touch msg
 	good:     bool init false;      // Crowd member is good?
 	bad:      bool init false;      //              ... bad?
 	recordLast: bool init false;    // Record last seen crowd member?
@@ -190,3 +190,5 @@ module crowds
 endmodule
 
 label "observe0Greater1" = observe0 > 1;
+label "observeIGreater1" = observe1 > 1 | observe2 > 1 | observe3 > 1 | observe4 > 1 | observe5 > 1 | observe6 > 1 | observe7 > 1 | observe8 > 1 | observe9 > 1 | observe10 > 1 | observe11 > 1 | observe12 > 1 | observe13 > 1 | observe14 > 1 | observe15 > 1 | observe16 > 1 | observe17 > 1 | observe18 > 1 | observe19 > 1;
+label "observeOnlyTrueSender" = observe0 > 1 & observe1 <= 1 & observe2 <= 1 & observe3 <= 1 & observe4 <= 1 & observe5 <= 1 & observe6 <= 1 & observe7 <= 1 & observe8 <= 1 & observe9 <= 1 & observe10 <= 1 & observe11 <= 1 & observe12 <= 1 & observe13 <= 1 & observe14 <= 1 & observe15 <= 1 & observe16 <= 1 & observe17 <= 1 & observe18 <= 1 & observe19 <= 1;

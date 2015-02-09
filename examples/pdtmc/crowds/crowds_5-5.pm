@@ -190,3 +190,5 @@ module crowds
 endmodule
 
 label "observe0Greater1" = observe0 > 1;
+label "observeIGreater1" = observe1>1|observe2>1|observe3>1|observe4>1;
+label "observeOnlyTrueSender" = observe0>1&observe1<=1 & observe2<=1 & observe3<=1 & observe4<=1;
