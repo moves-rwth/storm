@@ -129,7 +129,7 @@ namespace storm {
              * Prints the header including information about the linked libraries.
              */
             void printHeader(const int argc, const char* argv[]) {
-                std::cout << "PROPhESY" << std::endl;
+                std::cout << "StoRM" << std::endl;
                 std::cout << "--------" << std::endl << std::endl;
              	
 			 
@@ -138,7 +138,7 @@ namespace storm {
                 std::cout << "Linked with Intel Threading Building Blocks v" << TBB_VERSION_MAJOR << "." << TBB_VERSION_MINOR << " (Interface version " << TBB_INTERFACE_VERSION << ")." << std::endl;
 #endif
 #ifdef STORM_HAVE_GLPK
-//                std::cout << "Linked with GNU Linear Programming Kit v" << GLP_MAJOR_VERSION << "." << GLP_MINOR_VERSION << "." << std::endl;
+                std::cout << "Linked with GNU Linear Programming Kit v" << GLP_MAJOR_VERSION << "." << GLP_MINOR_VERSION << "." << std::endl;
 #endif
 #ifdef STORM_HAVE_GUROBI
                 std::cout << "Linked with Gurobi Optimizer v" << GRB_VERSION_MAJOR << "." << GRB_VERSION_MINOR << "." << GRB_VERSION_TECHNICAL << "." << std::endl;
@@ -160,7 +160,7 @@ namespace storm {
                     commandStream << argv[i] << " ";
                 }
                 std::cout << "Command line arguments: " << commandStream.str() << std::endl;
-//                std::cout << "Current working directory: " << getCurrentWorkingDirectory() << std::endl << std::endl;
+                std::cout << "Current working directory: " << getCurrentWorkingDirectory() << std::endl << std::endl;
             }
             
             
@@ -218,8 +218,6 @@ namespace storm {
                 storm::settings::SettingsManager& manager = storm::settings::mutableManager();
                 try {
                     manager.setFromCommandLine(argc, argv);
-//                    std::vector<std::string> arguments = {"--symbolic", "/Users/chris/work/prism-trunk/prism-examples/self-stabilisation/herman/herman7.mod", "--prop", "R=? [F \"stable\"]"};
-//                    manager.setFromExplodedString(arguments);
                 } catch (storm::exceptions::OptionParserException& e) {
                     manager.printHelp();
                     throw e;
