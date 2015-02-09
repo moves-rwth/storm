@@ -103,6 +103,23 @@ void check() {
             printApproximateResult(valueFunction);
         }
         std::cout << std::endl;
+        
+        // Generate derivatives for sensitivity analysis if requested.
+        if (std::is_same<ValueType, storm::RationalFunction>::value && storm::settings::parametricSettings().isDerivativesSet()) {
+            auto allVariables = valueFunction.gatherVariables();
+            
+            if (!allVariables.empty()) {
+                std::map<storm::Variable, storm::RationalFunction> derivatives;
+                for (auto const& variable : allVariables) {
+                    derivatives[variable] = valueFunction.derivative(variable);
+                }
+                
+                std::cout << std::endl << "Derivatives (variable; derivative):" << std::endl;
+                for (auto const& variableDerivativePair : derivatives) {
+                    std::cout << "(" << variableDerivativePair.first << "; " << variableDerivativePair.second << ")" << std::endl;
+                }
+            }
+        }
     }
 }
 
