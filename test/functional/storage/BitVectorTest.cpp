@@ -130,7 +130,7 @@ TEST(BitVectorDeathTest, GetSetAssertion) {
 #endif
 #else
 	std::cerr << "WARNING: Not testing GetSetAssertions, as they are disabled in release mode." << std::endl;
-	SUCCESS();
+	SUCCEED();
 #endif
 }
 
@@ -322,7 +322,7 @@ TEST(BitVectorTest, OperatorModulo) {
 #endif
 #else
 	std::cerr << "WARNING: Not testing OperatorModulo size check, as assertions are disabled in release mode." << std::endl;
-	SUCCESS();
+	SUCCEED();
 #endif
 }
 
