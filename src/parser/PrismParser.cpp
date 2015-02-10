@@ -343,7 +343,11 @@ namespace storm {
         storm::prism::TransitionReward PrismParser::createTransitionReward(std::string const& actionName, storm::expressions::Expression statePredicateExpression, storm::expressions::Expression rewardValueExpression, GlobalProgramInformation& globalProgramInformation) const {
             auto const& nameIndexPair = globalProgramInformation.actionIndices.find(actionName);
             STORM_LOG_THROW(actionName.empty() || nameIndexPair != globalProgramInformation.actionIndices.end(), storm::exceptions::WrongFormatException, "Transition reward refers to illegal action '" << actionName << "'.");
-            return storm::prism::TransitionReward(nameIndexPair->second, actionName, statePredicateExpression, rewardValueExpression, this->getFilename());
+			if (nameIndexPair == globalProgramInformation.actionIndices.end() && actionName.empty()) {
+				return storm::prism::TransitionReward(0, actionName, statePredicateExpression, rewardValueExpression, this->getFilename());
+			} else {
+				return storm::prism::TransitionReward(nameIndexPair->second, actionName, statePredicateExpression, rewardValueExpression, this->getFilename());
+			}
         }
         
         storm::prism::Assignment PrismParser::createAssignment(std::string const& variableName, storm::expressions::Expression assignedExpression) const {
