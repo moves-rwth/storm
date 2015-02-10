@@ -275,9 +275,42 @@ namespace storm {
                 Partition() = default;
                 Partition(Partition const& other) = default;
                 Partition& operator=(Partition const& other) = default;
-#ifndef WINDOWS
-                Partition(Partition&& other) = default;
-                Partition& operator=(Partition&& other) = default;
+#ifdef WINDOWS
+				Partition(Partition&& other) 
+					: blocks(), numberOfBlocks(other.numberOfBlocks), stateToBlockMapping(), statesAndValues(), positions(), keepSilentProbabilities(other.keepSilentProbabilities), silentProbabilities()
+				{
+					//std::cout << "Partition(Partition&& other)" << std::endl;
+					//std::cout.flush();
+					blocks.swap(other.blocks);
+					other.numberOfBlocks = 0;
+					stateToBlockMapping.swap(other.stateToBlockMapping);
+					statesAndValues.swap(other.statesAndValues);
+					positions.swap(other.positions);
+					silentProbabilities.swap(other.silentProbabilities);
+				}
+				Partition& operator=(Partition&& other)
+				{
+					//std::cout << "Partition& operator=(Partition&& other)" << std::endl;
+					//std::cout.flush();
+					blocks.clear();
+					blocks.swap(other.blocks);
+					numberOfBlocks = other.numberOfBlocks;
+					other.numberOfBlocks = 0;
+					stateToBlockMapping.clear();
+					stateToBlockMapping.swap(other.stateToBlockMapping);
+					statesAndValues.clear();
+					statesAndValues.swap(other.statesAndValues);
+					positions.clear();
+					positions.swap(other.positions);
+					keepSilentProbabilities = other.keepSilentProbabilities;
+					silentProbabilities.clear();
+					silentProbabilities.swap(other.silentProbabilities);
+
+					return *this;
+				}
+#else
+				Partition(Partition&& other) = default;
+				Partition& operator=(Partition&& other) = default;
 #endif
                 
                 /*!
