@@ -34,10 +34,10 @@ namespace storm {
             
             // Create default versions of constructors and assignments.
             BaseExpression(BaseExpression const&) = default;
-            BaseExpression& operator=(BaseExpression const&) = default;
+            BaseExpression& operator=(BaseExpression const&) = delete;
 #ifndef WINDOWS
             BaseExpression(BaseExpression&&) = default;
-            BaseExpression& operator=(BaseExpression&&) = default;
+            BaseExpression& operator=(BaseExpression&&) = delete;
 #endif
             
             // Make the destructor virtual (to allow destruction via base class pointer) and default it.

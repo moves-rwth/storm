@@ -20,10 +20,10 @@ namespace storm {
             
             // Instantiate constructors and assignments with their default implementations.
             IfThenElseExpression(IfThenElseExpression const& other) = default;
-            IfThenElseExpression& operator=(IfThenElseExpression const& other) = default;
+            IfThenElseExpression& operator=(IfThenElseExpression const& other) = delete;
 #ifndef WINDOWS
             IfThenElseExpression(IfThenElseExpression&&) = default;
-            IfThenElseExpression& operator=(IfThenElseExpression&&) = default;
+            IfThenElseExpression& operator=(IfThenElseExpression&&) = delete;
 #endif
             virtual ~IfThenElseExpression() = default;
             

@@ -347,10 +347,7 @@ namespace storm {
              */
             template<class T>
             bool equalModuloPrecision(std::vector<T> const& vectorLeft, std::vector<T> const& vectorRight, T precision, bool relativeError) {
-                if (vectorLeft.size() != vectorRight.size()) {
-                    LOG4CPLUS_ERROR(logger, "Lengths of vectors do not match, which makes comparison impossible.");
-                    throw storm::exceptions::InvalidArgumentException() << "Lengths of vectors do not match, which makes comparison impossible.";
-                }
+                STORM_LOG_ASSERT(vectorLeft.size() == vectorRight.size(), "Lengths of vectors does not match.");
                 
                 for (uint_fast64_t i = 0; i < vectorLeft.size(); ++i) {
                     if (!equalModuloPrecision(vectorLeft[i], vectorRight[i], precision, relativeError)) {
@@ -374,10 +371,7 @@ namespace storm {
              */
             template<class T>
             bool equalModuloPrecision(std::vector<T> const& vectorLeft, std::vector<T> const& vectorRight, std::vector<uint_fast64_t> const& positions, T precision, bool relativeError) {
-                if (vectorLeft.size() != vectorRight.size()) {
-                    LOG4CPLUS_ERROR(logger, "Lengths of vectors do not match, which makes comparison impossible.");
-                    throw storm::exceptions::InvalidArgumentException() << "Lengths of vectors do not match, which makes comparison impossible.";
-                }
+                STORM_LOG_ASSERT(vectorLeft.size() == vectorRight.size(), "Lengths of vectors does not match.");
                 
                 for (uint_fast64_t position : positions) {
                     if (!equalModuloPrecision(vectorLeft[position], vectorRight[position], precision, relativeError)) {

@@ -82,15 +82,15 @@ namespace storm {
             // The required precision for the iterative methods.
             double precision;
 
-            // Sets whether the relative or absolute error is to be considered for convergence detection. Not that this
-            // only applies to the Jacobi method for this solver.
-            bool relative;
-
             // The maximal number of iterations to do before iteration is aborted.
             uint_fast64_t maximalNumberOfIterations;
 
             // The preconditioner to use when solving the linear equation system.
             Preconditioner preconditioner;
+
+            // Sets whether the relative or absolute error is to be considered for convergence detection. Not that this
+            // only applies to the Jacobi method for this solver.
+            bool relative;
 
             // A restart value that determines when restarted methods shall do so.
             uint_fast64_t restart;
