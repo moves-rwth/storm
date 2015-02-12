@@ -86,8 +86,6 @@ namespace storm {
 				auto loglevel = storm::settings::debugSettings().isTraceSet() ? log4cplus::TRACE_LOG_LEVEL : storm::settings::debugSettings().isDebugSet() ? log4cplus::DEBUG_LOG_LEVEL : log4cplus::WARN_LOG_LEVEL;
                 logger.setLogLevel(loglevel);
 				consoleLogAppender->setThreshold(loglevel);
-                
-                
             }
             
             /*!

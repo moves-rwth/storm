@@ -21,6 +21,14 @@ namespace storm {
             return std::numeric_limits<ValueType>::infinity();
         }
         
+#ifdef STORM_HAVE_CARL
+        template<>
+        storm::RationalFunction infinity() {
+            // FIXME: this does not work.
+            return storm::RationalFunction(carl::rationalize<cln::cl_RA>(std::numeric_limits<double>::infinity()));
+        }
+#endif
+        
         template<typename ValueType>
         ValueType pow(ValueType const& value, uint_fast64_t exponent) {
             return std::pow(value, exponent);
@@ -188,6 +196,7 @@ namespace storm {
 
         template RationalFunction one();
         template RationalFunction zero();
+        template storm::RationalFunction infinity();
         
         template RationalFunction pow(RationalFunction const& value, uint_fast64_t exponent);
         

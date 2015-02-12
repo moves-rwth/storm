@@ -48,6 +48,9 @@ namespace storm {
                 default:
                     STORM_LOG_ASSERT(false, "Illegal operator type.");
             }
+            
+            // Return a dummy. This point must, however, never be reached.
+            return boost::any();
         }
         
         template<typename RationalFunctionType>
@@ -89,9 +92,7 @@ namespace storm {
         
         template<typename RationalFunctionType>
         boost::any ToRationalFunctionVisitor<RationalFunctionType>::visit(DoubleLiteralExpression const& expression) {
-            std::stringstream str;
-            str << std::fixed << std::setprecision(3) << expression.getValue();
-            return RationalFunctionType(carl::rationalize<cln::cl_RA>(str.str()));
+            return RationalFunctionType(carl::rationalize<cln::cl_RA>(expression.getValue()));
         }
 
         template class ToRationalFunctionVisitor<storm::RationalFunction>;

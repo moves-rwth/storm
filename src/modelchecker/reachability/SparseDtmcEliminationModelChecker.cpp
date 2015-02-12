@@ -128,8 +128,13 @@ namespace storm {
             storm::storage::BitVector maybeStates = ~psiStates & ~infinityStates;
             
             // If the initial state is known to have 0 reward or an infinite reward value, we can directly return the result.
-            STORM_LOG_THROW(model.getInitialStates().isDisjointFrom(infinityStates), storm::exceptions::IllegalArgumentException, "Initial state has infinite reward.");
-            if (!model.getInitialStates().isDisjointFrom(psiStates)) {
+            if (infinityStates.get(initialState)) {
+                STORM_LOG_DEBUG("The reward of all initial states was found in a preprocessing step.");
+                // This is a work around, because not all (e.g. storm::RationalFunction) data types can represent an
+                // infinity value.
+                return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<double>(initialState, storm::utility::infinity<double>()));
+            }
+            if (psiStates.get(initialState)) {
                 STORM_LOG_DEBUG("The reward of all initial states was found in a preprocessing step.");
                 return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(initialState, storm::utility::zero<ValueType>()));
             }
@@ -538,17 +543,9 @@ namespace storm {
             // Now, we return the value for the only initial state.
             STORM_LOG_DEBUG("Simplifying and returning result.");
             if (stateRewards) {
-//                if (storm::settings::parametricSettings().isSimplifySet()) {
-//                    return storm::utility::simplify(stateRewards.get()[*initialStates.begin()]);
-//                } else {
-                    return storm::utility::simplify(stateRewards.get()[*initialStates.begin()]);
-//                }
+                return storm::utility::simplify(stateRewards.get()[*initialStates.begin()]);
             } else {
-//                if (storm::settings::parametricSettings().isSimplifySet()) {
-//                    return storm::utility::simplify(oneStepProbabilities[*initialStates.begin()]);
-//                } else {
-                    return oneStepProbabilities[*initialStates.begin()];
-//                }
+                return oneStepProbabilities[*initialStates.begin()];
             }
         }
         

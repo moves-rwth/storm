@@ -33,6 +33,11 @@ namespace storm {
         template<typename ValueType>
         ValueType infinity();
         
+#ifdef STORM_HAVE_CARL
+        template<>
+        storm::RationalFunction infinity();
+#endif
+        
         template<typename ValueType>
         ValueType pow(ValueType const& value, uint_fast64_t exponent);
         
