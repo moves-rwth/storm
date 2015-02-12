@@ -18,11 +18,11 @@ namespace storm {
             UnaryExpression(ExpressionManager const& manager, Type const& type, std::shared_ptr<BaseExpression const> const& operand);
 
             // Instantiate constructors and assignments with their default implementations.
-            UnaryExpression(UnaryExpression const& other);
-            UnaryExpression& operator=(UnaryExpression const& other);
+            UnaryExpression(UnaryExpression const& other) = default;
+            UnaryExpression& operator=(UnaryExpression const& other) = delete;
 #ifndef WINDOWS
             UnaryExpression(UnaryExpression&&) = default;
-            UnaryExpression& operator=(UnaryExpression&&) = default;
+            UnaryExpression& operator=(UnaryExpression&&) = delete;
 #endif
             virtual ~UnaryExpression() = default;
             

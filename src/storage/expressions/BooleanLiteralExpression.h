@@ -18,10 +18,10 @@ namespace storm {
             
             // Instantiate constructors and assignments with their default implementations.
             BooleanLiteralExpression(BooleanLiteralExpression const& other) = default;
-            BooleanLiteralExpression& operator=(BooleanLiteralExpression const& other) = default;
+            BooleanLiteralExpression& operator=(BooleanLiteralExpression const& other) = delete;
 #ifndef WINDOWS
             BooleanLiteralExpression(BooleanLiteralExpression&&) = default;
-            BooleanLiteralExpression& operator=(BooleanLiteralExpression&&) = default;
+            BooleanLiteralExpression& operator=(BooleanLiteralExpression&&) = delete;
 #endif
             virtual ~BooleanLiteralExpression() = default;
 

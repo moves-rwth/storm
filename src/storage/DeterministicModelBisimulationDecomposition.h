@@ -275,10 +275,26 @@ namespace storm {
                 Partition() = default;
                 Partition(Partition const& other) = default;
                 Partition& operator=(Partition const& other) = default;
-#ifndef WINDOWS
-                Partition(Partition&& other) = default;
-                Partition& operator=(Partition&& other) = default;
-#endif
+
+                // Define move-construct and move-assignment explicitly to make sure they exist (as they are vital to
+                // keep validity of pointers.
+				Partition(Partition&& other) : blocks(std::move(other.blocks)), numberOfBlocks(other.numberOfBlocks), stateToBlockMapping(std::move(other.stateToBlockMapping)), statesAndValues(std::move(other.statesAndValues)), positions(std::move(other.positions)), keepSilentProbabilities(other.keepSilentProbabilities), silentProbabilities(std::move(other.silentProbabilities)) {
+                    // Intentionally left empty.
+				}
+                
+				Partition& operator=(Partition&& other) {
+                    if (this != &other) {
+                        blocks = std::move(other.blocks);
+                        numberOfBlocks = other.numberOfBlocks;
+                        stateToBlockMapping = std::move(other.stateToBlockMapping);
+                        statesAndValues = std::move(other.statesAndValues);
+                        positions = std::move(other.positions);
+                        keepSilentProbabilities = other.keepSilentProbabilities;
+                        silentProbabilities = std::move(other.silentProbabilities);
+                    }
+
+					return *this;
+				}
                 
                 /*!
                  * Splits all blocks of the partition such that afterwards all blocks contain only states with the label

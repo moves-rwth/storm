@@ -392,9 +392,15 @@ namespace storm {
                     std::unique_ptr<storm::modelchecker::CheckResult> result;
                     if (model->getType() == storm::models::DTMC) {
                         std::shared_ptr<storm::models::Dtmc<double>> dtmc = model->as<storm::models::Dtmc<double>>();
-//                        storm::modelchecker::SparseDtmcPrctlModelChecker<double> modelchecker(*dtmc);
                         storm::modelchecker::SparseDtmcEliminationModelChecker<double> modelchecker(*dtmc);
-                        result = modelchecker.check(*formula.get());
+                        if (modelchecker.canHandle(*formula.get())) {
+                            result = modelchecker.check(*formula.get());
+                        } else {
+                            storm::modelchecker::SparseDtmcPrctlModelChecker<double> modelchecker2(*dtmc);
+                            if (modelchecker2.canHandle(*formula.get())) {
+                                modelchecker2.check(*formula.get());
+                            }
+                        }
                     } else if (model->getType() == storm::models::MDP) {
                         std::shared_ptr<storm::models::Mdp<double>> mdp = model->as<storm::models::Mdp<double>>();
                         storm::modelchecker::SparseMdpPrctlModelChecker<double> modelchecker(*mdp);
