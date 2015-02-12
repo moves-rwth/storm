@@ -33,7 +33,6 @@ set(MSAT_ROOT "" CACHE STRING "The root directory of MathSAT (if available).")
 set(ADDITIONAL_INCLUDE_DIRS "" CACHE STRING "Additional directories added to the include directories.")
 set(ADDITIONAL_LINK_DIRS "" CACHE STRING "Additional directories added to the link directories.")
 set(CUSTOM_BOOST_ROOT "" CACHE STRING "A custom path to the Boost root directory.")
-option(PARAMETRIC_SYSTEMS "Sets whether models with parameters are supported." ON)
 #############################################################
 ##
 ##	Inclusion of required libraries
@@ -89,16 +88,14 @@ else()
     set(ENABLE_MSAT ON)
 endif()
 
-if(${PARAMETRIC_SYSTEMS})
-    find_package(carl REQUIRED)
+find_package(carl QUIET)
+if(carl_FOUND)
+    message(STATUS "StoRM - Activating CArL.")
     set(STORM_HAVE_CARL ON)
 endif()
 
 message(STATUS "StoRM - CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 message(STATUS "StoRM - CMAKE_BUILD_TYPE (ENV): $ENV{CMAKE_BUILD_TYPE}")
-
-
-
 
 #############################################################
 ##
@@ -258,8 +255,7 @@ include_directories("${PROJECT_BINARY_DIR}/include")
 file(GLOB_RECURSE STORM_HEADERS ${PROJECT_SOURCE_DIR}/src/*.h)
 file(GLOB_RECURSE STORM_SOURCES_WITHOUT_MAIN ${PROJECT_SOURCE_DIR}/src/*/*.cpp)
 file(GLOB_RECURSE STORM_MAIN_FILE ${PROJECT_SOURCE_DIR}/src/storm.cpp)
-file(GLOB_RECURSE STORM_PARAMETRIC_MAIN_FILE ${PROJECT_SOURCE_DIR}/src/stormParametric.cpp)
-set(STORM_SOURCES "${STORM_SOURCES_WITHOUT_MAIN};${STORM_MAIN_FILE};${STORM_PARAMETRIC_MAIN_FILE};")
+set(STORM_SOURCES "${STORM_SOURCES_WITHOUT_MAIN};${STORM_MAIN_FILE};")
 file(GLOB_RECURSE STORM_ADAPTERS_FILES ${PROJECT_SOURCE_DIR}/src/adapters/*.h ${PROJECT_SOURCE_DIR}/src/adapters/*.cpp)
 file(GLOB_RECURSE STORM_BUILDER_FILES ${PROJECT_SOURCE_DIR}/src/builder/*.h ${PROJECT_SOURCE_DIR}/src/builder/*.cpp)
 file(GLOB_RECURSE STORM_EXCEPTIONS_FILES ${PROJECT_SOURCE_DIR}/src/exceptions/*.h ${PROJECT_SOURCE_DIR}/src/exceptions/*.cpp)
@@ -379,11 +375,6 @@ add_library(storm ${STORM_SOURCES_WITHOUT_MAIN} ${STORM_HEADERS})
 add_executable(storm-main ${STORM_MAIN_FILE})
 target_link_libraries(storm-main storm)
 set_target_properties(storm-main PROPERTIES OUTPUT_NAME "storm")
-if(PARAMETRIC_SYSTEMS)
-	add_executable(storm-main-param ${STORM_PARAMETRIC_MAIN_FILE})
-	target_link_libraries(storm-main-param storm)
-	set_target_properties(storm-main-param PROPERTIES OUTPUT_NAME "pstorm")
-endif()
 add_executable(storm-functional-tests ${STORM_FUNCTIONAL_TEST_MAIN_FILE} ${STORM_FUNCTIONAL_TEST_FILES})
 target_link_libraries(storm-functional-tests storm)
 add_executable(storm-performance-tests ${STORM_PERFORMANCE_TEST_MAIN_FILE} ${STORM_PERFORMANCE_TEST_FILES})
@@ -471,8 +462,8 @@ endif(ENABLE_Z3)
 ##
 #############################################################
 
-if(PARAMETRIC_SYSTEMS)
-    message(STATUS "StoRM - Linking with carl")
+if(STORM_HAVE_CARL)
+    message(STATUS "StoRM - Linking with carl.")
     include_directories("${carl_INCLUDE_DIR}")
     target_link_libraries(storm lib_carl)
     target_link_libraries(storm-functional-tests lib_carl)

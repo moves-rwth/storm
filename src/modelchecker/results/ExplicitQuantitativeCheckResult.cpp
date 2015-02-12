@@ -184,11 +184,13 @@ namespace storm {
             }
         }
         
+#ifdef STORM_HAVE_CARL
         template<>
         std::unique_ptr<CheckResult> ExplicitQuantitativeCheckResult<storm::RationalFunction>::compareAgainstBound(storm::logic::ComparisonType comparisonType, double bound) const {
             // Since it is not possible to compare rational functions against bounds, we simply call the base class method.
             return QuantitativeCheckResult::compareAgainstBound(comparisonType, bound);
         }
+#endif
         
         template<typename ValueType>
         ValueType& ExplicitQuantitativeCheckResult<ValueType>::operator[](storm::storage::sparse::state_type state) {

@@ -720,14 +720,7 @@ namespace storm {
             return std::make_pair(std::move(resultLU), dInvBuilder.build());
         }
         
-#ifdef PARAMETRIC_SYSTEMS
-        template<>
-        typename std::pair<storm::storage::SparseMatrix<Polynomial>, storm::storage::SparseMatrix<Polynomial>> SparseMatrix<Polynomial>::getJacobiDecomposition() const {
-            // NOT SUPPORTED
-            // TODO do whatever storm does in such cases.
-            assert(false);
-        }
-        
+#ifdef STORM_HAVE_CARL
         template<>
         typename std::pair<storm::storage::SparseMatrix<RationalFunction>, storm::storage::SparseMatrix<RationalFunction>> SparseMatrix<RationalFunction>::getJacobiDecomposition() const {
             // NOT SUPPORTED
@@ -992,12 +985,6 @@ namespace storm {
         template class SparseMatrixBuilder<RationalFunction>;
         template class SparseMatrix<RationalFunction>;
         template std::ostream& operator<<(std::ostream& out, SparseMatrix<RationalFunction> const& matrix);
-        
-        template class MatrixEntry<typename SparseMatrix<Polynomial>::index_type, Polynomial>;
-        template std::ostream& operator<<(std::ostream& out, MatrixEntry<uint_fast64_t, Polynomial> const& entry);
-        template class SparseMatrixBuilder<Polynomial>;
-        template class SparseMatrix<Polynomial>;
-        template std::ostream& operator<<(std::ostream& out, SparseMatrix<Polynomial> const& matrix);
 #endif
         
         

@@ -41,7 +41,7 @@ namespace storm {
         template<typename ValueType>
         ValueType pow(ValueType const& value, uint_fast64_t exponent);
         
-#ifdef PARAMETRIC_SYSTEMS
+#ifdef STORM_HAVE_CARL
         template<>
         RationalFunction pow(RationalFunction const& value, uint_fast64_t exponent);
 #endif

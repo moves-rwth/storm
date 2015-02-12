@@ -212,7 +212,6 @@ namespace storm {
         // Explicitly instantiate the SCC decomposition.
         template class StronglyConnectedComponentDecomposition<double>;
 #ifdef STORM_HAVE_CARL
-        template class StronglyConnectedComponentDecomposition<storm::Polynomial>;
         template class StronglyConnectedComponentDecomposition<storm::RationalFunction>;
 #endif
     } // namespace storage

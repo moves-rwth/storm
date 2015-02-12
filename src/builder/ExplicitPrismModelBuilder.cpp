@@ -103,7 +103,11 @@ namespace storm {
             }
             
             // If the program still contains undefined constants and we are not in a parametric setting, assemble an appropriate error message.
-            if (!std::is_same<ValueType, RationalFunction>::value && preparedProgram.hasUndefinedConstants()) {
+#ifdef STORM_HAVE_CARL
+            if (!std::is_same<ValueType, storm::RationalFunction>::value && preparedProgram.hasUndefinedConstants()) {
+#else
+            if (preparedProgram.hasUndefinedConstants()) {
+#endif
                 std::vector<std::reference_wrapper<storm::prism::Constant const>> undefinedConstants = preparedProgram.getUndefinedConstants();
                 std::stringstream stream;
                 bool printComma = false;
@@ -788,6 +792,9 @@ namespace storm {
         
         // Explicitly instantiate the class.
         template class ExplicitPrismModelBuilder<double, uint32_t>;
+        
+#ifdef STORM_HAVE_CARL
         template class ExplicitPrismModelBuilder<RationalFunction, uint32_t>;
+#endif
     }
 }

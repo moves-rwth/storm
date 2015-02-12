@@ -332,10 +332,12 @@ namespace storm {
                 }
             }
             
+#ifdef STORM_HAVE_CARL
             template<>
             void generateCounterexample(storm::prism::Program const& program, std::shared_ptr<storm::models::AbstractModel<storm::RationalFunction>> model, std::shared_ptr<storm::logic::Formula> formula) {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unable to generate counterexample for parametric model.");
             }
+#endif
             
             template<typename ValueType>
             void verifyModel(boost::optional<storm::prism::Program> const& program, std::shared_ptr<storm::models::AbstractModel<ValueType>> model, std::shared_ptr<storm::logic::Formula> formula) {
@@ -376,6 +378,7 @@ namespace storm {
                 }
             }
             
+#ifdef STORM_HAVE_CARL
             template<>
             void verifyModel(boost::optional<storm::prism::Program> const& program, std::shared_ptr<storm::models::AbstractModel<storm::RationalFunction>> model, std::shared_ptr<storm::logic::Formula> formula) {
                 storm::settings::modules::GeneralSettings const& settings = storm::settings::generalSettings();
@@ -402,6 +405,7 @@ namespace storm {
                     std::cout << " skipped, because the modelling formalism is currently unsupported." << std::endl;
                 }
             }
+#endif
             
             template<typename ValueType>
             void buildAndCheckSymbolicModel(boost::optional<storm::prism::Program> const& program, boost::optional<std::shared_ptr<storm::logic::Formula>> formula) {
@@ -467,11 +471,15 @@ namespace storm {
                 }
                 
                 if (settings.isSymbolicSet()) {
+#ifdef STORM_HAVE_CARL
                     if (settings.isParametricSet()) {
                         buildAndCheckSymbolicModel<storm::RationalFunction>(program.get(), formula);
                     } else {
+#endif
                         buildAndCheckSymbolicModel<double>(program.get(), formula);
+#ifdef STORM_HAVE_CARL
                     }
+#endif
                 } else if (settings.isExplicitSet()) {
                     buildAndCheckExplicitModel<double>(formula);
                 } else {

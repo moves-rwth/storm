@@ -7,7 +7,7 @@ namespace storm {
             // Intentionally left empty.
         }
         
-#ifdef PARAMETRIC_SYSTEMS
+#ifdef STORM_HAVE_CARL
         ExpressionEvaluator<RationalFunction>::ExpressionEvaluator(storm::expressions::ExpressionManager const& manager) : ExprtkExpressionEvaluatorBase<RationalFunction>(manager) {
             // Intentionally left empty.
         }
