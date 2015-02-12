@@ -79,7 +79,7 @@ namespace storm {
             return true;
         }
         
-#ifdef PARAMETRIC_SYSTEMS
+#ifdef STORM_HAVE_CARL
         template<>
         RationalFunction pow(RationalFunction const& value, uint_fast64_t exponent) {
             return carl::pow(value, exponent);
@@ -182,7 +182,7 @@ namespace storm {
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, int>& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, int>& matrixEntry);
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, int>&& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, int>&& matrixEntry);
         
-#ifdef PARAMETRIC_SYSTEMS
+#ifdef STORM_HAVE_CARL
         template class ConstantsComparator<RationalFunction>;
         template class ConstantsComparator<Polynomial>;
 

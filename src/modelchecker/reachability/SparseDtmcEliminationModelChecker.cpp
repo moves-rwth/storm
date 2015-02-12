@@ -3,9 +3,7 @@
 #include <algorithm>
 #include <chrono>
 
-#ifdef PARAMETRIC_SYSTEMS
-#include "src/storage/parameters.h"
-#endif
+#include "src/adapters/CarlAdapter.h"
 
 #include "src/storage/StronglyConnectedComponentDecomposition.h"
 
@@ -1021,8 +1019,8 @@ namespace storm {
         
         template class SparseDtmcEliminationModelChecker<double>;
         
-#ifdef PARAMETRIC_SYSTEMS
-        template class SparseDtmcEliminationModelChecker<RationalFunction>;
+#ifdef STORM_HAVE_CARL
+        template class SparseDtmcEliminationModelChecker<storm::RationalFunction>;
 #endif
     } // namespace modelchecker
 } // namespace storm

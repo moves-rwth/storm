@@ -1,7 +1,6 @@
 #include "src/modelchecker/propositional/SparsePropositionalModelChecker.h"
 
-#include "storm-config.h"
-#include "src/storage/parameters.h"
+#include "src/adapters/CarlAdapter.h"
 
 #include "src/models/Dtmc.h"
 #include "src/models/Mdp.h"
@@ -54,7 +53,7 @@ namespace storm {
         template storm::models::Mdp<double> const& SparsePropositionalModelChecker<double>::getModelAs() const;
         template class SparsePropositionalModelChecker<double>;
         
-#ifdef PARAMETRIC_SYSTEMS
+#ifdef STORM_HAVE_CARL
         template storm::models::Dtmc<storm::RationalFunction> const& SparsePropositionalModelChecker<storm::RationalFunction>::getModelAs() const;
         template storm::models::Mdp<storm::RationalFunction> const& SparsePropositionalModelChecker<storm::RationalFunction>::getModelAs() const;
         template class SparsePropositionalModelChecker<storm::RationalFunction>;

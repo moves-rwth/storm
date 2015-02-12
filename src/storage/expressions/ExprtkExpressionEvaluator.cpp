@@ -1,7 +1,7 @@
 #include "src/storage/expressions/ExprtkExpressionEvaluator.h"
 #include "src/storage/expressions/ExpressionManager.h"
 
-#include "src/storage/parameters.h"
+#include "src/adapters/CarlAdapter.h"
 #include "src/utility/macros.h"
 
 namespace storm {

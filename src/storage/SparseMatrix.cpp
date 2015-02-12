@@ -8,7 +8,7 @@
 #endif
 
 #include "src/storage/SparseMatrix.h"
-#include "src/storage/parameters.h"
+#include "src/adapters/CarlAdapter.h"
 
 #include "src/exceptions/InvalidStateException.h"
 #include "src/utility/macros.h"
@@ -986,7 +986,7 @@ namespace storm {
         template class SparseMatrixBuilder<int>;
         template class SparseMatrix<int>;
         template std::ostream& operator<<(std::ostream& out, SparseMatrix<int> const& matrix);
-#ifdef PARAMETRIC_SYSTEMS
+#ifdef STORM_HAVE_CARL
         template class MatrixEntry<typename SparseMatrix<RationalFunction>::index_type, RationalFunction>;
         template std::ostream& operator<<(std::ostream& out, MatrixEntry<uint_fast64_t, RationalFunction> const& entry);
         template class SparseMatrixBuilder<RationalFunction>;

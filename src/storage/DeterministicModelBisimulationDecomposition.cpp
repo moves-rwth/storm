@@ -6,7 +6,7 @@
 #include <iomanip>
 #include <boost/iterator/transform_iterator.hpp>
 
-#include "src/storage/parameters.h"
+#include "src/adapters/CarlAdapter.h"
 #include "src/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
 
@@ -1488,7 +1488,7 @@ namespace storm {
         
         template class DeterministicModelBisimulationDecomposition<double>;
         
-#ifdef PARAMETRIC_SYSTEMS
+#ifdef STORM_HAVE_CARL
         template class DeterministicModelBisimulationDecomposition<storm::RationalFunction>;
 #endif
     }

@@ -1,7 +1,7 @@
 #ifndef STORM_STORAGE_EXPRESSIONS_TORATIONALFUNCTIONVISITOR_H_
 #define STORM_STORAGE_EXPRESSIONS_TORATIONALFUNCTIONVISITOR_H_
 
-#include "src/storage/parameters.h"
+#include "src/adapters/CarlAdapter.h"
 #include "src/storage/expressions/Expression.h"
 #include "src/storage/expressions/Expressions.h"
 #include "src/storage/expressions/ExpressionVisitor.h"

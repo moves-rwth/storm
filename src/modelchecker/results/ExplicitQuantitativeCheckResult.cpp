@@ -4,10 +4,7 @@
 #include "src/storage/BitVector.h"
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidOperationException.h"
-
-// Include the configuration to check whether rational functions are available.
-#include "storm-config.h"
-#include "src/storage/parameters.h"
+#include "src/adapters/CarlAdapter.h"
 
 namespace storm {
     namespace modelchecker {
@@ -231,7 +228,7 @@ namespace storm {
         
         template class ExplicitQuantitativeCheckResult<double>;
         
-#ifdef PARAMETRIC_SYSTEMS
+#ifdef STORM_HAVE_CARL
         template class ExplicitQuantitativeCheckResult<storm::RationalFunction>;
 #endif
     }

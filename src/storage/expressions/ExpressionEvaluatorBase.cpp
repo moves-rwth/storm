@@ -1,7 +1,7 @@
 #include "src/storage/expressions/ExpressionEvaluatorBase.h"
 
 #include "src/storage/expressions/ExpressionManager.h"
-#include "src/storage/parameters.h"
+#include "src/adapters/CarlAdapter.h"
 
 namespace storm {
     namespace expressions {
@@ -17,7 +17,7 @@ namespace storm {
         
         template class ExpressionEvaluatorBase<double>;
 #ifdef STORM_HAVE_CARL
-        template class ExpressionEvaluatorBase<RationalFunction>;
+        template class ExpressionEvaluatorBase<storm::RationalFunction>;
 #endif
     }
 }

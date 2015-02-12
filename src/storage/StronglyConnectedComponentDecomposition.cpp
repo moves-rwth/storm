@@ -1,6 +1,6 @@
 #include "src/storage/StronglyConnectedComponentDecomposition.h"
 #include "src/models/AbstractModel.h"
-#include "src/storage/parameters.h"
+#include "src/adapters/CarlAdapter.h"
 
 namespace storm {
     namespace storage {
@@ -211,11 +211,9 @@ namespace storm {
         
         // Explicitly instantiate the SCC decomposition.
         template class StronglyConnectedComponentDecomposition<double>;
-        #ifdef PARAMETRIC_SYSTEMS
-        template class StronglyConnectedComponentDecomposition<Polynomial>;
-        template class StronglyConnectedComponentDecomposition<RationalFunction>;
-        #endif
-        
-        
+#ifdef STORM_HAVE_CARL
+        template class StronglyConnectedComponentDecomposition<storm::Polynomial>;
+        template class StronglyConnectedComponentDecomposition<storm::RationalFunction>;
+#endif
     } // namespace storage
 } // namespace storm

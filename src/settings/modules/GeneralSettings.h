@@ -286,6 +286,13 @@ namespace storm {
                  */
                 bool isBisimulationSet() const;
                 
+                /*!
+                 * Retrieves whether the option enabling parametric model checking is set.
+                 *
+                 * @return True iff the option was set.
+                 */
+                bool isParametricSet() const;
+                
                 bool check() const override;
 
                 // The name of the module.
@@ -325,6 +332,7 @@ namespace storm {
                 static const std::string statisticsOptionShortName;
                 static const std::string bisimulationOptionName;
                 static const std::string bisimulationOptionShortName;
+                static const std::string parametricOptionName;
             };
             
         } // namespace modules

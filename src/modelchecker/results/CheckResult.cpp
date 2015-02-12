@@ -1,7 +1,7 @@
 #include "src/modelchecker/results/CheckResult.h"
 
 #include "storm-config.h"
-#include "src/storage/parameters.h"
+#include "src/adapters/CarlAdapter.h"
 
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
@@ -90,7 +90,7 @@ namespace storm {
         template ExplicitQuantitativeCheckResult<double>& CheckResult::asExplicitQuantitativeCheckResult();
         template ExplicitQuantitativeCheckResult<double> const& CheckResult::asExplicitQuantitativeCheckResult() const;
         
-#ifdef PARAMETRIC_SYSTEMS
+#ifdef STORM_HAVE_CARL
         template QuantitativeCheckResult<storm::RationalFunction>& CheckResult::asQuantitativeCheckResult();
         template QuantitativeCheckResult<storm::RationalFunction> const& CheckResult::asQuantitativeCheckResult() const;
         template ExplicitQuantitativeCheckResult<storm::RationalFunction>& CheckResult::asExplicitQuantitativeCheckResult();

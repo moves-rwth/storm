@@ -13,12 +13,7 @@
 #include <cstdint>
 
 #include "src/settings/SettingsManager.h"
-
-#include "storm-config.h"
-
-#ifdef PARAMETRIC_SYSTEMS
-#include "src/storage/parameters.h"
-#endif
+#include "src/adapters/CarlAdapter.h"
 
 namespace storm {
     
@@ -81,7 +76,7 @@ namespace storm {
             double precision;
         };
         
-#ifdef PARAMETRIC_SYSTEMS
+#ifdef STORM_HAVE_CARL
         template<>
         RationalFunction& simplify(RationalFunction& value);
         

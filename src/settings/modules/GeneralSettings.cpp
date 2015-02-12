@@ -41,6 +41,7 @@ namespace storm {
             const std::string GeneralSettings::statisticsOptionShortName = "stats";
             const std::string GeneralSettings::bisimulationOptionName = "bisimulation";
             const std::string GeneralSettings::bisimulationOptionShortName = "bisim";
+            const std::string GeneralSettings::parametricOptionName = "parametric";
 
             GeneralSettings::GeneralSettings(storm::settings::SettingsManager& settingsManager) : ModuleSettings(settingsManager, moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, helpOptionName, false, "Shows all available options, arguments and descriptions.").setShortName(helpOptionShortName)
@@ -84,6 +85,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, constantsOptionName, false, "Specifies the constant replacements to use in symbolic models. Note that Note that this requires the model to be given as an symbolic model (i.e., via --" + symbolicOptionName + ").").setShortName(constantsOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("values", "A comma separated list of constants and their value, e.g. a=1,b=2,c=3.").setDefaultValueString("").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, statisticsOptionName, false, "Sets whether to display statistics if available.").setShortName(statisticsOptionShortName).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, parametricOptionName, false, "Sets whether to use the parametric engine.").build());
             }
             
             bool GeneralSettings::isHelpSet() const {
@@ -239,6 +241,14 @@ namespace storm {
                 return this->getOption(statisticsOptionName).getHasOptionBeenSet();
             }
             
+            bool GeneralSettings::isBisimulationSet() const {
+                return this->getOption(bisimulationOptionName).getHasOptionBeenSet();
+            }
+            
+            bool GeneralSettings::isParametricSet() const {
+                return this->getOption(parametricOptionName).getHasOptionBeenSet();
+            }
+
             bool GeneralSettings::check() const {
                 // Ensure that the model was given either symbolically or explicitly.
                 STORM_LOG_THROW(!isSymbolicSet() || !isExplicitSet(), storm::exceptions::InvalidSettingsException, "The model may be either given in an explicit or a symbolic format, but not both.");
@@ -248,10 +258,6 @@ namespace storm {
                 STORM_LOG_THROW(propertySources <= 1, storm::exceptions::InvalidSettingsException, "Please specify either a file that contains the properties or a property on the command line, but not both.");
                 
                 return true;
-            }
-            
-            bool GeneralSettings::isBisimulationSet() const {
-                return this->getOption(bisimulationOptionName).getHasOptionBeenSet();
             }
             
         } // namespace modules

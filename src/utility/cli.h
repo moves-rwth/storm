@@ -274,62 +274,171 @@ namespace storm {
                 }
                 
                 // Customize model-building.
-                typename storm::builder::ExplicitPrismModelBuilder<double>::Options options;
+                typename storm::builder::ExplicitPrismModelBuilder<ValueType>::Options options;
                 if (formula) {
-                    options = storm::builder::ExplicitPrismModelBuilder<double>::Options(*formula.get());
+                    options = typename storm::builder::ExplicitPrismModelBuilder<ValueType>::Options(*formula.get());
                 }
                 options.addConstantDefinitionsFromString(program, settings.getConstantDefinitionString());
                 
                 // Then, build the model from the symbolic description.
-                result = storm::builder::ExplicitPrismModelBuilder<double>::translateProgram(program, options);
+                result = storm::builder::ExplicitPrismModelBuilder<ValueType>::translateProgram(program, options);
                 return result;
             }
             
             template<typename ValueType>
             std::shared_ptr<storm::models::AbstractModel<ValueType>> preprocessModel(std::shared_ptr<storm::models::AbstractModel<ValueType>> model, boost::optional<std::shared_ptr<storm::logic::Formula>> const& formula) {
                 if (storm::settings::generalSettings().isBisimulationSet()) {
-                    STORM_LOG_THROW(model->getType() == storm::models::DTMC, storm::exceptions::InvalidSettingsException, "Bisimulation minimization is currently only available for DTMCs.");
-                    std::shared_ptr<storm::models::Dtmc<double>> dtmc = model->template as<storm::models::Dtmc<double>>();
+                    STORM_LOG_THROW(model->getType() == storm::models::DTMC || model->getType() == storm::models::CTMC, storm::exceptions::InvalidSettingsException, "Bisimulation minimization is currently only available for DTMCs.");
+                    std::shared_ptr<storm::models::Dtmc<ValueType>> dtmc = model->template as<storm::models::Dtmc<ValueType>>();
                     
                     if (dtmc->hasTransitionRewards()) {
                         dtmc->convertTransitionRewardsToStateRewards();
                     }
                     
                     std::cout << "Performing bisimulation minimization... ";
-                    typename storm::storage::DeterministicModelBisimulationDecomposition<double>::Options options;
+                    typename storm::storage::DeterministicModelBisimulationDecomposition<ValueType>::Options options;
                     if (formula) {
-                        options = storm::storage::DeterministicModelBisimulationDecomposition<double>::Options(*model, *formula.get());
+                        options = typename storm::storage::DeterministicModelBisimulationDecomposition<ValueType>::Options(*model, *formula.get());
                     }
                     if (storm::settings::bisimulationSettings().isWeakBisimulationSet()) {
                         options.weak = true;
                         options.bounded = false;
                     }
                     
-                    storm::storage::DeterministicModelBisimulationDecomposition<double> bisimulationDecomposition(*dtmc, options);
+                    storm::storage::DeterministicModelBisimulationDecomposition<ValueType> bisimulationDecomposition(*dtmc, options);
                     model = bisimulationDecomposition.getQuotient();
                     std::cout << "done." << std::endl << std::endl;
                 }
                 return model;
             }
             
-            void generateCounterexample(storm::prism::Program const& program, std::shared_ptr<storm::models::AbstractModel<double>> model, std::shared_ptr<storm::logic::Formula> const& formula) {
+            template<typename ValueType>
+            void generateCounterexample(storm::prism::Program const& program, std::shared_ptr<storm::models::AbstractModel<ValueType>> model, std::shared_ptr<storm::logic::Formula> formula) {
                 if (storm::settings::counterexampleGeneratorSettings().isMinimalCommandSetGenerationSet()) {
                     STORM_LOG_THROW(model->getType() == storm::models::MDP, storm::exceptions::InvalidTypeException, "Minimal command set generation is only available for MDPs.");
                     STORM_LOG_THROW(storm::settings::generalSettings().isSymbolicSet(), storm::exceptions::InvalidSettingsException, "Minimal command set generation is only available for symbolic models.");
                     
-                    std::shared_ptr<storm::models::Mdp<double>> mdp = model->as<storm::models::Mdp<double>>();
+                    std::shared_ptr<storm::models::Mdp<ValueType>> mdp = model->template as<storm::models::Mdp<ValueType>>();
 
                     // Determine whether we are required to use the MILP-version or the SAT-version.
                     bool useMILP = storm::settings::counterexampleGeneratorSettings().isUseMilpBasedMinimalCommandSetGenerationSet();
 
                     if (useMILP) {
-                        storm::counterexamples::MILPMinimalLabelSetGenerator<double>::computeCounterexample(program, *mdp, formula);
+                        storm::counterexamples::MILPMinimalLabelSetGenerator<ValueType>::computeCounterexample(program, *mdp, formula);
                     } else {
-                        storm::counterexamples::SMTMinimalCommandSetGenerator<double>::computeCounterexample(program, storm::settings::generalSettings().getConstantDefinitionString(), *mdp, formula);
+                        storm::counterexamples::SMTMinimalCommandSetGenerator<ValueType>::computeCounterexample(program, storm::settings::generalSettings().getConstantDefinitionString(), *mdp, formula);
                     }
 
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No suitable counterexample representation selected.");
+                }
+            }
+            
+            template<>
+            void generateCounterexample(storm::prism::Program const& program, std::shared_ptr<storm::models::AbstractModel<storm::RationalFunction>> model, std::shared_ptr<storm::logic::Formula> formula) {
+                STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unable to generate counterexample for parametric model.");
+            }
+            
+            template<typename ValueType>
+            void verifyModel(boost::optional<storm::prism::Program> const& program, std::shared_ptr<storm::models::AbstractModel<ValueType>> model, std::shared_ptr<storm::logic::Formula> formula) {
+                storm::settings::modules::GeneralSettings const& settings = storm::settings::generalSettings();
+                
+                // If we were requested to generate a counterexample, we now do so.
+                if (settings.isCounterexampleSet()) {
+                    STORM_LOG_THROW(program, storm::exceptions::InvalidSettingsException, "Unable to generate counterexample for non-symbolic model.");
+                    generateCounterexample<ValueType>(program.get(), model, formula);
+                } else {
+                    std::cout << std::endl << "Model checking property: " << *formula << " ...";
+                    std::unique_ptr<storm::modelchecker::CheckResult> result;
+                    if (model->getType() == storm::models::DTMC) {
+                        std::shared_ptr<storm::models::Dtmc<ValueType>> dtmc = model->template as<storm::models::Dtmc<ValueType>>();
+                        storm::modelchecker::SparseDtmcEliminationModelChecker<ValueType> modelchecker(*dtmc);
+                        if (modelchecker.canHandle(*formula.get())) {
+                            result = modelchecker.check(*formula.get());
+                        } else {
+                            storm::modelchecker::SparseDtmcPrctlModelChecker<ValueType> modelchecker2(*dtmc);
+                            if (modelchecker2.canHandle(*formula.get())) {
+                                modelchecker2.check(*formula.get());
+                            }
+                        }
+                    } else if (model->getType() == storm::models::MDP) {
+                        std::shared_ptr<storm::models::Mdp<ValueType>> mdp = model->template as<storm::models::Mdp<ValueType>>();
+                        storm::modelchecker::SparseMdpPrctlModelChecker<ValueType> modelchecker(*mdp);
+                        result = modelchecker.check(*formula.get());
+                    }
+                    
+                    if (result) {
+                        std::cout << " done." << std::endl;
+                        std::cout << "Result (initial states): ";
+                        result->writeToStream(std::cout, model->getInitialStates());
+                        std::cout << std::endl << std::endl;
+                    } else {
+                        std::cout << " skipped, because the modelling formalism is currently unsupported." << std::endl;
+                    }
+                }
+            }
+            
+            template<>
+            void verifyModel(boost::optional<storm::prism::Program> const& program, std::shared_ptr<storm::models::AbstractModel<storm::RationalFunction>> model, std::shared_ptr<storm::logic::Formula> formula) {
+                storm::settings::modules::GeneralSettings const& settings = storm::settings::generalSettings();
+                
+                STORM_LOG_THROW(model->getType() == storm::models::DTMC, storm::exceptions::InvalidSettingsException, "Currently parametric verification is only available for DTMCs.");
+                std::shared_ptr<storm::models::Dtmc<storm::RationalFunction>> dtmc = model->template as<storm::models::Dtmc<storm::RationalFunction>>();
+
+                std::cout << std::endl << "Model checking property: " << *formula << " ...";
+                std::unique_ptr<storm::modelchecker::CheckResult> result;
+
+                storm::modelchecker::SparseDtmcEliminationModelChecker<storm::RationalFunction> modelchecker(*dtmc);
+                if (modelchecker.canHandle(*formula.get())) {
+                    result = modelchecker.check(*formula.get());
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "The parametric engine currently does not support this property.");
+                }
+
+                if (result) {
+                    std::cout << " done." << std::endl;
+                    std::cout << "Result (initial states): ";
+                    result->writeToStream(std::cout, model->getInitialStates());
+                    std::cout << std::endl << std::endl;
+                } else {
+                    std::cout << " skipped, because the modelling formalism is currently unsupported." << std::endl;
+                }
+            }
+            
+            template<typename ValueType>
+            void buildAndCheckSymbolicModel(boost::optional<storm::prism::Program> const& program, boost::optional<std::shared_ptr<storm::logic::Formula>> formula) {
+                // Now we are ready to actually build the model.
+                STORM_LOG_THROW(program, storm::exceptions::InvalidStateException, "Program has not been successfully parsed.");
+                std::shared_ptr<storm::models::AbstractModel<ValueType>> model = buildSymbolicModel<ValueType>(program.get(), formula);
+                
+                // Preprocess the model if needed.
+                model = preprocessModel<ValueType>(model, formula);
+
+                // Print some information about the model.
+                model->printModelInformationToStream(std::cout);
+
+                // Verify the model, if a formula was given.
+                if (formula) {
+                    verifyModel<ValueType>(program, model, formula.get());
+                }
+            }
+            
+            template<typename ValueType>
+            void buildAndCheckExplicitModel(boost::optional<std::shared_ptr<storm::logic::Formula>> formula) {
+                storm::settings::modules::GeneralSettings const& settings = storm::settings::generalSettings();
+
+                STORM_LOG_THROW(settings.isExplicitSet(), storm::exceptions::InvalidStateException, "Unable to build explicit model without model files.");
+                std::shared_ptr<storm::models::AbstractModel<ValueType>> model = buildExplicitModel<ValueType>(settings.getTransitionFilename(), settings.getLabelingFilename(), settings.isStateRewardsSet() ? settings.getStateRewardsFilename() : boost::optional<std::string>(), settings.isTransitionRewardsSet() ? settings.getTransitionRewardsFilename() : boost::optional<std::string>());
+                
+                // Preprocess the model if needed.
+                model = preprocessModel<ValueType>(model, formula);
+                
+                // Print some information about the model.
+                model->printModelInformationToStream(std::cout);
+                
+                // Verify the model, if a formula was given.
+                if (formula) {
+                    verifyModel<ValueType>(boost::optional<storm::prism::Program>(), model, formula.get());
                 }
             }
             
@@ -338,7 +447,6 @@ namespace storm {
                     initializeFileLogging();
                 }
                 
-                std::chrono::high_resolution_clock::time_point totalTimeStart = std::chrono::high_resolution_clock::now();
                 storm::settings::modules::GeneralSettings const& settings = storm::settings::generalSettings();
                 
                 // If we have to build the model from a symbolic representation, we need to parse the representation first.
@@ -360,82 +468,16 @@ namespace storm {
                     }
                 }
                 
-                // Now we are ready to actually build the model.
-                std::chrono::high_resolution_clock::time_point buildingTimeStart = std::chrono::high_resolution_clock::now();
-                std::shared_ptr<storm::models::AbstractModel<double>> model;
-                if (settings.isExplicitSet()) {
-                    model = buildExplicitModel<double>(settings.getTransitionFilename(), settings.getLabelingFilename(), settings.isStateRewardsSet() ? settings.getStateRewardsFilename() : boost::optional<std::string>(), settings.isTransitionRewardsSet() ? settings.getTransitionRewardsFilename() : boost::optional<std::string>());
-                } else if (settings.isSymbolicSet()) {
-                    STORM_LOG_THROW(program, storm::exceptions::InvalidStateException, "Program has not been successfully parsed.");
-                    model = buildSymbolicModel<double>(program.get(), formula);
+                if (settings.isSymbolicSet()) {
+                    if (settings.isParametricSet()) {
+                        buildAndCheckSymbolicModel<storm::RationalFunction>(program.get(), formula);
+                    } else {
+                        buildAndCheckSymbolicModel<double>(program.get(), formula);
+                    }
+                } else if (settings.isExplicitSet()) {
+                    buildAndCheckExplicitModel<double>(formula);
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No input model.");
-                }
-                std::chrono::high_resolution_clock::time_point buildingTimeEnd = std::chrono::high_resolution_clock::now();
-
-                // Now, we can do the preprocessing on the model, if it was requested.
-                std::chrono::high_resolution_clock::time_point preprocessingTimeStart = std::chrono::high_resolution_clock::now();
-                model = preprocessModel(model, formula);
-                std::chrono::high_resolution_clock::time_point preprocessingTimeEnd = std::chrono::high_resolution_clock::now();
-
-                // Print some information about the model.
-                model->printModelInformationToStream(std::cout);
-                
-                std::chrono::high_resolution_clock::time_point checkingTimeStart = std::chrono::high_resolution_clock::now();
-                // If we were requested to generate a counterexample, we now do so.
-                if (settings.isCounterexampleSet()) {
-                    STORM_LOG_THROW(settings.isPropertySet(), storm::exceptions::InvalidSettingsException, "Unable to generate counterexample without a property.");
-                    STORM_LOG_THROW(program, storm::exceptions::InvalidSettingsException, "Unable to generate counterexample for non-symbolic model.");
-                    generateCounterexample(program.get(), model, formula.get());
-                } else if (formula) {
-                    std::cout << std::endl << "Model checking property: " << *formula.get() << " ...";
-                    std::unique_ptr<storm::modelchecker::CheckResult> result;
-                    if (model->getType() == storm::models::DTMC) {
-                        std::shared_ptr<storm::models::Dtmc<double>> dtmc = model->as<storm::models::Dtmc<double>>();
-                        storm::modelchecker::SparseDtmcEliminationModelChecker<double> modelchecker(*dtmc);
-                        if (modelchecker.canHandle(*formula.get())) {
-                            result = modelchecker.check(*formula.get());
-                        } else {
-                            storm::modelchecker::SparseDtmcPrctlModelChecker<double> modelchecker2(*dtmc);
-                            if (modelchecker2.canHandle(*formula.get())) {
-                                modelchecker2.check(*formula.get());
-                            }
-                        }
-                    } else if (model->getType() == storm::models::MDP) {
-                        std::shared_ptr<storm::models::Mdp<double>> mdp = model->as<storm::models::Mdp<double>>();
-                        storm::modelchecker::SparseMdpPrctlModelChecker<double> modelchecker(*mdp);
-                        result = modelchecker.check(*formula.get());
-                    }
-                    if (result) {
-                        std::cout << " done." << std::endl;
-                        std::cout << "Result (initial states): ";
-                        result->writeToStream(std::cout, model->getInitialStates());
-                        std::cout << std::endl << std::endl;
-                    } else {
-                        std::cout << " skipped, because the modelling formalism is currently unsupported." << std::endl;
-                    }
-                }
-                std::chrono::high_resolution_clock::time_point checkingTimeEnd = std::chrono::high_resolution_clock::now();
-                std::chrono::high_resolution_clock::time_point totalTimeEnd = std::chrono::high_resolution_clock::now();
-
-                if (storm::settings::generalSettings().isShowStatisticsSet()) {
-                    std::chrono::high_resolution_clock::duration totalTime = totalTimeEnd - totalTimeStart;
-                    std::chrono::milliseconds totalTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(totalTime);
-                    std::chrono::high_resolution_clock::duration buildingTime = buildingTimeEnd - buildingTimeStart;
-                    std::chrono::milliseconds buildingTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(buildingTime);
-                    std::chrono::high_resolution_clock::duration preprocessingTime = preprocessingTimeEnd - preprocessingTimeStart;
-                    std::chrono::milliseconds preprocessingTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(preprocessingTime);
-                    std::chrono::high_resolution_clock::duration checkingTime = checkingTimeEnd - checkingTimeStart;
-                    std::chrono::milliseconds checkingTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(checkingTime);
-                    
-                    STORM_PRINT_AND_LOG(std::endl);
-                    STORM_PRINT_AND_LOG("Time breakdown:" << std::endl);
-                    STORM_PRINT_AND_LOG("    * time for building: " << buildingTimeInMilliseconds.count() << "ms" << std::endl);
-                    STORM_PRINT_AND_LOG("    * time for preprocessing: " << preprocessingTimeInMilliseconds.count() << "ms" << std::endl);
-                    STORM_PRINT_AND_LOG("    * time for checking: " << checkingTimeInMilliseconds.count() << "ms" << std::endl);
-                    STORM_PRINT_AND_LOG("------------------------------------------" << std::endl);
-                    STORM_PRINT_AND_LOG("    * total time: " << totalTimeInMilliseconds.count() << "ms" << std::endl);
-                    STORM_PRINT_AND_LOG(std::endl);
                 }
             }
         }

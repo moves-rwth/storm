@@ -1,7 +1,7 @@
 #include "src/modelchecker/results/QuantitativeCheckResult.h"
 
 #include "storm-config.h"
-#include "src/storage/parameters.h"
+#include "src/adapters/CarlAdapter.h"
 
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidOperationException.h"
@@ -15,7 +15,7 @@ namespace storm {
         
         template class QuantitativeCheckResult<double>;
         
-#ifdef PARAMETRIC_SYSTEMS
+#ifdef STORM_HAVE_CARL
         template class QuantitativeCheckResult<storm::RationalFunction>;
 #endif
     }
