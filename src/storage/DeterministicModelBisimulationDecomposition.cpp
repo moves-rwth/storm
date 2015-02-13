@@ -11,6 +11,7 @@
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
 
 #include "src/utility/graph.h"
+#include "src/utility/constants.h"
 #include "src/exceptions/IllegalFunctionCallException.h"
 #include "src/exceptions/InvalidOptionException.h"
 
@@ -770,7 +771,7 @@ namespace storm {
                 
                 // If the block is absorbing, we simply add a self-loop.
                 if (oldBlock.isAbsorbing()) {
-                    builder.addNextValue(blockIndex, blockIndex, storm::utility::constantOne<ValueType>());
+                    builder.addNextValue(blockIndex, blockIndex, storm::utility::one<ValueType>());
                     
                     // If the block has a special representative state, we retrieve it now.
                     if (oldBlock.hasRepresentativeState()) {

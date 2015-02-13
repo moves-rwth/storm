@@ -11,7 +11,7 @@
 #include "src/storage/SparseMatrix.h"
 #include "src/storage/Scheduler.h"
 #include "src/storage/StronglyConnectedComponentDecomposition.h"
-#include "src/utility/ConstantsComparator.h"
+#include "src/utility/constants.h"
 #include "src/utility/macros.h"
 #include "src/utility/Hash.h"
 #include "src/utility/vector.h"

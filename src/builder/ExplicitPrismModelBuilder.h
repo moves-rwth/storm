@@ -20,7 +20,7 @@
 #include "src/storage/SparseMatrix.h"
 #include "src/settings/SettingsManager.h"
 
-#include "src/utility/ConstantsComparator.h"
+#include "src/utility/constants.h"
 #include "src/utility/PrismUtility.h"
 
 namespace storm {

@@ -18,7 +18,7 @@
 #include "src/storage/SparseMatrix.h"
 #include "src/settings/SettingsManager.h"
 #include "src/models/AbstractNondeterministicModel.h"
-#include "src/utility/ConstantsComparator.h"
+#include "src/utility/constants.h"
 #include "src/utility/matrix.h"
 
 namespace storm {

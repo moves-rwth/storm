@@ -18,9 +18,10 @@
 #include "src/storage/SparseMatrix.h"
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/settings/SettingsManager.h"
+#include "src/utility/constants.h"
 #include "src/utility/vector.h"
 #include "src/utility/matrix.h"
-#include "src/utility/ConstantsComparator.h"
+#include "src/utility/constants.h"
 
 namespace storm {
 
@@ -202,7 +203,7 @@ public:
 
 		// Now fill the matrix.
 		newRow = 0;
-		T rest = utility::constantZero<T>();
+        T rest = storm::utility::zero<T>();
 		for(uint_fast64_t row = 0; row < origMat.getRowCount(); ++row) {
 			if(subSysStates.get(row)){
 				// Transfer transitions
@@ -216,14 +217,14 @@ public:
 
 				// Insert the transition taking care of the remaining outgoing probability.
 				newMatBuilder.addNextValue(newRow, newStateCount - 1, rest);
-				rest = storm::utility::constantZero<T>();
+				rest = storm::utility::zero<T>();
 
 				newRow++;
 			}
 		}
 
 		// Insert last transition: self loop on s_b
-		newMatBuilder.addNextValue(newStateCount - 1, newStateCount - 1, storm::utility::constantOne<T>());
+		newMatBuilder.addNextValue(newStateCount - 1, newStateCount - 1, storm::utility::one<T>());
 
 		// 3. Take care of the labeling.
 		storm::models::AtomicPropositionsLabeling newLabeling = storm::models::AtomicPropositionsLabeling(this->getStateLabeling(), subSysStates);
@@ -266,7 +267,7 @@ public:
 					}
 
 					// Insert the reward (e.g. 0) for the transition taking care of the remaining outgoing probability.
-					newTransRewardsBuilder.addNextValue(newRow, newStateCount - 1, storm::utility::constantZero<T>());
+					newTransRewardsBuilder.addNextValue(newRow, newStateCount - 1, storm::utility::zero<T>());
 
 					newRow++;
 				}

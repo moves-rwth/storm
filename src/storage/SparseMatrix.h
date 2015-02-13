@@ -7,7 +7,7 @@
 #include <iterator>
 
 #include "src/storage/BitVector.h"
-#include "src/utility/ConstantsComparator.h"
+#include "src/utility/constants.h"
 #include "src/utility/OsDetection.h"
 
 #include "src/exceptions/InvalidArgumentException.h"

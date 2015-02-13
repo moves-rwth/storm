@@ -1,4 +1,4 @@
-#include "src/utility/ConstantsComparator.h"
+#include "src/utility/constants.h"
 
 #include "src/storage/SparseMatrix.h"
 #include "src/storage/sparse/StateType.h"

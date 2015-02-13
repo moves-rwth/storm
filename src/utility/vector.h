@@ -125,7 +125,7 @@ namespace storm {
             template<class T>
             void subtractFromConstantOneVector(std::vector<T>& vector) {
                 for (auto& element : vector) {
-                    element = storm::utility::constantOne<T>() - element;
+                    element = storm::utility::one<T>() - element;
                 }
             }
             

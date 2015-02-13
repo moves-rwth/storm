@@ -1,6 +1,6 @@
 #include "src/modelchecker/AbstractModelChecker.h"
 
-#include "src/utility/ConstantsComparator.h"
+#include "src/utility/constants.h"
 #include "src/utility/macros.h"
 #include "src/exceptions/NotImplementedException.h"
 #include "src/exceptions/InvalidOperationException.h"

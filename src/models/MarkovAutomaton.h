@@ -13,6 +13,7 @@
 #include "src/storage/SparseMatrix.h"
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/settings/SettingsManager.h"
+#include "src/utility/constants.h"
 #include "src/utility/vector.h"
 #include "src/utility/matrix.h"
 
@@ -100,7 +101,7 @@ namespace storm {
             }
             
             T getMaximalExitRate() const {
-                T result = storm::utility::constantZero<T>();
+                T result = storm::utility::zero<T>();
                 for (auto markovianState : this->markovianStates) {
                     result = std::max(result, this->exitRates[markovianState]);
                 }

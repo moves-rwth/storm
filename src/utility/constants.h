@@ -1,12 +1,5 @@
-/*
- * constants.h
- *
- *  Created on: 11.10.2012
- *      Author: Thomas Heinemann
- */
-
-#ifndef STORM_UTILITY_CONSTTEMPLATES_H_
-#define STORM_UTILITY_CONSTTEMPLATES_H_
+#ifndef STORM_UTILITY_CONSTANTSCOMPARATOR_H_
+#define STORM_UTILITY_CONSTANTSCOMPARATOR_H_
 
 #ifdef max
 #	undef max
@@ -17,172 +10,115 @@
 #endif
 
 #include <limits>
-
-#include "src/exceptions/InvalidArgumentException.h"
+#include <cstdint>
 
 #include "src/settings/SettingsManager.h"
+#include "src/adapters/CarlAdapter.h"
 
 namespace storm {
-
-namespace utility {
-
-/*!
- * Returns a constant value of 0 that is fit to the type it is being written to.
- * As (at least) gcc has problems to use the correct template by the return value
- * only, the function gets a pointer as a parameter to infer the return type.
- *
- * @note
- * 	The template parameter is just inferred by the return type; GCC is not able to infer this
- * 	automatically, hence the type should always be stated explicitly (e.g. @c constantZero<int>();)
- *
- * @return Value 0, fit to the return type
- */
-template<typename _Scalar>
-static inline _Scalar constantZero() {
-   return _Scalar(0);
-}
-
-/*! @cond TEMPLATE_SPECIALIZATION
- * (By default, the template specifications are not included in the documentation)
- */
-
-/*!
- * Template specialization for int_fast32_t
- * @return Value 0, fit to the type int_fast32_t
- */
-template <>
-inline int_fast32_t constantZero() {
-   return 0;
-}
-
-/*!
- * Template specialization for uint_fast64_t
- * @return Value 0, fit to the type uint_fast64_t
- */
-template <>
-inline uint_fast64_t constantZero() {
-   return 0;
-}
-
-/*!
- * Template specialization for double
- * @return Value 0.0, fit to the type double
- */
-template <>
-inline double constantZero() {
-   return 0.0;
-}
     
-/*! @endcond */
+    // Forward-declare MatrixEntry class.
+    namespace storage {
+        template<typename IndexType, typename ValueType> class MatrixEntry;
+    }
+    
+    namespace utility {
+        
+        template<typename ValueType>
+        ValueType one();
+        
+        template<typename ValueType>
+        ValueType zero();
+        
+        template<typename ValueType>
+        ValueType infinity();
+        
+#ifdef STORM_HAVE_CARL
+        template<>
+        storm::RationalFunction infinity();
+#endif
+        
+        template<typename ValueType>
+        ValueType pow(ValueType const& value, uint_fast64_t exponent);
+        
+#ifdef STORM_HAVE_CARL
+        template<>
+        RationalFunction pow(RationalFunction const& value, uint_fast64_t exponent);
+#endif
+        
+        template<typename ValueType>
+        ValueType simplify(ValueType value);
+        
+        // A class that can be used for comparing constants.
+        template<typename ValueType>
+        class ConstantsComparator {
+        public:
+            bool isOne(ValueType const& value) const;
+            
+            bool isZero(ValueType const& value) const;
+            
+            bool isEqual(ValueType const& value1, ValueType const& value2) const;
+        };
+        
+        // For doubles we specialize this class and consider the comparison modulo some predefined precision.
+        template<>
+        class ConstantsComparator<double> {
+        public:
+            ConstantsComparator();
+            
+            ConstantsComparator(double precision);
+            
+            bool isOne(double const& value) const;
+            
+            bool isZero(double const& value) const;
+            
+            bool isEqual(double const& value1, double const& value2) const;
+            
+            bool isConstant(double const& value) const;
+            
+        private:
+            // The precision used for comparisons.
+            double precision;
+        };
+        
+#ifdef STORM_HAVE_CARL
+        template<>
+        RationalFunction& simplify(RationalFunction& value);
+        
+        template<>
+        RationalFunction&& simplify(RationalFunction&& value);
 
-/*!
- * Returns a constant value of 1 that is fit to the type it is being written to.
- * As (at least) gcc has problems to use the correct template by the return value
- * only, the function gets a pointer as a parameter to infer the return type.
- *
- * @note
- * 	The template parameter is just inferred by the return type; GCC is not able to infer this
- * 	automatically, hence the type should always be stated explicitly (e.g. @c constantOne<int>();)
- *
- * @return Value 1, fit to the return type
- */
-template<typename _Scalar>
-static inline _Scalar constantOne() {
-   return _Scalar(1);
+        template<>
+        class ConstantsComparator<storm::RationalFunction> {
+        public:
+            bool isOne(storm::RationalFunction const& value) const;
+            
+            bool isZero(storm::RationalFunction const& value) const;
+            
+            bool isEqual(storm::RationalFunction const& value1, storm::RationalFunction const& value2) const;
+            
+            bool isConstant(storm::RationalFunction const& value) const;
+        };
+        
+        template<>
+        class ConstantsComparator<storm::Polynomial> {
+        public:
+            bool isOne(storm::Polynomial const& value) const;
+            
+            bool isZero(storm::Polynomial const& value) const;
+            
+            bool isEqual(storm::Polynomial const& value1, storm::Polynomial const& value2) const;
+            
+            bool isConstant(storm::Polynomial const& value) const;
+        };
+#endif
+        
+        template<typename IndexType, typename ValueType>
+        storm::storage::MatrixEntry<IndexType, ValueType>& simplify(storm::storage::MatrixEntry<IndexType, ValueType>& matrixEntry);
+
+        template<typename IndexType, typename ValueType>
+        storm::storage::MatrixEntry<IndexType, ValueType>&& simplify(storm::storage::MatrixEntry<IndexType, ValueType>&& matrixEntry);
+    }
 }
 
-/*! @cond TEMPLATE_SPECIALIZATION
- * (By default, the template specializations are not included in the documentation)
- */
-
-/*!
- * Template specialization for int_fast32_t
- * @return Value 1, fit to the type int_fast32_t
- */
-template<>
-inline int_fast32_t constantOne() {
-   return 1;
-}
-
-/*!
- * Template specialization for uint_fast64_t
- * @return Value 1, fit to the type uint_fast61_t
- */
-template<>
-inline uint_fast64_t constantOne() {
-   return 1;
-}
-
-/*!
- * Template specialization for double
- * @return Value 1.0, fit to the type double
- */
-template<>
-inline double constantOne() {
-   return 1.0;
-}
-
-/*! @endcond */
-
-/*!
- * Returns a constant value of infinity that is fit to the type it is being written to.
- * As (at least) gcc has problems to use the correct template by the return value
- * only, the function gets a pointer as a parameter to infer the return type.
- *
- * @note
- * 	The template parameter is just inferred by the return type; GCC is not able to infer this
- * 	automatically, hence the type should always be stated explicitly (e.g. @c constantOne<int>();)
- *
- * @return Value Infinity, fit to the return type
- */
-template<typename _Scalar>
-static inline _Scalar constantInfinity() {
-   return std::numeric_limits<_Scalar>::infinity();
-}
-
-/*! @cond TEMPLATE_SPECIALIZATION
- * (By default, the template specializations are not included in the documentation)
- */
-
-/*!
- * Template specialization for int_fast32_t
- * @return Value Infinity, fit to the type uint_fast32_t
- */
-template<>
-inline int_fast32_t constantInfinity() {
-	throw storm::exceptions::InvalidArgumentException() << "Integer has no infinity.";
-	return std::numeric_limits<int_fast32_t>::max();
-}
-
-/*!
- * Template specialization for uint_fast64_t
- * @return Value Infinity, fit to the type uint_fast64_t
- */
-template<>
-inline uint_fast64_t constantInfinity() {
-	throw storm::exceptions::InvalidArgumentException() << "Integer has no infinity.";
-	return std::numeric_limits<uint_fast64_t>::max();
-}
-
-/*!
- * Template specialization for double
- * @return Value Infinity, fit to the type double
- */
-template<>
-inline double constantInfinity() {
-   return std::numeric_limits<double>::infinity();
-}
-
-/*! @endcond */
-
-template<typename T>
-inline bool isConstant(T const& v) 
-{
-	return true;
-}
-
-} //namespace utility
-
-} //namespace storm
-
-#endif /* STORM_UTILITY_CONSTTEMPLATES_H_ */
+#endif /* STORM_UTILITY_CONSTANTSCOMPARATOR_H_ */

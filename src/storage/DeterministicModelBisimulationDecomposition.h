@@ -10,7 +10,7 @@
 #include "src/models/Dtmc.h"
 #include "src/models/Ctmc.h"
 #include "src/storage/Distribution.h"
-#include "src/utility/ConstantsComparator.h"
+#include "src/utility/constants.h"
 #include "src/utility/OsDetection.h"
 
 namespace storm {

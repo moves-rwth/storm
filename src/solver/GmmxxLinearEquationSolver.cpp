@@ -186,7 +186,7 @@ namespace storm {
             while (!converged && iterationCount < maximalNumberOfIterations) {
                 // Compute D^-1 * (b - LU * x) and store result in nextX.
                 gmm::mult(*gmmLU, *currentX, tmpX);
-                gmm::add(b, gmm::scaled(tmpX, -storm::utility::constantOne<ValueType>()), tmpX);
+                gmm::add(b, gmm::scaled(tmpX, -storm::utility::one<ValueType>()), tmpX);
                 gmm::mult(*gmmDinv, tmpX, *nextX);
                 
                 // Now check if the process already converged within our precision.
