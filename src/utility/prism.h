@@ -1,5 +1,5 @@
-#ifndef STORM_UTILITY_PRISMUTILITY
-#define STORM_UTILITY_PRISMUTILITY
+#ifndef STORM_UTILITY_PRISM_H_
+#define STORM_UTILITY_PRISM_H_
 
 #include <memory>
 #include <boost/algorithm/string.hpp>
@@ -236,4 +236,4 @@ namespace storm {
     } // namespace utility
 } // namespace storm
 
-#endif /* STORM_UTILITY_PRISMUTILITY_H_ */
+#endif /* STORM_UTILITY_PRISM_H_ */

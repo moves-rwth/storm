@@ -37,19 +37,19 @@ namespace storm {
             }
         }
         
-        Dd<DdType::CUDD> DdManager<DdType::CUDD>::getOne() {
+        Dd<DdType::CUDD> DdManager<DdType::CUDD>::getOne() const {
             return Dd<DdType::CUDD>(this->shared_from_this(), cuddManager.addOne());
         }
         
-        Dd<DdType::CUDD> DdManager<DdType::CUDD>::getZero() {
+        Dd<DdType::CUDD> DdManager<DdType::CUDD>::getZero() const {
             return Dd<DdType::CUDD>(this->shared_from_this(), cuddManager.addZero());
         }
         
-        Dd<DdType::CUDD> DdManager<DdType::CUDD>::getConstant(double value) {
+        Dd<DdType::CUDD> DdManager<DdType::CUDD>::getConstant(double value) const {
             return Dd<DdType::CUDD>(this->shared_from_this(), cuddManager.constant(value));
         }
         
-        Dd<DdType::CUDD> DdManager<DdType::CUDD>::getEncoding(storm::expressions::Variable const& variable, int_fast64_t value) {
+        Dd<DdType::CUDD> DdManager<DdType::CUDD>::getEncoding(storm::expressions::Variable const& variable, int_fast64_t value) const {
             DdMetaVariable<DdType::CUDD> const& metaVariable = this->getMetaVariable(variable);
             
             STORM_LOG_THROW(value >= metaVariable.getLow() && value <= metaVariable.getHigh(), storm::exceptions::InvalidArgumentException, "Illegal value " << value << " for meta variable '" << variable.getName() << "'.");
@@ -77,7 +77,7 @@ namespace storm {
             return result;
         }
         
-        Dd<DdType::CUDD> DdManager<DdType::CUDD>::getRange(storm::expressions::Variable const& variable) {
+        Dd<DdType::CUDD> DdManager<DdType::CUDD>::getRange(storm::expressions::Variable const& variable) const {
             storm::dd::DdMetaVariable<DdType::CUDD> const& metaVariable = this->getMetaVariable(variable);
             
             Dd<DdType::CUDD> result = this->getZero();
@@ -88,7 +88,7 @@ namespace storm {
             return result;
         }
         
-        Dd<DdType::CUDD> DdManager<DdType::CUDD>::getIdentity(storm::expressions::Variable const& variable) {
+        Dd<DdType::CUDD> DdManager<DdType::CUDD>::getIdentity(storm::expressions::Variable const& variable) const {
             storm::dd::DdMetaVariable<DdType::CUDD> const& metaVariable = this->getMetaVariable(variable);
             
             Dd<DdType::CUDD> result = this->getZero();

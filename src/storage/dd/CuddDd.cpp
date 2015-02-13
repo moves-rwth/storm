@@ -12,7 +12,7 @@
 
 namespace storm {
     namespace dd {
-        Dd<DdType::CUDD>::Dd(std::shared_ptr<DdManager<DdType::CUDD>> ddManager, ADD cuddAdd, std::set<storm::expressions::Variable> const& containedMetaVariables) : ddManager(ddManager), cuddAdd(cuddAdd), containedMetaVariables(containedMetaVariables) {
+        Dd<DdType::CUDD>::Dd(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, ADD cuddAdd, std::set<storm::expressions::Variable> const& containedMetaVariables) : ddManager(ddManager), cuddAdd(cuddAdd), containedMetaVariables(containedMetaVariables) {
             // Intentionally left empty.
         }
         
@@ -808,7 +808,7 @@ namespace storm {
             this->getContainedMetaVariables().erase(metaVariable);
         }
         
-        std::shared_ptr<DdManager<DdType::CUDD>> Dd<DdType::CUDD>::getDdManager() const {
+        std::shared_ptr<DdManager<DdType::CUDD> const> Dd<DdType::CUDD>::getDdManager() const {
             return this->ddManager;
         }
         

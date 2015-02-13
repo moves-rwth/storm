@@ -85,7 +85,7 @@ namespace storm {
              * @param enumerateDontCareMetaVariables If set to true, all meta variable assignments are enumerated, even
              * if a meta variable does not at all influence the the function value.
              */
-            DdForwardIterator(std::shared_ptr<DdManager<DdType::CUDD>> ddManager, DdGen* generator, int* cube, double value, bool isAtEnd, std::set<storm::expressions::Variable> const* metaVariables = nullptr, bool enumerateDontCareMetaVariables = true);
+            DdForwardIterator(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, DdGen* generator, int* cube, double value, bool isAtEnd, std::set<storm::expressions::Variable> const* metaVariables = nullptr, bool enumerateDontCareMetaVariables = true);
             
             /*!
              * Recreates the internal information when a new cube needs to be treated.
@@ -98,7 +98,7 @@ namespace storm {
             void treatNextInCube();
             
             // The manager responsible for the meta variables (and therefore the underlying DD).
-            std::shared_ptr<DdManager<DdType::CUDD>> ddManager;
+            std::shared_ptr<DdManager<DdType::CUDD> const> ddManager;
             
             // The CUDD generator used to enumerate the cubes of the DD.
             DdGen* generator;

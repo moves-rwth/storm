@@ -563,7 +563,7 @@ namespace storm {
              *
              * A pointer to the manager that is responsible for this DD.
              */
-            std::shared_ptr<DdManager<DdType::CUDD>> getDdManager() const;
+            std::shared_ptr<DdManager<DdType::CUDD> const> getDdManager() const;
             
             /*!
              * Retrieves an iterator that points to the first meta variable assignment with a non-zero function value.
@@ -604,6 +604,7 @@ namespace storm {
             storm::expressions::Expression getMintermExpression() const;
             
             friend std::ostream & operator<<(std::ostream& out, const Dd<DdType::CUDD>& dd);
+            
         private:
             /*!
              * Retrieves a reference to the CUDD ADD object associated with this DD.
@@ -659,7 +660,7 @@ namespace storm {
              * @param cuddAdd The CUDD ADD to store.
              * @param containedMetaVariables The meta variables that appear in the DD.
              */
-            Dd(std::shared_ptr<DdManager<DdType::CUDD>> ddManager, ADD cuddAdd, std::set<storm::expressions::Variable> const& containedMetaVariables = std::set<storm::expressions::Variable>());
+            Dd(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, ADD cuddAdd, std::set<storm::expressions::Variable> const& containedMetaVariables = std::set<storm::expressions::Variable>());
             
             /*!
              * Helper function to convert the DD into a (sparse) matrix.
@@ -723,7 +724,7 @@ namespace storm {
             std::vector<uint_fast64_t> getSortedVariableIndices() const;
             
             // A pointer to the manager responsible for this DD.
-            std::shared_ptr<DdManager<DdType::CUDD>> ddManager;
+            std::shared_ptr<DdManager<DdType::CUDD> const> ddManager;
             
             // The ADD created by CUDD.
             ADD cuddAdd;

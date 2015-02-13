@@ -7,6 +7,7 @@
 #include "src/models/Mdp.h"
 #include "src/models/Ctmdp.h"
 
+#include "src/utility/prism.h"
 #include "src/utility/macros.h"
 #include "src/exceptions/WrongFormatException.h"
 
@@ -54,13 +55,11 @@ namespace storm {
             // Intentionally left empty.
         }
 
-
         template <typename ValueType, typename IndexType>
         ExplicitPrismModelBuilder<ValueType, IndexType>::Options::Options() : buildCommandLabels(false), buildRewards(false), rewardModelName(), constantDefinitions() {
             // Intentionally left empty.
         }
-            
-
+        
         template <typename ValueType, typename IndexType>
         ExplicitPrismModelBuilder<ValueType, IndexType>::Options::Options(storm::logic::Formula const& formula) : buildCommandLabels(false), buildRewards(formula.containsRewardOperator()), rewardModelName(), constantDefinitions(), labelsToBuild(std::set<std::string>()), expressionLabels(std::vector<storm::expressions::Expression>()) {
             // Extract all the labels used in the formula.

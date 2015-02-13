@@ -9,7 +9,7 @@ namespace storm {
             // Intentionally left empty.
         }
         
-        DdForwardIterator<DdType::CUDD>::DdForwardIterator(std::shared_ptr<DdManager<DdType::CUDD>> ddManager, DdGen* generator, int* cube, double value, bool isAtEnd, std::set<storm::expressions::Variable> const* metaVariables, bool enumerateDontCareMetaVariables) : ddManager(ddManager), generator(generator), cube(cube), value(value), isAtEnd(isAtEnd), metaVariables(metaVariables), enumerateDontCareMetaVariables(enumerateDontCareMetaVariables), cubeCounter(), relevantDontCareDdVariables(), currentValuation(ddManager->getExpressionManager().getSharedPointer()) {
+        DdForwardIterator<DdType::CUDD>::DdForwardIterator(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, DdGen* generator, int* cube, double value, bool isAtEnd, std::set<storm::expressions::Variable> const* metaVariables, bool enumerateDontCareMetaVariables) : ddManager(ddManager), generator(generator), cube(cube), value(value), isAtEnd(isAtEnd), metaVariables(metaVariables), enumerateDontCareMetaVariables(enumerateDontCareMetaVariables), cubeCounter(), relevantDontCareDdVariables(), currentValuation(ddManager->getExpressionManager().getSharedPointer()) {
             // If the given generator is not yet at its end, we need to create the current valuation from the cube from
             // scratch.
             if (!this->isAtEnd) {

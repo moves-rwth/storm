@@ -8,7 +8,7 @@
 namespace storm {
     namespace dd {
         Odd<DdType::CUDD>::Odd(Dd<DdType::CUDD> const& dd) {
-            std::shared_ptr<DdManager<DdType::CUDD>> manager = dd.getDdManager();
+            std::shared_ptr<DdManager<DdType::CUDD> const> manager = dd.getDdManager();
             
             // First, we need to determine the involved DD variables indices.
             std::vector<uint_fast64_t> ddVariableIndices = dd.getSortedVariableIndices();

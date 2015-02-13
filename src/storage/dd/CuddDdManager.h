@@ -40,21 +40,21 @@ namespace storm {
              *
              * @return A DD representing the constant one function.
              */
-            Dd<DdType::CUDD> getOne();
+            Dd<DdType::CUDD> getOne() const;
             
             /*!
              * Retrieves a DD representing the constant zero function.
              *
              * @return A DD representing the constant zero function.
              */
-            Dd<DdType::CUDD> getZero();
+            Dd<DdType::CUDD> getZero() const;
             
             /*!
              * Retrieves a DD representing the constant function with the given value.
              *
              * @return A DD representing the constant function with the given value.
              */
-            Dd<DdType::CUDD> getConstant(double value);
+            Dd<DdType::CUDD> getConstant(double value) const;
             
             /*!
              * Retrieves the DD representing the function that maps all inputs which have the given meta variable equal
@@ -65,7 +65,7 @@ namespace storm {
              * @return The DD representing the function that maps all inputs which have the given meta variable equal
              * to the given value one.
              */
-            Dd<DdType::CUDD> getEncoding(storm::expressions::Variable const& variable, int_fast64_t value);
+            Dd<DdType::CUDD> getEncoding(storm::expressions::Variable const& variable, int_fast64_t value) const;
             
             /*!
              * Retrieves the DD representing the range of the meta variable, i.e., a function that maps all legal values
@@ -74,7 +74,7 @@ namespace storm {
              * @param variable The expression variable associated with the meta variable.
              * @return The range of the meta variable.
              */
-            Dd<DdType::CUDD> getRange(storm::expressions::Variable const& variable);
+            Dd<DdType::CUDD> getRange(storm::expressions::Variable const& variable) const;
 
             /*!
              * Retrieves the DD representing the identity of the meta variable, i.e., a function that maps all legal
@@ -83,7 +83,7 @@ namespace storm {
              * @param variable The expression variable associated with the meta variable.
              * @return The identity of the meta variable.
              */
-            Dd<DdType::CUDD> getIdentity(storm::expressions::Variable const& variable);
+            Dd<DdType::CUDD> getIdentity(storm::expressions::Variable const& variable) const;
             
             /*!
              * Adds an integer meta variable with the given range.
