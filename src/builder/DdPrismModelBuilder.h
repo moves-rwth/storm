@@ -7,9 +7,10 @@
 #include "src/logic/Formulas.h"
 #include "src/storage/prism/Program.h"
 #include "src/adapters/DdExpressionAdapter.h"
+#include "src/utility/macros.h"
 
 namespace storm {
-    namespace adapters {
+    namespace builder {
         
         template <storm::dd::DdType Type>
         class DdPrismModelBuilder {
@@ -63,9 +64,20 @@ namespace storm {
         private:
             // This structure can store the decision diagrams representing a particular action.
             struct ActionDecisionDiagram {
-                ActionDecisionDiagram(storm::dd::DdManager<Type> const& manager) : guardDd(manager.getZero()), transitionsDd(manager.getZero()), numberOfUsedNondeterminismVariables(0) {
+                ActionDecisionDiagram() : guardDd(), transitionsDd(), numberOfUsedNondeterminismVariables(0) {
                     // Intentionally left empty.
                 }
+                
+                ActionDecisionDiagram(storm::dd::DdManager<Type> const& manager, uint_fast64_t numberOfUsedNondeterminismVariables = 0) : guardDd(manager.getZero()), transitionsDd(manager.getZero()), numberOfUsedNondeterminismVariables(numberOfUsedNondeterminismVariables) {
+                    // Intentionally left empty.
+                }
+                
+                ActionDecisionDiagram(storm::dd::Dd<Type> guardDd, storm::dd::Dd<Type> transitionsDd, uint_fast64_t numberOfUsedNondeterminismVariables = 0) : guardDd(guardDd), transitionsDd(transitionsDd), numberOfUsedNondeterminismVariables(numberOfUsedNondeterminismVariables) {
+                    // Intentionally left empty.
+                }
+                
+                ActionDecisionDiagram(ActionDecisionDiagram const& other) = default;
+                ActionDecisionDiagram& operator=(ActionDecisionDiagram const& other) = default;
                 
                 // The guard of the action.
                 storm::dd::Dd<Type> guardDd;
@@ -79,12 +91,27 @@ namespace storm {
             
             // This structure holds all decision diagrams related to a module.
             struct ModuleDecisionDiagram {
-                ModuleDecisionDiagram(storm::dd::DdManager<Type> const& manager) : independantAction(manager), synchronizingActionToDecisionDiagramMap(), identity(manager.getZero()) {
+                ModuleDecisionDiagram() : independentAction(), synchronizingActionToDecisionDiagramMap(), identity() {
                     // Intentionally left empty.
                 }
                 
-                // The decision diagram for the independant action.
-                ActionDecisionDiagram independantAction;
+                ModuleDecisionDiagram(storm::dd::DdManager<Type> const& manager) : independentAction(manager), synchronizingActionToDecisionDiagramMap(), identity(manager.getZero()) {
+                    // Intentionally left empty.
+                }
+
+                ModuleDecisionDiagram(ActionDecisionDiagram const& independentAction, std::map<uint_fast64_t, ActionDecisionDiagram> const& synchronizingActionToDecisionDiagramMap, storm::dd::Dd<Type> const& identity) : independentAction(independentAction), synchronizingActionToDecisionDiagramMap(synchronizingActionToDecisionDiagramMap), identity(identity) {
+                    // Intentionally left empty.
+                }
+                
+                ModuleDecisionDiagram(ModuleDecisionDiagram const& other) = default;
+                ModuleDecisionDiagram& operator=(ModuleDecisionDiagram const& other) = default;
+                
+                bool hasSynchronizingAction(uint_fast64_t actionIndex) {
+                    return synchronizingActionToDecisionDiagramMap.find(actionIndex) != synchronizingActionToDecisionDiagramMap.end();
+                }
+                
+                // The decision diagram for the independent action.
+                ActionDecisionDiagram independentAction;
                 
                 // A mapping from synchronizing action indices to the decision diagram.
                 std::map<uint_fast64_t, ActionDecisionDiagram> synchronizingActionToDecisionDiagramMap;
@@ -97,22 +124,14 @@ namespace storm {
              * Structure to store all information required to generate the model from the program.
              */
             class GenerationInformation {
-                GenerationInformation(storm::prism::Program const& program) : program(program), manager(std::make_shared<storm::dd::DdManager<Type>>()), rowMetaVariables(), columnMetaVariables(), metaVariablePairs(), numberOfNondetVariables(0), variableToIdentityMap(), moduleToIdentityMap(), allSynchronizingActionIndices(), labelToStateDdMap() {
+            public:
+                GenerationInformation(storm::prism::Program const& program) : program(program), manager(std::make_shared<storm::dd::DdManager<Type>>()), rowMetaVariables(), variableToRowMetaVariableMap(), rowExpressionAdapter(nullptr), columnMetaVariables(), variableToColumnMetaVariableMap(), columnExpressionAdapter(nullptr), nondeterminismMetaVariables(), variableToIdentityMap(), moduleToIdentityMap() {
                     // Initializes variables and identity DDs.
-                    createMetaVariables();
-                    createIdentities();
+                    createMetaVariablesAndIdentities();
+                    
+                    rowExpressionAdapter = std::unique_ptr<storm::adapters::DdExpressionAdapter<Type>>(new storm::adapters::DdExpressionAdapter<Type>(*manager, variableToRowMetaVariableMap));
+                    columnExpressionAdapter = std::unique_ptr<storm::adapters::DdExpressionAdapter<Type>>(new storm::adapters::DdExpressionAdapter<Type>(*manager, variableToColumnMetaVariableMap));
                 }
-                
-            private:
-                /*!
-                 * Creates the required meta variables.
-                 */
-                void createMetaVariables();
-                
-                /*!
-                 * Creates identity DDs for all variables and all modules.
-                 */
-                void createIdentities();
                 
                 // The program that is currently translated.
                 storm::prism::Program const& program;
@@ -121,135 +140,142 @@ namespace storm {
                 std::shared_ptr<storm::dd::DdManager<Type>> manager;
 
                 // The meta variables for the row encoding.
-                std::vector<storm::expressions::Variable> rowMetaVariables;
+                std::set<storm::expressions::Variable> rowMetaVariables;
+                std::map<storm::expressions::Variable, storm::expressions::Variable> variableToRowMetaVariableMap;
+                std::unique_ptr<storm::adapters::DdExpressionAdapter<Type>> rowExpressionAdapter;
                 
                 // The meta variables for the column encoding.
-                std::vector<storm::expressions::Variable> columnMetaVariables;
-
-                // Pairs of meta variables (row, column).
-                std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> metaVariablePairs;
-
-                // Number of variables used to encode the nondeterminism.
-                uint_fast64_t numberOfNondetVariables;
+                std::set<storm::expressions::Variable> columnMetaVariables;
+                std::map<storm::expressions::Variable, storm::expressions::Variable> variableToColumnMetaVariableMap;
+                std::unique_ptr<storm::adapters::DdExpressionAdapter<Type>> columnExpressionAdapter;
+                
+                // The meta variables used to encode the nondeterminism.
+                std::vector<storm::expressions::Variable> nondeterminismMetaVariables;
+                
+                // The meta variables used to encode the synchronization.
+                std::vector<storm::expressions::Variable> synchronizationMetaVariables;
                 
                 // DDs representing the identity for each variable.
                 std::map<storm::expressions::Variable, storm::dd::Dd<Type>> variableToIdentityMap;
                 
                 // DDs representing the identity for each module (index).
-                std::map<uint_fast64_t, storm::dd::Dd<Type>> moduleToIdentityMap;
+                std::map<std::string, storm::dd::Dd<Type>> moduleToIdentityMap;
                 
-                // All synchronizing actions
-                std::set<uint_fast64_t> allSynchronizingActionIndices;
-                
-                // DDs representing the identity matrix for each module
-                std::unordered_map<std::string, storm::dd::Dd<Type>> labelToStateDdMap;
+            private:
+                /*!
+                 * Creates the required meta variables and variable/module identities.
+                 */
+                void createMetaVariablesAndIdentities() {
+                    // Add synchronization variables.
+                    for (uint_fast64_t i = 0; i < program.getActionIndices().size(); ++i) {
+                        std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair = manager->addMetaVariable("sync" + std::to_string(i));
+                        synchronizationMetaVariables.push_back(variablePair.first);
+                    }
+                    
+                    // Add nondeterminism variables (number of modules + number of commands).
+                    uint_fast64_t numberOfNondeterminismVariables = program.getModules().size();
+                    for (auto const& module : program.getModules()) {
+                        numberOfNondeterminismVariables += module.getNumberOfCommands();
+                    }
+                    for (uint_fast64_t i = 0; i < numberOfNondeterminismVariables; ++i) {
+                        std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair = manager->addMetaVariable("nondet" + std::to_string(i));
+                        nondeterminismMetaVariables.push_back(variablePair.first);
+                    }
+                    
+                    // Create meta variables for global program variables.
+                    for (storm::prism::BooleanVariable const& booleanVariable : program.getGlobalBooleanVariables()) {
+                        std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair = manager->addMetaVariable(booleanVariable.getName());
+                        
+                        rowMetaVariables.insert(variablePair.first);
+                        variableToRowMetaVariableMap.emplace(booleanVariable.getExpressionVariable(), variablePair.first);
+                        
+                        columnMetaVariables.insert(variablePair.second);
+                        variableToColumnMetaVariableMap.emplace(booleanVariable.getExpressionVariable(), variablePair.second);
+                        
+                        storm::dd::Dd<Type> variableIdentity = manager->getIdentity(variablePair.first).equals(manager->getIdentity(variablePair.second));
+                        variableToIdentityMap.emplace(booleanVariable.getExpressionVariable(), variableIdentity);
+                    }
+                    for (storm::prism::IntegerVariable const& integerVariable : program.getGlobalIntegerVariables()) {
+                        int_fast64_t low = integerVariable.getLowerBoundExpression().evaluateAsInt();
+                        int_fast64_t high = integerVariable.getUpperBoundExpression().evaluateAsInt();
+                        std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair = manager->addMetaVariable(integerVariable.getName(), low, high);
+                        
+                        rowMetaVariables.insert(variablePair.first);
+                        variableToRowMetaVariableMap.emplace(integerVariable.getExpressionVariable(), variablePair.first);
+                        
+                        columnMetaVariables.insert(variablePair.second);
+                        variableToColumnMetaVariableMap.emplace(integerVariable.getExpressionVariable(), variablePair.second);
+
+                        storm::dd::Dd<Type> variableIdentity = manager->getIdentity(variablePair.first).equals(manager->getIdentity(variablePair.second)) * manager->getRange(variablePair.first);
+                        variableToIdentityMap.emplace(integerVariable.getExpressionVariable(), variableIdentity);
+                    }
+
+                    // Create meta variables for each of the modules' variables.
+                    for (storm::prism::Module const& module : program.getModules()) {
+                        storm::dd::Dd<Type> moduleIdentity = manager->getOne();
+                        for (storm::prism::BooleanVariable const& booleanVariable : module.getBooleanVariables()) {
+                            std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair = manager->addMetaVariable(booleanVariable.getName());
+                            STORM_LOG_TRACE("Created meta variables for boolean variable: " << variablePair.first.getName() << "[" << variablePair.first.getIndex() << "] and " << variablePair.second.getName() << "[" << variablePair.second.getIndex() << "]");
+
+                            rowMetaVariables.insert(variablePair.first);
+                            variableToRowMetaVariableMap.emplace(booleanVariable.getExpressionVariable(), variablePair.first);
+                            
+                            columnMetaVariables.insert(variablePair.second);
+                            variableToColumnMetaVariableMap.emplace(booleanVariable.getExpressionVariable(), variablePair.second);
+                            
+                            storm::dd::Dd<Type> variableIdentity = manager->getIdentity(variablePair.first).equals(manager->getIdentity(variablePair.second)) * manager->getRange(variablePair.first) * manager->getRange(variablePair.second);
+                            variableToIdentityMap.emplace(booleanVariable.getExpressionVariable(), variableIdentity);
+                            moduleIdentity *= variableIdentity;
+                        }
+                        for (storm::prism::IntegerVariable const& integerVariable : module.getIntegerVariables()) {
+                            int_fast64_t low = integerVariable.getLowerBoundExpression().evaluateAsInt();
+                            int_fast64_t high = integerVariable.getUpperBoundExpression().evaluateAsInt();
+                            std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair = manager->addMetaVariable(integerVariable.getName(), low, high);
+                            STORM_LOG_TRACE("Created meta variables for integer variable: " << variablePair.first.getName() << "[" << variablePair.first.getIndex() << "] and " << variablePair.second.getName() << "[" << variablePair.second.getIndex() << "]");
+                            
+                            rowMetaVariables.insert(variablePair.first);
+                            variableToRowMetaVariableMap.emplace(integerVariable.getExpressionVariable(), variablePair.first);
+                            
+                            columnMetaVariables.insert(variablePair.second);
+                            variableToColumnMetaVariableMap.emplace(integerVariable.getExpressionVariable(), variablePair.second);
+                            
+                            storm::dd::Dd<Type> variableIdentity = manager->getIdentity(variablePair.first).equals(manager->getIdentity(variablePair.second)) * manager->getRange(variablePair.first) * manager->getRange(variablePair.second);
+                            variableToIdentityMap.emplace(integerVariable.getExpressionVariable(), variableIdentity);
+                            moduleIdentity *= variableIdentity;
+                        }
+                        moduleToIdentityMap[module.getName()] = moduleIdentity;
+                    }
+                }
             };
             
         private:
             
-//            /*!
-//             * Creates system DD (full parallel)
-//             *
-//             * @return A DD representing the whole system
-//             */
-//            static storm::dd::Dd<Type> createSystemDecisionDiagramm(GenerationInformation & generationInfo);
-//            
-//            /*!
-//             * Combines all DDs to one DD (including independent/synchronized actions)
-//             *
-//             * @param systemDds DDs representing the whole system
-//             * @return System DDs with combined independent/synchronized actions
-//             */
-//            static SystemComponentDecisionDiagram<Type> combineSystem(GenerationInformation const & generationInfo, SystemComponentDecisionDiagram<Type> systemDds);
-//            
-//            /*!
-//             * Combines 2 modules with/without synchronizing actions
-//             *
-//             * @param synchronizing Synchronizing actions or not
-//             * @param module1 First module
-//             * @param module1 Second module
-//             * @param identity1 Identity matrix of first module
-//             * @param identity2 Identity matrix of second module
-//             * @return A module DD representing the combination of both modules
-//             */
-//            static ModuleDecisionDiagram<Type> combineModules(GenerationInformation const & generationInfo, bool synchronizing, ModuleDecisionDiagram<Type> moduleDd1, ModuleDecisionDiagram<Type> moduleDd2, storm::dd::Dd<Type> const& identityDd1, storm::dd::Dd<Type> const& identityDd2);
-//            
-//            /*!
-//             * Combines 2 modules and solves non-determinism (MDP)
-//             *
-//             * @param module1 First module
-//             * @param module1 Second module
-//             * @return A module DD representing the combination of both modules
-//             */
-//            static ModuleDecisionDiagram<Type> combineModulesMDP(GenerationInformation const & generationInfo, ModuleDecisionDiagram<Type> moduleDd1, ModuleDecisionDiagram<Type> moduleDd2);
-//            
-//            /*!
-//             * Creates a system component DD (module)
-//             *
-//             * @param module Module
-//             * @param usedNondetVariablesVector Number of used nondet. variables
-//             * @return A system component DD storing all required module information
-//             */
-//            static SystemComponentDecisionDiagram<Type> createSystemComponentDecisionDiagramm(GenerationInformation const & generationInfo, storm::prism::Module const & module, std::vector<uint_fast64_t> usedNondetVariablesVector);
-//            
-//            /*!
-//             * Combines commands (with guards) to a module DD (DTMC)
-//             *
-//             * @param numberOfCommands Number of commands in the current module
-//             * @param commandDds DDs containing all updates for each command
-//             * @param guardDds Guard DDs for each command
-//             * @return A DD representing the module.
-//             */
-//            static ModuleDecisionDiagram<Type> combineCommandsDTMC(std::shared_ptr<storm::dd::DdManager<Type>> const & manager, uint_fast64_t numberOfCommands, std::vector<storm::dd::Dd<Type>> const& commandDds, std::vector<storm::dd::Dd<Type>> const& guardDds);
-//            
-//            /*!
-//             * Combines commands (with guards) to a module DD (MDP)
-//             *
-//             * @param numberOfCommands Number of commands in the current module
-//             * @param commandDds DDs containing all updates for each command
-//             * @param guardDds Guard DDs for each command
-//             * @param usedNondetVariables Number of used nondet. variables
-//             * @return A DD representing the module.
-//             */
-//            static ModuleDecisionDiagram<Type> combineCommandsMDP(std::shared_ptr<storm::dd::DdManager<Type>> const & manager, uint_fast64_t numberOfCommands, std::vector<storm::dd::Dd<Type>> const& commandDds, std::vector<storm::dd::Dd<Type>> const& guardDds, uint_fast64_t usedNondetVariables);
-//            
-//            /*!
-//             * Creates a module DD
-//             *
-//             * @param module Module
-//             * @param synchronizingAction Name of the synchronizing action ("" = no synchronization)
-//             * @param usedNondetVariables Number of used nondet. variables
-//             * @return A DD representing the module (with/without synchronized actions).
-//             */
-//            static ModuleDecisionDiagram<Type> createModuleDecisionDiagramm(GenerationInformation const & generationInfo, storm::prism::Module const& module, std::string const& synchronizingAction, uint_fast64_t usedNondetVariables);
-//            
-//            /*!
-//             * Creates a command DD
-//             *
-//             * @param module Current module
-//             * @param guard Command guard
-//             * @param update Command expression
-//             * @return A DD representing the command.
-//             */
-//            static storm::dd::Dd<Type> createCommandDecisionDiagramm(GenerationInformation const & generationInfo, storm::prism::Module const& module, storm::dd::Dd<Type> const& guard, storm::prism::Command const& command);
-//            
-//            /*!
-//             * Creates an update DD
-//             *
-//             * @param module Current module
-//             * @param guard Command guard
-//             * @param update Update expression
-//             * @return A DD representing the update.
-//             */
-//            static storm::dd::Dd<Type> createUpdateDecisionDiagramm(GenerationInformation const & generationInfo, storm::prism::Module const& module, storm::dd::Dd<Type> const& guard, storm::prism::Update const& update);
-//            
-//            /*!
-//             * Creates initial state DD
-//             *
-//             * @return A DD representing the initial state.
-//             */
-//            static storm::dd::Dd<Type> getInitialStateDecisionDiagram(GenerationInformation const & generationInfo);
-//            
+            static storm::dd::Dd<Type> encodeChoice(GenerationInformation& generationInfo, uint_fast64_t nondeterminismVariableOffset, uint_fast64_t numberOfBinaryVariables, int_fast64_t value);
+            
+            static storm::dd::Dd<Type> createUpdateDecisionDiagram(GenerationInformation& generationInfo, storm::prism::Module const& module, storm::dd::Dd<Type> const& guard, storm::prism::Update const& update);
+
+            static ActionDecisionDiagram createCommandDecisionDiagram(GenerationInformation& generationInfo, storm::prism::Module const& module, storm::prism::Command const& command);
+
+            static ActionDecisionDiagram createActionDecisionDiagram(GenerationInformation& generationInfo, storm::prism::Module const& module, boost::optional<uint_fast64_t> synchronizationActionIndex, uint_fast64_t nondeterminismVariableOffset);
+
+            static ActionDecisionDiagram combineCommandsToActionDTMC(GenerationInformation& generationInfo, std::vector<ActionDecisionDiagram> const& commandDds);
+
+            static ActionDecisionDiagram combineCommandsToActionMDP(GenerationInformation& generationInfo, std::vector<ActionDecisionDiagram> const& commandDds, uint_fast64_t nondeterminismVariableOffset);
+
+            static ActionDecisionDiagram combineSynchronizingActions(GenerationInformation const& generationInfo, ActionDecisionDiagram const& action1, ActionDecisionDiagram const& action2);
+
+            static ActionDecisionDiagram combineUnsynchronizedActions(GenerationInformation const& generationInfo, ActionDecisionDiagram const& action1, ActionDecisionDiagram const& action2, storm::dd::Dd<Type> const& identityDd1, storm::dd::Dd<Type> const& identityDd2);
+
+            static ModuleDecisionDiagram createModuleDecisionDiagram(GenerationInformation& generationInfo, storm::prism::Module const& module, std::map<uint_fast64_t, uint_fast64_t> const& synchronizingActionToOffsetMap);
+
+            static storm::dd::Dd<Type> createSystemFromModule(GenerationInformation& generationInfo, ModuleDecisionDiagram const& module);
+            
+            static storm::dd::Dd<Type> createSystemDecisionDiagram(GenerationInformation& generationInfo);
+            
+            static storm::dd::Dd<Type> createInitialStatesDecisionDiagram(GenerationInformation& generationInfo);
+
+            static storm::dd::Dd<Type> performReachability(GenerationInformation& generationInfo, storm::dd::Dd<Type> const& initialStates, storm::dd::Dd<Type> const& transitions);
+            
 //            /*!
 //             * Calculates the reachable states of the given transition matrix
 //             *
@@ -258,7 +284,7 @@ namespace storm {
 //             * @return A DD representing all reachable states
 //             */
 //            static storm::dd::Dd<Type> performReachability(GenerationInformation & generationInfo, storm::dd::Dd<Type> const& systemDd, storm::dd::Dd<Type> const& initialStateDd);
-//            
+//
 //            /*!
 //             * Adds a self-loop to deadlock states
 //             *

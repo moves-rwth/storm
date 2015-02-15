@@ -12,9 +12,9 @@ namespace storm {
     namespace adapters {
         
         template<storm::dd::DdType Type>
-        class SymbolicExpressionAdapter : public storm::expressions::ExpressionVisitor {
+        class DdExpressionAdapter : public storm::expressions::ExpressionVisitor {
         public:
-            SymbolicExpressionAdapter(storm::dd::DdManager<Type> const& ddManager, std::map<storm::expressions::Variable, storm::expressions::Variable> const& variableMapping);
+            DdExpressionAdapter(storm::dd::DdManager<Type> const& ddManager, std::map<storm::expressions::Variable, storm::expressions::Variable> const& variableMapping);
             
             storm::dd::Dd<Type> translateExpression(storm::expressions::Expression const& expression);
             

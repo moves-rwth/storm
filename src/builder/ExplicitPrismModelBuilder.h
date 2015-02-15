@@ -21,7 +21,7 @@
 #include "src/settings/SettingsManager.h"
 
 #include "src/utility/constants.h"
-#include "src/utility/PrismUtility.h"
+#include "src/utility/prism.h"
 
 namespace storm {
     namespace builder {

@@ -51,6 +51,7 @@ log4cplus::Logger printer;
 
 // Headers of builders.
 #include "src/builder/ExplicitPrismModelBuilder.h"
+#include "src/builder/DdPrismModelBuilder.h"
 
 // Headers for model processing.
 #include "src/storage/NaiveDeterministicModelBisimulationDecomposition.h"
@@ -272,14 +273,22 @@ namespace storm {
                 }
                 
                 // Customize model-building.
-                typename storm::builder::ExplicitPrismModelBuilder<ValueType>::Options options;
+//                typename storm::builder::ExplicitPrismModelBuilder<ValueType>::Options options;
+//                if (formula) {
+//                    options = typename storm::builder::ExplicitPrismModelBuilder<ValueType>::Options(*formula.get());
+//                }
+//                options.addConstantDefinitionsFromString(program, settings.getConstantDefinitionString());
+//                
+//                // Then, build the model from the symbolic description.
+//                result = storm::builder::ExplicitPrismModelBuilder<ValueType>::translateProgram(program, options);
+                
+                typename storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::Options options;
                 if (formula) {
-                    options = typename storm::builder::ExplicitPrismModelBuilder<ValueType>::Options(*formula.get());
+                    options = typename storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::Options(*formula.get());
                 }
                 options.addConstantDefinitionsFromString(program, settings.getConstantDefinitionString());
                 
-                // Then, build the model from the symbolic description.
-                result = storm::builder::ExplicitPrismModelBuilder<ValueType>::translateProgram(program, options);
+                storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program, options);
                 return result;
             }
             

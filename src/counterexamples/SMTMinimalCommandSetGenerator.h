@@ -13,7 +13,7 @@
 #include "src/solver/GmmxxNondeterministicLinearEquationSolver.h"
 
 #include "src/utility/counterexamples.h"
-#include "src/utility/PrismUtility.h"
+#include "src/utility/prism.h"
 
 namespace storm {
     namespace counterexamples {

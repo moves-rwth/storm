@@ -1,16 +1,16 @@
 #include "src/builder/DdPrismModelBuilder.h"
-#include "src/adapters/DdExpressionAdapter.h"
 
 #include "src/storage/dd/CuddDd.h"
 #include "src/storage/dd/CuddDdManager.h"
 #include "src/settings/SettingsManager.h"
 
+#include "src/exceptions/InvalidStateException.h"
+
 #include "src/utility/prism.h"
 #include "src/utility/math.h"
-#include "src/utility/macros.h"
 
 namespace storm {
-    namespace adapters {
+    namespace builder {
         
         template <storm::dd::DdType Type>
         DdPrismModelBuilder<Type>::Options::Options() : buildRewards(false), rewardModelName(), constantDefinitions() {
@@ -49,6 +49,440 @@ namespace storm {
         }
         
         template <storm::dd::DdType Type>
+        storm::dd::Dd<Type> DdPrismModelBuilder<Type>::createUpdateDecisionDiagram(GenerationInformation& generationInfo, storm::prism::Module const& module, storm::dd::Dd<Type> const& guard, storm::prism::Update const& update) {
+            storm::dd::Dd<Type> updateDd = generationInfo.manager->getOne();
+            
+            // Iterate over all assignments (boolean and integer) and build the DD for it.
+            std::vector<storm::prism::Assignment> assignments = update.getAssignments();
+            std::set<storm::expressions::Variable> assignedVariables;
+            for (auto const& assignment : assignments) {
+                // Record the variable as being written.
+                STORM_LOG_TRACE("Assigning to variable " << generationInfo.variableToRowMetaVariableMap.at(assignment.getVariable()).getName());
+                assignedVariables.insert(generationInfo.variableToRowMetaVariableMap.at(assignment.getVariable()));
+                
+                // Translate the written variable.
+                auto const& primedMetaVariable = generationInfo.variableToColumnMetaVariableMap.at(assignment.getVariable());
+                storm::dd::Dd<Type> writtenVariable = generationInfo.manager->getIdentity(primedMetaVariable);
+                
+                // Translate the expression that is being assigned.
+                storm::dd::Dd<Type> updateExpression = generationInfo.rowExpressionAdapter->translateExpression(assignment.getExpression());
+                
+                // Combine the update expression with the guard.
+                storm::dd::Dd<Type> result = updateExpression * guard;
+                
+                // Combine the variable and the assigned expression.
+                result = result.equals(writtenVariable);
+                result *= guard;
+                
+                // Restrict the transitions to the range of the written variable.
+                result = result * generationInfo.manager->getRange(primedMetaVariable);
+                
+                updateDd *= result;
+            }
+            
+            // FIXME: global boolean variables cause problems. They cannot be added here, because then synchronization goes wrong.
+//            for (uint_fast64_t i = 0; i < generationInfo.program.getGlobalBooleanVariables().size(); ++i) {
+//                storm::prism::BooleanVariable const& booleanVariable = generationInfo.program.getGlobalBooleanVariables().at(i);
+//                if (update.getAssignmentMapping().find(booleanVariable.getName()) == update.getAssignmentMapping().end()) {
+//                    // Multiply identity matrix
+//                    updateDd = updateDd * generationInfo.variableToIdentityDecisionDiagramMap.at(booleanVariable.getName());
+//                }
+//            }
+//            
+//            // All unused global integer variables do not change
+//            for (uint_fast64_t i = 0; i < generationInfo.program.getGlobalIntegerVariables().size(); ++i) {
+//                storm::prism::IntegerVariable const& integerVariable = generationInfo.program.getGlobalIntegerVariables().at(i);
+//                if (update.getAssignmentMapping().find(integerVariable.getName()) == update.getAssignmentMapping().end()) {
+//                    // Multiply identity matrix
+//                    updateDd = updateDd * generationInfo.variableToIdentityDecisionDiagramMap.at(integerVariable.getName());
+//                }
+//            }
+            
+            // All unassigned boolean variables need to keep their value.
+            for (storm::prism::BooleanVariable const& booleanVariable : module.getBooleanVariables()) {
+                if (assignedVariables.find(booleanVariable.getExpressionVariable()) == assignedVariables.end()) {
+                    storm::expressions::Variable const& metaVariable = generationInfo.variableToRowMetaVariableMap.at(booleanVariable.getExpressionVariable());
+                    STORM_LOG_TRACE("Multiplying identity of variable " << booleanVariable.getName());
+                    updateDd *= generationInfo.variableToIdentityMap.at(booleanVariable.getExpressionVariable());
+                }
+            }
+            
+            // All unassigned integer variables need to keep their value.
+            for (storm::prism::IntegerVariable const& integerVariable : module.getIntegerVariables()) {
+                storm::expressions::Variable const& metaVariable = generationInfo.variableToRowMetaVariableMap.at(integerVariable.getExpressionVariable());
+                if (assignedVariables.find(metaVariable) == assignedVariables.end()) {
+                    STORM_LOG_TRACE("Multiplying identity of variable " << integerVariable.getName());
+                    updateDd *= generationInfo.variableToIdentityMap.at(integerVariable.getExpressionVariable());
+                }
+            }
+            
+            return updateDd;
+        }
+        
+        template <storm::dd::DdType Type>
+        typename DdPrismModelBuilder<Type>::ActionDecisionDiagram DdPrismModelBuilder<Type>::createCommandDecisionDiagram(GenerationInformation& generationInfo, storm::prism::Module const& module, storm::prism::Command const& command) {
+            STORM_LOG_TRACE("Translating guard " << command.getGuardExpression());
+            storm::dd::Dd<Type> guardDd = generationInfo.rowExpressionAdapter->translateExpression(command.getGuardExpression());
+            STORM_LOG_WARN_COND(!guardDd.isZero(), "The guard '" << command.getGuardExpression() << "' is unsatisfiable.");
+            
+            if (!guardDd.isZero()) {
+                storm::dd::Dd<Type> commandDd = generationInfo.manager->getZero();
+                for (storm::prism::Update const& update : command.getUpdates()) {
+                    storm::dd::Dd<Type> updateDd = createUpdateDecisionDiagram(generationInfo, module, guardDd, update);
+                    
+                    STORM_LOG_WARN_COND(!updateDd.isZero(), "Update '" << update << "' does not have any effect.");
+                    
+                    double p = update.getLikelihoodExpression().evaluateAsDouble();
+                    updateDd *= generationInfo.manager->getConstant(p);
+                    
+                    commandDd += updateDd;
+                }
+                
+                return ActionDecisionDiagram(guardDd, guardDd * commandDd);
+            } else {
+                return ActionDecisionDiagram(*generationInfo.manager);
+            }
+        }
+        
+        template <storm::dd::DdType Type>
+        typename DdPrismModelBuilder<Type>::ActionDecisionDiagram DdPrismModelBuilder<Type>::createActionDecisionDiagram(GenerationInformation& generationInfo, storm::prism::Module const& module, boost::optional<uint_fast64_t> synchronizationActionIndex, uint_fast64_t nondeterminismVariableOffset) {
+            std::vector<ActionDecisionDiagram> commandDds;
+            for (storm::prism::Command const& command : module.getCommands()) {
+                
+                // Determine whether the command is relevant for the selected action.
+                bool relevant = (!synchronizationActionIndex && !command.isLabeled()) || (synchronizationActionIndex && command.getActionIndex() == synchronizationActionIndex.get());
+                
+                if (!relevant) {
+                    continue;
+                }
+                
+                // At this point, the command is known to be relevant for the action.
+                commandDds.push_back(createCommandDecisionDiagram(generationInfo, module, command));
+            }
+            
+            ActionDecisionDiagram result(*generationInfo.manager);
+            if (!commandDds.empty()) {
+                switch (generationInfo.program.getModelType()){
+                    case storm::prism::Program::ModelType::DTMC:
+                        result = combineCommandsToActionDTMC(generationInfo, commandDds);
+                        break;
+                    case storm::prism::Program::ModelType::MDP:
+                        result = combineCommandsToActionMDP(generationInfo, commandDds, nondeterminismVariableOffset);
+                        break;
+                    default:
+                        STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Cannot translate model of this type.");
+                }
+            }
+            
+            return result;
+        }
+        
+        template <storm::dd::DdType Type>
+        typename DdPrismModelBuilder<Type>::ActionDecisionDiagram DdPrismModelBuilder<Type>::combineCommandsToActionDTMC(GenerationInformation& generationInfo, std::vector<ActionDecisionDiagram> const& commandDds) {
+            storm::dd::Dd<Type> allGuards = generationInfo.manager->getZero();
+            storm::dd::Dd<Type> allCommands = generationInfo.manager->getZero();
+            storm::dd::Dd<Type> temporary;
+            
+            for (auto const& commandDd : commandDds) {
+                // Check for overlapping guards.
+                temporary = commandDd.guardDd * allGuards;
+                STORM_LOG_WARN_COND(temporary.isZero(), "Guard of a command overlaps with previous guards.");
+                
+                allGuards += commandDd.guardDd;
+                allCommands += commandDd.guardDd * commandDd.transitionsDd;
+            }
+            
+            return ActionDecisionDiagram(allGuards, allCommands);
+        }
+        
+        template <storm::dd::DdType Type>
+        storm::dd::Dd<Type> DdPrismModelBuilder<Type>::encodeChoice(GenerationInformation& generationInfo, uint_fast64_t nondeterminismVariableOffset, uint_fast64_t numberOfBinaryVariables, int_fast64_t value) {
+            storm::dd::Dd<Type> result = generationInfo.manager->getOne();
+            
+            std::map<storm::expressions::Variable, int_fast64_t> metaVariableNameToValueMap;
+            for (uint_fast64_t i = nondeterminismVariableOffset; i < nondeterminismVariableOffset + numberOfBinaryVariables; ++i) {
+                if (value & (1ull << (numberOfBinaryVariables - i - 1))) {
+                    metaVariableNameToValueMap.emplace(generationInfo.nondeterminismMetaVariables[i], 1);
+                }
+                else {
+                    metaVariableNameToValueMap.emplace(generationInfo.nondeterminismMetaVariables[i], 0);
+                }
+            }
+            
+            result.setValue(metaVariableNameToValueMap, 1);
+            return result;
+        }
+        
+        template <storm::dd::DdType Type>
+        typename DdPrismModelBuilder<Type>::ActionDecisionDiagram DdPrismModelBuilder<Type>::combineCommandsToActionMDP(GenerationInformation& generationInfo, std::vector<ActionDecisionDiagram> const& commandDds, uint_fast64_t nondeterminismVariableOffset) {
+            storm::dd::Dd<Type> allGuards = generationInfo.manager->getZero();
+            storm::dd::Dd<Type> allCommands = generationInfo.manager->getZero();
+            
+            // Sum all guards, so we can read off the maximal number of nondeterministic choices in any given state.
+            storm::dd::Dd<Type> sumOfGuards = generationInfo.manager->getZero();
+            for (auto const& commandDd : commandDds) {
+                sumOfGuards += commandDd.guardDd;
+                allGuards = allGuards || commandDd.guardDd;
+            }
+            uint_fast64_t maxChoices = static_cast<uint_fast64_t>(sumOfGuards.getMax());
+
+            // Depending on the maximal number of nondeterminstic choices, we need to use some variables to encode the nondeterminism.
+            if (maxChoices == 0) {
+                return ActionDecisionDiagram(*generationInfo.manager);
+            } else if (maxChoices == 1) {
+                // Sum up all commands.
+                for (auto const& commandDd : commandDds) {
+                    // FIXME: necessary to multiply with guard again?
+                    allCommands += commandDd.guardDd * commandDd.transitionsDd;
+                }
+                return ActionDecisionDiagram(sumOfGuards, allCommands);
+            } else {
+                // Calculate number of required variables to encode the nondeterminism.
+                uint_fast64_t numberOfBinaryVariables = static_cast<uint_fast64_t>(std::ceil(storm::utility::math::log2(maxChoices)));
+                
+                storm::dd::Dd<Type> equalsNumberOfChoicesDd = generationInfo.manager->getZero();
+                std::vector<storm::dd::Dd<Type>> choiceDds(maxChoices, generationInfo.manager->getZero());
+                std::vector<storm::dd::Dd<Type>> remainingDds(maxChoices, generationInfo.manager->getZero());
+                
+                for (uint_fast64_t currentChoices = 1; currentChoices <= maxChoices; ++currentChoices) {
+                    // Determine the set of states with exactly currentChoices choices.
+                    equalsNumberOfChoicesDd = sumOfGuards.equals(generationInfo.manager->getConstant(static_cast<double>(currentChoices)));
+                    
+                    // If there is no such state, continue with the next possible number of choices.
+                    if (equalsNumberOfChoicesDd.isZero()) {
+                        continue;
+                    }
+                    
+                    // Reset the previously used intermediate storage.
+                    for (uint_fast64_t j = 0; j < currentChoices; ++j) {
+                        choiceDds[j] = generationInfo.manager->getZero();
+                        remainingDds[j] = equalsNumberOfChoicesDd;
+                    }
+                    
+                    for (std::size_t j = 0; j < commandDds.size(); ++j) {
+                        // Check if command guard overlaps with equalsNumberOfChoicesDd. That is, there are states with exactly currentChoices
+                        // choices such that one outgoing choice is given by the j-th command.
+                        storm::dd::Dd<Type> guardChoicesIntersection = commandDds[j].guardDd && equalsNumberOfChoicesDd;
+                        
+                        // If there is no such state, continue with the next command.
+                        if (guardChoicesIntersection.isZero()) {
+                            continue;
+                        }
+                        
+                        // Split the currentChoices nondeterministic choices.
+                        for (uint_fast64_t k = 0; k < currentChoices; ++k) {
+                            // Calculate the overlapping part of command guard and the remaining DD.
+                            storm::dd::Dd<Type> remainingGuardChoicesIntersection = guardChoicesIntersection && remainingDds[k];
+                            
+                            // Check if we can add some overlapping parts to the current index
+                            if (!remainingGuardChoicesIntersection.isZero()) {
+                                // Remove overlapping parts from the remaining DD.
+                                remainingDds[k] = remainingDds[k] && !remainingGuardChoicesIntersection;
+                                
+                                // Combine the overlapping part of the guard with command updates and add it to the resulting DD.
+                                choiceDds[k] += remainingGuardChoicesIntersection * commandDds[j].transitionsDd;
+                            }
+                            
+                            // Remove overlapping parts from the command guard DD
+                            guardChoicesIntersection = guardChoicesIntersection && !remainingGuardChoicesIntersection;
+                            
+                            // If the guard DD has become equivalent to false, we can stop here.
+                            if (guardChoicesIntersection.isZero()) {
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // Add the meta variables that encode the nondeterminisim to the different choices.
+                    for (uint_fast64_t j = 0; j < currentChoices; ++j) {
+                        allCommands += encodeChoice(generationInfo, nondeterminismVariableOffset, numberOfBinaryVariables, j) * choiceDds[j];
+                    }
+                    
+                    // Delete currentChoices out of overlapping DD
+                    sumOfGuards = sumOfGuards * (!equalsNumberOfChoicesDd);
+                }
+                
+                return ActionDecisionDiagram(allGuards, allCommands, nondeterminismVariableOffset + numberOfBinaryVariables);
+            }
+        }
+
+        template <storm::dd::DdType Type>
+        typename DdPrismModelBuilder<Type>::ActionDecisionDiagram DdPrismModelBuilder<Type>::combineSynchronizingActions(GenerationInformation const& generationInfo, ActionDecisionDiagram const& action1, ActionDecisionDiagram const& action2) {
+            return ActionDecisionDiagram(action1.guardDd * action2.guardDd, action1.transitionsDd * action2.transitionsDd, std::max(action1.numberOfUsedNondeterminismVariables, action2.numberOfUsedNondeterminismVariables));
+        }
+        
+        template <storm::dd::DdType Type>
+        typename DdPrismModelBuilder<Type>::ActionDecisionDiagram DdPrismModelBuilder<Type>::combineUnsynchronizedActions(GenerationInformation const& generationInfo, ActionDecisionDiagram const& action1, ActionDecisionDiagram const& action2, storm::dd::Dd<Type> const& identityDd1, storm::dd::Dd<Type> const& identityDd2) {
+            storm::dd::Dd<Type> action1Extended = action1.transitionsDd * identityDd2;
+            storm::dd::Dd<Type> action2Extended = action2.transitionsDd * identityDd1;
+
+            if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::DTMC) {
+                return ActionDecisionDiagram(action1.guardDd + action2.guardDd, action1Extended + action2Extended, 0);
+            } else if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::MDP) {
+                if (action1.transitionsDd.isZero()) {
+                    return ActionDecisionDiagram(action2.guardDd, action2Extended, action2.numberOfUsedNondeterminismVariables);
+                } else if (action2.transitionsDd.isZero()) {
+                    return ActionDecisionDiagram(action1.guardDd, action1Extended, action1.numberOfUsedNondeterminismVariables);
+                }
+                
+                // Bring both choices to the same number of variables that encode the nondeterminism.
+                uint_fast64_t numberOfUsedNondeterminismVariables = std::max(action1.numberOfUsedNondeterminismVariables, action2.numberOfUsedNondeterminismVariables);
+                if (action1.numberOfUsedNondeterminismVariables > action2.numberOfUsedNondeterminismVariables) {
+                    storm::dd::Dd<Type> nondeterminisimEncoding = generationInfo.manager->getOne();
+                    
+                    for (uint_fast64_t i = action2.numberOfUsedNondeterminismVariables + 1; i <= action1.numberOfUsedNondeterminismVariables; ++i) {
+                        nondeterminisimEncoding *= generationInfo.manager->getEncoding(generationInfo.nondeterminismMetaVariables[i], 0);
+                    }
+                    action2Extended *= nondeterminisimEncoding;
+                } else if (action2.numberOfUsedNondeterminismVariables > action1.numberOfUsedNondeterminismVariables) {
+                    storm::dd::Dd<Type> nondeterminisimEncoding = generationInfo.manager->getOne();
+                    
+                    for (uint_fast64_t i = action1.numberOfUsedNondeterminismVariables + 1; i <= action2.numberOfUsedNondeterminismVariables; ++i) {
+                        nondeterminisimEncoding *= generationInfo.manager->getEncoding(generationInfo.nondeterminismMetaVariables[i], 0);
+                    }
+                    action1Extended *= nondeterminisimEncoding;
+                }
+                
+                // Add a new variable that resolves the nondeterminism between the two choices.
+                storm::dd::Dd<Type> combinedTransitions = generationInfo.manager->getEncoding(generationInfo.nondeterminismMetaVariables[numberOfUsedNondeterminismVariables + 1], 1).ite(action2Extended, action1Extended);
+                
+                return ActionDecisionDiagram(action1.guardDd || action2.guardDd, combinedTransitions, numberOfUsedNondeterminismVariables + 1);
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::InvalidStateException, "Illegal model type.");
+            }
+        }
+
+        template <storm::dd::DdType Type>
+        typename DdPrismModelBuilder<Type>::ModuleDecisionDiagram DdPrismModelBuilder<Type>::createModuleDecisionDiagram(GenerationInformation& generationInfo, storm::prism::Module const& module, std::map<uint_fast64_t, uint_fast64_t> const& synchronizingActionToOffsetMap) {
+            // Start by creating the action DD for the independent action.
+            ActionDecisionDiagram independentActionDd = createActionDecisionDiagram(generationInfo, module, boost::optional<uint_fast64_t>(), 0);
+            
+            // Create module DD for all synchronizing actions of the module.
+            std::map<uint_fast64_t, ActionDecisionDiagram> actionIndexToDdMap;
+            for (auto const& actionIndex : module.getActionIndices()) {
+                actionIndexToDdMap.emplace(actionIndex, createActionDecisionDiagram(generationInfo, module, actionIndex, synchronizingActionToOffsetMap.at(actionIndex)));
+            }
+            
+            return ModuleDecisionDiagram(independentActionDd, actionIndexToDdMap, generationInfo.moduleToIdentityMap.at(module.getName()));
+        }
+        
+        template <storm::dd::DdType Type>
+        storm::dd::Dd<Type> DdPrismModelBuilder<Type>::createSystemFromModule(GenerationInformation& generationInfo, ModuleDecisionDiagram const& module) {
+            // If the model is an MDP, we need to encode the nondeterminism using additional variables.
+            if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::MDP) {
+                storm::dd::Dd<Type> result = generationInfo.manager->getZero();
+                
+                // First, determine the maximal variable index that is used.
+                uint_fast64_t numberOfUsedNondeterminismVariables = module.independentAction.numberOfUsedNondeterminismVariables;
+                for (auto const& synchronizingAction : module.synchronizingActionToDecisionDiagramMap) {
+                    numberOfUsedNondeterminismVariables = std::max(numberOfUsedNondeterminismVariables, synchronizingAction.second.numberOfUsedNondeterminismVariables);
+                }
+
+                // Now make all actions use the same amount of nondeterminism variables.
+                
+                // Add variables to independent action DD.
+                storm::dd::Dd<Type> nondeterminismEncoding = generationInfo.manager->getOne();
+                for (uint_fast64_t i = module.independentAction.numberOfUsedNondeterminismVariables + 1; i <= numberOfUsedNondeterminismVariables; ++i) {
+                    nondeterminismEncoding *= generationInfo.manager->getEncoding(generationInfo.nondeterminismMetaVariables[i], 0);
+                }
+                result = module.independentAction.transitionsDd * nondeterminismEncoding;
+
+                // Add variables to synchronized action DDs.
+                std::map<uint_fast64_t, storm::dd::Dd<Type>> synchronizingActionToDdMap;
+                for (auto const& synchronizingAction : module.synchronizingActionToDecisionDiagramMap) {
+                    nondeterminismEncoding = generationInfo.manager->getOne();
+                    for (uint_fast64_t i = synchronizingAction.second.numberOfUsedNondeterminismVariables + 1; i <= numberOfUsedNondeterminismVariables; ++i) {
+                        nondeterminismEncoding *= generationInfo.manager->getEncoding(generationInfo.nondeterminismMetaVariables[i], 0);
+                    }
+                    synchronizingActionToDdMap.emplace(synchronizingAction.first, synchronizingAction.second.transitionsDd * nondeterminismEncoding);
+                }
+                
+                // Add variables for synchronization.
+                storm::dd::Dd<Type> synchronization = generationInfo.manager->getOne();
+                for (uint_fast64_t i = 0; i < generationInfo.synchronizationMetaVariables.size(); ++i) {
+                    synchronization *= generationInfo.manager->getEncoding(generationInfo.synchronizationMetaVariables[i], 0);
+                }
+                result *= synchronization;
+                
+                for (auto& synchronizingAction : synchronizingActionToDdMap) {
+                    synchronization = generationInfo.manager->getOne();
+                    
+                    for (uint_fast64_t i = 0; i < generationInfo.synchronizationMetaVariables.size(); ++i) {
+                        if (i == synchronizingAction.first) {
+                            synchronization *= generationInfo.manager->getEncoding(generationInfo.synchronizationMetaVariables[i], 1);
+                        } else {
+                            synchronization *= generationInfo.manager->getEncoding(generationInfo.synchronizationMetaVariables[i], 0);
+                        }
+                    }
+                    
+                    synchronizingAction.second *= synchronization;
+                }
+                
+                // Now, we can simply add all synchronizing actions to the result.
+                for (auto const& synchronizingAction : module.synchronizingActionToDecisionDiagramMap) {
+                    result += synchronizingAction.second.transitionsDd;
+                }
+
+                return result;
+            } else {
+                // Simply add all actions.
+                storm::dd::Dd<Type> result = module.independentAction.transitionsDd;
+                for (auto const& synchronizingAction : module.synchronizingActionToDecisionDiagramMap) {
+                    result += synchronizingAction.second.transitionsDd;
+                }
+                return result;
+            }
+        }
+        
+        template <storm::dd::DdType Type>
+        storm::dd::Dd<Type> DdPrismModelBuilder<Type>::createSystemDecisionDiagram(GenerationInformation& generationInfo) {
+            // Create the initial offset mapping.
+            std::map<uint_fast64_t, uint_fast64_t> synchronizingActionToOffsetMap;
+            for (auto const& actionIndex : generationInfo.program.getActionIndices()) {
+                synchronizingActionToOffsetMap[actionIndex] = 0;
+            }
+
+            // Start by creating DDs for the first module.
+            ModuleDecisionDiagram system = createModuleDecisionDiagram(generationInfo, generationInfo.program.getModule(0), synchronizingActionToOffsetMap);
+
+            // No translate module by module and combine it with the system created thus far.
+            for (uint_fast64_t i = 1; i < generationInfo.program.getNumberOfModules(); ++i) {
+                storm::prism::Module const& currentModule = generationInfo.program.getModule(i);
+                
+                // Update the offset index.
+                for (auto const& actionIndex : generationInfo.program.getActionIndices()) {
+                    synchronizingActionToOffsetMap[actionIndex] = system.synchronizingActionToDecisionDiagramMap[actionIndex].numberOfUsedNondeterminismVariables;
+                }
+                
+                ModuleDecisionDiagram nextModule = createModuleDecisionDiagram(generationInfo, currentModule, synchronizingActionToOffsetMap);
+                
+                // Combine the non-synchronizing action.
+                system.independentAction = combineUnsynchronizedActions(generationInfo, system.independentAction, nextModule.independentAction, system.identity, nextModule.identity);
+                
+                // Combine synchronizing actions.
+                for (auto const& actionIndex : currentModule.getActionIndices()) {
+                    if (system.hasSynchronizingAction(actionIndex)) {
+                        system.synchronizingActionToDecisionDiagramMap[actionIndex] = combineSynchronizingActions(generationInfo, system.synchronizingActionToDecisionDiagramMap[actionIndex], nextModule.synchronizingActionToDecisionDiagramMap[actionIndex]);
+                    } else {
+                        system.synchronizingActionToDecisionDiagramMap[actionIndex] = combineUnsynchronizedActions(generationInfo, system.synchronizingActionToDecisionDiagramMap[actionIndex], nextModule.synchronizingActionToDecisionDiagramMap[actionIndex], system.identity, nextModule.identity);
+                    }
+                }
+                
+                // Combine identity matrices.
+                system.identity = system.identity * nextModule.identity;
+            }
+            
+            storm::dd::Dd<Type> result = createSystemFromModule(generationInfo, system);
+            
+            // For DTMCs, we normalize each row to 1 (to account for non-determinism).
+            if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::DTMC) {
+                result = result / result.sumAbstract(generationInfo.columnMetaVariables);
+            }
+            
+            return result;
+        }
+        
+        template <storm::dd::DdType Type>
         void DdPrismModelBuilder<Type>::translateProgram(storm::prism::Program const& program, Options const& options) {
             // There might be nondeterministic variables. In that case the program must be prepared before translating.
             storm::prism::Program preparedProgram;
@@ -62,56 +496,42 @@ namespace storm {
             
             // Start by initializing the structure used for storing all information needed during the model generation.
             // In particular, this creates the meta variables used to encode the model.
-//            GenerationInformation generationInfo(preparedProgram);
+            GenerationInformation generationInfo(preparedProgram);
 
             
-//            LOG4CPLUS_INFO(logger, "Creating MTBDD representation for probabilistic program.");
+            auto clock = std::chrono::high_resolution_clock::now();
+            storm::dd::Dd<Type> transitionMatrix = createSystemDecisionDiagram(generationInfo);
+            std::cout << "Built transition matrix in " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - clock).count() << "ms." << std::endl;
+            transitionMatrix.exportToDot("trans.dot");
+            std::cout << "num transitions: " << transitionMatrix.getNonZeroCount() << std::endl;
+            
+            storm::dd::Dd<Type> initialStates = createInitialStatesDecisionDiagram(generationInfo);
+            std::cout << "initial states: " << initialStates.getNonZeroCount() << std::endl;
+            
+            
+        }
+        
+        template <storm::dd::DdType Type>
+        storm::dd::Dd<Type> DdPrismModelBuilder<Type>::createInitialStatesDecisionDiagram(GenerationInformation& generationInfo) {
+            storm::dd::Dd<Type> initialStates = generationInfo.rowExpressionAdapter->translateExpression(generationInfo.program.getInitialConstruct().getInitialStatesExpression());
+            
+            for (auto const& metaVariable : generationInfo.rowMetaVariables) {
+                initialStates *= generationInfo.manager->getRange(metaVariable);
+            }
+            
+            return initialStates;
+        }
+        
+//        template <storm::dd::DdType Type>
+//        storm::dd::Dd<Type> DdPrismModelBuilder<Type>::performReachability(GenerationInformation& generationInfo, storm::dd::Dd<Type> const& initialStates, storm::dd::Dd<Type> const& transitions) {
+//            storm::dd::Dd<Type> reachableStates = initialStates;
 //            
-//            // There might be nondeterministic variables. In that case the program must be prepared before translating.
-//            storm::prism::Program preparedProgram = program.defineUndefinedConstants(std::map<std::string, storm::expressions::Expression>());
-//            preparedProgram = preparedProgram.substituteConstants();
-//
-//            // Initialize the structure used for storing all information needed during the model generation.
-//            GenerationInformation generationInfo(preparedProgram);
-//
-//            // Initial state DD
-//            storm::dd::Dd<Type> initialStateDd = generationInfo.manager->getZero();
-//            initialStateDd = getInitialStateDecisionDiagram(generationInfo);
+//            // Copy current state
+//            storm::dd::Dd<Type> newReachableStates = reachableStates;
 //            
-//            // System DD
-//            storm::dd::Dd<Type> systemDd = generationInfo.manager->getZero();
-//            
-//            // Reachable states DD
-//            storm::dd::Dd<Type> reachableStatesDd = generationInfo.manager->getOne();
-//            
-//            // Initialize the clock.
-//            auto clock = std::chrono::high_resolution_clock::now();
-//            
-//            // Create system DD
-//            systemDd = createSystemDecisionDiagramm(generationInfo);
-//            std::cout << "Built transition matrix in " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - clock).count() << "ms." << std::endl;
-//            
-//            //manager->triggerReordering();
-//            
-//            // Get all reachable states
-//            if (!storm::settings::adapterSettings().isNoReachSet()){
-//                reachableStatesDd = performReachability(generationInfo, systemDd, initialStateDd);
-//                // Reduce transition matrix
-//                systemDd = systemDd * reachableStatesDd;
-//            }
-//            
-//            // Fix deadlocks
-//            if (!storm::settings::adapterSettings().isNoDeadlockSet()){
-//                systemDd = findDeadlocks(generationInfo, systemDd, reachableStatesDd);
-//            }
-//            
-//            // System DD with only 0/1 leaves
-//            storm::dd::Dd<Type> systemBdd = systemDd.notZero();
-//            
-//            // Get all abstract variables (MDP)
 //            std::set<std::string> abstractVariables = std::set<std::string>();
 //            
-//            if (program.getModelType() == storm::prism::Program::ModelType::MDP) {
+//            if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::MDP) {
 //                for (uint_fast64_t i = 0; i < generationInfo.allSynchronizingActions.size(); ++i) {
 //                    // Synchronizing variables
 //                    if (systemDd.containsMetaVariable("sync" + std::to_string(i))) {
@@ -126,221 +546,65 @@ namespace storm {
 //                }
 //            }
 //            
-//            // Create state labeling
-//            std::unordered_map<std::string, storm::dd::Dd<Type>> labelToStateDdMap;
-//            storm::dd::Dd<Type> temporary;
-//            for (auto const& label : program.getLabels()) {
-//                // Translate Labeling into Expression and further into DD
-//                temporary = storm::adapters::SymbolicExpressionAdapter<Type>::translateExpression(label.getStatePredicateExpression().getBaseExpressionPointer(), generationInfo.program, generationInfo.manager, false);
-//                temporary = temporary * reachableStatesDd;
-//                labelToStateDdMap.insert(std::make_pair(label.getName(), temporary));
+//            // Create system BDD
+//            storm::dd::Dd<Type> systemBdd = systemDd.notZero();
+//            
+//            // For MDPs, we need to abstract from the nondeterminism variables, but we can do so prior to the
+//            // reachability analysis.
+//            if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::MDP) {
+//                // Abstract from synchronizing and nondet. variables (MDPs)
+//                systemBdd = systemBdd.existsAbstract(abstractVariables);
 //            }
 //            
-//            // Create model
-//            std::shared_ptr<storm::models::AbstractSymbolicModel<Type>> model;
-//            switch (program.getModelType()){
-//                case storm::prism::Program::ModelType::DTMC:
-//                    model = std::shared_ptr<storm::models::AbstractSymbolicModel<Type>>(std::make_shared<storm::models::SymbolicDtmc<Type>>(std::move(systemDd),
-//                                                                                                                                            std::move(systemBdd), std::move(initialStateDd), std::move(reachableStatesDd),
-//                                                                                                                                            std::move(generationInfo.rewardDds.first), std::move(generationInfo.rewardDds.second), std::move(generationInfo.manager->getZero()),
-//                                                                                                                                            std::move(generationInfo.rowMetaVariableNames), std::move(generationInfo.columnMetaVariableNames), std::move(generationInfo.metaVariablePairs),
-//                                                                                                                                            std::move(generationInfo.allSynchronizingActions), std::move(abstractVariables), std::move(generationInfo.manager), std::move(labelToStateDdMap)));
-//                    break;
-//                case storm::prism::Program::ModelType::MDP:
-//                    model = std::shared_ptr<storm::models::AbstractSymbolicModel<Type>>(std::make_shared<storm::models::SymbolicMdp<Type>>(std::move(systemDd),
-//                                                                                                                                           std::move(systemBdd), std::move(initialStateDd), std::move(reachableStatesDd),
-//                                                                                                                                           std::move(generationInfo.rewardDds.first), std::move(generationInfo.rewardDds.second), std::move(generationInfo.transitionActionDd),
-//                                                                                                                                           std::move(generationInfo.rowMetaVariableNames), std::move(generationInfo.columnMetaVariableNames), std::move(generationInfo.metaVariablePairs),
-//                                                                                                                                           std::move(generationInfo.allSynchronizingActions), std::move(abstractVariables), std::move(generationInfo.manager), std::move(labelToStateDdMap)));
-//                    break;
-//                default:
-//                    STORM_LOG_ASSERT(false, "Illegal model type.");
-//            }
+//            // Initialize variables and choose option
+//            bool changed;
+//            int iter = 0;
+//            int option = storm::settings::adapterSettings().getReachabilityMethod();
 //            
-//            LOG4CPLUS_INFO(logger, "Done creating MTBDD representation for probabilistic preparedProgram.");
-//            LOG4CPLUS_INFO(logger, "MTBDD: " << systemDd.getNodeCount() << " nodes, " << systemDd.getLeafCount() << " leaves, " << generationInfo.manager->getNumberOfMetaVariables() << " variables.");
-//            return model;
-        }
-        
-//        template <storm::dd::DdType Type>
-//        void SymbolicModelAdapter<Type>::GenerationInformation::addDecisionDiagramVariables() {
+//            //TODO: Name reachability options.
+//            std::cout << "Reachability option: " << option << std::endl;
 //            
-//            uint_fast64_t numberOfSynchronizingActions = allSynchronizingActions.size();
-//            
-//            // Add synchronizing variables
-//            for (uint_fast64_t i = 0; i < numberOfSynchronizingActions; ++i) {
-//                manager->addMetaVariable("sync" + std::to_string(i), 0, 1);
-//            }
-//            
-//            // Add nondet. variables ( number of modules + number of commands)
-//            numberOfNondetVariables = program.getModules().size();
-//            for (uint_fast64_t i = 0; i < program.getModules().size(); ++i) {
-//                numberOfNondetVariables += program.getModule(i).getCommands().size();
-//            }
-//            
-//            for (uint_fast64_t i = numberOfNondetVariables; i > 0; --i) {
-//                manager->addMetaVariable("nondet" + std::to_string(i), 0, 1);
-//            }
-//            
-//            std::vector<std::string> newVariables;
-//            
-//            // Global Boolean Variables
-//            for (uint_fast64_t j = 0; j < program.getGlobalBooleanVariables().size(); ++j) {
-//                storm::prism::BooleanVariable const& booleanVariable = program.getGlobalBooleanVariables().at(j);
+//            if (option == 3 || option == 4){
 //                
-//                // Add row and column meta variable
-//                manager->addMetaVariable(booleanVariable.getName(), 0, 1);
+//                S = storm::dd::Dd<Type>(initialStateDd);
+//                U = storm::dd::Dd<Type>(initialStateDd);
 //                
-//                rowMetaVariableNames.insert(booleanVariable.getName());
-//                columnMetaVariableNames.insert(booleanVariable.getName() + "'");
+//                generationInfo.globalSystemDds.independentActionDd.commandsDd = generationInfo.globalSystemDds.independentActionDd.commandsDd.notZero();
+//                generationInfo.globalSystemDds.independentActionDd.commandsDd = generationInfo.globalSystemDds.independentActionDd.commandsDd.existsAbstract(abstractVariables);
 //                
-//                // Create pair (column,row)
-//                std::pair<std::string, std::string> variablePair(booleanVariable.getName() + "'", booleanVariable.getName());
-//                metaVariablePairs.push_back(variablePair);
-//            }
-//            
-//            // Global Integer Variables
-//            for (uint_fast64_t j = 0; j < program.getGlobalIntegerVariables().size(); ++j) {
-//                storm::prism::IntegerVariable const& integerVariable = program.getGlobalIntegerVariables().at(j);
-//                
-//                int_fast64_t low = integerVariable.getLowerBoundExpression().evaluateAsInt();
-//                int_fast64_t high = integerVariable.getUpperBoundExpression().evaluateAsInt();
-//                
-//                // Add row and column meta variable
-//                manager->addMetaVariable(integerVariable.getName(), low, high);
-//                
-//                rowMetaVariableNames.insert(integerVariable.getName());
-//                columnMetaVariableNames.insert(integerVariable.getName() + "'");
-//                
-//                // Create pair (column,row)
-//                std::pair<std::string, std::string> variablePair(integerVariable.getName() + "'", integerVariable.getName());
-//                metaVariablePairs.push_back(variablePair);
-//            }
-//            
-//            // Add boolean and integer variables
-//            for (uint_fast64_t i = 0; i < program.getNumberOfModules(); ++i) {
-//                storm::prism::Module const& module = program.getModule(i);
-//                
-//                // Boolean Variables
-//                for (uint_fast64_t j = 0; j < module.getNumberOfBooleanVariables(); ++j) {
-//                    storm::prism::BooleanVariable const& booleanVariable = module.getBooleanVariables().at(j);
-//                    
-//                    // Add row and column meta variable
-//                    manager->addMetaVariable(booleanVariable.getName(), 0, 1);
-//                    
-//                    rowMetaVariableNames.insert(booleanVariable.getName());
-//                    columnMetaVariableNames.insert(booleanVariable.getName() + "'");
-//                    
-//                    // Create pair (column,row)
-//                    std::pair<std::string, std::string> variablePair(booleanVariable.getName() + "'", booleanVariable.getName());
-//                    metaVariablePairs.push_back(variablePair);
-//                }
-//                
-//                // Integer Variables
-//                for (uint_fast64_t j = 0; j < module.getNumberOfIntegerVariables(); ++j) {
-//                    storm::prism::IntegerVariable const& integerVariable = module.getIntegerVariables().at(j);
-//                    
-//                    int_fast64_t low = integerVariable.getLowerBoundExpression().evaluateAsInt();
-//                    int_fast64_t high = integerVariable.getUpperBoundExpression().evaluateAsInt();
-//                    
-//                    // Add row and column meta variable
-//                    manager->addMetaVariable(integerVariable.getName(), low, high);
-//                    
-//                    rowMetaVariableNames.insert(integerVariable.getName());
-//                    columnMetaVariableNames.insert(integerVariable.getName() + "'");
-//                    
-//                    // Create pair (column,row)
-//                    std::pair<std::string, std::string> variablePair(integerVariable.getName() + "'", integerVariable.getName());
-//                    metaVariablePairs.push_back(variablePair);
+//                for (uint_fast64_t i = 0; i < generationInfo.allSynchronizingActions.size(); ++i) {
+//                    generationInfo.globalSystemDds.synchronizingActionDds[i].commandsDd = generationInfo.globalSystemDds.synchronizingActionDds[i].commandsDd.notZero();
+//                    generationInfo.globalSystemDds.synchronizingActionDds[i].commandsDd = generationInfo.globalSystemDds.synchronizingActionDds[i].commandsDd.existsAbstract(abstractVariables);
 //                }
 //            }
 //            
-//            std::cout << "Variable Ordering: ";
-//            for(auto x: manager->getDdVariableNames()){
-//                std::cout << x << ",";
-//            }
-//            std::cout << std::endl;
-//            std::cout << std::endl;
-//        }
-//        
-//        template <storm::dd::DdType Type>
-//        void SymbolicModelAdapter<Type>::GenerationInformation::createIdentityDecisionDiagrams() {
-//            
-//            // Global Boolean variables
-//            for (uint_fast64_t j = 0; j < program.getGlobalBooleanVariables().size(); ++j) {
-//                storm::prism::BooleanVariable const & booleanVariable = program.getGlobalBooleanVariables().at(j);
-//                
-//                storm::dd::Dd<Type> identity = manager->getZero();
-//                
-//                // f(0)=0 leads to 1
-//                identity.setValue(booleanVariable.getName(), 0, booleanVariable.getName() + "'", 0, 1);
-//                // f(1)=1 leads to 1
-//                identity.setValue(booleanVariable.getName(), 1, booleanVariable.getName() + "'", 1, 1);
-//                
-//                variableToIdentityDecisionDiagramMap.insert(std::make_pair(booleanVariable.getName(), identity));
-//            }
-//            
-//            // Global Integer variables
-//            for (uint_fast64_t j = 0; j < program.getGlobalIntegerVariables().size(); ++j) {
-//                storm::prism::IntegerVariable const& integerVariable = program.getGlobalIntegerVariables().at(j);
-//                storm::dd::Dd<Type> identity = manager->getZero();
-//                
-//                int_fast64_t low = integerVariable.getLowerBoundExpression().evaluateAsInt();
-//                int_fast64_t high = integerVariable.getUpperBoundExpression().evaluateAsInt();
-//                
-//                for (int_fast64_t i = low; i <= high; ++i) {
-//                    // f(i)=i leads to 1
-//                    identity.setValue(integerVariable.getName(), i, integerVariable.getName() + "'", i, 1);
-//                }
-//                
-//                variableToIdentityDecisionDiagramMap.insert(std::make_pair(integerVariable.getName(), identity));
-//            }
-//            
-//            
-//            for (uint_fast64_t i = 0; i < program.getNumberOfModules(); ++i) {
-//                storm::prism::Module const& module = program.getModule(i);
-//                
-//                // Module identity matrix
-//                storm::dd::Dd<Type> moduleIdentity = manager->getOne();
-//                
-//                // Boolean variables
-//                for (uint_fast64_t j = 0; j < module.getNumberOfBooleanVariables(); ++j) {
-//                    storm::prism::BooleanVariable const& booleanVariable = module.getBooleanVariables().at(j);
+//            // Perform updates until nothing changes
+//            do {
+//                if (option == 1){
+//                    iter++;
+//                    changed = true;
 //                    
-//                    storm::dd::Dd<Type> identity = manager->getZero();
+//                    newReachableStates = newReachableStates * systemBdd;
 //                    
-//                    // f(0)=0 leads to 1
-//                    identity.setValue(booleanVariable.getName(), 0, booleanVariable.getName() + "'", 0, 1);
-//                    // f(1)=1 leads to 1
-//                    identity.setValue(booleanVariable.getName(), 1, booleanVariable.getName() + "'", 1, 1);
+//                    // Abstract from row meta variables
+//                    newReachableStates = newReachableStates.existsAbstract(generationInfo.rowMetaVariableNames);
 //                    
-//                    variableToIdentityDecisionDiagramMap.insert(std::make_pair(booleanVariable.getName(), identity));
-//                    moduleIdentity = moduleIdentity * identity;
-//                }
-//                
-//                // Integer variables
-//                for (uint_fast64_t j = 0; j < module.getNumberOfIntegerVariables(); ++j) {
-//                    storm::prism::IntegerVariable const& integerVariable = module.getIntegerVariables().at(j);
-//                    storm::dd::Dd<Type> identity = manager->getZero();
+//                    // Swap column variables to row variables
+//                    newReachableStates.swapVariables(generationInfo.metaVariablePairs);
 //                    
-//                    int_fast64_t low = integerVariable.getLowerBoundExpression().evaluateAsInt();
-//                    int_fast64_t high = integerVariable.getUpperBoundExpression().evaluateAsInt();
+//                    newReachableStates = newReachableStates * (!reachableStates);
 //                    
-//                    for (int_fast64_t i = low; i <= high; ++i) {
-//                        // f(i)=i leads to 1
-//                        identity.setValue(integerVariable.getName(), i, integerVariable.getName() + "'", i, 1);
+//                    // Check if something has changed
+//                    if (newReachableStates.isZero()) {
+//                        changed = false;
 //                    }
 //                    
-//                    variableToIdentityDecisionDiagramMap.insert(std::make_pair(integerVariable.getName(), identity));
-//                    moduleIdentity = moduleIdentity * identity;
-//                }
-//                
-//                // Create module identity matrix
-//                moduleToIdentityDecisionDiagramMap.insert(std::make_pair(module.getName(), moduleIdentity));
-//            }
-//            
+//                    // Update reachableStates DD
+//                    reachableStates = reachableStates + newReachableStates;
+//                    
+//
 //        }
-//        
+        
 //        template <storm::dd::DdType Type>
 //        storm::dd::Dd<Type> SymbolicModelAdapter<Type>::createSystemDecisionDiagramm(GenerationInformation & generationInfo){
 //            
@@ -436,7 +700,7 @@ namespace storm {
 //            
 //            return systemTransitionMatrix;
 //        }
-//        
+//
 //        template <storm::dd::DdType Type>
 //        SystemComponentDecisionDiagram<Type> SymbolicModelAdapter<Type>::combineSystem(GenerationInformation const & generationInfo, SystemComponentDecisionDiagram<Type> systemDds){
 //            
@@ -683,45 +947,6 @@ namespace storm {
 //            return systemComponentDd;
 //        }
 //        
-//        template <storm::dd::DdType Type>
-//        ModuleDecisionDiagram<Type> SymbolicModelAdapter<Type>::combineCommandsDTMC(std::shared_ptr<storm::dd::DdManager<Type>> const & manager, uint_fast64_t numberOfCommands, std::vector<storm::dd::Dd<Type>> const& commandDds, std::vector<storm::dd::Dd<Type>> const & guardDds){
-//            
-//            // Module DD
-//            ModuleDecisionDiagram<Type> moduleDd;
-//            
-//            // Initialize DDs
-//            storm::dd::Dd<Type> guardRangeDd = manager->getZero();
-//            storm::dd::Dd<Type> commandsDd = manager->getZero();
-//            storm::dd::Dd<Type> temporary = manager->getZero();
-//            
-//            for (uint_fast64_t i = 0; i < numberOfCommands; ++i) {
-//                
-//                // Check guard
-//                if (guardDds[i].isZero()) continue;
-//                
-//                // Check for overlapping guards
-//                temporary = guardDds[i] * guardRangeDd;
-//                if (!(temporary.isZero())) {
-//                    LOG4CPLUS_WARN(logger, "Overlapping guard in command " << (i + 1) << ".");
-//                }
-//                
-//                // Sum up all guards
-//                guardRangeDd = guardRangeDd + guardDds[i];
-//                
-//                // Create command DD (multiply guard and updates)
-//                temporary = guardDds[i] * commandDds[i];
-//                
-//                // Sum up all command DDs
-//                commandsDd = commandsDd + temporary;
-//            }
-//            
-//            moduleDd.guardDd = guardRangeDd;
-//            moduleDd.commandsDd = commandsDd;
-//            moduleDd.usedNondetVariables = 0;
-//            
-//            return moduleDd;
-//        }
-//        
 //        // TODO
 //        std::map<std::string, int_fast64_t> getMetaVariableMapping(std::vector<std::string> metaVariables, uint_fast64_t value){
 //            
@@ -735,7 +960,7 @@ namespace storm {
 //                    metaVariableNameToValueMap.insert(std::make_pair(metaVariables[i], 0));
 //                }
 //            }
-//            
+//
 //            return metaVariableNameToValueMap;
 //        }
 //        
@@ -886,7 +1111,7 @@ namespace storm {
 //                    
 //                    // Translate guard
 //                    guardDds[j] = storm::adapters::SymbolicExpressionAdapter<Type>::translateExpression(command.getGuardExpression().getBaseExpressionPointer(), generationInfo.program, generationInfo.manager);
-//                    
+//
 //                    if (guardDds[j].isZero()){
 //                        LOG4CPLUS_WARN(logger, "A guard is unsatisfiable.");
 //                    }
@@ -948,7 +1173,7 @@ namespace storm {
 //            
 //            return commandDd;
 //        }
-//        
+//
 //        template <storm::dd::DdType Type>
 //        storm::dd::Dd<Type> SymbolicModelAdapter<Type>::createUpdateDecisionDiagramm(GenerationInformation const & generationInfo, storm::prism::Module const& module, storm::dd::Dd<Type> const& guard, storm::prism::Update const& update){
 //            
@@ -977,7 +1202,7 @@ namespace storm {
 //                
 //                updateDd = updateDd * result;
 //            }
-//            
+//
 //            // All unused global boolean variables do not change
 //            for (uint_fast64_t i = 0; i < generationInfo.program.getGlobalBooleanVariables().size(); ++i) {
 //                storm::prism::BooleanVariable const& booleanVariable = generationInfo.program.getGlobalBooleanVariables().at(i);
@@ -1013,7 +1238,7 @@ namespace storm {
 //                    updateDd = updateDd * generationInfo.variableToIdentityDecisionDiagramMap.at(integerVariable.getName());
 //                }
 //            }
-//            
+//
 //            return updateDd;
 //        }
 //        

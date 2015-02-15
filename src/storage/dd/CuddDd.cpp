@@ -175,7 +175,7 @@ namespace storm {
             std::set<storm::expressions::Variable> newMetaVariables = this->getContainedMetaVariables();
             for (auto const& metaVariable : metaVariables) {
                 // First check whether the DD contains the meta variable and erase it, if this is the case.
-                STORM_LOG_THROW(this->containsMetaVariable(metaVariable), storm::exceptions::InvalidArgumentException, "Cannot abstract from meta variable that is not present in the DD.");
+                STORM_LOG_THROW(this->containsMetaVariable(metaVariable), storm::exceptions::InvalidArgumentException, "Cannot abstract from meta variable '" << metaVariable.getName() << "' that is not present in the DD.");
                 newMetaVariables.erase(metaVariable);
                 
                 DdMetaVariable<DdType::CUDD> const& ddMetaVariable = this->getDdManager()->getMetaVariable(metaVariable);
@@ -191,7 +191,7 @@ namespace storm {
             std::set<storm::expressions::Variable> newMetaVariables = this->getContainedMetaVariables();
             for (auto const& metaVariable : metaVariables) {
                 // First check whether the DD contains the meta variable and erase it, if this is the case.
-                STORM_LOG_THROW(this->containsMetaVariable(metaVariable), storm::exceptions::InvalidArgumentException, "Cannot abstract from meta variable that is not present in the DD.");
+                STORM_LOG_THROW(this->containsMetaVariable(metaVariable), storm::exceptions::InvalidArgumentException, "Cannot abstract from meta variable '" << metaVariable.getName() << "' that is not present in the DD.");
                 newMetaVariables.erase(metaVariable);
                 
                 DdMetaVariable<DdType::CUDD> const& ddMetaVariable = this->getDdManager()->getMetaVariable(metaVariable);
@@ -207,7 +207,7 @@ namespace storm {
             std::set<storm::expressions::Variable> newMetaVariables = this->getContainedMetaVariables();
             for (auto const& metaVariable : metaVariables) {
                 // First check whether the DD contains the meta variable and erase it, if this is the case.
-                STORM_LOG_THROW(this->containsMetaVariable(metaVariable), storm::exceptions::InvalidArgumentException, "Cannot abstract from meta variable that is not present in the DD.");
+                STORM_LOG_THROW(this->containsMetaVariable(metaVariable), storm::exceptions::InvalidArgumentException, "Cannot abstract from meta variable '" << metaVariable.getName() << "' that is not present in the DD.");
                 newMetaVariables.erase(metaVariable);
                 
                 DdMetaVariable<DdType::CUDD> const& ddMetaVariable = this->getDdManager()->getMetaVariable(metaVariable);
@@ -223,7 +223,7 @@ namespace storm {
             std::set<storm::expressions::Variable> newMetaVariables = this->getContainedMetaVariables();
             for (auto const& metaVariable : metaVariables) {
                 // First check whether the DD contains the meta variable and erase it, if this is the case.
-                STORM_LOG_THROW(this->containsMetaVariable(metaVariable), storm::exceptions::InvalidArgumentException, "Cannot abstract from meta variable that is not present in the DD.");
+                STORM_LOG_THROW(this->containsMetaVariable(metaVariable), storm::exceptions::InvalidArgumentException, "Cannot abstract from meta variable '" << metaVariable.getName() << "' that is not present in the DD.");
                 newMetaVariables.erase(metaVariable);
                 
                 DdMetaVariable<DdType::CUDD> const& ddMetaVariable = this->getDdManager()->getMetaVariable(metaVariable);
@@ -239,7 +239,7 @@ namespace storm {
             std::set<storm::expressions::Variable> newMetaVariables = this->getContainedMetaVariables();
             for (auto const& metaVariable : metaVariables) {
                 // First check whether the DD contains the meta variable and erase it, if this is the case.
-                STORM_LOG_THROW(this->containsMetaVariable(metaVariable), storm::exceptions::InvalidArgumentException, "Cannot abstract from meta variable that is not present in the DD.");
+                STORM_LOG_THROW(this->containsMetaVariable(metaVariable), storm::exceptions::InvalidArgumentException, "Cannot abstract from meta variable '" << metaVariable.getName() << "' that is not present in the DD.");
                 newMetaVariables.erase(metaVariable);
                 
                 DdMetaVariable<DdType::CUDD> const& ddMetaVariable = this->getDdManager()->getMetaVariable(metaVariable);

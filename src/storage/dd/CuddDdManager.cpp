@@ -85,6 +85,7 @@ namespace storm {
             for (int_fast64_t value = metaVariable.getLow(); value <= metaVariable.getHigh(); ++value) {
                 result.setValue(variable, value, static_cast<double>(1));
             }
+            
             return result;
         }
         
