@@ -132,8 +132,8 @@ namespace storm {
                     
                     STORM_LOG_WARN_COND(!updateDd.isZero(), "Update '" << update << "' does not have any effect.");
                     
-                    double p = update.getLikelihoodExpression().evaluateAsDouble();
-                    updateDd *= generationInfo.manager->getConstant(p);
+                    storm::dd::Dd<Type> probabilityDd = generationInfo.rowExpressionAdapter->translateExpression(update.getLikelihoodExpression());
+                    updateDd *= probabilityDd;
                     
                     commandDd += updateDd;
                 }
