@@ -100,8 +100,8 @@ namespace storm {
             
             // All unassigned boolean variables need to keep their value.
             for (storm::prism::BooleanVariable const& booleanVariable : module.getBooleanVariables()) {
-                if (assignedVariables.find(booleanVariable.getExpressionVariable()) == assignedVariables.end()) {
-                    storm::expressions::Variable const& metaVariable = generationInfo.variableToRowMetaVariableMap.at(booleanVariable.getExpressionVariable());
+                storm::expressions::Variable const& metaVariable = generationInfo.variableToRowMetaVariableMap.at(booleanVariable.getExpressionVariable());
+                if (assignedVariables.find(metaVariable) == assignedVariables.end()) {
                     STORM_LOG_TRACE("Multiplying identity of variable " << booleanVariable.getName());
                     updateDd *= generationInfo.variableToIdentityMap.at(booleanVariable.getExpressionVariable());
                 }
@@ -137,6 +137,9 @@ namespace storm {
                     
                     commandDd += updateDd;
                 }
+                
+                guardDd.exportToDot(module.getName() + "_cmd_" + std::to_string(command.getGlobalIndex()) + "_grd.dot");
+                commandDd.exportToDot(module.getName() + "_cmd_" + std::to_string(command.getGlobalIndex()) + ".dot");
                 
                 return ActionDecisionDiagram(guardDd, guardDd * commandDd);
             } else {
@@ -360,6 +363,7 @@ namespace storm {
             // Create module DD for all synchronizing actions of the module.
             std::map<uint_fast64_t, ActionDecisionDiagram> actionIndexToDdMap;
             for (auto const& actionIndex : module.getActionIndices()) {
+                STORM_LOG_TRACE("Creating DD for action '" << actionIndex << "'.");
                 actionIndexToDdMap.emplace(actionIndex, createActionDecisionDiagram(generationInfo, module, actionIndex, synchronizingActionToOffsetMap.at(actionIndex)));
             }
             
@@ -443,15 +447,19 @@ namespace storm {
             }
 
             // Start by creating DDs for the first module.
+            STORM_LOG_TRACE("Translating (first) module '" << generationInfo.program.getModule(0).getName() << "'.");
             ModuleDecisionDiagram system = createModuleDecisionDiagram(generationInfo, generationInfo.program.getModule(0), synchronizingActionToOffsetMap);
 
             // No translate module by module and combine it with the system created thus far.
             for (uint_fast64_t i = 1; i < generationInfo.program.getNumberOfModules(); ++i) {
                 storm::prism::Module const& currentModule = generationInfo.program.getModule(i);
+                STORM_LOG_TRACE("Translating module '" << currentModule.getName() << "'.");
                 
                 // Update the offset index.
                 for (auto const& actionIndex : generationInfo.program.getActionIndices()) {
-                    synchronizingActionToOffsetMap[actionIndex] = system.synchronizingActionToDecisionDiagramMap[actionIndex].numberOfUsedNondeterminismVariables;
+                    if (system.hasSynchronizingAction(actionIndex)) {
+                        synchronizingActionToOffsetMap[actionIndex] = system.synchronizingActionToDecisionDiagramMap[actionIndex].numberOfUsedNondeterminismVariables;
+                    }
                 }
                 
                 ModuleDecisionDiagram nextModule = createModuleDecisionDiagram(generationInfo, currentModule, synchronizingActionToOffsetMap);
@@ -461,10 +469,11 @@ namespace storm {
                 
                 // Combine synchronizing actions.
                 for (auto const& actionIndex : currentModule.getActionIndices()) {
+                    std::cout << "treating action index " << actionIndex << std::endl;
                     if (system.hasSynchronizingAction(actionIndex)) {
                         system.synchronizingActionToDecisionDiagramMap[actionIndex] = combineSynchronizingActions(generationInfo, system.synchronizingActionToDecisionDiagramMap[actionIndex], nextModule.synchronizingActionToDecisionDiagramMap[actionIndex]);
                     } else {
-                        system.synchronizingActionToDecisionDiagramMap[actionIndex] = combineUnsynchronizedActions(generationInfo, system.synchronizingActionToDecisionDiagramMap[actionIndex], nextModule.synchronizingActionToDecisionDiagramMap[actionIndex], system.identity, nextModule.identity);
+                        system.synchronizingActionToDecisionDiagramMap[actionIndex] = combineUnsynchronizedActions(generationInfo, ActionDecisionDiagram(*generationInfo.manager), nextModule.synchronizingActionToDecisionDiagramMap[actionIndex], system.identity, nextModule.identity);
                     }
                 }
                 
@@ -494,11 +503,12 @@ namespace storm {
             
             preparedProgram = preparedProgram.substituteConstants();
             
+            std::cout << "translated prog: " << preparedProgram << std::endl;
+            
             // Start by initializing the structure used for storing all information needed during the model generation.
             // In particular, this creates the meta variables used to encode the model.
             GenerationInformation generationInfo(preparedProgram);
 
-            
             auto clock = std::chrono::high_resolution_clock::now();
             storm::dd::Dd<Type> transitionMatrix = createSystemDecisionDiagram(generationInfo);
             std::cout << "Built transition matrix in " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - clock).count() << "ms." << std::endl;
@@ -508,7 +518,9 @@ namespace storm {
             storm::dd::Dd<Type> initialStates = createInitialStatesDecisionDiagram(generationInfo);
             std::cout << "initial states: " << initialStates.getNonZeroCount() << std::endl;
             
-            
+            storm::dd::Dd<Type> reachableStates = computeReachableStates(generationInfo, initialStates, transitionMatrix);
+            std::cout << "reachable states: " << reachableStates.getNonZeroCount() << std::endl;
+            exit(-1);
         }
         
         template <storm::dd::DdType Type>
@@ -522,88 +534,45 @@ namespace storm {
             return initialStates;
         }
         
-//        template <storm::dd::DdType Type>
-//        storm::dd::Dd<Type> DdPrismModelBuilder<Type>::performReachability(GenerationInformation& generationInfo, storm::dd::Dd<Type> const& initialStates, storm::dd::Dd<Type> const& transitions) {
-//            storm::dd::Dd<Type> reachableStates = initialStates;
-//            
-//            // Copy current state
-//            storm::dd::Dd<Type> newReachableStates = reachableStates;
-//            
-//            std::set<std::string> abstractVariables = std::set<std::string>();
-//            
-//            if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::MDP) {
-//                for (uint_fast64_t i = 0; i < generationInfo.allSynchronizingActions.size(); ++i) {
-//                    // Synchronizing variables
-//                    if (systemDd.containsMetaVariable("sync" + std::to_string(i))) {
-//                        abstractVariables.insert("sync" + std::to_string(i));
-//                    }
-//                }
-//                for (uint_fast64_t i = 1; i <= generationInfo.numberOfNondetVariables; ++i) {
-//                    // Nondet. variables
-//                    if (systemDd.containsMetaVariable("nondet" + std::to_string(i))) {
-//                        abstractVariables.insert("nondet" + std::to_string(i));
-//                    }
-//                }
-//            }
-//            
-//            // Create system BDD
-//            storm::dd::Dd<Type> systemBdd = systemDd.notZero();
-//            
-//            // For MDPs, we need to abstract from the nondeterminism variables, but we can do so prior to the
-//            // reachability analysis.
-//            if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::MDP) {
-//                // Abstract from synchronizing and nondet. variables (MDPs)
-//                systemBdd = systemBdd.existsAbstract(abstractVariables);
-//            }
-//            
-//            // Initialize variables and choose option
-//            bool changed;
-//            int iter = 0;
-//            int option = storm::settings::adapterSettings().getReachabilityMethod();
-//            
-//            //TODO: Name reachability options.
-//            std::cout << "Reachability option: " << option << std::endl;
-//            
-//            if (option == 3 || option == 4){
-//                
-//                S = storm::dd::Dd<Type>(initialStateDd);
-//                U = storm::dd::Dd<Type>(initialStateDd);
-//                
-//                generationInfo.globalSystemDds.independentActionDd.commandsDd = generationInfo.globalSystemDds.independentActionDd.commandsDd.notZero();
-//                generationInfo.globalSystemDds.independentActionDd.commandsDd = generationInfo.globalSystemDds.independentActionDd.commandsDd.existsAbstract(abstractVariables);
-//                
-//                for (uint_fast64_t i = 0; i < generationInfo.allSynchronizingActions.size(); ++i) {
-//                    generationInfo.globalSystemDds.synchronizingActionDds[i].commandsDd = generationInfo.globalSystemDds.synchronizingActionDds[i].commandsDd.notZero();
-//                    generationInfo.globalSystemDds.synchronizingActionDds[i].commandsDd = generationInfo.globalSystemDds.synchronizingActionDds[i].commandsDd.existsAbstract(abstractVariables);
-//                }
-//            }
-//            
-//            // Perform updates until nothing changes
-//            do {
-//                if (option == 1){
-//                    iter++;
-//                    changed = true;
-//                    
-//                    newReachableStates = newReachableStates * systemBdd;
-//                    
-//                    // Abstract from row meta variables
-//                    newReachableStates = newReachableStates.existsAbstract(generationInfo.rowMetaVariableNames);
-//                    
-//                    // Swap column variables to row variables
-//                    newReachableStates.swapVariables(generationInfo.metaVariablePairs);
-//                    
-//                    newReachableStates = newReachableStates * (!reachableStates);
-//                    
-//                    // Check if something has changed
-//                    if (newReachableStates.isZero()) {
-//                        changed = false;
-//                    }
-//                    
-//                    // Update reachableStates DD
-//                    reachableStates = reachableStates + newReachableStates;
-//                    
-//
-//        }
+        template <storm::dd::DdType Type>
+        storm::dd::Dd<Type> DdPrismModelBuilder<Type>::computeReachableStates(GenerationInformation& generationInfo, storm::dd::Dd<Type> const& initialStates, storm::dd::Dd<Type> const& transitions) {
+            storm::dd::Dd<Type> reachableStatesBdd = initialStates.notZero();
+            
+            // If the model is an MDP, we can abstract from the variables encoding the nondeterminism in the model.
+            storm::dd::Dd<Type> transitionBdd = transitions.notZero();
+            if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::MDP) {
+                std::set<storm::expressions::Variable> abstractVariables;
+                abstractVariables.insert(generationInfo.synchronizationMetaVariables.begin(), generationInfo.synchronizationMetaVariables.end());
+                abstractVariables.insert(generationInfo.nondeterminismMetaVariables.begin(), generationInfo.nondeterminismMetaVariables.end());
+                transitionBdd = transitionBdd.existsAbstract(abstractVariables);
+            }
+            
+            transitionBdd.exportToDot("trans.dot");
+            reachableStatesBdd.exportToDot("reach.dot");
+            
+            // Perform the BFS to discover all reachable states.
+            bool changed = true;
+            uint_fast64_t iteration = 0;
+            do {
+                STORM_LOG_TRACE("Iteration " << iteration << " of computing reachable states.");
+                changed = false;
+                storm::dd::Dd<Type> tmp = reachableStatesBdd * transitionBdd;
+                tmp = tmp.existsAbstract(generationInfo.rowMetaVariables);
+                tmp.swapVariables(generationInfo.rowColumnMetaVariablePairs);
+
+                storm::dd::Dd<Type> newReachableStates = tmp * (!reachableStatesBdd);
+                
+                // Check whether new states were indeed discovered.
+                if (!newReachableStates.isZero()) {
+                    changed = true;
+                }
+                
+                reachableStatesBdd += newReachableStates;
+                ++iteration;
+            } while (changed);
+            
+            return reachableStatesBdd;
+        }
         
 //        template <storm::dd::DdType Type>
 //        storm::dd::Dd<Type> SymbolicModelAdapter<Type>::createSystemDecisionDiagramm(GenerationInformation & generationInfo){
