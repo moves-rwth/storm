@@ -103,6 +103,8 @@ namespace storm {
             
             // If the program still contains undefined constants and we are not in a parametric setting, assemble an appropriate error message.
 #ifdef STORM_HAVE_CARL
+            // If the program either has undefined constants or we are building a parametric model, but the parameters
+            // not only appear in the probabilities, we re
             if (!std::is_same<ValueType, storm::RationalFunction>::value && preparedProgram.hasUndefinedConstants()) {
 #else
             if (preparedProgram.hasUndefinedConstants()) {
@@ -120,6 +122,10 @@ namespace storm {
                 }
                 stream << ".";
                 STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Program still contains these undefined constants: " + stream.str());
+#ifdef STORM_HAVE_CARL
+            } else if (std::is_same<ValueType, storm::RationalFunction>::value && !preparedProgram.hasUndefinedConstantsOnlyInUpdateProbabilitiesAndRewards()) {
+                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The program contains undefined constants that appear in some places other than update probabilities and reward value expressions, which is not admitted.");
+#endif
             }
             
             // Now that we have defined all the constants in the program, we need to substitute their appearances in

@@ -11,7 +11,7 @@
 
 namespace storm {
     namespace prism {
-        Program::Program(std::shared_ptr<storm::expressions::ExpressionManager> manager, ModelType modelType, std::vector<Constant> const& constants, std::vector<BooleanVariable> const& globalBooleanVariables, std::vector<IntegerVariable> const& globalIntegerVariables, std::vector<Formula> const& formulas, std::vector<Module> const& modules, std::map<std::string, uint_fast64_t> const& actionToIndexMap, std::vector<RewardModel> const& rewardModels, bool fixInitialConstruct, storm::prism::InitialConstruct const& initialConstruct, std::vector<Label> const& labels, std::string const& filename, uint_fast64_t lineNumber, bool checkValidity) : LocatedInformation(filename, lineNumber), manager(manager), modelType(modelType), constants(constants), constantToIndexMap(), globalBooleanVariables(globalBooleanVariables), globalBooleanVariableToIndexMap(), globalIntegerVariables(globalIntegerVariables), globalIntegerVariableToIndexMap(), formulas(formulas), formulaToIndexMap(), modules(modules), moduleToIndexMap(), rewardModels(rewardModels), rewardModelToIndexMap(), initialConstruct(initialConstruct), labels(labels), actionToIndexMap(actionToIndexMap), actions(), actionIndices(), actionIndicesToModuleIndexMap(), variableToModuleIndexMap() {
+        Program::Program(std::shared_ptr<storm::expressions::ExpressionManager> manager, ModelType modelType, std::vector<Constant> const& constants, std::vector<BooleanVariable> const& globalBooleanVariables, std::vector<IntegerVariable> const& globalIntegerVariables, std::vector<Formula> const& formulas, std::vector<Module> const& modules, std::map<std::string, uint_fast64_t> const& actionToIndexMap, std::vector<RewardModel> const& rewardModels, bool fixInitialConstruct, storm::prism::InitialConstruct const& initialConstruct, std::vector<Label> const& labels, std::string const& filename, uint_fast64_t lineNumber, bool checkValidity) : LocatedInformation(filename, lineNumber), manager(manager), modelType(modelType), constants(constants), constantToIndexMap(), globalBooleanVariables(globalBooleanVariables), globalBooleanVariableToIndexMap(), globalIntegerVariables(globalIntegerVariables), globalIntegerVariableToIndexMap(), formulas(formulas), formulaToIndexMap(), modules(modules), moduleToIndexMap(), rewardModels(rewardModels), rewardModelToIndexMap(), initialConstruct(initialConstruct), labels(labels), actionToIndexMap(actionToIndexMap), indexToActionMap(), actions(), actionIndices(), actionIndicesToModuleIndexMap(), variableToModuleIndexMap() {
             this->createMappings();
             
             // Create a new initial construct if the corresponding flag was set.
@@ -51,6 +51,81 @@ namespace storm {
                 }
             }
             return false;
+        }
+        
+        bool Program::hasUndefinedConstantsOnlyInUpdateProbabilitiesAndRewards() const {
+            if (!this->hasUndefinedConstants()) {
+                return true;
+            }
+            
+            // Gather the variables of all undefined constants.
+            std::set<storm::expressions::Variable> undefinedConstantVariables;
+            for (auto const& constant : this->getConstants()) {
+                if (!constant.isDefined()) {
+                    undefinedConstantVariables.insert(constant.getExpressionVariable());
+                }
+            }
+            
+            // Now it remains to check that the intersection of the variables used in the program with the undefined
+            // constants' variables is empty (except for the update probabilities).
+            
+            // Start by checking the defining expressions of all defined constants.
+            for (auto const& constant : this->getConstants()) {
+                if (constant.isDefined()) {
+                    if (constant.getExpression().containsVariable(undefinedConstantVariables)) {
+                        return false;
+                    }
+                }
+            }
+            
+            // Now check initial value expressions of global variables.
+            for (auto const& booleanVariable : this->getGlobalBooleanVariables()) {
+                if (booleanVariable.getInitialValueExpression().containsVariable(undefinedConstantVariables)) {
+                    return false;
+                }
+            }
+            for (auto const& integerVariable : this->getGlobalIntegerVariables()) {
+                if (integerVariable.getInitialValueExpression().containsVariable(undefinedConstantVariables)) {
+                    return false;
+                }
+                if (integerVariable.getLowerBoundExpression().containsVariable(undefinedConstantVariables)) {
+                    return false;
+                }
+                if (integerVariable.getUpperBoundExpression().containsVariable(undefinedConstantVariables)) {
+                    return false;
+                }
+            }
+            
+            // Then check the formulas.
+            for (auto const& formula : this->getFormulas()) {
+                if (formula.getExpression().containsVariable(undefinedConstantVariables)) {
+                    return false;
+                }
+            }
+            
+            // Proceed by checking each of the modules.
+            for (auto const& module : this->getModules()) {
+                module.containsVariablesOnlyInUpdateProbabilities(undefinedConstantVariables);
+            }
+
+            // Check the reward models.
+            for (auto const& rewardModel : this->getRewardModels()) {
+                rewardModel.containsVariablesOnlyInRewardValueExpressions(undefinedConstantVariables);
+            }
+                     
+            // Initial construct.
+            if (this->getInitialConstruct().getInitialStatesExpression().containsVariable(undefinedConstantVariables)) {
+                return false;
+            }
+            
+            // Labels.
+            for (auto const& label : this->getLabels()) {
+                if (label.getStatePredicateExpression().containsVariable(undefinedConstantVariables)) {
+                    return false;
+                }
+            }
+            
+            return true;
         }
         
         std::vector<std::reference_wrapper<storm::prism::Constant const>> Program::getUndefinedConstants() const {
@@ -148,6 +223,12 @@ namespace storm {
         
         std::set<uint_fast64_t> const& Program::getActionIndices() const {
             return this->actionIndices;
+        }
+        
+        std::string const& Program::getActionName(uint_fast64_t actionIndex) const {
+            auto const& indexNamePair = this->indexToActionMap.find(actionIndex);
+            STORM_LOG_THROW(indexNamePair != this->indexToActionMap.end(), storm::exceptions::InvalidArgumentException, "Unknown action index " << actionIndex << ".");
+            return indexNamePair->second;
         }
         
         std::set<uint_fast64_t> const& Program::getModuleIndicesByAction(std::string const& action) const {
@@ -272,6 +353,7 @@ namespace storm {
             for (auto const& actionIndexPair : this->getActionNameToIndexMapping()) {
                 this->actions.insert(actionIndexPair.first);
                 this->actionIndices.insert(actionIndexPair.second);
+                this->indexToActionMap.emplace(actionIndexPair.second, actionIndexPair.first);
             }
             
             // Build the mapping from action names to module indices so that the lookup can later be performed quickly.

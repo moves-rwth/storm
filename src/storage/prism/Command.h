@@ -99,6 +99,15 @@ namespace storm {
              */
             bool isLabeled() const;
             
+            /*!
+             * Checks whether the given set of variables only appears in the update probabilities of the command.
+             *
+             * @param undefinedConstantVariables The set of variables that may only appear in the update probabilities
+             * of the command.
+             * @return True iff the given set of variables only appears in the update probabilities of the command.
+             */
+            bool containsVariablesOnlyInUpdateProbabilities(std::set<storm::expressions::Variable> const& undefinedConstantVariables) const;
+            
             friend std::ostream& operator<<(std::ostream& stream, Command const& command);
             
         private:

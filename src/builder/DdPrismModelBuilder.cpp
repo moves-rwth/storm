@@ -82,23 +82,25 @@ namespace storm {
                 updateDd *= result;
             }
             
-            // FIXME: global boolean variables cause problems. They cannot be added here, because then synchronization goes wrong.
-//            for (uint_fast64_t i = 0; i < generationInfo.program.getGlobalBooleanVariables().size(); ++i) {
-//                storm::prism::BooleanVariable const& booleanVariable = generationInfo.program.getGlobalBooleanVariables().at(i);
-//                if (update.getAssignmentMapping().find(booleanVariable.getName()) == update.getAssignmentMapping().end()) {
-//                    // Multiply identity matrix
-//                    updateDd = updateDd * generationInfo.variableToIdentityDecisionDiagramMap.at(booleanVariable.getName());
-//                }
-//            }
-//            
-//            // All unused global integer variables do not change
-//            for (uint_fast64_t i = 0; i < generationInfo.program.getGlobalIntegerVariables().size(); ++i) {
-//                storm::prism::IntegerVariable const& integerVariable = generationInfo.program.getGlobalIntegerVariables().at(i);
-//                if (update.getAssignmentMapping().find(integerVariable.getName()) == update.getAssignmentMapping().end()) {
-//                    // Multiply identity matrix
-//                    updateDd = updateDd * generationInfo.variableToIdentityDecisionDiagramMap.at(integerVariable.getName());
-//                }
-//            }
+            // This works under the assumption that global variables are only written in non-synchronzing commands, but
+            // is not checked here.
+            for (auto const& booleanVariable : generationInfo.program.getGlobalBooleanVariables()) {
+                storm::expressions::Variable const& metaVariable = generationInfo.variableToRowMetaVariableMap.at(booleanVariable.getExpressionVariable());
+
+                if (assignedVariables.find(metaVariable) == assignedVariables.end()) {
+                    STORM_LOG_TRACE("Multiplying identity of variable " << booleanVariable.getName());
+                    updateDd *= generationInfo.variableToIdentityMap.at(booleanVariable.getExpressionVariable());
+                }
+            }
+            
+            // All unused global integer variables do not change
+            for (auto const& integerVariable : generationInfo.program.getGlobalIntegerVariables()) {
+                storm::expressions::Variable const& metaVariable = generationInfo.variableToRowMetaVariableMap.at(integerVariable.getExpressionVariable());
+                if (assignedVariables.find(metaVariable) == assignedVariables.end()) {
+                    STORM_LOG_TRACE("Multiplying identity of variable " << integerVariable.getName());
+                    updateDd *= generationInfo.variableToIdentityMap.at(integerVariable.getExpressionVariable());
+                }
+            }
             
             // All unassigned boolean variables need to keep their value.
             for (storm::prism::BooleanVariable const& booleanVariable : module.getBooleanVariables()) {
@@ -140,6 +142,7 @@ namespace storm {
                     commandDd += updateDd;
                 }
                 
+                (guardDd * commandDd).exportToDot(module.getName() + "_" + command.getActionName() + ".dot");
                 return ActionDecisionDiagram(guardDd, guardDd * commandDd);
             } else {
                 return ActionDecisionDiagram(*generationInfo.manager);
@@ -152,14 +155,26 @@ namespace storm {
             for (storm::prism::Command const& command : module.getCommands()) {
                 
                 // Determine whether the command is relevant for the selected action.
-                bool relevant = (!synchronizationActionIndex && !command.isLabeled()) || (synchronizationActionIndex && command.getActionIndex() == synchronizationActionIndex.get());
+                bool relevant = (!synchronizationActionIndex && !command.isLabeled()) || (synchronizationActionIndex && command.isLabeled() && command.getActionIndex() == synchronizationActionIndex.get());
                 
                 if (!relevant) {
                     continue;
                 }
                 
+                if (synchronizationActionIndex) {
+                    std::cout << command << " is relevant for synch " << synchronizationActionIndex.get() << std::endl;
+                }
+                
                 // At this point, the command is known to be relevant for the action.
                 commandDds.push_back(createCommandDecisionDiagram(generationInfo, module, command));
+            }
+            
+            if (synchronizationActionIndex && synchronizationActionIndex.get() == 0) {
+                int i = 0;
+                for (auto const& commandDd : commandDds) {
+                    commandDd.transitionsDd.exportToDot("cmd_" + std::to_string(i) + ".dot");
+                    ++i;
+                }
             }
             
             ActionDecisionDiagram result(*generationInfo.manager);
@@ -318,6 +333,9 @@ namespace storm {
             storm::dd::Dd<Type> action1Extended = action1.transitionsDd * identityDd2;
             storm::dd::Dd<Type> action2Extended = action2.transitionsDd * identityDd1;
 
+            action1.transitionsDd.exportToDot("act1.dot");
+            action2.transitionsDd.exportToDot("act2.dot");
+            
             if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::DTMC) {
                 return ActionDecisionDiagram(action1.guardDd + action2.guardDd, action1Extended + action2Extended, 0);
             } else if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::MDP) {
@@ -329,24 +347,28 @@ namespace storm {
                 
                 // Bring both choices to the same number of variables that encode the nondeterminism.
                 uint_fast64_t numberOfUsedNondeterminismVariables = std::max(action1.numberOfUsedNondeterminismVariables, action2.numberOfUsedNondeterminismVariables);
+                std::cout << "max used nondet: " << numberOfUsedNondeterminismVariables << std::endl;
                 if (action1.numberOfUsedNondeterminismVariables > action2.numberOfUsedNondeterminismVariables) {
                     storm::dd::Dd<Type> nondeterminisimEncoding = generationInfo.manager->getOne();
                     
-                    for (uint_fast64_t i = action2.numberOfUsedNondeterminismVariables + 1; i <= action1.numberOfUsedNondeterminismVariables; ++i) {
+                    for (uint_fast64_t i = action2.numberOfUsedNondeterminismVariables; i < action1.numberOfUsedNondeterminismVariables; ++i) {
                         nondeterminisimEncoding *= generationInfo.manager->getEncoding(generationInfo.nondeterminismMetaVariables[i], 0);
                     }
                     action2Extended *= nondeterminisimEncoding;
                 } else if (action2.numberOfUsedNondeterminismVariables > action1.numberOfUsedNondeterminismVariables) {
                     storm::dd::Dd<Type> nondeterminisimEncoding = generationInfo.manager->getOne();
                     
-                    for (uint_fast64_t i = action1.numberOfUsedNondeterminismVariables + 1; i <= action2.numberOfUsedNondeterminismVariables; ++i) {
+                    for (uint_fast64_t i = action1.numberOfUsedNondeterminismVariables; i < action2.numberOfUsedNondeterminismVariables; ++i) {
                         nondeterminisimEncoding *= generationInfo.manager->getEncoding(generationInfo.nondeterminismMetaVariables[i], 0);
                     }
                     action1Extended *= nondeterminisimEncoding;
                 }
                 
+                action1Extended.exportToDot("act1ext.dot");
+                action2Extended.exportToDot("act2ext.dot");
+                
                 // Add a new variable that resolves the nondeterminism between the two choices.
-                storm::dd::Dd<Type> combinedTransitions = generationInfo.manager->getEncoding(generationInfo.nondeterminismMetaVariables[numberOfUsedNondeterminismVariables + 1], 1).ite(action2Extended, action1Extended);
+                storm::dd::Dd<Type> combinedTransitions = generationInfo.manager->getEncoding(generationInfo.nondeterminismMetaVariables[numberOfUsedNondeterminismVariables], 1).ite(action2Extended, action1Extended);
                 
                 return ActionDecisionDiagram(action1.guardDd || action2.guardDd, combinedTransitions, numberOfUsedNondeterminismVariables + 1);
             } else {
@@ -358,15 +380,18 @@ namespace storm {
         typename DdPrismModelBuilder<Type>::ModuleDecisionDiagram DdPrismModelBuilder<Type>::createModuleDecisionDiagram(GenerationInformation& generationInfo, storm::prism::Module const& module, std::map<uint_fast64_t, uint_fast64_t> const& synchronizingActionToOffsetMap) {
             // Start by creating the action DD for the independent action.
             ActionDecisionDiagram independentActionDd = createActionDecisionDiagram(generationInfo, module, boost::optional<uint_fast64_t>(), 0);
+            uint_fast64_t numberOfUsedNondeterminismVariables = independentActionDd.numberOfUsedNondeterminismVariables;
             
             // Create module DD for all synchronizing actions of the module.
             std::map<uint_fast64_t, ActionDecisionDiagram> actionIndexToDdMap;
             for (auto const& actionIndex : module.getActionIndices()) {
                 STORM_LOG_TRACE("Creating DD for action '" << actionIndex << "'.");
-                actionIndexToDdMap.emplace(actionIndex, createActionDecisionDiagram(generationInfo, module, actionIndex, synchronizingActionToOffsetMap.at(actionIndex)));
+                ActionDecisionDiagram tmp = createActionDecisionDiagram(generationInfo, module, actionIndex, synchronizingActionToOffsetMap.at(actionIndex));
+                numberOfUsedNondeterminismVariables = std::max(numberOfUsedNondeterminismVariables, tmp.numberOfUsedNondeterminismVariables);
+                actionIndexToDdMap.emplace(actionIndex, tmp);
             }
             
-            return ModuleDecisionDiagram(independentActionDd, actionIndexToDdMap, generationInfo.moduleToIdentityMap.at(module.getName()));
+            return ModuleDecisionDiagram(independentActionDd, actionIndexToDdMap, generationInfo.moduleToIdentityMap.at(module.getName()), numberOfUsedNondeterminismVariables);
         }
         
         template <storm::dd::DdType Type>
@@ -375,17 +400,15 @@ namespace storm {
             if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::MDP) {
                 storm::dd::Dd<Type> result = generationInfo.manager->getZero();
                 
-                // First, determine the maximal variable index that is used.
-                uint_fast64_t numberOfUsedNondeterminismVariables = module.independentAction.numberOfUsedNondeterminismVariables;
-                for (auto const& synchronizingAction : module.synchronizingActionToDecisionDiagramMap) {
-                    numberOfUsedNondeterminismVariables = std::max(numberOfUsedNondeterminismVariables, synchronizingAction.second.numberOfUsedNondeterminismVariables);
-                }
+                // First, determine the highest number of nondeterminism variables that is used in any action and make
+                // all actions use the same amout of nondeterminism variables.
+                uint_fast64_t numberOfUsedNondeterminismVariables = module.numberOfUsedNondeterminismVariables;
+                std::cout << "pumping number of used nondet variables to " << numberOfUsedNondeterminismVariables << std::endl;
 
-                // Now make all actions use the same amount of nondeterminism variables.
-                
                 // Add variables to independent action DD.
                 storm::dd::Dd<Type> nondeterminismEncoding = generationInfo.manager->getOne();
-                for (uint_fast64_t i = module.independentAction.numberOfUsedNondeterminismVariables + 1; i <= numberOfUsedNondeterminismVariables; ++i) {
+                for (uint_fast64_t i = module.independentAction.numberOfUsedNondeterminismVariables; i < numberOfUsedNondeterminismVariables; ++i) {
+                    std::cout << "adding " << i << " to independent" << std::endl;
                     nondeterminismEncoding *= generationInfo.manager->getEncoding(generationInfo.nondeterminismMetaVariables[i], 0);
                 }
                 result = module.independentAction.transitionsDd * nondeterminismEncoding;
@@ -394,7 +417,7 @@ namespace storm {
                 std::map<uint_fast64_t, storm::dd::Dd<Type>> synchronizingActionToDdMap;
                 for (auto const& synchronizingAction : module.synchronizingActionToDecisionDiagramMap) {
                     nondeterminismEncoding = generationInfo.manager->getOne();
-                    for (uint_fast64_t i = synchronizingAction.second.numberOfUsedNondeterminismVariables + 1; i <= numberOfUsedNondeterminismVariables; ++i) {
+                    for (uint_fast64_t i = synchronizingAction.second.numberOfUsedNondeterminismVariables; i < numberOfUsedNondeterminismVariables; ++i) {
                         nondeterminismEncoding *= generationInfo.manager->getEncoding(generationInfo.nondeterminismMetaVariables[i], 0);
                     }
                     synchronizingActionToDdMap.emplace(synchronizingAction.first, synchronizingAction.second.transitionsDd * nondeterminismEncoding);
@@ -422,8 +445,9 @@ namespace storm {
                 }
                 
                 // Now, we can simply add all synchronizing actions to the result.
-                for (auto const& synchronizingAction : module.synchronizingActionToDecisionDiagramMap) {
-                    result += synchronizingAction.second.transitionsDd;
+                for (auto const& synchronizingAction : synchronizingActionToDdMap) {
+                    synchronizingAction.second.exportToDot("synch" + std::to_string(synchronizingAction.first) + ".dot");
+                    result += synchronizingAction.second;
                 }
 
                 return result;
@@ -466,7 +490,9 @@ namespace storm {
                 ModuleDecisionDiagram nextModule = createModuleDecisionDiagram(generationInfo, currentModule, synchronizingActionToOffsetMap);
                 
                 // Combine the non-synchronizing action.
+                uint_fast64_t numberOfUsedNondeterminismVariables = nextModule.numberOfUsedNondeterminismVariables;
                 system.independentAction = combineUnsynchronizedActions(generationInfo, system.independentAction, nextModule.independentAction, system.identity, nextModule.identity);
+                numberOfUsedNondeterminismVariables = std::max(numberOfUsedNondeterminismVariables, system.independentAction.numberOfUsedNondeterminismVariables);
                 
                 // For all synchronizing actions that the next module does not have, we need to multiply the identity of the next module.
                 for (auto& action : system.synchronizingActionToDecisionDiagramMap) {
@@ -479,13 +505,19 @@ namespace storm {
                 for (auto const& actionIndex : currentModule.getActionIndices()) {
                     if (system.hasSynchronizingAction(actionIndex)) {
                         system.synchronizingActionToDecisionDiagramMap[actionIndex] = combineSynchronizingActions(generationInfo, system.synchronizingActionToDecisionDiagramMap[actionIndex], nextModule.synchronizingActionToDecisionDiagramMap[actionIndex]);
+                        numberOfUsedNondeterminismVariables = std::max(numberOfUsedNondeterminismVariables, system.synchronizingActionToDecisionDiagramMap[actionIndex].numberOfUsedNondeterminismVariables);
                     } else {
                         system.synchronizingActionToDecisionDiagramMap[actionIndex] = combineUnsynchronizedActions(generationInfo, ActionDecisionDiagram(*generationInfo.manager), nextModule.synchronizingActionToDecisionDiagramMap[actionIndex], system.identity, nextModule.identity);
+                        numberOfUsedNondeterminismVariables = std::max(numberOfUsedNondeterminismVariables, system.synchronizingActionToDecisionDiagramMap[actionIndex].numberOfUsedNondeterminismVariables);
                     }
                 }
                 
                 // Combine identity matrices.
                 system.identity = system.identity * nextModule.identity;
+                
+                // Keep track of the number of nondeterminism variables used.
+                std::cout << "num used: " << numberOfUsedNondeterminismVariables << std::endl;
+                system.numberOfUsedNondeterminismVariables = std::max(system.numberOfUsedNondeterminismVariables, numberOfUsedNondeterminismVariables);
             }
             
             storm::dd::Dd<Type> result = createSystemFromModule(generationInfo, system);
@@ -493,6 +525,15 @@ namespace storm {
             // For DTMCs, we normalize each row to 1 (to account for non-determinism).
             if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::DTMC) {
                 result = result / result.sumAbstract(generationInfo.columnMetaVariables);
+            } else if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::MDP) {
+                // For MDPs, we need to throw away the nondeterminism variables from the generation information that
+                // were never used.
+                std::cout << "System uses " << system.numberOfUsedNondeterminismVariables << "nd vars" << std::endl;
+                for (uint_fast64_t index = system.numberOfUsedNondeterminismVariables; index < generationInfo.nondeterminismMetaVariables.size(); ++index) {
+                    std::cout << "removing " << generationInfo.nondeterminismMetaVariables[index].getName() << std::endl;
+                    generationInfo.allNondeterminismVariables.erase(generationInfo.nondeterminismMetaVariables[index]);
+                }
+                generationInfo.nondeterminismMetaVariables.resize(system.numberOfUsedNondeterminismVariables);
             }
             
             return std::make_pair(result, system);
@@ -508,9 +549,24 @@ namespace storm {
                 preparedProgram = program;
             }
             
-            preparedProgram = preparedProgram.substituteConstants();
+            if (preparedProgram.hasUndefinedConstants()) {
+                std::vector<std::reference_wrapper<storm::prism::Constant const>> undefinedConstants = preparedProgram.getUndefinedConstants();
+                std::stringstream stream;
+                bool printComma = false;
+                for (auto const& constant : undefinedConstants) {
+                    if (printComma) {
+                        stream << ", ";
+                    } else {
+                        printComma = true;
+                    }
+                    stream << constant.get().getName() << " (" << constant.get().getType() << ")";
+                }
+                stream << ".";
+                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Program still contains these undefined constants: " + stream.str());
+            }
             
-//            std::cout << "translated prog: " << preparedProgram << std::endl;
+            preparedProgram = preparedProgram.substituteConstants();
+            std::cout << "translated prog: " << preparedProgram << std::endl;
             
             // Start by initializing the structure used for storing all information needed during the model generation.
             // In particular, this creates the meta variables used to encode the model.
@@ -519,33 +575,55 @@ namespace storm {
             auto clock = std::chrono::high_resolution_clock::now();
             std::pair<storm::dd::Dd<Type>, ModuleDecisionDiagram> transitionMatrixModulePair = createSystemDecisionDiagram(generationInfo);
             storm::dd::Dd<Type> transitionMatrix = transitionMatrixModulePair.first;
+            transitionMatrix.exportToDot("trans.dot");
             ModuleDecisionDiagram const& globalModule = transitionMatrixModulePair.second;
             
             // Cut the transition matrix to the reachable fragment of the state space.
             storm::dd::Dd<Type> reachableStates = computeReachableStates(generationInfo, createInitialStatesDecisionDiagram(generationInfo), transitionMatrix);
             transitionMatrix *= reachableStates;
+            reachableStates.exportToDot("reach.dot");
 
             // Detect deadlocks and 1) fix them if requested 2) throw an error otherwise.
             storm::dd::Dd<Type> statesWithTransition = transitionMatrix.notZero();
             if (program.getModelType() == storm::prism::Program::ModelType::MDP) {
-                statesWithTransition.existsAbstract(generationInfo.allNondeterminismVariables);
+                statesWithTransition = statesWithTransition.existsAbstract(generationInfo.allNondeterminismVariables);
+                statesWithTransition.exportToDot("after_exists.dot");
             }
             statesWithTransition = statesWithTransition.existsAbstract(generationInfo.columnMetaVariables);
             storm::dd::Dd<Type> deadlockStates = reachableStates * !statesWithTransition;
+            deadlockStates.exportToDot("deadlocks.dot");
 
-            if (!deadlockStates.isZero()) {
-                // If we need to fix deadlocks, we do so now.
-                if (!storm::settings::generalSettings().isDontFixDeadlocksSet()) {
-                    STORM_LOG_WARN("Fixing deadlocks in " << deadlockStates.getNonZeroCount() << " states.");
-                    
-                    // FIXME: For MDPs, we need to use an action encoding if we do not want to attach a lot of self-loops.
-                    transitionMatrix += deadlockStates * globalModule.identity;
-                } else {
-                    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The model contains " << deadlockStates.getNonZeroCount() << " deadlock states. Please unset the option to not fix deadlocks, if you want to fix them automatically.");
-                }
+//            if (!deadlockStates.isZero()) {
+//                // If we need to fix deadlocks, we do so now.
+//                if (!storm::settings::generalSettings().isDontFixDeadlocksSet()) {
+//                    std::cout << "fixing " << deadlockStates.getNonZeroCount() << std::endl;
+//                    STORM_LOG_WARN("Fixing deadlocks in " << deadlockStates.getNonZeroCount() << " states.");
+//
+//                    if (program.getModelType() == storm::prism::Program::ModelType::DTMC) {
+//                        // For DTMCs, we can simply add the identity of the global module for all deadlock states.
+//                        transitionMatrix += deadlockStates * globalModule.identity;
+//                    } else if (program.getModelType() == storm::prism::Program::ModelType::MDP) {
+//                        // For MDPs, however, we need to select an action associated with the self-loop, if we do not
+//                        // want to attach a lot of self-loops to the deadlock states.
+//                        storm::dd::Dd<Type> action = generationInfo.manager->getOne();
+//                        std::for_each(generationInfo.allNondeterminismVariables.begin(), generationInfo.allNondeterminismVariables.end(), [&action,&generationInfo] (storm::expressions::Variable const& metaVariable) { action *= !generationInfo.manager->getIdentity(metaVariable); } );
+//                        transitionMatrix += deadlockStates * globalModule.identity * action;
+//                        (deadlockStates * globalModule.identity * action).exportToDot("selfloops.dot");
+//                    }
+//                } else {
+//                    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The model contains " << deadlockStates.getNonZeroCount() << " deadlock states. Please unset the option to not fix deadlocks, if you want to fix them automatically.");
+//                }
+//            } else {
+//                std::cout << "no deadlocks" << std::endl;
+//            }
+            
+            transitionMatrix.exportToDot("trans_reach.dot");
+            for (auto const& var : transitionMatrix.getContainedMetaVariables()) {
+                std::cout << "var: " << var.getName() << std::endl;
             }
             
-            return std::make_pair(reachableStates, transitionMatrix * reachableStates);
+            std::cout << reachableStates.getNonZeroCount() << " states and " << transitionMatrix.getNonZeroCount() << " transitions." << std::endl;
+            return std::make_pair(reachableStates, transitionMatrix);
         }
         
         template <storm::dd::DdType Type>
@@ -569,6 +647,7 @@ namespace storm {
                 transitionBdd = transitionBdd.existsAbstract(generationInfo.allNondeterminismVariables);
             }
             
+            transitionBdd.exportToDot("trans01.dot");
             
             // Perform the BFS to discover all reachable states.
             bool changed = true;

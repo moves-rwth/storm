@@ -31,3 +31,31 @@ TEST(ExplicitPrismModelBuilderTest, Dtmc) {
     EXPECT_EQ(1728, model->getNumberOfStates());
     EXPECT_EQ(2505, model->getNumberOfTransitions());
 }
+
+TEST(ExplicitPrismModelBuilderTest, Mdp) {
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/two_dice.nm");
+    
+    std::unique_ptr<storm::models::AbstractModel<double>> model = storm::builder::ExplicitPrismModelBuilder<double>::translateProgram(program);
+    EXPECT_EQ(169, model->getNumberOfStates());
+    EXPECT_EQ(436, model->getNumberOfTransitions());
+    
+    program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/leader3.nm");
+    model = storm::builder::ExplicitPrismModelBuilder<double>::translateProgram(program);
+    EXPECT_EQ(364, model->getNumberOfStates());
+    EXPECT_EQ(654, model->getNumberOfTransitions());
+    
+    program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/coin2-2.nm");
+    model = storm::builder::ExplicitPrismModelBuilder<double>::translateProgram(program);
+    EXPECT_EQ(272, model->getNumberOfStates());
+    EXPECT_EQ(492, model->getNumberOfTransitions());
+
+    program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/csma2-2.nm");
+    model = storm::builder::ExplicitPrismModelBuilder<double>::translateProgram(program);
+    EXPECT_EQ(1038, model->getNumberOfStates());
+    EXPECT_EQ(1282, model->getNumberOfTransitions());
+    
+    program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/firewire3-0.5.nm");
+    model = storm::builder::ExplicitPrismModelBuilder<double>::translateProgram(program);
+    EXPECT_EQ(4093, model->getNumberOfStates());
+    EXPECT_EQ(5585, model->getNumberOfTransitions());
+}

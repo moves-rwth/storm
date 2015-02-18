@@ -48,6 +48,21 @@ namespace storm {
             return labeled;
         }
         
+        bool Command::containsVariablesOnlyInUpdateProbabilities(std::set<storm::expressions::Variable> const& undefinedConstantVariables) const {
+            if (this->getGuardExpression().containsVariable(undefinedConstantVariables)) {
+                return false;
+            }
+            for (auto const& update : this->getUpdates()) {
+                for (auto const& assignment : update.getAssignments()) {
+                    if (assignment.getExpression().containsVariable(undefinedConstantVariables)) {
+                        return false;
+                    }
+                }
+            }
+            
+            return true;
+        }
+        
         std::ostream& operator<<(std::ostream& stream, Command const& command) {
             stream << "[" << command.getActionName() << "] " << command.getGuardExpression() << " -> ";
             for (uint_fast64_t i = 0; i < command.getUpdates().size(); ++i) {

@@ -170,6 +170,31 @@ namespace storm {
             return Module(this->getName(), newBooleanVariables, newIntegerVariables, newCommands, this->getFilename(), this->getLineNumber());
         }
         
+        bool Module::containsVariablesOnlyInUpdateProbabilities(std::set<storm::expressions::Variable> const& undefinedConstantVariables) const {
+            for (auto const& booleanVariable : this->getBooleanVariables()) {
+                if (booleanVariable.getInitialValueExpression().containsVariable(undefinedConstantVariables)) {
+                    return false;
+                }
+            }
+            for (auto const& integerVariable : this->getIntegerVariables()) {
+                if (integerVariable.getInitialValueExpression().containsVariable(undefinedConstantVariables)) {
+                    return false;
+                }
+                if (integerVariable.getLowerBoundExpression().containsVariable(undefinedConstantVariables)) {
+                    return false;
+                }
+                if (integerVariable.getUpperBoundExpression().containsVariable(undefinedConstantVariables)) {
+                    return false;
+                }
+            }
+            
+            for (auto const& command : this->getCommands()) {
+                command.containsVariablesOnlyInUpdateProbabilities(undefinedConstantVariables);
+            }
+            
+            return true;
+        }
+        
         std::ostream& operator<<(std::ostream& stream, Module const& module) {
             stream << "module " << module.getName() << std::endl;
             for (auto const& booleanVariable : module.getBooleanVariables()) {

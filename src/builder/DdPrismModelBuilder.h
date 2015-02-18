@@ -91,15 +91,15 @@ namespace storm {
             
             // This structure holds all decision diagrams related to a module.
             struct ModuleDecisionDiagram {
-                ModuleDecisionDiagram() : independentAction(), synchronizingActionToDecisionDiagramMap(), identity() {
+                ModuleDecisionDiagram() : independentAction(), synchronizingActionToDecisionDiagramMap(), identity(), numberOfUsedNondeterminismVariables(0) {
                     // Intentionally left empty.
                 }
                 
-                ModuleDecisionDiagram(storm::dd::DdManager<Type> const& manager) : independentAction(manager), synchronizingActionToDecisionDiagramMap(), identity(manager.getZero()) {
+                ModuleDecisionDiagram(storm::dd::DdManager<Type> const& manager) : independentAction(manager), synchronizingActionToDecisionDiagramMap(), identity(manager.getZero()), numberOfUsedNondeterminismVariables(0) {
                     // Intentionally left empty.
                 }
 
-                ModuleDecisionDiagram(ActionDecisionDiagram const& independentAction, std::map<uint_fast64_t, ActionDecisionDiagram> const& synchronizingActionToDecisionDiagramMap, storm::dd::Dd<Type> const& identity) : independentAction(independentAction), synchronizingActionToDecisionDiagramMap(synchronizingActionToDecisionDiagramMap), identity(identity) {
+                ModuleDecisionDiagram(ActionDecisionDiagram const& independentAction, std::map<uint_fast64_t, ActionDecisionDiagram> const& synchronizingActionToDecisionDiagramMap, storm::dd::Dd<Type> const& identity, uint_fast64_t numberOfUsedNondeterminismVariables = 0) : independentAction(independentAction), synchronizingActionToDecisionDiagramMap(synchronizingActionToDecisionDiagramMap), identity(identity), numberOfUsedNondeterminismVariables(numberOfUsedNondeterminismVariables) {
                     // Intentionally left empty.
                 }
                 
@@ -118,6 +118,9 @@ namespace storm {
                 
                 // A decision diagram that represents the identity of this module.
                 storm::dd::Dd<Type> identity;
+                
+                // The number of variables encoding the nondeterminism that were actually used.
+                uint_fast64_t numberOfUsedNondeterminismVariables;
             };
             
             /*!
@@ -177,8 +180,8 @@ namespace storm {
                  */
                 void createMetaVariablesAndIdentities() {
                     // Add synchronization variables.
-                    for (uint_fast64_t i = 0; i < program.getActionIndices().size(); ++i) {
-                        std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair = manager->addMetaVariable("sync" + std::to_string(i));
+                    for (auto const& actionIndex : program.getActionIndices()) {
+                        std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair = manager->addMetaVariable(program.getActionName(actionIndex));
                         synchronizationMetaVariables.push_back(variablePair.first);
                         allNondeterminismVariables.insert(variablePair.first);
                     }
@@ -209,7 +212,8 @@ namespace storm {
                         storm::dd::Dd<Type> variableIdentity = manager->getIdentity(variablePair.first).equals(manager->getIdentity(variablePair.second)) * manager->getRange(variablePair.first);
                         variableToIdentityMap.emplace(integerVariable.getExpressionVariable(), variableIdentity);
                         rowColumnMetaVariablePairs.push_back(variablePair);
-                    }                    for (storm::prism::BooleanVariable const& booleanVariable : program.getGlobalBooleanVariables()) {
+                    }
+                    for (storm::prism::BooleanVariable const& booleanVariable : program.getGlobalBooleanVariables()) {
                         std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair = manager->addMetaVariable(booleanVariable.getName());
                         
                         rowMetaVariables.insert(variablePair.first);

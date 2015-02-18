@@ -53,6 +53,9 @@ log4cplus::Logger printer;
 #include "src/builder/ExplicitPrismModelBuilder.h"
 #include "src/builder/DdPrismModelBuilder.h"
 
+// Headers for DD-related classes.
+#include "src/storage/dd/CuddDd.h"
+
 // Headers for model processing.
 #include "src/storage/NaiveDeterministicModelBisimulationDecomposition.h"
 #include "src/storage/DeterministicModelBisimulationDecomposition.h"
