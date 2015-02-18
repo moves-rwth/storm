@@ -60,4 +60,9 @@ TEST(DdPrismModelBuilderTest, Mdp) {
     model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program);
     EXPECT_EQ(4093, model.first.getNonZeroCount());
     EXPECT_EQ(5585, model.second.getNonZeroCount());
+
+    program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/wlan0-2-2.nm");
+    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program);
+    EXPECT_EQ(37, model.first.getNonZeroCount());
+    EXPECT_EQ(59, model.second.getNonZeroCount());
 }

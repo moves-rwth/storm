@@ -58,4 +58,9 @@ TEST(ExplicitPrismModelBuilderTest, Mdp) {
     model = storm::builder::ExplicitPrismModelBuilder<double>::translateProgram(program);
     EXPECT_EQ(4093, model->getNumberOfStates());
     EXPECT_EQ(5585, model->getNumberOfTransitions());
+    
+    program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/wlan0-2-2.nm");
+    model = storm::builder::ExplicitPrismModelBuilder<double>::translateProgram(program);
+    EXPECT_EQ(37, model->getNumberOfStates());
+    EXPECT_EQ(59, model->getNumberOfTransitions());
 }
