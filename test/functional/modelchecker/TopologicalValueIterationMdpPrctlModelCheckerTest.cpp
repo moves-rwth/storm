@@ -110,7 +110,7 @@ TEST(TopologicalValueIterationMdpPrctlModelCheckerTest, Dice) {
     
 	result = mc.check(*rewardFormula);
 
-#ifdef STORM_HAVE_CUDAFORSTORM
+#ifdef STORM_HAVE_CUDA
 	ASSERT_LT(std::abs(result->asExplicitQuantitativeCheckResult<double>()[0] - 7.333329499),
 		storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
 #else
@@ -126,7 +126,7 @@ TEST(TopologicalValueIterationMdpPrctlModelCheckerTest, Dice) {
 
 	result = mc.check(*rewardFormula);
 
-#ifdef STORM_HAVE_CUDAFORSTORM
+#ifdef STORM_HAVE_CUDA
 	ASSERT_LT(std::abs(result->asExplicitQuantitativeCheckResult<double>()[0] - 7.333329499),
 		storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
 #else
@@ -147,7 +147,7 @@ TEST(TopologicalValueIterationMdpPrctlModelCheckerTest, Dice) {
 
 	result = stateRewardModelChecker.check(*rewardFormula);
 
-#ifdef STORM_HAVE_CUDAFORSTORM
+#ifdef STORM_HAVE_CUDA
 	ASSERT_LT(std::abs(result->asExplicitQuantitativeCheckResult<double>()[0] - 7.333329499),
 		storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
 #else
@@ -162,7 +162,7 @@ TEST(TopologicalValueIterationMdpPrctlModelCheckerTest, Dice) {
 
 	result = stateRewardModelChecker.check(*rewardFormula);
 
-#ifdef STORM_HAVE_CUDAFORSTORM
+#ifdef STORM_HAVE_CUDA
 	ASSERT_LT(std::abs(result->asExplicitQuantitativeCheckResult<double>()[0] - 7.333329499),
 		storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
 #else
@@ -183,7 +183,7 @@ TEST(TopologicalValueIterationMdpPrctlModelCheckerTest, Dice) {
 
 	result = stateAndTransitionRewardModelChecker.check(*rewardFormula);
 
-#ifdef STORM_HAVE_CUDAFORSTORM
+#ifdef STORM_HAVE_CUDA
 	ASSERT_LT(std::abs(result->asExplicitQuantitativeCheckResult<double>()[0] - 14.666658998),
 		storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
 #else
@@ -198,7 +198,7 @@ TEST(TopologicalValueIterationMdpPrctlModelCheckerTest, Dice) {
 
 	result = stateAndTransitionRewardModelChecker.check(*rewardFormula);
 
-#ifdef STORM_HAVE_CUDAFORSTORM
+#ifdef STORM_HAVE_CUDA
 	ASSERT_LT(std::abs(result->asExplicitQuantitativeCheckResult<double>()[0] - 14.666658998),
 		storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
 #else
@@ -266,7 +266,7 @@ TEST(TopologicalValueIterationMdpPrctlModelCheckerTest, AsynchronousLeader) {
 
 	result = mc.check(*rewardFormula);
 
-#ifdef STORM_HAVE_CUDAFORSTORM
+#ifdef STORM_HAVE_CUDA
 	ASSERT_LT(std::abs(result->asExplicitQuantitativeCheckResult<double>()[0] - 4.285689611),
 		storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
 #else
@@ -282,7 +282,7 @@ TEST(TopologicalValueIterationMdpPrctlModelCheckerTest, AsynchronousLeader) {
 
 	result = mc.check(*rewardFormula);
 
-#ifdef STORM_HAVE_CUDAFORSTORM
+#ifdef STORM_HAVE_CUDA
 	ASSERT_LT(std::abs(result->asExplicitQuantitativeCheckResult<double>()[0] - 4.285689611),
 		storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
 #else

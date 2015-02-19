@@ -16,7 +16,7 @@
 extern log4cplus::Logger logger;
 
 #include "storm-config.h"
-#ifdef STORM_HAVE_CUDAFORSTORM
+#ifdef STORM_HAVE_CUDA
 #	include "cudaForStorm.h"
 #endif
 
@@ -84,7 +84,7 @@ namespace storm {
 			std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = A.getRowGroupIndices();
 			
 			// Check if the decomposition is necessary
-#ifdef STORM_HAVE_CUDAFORSTORM
+#ifdef STORM_HAVE_CUDA
 #define __USE_CUDAFORSTORM_OPT true
 			size_t const gpuSizeOfCompleteSystem = basicValueIteration_mvReduce_uint64_double_calculateMemorySize(static_cast<size_t>(A.getRowCount()), nondeterministicChoiceIndices.size(), static_cast<size_t>(A.getEntryCount()));
 			size_t const cudaFreeMemory = static_cast<size_t>(getFreeCudaMemory() * 0.95);
@@ -98,7 +98,7 @@ namespace storm {
 				// Dummy output for SCC Times
 				//std::cout << "Computing the SCC Decomposition took 0ms" << std::endl;
 
-#ifdef STORM_HAVE_CUDAFORSTORM
+#ifdef STORM_HAVE_CUDA
 				if (!resetCudaDevice()) {
 					LOG4CPLUS_ERROR(logger, "Could not reset CUDA Device, can not use CUDA Equation Solver.");
 					throw storm::exceptions::InvalidStateException() << "Could not reset CUDA Device, can not use CUDA Equation Solver.";
@@ -108,9 +108,9 @@ namespace storm {
 				bool result = false;
 				size_t globalIterations = 0;
 				if (minimize) {
-					result = __basicValueIteration_mvReduce_uint64_minimize<ValueType>(this->maximalNumberOfIterations, this->precision, this->relative, A.rowIndications, A.columnsAndValues, x, b, nondeterministicChoiceIndices, globalIterations);
+					result = __basicValueIteration_mvReduce_minimize<uint_fast64_t, ValueType>(this->maximalNumberOfIterations, this->precision, this->relative, A.rowIndications, A.columnsAndValues, x, b, nondeterministicChoiceIndices, globalIterations);
 				} else {
-					result = __basicValueIteration_mvReduce_uint64_maximize<ValueType>(this->maximalNumberOfIterations, this->precision, this->relative, A.rowIndications, A.columnsAndValues, x, b, nondeterministicChoiceIndices, globalIterations);
+					result = __basicValueIteration_mvReduce_maximize<uint_fast64_t, ValueType>(this->maximalNumberOfIterations, this->precision, this->relative, A.rowIndications, A.columnsAndValues, x, b, nondeterministicChoiceIndices, globalIterations);
 				}
 				LOG4CPLUS_INFO(logger, "Executed " << globalIterations << " of max. " << maximalNumberOfIterations << " Iterations on GPU.");
 
@@ -217,7 +217,7 @@ namespace storm {
 
 					// For the current SCC, we need to perform value iteration until convergence.
 					if (useGpu) {
-#ifdef STORM_HAVE_CUDAFORSTORM
+#ifdef STORM_HAVE_CUDA
 						if (!resetCudaDevice()) {
 							LOG4CPLUS_ERROR(logger, "Could not reset CUDA Device, can not use CUDA Equation Solver.");
 							throw storm::exceptions::InvalidStateException() << "Could not reset CUDA Device, can not use CUDA Equation Solver.";
@@ -230,9 +230,9 @@ namespace storm {
 						bool result = false;
 						localIterations = 0;
 						if (minimize) {
-							result = __basicValueIteration_mvReduce_uint64_minimize<ValueType>(this->maximalNumberOfIterations, this->precision, this->relative, sccSubmatrix.rowIndications, sccSubmatrix.columnsAndValues, *currentX, sccSubB, sccSubNondeterministicChoiceIndices, localIterations);
+							result = __basicValueIteration_mvReduce_minimize<uint_fast64_t, ValueType>(this->maximalNumberOfIterations, this->precision, this->relative, sccSubmatrix.rowIndications, sccSubmatrix.columnsAndValues, *currentX, sccSubB, sccSubNondeterministicChoiceIndices, localIterations);
 						} else {
-							result = __basicValueIteration_mvReduce_uint64_maximize<ValueType>(this->maximalNumberOfIterations, this->precision, this->relative, sccSubmatrix.rowIndications, sccSubmatrix.columnsAndValues, *currentX, sccSubB, sccSubNondeterministicChoiceIndices, localIterations);
+							result = __basicValueIteration_mvReduce_maximize<uint_fast64_t, ValueType>(this->maximalNumberOfIterations, this->precision, this->relative, sccSubmatrix.rowIndications, sccSubmatrix.columnsAndValues, *currentX, sccSubB, sccSubNondeterministicChoiceIndices, localIterations);
 						}
 						LOG4CPLUS_INFO(logger, "Executed " << localIterations << " of max. " << maximalNumberOfIterations << " Iterations on GPU.");
 
@@ -284,7 +284,7 @@ namespace storm {
 							// TODO: It seems that the equalModuloPrecision call that compares all values should have a higher
 							// running time. In fact, it is faster. This has to be investigated.
 							// converged = storm::utility::equalModuloPrecision(*currentX, *newX, scc, precision, relative);
-							converged = storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *swap, this->precision, this->relative);
+							converged = storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *swap, static_cast<ValueType>(this->precision), this->relative);
 
 							// Update environment variables.
 							std::swap(currentX, swap);
@@ -332,7 +332,7 @@ namespace storm {
 		std::vector<std::pair<bool, storm::storage::StateBlock>>
 			TopologicalValueIterationNondeterministicLinearEquationSolver<ValueType>::getOptimalGroupingFromTopologicalSccDecomposition(storm::storage::StronglyConnectedComponentDecomposition<ValueType> const& sccDecomposition, std::vector<uint_fast64_t> const& topologicalSort, storm::storage::SparseMatrix<ValueType> const& matrix) const {
 				std::vector<std::pair<bool, storm::storage::StateBlock>> result;
-#ifdef STORM_HAVE_CUDAFORSTORM
+#ifdef STORM_HAVE_CUDA
 				// 95% to have a bit of padding
 				size_t const cudaFreeMemory = static_cast<size_t>(getFreeCudaMemory() * 0.95);
 				size_t lastResultIndex = 0;
@@ -395,7 +395,7 @@ namespace storm {
 									}
 									std::sort(tempGroups.begin(), tempGroups.end());
 								}
-								result.push_back(std::make_pair(true, storm::storage::StateBlock(boost::container::ordered_unique_range, tempGroups.cbegin(), tempGroups.cend())));
+								result.push_back(std::make_pair(true, storm::storage::StateBlock(tempGroups.cbegin(), tempGroups.cend())));
 							} else {
 								// Only one group, copy construct.
 								result.push_back(std::make_pair(true, storm::storage::StateBlock(std::move(sccDecomposition[topologicalSort[startIndex]]))));
@@ -449,7 +449,7 @@ namespace storm {
 							}
 							std::sort(tempGroups.begin(), tempGroups.end());
 						}						
-						result.push_back(std::make_pair(true, storm::storage::StateBlock(boost::container::ordered_unique_range, tempGroups.cbegin(), tempGroups.cend())));
+						result.push_back(std::make_pair(true, storm::storage::StateBlock(tempGroups.cbegin(), tempGroups.cend())));
 					}
 					else {
 						// Only one group, copy construct.

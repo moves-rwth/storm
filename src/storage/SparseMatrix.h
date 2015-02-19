@@ -23,6 +23,10 @@ namespace storm {
 		class EigenAdapter;
 		class StormAdapter;
 	}
+	namespace solver {
+		template<typename T>
+		class TopologicalValueIterationNondeterministicLinearEquationSolver;
+	}
 }
 
 namespace storm {
@@ -273,6 +277,7 @@ namespace storm {
             friend class storm::adapters::GmmxxAdapter;
             friend class storm::adapters::EigenAdapter;
             friend class storm::adapters::StormAdapter;
+			friend class storm::solver::TopologicalValueIterationNondeterministicLinearEquationSolver<ValueType>;
             
             typedef uint_fast64_t index_type;
             typedef ValueType value_type;
@@ -454,6 +459,13 @@ namespace storm {
              */
             index_type getEntryCount() const;
             
+			/*!
+			* Returns the number of entries in the given row group of the matrix.
+			*
+			* @return The number of entries in the given row group of the matrix.
+			*/
+			uint_fast64_t getRowGroupEntryCount(uint_fast64_t const group) const;
+
             /*!
              * Returns the number of nonzero entries in the matrix.
              *

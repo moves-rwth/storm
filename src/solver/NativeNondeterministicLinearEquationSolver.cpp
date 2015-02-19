@@ -66,7 +66,7 @@ namespace storm {
                 }
                 
                 // Determine whether the method converged.
-                converged = storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *newX, precision, relative);
+                converged = storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *newX, static_cast<ValueType>(precision), relative);
                 
                 // Update environment variables.
                 std::swap(currentX, newX);

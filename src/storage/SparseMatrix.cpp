@@ -351,6 +351,15 @@ namespace storm {
             return entryCount;
         }
         
+		template<typename T>
+		uint_fast64_t SparseMatrix<T>::getRowGroupEntryCount(uint_fast64_t const group) const {
+			uint_fast64_t result = 0;
+			for (uint_fast64_t row = this->getRowGroupIndices()[group]; row < this->getRowGroupIndices()[group + 1]; ++row) {
+				result += (this->rowIndications[row + 1] - this->rowIndications[row]);
+			}
+			return result;
+		}
+
         template<typename ValueType>
         typename SparseMatrix<ValueType>::index_type SparseMatrix<ValueType>::getNonzeroEntryCount() const {
             return nonzeroEntryCount;
