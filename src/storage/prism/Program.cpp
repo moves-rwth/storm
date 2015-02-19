@@ -485,7 +485,8 @@ namespace storm {
         void Program::checkValidity() const {
             // Start by checking the constant declarations.
             std::set<storm::expressions::Variable> all;
-            std::set<storm::expressions::Variable> global;
+            std::set<storm::expressions::Variable> allGlobals;
+            std::set<storm::expressions::Variable> globalVariables;
             std::set<storm::expressions::Variable> constants;
             for (auto const& constant : this->getConstants()) {
                 // Check defining expressions of defined constants.
@@ -498,7 +499,7 @@ namespace storm {
                 // Record the new identifier for future checks.
                 constants.insert(constant.getExpressionVariable());
                 all.insert(constant.getExpressionVariable());
-                global.insert(constant.getExpressionVariable());
+                allGlobals.insert(constant.getExpressionVariable());
             }
             
             // Now we check the variable declarations. We start with the global variables.
@@ -512,7 +513,8 @@ namespace storm {
                 // Record the new identifier for future checks.
                 variables.insert(variable.getExpressionVariable());
                 all.insert(variable.getExpressionVariable());
-                global.insert(variable.getExpressionVariable());
+                allGlobals.insert(variable.getExpressionVariable());
+                globalVariables.insert(variable.getExpressionVariable());
             }
             for (auto const& variable : this->getGlobalIntegerVariables()) {
                 // Check that bound expressions of the range.
@@ -532,7 +534,8 @@ namespace storm {
                 // Record the new identifier for future checks.
                 variables.insert(variable.getExpressionVariable());
                 all.insert(variable.getExpressionVariable());
-                global.insert(variable.getExpressionVariable());
+                allGlobals.insert(variable.getExpressionVariable());
+                globalVariables.insert(variable.getExpressionVariable());
             }
 
             // Now go through the variables of the modules.
@@ -574,7 +577,7 @@ namespace storm {
             
             // Check the commands of the modules.
             for (auto const& module : this->getModules()) {
-                std::set<storm::expressions::Variable> legalVariables = global;
+                std::set<storm::expressions::Variable> legalVariables = globalVariables;
                 for (auto const& variable : module.getBooleanVariables()) {
                     legalVariables.insert(variable.getExpressionVariable());
                 }
@@ -599,6 +602,12 @@ namespace storm {
                         std::set<storm::expressions::Variable> alreadyAssignedVariables;
                         for (auto const& assignment : update.getAssignments()) {
                             storm::expressions::Variable assignedVariable = manager->getVariable(assignment.getVariableName());
+
+                            // If the command is labeled, i.e. may synchronize, we need to make sure no global variable is written.
+                            if (command.isLabeled()) {
+                                STORM_LOG_THROW(globalVariables.find(assignedVariable) == globalVariables.end(), storm::exceptions::WrongFormatException, "Error in " << command.getFilename() << ", line " << command.getLineNumber() << ": assignment of (possibly) synchronizing command writes to global variable '" << assignment.getVariableName() << "'.");
+                            }
+
                             if (legalVariables.find(assignedVariable) == legalVariables.end()) {
                                 if (all.find(assignedVariable) != all.end()) {
                                     STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Error in " << command.getFilename() << ", line " << command.getLineNumber() << ": assignment illegally refers to variable '" << assignment.getVariableName() << "'.");
@@ -611,7 +620,7 @@ namespace storm {
                             
                             containedVariables = assignment.getExpression().getVariables();
                             isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedVariables.begin(), containedVariables.end());
-                            STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << command.getFilename() << ", line " << command.getLineNumber() << ": likelihood expression refers to unknown identifiers.");
+                            STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << command.getFilename() << ", line " << command.getLineNumber() << ": assigned expression refers to unknown identifiers.");
                             
                             // Add the current variable to the set of assigned variables (of this update).
                             alreadyAssignedVariables.insert(assignedVariable);
