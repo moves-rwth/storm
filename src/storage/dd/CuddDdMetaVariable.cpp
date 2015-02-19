@@ -3,18 +3,20 @@
 
 namespace storm {
     namespace dd {
-        DdMetaVariable<DdType::CUDD>::DdMetaVariable(std::string const& name, int_fast64_t low, int_fast64_t high, std::vector<Dd<DdType::CUDD>> const& ddVariables, std::shared_ptr<DdManager<DdType::CUDD>> manager) : name(name), type(MetaVariableType::Int), low(low), high(high), ddVariables(ddVariables), cube(manager->getOne()), manager(manager) {
+        DdMetaVariable<DdType::CUDD>::DdMetaVariable(std::string const& name, int_fast64_t low, int_fast64_t high, std::vector<Dd<DdType::CUDD>> const& ddVariables, std::shared_ptr<DdManager<DdType::CUDD>> manager) : name(name), type(MetaVariableType::Int), low(low), high(high), ddVariables(ddVariables), cube(manager->getOne()), cubeAsMtbdd(manager->getOne(true)), manager(manager) {
             // Create the cube of all variables of this meta variable.
             for (auto const& ddVariable : this->ddVariables) {
-                this->cube *= ddVariable;
+                this->cube &= ddVariable;
             }
+            this->cubeAsMtbdd = this->cube.toMtbdd();
         }
         
-        DdMetaVariable<DdType::CUDD>::DdMetaVariable(std::string const& name, std::vector<Dd<DdType::CUDD>> const& ddVariables, std::shared_ptr<DdManager<DdType::CUDD>> manager) : name(name), type(MetaVariableType::Bool), low(0), high(1), ddVariables(ddVariables), cube(manager->getOne()), manager(manager) {
+        DdMetaVariable<DdType::CUDD>::DdMetaVariable(std::string const& name, std::vector<Dd<DdType::CUDD>> const& ddVariables, std::shared_ptr<DdManager<DdType::CUDD>> manager) : name(name), type(MetaVariableType::Bool), low(0), high(1), ddVariables(ddVariables), cube(manager->getOne()), cubeAsMtbdd(manager->getOne(true)), manager(manager) {
             // Create the cube of all variables of this meta variable.
             for (auto const& ddVariable : this->ddVariables) {
-                this->cube *= ddVariable;
+                this->cube &= ddVariable;
             }
+            this->cubeAsMtbdd = this->cube.toMtbdd();
         }
         
         std::string const& DdMetaVariable<DdType::CUDD>::getName() const {
@@ -48,5 +50,10 @@ namespace storm {
         Dd<DdType::CUDD> const& DdMetaVariable<DdType::CUDD>::getCube() const {
             return this->cube;
         }
+
+        Dd<DdType::CUDD> const& DdMetaVariable<DdType::CUDD>::getCubeAsMtbdd() const {
+            return this->cubeAsMtbdd;
+        }
+
     }
 }

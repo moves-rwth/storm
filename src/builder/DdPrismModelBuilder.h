@@ -68,7 +68,7 @@ namespace storm {
                     // Intentionally left empty.
                 }
                 
-                ActionDecisionDiagram(storm::dd::DdManager<Type> const& manager, uint_fast64_t numberOfUsedNondeterminismVariables = 0) : guardDd(manager.getZero()), transitionsDd(manager.getZero()), numberOfUsedNondeterminismVariables(numberOfUsedNondeterminismVariables) {
+                ActionDecisionDiagram(storm::dd::DdManager<Type> const& manager, uint_fast64_t numberOfUsedNondeterminismVariables = 0) : guardDd(manager.getZero(true)), transitionsDd(manager.getZero(true)), numberOfUsedNondeterminismVariables(numberOfUsedNondeterminismVariables) {
                     // Intentionally left empty.
                 }
                 
@@ -95,7 +95,7 @@ namespace storm {
                     // Intentionally left empty.
                 }
                 
-                ModuleDecisionDiagram(storm::dd::DdManager<Type> const& manager) : independentAction(manager), synchronizingActionToDecisionDiagramMap(), identity(manager.getZero()), numberOfUsedNondeterminismVariables(0) {
+                ModuleDecisionDiagram(storm::dd::DdManager<Type> const& manager) : independentAction(manager), synchronizingActionToDecisionDiagramMap(), identity(manager.getZero(true)), numberOfUsedNondeterminismVariables(0) {
                     // Intentionally left empty.
                 }
 
@@ -209,7 +209,7 @@ namespace storm {
                         columnMetaVariables.insert(variablePair.second);
                         variableToColumnMetaVariableMap.emplace(integerVariable.getExpressionVariable(), variablePair.second);
                         
-                        storm::dd::Dd<Type> variableIdentity = manager->getIdentity(variablePair.first).equals(manager->getIdentity(variablePair.second)) * manager->getRange(variablePair.first);
+                        storm::dd::Dd<Type> variableIdentity = manager->getIdentity(variablePair.first).equals(manager->getIdentity(variablePair.second)) * manager->getRange(variablePair.first, true);
                         variableToIdentityMap.emplace(integerVariable.getExpressionVariable(), variableIdentity);
                         rowColumnMetaVariablePairs.push_back(variablePair);
                     }
@@ -230,8 +230,8 @@ namespace storm {
 
                     // Create meta variables for each of the modules' variables.
                     for (storm::prism::Module const& module : program.getModules()) {
-                        storm::dd::Dd<Type> moduleIdentity = manager->getOne();
-                        storm::dd::Dd<Type> moduleRange = manager->getOne();
+                        storm::dd::Dd<Type> moduleIdentity = manager->getOne(true);
+                        storm::dd::Dd<Type> moduleRange = manager->getOne(true);
                         
                         for (storm::prism::IntegerVariable const& integerVariable : module.getIntegerVariables()) {
                             int_fast64_t low = integerVariable.getLowerBoundExpression().evaluateAsInt();
@@ -245,11 +245,10 @@ namespace storm {
                             columnMetaVariables.insert(variablePair.second);
                             variableToColumnMetaVariableMap.emplace(integerVariable.getExpressionVariable(), variablePair.second);
                             
-                            storm::dd::Dd<Type> variableIdentity = manager->getIdentity(variablePair.first).equals(manager->getIdentity(variablePair.second)) * manager->getRange(variablePair.first) * manager->getRange(variablePair.second);
-                            variableIdentity.exportToDot(variablePair.first.getName() + "_ident.dot");
+                            storm::dd::Dd<Type> variableIdentity = manager->getIdentity(variablePair.first).equals(manager->getIdentity(variablePair.second)) * manager->getRange(variablePair.first, true) * manager->getRange(variablePair.second, true);
                             variableToIdentityMap.emplace(integerVariable.getExpressionVariable(), variableIdentity);
                             moduleIdentity *= variableIdentity;
-                            moduleRange *= manager->getRange(variablePair.first);
+                            moduleRange *= manager->getRange(variablePair.first, true);
                             
                             rowColumnMetaVariablePairs.push_back(variablePair);
                         }
@@ -263,10 +262,10 @@ namespace storm {
                             columnMetaVariables.insert(variablePair.second);
                             variableToColumnMetaVariableMap.emplace(booleanVariable.getExpressionVariable(), variablePair.second);
                             
-                            storm::dd::Dd<Type> variableIdentity = manager->getIdentity(variablePair.first).equals(manager->getIdentity(variablePair.second)) * manager->getRange(variablePair.first) * manager->getRange(variablePair.second);
+                            storm::dd::Dd<Type> variableIdentity = manager->getIdentity(variablePair.first).equals(manager->getIdentity(variablePair.second)) * manager->getRange(variablePair.first, true) * manager->getRange(variablePair.second, true);
                             variableToIdentityMap.emplace(booleanVariable.getExpressionVariable(), variableIdentity);
                             moduleIdentity *= variableIdentity;
-                            moduleRange *= manager->getRange(variablePair.first);
+                            moduleRange *= manager->getRange(variablePair.first, true);
 
                             rowColumnMetaVariablePairs.push_back(variablePair);
                         }

@@ -40,13 +40,13 @@ namespace storm {
                     result = leftResult || rightResult;
                     break;
                 case storm::expressions::BinaryBooleanFunctionExpression::OperatorType::Iff:
-                    result = leftResult.equals(rightResult);
+                    result = leftResult.iff(rightResult);
                     break;
                 case storm::expressions::BinaryBooleanFunctionExpression::OperatorType::Implies:
                     result = !leftResult || rightResult;
                     break;
                 case storm::expressions::BinaryBooleanFunctionExpression::OperatorType::Xor:
-                    result = (leftResult && !rightResult) || (!leftResult && rightResult);
+                    result = leftResult.exclusiveOr(rightResult);
                     break;
             }
             

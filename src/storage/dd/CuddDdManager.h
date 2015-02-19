@@ -36,18 +36,20 @@ namespace storm {
 #endif
             
             /*!
-             * Retrieves a DD representing the constant one function.
+             * Retrieves a DD representing the constant one function. If the flag is set, the result will be given in
+             * terms of an MTBDD rather than a BDD.
              *
              * @return A DD representing the constant one function.
              */
-            Dd<DdType::CUDD> getOne() const;
+            Dd<DdType::CUDD> getOne(bool asMtbdd = false) const;
             
             /*!
-             * Retrieves a DD representing the constant zero function.
+             * Retrieves a DD representing the constant zero function. If the flag is set, the result will be given in
+             * terms of an MTBDD rather than a BDD.
              *
              * @return A DD representing the constant zero function.
              */
-            Dd<DdType::CUDD> getZero() const;
+            Dd<DdType::CUDD> getZero(bool asMtbdd = false) const;
             
             /*!
              * Retrieves a DD representing the constant function with the given value.
@@ -62,19 +64,21 @@ namespace storm {
              *
              * @param variable The expression variable associated with the meta variable.
              * @param value The value the meta variable is supposed to have.
+             * @param asMtbdd If set to true, the result will be given in terms of an MTBDD.
              * @return The DD representing the function that maps all inputs which have the given meta variable equal
              * to the given value one.
              */
-            Dd<DdType::CUDD> getEncoding(storm::expressions::Variable const& variable, int_fast64_t value) const;
+            Dd<DdType::CUDD> getEncoding(storm::expressions::Variable const& variable, int_fast64_t value, bool asMtbdd = false) const;
             
             /*!
              * Retrieves the DD representing the range of the meta variable, i.e., a function that maps all legal values
              * of the range of the meta variable to one.
              *
              * @param variable The expression variable associated with the meta variable.
+             * @param asMtbdd If set to true, the result will be given in terms of an MTBDD.
              * @return The range of the meta variable.
              */
-            Dd<DdType::CUDD> getRange(storm::expressions::Variable const& variable) const;
+            Dd<DdType::CUDD> getRange(storm::expressions::Variable const& variable, bool asMtbdd = false) const;
 
             /*!
              * Retrieves the DD representing the identity of the meta variable, i.e., a function that maps all legal

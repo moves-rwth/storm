@@ -70,6 +70,7 @@ log4cplus::Logger printer;
 #include "src/counterexamples/SMTMinimalCommandSetGenerator.h"
 
 // Headers related to exception handling.
+#include "src/exceptions/InvalidStateException.h"
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/exceptions/InvalidSettingsException.h"
 #include "src/exceptions/InvalidTypeException.h"
@@ -276,22 +277,25 @@ namespace storm {
                 }
                 
                 // Customize model-building.
-//                typename storm::builder::ExplicitPrismModelBuilder<ValueType>::Options options;
-//                if (formula) {
-//                    options = typename storm::builder::ExplicitPrismModelBuilder<ValueType>::Options(*formula.get());
-//                }
-//                options.addConstantDefinitionsFromString(program, settings.getConstantDefinitionString());
-//                
-//                // Then, build the model from the symbolic description.
-//                result = storm::builder::ExplicitPrismModelBuilder<ValueType>::translateProgram(program, options);
-                
-                typename storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::Options options;
-                if (formula) {
-                    options = typename storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::Options(*formula.get());
+                if (settings.getEngine() == storm::settings::modules::GeneralSettings::Engine::Sparse) {
+                    typename storm::builder::ExplicitPrismModelBuilder<ValueType>::Options options;
+                    if (formula) {
+                        options = typename storm::builder::ExplicitPrismModelBuilder<ValueType>::Options(*formula.get());
+                    }
+                    options.addConstantDefinitionsFromString(program, settings.getConstantDefinitionString());
+                    
+                    // Then, build the model from the symbolic description.
+                    result = storm::builder::ExplicitPrismModelBuilder<ValueType>::translateProgram(program, options);
+                } else if (settings.getEngine() == storm::settings::modules::GeneralSettings::Engine::Dd) {
+                    typename storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::Options options;
+                    if (formula) {
+                        options = typename storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::Options(*formula.get());
+                    }
+                    options.addConstantDefinitionsFromString(program, settings.getConstantDefinitionString());
+                    
+                    storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program, options);
                 }
-                options.addConstantDefinitionsFromString(program, settings.getConstantDefinitionString());
                 
-                storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program, options);
                 return result;
             }
             
@@ -424,6 +428,8 @@ namespace storm {
                 // Now we are ready to actually build the model.
                 STORM_LOG_THROW(program, storm::exceptions::InvalidStateException, "Program has not been successfully parsed.");
                 std::shared_ptr<storm::models::AbstractModel<ValueType>> model = buildSymbolicModel<ValueType>(program.get(), formula);
+                
+                STORM_LOG_THROW(model != nullptr, storm::exceptions::InvalidStateException, "Model could not be constructed for an unknown reason.");
                 
                 // Preprocess the model if needed.
                 model = preprocessModel<ValueType>(model, formula);

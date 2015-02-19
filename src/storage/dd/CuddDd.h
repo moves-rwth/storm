@@ -5,6 +5,7 @@
 #include <set>
 #include <memory>
 #include <iostream>
+#include <boost/variant.hpp>
 
 #include "src/storage/dd/Dd.h"
 #include "src/storage/dd/CuddDdForwardIterator.h"
@@ -65,16 +66,50 @@ namespace storm {
             /*!
              * Performs a logical or of the current and the given DD.
              *
+             * @param other The second DD used for the operation.
              * @return The logical or of the operands.
              */
             Dd<DdType::CUDD> operator||(Dd<DdType::CUDD> const& other) const;
             
             /*!
+             * Performs a logical or of the current and the given DD and assigns it to the current DD.
+             *
+             * @param other The second DD used for the operation.
+             * @return A reference to the current DD after the operation
+             */
+            Dd<DdType::CUDD>& operator|=(Dd<DdType::CUDD> const& other);
+            
+            /*!
              * Performs a logical and of the current and the given DD.
              *
+             * @param other The second DD used for the operation.
              * @return The logical and of the operands.
              */
             Dd<DdType::CUDD> operator&&(Dd<DdType::CUDD> const& other) const;
+            
+            /*!
+             * Performs a logical and of the current and the given DD and assigns it to the current DD.
+             *
+             * @param other The second DD used for the operation.
+             * @return A reference to the current DD after the operation
+             */
+            Dd<DdType::CUDD>& operator&=(Dd<DdType::CUDD> const& other);
+            
+            /*!
+             * Performs a logical iff of the current and the given DD.
+             *
+             * @param other The second DD used for the operation.
+             * @return The logical iff of the operands.
+             */
+            Dd<DdType::CUDD> iff(Dd<DdType::CUDD> const& other) const;
+            
+            /*!
+             * Performs a logical exclusive-or of the current and the given DD.
+             *
+             * @param other The second DD used for the operation.
+             * @return The logical exclusive-or of the operands.
+             */
+            Dd<DdType::CUDD> exclusiveOr(Dd<DdType::CUDD> const& other) const;
             
             /*!
              * Adds the two DDs.
@@ -295,6 +330,16 @@ namespace storm {
              * @return A DD representing the result of the matrix-matrix multiplication.
              */
             Dd<DdType::CUDD> multiplyMatrix(Dd<DdType::CUDD> const& otherMatrix, std::set<storm::expressions::Variable> const& summationMetaVariables) const;
+            
+            /*!
+             * Computes the logical and of the current and the given DD and existentially abstracts from the given set
+             * of variables.
+             *
+             * @param other The second DD for the logical and.
+             * @param existentialVariables The variables from which to existentially abstract.
+             * @return A DD representing the result.
+             */
+            Dd<DdType::CUDD> andExists(Dd<DdType::CUDD> const& other, std::set<storm::expressions::Variable> const& existentialVariables) const;
             
             /*!
              * Computes a DD that represents the function in which all assignments with a function value strictly larger
@@ -605,20 +650,64 @@ namespace storm {
             
             friend std::ostream & operator<<(std::ostream& out, const Dd<DdType::CUDD>& dd);
             
-        private:
             /*!
-             * Retrieves a reference to the CUDD ADD object associated with this DD.
+             * Converts an MTBDD to a BDD by mapping all values unequal to zero to 1. This effectively does the same as
+             * a call to notZero().
              *
-             * @return The CUDD ADD object associated with this DD.
+             * @return The corresponding BDD.
              */
-            ADD getCuddAdd();
+            Dd<DdType::CUDD> toBdd() const;
+
+            /*!
+             * Converts a BDD to an equivalent MTBDD.
+             *
+             * @return The corresponding MTBDD.
+             */
+            Dd<DdType::CUDD> toMtbdd() const;
             
             /*!
-             * Retrieves the CUDD ADD object associated with this DD.
+             * Retrieves whether this DD is a BDD.
              *
-             * @return The CUDD ADD object assoicated with this DD.
+             * @return True iff this DD is a BDD.
              */
-            ADD const& getCuddAdd() const;
+            bool isBdd() const;
+
+            /*!
+             * Retrieves whether this DD is an MTBDD. Even though MTBDDs technicall subsume BDDs, this will return false
+             * if the DD is actually a BDD.
+             *
+             * @return True iff this DD is an MTBDD.
+             */
+            bool isMtbdd() const;
+            
+        private:
+            /*!
+             * Retrieves the CUDD BDD object associated with this DD.
+             *
+             * @return The CUDD BDD object associated with this DD.
+             */
+            BDD getCuddBdd() const;
+            
+            /*!
+             * Retrieves the CUDD MTBDD object associated with this DD.
+             *
+             * @return The CUDD MTBDD object associated with this DD.
+             */
+            ADD getCuddMtbdd() const;
+            
+            /*!
+             * Retrieves the CUDD object associated with this DD.
+             *
+             * @return The CUDD object associated with this DD.
+             */
+            ABDD const& getCuddDd() const;
+            
+            /*!
+             * Retrieves the raw DD node of CUDD associated with this DD.
+             *
+             * @return The DD node of CUDD associated with this DD.
+             */
+            DdNode* getCuddDdNode() const;
             
             /*!
              * Adds the given meta variable to the set of meta variables that are contained in this DD.
@@ -657,10 +746,19 @@ namespace storm {
              * Creates a DD that encapsulates the given CUDD ADD.
              *
              * @param ddManager The manager responsible for this DD.
-             * @param cuddAdd The CUDD ADD to store.
+             * @param cuddDd The CUDD ADD to store.
              * @param containedMetaVariables The meta variables that appear in the DD.
              */
-            Dd(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, ADD cuddAdd, std::set<storm::expressions::Variable> const& containedMetaVariables = std::set<storm::expressions::Variable>());
+            Dd(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, ADD cuddDd, std::set<storm::expressions::Variable> const& containedMetaVariables = std::set<storm::expressions::Variable>());
+
+            /*!
+             * Creates a DD that encapsulates the given CUDD ADD.
+             *
+             * @param ddManager The manager responsible for this DD.
+             * @param cuddDd The CUDD ADD to store.
+             * @param containedMetaVariables The meta variables that appear in the DD.
+             */
+            Dd(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, BDD cuddDd, std::set<storm::expressions::Variable> const& containedMetaVariables = std::set<storm::expressions::Variable>());
             
             /*!
              * Helper function to convert the DD into a (sparse) matrix.
@@ -727,7 +825,7 @@ namespace storm {
             std::shared_ptr<DdManager<DdType::CUDD> const> ddManager;
             
             // The ADD created by CUDD.
-            ADD cuddAdd;
+            boost::variant<BDD, ADD> cuddDd;
             
             // The meta variables that appear in this DD.
             std::set<storm::expressions::Variable> containedMetaVariables;

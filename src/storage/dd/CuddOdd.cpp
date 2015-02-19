@@ -17,17 +17,17 @@ namespace storm {
             std::vector<std::map<DdNode*, std::shared_ptr<Odd<DdType::CUDD>>>> uniqueTableForLevels(ddVariableIndices.size() + 1);
             
             // Now construct the ODD structure.
-            std::shared_ptr<Odd<DdType::CUDD>> rootOdd = buildOddRec(dd.getCuddAdd().getNode(), manager->getCuddManager(), 0, ddVariableIndices.size(), ddVariableIndices, uniqueTableForLevels);
+            // Currently, the DD needs to be an MTBDD, because complement edges are not supported.
+            std::shared_ptr<Odd<DdType::CUDD>> rootOdd = buildOddRec(dd.toMtbdd().getCuddDdNode(), manager->getCuddManager(), 0, ddVariableIndices.size(), ddVariableIndices, uniqueTableForLevels);
             
             // Finally, move the children of the root ODD into this ODD.
-            this->dd = rootOdd->dd;
             this->elseNode = std::move(rootOdd->elseNode);
             this->thenNode = std::move(rootOdd->thenNode);
             this->elseOffset = rootOdd->elseOffset;
             this->thenOffset = rootOdd->thenOffset;
         }
         
-        Odd<DdType::CUDD>::Odd(ADD dd, std::shared_ptr<Odd<DdType::CUDD>>&& elseNode, uint_fast64_t elseOffset, std::shared_ptr<Odd<DdType::CUDD>>&& thenNode, uint_fast64_t thenOffset) : dd(dd), elseNode(elseNode), thenNode(thenNode), elseOffset(elseOffset), thenOffset(thenOffset) {
+        Odd<DdType::CUDD>::Odd(std::shared_ptr<Odd<DdType::CUDD>> elseNode, uint_fast64_t elseOffset, std::shared_ptr<Odd<DdType::CUDD>> thenNode, uint_fast64_t thenOffset) : elseNode(elseNode), thenNode(thenNode), elseOffset(elseOffset), thenOffset(thenOffset) {
             // Intentionally left empty.
         }
         
@@ -92,18 +92,18 @@ namespace storm {
                         thenOffset = 1;
                     }
                     
-                    return std::shared_ptr<Odd<DdType::CUDD>>(new Odd<DdType::CUDD>(ADD(manager, dd), nullptr, elseOffset, nullptr, thenOffset));
+                    return std::shared_ptr<Odd<DdType::CUDD>>(new Odd<DdType::CUDD>(nullptr, elseOffset, nullptr, thenOffset));
                 } else if (ddVariableIndices[currentLevel] < static_cast<uint_fast64_t>(dd->index)) {
                     // If we skipped the level in the DD, we compute the ODD just for the else-successor and use the same
                     // node for the then-successor as well.
                     std::shared_ptr<Odd<DdType::CUDD>> elseNode = buildOddRec(dd, manager, currentLevel + 1, maxLevel, ddVariableIndices, uniqueTableForLevels);
                     std::shared_ptr<Odd<DdType::CUDD>> thenNode = elseNode;
-                    return std::shared_ptr<Odd<DdType::CUDD>>(new Odd<DdType::CUDD>(ADD(manager, dd), std::move(elseNode), elseNode->getElseOffset() + elseNode->getThenOffset(), std::move(thenNode), thenNode->getElseOffset() + thenNode->getThenOffset()));
+                    return std::shared_ptr<Odd<DdType::CUDD>>(new Odd<DdType::CUDD>(elseNode, elseNode->getElseOffset() + elseNode->getThenOffset(), thenNode, thenNode->getElseOffset() + thenNode->getThenOffset()));
                 } else {
                     // Otherwise, we compute the ODDs for both the then- and else successors.
                     std::shared_ptr<Odd<DdType::CUDD>> elseNode = buildOddRec(Cudd_E(dd), manager, currentLevel + 1, maxLevel, ddVariableIndices, uniqueTableForLevels);
                     std::shared_ptr<Odd<DdType::CUDD>> thenNode = buildOddRec(Cudd_T(dd), manager, currentLevel + 1, maxLevel, ddVariableIndices, uniqueTableForLevels);
-                    return std::shared_ptr<Odd<DdType::CUDD>>(new Odd<DdType::CUDD>(ADD(manager, dd), std::move(elseNode), elseNode->getElseOffset() + elseNode->getThenOffset(), std::move(thenNode), thenNode->getElseOffset() + thenNode->getThenOffset()));
+                    return std::shared_ptr<Odd<DdType::CUDD>>(new Odd<DdType::CUDD>(elseNode, elseNode->getElseOffset() + elseNode->getThenOffset(), thenNode, thenNode->getElseOffset() + thenNode->getThenOffset()));
                 }
             }
         }

@@ -124,8 +124,8 @@ namespace storm {
             // This is needed, because cubes may represent many assignments (if they have don't care variables).
             uint_fast64_t cubeCounter;
             
-            // A vector of tuples of the form <variable, metaVariable, bitIndex>.
-            std::vector<std::tuple<ADD, storm::expressions::Variable, uint_fast64_t>> relevantDontCareDdVariables;
+            // A vector of tuples of the form <metaVariable, bitIndex>.
+            std::vector<std::tuple<storm::expressions::Variable, uint_fast64_t>> relevantDontCareDdVariables;
             
             // The current valuation of meta variables.
             storm::expressions::SimpleValuation currentValuation;

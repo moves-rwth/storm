@@ -7,29 +7,109 @@
 #include "src/utility/vector.h"
 #include "src/utility/macros.h"
 
+#include "src/exceptions/IllegalFunctionCallException.h"
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/exceptions/NotImplementedException.h"
 
 namespace storm {
     namespace dd {
-        Dd<DdType::CUDD>::Dd(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, ADD cuddAdd, std::set<storm::expressions::Variable> const& containedMetaVariables) : ddManager(ddManager), cuddAdd(cuddAdd), containedMetaVariables(containedMetaVariables) {
+        Dd<DdType::CUDD>::Dd(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, BDD cuddDd, std::set<storm::expressions::Variable> const& containedMetaVariables) : ddManager(ddManager), cuddDd(cuddDd), containedMetaVariables(containedMetaVariables) {
+            // Intentionally left empty.
+        }
+
+        Dd<DdType::CUDD>::Dd(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, ADD cuddDd, std::set<storm::expressions::Variable> const& containedMetaVariables) : ddManager(ddManager), cuddDd(cuddDd), containedMetaVariables(containedMetaVariables) {
             // Intentionally left empty.
         }
         
+        bool Dd<DdType::CUDD>::isBdd() const {
+            return this->cuddDd.which() == 0;
+        }
+        
+        bool Dd<DdType::CUDD>::isMtbdd() const {
+            return this->cuddDd.which() == 1;
+        }
+        
+        Dd<DdType::CUDD> Dd<DdType::CUDD>::toBdd() const {
+            if (this->isBdd()) {
+                return *this;
+            } else {
+                return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddMtbdd().BddPattern(), this->containedMetaVariables);
+            }
+        }
+        
+        Dd<DdType::CUDD> Dd<DdType::CUDD>::toMtbdd() const {
+            if (this->isMtbdd()) {
+                return *this;
+            } else {
+                return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddBdd().Add(), this->containedMetaVariables);
+            }
+        }
+        
+        BDD Dd<DdType::CUDD>::getCuddBdd() const {
+            if (this->isBdd()) {
+                return boost::get<BDD>(this->cuddDd);
+            } else {
+                STORM_LOG_WARN_COND(false, "Implicitly converting MTBDD to BDD.");
+                return this->getCuddMtbdd().BddPattern();
+            }
+        }
+        
+        ADD Dd<DdType::CUDD>::getCuddMtbdd() const {
+            if (this->isMtbdd()) {
+                return boost::get<ADD>(this->cuddDd);
+            } else {
+                STORM_LOG_WARN_COND(false, "Implicitly converting BDD to MTBDD.");
+                return this->getCuddBdd().Add();
+            }
+        }
+        
+        ABDD const& Dd<DdType::CUDD>::getCuddDd() const {
+            if (this->isBdd()) {
+                return static_cast<ABDD const&>(boost::get<BDD>(this->cuddDd));
+            } else {
+                return static_cast<ABDD const&>(boost::get<ADD>(this->cuddDd));
+            }
+        }
+        
+        DdNode* Dd<DdType::CUDD>::getCuddDdNode() const {
+            if (this->isBdd()) {
+                return this->getCuddBdd().getNode();
+            } else {
+                return this->getCuddMtbdd().getNode();
+            }
+        }
+        
         bool Dd<DdType::CUDD>::operator==(Dd<DdType::CUDD> const& other) const {
-            return this->cuddAdd == other.getCuddAdd();
+            if (this->isBdd()) {
+                if (other.isBdd()) {
+                    return this->getCuddBdd() == other.getCuddBdd();
+                } else {
+                    return false;
+                }
+            } else {
+                if (other.isMtbdd()) {
+                    return this->getCuddMtbdd() == other.getCuddMtbdd();
+                } else {
+                    return false;
+                }
+            }
         }
         
         bool Dd<DdType::CUDD>::operator!=(Dd<DdType::CUDD> const& other) const {
-            return this->cuddAdd != other.getCuddAdd();
+            return !(*this == other);
         }
         
         Dd<DdType::CUDD> Dd<DdType::CUDD>::ite(Dd<DdType::CUDD> const& thenDd, Dd<DdType::CUDD> const& elseDd) const {
             std::set<storm::expressions::Variable> metaVariableNames(this->getContainedMetaVariables());
             metaVariableNames.insert(thenDd.getContainedMetaVariables().begin(), thenDd.getContainedMetaVariables().end());
             metaVariableNames.insert(elseDd.getContainedMetaVariables().begin(), elseDd.getContainedMetaVariables().end());
-            
-            return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddAdd().Ite(thenDd.getCuddAdd(), elseDd.getCuddAdd()), metaVariableNames);
+
+            // If all involved DDs are BDDs, the result is also going to be a BDD.
+            if (this->isBdd() && thenDd.isBdd() && elseDd.isBdd()) {
+                return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddBdd().Ite(thenDd.getCuddBdd(), elseDd.getCuddBdd()), metaVariableNames);
+            } else {
+                return Dd<DdType::CUDD>(this->getDdManager(), this->toMtbdd().getCuddMtbdd().Ite(thenDd.toMtbdd().getCuddMtbdd(), elseDd.toMtbdd().getCuddMtbdd()), metaVariableNames);
+            }
         }
         
         Dd<DdType::CUDD> Dd<DdType::CUDD>::operator+(Dd<DdType::CUDD> const& other) const {
@@ -39,11 +119,9 @@ namespace storm {
         }
         
         Dd<DdType::CUDD>& Dd<DdType::CUDD>::operator+=(Dd<DdType::CUDD> const& other) {
-            this->cuddAdd += other.getCuddAdd();
-            
-            // Join the variable sets of the two participating DDs.
+            STORM_LOG_WARN_COND(this->isMtbdd() && other.isMtbdd(), "Performing addition on BDDs.");
             this->getContainedMetaVariables().insert(other.getContainedMetaVariables().begin(), other.getContainedMetaVariables().end());
-            
+            this->cuddDd = this->getCuddMtbdd() + other.getCuddMtbdd();
             return *this;
         }
         
@@ -54,45 +132,48 @@ namespace storm {
         }
         
         Dd<DdType::CUDD>& Dd<DdType::CUDD>::operator*=(Dd<DdType::CUDD> const& other) {
-            this->cuddAdd *= other.getCuddAdd();
-            
-            // Join the variable sets of the two participating DDs.
             this->getContainedMetaVariables().insert(other.getContainedMetaVariables().begin(), other.getContainedMetaVariables().end());
-            
+            if (this->isMtbdd() && other.isMtbdd()) {
+                this->cuddDd = this->getCuddMtbdd() * other.getCuddMtbdd();
+            } else if (this->isBdd() && other.isBdd()) {
+                this->cuddDd = this->getCuddBdd() & other.getCuddBdd();
+            } else {
+                STORM_LOG_WARN_COND(false, "Performing multiplication on two DDs of different type.");
+                this->cuddDd = this->getCuddMtbdd() * other.getCuddMtbdd();
+            }
             return *this;
         }
         
         Dd<DdType::CUDD> Dd<DdType::CUDD>::operator-(Dd<DdType::CUDD> const& other) const {
+            STORM_LOG_WARN_COND(this->isMtbdd() && other.isMtbdd(), "Performing arithmetical operation on BDD(s).");
             Dd<DdType::CUDD> result(*this);
             result -= other;
             return result;
         }
         
         Dd<DdType::CUDD> Dd<DdType::CUDD>::operator-() const {
-            return this->getDdManager()->getZero() - *this;
+            STORM_LOG_WARN_COND(this->isMtbdd(), "Performing arithmetical operation on BDD(s).");
+            return this->getDdManager()->getZero(true) - *this;
         }
         
         Dd<DdType::CUDD>& Dd<DdType::CUDD>::operator-=(Dd<DdType::CUDD> const& other) {
-            this->cuddAdd -= other.getCuddAdd();
-            
-            // Join the variable sets of the two participating DDs.
+            STORM_LOG_WARN_COND(this->isMtbdd() && other.isMtbdd(), "Performing arithmetical operation on BDD(s).");
+            this->cuddDd = this->getCuddMtbdd() - other.getCuddMtbdd();
             this->getContainedMetaVariables().insert(other.getContainedMetaVariables().begin(), other.getContainedMetaVariables().end());
-            
             return *this;
         }
         
         Dd<DdType::CUDD> Dd<DdType::CUDD>::operator/(Dd<DdType::CUDD> const& other) const {
+            STORM_LOG_WARN_COND(this->isMtbdd() && other.isMtbdd(), "Performing arithmetical operation on BDD(s).");
             Dd<DdType::CUDD> result(*this);
             result /= other;
             return result;
         }
         
         Dd<DdType::CUDD>& Dd<DdType::CUDD>::operator/=(Dd<DdType::CUDD> const& other) {
-            this->cuddAdd = this->cuddAdd.Divide(other.getCuddAdd());
-            
-            // Join the variable sets of the two participating DDs.
+            STORM_LOG_WARN_COND(this->isMtbdd() && other.isMtbdd(), "Performing arithmetical operation on BDD(s).");
+            this->cuddDd = this->getCuddMtbdd().Divide(other.getCuddMtbdd());
             this->getContainedMetaVariables().insert(other.getContainedMetaVariables().begin(), other.getContainedMetaVariables().end());
-            
             return *this;
         }
         
@@ -101,77 +182,155 @@ namespace storm {
             result.complement();
             return result;
         }
-
+        
+        Dd<DdType::CUDD>& Dd<DdType::CUDD>::complement() {
+            if (this->isBdd()) {
+                this->cuddDd = ~this->getCuddBdd();
+            } else {
+                this->cuddDd = ~this->getCuddMtbdd();
+            }
+            return *this;
+        }
+        
         Dd<DdType::CUDD> Dd<DdType::CUDD>::operator&&(Dd<DdType::CUDD> const& other) const {
-            std::set<storm::expressions::Variable> metaVariables(this->getContainedMetaVariables());
-            metaVariables.insert(other.getContainedMetaVariables().begin(), other.getContainedMetaVariables().end());
-            
-            // Rewrite a and b to not((not a) or (not b)). 
-            return Dd<DdType::CUDD>(this->getDdManager(), ~(~this->getCuddAdd()).Or(~other.getCuddAdd()), metaVariables);
+            Dd<DdType::CUDD> result(*this);
+            result &= other;
+            return result;
+        }
+
+        Dd<DdType::CUDD>& Dd<DdType::CUDD>::operator&=(Dd<DdType::CUDD> const& other) {
+            this->getContainedMetaVariables().insert(other.getContainedMetaVariables().begin(), other.getContainedMetaVariables().end());
+            if (this->isBdd() && other.isBdd()) {
+                this->cuddDd = this->getCuddBdd() & other.getCuddBdd();
+            } else if (this->isMtbdd() && other.isMtbdd()) {
+                // We also tolerate (without a warning) if the two arguments are MTBDDs. The caller has to make sure that
+                // the two given DDs are 0-1-MTBDDs, because the operation may produce wrong results otherwise.
+                this->cuddDd = this->getCuddMtbdd() & other.getCuddMtbdd();
+            } else {
+                STORM_LOG_WARN_COND(false, "Performing logical and on two DDs of different type.");
+                this->cuddDd = this->getCuddBdd() & other.getCuddBdd();
+            }
+            return *this;
         }
         
         Dd<DdType::CUDD> Dd<DdType::CUDD>::operator||(Dd<DdType::CUDD> const& other) const {
-            std::set<storm::expressions::Variable> metaVariables(this->getContainedMetaVariables());
-            metaVariables.insert(other.getContainedMetaVariables().begin(), other.getContainedMetaVariables().end());
-            return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddAdd().Or(other.getCuddAdd()), metaVariables);
+            Dd<DdType::CUDD> result(*this);
+            result |= other;
+            return result;
         }
         
-        Dd<DdType::CUDD>& Dd<DdType::CUDD>::complement() {
-            this->cuddAdd = ~this->cuddAdd;
+        Dd<DdType::CUDD>& Dd<DdType::CUDD>::operator|=(Dd<DdType::CUDD> const& other) {
+            this->getContainedMetaVariables().insert(other.getContainedMetaVariables().begin(), other.getContainedMetaVariables().end());
+            if (this->isBdd() && other.isBdd()) {
+                this->cuddDd = this->getCuddBdd() | other.getCuddBdd();
+            } else if (this->isMtbdd() && other.isMtbdd()) {
+                // We also tolerate (without a warning) if the two arguments are MTBDDs. The caller has to make sure that
+                // the two given DDs are 0-1-MTBDDs, because the operation may produce wrong results otherwise.
+                this->cuddDd = this->getCuddMtbdd() | other.getCuddMtbdd();
+            } else {
+                STORM_LOG_WARN_COND(false, "Performing logical and on two DDs of different type.");
+                this->cuddDd = this->getCuddBdd() & other.getCuddBdd();
+            }
+            return *this;
+            
+            STORM_LOG_WARN_COND(this->isBdd() && other.isBdd(), "Performing logical operation on MTBDD(s).");
+            this->cuddDd = this->getCuddBdd() | other.getCuddBdd();
+            this->getContainedMetaVariables().insert(other.getContainedMetaVariables().begin(), other.getContainedMetaVariables().end());
+            return *this;
+        }
+        
+        Dd<DdType::CUDD> Dd<DdType::CUDD>::iff(Dd<DdType::CUDD> const& other) const {
+            std::set<storm::expressions::Variable> metaVariables(this->getContainedMetaVariables());
+            metaVariables.insert(other.getContainedMetaVariables().begin(), other.getContainedMetaVariables().end());
+            if (this->isBdd() && other.isBdd()) {
+                return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddBdd().Xnor(other.getCuddBdd()), metaVariables);
+            } else if (this->isMtbdd() && other.isMtbdd()) {
+                // We also tolerate (without a warning) if the two arguments are MTBDDs. The caller has to make sure that
+                // the two given DDs are 0-1-MTBDDs, because the operation may produce wrong results otherwise.
+                return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddMtbdd().Xnor(other.getCuddMtbdd()), metaVariables);
+            } else {
+                STORM_LOG_WARN_COND(false, "Performing logical iff on two DDs of different type.");
+                return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddBdd().Xnor(other.getCuddBdd()), metaVariables);
+            }
+            return *this;
+        }
+
+        Dd<DdType::CUDD> Dd<DdType::CUDD>::exclusiveOr(Dd<DdType::CUDD> const& other) const {
+            std::set<storm::expressions::Variable> metaVariables(this->getContainedMetaVariables());
+            metaVariables.insert(other.getContainedMetaVariables().begin(), other.getContainedMetaVariables().end());
+            if (this->isBdd() && other.isBdd()) {
+                return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddBdd().Xor(other.getCuddBdd()), metaVariables);
+            } else if (this->isMtbdd() && other.isMtbdd()) {
+                // We also tolerate (without a warning) if the two arguments are MTBDDs. The caller has to make sure that
+                // the two given DDs are 0-1-MTBDDs, because the operation may produce wrong results otherwise.
+                return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddMtbdd().Xnor(other.getCuddMtbdd()), metaVariables);
+            } else {
+                STORM_LOG_WARN_COND(false, "Performing logical iff on two DDs of different type.");
+                return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddBdd().Xor(other.getCuddBdd()), metaVariables);
+            }
             return *this;
         }
         
         Dd<DdType::CUDD> Dd<DdType::CUDD>::equals(Dd<DdType::CUDD> const& other) const {
+            STORM_LOG_WARN_COND(this->isMtbdd() && other.isMtbdd(), "Performing arithmetical operation on BDD(s).");
             std::set<storm::expressions::Variable> metaVariables(this->getContainedMetaVariables());
             metaVariables.insert(other.getContainedMetaVariables().begin(), other.getContainedMetaVariables().end());
-            return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddAdd().Equals(other.getCuddAdd()), metaVariables);
+            return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddMtbdd().Equals(other.getCuddMtbdd()), metaVariables);
         }
         
         Dd<DdType::CUDD> Dd<DdType::CUDD>::notEquals(Dd<DdType::CUDD> const& other) const {
+            STORM_LOG_WARN_COND(this->isMtbdd() && other.isMtbdd(), "Performing arithmetical operation on BDD(s).");
             std::set<storm::expressions::Variable> metaVariables(this->getContainedMetaVariables());
             metaVariables.insert(other.getContainedMetaVariables().begin(), other.getContainedMetaVariables().end());
-            return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddAdd().NotEquals(other.getCuddAdd()), metaVariables);
+            return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddMtbdd().NotEquals(other.getCuddMtbdd()), metaVariables);
         }
         
         Dd<DdType::CUDD> Dd<DdType::CUDD>::less(Dd<DdType::CUDD> const& other) const {
+            STORM_LOG_WARN_COND(this->isMtbdd() && other.isMtbdd(), "Performing arithmetical operation on BDD(s).");
             std::set<storm::expressions::Variable> metaVariables(this->getContainedMetaVariables());
             metaVariables.insert(other.getContainedMetaVariables().begin(), other.getContainedMetaVariables().end());
-            return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddAdd().LessThan(other.getCuddAdd()), metaVariables);
+            return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddMtbdd().LessThan(other.getCuddMtbdd()), metaVariables);
         }
         
         Dd<DdType::CUDD> Dd<DdType::CUDD>::lessOrEqual(Dd<DdType::CUDD> const& other) const {
+            STORM_LOG_WARN_COND(this->isMtbdd() && other.isMtbdd(), "Performing arithmetical operation on BDD(s).");
             std::set<storm::expressions::Variable> metaVariables(this->getContainedMetaVariables());
             metaVariables.insert(other.getContainedMetaVariables().begin(), other.getContainedMetaVariables().end());
-            return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddAdd().LessThanOrEqual(other.getCuddAdd()), metaVariables);
+            return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddMtbdd().LessThanOrEqual(other.getCuddMtbdd()), metaVariables);
         }
         
         Dd<DdType::CUDD> Dd<DdType::CUDD>::greater(Dd<DdType::CUDD> const& other) const {
+            STORM_LOG_WARN_COND(this->isMtbdd() && other.isMtbdd(), "Performing arithmetical operation on BDD(s).");
             std::set<storm::expressions::Variable> metaVariables(this->getContainedMetaVariables());
             metaVariables.insert(other.getContainedMetaVariables().begin(), other.getContainedMetaVariables().end());
-            return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddAdd().GreaterThan(other.getCuddAdd()), metaVariables);
+            return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddMtbdd().GreaterThan(other.getCuddMtbdd()), metaVariables);
         }
         
         Dd<DdType::CUDD> Dd<DdType::CUDD>::greaterOrEqual(Dd<DdType::CUDD> const& other) const {
+            STORM_LOG_WARN_COND(this->isMtbdd() && other.isMtbdd(), "Performing arithmetical operation on BDD(s).");
             std::set<storm::expressions::Variable> metaVariables(this->getContainedMetaVariables());
             metaVariables.insert(other.getContainedMetaVariables().begin(), other.getContainedMetaVariables().end());
-            return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddAdd().GreaterThanOrEqual(other.getCuddAdd()), metaVariables);
+            return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddMtbdd().GreaterThanOrEqual(other.getCuddMtbdd()), metaVariables);
         }
         
         Dd<DdType::CUDD> Dd<DdType::CUDD>::minimum(Dd<DdType::CUDD> const& other) const {
+            STORM_LOG_WARN_COND(this->isMtbdd() && other.isMtbdd(), "Performing arithmetical operation on BDD(s).");
             std::set<storm::expressions::Variable> metaVariables(this->getContainedMetaVariables());
             metaVariables.insert(other.getContainedMetaVariables().begin(), other.getContainedMetaVariables().end());
-            return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddAdd().Minimum(other.getCuddAdd()), metaVariables);
+            return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddMtbdd().Minimum(other.getCuddMtbdd()), metaVariables);
         }
 
         Dd<DdType::CUDD> Dd<DdType::CUDD>::maximum(Dd<DdType::CUDD> const& other) const {
+            STORM_LOG_WARN_COND(this->isMtbdd() && other.isMtbdd(), "Performing arithmetical operation on BDD(s).");
             std::set<storm::expressions::Variable> metaVariables(this->getContainedMetaVariables());
             metaVariables.insert(other.getContainedMetaVariables().begin(), other.getContainedMetaVariables().end());
-            return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddAdd().Maximum(other.getCuddAdd()), metaVariables);
+            return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddMtbdd().Maximum(other.getCuddMtbdd()), metaVariables);
         }
 
         Dd<DdType::CUDD> Dd<DdType::CUDD>::existsAbstract(std::set<storm::expressions::Variable> const& metaVariables) const {
-            Dd<DdType::CUDD> cubeDd(this->getDdManager()->getOne());
+            STORM_LOG_WARN_COND(this->isBdd(), "Performing logical operation on MTBDD(s).");
             
+            Dd<DdType::CUDD> cubeDd(this->getDdManager()->getOne(false));
             std::set<storm::expressions::Variable> newMetaVariables = this->getContainedMetaVariables();
             for (auto const& metaVariable : metaVariables) {
                 // First check whether the DD contains the meta variable and erase it, if this is the case.
@@ -179,15 +338,16 @@ namespace storm {
                 newMetaVariables.erase(metaVariable);
                 
                 DdMetaVariable<DdType::CUDD> const& ddMetaVariable = this->getDdManager()->getMetaVariable(metaVariable);
-                cubeDd *= ddMetaVariable.getCube();
+                cubeDd &= ddMetaVariable.getCube();
             }
             
-            return Dd<DdType::CUDD>(this->getDdManager(), this->cuddAdd.OrAbstract(cubeDd.getCuddAdd()), newMetaVariables);
+            return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddBdd().ExistAbstract(cubeDd.getCuddBdd()), newMetaVariables);
         }
         
         Dd<DdType::CUDD> Dd<DdType::CUDD>::universalAbstract(std::set<storm::expressions::Variable> const& metaVariables) const {
+            STORM_LOG_WARN_COND(this->isBdd(), "Performing logical operation on MTBDD(s).");
+
             Dd<DdType::CUDD> cubeDd(this->getDdManager()->getOne());
-            
             std::set<storm::expressions::Variable> newMetaVariables = this->getContainedMetaVariables();
             for (auto const& metaVariable : metaVariables) {
                 // First check whether the DD contains the meta variable and erase it, if this is the case.
@@ -195,15 +355,16 @@ namespace storm {
                 newMetaVariables.erase(metaVariable);
                 
                 DdMetaVariable<DdType::CUDD> const& ddMetaVariable = this->getDdManager()->getMetaVariable(metaVariable);
-                cubeDd *= ddMetaVariable.getCube();
+                cubeDd &= ddMetaVariable.getCube();
             }
             
-            return Dd<DdType::CUDD>(this->getDdManager(), this->cuddAdd.UnivAbstract(cubeDd.getCuddAdd()), newMetaVariables);
+            return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddBdd().UnivAbstract(cubeDd.getCuddBdd()), newMetaVariables);
         }
         
         Dd<DdType::CUDD> Dd<DdType::CUDD>::sumAbstract(std::set<storm::expressions::Variable> const& metaVariables) const {
-            Dd<DdType::CUDD> cubeDd(this->getDdManager()->getOne());
-            
+            STORM_LOG_WARN_COND(this->isMtbdd(), "Performing arithmetical operation on BDD(s).");
+
+            Dd<DdType::CUDD> cubeDd(this->getDdManager()->getOne(true));
             std::set<storm::expressions::Variable> newMetaVariables = this->getContainedMetaVariables();
             for (auto const& metaVariable : metaVariables) {
                 // First check whether the DD contains the meta variable and erase it, if this is the case.
@@ -211,15 +372,16 @@ namespace storm {
                 newMetaVariables.erase(metaVariable);
                 
                 DdMetaVariable<DdType::CUDD> const& ddMetaVariable = this->getDdManager()->getMetaVariable(metaVariable);
-                cubeDd *= ddMetaVariable.getCube();
+                cubeDd *= ddMetaVariable.getCubeAsMtbdd();
             }
             
-            return Dd<DdType::CUDD>(this->getDdManager(), this->cuddAdd.ExistAbstract(cubeDd.getCuddAdd()), newMetaVariables);
+            return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddMtbdd().ExistAbstract(cubeDd.getCuddMtbdd()), newMetaVariables);
         }
         
         Dd<DdType::CUDD> Dd<DdType::CUDD>::minAbstract(std::set<storm::expressions::Variable> const& metaVariables) const {
-            Dd<DdType::CUDD> cubeDd(this->getDdManager()->getOne());
-            
+            STORM_LOG_WARN_COND(this->isMtbdd(), "Performing arithmetical operation on BDD(s).");
+
+            Dd<DdType::CUDD> cubeDd(this->getDdManager()->getOne(true));
             std::set<storm::expressions::Variable> newMetaVariables = this->getContainedMetaVariables();
             for (auto const& metaVariable : metaVariables) {
                 // First check whether the DD contains the meta variable and erase it, if this is the case.
@@ -227,15 +389,16 @@ namespace storm {
                 newMetaVariables.erase(metaVariable);
                 
                 DdMetaVariable<DdType::CUDD> const& ddMetaVariable = this->getDdManager()->getMetaVariable(metaVariable);
-                cubeDd *= ddMetaVariable.getCube();
+                cubeDd *= ddMetaVariable.getCubeAsMtbdd();
             }
             
-            return Dd<DdType::CUDD>(this->getDdManager(), this->cuddAdd.MinAbstract(cubeDd.getCuddAdd()), newMetaVariables);
+            return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddMtbdd().MinAbstract(cubeDd.getCuddMtbdd()), newMetaVariables);
         }
         
         Dd<DdType::CUDD> Dd<DdType::CUDD>::maxAbstract(std::set<storm::expressions::Variable> const& metaVariables) const {
-            Dd<DdType::CUDD> cubeDd(this->getDdManager()->getOne());
-            
+            STORM_LOG_WARN_COND(this->isMtbdd(), "Performing arithmetical operation on BDD(s).");
+
+            Dd<DdType::CUDD> cubeDd(this->getDdManager()->getOne(true));
             std::set<storm::expressions::Variable> newMetaVariables = this->getContainedMetaVariables();
             for (auto const& metaVariable : metaVariables) {
                 // First check whether the DD contains the meta variable and erase it, if this is the case.
@@ -243,63 +406,102 @@ namespace storm {
                 newMetaVariables.erase(metaVariable);
                 
                 DdMetaVariable<DdType::CUDD> const& ddMetaVariable = this->getDdManager()->getMetaVariable(metaVariable);
-                cubeDd *= ddMetaVariable.getCube();
+                cubeDd *= ddMetaVariable.getCubeAsMtbdd();
             }
             
-            return Dd<DdType::CUDD>(this->getDdManager(), this->cuddAdd.MaxAbstract(cubeDd.getCuddAdd()), newMetaVariables);
+            return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddMtbdd().MaxAbstract(cubeDd.getCuddMtbdd()), newMetaVariables);
         }
         
         bool Dd<DdType::CUDD>::equalModuloPrecision(Dd<DdType::CUDD> const& other, double precision, bool relative) const {
+            STORM_LOG_WARN_COND(this->isMtbdd(), "Performing arithmetical operation on BDD(s).");
+
             if (relative) {
-                return this->getCuddAdd().EqualSupNormRel(other.getCuddAdd(), precision);
+                return this->getCuddMtbdd().EqualSupNormRel(other.getCuddMtbdd(), precision);
             } else {
-                return this->getCuddAdd().EqualSupNorm(other.getCuddAdd(), precision);
+                return this->getCuddMtbdd().EqualSupNorm(other.getCuddMtbdd(), precision);
             }
         }
         
         void Dd<DdType::CUDD>::swapVariables(std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& metaVariablePairs) {
-            std::vector<ADD> from;
-            std::vector<ADD> to;
-            for (auto const& metaVariablePair : metaVariablePairs) {
-                DdMetaVariable<DdType::CUDD> const& variable1 = this->getDdManager()->getMetaVariable(metaVariablePair.first);
-                DdMetaVariable<DdType::CUDD> const& variable2 = this->getDdManager()->getMetaVariable(metaVariablePair.second);
-
-                // Check if it's legal so swap the meta variables.
-                if (variable1.getNumberOfDdVariables() != variable2.getNumberOfDdVariables()) {
-                    throw storm::exceptions::InvalidArgumentException() << "Unable to swap meta variables with different size.";
+            if (this->isBdd()) {
+                std::vector<BDD> from;
+                std::vector<BDD> to;
+                for (auto const& metaVariablePair : metaVariablePairs) {
+                    DdMetaVariable<DdType::CUDD> const& variable1 = this->getDdManager()->getMetaVariable(metaVariablePair.first);
+                    DdMetaVariable<DdType::CUDD> const& variable2 = this->getDdManager()->getMetaVariable(metaVariablePair.second);
+                    
+                    // Check if it's legal so swap the meta variables.
+                    if (variable1.getNumberOfDdVariables() != variable2.getNumberOfDdVariables()) {
+                        throw storm::exceptions::InvalidArgumentException() << "Unable to swap meta variables with different size.";
+                    }
+                    
+                    // Keep track of the contained meta variables in the DD.
+                    bool containsVariable1 = this->containsMetaVariable(metaVariablePair.first);
+                    bool containsVariable2 = this->containsMetaVariable(metaVariablePair.second);
+                    if (containsVariable1 && !containsVariable2) {
+                        this->removeContainedMetaVariable(metaVariablePair.first);
+                        this->addContainedMetaVariable(metaVariablePair.second);
+                    } else if (!containsVariable1 && containsVariable2) {
+                        this->removeContainedMetaVariable(metaVariablePair.second);
+                        this->addContainedMetaVariable(metaVariablePair.first);
+                    }
+                    
+                    // Add the variables to swap to the corresponding vectors.
+                    for (auto const& ddVariable : variable1.getDdVariables()) {
+                        from.push_back(ddVariable.getCuddBdd());
+                    }
+                    for (auto const& ddVariable : variable2.getDdVariables()) {
+                        to.push_back(ddVariable.getCuddBdd());
+                    }
                 }
                 
-                // Keep track of the contained meta variables in the DD.
-                bool containsVariable1 = this->containsMetaVariable(metaVariablePair.first);
-                bool containsVariable2 = this->containsMetaVariable(metaVariablePair.second);
-                if (containsVariable1 && !containsVariable2) {
-                    this->removeContainedMetaVariable(metaVariablePair.first);
-                    this->addContainedMetaVariable(metaVariablePair.second);
-                } else if (!containsVariable1 && containsVariable2) {
-                    this->removeContainedMetaVariable(metaVariablePair.second);
-                    this->addContainedMetaVariable(metaVariablePair.first);
+                // Finally, call CUDD to swap the variables.
+                this->cuddDd = this->getCuddBdd().SwapVariables(from, to);
+            } else {
+                std::vector<ADD> from;
+                std::vector<ADD> to;
+                for (auto const& metaVariablePair : metaVariablePairs) {
+                    DdMetaVariable<DdType::CUDD> const& variable1 = this->getDdManager()->getMetaVariable(metaVariablePair.first);
+                    DdMetaVariable<DdType::CUDD> const& variable2 = this->getDdManager()->getMetaVariable(metaVariablePair.second);
+                    
+                    // Check if it's legal so swap the meta variables.
+                    if (variable1.getNumberOfDdVariables() != variable2.getNumberOfDdVariables()) {
+                        throw storm::exceptions::InvalidArgumentException() << "Unable to swap meta variables with different size.";
+                    }
+                    
+                    // Keep track of the contained meta variables in the DD.
+                    bool containsVariable1 = this->containsMetaVariable(metaVariablePair.first);
+                    bool containsVariable2 = this->containsMetaVariable(metaVariablePair.second);
+                    if (containsVariable1 && !containsVariable2) {
+                        this->removeContainedMetaVariable(metaVariablePair.first);
+                        this->addContainedMetaVariable(metaVariablePair.second);
+                    } else if (!containsVariable1 && containsVariable2) {
+                        this->removeContainedMetaVariable(metaVariablePair.second);
+                        this->addContainedMetaVariable(metaVariablePair.first);
+                    }
+                    
+                    // Add the variables to swap to the corresponding vectors.
+                    for (auto const& ddVariable : variable1.getDdVariables()) {
+                        from.push_back(ddVariable.getCuddMtbdd());
+                    }
+                    for (auto const& ddVariable : variable2.getDdVariables()) {
+                        to.push_back(ddVariable.getCuddMtbdd());
+                    }
                 }
                 
-                // Add the variables to swap to the corresponding vectors.
-                for (auto const& ddVariable : variable1.getDdVariables()) {
-                    from.push_back(ddVariable.getCuddAdd());
-                }
-                for (auto const& ddVariable : variable2.getDdVariables()) {
-                    to.push_back(ddVariable.getCuddAdd());
-                }
+                // Finally, call CUDD to swap the variables.
+                this->cuddDd = this->getCuddMtbdd().SwapVariables(from, to);
             }
-            
-            // Finally, call CUDD to swap the variables.
-            this->cuddAdd = this->cuddAdd.SwapVariables(from, to);
         }
         
         Dd<DdType::CUDD> Dd<DdType::CUDD>::multiplyMatrix(Dd<DdType::CUDD> const& otherMatrix, std::set<storm::expressions::Variable> const& summationMetaVariables) const {
-            std::vector<ADD> summationDdVariables;
-            
+            STORM_LOG_WARN_COND(this->isMtbdd() && otherMatrix.isMtbdd(), "Performing arithmetical operation on BDD(s).");
+
             // Create the CUDD summation variables.
+            std::vector<ADD> summationDdVariables;
             for (auto const& metaVariable : summationMetaVariables) {
                 for (auto const& ddVariable : this->getDdManager()->getMetaVariable(metaVariable).getDdVariables()) {
-                    summationDdVariables.push_back(ddVariable.getCuddAdd());
+                    summationDdVariables.push_back(ddVariable.getCuddMtbdd());
                 }
             }
             
@@ -308,37 +510,68 @@ namespace storm {
             std::set<storm::expressions::Variable> containedMetaVariables;
             std::set_difference(unionOfMetaVariables.begin(), unionOfMetaVariables.end(), summationMetaVariables.begin(), summationMetaVariables.end(), std::inserter(containedMetaVariables, containedMetaVariables.begin()));
             
-            return Dd<DdType::CUDD>(this->getDdManager(), this->cuddAdd.MatrixMultiply(otherMatrix.getCuddAdd(), summationDdVariables), containedMetaVariables);
+            return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddMtbdd().MatrixMultiply(otherMatrix.getCuddMtbdd(), summationDdVariables), containedMetaVariables);
+        }
+        
+        Dd<DdType::CUDD> Dd<DdType::CUDD>::andExists(Dd<DdType::CUDD> const& other, std::set<storm::expressions::Variable> const& existentialVariables) const {
+            STORM_LOG_WARN_COND(this->isBdd() && other.isBdd(), "Performing logical operation on MTBDD(s).");
+            
+            Dd<DdType::CUDD> cubeDd(this->getDdManager()->getOne());
+            for (auto const& metaVariable : existentialVariables) {
+                DdMetaVariable<DdType::CUDD> const& ddMetaVariable = this->getDdManager()->getMetaVariable(metaVariable);
+                cubeDd &= ddMetaVariable.getCube();
+            }
+            
+            std::set<storm::expressions::Variable> unionOfMetaVariables;
+            std::set_union(this->getContainedMetaVariables().begin(), this->getContainedMetaVariables().end(), other.getContainedMetaVariables().begin(), other.getContainedMetaVariables().end(), std::inserter(unionOfMetaVariables, unionOfMetaVariables.begin()));
+            std::set<storm::expressions::Variable> containedMetaVariables;
+            std::set_difference(unionOfMetaVariables.begin(), unionOfMetaVariables.end(), existentialVariables.begin(), existentialVariables.end(), std::inserter(containedMetaVariables, containedMetaVariables.begin()));
+            
+            return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddBdd().AndAbstract(other.getCuddBdd(), cubeDd.getCuddBdd()), containedMetaVariables);
         }
         
         Dd<DdType::CUDD> Dd<DdType::CUDD>::greater(double value) const {
-            return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddAdd().BddStrictThreshold(value).Add(), this->getContainedMetaVariables());
+            STORM_LOG_WARN_COND(this->isMtbdd(), "Performing arithmetical operation on BDD(s).");
+            return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddMtbdd().BddStrictThreshold(value), this->getContainedMetaVariables());
         }
         
         Dd<DdType::CUDD> Dd<DdType::CUDD>::greaterOrEqual(double value) const {
-            return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddAdd().BddThreshold(value).Add(), this->getContainedMetaVariables());
+            STORM_LOG_WARN_COND(this->isMtbdd(), "Performing arithmetical operation on BDD(s).");
+            return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddMtbdd().BddThreshold(value), this->getContainedMetaVariables());
         }
 
         Dd<DdType::CUDD> Dd<DdType::CUDD>::notZero() const {
-            return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddAdd().BddPattern().Add(), this->getContainedMetaVariables());
+            return this->toBdd();
         }
         
         Dd<DdType::CUDD> Dd<DdType::CUDD>::constrain(Dd<DdType::CUDD> const& constraint) const {
             std::set<storm::expressions::Variable> metaVariables(this->getContainedMetaVariables());
             metaVariables.insert(constraint.getContainedMetaVariables().begin(), constraint.getContainedMetaVariables().end());
             
-            return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddAdd().Constrain(constraint.getCuddAdd()), metaVariables);
+            if (this->isBdd() && constraint.isBdd()) {
+                return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddBdd().Constrain(constraint.getCuddBdd()), metaVariables);
+            } else {
+                return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddMtbdd().Constrain(constraint.getCuddMtbdd()), metaVariables);
+            }
         }
         
         Dd<DdType::CUDD> Dd<DdType::CUDD>::restrict(Dd<DdType::CUDD> const& constraint) const {
             std::set<storm::expressions::Variable> metaVariables(this->getContainedMetaVariables());
             metaVariables.insert(constraint.getContainedMetaVariables().begin(), constraint.getContainedMetaVariables().end());
             
-            return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddAdd().Restrict(constraint.getCuddAdd()), metaVariables);
+            if (this->isBdd() && constraint.isBdd()) {
+                return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddBdd().Restrict(constraint.getCuddBdd()), metaVariables);
+            } else {
+                return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddMtbdd().Restrict(constraint.getCuddMtbdd()), metaVariables);
+            }
         }
         
         Dd<DdType::CUDD> Dd<DdType::CUDD>::getSupport() const {
-            return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddAdd().Support().Add(), this->getContainedMetaVariables());
+            if (this->isBdd()) {
+                return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddBdd().Support(), this->getContainedMetaVariables());
+            } else {
+                return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddMtbdd().Support(), this->getContainedMetaVariables());
+            }
         }
 
         uint_fast64_t Dd<DdType::CUDD>::getNonZeroCount() const {
@@ -346,24 +579,40 @@ namespace storm {
             for (auto const& metaVariable : this->getContainedMetaVariables()) {
                 numberOfDdVariables += this->getDdManager()->getMetaVariable(metaVariable).getNumberOfDdVariables();
             }
-            return static_cast<uint_fast64_t>(this->cuddAdd.CountMinterm(static_cast<int>(numberOfDdVariables)));
+            if (this->isBdd()) {
+                return static_cast<uint_fast64_t>(this->getCuddBdd().CountMinterm(static_cast<int>(numberOfDdVariables)));
+            } else {
+                return static_cast<uint_fast64_t>(this->getCuddMtbdd().CountMinterm(static_cast<int>(numberOfDdVariables)));
+            }
         }
         
         uint_fast64_t Dd<DdType::CUDD>::getLeafCount() const {
-            return static_cast<uint_fast64_t>(this->cuddAdd.CountLeaves());
+            if (this->isBdd()) {
+                return static_cast<uint_fast64_t>(this->getCuddBdd().CountLeaves());
+            } else {
+                return static_cast<uint_fast64_t>(this->getCuddMtbdd().CountLeaves());
+            }
         }
-        
+
         uint_fast64_t Dd<DdType::CUDD>::getNodeCount() const {
-            return static_cast<uint_fast64_t>(this->cuddAdd.nodeCount());
+            if (this->isBdd()) {
+                return static_cast<uint_fast64_t>(this->getCuddBdd().nodeCount());
+            } else {
+                return static_cast<uint_fast64_t>(this->getCuddMtbdd().nodeCount());
+            }
         }
         
         double Dd<DdType::CUDD>::getMin() const {
-            ADD constantMinAdd = this->cuddAdd.FindMin();
+            STORM_LOG_WARN_COND(this->isMtbdd(), "Performing arithmetical operation on BDD(s).");
+
+            ADD constantMinAdd = this->getCuddMtbdd().FindMin();
             return static_cast<double>(Cudd_V(constantMinAdd.getNode()));
         }
         
         double Dd<DdType::CUDD>::getMax() const {
-            ADD constantMaxAdd = this->cuddAdd.FindMax();
+            STORM_LOG_WARN_COND(this->isMtbdd(), "Performing arithmetical operation on BDD(s).");
+
+            ADD constantMaxAdd = this->getCuddMtbdd().FindMax();
             return static_cast<double>(Cudd_V(constantMaxAdd.getNode()));
         }
         
@@ -381,65 +630,102 @@ namespace storm {
         }
         
         void Dd<DdType::CUDD>::setValue(std::map<storm::expressions::Variable, int_fast64_t> const& metaVariableToValueMap, double targetValue) {
-            Dd<DdType::CUDD> valueEncoding(this->getDdManager()->getOne());
-            for (auto const& nameValuePair : metaVariableToValueMap) {
-                valueEncoding *= this->getDdManager()->getEncoding(nameValuePair.first, nameValuePair.second);
-                // Also record that the DD now contains the meta variable.
-                this->addContainedMetaVariable(nameValuePair.first);
+            if (this->isBdd()) {
+                STORM_LOG_THROW(targetValue == storm::utility::zero<double>() || targetValue == storm::utility::one<double>(), storm::exceptions::InvalidArgumentException, "Cannot set encoding to non-0, non-1 value " << targetValue << " in BDD.");
+                Dd<DdType::CUDD> valueEncoding(this->getDdManager()->getOne());
+                for (auto const& nameValuePair : metaVariableToValueMap) {
+                    valueEncoding &= this->getDdManager()->getEncoding(nameValuePair.first, nameValuePair.second);
+                    // Also record that the DD now contains the meta variable.
+                    this->addContainedMetaVariable(nameValuePair.first);
+                }
+                if (targetValue == storm::utility::one<double>()) {
+                    this->cuddDd = valueEncoding.getCuddBdd().Ite(this->getDdManager()->getOne().getCuddBdd(), this->getCuddBdd());
+                } else {
+                    this->cuddDd = valueEncoding.getCuddBdd().Ite(this->getDdManager()->getZero().getCuddBdd(), this->getCuddBdd());
+                }
+            } else {
+                Dd<DdType::CUDD> valueEncoding(this->getDdManager()->getOne());
+                for (auto const& nameValuePair : metaVariableToValueMap) {
+                    valueEncoding &= this->getDdManager()->getEncoding(nameValuePair.first, nameValuePair.second);
+                    // Also record that the DD now contains the meta variable.
+                    this->addContainedMetaVariable(nameValuePair.first);
+                }
+                
+                this->cuddDd = valueEncoding.toMtbdd().getCuddMtbdd().Ite(this->getDdManager()->getConstant(targetValue).getCuddMtbdd(), this->getCuddMtbdd());
             }
-            
-            this->cuddAdd = valueEncoding.getCuddAdd().Ite(this->getDdManager()->getConstant(targetValue).getCuddAdd(), this->cuddAdd);
         }
         
         double Dd<DdType::CUDD>::getValue(std::map<storm::expressions::Variable, int_fast64_t> const& metaVariableToValueMap) const {
             std::set<storm::expressions::Variable> remainingMetaVariables(this->getContainedMetaVariables());
             Dd<DdType::CUDD> valueEncoding(this->getDdManager()->getOne());
             for (auto const& nameValuePair : metaVariableToValueMap) {
-                valueEncoding *= this->getDdManager()->getEncoding(nameValuePair.first, nameValuePair.second);
+                valueEncoding &= this->getDdManager()->getEncoding(nameValuePair.first, nameValuePair.second);
                 if (this->containsMetaVariable(nameValuePair.first)) {
                     remainingMetaVariables.erase(nameValuePair.first);
                 }
             }
             
-            if (!remainingMetaVariables.empty()) {
-                throw storm::exceptions::InvalidArgumentException() << "Cannot evaluate function for which not all inputs were given.";
-            }
+            STORM_LOG_THROW(remainingMetaVariables.empty(), storm::exceptions::InvalidArgumentException, "Cannot evaluate function for which not all inputs were given.");
             
-            Dd<DdType::CUDD> value = *this * valueEncoding;
-            value = value.sumAbstract(this->getContainedMetaVariables());
-            return static_cast<double>(Cudd_V(value.getCuddAdd().getNode()));
+            if (this->isBdd()) {
+                Dd<DdType::CUDD> value = *this && valueEncoding;
+                return value.isZero() ? 0 : 1;
+            } else {
+                Dd<DdType::CUDD> value = *this * valueEncoding;
+                value = value.sumAbstract(this->getContainedMetaVariables());
+                return static_cast<double>(Cudd_V(value.getCuddMtbdd().getNode()));
+            }
         }
         
         bool Dd<DdType::CUDD>::isOne() const {
-            return *this == this->getDdManager()->getOne();
+            if (this->isBdd()) {
+                return this->getCuddBdd().IsOne();
+            } else {
+                return this->getCuddMtbdd().IsOne();
+            }
         }
         
         bool Dd<DdType::CUDD>::isZero() const {
-            return *this == this->getDdManager()->getZero();
+            if (this->isBdd()) {
+                return this->getCuddBdd().IsZero();
+            } else {
+                return this->getCuddMtbdd().IsZero();
+            }
         }
         
         bool Dd<DdType::CUDD>::isConstant() const {
-            return Cudd_IsConstant(this->cuddAdd.getNode());
+            if (this->isBdd()) {
+                return Cudd_IsConstant(this->getCuddBdd().getNode());
+            } else {
+                return Cudd_IsConstant(this->getCuddMtbdd().getNode());
+            }
         }
         
         uint_fast64_t Dd<DdType::CUDD>::getIndex() const {
-            return static_cast<uint_fast64_t>(this->getCuddAdd().NodeReadIndex());
+            if (this->isBdd()) {
+                return static_cast<uint_fast64_t>(this->getCuddBdd().NodeReadIndex());
+            } else {
+                return static_cast<uint_fast64_t>(this->getCuddMtbdd().NodeReadIndex());
+            }
         }
         
         template<typename ValueType>
         std::vector<ValueType> Dd<DdType::CUDD>::toVector() const {
+            STORM_LOG_THROW(this->isMtbdd(), storm::exceptions::IllegalFunctionCallException, "Cannot create vector from BDD.");
             return this->toVector<ValueType>(Odd<DdType::CUDD>(*this));
         }
         
         template<typename ValueType>
         std::vector<ValueType> Dd<DdType::CUDD>::toVector(Odd<DdType::CUDD> const& rowOdd) const {
+            STORM_LOG_THROW(this->isMtbdd(), storm::exceptions::IllegalFunctionCallException, "Cannot create vector from BDD.");
             std::vector<ValueType> result(rowOdd.getTotalOffset());
             std::vector<uint_fast64_t> ddVariableIndices = this->getSortedVariableIndices();
-            addToVectorRec(this->getCuddAdd().getNode(), 0, ddVariableIndices.size(), 0, rowOdd, ddVariableIndices, result);
+            addToVectorRec(this->getCuddDdNode(), 0, ddVariableIndices.size(), 0, rowOdd, ddVariableIndices, result);
             return result;
         }
         
         storm::storage::SparseMatrix<double> Dd<DdType::CUDD>::toMatrix() const {
+            STORM_LOG_THROW(this->isMtbdd(), storm::exceptions::IllegalFunctionCallException, "Cannot create matrix from BDD.");
             std::set<storm::expressions::Variable> rowVariables;
             std::set<storm::expressions::Variable> columnVariables;
             
@@ -455,6 +741,7 @@ namespace storm {
         }
         
         storm::storage::SparseMatrix<double> Dd<DdType::CUDD>::toMatrix(storm::dd::Odd<DdType::CUDD> const& rowOdd, storm::dd::Odd<DdType::CUDD> const& columnOdd) const {
+            STORM_LOG_THROW(this->isMtbdd(), storm::exceptions::IllegalFunctionCallException, "Cannot create matrix from BDD.");
             std::set<storm::expressions::Variable> rowMetaVariables;
             std::set<storm::expressions::Variable> columnMetaVariables;
 
@@ -470,6 +757,7 @@ namespace storm {
         }
         
         storm::storage::SparseMatrix<double> Dd<DdType::CUDD>::toMatrix(std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, storm::dd::Odd<DdType::CUDD> const& rowOdd, storm::dd::Odd<DdType::CUDD> const& columnOdd) const {
+            STORM_LOG_THROW(this->isMtbdd(), storm::exceptions::IllegalFunctionCallException, "Cannot create matrix from BDD.");
             std::vector<uint_fast64_t> ddRowVariableIndices;
             std::vector<uint_fast64_t> ddColumnVariableIndices;
             
@@ -500,7 +788,7 @@ namespace storm {
             
             // Use the toMatrixRec function to compute the number of elements in each row. Using the flag, we prevent
             // it from actually generating the entries in the entry vector.
-            toMatrixRec(this->getCuddAdd().getNode(), rowIndications, columnsAndValues, trivialRowGroupIndices, rowOdd, columnOdd, 0, 0, ddRowVariableIndices.size() + ddColumnVariableIndices.size(), 0, 0, ddRowVariableIndices, ddColumnVariableIndices, false);
+            toMatrixRec(this->getCuddDdNode(), rowIndications, columnsAndValues, trivialRowGroupIndices, rowOdd, columnOdd, 0, 0, ddRowVariableIndices.size() + ddColumnVariableIndices.size(), 0, 0, ddRowVariableIndices, ddColumnVariableIndices, false);
             
             // TODO: counting might be faster by just summing over the primed variables and then using the ODD to convert
             // the resulting (DD) vector to an explicit vector.
@@ -516,7 +804,7 @@ namespace storm {
             rowIndications[0] = 0;
             
             // Now actually fill the entry vector.
-            toMatrixRec(this->getCuddAdd().getNode(), rowIndications, columnsAndValues, trivialRowGroupIndices, rowOdd, columnOdd, 0, 0, ddRowVariableIndices.size() + ddColumnVariableIndices.size(), 0, 0, ddRowVariableIndices, ddColumnVariableIndices, true);
+            toMatrixRec(this->getCuddDdNode(), rowIndications, columnsAndValues, trivialRowGroupIndices, rowOdd, columnOdd, 0, 0, ddRowVariableIndices.size() + ddColumnVariableIndices.size(), 0, 0, ddRowVariableIndices, ddColumnVariableIndices, true);
             
             // Since the last call to toMatrixRec modified the rowIndications, we need to restore the correct values.
             for (uint_fast64_t i = rowIndications.size() - 1; i > 0; --i) {
@@ -529,6 +817,7 @@ namespace storm {
         }
         
         storm::storage::SparseMatrix<double> Dd<DdType::CUDD>::toMatrix(std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd<DdType::CUDD> const& rowOdd, storm::dd::Odd<DdType::CUDD> const& columnOdd) const {
+            STORM_LOG_THROW(this->isMtbdd(), storm::exceptions::IllegalFunctionCallException, "Cannot create matrix from BDD.");
             std::vector<uint_fast64_t> ddRowVariableIndices;
             std::vector<uint_fast64_t> ddColumnVariableIndices;
             std::vector<uint_fast64_t> ddGroupVariableIndices;
@@ -573,7 +862,7 @@ namespace storm {
             // Next, we split the matrix into one for each group. This only works if the group variables are at the very
             // top.
             std::vector<Dd<DdType::CUDD>> groups;
-            splitGroupsRec(this->getCuddAdd().getNode(), groups, ddGroupVariableIndices, 0, ddGroupVariableIndices.size(), rowAndColumnMetaVariables);
+            splitGroupsRec(this->getCuddDdNode(), groups, ddGroupVariableIndices, 0, ddGroupVariableIndices.size(), rowAndColumnMetaVariables);
             
             // Create the actual storage for the non-zero entries.
             std::vector<storm::storage::MatrixEntry<uint_fast64_t, double>> columnsAndValues(this->getNonZeroCount());
@@ -584,10 +873,10 @@ namespace storm {
             for (uint_fast64_t i = 0; i < groups.size(); ++i) {
                 auto const& dd = groups[i];
                 
-                toMatrixRec(dd.getCuddAdd().getNode(), rowIndications, columnsAndValues, rowGroupIndices, rowOdd, columnOdd, 0, 0, ddRowVariableIndices.size() + ddColumnVariableIndices.size(), 0, 0, ddRowVariableIndices, ddColumnVariableIndices, false);
+                toMatrixRec(dd.getCuddDdNode(), rowIndications, columnsAndValues, rowGroupIndices, rowOdd, columnOdd, 0, 0, ddRowVariableIndices.size() + ddColumnVariableIndices.size(), 0, 0, ddRowVariableIndices, ddColumnVariableIndices, false);
                 
                 statesWithGroupEnabled[i] = dd.notZero().existsAbstract(columnMetaVariables);
-                addToVectorRec(statesWithGroupEnabled[i].getCuddAdd().getNode(), 0, ddRowVariableIndices.size(), 0, rowOdd, ddRowVariableIndices, rowGroupIndices);
+                addToVectorRec(statesWithGroupEnabled[i].getCuddDdNode(), 0, ddRowVariableIndices.size(), 0, rowOdd, ddRowVariableIndices, rowGroupIndices);
             }
             
             // Since we modified the rowGroupIndices, we need to restore the correct values.
@@ -610,9 +899,9 @@ namespace storm {
             for (uint_fast64_t i = 0; i < groups.size(); ++i) {
                 auto const& dd = groups[i];
 
-                toMatrixRec(dd.getCuddAdd().getNode(), rowIndications, columnsAndValues, rowGroupIndices, rowOdd, columnOdd, 0, 0, ddRowVariableIndices.size() + ddColumnVariableIndices.size(), 0, 0, ddRowVariableIndices, ddColumnVariableIndices, true);
+                toMatrixRec(dd.getCuddDdNode(), rowIndications, columnsAndValues, rowGroupIndices, rowOdd, columnOdd, 0, 0, ddRowVariableIndices.size() + ddColumnVariableIndices.size(), 0, 0, ddRowVariableIndices, ddColumnVariableIndices, true);
                 
-                addToVectorRec(statesWithGroupEnabled[i].getCuddAdd().getNode(), 0, ddRowVariableIndices.size(), 0, rowOdd, ddRowVariableIndices, rowGroupIndices);
+                addToVectorRec(statesWithGroupEnabled[i].getCuddDdNode(), 0, ddRowVariableIndices.size(), 0, rowOdd, ddRowVariableIndices, rowGroupIndices);
             }
             
             // Since we modified the rowGroupIndices, we need to restore the correct values.
@@ -632,7 +921,7 @@ namespace storm {
         
         void Dd<DdType::CUDD>::toMatrixRec(DdNode const* dd, std::vector<uint_fast64_t>& rowIndications, std::vector<storm::storage::MatrixEntry<uint_fast64_t, double>>& columnsAndValues, std::vector<uint_fast64_t> const& rowGroupOffsets, Odd<DdType::CUDD> const& rowOdd, Odd<DdType::CUDD> const& columnOdd, uint_fast64_t currentRowLevel, uint_fast64_t currentColumnLevel, uint_fast64_t maxLevel, uint_fast64_t currentRowOffset, uint_fast64_t currentColumnOffset, std::vector<uint_fast64_t> const& ddRowVariableIndices, std::vector<uint_fast64_t> const& ddColumnVariableIndices, bool generateValues) const {
             // For the empty DD, we do not need to add any entries.
-            if (dd == this->getDdManager()->getZero().getCuddAdd().getNode()) {
+            if (dd == Cudd_ReadZero(this->getDdManager()->getCuddManager().getManager())) {
                 return;
             }
 
@@ -684,7 +973,7 @@ namespace storm {
         
         void Dd<DdType::CUDD>::splitGroupsRec(DdNode* dd, std::vector<Dd<DdType::CUDD>>& groups, std::vector<uint_fast64_t> const& ddGroupVariableIndices, uint_fast64_t currentLevel, uint_fast64_t maxLevel, std::set<storm::expressions::Variable> const& remainingMetaVariables) const {
             // For the empty DD, we do not need to create a group.
-            if (dd == this->getDdManager()->getZero().getCuddAdd().getNode()) {
+            if (dd == Cudd_ReadZero(this->getDdManager()->getCuddManager().getManager())) {
                 return;
             }
             
@@ -702,7 +991,7 @@ namespace storm {
         template<typename ValueType>
         void Dd<DdType::CUDD>::addToVectorRec(DdNode const* dd, uint_fast64_t currentLevel, uint_fast64_t maxLevel, uint_fast64_t currentOffset, Odd<DdType::CUDD> const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType>& targetVector) const {
             // For the empty DD, we do not need to add any entries.
-            if (dd == this->getDdManager()->getZero().getCuddAdd().getNode()) {
+            if (dd == Cudd_ReadZero(this->getDdManager()->getCuddManager().getManager())) {
                 return;
             }
             
@@ -759,9 +1048,14 @@ namespace storm {
         }
         
         void Dd<DdType::CUDD>::exportToDot(std::string const& filename) const {
-			std::vector<ADD> cuddAddVector = { this->cuddAdd };
 			if (filename.empty()) {
-				this->getDdManager()->getCuddManager().DumpDot(cuddAddVector);
+                if (this->isBdd()) {
+                    std::vector<BDD> cuddBddVector = { this->getCuddBdd() };
+                    this->getDdManager()->getCuddManager().DumpDot(cuddBddVector);
+                } else {
+                    std::vector<ADD> cuddAddVector = { this->getCuddMtbdd() };
+                    this->getDdManager()->getCuddManager().DumpDot(cuddAddVector);
+                }
             } else {
                 // Build the name input of the DD.
                 std::vector<char*> ddNames;
@@ -779,7 +1073,13 @@ namespace storm {
                 
                 // Open the file, dump the DD and close it again.
                 FILE* filePointer = fopen(filename.c_str() , "w");
-				this->getDdManager()->getCuddManager().DumpDot(cuddAddVector, &ddVariableNames[0], &ddNames[0], filePointer);
+                if (this->isBdd()) {
+                    std::vector<BDD> cuddBddVector = { this->getCuddBdd() };
+                    this->getDdManager()->getCuddManager().DumpDot(cuddBddVector, &ddVariableNames[0], &ddNames[0], filePointer);
+                } else {
+                    std::vector<ADD> cuddAddVector = { this->getCuddMtbdd() };
+                    this->getDdManager()->getCuddManager().DumpDot(cuddAddVector, &ddVariableNames[0], &ddNames[0], filePointer);
+                }
                 fclose(filePointer);
                 
                 // Finally, delete the names.
@@ -790,14 +1090,6 @@ namespace storm {
                     delete element;
                 }
             }
-        }
-        
-        ADD Dd<DdType::CUDD>::getCuddAdd() {
-            return this->cuddAdd;
-        }
-        
-        ADD const& Dd<DdType::CUDD>::getCuddAdd() const {
-            return this->cuddAdd;
         }
         
         void Dd<DdType::CUDD>::addContainedMetaVariable(storm::expressions::Variable const& metaVariable) {
@@ -815,7 +1107,7 @@ namespace storm {
         DdForwardIterator<DdType::CUDD> Dd<DdType::CUDD>::begin(bool enumerateDontCareMetaVariables) const {
             int* cube;
             double value;
-            DdGen* generator = this->getCuddAdd().FirstCube(&cube, &value);
+            DdGen* generator = this->getCuddDd().FirstCube(&cube, &value);
             return DdForwardIterator<DdType::CUDD>(this->getDdManager(), generator, cube, value, (Cudd_IsGenEmpty(generator) != 0), &this->getContainedMetaVariables(), enumerateDontCareMetaVariables);
         }
         
@@ -824,14 +1116,13 @@ namespace storm {
         }
         
         storm::expressions::Expression Dd<DdType::CUDD>::toExpression() const {
-            return toExpressionRecur(this->getCuddAdd().getNode(), this->getDdManager()->getDdVariables());
+            return toExpressionRecur(this->getCuddDdNode(), this->getDdManager()->getDdVariables());
         }
         
         storm::expressions::Expression Dd<DdType::CUDD>::getMintermExpression() const {
             // Note that we first transform the ADD into a BDD to convert all non-zero terminals to ones and therefore
             // make the DD more compact.
-            Dd<DdType::CUDD> tmp(this->getDdManager(), this->getCuddAdd().BddPattern().Add(), this->getContainedMetaVariables());
-            return getMintermExpressionRecur(this->getDdManager()->getCuddManager().getManager(), this->getCuddAdd().BddPattern().getNode(), this->getDdManager()->getDdVariables());
+            return getMintermExpressionRecur(this->getDdManager()->getCuddManager().getManager(), this->toBdd().getCuddDdNode(), this->getDdManager()->getDdVariables());
         }
         
         storm::expressions::Expression Dd<DdType::CUDD>::toExpressionRecur(DdNode const* dd, std::vector<storm::expressions::Variable> const& variables) {
@@ -869,7 +1160,7 @@ namespace storm {
 //            }
         }
         
-        std::ostream & operator<<(std::ostream& out, const Dd<DdType::CUDD>& dd) {
+        std::ostream& operator<<(std::ostream& out, const Dd<DdType::CUDD>& dd) {
             dd.exportToDot();
             return out;
         }

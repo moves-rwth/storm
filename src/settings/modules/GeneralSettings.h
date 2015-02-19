@@ -13,6 +13,9 @@ namespace storm {
              */
             class GeneralSettings : public ModuleSettings {
             public:                
+                // An enumeration of all engines.
+                enum class Engine { Sparse, Dd };
+                
                 // An enumeration of all available LP solvers.
                 enum class LpSolver { Gurobi, glpk };
                 
@@ -287,6 +290,13 @@ namespace storm {
                  */
                 bool isBisimulationSet() const;
                 
+                /*!
+                 * Retrieves the selected engine.
+                 *
+                 * @return The selecte engine.
+                 */
+                Engine getEngine() const;
+                
 #ifdef STORM_HAVE_CARL
                 /*!
                  * Retrieves whether the option enabling parametric model checking is set.
@@ -335,6 +345,8 @@ namespace storm {
                 static const std::string statisticsOptionShortName;
                 static const std::string bisimulationOptionName;
                 static const std::string bisimulationOptionShortName;
+                static const std::string engineOptionName;
+                static const std::string engineOptionShortName;
                 
 #ifdef STORM_HAVE_CARL
                 static const std::string parametricOptionName;

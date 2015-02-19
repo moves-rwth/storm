@@ -62,8 +62,15 @@ TEST(CuddDdManager, EncodingTest) {
     ASSERT_THROW(encoding = manager->getEncoding(x.first, 10), storm::exceptions::InvalidArgumentException);
     ASSERT_NO_THROW(encoding = manager->getEncoding(x.first, 4));
     EXPECT_EQ(1, encoding.getNonZeroCount());
-    EXPECT_EQ(6, encoding.getNodeCount());
-    EXPECT_EQ(2, encoding.getLeafCount());
+
+    // As a BDD, this DD has one only leaf, because there does not exist a 0-leaf, and (consequently) one node less
+    // than the MTBDD.
+    EXPECT_EQ(5, encoding.getNodeCount());
+    EXPECT_EQ(1, encoding.getLeafCount());
+    
+    // As an MTBDD, the 0-leaf is there, so the count is actually 2 and the node count is 6.
+    EXPECT_EQ(6, encoding.toMtbdd().getNodeCount());
+    EXPECT_EQ(2, encoding.toMtbdd().getLeafCount());
 }
 
 TEST(CuddDdManager, RangeTest) {
@@ -75,8 +82,8 @@ TEST(CuddDdManager, RangeTest) {
     ASSERT_NO_THROW(range = manager->getRange(x.first));
     
     EXPECT_EQ(9, range.getNonZeroCount());
-    EXPECT_EQ(2, range.getLeafCount());
-    EXPECT_EQ(6, range.getNodeCount());
+    EXPECT_EQ(1, range.getLeafCount());
+    EXPECT_EQ(5, range.getNodeCount());
 }
 
 TEST(CuddDdManager, IdentityTest) {
@@ -100,17 +107,14 @@ TEST(CuddDd, OperatorTest) {
     EXPECT_FALSE(manager->getZero() != manager->getZero());
     EXPECT_TRUE(manager->getZero() != manager->getOne());
     
-    storm::dd::Dd<storm::dd::DdType::CUDD> dd1 = manager->getOne();
-    storm::dd::Dd<storm::dd::DdType::CUDD> dd2 = manager->getOne();
+    storm::dd::Dd<storm::dd::DdType::CUDD> dd1 = manager->getOne(true);
+    storm::dd::Dd<storm::dd::DdType::CUDD> dd2 = manager->getOne(true);
     storm::dd::Dd<storm::dd::DdType::CUDD> dd3 = dd1 + dd2;
     EXPECT_TRUE(dd3 == manager->getConstant(2));
     
-    dd3 += manager->getZero();
+    dd3 += manager->getZero(true);
     EXPECT_TRUE(dd3 == manager->getConstant(2));
     
-    dd3 = dd1 && manager->getConstant(3);
-    EXPECT_TRUE(dd1 == manager->getOne());
-
     dd3 = dd1 * manager->getConstant(3);
     EXPECT_TRUE(dd3 == manager->getConstant(3));
 
@@ -118,22 +122,22 @@ TEST(CuddDd, OperatorTest) {
     EXPECT_TRUE(dd3 == manager->getConstant(6));
     
     dd3 = dd1 - dd2;
-    EXPECT_TRUE(dd3 == manager->getZero());
+    EXPECT_TRUE(dd3.isZero());
     
     dd3 -= manager->getConstant(-2);
     EXPECT_TRUE(dd3 == manager->getConstant(2));
     
     dd3 /= manager->getConstant(2);
-    EXPECT_TRUE(dd3 == manager->getOne());
+    EXPECT_TRUE(dd3.isOne());
     
-    dd3.complement();
-    EXPECT_TRUE(dd3 == manager->getZero());
+    dd3 = dd3.toBdd().complement();
+    EXPECT_TRUE(dd3.isZero());
     
     dd1 = !dd3;
-    EXPECT_TRUE(dd1 == manager->getOne());
+    EXPECT_TRUE(dd1.isOne());
 
-    dd3 = dd1 || dd2;
-    EXPECT_TRUE(dd3 == manager->getOne());
+    dd3 = dd1 || dd2.toBdd();
+    EXPECT_TRUE(dd3.isOne());
     
     dd1 = manager->getIdentity(x.first);
     dd2 = manager->getConstant(5);
@@ -142,7 +146,7 @@ TEST(CuddDd, OperatorTest) {
     EXPECT_EQ(1, dd3.getNonZeroCount());
     
     storm::dd::Dd<storm::dd::DdType::CUDD> dd4 = dd1.notEquals(dd2);
-    EXPECT_TRUE(dd4 == !dd3);
+    EXPECT_TRUE(dd4.toBdd() == !dd3.toBdd());
     
     dd3 = dd1.less(dd2);
     EXPECT_EQ(11, dd3.getNonZeroCount());
@@ -161,12 +165,12 @@ TEST(CuddDd, OperatorTest) {
     EXPECT_EQ(10, dd4.getNonZeroCount());
     
     dd4 = dd3.minimum(dd1);
-    dd4 *= manager->getEncoding(x.first, 2);
+    dd4 *= manager->getEncoding(x.first, 2, true);
     dd4 = dd4.sumAbstract({x.first});
     EXPECT_EQ(2, dd4.getValue());
 
     dd4 = dd3.maximum(dd1);
-    dd4 *= manager->getEncoding(x.first, 2);
+    dd4 *= manager->getEncoding(x.first, 2, true);
     dd4 = dd4.sumAbstract({x.first});
     EXPECT_EQ(5, dd4.getValue());
 
@@ -197,7 +201,7 @@ TEST(CuddDd, AbstractionTest) {
     EXPECT_EQ(1, dd3.getNonZeroCount());
     ASSERT_THROW(dd3 = dd3.existsAbstract({x.second}), storm::exceptions::InvalidArgumentException);
     ASSERT_NO_THROW(dd3 = dd3.existsAbstract({x.first}));
-    EXPECT_TRUE(dd3 == manager->getZero());
+    EXPECT_TRUE(dd3.isOne());
 
     dd3 = dd1.equals(dd2);
     dd3 *= manager->getConstant(3);
@@ -253,7 +257,7 @@ TEST(CuddDd, GetSetValueTest) {
     std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::CUDD>> manager(new storm::dd::DdManager<storm::dd::DdType::CUDD>());
     std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
     
-    storm::dd::Dd<storm::dd::DdType::CUDD> dd1 = manager->getOne();
+    storm::dd::Dd<storm::dd::DdType::CUDD> dd1 = manager->getOne(true);
     ASSERT_NO_THROW(dd1.setValue(x.first, 4, 2));
     EXPECT_EQ(2, dd1.getLeafCount());
     
@@ -397,7 +401,7 @@ TEST(CuddDd, OddTest) {
     }
     
     // Create a non-trivial matrix.
-    dd = manager->getIdentity(x.first).equals(manager->getIdentity(x.second)) * manager->getRange(x.first);
+    dd = manager->getIdentity(x.first).equals(manager->getIdentity(x.second)) * manager->getRange(x.first);    
     dd += manager->getEncoding(x.first, 1) * manager->getRange(x.second) + manager->getEncoding(x.second, 1) * manager->getRange(x.first);
     
     // Create the ODDs.

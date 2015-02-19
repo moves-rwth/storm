@@ -50,7 +50,7 @@ namespace storm {
         
         template <storm::dd::DdType Type>
         storm::dd::Dd<Type> DdPrismModelBuilder<Type>::createUpdateDecisionDiagram(GenerationInformation& generationInfo, storm::prism::Module const& module, storm::dd::Dd<Type> const& guard, storm::prism::Update const& update) {
-            storm::dd::Dd<Type> updateDd = generationInfo.manager->getOne();
+            storm::dd::Dd<Type> updateDd = generationInfo.manager->getOne(true);
             
             STORM_LOG_TRACE("Translating update " << update);
             
@@ -77,7 +77,7 @@ namespace storm {
                 result *= guard;
                 
                 // Restrict the transitions to the range of the written variable.
-                result = result * generationInfo.manager->getRange(primedMetaVariable);
+                result = result * generationInfo.manager->getRange(primedMetaVariable, true);
                 
                 updateDd *= result;
             }
@@ -130,7 +130,7 @@ namespace storm {
             STORM_LOG_WARN_COND(!guardDd.isZero(), "The guard '" << command.getGuardExpression() << "' is unsatisfiable.");
             
             if (!guardDd.isZero()) {
-                storm::dd::Dd<Type> commandDd = generationInfo.manager->getZero();
+                storm::dd::Dd<Type> commandDd = generationInfo.manager->getZero(true);
                 for (storm::prism::Update const& update : command.getUpdates()) {
                     storm::dd::Dd<Type> updateDd = createUpdateDecisionDiagram(generationInfo, module, guardDd, update);
                     
@@ -183,8 +183,8 @@ namespace storm {
         
         template <storm::dd::DdType Type>
         typename DdPrismModelBuilder<Type>::ActionDecisionDiagram DdPrismModelBuilder<Type>::combineCommandsToActionDTMC(GenerationInformation& generationInfo, std::vector<ActionDecisionDiagram> const& commandDds) {
-            storm::dd::Dd<Type> allGuards = generationInfo.manager->getZero();
-            storm::dd::Dd<Type> allCommands = generationInfo.manager->getZero();
+            storm::dd::Dd<Type> allGuards = generationInfo.manager->getZero(true);
+            storm::dd::Dd<Type> allCommands = generationInfo.manager->getZero(true);
             storm::dd::Dd<Type> temporary;
             
             for (auto const& commandDd : commandDds) {
@@ -201,7 +201,7 @@ namespace storm {
         
         template <storm::dd::DdType Type>
         storm::dd::Dd<Type> DdPrismModelBuilder<Type>::encodeChoice(GenerationInformation& generationInfo, uint_fast64_t nondeterminismVariableOffset, uint_fast64_t numberOfBinaryVariables, int_fast64_t value) {
-            storm::dd::Dd<Type> result = generationInfo.manager->getZero();
+            storm::dd::Dd<Type> result = generationInfo.manager->getZero(true);
             
             STORM_LOG_TRACE("Encoding " << value << " with " << numberOfBinaryVariables << " binary variable(s) starting from offset " << nondeterminismVariableOffset << ".");
             
@@ -220,11 +220,11 @@ namespace storm {
         
         template <storm::dd::DdType Type>
         typename DdPrismModelBuilder<Type>::ActionDecisionDiagram DdPrismModelBuilder<Type>::combineCommandsToActionMDP(GenerationInformation& generationInfo, std::vector<ActionDecisionDiagram> const& commandDds, uint_fast64_t nondeterminismVariableOffset) {
-            storm::dd::Dd<Type> allGuards = generationInfo.manager->getZero();
-            storm::dd::Dd<Type> allCommands = generationInfo.manager->getZero();
+            storm::dd::Dd<Type> allGuards = generationInfo.manager->getZero(true);
+            storm::dd::Dd<Type> allCommands = generationInfo.manager->getZero(true);
             
             // Sum all guards, so we can read off the maximal number of nondeterministic choices in any given state.
-            storm::dd::Dd<Type> sumOfGuards = generationInfo.manager->getZero();
+            storm::dd::Dd<Type> sumOfGuards = generationInfo.manager->getZero(true);
             for (auto const& commandDd : commandDds) {
                 sumOfGuards += commandDd.guardDd;
                 allGuards = allGuards || commandDd.guardDd;
@@ -247,9 +247,9 @@ namespace storm {
                 // Calculate number of required variables to encode the nondeterminism.
                 uint_fast64_t numberOfBinaryVariables = static_cast<uint_fast64_t>(std::ceil(storm::utility::math::log2(maxChoices)));
                 
-                storm::dd::Dd<Type> equalsNumberOfChoicesDd = generationInfo.manager->getZero();
-                std::vector<storm::dd::Dd<Type>> choiceDds(maxChoices, generationInfo.manager->getZero());
-                std::vector<storm::dd::Dd<Type>> remainingDds(maxChoices, generationInfo.manager->getZero());
+                storm::dd::Dd<Type> equalsNumberOfChoicesDd = generationInfo.manager->getZero(true);
+                std::vector<storm::dd::Dd<Type>> choiceDds(maxChoices, generationInfo.manager->getZero(true));
+                std::vector<storm::dd::Dd<Type>> remainingDds(maxChoices, generationInfo.manager->getZero(true));
                 
                 for (uint_fast64_t currentChoices = 1; currentChoices <= maxChoices; ++currentChoices) {
                     // Determine the set of states with exactly currentChoices choices.
@@ -262,7 +262,7 @@ namespace storm {
                     
                     // Reset the previously used intermediate storage.
                     for (uint_fast64_t j = 0; j < currentChoices; ++j) {
-                        choiceDds[j] = generationInfo.manager->getZero();
+                        choiceDds[j] = generationInfo.manager->getZero(true);
                         remainingDds[j] = equalsNumberOfChoicesDd;
                     }
                     
@@ -335,23 +335,23 @@ namespace storm {
                 // Bring both choices to the same number of variables that encode the nondeterminism.
                 uint_fast64_t numberOfUsedNondeterminismVariables = std::max(action1.numberOfUsedNondeterminismVariables, action2.numberOfUsedNondeterminismVariables);
                 if (action1.numberOfUsedNondeterminismVariables > action2.numberOfUsedNondeterminismVariables) {
-                    storm::dd::Dd<Type> nondeterminisimEncoding = generationInfo.manager->getOne();
+                    storm::dd::Dd<Type> nondeterminisimEncoding = generationInfo.manager->getOne(true);
                     
                     for (uint_fast64_t i = action2.numberOfUsedNondeterminismVariables; i < action1.numberOfUsedNondeterminismVariables; ++i) {
-                        nondeterminisimEncoding *= generationInfo.manager->getEncoding(generationInfo.nondeterminismMetaVariables[i], 0);
+                        nondeterminisimEncoding *= generationInfo.manager->getEncoding(generationInfo.nondeterminismMetaVariables[i], 0, true);
                     }
                     action2Extended *= nondeterminisimEncoding;
                 } else if (action2.numberOfUsedNondeterminismVariables > action1.numberOfUsedNondeterminismVariables) {
-                    storm::dd::Dd<Type> nondeterminisimEncoding = generationInfo.manager->getOne();
+                    storm::dd::Dd<Type> nondeterminisimEncoding = generationInfo.manager->getOne(true);
                     
                     for (uint_fast64_t i = action1.numberOfUsedNondeterminismVariables; i < action2.numberOfUsedNondeterminismVariables; ++i) {
-                        nondeterminisimEncoding *= generationInfo.manager->getEncoding(generationInfo.nondeterminismMetaVariables[i], 0);
+                        nondeterminisimEncoding *= generationInfo.manager->getEncoding(generationInfo.nondeterminismMetaVariables[i], 0, true);
                     }
                     action1Extended *= nondeterminisimEncoding;
                 }
                 
                 // Add a new variable that resolves the nondeterminism between the two choices.
-                storm::dd::Dd<Type> combinedTransitions = generationInfo.manager->getEncoding(generationInfo.nondeterminismMetaVariables[numberOfUsedNondeterminismVariables], 1).ite(action2Extended, action1Extended);
+                storm::dd::Dd<Type> combinedTransitions = generationInfo.manager->getEncoding(generationInfo.nondeterminismMetaVariables[numberOfUsedNondeterminismVariables], 1, true).ite(action2Extended, action1Extended);
                 
                 return ActionDecisionDiagram(action1.guardDd || action2.guardDd, combinedTransitions, numberOfUsedNondeterminismVariables + 1);
             } else {
@@ -381,44 +381,44 @@ namespace storm {
         storm::dd::Dd<Type> DdPrismModelBuilder<Type>::createSystemFromModule(GenerationInformation& generationInfo, ModuleDecisionDiagram const& module) {
             // If the model is an MDP, we need to encode the nondeterminism using additional variables.
             if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::MDP) {
-                storm::dd::Dd<Type> result = generationInfo.manager->getZero();
+                storm::dd::Dd<Type> result = generationInfo.manager->getZero(true);
                 
                 // First, determine the highest number of nondeterminism variables that is used in any action and make
                 // all actions use the same amout of nondeterminism variables.
                 uint_fast64_t numberOfUsedNondeterminismVariables = module.numberOfUsedNondeterminismVariables;
 
                 // Add variables to independent action DD.
-                storm::dd::Dd<Type> nondeterminismEncoding = generationInfo.manager->getOne();
+                storm::dd::Dd<Type> nondeterminismEncoding = generationInfo.manager->getOne(true);
                 for (uint_fast64_t i = module.independentAction.numberOfUsedNondeterminismVariables; i < numberOfUsedNondeterminismVariables; ++i) {
-                    nondeterminismEncoding *= generationInfo.manager->getEncoding(generationInfo.nondeterminismMetaVariables[i], 0);
+                    nondeterminismEncoding *= generationInfo.manager->getEncoding(generationInfo.nondeterminismMetaVariables[i], 0, true);
                 }
                 result = module.independentAction.transitionsDd * nondeterminismEncoding;
 
                 // Add variables to synchronized action DDs.
                 std::map<uint_fast64_t, storm::dd::Dd<Type>> synchronizingActionToDdMap;
                 for (auto const& synchronizingAction : module.synchronizingActionToDecisionDiagramMap) {
-                    nondeterminismEncoding = generationInfo.manager->getOne();
+                    nondeterminismEncoding = generationInfo.manager->getOne(true);
                     for (uint_fast64_t i = synchronizingAction.second.numberOfUsedNondeterminismVariables; i < numberOfUsedNondeterminismVariables; ++i) {
-                        nondeterminismEncoding *= generationInfo.manager->getEncoding(generationInfo.nondeterminismMetaVariables[i], 0);
+                        nondeterminismEncoding *= generationInfo.manager->getEncoding(generationInfo.nondeterminismMetaVariables[i], 0, true);
                     }
                     synchronizingActionToDdMap.emplace(synchronizingAction.first, synchronizingAction.second.transitionsDd * nondeterminismEncoding);
                 }
                 
                 // Add variables for synchronization.
-                storm::dd::Dd<Type> synchronization = generationInfo.manager->getOne();
+                storm::dd::Dd<Type> synchronization = generationInfo.manager->getOne(true);
                 for (uint_fast64_t i = 0; i < generationInfo.synchronizationMetaVariables.size(); ++i) {
-                    synchronization *= generationInfo.manager->getEncoding(generationInfo.synchronizationMetaVariables[i], 0);
+                    synchronization *= generationInfo.manager->getEncoding(generationInfo.synchronizationMetaVariables[i], 0, true);
                 }
                 result *= synchronization;
                 
                 for (auto& synchronizingAction : synchronizingActionToDdMap) {
-                    synchronization = generationInfo.manager->getOne();
+                    synchronization = generationInfo.manager->getOne(true);
                     
                     for (uint_fast64_t i = 0; i < generationInfo.synchronizationMetaVariables.size(); ++i) {
                         if (i == synchronizingAction.first) {
-                            synchronization *= generationInfo.manager->getEncoding(generationInfo.synchronizationMetaVariables[i], 1);
+                            synchronization *= generationInfo.manager->getEncoding(generationInfo.synchronizationMetaVariables[i], 1, true);
                         } else {
-                            synchronization *= generationInfo.manager->getEncoding(generationInfo.synchronizationMetaVariables[i], 0);
+                            synchronization *= generationInfo.manager->getEncoding(generationInfo.synchronizationMetaVariables[i], 0, true);
                         }
                     }
                     
@@ -549,14 +549,24 @@ namespace storm {
             // In particular, this creates the meta variables used to encode the model.
             GenerationInformation generationInfo(preparedProgram);
 
-            auto clock = std::chrono::high_resolution_clock::now();
+            auto totalTimeStart = std::chrono::high_resolution_clock::now();
             std::pair<storm::dd::Dd<Type>, ModuleDecisionDiagram> transitionMatrixModulePair = createSystemDecisionDiagram(generationInfo);
+            auto totalTimeEnd = std::chrono::high_resolution_clock::now();
+            std::cout << "building matrix took " << std::chrono::duration_cast<std::chrono::milliseconds>(totalTimeEnd - totalTimeStart).count() << "ms" << std::endl;
+            
             storm::dd::Dd<Type> transitionMatrix = transitionMatrixModulePair.first;
             ModuleDecisionDiagram const& globalModule = transitionMatrixModulePair.second;
             
             // Cut the transition matrix to the reachable fragment of the state space.
+            totalTimeStart = std::chrono::high_resolution_clock::now();
             storm::dd::Dd<Type> reachableStates = computeReachableStates(generationInfo, createInitialStatesDecisionDiagram(generationInfo), transitionMatrix);
-            transitionMatrix *= reachableStates;
+            totalTimeEnd = std::chrono::high_resolution_clock::now();
+            std::cout << "reachability took " << std::chrono::duration_cast<std::chrono::milliseconds>(totalTimeEnd - totalTimeStart).count() << "ms" << std::endl;
+            
+            totalTimeStart = std::chrono::high_resolution_clock::now();
+            transitionMatrix *= reachableStates.toMtbdd();
+            totalTimeEnd = std::chrono::high_resolution_clock::now();
+            std::cout << "cutting trans to reachable took " << std::chrono::duration_cast<std::chrono::milliseconds>(totalTimeEnd - totalTimeStart).count() << "ms" << std::endl;
 
             // Detect deadlocks and 1) fix them if requested 2) throw an error otherwise.
             storm::dd::Dd<Type> statesWithTransition = transitionMatrix.notZero();
@@ -564,7 +574,7 @@ namespace storm {
                 statesWithTransition = statesWithTransition.existsAbstract(generationInfo.allNondeterminismVariables);
             }
             statesWithTransition = statesWithTransition.existsAbstract(generationInfo.columnMetaVariables);
-            storm::dd::Dd<Type> deadlockStates = reachableStates * !statesWithTransition;
+            storm::dd::Dd<Type> deadlockStates = (reachableStates && !statesWithTransition).toMtbdd();
 
             if (!deadlockStates.isZero()) {
                 // If we need to fix deadlocks, we do so now.
@@ -577,7 +587,7 @@ namespace storm {
                     } else if (program.getModelType() == storm::prism::Program::ModelType::MDP) {
                         // For MDPs, however, we need to select an action associated with the self-loop, if we do not
                         // want to attach a lot of self-loops to the deadlock states.
-                        storm::dd::Dd<Type> action = generationInfo.manager->getOne();
+                        storm::dd::Dd<Type> action = generationInfo.manager->getOne(true);
                         std::for_each(generationInfo.allNondeterminismVariables.begin(), generationInfo.allNondeterminismVariables.end(), [&action,&generationInfo] (storm::expressions::Variable const& metaVariable) { action *= !generationInfo.manager->getIdentity(metaVariable); } );
                         transitionMatrix += deadlockStates * globalModule.identity * action;
                     }
@@ -592,10 +602,10 @@ namespace storm {
         
         template <storm::dd::DdType Type>
         storm::dd::Dd<Type> DdPrismModelBuilder<Type>::createInitialStatesDecisionDiagram(GenerationInformation& generationInfo) {
-            storm::dd::Dd<Type> initialStates = generationInfo.rowExpressionAdapter->translateExpression(generationInfo.program.getInitialConstruct().getInitialStatesExpression());
+            storm::dd::Dd<Type> initialStates = generationInfo.rowExpressionAdapter->translateExpression(generationInfo.program.getInitialConstruct().getInitialStatesExpression()).toBdd();
             
             for (auto const& metaVariable : generationInfo.rowMetaVariables) {
-                initialStates *= generationInfo.manager->getRange(metaVariable);
+                initialStates &= generationInfo.manager->getRange(metaVariable);
             }
             
             return initialStates;
@@ -603,7 +613,7 @@ namespace storm {
         
         template <storm::dd::DdType Type>
         storm::dd::Dd<Type> DdPrismModelBuilder<Type>::computeReachableStates(GenerationInformation& generationInfo, storm::dd::Dd<Type> const& initialStates, storm::dd::Dd<Type> const& transitions) {
-            storm::dd::Dd<Type> reachableStatesBdd = initialStates.notZero();
+            storm::dd::Dd<Type> reachableStatesBdd = initialStates.toBdd();
             
             // If the model is an MDP, we can abstract from the variables encoding the nondeterminism in the model.
             storm::dd::Dd<Type> transitionBdd = transitions.notZero();
@@ -617,18 +627,17 @@ namespace storm {
             do {
                 STORM_LOG_TRACE("Iteration " << iteration << " of computing reachable states.");
                 changed = false;
-                storm::dd::Dd<Type> tmp = reachableStatesBdd * transitionBdd;
-                tmp = tmp.existsAbstract(generationInfo.rowMetaVariables);
+                storm::dd::Dd<Type> tmp = reachableStatesBdd.andExists(transitionBdd, generationInfo.rowMetaVariables);
                 tmp.swapVariables(generationInfo.rowColumnMetaVariablePairs);
 
-                storm::dd::Dd<Type> newReachableStates = tmp * (!reachableStatesBdd);
+                storm::dd::Dd<Type> newReachableStates = tmp && (!reachableStatesBdd);
                 
                 // Check whether new states were indeed discovered.
                 if (!newReachableStates.isZero()) {
                     changed = true;
                 }
                 
-                reachableStatesBdd += newReachableStates;
+                reachableStatesBdd |= newReachableStates;
                 ++iteration;
             } while (changed);
             

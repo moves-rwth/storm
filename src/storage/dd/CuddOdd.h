@@ -92,13 +92,13 @@ namespace storm {
             /*!
              * Constructs an offset-labeled DD with the given topmost DD node, else- and then-successor.
              *
-             * @param dd The DD associated with this ODD node.
+             * @param dd The DD node associated with this ODD node.
              * @param elseNode The else-successor of thie ODD node.
              * @param elseOffset The offset of the else-successor.
              * @param thenNode The then-successor of thie ODD node.
              * @param thenOffset The offset of the then-successor.
              */
-            Odd(ADD dd, std::shared_ptr<Odd<DdType::CUDD>>&& elseNode, uint_fast64_t elseOffset, std::shared_ptr<Odd<DdType::CUDD>>&& thenNode, uint_fast64_t thenOffset);
+            Odd(std::shared_ptr<Odd<DdType::CUDD>> elseNode, uint_fast64_t elseOffset, std::shared_ptr<Odd<DdType::CUDD>> thenNode, uint_fast64_t thenOffset);
             
             /*!
              * Recursively builds the ODD.
@@ -113,9 +113,6 @@ namespace storm {
              * @return A pointer to the constructed ODD for the given arguments.
              */
             static std::shared_ptr<Odd<DdType::CUDD>> buildOddRec(DdNode* dd, Cudd const& manager, uint_fast64_t currentLevel, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<std::map<DdNode*, std::shared_ptr<Odd<DdType::CUDD>>>>& uniqueTableForLevels);
-            
-            // The DD associated with this ODD node.
-            ADD dd;
             
             // The then- and else-nodes.
             std::shared_ptr<Odd<DdType::CUDD>> elseNode;

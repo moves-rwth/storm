@@ -20,7 +20,7 @@ namespace storm {
             const std::string GeneralSettings::configOptionName = "config";
             const std::string GeneralSettings::configOptionShortName = "c";
             const std::string GeneralSettings::explicitOptionName = "explicit";
-            const std::string GeneralSettings::explicitOptionShortName = "e";
+            const std::string GeneralSettings::explicitOptionShortName = "exp";
             const std::string GeneralSettings::symbolicOptionName = "symbolic";
             const std::string GeneralSettings::symbolicOptionShortName = "s";
             const std::string GeneralSettings::propertyOptionName = "prop";
@@ -41,6 +41,8 @@ namespace storm {
             const std::string GeneralSettings::statisticsOptionShortName = "stats";
             const std::string GeneralSettings::bisimulationOptionName = "bisimulation";
             const std::string GeneralSettings::bisimulationOptionShortName = "bisim";
+            const std::string GeneralSettings::engineOptionName = "engine";
+            const std::string GeneralSettings::engineOptionShortName = "e";
             
 #ifdef STORM_HAVE_CARL
             const std::string GeneralSettings::parametricOptionName = "parametric";
@@ -75,6 +77,10 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, stateRewardsOptionName, false, "If given, the state rewards are read from this file and added to the explicit model. Note that this requires the model to be given as an explicit model (i.e., via --" + explicitOptionName + ").")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The file from which to read the state rewards.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, dontFixDeadlockOptionName, false, "If the model contains deadlock states, they need to be fixed by setting this option.").setShortName(dontFixDeadlockOptionShortName).build());
+                
+                std::vector<std::string> engines = {"sparse", "dd"};
+                this->addOption(storm::settings::OptionBuilder(moduleName, engineOptionName, false, "Sets which engine is used for model building and model checking.").setShortName(engineOptionShortName)
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the engine to use. Available are {sparse, dd}.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(engines)).setDefaultValueString("sparse").build()).build());
                 
                 std::vector<std::string> linearEquationSolver = {"gmm++", "native"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, eqSolverOptionName, false, "Sets which solver is preferred for solving systems of linear equations.")
@@ -251,6 +257,16 @@ namespace storm {
                 return this->getOption(bisimulationOptionName).getHasOptionBeenSet();
             }
             
+            GeneralSettings::Engine GeneralSettings::getEngine() const {
+                std::string engine = this->getOption(engineOptionName).getArgumentByName("name").getValueAsString();
+                if (engine == "sparse") {
+                    return GeneralSettings::Engine::Sparse;
+                } else if (engine == "dd") {
+                    return GeneralSettings::Engine::Dd;
+                }
+                STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown engine '" << engine << "'.");
+            }
+            
 #ifdef STORM_HAVE_CARL
             bool GeneralSettings::isParametricSet() const {
                 return this->getOption(parametricOptionName).getHasOptionBeenSet();
@@ -264,6 +280,8 @@ namespace storm {
                 // Make sure that one "source" for properties is given.
                 uint_fast64_t propertySources = 0 + (isPropertySet() ? 1 : 0) + (isPropertyFileSet() ? 1 : 0);
                 STORM_LOG_THROW(propertySources <= 1, storm::exceptions::InvalidSettingsException, "Please specify either a file that contains the properties or a property on the command line, but not both.");
+                
+                STORM_LOG_THROW(this->getEngine() != Engine::Dd || !isExplicitSet(), storm::exceptions::InvalidSettingsException, "Decision-diagram engine can only be used with symbolic input models.");
                 
                 return true;
             }

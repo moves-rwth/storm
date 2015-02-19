@@ -113,6 +113,13 @@ namespace storm {
              */
             Dd<DdType::CUDD> const& getCube() const;
             
+            /*!
+             * Retrieves the cube of all variables that encode this meta variable represented as an MTBDD.
+             *
+             * @return The cube of all variables that encode this meta variable.
+             */
+            Dd<DdType::CUDD> const& getCubeAsMtbdd() const;
+            
             // The name of the meta variable.
             std::string name;
             
@@ -130,6 +137,10 @@ namespace storm {
             
             // The cube consisting of all variables that encode the meta variable.
             Dd<DdType::CUDD> cube;
+            
+            // The cube consisting of all variables that encode the meta variable represented by an MTBDD. This is
+            // used as a shortcut mainly for the abstraction methods.
+            Dd<DdType::CUDD> cubeAsMtbdd;
             
             // A pointer to the manager responsible for this meta variable.
             std::shared_ptr<DdManager<DdType::CUDD>> manager;
