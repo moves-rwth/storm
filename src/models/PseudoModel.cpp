@@ -91,7 +91,7 @@ namespace storm {
 
 				// Now we can just enumerate all the target SCCs and insert the corresponding transitions.
 				for (auto targetBlock : allTargetBlocks) {
-					dependencyGraphBuilder.addNextValue(currentBlockIndex, targetBlock, storm::utility::constantOne<ValueType>());
+					dependencyGraphBuilder.addNextValue(currentBlockIndex, targetBlock, storm::utility::one<ValueType>());
 				}
 			}
 

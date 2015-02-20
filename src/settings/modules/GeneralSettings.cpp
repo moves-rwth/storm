@@ -269,10 +269,6 @@ namespace storm {
                 
                 return true;
             }
-            
-            bool GeneralSettings::isBisimulationSet() const {
-                return this->getOption(bisimulationOptionName).getHasOptionBeenSet();
-            }
 
             bool GeneralSettings::isCudaSet() const {
                 return this->getOption(cudaOptionName).getHasOptionBeenSet();

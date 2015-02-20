@@ -33,13 +33,20 @@ namespace storm {
         ValueType pow(ValueType const& value, uint_fast64_t exponent) {
             return std::pow(value, exponent);
         }
-        
-        template<>
-        double simplify(double value) {
-            // In the general case, we don't to anything here, but merely return the value. If something else is
-            // supposed to happen here, the templated function can be specialized for this particular type.
-            return value;
-        }
+
+		template<>
+		double simplify(double value) {
+			// In the general case, we don't to anything here, but merely return the value. If something else is
+			// supposed to happen here, the templated function can be specialized for this particular type.
+			return value;
+		}
+
+		template<>
+		float simplify(float value) {
+			// In the general case, we don't to anything here, but merely return the value. If something else is
+			// supposed to happen here, the templated function can be specialized for this particular type.
+			return value;
+		}
 
         template<>
         int simplify(int value) {
@@ -162,20 +169,38 @@ namespace storm {
             return std::move(matrixEntry);
         }
         
-        template class ConstantsComparator<double>;
-        
-        template double one();
-        template double zero();
-        template double infinity();
-        
-        template double pow(double const& value, uint_fast64_t exponent);
+		//explicit instantiations
+		//double
+		template class ConstantsComparator<double>;
 
-        template double simplify(double value);
+		template double one();
+		template double zero();
+		template double infinity();
 
-        template storm::storage::MatrixEntry<storm::storage::sparse::state_type, double> simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, double> matrixEntry);
-        template storm::storage::MatrixEntry<storm::storage::sparse::state_type, double>& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, double>& matrixEntry);
-        template storm::storage::MatrixEntry<storm::storage::sparse::state_type, double>&& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, double>&& matrixEntry);
-        
+		template double pow(double const& value, uint_fast64_t exponent);
+
+		template double simplify(double value);
+
+		template storm::storage::MatrixEntry<storm::storage::sparse::state_type, double> simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, double> matrixEntry);
+		template storm::storage::MatrixEntry<storm::storage::sparse::state_type, double>& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, double>& matrixEntry);
+		template storm::storage::MatrixEntry<storm::storage::sparse::state_type, double>&& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, double>&& matrixEntry);
+
+		//float
+		template class ConstantsComparator<float>;
+
+		template float one();
+		template float zero();
+		template float infinity();
+
+		template float pow(float const& value, uint_fast64_t exponent);
+
+		template float simplify(float value);
+
+		template storm::storage::MatrixEntry<storm::storage::sparse::state_type, float> simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, float> matrixEntry);
+		template storm::storage::MatrixEntry<storm::storage::sparse::state_type, float>& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, float>& matrixEntry);
+		template storm::storage::MatrixEntry<storm::storage::sparse::state_type, float>&& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, float>&& matrixEntry);
+
+		//int
         template class ConstantsComparator<int>;
         
         template int one();
