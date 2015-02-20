@@ -6,6 +6,7 @@
 
 #include "src/storage/sparse/StateType.h"
 #include "src/storage/Decomposition.h"
+#include "src/storage/StateBlock.h"
 #include "src/logic/Formulas.h"
 #include "src/models/sparse/Dtmc.h"
 #include "src/models/sparse/Ctmc.h"

@@ -1,18 +1,8 @@
 #ifndef STORM_MODELS_SPARSE_MDP_H_
 #define STORM_MODELS_SPARSE_MDP_H_
 
-#include <ostream>
-#include <iostream>
-#include <memory>
-#include <cstdlib>
-#include <algorithm>
-
-#include "src/models/sparse/StateLabeling.h"
-#include "src/storage/SparseMatrix.h"
-#include "src/settings/SettingsManager.h"
 #include "src/models/sparse/NondeterministicModel.h"
-#include "src/utility/constants.h"
-#include "src/utility/matrix.h"
+#include "src/utility/OsDetection.h"
 
 namespace storm {
     namespace models {

@@ -10,9 +10,9 @@
 TEST(SparseMdpPrctlModelCheckerTest, AsynchronousLeader) {
 	std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader7.tra", STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader7.lab", "", STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader7.trans.rew");
 
-	ASSERT_EQ(abstractModel->getType(), storm::models::MDP);
+    ASSERT_EQ(abstractModel->getType(), storm::models::ModelType::Mdp);
 
-	std::shared_ptr<storm::models::Mdp<double>> mdp = abstractModel->as<storm::models::Mdp<double>>();
+	std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = abstractModel->as<storm::models::sparse::Mdp<double>>();
 
 	ASSERT_EQ(2095783ull, mdp->getNumberOfStates());
 	ASSERT_EQ(7714385ull, mdp->getNumberOfTransitions());
@@ -72,9 +72,9 @@ TEST(SparseMdpPrctlModelCheckerTest, AsynchronousLeader) {
 TEST(SparseMdpPrctlModelCheckerTest, Consensus) {
 	std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/mdp/consensus/coin4_6.tra", STORM_CPP_BASE_PATH "/examples/mdp/consensus/coin4_6.lab", STORM_CPP_BASE_PATH "/examples/mdp/consensus/coin4_6.steps.state.rew", "");
     
-	ASSERT_EQ(abstractModel->getType(), storm::models::MDP);
+    ASSERT_EQ(abstractModel->getType(), storm::models::ModelType::Mdp);
     
-	std::shared_ptr<storm::models::Mdp<double>> mdp = abstractModel->as<storm::models::Mdp<double>>();
+	std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = abstractModel->as<storm::models::sparse::Mdp<double>>();
     
 	ASSERT_EQ(63616ull, mdp->getNumberOfStates());
 	ASSERT_EQ(213472ull, mdp->getNumberOfTransitions());

@@ -2,15 +2,7 @@
 #define STORM_MODELS_SPARSE_MARKOVAUTOMATON_H_
 
 #include "src/models/sparse/NondeterministicModel.h"
-#include "src/models/sparse/StateLabeling.h"
-#include "src/storage/SparseMatrix.h"
-#include "src/storage/sparse/StateType.h"
-#include "src/exceptions/InvalidArgumentException.h"
-#include "src/settings/SettingsManager.h"
 #include "src/utility/OsDetection.h"
-#include "src/utility/constants.h"
-#include "src/utility/vector.h"
-#include "src/utility/matrix.h"
 
 namespace storm {
     namespace models {

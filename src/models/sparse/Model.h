@@ -1,7 +1,6 @@
 #ifndef STORM_MODELS_SPARSE_MODEL_H_
 #define STORM_MODELS_SPARSE_MODEL_H_
 
-#include <memory>
 #include <vector>
 #include <boost/container/flat_set.hpp>
 #include <boost/optional.hpp>
@@ -11,14 +10,8 @@
 #include "src/storage/sparse/StateType.h"
 #include "src/storage/BitVector.h"
 #include "src/storage/SparseMatrix.h"
-#include "src/storage/Scheduler.h"
-#include "src/storage/StronglyConnectedComponentDecomposition.h"
-#include "src/utility/constants.h"
+#include "src/storage/Decomposition.h"
 #include "src/utility/OsDetection.h"
-#include "src/utility/macros.h"
-#include "src/utility/vector.h"
-
-#include "src/exceptions/InvalidOperationException.h"
 
 namespace storm {
     namespace models {

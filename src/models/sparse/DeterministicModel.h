@@ -1,9 +1,6 @@
 #ifndef STORM_MODELS_SPARSE_DETERMINISTICMODEL_H_
 #define STORM_MODELS_SPARSE_DETERMINISTICMODEL_H_
 
-#include <memory>
-#include <sstream>
-
 #include "src/models/sparse/Model.h"
 #include "src/utility/OsDetection.h"
 

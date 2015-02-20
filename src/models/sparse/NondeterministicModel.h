@@ -1,8 +1,6 @@
 #ifndef STORM_MODELS_SPARSE_NONDETERMINISTICMODEL_H_
 #define STORM_MODELS_SPARSE_NONDETERMINISTICMODEL_H_
 
-#include <memory>
-
 #include "src/models/sparse/Model.h"
 #include "src/utility/OsDetection.h"
 

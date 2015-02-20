@@ -5,8 +5,6 @@
 #include <vector>
 
 #include "src/models/sparse/DeterministicModel.h"
-#include "src/models/sparse/StateLabeling.h"
-#include "src/storage/SparseMatrix.h"
 #include "src/utility/OsDetection.h"
 
 namespace storm {

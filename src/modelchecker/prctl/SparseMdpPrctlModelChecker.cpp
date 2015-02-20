@@ -10,6 +10,7 @@
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
+#include "src/exceptions/InvalidStateException.h"
 #include "src/exceptions/InvalidPropertyException.h"
 
 namespace storm {

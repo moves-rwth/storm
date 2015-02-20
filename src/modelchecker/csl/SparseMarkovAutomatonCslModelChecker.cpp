@@ -3,6 +3,8 @@
 #include <utility>
 #include <vector>
 
+#include "src/storage/StronglyConnectedComponentDecomposition.h"
+
 #include "src/utility/constants.h"
 #include "src/utility/macros.h"
 #include "src/utility/vector.h"

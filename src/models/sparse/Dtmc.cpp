@@ -1,6 +1,7 @@
 #include "src/models/sparse/Dtmc.h"
 
 #include "src/adapters/CarlAdapter.h"
+#include "src/exceptions/NotImplementedException.h"
 
 namespace storm {
     namespace models {

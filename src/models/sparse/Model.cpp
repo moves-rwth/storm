@@ -1,5 +1,6 @@
 #include "src/models/sparse/Model.h"
 
+#include "src/utility/vector.h"
 #include "src/adapters/CarlAdapter.h"
 
 namespace storm {

@@ -10,9 +10,9 @@
 TEST(GmmxxDtmcPrctlModelCheckerTest, Crowds) {
 	std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/dtmc/crowds/crowds20_5.tra", STORM_CPP_BASE_PATH "/examples/dtmc/crowds/crowds20_5.lab", "", "");
 
-	ASSERT_EQ(abstractModel->getType(), storm::models::DTMC);
+    ASSERT_EQ(abstractModel->getType(), storm::models::ModelType::Dtmc);
 
-	std::shared_ptr<storm::models::Dtmc<double>> dtmc = abstractModel->as<storm::models::Dtmc<double>>();
+	std::shared_ptr<storm::models::sparse::Dtmc<double>> dtmc = abstractModel->as<storm::models::sparse::Dtmc<double>>();
 
 	ASSERT_EQ(2036647ull, dtmc->getNumberOfStates());
 	ASSERT_EQ(7362293ull, dtmc->getNumberOfTransitions());
@@ -48,9 +48,9 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, Crowds) {
 TEST(GmmxxDtmcPrctlModelCheckerTest, SynchronousLeader) {
 	std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/dtmc/synchronous_leader/leader6_8.tra", STORM_CPP_BASE_PATH "/examples/dtmc/synchronous_leader/leader6_8.lab", "", STORM_CPP_BASE_PATH "/examples/dtmc/synchronous_leader/leader6_8.pick.trans.rew");
 
-	ASSERT_EQ(abstractModel->getType(), storm::models::DTMC);
+    ASSERT_EQ(abstractModel->getType(), storm::models::ModelType::Dtmc);
 
-	std::shared_ptr<storm::models::Dtmc<double>> dtmc = abstractModel->as<storm::models::Dtmc<double>>();
+	std::shared_ptr<storm::models::sparse::Dtmc<double>> dtmc = abstractModel->as<storm::models::sparse::Dtmc<double>>();
 
 	ASSERT_EQ(1312334ull, dtmc->getNumberOfStates());
 	ASSERT_EQ(1574477ull, dtmc->getNumberOfTransitions());
