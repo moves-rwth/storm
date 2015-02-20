@@ -63,7 +63,7 @@ namespace storm {
 #define __FORCE_FLOAT_CALCULATION false
 #endif
 			if (__FORCE_FLOAT_CALCULATION && (sizeof(ValueType) == sizeof(double))) {
-				TopologicalValueIterationNondeterministicLinearEquationSolver<float> tvindles{ precision, maximalNumberOfIterations, relative };
+				TopologicalValueIterationNondeterministicLinearEquationSolver<float> tvindles{ this->precision, this->maximalNumberOfIterations, this->relative };
 
 				storm::storage::SparseMatrix<float> new_A = A.template toValueType<float>();
 				std::vector<float> new_x = storm::utility::vector::toValueType<float>(x);
@@ -298,7 +298,7 @@ namespace storm {
 							++localIterations;
 							++globalIterations;
 						}
-						LOG4CPLUS_INFO(logger, "Executed " << localIterations << " of max. " << maximalNumberOfIterations << " Iterations.");
+						LOG4CPLUS_INFO(logger, "Executed " << localIterations << " of max. " << this->maximalNumberOfIterations << " Iterations.");
 					}
 
 
