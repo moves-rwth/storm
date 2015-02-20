@@ -36,6 +36,12 @@ namespace storm {
 			this->maximalNumberOfIterations = settings.getMaximalIterationCount();
 			this->precision = settings.getPrecision();
 			this->relative = (settings.getConvergenceCriterion() == storm::settings::modules::TopologicalValueIterationEquationSolverSettings::ConvergenceCriterion::Relative);
+
+			auto generalSettings = storm::settings::generalSettings();
+			this->enableCuda = generalSettings.isCudaSet();
+#ifdef STORM_HAVE_CUDA
+			STORM_LOG_INFO_COND(this->enableCuda, "Option CUDA was not set, but the topological value iteration solver will use it anyways.");
+#endif
         }
         
         template<typename ValueType>

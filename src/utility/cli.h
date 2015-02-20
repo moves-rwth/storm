@@ -25,6 +25,10 @@
 #ifdef STORM_HAVE_MSAT
 #   include "mathsat.h"
 #endif
+#ifdef STORM_HAVE_CUDA
+#include <cuda.h>
+#include <cuda_runtime.h>
+#endif
 
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
@@ -60,6 +64,7 @@ log4cplus::Logger printer;
 #include "src/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "src/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
 #include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
+#include "src/modelchecker/prctl/TopologicalValueIterationMdpPrctlModelChecker.h"
 
 // Headers for counterexample generation.
 #include "src/counterexamples/MILPMinimalLabelSetGenerator.h"
@@ -150,6 +155,44 @@ namespace storm {
                 char* msatVersion = msat_get_version();
                 std::cout << "Linked with " << msatVersion << "." << std::endl;
                 msat_free(msatVersion);
+#endif
+#ifdef STORM_HAVE_CUDA
+				int deviceCount = 0;
+				cudaError_t error_id = cudaGetDeviceCount(&deviceCount);
+
+				if (error_id == cudaSuccess)
+				{
+					std::cout << "Compiled with CUDA support, ";
+					// This function call returns 0 if there are no CUDA capable devices.
+					if (deviceCount == 0)
+					{
+						std::cout<< "but there are no available device(s) that support CUDA." << std::endl;
+					} else
+					{
+						std::cout << "detected " << deviceCount << " CUDA Capable device(s):" << std::endl;
+					}
+
+					int dev, driverVersion = 0, runtimeVersion = 0;
+
+					for (dev = 0; dev < deviceCount; ++dev)
+					{
+						cudaSetDevice(dev);
+						cudaDeviceProp deviceProp;
+						cudaGetDeviceProperties(&deviceProp, dev);
+
+						std::cout << "CUDA Device " << dev << ": \"" << deviceProp.name << "\"" << std::endl;
+
+						// Console log
+						cudaDriverGetVersion(&driverVersion);
+						cudaRuntimeGetVersion(&runtimeVersion);
+						std::cout << "  CUDA Driver Version / Runtime Version          " << driverVersion / 1000 << "." << (driverVersion % 100) / 10 << " / " << runtimeVersion / 1000 << "." << (runtimeVersion % 100) / 10 << std::endl;
+						std::cout << "  CUDA Capability Major/Minor version number:    " << deviceProp.major<<"."<<deviceProp.minor <<std::endl;
+					}
+					std::cout << std::endl;
+				}
+				else {
+					std::cout << "Compiled with CUDA support, but an error occured trying to find CUDA devices." << std::endl;
+				}
 #endif
                 
                 // "Compute" the command line argument string with which STORM was invoked.
@@ -362,9 +405,19 @@ namespace storm {
                             }
                         }
                     } else if (model->getType() == storm::models::MDP) {
-                        std::shared_ptr<storm::models::Mdp<ValueType>> mdp = model->template as<storm::models::Mdp<ValueType>>();
-                        storm::modelchecker::SparseMdpPrctlModelChecker<ValueType> modelchecker(*mdp);
-                        result = modelchecker.check(*formula.get());
+						std::shared_ptr<storm::models::Mdp<ValueType>> mdp = model->template as<storm::models::Mdp<ValueType>>();
+#ifdef STORM_HAVE_CUDA
+						if (settings.isCudaSet()) {
+							storm::modelchecker::TopologicalValueIterationMdpPrctlModelChecker<ValueType> modelchecker(*mdp);
+							result = modelchecker.check(*formula.get());
+						} else {
+							storm::modelchecker::SparseMdpPrctlModelChecker<ValueType> modelchecker(*mdp);
+							result = modelchecker.check(*formula.get());
+						}
+#else
+						storm::modelchecker::SparseMdpPrctlModelChecker<ValueType> modelchecker(*mdp);
+						result = modelchecker.check(*formula.get());
+#endif
                     }
                     
                     if (result) {

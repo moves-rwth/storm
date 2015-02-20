@@ -20,7 +20,7 @@ TEST(TopologicalValueIterationMdpPrctlModelCheckerTest, Dice) {
 	ASSERT_EQ(mdp->getNumberOfStates(), 169ull);
 	ASSERT_EQ(mdp->getNumberOfTransitions(), 436ull);
     
-	storm::modelchecker::prctl::TopologicalValueIterationMdpPrctlModelChecker<double> mc(*mdp);
+	storm::modelchecker::TopologicalValueIterationMdpPrctlModelChecker<double> mc(*mdp);
     
 	//storm::property::prctl::Ap<double>* apFormula = new storm::property::prctl::Ap<double>("two");
 	auto apFormula = std::make_shared<storm::logic::AtomicLabelFormula>("two");
@@ -138,7 +138,7 @@ TEST(TopologicalValueIterationMdpPrctlModelCheckerTest, Dice) {
 	// ------------- state rewards --------------
 	std::shared_ptr<storm::models::Mdp<double>> stateRewardMdp = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.tra", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.lab", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.flip.state.rew", "")->as<storm::models::Mdp<double>>();
     
-	storm::modelchecker::prctl::TopologicalValueIterationMdpPrctlModelChecker<double> stateRewardModelChecker(*stateRewardMdp);
+	storm::modelchecker::TopologicalValueIterationMdpPrctlModelChecker<double> stateRewardModelChecker(*stateRewardMdp);
 
 
 	apFormula = std::make_shared<storm::logic::AtomicLabelFormula>("done");
@@ -174,7 +174,7 @@ TEST(TopologicalValueIterationMdpPrctlModelCheckerTest, Dice) {
 	// -------------------------------- state and transition reward ------------------------
 	std::shared_ptr<storm::models::Mdp<double>> stateAndTransitionRewardMdp = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.tra", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.lab", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.flip.state.rew", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.flip.trans.rew")->as<storm::models::Mdp<double>>();
     
-	storm::modelchecker::prctl::TopologicalValueIterationMdpPrctlModelChecker<double> stateAndTransitionRewardModelChecker(*stateAndTransitionRewardMdp);
+	storm::modelchecker::TopologicalValueIterationMdpPrctlModelChecker<double> stateAndTransitionRewardModelChecker(*stateAndTransitionRewardMdp);
     
 
 	apFormula = std::make_shared<storm::logic::AtomicLabelFormula>("done");
@@ -214,7 +214,7 @@ TEST(TopologicalValueIterationMdpPrctlModelCheckerTest, AsynchronousLeader) {
 	ASSERT_EQ(mdp->getNumberOfStates(), 3172ull);
 	ASSERT_EQ(mdp->getNumberOfTransitions(), 7144ull);
 
-	storm::modelchecker::prctl::TopologicalValueIterationMdpPrctlModelChecker<double> mc(*mdp);
+	storm::modelchecker::TopologicalValueIterationMdpPrctlModelChecker<double> mc(*mdp);
 
 	auto apFormula = std::make_shared<storm::logic::AtomicLabelFormula>("elected");
 	auto eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(apFormula);

@@ -1,6 +1,0 @@
-#include "utility.h"
-#include "bandWidth.h"
-#include "basicAdd.h"
-#include "kernelSwitchTest.h"
-#include "basicValueIteration.h"
-#include "version.h"
