@@ -1,5 +1,6 @@
 #include "src/storage/StronglyConnectedComponentDecomposition.h"
 #include "src/models/AbstractModel.h"
+#include "src/adapters/CarlAdapter.h"
 
 namespace storm {
     namespace storage {
@@ -170,7 +171,7 @@ namespace storm {
                     p.push_back(currentState);
                 
                     for (auto const& successor : transitionMatrix.getRowGroup(currentState)) {
-                        if (subsystem.get(successor.getColumn()) && successor.getValue() != storm::utility::constantZero<ValueType>()) {
+                        if (subsystem.get(successor.getColumn()) && !comparator.isZero(successor.getValue())) {
                             if (currentState == successor.getColumn()) {
                                 statesWithSelfLoop.set(currentState);
                             }
@@ -211,5 +212,8 @@ namespace storm {
         // Explicitly instantiate the SCC decomposition.
 		template class StronglyConnectedComponentDecomposition<double>;
 		template class StronglyConnectedComponentDecomposition<float>;
+#ifdef STORM_HAVE_CARL
+        template class StronglyConnectedComponentDecomposition<storm::RationalFunction>;
+#endif
     } // namespace storage
 } // namespace storm

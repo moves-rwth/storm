@@ -35,7 +35,6 @@ set(MSAT_ROOT "" CACHE STRING "The root directory of MathSAT (if available).")
 set(ADDITIONAL_INCLUDE_DIRS "" CACHE STRING "Additional directories added to the include directories.")
 set(ADDITIONAL_LINK_DIRS "" CACHE STRING "Additional directories added to the link directories.")
 set(CUSTOM_BOOST_ROOT "" CACHE STRING "A custom path to the Boost root directory.")
-
 #############################################################
 ##
 ##	Inclusion of required libraries
@@ -59,6 +58,7 @@ set(TBB_INSTALL_DIR "${PROJECT_SOURCE_DIR}/resources/3rdparty/tbb42_20140122_mer
 
 find_package(Boost REQUIRED)
 find_package(Doxygen REQUIRED)
+find_package(Gurobi)
 find_package(TBB)
 find_package(Threads REQUIRED)
 find_package(GMP)
@@ -71,7 +71,7 @@ else()
 endif()
 message(STATUS "StoRM - Building ${CMAKE_BUILD_TYPE} version.")
 
-if ("${GUROBI_ROOT}" STREQUAL "")
+if ("${GUROBI_ROOT}" STREQUAL "" AND NOT GUROBI_FOUND)
     set(ENABLE_GUROBI OFF)
 else()
     set(ENABLE_GUROBI ON)
@@ -96,9 +96,14 @@ else()
     set(ENABLE_MSAT ON)
 endif()
 
+find_package(carl QUIET)
+if(carl_FOUND)
+    message(STATUS "StoRM - Activating CArL.")
+    set(STORM_HAVE_CARL ON)
+endif()
+
 message(STATUS "StoRM - CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 message(STATUS "StoRM - CMAKE_BUILD_TYPE (ENV): $ENV{CMAKE_BUILD_TYPE}")
-
 
 #############################################################
 ##
@@ -386,7 +391,7 @@ endif()
 file(GLOB_RECURSE STORM_HEADERS ${PROJECT_SOURCE_DIR}/src/*.h)
 file(GLOB_RECURSE STORM_SOURCES_WITHOUT_MAIN ${PROJECT_SOURCE_DIR}/src/*/*.cpp)
 file(GLOB_RECURSE STORM_MAIN_FILE ${PROJECT_SOURCE_DIR}/src/storm.cpp)
-set(STORM_SOURCES "${STORM_SOURCES_WITHOUT_MAIN};${STORM_MAIN_FILE}")
+set(STORM_SOURCES "${STORM_SOURCES_WITHOUT_MAIN};${STORM_MAIN_FILE};")
 file(GLOB_RECURSE STORM_ADAPTERS_FILES ${PROJECT_SOURCE_DIR}/src/adapters/*.h ${PROJECT_SOURCE_DIR}/src/adapters/*.cpp)
 file(GLOB_RECURSE STORM_BUILDER_FILES ${PROJECT_SOURCE_DIR}/src/builder/*.h ${PROJECT_SOURCE_DIR}/src/builder/*.cpp)
 file(GLOB_RECURSE STORM_EXCEPTIONS_FILES ${PROJECT_SOURCE_DIR}/src/exceptions/*.h ${PROJECT_SOURCE_DIR}/src/exceptions/*.cpp)
@@ -395,6 +400,8 @@ file(GLOB STORM_MODELCHECKER_FILES ${PROJECT_SOURCE_DIR}/src/modelchecker/*.h ${
 file(GLOB_RECURSE STORM_MODELCHECKER_PRCTL_FILES ${PROJECT_SOURCE_DIR}/src/modelchecker/prctl/*.h ${PROJECT_SOURCE_DIR}/src/modelchecker/prctl/*.cpp)
 file(GLOB_RECURSE STORM_MODELCHECKER_CSL_FILES ${PROJECT_SOURCE_DIR}/src/modelchecker/csl/*.h ${PROJECT_SOURCE_DIR}/src/modelchecker/csl/*.cpp)
 file(GLOB_RECURSE STORM_MODELCHECKER_REACHABILITY_FILES ${PROJECT_SOURCE_DIR}/src/modelchecker/reachability/*.h ${PROJECT_SOURCE_DIR}/src/modelchecker/reachability/*.cpp)
+file(GLOB_RECURSE STORM_MODELCHECKER_PROPOSITIONAL_FILES ${PROJECT_SOURCE_DIR}/src/modelchecker/propositional/*.h ${PROJECT_SOURCE_DIR}/src/modelchecker/propositional/*.cpp)
+file(GLOB_RECURSE STORM_MODELCHECKER_RESULTS_FILES ${PROJECT_SOURCE_DIR}/src/modelchecker/results/*.h ${PROJECT_SOURCE_DIR}/src/modelchecker/results/*.cpp)
 file(GLOB_RECURSE STORM_COUNTEREXAMPLES_FILES ${PROJECT_SOURCE_DIR}/src/counterexamples/*.h ${PROJECT_SOURCE_DIR}/src/counterexamples/*.cpp)
 file(GLOB_RECURSE STORM_MODELS_FILES ${PROJECT_SOURCE_DIR}/src/models/*.h ${PROJECT_SOURCE_DIR}/src/models/*.cpp)
 file(GLOB STORM_PARSER_FILES ${PROJECT_SOURCE_DIR}/src/parser/*.h ${PROJECT_SOURCE_DIR}/src/parser/*.cpp)
@@ -430,6 +437,8 @@ source_group(modelchecker FILES ${STORM_MODELCHECKER_FILES})
 source_group(modelchecker\\prctl FILES ${STORM_MODELCHECKER_PRCTL_FILES})
 source_group(modelchecker\\csl FILES ${STORM_MODELCHECKER_CSL_FILES})
 source_group(modelchecker\\reachability FILES ${STORM_MODELCHECKER_REACHABILITY_FILES})
+source_group(modelchecker\\propositional FILES ${STORM_MODELCHECKER_PROPOSITIONAL_FILES})
+source_group(modelchecker\\results FILES ${STORM_MODELCHECKER_RESULTS_FILES})
 source_group(counterexamples FILES ${STORM_COUNTEREXAMPLES_FILES})
 source_group(models FILES ${STORM_MODELS_FILES})
 source_group(parser FILES ${STORM_PARSER_FILES})
@@ -462,7 +471,10 @@ endif(ADDITIONAL_LINK_DIRS)
 ##
 #############################################################
 if (ENABLE_GUROBI)
-	link_directories("${GUROBI_ROOT}/lib")
+	if (NOT GUROBI_FOUND)
+		message(FATAL_ERROR "Gurobi was requested, but not found!")
+	endif()
+	#link_directories("${GUROBI_ROOT}/lib")
 endif()
 if (ENABLE_Z3)
     link_directories("${Z3_ROOT}/bin")
@@ -561,11 +573,11 @@ target_link_libraries(storm ltl2dstar)
 ##
 #############################################################
 if (ENABLE_GUROBI)
-    message (STATUS "StoRM - Linking with Gurobi")
-	include_directories("${GUROBI_ROOT}/include")
-    target_link_libraries(storm "gurobi56")
-    target_link_libraries(storm-functional-tests "gurobi56")
-    target_link_libraries(storm-performance-tests "gurobi56")
+    message (STATUS "StoRM - Linking with Gurobi (include: ${GUROBI_INCLUDE_DIRS})")
+	include_directories(${GUROBI_INCLUDE_DIRS})
+    target_link_libraries(storm ${GUROBI_LIBRARY})
+    target_link_libraries(storm-functional-tests ${GUROBI_LIBRARY})
+    target_link_libraries(storm-performance-tests ${GUROBI_LIBRARY})
 endif(ENABLE_GUROBI)
 
 #############################################################
@@ -607,9 +619,23 @@ include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/exprtk")
 #############################################################
 if (ENABLE_Z3)
     message (STATUS "StoRM - Linking with Z3")
-	include_directories("${Z3_ROOT}/include")
+    include_directories("${Z3_ROOT}/include")
     target_link_libraries(storm ${Z3_LIB_NAME})
 endif(ENABLE_Z3)
+
+#############################################################
+##
+##      carl
+##
+#############################################################
+
+if(STORM_HAVE_CARL)
+    message(STATUS "StoRM - Linking with carl.")
+    include_directories("${carl_INCLUDE_DIR}")
+    target_link_libraries(storm lib_carl)
+    target_link_libraries(storm-functional-tests lib_carl)
+    target_link_libraries(storm-performance-tests lib_carl)
+endif()
 
 #############################################################
 ##
@@ -618,23 +644,23 @@ endif(ENABLE_Z3)
 #############################################################
 if (ENABLE_MSAT)
     message (STATUS "StoRM - Linking with MathSAT")
-	include_directories("${MSAT_ROOT}/include")
+    include_directories("${MSAT_ROOT}/include")
     target_link_libraries(storm "mathsat")
     target_link_libraries(storm-functional-tests "mathsat")
     target_link_libraries(storm-performance-tests "mathsat")
-	if(GMP_FOUND)
-		include_directories("${GMP_INCLUDE_DIR}")
-		target_link_libraries(storm "gmp")
-		target_link_libraries(storm-functional-tests "gmp")
-		target_link_libraries(storm-performance-tests "gmp")
-	elseif(MPIR_FOUND)
-		include_directories("${GMP_INCLUDE_DIR}")
-		target_link_libraries(storm "mpir" "mpirxx")
-		target_link_libraries(storm-functional-tests "mpir" "mpirxx")
-		target_link_libraries(storm-performance-tests "mpir" "mpirxx")
-	else(GMP_FOUND)
-		message(FATAL_ERROR "GMP is required for MathSAT, but was not found!")
-	endif(GMP_FOUND)
+    if(GMP_FOUND)
+        include_directories("${GMP_INCLUDE_DIR}")
+        target_link_libraries(storm "gmp")
+        target_link_libraries(storm-functional-tests "gmp")
+        target_link_libraries(storm-performance-tests "gmp")
+    elseif(MPIR_FOUND)
+        include_directories("${GMP_INCLUDE_DIR}")
+        target_link_libraries(storm "mpir" "mpirxx")
+        target_link_libraries(storm-functional-tests "mpir" "mpirxx")
+        target_link_libraries(storm-performance-tests "mpir" "mpirxx")
+    else(GMP_FOUND)
+        message(FATAL_ERROR "GMP is required for MathSAT, but was not found!")
+    endif(GMP_FOUND)
 endif(ENABLE_MSAT)
 
 #############################################################

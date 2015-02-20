@@ -98,6 +98,7 @@ TEST(BitVectorTest, SetFromInt) {
     EXPECT_FALSE(vector.get(62));
     EXPECT_TRUE(vector.get(63));
     
+    vector = storm::storage::BitVector(77);
     vector.setFromInt(62, 4, 15);
 
     EXPECT_TRUE(vector.get(62));
@@ -108,11 +109,29 @@ TEST(BitVectorTest, SetFromInt) {
     vector.setFromInt(62, 5, 17);
 }
 
+TEST(BitVectorTest, GetSetInt) {
+    storm::storage::BitVector vector(77);
+
+    vector.setFromInt(63, 3, 2);
+    EXPECT_EQ(2, vector.getAsInt(63, 3));
+}
+
+
 TEST(BitVectorDeathTest, GetSetAssertion) {
 	storm::storage::BitVector vector(32);
     
-    EXPECT_DEATH_IF_SUPPORTED(vector.get(32), "");
-    EXPECT_DEATH_IF_SUPPORTED(vector.set(32), "");
+#ifndef NDEBUG
+#ifdef WINDOWS
+	EXPECT_EXIT(vector.get(32), ::testing::ExitedWithCode(0), ".*");
+	EXPECT_EXIT(vector.set(32), ::testing::ExitedWithCode(0), ".*");
+#else
+	EXPECT_DEATH_IF_SUPPORTED(vector.get(32), "");
+	EXPECT_DEATH_IF_SUPPORTED(vector.set(32), "");
+#endif
+#else
+	std::cerr << "WARNING: Not testing GetSetAssertions, as they are disabled in release mode." << std::endl;
+	SUCCEED();
+#endif
 }
 
 TEST(BitVectorTest, Resize) {
@@ -294,7 +313,17 @@ TEST(BitVectorTest, OperatorModulo) {
 		vector3.set(i, i % 2 == 0);
     }
     
-    EXPECT_DEATH_IF_SUPPORTED(vector1 % vector3, "");
+
+#ifndef NDEBUG
+#ifdef WINDOWS
+	EXPECT_EXIT(vector1 % vector3, ::testing::ExitedWithCode(0), ".*");
+#else
+	EXPECT_DEATH_IF_SUPPORTED(vector1 % vector3, "");
+#endif
+#else
+	std::cerr << "WARNING: Not testing OperatorModulo size check, as assertions are disabled in release mode." << std::endl;
+	SUCCEED();
+#endif
 }
 
 TEST(BitVectorTest, OperatorNot) {

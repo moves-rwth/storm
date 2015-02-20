@@ -1,4 +1,4 @@
-#include "src/utility/ConstantsComparator.h"
+#include "src/utility/constants.h"
 
 #include "src/storage/SparseMatrix.h"
 #include "src/storage/sparse/StateType.h"
@@ -21,6 +21,14 @@ namespace storm {
             return std::numeric_limits<ValueType>::infinity();
         }
         
+#ifdef STORM_HAVE_CARL
+        template<>
+        storm::RationalFunction infinity() {
+            // FIXME: this does not work.
+            return storm::RationalFunction(carl::rationalize<cln::cl_RA>(std::numeric_limits<double>::infinity()));
+        }
+#endif
+        
         template<typename ValueType>
         ValueType pow(ValueType const& value, uint_fast64_t exponent) {
             return std::pow(value, exponent);
@@ -32,7 +40,7 @@ namespace storm {
             // supposed to happen here, the templated function can be specialized for this particular type.
             return value;
         }
-        
+
         template<>
         int simplify(int value) {
             // In the general case, we don't to anything here, but merely return the value. If something else is
@@ -79,24 +87,24 @@ namespace storm {
             return true;
         }
         
-#ifdef PARAMETRIC_SYSTEMS
+#ifdef STORM_HAVE_CARL
         template<>
         RationalFunction pow(RationalFunction const& value, uint_fast64_t exponent) {
             return carl::pow(value, exponent);
         }
-        
+
         template<>
         RationalFunction simplify(RationalFunction value) {
             value.simplify();
             return value;
         }
-        
+
         template<>
         RationalFunction& simplify(RationalFunction& value) {
             value.simplify();
             return value;
         }
-        
+
         template<>
         RationalFunction&& simplify(RationalFunction&& value) {
             value.simplify();
@@ -135,19 +143,19 @@ namespace storm {
             return value.isConstant();
         }
 #endif
-        
+
         template<typename IndexType, typename ValueType>
         storm::storage::MatrixEntry<IndexType, ValueType> simplify(storm::storage::MatrixEntry<IndexType, ValueType> matrixEntry) {
             simplify(matrixEntry.getValue());
             return matrixEntry;
         }
-        
+
         template<typename IndexType, typename ValueType>
         storm::storage::MatrixEntry<IndexType, ValueType>& simplify(storm::storage::MatrixEntry<IndexType, ValueType>& matrixEntry) {
             simplify(matrixEntry.getValue());
             return matrixEntry;
         }
-        
+
         template<typename IndexType, typename ValueType>
         storm::storage::MatrixEntry<IndexType, ValueType>&& simplify(storm::storage::MatrixEntry<IndexType, ValueType>&& matrixEntry) {
             simplify(matrixEntry.getValue());
@@ -161,9 +169,9 @@ namespace storm {
         template double infinity();
         
         template double pow(double const& value, uint_fast64_t exponent);
-        
+
         template double simplify(double value);
-        
+
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, double> simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, double> matrixEntry);
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, double>& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, double>& matrixEntry);
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, double>&& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, double>&& matrixEntry);
@@ -182,12 +190,13 @@ namespace storm {
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, int>& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, int>& matrixEntry);
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, int>&& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, int>&& matrixEntry);
         
-#ifdef PARAMETRIC_SYSTEMS
+#ifdef STORM_HAVE_CARL
         template class ConstantsComparator<RationalFunction>;
         template class ConstantsComparator<Polynomial>;
-        
+
         template RationalFunction one();
         template RationalFunction zero();
+        template storm::RationalFunction infinity();
         
         template RationalFunction pow(RationalFunction const& value, uint_fast64_t exponent);
         

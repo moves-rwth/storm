@@ -50,13 +50,13 @@ TEST(ExpressionEvaluation, ExprTkEvaluation) {
     eval.setBooleanValue(x, true);
     for (int_fast64_t i = 0; i < 1000; ++i) {
         eval.setIntegerValue(y, 3 + i);
-        EXPECT_NEAR(8.5 + i, eval.asDouble(iteExpression), 1e-6);
+        EXPECT_NEAR(8.5 + i, eval.asRational(iteExpression), 1e-6);
     }
     
     eval.setBooleanValue(x, false);
     for (int_fast64_t i = 0; i < 1000; ++i) {
         double zValue = i / static_cast<double>(10);
         eval.setRationalValue(z, zValue);
-        EXPECT_NEAR(3 * zValue, eval.asDouble(iteExpression), 1e-6);
+        EXPECT_NEAR(3 * zValue, eval.asRational(iteExpression), 1e-6);
     }
 }

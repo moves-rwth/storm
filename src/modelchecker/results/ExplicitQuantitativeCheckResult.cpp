@@ -1,9 +1,10 @@
-#include "src/modelchecker/ExplicitQuantitativeCheckResult.h"
+#include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
-#include "src/modelchecker/ExplicitQualitativeCheckResult.h"
+#include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "src/storage/BitVector.h"
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidOperationException.h"
+#include "src/adapters/CarlAdapter.h"
 
 namespace storm {
     namespace modelchecker {
@@ -183,6 +184,14 @@ namespace storm {
             }
         }
         
+#ifdef STORM_HAVE_CARL
+        template<>
+        std::unique_ptr<CheckResult> ExplicitQuantitativeCheckResult<storm::RationalFunction>::compareAgainstBound(storm::logic::ComparisonType comparisonType, double bound) const {
+            // Since it is not possible to compare rational functions against bounds, we simply call the base class method.
+            return QuantitativeCheckResult::compareAgainstBound(comparisonType, bound);
+        }
+#endif
+        
         template<typename ValueType>
         ValueType& ExplicitQuantitativeCheckResult<ValueType>::operator[](storm::storage::sparse::state_type state) {
             if (this->isResultForAllStates()) {
@@ -220,5 +229,9 @@ namespace storm {
         }
         
         template class ExplicitQuantitativeCheckResult<double>;
+        
+#ifdef STORM_HAVE_CARL
+        template class ExplicitQuantitativeCheckResult<storm::RationalFunction>;
+#endif
     }
 }

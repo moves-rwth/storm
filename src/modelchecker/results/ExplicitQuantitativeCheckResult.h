@@ -5,7 +5,7 @@
 #include <map>
 #include <boost/variant.hpp>
 
-#include "src/modelchecker/QuantitativeCheckResult.h"
+#include "src/modelchecker/results/QuantitativeCheckResult.h"
 #include "src/storage/sparse/StateType.h"
 #include "src/utility/OsDetection.h"
 

@@ -18,10 +18,10 @@ namespace storm {
             
             // Instantiate constructors and assignments with their default implementations.
             IntegerLiteralExpression(IntegerLiteralExpression const& other) = default;
-            IntegerLiteralExpression& operator=(IntegerLiteralExpression const& other) = default;
+            IntegerLiteralExpression& operator=(IntegerLiteralExpression const& other) = delete;
 #ifndef WINDOWS
             IntegerLiteralExpression(IntegerLiteralExpression&&) = default;
-            IntegerLiteralExpression& operator=(IntegerLiteralExpression&&) = default;
+            IntegerLiteralExpression& operator=(IntegerLiteralExpression&&) = delete;
 #endif
             virtual ~IntegerLiteralExpression() = default;
             

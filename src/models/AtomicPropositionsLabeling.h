@@ -139,20 +139,53 @@ public:
 	 * @return The index of the new proposition.
 	 */
 	uint_fast64_t addAtomicProposition(std::string const& ap) {
+		return addAtomicProposition(ap, storage::BitVector(stateCount));
+	}
+	
+    /*!
+     * Retrieves the set of atomic propositions contained in this labeling.
+     *
+     * @return The set of known atomic propositions.
+     */
+    std::set<std::string> getAtomicPropositions() const {
+        std::set<std::string> result;
+        
+        for (auto const& apIndexPair : this->nameToLabelingMap) {
+            result.insert(apIndexPair.first);
+        }
+        
+        return result;
+    }
+    
+	/**
+	 * Creates a new atomic proposition and attaches the given states with the label.
+     * @param ap
+     * @param states
+     * @return 
+     */
+	uint_fast64_t addAtomicProposition(std::string const& ap, storage::BitVector const& states)
+	{
 		if (nameToLabelingMap.count(ap) != 0) {
 			LOG4CPLUS_ERROR(logger, "Atomic Proposition already exists.");
 			throw storm::exceptions::OutOfRangeException("Atomic Proposition already exists.");
 		}
+		if(states.size() != stateCount)
+		{
+			LOG4CPLUS_ERROR(logger, "State vector has invalid size.");
+			throw storm::exceptions::OutOfRangeException("State vector has invalid size.");
+		}
+		
 		if (apsCurrent >= apCountMax) {
 			apCountMax++;
 			singleLabelings.reserve(apCountMax);
 		}
 		nameToLabelingMap.emplace(ap, apsCurrent);
-        singleLabelings.emplace_back(stateCount);
+        singleLabelings.push_back(states);
 
 		uint_fast64_t returnValue = apsCurrent++;
 		return returnValue;
 	}
+	
 
 	/*!
 	 * Checks whether the name of an atomic proposition is registered within this labeling.
@@ -221,19 +254,6 @@ public:
         auto apIndexPair = nameToLabelingMap.find(ap);
 		return this->singleLabelings[apIndexPair->second].get(state);
 	}
-
-    /*!
-     * Retrieves the set of atomic propositions of the model.
-     *
-     * @return The set of atomic propositions of the model.
-     */
-    std::set<std::string> getAtomicPropositions() const {
-        std::set<std::string> result;
-        for (auto const& labeling : this->nameToLabelingMap) {
-            result.insert(labeling.first);
-        }
-        return result;
-    }
     
 	/*!
 	 * Returns the number of atomic propositions managed by this object (set in the initialization).

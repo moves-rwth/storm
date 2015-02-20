@@ -123,7 +123,7 @@ namespace storm {
                         for (uint_fast64_t skippedRow = 0; skippedRow < row; ++skippedRow) {
                             hadDeadlocks = true;
                             if (!dontFixDeadlocks) {
-                                resultMatrix.addNextValue(skippedRow, skippedRow, storm::utility::constantOne<double>());
+                                resultMatrix.addNextValue(skippedRow, skippedRow, storm::utility::one<double>());
                                 LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << skippedRow << " has no outgoing transitions. A self-loop was inserted.");
                             } else {
                                 LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": state " << skippedRow << " has no outgoing transitions.");
@@ -144,7 +144,7 @@ namespace storm {
 						if (lastRow != row) {
 							if (!rowHadDiagonalEntry) {
 								if (insertDiagonalEntriesIfMissing) {
-									resultMatrix.addNextValue(lastRow, lastRow, storm::utility::constantZero<double>());
+									resultMatrix.addNextValue(lastRow, lastRow, storm::utility::zero<double>());
 									LOG4CPLUS_DEBUG(logger, "While parsing " << filename << ": state " << lastRow << " has no transition to itself. Inserted a 0-transition. (1)");
 								} else {
 									LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << lastRow << " has no transition to itself.");
@@ -155,7 +155,7 @@ namespace storm {
 							for (uint_fast64_t skippedRow = lastRow + 1; skippedRow < row; ++skippedRow) {
 								hadDeadlocks = true;
 								if (!dontFixDeadlocks) {
-									resultMatrix.addNextValue(skippedRow, skippedRow, storm::utility::constantOne<double>());
+									resultMatrix.addNextValue(skippedRow, skippedRow, storm::utility::one<double>());
 									LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << skippedRow << " has no outgoing transitions. A self-loop was inserted.");
 								} else {
 									LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": state " << skippedRow << " has no outgoing transitions.");
@@ -172,7 +172,7 @@ namespace storm {
 
 						if (col > row && !rowHadDiagonalEntry) {
 							if (insertDiagonalEntriesIfMissing) {
-								resultMatrix.addNextValue(row, row, storm::utility::constantZero<double>());
+								resultMatrix.addNextValue(row, row, storm::utility::zero<double>());
 								LOG4CPLUS_DEBUG(logger, "While parsing " << filename << ": state " << row << " has no transition to itself. Inserted a 0-transition. (2)");
 							} else {
 								LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << row << " has no transition to itself.");
@@ -186,7 +186,7 @@ namespace storm {
 
 					if (!rowHadDiagonalEntry) {
 						if (insertDiagonalEntriesIfMissing) {
-							resultMatrix.addNextValue(lastRow, lastRow, storm::utility::constantZero<double>());
+							resultMatrix.addNextValue(lastRow, lastRow, storm::utility::zero<double>());
 							LOG4CPLUS_DEBUG(logger, "While parsing " << filename << ": state " << lastRow << " has no transition to itself. Inserted a 0-transition. (3)");
 						} else {
 							LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << lastRow << " has no transition to itself.");

@@ -14,6 +14,8 @@ namespace storm {
             
             virtual bool isBoundedUntilFormula() const override;
 
+            virtual bool containsBoundedUntilFormula() const override;
+            
             bool isIntervalBounded() const;
             bool isIntegerUpperBounded() const;
             

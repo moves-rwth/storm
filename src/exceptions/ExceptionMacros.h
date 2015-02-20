@@ -1,6 +1,7 @@
 #ifndef STORM_EXCEPTIONS_EXCEPTIONMACROS_H_
 #define STORM_EXCEPTIONS_EXCEPTIONMACROS_H_
 
+
 /*!
  * Macro to generate descendant exception classes. As all classes are nearly the same, this makes changing common
  * features much easier.

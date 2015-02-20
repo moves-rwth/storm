@@ -1,6 +1,7 @@
 #ifndef STORM_SETTINGS_MODULES_GENERALSETTINGS_H_
 #define STORM_SETTINGS_MODULES_GENERALSETTINGS_H_
 
+#include "storm-config.h"
 #include "src/settings/modules/ModuleSettings.h"
 
 namespace storm {
@@ -293,6 +294,15 @@ namespace storm {
                  */
                 bool isCudaSet() const;
                 
+#ifdef STORM_HAVE_CARL
+                /*!
+                 * Retrieves whether the option enabling parametric model checking is set.
+                 *
+                 * @return True iff the option was set.
+                 */
+                bool isParametricSet() const;
+#endif
+                
                 bool check() const override;
 
                 // The name of the module.
@@ -333,6 +343,10 @@ namespace storm {
                 static const std::string bisimulationOptionName;
                 static const std::string bisimulationOptionShortName;
                 static const std::string cudaOptionName;
+                
+#ifdef STORM_HAVE_CARL
+                static const std::string parametricOptionName;
+#endif
             };
             
         } // namespace modules

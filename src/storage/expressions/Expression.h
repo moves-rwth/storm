@@ -5,6 +5,7 @@
 #include <map>
 #include <unordered_map>
 
+#include "src/storage/expressions/SimpleValuation.h"
 #include "src/storage/expressions/BaseExpression.h"
 #include "src/storage/expressions/ExpressionVisitor.h"
 #include "src/utility/OsDetection.h"

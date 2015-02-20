@@ -1,11 +1,13 @@
 #include "src/storage/expressions/ExprtkExpressionEvaluator.h"
 #include "src/storage/expressions/ExpressionManager.h"
 
+#include "src/adapters/CarlAdapter.h"
 #include "src/utility/macros.h"
 
 namespace storm {
     namespace expressions {
-        ExprtkExpressionEvaluator::ExprtkExpressionEvaluator(storm::expressions::ExpressionManager const& manager) : manager(manager.getSharedPointer()), booleanValues(manager.getNumberOfBooleanVariables()), integerValues(manager.getNumberOfIntegerVariables()), rationalValues(manager.getNumberOfRationalVariables()) {
+        template<typename RationalType>
+        ExprtkExpressionEvaluatorBase<RationalType>::ExprtkExpressionEvaluatorBase(storm::expressions::ExpressionManager const& manager) : ExpressionEvaluatorBase<RationalType>(manager), booleanValues(manager.getNumberOfBooleanVariables()), integerValues(manager.getNumberOfIntegerVariables()), rationalValues(manager.getNumberOfRationalVariables()) {
 
             for (auto const& variableTypePair : manager) {
                 if (variableTypePair.second.isBooleanType()) {
@@ -19,7 +21,8 @@ namespace storm {
             symbolTable.add_constants();
         }
         
-        bool ExprtkExpressionEvaluator::asBool(Expression const& expression) const {
+        template<typename RationalType>
+        bool ExprtkExpressionEvaluatorBase<RationalType>::asBool(Expression const& expression) const {
             BaseExpression const* expressionPtr = expression.getBaseExpressionPointer().get();
             auto const& expressionPair = this->compiledExpressions.find(expression.getBaseExpressionPointer().get());
             if (expressionPair == this->compiledExpressions.end()) {
@@ -29,7 +32,8 @@ namespace storm {
             return expressionPair->second.value() == ValueType(1);
         }
         
-        int_fast64_t ExprtkExpressionEvaluator::asInt(Expression const& expression) const {
+        template<typename RationalType>
+        int_fast64_t ExprtkExpressionEvaluatorBase<RationalType>::asInt(Expression const& expression) const {
             BaseExpression const* expressionPtr = expression.getBaseExpressionPointer().get();
             auto const& expressionPair = this->compiledExpressions.find(expression.getBaseExpressionPointer().get());
             if (expressionPair == this->compiledExpressions.end()) {
@@ -39,7 +43,36 @@ namespace storm {
             return static_cast<int_fast64_t>(expressionPair->second.value());
         }
         
-        double ExprtkExpressionEvaluator::asDouble(Expression const& expression) const {
+        template<typename RationalType>
+        typename ExprtkExpressionEvaluatorBase<RationalType>::CompiledExpressionType& ExprtkExpressionEvaluatorBase<RationalType>::getCompiledExpression(BaseExpression const* expression) const {
+            std::pair<CacheType::iterator, bool> result = this->compiledExpressions.emplace(expression, CompiledExpressionType());
+            CompiledExpressionType& compiledExpression = result.first->second;
+            compiledExpression.register_symbol_table(symbolTable);
+            bool parsingOk = parser.compile(ToExprtkStringVisitor().toString(expression), compiledExpression);
+            STORM_LOG_ASSERT(parsingOk, "Expression was not properly parsed by ExprTk.");
+            return compiledExpression;
+        }
+        
+        template<typename RationalType>
+        void ExprtkExpressionEvaluatorBase<RationalType>::setBooleanValue(storm::expressions::Variable const& variable, bool value) {
+            this->booleanValues[variable.getOffset()] = static_cast<ValueType>(value);
+        }
+        
+        template<typename RationalType>
+        void ExprtkExpressionEvaluatorBase<RationalType>::setIntegerValue(storm::expressions::Variable const& variable, int_fast64_t value) {
+            this->integerValues[variable.getOffset()] = static_cast<ValueType>(value);
+        }
+        
+        template<typename RationalType>
+        void ExprtkExpressionEvaluatorBase<RationalType>::setRationalValue(storm::expressions::Variable const& variable, double value) {
+            this->rationalValues[variable.getOffset()] = static_cast<ValueType>(value);
+        }
+        
+        ExprtkExpressionEvaluator::ExprtkExpressionEvaluator(storm::expressions::ExpressionManager const& manager) : ExprtkExpressionEvaluatorBase<double>(manager) {
+            // Intentionally left empty.
+        }
+        
+        double ExprtkExpressionEvaluator::asRational(Expression const& expression) const {
             BaseExpression const* expressionPtr = expression.getBaseExpressionPointer().get();
             auto const& expressionPair = this->compiledExpressions.find(expression.getBaseExpressionPointer().get());
             if (expressionPair == this->compiledExpressions.end()) {
@@ -49,25 +82,9 @@ namespace storm {
             return static_cast<double>(expressionPair->second.value());
         }
         
-        ExprtkExpressionEvaluator::CompiledExpressionType& ExprtkExpressionEvaluator::getCompiledExpression(BaseExpression const* expression) const {
-            std::pair<CacheType::iterator, bool> result = this->compiledExpressions.emplace(expression, CompiledExpressionType());
-            CompiledExpressionType& compiledExpression = result.first->second;
-            compiledExpression.register_symbol_table(symbolTable);
-            bool parsingOk = parser.compile(ToExprtkStringVisitor().toString(expression), compiledExpression);
-            STORM_LOG_ASSERT(parsingOk, "Expression was not properly parsed by ExprTk.");
-            return compiledExpression;
-        }
-        
-        void ExprtkExpressionEvaluator::setBooleanValue(storm::expressions::Variable const& variable, bool value) {
-            this->booleanValues[variable.getOffset()] = static_cast<ValueType>(value);
-        }
-        
-        void ExprtkExpressionEvaluator::setIntegerValue(storm::expressions::Variable const& variable, int_fast64_t value) {
-            this->integerValues[variable.getOffset()] = static_cast<ValueType>(value);
-        }
-        
-        void ExprtkExpressionEvaluator::setRationalValue(storm::expressions::Variable const& variable, double value) {
-            this->rationalValues[variable.getOffset()] = static_cast<ValueType>(value);
-        }
+        template class ExprtkExpressionEvaluatorBase<double>;
+#ifdef STORM_HAVE_CARL
+        template class ExprtkExpressionEvaluatorBase<RationalFunction>;
+#endif
     }
 }

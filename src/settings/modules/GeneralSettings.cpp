@@ -42,6 +42,10 @@ namespace storm {
             const std::string GeneralSettings::bisimulationOptionName = "bisimulation";
             const std::string GeneralSettings::bisimulationOptionShortName = "bisim";
             const std::string GeneralSettings::cudaOptionName = "cuda";
+            
+#ifdef STORM_HAVE_CARL
+            const std::string GeneralSettings::parametricOptionName = "parametric";
+#endif
 
             GeneralSettings::GeneralSettings(storm::settings::SettingsManager& settingsManager) : ModuleSettings(settingsManager, moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, helpOptionName, false, "Shows all available options, arguments and descriptions.").setShortName(helpOptionShortName)
@@ -86,6 +90,10 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("values", "A comma separated list of constants and their value, e.g. a=1,b=2,c=3.").setDefaultValueString("").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, statisticsOptionName, false, "Sets whether to display statistics if available.").setShortName(statisticsOptionShortName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, cudaOptionName, false, "Sets whether to use CUDA to speed up computation time.").build());
+
+#ifdef STORM_HAVE_CARL
+                this->addOption(storm::settings::OptionBuilder(moduleName, parametricOptionName, false, "Sets whether to use the parametric engine.").build());
+#endif
             }
             
             bool GeneralSettings::isHelpSet() const {
@@ -240,6 +248,16 @@ namespace storm {
             bool GeneralSettings::isShowStatisticsSet() const {
                 return this->getOption(statisticsOptionName).getHasOptionBeenSet();
             }
+            
+            bool GeneralSettings::isBisimulationSet() const {
+                return this->getOption(bisimulationOptionName).getHasOptionBeenSet();
+            }
+            
+#ifdef STORM_HAVE_CARL
+            bool GeneralSettings::isParametricSet() const {
+                return this->getOption(parametricOptionName).getHasOptionBeenSet();
+            }
+#endif
             
             bool GeneralSettings::check() const {
                 // Ensure that the model was given either symbolically or explicitly.

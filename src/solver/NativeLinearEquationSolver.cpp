@@ -61,7 +61,7 @@ namespace storm {
             while (!converged && iterationCount < maximalNumberOfIterations) {
                 // Compute D^-1 * (b - LU * x) and store result in nextX.
                 jacobiDecomposition.first.multiplyWithVector(*currentX, tmpX);
-                storm::utility::vector::scaleVectorInPlace(tmpX, -storm::utility::constantOne<ValueType>());
+                storm::utility::vector::scaleVectorInPlace(tmpX, -storm::utility::one<ValueType>());
                 storm::utility::vector::addVectorsInPlace(tmpX, b);
                 jacobiDecomposition.second.multiplyWithVector(tmpX, *nextX);
                 

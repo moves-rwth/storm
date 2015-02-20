@@ -18,9 +18,10 @@
 #include "src/storage/SparseMatrix.h"
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/settings/SettingsManager.h"
+#include "src/utility/constants.h"
 #include "src/utility/vector.h"
 #include "src/utility/matrix.h"
-#include "src/utility/ConstantsComparator.h"
+#include "src/utility/constants.h"
 
 namespace storm {
 
@@ -46,9 +47,8 @@ public:
 	 * @param optionalChoiceLabeling A vector that represents the labels associated with the choices of each state.
 	 */
 	Dtmc(storm::storage::SparseMatrix<T> const& probabilityMatrix, storm::models::AtomicPropositionsLabeling const& stateLabeling,
-				boost::optional<std::vector<T>> const& optionalStateRewardVector = boost::optional<std::vector<T>>(),
-                boost::optional<storm::storage::SparseMatrix<T>> const& optionalTransitionRewardMatrix = boost::optional<storm::storage::SparseMatrix<T>>(),
-                boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> const& optionalChoiceLabeling = boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>())
+				boost::optional<std::vector<T>> const& optionalStateRewardVector = {}, boost::optional<storm::storage::SparseMatrix<T>> const& optionalTransitionRewardMatrix = {},
+                boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> const& optionalChoiceLabeling = {})
 			: AbstractDeterministicModel<T>(probabilityMatrix, stateLabeling, optionalStateRewardVector, optionalTransitionRewardMatrix, optionalChoiceLabeling) {
 		if (!this->checkValidityOfProbabilityMatrix()) {
 			LOG4CPLUS_ERROR(logger, "Probability matrix is invalid.");
@@ -107,6 +107,13 @@ public:
 	Dtmc(Dtmc<T>&& dtmc) : AbstractDeterministicModel<T>(std::move(dtmc)) {
 		// Intentionally left empty.
 	}
+    
+    Dtmc<T>& operator=(Dtmc<T>&& dtmc) {
+        if (this != &dtmc) {
+            AbstractDeterministicModel<T>::operator=(std::move(dtmc));
+        }
+        return *this;
+    }
 
 	//! Destructor
 	/*!
@@ -192,11 +199,11 @@ public:
 
 		// The number of transitions of the new Dtmc is the number of transitions transfered
 		// from the old one plus one transition for each state to s_b.
-		storm::storage::SparseMatrixBuilder<T> newMatBuilder(newStateCount, subSysTransitionCount + newStateCount);
+		storm::storage::SparseMatrixBuilder<T> newMatBuilder(newStateCount,newStateCount,subSysTransitionCount + newStateCount);
 
 		// Now fill the matrix.
 		newRow = 0;
-		T rest = 0;
+        T rest = storm::utility::zero<T>();
 		for(uint_fast64_t row = 0; row < origMat.getRowCount(); ++row) {
 			if(subSysStates.get(row)){
 				// Transfer transitions
@@ -210,14 +217,14 @@ public:
 
 				// Insert the transition taking care of the remaining outgoing probability.
 				newMatBuilder.addNextValue(newRow, newStateCount - 1, rest);
-				rest = storm::utility::constantZero<T>();
+				rest = storm::utility::zero<T>();
 
 				newRow++;
 			}
 		}
 
 		// Insert last transition: self loop on s_b
-		newMatBuilder.addNextValue(newStateCount - 1, newStateCount - 1, storm::utility::constantOne<T>());
+		newMatBuilder.addNextValue(newStateCount - 1, newStateCount - 1, storm::utility::one<T>());
 
 		// 3. Take care of the labeling.
 		storm::models::AtomicPropositionsLabeling newLabeling = storm::models::AtomicPropositionsLabeling(this->getStateLabeling(), subSysStates);
@@ -260,7 +267,7 @@ public:
 					}
 
 					// Insert the reward (e.g. 0) for the transition taking care of the remaining outgoing probability.
-					newTransRewardsBuilder.addNextValue(newRow, newStateCount - 1, storm::utility::constantZero<T>());
+					newTransRewardsBuilder.addNextValue(newRow, newStateCount - 1, storm::utility::zero<T>());
 
 					newRow++;
 				}
@@ -274,7 +281,7 @@ public:
 
 			// Get the choice label sets and move the needed values to the front.
 			std::vector<boost::container::flat_set<uint_fast64_t>> newChoice(this->getChoiceLabeling());
-			storm::utility::vector::selectVectorValues(newChoice, subSysStates, newChoice);
+			storm::utility::vector::selectVectorValues(newChoice, subSysStates, this->getChoiceLabeling());
 
 			// Throw away all values after the last state and set the choice label set for s_b as empty.
 			newChoice.resize(newStateCount);
@@ -291,6 +298,36 @@ public:
     virtual std::shared_ptr<AbstractModel<T>> applyScheduler(storm::storage::Scheduler const& scheduler) const override {
         storm::storage::SparseMatrix<T> newTransitionMatrix = storm::utility::matrix::applyScheduler(this->getTransitionMatrix(), scheduler);
         return std::shared_ptr<AbstractModel<T>>(new Dtmc(newTransitionMatrix, this->getStateLabeling(), this->hasStateRewards() ? this->getStateRewardVector() : boost::optional<std::vector<T>>(), this->hasTransitionRewards() ? this->getTransitionRewardMatrix() :  boost::optional<storm::storage::SparseMatrix<T>>(), this->hasChoiceLabeling() ? this->getChoiceLabeling() : boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>()));
+    }
+    
+    void dumpToExplicitFormat(std::string const& traFilename, std::string const& labFilename) const {
+        std::ofstream transStream(traFilename);
+        transStream << "dtmc" << std::endl;
+        for (uint_fast64_t stateIndex = 0; stateIndex < this->getNumberOfStates(); ++stateIndex) {
+            for (auto const& element : this->getTransitionMatrix().getRow(stateIndex)) {
+                transStream << stateIndex << " " << element.first << " " << element.second << std::endl;
+            }
+        }
+        transStream.close();
+        
+        std::ofstream labStream(labFilename);
+        labStream << "#DECLARATION" << std::endl;
+        for (auto const& label : this->getStateLabeling().getAtomicPropositions()) {
+            labStream << label << " ";
+        }
+        labStream << std::endl;
+        labStream << "#END" << std::endl;
+        for (uint_fast64_t stateIndex = 0; stateIndex < this->getNumberOfStates(); ++stateIndex) {
+            std::set<std::string> labels = this->getLabelsForState(stateIndex);
+            if (!labels.empty()) {
+                labStream << stateIndex << " ";
+                for (auto const& label : labels) {
+                    labStream << label << " ";
+                }
+                labStream << std::endl;
+            }
+        }
+        labStream.close();
     }
 
 private:
@@ -318,17 +355,17 @@ private:
                 continue;
             }
             
-			if (comparator.isZero(sum)) {
-				return false;
-			}
 			if (!comparator.isOne(sum)) {
-				LOG4CPLUS_ERROR(logger, "Row " << row << " has sum " << sum << ".");
 				return false;
 			}
 		}
 		return true;
 	}
+
+	
 };
+
+
 
 } // namespace models
 

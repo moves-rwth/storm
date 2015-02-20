@@ -1,8 +1,9 @@
 #include "src/modelchecker/AbstractModelChecker.h"
 
-#include "src/utility/ConstantsComparator.h"
+#include "src/utility/constants.h"
 #include "src/utility/macros.h"
 #include "src/exceptions/NotImplementedException.h"
+#include "src/exceptions/InvalidOperationException.h"
 
 namespace storm {
     namespace modelchecker {
@@ -164,6 +165,7 @@ namespace storm {
             }
             
             if (stateFormula.hasBound()) {
+                STORM_LOG_THROW(result->isQuantitative(), storm::exceptions::InvalidOperationException, "Unable to perform comparison operation on non-quantitative result.");
                 return result->compareAgainstBound(stateFormula.getComparisonType(), stateFormula.getBound());
             } else {
                 return result;
@@ -189,6 +191,7 @@ namespace storm {
             }
             
             if (stateFormula.hasBound()) {
+                STORM_LOG_THROW(result->isQuantitative(), storm::exceptions::InvalidOperationException, "Unable to perform comparison operation on non-quantitative result.");
                 return result->compareAgainstBound(stateFormula.getComparisonType(), stateFormula.getBound());
             } else {
                 return result;
@@ -214,6 +217,7 @@ namespace storm {
             }
             
             if (stateFormula.hasBound()) {
+                STORM_LOG_THROW(result->isQuantitative(), storm::exceptions::InvalidOperationException, "Unable to perform comparison operation on non-quantitative result.");
                 return result->compareAgainstBound(stateFormula.getComparisonType(), stateFormula.getBound());
             } else {
                 return result;

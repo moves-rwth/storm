@@ -13,7 +13,7 @@
 namespace storm {
     namespace builder {
         template <typename ValueType, typename IndexType>
-        ExplicitPrismModelBuilder<ValueType, IndexType>::StateInformation::StateInformation(uint64_t bitsPerState) : stateStorage(bitsPerState, 1000000), bitsPerState(bitsPerState), reachableStates() {
+        ExplicitPrismModelBuilder<ValueType, IndexType>::StateInformation::StateInformation(uint64_t bitsPerState) : stateStorage(bitsPerState, 10000000), bitsPerState(bitsPerState), reachableStates() {
             // Intentionally left empty.
         }
         
@@ -97,13 +97,17 @@ namespace storm {
             // Start by defining the undefined constants in the model.
             storm::prism::Program preparedProgram;
             if (options.constantDefinitions) {
-                 preparedProgram = program.defineUndefinedConstants(options.constantDefinitions.get());
+                preparedProgram = program.defineUndefinedConstants(options.constantDefinitions.get());
             } else {
                 preparedProgram = program;
             }
             
-            // If the program still contains undefined constants, assemble an appropriate error message.
+            // If the program still contains undefined constants and we are not in a parametric setting, assemble an appropriate error message.
+#ifdef STORM_HAVE_CARL
+            if (!std::is_same<ValueType, storm::RationalFunction>::value && preparedProgram.hasUndefinedConstants()) {
+#else
             if (preparedProgram.hasUndefinedConstants()) {
+#endif
                 std::vector<std::reference_wrapper<storm::prism::Constant const>> undefinedConstants = preparedProgram.getUndefinedConstants();
                 std::stringstream stream;
                 bool printComma = false;
@@ -181,7 +185,7 @@ namespace storm {
         }
         
         template <typename ValueType, typename IndexType>
-        void ExplicitPrismModelBuilder<ValueType, IndexType>::unpackStateIntoEvaluator(storm::storage::BitVector const& currentState, VariableInformation const& variableInformation, storm::expressions::ExprtkExpressionEvaluator& evaluator) {
+        void ExplicitPrismModelBuilder<ValueType, IndexType>::unpackStateIntoEvaluator(storm::storage::BitVector const& currentState, VariableInformation const& variableInformation, storm::expressions::ExpressionEvaluator<ValueType>& evaluator) {
             for (auto const& booleanVariable : variableInformation.booleanVariables) {
                 evaluator.setBooleanValue(booleanVariable.variable, currentState.get(booleanVariable.bitOffset));
             }
@@ -191,12 +195,12 @@ namespace storm {
         }
         
         template <typename ValueType, typename IndexType>
-        typename ExplicitPrismModelBuilder<ValueType, IndexType>::CompressedState ExplicitPrismModelBuilder<ValueType, IndexType>::applyUpdate(VariableInformation const& variableInformation, CompressedState const& state, storm::prism::Update const& update, storm::expressions::ExprtkExpressionEvaluator const& evaluator) {
+        typename ExplicitPrismModelBuilder<ValueType, IndexType>::CompressedState ExplicitPrismModelBuilder<ValueType, IndexType>::applyUpdate(VariableInformation const& variableInformation, CompressedState const& state, storm::prism::Update const& update, storm::expressions::ExpressionEvaluator<ValueType> const& evaluator) {
             return applyUpdate(variableInformation, state, state, update, evaluator);
         }
         
         template <typename ValueType, typename IndexType>
-        typename ExplicitPrismModelBuilder<ValueType, IndexType>::CompressedState ExplicitPrismModelBuilder<ValueType, IndexType>::applyUpdate(VariableInformation const& variableInformation, CompressedState const& state, CompressedState const& baseState, storm::prism::Update const& update, storm::expressions::ExprtkExpressionEvaluator const& evaluator) {
+        typename ExplicitPrismModelBuilder<ValueType, IndexType>::CompressedState ExplicitPrismModelBuilder<ValueType, IndexType>::applyUpdate(VariableInformation const& variableInformation, CompressedState const& state, CompressedState const& baseState, storm::prism::Update const& update, storm::expressions::ExpressionEvaluator<ValueType> const& evaluator) {
             CompressedState newState(state);
             
             auto assignmentIt = update.getAssignments().begin();
@@ -220,6 +224,7 @@ namespace storm {
                 int_fast64_t assignedValue = evaluator.asInt(assignmentIt->getExpression());
                 STORM_LOG_THROW(assignedValue <= integerIt->upperBound, storm::exceptions::WrongFormatException, "The update " << update << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getVariableName() << "'.");
                 newState.setFromInt(integerIt->bitOffset, integerIt->bitWidth, assignedValue - integerIt->lowerBound);
+                STORM_LOG_ASSERT(newState.getAsInt(integerIt->bitOffset, integerIt->bitWidth) + integerIt->lowerBound == assignedValue, "Writing to the bit vector bucket failed (read " << newState.getAsInt(integerIt->bitOffset, integerIt->bitWidth) << " but wrote " << assignedValue << ").");
             }
             
             // Check that we processed all assignments.
@@ -244,7 +249,7 @@ namespace storm {
         }
         
         template <typename ValueType, typename IndexType>
-        boost::optional<std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>>> ExplicitPrismModelBuilder<ValueType, IndexType>::getActiveCommandsByActionIndex(storm::prism::Program const& program,storm::expressions::ExprtkExpressionEvaluator const& evaluator, uint_fast64_t const& actionIndex) {
+        boost::optional<std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>>> ExplicitPrismModelBuilder<ValueType, IndexType>::getActiveCommandsByActionIndex(storm::prism::Program const& program,storm::expressions::ExpressionEvaluator<ValueType> const& evaluator, uint_fast64_t const& actionIndex) {
             boost::optional<std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>>> result((std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>>()));
             
             // Iterate over all modules.
@@ -287,7 +292,7 @@ namespace storm {
         }
         
         template <typename ValueType, typename IndexType>
-        std::vector<Choice<ValueType>> ExplicitPrismModelBuilder<ValueType, IndexType>::getUnlabeledTransitions(storm::prism::Program const& program, bool discreteTimeModel, StateInformation& stateInformation, VariableInformation const& variableInformation, storm::storage::BitVector const& currentState, bool choiceLabeling, storm::expressions::ExprtkExpressionEvaluator const& evaluator, std::queue<storm::storage::BitVector>& stateQueue, storm::utility::ConstantsComparator<ValueType> const& comparator) {
+        std::vector<Choice<ValueType>> ExplicitPrismModelBuilder<ValueType, IndexType>::getUnlabeledTransitions(storm::prism::Program const& program, bool discreteTimeModel, StateInformation& stateInformation, VariableInformation const& variableInformation, storm::storage::BitVector const& currentState, bool choiceLabeling, storm::expressions::ExpressionEvaluator<ValueType> const& evaluator, std::queue<storm::storage::BitVector>& stateQueue, storm::utility::ConstantsComparator<ValueType> const& comparator) {
             std::vector<Choice<ValueType>> result;
             
             // Iterate over all modules.
@@ -315,7 +320,7 @@ namespace storm {
                     }
                     
                     // Iterate over all updates of the current command.
-                    double probabilitySum = 0;
+                    ValueType probabilitySum = storm::utility::zero<ValueType>();
                     for (uint_fast64_t k = 0; k < command.getNumberOfUpdates(); ++k) {
                         storm::prism::Update const& update = command.getUpdate(k);
                         
@@ -324,11 +329,11 @@ namespace storm {
                         uint32_t stateIndex = getOrAddStateIndex(applyUpdate(variableInformation, currentState, update, evaluator), stateInformation, stateQueue);
                         
                         // Update the choice by adding the probability/target state to it.
-                        ValueType probability = evaluator.asDouble(update.getLikelihoodExpression());
+                        ValueType probability = evaluator.asRational(update.getLikelihoodExpression());
                         choice.addProbability(stateIndex, probability);
                         probabilitySum += probability;
                     }
-                    
+
                     // Check that the resulting distribution is in fact a distribution.
                     STORM_LOG_THROW(!discreteTimeModel || comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException, "Probabilities do not sum to one for command '" << command << "' (actually sum to " << probabilitySum << ").");
                 }
@@ -338,7 +343,7 @@ namespace storm {
         }
         
         template <typename ValueType, typename IndexType>
-        std::vector<Choice<ValueType>> ExplicitPrismModelBuilder<ValueType, IndexType>::getLabeledTransitions(storm::prism::Program const& program, bool discreteTimeModel, StateInformation& stateInformation, VariableInformation const& variableInformation, storm::storage::BitVector const& currentState, bool choiceLabeling, storm::expressions::ExprtkExpressionEvaluator const& evaluator, std::queue<storm::storage::BitVector>& stateQueue, storm::utility::ConstantsComparator<ValueType> const& comparator) {
+        std::vector<Choice<ValueType>> ExplicitPrismModelBuilder<ValueType, IndexType>::getLabeledTransitions(storm::prism::Program const& program, bool discreteTimeModel, StateInformation& stateInformation, VariableInformation const& variableInformation, storm::storage::BitVector const& currentState, bool choiceLabeling, storm::expressions::ExpressionEvaluator<ValueType> const& evaluator, std::queue<storm::storage::BitVector>& stateQueue, storm::utility::ConstantsComparator<ValueType> const& comparator) {
             std::vector<Choice<ValueType>> result;
             
             for (uint_fast64_t actionIndex : program.getActionIndices()) {
@@ -372,7 +377,7 @@ namespace storm {
                                 for (auto const& stateProbabilityPair : *currentTargetStates) {
                                     // Compute the new state under the current update and add it to the set of new target states.
                                     CompressedState newTargetState = applyUpdate(variableInformation, stateProbabilityPair.first, currentState, update, evaluator);
-                                    newTargetStates->emplace(newTargetState, stateProbabilityPair.second * evaluator.asDouble(update.getLikelihoodExpression()));
+                                    newTargetStates->emplace(newTargetState, stateProbabilityPair.second * evaluator.asRational(update.getLikelihoodExpression()));
                                 }
                             }
                             
@@ -400,7 +405,7 @@ namespace storm {
                             }
                         }
                         
-                        double probabilitySum = 0;
+                        ValueType probabilitySum = storm::utility::zero<ValueType>();
                         for (auto const& stateProbabilityPair : *newTargetStates) {
                             uint32_t actualIndex = getOrAddStateIndex(stateProbabilityPair.first, stateInformation, stateQueue);
                             choice.addProbability(actualIndex, stateProbabilityPair.second);
@@ -463,12 +468,12 @@ namespace storm {
             
             // Now explore the current state until there is no more reachable state.
             uint_fast64_t currentRow = 0;
-            storm::expressions::ExprtkExpressionEvaluator evaluator(program.getManager());
+            storm::expressions::ExpressionEvaluator<ValueType> evaluator(program.getManager());
             while (!stateQueue.empty()) {
                 // Get the current state and unpack it.
                 storm::storage::BitVector currentState = stateQueue.front();
                 stateQueue.pop();
-                ValueType stateIndex = stateInformation.stateStorage.getValue(currentState);
+                IndexType stateIndex = stateInformation.stateStorage.getValue(currentState);
                 unpackStateIntoEvaluator(currentState, variableInformation, evaluator);
                 
                 // Retrieve all choices for the current state.
@@ -510,7 +515,7 @@ namespace storm {
                             // Now add all rewards that match this choice.
                             for (auto const& transitionReward : transitionRewards) {
                                 if (!transitionReward.isLabeled() && evaluator.asBool(transitionReward.getStatePredicateExpression())) {
-                                    stateToRewardMap[stateProbabilityPair.first] += ValueType(evaluator.asDouble(transitionReward.getRewardValueExpression()));
+                                    stateToRewardMap[stateProbabilityPair.first] += ValueType(evaluator.asRational(transitionReward.getRewardValueExpression()));
                                 }
                             }
                         }
@@ -521,7 +526,7 @@ namespace storm {
                             // Now add all rewards that match this choice.
                             for (auto const& transitionReward : transitionRewards) {
                                 if (transitionReward.isLabeled() && transitionReward.getActionIndex() == globalChoice.getActionIndex() && evaluator.asBool(transitionReward.getStatePredicateExpression())) {
-                                    stateToRewardMap[stateProbabilityPair.first] += ValueType(evaluator.asDouble(transitionReward.getRewardValueExpression()));
+                                    stateToRewardMap[stateProbabilityPair.first] += ValueType(evaluator.asRational(transitionReward.getRewardValueExpression()));
                                 }
                             }
                         }
@@ -564,7 +569,7 @@ namespace storm {
                                 // Now add all rewards that match this choice.
                                 for (auto const& transitionReward : transitionRewards) {
                                     if (!transitionReward.isLabeled() && evaluator.asBool(transitionReward.getStatePredicateExpression())) {
-                                        stateToRewardMap[stateProbabilityPair.first] += ValueType(evaluator.asDouble(transitionReward.getRewardValueExpression()));
+                                        stateToRewardMap[stateProbabilityPair.first] += ValueType(evaluator.asRational(transitionReward.getRewardValueExpression()));
                                     }
                                 }
                             }
@@ -580,7 +585,7 @@ namespace storm {
                                 // Now add all rewards that match this choice.
                                 for (auto const& transitionReward : transitionRewards) {
                                     if (transitionReward.isLabeled() && transitionReward.getActionIndex() == choice.getActionIndex() && evaluator.asBool(transitionReward.getStatePredicateExpression())) {
-                                        stateToRewardMap[stateProbabilityPair.first] += ValueType(evaluator.asDouble(transitionReward.getRewardValueExpression()));
+                                        stateToRewardMap[stateProbabilityPair.first] += ValueType(evaluator.asRational(transitionReward.getRewardValueExpression()));
                                     }
                                 }
                             }
@@ -622,7 +627,7 @@ namespace storm {
                                 // Now add all rewards that match this choice.
                                 for (auto const& transitionReward : transitionRewards) {
                                     if (!transitionReward.isLabeled() && evaluator.asBool(transitionReward.getStatePredicateExpression())) {
-                                        stateToRewardMap[stateProbabilityPair.first] += ValueType(evaluator.asDouble(transitionReward.getRewardValueExpression()));
+                                        stateToRewardMap[stateProbabilityPair.first] += ValueType(evaluator.asRational(transitionReward.getRewardValueExpression()));
                                     }
                                 }
                                 
@@ -651,7 +656,7 @@ namespace storm {
                                 // Now add all rewards that match this choice.
                                 for (auto const& transitionReward : transitionRewards) {
                                     if (transitionReward.getActionIndex() == choice.getActionIndex() && evaluator.asBool(transitionReward.getStatePredicateExpression())) {
-                                        stateToRewardMap[stateProbabilityPair.first] += ValueType(evaluator.asDouble(transitionReward.getRewardValueExpression()));
+                                        stateToRewardMap[stateProbabilityPair.first] += ValueType(evaluator.asRational(transitionReward.getRewardValueExpression()));
                                     }
                                 }
                                 
@@ -737,7 +742,7 @@ namespace storm {
         
         template <typename ValueType, typename IndexType>
         storm::models::AtomicPropositionsLabeling ExplicitPrismModelBuilder<ValueType, IndexType>::buildStateLabeling(storm::prism::Program const& program, VariableInformation const& variableInformation, StateInformation const& stateInformation) {
-            storm::expressions::ExprtkExpressionEvaluator evaluator(program.getManager());
+            storm::expressions::ExpressionEvaluator<ValueType> evaluator(program.getManager());
             
             std::vector<storm::prism::Label> const& labels = program.getLabels();
             
@@ -768,7 +773,7 @@ namespace storm {
         
         template <typename ValueType, typename IndexType>
         std::vector<ValueType> ExplicitPrismModelBuilder<ValueType, IndexType>::buildStateRewards(storm::prism::Program const& program, VariableInformation const& variableInformation, std::vector<storm::prism::StateReward> const& rewards, StateInformation const& stateInformation) {
-            storm::expressions::ExprtkExpressionEvaluator evaluator(program.getManager());
+            storm::expressions::ExpressionEvaluator<ValueType> evaluator(program.getManager());
             
             std::vector<ValueType> result(stateInformation.reachableStates.size());
             for (uint_fast64_t index = 0; index < stateInformation.reachableStates.size(); index++) {
@@ -778,7 +783,7 @@ namespace storm {
                     
                     // Add this reward to the state if the state is included in the state reward.
                     if (evaluator.asBool(reward.getStatePredicateExpression())) {
-                        result[index] += ValueType(evaluator.asDouble(reward.getRewardValueExpression()));
+                        result[index] += ValueType(evaluator.asRational(reward.getRewardValueExpression()));
                     }
                 }
             }
@@ -787,5 +792,9 @@ namespace storm {
         
         // Explicitly instantiate the class.
         template class ExplicitPrismModelBuilder<double, uint32_t>;
+        
+#ifdef STORM_HAVE_CARL
+        template class ExplicitPrismModelBuilder<RationalFunction, uint32_t>;
+#endif
     }
 }

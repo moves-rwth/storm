@@ -11,9 +11,8 @@
 #include <algorithm>
 #include <functional>
 
-#include "log4cplus/logger.h"
-#include "log4cplus/loggingmacros.h"
-extern log4cplus::Logger logger;
+#include "src/storage/BitVector.h"
+#include "src/utility/macros.h"
 
 template<typename ValueType>
 std::ostream& operator<<(std::ostream& out, std::vector<ValueType> const& vector);
@@ -126,7 +125,7 @@ namespace storm {
             template<class T>
             void subtractFromConstantOneVector(std::vector<T>& vector) {
                 for (auto& element : vector) {
-                    element = storm::utility::constantOne<T>() - element;
+                    element = storm::utility::one<T>() - element;
                 }
             }
             
@@ -350,10 +349,7 @@ namespace storm {
              */
             template<class T>
             bool equalModuloPrecision(std::vector<T> const& vectorLeft, std::vector<T> const& vectorRight, T precision, bool relativeError) {
-                if (vectorLeft.size() != vectorRight.size()) {
-                    LOG4CPLUS_ERROR(logger, "Lengths of vectors do not match, which makes comparison impossible.");
-                    throw storm::exceptions::InvalidArgumentException() << "Lengths of vectors do not match, which makes comparison impossible.";
-                }
+                STORM_LOG_ASSERT(vectorLeft.size() == vectorRight.size(), "Lengths of vectors does not match.");
                 
                 for (uint_fast64_t i = 0; i < vectorLeft.size(); ++i) {
                     if (!equalModuloPrecision(vectorLeft[i], vectorRight[i], precision, relativeError)) {
@@ -377,10 +373,7 @@ namespace storm {
              */
             template<class T>
             bool equalModuloPrecision(std::vector<T> const& vectorLeft, std::vector<T> const& vectorRight, std::vector<uint_fast64_t> const& positions, T precision, bool relativeError) {
-                if (vectorLeft.size() != vectorRight.size()) {
-                    LOG4CPLUS_ERROR(logger, "Lengths of vectors do not match, which makes comparison impossible.");
-                    throw storm::exceptions::InvalidArgumentException() << "Lengths of vectors do not match, which makes comparison impossible.";
-                }
+                STORM_LOG_ASSERT(vectorLeft.size() == vectorRight.size(), "Lengths of vectors does not match.");
                 
                 for (uint_fast64_t position : positions) {
                     if (!equalModuloPrecision(vectorLeft[position], vectorRight[position], precision, relativeError)) {

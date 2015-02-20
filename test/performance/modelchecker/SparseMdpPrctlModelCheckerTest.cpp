@@ -3,7 +3,7 @@
 
 #include "src/settings/SettingsManager.h"
 #include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
-#include "src/modelchecker/ExplicitQuantitativeCheckResult.h"
+#include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "src/solver/NativeNondeterministicLinearEquationSolver.h"
 #include "src/parser/AutoParser.h"
 

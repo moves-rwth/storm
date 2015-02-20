@@ -41,7 +41,7 @@ namespace storm {
                 newUpdates.emplace_back(update.substitute(substitution));
             }
             
-            return Command(this->getGlobalIndex(), this->getActionIndex(), this->getActionName(), this->getGuardExpression().substitute(substitution), newUpdates, this->getFilename(), this->getLineNumber());
+            return Command(this->getGlobalIndex(), this->getActionIndex(), this->getActionName(), this->getGuardExpression().substitute(substitution).simplify(), newUpdates, this->getFilename(), this->getLineNumber());
         }
         
         bool Command::isLabeled() const {

@@ -459,7 +459,7 @@ namespace storm {
                 bucketVector[bucket] = (bucketVector[bucket] & ~mask) | (value << (64 - (bitIndexInBucket + numberOfBits)));
             } else if (bitIndexInBucket + numberOfBits > 64) {
                 // Write the part of the value that falls into the first bucket.
-                bucketVector[bucket] = (bucketVector[bucket] & ~mask) | (value >> (64 - bitIndexInBucket));
+                bucketVector[bucket] = (bucketVector[bucket] & ~mask) | (value >> (numberOfBits + (bitIndexInBucket - 64)));
                 ++bucket;
                 
                 // Compute the remaining number of bits.

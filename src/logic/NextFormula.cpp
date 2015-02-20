@@ -10,6 +10,10 @@ namespace storm {
             return true;
         }
         
+        bool NextFormula::containsNextFormula() const {
+            return true;
+        }
+        
         std::ostream& NextFormula::writeToStream(std::ostream& out) const {
             out << "X ";
             this->getSubformula().writeToStream(out);

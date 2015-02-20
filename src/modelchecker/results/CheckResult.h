@@ -21,9 +21,8 @@ namespace storm {
             virtual CheckResult& operator&=(CheckResult const& other);
             virtual CheckResult& operator|=(CheckResult const& other);
             virtual void complement();
-            
             virtual std::unique_ptr<CheckResult> compareAgainstBound(storm::logic::ComparisonType comparisonType, double bound) const;
-            
+
             virtual bool isExplicit() const;
             virtual bool isQuantitative() const;
             virtual bool isQualitative() const;
@@ -31,6 +30,14 @@ namespace storm {
             
             virtual bool isExplicitQualitativeCheckResult() const;
             virtual bool isExplicitQuantitativeCheckResult() const;
+            
+            QualitativeCheckResult& asQualitativeCheckResult();
+            QualitativeCheckResult const& asQualitativeCheckResult() const;
+
+            template<typename ValueType>
+            QuantitativeCheckResult<ValueType>& asQuantitativeCheckResult();
+            template<typename ValueType>
+            QuantitativeCheckResult<ValueType> const& asQuantitativeCheckResult() const;
             
             ExplicitQualitativeCheckResult& asExplicitQualitativeCheckResult();
             ExplicitQualitativeCheckResult const& asExplicitQualitativeCheckResult() const;

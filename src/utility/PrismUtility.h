@@ -225,7 +225,7 @@ namespace storm {
                                 constantDefinitions[variable] = program.getManager().rational(doubleValue);
                             }
                         } else {
-                            throw storm::exceptions::InvalidArgumentException() << "Illegal constant definition string: unknown undefined constant " << constantName << ".";
+                            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Illegal constant definition string: unknown undefined constant " << constantName << ".");
                         }
                     }
                 }

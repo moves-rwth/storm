@@ -18,10 +18,10 @@ namespace storm {
             
             // Instantiate constructors and assignments with their default implementations.
             DoubleLiteralExpression(DoubleLiteralExpression const& other) = default;
-            DoubleLiteralExpression& operator=(DoubleLiteralExpression const& other) = default;
+            DoubleLiteralExpression& operator=(DoubleLiteralExpression const& other) = delete;
 #ifndef WINDOWS
             DoubleLiteralExpression(DoubleLiteralExpression&&) = default;
-            DoubleLiteralExpression& operator=(DoubleLiteralExpression&&) = default;
+            DoubleLiteralExpression& operator=(DoubleLiteralExpression&&) = delete;
 #endif
             virtual ~DoubleLiteralExpression() = default;
             

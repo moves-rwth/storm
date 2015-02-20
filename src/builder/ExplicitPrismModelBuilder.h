@@ -12,7 +12,7 @@
 
 #include "src/storage/prism/Program.h"
 #include "src/storage/expressions/SimpleValuation.h"
-#include "src/storage/expressions/ExprtkExpressionEvaluator.h"
+#include "src/storage/expressions/ExpressionEvaluator.h"
 #include "src/storage/BitVectorHashMap.h"
 #include "src/logic/Formulas.h"
 #include "src/models/AbstractModel.h"
@@ -20,7 +20,7 @@
 #include "src/storage/SparseMatrix.h"
 #include "src/settings/SettingsManager.h"
 
-#include "src/utility/ConstantsComparator.h"
+#include "src/utility/constants.h"
 #include "src/utility/PrismUtility.h"
 
 namespace storm {
@@ -175,7 +175,7 @@ namespace storm {
             static std::unique_ptr<storm::models::AbstractModel<ValueType>> translateProgram(storm::prism::Program program, Options const& options = Options());
             
         private:
-            static void unpackStateIntoEvaluator(storm::storage::BitVector const& currentState, VariableInformation const& variableInformation, storm::expressions::ExprtkExpressionEvaluator& evaluator);
+            static void unpackStateIntoEvaluator(storm::storage::BitVector const& currentState, VariableInformation const& variableInformation, storm::expressions::ExpressionEvaluator<ValueType>& evaluator);
             
             /*!
              * Applies an update to the given state and returns the resulting new state object. This methods does not
@@ -185,7 +185,7 @@ namespace storm {
              * @params update The update to apply.
              * @return The resulting state.
              */
-            static CompressedState applyUpdate(VariableInformation const& variableInformation, CompressedState const& state, storm::prism::Update const& update, storm::expressions::ExprtkExpressionEvaluator const& evaluator);
+            static CompressedState applyUpdate(VariableInformation const& variableInformation, CompressedState const& state, storm::prism::Update const& update, storm::expressions::ExpressionEvaluator<ValueType> const& evaluator);
             
             /*!
              * Applies an update to the given state and returns the resulting new state object. The update is evaluated
@@ -197,7 +197,7 @@ namespace storm {
              * @param update The update to apply.
              * @return The resulting state.
              */
-            static CompressedState applyUpdate(VariableInformation const& variableInformation, CompressedState const& state, CompressedState const& baseState, storm::prism::Update const& update, storm::expressions::ExprtkExpressionEvaluator const& evaluator);
+            static CompressedState applyUpdate(VariableInformation const& variableInformation, CompressedState const& state, CompressedState const& baseState, storm::prism::Update const& update, storm::expressions::ExpressionEvaluator<ValueType> const& evaluator);
             
             /*!
              * Retrieves the state id of the given state. If the state has not been encountered yet, it will be added to
@@ -227,11 +227,11 @@ namespace storm {
              * @param actionIndex The index of the action label to select.
              * @return A list of lists of active commands or nothing.
              */
-            static boost::optional<std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>>> getActiveCommandsByActionIndex(storm::prism::Program const& program,storm::expressions::ExprtkExpressionEvaluator const& evaluator, uint_fast64_t const& actionIndex);
+            static boost::optional<std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>>> getActiveCommandsByActionIndex(storm::prism::Program const& program,storm::expressions::ExpressionEvaluator<ValueType> const& evaluator, uint_fast64_t const& actionIndex);
                         
-            static std::vector<Choice<ValueType>> getUnlabeledTransitions(storm::prism::Program const& program, bool discreteTimeModel, StateInformation& stateInformation, VariableInformation const& variableInformation, storm::storage::BitVector const& currentState, bool choiceLabeling, storm::expressions::ExprtkExpressionEvaluator const& evaluator, std::queue<storm::storage::BitVector>& stateQueue, storm::utility::ConstantsComparator<ValueType> const& comparator);
+            static std::vector<Choice<ValueType>> getUnlabeledTransitions(storm::prism::Program const& program, bool discreteTimeModel, StateInformation& stateInformation, VariableInformation const& variableInformation, storm::storage::BitVector const& currentState, bool choiceLabeling, storm::expressions::ExpressionEvaluator<ValueType> const& evaluator, std::queue<storm::storage::BitVector>& stateQueue, storm::utility::ConstantsComparator<ValueType> const& comparator);
             
-            static std::vector<Choice<ValueType>> getLabeledTransitions(storm::prism::Program const& program, bool discreteTimeModel, StateInformation& stateInformation, VariableInformation const& variableInformation, storm::storage::BitVector const& currentState, bool choiceLabeling, storm::expressions::ExprtkExpressionEvaluator const& evaluator, std::queue<storm::storage::BitVector>& stateQueue, storm::utility::ConstantsComparator<ValueType> const& comparator);
+            static std::vector<Choice<ValueType>> getLabeledTransitions(storm::prism::Program const& program, bool discreteTimeModel, StateInformation& stateInformation, VariableInformation const& variableInformation, storm::storage::BitVector const& currentState, bool choiceLabeling, storm::expressions::ExpressionEvaluator<ValueType> const& evaluator, std::queue<storm::storage::BitVector>& stateQueue, storm::utility::ConstantsComparator<ValueType> const& comparator);
             /*!
              * Builds the transition matrix and the transition reward matrix based for the given program.
              *

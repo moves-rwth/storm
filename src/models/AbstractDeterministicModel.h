@@ -70,7 +70,14 @@ class AbstractDeterministicModel: public AbstractModel<T> {
 		AbstractDeterministicModel(AbstractDeterministicModel && other) : AbstractModel<T>(std::move(other)) {
 			// Intentionally left empty.
 		}
-        
+    
+    AbstractDeterministicModel<T>& operator=(AbstractDeterministicModel<T>&& model) {
+        if (this != &model) {
+            AbstractModel<T>::operator=(std::move(model));
+        }
+        return *this;
+    }
+    
 		/*!
 		 * Calculates a hash over all values contained in this Model.
 		 * @return size_t A Hash Value
@@ -87,7 +94,7 @@ class AbstractDeterministicModel: public AbstractModel<T> {
             for (uint_fast64_t i = 0; i < this->transitionMatrix.getRowCount(); ++i, ++rowIt) {
                 typename storm::storage::SparseMatrix<T>::const_rows row = this->transitionMatrix.getRow(i);
                 for (auto const& transition : row) {
-                    if (transition.getValue() != storm::utility::constantZero<T>()) {
+                    if (transition.getValue() != storm::utility::zero<T>()) {
                         if (subsystem == nullptr || subsystem->get(transition.getColumn())) {
                             outStream << "\t" << i << " -> " << transition.getColumn() << " [ label= \"" << transition.getValue() << "\" ];" << std::endl;
                         }
@@ -115,6 +122,12 @@ class AbstractDeterministicModel: public AbstractModel<T> {
 			}
 
 			this->choiceLabeling.reset(newChoiceLabeling);
+		}
+		
+		virtual void makeAbsorbing(storage::BitVector states) 
+		{
+			assert(states.size() == this->getNumberOfStates());
+			this->transitionMatrix.makeRowsAbsorbing(states);
 		}
 };
 

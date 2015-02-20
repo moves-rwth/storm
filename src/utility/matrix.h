@@ -36,7 +36,7 @@ namespace storm {
                         }
                     } else {
                         // If no valid choice for the state is defined, we insert a self-loop.
-                        matrixBuilder.addNextValue(state, state, storm::utility::constantOne<T>());
+                        matrixBuilder.addNextValue(state, state, storm::utility::one<T>());
                     }
                 }
                 

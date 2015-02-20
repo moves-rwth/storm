@@ -3,13 +3,13 @@
 #include <utility>
 #include <vector>
 
-#include "src/utility/ConstantsComparator.h"
+#include "src/utility/constants.h"
 #include "src/utility/macros.h"
 #include "src/utility/vector.h"
 #include "src/utility/graph.h"
 
-#include "src/modelchecker/ExplicitQualitativeCheckResult.h"
-#include "src/modelchecker/ExplicitQuantitativeCheckResult.h"
+#include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
+#include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
 #include "src/solver/LpSolver.h"
 

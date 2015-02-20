@@ -138,6 +138,14 @@ namespace storm {
             return false;
         }
         
+        bool Formula::containsBoundedUntilFormula() const {
+            return false;
+        }
+        
+        bool Formula::containsNextFormula() const {
+            return false;
+        }
+        
         bool Formula::containsProbabilityOperator() const {
             return false;
         }

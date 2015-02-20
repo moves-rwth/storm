@@ -61,15 +61,21 @@ namespace storm {
                 }
                 
                 boost::variant<int_fast64_t, double> result;
-                switch (this->getOperatorType()) {
-                    case OperatorType::Minus: result = -(operandSimplified->hasIntegerType() ? boost::get<int_fast64_t>(operandEvaluation) : boost::get<double>(operandEvaluation)); break;
-                    case OperatorType::Floor: result = std::floor(operandSimplified->hasIntegerType() ? boost::get<int_fast64_t>(operandEvaluation) : boost::get<double>(operandEvaluation)); break;
-                    case OperatorType::Ceil: result = std::ceil(operandSimplified->hasIntegerType() ? boost::get<int_fast64_t>(operandEvaluation) : boost::get<double>(operandEvaluation)); break;
-                }
-                
-                if (result.type() == typeid(int_fast64_t)) {
-                    return std::shared_ptr<BaseExpression>(new IntegerLiteralExpression(this->getManager(), boost::get<int_fast64_t>(result)));
+                if (operandSimplified->hasIntegerType()) {
+                    int_fast64_t value = 0;
+                    switch (this->getOperatorType()) {
+                        case OperatorType::Minus: value = -boost::get<int_fast64_t>(operandEvaluation); break;
+                        case OperatorType::Floor: value = std::floor(boost::get<int_fast64_t>(operandEvaluation)); break;
+                        case OperatorType::Ceil: value = std::ceil(boost::get<int_fast64_t>(operandEvaluation)); break;
+                    }
+                    return std::shared_ptr<BaseExpression>(new IntegerLiteralExpression(this->getManager(), value));
                 } else {
+                    double value = 0;
+                    switch (this->getOperatorType()) {
+                        case OperatorType::Minus: value = -boost::get<double>(operandEvaluation); break;
+                        case OperatorType::Floor: value = std::floor(boost::get<double>(operandEvaluation)); break;
+                        case OperatorType::Ceil: value = std::ceil(boost::get<double>(operandEvaluation)); break;
+                    }
                     return std::shared_ptr<BaseExpression>(new DoubleLiteralExpression(this->getManager(), boost::get<double>(result)));
                 }
             }

@@ -1,7 +1,10 @@
-#include "src/modelchecker/CheckResult.h"
+#include "src/modelchecker/results/CheckResult.h"
 
-#include "src/modelchecker/ExplicitQualitativeCheckResult.h"
-#include "src/modelchecker/ExplicitQuantitativeCheckResult.h"
+#include "storm-config.h"
+#include "src/adapters/CarlAdapter.h"
+
+#include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
+#include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidOperationException.h"
@@ -71,8 +74,27 @@ namespace storm {
             return dynamic_cast<ExplicitQuantitativeCheckResult<ValueType> const&>(*this);
         }
         
+        template<typename ValueType>
+        QuantitativeCheckResult<ValueType>& CheckResult::asQuantitativeCheckResult() {
+            return dynamic_cast<QuantitativeCheckResult<ValueType>&>(*this);
+        }
+        
+        template<typename ValueType>
+        QuantitativeCheckResult<ValueType> const& CheckResult::asQuantitativeCheckResult() const {
+            return dynamic_cast<QuantitativeCheckResult<ValueType> const&>(*this);
+        }
+        
         // Explicitly instantiate the template functions.
+        template QuantitativeCheckResult<double>& CheckResult::asQuantitativeCheckResult();
+        template QuantitativeCheckResult<double> const& CheckResult::asQuantitativeCheckResult() const;
         template ExplicitQuantitativeCheckResult<double>& CheckResult::asExplicitQuantitativeCheckResult();
         template ExplicitQuantitativeCheckResult<double> const& CheckResult::asExplicitQuantitativeCheckResult() const;
+        
+#ifdef STORM_HAVE_CARL
+        template QuantitativeCheckResult<storm::RationalFunction>& CheckResult::asQuantitativeCheckResult();
+        template QuantitativeCheckResult<storm::RationalFunction> const& CheckResult::asQuantitativeCheckResult() const;
+        template ExplicitQuantitativeCheckResult<storm::RationalFunction>& CheckResult::asExplicitQuantitativeCheckResult();
+        template ExplicitQuantitativeCheckResult<storm::RationalFunction> const& CheckResult::asExplicitQuantitativeCheckResult() const;
+#endif
     }
 }

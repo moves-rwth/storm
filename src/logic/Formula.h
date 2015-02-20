@@ -4,7 +4,7 @@
 #include <memory>
 #include <iostream>
 
-#include "src/modelchecker/CheckResult.h"
+#include "src/modelchecker/results/CheckResult.h"
 
 namespace storm {
     namespace logic {
@@ -83,6 +83,8 @@ namespace storm {
             virtual bool isPltlFormula() const;
             virtual bool isLtlFormula() const;
             virtual bool isPropositionalFormula() const;
+            virtual bool containsBoundedUntilFormula() const;
+            virtual bool containsNextFormula() const;
             virtual bool containsProbabilityOperator() const;
             virtual bool containsNestedProbabilityOperators() const;
             virtual bool containsRewardOperator() const;

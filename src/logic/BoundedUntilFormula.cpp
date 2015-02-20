@@ -18,6 +18,10 @@ namespace storm {
             return true;
         }
         
+        bool BoundedUntilFormula::containsBoundedUntilFormula() const {
+            return true;
+        }
+        
         bool BoundedUntilFormula::isIntervalBounded() const {
             return bounds.which() == 1;
         }

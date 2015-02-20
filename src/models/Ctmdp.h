@@ -44,10 +44,7 @@ public:
             boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> const& optionalChoiceLabeling)
 			: AbstractNondeterministicModel<T>(probabilityMatrix, stateLabeling, optionalStateRewardVector, optionalTransitionRewardMatrix,
                                                optionalChoiceLabeling) {
-		if (!this->checkValidityOfProbabilityMatrix()) {
-			LOG4CPLUS_ERROR(logger, "Probability matrix is invalid.");
-			throw storm::exceptions::InvalidArgumentException() << "Probability matrix is invalid.";
-		}
+                // Intentionally left empty.
 	}
 
 	/*!
@@ -66,10 +63,7 @@ public:
             boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> const& optionalChoiceLabeling)
 			// The std::move call must be repeated here because otherwise this calls the copy constructor of the Base Class
 			: AbstractNondeterministicModel<T>(std::move(probabilityMatrix), std::move(stateLabeling), std::move(optionalStateRewardVector), std::move(optionalTransitionRewardMatrix), std::move(optionalChoiceLabeling)) {
-		if (!this->checkValidityOfProbabilityMatrix()) {
-			LOG4CPLUS_ERROR(logger, "Probability matrix is invalid.");
-			throw storm::exceptions::InvalidArgumentException() << "Probability matrix is invalid.";
-		}
+                // Intentionally left empty.
 	}
 
 	/*!
@@ -77,10 +71,7 @@ public:
 	 * @param ctmdp A reference to the CTMDP that is to be copied.
 	 */
 	Ctmdp(Ctmdp<T> const & ctmdp) : AbstractNondeterministicModel<T>(ctmdp) {
-		if (!this->checkValidityOfProbabilityMatrix()) {
-			LOG4CPLUS_ERROR(logger, "Probability matrix is invalid.");
-			throw storm::exceptions::InvalidArgumentException() << "Probability matrix is invalid.";
-		}
+        // Intentionally left empty.
 	}
 
 	/*!
@@ -88,10 +79,7 @@ public:
 	 * @param ctmdp A reference to the CTMDP that is to be moved.
 	 */
 	Ctmdp(Ctmdp<T>&& ctmdp) : AbstractNondeterministicModel<T>(std::move(ctmdp)) {
-		if (!this->checkValidityOfProbabilityMatrix()) {
-			LOG4CPLUS_ERROR(logger, "Probability matrix is invalid.");
-			throw storm::exceptions::InvalidArgumentException() << "Probability matrix is invalid.";
-		}
+        // Intentionally left empty.
 	}
 
 	/*!
@@ -117,23 +105,6 @@ public:
         storm::storage::SparseMatrix<T> newTransitionMatrix = storm::utility::matrix::applyScheduler(this->getTransitionMatrix(), scheduler);
         return std::shared_ptr<AbstractModel<T>>(new Ctmdp(newTransitionMatrix, this->getStateLabeling(), this->hasStateRewards() ? this->getStateRewardVector() : boost::optional<std::vector<T>>(), this->hasTransitionRewards() ? this->getTransitionRewardMatrix() :  boost::optional<storm::storage::SparseMatrix<T>>(), this->hasChoiceLabeling() ? this->getChoiceLabeling() : boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>()));
     }
-    
-private:
-
-	/*!
-	 *	@brief Perform some sanity checks.
-	 *
-	 *	Checks probability matrix if all rows sum up to one.
-	 */
-	bool checkValidityOfProbabilityMatrix() {
-		double precision = storm::settings::generalSettings().getPrecision();
-		for (uint_fast64_t row = 0; row < this->getTransitionMatrix().getRowCount(); row++) {
-			T sum = this->getTransitionMatrix().getRowSum(row);
-			if (sum == 0) continue;
-			if (std::abs(sum - 1) > precision) return false;
-		}
-		return true;
-	}
 };
 
 } // namespace models

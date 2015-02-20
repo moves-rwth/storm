@@ -17,7 +17,7 @@ namespace storm {
         public:
             friend class SimpleValuationPointerHash;
             friend class SimpleValuationPointerLess;
-            
+
             /*!
              * Creates an empty simple valuation that is associated to no manager and has no variables.
              */

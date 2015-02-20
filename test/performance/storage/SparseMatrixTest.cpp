@@ -25,8 +25,8 @@ TEST(SparseMatrix, Iteration) {
 TEST(SparseMatrix, SparseMultiplication) {
     storm::storage::SparseMatrixBuilder<double> matrixBuilder;
     for (uint_fast64_t row = 0; row < 100000; ++row) {
-        ASSERT_NO_THROW(matrixBuilder.addNextValue(row, 0, storm::utility::constantOne<double>()));
-        ASSERT_NO_THROW(matrixBuilder.addNextValue(row, 1, storm::utility::constantOne<double>()));
+        ASSERT_NO_THROW(matrixBuilder.addNextValue(row, 0, storm::utility::one<double>()));
+        ASSERT_NO_THROW(matrixBuilder.addNextValue(row, 1, storm::utility::one<double>()));
     }
     
     storm::storage::SparseMatrix<double> matrix;
@@ -74,7 +74,7 @@ TEST(SparseMatrix, DenseMultiplication) {
     uint_fast64_t const size = 2000;
     for (uint_fast64_t row = 0; row < size; ++row) {
         for (uint_fast64_t column = 0; column < size; ++column) {
-            ASSERT_NO_THROW(matrixBuilder.addNextValue(row, column, storm::utility::constantOne<double>()));
+            ASSERT_NO_THROW(matrixBuilder.addNextValue(row, column, storm::utility::one<double>()));
         }
     }
     

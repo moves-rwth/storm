@@ -1,35 +1,29 @@
-#ifndef STORM_STORAGE_EXPRESSIONS_EXPRESSIONEVALUATOR_H_
-#define STORM_STORAGE_EXPRESSIONS_EXPRESSIONEVALUATOR_H_
+#ifndef STORM_STORAGE_EXPRESSIONS_EXPRTKEXPRESSIONEVALUATOR_H_
+#define STORM_STORAGE_EXPRESSIONS_EXPRTKEXPRESSIONEVALUATOR_H_
 
 #include <unordered_map>
 #include <vector>
 
-#include "exprtk.hpp"
+#include "src/storage/expressions/ExpressionEvaluatorBase.h"
 
-#include "src/storage/expressions/Expression.h"
-#include "src/storage/expressions/ExpressionVisitor.h"
+#include "exprtk.hpp"
 #include "src/storage/expressions/ToExprtkStringVisitor.h"
 
 namespace storm {
     namespace expressions {
-        class ExprtkExpressionEvaluator {
+        template <typename RationalType>
+        class ExprtkExpressionEvaluatorBase : public ExpressionEvaluatorBase<RationalType> {
         public:
-            /*!
-             * Creates an expression evaluator that is capable of evaluating expressions managed by the given manager.
-             *
-             * @param manager The manager responsible for the expressions.
-             */
-            ExprtkExpressionEvaluator(storm::expressions::ExpressionManager const& manager);
+            ExprtkExpressionEvaluatorBase(storm::expressions::ExpressionManager const& manager);
             
-            bool asBool(Expression const& expression) const;
-            int_fast64_t asInt(Expression const& expression) const;
-            double asDouble(Expression const& expression) const;
+            bool asBool(Expression const& expression) const override;
+            int_fast64_t asInt(Expression const& expression) const override;
 
-            void setBooleanValue(storm::expressions::Variable const& variable, bool value);
-            void setIntegerValue(storm::expressions::Variable const& variable, int_fast64_t value);
-            void setRationalValue(storm::expressions::Variable const& variable, double value);
-            
-        private:
+            void setBooleanValue(storm::expressions::Variable const& variable, bool value) override;
+            void setIntegerValue(storm::expressions::Variable const& variable, int_fast64_t value) override;
+            void setRationalValue(storm::expressions::Variable const& variable, double value) override;
+
+        protected:
             typedef double ValueType;
             typedef exprtk::expression<ValueType> CompiledExpressionType;
             typedef std::unordered_map<BaseExpression const*, CompiledExpressionType> CacheType;
@@ -40,9 +34,6 @@ namespace storm {
              * @param expression The expression that is to be compiled.
              */
             CompiledExpressionType& getCompiledExpression(BaseExpression const* expression) const;
-            
-            // The expression manager that is used by this evaluator.
-            std::shared_ptr<storm::expressions::ExpressionManager const> manager;
             
             // The parser used.
             mutable exprtk::parser<ValueType> parser;
@@ -58,7 +49,19 @@ namespace storm {
             // A mapping of expressions to their compiled counterpart.
             mutable CacheType compiledExpressions;
         };
+        
+        class ExprtkExpressionEvaluator : public ExprtkExpressionEvaluatorBase<double> {
+        public:
+            /*!
+             * Creates an expression evaluator that is capable of evaluating expressions managed by the given manager.
+             *
+             * @param manager The manager responsible for the expressions.
+             */
+            ExprtkExpressionEvaluator(storm::expressions::ExpressionManager const& manager);
+            
+            double asRational(Expression const& expression) const override;
+        };
     }
 }
 
-#endif /* STORM_STORAGE_EXPRESSIONS_EXPRESSIONEVALUATOR_H_ */
+#endif /* STORM_STORAGE_EXPRESSIONS_EXPRTKEXPRESSIONEVALUATOR_H_ */

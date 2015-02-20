@@ -11,7 +11,12 @@
 #include "src/storage/SparseMatrix.h"
 #include "src/storage/Scheduler.h"
 #include "src/storage/StronglyConnectedComponentDecomposition.h"
+#include "src/utility/constants.h"
+#include "src/utility/macros.h"
 #include "src/utility/Hash.h"
+#include "src/utility/vector.h"
+
+#include "src/exceptions/InvalidOperationException.h"
 
 namespace storm {
 namespace models {
@@ -104,6 +109,17 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
                 transitionRewardMatrix(std::move(optionalTransitionRewardMatrix)) {
             // Intentionally left empty.
         }
+    
+    AbstractModel<T>& operator=(AbstractModel<T>&& model) {
+        if (this != &model) {
+            this->transitionMatrix = std::move(model.transitionMatrix);
+            this->choiceLabeling = std::move(model.choiceLabeling);
+            this->stateLabeling = std::move(model.stateLabeling);
+            this->stateRewardVector = std::move(model.stateRewardVector);
+            this->transitionRewardMatrix = std::move(model.transitionRewardMatrix);
+        }
+        return *this;
+    }
 
 		/*!
 		 * Destructor.
@@ -181,7 +197,7 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
                 
                 // Now we can just enumerate all the target SCCs and insert the corresponding transitions.
                 for (auto targetBlock : allTargetBlocks) {
-                    dependencyGraphBuilder.addNextValue(currentBlockIndex, targetBlock, storm::utility::constantOne<T>());
+                    dependencyGraphBuilder.addNextValue(currentBlockIndex, targetBlock, storm::utility::one<T>());
                 }
             }
             
@@ -304,6 +320,10 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
 		storm::models::AtomicPropositionsLabeling const& getStateLabeling() const {
 			return stateLabeling;
 		}
+		
+		storm::models::AtomicPropositionsLabeling & getStateLabeling() {
+			return stateLabeling;
+		}
 
 		/*!
 		 * Retrieves whether this model has a state reward model.
@@ -329,6 +349,16 @@ class AbstractModel: public std::enable_shared_from_this<AbstractModel<T>> {
             return static_cast<bool>(choiceLabeling);
         }
 
+    void convertTransitionRewardsToStateRewards() {
+        STORM_LOG_THROW(this->hasTransitionRewards(), storm::exceptions::InvalidOperationException, "Cannot reduce non-existant transition rewards to state rewards.");
+        if (this->hasStateRewards()) {
+            storm::utility::vector::addVectorsInPlace(stateRewardVector.get(), transitionMatrix.getPointwiseProductRowSumVector(transitionRewardMatrix.get()));
+        } else {
+            this->stateRewardVector = transitionMatrix.getPointwiseProductRowSumVector(transitionRewardMatrix.get());
+        }
+        this->transitionRewardMatrix = boost::optional<storm::storage::SparseMatrix<T>>();
+    }
+    
 		/*!
 		 * Retrieves the size of the internal representation of the model in memory.
 		 * @return the size of the internal representation of the model in memory

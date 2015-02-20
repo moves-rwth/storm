@@ -54,7 +54,7 @@ namespace storm {
                     for (auto const& successor : transitionMatrix.getRow(currentState)) {
                         // Only explore the state if the transition was actually there and the successor has not yet
                         // been visited.
-                        if (successor.getValue() > storm::utility::constantZero<T>() && !reachableStates.get(successor.getColumn())) {
+                        if (successor.getValue() != storm::utility::zero<T>() && !reachableStates.get(successor.getColumn())) {
                             // If the successor is one of the target states, we need to include it, but must not explore
                             // it further.
                             if (targetStates.get(successor.getColumn())) {
@@ -757,16 +757,16 @@ namespace storm {
                 
                 LOG4CPLUS_INFO(logger, "Performing Dijkstra search.");
                 
-				const uint_fast64_t noPredecessorValue = storm::utility::constantZero<uint_fast64_t>();
-                std::vector<T> probabilities(model.getNumberOfStates(), storm::utility::constantZero<T>());
+				const uint_fast64_t noPredecessorValue = storm::utility::zero<uint_fast64_t>();
+                std::vector<T> probabilities(model.getNumberOfStates(), storm::utility::zero<T>());
                 std::vector<uint_fast64_t> predecessors(model.getNumberOfStates(), noPredecessorValue);
                 
                 // Set the probability to 1 for all starting states.
                 std::set<std::pair<T, uint_fast64_t>, DistanceCompare<T>> probabilityStateSet;
 
                 for (auto state : startingStates) {
-                    probabilityStateSet.emplace(storm::utility::constantOne<T>(), state);
-                    probabilities[state] = storm::utility::constantOne<T>();
+                    probabilityStateSet.emplace(storm::utility::one<T>(), state);
+                    probabilities[state] = storm::utility::one<T>();
                 }
                 
                 // As long as there is one reachable state, we need to consider it.

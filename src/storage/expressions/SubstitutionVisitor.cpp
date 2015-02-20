@@ -27,7 +27,7 @@ namespace storm {
             if (conditionExpression.get() == expression.getCondition().get() && thenExpression.get() == expression.getThenExpression().get() && elseExpression.get() == expression.getElseExpression().get()) {
                 return expression.getSharedPointer();
             } else {
-                return static_cast<std::shared_ptr<BaseExpression const>>(std::shared_ptr<BaseExpression>(new IfThenElseExpression(expression.getManager(), expression.getType(), conditionExpression, thenExpression, elseExpression)));
+				return std::const_pointer_cast<BaseExpression const>(std::shared_ptr<BaseExpression>(new IfThenElseExpression(expression.getManager(), expression.getType(), conditionExpression, thenExpression, elseExpression)));
             }
         }
         
@@ -40,7 +40,7 @@ namespace storm {
             if (firstExpression.get() == expression.getFirstOperand().get() && secondExpression.get() == expression.getSecondOperand().get()) {
                 return expression.getSharedPointer();
             } else {
-                return static_cast<std::shared_ptr<BaseExpression const>>(std::shared_ptr<BaseExpression>(new BinaryBooleanFunctionExpression(expression.getManager(), expression.getType(), firstExpression, secondExpression, expression.getOperatorType())));
+				return std::const_pointer_cast<BaseExpression const>(std::shared_ptr<BaseExpression>(new BinaryBooleanFunctionExpression(expression.getManager(), expression.getType(), firstExpression, secondExpression, expression.getOperatorType())));
             }
         }
         
@@ -53,7 +53,7 @@ namespace storm {
             if (firstExpression.get() == expression.getFirstOperand().get() && secondExpression.get() == expression.getSecondOperand().get()) {
                 return expression.getSharedPointer();
             } else {
-                return static_cast<std::shared_ptr<BaseExpression const>>(std::shared_ptr<BaseExpression>(new BinaryNumericalFunctionExpression(expression.getManager(), expression.getType(), firstExpression, secondExpression, expression.getOperatorType())));
+				return std::const_pointer_cast<BaseExpression const>(std::shared_ptr<BaseExpression>(new BinaryNumericalFunctionExpression(expression.getManager(), expression.getType(), firstExpression, secondExpression, expression.getOperatorType())));
             }
         }
         
@@ -66,7 +66,7 @@ namespace storm {
             if (firstExpression.get() == expression.getFirstOperand().get() && secondExpression.get() == expression.getSecondOperand().get()) {
                 return expression.getSharedPointer();
             } else {
-                return static_cast<std::shared_ptr<BaseExpression const>>(std::shared_ptr<BaseExpression>(new BinaryRelationExpression(expression.getManager(), expression.getType(), firstExpression, secondExpression, expression.getRelationType())));
+				return std::const_pointer_cast<BaseExpression const>(std::shared_ptr<BaseExpression>(new BinaryRelationExpression(expression.getManager(), expression.getType(), firstExpression, secondExpression, expression.getRelationType())));
             }
         }
         
@@ -89,7 +89,7 @@ namespace storm {
             if (operandExpression.get() == expression.getOperand().get()) {
                 return expression.getSharedPointer();
             } else {
-                return static_cast<std::shared_ptr<BaseExpression const>>(std::shared_ptr<BaseExpression>(new UnaryBooleanFunctionExpression(expression.getManager(), expression.getType(), operandExpression, expression.getOperatorType())));
+				return std::const_pointer_cast<BaseExpression const>(std::shared_ptr<BaseExpression>(new UnaryBooleanFunctionExpression(expression.getManager(), expression.getType(), operandExpression, expression.getOperatorType())));
             }
         }
         
@@ -101,7 +101,7 @@ namespace storm {
             if (operandExpression.get() == expression.getOperand().get()) {
                 return expression.getSharedPointer();
             } else {
-                return static_cast<std::shared_ptr<BaseExpression const>>(std::shared_ptr<BaseExpression>(new UnaryNumericalFunctionExpression(expression.getManager(), expression.getType(), operandExpression, expression.getOperatorType())));
+				return std::const_pointer_cast<BaseExpression const>(std::shared_ptr<BaseExpression>(new UnaryNumericalFunctionExpression(expression.getManager(), expression.getType(), operandExpression, expression.getOperatorType())));
             }
         }
         

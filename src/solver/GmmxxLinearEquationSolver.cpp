@@ -16,10 +16,9 @@ namespace storm {
     namespace solver {
         
         template<typename ValueType>
-        GmmxxLinearEquationSolver<ValueType>::GmmxxLinearEquationSolver(SolutionMethod method, double precision, uint_fast64_t maximalNumberOfIterations, Preconditioner preconditioner, bool relative, uint_fast64_t restart) : method(method), precision(precision), maximalNumberOfIterations(maximalNumberOfIterations), preconditioner(preconditioner), restart(restart) {
+        GmmxxLinearEquationSolver<ValueType>::GmmxxLinearEquationSolver(SolutionMethod method, double precision, uint_fast64_t maximalNumberOfIterations, Preconditioner preconditioner, bool relative, uint_fast64_t restart) : method(method), precision(precision), maximalNumberOfIterations(maximalNumberOfIterations), preconditioner(preconditioner), relative(relative), restart(restart) {
             // Intentionally left empty.
         }
-        
 
         template<typename ValueType>
         GmmxxLinearEquationSolver<ValueType>::GmmxxLinearEquationSolver() {
@@ -187,7 +186,7 @@ namespace storm {
             while (!converged && iterationCount < maximalNumberOfIterations) {
                 // Compute D^-1 * (b - LU * x) and store result in nextX.
                 gmm::mult(*gmmLU, *currentX, tmpX);
-                gmm::add(b, gmm::scaled(tmpX, -storm::utility::constantOne<ValueType>()), tmpX);
+                gmm::add(b, gmm::scaled(tmpX, -storm::utility::one<ValueType>()), tmpX);
                 gmm::mult(*gmmDinv, tmpX, *nextX);
                 
                 // Now check if the process already converged within our precision.

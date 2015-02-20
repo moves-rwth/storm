@@ -28,6 +28,7 @@
 #include "src/settings/modules/BisimulationSettings.h"
 #include "src/settings/modules/GlpkSettings.h"
 #include "src/settings/modules/GurobiSettings.h"
+#include "src/settings/modules/ParametricSettings.h"
 #include "src/settings/modules/SparseDtmcEliminationModelCheckerSettings.h"
 #include "src/settings/modules/TopologicalValueIterationEquationSolverSettings.h"
 
@@ -319,7 +320,13 @@ namespace storm {
 		storm::settings::modules::TopologicalValueIterationEquationSolverSettings const& topologicalValueIterationEquationSolverSettings();
         
         /*!
-         * Retrieves the settings of the elimination-based DTMC model checker.
+         * Retrieves the settings for parametric model checking.
+         *
+         * @return An object that allows accessing the settings for parameteric model checking.
+         */
+        storm::settings::modules::ParametricSettings const& parametricSettings();
+
+        /* Retrieves the settings of the elimination-based DTMC model checker.
          *
          * @return An object that allows accessing the settings of the elimination-based DTMC model checker.
          */
