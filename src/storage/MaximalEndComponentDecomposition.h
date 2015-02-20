@@ -3,7 +3,7 @@
 
 #include "src/storage/Decomposition.h"
 #include "src/storage/MaximalEndComponent.h"
-#include "src/models/AbstractNondeterministicModel.h"
+#include "src/models/sparse/NondeterministicModel.h"
 
 namespace storm  {
     namespace storage {
@@ -24,7 +24,7 @@ namespace storm  {
              *
              * @param model The model to decompose into MECs.
              */
-            MaximalEndComponentDecomposition(storm::models::AbstractNondeterministicModel<ValueType> const& model);
+            MaximalEndComponentDecomposition(storm::models::sparse::NondeterministicModel<ValueType> const& model);
             
             /*!
              * Creates an MEC decomposition of the given subsystem in the given model.
@@ -32,7 +32,7 @@ namespace storm  {
              * @param model The model whose subsystem to decompose into MECs.
              * @param subsystem The subsystem to decompose.
              */
-            MaximalEndComponentDecomposition(storm::models::AbstractNondeterministicModel<ValueType> const& model, storm::storage::BitVector const& subsystem);
+            MaximalEndComponentDecomposition(storm::models::sparse::NondeterministicModel<ValueType> const& model, storm::storage::BitVector const& subsystem);
             
             /*!
              * Creates an MEC decomposition by copying the contents of the given MEC decomposition.
@@ -70,7 +70,7 @@ namespace storm  {
              * @param model The model whose subsystem to decompose into MECs.
              * @param subsystem The subsystem to decompose.
              */
-            void performMaximalEndComponentDecomposition(storm::models::AbstractNondeterministicModel<ValueType> const& model, storm::storage::BitVector const& subsystem);
+            void performMaximalEndComponentDecomposition(storm::models::sparse::NondeterministicModel<ValueType> const& model, storm::storage::BitVector const& subsystem);
         };
     }
 }

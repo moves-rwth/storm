@@ -2,7 +2,7 @@
 #define STORM_MODELCHECKER_SPARSEMDPPRCTLMODELCHECKER_H_
 
 #include "src/modelchecker/propositional/SparsePropositionalModelChecker.h"
-#include "src/models/Mdp.h"
+#include "src/models/sparse/Mdp.h"
 #include "src/utility/solver.h"
 #include "src/solver/NondeterministicLinearEquationSolver.h"
 
@@ -24,8 +24,8 @@ namespace storm {
             friend class SparseMarkovAutomatonCslModelChecker<ValueType>;
             friend class counterexamples::SMTMinimalCommandSetGenerator<ValueType>;
             
-            explicit SparseMdpPrctlModelChecker(storm::models::Mdp<ValueType> const& model);
-            explicit SparseMdpPrctlModelChecker(storm::models::Mdp<ValueType> const& model, std::shared_ptr<storm::solver::NondeterministicLinearEquationSolver<ValueType>> nondeterministicLinearEquationSolver);
+            explicit SparseMdpPrctlModelChecker(storm::models::sparse::Mdp<ValueType> const& model);
+            explicit SparseMdpPrctlModelChecker(storm::models::sparse::Mdp<ValueType> const& model, std::shared_ptr<storm::solver::NondeterministicLinearEquationSolver<ValueType>> nondeterministicLinearEquationSolver);
             
             // The implemented methods of the AbstractModelChecker interface.
             virtual bool canHandle(storm::logic::Formula const& formula) const override;
@@ -37,7 +37,7 @@ namespace storm {
             virtual std::unique_ptr<CheckResult> computeReachabilityRewards(storm::logic::ReachabilityRewardFormula const& rewardPathFormula, bool qualitative = false, boost::optional<storm::logic::OptimalityType> const& optimalityType = boost::optional<storm::logic::OptimalityType>()) override;
             
         protected:
-            storm::models::Mdp<ValueType> const& getModel() const override;
+            storm::models::sparse::Mdp<ValueType> const& getModel() const override;
             
         private:
             // The methods that perform the actual checking.

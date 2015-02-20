@@ -4,16 +4,16 @@
 #include "storage/DeterministicModelBisimulationDecomposition.h"
 
 TEST(DeterministicModelBisimulationDecomposition, Die) {
-	std::shared_ptr<storm::models::AbstractModel<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/dtmc/die/die.tra", STORM_CPP_BASE_PATH "/examples/dtmc/die/die.lab", "", "");
+	std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/dtmc/die/die.tra", STORM_CPP_BASE_PATH "/examples/dtmc/die/die.lab", "", "");
     
-    ASSERT_EQ(abstractModel->getType(), storm::models::DTMC);
-	std::shared_ptr<storm::models::Dtmc<double>> dtmc = abstractModel->as<storm::models::Dtmc<double>>();
+    ASSERT_EQ(abstractModel->getType(), storm::models::ModelType::Dtmc);
+	std::shared_ptr<storm::models::sparse::Dtmc<double>> dtmc = abstractModel->as<storm::models::sparse::Dtmc<double>>();
 
     storm::storage::DeterministicModelBisimulationDecomposition<double> bisim(*dtmc);
-    std::shared_ptr<storm::models::AbstractModel<double>> result;
+    std::shared_ptr<storm::models::sparse::Model<double>> result;
     ASSERT_NO_THROW(result = bisim.getQuotient());
 
-    EXPECT_EQ(storm::models::DTMC, result->getType());
+    EXPECT_EQ(storm::models::ModelType::Dtmc, result->getType());
     EXPECT_EQ(13, result->getNumberOfStates());
     EXPECT_EQ(20, result->getNumberOfTransitions());
 
@@ -27,7 +27,7 @@ TEST(DeterministicModelBisimulationDecomposition, Die) {
     storm::storage::DeterministicModelBisimulationDecomposition<double> bisim2(*dtmc, options);
     ASSERT_NO_THROW(result = bisim2.getQuotient());
     
-    EXPECT_EQ(storm::models::DTMC, result->getType());
+    EXPECT_EQ(storm::models::ModelType::Dtmc, result->getType());
     EXPECT_EQ(5, result->getNumberOfStates());
     EXPECT_EQ(8, result->getNumberOfTransitions());
 
@@ -37,7 +37,7 @@ TEST(DeterministicModelBisimulationDecomposition, Die) {
     storm::storage::DeterministicModelBisimulationDecomposition<double> bisim3(*dtmc, options);
     ASSERT_NO_THROW(result = bisim3.getQuotient());
     
-    EXPECT_EQ(storm::models::DTMC, result->getType());
+    EXPECT_EQ(storm::models::ModelType::Dtmc, result->getType());
     EXPECT_EQ(5, result->getNumberOfStates());
     EXPECT_EQ(8, result->getNumberOfTransitions());
     
@@ -52,22 +52,22 @@ TEST(DeterministicModelBisimulationDecomposition, Die) {
     
     storm::storage::DeterministicModelBisimulationDecomposition<double> bisim4(*dtmc, options2);
     ASSERT_NO_THROW(result = bisim4.getQuotient());
-    EXPECT_EQ(storm::models::DTMC, result->getType());
+    EXPECT_EQ(storm::models::ModelType::Dtmc, result->getType());
     EXPECT_EQ(5, result->getNumberOfStates());
     EXPECT_EQ(8, result->getNumberOfTransitions());
 }
 
 TEST(DeterministicModelBisimulationDecomposition, Crowds) {
-	std::shared_ptr<storm::models::AbstractModel<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/dtmc/crowds/crowds5_5.tra", STORM_CPP_BASE_PATH "/examples/dtmc/crowds/crowds5_5.lab", "", "");
+	std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/dtmc/crowds/crowds5_5.tra", STORM_CPP_BASE_PATH "/examples/dtmc/crowds/crowds5_5.lab", "", "");
     
-    ASSERT_EQ(abstractModel->getType(), storm::models::DTMC);
-	std::shared_ptr<storm::models::Dtmc<double>> dtmc = abstractModel->as<storm::models::Dtmc<double>>();
+    ASSERT_EQ(abstractModel->getType(), storm::models::ModelType::Dtmc);
+	std::shared_ptr<storm::models::sparse::Dtmc<double>> dtmc = abstractModel->as<storm::models::sparse::Dtmc<double>>();
 
     storm::storage::DeterministicModelBisimulationDecomposition<double> bisim(*dtmc);
-    std::shared_ptr<storm::models::AbstractModel<double>> result;
+    std::shared_ptr<storm::models::sparse::Model<double>> result;
     ASSERT_NO_THROW(result = bisim.getQuotient());
     
-    EXPECT_EQ(storm::models::DTMC, result->getType());
+    EXPECT_EQ(storm::models::ModelType::Dtmc, result->getType());
     EXPECT_EQ(334, result->getNumberOfStates());
     EXPECT_EQ(546, result->getNumberOfTransitions());
     
@@ -81,7 +81,7 @@ TEST(DeterministicModelBisimulationDecomposition, Crowds) {
     storm::storage::DeterministicModelBisimulationDecomposition<double> bisim2(*dtmc, options);
     ASSERT_NO_THROW(result = bisim2.getQuotient());
     
-    EXPECT_EQ(storm::models::DTMC, result->getType());
+    EXPECT_EQ(storm::models::ModelType::Dtmc, result->getType());
     EXPECT_EQ(65, result->getNumberOfStates());
     EXPECT_EQ(105, result->getNumberOfTransitions());
 
@@ -91,7 +91,7 @@ TEST(DeterministicModelBisimulationDecomposition, Crowds) {
     storm::storage::DeterministicModelBisimulationDecomposition<double> bisim3(*dtmc, options);
     ASSERT_NO_THROW(result = bisim3.getQuotient());
     
-    EXPECT_EQ(storm::models::DTMC, result->getType());
+    EXPECT_EQ(storm::models::ModelType::Dtmc, result->getType());
     EXPECT_EQ(43, result->getNumberOfStates());
     EXPECT_EQ(83, result->getNumberOfTransitions());
     
@@ -106,7 +106,7 @@ TEST(DeterministicModelBisimulationDecomposition, Crowds) {
     storm::storage::DeterministicModelBisimulationDecomposition<double> bisim4(*dtmc, options2);
     ASSERT_NO_THROW(result = bisim4.getQuotient());
 
-    EXPECT_EQ(storm::models::DTMC, result->getType());
+    EXPECT_EQ(storm::models::ModelType::Dtmc, result->getType());
     EXPECT_EQ(64, result->getNumberOfStates());
     EXPECT_EQ(104, result->getNumberOfTransitions());
     
@@ -120,7 +120,7 @@ TEST(DeterministicModelBisimulationDecomposition, Crowds) {
     storm::storage::DeterministicModelBisimulationDecomposition<double> bisim5(*dtmc, options3);
     ASSERT_NO_THROW(result = bisim5.getQuotient());
 
-    EXPECT_EQ(storm::models::DTMC, result->getType());
+    EXPECT_EQ(storm::models::ModelType::Dtmc, result->getType());
     EXPECT_EQ(64, result->getNumberOfStates());
     EXPECT_EQ(104, result->getNumberOfTransitions());
     
@@ -134,7 +134,7 @@ TEST(DeterministicModelBisimulationDecomposition, Crowds) {
     storm::storage::DeterministicModelBisimulationDecomposition<double> bisim6(*dtmc, options4);
     ASSERT_NO_THROW(result = bisim6.getQuotient());
     
-    EXPECT_EQ(storm::models::DTMC, result->getType());
+    EXPECT_EQ(storm::models::ModelType::Dtmc, result->getType());
     EXPECT_EQ(65, result->getNumberOfStates());
     EXPECT_EQ(105, result->getNumberOfTransitions());
 }

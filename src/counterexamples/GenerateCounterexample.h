@@ -4,7 +4,7 @@
 
 
 #include "src/models/Dtmc.h"
-#include "src/models/AtomicPropositionsLabeling.h"
+#include "src/models/sparse/StateLabeling.h"
 #include "src/counterexamples/MILPMinimalLabelSetGenerator.h"
 #include "src/counterexamples/SMTMinimalCommandSetGenerator.h"
 #include "src/counterexamples/PathBasedSubsystemGenerator.h"
@@ -23,7 +23,7 @@
  *
  * @param parser An AutoParser to get the model from.
  */
- void generateCounterExample(std::shared_ptr<storm::models::AbstractModel<double>> model) {
+ void generateCounterExample(std::shared_ptr<storm::models::sparse::Model<double>> model) {
 	LOG4CPLUS_INFO(logger, "Starting counterexample generation.");
 	LOG4CPLUS_INFO(logger, "Testing inputs...");
 

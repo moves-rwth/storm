@@ -811,7 +811,7 @@ namespace storm {
 #endif
 
         template<typename ValueType>
-        uint_fast64_t SparseMatrix<ValueType>::getSizeInMemory() const {
+        std::size_t SparseMatrix<ValueType>::getSizeInBytes() const {
             uint_fast64_t size = sizeof(*this);
             
             // Add size of columns and values.

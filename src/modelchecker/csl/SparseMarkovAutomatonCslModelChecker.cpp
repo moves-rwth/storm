@@ -19,12 +19,12 @@
 namespace storm {
     namespace modelchecker {
         template<typename ValueType>
-        SparseMarkovAutomatonCslModelChecker<ValueType>::SparseMarkovAutomatonCslModelChecker(storm::models::MarkovAutomaton<ValueType> const& model, std::shared_ptr<storm::solver::NondeterministicLinearEquationSolver<ValueType>> nondeterministicLinearEquationSolver) : model(model), nondeterministicLinearEquationSolver(nondeterministicLinearEquationSolver) {
+        SparseMarkovAutomatonCslModelChecker<ValueType>::SparseMarkovAutomatonCslModelChecker(storm::models::sparse::MarkovAutomaton<ValueType> const& model, std::shared_ptr<storm::solver::NondeterministicLinearEquationSolver<ValueType>> nondeterministicLinearEquationSolver) : model(model), nondeterministicLinearEquationSolver(nondeterministicLinearEquationSolver) {
             // Intentionally left empty.
         }
         
         template<typename ValueType>
-        SparseMarkovAutomatonCslModelChecker<ValueType>::SparseMarkovAutomatonCslModelChecker(storm::models::MarkovAutomaton<ValueType> const& model) : model(model), nondeterministicLinearEquationSolver(storm::utility::solver::getNondeterministicLinearEquationSolver<ValueType>()) {
+        SparseMarkovAutomatonCslModelChecker<ValueType>::SparseMarkovAutomatonCslModelChecker(storm::models::sparse::MarkovAutomaton<ValueType> const& model) : model(model), nondeterministicLinearEquationSolver(storm::utility::solver::getNondeterministicLinearEquationSolver<ValueType>()) {
             // Intentionally left empty.
         }
         
@@ -429,8 +429,8 @@ namespace storm {
         
         template<typename ValueType>
         std::unique_ptr<CheckResult> SparseMarkovAutomatonCslModelChecker<ValueType>::checkAtomicLabelFormula(storm::logic::AtomicLabelFormula const& stateFormula) {
-            STORM_LOG_THROW(model.hasAtomicProposition(stateFormula.getLabel()), storm::exceptions::InvalidPropertyException, "The property refers to unknown label '" << stateFormula.getLabel() << "'.");
-            return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult(model.getLabeledStates(stateFormula.getLabel())));
+            STORM_LOG_THROW(model.hasLabel(stateFormula.getLabel()), storm::exceptions::InvalidPropertyException, "The property refers to unknown label '" << stateFormula.getLabel() << "'.");
+            return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult(model.getStates(stateFormula.getLabel())));
         }
                 
         template<typename ValueType>

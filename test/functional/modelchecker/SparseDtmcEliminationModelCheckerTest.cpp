@@ -10,11 +10,11 @@
 #include "src/parser/AutoParser.h"
 
 TEST(SparseDtmcEliminationModelCheckerTest, Die) {
-    std::shared_ptr<storm::models::AbstractModel<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/dtmc/die/die.tra", STORM_CPP_BASE_PATH "/examples/dtmc/die/die.lab", "", STORM_CPP_BASE_PATH "/examples/dtmc/die/die.coin_flips.trans.rew");
+    std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/dtmc/die/die.tra", STORM_CPP_BASE_PATH "/examples/dtmc/die/die.lab", "", STORM_CPP_BASE_PATH "/examples/dtmc/die/die.coin_flips.trans.rew");
     
-    ASSERT_EQ(abstractModel->getType(), storm::models::DTMC);
+    ASSERT_EQ(abstractModel->getType(), storm::models::ModelType::Dtmc);
     
-    std::shared_ptr<storm::models::Dtmc<double>> dtmc = abstractModel->as<storm::models::Dtmc<double>>();
+    std::shared_ptr<storm::models::sparse::Dtmc<double>> dtmc = abstractModel->as<storm::models::sparse::Dtmc<double>>();
     
     ASSERT_EQ(dtmc->getNumberOfStates(), 13ull);
     ASSERT_EQ(dtmc->getNumberOfTransitions(), 20ull);
@@ -55,11 +55,11 @@ TEST(SparseDtmcEliminationModelCheckerTest, Die) {
 }
 
 TEST(SparseDtmcEliminationModelCheckerTest, Crowds) {
-    std::shared_ptr<storm::models::AbstractModel<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/dtmc/crowds/crowds5_5.tra", STORM_CPP_BASE_PATH "/examples/dtmc/crowds/crowds5_5.lab", "", "");
+    std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/dtmc/crowds/crowds5_5.tra", STORM_CPP_BASE_PATH "/examples/dtmc/crowds/crowds5_5.lab", "", "");
     
-    ASSERT_EQ(abstractModel->getType(), storm::models::DTMC);
+    ASSERT_EQ(abstractModel->getType(), storm::models::ModelType::Dtmc);
     
-    std::shared_ptr<storm::models::Dtmc<double>> dtmc = abstractModel->as<storm::models::Dtmc<double>>();
+    std::shared_ptr<storm::models::sparse::Dtmc<double>> dtmc = abstractModel->as<storm::models::sparse::Dtmc<double>>();
     
     ASSERT_EQ(8607ull, dtmc->getNumberOfStates());
     ASSERT_EQ(15113ull, dtmc->getNumberOfTransitions());
@@ -116,10 +116,10 @@ TEST(SparseDtmcEliminationModelCheckerTest, Crowds) {
 }
 
 TEST(SparseDtmcEliminationModelCheckerTest, SynchronousLeader) {
-    std::shared_ptr<storm::models::AbstractModel<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/dtmc/synchronous_leader/leader4_8.tra", STORM_CPP_BASE_PATH "/examples/dtmc/synchronous_leader/leader4_8.lab", "", STORM_CPP_BASE_PATH "/examples/dtmc/synchronous_leader/leader4_8.pick.trans.rew");
+    std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/dtmc/synchronous_leader/leader4_8.tra", STORM_CPP_BASE_PATH "/examples/dtmc/synchronous_leader/leader4_8.lab", "", STORM_CPP_BASE_PATH "/examples/dtmc/synchronous_leader/leader4_8.pick.trans.rew");
     
-    ASSERT_EQ(abstractModel->getType(), storm::models::DTMC);
-    std::shared_ptr<storm::models::Dtmc<double>> dtmc = abstractModel->as<storm::models::Dtmc<double>>();
+    ASSERT_EQ(abstractModel->getType(), storm::models::ModelType::Dtmc);
+    std::shared_ptr<storm::models::sparse::Dtmc<double>> dtmc = abstractModel->as<storm::models::sparse::Dtmc<double>>();
     
     ASSERT_EQ(12400ull, dtmc->getNumberOfStates());
     ASSERT_EQ(16495ull, dtmc->getNumberOfTransitions());

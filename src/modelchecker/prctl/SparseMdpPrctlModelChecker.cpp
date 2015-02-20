@@ -15,12 +15,12 @@
 namespace storm {
     namespace modelchecker {
         template<typename ValueType>
-        SparseMdpPrctlModelChecker<ValueType>::SparseMdpPrctlModelChecker(storm::models::Mdp<ValueType> const& model) : SparsePropositionalModelChecker<ValueType>(model), nondeterministicLinearEquationSolver(storm::utility::solver::getNondeterministicLinearEquationSolver<ValueType>()) {
+        SparseMdpPrctlModelChecker<ValueType>::SparseMdpPrctlModelChecker(storm::models::sparse::Mdp<ValueType> const& model) : SparsePropositionalModelChecker<ValueType>(model), nondeterministicLinearEquationSolver(storm::utility::solver::getNondeterministicLinearEquationSolver<ValueType>()) {
             // Intentionally left empty.
         }
         
         template<typename ValueType>
-        SparseMdpPrctlModelChecker<ValueType>::SparseMdpPrctlModelChecker(storm::models::Mdp<ValueType> const& model, std::shared_ptr<storm::solver::NondeterministicLinearEquationSolver<ValueType>> nondeterministicLinearEquationSolver) : SparsePropositionalModelChecker<ValueType>(model), nondeterministicLinearEquationSolver(nondeterministicLinearEquationSolver) {
+        SparseMdpPrctlModelChecker<ValueType>::SparseMdpPrctlModelChecker(storm::models::sparse::Mdp<ValueType> const& model, std::shared_ptr<storm::solver::NondeterministicLinearEquationSolver<ValueType>> nondeterministicLinearEquationSolver) : SparsePropositionalModelChecker<ValueType>(model), nondeterministicLinearEquationSolver(nondeterministicLinearEquationSolver) {
             // Intentionally left empty.
         }
         
@@ -314,8 +314,8 @@ namespace storm {
         }
         
         template<typename ValueType>
-        storm::models::Mdp<ValueType> const& SparseMdpPrctlModelChecker<ValueType>::getModel() const {
-            return this->template getModelAs<storm::models::Mdp<ValueType>>();
+        storm::models::sparse::Mdp<ValueType> const& SparseMdpPrctlModelChecker<ValueType>::getModel() const {
+            return this->template getModelAs<storm::models::sparse::Mdp<ValueType>>();
         }
                 
         template class SparseMdpPrctlModelChecker<double>;

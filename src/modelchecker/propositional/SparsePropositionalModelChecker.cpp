@@ -2,8 +2,8 @@
 
 #include "src/adapters/CarlAdapter.h"
 
-#include "src/models/Dtmc.h"
-#include "src/models/Mdp.h"
+#include "src/models/sparse/Dtmc.h"
+#include "src/models/sparse/Mdp.h"
 
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
 
@@ -13,7 +13,7 @@
 namespace storm {
     namespace modelchecker {
         template<typename ValueType>
-        SparsePropositionalModelChecker<ValueType>::SparsePropositionalModelChecker(storm::models::AbstractModel<ValueType> const& model) : model(model) {
+        SparsePropositionalModelChecker<ValueType>::SparsePropositionalModelChecker(storm::models::sparse::Model<ValueType> const& model) : model(model) {
             // Intentionally left empty.
         }
         
@@ -33,12 +33,12 @@ namespace storm {
         
         template<typename ValueType>
         std::unique_ptr<CheckResult> SparsePropositionalModelChecker<ValueType>::checkAtomicLabelFormula(storm::logic::AtomicLabelFormula const& stateFormula) {
-            STORM_LOG_THROW(model.hasAtomicProposition(stateFormula.getLabel()), storm::exceptions::InvalidPropertyException, "The property refers to unknown label '" << stateFormula.getLabel() << "'.");
-            return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult(model.getLabeledStates(stateFormula.getLabel())));
+            STORM_LOG_THROW(model.hasLabel(stateFormula.getLabel()), storm::exceptions::InvalidPropertyException, "The property refers to unknown label '" << stateFormula.getLabel() << "'.");
+            return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult(model.getStates(stateFormula.getLabel())));
         }
         
         template<typename ValueType>
-        storm::models::AbstractModel<ValueType> const& SparsePropositionalModelChecker<ValueType>::getModel() const {
+        storm::models::sparse::Model<ValueType> const& SparsePropositionalModelChecker<ValueType>::getModel() const {
             return model;
         }
         
@@ -49,13 +49,13 @@ namespace storm {
         }
         
         // Explicitly instantiate the template class.
-        template storm::models::Dtmc<double> const& SparsePropositionalModelChecker<double>::getModelAs() const;
-        template storm::models::Mdp<double> const& SparsePropositionalModelChecker<double>::getModelAs() const;
+        template storm::models::sparse::Dtmc<double> const& SparsePropositionalModelChecker<double>::getModelAs() const;
+        template storm::models::sparse::Mdp<double> const& SparsePropositionalModelChecker<double>::getModelAs() const;
         template class SparsePropositionalModelChecker<double>;
         
 #ifdef STORM_HAVE_CARL
-        template storm::models::Dtmc<storm::RationalFunction> const& SparsePropositionalModelChecker<storm::RationalFunction>::getModelAs() const;
-        template storm::models::Mdp<storm::RationalFunction> const& SparsePropositionalModelChecker<storm::RationalFunction>::getModelAs() const;
+        template storm::models::sparse::Dtmc<storm::RationalFunction> const& SparsePropositionalModelChecker<storm::RationalFunction>::getModelAs() const;
+        template storm::models::sparse::Mdp<storm::RationalFunction> const& SparsePropositionalModelChecker<storm::RationalFunction>::getModelAs() const;
         template class SparsePropositionalModelChecker<storm::RationalFunction>;
 #endif
     }

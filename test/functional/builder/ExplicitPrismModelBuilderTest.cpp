@@ -7,7 +7,7 @@
 TEST(ExplicitPrismModelBuilderTest, Dtmc) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/die.pm");
     
-    std::unique_ptr<storm::models::AbstractModel<double>> model = storm::builder::ExplicitPrismModelBuilder<double>::translateProgram(program);
+    std::unique_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitPrismModelBuilder<double>::translateProgram(program);
     EXPECT_EQ(13, model->getNumberOfStates());
     EXPECT_EQ(20, model->getNumberOfTransitions());
     
@@ -35,7 +35,7 @@ TEST(ExplicitPrismModelBuilderTest, Dtmc) {
 TEST(ExplicitPrismModelBuilderTest, Mdp) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/two_dice.nm");
     
-    std::unique_ptr<storm::models::AbstractModel<double>> model = storm::builder::ExplicitPrismModelBuilder<double>::translateProgram(program);
+    std::unique_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitPrismModelBuilder<double>::translateProgram(program);
     EXPECT_EQ(169, model->getNumberOfStates());
     EXPECT_EQ(436, model->getNumberOfTransitions());
     

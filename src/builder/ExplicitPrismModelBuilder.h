@@ -15,8 +15,8 @@
 #include "src/storage/expressions/ExpressionEvaluator.h"
 #include "src/storage/BitVectorHashMap.h"
 #include "src/logic/Formulas.h"
-#include "src/models/AbstractModel.h"
-#include "src/models/AtomicPropositionsLabeling.h"
+#include "src/models/sparse/Model.h"
+#include "src/models/sparse/StateLabeling.h"
 #include "src/storage/SparseMatrix.h"
 #include "src/settings/SettingsManager.h"
 
@@ -108,7 +108,7 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> transitionMatrix;
                 
                 // The state labeling.
-                storm::models::AtomicPropositionsLabeling stateLabeling;
+                storm::models::sparse::StateLabeling stateLabeling;
                 
                 // The state reward vector.
                 std::vector<ValueType> stateRewards;
@@ -172,7 +172,7 @@ namespace storm {
              * @param rewardModel The reward model that is to be built.
              * @return The explicit model that was given by the probabilistic program.
              */
-            static std::unique_ptr<storm::models::AbstractModel<ValueType>> translateProgram(storm::prism::Program program, Options const& options = Options());
+            static std::unique_ptr<storm::models::sparse::Model<ValueType>> translateProgram(storm::prism::Program program, Options const& options = Options());
             
         private:
             static void unpackStateIntoEvaluator(storm::storage::BitVector const& currentState, VariableInformation const& variableInformation, storm::expressions::ExpressionEvaluator<ValueType>& evaluator);
@@ -268,7 +268,7 @@ namespace storm {
              * @param stateInformation Information about the state space of the program.
              * @return The state labeling of the given program.
              */
-            static storm::models::AtomicPropositionsLabeling buildStateLabeling(storm::prism::Program const& program, VariableInformation const& variableInformation, StateInformation const& stateInformation);
+            static storm::models::sparse::StateLabeling buildStateLabeling(storm::prism::Program const& program, VariableInformation const& variableInformation, StateInformation const& stateInformation);
 
             /*!
              * Builds the state rewards for the given state space.

@@ -2,10 +2,9 @@
 
 #include <map>
 
-#include "src/models/Dtmc.h"
-#include "src/models/Ctmc.h"
-#include "src/models/Mdp.h"
-#include "src/models/Ctmdp.h"
+#include "src/models/sparse/Dtmc.h"
+#include "src/models/sparse/Ctmc.h"
+#include "src/models/sparse/Mdp.h"
 
 #include "src/utility/prism.h"
 #include "src/utility/macros.h"
@@ -92,7 +91,7 @@ namespace storm {
         }
         
         template <typename ValueType, typename IndexType>
-        std::unique_ptr<storm::models::AbstractModel<ValueType>> ExplicitPrismModelBuilder<ValueType, IndexType>::translateProgram(storm::prism::Program program, Options const& options) {
+        std::unique_ptr<storm::models::sparse::Model<ValueType>> ExplicitPrismModelBuilder<ValueType, IndexType>::translateProgram(storm::prism::Program program, Options const& options) {
             // Start by defining the undefined constants in the model.
             storm::prism::Program preparedProgram;
             if (options.constantDefinitions) {
@@ -167,19 +166,16 @@ namespace storm {
             
             ModelComponents modelComponents = buildModelComponents(preparedProgram, rewardModel, options);
             
-            std::unique_ptr<storm::models::AbstractModel<ValueType>> result;
+            std::unique_ptr<storm::models::sparse::Model<ValueType>> result;
             switch (program.getModelType()) {
                 case storm::prism::Program::ModelType::DTMC:
-                    result = std::unique_ptr<storm::models::AbstractModel<ValueType>>(new storm::models::Dtmc<ValueType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), rewardModel.hasStateRewards() ? std::move(modelComponents.stateRewards) : boost::optional<std::vector<ValueType>>(), rewardModel.hasTransitionRewards() ? std::move(modelComponents.transitionRewardMatrix) : boost::optional<storm::storage::SparseMatrix<ValueType>>(), std::move(modelComponents.choiceLabeling)));
+                    result = std::unique_ptr<storm::models::sparse::Model<ValueType>>(new storm::models::sparse::Dtmc<ValueType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), rewardModel.hasStateRewards() ? std::move(modelComponents.stateRewards) : boost::optional<std::vector<ValueType>>(), rewardModel.hasTransitionRewards() ? std::move(modelComponents.transitionRewardMatrix) : boost::optional<storm::storage::SparseMatrix<ValueType>>(), std::move(modelComponents.choiceLabeling)));
                     break;
                 case storm::prism::Program::ModelType::CTMC:
-                    result = std::unique_ptr<storm::models::AbstractModel<ValueType>>(new storm::models::Ctmc<ValueType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), rewardModel.hasStateRewards() ? std::move(modelComponents.stateRewards) : boost::optional<std::vector<ValueType>>(), rewardModel.hasTransitionRewards() ? std::move(modelComponents.transitionRewardMatrix) : boost::optional<storm::storage::SparseMatrix<ValueType>>(), std::move(modelComponents.choiceLabeling)));
+                    result = std::unique_ptr<storm::models::sparse::Model<ValueType>>(new storm::models::sparse::Ctmc<ValueType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), rewardModel.hasStateRewards() ? std::move(modelComponents.stateRewards) : boost::optional<std::vector<ValueType>>(), rewardModel.hasTransitionRewards() ? std::move(modelComponents.transitionRewardMatrix) : boost::optional<storm::storage::SparseMatrix<ValueType>>(), std::move(modelComponents.choiceLabeling)));
                     break;
                 case storm::prism::Program::ModelType::MDP:
-                    result = std::unique_ptr<storm::models::AbstractModel<ValueType>>(new storm::models::Mdp<ValueType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), rewardModel.hasStateRewards() ? std::move(modelComponents.stateRewards) : boost::optional<std::vector<ValueType>>(), rewardModel.hasTransitionRewards() ? std::move(modelComponents.transitionRewardMatrix) : boost::optional<storm::storage::SparseMatrix<ValueType>>(), std::move(modelComponents.choiceLabeling)));
-                    break;
-                case storm::prism::Program::ModelType::CTMDP:
-                    result = std::unique_ptr<storm::models::AbstractModel<ValueType>>(new storm::models::Ctmdp<ValueType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), rewardModel.hasStateRewards() ? std::move(modelComponents.stateRewards) : boost::optional<std::vector<ValueType>>(), rewardModel.hasTransitionRewards() ? std::move(modelComponents.transitionRewardMatrix) : boost::optional<storm::storage::SparseMatrix<ValueType>>(), std::move(modelComponents.choiceLabeling)));
+                    result = std::unique_ptr<storm::models::sparse::Model<ValueType>>(new storm::models::sparse::Mdp<ValueType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), rewardModel.hasStateRewards() ? std::move(modelComponents.stateRewards) : boost::optional<std::vector<ValueType>>(), rewardModel.hasTransitionRewards() ? std::move(modelComponents.transitionRewardMatrix) : boost::optional<storm::storage::SparseMatrix<ValueType>>(), std::move(modelComponents.choiceLabeling)));
                     break;
                 default:
                     STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Error while creating model from probabilistic program: cannot handle this model type.");
@@ -746,31 +742,31 @@ namespace storm {
         }
         
         template <typename ValueType, typename IndexType>
-        storm::models::AtomicPropositionsLabeling ExplicitPrismModelBuilder<ValueType, IndexType>::buildStateLabeling(storm::prism::Program const& program, VariableInformation const& variableInformation, StateInformation const& stateInformation) {
+        storm::models::sparse::StateLabeling ExplicitPrismModelBuilder<ValueType, IndexType>::buildStateLabeling(storm::prism::Program const& program, VariableInformation const& variableInformation, StateInformation const& stateInformation) {
             storm::expressions::ExpressionEvaluator<ValueType> evaluator(program.getManager());
             
             std::vector<storm::prism::Label> const& labels = program.getLabels();
             
-            storm::models::AtomicPropositionsLabeling result(stateInformation.reachableStates.size(), labels.size() + 1);
+            storm::models::sparse::StateLabeling result(stateInformation.reachableStates.size());
             
             // Initialize labeling.
             for (auto const& label : labels) {
-                result.addAtomicProposition(label.getName());
+                result.addLabel(label.getName());
             }
             for (uint_fast64_t index = 0; index < stateInformation.reachableStates.size(); index++) {
                 unpackStateIntoEvaluator(stateInformation.reachableStates[index], variableInformation, evaluator);
                 for (auto const& label : labels) {
                     // Add label to state, if the corresponding expression is true.
                     if (evaluator.asBool(label.getStatePredicateExpression())) {
-                        result.addAtomicPropositionToState(label.getName(), index);
+                        result.addLabelToState(label.getName(), index);
                     }
                 }
             }
             
             // Also label the initial state with the special label "init".
-            result.addAtomicProposition("init");
+            result.addLabel("init");
             for (auto index : stateInformation.initialStateIndices) {
-                result.addAtomicPropositionToState("init", index);
+                result.addLabelToState("init", index);
             }
             
             return result;

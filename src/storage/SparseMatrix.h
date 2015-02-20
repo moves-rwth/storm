@@ -667,7 +667,7 @@ namespace storm {
              *
              * @return The size of the matrix in memory measured in bytes.
              */
-            uint_fast64_t getSizeInMemory() const;
+            std::size_t getSizeInBytes() const;
             
             /*!
              * Calculates a hash value over all values contained in the matrix.

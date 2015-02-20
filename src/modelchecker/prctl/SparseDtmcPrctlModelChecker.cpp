@@ -14,12 +14,12 @@
 namespace storm {
     namespace modelchecker {
         template<typename ValueType>
-        SparseDtmcPrctlModelChecker<ValueType>::SparseDtmcPrctlModelChecker(storm::models::Dtmc<ValueType> const& model, std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>>&& linearEquationSolver) : SparsePropositionalModelChecker<ValueType>(model), linearEquationSolver(std::move(linearEquationSolver)) {
+        SparseDtmcPrctlModelChecker<ValueType>::SparseDtmcPrctlModelChecker(storm::models::sparse::Dtmc<ValueType> const& model, std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>>&& linearEquationSolver) : SparsePropositionalModelChecker<ValueType>(model), linearEquationSolver(std::move(linearEquationSolver)) {
             // Intentionally left empty.
         }
         
         template<typename ValueType>
-        SparseDtmcPrctlModelChecker<ValueType>::SparseDtmcPrctlModelChecker(storm::models::Dtmc<ValueType> const& model) : SparsePropositionalModelChecker<ValueType>(model), linearEquationSolver(storm::utility::solver::getLinearEquationSolver<ValueType>()) {
+        SparseDtmcPrctlModelChecker<ValueType>::SparseDtmcPrctlModelChecker(storm::models::sparse::Dtmc<ValueType> const& model) : SparsePropositionalModelChecker<ValueType>(model), linearEquationSolver(storm::utility::solver::getLinearEquationSolver<ValueType>()) {
             // Intentionally left empty.
         }
         
@@ -298,8 +298,8 @@ namespace storm {
         }
         
         template<typename ValueType>
-        storm::models::Dtmc<ValueType> const& SparseDtmcPrctlModelChecker<ValueType>::getModel() const {
-            return this->template getModelAs<storm::models::Dtmc<ValueType>>();
+        storm::models::sparse::Dtmc<ValueType> const& SparseDtmcPrctlModelChecker<ValueType>::getModel() const {
+            return this->template getModelAs<storm::models::sparse::Dtmc<ValueType>>();
         }
         
         template class SparseDtmcPrctlModelChecker<double>;

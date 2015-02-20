@@ -404,7 +404,7 @@ public:
 		std::shared_ptr<storm::properties::prctl::AbstractPathFormula<T>> pathFormula = boundOperator->getChild();
 
 		// get "init" labeled states
-		storm::storage::BitVector initStates = model.getLabeledStates("init");
+		storm::storage::BitVector initStates = model.getStates("init");
 
 		//get real prob for formula
 		logger.getAppender("mainFileAppender")->setThreshold(log4cplus::WARN_LOG_LEVEL);

@@ -2,7 +2,7 @@
 #define STORM_MODELCHECKER_SPARSEDTMCPRCTLMODELCHECKER_H_
 
 #include "src/modelchecker/propositional/SparsePropositionalModelChecker.h"
-#include "src/models/Dtmc.h"
+#include "src/models/sparse/Dtmc.h"
 #include "src/utility/solver.h"
 #include "src/solver/LinearEquationSolver.h"
 
@@ -12,8 +12,8 @@ namespace storm {
         template<class ValueType>
         class SparseDtmcPrctlModelChecker : public SparsePropositionalModelChecker<ValueType> {
         public:
-            explicit SparseDtmcPrctlModelChecker(storm::models::Dtmc<ValueType> const& model);
-            explicit SparseDtmcPrctlModelChecker(storm::models::Dtmc<ValueType> const& model, std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>>&& linearEquationSolver);
+            explicit SparseDtmcPrctlModelChecker(storm::models::sparse::Dtmc<ValueType> const& model);
+            explicit SparseDtmcPrctlModelChecker(storm::models::sparse::Dtmc<ValueType> const& model, std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>>&& linearEquationSolver);
             
             // The implemented methods of the AbstractModelChecker interface.
             virtual bool canHandle(storm::logic::Formula const& formula) const override;
@@ -25,7 +25,7 @@ namespace storm {
             virtual std::unique_ptr<CheckResult> computeReachabilityRewards(storm::logic::ReachabilityRewardFormula const& rewardPathFormula, bool qualitative = false, boost::optional<storm::logic::OptimalityType> const& optimalityType = boost::optional<storm::logic::OptimalityType>()) override;
             
         protected:
-            storm::models::Dtmc<ValueType> const& getModel() const override;
+            storm::models::sparse::Dtmc<ValueType> const& getModel() const override;
             
         private:
             // The methods that perform the actual checking.
