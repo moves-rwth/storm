@@ -378,6 +378,19 @@ namespace storm {
         }
         
         template <storm::dd::DdType Type>
+        storm::dd::Dd<Type> DdPrismModelBuilder<Type>::getSynchronizationDecisionDiagram(GenerationInformation& generationInfo, boost::optional<uint_fast64_t> const& synchronizationAction) {
+            storm::dd::Dd<Type> synchronization = generationInfo.manager->getOne(true);
+            for (uint_fast64_t i = 0; i < generationInfo.synchronizationMetaVariables.size(); ++i) {
+                if (synchronizationAction && synchronizationAction.get() == i) {
+                    synchronization *= generationInfo.manager->getEncoding(generationInfo.synchronizationMetaVariables[i], 1, true);
+                } else {
+                    synchronization *= generationInfo.manager->getEncoding(generationInfo.synchronizationMetaVariables[i], 0, true);
+                }
+            }
+            return synchronization;
+        }
+        
+        template <storm::dd::DdType Type>
         storm::dd::Dd<Type> DdPrismModelBuilder<Type>::createSystemFromModule(GenerationInformation& generationInfo, ModuleDecisionDiagram const& module) {
             // If the model is an MDP, we need to encode the nondeterminism using additional variables.
             if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::MDP) {
@@ -405,24 +418,10 @@ namespace storm {
                 }
                 
                 // Add variables for synchronization.
-                storm::dd::Dd<Type> synchronization = generationInfo.manager->getOne(true);
-                for (uint_fast64_t i = 0; i < generationInfo.synchronizationMetaVariables.size(); ++i) {
-                    synchronization *= generationInfo.manager->getEncoding(generationInfo.synchronizationMetaVariables[i], 0, true);
-                }
-                result *= synchronization;
+                result *= getSynchronizationDecisionDiagram(generationInfo);
                 
                 for (auto& synchronizingAction : synchronizingActionToDdMap) {
-                    synchronization = generationInfo.manager->getOne(true);
-                    
-                    for (uint_fast64_t i = 0; i < generationInfo.synchronizationMetaVariables.size(); ++i) {
-                        if (i == synchronizingAction.first) {
-                            synchronization *= generationInfo.manager->getEncoding(generationInfo.synchronizationMetaVariables[i], 1, true);
-                        } else {
-                            synchronization *= generationInfo.manager->getEncoding(generationInfo.synchronizationMetaVariables[i], 0, true);
-                        }
-                    }
-                    
-                    synchronizingAction.second *= synchronization;
+                    synchronizingAction.second *= getSynchronizationDecisionDiagram(generationInfo, synchronizingAction.first);
                 }
                 
                 // Now, we can simply add all synchronizing actions to the result.
@@ -517,6 +516,64 @@ namespace storm {
         }
         
         template <storm::dd::DdType Type>
+        std::pair<storm::dd::Dd<Type>, storm::dd::Dd<Type>> DdPrismModelBuilder<Type>::createRewardDecisionDiagrams(GenerationInformation& generationInfo, storm::prism::RewardModel const& rewardModel, storm::dd::Dd<Type> transitionMatrix) {
+            // Start by creating the state reward vector.
+            storm::dd::Dd<Type> stateRewards = generationInfo.manager->getZero();
+            for (auto const& stateReward : rewardModel.getStateRewards()) {
+                storm::dd::Dd<Type> states = generationInfo.rowExpressionAdapter->translateExpression(stateReward.getStatePredicateExpression());
+                storm::dd::Dd<Type> rewards = generationInfo.rowExpressionAdapter->translateExpression(stateReward.getRewardValueExpression());
+                
+                // Restrict the rewards to those states that satisfy the condition.
+                rewards = states * rewards;
+                
+                // Perform some sanity checks.
+                STORM_LOG_WARN_COND(rewards.getMin() >= 0, "The reward model assigns negative rewards to some states.");
+                STORM_LOG_WARN_COND(!rewards.isZero(), "The reward model does not assign any non-zero rewards.");
+                
+                // Add the rewards to the global state reward vector.
+                stateRewards += rewards;
+            }
+            
+            // Then build the transition reward matrix.
+            storm::dd::Dd<Type> transitionRewards = generationInfo.manager->getZero();
+            for (auto const& transitionReward : rewardModel.getTransitionRewards()) {
+                storm::dd::Dd<Type> states = generationInfo.rowExpressionAdapter->translateExpression(transitionReward.getStatePredicateExpression());
+                storm::dd::Dd<Type> rewards = generationInfo.rowExpressionAdapter->translateExpression(transitionReward.getRewardValueExpression());
+
+                storm::dd::Dd<Type> synchronization;
+                if (transitionReward.isLabeled()) {
+                    synchronization = getSynchronizationDecisionDiagram(generationInfo);
+                } else {
+                    synchronization = getSynchronizationDecisionDiagram(generationInfo, transitionReward.getActionIndex());
+                }
+                
+                storm::dd::Dd<Type> transitionRewardDd = synchronization * states * rewards;
+                if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::MDP) {
+                    transitionRewardDd += transitionMatrix.notZero() * transitionRewardDd;
+                } else {
+                    transitionRewardDd += transitionMatrix * transitionRewardDd;
+                }
+                
+                // Perform some sanity checks.
+                STORM_LOG_WARN_COND(transitionRewardDd.getMin() >= 0, "The reward model assigns negative rewards to some states.");
+                STORM_LOG_WARN_COND(!transitionRewardDd.isZero(), "The reward model does not assign any non-zero rewards.");
+                
+                // Add the rewards to the global transition reward matrix.
+                transitionRewards += transitionRewardDd;
+            }
+            
+            // Scale transition rewards for DTMCs
+            if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::DTMC) {
+                for (uint_fast64_t i = 0; i < generationInfo.program.getRewardModels().size(); ++i){
+                    // Divide transition rewards through transition matrix
+                    transitionRewardsDds[i] = transitionRewardsDds[i] / systemDds.independentActionDd.commandsDd;
+                }
+            }
+        
+            return std::make_pair(stateRewards, transitionRewards);
+        }
+    
+        template <storm::dd::DdType Type>
         std::pair<storm::dd::Dd<Type>, storm::dd::Dd<Type>> DdPrismModelBuilder<Type>::translateProgram(storm::prism::Program const& program, Options const& options) {
             // There might be nondeterministic variables. In that case the program must be prepared before translating.
             storm::prism::Program preparedProgram;
@@ -597,6 +654,25 @@ namespace storm {
             }
             
             std::cout << reachableStates.getNonZeroCount() << " states and " << transitionMatrix.getNonZeroCount() << " transitions." << std::endl;
+            
+            // Finally, we build the DDs for a reward structure, if requested.
+            boost::optional<std::pair<storm::dd::Dd<Type>, storm::dd::Dd<Type>>> stateAndTransitionRewards;
+            if (options.buildRewards) {
+                // If a specific reward model was selected or one with the empty name exists, select it.
+                storm::prism::RewardModel rewardModel = storm::prism::RewardModel();
+                if (options.rewardModelName) {
+                    rewardModel = preparedProgram.getRewardModel(options.rewardModelName.get());
+                } else if (preparedProgram.hasRewardModel("")) {
+                    rewardModel = preparedProgram.getRewardModel("");
+                } else if (preparedProgram.hasRewardModel()) {
+                    // Otherwise, we select the first one.
+                    rewardModel = preparedProgram.getRewardModel(0);
+                }
+                
+                STORM_LOG_TRACE("Building reward structure.");
+                stateAndTransitionRewards = createRewardDecisionDiagrams(generationInfo, rewardModel, transitionMatrix);
+            }
+            
             return std::make_pair(reachableStates, transitionMatrix);
         }
         
@@ -1670,7 +1746,7 @@ namespace storm {
 //                    transitionRewardsDds[i] = transitionRewardsDds[i] / systemDds.independentActionDd.commandsDd;
 //                }
 //            }
-//            
+//
 //            // Pair to store state and transition rewards
 //            return std::make_pair(stateRewardsDds, transitionRewardsDds);
 //        }

@@ -295,7 +295,11 @@ namespace storm {
 
             static ModuleDecisionDiagram createModuleDecisionDiagram(GenerationInformation& generationInfo, storm::prism::Module const& module, std::map<uint_fast64_t, uint_fast64_t> const& synchronizingActionToOffsetMap);
 
+            static storm::dd::Dd<Type> getSynchronizationDecisionDiagram(GenerationInformation& generationInfo, boost::optional<uint_fast64_t> const& synchronizationAction = boost::optional<uint_fast64_t>());
+            
             static storm::dd::Dd<Type> createSystemFromModule(GenerationInformation& generationInfo, ModuleDecisionDiagram const& module);
+            
+            static std::pair<storm::dd::Dd<Type>, storm::dd::Dd<Type>>createRewardDecisionDiagrams(GenerationInformation& generationInfo, storm::prism::RewardModel const& rewardModel, storm::dd::Dd<Type> transitionMatrix);
             
             static std::pair<storm::dd::Dd<Type>, ModuleDecisionDiagram> createSystemDecisionDiagram(GenerationInformation& generationInfo);
             
