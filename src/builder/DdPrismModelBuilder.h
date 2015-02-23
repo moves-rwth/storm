@@ -299,7 +299,7 @@ namespace storm {
             
             static storm::dd::Dd<Type> createSystemFromModule(GenerationInformation& generationInfo, ModuleDecisionDiagram const& module);
             
-            static std::pair<storm::dd::Dd<Type>, storm::dd::Dd<Type>>createRewardDecisionDiagrams(GenerationInformation& generationInfo, storm::prism::RewardModel const& rewardModel, storm::dd::Dd<Type> transitionMatrix);
+            static std::pair<storm::dd::Dd<Type>, storm::dd::Dd<Type>> createRewardDecisionDiagrams(GenerationInformation& generationInfo, storm::prism::RewardModel const& rewardModel, ModuleDecisionDiagram const& globalModule, storm::dd::Dd<Type> const& fullTransitionMatrix);
             
             static std::pair<storm::dd::Dd<Type>, ModuleDecisionDiagram> createSystemDecisionDiagram(GenerationInformation& generationInfo);
             
@@ -307,30 +307,6 @@ namespace storm {
 
             static storm::dd::Dd<Type> computeReachableStates(GenerationInformation& generationInfo, storm::dd::Dd<Type> const& initialStates, storm::dd::Dd<Type> const& transitions);
             
-//            /*!
-//             * Calculates the reachable states of the given transition matrix
-//             *
-//             * @param systemDd The transition matrix DD
-//             * @param initialStateDd All initial states
-//             * @return A DD representing all reachable states
-//             */
-//            static storm::dd::Dd<Type> performReachability(GenerationInformation & generationInfo, storm::dd::Dd<Type> const& systemDd, storm::dd::Dd<Type> const& initialStateDd);
-//
-//            /*!
-//             * Adds a self-loop to deadlock states
-//             *
-//             * @param systemDd The given DD
-//             * @param reachableStatesDd DD representing all reachable states
-//             * @return A DD with fixed deadlocks.
-//             */
-//            static storm::dd::Dd<Type> findDeadlocks(GenerationInformation const & generationInfo, storm::dd::Dd<Type> systemDd, storm::dd::Dd<Type> const& reachableStatesDd);
-//            
-//            /*!
-//             * Computes state and transition rewards
-//             *
-//             * @param systemDds System DDs
-//             */
-//            static std::pair<std::vector<storm::dd::Dd<Type>>, std::vector<storm::dd::Dd<Type>>> computeRewards(GenerationInformation const & generationInfo, SystemComponentDecisionDiagram<Type> const& systemDds);
         };
         
     } // namespace adapters
