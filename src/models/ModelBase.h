@@ -76,6 +76,20 @@ namespace storm {
              */
             virtual void printModelInformationToStream(std::ostream& out) const = 0;
             
+            /*!
+             * Checks whether the model is a sparse model.
+             *
+             * @return True iff the model is a sparse model.
+             */
+            virtual bool isSparseModel() const;
+            
+            /*!
+             * Checks whether the model is a symbolic model.
+             *
+             * @return True iff the model is a symbolic model.
+             */
+            virtual bool isSymbolicModel() const;
+            
         private:
             // The type of the model.
             ModelType modelType;

@@ -102,9 +102,9 @@ namespace storm {
             }
             
             void StateLabeling::printLabelingInformationToStream(std::ostream& out) const {
-                out << "Labels:" << this->getNumberOfLabels() << std::endl;
+                out << "Labels: \t" << this->getNumberOfLabels() << std::endl;
                 for (auto const& labelIndexPair : this->nameToLabelingIndexMap) {
-                    out << "\t * " << labelIndexPair.first << " -> " << this->labelings[labelIndexPair.second].getNumberOfSetBits() << " state(s)" << std::endl;
+                    out << "   * " << labelIndexPair.first << " -> " << this->labelings[labelIndexPair.second].getNumberOfSetBits() << " state(s)" << std::endl;
                 }
             }
         }

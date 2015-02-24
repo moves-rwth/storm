@@ -47,15 +47,13 @@ log4cplus::Logger printer;
 #include "src/logic/Formulas.h"
 
 // Model headers.
-#include "src/models/sparse/Model.h"
 #include "src/models/ModelBase.h"
+#include "src/models/sparse/Model.h"
+#include "src/models/symbolic/Model.h"
 
 // Headers of builders.
 #include "src/builder/ExplicitPrismModelBuilder.h"
 #include "src/builder/DdPrismModelBuilder.h"
-
-// Headers for DD-related classes.
-#include "src/storage/dd/CuddDd.h"
 
 // Headers for model processing.
 #include "src/storage/DeterministicModelBisimulationDecomposition.h"
@@ -88,9 +86,9 @@ namespace storm {
                 consoleLogAppender->setName("mainConsoleAppender");
                 consoleLogAppender->setLayout(std::auto_ptr<log4cplus::Layout>(new log4cplus::PatternLayout("%-5p - %D{%H:%M:%S} (%r ms) - %b:%L: %m%n")));
                 logger.addAppender(consoleLogAppender);
-				auto loglevel = storm::settings::debugSettings().isTraceSet() ? log4cplus::TRACE_LOG_LEVEL : storm::settings::debugSettings().isDebugSet() ? log4cplus::DEBUG_LOG_LEVEL : log4cplus::WARN_LOG_LEVEL;
+                auto loglevel = storm::settings::debugSettings().isTraceSet() ? log4cplus::TRACE_LOG_LEVEL : storm::settings::debugSettings().isDebugSet() ? log4cplus::DEBUG_LOG_LEVEL : log4cplus::WARN_LOG_LEVEL;
                 logger.setLogLevel(loglevel);
-				consoleLogAppender->setThreshold(loglevel);
+                consoleLogAppender->setThreshold(loglevel);
             }
             
             /*!
@@ -134,9 +132,9 @@ namespace storm {
             void printHeader(const int argc, const char* argv[]) {
                 std::cout << "StoRM" << std::endl;
                 std::cout << "--------" << std::endl << std::endl;
-             	
-			 
-//				std::cout << storm::utility::StormVersion::longVersionString() << std::endl;
+                
+                
+                //				std::cout << storm::utility::StormVersion::longVersionString() << std::endl;
 #ifdef STORM_HAVE_INTELTBB
                 std::cout << "Linked with Intel Threading Building Blocks v" << TBB_VERSION_MAJOR << "." << TBB_VERSION_MINOR << " (Interface version " << TBB_INTERFACE_VERSION << ")." << std::endl;
 #endif
@@ -231,11 +229,11 @@ namespace storm {
                     storm::settings::manager().printHelp(storm::settings::generalSettings().getHelpModuleName());
                     return false;
                 }
-				
-				if (storm::settings::generalSettings().isVersionSet()) {
-					storm::settings::manager().printVersion();
-					return false;
-				}
+                
+                if (storm::settings::generalSettings().isVersionSet()) {
+                    storm::settings::manager().printVersion();
+                    return false;
+                }
                 
                 if (storm::settings::generalSettings().isVerboseSet()) {
                     logger.getAppender("mainConsoleAppender")->setThreshold(log4cplus::INFO_LOG_LEVEL);
@@ -263,11 +261,11 @@ namespace storm {
             }
             
             template<typename ValueType>
-            std::shared_ptr<storm::models::sparse::Model<ValueType>> buildSymbolicModel(storm::prism::Program const& program, boost::optional<std::shared_ptr<storm::logic::Formula>> const& formula) {
-                std::shared_ptr<storm::models::sparse::Model<ValueType>> result(nullptr);
+            std::shared_ptr<storm::models::ModelBase> buildSymbolicModel(storm::prism::Program const& program, boost::optional<std::shared_ptr<storm::logic::Formula>> const& formula) {
+                std::shared_ptr<storm::models::ModelBase> result(nullptr);
                 
                 storm::settings::modules::GeneralSettings settings = storm::settings::generalSettings();
-
+                
                 // Get the string that assigns values to the unknown currently undefined constants in the model.
                 std::string constants = settings.getConstantDefinitionString();
                 
@@ -276,7 +274,7 @@ namespace storm {
                     buildRewards = formula.get()->isRewardOperatorFormula() || formula.get()->isRewardPathFormula();
                 }
                 
-                // Customize model-building.
+                // Customize and perform model-building.
                 if (settings.getEngine() == storm::settings::modules::GeneralSettings::Engine::Sparse) {
                     typename storm::builder::ExplicitPrismModelBuilder<ValueType>::Options options;
                     if (formula) {
@@ -284,7 +282,6 @@ namespace storm {
                     }
                     options.addConstantDefinitionsFromString(program, settings.getConstantDefinitionString());
                     
-                    // Then, build the model from the symbolic description.
                     result = storm::builder::ExplicitPrismModelBuilder<ValueType>::translateProgram(program, options);
                 } else if (settings.getEngine() == storm::settings::modules::GeneralSettings::Engine::Dd) {
                     typename storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::Options options;
@@ -293,17 +290,19 @@ namespace storm {
                     }
                     options.addConstantDefinitionsFromString(program, settings.getConstantDefinitionString());
                     
-                    storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program, options);
+                    result = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program, options);
                 }
                 
                 return result;
             }
             
             template<typename ValueType>
-            std::shared_ptr<storm::models::sparse::Model<ValueType>> preprocessModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> model, boost::optional<std::shared_ptr<storm::logic::Formula>> const& formula) {
+            std::shared_ptr<storm::models::ModelBase> preprocessModel(std::shared_ptr<storm::models::ModelBase> model, boost::optional<std::shared_ptr<storm::logic::Formula>> const& formula) {
                 if (storm::settings::generalSettings().isBisimulationSet()) {
+                    STORM_LOG_THROW(model->isSparseModel(), storm::exceptions::InvalidSettingsException, "Bisimulation minimization is currently only available for sparse models.");
+                    std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = model->template as<storm::models::sparse::Model<ValueType>>();
                     STORM_LOG_THROW(model->getType() == storm::models::ModelType::Dtmc || model->getType() == storm::models::ModelType::Ctmc, storm::exceptions::InvalidSettingsException, "Bisimulation minimization is currently only available for DTMCs.");
-                    std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> dtmc = model->template as<storm::models::sparse::Dtmc<ValueType>>();
+                    std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> dtmc = sparseModel->template as<storm::models::sparse::Dtmc<ValueType>>();
                     
                     if (dtmc->hasTransitionRewards()) {
                         dtmc->convertTransitionRewardsToStateRewards();
@@ -312,7 +311,7 @@ namespace storm {
                     std::cout << "Performing bisimulation minimization... ";
                     typename storm::storage::DeterministicModelBisimulationDecomposition<ValueType>::Options options;
                     if (formula) {
-                        options = typename storm::storage::DeterministicModelBisimulationDecomposition<ValueType>::Options(*model, *formula.get());
+                        options = typename storm::storage::DeterministicModelBisimulationDecomposition<ValueType>::Options(*sparseModel, *formula.get());
                     }
                     if (storm::settings::bisimulationSettings().isWeakBisimulationSet()) {
                         options.weak = true;
@@ -333,16 +332,16 @@ namespace storm {
                     STORM_LOG_THROW(storm::settings::generalSettings().isSymbolicSet(), storm::exceptions::InvalidSettingsException, "Minimal command set generation is only available for symbolic models.");
                     
                     std::shared_ptr<storm::models::sparse::Mdp<ValueType>> mdp = model->template as<storm::models::sparse::Mdp<ValueType>>();
-
+                    
                     // Determine whether we are required to use the MILP-version or the SAT-version.
                     bool useMILP = storm::settings::counterexampleGeneratorSettings().isUseMilpBasedMinimalCommandSetGenerationSet();
-
+                    
                     if (useMILP) {
                         storm::counterexamples::MILPMinimalLabelSetGenerator<ValueType>::computeCounterexample(program, *mdp, formula);
                     } else {
                         storm::counterexamples::SMTMinimalCommandSetGenerator<ValueType>::computeCounterexample(program, storm::settings::generalSettings().getConstantDefinitionString(), *mdp, formula);
                     }
-
+                    
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No suitable counterexample representation selected.");
                 }
@@ -356,18 +355,20 @@ namespace storm {
 #endif
             
             template<typename ValueType>
-            void verifyModel(boost::optional<storm::prism::Program> const& program, std::shared_ptr<storm::models::sparse::Model<ValueType>> model, std::shared_ptr<storm::logic::Formula> formula) {
+            void verifySparseModel(boost::optional<storm::prism::Program> const& program, std::shared_ptr<storm::models::sparse::Model<ValueType>> model, std::shared_ptr<storm::logic::Formula> formula) {
                 storm::settings::modules::GeneralSettings const& settings = storm::settings::generalSettings();
                 
                 // If we were requested to generate a counterexample, we now do so.
                 if (settings.isCounterexampleSet()) {
+                    STORM_LOG_THROW(model->isSparseModel(), storm::exceptions::InvalidSettingsException, "Counterexample generation is only available for sparse models.");
                     STORM_LOG_THROW(program, storm::exceptions::InvalidSettingsException, "Unable to generate counterexample for non-symbolic model.");
                     generateCounterexample<ValueType>(program.get(), model, formula);
                 } else {
+                    std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = model->template as<storm::models::sparse::Model<ValueType>>();
                     std::cout << std::endl << "Model checking property: " << *formula << " ...";
                     std::unique_ptr<storm::modelchecker::CheckResult> result;
                     if (model->getType() == storm::models::ModelType::Dtmc) {
-                        std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> dtmc = model->template as<storm::models::sparse::Dtmc<ValueType>>();
+                        std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> dtmc = sparseModel->template as<storm::models::sparse::Dtmc<ValueType>>();
                         storm::modelchecker::SparseDtmcEliminationModelChecker<ValueType> modelchecker(*dtmc);
                         if (modelchecker.canHandle(*formula.get())) {
                             result = modelchecker.check(*formula.get());
@@ -378,7 +379,7 @@ namespace storm {
                             }
                         }
                     } else if (model->getType() == storm::models::ModelType::Mdp) {
-                        std::shared_ptr<storm::models::sparse::Mdp<ValueType>> mdp = model->template as<storm::models::sparse::Mdp<ValueType>>();
+                        std::shared_ptr<storm::models::sparse::Mdp<ValueType>> mdp = sparseModel->template as<storm::models::sparse::Mdp<ValueType>>();
                         storm::modelchecker::SparseMdpPrctlModelChecker<ValueType> modelchecker(*mdp);
                         result = modelchecker.check(*formula.get());
                     }
@@ -386,32 +387,33 @@ namespace storm {
                     if (result) {
                         std::cout << " done." << std::endl;
                         std::cout << "Result (initial states): ";
-                        result->writeToStream(std::cout, model->getInitialStates());
+                        result->writeToStream(std::cout, sparseModel->getInitialStates());
                         std::cout << std::endl << std::endl;
                     } else {
                         std::cout << " skipped, because the modelling formalism is currently unsupported." << std::endl;
                     }
+                    
                 }
             }
             
 #ifdef STORM_HAVE_CARL
             template<>
-            void verifyModel(boost::optional<storm::prism::Program> const& program, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model, std::shared_ptr<storm::logic::Formula> formula) {
+            void verifySparseModel(boost::optional<storm::prism::Program> const& program, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model, std::shared_ptr<storm::logic::Formula> formula) {
                 storm::settings::modules::GeneralSettings const& settings = storm::settings::generalSettings();
                 
                 STORM_LOG_THROW(model->getType() == storm::models::ModelType::Dtmc, storm::exceptions::InvalidSettingsException, "Currently parametric verification is only available for DTMCs.");
                 std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-
+                
                 std::cout << std::endl << "Model checking property: " << *formula << " ...";
                 std::unique_ptr<storm::modelchecker::CheckResult> result;
-
+                
                 storm::modelchecker::SparseDtmcEliminationModelChecker<storm::RationalFunction> modelchecker(*dtmc);
                 if (modelchecker.canHandle(*formula.get())) {
                     result = modelchecker.check(*formula.get());
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "The parametric engine currently does not support this property.");
                 }
-
+                
                 if (result) {
                     std::cout << " done." << std::endl;
                     std::cout << "Result (initial states): ";
@@ -427,28 +429,32 @@ namespace storm {
             void buildAndCheckSymbolicModel(boost::optional<storm::prism::Program> const& program, boost::optional<std::shared_ptr<storm::logic::Formula>> formula) {
                 // Now we are ready to actually build the model.
                 STORM_LOG_THROW(program, storm::exceptions::InvalidStateException, "Program has not been successfully parsed.");
-                std::shared_ptr<storm::models::sparse::Model<ValueType>> model = buildSymbolicModel<ValueType>(program.get(), formula);
+                std::shared_ptr<storm::models::ModelBase> model = buildSymbolicModel<ValueType>(program.get(), formula);
                 
                 STORM_LOG_THROW(model != nullptr, storm::exceptions::InvalidStateException, "Model could not be constructed for an unknown reason.");
                 
                 // Preprocess the model if needed.
                 model = preprocessModel<ValueType>(model, formula);
-
+                
                 // Print some information about the model.
                 model->printModelInformationToStream(std::cout);
-
+                
                 // Verify the model, if a formula was given.
                 if (formula) {
-                    verifyModel<ValueType>(program, model, formula.get());
+                    if (model->isSparseModel()) {
+                        verifySparseModel<ValueType>(program, model->as<storm::models::sparse::Model<ValueType>>(), formula.get());
+                    } else {
+                        // Not handled yet.
+                    }
                 }
             }
             
             template<typename ValueType>
             void buildAndCheckExplicitModel(boost::optional<std::shared_ptr<storm::logic::Formula>> formula) {
                 storm::settings::modules::GeneralSettings const& settings = storm::settings::generalSettings();
-
+                
                 STORM_LOG_THROW(settings.isExplicitSet(), storm::exceptions::InvalidStateException, "Unable to build explicit model without model files.");
-                std::shared_ptr<storm::models::sparse::Model<ValueType>> model = buildExplicitModel<ValueType>(settings.getTransitionFilename(), settings.getLabelingFilename(), settings.isStateRewardsSet() ? settings.getStateRewardsFilename() : boost::optional<std::string>(), settings.isTransitionRewardsSet() ? settings.getTransitionRewardsFilename() : boost::optional<std::string>());
+                std::shared_ptr<storm::models::ModelBase> model = buildExplicitModel<ValueType>(settings.getTransitionFilename(), settings.getLabelingFilename(), settings.isStateRewardsSet() ? settings.getStateRewardsFilename() : boost::optional<std::string>(), settings.isTransitionRewardsSet() ? settings.getTransitionRewardsFilename() : boost::optional<std::string>());
                 
                 // Preprocess the model if needed.
                 model = preprocessModel<ValueType>(model, formula);
@@ -458,7 +464,8 @@ namespace storm {
                 
                 // Verify the model, if a formula was given.
                 if (formula) {
-                    verifyModel<ValueType>(boost::optional<storm::prism::Program>(), model, formula.get());
+                    STORM_LOG_THROW(model->isSparseModel(), storm::exceptions::InvalidStateException, "Expected sparse model.");
+                    verifySparseModel<ValueType>(boost::optional<storm::prism::Program>(), model->as<storm::models::sparse::Model<ValueType>>(), formula.get());
                 }
             }
             

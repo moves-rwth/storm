@@ -28,7 +28,7 @@ namespace storm {
                 std::set<storm::expressions::Variable> rowAndNondeterminsmVariables;
                 std::set_union(this->getNondeterminismVariables().begin(), this->getNondeterminismVariables().end(), this->getRowVariables().begin(), this->getRowVariables().end(), std::inserter(rowAndNondeterminsmVariables, rowAndNondeterminsmVariables.begin()));
                 
-                storm::dd::Dd<Type> tmp = this->getTransitionMatrix().notZero().existsAbstract(this->getColumnVariables()).sumAbstract(rowAndNondeterminsmVariables);
+                storm::dd::Dd<Type> tmp = this->getTransitionMatrix().notZero().existsAbstract(this->getColumnVariables()).toMtbdd().sumAbstract(rowAndNondeterminsmVariables);
                 return static_cast<uint_fast64_t>(tmp.getValue());
             }
             
@@ -40,13 +40,14 @@ namespace storm {
             template<storm::dd::DdType Type>
             void NondeterministicModel<Type>::printModelInformationToStream(std::ostream& out) const {
                 out << "-------------------------------------------------------------- " << std::endl;
-                out << "Model type: \t\t" << this->getType() << " (symbolic)" << std::endl;
-                out << "States: \t\t" << this->getNumberOfStates() << " (" << this->getReachableStates().getNodeCount() << " nodes)" << std::endl;
-                out << "Transitions: \t\t" << this->getNumberOfTransitions() << " (" << this->getTransitionMatrix().getNodeCount() << " nodes)" << std::endl;
-                out << "Choices: \t\t" << this->getNumberOfChoices() << std::endl;
-                out << "Variables: \t\t" << "rows:" << this->getRowVariables().size() << ", columns: " << this->getColumnVariables().size() << ", nondeterminism: " << this->getNondeterminismVariables().size() << std::endl;
+                out << "Model type: \t" << this->getType() << " (symbolic)" << std::endl;
+                out << "States: \t" << this->getNumberOfStates() << " (" << this->getReachableStates().getNodeCount() << " nodes)" << std::endl;
+                out << "Transitions: \t" << this->getNumberOfTransitions() << " (" << this->getTransitionMatrix().getNodeCount() << " nodes)" << std::endl;
+                out << "Choices: \t" << this->getNumberOfChoices() << std::endl;
+                out << "Variables: \t" << "rows: " << this->getRowVariables().size() << ", columns: " << this->getColumnVariables().size() << ", nondeterminism: " << this->getNondeterminismVariables().size() << std::endl;
+                out << "Labels: \t" << this->getLabelToExpressionMap().size() << std::endl;
                 for (auto const& label : this->getLabelToExpressionMap()) {
-                    out << "\t" << label.first << std::endl;
+                    out << "   * " << label.first << std::endl;
                 }
                 out << "Size in memory: \t" << (this->getSizeInBytes())/1024 << " kbytes" << std::endl;
                 out << "-------------------------------------------------------------- " << std::endl;

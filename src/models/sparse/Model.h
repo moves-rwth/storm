@@ -252,6 +252,8 @@ namespace storm {
                  */
                 std::set<std::string> getLabelsOfState(storm::storage::sparse::state_type state) const;
                 
+                virtual bool isSparseModel() const override;
+                
             protected:
                 /*!
                  * Sets the transition matrix of the model.

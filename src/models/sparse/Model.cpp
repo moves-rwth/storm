@@ -199,9 +199,9 @@ namespace storm {
             template <typename ValueType>
             void Model<ValueType>::printModelInformationToStream(std::ostream& out) const {
                 out << "-------------------------------------------------------------- " << std::endl;
-                out << "Model type: \t\t" << this->getType() << " (sparse)" << std::endl;
-                out << "States: \t\t" << this->getNumberOfStates() << std::endl;
-                out << "Transitions: \t\t" << this->getNumberOfTransitions() << std::endl;
+                out << "Model type: \t" << this->getType() << " (sparse)" << std::endl;
+                out << "States: \t" << this->getNumberOfStates() << std::endl;
+                out << "Transitions: \t" << this->getNumberOfTransitions() << std::endl;
                 this->getStateLabeling().printLabelingInformationToStream(out);
                 out << "Size in memory: \t" << (this->getSizeInBytes())/1024 << " kbytes" << std::endl;
                 out << "-------------------------------------------------------------- " << std::endl;
@@ -284,6 +284,11 @@ namespace storm {
             template <typename ValueType>
             void Model<ValueType>::setTransitionMatrix(storm::storage::SparseMatrix<ValueType>&& transitionMatrix) {
                 this->transitionMatrix = std::move(transitionMatrix);
+            }
+            
+            template <typename ValueType>
+            bool Model<ValueType>::isSparseModel() const {
+                return true;
             }
             
             template class Model<double>;

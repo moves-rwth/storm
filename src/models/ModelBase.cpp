@@ -5,5 +5,13 @@ namespace storm {
         ModelType ModelBase::getType() const {
             return modelType;
         }
+        
+        bool ModelBase::isSparseModel() const {
+            return false;
+        }
+        
+        bool ModelBase::isSymbolicModel() const {
+            return false;
+        }
     }
 }

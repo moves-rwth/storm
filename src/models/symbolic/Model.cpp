@@ -119,15 +119,21 @@ namespace storm {
             template<storm::dd::DdType Type>
             void Model<Type>::printModelInformationToStream(std::ostream& out) const {
                 out << "-------------------------------------------------------------- " << std::endl;
-                out << "Model type: \t\t" << this->getType() << " (symbolic)" << std::endl;
-                out << "States: \t\t" << this->getNumberOfStates() << " (" << reachableStates.getNodeCount() << " nodes)" << std::endl;
-                out << "Transitions: \t\t" << this->getNumberOfTransitions() << " (" << transitionMatrix.getNodeCount() << " nodes)" << std::endl;
-                out << "Variables: \t\t" << "rows:" << this->rowVariables.size() << ", columns: " << this->columnVariables.size() << std::endl;
+                out << "Model type: \t" << this->getType() << " (symbolic)" << std::endl;
+                out << "States: \t" << this->getNumberOfStates() << " (" << reachableStates.getNodeCount() << " nodes)" << std::endl;
+                out << "Transitions: \t" << this->getNumberOfTransitions() << " (" << transitionMatrix.getNodeCount() << " nodes)" << std::endl;
+                out << "Variables: \t" << "rows: " << this->rowVariables.size() << ", columns: " << this->columnVariables.size() << std::endl;
+                out << "Labels: \t" << this->labelToExpressionMap.size() << std::endl;
                 for (auto const& label : labelToExpressionMap) {
-                    out << "\t" << label.first << std::endl;
+                    out << "   * " << label.first << std::endl;
                 }
                 out << "Size in memory: \t" << (this->getSizeInBytes())/1024 << " kbytes" << std::endl;
                 out << "-------------------------------------------------------------- " << std::endl;
+            }
+            
+            template<storm::dd::DdType Type>
+            bool Model<Type>::isSymbolicModel() const {
+                return true;
             }
             
             // Explicitly instantiate the template class.

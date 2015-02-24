@@ -671,7 +671,7 @@ namespace storm {
                 Dd<DdType::CUDD> value = *this && valueEncoding;
                 return value.isZero() ? 0 : 1;
             } else {
-                Dd<DdType::CUDD> value = *this * valueEncoding;
+                Dd<DdType::CUDD> value = *this * valueEncoding.toMtbdd();
                 value = value.sumAbstract(this->getContainedMetaVariables());
                 return static_cast<double>(Cudd_V(value.getCuddMtbdd().getNode()));
             }
