@@ -69,6 +69,20 @@ namespace storm {
                 virtual uint_fast64_t getNumberOfTransitions() const override;
                 
                 /*!
+                 * Retrieves the manager responsible for the DDs that represent this model.
+                 *
+                 * @return The manager responsible for the DDs that represent this model.
+                 */
+                storm::dd::DdManager<Type> const& getManager() const;
+
+                /*!
+                 * Retrieves the manager responsible for the DDs that represent this model.
+                 *
+                 * @return The manager responsible for the DDs that represent this model.
+                 */
+                storm::dd::DdManager<Type>& getManager();
+                
+                /*!
                  * Retrieves the reachable states of the model.
                  *
                  * @return The reachble states of the model.
@@ -171,6 +185,13 @@ namespace storm {
                  * @return The meta variables used to encode the columns of the transition matrix and the vector indices.
                  */
                 std::set<storm::expressions::Variable> const& getColumnVariables() const;
+                
+                /*!
+                 * Retrieves the pairs of row and column meta variables.
+                 *
+                 * @return The pairs of row and column meta variables.
+                 */
+                std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& getRowColumnMetaVariablePairs() const;
                 
                 virtual std::size_t getSizeInBytes() const override;
                 

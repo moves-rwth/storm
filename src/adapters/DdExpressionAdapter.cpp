@@ -9,7 +9,7 @@ namespace storm {
     namespace adapters {
         
         template<storm::dd::DdType Type>
-        DdExpressionAdapter<Type>::DdExpressionAdapter(storm::dd::DdManager<Type> const& ddManager, std::map<storm::expressions::Variable, storm::expressions::Variable> const& variableMapping) : ddManager(ddManager), variableMapping(variableMapping) {
+        DdExpressionAdapter<Type>::DdExpressionAdapter(std::shared_ptr<storm::dd::DdManager<Type>> ddManager, std::map<storm::expressions::Variable, storm::expressions::Variable> const& variableMapping) : ddManager(ddManager), variableMapping(variableMapping) {
             // Intentionally left empty.
         }
         
@@ -118,8 +118,8 @@ namespace storm {
         template<storm::dd::DdType Type>
         boost::any DdExpressionAdapter<Type>::visit(storm::expressions::VariableExpression const& expression) {
             auto const& variablePair = variableMapping.find(expression.getVariable());
-            STORM_LOG_THROW(variablePair != variableMapping.end(), storm::exceptions::InvalidArgumentException, "Cannot translate the given expression, because it contains th variable '" << expression.getVariableName() << "' for which no DD counterpart is known.");
-            return ddManager.getIdentity(variablePair->second);
+            STORM_LOG_THROW(variablePair != variableMapping.end(), storm::exceptions::InvalidArgumentException, "Cannot translate the given expression, because it contains the variable '" << expression.getVariableName() << "' for which no DD counterpart is known.");
+            return ddManager->getIdentity(variablePair->second);
         }
         
         template<storm::dd::DdType Type>
@@ -152,17 +152,17 @@ namespace storm {
         
         template<storm::dd::DdType Type>
         boost::any DdExpressionAdapter<Type>::visit(storm::expressions::BooleanLiteralExpression const& expression) {
-            return ddManager.getConstant(expression.getValue());
+            return ddManager->getConstant(expression.getValue());
         }
         
         template<storm::dd::DdType Type>
         boost::any DdExpressionAdapter<Type>::visit(storm::expressions::IntegerLiteralExpression const& expression) {
-            return ddManager.getConstant(expression.getValue());
+            return ddManager->getConstant(expression.getValue());
         }
         
         template<storm::dd::DdType Type>
         boost::any DdExpressionAdapter<Type>::visit(storm::expressions::DoubleLiteralExpression const& expression) {
-            return ddManager.getConstant(expression.getValue());
+            return ddManager->getConstant(expression.getValue());
         }
         
         // Explicitly instantiate the symbolic expression adapter

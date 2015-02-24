@@ -135,8 +135,8 @@ namespace storm {
                     // Initializes variables and identity DDs.
                     createMetaVariablesAndIdentities();
                     
-                    rowExpressionAdapter = std::shared_ptr<storm::adapters::DdExpressionAdapter<Type>>(new storm::adapters::DdExpressionAdapter<Type>(*manager, variableToRowMetaVariableMap));
-                    columnExpressionAdapter = std::shared_ptr<storm::adapters::DdExpressionAdapter<Type>>(new storm::adapters::DdExpressionAdapter<Type>(*manager, variableToColumnMetaVariableMap));
+                    rowExpressionAdapter = std::shared_ptr<storm::adapters::DdExpressionAdapter<Type>>(new storm::adapters::DdExpressionAdapter<Type>(manager, variableToRowMetaVariableMap));
+                    columnExpressionAdapter = std::shared_ptr<storm::adapters::DdExpressionAdapter<Type>>(new storm::adapters::DdExpressionAdapter<Type>(manager, variableToColumnMetaVariableMap));
                 }
                 
                 // The program that is currently translated.

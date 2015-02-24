@@ -14,7 +14,7 @@ namespace storm {
         template<storm::dd::DdType Type>
         class DdExpressionAdapter : public storm::expressions::ExpressionVisitor {
         public:
-            DdExpressionAdapter(storm::dd::DdManager<Type> const& ddManager, std::map<storm::expressions::Variable, storm::expressions::Variable> const& variableMapping);
+            DdExpressionAdapter(std::shared_ptr<storm::dd::DdManager<Type>> ddManager, std::map<storm::expressions::Variable, storm::expressions::Variable> const& variableMapping);
             
             storm::dd::Dd<Type> translateExpression(storm::expressions::Expression const& expression);
             
@@ -31,10 +31,10 @@ namespace storm {
 
         private:
             // The manager responsible for the DDs built by this adapter.
-            storm::dd::DdManager<Type> const& ddManager;
+            std::shared_ptr<storm::dd::DdManager<Type>> ddManager;
             
             // This member maps the variables used in the expressions to the variables used by the DD manager.
-            std::map<storm::expressions::Variable, storm::expressions::Variable> const& variableMapping;
+            std::map<storm::expressions::Variable, storm::expressions::Variable> variableMapping;
         };
         
     } // namespace adapters

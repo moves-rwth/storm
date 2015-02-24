@@ -32,6 +32,16 @@ namespace storm {
             }
             
             template<storm::dd::DdType Type>
+            storm::dd::DdManager<Type> const& Model<Type>::getManager() const {
+                return *manager;
+            }
+            
+            template<storm::dd::DdType Type>
+            storm::dd::DdManager<Type>& Model<Type>::getManager() {
+                return *manager;
+            }
+            
+            template<storm::dd::DdType Type>
             storm::dd::Dd<Type> const& Model<Type>::getReachableStates() const {
                 return reachableStates;
             }
@@ -43,12 +53,12 @@ namespace storm {
             
             template<storm::dd::DdType Type>
             storm::dd::Dd<Type> Model<Type>::getStates(std::string const& label) const {
-                return rowExpressionAdapter->translateExpression(labelToExpressionMap.at(label));
+                return rowExpressionAdapter->translateExpression(labelToExpressionMap.at(label)) && this->reachableStates;
             }
             
             template<storm::dd::DdType Type>
             storm::dd::Dd<Type> Model<Type>::getStates(storm::expressions::Expression const& expression) const {
-                return rowExpressionAdapter->translateExpression(expression);
+                return rowExpressionAdapter->translateExpression(expression).toBdd() && this->reachableStates;
             }
             
             template<storm::dd::DdType Type>
@@ -104,6 +114,11 @@ namespace storm {
             template<storm::dd::DdType Type>
             std::set<storm::expressions::Variable> const& Model<Type>::getColumnVariables() const {
                 return columnVariables;
+            }
+            
+            template<storm::dd::DdType Type>
+            std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& Model<Type>::getRowColumnMetaVariablePairs() const {
+                return rowColumnMetaVariablePairs;
             }
             
             template<storm::dd::DdType Type>
