@@ -69,6 +69,13 @@ namespace storm {
              */
             virtual std::size_t getSizeInBytes() const = 0;
             
+            /*!
+             * Prints information about the model to the specified stream.
+             *
+             * @param out The stream the information is to be printed to.
+             */
+            virtual void printModelInformationToStream(std::ostream& out) const = 0;
+            
         private:
             // The type of the model.
             ModelType modelType;

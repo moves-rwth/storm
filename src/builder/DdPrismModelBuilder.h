@@ -4,6 +4,7 @@
 #include <map>
 #include <boost/optional.hpp>
 
+#include "src/models/symbolic/Model.h"
 #include "src/logic/Formulas.h"
 #include "src/storage/prism/Program.h"
 #include "src/adapters/DdExpressionAdapter.h"
@@ -55,11 +56,13 @@ namespace storm {
             };
             
             /*!
-             * Translates the given program into a model that stores the transition relation as a decision diagram.
+             * Translates the given program into a symbolic model (i.e. one that stores the transition relation as a
+             * decision diagram).
              *
              * @param program The program to translate.
+             * @return A pointer to the resulting model.
              */
-            static std::pair<storm::dd::Dd<Type>, storm::dd::Dd<Type>> translateProgram(storm::prism::Program const& program, Options const& options = Options());
+            static std::shared_ptr<storm::models::symbolic::Model<Type>> translateProgram(storm::prism::Program const& program, Options const& options = Options());
             
         private:
             // This structure can store the decision diagrams representing a particular action.
@@ -132,8 +135,8 @@ namespace storm {
                     // Initializes variables and identity DDs.
                     createMetaVariablesAndIdentities();
                     
-                    rowExpressionAdapter = std::unique_ptr<storm::adapters::DdExpressionAdapter<Type>>(new storm::adapters::DdExpressionAdapter<Type>(*manager, variableToRowMetaVariableMap));
-                    columnExpressionAdapter = std::unique_ptr<storm::adapters::DdExpressionAdapter<Type>>(new storm::adapters::DdExpressionAdapter<Type>(*manager, variableToColumnMetaVariableMap));
+                    rowExpressionAdapter = std::shared_ptr<storm::adapters::DdExpressionAdapter<Type>>(new storm::adapters::DdExpressionAdapter<Type>(*manager, variableToRowMetaVariableMap));
+                    columnExpressionAdapter = std::shared_ptr<storm::adapters::DdExpressionAdapter<Type>>(new storm::adapters::DdExpressionAdapter<Type>(*manager, variableToColumnMetaVariableMap));
                 }
                 
                 // The program that is currently translated.
@@ -145,12 +148,12 @@ namespace storm {
                 // The meta variables for the row encoding.
                 std::set<storm::expressions::Variable> rowMetaVariables;
                 std::map<storm::expressions::Variable, storm::expressions::Variable> variableToRowMetaVariableMap;
-                std::unique_ptr<storm::adapters::DdExpressionAdapter<Type>> rowExpressionAdapter;
+                std::shared_ptr<storm::adapters::DdExpressionAdapter<Type>> rowExpressionAdapter;
                 
                 // The meta variables for the column encoding.
                 std::set<storm::expressions::Variable> columnMetaVariables;
                 std::map<storm::expressions::Variable, storm::expressions::Variable> variableToColumnMetaVariableMap;
-                std::unique_ptr<storm::adapters::DdExpressionAdapter<Type>> columnExpressionAdapter;
+                std::shared_ptr<storm::adapters::DdExpressionAdapter<Type>> columnExpressionAdapter;
                 
                 // All pairs of row/column meta variables.
                 std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> rowColumnMetaVariablePairs;

@@ -1,0 +1,137 @@
+#include "src/models/symbolic/Model.h"
+
+namespace storm {
+    namespace models {
+        namespace symbolic {
+            template<storm::dd::DdType Type>
+            Model<Type>::Model(storm::models::ModelType const& modelType,
+                               std::shared_ptr<storm::dd::DdManager<Type>> manager,
+                               storm::dd::Dd<Type> reachableStates,
+                               storm::dd::Dd<Type> initialStates,
+                               storm::dd::Dd<Type> transitionMatrix,
+                               std::set<storm::expressions::Variable> const& rowVariables,
+                               std::shared_ptr<storm::adapters::DdExpressionAdapter<Type>> rowExpressionAdapter,
+                               std::set<storm::expressions::Variable> const& columnVariables,
+                               std::shared_ptr<storm::adapters::DdExpressionAdapter<Type>> columnExpressionAdapter,
+                               std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs,
+                               std::map<std::string, storm::expressions::Expression> labelToExpressionMap,
+                               boost::optional<storm::dd::Dd<Type>> const& optionalStateRewardVector,
+                               boost::optional<storm::dd::Dd<Type>> const& optionalTransitionRewardMatrix)
+            : ModelBase(modelType), manager(manager), reachableStates(reachableStates), initialStates(initialStates), transitionMatrix(transitionMatrix), rowVariables(rowVariables), rowExpressionAdapter(rowExpressionAdapter), columnVariables(columnVariables), columnExpressionAdapter(columnExpressionAdapter), rowColumnMetaVariablePairs(rowColumnMetaVariablePairs), labelToExpressionMap(labelToExpressionMap), stateRewardVector(optionalStateRewardVector), transitionRewardMatrix(optionalTransitionRewardMatrix) {
+                // Intentionally left empty.
+            }
+            
+            template<storm::dd::DdType Type>
+            uint_fast64_t Model<Type>::getNumberOfStates() const {
+                return reachableStates.getNonZeroCount();
+            }
+            
+            template<storm::dd::DdType Type>
+            uint_fast64_t Model<Type>::getNumberOfTransitions() const {
+                return transitionMatrix.getNonZeroCount();
+            }
+            
+            template<storm::dd::DdType Type>
+            storm::dd::Dd<Type> const& Model<Type>::getReachableStates() const {
+                return reachableStates;
+            }
+            
+            template<storm::dd::DdType Type>
+            storm::dd::Dd<Type> const& Model<Type>::getInitialStates() const {
+                return initialStates;
+            }
+            
+            template<storm::dd::DdType Type>
+            storm::dd::Dd<Type> Model<Type>::getStates(std::string const& label) const {
+                return rowExpressionAdapter->translateExpression(labelToExpressionMap.at(label));
+            }
+            
+            template<storm::dd::DdType Type>
+            storm::dd::Dd<Type> Model<Type>::getStates(storm::expressions::Expression const& expression) const {
+                return rowExpressionAdapter->translateExpression(expression);
+            }
+            
+            template<storm::dd::DdType Type>
+            bool Model<Type>::hasLabel(std::string const& label) const {
+                return labelToExpressionMap.find(label) != labelToExpressionMap.end();
+            }
+            
+            template<storm::dd::DdType Type>
+            storm::dd::Dd<Type> const& Model<Type>::getTransitionMatrix() const {
+                return transitionMatrix;
+            }
+            
+            template<storm::dd::DdType Type>
+            storm::dd::Dd<Type>& Model<Type>::getTransitionMatrix() {
+                return transitionMatrix;
+            }
+            
+            template<storm::dd::DdType Type>
+            storm::dd::Dd<Type> const& Model<Type>::getTransitionRewardMatrix() const {
+                return transitionRewardMatrix.get();
+            }
+            
+            template<storm::dd::DdType Type>
+            storm::dd::Dd<Type>& Model<Type>::getTransitionRewardMatrix() {
+                return transitionRewardMatrix.get();
+            }
+            
+            template<storm::dd::DdType Type>
+            storm::dd::Dd<Type> const& Model<Type>::getStateRewardVector() const {
+                return stateRewardVector.get();
+            }
+            
+            template<storm::dd::DdType Type>
+            bool Model<Type>::hasStateRewards() const {
+                return static_cast<bool>(stateRewardVector);
+            }
+            
+            template<storm::dd::DdType Type>
+            bool Model<Type>::hasTransitionRewards() const {
+                return static_cast<bool>(transitionRewardMatrix);
+            }
+            
+            template<storm::dd::DdType Type>
+            std::size_t Model<Type>::getSizeInBytes() const {
+                return sizeof(*this) + sizeof(DdNode) * (reachableStates.getNodeCount() + initialStates.getNodeCount() + transitionMatrix.getNodeCount());
+            }
+            
+            template<storm::dd::DdType Type>
+            std::set<storm::expressions::Variable> const& Model<Type>::getRowVariables() const {
+                return rowVariables;
+            }
+            
+            template<storm::dd::DdType Type>
+            std::set<storm::expressions::Variable> const& Model<Type>::getColumnVariables() const {
+                return columnVariables;
+            }
+            
+            template<storm::dd::DdType Type>
+            void Model<Type>::setTransitionMatrix(storm::dd::Dd<Type> const& transitionMatrix) {
+                this->transitionMatrix = transitionMatrix;
+            }
+            
+            template<storm::dd::DdType Type>
+            std::map<std::string, storm::expressions::Expression> const& Model<Type>::getLabelToExpressionMap() const {
+                return labelToExpressionMap;
+            }
+            
+            template<storm::dd::DdType Type>
+            void Model<Type>::printModelInformationToStream(std::ostream& out) const {
+                out << "-------------------------------------------------------------- " << std::endl;
+                out << "Model type: \t\t" << this->getType() << " (symbolic)" << std::endl;
+                out << "States: \t\t" << this->getNumberOfStates() << " (" << reachableStates.getNodeCount() << " nodes)" << std::endl;
+                out << "Transitions: \t\t" << this->getNumberOfTransitions() << " (" << transitionMatrix.getNodeCount() << " nodes)" << std::endl;
+                out << "Variables: \t\t" << "rows:" << this->rowVariables.size() << ", columns: " << this->columnVariables.size() << std::endl;
+                for (auto const& label : labelToExpressionMap) {
+                    out << "\t" << label.first << std::endl;
+                }
+                out << "Size in memory: \t" << (this->getSizeInBytes())/1024 << " kbytes" << std::endl;
+                out << "-------------------------------------------------------------- " << std::endl;
+            }
+            
+            // Explicitly instantiate the template class.
+            template class Model<storm::dd::DdType::CUDD>;
+        } // namespace symbolic
+    } // namespace models
+} // namespace storm

@@ -1,5 +1,8 @@
 #include "src/builder/DdPrismModelBuilder.h"
 
+#include "src/models/symbolic/Dtmc.h"
+#include "src/models/symbolic/Mdp.h"
+
 #include "src/storage/dd/CuddDd.h"
 #include "src/storage/dd/CuddDdManager.h"
 #include "src/settings/SettingsManager.h"
@@ -574,7 +577,7 @@ namespace storm {
         }
     
         template <storm::dd::DdType Type>
-        std::pair<storm::dd::Dd<Type>, storm::dd::Dd<Type>> DdPrismModelBuilder<Type>::translateProgram(storm::prism::Program const& program, Options const& options) {
+        std::shared_ptr<storm::models::symbolic::Model<Type>> DdPrismModelBuilder<Type>::translateProgram(storm::prism::Program const& program, Options const& options) {
             // There might be nondeterministic variables. In that case the program must be prepared before translating.
             storm::prism::Program preparedProgram;
             if (options.constantDefinitions) {
@@ -600,13 +603,11 @@ namespace storm {
             }
             
             preparedProgram = preparedProgram.substituteConstants();
-//            std::cout << "translated prog: " << preparedProgram << std::endl;
             
             // Start by initializing the structure used for storing all information needed during the model generation.
             // In particular, this creates the meta variables used to encode the model.
             GenerationInformation generationInfo(preparedProgram);
 
-            auto totalTimeStart = std::chrono::high_resolution_clock::now();
             std::pair<storm::dd::Dd<Type>, ModuleDecisionDiagram> transitionMatrixModulePair = createSystemDecisionDiagram(generationInfo);
             storm::dd::Dd<Type> transitionMatrix = transitionMatrixModulePair.first;
             ModuleDecisionDiagram const& globalModule = transitionMatrixModulePair.second;
@@ -632,19 +633,10 @@ namespace storm {
                 stateAndTransitionRewards = createRewardDecisionDiagrams(generationInfo, rewardModel, globalModule, transitionMatrix);
             }
             
-            auto totalTimeEnd = std::chrono::high_resolution_clock::now();
-            std::cout << "building matrices and vectors took " << std::chrono::duration_cast<std::chrono::milliseconds>(totalTimeEnd - totalTimeStart).count() << "ms" << std::endl;
-            
             // Cut the transition matrix to the reachable fragment of the state space.
-            totalTimeStart = std::chrono::high_resolution_clock::now();
-            storm::dd::Dd<Type> reachableStates = computeReachableStates(generationInfo, createInitialStatesDecisionDiagram(generationInfo), transitionMatrix);
-            totalTimeEnd = std::chrono::high_resolution_clock::now();
-            std::cout << "reachability took " << std::chrono::duration_cast<std::chrono::milliseconds>(totalTimeEnd - totalTimeStart).count() << "ms" << std::endl;
-            
-            totalTimeStart = std::chrono::high_resolution_clock::now();
+            storm::dd::Dd<Type> initialStates = createInitialStatesDecisionDiagram(generationInfo);
+            storm::dd::Dd<Type> reachableStates = computeReachableStates(generationInfo, initialStates, transitionMatrix);
             transitionMatrix *= reachableStates.toMtbdd();
-            totalTimeEnd = std::chrono::high_resolution_clock::now();
-            std::cout << "cutting trans to reachable took " << std::chrono::duration_cast<std::chrono::milliseconds>(totalTimeEnd - totalTimeStart).count() << "ms" << std::endl;
 
             // Detect deadlocks and 1) fix them if requested 2) throw an error otherwise.
             storm::dd::Dd<Type> statesWithTransition = transitionMatrix.notZero();
@@ -674,9 +666,19 @@ namespace storm {
                 }
             }
             
-            std::cout << reachableStates.getNonZeroCount() << " states and " << transitionMatrix.getNonZeroCount() << " transitions." << std::endl;
+            // Build the labels that can be accessed as a shortcut.
+            std::map<std::string, storm::expressions::Expression> labelToExpressionMapping;
+            for (auto const& label : program.getLabels()) {
+                labelToExpressionMapping.emplace(label.getName(), label.getStatePredicateExpression());
+            }
             
-            return std::make_pair(reachableStates, transitionMatrix);
+            if (program.getModelType() == storm::prism::Program::ModelType::DTMC) {
+                return std::unique_ptr<storm::models::symbolic::Model<Type>>(new storm::models::symbolic::Dtmc<Type>(generationInfo.manager, reachableStates, initialStates, transitionMatrix, generationInfo.rowMetaVariables, generationInfo.rowExpressionAdapter, generationInfo.columnMetaVariables, generationInfo.columnExpressionAdapter, generationInfo.rowColumnMetaVariablePairs, labelToExpressionMapping, stateAndTransitionRewards ? stateAndTransitionRewards.get().first : boost::optional<storm::dd::Dd<Type>>(), stateAndTransitionRewards ? stateAndTransitionRewards.get().second : boost::optional<storm::dd::Dd<Type>>()));
+            } else if (program.getModelType() == storm::prism::Program::ModelType::MDP) {
+                return std::unique_ptr<storm::models::symbolic::Model<Type>>(new storm::models::symbolic::Mdp<Type>(generationInfo.manager, reachableStates, initialStates, transitionMatrix, generationInfo.rowMetaVariables, generationInfo.rowExpressionAdapter, generationInfo.columnMetaVariables, generationInfo.columnExpressionAdapter, generationInfo.rowColumnMetaVariablePairs, generationInfo.allNondeterminismVariables, labelToExpressionMapping, stateAndTransitionRewards ? stateAndTransitionRewards.get().first : boost::optional<storm::dd::Dd<Type>>(), stateAndTransitionRewards ? stateAndTransitionRewards.get().second : boost::optional<storm::dd::Dd<Type>>()));
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Invalid model type.");
+            }
         }
         
         template <storm::dd::DdType Type>

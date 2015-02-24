@@ -269,6 +269,7 @@ file(GLOB_RECURSE STORM_MODELCHECKER_RESULTS_FILES ${PROJECT_SOURCE_DIR}/src/mod
 file(GLOB_RECURSE STORM_COUNTEREXAMPLES_FILES ${PROJECT_SOURCE_DIR}/src/counterexamples/*.h ${PROJECT_SOURCE_DIR}/src/counterexamples/*.cpp)
 file(GLOB STORM_MODELS_FILES ${PROJECT_SOURCE_DIR}/src/models/*.h ${PROJECT_SOURCE_DIR}/src/models/*.cpp)
 file(GLOB_RECURSE STORM_MODELS_SPARSE_FILES ${PROJECT_SOURCE_DIR}/src/models/sparse/*.h ${PROJECT_SOURCE_DIR}/src/models/sparse/*.cpp)
+file(GLOB_RECURSE STORM_MODELS_SYMBOLIC_FILES ${PROJECT_SOURCE_DIR}/src/models/symbolic/*.h ${PROJECT_SOURCE_DIR}/src/models/symbolic/*.cpp)
 file(GLOB STORM_PARSER_FILES ${PROJECT_SOURCE_DIR}/src/parser/*.h ${PROJECT_SOURCE_DIR}/src/parser/*.cpp)
 file(GLOB_RECURSE STORM_PARSER_PRISMPARSER_FILES ${PROJECT_SOURCE_DIR}/src/parser/prismparser/*.h ${PROJECT_SOURCE_DIR}/src/parser/prismparser/*.cpp)
 file(GLOB STORM_SETTINGS_FILES ${PROJECT_SOURCE_DIR}/src/settings/*.h ${PROJECT_SOURCE_DIR}/src/settings/*.cpp)
@@ -290,7 +291,6 @@ file(GLOB_RECURSE STORM_PERFORMANCE_TEST_FILES ${STORM_CPP_TESTS_BASE_PATH}/perf
 # Additional include files like the storm-config.h
 file(GLOB_RECURSE STORM_BUILD_HEADERS ${PROJECT_BINARY_DIR}/include/*.h)
 
-
 # Group the headers and sources
 source_group(main FILES ${STORM_MAIN_FILE})
 source_group(adapters FILES ${STORM_ADAPTERS_FILES})
@@ -307,6 +307,7 @@ source_group(modelchecker\\results FILES ${STORM_MODELCHECKER_RESULTS_FILES})
 source_group(counterexamples FILES ${STORM_COUNTEREXAMPLES_FILES})
 source_group(models FILES ${STORM_MODELS_FILES})
 source_group(models\\sparse FILES ${STORM_MODELS_SPARSE_FILES})
+source_group(models\\symbolic FILES ${STORM_MODELS_SYMBOLIC_FILES})
 source_group(parser FILES ${STORM_PARSER_FILES})
 source_group(parser\\prismparser FILES ${STORM_PARSER_PRISMPARSER_FILES})
 source_group(settings FILES ${STORM_SETTINGS_FILES})

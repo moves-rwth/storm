@@ -42,7 +42,7 @@ namespace storm {
             template<typename ValueType>
             void NondeterministicModel<ValueType>::printModelInformationToStream(std::ostream& out) const {
                 out << "-------------------------------------------------------------- " << std::endl;
-                out << "Model type: \t\t" << this->getType() << std::endl;
+                out << "Model type: \t\t" << this->getType() << " (sparse)" << std::endl;
                 out << "States: \t\t" << this->getNumberOfStates() << std::endl;
                 out << "Transitions: \t\t" << this->getNumberOfTransitions() << std::endl;
                 out << "Choices: \t\t" << this->getNumberOfChoices() << std::endl;

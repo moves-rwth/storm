@@ -73,6 +73,7 @@ namespace storm {
                  */
                 template <typename BlockType>
                 storm::storage::SparseMatrix<ValueType> extractPartitionDependencyGraph(storm::storage::Decomposition<BlockType> const& decomposition) const;
+                
                 /*!
                  * Retrieves the backward transition relation of the model, i.e. a set of transitions between states
                  * that correspond to the reversed transition relation of this model.

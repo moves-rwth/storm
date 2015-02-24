@@ -199,7 +199,7 @@ namespace storm {
             template <typename ValueType>
             void Model<ValueType>::printModelInformationToStream(std::ostream& out) const {
                 out << "-------------------------------------------------------------- " << std::endl;
-                out << "Model type: \t\t" << this->getType() << std::endl;
+                out << "Model type: \t\t" << this->getType() << " (sparse)" << std::endl;
                 out << "States: \t\t" << this->getNumberOfStates() << std::endl;
                 out << "Transitions: \t\t" << this->getNumberOfTransitions() << std::endl;
                 this->getStateLabeling().printLabelingInformationToStream(out);

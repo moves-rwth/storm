@@ -172,7 +172,7 @@ namespace storm {
              * @param rewardModel The reward model that is to be built.
              * @return The explicit model that was given by the probabilistic program.
              */
-            static std::unique_ptr<storm::models::sparse::Model<ValueType>> translateProgram(storm::prism::Program program, Options const& options = Options());
+            static std::shared_ptr<storm::models::sparse::Model<ValueType>> translateProgram(storm::prism::Program program, Options const& options = Options());
             
         private:
             static void unpackStateIntoEvaluator(storm::storage::BitVector const& currentState, VariableInformation const& variableInformation, storm::expressions::ExpressionEvaluator<ValueType>& evaluator);
