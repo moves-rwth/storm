@@ -353,6 +353,15 @@ namespace storm {
             return entryCount;
         }
         
+		template<typename T>
+		uint_fast64_t SparseMatrix<T>::getRowGroupEntryCount(uint_fast64_t const group) const {
+			uint_fast64_t result = 0;
+			for (uint_fast64_t row = this->getRowGroupIndices()[group]; row < this->getRowGroupIndices()[group + 1]; ++row) {
+				result += (this->rowIndications[row + 1] - this->rowIndications[row]);
+			}
+			return result;
+		}
+
         template<typename ValueType>
         typename SparseMatrix<ValueType>::index_type SparseMatrix<ValueType>::getNonzeroEntryCount() const {
             return nonzeroEntryCount;
@@ -970,12 +979,21 @@ namespace storm {
         }
         
         // Explicitly instantiate the entry, builder and the matrix.
-        template class MatrixEntry<typename SparseMatrix<double>::index_type, double>;
-        template std::ostream& operator<<(std::ostream& out, MatrixEntry<uint_fast64_t, double> const& entry);
-        template class SparseMatrixBuilder<double>;
-        template class SparseMatrix<double>;
-        template std::ostream& operator<<(std::ostream& out, SparseMatrix<double> const& matrix);
-        template class MatrixEntry<typename SparseMatrix<int>::index_type, int>;
+		//double
+		template class MatrixEntry<typename SparseMatrix<double>::index_type, double>;
+		template std::ostream& operator<<(std::ostream& out, MatrixEntry<uint_fast64_t, double> const& entry);
+		template class SparseMatrixBuilder<double>;
+		template class SparseMatrix<double>;
+		template std::ostream& operator<<(std::ostream& out, SparseMatrix<double> const& matrix);
+		//float
+		template class MatrixEntry<typename SparseMatrix<float>::index_type, float>;
+		template std::ostream& operator<<(std::ostream& out, MatrixEntry<uint_fast64_t, float> const& entry);
+		template class SparseMatrixBuilder<float>;
+		template class SparseMatrix<float>;
+		template std::ostream& operator<<(std::ostream& out, SparseMatrix<float> const& matrix);
+		//int
+		template class MatrixEntry<typename SparseMatrix<int>::index_type, int>;
+		template std::ostream& operator<<(std::ostream& out, MatrixEntry<uint_fast64_t, int> const& entry);
         template class SparseMatrixBuilder<int>;
         template class SparseMatrix<int>;
         template std::ostream& operator<<(std::ostream& out, SparseMatrix<int> const& matrix);

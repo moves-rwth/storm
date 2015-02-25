@@ -17,8 +17,14 @@
 // Whether Gurobi is available and to be used (define/undef)
 #@STORM_CPP_GUROBI_DEF@ STORM_HAVE_GUROBI
 
+// Whether CUDA is available (define/undef)
+#@STORM_CPP_CUDA_DEF@ STORM_HAVE_CUDA
+
 // Whether GLPK is available and to be used (define/undef)
 #@STORM_CPP_GLPK_DEF@ STORM_HAVE_GLPK
+
+// Whether CudaForStorm is available and to be used (define/undef)
+#@STORM_CPP_CUDAFORSTORM_DEF@ STORM_HAVE_CUDAFORSTORM
 
 // Whether Z3 is available and to be used (define/undef)
 #@STORM_CPP_Z3_DEF@ STORM_HAVE_Z3

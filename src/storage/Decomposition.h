@@ -5,6 +5,9 @@
 #include <cstdint>
 #include <ostream>
 
+#include "src/storage/SparseMatrix.h"
+#include "src/models/sparse/Model.h"
+
 namespace storm {
     namespace storage {
         
@@ -123,6 +126,9 @@ namespace storm {
             // Declare the streaming operator as a friend function to enable output of decompositions.
             template<typename BlockTypePrime>
             friend std::ostream& operator<<(std::ostream& out, Decomposition<BlockTypePrime> const& decomposition);
+            
+            template <typename ValueType>
+            storm::storage::SparseMatrix<ValueType> extractPartitionDependencyGraph(storm::storage::SparseMatrix<ValueType> const& matrix) const;
             
         protected:
             // The blocks of the decomposition.

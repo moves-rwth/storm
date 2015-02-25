@@ -39,48 +39,6 @@ namespace storm {
             }
             
             template <typename ValueType>
-            template <typename BlockType>
-            storm::storage::SparseMatrix<ValueType> Model<ValueType>::extractPartitionDependencyGraph(storm::storage::Decomposition<BlockType> const& decomposition) const {
-                uint_fast64_t numberOfStates = decomposition.size();
-                
-                // First, we need to create a mapping of states to their SCC index, to ease the computation of dependency transitions later.
-                std::vector<uint_fast64_t> stateToBlockMap(this->getNumberOfStates());
-                for (uint_fast64_t i = 0; i < decomposition.size(); ++i) {
-                    for (auto state : decomposition[i]) {
-                        stateToBlockMap[state] = i;
-                    }
-                }
-                
-                // The resulting sparse matrix will have as many rows/columns as there are blocks in the partition.
-                storm::storage::SparseMatrixBuilder<ValueType> dependencyGraphBuilder(numberOfStates, numberOfStates);
-                
-                for (uint_fast64_t currentBlockIndex = 0; currentBlockIndex < decomposition.size(); ++currentBlockIndex) {
-                    // Get the next block.
-                    typename storm::storage::Decomposition<BlockType>::block_type const& block = decomposition[currentBlockIndex];
-                    
-                    // Now, we determine the blocks which are reachable (in one step) from the current block.
-                    boost::container::flat_set<uint_fast64_t> allTargetBlocks;
-                    for (auto state : block) {
-                        for (auto const& transitionEntry : this->getRows(state)) {
-                            uint_fast64_t targetBlock = stateToBlockMap[transitionEntry.first];
-                            
-                            // We only need to consider transitions that are actually leaving the SCC.
-                            if (targetBlock != currentBlockIndex) {
-                                allTargetBlocks.insert(targetBlock);
-                            }
-                        }
-                    }
-                    
-                    // Now we can just enumerate all the target SCCs and insert the corresponding transitions.
-                    for (auto targetBlock : allTargetBlocks) {
-                        dependencyGraphBuilder.addNextValue(currentBlockIndex, targetBlock, storm::utility::one<ValueType>());
-                    }
-                }
-                
-                return dependencyGraphBuilder.build();
-            }
-            
-            template <typename ValueType>
             storm::storage::SparseMatrix<ValueType> Model<ValueType>::getBackwardTransitions() const {
                 return this->getTransitionMatrix().transpose(true);
             }
@@ -292,6 +250,7 @@ namespace storm {
             }
             
             template class Model<double>;
+            template class Model<float>;
             
 #ifdef STORM_HAVE_CARL
             template class Model<storm::RationalFunction>;

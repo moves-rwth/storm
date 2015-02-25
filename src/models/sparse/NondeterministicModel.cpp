@@ -122,6 +122,7 @@ namespace storm {
             }
             
             template class NondeterministicModel<double>;
+            template class NondeterministicModel<float>;
 
 #ifdef STORM_HAVE_CARL
             template class NondeterministicModel<storm::RationalFunction>;

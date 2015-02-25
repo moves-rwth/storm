@@ -123,7 +123,7 @@ namespace storm {
                 uint_fast64_t numberOfStates = phiStates.size();
                 storm::storage::BitVector statesWithProbabilityGreater0(numberOfStates);
                 
-                // Add all psi states as the already satisfy the condition.
+                // Add all psi states as they already satisfy the condition.
                 statesWithProbabilityGreater0 |= psiStates;
                 
                 // Initialize the stack used for the DFS with the states.
@@ -712,7 +712,7 @@ namespace storm {
                     LOG4CPLUS_ERROR(logger, "Provided matrix is required to be square.");
                     throw storm::exceptions::InvalidArgumentException() << "Provided matrix is required to be square.";
                 }
-                
+
                 uint_fast64_t numberOfStates = matrix.getRowCount();
                 
                 // Prepare the result. This relies on the matrix being square.
@@ -741,12 +741,12 @@ namespace storm {
                             
                         recursionStepBackward:
                             for (; successorIterator != matrix.end(currentState); ++successorIterator) {
-                                if (!visitedStates.get(successorIterator.first)) {
+                                if (!visitedStates.get(successorIterator->getColumn())) {
                                     // Put unvisited successor on top of our recursion stack and remember that.
-                                    recursionStack.push_back(successorIterator.first);
+									recursionStack.push_back(successorIterator->getColumn());
                                     
                                     // Also, put initial value for iterator on corresponding recursion stack.
-                                    iteratorRecursionStack.push_back(matrix.begin(successorIterator.first));
+									iteratorRecursionStack.push_back(matrix.begin(successorIterator->getColumn()));
                                     
                                     goto recursionStepForward;
                                 }

@@ -210,7 +210,8 @@ namespace storm {
         }
         
         // Explicitly instantiate the SCC decomposition.
-        template class StronglyConnectedComponentDecomposition<double>;
+		template class StronglyConnectedComponentDecomposition<double>;
+		template class StronglyConnectedComponentDecomposition<float>;
 #ifdef STORM_HAVE_CARL
         template class StronglyConnectedComponentDecomposition<storm::RationalFunction>;
 #endif

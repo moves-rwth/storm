@@ -95,6 +95,7 @@ namespace storm {
             }
             
             template class Mdp<double>;
+            template class Mdp<float>;
 
 #ifdef STORM_HAVE_CARL
             template class Mdp<storm::RationalFunction>;

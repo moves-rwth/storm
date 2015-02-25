@@ -22,6 +22,10 @@ namespace storm {
 		class EigenAdapter;
 		class StormAdapter;
 	}
+	namespace solver {
+		template<typename T>
+		class TopologicalValueIterationNondeterministicLinearEquationSolver;
+	}
 }
 
 namespace storm {
@@ -272,6 +276,7 @@ namespace storm {
             friend class storm::adapters::GmmxxAdapter;
             friend class storm::adapters::EigenAdapter;
             friend class storm::adapters::StormAdapter;
+			friend class storm::solver::TopologicalValueIterationNondeterministicLinearEquationSolver<ValueType>;
             
             typedef uint_fast64_t index_type;
             typedef ValueType value_type;
@@ -453,6 +458,13 @@ namespace storm {
              */
             index_type getEntryCount() const;
             
+			/*!
+			* Returns the number of entries in the given row group of the matrix.
+			*
+			* @return The number of entries in the given row group of the matrix.
+			*/
+			uint_fast64_t getRowGroupEntryCount(uint_fast64_t const group) const;
+
             /*!
              * Returns the number of nonzero entries in the matrix.
              *
@@ -771,6 +783,23 @@ namespace storm {
              * @return An iterator that points past the end of the last row of the matrix.
              */
             iterator end();
+
+			/*!
+			* Returns a copy of the matrix with the chosen internal data type
+			*/
+			template<typename NewValueType>
+			SparseMatrix<NewValueType> toValueType() const {
+				std::vector<MatrixEntry<SparseMatrix::index_type, NewValueType>> new_columnsAndValues;
+				std::vector<SparseMatrix::index_type> new_rowIndications(rowIndications);
+				std::vector<SparseMatrix::index_type> new_rowGroupIndices(rowGroupIndices);
+
+				new_columnsAndValues.resize(columnsAndValues.size());
+				for (size_t i = 0, size = columnsAndValues.size(); i < size; ++i) {
+					new_columnsAndValues.at(i) = MatrixEntry<SparseMatrix::index_type, NewValueType>(columnsAndValues.at(i).getColumn(), static_cast<NewValueType>(columnsAndValues.at(i).getValue()));
+				}
+
+				return SparseMatrix<NewValueType>(columnCount, std::move(new_rowIndications), std::move(new_columnsAndValues), std::move(new_rowGroupIndices));
+			}
             
         private:
             /*!

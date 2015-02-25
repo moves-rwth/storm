@@ -289,6 +289,13 @@ namespace storm {
                  * @return True iff the option was set.
                  */
                 bool isBisimulationSet() const;
+
+                /*!
+                 * Retrieves whether the option to use CUDA is set.
+                 *
+                 * @return True iff the option was set.
+                 */
+                bool isCudaSet() const;
                 
                 /*!
                  * Retrieves the selected engine.
@@ -347,6 +354,7 @@ namespace storm {
                 static const std::string bisimulationOptionShortName;
                 static const std::string engineOptionName;
                 static const std::string engineOptionShortName;
+                static const std::string cudaOptionName;
                 
 #ifdef STORM_HAVE_CARL
                 static const std::string parametricOptionName;

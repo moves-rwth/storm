@@ -205,6 +205,7 @@ namespace storm {
             }
             
             template class Dtmc<double>;
+            template class Dtmc<float>;
 
 #ifdef STORM_HAVE_CARL
             template class Dtmc<storm::RationalFunction>;

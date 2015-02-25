@@ -10,7 +10,6 @@
 #include "src/storage/sparse/StateType.h"
 #include "src/storage/BitVector.h"
 #include "src/storage/SparseMatrix.h"
-#include "src/storage/Decomposition.h"
 #include "src/utility/OsDetection.h"
 
 namespace storm {
@@ -64,16 +63,7 @@ namespace storm {
                       boost::optional<std::vector<ValueType>>&& optionalStateRewardVector = boost::optional<std::vector<ValueType>>(),
                       boost::optional<storm::storage::SparseMatrix<ValueType>>&& optionalTransitionRewardMatrix = boost::optional<storm::storage::SparseMatrix<ValueType>>(),
                       boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>&& optionalChoiceLabeling = boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>());
-                
-                /*!
-                 * Extracts the dependency graph from the model according to the given partition.
-                 *
-                 * @param decomposition A decomposition containing the blocks of the partition of the system.
-                 * @return A sparse matrix with bool entries that represents the dependency graph of the blocks of the partition.
-                 */
-                template <typename BlockType>
-                storm::storage::SparseMatrix<ValueType> extractPartitionDependencyGraph(storm::storage::Decomposition<BlockType> const& decomposition) const;
-                
+                                
                 /*!
                  * Retrieves the backward transition relation of the model, i.e. a set of transitions between states
                  * that correspond to the reversed transition relation of this model.

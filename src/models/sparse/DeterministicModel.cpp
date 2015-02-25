@@ -50,6 +50,7 @@ namespace storm {
             }
             
             template class DeterministicModel<double>;
+            template class DeterministicModel<float>;
             
 #ifdef STORM_HAVE_CARL
             template class DeterministicModel<storm::RationalFunction>;

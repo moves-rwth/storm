@@ -29,6 +29,7 @@ option(LINK_LIBCXXABI "Sets whether libc++abi should be linked." OFF)
 option(USE_LIBCXX "Sets whether the standard library is libc++." OFF)
 set(GUROBI_ROOT "" CACHE STRING "The root directory of Gurobi (if available).")
 set(Z3_ROOT "" CACHE STRING "The root directory of Z3 (if available).")
+set(CUDA_ROOT "" CACHE STRING "The root directory of CUDA.")
 set(MSAT_ROOT "" CACHE STRING "The root directory of MathSAT (if available).")
 set(ADDITIONAL_INCLUDE_DIRS "" CACHE STRING "Additional directories added to the include directories.")
 set(ADDITIONAL_LINK_DIRS "" CACHE STRING "Additional directories added to the link directories.")
@@ -73,6 +74,12 @@ if ("${GUROBI_ROOT}" STREQUAL "" AND NOT GUROBI_FOUND)
     set(ENABLE_GUROBI OFF)
 else()
     set(ENABLE_GUROBI ON)
+endif()
+
+if ("${CUDA_ROOT}" STREQUAL "")
+    set(ENABLE_CUDA OFF)
+else()
+    set(ENABLE_CUDA ON)
 endif()
 
 if ("${Z3_ROOT}" STREQUAL "")
@@ -208,8 +215,18 @@ else()
 	set(STORM_CPP_GUROBI_DEF "undef")
 endif()
 
+# CUDA Defines
+if (ENABLE_CUDA)
+	set(STORM_CPP_CUDA_DEF "define")
+else()
+	set(STORM_CPP_CUDA_DEF "undef")
+endif()
+
 # glpk defines
 set(STORM_CPP_GLPK_DEF "define")
+
+# CUDA Defines
+set(STORM_CPP_CUDAFORSTORM_DEF "undef")
 
 # Z3 Defines
 if (ENABLE_Z3)
@@ -246,6 +263,120 @@ configure_file (
 
 # Add the binary dir include directory for storm-config.h
 include_directories("${PROJECT_BINARY_DIR}/include")
+
+#############################################################
+##
+##	CUDA Library generation
+##
+#############################################################
+
+if(ENABLE_CUDA)
+
+	# Test for type alignment
+	try_run(STORM_CUDA_RUN_RESULT_TYPEALIGNMENT STORM_CUDA_COMPILE_RESULT_TYPEALIGNMENT
+		${PROJECT_BINARY_DIR} "${PROJECT_SOURCE_DIR}/cuda/CMakeAlignmentCheck.cpp"
+		COMPILE_OUTPUT_VARIABLE OUTPUT_TEST_VAR
+	)
+	if(NOT STORM_CUDA_COMPILE_RESULT_TYPEALIGNMENT)
+		message(FATAL_ERROR "StoRM (CudaPlugin) - Could not test type alignment, there was an Error while compiling the file ${PROJECT_SOURCE_DIR}/cuda/CMakeAlignmentCheck.cpp: ${OUTPUT_TEST_VAR}")
+	elseif(STORM_CUDA_RUN_RESULT_TYPEALIGNMENT EQUAL 0)
+		message(STATUS "StoRM (CudaPlugin) - Result of Type Alignment Check: OK.")
+	else()
+		message(FATAL_ERROR "StoRM (CudaPlugin) - Result of Type Alignment Check: FAILED (Code ${STORM_CUDA_RUN_RESULT_TYPEALIGNMENT})")
+	endif()
+
+	# Test for Float 64bit Alignment
+	try_run(STORM_CUDA_RUN_RESULT_FLOATALIGNMENT STORM_CUDA_COMPILE_RESULT_FLOATALIGNMENT
+		${PROJECT_BINARY_DIR} "${PROJECT_SOURCE_DIR}/cuda/CMakeFloatAlignmentCheck.cpp"
+		COMPILE_OUTPUT_VARIABLE OUTPUT_TEST_VAR
+	)
+	if(NOT STORM_CUDA_COMPILE_RESULT_FLOATALIGNMENT)
+		message(FATAL_ERROR "StoRM (CudaPlugin) - Could not test float type alignment, there was an Error while compiling the file ${PROJECT_SOURCE_DIR}/cuda/CMakeFloatAlignmentCheck.cpp: ${OUTPUT_TEST_VAR}")
+	elseif(STORM_CUDA_RUN_RESULT_FLOATALIGNMENT EQUAL 2)
+		message(STATUS "StoRM (CudaPlugin) - Result of Float Type Alignment Check: 64bit alignment active.")
+		set(STORM_CUDAPLUGIN_FLOAT_64BIT_ALIGN_DEF "define")
+	elseif(STORM_CUDA_RUN_RESULT_FLOATALIGNMENT EQUAL 3)
+		message(STATUS "StoRM (CudaPlugin) - Result of Float Type Alignment Check: 64bit alignment disabled.")
+		set(STORM_CUDAPLUGIN_FLOAT_64BIT_ALIGN_DEF "undef")
+	else()
+		message(FATAL_ERROR "StoRM (CudaPlugin) - Result of Float Type Alignment Check: FAILED (Code ${STORM_CUDA_RUN_RESULT_FLOATALIGNMENT})")
+	endif()
+	#
+	# Make a version file containing the current version from git.
+	#
+	include(GetGitRevisionDescription)
+	git_describe_checkout(STORM_GIT_VERSION_STRING)
+	# Parse the git Tag into variables
+	string(REGEX REPLACE "^([0-9]+)\\..*" "\\1" STORM_CUDAPLUGIN_VERSION_MAJOR "${STORM_GIT_VERSION_STRING}")
+	string(REGEX REPLACE "^[0-9]+\\.([0-9]+).*" "\\1" STORM_CUDAPLUGIN_VERSION_MINOR "${STORM_GIT_VERSION_STRING}")
+	string(REGEX REPLACE "^[0-9]+\\.[0-9]+\\.([0-9]+).*" "\\1" STORM_CUDAPLUGIN_VERSION_PATCH "${STORM_GIT_VERSION_STRING}")
+	string(REGEX REPLACE "^[0-9]+\\.[0-9]+\\.[0-9]+\\-([0-9]+)\\-.*" "\\1" STORM_CUDAPLUGIN_VERSION_COMMITS_AHEAD "${STORM_GIT_VERSION_STRING}")
+	string(REGEX REPLACE "^[0-9]+\\.[0-9]+\\.[0-9]+\\-[0-9]+\\-([a-z0-9]+).*" "\\1" STORM_CUDAPLUGIN_VERSION_HASH "${STORM_GIT_VERSION_STRING}")
+	string(REGEX REPLACE "^[0-9]+\\.[0-9]+\\.[0-9]+\\-[0-9]+\\-[a-z0-9]+\\-(.*)" "\\1" STORM_CUDAPLUGIN_VERSION_APPENDIX "${STORM_GIT_VERSION_STRING}")
+	if ("${STORM_CUDAPLUGIN_VERSION_APPENDIX}" MATCHES "^.*dirty.*$")
+		set(STORM_CUDAPLUGIN_VERSION_DIRTY 1)
+	else()
+		set(STORM_CUDAPLUGIN_VERSION_DIRTY 0)
+	endif()
+	message(STATUS "StoRM (CudaPlugin) - Version information: ${STORM_CUDAPLUGIN_VERSION_MAJOR}.${STORM_CUDAPLUGIN_VERSION_MINOR}.${STORM_CUDAPLUGIN_VERSION_PATCH} (${STORM_CUDAPLUGIN_VERSION_COMMITS_AHEAD} commits ahead of Tag) build from ${STORM_CUDAPLUGIN_VERSION_HASH} (Dirty: ${STORM_CUDAPLUGIN_VERSION_DIRTY})")
+
+
+	# Configure a header file to pass some of the CMake settings to the source code
+	configure_file (
+		"${PROJECT_SOURCE_DIR}/cuda/storm-cudaplugin-config.h.in"
+		"${PROJECT_BINARY_DIR}/include/storm-cudaplugin-config.h"
+	)
+
+	#create library
+	find_package(CUDA REQUIRED)
+	set(CUSP_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/resources/3rdparty/cusplibrary")
+	find_package(Cusp REQUIRED)
+	find_package(Thrust REQUIRED)
+
+	set(STORM_CUDA_LIB_NAME "storm-cuda")
+
+	file(GLOB_RECURSE STORM_CUDA_KERNEL_FILES ${PROJECT_SOURCE_DIR}/cuda/kernels/*.cu)
+	file(GLOB_RECURSE STORM_CUDA_HEADER_FILES ${PROJECT_SOURCE_DIR}/cuda/kernels/*.h)
+	
+	source_group(kernels FILES ${STORM_CUDA_KERNEL_FILES} ${STORM_CUDA_HEADER_FILES})
+	include_directories(${PROJECT_SOURCE_DIR}/cuda/kernels/)
+
+	#set(CUDA_PROPAGATE_HOST_FLAGS OFF)
+	set(CUDA_NVCC_FLAGS "-arch=sm_30")
+	
+	#############################################################
+	##
+	##	CUSP
+	##
+	#############################################################
+	if(CUSP_FOUND)
+		include_directories(${CUSP_INCLUDE_DIR})
+		cuda_include_directories(${CUSP_INCLUDE_DIR})
+		message(STATUS "StoRM (CudaPlugin) - Found CUSP Version ${CUSP_VERSION} in location ${CUSP_INCLUDE_DIR}")
+	else()
+		message(FATAL_ERROR "StoRM (CudaPlugin) - Could not find CUSP!")
+	endif()
+	
+	#############################################################
+	##
+	##	Thrust
+	##
+	#############################################################
+	if(THRUST_FOUND)
+		include_directories(${THRUST_INCLUDE_DIR})
+		cuda_include_directories(${THRUST_INCLUDE_DIR})
+		message(STATUS "StoRM (CudaPlugin) - Found Thrust Version ${THRUST_VERSION} in location ${THRUST_INCLUDE_DIR}")
+	else()
+		message(FATAL_ERROR "StoRM (CudaPlugin) - Could not find Thrust! Check your CUDA installation.")
+	endif()
+	
+	include_directories(${CUDA_INCLUDE_DIRS})
+	include_directories(${ADDITIONAL_INCLUDE_DIRS})
+	
+	cuda_add_library(${STORM_CUDA_LIB_NAME}
+	    ${STORM_CUDA_KERNEL_FILES} ${STORM_CUDA_HEADER_FILES}
+	)
+endif()
 
 #############################################################
 ##
@@ -429,6 +560,20 @@ if (ENABLE_GUROBI)
     target_link_libraries(storm-functional-tests ${GUROBI_LIBRARY})
     target_link_libraries(storm-performance-tests ${GUROBI_LIBRARY})
 endif(ENABLE_GUROBI)
+
+#############################################################
+##
+##	CUDA (optional)
+##
+#############################################################
+if (ENABLE_CUDA)
+    message (STATUS "StoRM - Linking with CUDA")
+	target_link_libraries(storm ${STORM_CUDA_LIB_NAME})
+    target_link_libraries(storm-functional-tests ${STORM_CUDA_LIB_NAME})
+    target_link_libraries(storm-performance-tests ${STORM_CUDA_LIB_NAME})
+	
+	include_directories("${PROJECT_SOURCE_DIR}/cuda/kernels/")
+endif(ENABLE_CUDA)
 
 #############################################################
 ##

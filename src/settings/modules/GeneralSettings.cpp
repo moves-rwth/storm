@@ -43,6 +43,7 @@ namespace storm {
             const std::string GeneralSettings::bisimulationOptionShortName = "bisim";
             const std::string GeneralSettings::engineOptionName = "engine";
             const std::string GeneralSettings::engineOptionShortName = "e";
+            const std::string GeneralSettings::cudaOptionName = "cuda";
             
 #ifdef STORM_HAVE_CARL
             const std::string GeneralSettings::parametricOptionName = "parametric";
@@ -94,6 +95,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, constantsOptionName, false, "Specifies the constant replacements to use in symbolic models. Note that Note that this requires the model to be given as an symbolic model (i.e., via --" + symbolicOptionName + ").").setShortName(constantsOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("values", "A comma separated list of constants and their value, e.g. a=1,b=2,c=3.").setDefaultValueString("").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, statisticsOptionName, false, "Sets whether to display statistics if available.").setShortName(statisticsOptionShortName).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, cudaOptionName, false, "Sets whether to use CUDA to speed up computation time.").build());
 
 #ifdef STORM_HAVE_CARL
                 this->addOption(storm::settings::OptionBuilder(moduleName, parametricOptionName, false, "Sets whether to use the parametric engine.").build());
@@ -284,6 +286,10 @@ namespace storm {
                 STORM_LOG_THROW(this->getEngine() != Engine::Dd || !isExplicitSet(), storm::exceptions::InvalidSettingsException, "Decision-diagram engine can only be used with symbolic input models.");
                 
                 return true;
+            }
+
+            bool GeneralSettings::isCudaSet() const {
+                return this->getOption(cudaOptionName).getHasOptionBeenSet();
             }
             
         } // namespace modules
