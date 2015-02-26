@@ -724,9 +724,10 @@ namespace storm {
                     statesWithProbabilityGreater0E = statesWithProbabilityGreater0E.swapVariables(model.getRowColumnMetaVariablePairs());
                     statesWithProbabilityGreater0E = statesWithProbabilityGreater0E.andExists(transitionMatrixBdd, model.getColumnVariables());
                     statesWithProbabilityGreater0E &= phiStatesBdd;
+                    statesWithProbabilityGreater0E |= lastIterationStates;
                     ++iterations;
                 }
-                
+                                
                 return statesWithProbabilityGreater0E;
             }
             
@@ -833,37 +834,47 @@ namespace storm {
              * @param model The (symbolic) model for which to compute the set of states.
              * @param phiStates The phi states of the model.
              * @param psiStates The psi states of the model.
-             * @param statesWithProbability0A The states of the model that have a probability zero under all schedulers.
+             * @param statesWithProbabilityGreater0E The states of the model that have a scheduler that achieves a value
+             * greater than zero.
              * @return A DD representing all such states.
              */
             template <storm::dd::DdType Type>
             storm::dd::Dd<Type> performProb1E(storm::models::symbolic::NondeterministicModel<Type> const& model, storm::dd::Dd<Type> const& phiStates, storm::dd::Dd<Type> const& psiStates, storm::dd::Dd<Type> const& statesWithProbabilityGreater0E) {
                 // Initialize environment for backward search.
                 storm::dd::DdManager<Type> const& manager = model.getManager();
-                storm::dd::Dd<Type> innerStates = manager.getZero();
                 storm::dd::Dd<Type> statesWithProbability1E = statesWithProbabilityGreater0E;
                 storm::dd::Dd<Type> phiStatesBdd = phiStates.toBdd();
                 storm::dd::Dd<Type> psiStatesBdd = psiStates.toBdd();
 
                 uint_fast64_t iterations = 0;
                 storm::dd::Dd<Type> transitionMatrixBdd = model.getTransitionMatrix().notZero();
-                while (statesWithProbability1E != innerStates) {
-                    innerStates = manager.getZero();
-                    storm::dd::Dd<Type> temporary = manager.getOne();
+                bool outerLoopDone = false;
+                while (!outerLoopDone) {
+                    storm::dd::Dd<Type> innerStates = manager.getZero();
                     
-                    while (innerStates != temporary) {
-                        innerStates = temporary;
-                        temporary = statesWithProbability1E;
-                        temporary = temporary.swapVariables(model.getRowColumnMetaVariablePairs());
+                    bool innerLoopDone = false;
+                    while (!innerLoopDone) {
+                        storm::dd::Dd<Type> temporary = statesWithProbability1E.swapVariables(model.getRowColumnMetaVariablePairs());
                         temporary = transitionMatrixBdd.implies(temporary).universalAbstract(model.getColumnVariables());
                         
-                        storm::dd::Dd<Type> temporary2 = innerStates;
-                        temporary2 = temporary2.swapVariables(model.getRowColumnMetaVariablePairs());
+                        storm::dd::Dd<Type> temporary2 = innerStates.swapVariables(model.getRowColumnMetaVariablePairs());
                         temporary2 = transitionMatrixBdd.andExists(temporary2, model.getColumnVariables());
                         
                         temporary = temporary.andExists(temporary2, model.getNondeterminismVariables());
                         temporary &= phiStatesBdd;
                         temporary |= psiStatesBdd;
+                        
+                        if (innerStates == temporary) {
+                            innerLoopDone = true;
+                        } else {
+                            innerStates = temporary;
+                        }
+                    }
+                    
+                    if (statesWithProbability1E == innerStates) {
+                        outerLoopDone = true;
+                    } else {
+                        statesWithProbability1E = innerStates;
                     }
                     ++iterations;
                 }
@@ -875,7 +886,6 @@ namespace storm {
             std::pair<storm::dd::Dd<Type>, storm::dd::Dd<Type>> performProb01Max(storm::models::symbolic::NondeterministicModel<Type> const& model, storm::dd::Dd<Type> const& phiStates, storm::dd::Dd<Type> const& psiStates) {
                 std::pair<storm::dd::Dd<Type>, storm::dd::Dd<Type>> result;
                 result.first = performProb0A(model, phiStates, psiStates);
-                std::cout << "first: " << result.first.getNonZeroCount() << std::endl;
                 result.second = performProb1E(model, phiStates, psiStates, !result.first && model.getReachableStates());
                 return result;
             }

@@ -668,7 +668,7 @@ namespace storm {
             
             // Build the labels that can be accessed as a shortcut.
             std::map<std::string, storm::expressions::Expression> labelToExpressionMapping;
-            for (auto const& label : program.getLabels()) {
+            for (auto const& label : preparedProgram.getLabels()) {
                 labelToExpressionMapping.emplace(label.getName(), label.getStatePredicateExpression());
             }
             

@@ -56,17 +56,31 @@ TEST(GraphTest, SymbolicProb01MinMax) {
     EXPECT_EQ(77, statesWithProbability01.first.getNonZeroCount());
     EXPECT_EQ(149, statesWithProbability01.second.getNonZeroCount());
     
-//    ASSERT_NO_THROW(statesWithProbability01 = storm::utility::graph::performProb01Max(*model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>(), model->getReachableStates(), model->getStates("all_coins_equal_0")));
-//    EXPECT_EQ(74, statesWithProbability01.first.getNonZeroCount());
-//    EXPECT_EQ(198, statesWithProbability01.second.getNonZeroCount());
+    ASSERT_NO_THROW(statesWithProbability01 = storm::utility::graph::performProb01Max(*model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>(), model->getReachableStates(), model->getStates("all_coins_equal_0")));
+    EXPECT_EQ(74, statesWithProbability01.first.getNonZeroCount());
+    EXPECT_EQ(198, statesWithProbability01.second.getNonZeroCount());
 
-//    ASSERT_NO_THROW(statesWithProbability01 = storm::utility::graph::performProb01Min(*model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>(), model->getReachableStates(), model->getStates("all_coins_equal_1")));
-//    EXPECT_EQ(0, statesWithProbability01.first.getNonZeroCount());
-//    EXPECT_EQ(364, statesWithProbability01.second.getNonZeroCount());
-//    
-//    ASSERT_NO_THROW(statesWithProbability01 = storm::utility::graph::performProb01Max(*model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>(), model->getReachableStates(), model->getStates("all_coins_equal_1")));
-//    EXPECT_EQ(0, statesWithProbability01.first.getNonZeroCount());
-//    EXPECT_EQ(364, statesWithProbability01.second.getNonZeroCount());
+    ASSERT_NO_THROW(statesWithProbability01 = storm::utility::graph::performProb01Min(*model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>(), model->getReachableStates(), model->getStates("all_coins_equal_1")));
+    EXPECT_EQ(94, statesWithProbability01.first.getNonZeroCount());
+    EXPECT_EQ(33, statesWithProbability01.second.getNonZeroCount());
+    
+    ASSERT_NO_THROW(statesWithProbability01 = storm::utility::graph::performProb01Max(*model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>(), model->getReachableStates(), model->getStates("all_coins_equal_1")));
+    EXPECT_EQ(83, statesWithProbability01.first.getNonZeroCount());
+    EXPECT_EQ(35, statesWithProbability01.second.getNonZeroCount());
+    
+    program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/csma2-2.nm");
+    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program);
+    
+    ASSERT_TRUE(model->getType() == storm::models::ModelType::Mdp);
+    
+    statesWithProbability01 = storm::utility::graph::performProb01Min(*model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>(), model->getReachableStates(), model->getStates("collision_max_backoff"));
+    ASSERT_NO_THROW(statesWithProbability01 = storm::utility::graph::performProb01Min(*model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>(), model->getReachableStates(), model->getStates("collision_max_backoff")));
+    EXPECT_EQ(993, statesWithProbability01.first.getNonZeroCount());
+    EXPECT_EQ(16, statesWithProbability01.second.getNonZeroCount());
+    
+    ASSERT_NO_THROW(statesWithProbability01 = storm::utility::graph::performProb01Max(*model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>(), model->getReachableStates(), model->getStates("collision_max_backoff")));
+    EXPECT_EQ(993, statesWithProbability01.first.getNonZeroCount());
+    EXPECT_EQ(16, statesWithProbability01.second.getNonZeroCount());
 }
 
 TEST(GraphTest, ExplicitProb01) {
