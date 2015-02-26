@@ -53,6 +53,7 @@ namespace storm {
             
             template<storm::dd::DdType Type>
             storm::dd::Dd<Type> Model<Type>::getStates(std::string const& label) const {
+                STORM_LOG_THROW(labelToExpressionMap.find(label) != labelToExpressionMap.end(), storm::exceptions::InvalidArgumentException, "The label " << label << " is invalid for the labeling of the model.");
                 return rowExpressionAdapter->translateExpression(labelToExpressionMap.at(label)) && this->reachableStates;
             }
             

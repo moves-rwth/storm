@@ -71,12 +71,22 @@ namespace storm {
                  */
                 std::set<storm::expressions::Variable> const& getNondeterminismVariables() const;
                 
+                /*!
+                 * Retrieves a BDD characterizing all illegal nondeterminism encodings in the model.
+                 *
+                 * @return A BDD characterizing all illegal nondeterminism encodings in the model.
+                 */
+                storm::dd::Dd<Type> const& getIllegalMask() const;
+                
                 virtual void printModelInformationToStream(std::ostream& out) const override;
                 
             private:
                 
                 // The meta variables encoding the nondeterminism in the model.
                 std::set<storm::expressions::Variable> nondeterminismVariables;
+                
+                // A mask that characterizes all legal nondeterministic choices.
+                storm::dd::Dd<Type> illegalMask;
             };
             
         } // namespace symbolic

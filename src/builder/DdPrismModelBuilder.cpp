@@ -709,7 +709,7 @@ namespace storm {
                 STORM_LOG_TRACE("Iteration " << iteration << " of computing reachable states.");
                 changed = false;
                 storm::dd::Dd<Type> tmp = reachableStatesBdd.andExists(transitionBdd, generationInfo.rowMetaVariables);
-                tmp.swapVariables(generationInfo.rowColumnMetaVariablePairs);
+                tmp = tmp.swapVariables(generationInfo.rowColumnMetaVariablePairs);
 
                 storm::dd::Dd<Type> newReachableStates = tmp && (!reachableStatesBdd);
                 

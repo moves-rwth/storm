@@ -252,7 +252,6 @@ namespace storm {
                 STORM_LOG_WARN_COND(false, "Performing logical iff on two DDs of different type.");
                 return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddBdd().Xnor(other.getCuddBdd()), metaVariables);
             }
-            return *this;
         }
 
         Dd<DdType::CUDD> Dd<DdType::CUDD>::exclusiveOr(Dd<DdType::CUDD> const& other) const {
@@ -263,12 +262,18 @@ namespace storm {
             } else if (this->isMtbdd() && other.isMtbdd()) {
                 // We also tolerate (without a warning) if the two arguments are MTBDDs. The caller has to make sure that
                 // the two given DDs are 0-1-MTBDDs, because the operation may produce wrong results otherwise.
-                return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddMtbdd().Xnor(other.getCuddMtbdd()), metaVariables);
+                return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddMtbdd().Xor(other.getCuddMtbdd()), metaVariables);
             } else {
                 STORM_LOG_WARN_COND(false, "Performing logical iff on two DDs of different type.");
                 return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddBdd().Xor(other.getCuddBdd()), metaVariables);
             }
-            return *this;
+        }
+        
+        Dd<DdType::CUDD> Dd<DdType::CUDD>::implies(Dd<DdType::CUDD> const& other) const {
+            std::set<storm::expressions::Variable> metaVariables(this->getContainedMetaVariables());
+            metaVariables.insert(other.getContainedMetaVariables().begin(), other.getContainedMetaVariables().end());
+            STORM_LOG_WARN_COND(this->isBdd() && other.isBdd(), "Performing logical operatiorn on MTBDDs.");
+            return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddBdd().Ite(other.getCuddBdd(), this->getDdManager()->getOne().getCuddBdd()), metaVariables);
         }
         
         Dd<DdType::CUDD> Dd<DdType::CUDD>::equals(Dd<DdType::CUDD> const& other) const {
@@ -422,7 +427,8 @@ namespace storm {
             }
         }
         
-        void Dd<DdType::CUDD>::swapVariables(std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& metaVariablePairs) {
+        Dd<DdType::CUDD> Dd<DdType::CUDD>::swapVariables(std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& metaVariablePairs) {
+            std::set<storm::expressions::Variable> newContainedMetaVariables;
             if (this->isBdd()) {
                 std::vector<BDD> from;
                 std::vector<BDD> to;
@@ -431,19 +437,14 @@ namespace storm {
                     DdMetaVariable<DdType::CUDD> const& variable2 = this->getDdManager()->getMetaVariable(metaVariablePair.second);
                     
                     // Check if it's legal so swap the meta variables.
-                    if (variable1.getNumberOfDdVariables() != variable2.getNumberOfDdVariables()) {
-                        throw storm::exceptions::InvalidArgumentException() << "Unable to swap meta variables with different size.";
-                    }
+                    STORM_LOG_THROW(variable1.getNumberOfDdVariables() == variable2.getNumberOfDdVariables(), storm::exceptions::InvalidArgumentException, "Unable to swap meta variables with different size.");
                     
                     // Keep track of the contained meta variables in the DD.
-                    bool containsVariable1 = this->containsMetaVariable(metaVariablePair.first);
-                    bool containsVariable2 = this->containsMetaVariable(metaVariablePair.second);
-                    if (containsVariable1 && !containsVariable2) {
-                        this->removeContainedMetaVariable(metaVariablePair.first);
-                        this->addContainedMetaVariable(metaVariablePair.second);
-                    } else if (!containsVariable1 && containsVariable2) {
-                        this->removeContainedMetaVariable(metaVariablePair.second);
-                        this->addContainedMetaVariable(metaVariablePair.first);
+                    if (this->containsMetaVariable(metaVariablePair.first)) {
+                        newContainedMetaVariables.insert(metaVariablePair.second);
+                    }
+                    if (this->containsMetaVariable(metaVariablePair.second)) {
+                        newContainedMetaVariables.insert(metaVariablePair.first);
                     }
                     
                     // Add the variables to swap to the corresponding vectors.
@@ -456,7 +457,7 @@ namespace storm {
                 }
                 
                 // Finally, call CUDD to swap the variables.
-                this->cuddDd = this->getCuddBdd().SwapVariables(from, to);
+                return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddBdd().SwapVariables(from, to), newContainedMetaVariables);
             } else {
                 std::vector<ADD> from;
                 std::vector<ADD> to;
@@ -470,14 +471,11 @@ namespace storm {
                     }
                     
                     // Keep track of the contained meta variables in the DD.
-                    bool containsVariable1 = this->containsMetaVariable(metaVariablePair.first);
-                    bool containsVariable2 = this->containsMetaVariable(metaVariablePair.second);
-                    if (containsVariable1 && !containsVariable2) {
-                        this->removeContainedMetaVariable(metaVariablePair.first);
-                        this->addContainedMetaVariable(metaVariablePair.second);
-                    } else if (!containsVariable1 && containsVariable2) {
-                        this->removeContainedMetaVariable(metaVariablePair.second);
-                        this->addContainedMetaVariable(metaVariablePair.first);
+                    if (this->containsMetaVariable(metaVariablePair.first)) {
+                        newContainedMetaVariables.insert(metaVariablePair.second);
+                    }
+                    if (this->containsMetaVariable(metaVariablePair.second)) {
+                        newContainedMetaVariables.insert(metaVariablePair.first);
                     }
                     
                     // Add the variables to swap to the corresponding vectors.
@@ -490,7 +488,7 @@ namespace storm {
                 }
                 
                 // Finally, call CUDD to swap the variables.
-                this->cuddDd = this->getCuddMtbdd().SwapVariables(from, to);
+                return Dd<DdType::CUDD>(this->getDdManager(), this->getCuddMtbdd().SwapVariables(from, to), newContainedMetaVariables);
             }
         }
         

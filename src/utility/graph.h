@@ -274,7 +274,7 @@ namespace storm {
                 storm::dd::Dd<Type> transitionMatrixBdd = model.getTransitionMatrix().notZero();
                 while (lastIterationStates != statesWithProbabilityGreater0) {
                     lastIterationStates = statesWithProbabilityGreater0;
-                    statesWithProbabilityGreater0.swapVariables(model.getRowColumnMetaVariablePairs());
+                    statesWithProbabilityGreater0 = statesWithProbabilityGreater0.swapVariables(model.getRowColumnMetaVariablePairs());
                     statesWithProbabilityGreater0 &= transitionMatrixBdd;
                     statesWithProbabilityGreater0 = statesWithProbabilityGreater0.existsAbstract(model.getColumnVariables());
                     statesWithProbabilityGreater0 &= phiStatesBdd;
@@ -698,6 +698,194 @@ namespace storm {
             template <typename T>
             std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01Min(storm::models::sparse::NondeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
                 return performProb01Min(model.getTransitionMatrix(), model.getTransitionMatrix().getRowGroupIndices(), model.getBackwardTransitions(), phiStates, psiStates);
+            }
+            
+            /*!
+             * Computes the set of states for which there exists a scheduler that achieves a probability greater than
+             * zero of satisfying phi until psi.
+             *
+             * @param model The (symbolic) model for which to compute the set of states.
+             * @param phiStates The phi states of the model.
+             * @param psiStates The psi states of the model.
+             * @return A DD representing all such states.
+             */
+            template <storm::dd::DdType Type>
+            storm::dd::Dd<Type> performProbGreater0E(storm::models::symbolic::NondeterministicModel<Type> const& model, storm::dd::Dd<Type> const& phiStates, storm::dd::Dd<Type> const& psiStates) {
+                // Initialize environment for backward search.
+                storm::dd::DdManager<Type> const& manager = model.getManager();
+                storm::dd::Dd<Type> lastIterationStates = manager.getZero();
+                storm::dd::Dd<Type> statesWithProbabilityGreater0E = psiStates.toBdd();
+                storm::dd::Dd<Type> phiStatesBdd = phiStates.toBdd();
+
+                uint_fast64_t iterations = 0;
+                storm::dd::Dd<Type> transitionMatrixBdd = model.getTransitionMatrix().notZero().existsAbstract(model.getNondeterminismVariables());
+                while (lastIterationStates != statesWithProbabilityGreater0E) {
+                    lastIterationStates = statesWithProbabilityGreater0E;
+                    statesWithProbabilityGreater0E = statesWithProbabilityGreater0E.swapVariables(model.getRowColumnMetaVariablePairs());
+                    statesWithProbabilityGreater0E = statesWithProbabilityGreater0E.andExists(transitionMatrixBdd, model.getColumnVariables());
+                    statesWithProbabilityGreater0E &= phiStatesBdd;
+                    ++iterations;
+                }
+                
+                return statesWithProbabilityGreater0E;
+            }
+            
+            /*!
+             * Computes the set of states for which there does not exist a scheduler that achieves a probability greater
+             * than zero of satisfying phi until psi.
+             *
+             * @param model The (symbolic) model for which to compute the set of states.
+             * @param phiStates The phi states of the model.
+             * @param psiStates The psi states of the model.
+             * @return A DD representing all such states.
+             */
+            template <storm::dd::DdType Type>
+            storm::dd::Dd<Type> performProb0A(storm::models::symbolic::NondeterministicModel<Type> const& model, storm::dd::Dd<Type> const& phiStates, storm::dd::Dd<Type> const& psiStates) {
+                return !performProbGreater0E(model, phiStates, psiStates) && model.getReachableStates();
+            }
+            
+            /*!
+             * Computes the set of states for which all schedulers achieve a probability greater than zero of satisfying
+             * phi until psi.
+             *
+             * @param model The (symbolic) model for which to compute the set of states.
+             * @param phiStates The phi states of the model.
+             * @param psiStates The psi states of the model.
+             * @return A DD representing all such states.
+             */
+            template <storm::dd::DdType Type>
+            storm::dd::Dd<Type> performProbGreater0A(storm::models::symbolic::NondeterministicModel<Type> const& model, storm::dd::Dd<Type> const& phiStates, storm::dd::Dd<Type> const& psiStates) {
+                // Initialize environment for backward search.
+                storm::dd::DdManager<Type> const& manager = model.getManager();
+                storm::dd::Dd<Type> lastIterationStates = manager.getZero();
+                storm::dd::Dd<Type> statesWithProbabilityGreater0A = psiStates.toBdd();
+                storm::dd::Dd<Type> phiStatesBdd = phiStates.toBdd();
+                storm::dd::Dd<Type> psiStatesBdd = statesWithProbabilityGreater0A;
+                
+                uint_fast64_t iterations = 0;
+                storm::dd::Dd<Type> transitionMatrixBdd = model.getTransitionMatrix().notZero();
+                while (lastIterationStates != statesWithProbabilityGreater0A) {
+                    lastIterationStates = statesWithProbabilityGreater0A;
+                    statesWithProbabilityGreater0A = statesWithProbabilityGreater0A.swapVariables(model.getRowColumnMetaVariablePairs());
+                    statesWithProbabilityGreater0A = statesWithProbabilityGreater0A.andExists(transitionMatrixBdd, model.getColumnVariables());
+                    statesWithProbabilityGreater0A |= model.getIllegalMask();
+                    statesWithProbabilityGreater0A = statesWithProbabilityGreater0A.universalAbstract(model.getNondeterminismVariables());
+                    statesWithProbabilityGreater0A &= phiStatesBdd;
+                    statesWithProbabilityGreater0A |= psiStatesBdd;
+                    ++iterations;
+                }
+                
+                return statesWithProbabilityGreater0A;
+            }
+            
+            /*!
+             * Computes the set of states for which there exists a scheduler that achieves probability zero of satisfying
+             * phi until psi.
+             *
+             * @param model The (symbolic) model for which to compute the set of states.
+             * @param phiStates The phi states of the model.
+             * @param psiStates The psi states of the model.
+             * @return A DD representing all such states.
+             */
+            template <storm::dd::DdType Type>
+            storm::dd::Dd<Type> performProb0E(storm::models::symbolic::NondeterministicModel<Type> const& model, storm::dd::Dd<Type> const& phiStates, storm::dd::Dd<Type> const& psiStates) {
+                return !performProbGreater0A(model, phiStates, psiStates) && model.getReachableStates();
+            }
+            
+            /*!
+             * Computes the set of states for which all schedulers achieve probability one of satisfying phi until psi.
+             *
+             * @param model The (symbolic) model for which to compute the set of states.
+             * @param phiStates The phi states of the model.
+             * @param psiStates The psi states of the model.
+             * @param statesWithProbabilityGreater0A The states of the model that have a probability greater zero under
+             * all schedulers.
+             * @return A DD representing all such states.
+             */
+            template <storm::dd::DdType Type>
+            storm::dd::Dd<Type> performProb1A(storm::models::symbolic::NondeterministicModel<Type> const& model, storm::dd::Dd<Type> const& phiStates, storm::dd::Dd<Type> const& psiStates, storm::dd::Dd<Type> const& statesWithProbabilityGreater0A) {
+                // Initialize environment for backward search.
+                storm::dd::DdManager<Type> const& manager = model.getManager();
+                storm::dd::Dd<Type> lastIterationStates = manager.getZero();
+                storm::dd::Dd<Type> statesWithProbability1A = psiStates.toBdd() || statesWithProbabilityGreater0A;
+                storm::dd::Dd<Type> psiStatesBdd = psiStates.toBdd();
+                
+                uint_fast64_t iterations = 0;
+                storm::dd::Dd<Type> transitionMatrixBdd = model.getTransitionMatrix().notZero();
+                while (lastIterationStates != statesWithProbability1A) {
+                    lastIterationStates = statesWithProbability1A;
+                    statesWithProbability1A = statesWithProbability1A.swapVariables(model.getRowColumnMetaVariablePairs());
+                    statesWithProbability1A = transitionMatrixBdd.implies(statesWithProbability1A).universalAbstract(model.getColumnVariables());
+                    statesWithProbability1A |= model.getIllegalMask();
+                    statesWithProbability1A = statesWithProbability1A.universalAbstract(model.getNondeterminismVariables());
+                    statesWithProbability1A &= statesWithProbabilityGreater0A;
+                    statesWithProbability1A |= psiStatesBdd;
+                    ++iterations;
+                }
+                
+                return statesWithProbability1A;
+            }
+            
+            /*!
+             * Computes the set of states for which there exists a scheduler that achieves probability one of satisfying
+             * phi until psi.
+             *
+             * @param model The (symbolic) model for which to compute the set of states.
+             * @param phiStates The phi states of the model.
+             * @param psiStates The psi states of the model.
+             * @param statesWithProbability0A The states of the model that have a probability zero under all schedulers.
+             * @return A DD representing all such states.
+             */
+            template <storm::dd::DdType Type>
+            storm::dd::Dd<Type> performProb1E(storm::models::symbolic::NondeterministicModel<Type> const& model, storm::dd::Dd<Type> const& phiStates, storm::dd::Dd<Type> const& psiStates, storm::dd::Dd<Type> const& statesWithProbabilityGreater0E) {
+                // Initialize environment for backward search.
+                storm::dd::DdManager<Type> const& manager = model.getManager();
+                storm::dd::Dd<Type> innerStates = manager.getZero();
+                storm::dd::Dd<Type> statesWithProbability1E = statesWithProbabilityGreater0E;
+                storm::dd::Dd<Type> phiStatesBdd = phiStates.toBdd();
+                storm::dd::Dd<Type> psiStatesBdd = psiStates.toBdd();
+
+                uint_fast64_t iterations = 0;
+                storm::dd::Dd<Type> transitionMatrixBdd = model.getTransitionMatrix().notZero();
+                while (statesWithProbability1E != innerStates) {
+                    innerStates = manager.getZero();
+                    storm::dd::Dd<Type> temporary = manager.getOne();
+                    
+                    while (innerStates != temporary) {
+                        innerStates = temporary;
+                        temporary = statesWithProbability1E;
+                        temporary = temporary.swapVariables(model.getRowColumnMetaVariablePairs());
+                        temporary = transitionMatrixBdd.implies(temporary).universalAbstract(model.getColumnVariables());
+                        
+                        storm::dd::Dd<Type> temporary2 = innerStates;
+                        temporary2 = temporary2.swapVariables(model.getRowColumnMetaVariablePairs());
+                        temporary2 = transitionMatrixBdd.andExists(temporary2, model.getColumnVariables());
+                        
+                        temporary = temporary.andExists(temporary2, model.getNondeterminismVariables());
+                        temporary &= phiStatesBdd;
+                        temporary |= psiStatesBdd;
+                    }
+                    ++iterations;
+                }
+
+                return statesWithProbability1E;
+            }
+            
+            template <storm::dd::DdType Type>
+            std::pair<storm::dd::Dd<Type>, storm::dd::Dd<Type>> performProb01Max(storm::models::symbolic::NondeterministicModel<Type> const& model, storm::dd::Dd<Type> const& phiStates, storm::dd::Dd<Type> const& psiStates) {
+                std::pair<storm::dd::Dd<Type>, storm::dd::Dd<Type>> result;
+                result.first = performProb0A(model, phiStates, psiStates);
+                std::cout << "first: " << result.first.getNonZeroCount() << std::endl;
+                result.second = performProb1E(model, phiStates, psiStates, !result.first && model.getReachableStates());
+                return result;
+            }
+
+            template <storm::dd::DdType Type>
+            std::pair<storm::dd::Dd<Type>, storm::dd::Dd<Type>> performProb01Min(storm::models::symbolic::NondeterministicModel<Type> const& model, storm::dd::Dd<Type> const& phiStates, storm::dd::Dd<Type> const& psiStates) {
+                std::pair<storm::dd::Dd<Type>, storm::dd::Dd<Type>> result;
+                result.first = performProb0E(model, phiStates, psiStates);
+                result.second = performProb1A(model, phiStates, psiStates, !result.first && model.getReachableStates());
+                return result;
             }
             
             /*!

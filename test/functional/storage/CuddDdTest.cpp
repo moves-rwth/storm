@@ -234,8 +234,8 @@ TEST(CuddDd, SwapTest) {
     storm::dd::Dd<storm::dd::DdType::CUDD> dd2;
     
     dd1 = manager->getIdentity(x.first);
-    ASSERT_THROW(dd1.swapVariables({std::make_pair(x.first, z.first)}), storm::exceptions::InvalidArgumentException);
-    ASSERT_NO_THROW(dd1.swapVariables({std::make_pair(x.first, x.second)}));
+    ASSERT_THROW(dd1 = dd1.swapVariables({std::make_pair(x.first, z.first)}), storm::exceptions::InvalidArgumentException);
+    ASSERT_NO_THROW(dd1 = dd1.swapVariables({std::make_pair(x.first, x.second)}));
     EXPECT_TRUE(dd1 == manager->getIdentity(x.second));
 }
 
@@ -249,7 +249,7 @@ TEST(CuddDd, MultiplyMatrixTest) {
     dd1 *= manager->getConstant(2);
     
     ASSERT_NO_THROW(dd3 = dd1.multiplyMatrix(dd2, {x.second}));
-    ASSERT_NO_THROW(dd3.swapVariables({std::make_pair(x.first, x.second)}));
+    ASSERT_NO_THROW(dd3 = dd3.swapVariables({std::make_pair(x.first, x.second)}));
     EXPECT_TRUE(dd3 == dd2 * manager->getConstant(2));
 }
 

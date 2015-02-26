@@ -112,6 +112,14 @@ namespace storm {
             Dd<DdType::CUDD> exclusiveOr(Dd<DdType::CUDD> const& other) const;
             
             /*!
+             * Performs a logical implication of the current and the given DD.
+             *
+             * @param other The second DD used for the operation.
+             * @return The logical implication of the operands.
+             */
+            Dd<DdType::CUDD> implies(Dd<DdType::CUDD> const& other) const;
+            
+            /*!
              * Adds the two DDs.
              *
              * @param other The DD to add to the current one.
@@ -317,8 +325,9 @@ namespace storm {
              * the same number of underlying DD variables.
              *
              * @param metaVariablePairs A vector of meta variable pairs that are to be swapped for one another.
+             * @return The resulting DD.
              */
-            void swapVariables(std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& metaVariablePairs);
+            Dd<DdType::CUDD> swapVariables(std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& metaVariablePairs);
             
             /*!
              * Multiplies the current DD (representing a matrix) with the given matrix by summing over the given meta

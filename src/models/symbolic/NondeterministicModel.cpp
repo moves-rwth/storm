@@ -20,7 +20,10 @@ namespace storm {
                                                                boost::optional<storm::dd::Dd<Type>> const& optionalStateRewardVector,
                                                                boost::optional<storm::dd::Dd<Type>> const& optionalTransitionRewardMatrix)
             : Model<Type>(modelType, manager, reachableStates, initialStates, transitionMatrix, rowVariables, rowExpressionAdapter, columnVariables, columnExpressionAdapter, rowColumnMetaVariablePairs, labelToExpressionMap, optionalStateRewardVector, optionalTransitionRewardMatrix), nondeterminismVariables(nondeterminismVariables) {
-                // Intentionally left empty.
+                
+                // Prepare the mask of illegal nondeterministic choices.
+                illegalMask = transitionMatrix.notZero().existsAbstract(this->getColumnVariables());
+                illegalMask = !illegalMask && reachableStates;
             }
             
             template<storm::dd::DdType Type>
@@ -35,6 +38,11 @@ namespace storm {
             template<storm::dd::DdType Type>
             std::set<storm::expressions::Variable> const& NondeterministicModel<Type>::getNondeterminismVariables() const {
                 return nondeterminismVariables;
+            }
+            
+            template<storm::dd::DdType Type>
+            storm::dd::Dd<Type> const& NondeterministicModel<Type>::getIllegalMask() const {
+                return illegalMask;
             }
             
             template<storm::dd::DdType Type>
