@@ -12,7 +12,7 @@
 namespace storm {
     namespace modelchecker {
         template<typename ValueType>
-        class ExplicitQuantitativeCheckResult : public QuantitativeCheckResult<ValueType> {
+        class ExplicitQuantitativeCheckResult : public QuantitativeCheckResult {
         public:
             typedef std::vector<ValueType> vector_type;
             typedef std::map<storm::storage::sparse::state_type, ValueType> map_type;
@@ -45,8 +45,9 @@ namespace storm {
             map_type const& getValueMap() const;
             
             virtual std::ostream& writeToStream(std::ostream& out) const override;
-            virtual std::ostream& writeToStream(std::ostream& out, storm::storage::BitVector const& filter) const override;
-            
+
+            virtual void filter(QualitativeCheckResult const& filter) override;
+
         private:
             // The values of the quantitative check result.
             boost::variant<vector_type, map_type> values;

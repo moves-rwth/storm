@@ -2,6 +2,7 @@
 #define STORM_LOGIC_FORMULA_H_
 
 #include <memory>
+#include <vector>
 #include <iostream>
 
 #include "src/modelchecker/results/CheckResult.h"

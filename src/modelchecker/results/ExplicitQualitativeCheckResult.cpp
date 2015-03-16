@@ -29,7 +29,7 @@ namespace storm {
             // Intentionally left empty.
         }
         
-        void ExplicitQualitativeCheckResult::performLogicalOperation(ExplicitQualitativeCheckResult& first, CheckResult const& second, std::function<bool (bool, bool)> const& function) {
+        void ExplicitQualitativeCheckResult::performLogicalOperation(ExplicitQualitativeCheckResult& first, QualitativeCheckResult const& second, std::function<bool (bool, bool)> const& function) {
             STORM_LOG_THROW(typeid(second) == typeid(ExplicitQualitativeCheckResult), storm::exceptions::InvalidOperationException, "Cannot perform logical 'and' on check results of incompatible type.");
             STORM_LOG_THROW(first.isResultForAllStates() == second.isResultForAllStates(), storm::exceptions::InvalidOperationException, "Cannot perform logical 'and' on check results of incompatible type.");
             ExplicitQualitativeCheckResult const& secondCheckResult = static_cast<ExplicitQualitativeCheckResult const&>(second);
@@ -52,12 +52,12 @@ namespace storm {
             }
         }
         
-        CheckResult& ExplicitQualitativeCheckResult::operator&=(CheckResult const& other) {
+        QualitativeCheckResult& ExplicitQualitativeCheckResult::operator&=(QualitativeCheckResult const& other) {
             performLogicalOperation(*this, other, [] (bool a, bool b) { return a && b; });
             return *this;
         }
         
-        CheckResult& ExplicitQualitativeCheckResult::operator|=(CheckResult const& other) {
+        QualitativeCheckResult& ExplicitQualitativeCheckResult::operator|=(QualitativeCheckResult const& other) {
             performLogicalOperation(*this, other, [] (bool a, bool b) { return a || b; });
             return *this;
         }
@@ -109,19 +109,19 @@ namespace storm {
             } else {
                 std::ios::fmtflags oldflags(std::cout.flags());
                 out << std::boolalpha;
-
+                
                 map_type const& map = boost::get<map_type>(truthValues);
-
+                
 #ifndef WINDOWS
                 typename map_type::const_iterator it = map.begin();
                 typename map_type::const_iterator itPlusOne = map.begin();
                 ++itPlusOne;
                 typename map_type::const_iterator ite = map.end();
 #else
-				map_type::const_iterator it = map.begin();
-				map_type::const_iterator itPlusOne = map.begin();
-				++itPlusOne;
-				map_type::const_iterator ite = map.end();
+                map_type::const_iterator it = map.begin();
+                map_type::const_iterator itPlusOne = map.begin();
+                ++itPlusOne;
+                map_type::const_iterator ite = map.end();
 #endif
                 
                 for (; it != ite; ++itPlusOne, ++it) {
@@ -135,43 +135,32 @@ namespace storm {
             return out;
         }
         
-        std::ostream& ExplicitQualitativeCheckResult::writeToStream(std::ostream& out, storm::storage::BitVector const& filter) const {
-            std::ios::fmtflags oldflags(std::cout.flags());
+        void ExplicitQualitativeCheckResult::filter(QualitativeCheckResult const& filter) {
+            STORM_LOG_THROW(filter.isExplicitQualitativeCheckResult(), storm::exceptions::InvalidOperationException, "Cannot filter explicit check result with non-explicit filter.");
+            STORM_LOG_THROW(filter.isResultForAllStates(), storm::exceptions::InvalidOperationException, "Cannot filter check result with non-complete filter.");
+            ExplicitQualitativeCheckResult const& explicitFilter = filter.asExplicitQualitativeCheckResult();
+            vector_type const& filterTruthValues = explicitFilter.getTruthValuesVector();
             
-            out << "[";
-            storm::storage::BitVector::const_iterator it = filter.begin();
-            storm::storage::BitVector::const_iterator itPlusOne = filter.begin();
-            ++itPlusOne;
-            storm::storage::BitVector::const_iterator ite = filter.end();
-            
-            out << std::boolalpha;
             if (this->isResultForAllStates()) {
-                vector_type const& vector = boost::get<vector_type>(truthValues);
-                for (; it != ite; ++itPlusOne, ++it) {
-                    out << vector[*it];
-                    if (itPlusOne != ite) {
-                        out << ", ";
-                    }
+                map_type newMap;
+                for (auto const& element : filterTruthValues) {
+                    newMap.emplace(element, this->getTruthValuesVector().get(element));
                 }
+                this->truthValues = newMap;
             } else {
                 map_type const& map = boost::get<map_type>(truthValues);
-                bool allResultsAvailable = true;
-                for (; it != ite; ++itPlusOne, ++it) {
-                    auto const& keyValuePair = map.find(*it);
-                    if (keyValuePair != map.end()) {
-                        out << keyValuePair->second;
-                        if (itPlusOne != ite) {
-                            out << ", ";
-                        }
-                    } else {
-                        allResultsAvailable = false;
+                
+                map_type newMap;
+                for (auto const& element : map) {
+                    if (filterTruthValues.get(element.first)) {
+                        newMap.insert(element);
                     }
                 }
+                
+                STORM_LOG_THROW(newMap.size() == filterTruthValues.getNumberOfSetBits(), storm::exceptions::InvalidOperationException, "The check result fails to contain some results referred to by the filter.");
+                
+                this->truthValues = newMap;
             }
-            out << "]";
-            
-            std::cout.flags(oldflags);
-            return out;
         }
     }
 }
