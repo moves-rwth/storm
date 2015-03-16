@@ -1,5 +1,7 @@
 #include "src/modelchecker/AbstractModelChecker.h"
 
+#include "src/modelchecker/results/QualitativeCheckResult.h"
+#include "src/modelchecker/results/QuantitativeCheckResult.h"
 #include "src/utility/constants.h"
 #include "src/utility/macros.h"
 #include "src/exceptions/NotImplementedException.h"
@@ -131,10 +133,12 @@ namespace storm {
             std::unique_ptr<CheckResult> leftResult = this->check(stateFormula.getLeftSubformula().asStateFormula());
             std::unique_ptr<CheckResult> rightResult = this->check(stateFormula.getRightSubformula().asStateFormula());
             
+            STORM_LOG_THROW(leftResult->isQualitative() && rightResult->isQualitative(), storm::exceptions::InternalTypeErrorException, "Expected qualitative results.");
+            
             if (stateFormula.isAnd()) {
-                *leftResult &= *rightResult;
+                leftResult->asQualitativeCheckResult() &= rightResult->asQualitativeCheckResult();
             } else if (stateFormula.isOr()) {
-                *leftResult |= *rightResult;
+                leftResult->asQualitativeCheckResult() |= rightResult->asQualitativeCheckResult();
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The given formula '" << stateFormula << "' is invalid.");
             }
@@ -166,7 +170,7 @@ namespace storm {
             
             if (stateFormula.hasBound()) {
                 STORM_LOG_THROW(result->isQuantitative(), storm::exceptions::InvalidOperationException, "Unable to perform comparison operation on non-quantitative result.");
-                return result->compareAgainstBound(stateFormula.getComparisonType(), stateFormula.getBound());
+                return result->asQuantitativeCheckResult().compareAgainstBound(stateFormula.getComparisonType(), stateFormula.getBound());
             } else {
                 return result;
             }
@@ -192,7 +196,7 @@ namespace storm {
             
             if (stateFormula.hasBound()) {
                 STORM_LOG_THROW(result->isQuantitative(), storm::exceptions::InvalidOperationException, "Unable to perform comparison operation on non-quantitative result.");
-                return result->compareAgainstBound(stateFormula.getComparisonType(), stateFormula.getBound());
+                return result->asQuantitativeCheckResult().compareAgainstBound(stateFormula.getComparisonType(), stateFormula.getBound());
             } else {
                 return result;
             }
@@ -218,7 +222,7 @@ namespace storm {
             
             if (stateFormula.hasBound()) {
                 STORM_LOG_THROW(result->isQuantitative(), storm::exceptions::InvalidOperationException, "Unable to perform comparison operation on non-quantitative result.");
-                return result->compareAgainstBound(stateFormula.getComparisonType(), stateFormula.getBound());
+                return result->asQuantitativeCheckResult().compareAgainstBound(stateFormula.getComparisonType(), stateFormula.getBound());
             } else {
                 return result;
             }
@@ -235,7 +239,7 @@ namespace storm {
             
             std::unique_ptr<CheckResult> result;
             if (stateFormula.hasBound()) {
-                return result->compareAgainstBound(stateFormula.getComparisonType(), stateFormula.getBound());
+                return result->asQuantitativeCheckResult().compareAgainstBound(stateFormula.getComparisonType(), stateFormula.getBound());
             } else {
                 return result;
             }
@@ -243,8 +247,9 @@ namespace storm {
         
         std::unique_ptr<CheckResult> AbstractModelChecker::checkUnaryBooleanStateFormula(storm::logic::UnaryBooleanStateFormula const& stateFormula) {
             std::unique_ptr<CheckResult> subResult = this->check(stateFormula.getSubformula());
+            STORM_LOG_THROW(subResult->isQualitative(), storm::exceptions::InternalTypeErrorException, "Expected qualitative result.");
             if (stateFormula.isNot()) {
-                subResult->complement();
+                subResult->asQualitativeCheckResult().complement();
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The given formula '" << stateFormula << "' is invalid.");
             }
