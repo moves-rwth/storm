@@ -258,20 +258,19 @@ namespace storm {
              * through phi states before.
              *
              * @param model The (symbolic) model for which to compute the set of states.
-             * @param phiStates The phi states of the model.
-             * @param psiStates The psi states of the model.
+             * @param transitionMatrixBdd The transition matrix of the model as a BDD.
+             * @param phiStatesBdd The BDD containing all phi states of the model.
+             * @param psiStatesBdd The BDD containing all psi states of the model.
              * @return All states with positive probability.
              */
             template <storm::dd::DdType Type>
-            storm::dd::Dd<Type> performProbGreater0(storm::models::symbolic::DeterministicModel<Type> const& model, storm::dd::Dd<Type> const& phiStates, storm::dd::Dd<Type> const& psiStates) {
+            storm::dd::Dd<Type> performProbGreater0(storm::models::symbolic::DeterministicModel<Type> const& model, storm::dd::Dd<Type> const& transitionMatrixBdd, storm::dd::Dd<Type> const& phiStatesBdd, storm::dd::Dd<Type> const& psiStatesBdd) {
                 // Initialize environment for backward search.
                 storm::dd::DdManager<Type> const& manager = model.getManager();
                 storm::dd::Dd<Type> lastIterationStates = manager.getZero();
-                storm::dd::Dd<Type> statesWithProbabilityGreater0 = psiStates.toBdd();
-                storm::dd::Dd<Type> phiStatesBdd = phiStates.toBdd();
+                storm::dd::Dd<Type> statesWithProbabilityGreater0 = psiStatesBdd;
                 
                 uint_fast64_t iterations = 0;
-                storm::dd::Dd<Type> transitionMatrixBdd = model.getTransitionMatrix().notZero();
                 while (lastIterationStates != statesWithProbabilityGreater0) {
                     lastIterationStates = statesWithProbabilityGreater0;
                     statesWithProbabilityGreater0 = statesWithProbabilityGreater0.swapVariables(model.getRowColumnMetaVariablePairs());
@@ -290,15 +289,17 @@ namespace storm {
              * deterministic model.
              *
              * @param model The (symbolic) model for which to compute the set of states.
-             * @param phiStates The phi states of the model.
-             * @param psiStates The psi states of the model.
+             * @param transitionMatrixBdd The transition matrix of the model as a BDD.
+             * @param phiStatesBdd The BDD containing all  phi states of the model.
+             * @param psiStatesBdd The BDD containing all psi states of the model.
              * @return A pair of DDs that represent all states with probability 0 and 1, respectively.
              */
             template <storm::dd::DdType Type>
-            static std::pair<storm::dd::Dd<Type>, storm::dd::Dd<Type>> performProb01(storm::models::symbolic::DeterministicModel<Type> const& model, storm::dd::Dd<Type> const& phiStates, storm::dd::Dd<Type> const& psiStates) {
+            static std::pair<storm::dd::Dd<Type>, storm::dd::Dd<Type>> performProb01(storm::models::symbolic::DeterministicModel<Type> const& model, storm::dd::Dd<Type> const& phiStatesBdd, storm::dd::Dd<Type> const& psiStatesBdd) {
                 std::pair<storm::dd::Dd<Type>, storm::dd::Dd<Type>> result;
-                result.first = performProbGreater0(model, phiStates, psiStates);
-                result.second = !performProbGreater0(model, !psiStates && model.getReachableStates(), !result.first && model.getReachableStates()) && model.getReachableStates();
+                storm::dd::Dd<Type> transitionMatrixBdd = model.getTransitionMatrix().notZero();
+                result.first = performProbGreater0(model, transitionMatrixBdd, phiStatesBdd, psiStatesBdd);
+                result.second = !performProbGreater0(model, transitionMatrixBdd, !psiStatesBdd && model.getReachableStates(), !result.first && model.getReachableStates()) && model.getReachableStates();
                 result.first = !result.first && model.getReachableStates();
                 return result;
             }
@@ -705,24 +706,24 @@ namespace storm {
              * zero of satisfying phi until psi.
              *
              * @param model The (symbolic) model for which to compute the set of states.
-             * @param phiStates The phi states of the model.
-             * @param psiStates The psi states of the model.
+             * @param transitionMatrixBdd The transition matrix of the model as a BDD.
+             * @param phiStatesBdd The BDD containing all phi states of the model.
+             * @param psiStatesBdd The BDD containing all psi states of the model.
              * @return A DD representing all such states.
              */
             template <storm::dd::DdType Type>
-            storm::dd::Dd<Type> performProbGreater0E(storm::models::symbolic::NondeterministicModel<Type> const& model, storm::dd::Dd<Type> const& phiStates, storm::dd::Dd<Type> const& psiStates) {
+            storm::dd::Dd<Type> performProbGreater0E(storm::models::symbolic::NondeterministicModel<Type> const& model, storm::dd::Dd<Type> const& transitionMatrixBdd, storm::dd::Dd<Type> const& phiStatesBdd, storm::dd::Dd<Type> const& psiStatesBdd) {
                 // Initialize environment for backward search.
                 storm::dd::DdManager<Type> const& manager = model.getManager();
                 storm::dd::Dd<Type> lastIterationStates = manager.getZero();
-                storm::dd::Dd<Type> statesWithProbabilityGreater0E = psiStates.toBdd();
-                storm::dd::Dd<Type> phiStatesBdd = phiStates.toBdd();
+                storm::dd::Dd<Type> statesWithProbabilityGreater0E = psiStatesBdd;
 
                 uint_fast64_t iterations = 0;
-                storm::dd::Dd<Type> transitionMatrixBdd = model.getTransitionMatrix().notZero().existsAbstract(model.getNondeterminismVariables());
+                storm::dd::Dd<Type> abstractedTransitionMatrixBdd = transitionMatrixBdd.existsAbstract(model.getNondeterminismVariables());
                 while (lastIterationStates != statesWithProbabilityGreater0E) {
                     lastIterationStates = statesWithProbabilityGreater0E;
                     statesWithProbabilityGreater0E = statesWithProbabilityGreater0E.swapVariables(model.getRowColumnMetaVariablePairs());
-                    statesWithProbabilityGreater0E = statesWithProbabilityGreater0E.andExists(transitionMatrixBdd, model.getColumnVariables());
+                    statesWithProbabilityGreater0E = statesWithProbabilityGreater0E.andExists(abstractedTransitionMatrixBdd, model.getColumnVariables());
                     statesWithProbabilityGreater0E &= phiStatesBdd;
                     statesWithProbabilityGreater0E |= lastIterationStates;
                     ++iterations;
@@ -736,13 +737,14 @@ namespace storm {
              * than zero of satisfying phi until psi.
              *
              * @param model The (symbolic) model for which to compute the set of states.
+             * @param transitionMatrixBdd The transition matrix of the model as a BDD.
              * @param phiStates The phi states of the model.
              * @param psiStates The psi states of the model.
              * @return A DD representing all such states.
              */
             template <storm::dd::DdType Type>
-            storm::dd::Dd<Type> performProb0A(storm::models::symbolic::NondeterministicModel<Type> const& model, storm::dd::Dd<Type> const& phiStates, storm::dd::Dd<Type> const& psiStates) {
-                return !performProbGreater0E(model, phiStates, psiStates) && model.getReachableStates();
+            storm::dd::Dd<Type> performProb0A(storm::models::symbolic::NondeterministicModel<Type> const& model, storm::dd::Dd<Type> const& transitionMatrixBdd, storm::dd::Dd<Type> const& phiStatesBdd, storm::dd::Dd<Type> const& psiStatesBdd) {
+                return !performProbGreater0E(model, transitionMatrixBdd, phiStatesBdd, psiStatesBdd) && model.getReachableStates();
             }
             
             /*!
@@ -750,21 +752,19 @@ namespace storm {
              * phi until psi.
              *
              * @param model The (symbolic) model for which to compute the set of states.
-             * @param phiStates The phi states of the model.
-             * @param psiStates The psi states of the model.
+             * @param transitionMatrixBdd The transition matrix of the model as a BDD.
+             * @param phiStatesBdd The BDD containing all phi states of the model.
+             * @param psiStatesBdd The BDD containing all psi states of the model.
              * @return A DD representing all such states.
              */
             template <storm::dd::DdType Type>
-            storm::dd::Dd<Type> performProbGreater0A(storm::models::symbolic::NondeterministicModel<Type> const& model, storm::dd::Dd<Type> const& phiStates, storm::dd::Dd<Type> const& psiStates) {
+            storm::dd::Dd<Type> performProbGreater0A(storm::models::symbolic::NondeterministicModel<Type> const& model, storm::dd::Dd<Type> const& transitionMatrixBdd, storm::dd::Dd<Type> const& phiStatesBdd, storm::dd::Dd<Type> const& psiStatesBdd) {
                 // Initialize environment for backward search.
                 storm::dd::DdManager<Type> const& manager = model.getManager();
                 storm::dd::Dd<Type> lastIterationStates = manager.getZero();
-                storm::dd::Dd<Type> statesWithProbabilityGreater0A = psiStates.toBdd();
-                storm::dd::Dd<Type> phiStatesBdd = phiStates.toBdd();
-                storm::dd::Dd<Type> psiStatesBdd = statesWithProbabilityGreater0A;
+                storm::dd::Dd<Type> statesWithProbabilityGreater0A = psiStatesBdd;
                 
                 uint_fast64_t iterations = 0;
-                storm::dd::Dd<Type> transitionMatrixBdd = model.getTransitionMatrix().notZero();
                 while (lastIterationStates != statesWithProbabilityGreater0A) {
                     lastIterationStates = statesWithProbabilityGreater0A;
                     statesWithProbabilityGreater0A = statesWithProbabilityGreater0A.swapVariables(model.getRowColumnMetaVariablePairs());
@@ -784,35 +784,35 @@ namespace storm {
              * phi until psi.
              *
              * @param model The (symbolic) model for which to compute the set of states.
-             * @param phiStates The phi states of the model.
-             * @param psiStates The psi states of the model.
+             * @param transitionMatrixBdd The transition matrix of the model as a BDD.
+             * @param phiStatesBdd The BDD containing all phi states of the model.
+             * @param psiStatesBdd The BDD containing all psi states of the model.
              * @return A DD representing all such states.
              */
             template <storm::dd::DdType Type>
-            storm::dd::Dd<Type> performProb0E(storm::models::symbolic::NondeterministicModel<Type> const& model, storm::dd::Dd<Type> const& phiStates, storm::dd::Dd<Type> const& psiStates) {
-                return !performProbGreater0A(model, phiStates, psiStates) && model.getReachableStates();
+            storm::dd::Dd<Type> performProb0E(storm::models::symbolic::NondeterministicModel<Type> const& model, storm::dd::Dd<Type> const& transitionMatrixBdd, storm::dd::Dd<Type> const& phiStatesBdd, storm::dd::Dd<Type> const& psiStatesBdd) {
+                return !performProbGreater0A(model, transitionMatrixBdd, phiStatesBdd, psiStatesBdd) && model.getReachableStates();
             }
             
             /*!
              * Computes the set of states for which all schedulers achieve probability one of satisfying phi until psi.
              *
              * @param model The (symbolic) model for which to compute the set of states.
-             * @param phiStates The phi states of the model.
-             * @param psiStates The psi states of the model.
+             * @param transitionMatrixBdd The transition matrix of the model as a BDD.
+             * @param phiStatesBdd The BDD containing all phi states of the model.
+             * @param psiStatesBdd The BDD containing all psi states of the model.
              * @param statesWithProbabilityGreater0A The states of the model that have a probability greater zero under
              * all schedulers.
              * @return A DD representing all such states.
              */
             template <storm::dd::DdType Type>
-            storm::dd::Dd<Type> performProb1A(storm::models::symbolic::NondeterministicModel<Type> const& model, storm::dd::Dd<Type> const& phiStates, storm::dd::Dd<Type> const& psiStates, storm::dd::Dd<Type> const& statesWithProbabilityGreater0A) {
+            storm::dd::Dd<Type> performProb1A(storm::models::symbolic::NondeterministicModel<Type> const& model, storm::dd::Dd<Type> const& transitionMatrixBdd, storm::dd::Dd<Type> const& phiStatesBdd, storm::dd::Dd<Type> const& psiStatesBdd, storm::dd::Dd<Type> const& statesWithProbabilityGreater0A) {
                 // Initialize environment for backward search.
                 storm::dd::DdManager<Type> const& manager = model.getManager();
                 storm::dd::Dd<Type> lastIterationStates = manager.getZero();
-                storm::dd::Dd<Type> statesWithProbability1A = psiStates.toBdd() || statesWithProbabilityGreater0A;
-                storm::dd::Dd<Type> psiStatesBdd = psiStates.toBdd();
+                storm::dd::Dd<Type> statesWithProbability1A = psiStatesBdd || statesWithProbabilityGreater0A;
                 
                 uint_fast64_t iterations = 0;
-                storm::dd::Dd<Type> transitionMatrixBdd = model.getTransitionMatrix().notZero();
                 while (lastIterationStates != statesWithProbability1A) {
                     lastIterationStates = statesWithProbability1A;
                     statesWithProbability1A = statesWithProbability1A.swapVariables(model.getRowColumnMetaVariablePairs());
@@ -832,22 +832,20 @@ namespace storm {
              * phi until psi.
              *
              * @param model The (symbolic) model for which to compute the set of states.
-             * @param phiStates The phi states of the model.
-             * @param psiStates The psi states of the model.
+             * @param transitionMatrixBdd The transition matrix of the model as a BDD.
+             * @param phiStatesBdd The BDD containing all phi states of the model.
+             * @param psiStatesBdd The BDD containing all psi states of the model.
              * @param statesWithProbabilityGreater0E The states of the model that have a scheduler that achieves a value
              * greater than zero.
              * @return A DD representing all such states.
              */
             template <storm::dd::DdType Type>
-            storm::dd::Dd<Type> performProb1E(storm::models::symbolic::NondeterministicModel<Type> const& model, storm::dd::Dd<Type> const& phiStates, storm::dd::Dd<Type> const& psiStates, storm::dd::Dd<Type> const& statesWithProbabilityGreater0E) {
+            storm::dd::Dd<Type> performProb1E(storm::models::symbolic::NondeterministicModel<Type> const& model, storm::dd::Dd<Type> const& transitionMatrixBdd, storm::dd::Dd<Type> const& phiStatesBdd, storm::dd::Dd<Type> const& psiStatesBdd, storm::dd::Dd<Type> const& statesWithProbabilityGreater0E) {
                 // Initialize environment for backward search.
                 storm::dd::DdManager<Type> const& manager = model.getManager();
                 storm::dd::Dd<Type> statesWithProbability1E = statesWithProbabilityGreater0E;
-                storm::dd::Dd<Type> phiStatesBdd = phiStates.toBdd();
-                storm::dd::Dd<Type> psiStatesBdd = psiStates.toBdd();
 
                 uint_fast64_t iterations = 0;
-                storm::dd::Dd<Type> transitionMatrixBdd = model.getTransitionMatrix().notZero();
                 bool outerLoopDone = false;
                 while (!outerLoopDone) {
                     storm::dd::Dd<Type> innerStates = manager.getZero();
@@ -883,18 +881,20 @@ namespace storm {
             }
             
             template <storm::dd::DdType Type>
-            std::pair<storm::dd::Dd<Type>, storm::dd::Dd<Type>> performProb01Max(storm::models::symbolic::NondeterministicModel<Type> const& model, storm::dd::Dd<Type> const& phiStates, storm::dd::Dd<Type> const& psiStates) {
+            std::pair<storm::dd::Dd<Type>, storm::dd::Dd<Type>> performProb01Max(storm::models::symbolic::NondeterministicModel<Type> const& model, storm::dd::Dd<Type> const& phiStatesBdd, storm::dd::Dd<Type> const& psiStatesBdd) {
                 std::pair<storm::dd::Dd<Type>, storm::dd::Dd<Type>> result;
-                result.first = performProb0A(model, phiStates, psiStates);
-                result.second = performProb1E(model, phiStates, psiStates, !result.first && model.getReachableStates());
+                storm::dd::Dd<Type> transitionMatrixBdd = model.getTransitionMatrix().notZero();
+                result.first = performProb0A(model, transitionMatrixBdd, phiStatesBdd, psiStatesBdd);
+                result.second = performProb1E(model, transitionMatrixBdd, phiStatesBdd, psiStatesBdd, !result.first && model.getReachableStates());
                 return result;
             }
 
             template <storm::dd::DdType Type>
-            std::pair<storm::dd::Dd<Type>, storm::dd::Dd<Type>> performProb01Min(storm::models::symbolic::NondeterministicModel<Type> const& model, storm::dd::Dd<Type> const& phiStates, storm::dd::Dd<Type> const& psiStates) {
+            std::pair<storm::dd::Dd<Type>, storm::dd::Dd<Type>> performProb01Min(storm::models::symbolic::NondeterministicModel<Type> const& model, storm::dd::Dd<Type> const& phiStatesBdd, storm::dd::Dd<Type> const& psiStatesBdd) {
                 std::pair<storm::dd::Dd<Type>, storm::dd::Dd<Type>> result;
-                result.first = performProb0E(model, phiStates, psiStates);
-                result.second = performProb1A(model, phiStates, psiStates, !result.first && model.getReachableStates());
+                storm::dd::Dd<Type> transitionMatrixBdd = model.getTransitionMatrix().notZero();
+                result.first = performProb0E(model, transitionMatrixBdd, phiStatesBdd, psiStatesBdd);
+                result.second = performProb1A(model, transitionMatrixBdd, phiStatesBdd, psiStatesBdd, !result.first && model.getReachableStates());
                 return result;
             }
             
