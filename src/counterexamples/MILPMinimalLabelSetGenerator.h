@@ -629,7 +629,7 @@ namespace storm {
                 uint_fast64_t numberOfConstraintsCreated = 0;
 
                 for (auto label : choiceInformation.knownLabels) {
-                    storm::expressions::Expression constraint = variableInformation.labelToVariableMap.at(label) == solver.getConstant(0);
+                    storm::expressions::Expression constraint = variableInformation.labelToVariableMap.at(label) == solver.getConstant(1);
                     solver.addConstraint("KnownLabels" + std::to_string(numberOfConstraintsCreated), constraint);
                     ++numberOfConstraintsCreated;
                 }
@@ -929,10 +929,9 @@ namespace storm {
                 double maximalReachabilityProbability = 0;
                 if (checkThresholdFeasible) {
                     storm::modelchecker::SparseMdpPrctlModelChecker<T> modelchecker(labeledMdp);
-                    std::unique_ptr<storm::modelchecker::CheckResult> result = modelchecker.check(pathFormula);
-                    storm::modelchecker::ExplicitQuantitativeCheckResult<double> const& quantitativeResult = result->asExplicitQuantitativeCheckResult<double>();
+                    std::vector<T> result = modelchecker.computeUntilProbabilitiesHelper(false, phiStates, psiStates, false);
                     for (auto state : labeledMdp.getInitialStates()) {
-                        maximalReachabilityProbability = std::max(maximalReachabilityProbability, quantitativeResult[state]);
+                        maximalReachabilityProbability = std::max(maximalReachabilityProbability, result[state]);
                     }
                     STORM_LOG_THROW((strictBound && maximalReachabilityProbability >= probabilityThreshold) || (!strictBound && maximalReachabilityProbability > probabilityThreshold), storm::exceptions::InvalidArgumentException, "Given probability threshold " << probabilityThreshold << " can not be " << (strictBound ? "achieved" : "exceeded") << " in model with maximal reachability probability of " << maximalReachabilityProbability << ".");
                     std::cout << std::endl << "Maximal reachability in model is " << maximalReachabilityProbability << "." << std::endl << std::endl;
@@ -952,6 +951,8 @@ namespace storm {
  
                 //  (4.2) Construct constraint system.
                 buildConstraintSystem(*solver, labeledMdp, psiStates, stateInformation, choiceInformation, variableInformation, probabilityThreshold, strictBound, includeSchedulerCuts);
+                
+                solver->writeModelToFile("model.lp");
                 
                 // (4.3) Optimize the model.
                 solver->optimize();

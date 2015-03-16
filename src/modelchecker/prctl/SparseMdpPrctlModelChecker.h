@@ -10,6 +10,9 @@ namespace storm {
     namespace counterexamples {
         template<typename ValueType>
         class SMTMinimalCommandSetGenerator;
+        
+        template<typename ValueType>
+        class MILPMinimalLabelSetGenerator;
     }
     
     namespace modelchecker {
@@ -22,7 +25,8 @@ namespace storm {
         class SparseMdpPrctlModelChecker : public SparsePropositionalModelChecker<ValueType> {
         public:
             friend class SparseMarkovAutomatonCslModelChecker<ValueType>;
-            friend class counterexamples::SMTMinimalCommandSetGenerator<ValueType>;
+            friend class storm::counterexamples::SMTMinimalCommandSetGenerator<ValueType>;
+            friend class storm::counterexamples::MILPMinimalLabelSetGenerator<ValueType>;
             
             explicit SparseMdpPrctlModelChecker(storm::models::Mdp<ValueType> const& model);
             explicit SparseMdpPrctlModelChecker(storm::models::Mdp<ValueType> const& model, std::shared_ptr<storm::solver::NondeterministicLinearEquationSolver<ValueType>> nondeterministicLinearEquationSolver);

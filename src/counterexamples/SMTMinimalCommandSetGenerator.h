@@ -1627,10 +1627,9 @@ namespace storm {
                 double maximalReachabilityProbability = 0;
                 if (checkThresholdFeasible) {
                     storm::modelchecker::SparseMdpPrctlModelChecker<T> modelchecker(labeledMdp);
-                    std::unique_ptr<storm::modelchecker::CheckResult> result = modelchecker.check(pathFormula);
-                    storm::modelchecker::ExplicitQuantitativeCheckResult<double> const& quantitativeResult = result->asExplicitQuantitativeCheckResult<double>();
+                    std::vector<T> result = modelchecker.computeUntilProbabilitiesHelper(false, phiStates, psiStates, false);
                     for (auto state : labeledMdp.getInitialStates()) {
-                        maximalReachabilityProbability = std::max(maximalReachabilityProbability, quantitativeResult[state]);
+                        maximalReachabilityProbability = std::max(maximalReachabilityProbability, result[state]);
                     }
                     STORM_LOG_THROW((strictBound && maximalReachabilityProbability >= probabilityThreshold) || (!strictBound && maximalReachabilityProbability > probabilityThreshold), storm::exceptions::InvalidArgumentException, "Given probability threshold " << probabilityThreshold << " can not be " << (strictBound ? "achieved" : "exceeded") << " in model with maximal reachability probability of " << maximalReachabilityProbability << ".");
                     std::cout << std::endl << "Maximal reachability in model is " << maximalReachabilityProbability << "." << std::endl << std::endl;

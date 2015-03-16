@@ -321,6 +321,11 @@ namespace storm {
                 }
                 options.addConstantDefinitionsFromString(program, settings.getConstantDefinitionString());
                 
+                // Generate command labels if we are going to build a counterexample later.
+                if (storm::settings::counterexampleGeneratorSettings().isMinimalCommandSetGenerationSet()) {
+                    options.buildCommandLabels = true;
+                }
+                
                 // Then, build the model from the symbolic description.
                 result = storm::builder::ExplicitPrismModelBuilder<ValueType>::translateProgram(program, options);
                 return result;
