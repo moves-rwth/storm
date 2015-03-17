@@ -440,8 +440,8 @@ namespace storm {
                     if (result) {
                         std::cout << " done." << std::endl;
                         std::cout << "Result (initial states): ";
-                        result->writeToStream(std::cout, sparseModel->getInitialStates());
-                        std::cout << std::endl << std::endl;
+                        result->filter(storm::modelchecker::ExplicitQualitativeCheckResult(sparseModel->getInitialStates()));
+                        std::cout << *result << std::endl;
                     } else {
                         std::cout << " skipped, because the modelling formalism is currently unsupported." << std::endl;
                     }
@@ -470,8 +470,8 @@ namespace storm {
                 if (result) {
                     std::cout << " done." << std::endl;
                     std::cout << "Result (initial states): ";
-                    result->writeToStream(std::cout, model->getInitialStates());
-                    std::cout << std::endl << std::endl;
+                    result->filter(storm::modelchecker::ExplicitQualitativeCheckResult(dtmc->getInitialStates()));
+                    std::cout << *result << std::endl;
                 } else {
                     std::cout << " skipped, because the modelling formalism is currently unsupported." << std::endl;
                 }

@@ -30,7 +30,7 @@ namespace storm {
         }
         
         void ExplicitQualitativeCheckResult::performLogicalOperation(ExplicitQualitativeCheckResult& first, QualitativeCheckResult const& second, std::function<bool (bool, bool)> const& function) {
-            STORM_LOG_THROW(typeid(second) == typeid(ExplicitQualitativeCheckResult), storm::exceptions::InvalidOperationException, "Cannot perform logical 'and' on check results of incompatible type.");
+            STORM_LOG_THROW(second.isExplicitQualitativeCheckResult(), storm::exceptions::InvalidOperationException, "Cannot perform logical 'and' on check results of incompatible type.");
             STORM_LOG_THROW(first.isResultForAllStates() == second.isResultForAllStates(), storm::exceptions::InvalidOperationException, "Cannot perform logical 'and' on check results of incompatible type.");
             ExplicitQualitativeCheckResult const& secondCheckResult = static_cast<ExplicitQualitativeCheckResult const&>(second);
             if (first.isResultForAllStates()) {
@@ -104,6 +104,7 @@ namespace storm {
         }
         
         std::ostream& ExplicitQualitativeCheckResult::writeToStream(std::ostream& out) const {
+            out << "[";
             if (this->isResultForAllStates()) {
                 out << boost::get<vector_type>(truthValues);
             } else {
@@ -111,27 +112,18 @@ namespace storm {
                 out << std::boolalpha;
                 
                 map_type const& map = boost::get<map_type>(truthValues);
-                
-#ifndef WINDOWS
-                typename map_type::const_iterator it = map.begin();
-                typename map_type::const_iterator itPlusOne = map.begin();
-                ++itPlusOne;
-                typename map_type::const_iterator ite = map.end();
-#else
-                map_type::const_iterator it = map.begin();
-                map_type::const_iterator itPlusOne = map.begin();
-                ++itPlusOne;
-                map_type::const_iterator ite = map.end();
-#endif
-                
-                for (; it != ite; ++itPlusOne, ++it) {
-                    out << it->second;
-                    if (itPlusOne != ite) {
+                bool first = true;
+                for (auto const& element : map) {
+                    if (!first) {
                         out << ", ";
+                    } else {
+                        first = false;
                     }
+                    out << element.second;
                 }
                 std::cout.flags(oldflags);
             }
+            out << "]";
             return out;
         }
         

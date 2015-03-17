@@ -83,29 +83,25 @@ namespace storm {
             out << "[";
             if (this->isResultForAllStates()) {
                 vector_type const& valuesAsVector = boost::get<vector_type>(values);
-                typename vector_type::const_iterator it = valuesAsVector.begin();
-                typename vector_type::const_iterator itPlusOne = valuesAsVector.begin();
-                ++itPlusOne;
-                typename vector_type::const_iterator ite = valuesAsVector.end();
-                
-                for (; it != ite; ++itPlusOne, ++it) {
-                    out << *it;
-                    if (itPlusOne != ite) {
+                bool first = true;
+                for (auto const& element : valuesAsVector) {
+                    if (!first) {
                         out << ", ";
+                    } else {
+                        first = false;
                     }
+                    out << element;
                 }
             } else {
                 map_type const& valuesAsMap = boost::get<map_type>(values);
-                typename map_type::const_iterator it = valuesAsMap.begin();
-                typename map_type::const_iterator itPlusOne = valuesAsMap.begin();
-                ++itPlusOne;
-                typename map_type::const_iterator ite = valuesAsMap.end();
-                
-                for (; it != ite; ++itPlusOne, ++it) {
-                    out << it->second;
-                    if (itPlusOne != ite) {
+                bool first = true;
+                for (auto const& element : valuesAsMap) {
+                    if (!first) {
                         out << ", ";
+                    } else {
+                        first = false;
                     }
+                    out << element.second;
                 }
             }
             out << "]";

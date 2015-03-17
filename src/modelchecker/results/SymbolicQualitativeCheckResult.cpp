@@ -1,55 +1,66 @@
-#include "src/modelcheckers/result/SymbolicQualitativeCheckResult.h"
+#include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"
+
+#include "src/storage/dd/CuddDd.h"
+#include "src/exceptions/InvalidOperationException.h"
 
 namespace storm {
-    namespace modelcheckers {
+    namespace modelchecker {
         template <storm::dd::DdType Type>
-        SymbolicQualitativeCheckResult(storm::dd::Dd<Type> const& values) {
-            
+        SymbolicQualitativeCheckResult<Type>::SymbolicQualitativeCheckResult(storm::dd::Dd<Type> const& allStates, storm::dd::Dd<Type> const& truthValues) : allStates(allStates), truthValues(truthValues) {
+            // Intentionally left empty.
         }
         
         template <storm::dd::DdType Type>
-        bool isSymbolic() const {
-            
+        bool SymbolicQualitativeCheckResult<Type>::isSymbolic() const {
+            return true;
         }
 
         template <storm::dd::DdType Type>
-        bool isResultForAllStates() const {
-            
+        bool SymbolicQualitativeCheckResult<Type>::isResultForAllStates() const {
+            return true;
         }
         
         template <storm::dd::DdType Type>
-        bool isSymbolicQualitativeCheckResult() const {
-            
+        bool SymbolicQualitativeCheckResult<Type>::isSymbolicQualitativeCheckResult() const {
+            return true;
         }
         
         template <storm::dd::DdType Type>
-        QualitativeCheckResult& operator&=(QualitativeCheckResult const& other) {
-            
+        QualitativeCheckResult& SymbolicQualitativeCheckResult<Type>::operator&=(QualitativeCheckResult const& other) {
+            STORM_LOG_THROW(other.isSymbolicQualitativeCheckResult(), storm::exceptions::InvalidOperationException, "Cannot perform logical 'and' on check results of incompatible type.");
+            this->truthValues &= other.asSymbolicQualitativeCheckResult<Type>().getTruthValuesVector();
         }
 
         template <storm::dd::DdType Type>
-        QualitativeCheckResult& operator|=(QualitativeCheckResult const& other) {
-            
+        QualitativeCheckResult& SymbolicQualitativeCheckResult<Type>::operator|=(QualitativeCheckResult const& other) {
+            STORM_LOG_THROW(other.isSymbolicQualitativeCheckResult(), storm::exceptions::InvalidOperationException, "Cannot perform logical 'and' on check results of incompatible type.");
+            this->truthValues |= other.asSymbolicQualitativeCheckResult<Type>().getTruthValuesVector();
         }
 
         template <storm::dd::DdType Type>
-        void complement() {
-            
+        void SymbolicQualitativeCheckResult<Type>::complement() {
+            this->truthValues = !this->truthValues && allStates;
         }
         
         template <storm::dd::DdType Type>
-        storm::dd::Dd<Type> const& getTruthValuesVector() const {
-            
+        storm::dd::Dd<Type> const& SymbolicQualitativeCheckResult<Type>::getTruthValuesVector() const {
+            return truthValues;
         }
         
         template <storm::dd::DdType Type>
-        std::ostream& writeToStream(std::ostream& out) const {
-            
+        std::ostream& SymbolicQualitativeCheckResult<Type>::writeToStream(std::ostream& out) const {
+            if (this->truthValues.isZero()) {
+                out << "[false]" << std::endl;
+            } else {
+                out << "[true]" << std::endl;
+            }
+            return out;
         }
         
         template <storm::dd::DdType Type>
-        void filter(QualitativeCheckResult const& filter) {
-            
+        void SymbolicQualitativeCheckResult<Type>::filter(QualitativeCheckResult const& filter) {
+            STORM_LOG_THROW(filter.isSymbolicQualitativeCheckResult(), storm::exceptions::InvalidOperationException, "Cannot filter symbolic check result with non-symbolic filter.");
+            this->truthValues &= filter.asSymbolicQualitativeCheckResult<Type>().getTruthValuesVector();
         }
     }
 }

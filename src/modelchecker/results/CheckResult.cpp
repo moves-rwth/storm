@@ -73,6 +73,14 @@ namespace storm {
             return dynamic_cast<ExplicitQuantitativeCheckResult<ValueType> const&>(*this);
         }
         
+        QualitativeCheckResult& CheckResult::asQualitativeCheckResult() {
+            return dynamic_cast<QualitativeCheckResult&>(*this);
+        }
+        
+        QualitativeCheckResult const& CheckResult::asQualitativeCheckResult() const {
+            return dynamic_cast<QualitativeCheckResult const&>(*this);
+        }
+        
         QuantitativeCheckResult& CheckResult::asQuantitativeCheckResult() {
             return dynamic_cast<QuantitativeCheckResult&>(*this);
         }
