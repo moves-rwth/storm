@@ -51,7 +51,7 @@ namespace storm {
                     currentState = stack.back();
                     stack.pop_back();
                     
-                    for (auto const& successor : transitionMatrix.getRow(currentState)) {
+                    for (auto const& successor : transitionMatrix.getRowGroup(currentState)) {
                         // Only explore the state if the transition was actually there and the successor has not yet
                         // been visited.
                         if (successor.getValue() != storm::utility::zero<T>() && !reachableStates.get(successor.getColumn())) {

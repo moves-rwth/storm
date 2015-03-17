@@ -12,6 +12,9 @@
 
 #include "src/exceptions/InvalidPropertyException.h"
 
+#include "src/storage/MaximalEndComponentDecomposition.h"
+#include "src/storage/MaximalEndComponent.h"
+
 namespace storm {
     namespace modelchecker {
         template<typename ValueType>
@@ -313,6 +316,154 @@ namespace storm {
             return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(this->computeReachabilityRewardsHelper(optimalityType.get() == storm::logic::OptimalityType::Minimize, subResult.getTruthValuesVector(), qualitative)));
         }
         
+
+		template<typename ValueType>
+		std::vector<ValueType> SparseMdpPrctlModelChecker<ValueType>::computeLongRunAverageHelper(bool minimize, storm::storage::BitVector const& psiStates, bool qualitative) const {
+			// If there are no goal states, we avoid the computation and directly return zero.
+			if (psiStates.empty()) {
+				return std::vector<ValueType>(model.getNumberOfStates(), storm::utility::zero<ValueType>());
+			}
+
+			// Likewise, if all bits are set, we can avoid the computation and set.
+			if ((~psiStates).empty()) {
+				return std::vector<ValueType>(model.getNumberOfStates(), storm::utility::one<ValueType>());
+			}
+
+			// Start by decomposing the MDP into its MECs.
+			storm::storage::MaximalEndComponentDecomposition<double> mecDecomposition(model);
+
+			// Get some data members for convenience.
+			typename storm::storage::SparseMatrix<ValueType> const& transitionMatrix = model.getTransitionMatrix();
+			std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = model.getNondeterministicChoiceIndices();
+
+			// Now start with compute the long-run average for all end components in isolation.
+			std::vector<ValueType> lraValuesForEndComponents;
+
+			// While doing so, we already gather some information for the following steps.
+			std::vector<uint_fast64_t> stateToMecIndexMap(model.getNumberOfStates());
+			storm::storage::BitVector statesInMecs(model.getNumberOfStates());
+
+			for (uint_fast64_t currentMecIndex = 0; currentMecIndex < mecDecomposition.size(); ++currentMecIndex) {
+				storm::storage::MaximalEndComponent const& mec = mecDecomposition[currentMecIndex];
+
+				// Gather information for later use.
+				for (auto const& stateChoicesPair : mec) {
+					uint_fast64_t state = stateChoicesPair.first;
+
+					statesInMecs.set(state);
+					stateToMecIndexMap[state] = currentMecIndex;
+				}
+
+				// Compute the LRA value for the current MEC.
+				lraValuesForEndComponents.push_back(this->computeLraForMaximalEndComponent(minimize, transitionMatrix, psiStates, mec));
+			}
+
+			// For fast transition rewriting, we build some auxiliary data structures.
+			storm::storage::BitVector statesNotContainedInAnyMec = ~statesInMecs;
+			
+			// Prepare result vector.
+			std::vector<ValueType> result(model.getNumberOfStates());
+
+			//Set the values for all states in MECs.
+			for (auto state : statesInMecs) {
+				result[state] = lraValuesForEndComponents[stateToMecIndexMap[state]];
+			}
+
+			//for all states not in any mec set the result to the minimal/maximal value of the reachable MECs
+			//there might be a more efficient way to do this...
+			for (auto state : statesNotContainedInAnyMec){
+
+				//calculate what result values the reachable states in MECs have
+				storm::storage::BitVector currentState(model.getNumberOfStates);
+				currentState.set(state);
+				storm::storage::BitVector reachableStates = storm::utility::graph::getReachableStates(
+					transitionMatrix, currentState, storm::storage::BitVector(model.getNumberOfStates, true), statesInMecs
+					);
+
+				storm::storage::BitVector reachableMecStates = statesInMecs & reachableStates;
+				std::vector<ValueType> reachableResults(reachableMecStates.getNumberOfSetBits());
+				storm::utility::vector::selectVectorValues(reachableResults, reachableMecStates, result);
+
+				//now select the minimal/maximal element
+				if (minimize){
+					result[state] = *std::min_element(reachableResults.begin(), reachableResults.end());
+				} else {
+					result[state] = *std::max_element(reachableResults.begin(), reachableResults.end());
+				}
+			}
+
+			return result;
+		}
+
+		template<typename ValueType>
+		std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<ValueType>::computeLongRunAverage(storm::logic::StateFormula const& stateFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
+			STORM_LOG_THROW(optimalityType, storm::exceptions::InvalidArgumentException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
+			
+			std::unique_ptr<CheckResult> subResultPointer = this->check(stateFormula);
+			ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();
+			
+			return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(this->computeLongRunAverageHelper(optimalityType.get() == storm::logic::OptimalityType::Minimize, subResult.getTruthValuesVector(), qualitative)));
+		}
+
+		template<typename ValueType>
+		ValueType SparseMarkovAutomatonCslModelChecker<ValueType>::computeLraForMaximalEndComponent(bool minimize, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& psiStates, storm::storage::MaximalEndComponent const& mec) {
+			std::shared_ptr<storm::solver::LpSolver> solver = storm::utility::solver::getLpSolver("LRA for MEC");
+			solver->setModelSense(minimize ? storm::solver::LpSolver::ModelSense::Maximize : storm::solver::LpSolver::ModelSense::Minimize);
+
+			//// First, we need to create the variables for the problem.
+			//std::map<uint_fast64_t, storm::expressions::Variable> stateToVariableMap;
+			//for (auto const& stateChoicesPair : mec) {
+			//	std::string variableName = "x" + std::to_string(stateChoicesPair.first);
+			//	stateToVariableMap[stateChoicesPair.first] = solver->addUnboundedContinuousVariable(variableName);
+			//}
+			//storm::expressions::Variable k = solver->addUnboundedContinuousVariable("k", 1);
+			//solver->update();
+
+			//// Now we encode the problem as constraints.
+			//for (auto const& stateChoicesPair : mec) {
+			//	uint_fast64_t state = stateChoicesPair.first;
+
+			//	// Now, based on the type of the state, create a suitable constraint.
+			//	if (markovianStates.get(state)) {
+			//		storm::expressions::Expression constraint = stateToVariableMap.at(state);
+
+			//		for (auto element : transitionMatrix.getRow(nondeterministicChoiceIndices[state])) {
+			//			constraint = constraint - stateToVariableMap.at(element.getColumn()) * solver->getConstant(element.getValue());
+			//		}
+
+			//		constraint = constraint + solver->getConstant(storm::utility::one<ValueType>() / exitRates[state]) * k;
+			//		storm::expressions::Expression rightHandSide = psiStates.get(state) ? solver->getConstant(storm::utility::one<ValueType>() / exitRates[state]) : solver->getConstant(0);
+			//		if (minimize) {
+			//			constraint = constraint <= rightHandSide;
+			//		} else {
+			//			constraint = constraint >= rightHandSide;
+			//		}
+			//		solver->addConstraint("state" + std::to_string(state), constraint);
+			//	} else {
+			//		// For probabilistic states, we want to add the constraint x_s <= sum P(s, a, s') * x_s' where a is the current action
+			//		// and the sum ranges over all states s'.
+			//		for (auto choice : stateChoicesPair.second) {
+			//			storm::expressions::Expression constraint = stateToVariableMap.at(state);
+
+			//			for (auto element : transitionMatrix.getRow(choice)) {
+			//				constraint = constraint - stateToVariableMap.at(element.getColumn()) * solver->getConstant(element.getValue());
+			//			}
+
+			//			storm::expressions::Expression rightHandSide = solver->getConstant(storm::utility::zero<ValueType>());
+			//			if (minimize) {
+			//				constraint = constraint <= rightHandSide;
+			//			} else {
+			//				constraint = constraint >= rightHandSide;
+			//			}
+			//			solver->addConstraint("state" + std::to_string(state), constraint);
+			//		}
+			//	}
+			//}
+
+			//solver->optimize();
+			//return solver->getContinuousValue(k);
+		}
+
         template<typename ValueType>
         storm::models::Mdp<ValueType> const& SparseMdpPrctlModelChecker<ValueType>::getModel() const {
             return this->template getModelAs<storm::models::Mdp<ValueType>>();
