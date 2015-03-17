@@ -11,7 +11,7 @@ namespace storm {
         }
         
         std::ostream& operator<<(std::ostream& stream, BooleanVariable const& variable) {
-            stream << variable.getName() << ": bool init" << variable.getInitialValueExpression() << ";";
+            stream << variable.getName() << ": bool init " << variable.getInitialValueExpression() << ";";
             return stream;
         }
         
