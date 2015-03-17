@@ -161,10 +161,10 @@ namespace storm {
             if (stateFormula.hasOptimalityType()) {
                 result = this->computeProbabilities(stateFormula.getSubformula().asPathFormula(), qualitative, stateFormula.getOptimalityType());
             } else if (stateFormula.hasBound()) {
-                if (stateFormula.getComparisonType() == storm::logic::ComparisonType::Less || storm::logic::ComparisonType::LessEqual) {
-                    result = this->computeProbabilities(stateFormula.getSubformula().asPathFormula(), storm::logic::OptimalityType::Maximize);
+                if (stateFormula.getComparisonType() == storm::logic::ComparisonType::Less || stateFormula.getComparisonType() == storm::logic::ComparisonType::LessEqual) {
+                    result = this->computeProbabilities(stateFormula.getSubformula().asPathFormula(), qualitative, storm::logic::OptimalityType::Maximize);
                 } else {
-                    result = this->computeProbabilities(stateFormula.getSubformula().asPathFormula(), storm::logic::OptimalityType::Minimize);
+                    result = this->computeProbabilities(stateFormula.getSubformula().asPathFormula(), qualitative, storm::logic::OptimalityType::Minimize);
                 }
             } else {
                 result = this->computeProbabilities(stateFormula.getSubformula().asPathFormula(), qualitative);
@@ -193,10 +193,10 @@ namespace storm {
             if (stateFormula.hasOptimalityType()) {
                 result = this->computeRewards(stateFormula.getSubformula().asRewardPathFormula(), qualitative, stateFormula.getOptimalityType());
             } else if (stateFormula.hasBound()) {
-                if (stateFormula.getComparisonType() == storm::logic::ComparisonType::Less || storm::logic::ComparisonType::LessEqual) {
-                    result = this->computeRewards(stateFormula.getSubformula().asRewardPathFormula(), storm::logic::OptimalityType::Maximize);
+                if (stateFormula.getComparisonType() == storm::logic::ComparisonType::Less || stateFormula.getComparisonType() == storm::logic::ComparisonType::LessEqual) {
+                    result = this->computeRewards(stateFormula.getSubformula().asRewardPathFormula(), qualitative, storm::logic::OptimalityType::Maximize);
                 } else {
-                    result = this->computeRewards(stateFormula.getSubformula().asRewardPathFormula(), storm::logic::OptimalityType::Minimize);
+                    result = this->computeRewards(stateFormula.getSubformula().asRewardPathFormula(), qualitative, storm::logic::OptimalityType::Minimize);
                 }
             } else {
                 result = this->computeRewards(stateFormula.getSubformula().asRewardPathFormula(), qualitative);
@@ -225,10 +225,10 @@ namespace storm {
             if (stateFormula.hasOptimalityType()) {
                 result = this->computeExpectedTimes(stateFormula.getSubformula().asEventuallyFormula(), qualitative, stateFormula.getOptimalityType());
             } else if (stateFormula.hasBound()) {
-                if (stateFormula.getComparisonType() == storm::logic::ComparisonType::Less || storm::logic::ComparisonType::LessEqual) {
-                    result = this->computeExpectedTimes(stateFormula.getSubformula().asEventuallyFormula(), storm::logic::OptimalityType::Maximize);
+                if (stateFormula.getComparisonType() == storm::logic::ComparisonType::Less || stateFormula.getComparisonType() == storm::logic::ComparisonType::LessEqual) {
+                    result = this->computeExpectedTimes(stateFormula.getSubformula().asEventuallyFormula(), qualitative, storm::logic::OptimalityType::Maximize);
                 } else {
-                    result = this->computeExpectedTimes(stateFormula.getSubformula().asEventuallyFormula(), storm::logic::OptimalityType::Minimize);
+                    result = this->computeExpectedTimes(stateFormula.getSubformula().asEventuallyFormula(), qualitative, storm::logic::OptimalityType::Minimize);
                 }
             } else {
                 result = this->computeExpectedTimes(stateFormula.getSubformula().asEventuallyFormula(), qualitative);
@@ -249,10 +249,10 @@ namespace storm {
             if (stateFormula.hasOptimalityType()) {
                 result = this->computeLongRunAverage(stateFormula.getSubformula().asStateFormula(), false, stateFormula.getOptimalityType());
             } else if (stateFormula.hasBound()) {
-                if (stateFormula.getComparisonType() == storm::logic::ComparisonType::Less || storm::logic::ComparisonType::LessEqual) {
-                    result = this->computeLongRunAverage(stateFormula.getSubformula().asStateFormula(), storm::logic::OptimalityType::Maximize);
+                if (stateFormula.getComparisonType() == storm::logic::ComparisonType::Less || stateFormula.getComparisonType() == storm::logic::ComparisonType::LessEqual) {
+                    result = this->computeLongRunAverage(stateFormula.getSubformula().asStateFormula(), false, storm::logic::OptimalityType::Maximize);
                 } else {
-                    result = this->computeLongRunAverage(stateFormula.getSubformula().asStateFormula(), storm::logic::OptimalityType::Minimize);
+                    result = this->computeLongRunAverage(stateFormula.getSubformula().asStateFormula(), false, storm::logic::OptimalityType::Minimize);
                 }
             } else {
                 result = this->computeLongRunAverage(stateFormula.getSubformula().asStateFormula(), false);
