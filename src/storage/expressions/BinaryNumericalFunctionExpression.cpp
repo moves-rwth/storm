@@ -6,6 +6,7 @@
 #include "src/storage/expressions/DoubleLiteralExpression.h"
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidTypeException.h"
+#include "src/exceptions/InvalidStateException.h"
 
 namespace storm {
     namespace expressions {
@@ -65,7 +66,7 @@ namespace storm {
             std::shared_ptr<BaseExpression const> firstOperandSimplified = this->getFirstOperand()->simplify();
             std::shared_ptr<BaseExpression const> secondOperandSimplified = this->getSecondOperand()->simplify();
             
-            if (firstOperandSimplified->isLiteral() && secondOperandSimplified->isLiteral()) {
+            if (firstOperandSimplified->isLiteral() && secondOperandSimplified->isLiteral() && this->getOperatorType() != OperatorType::Divide) {
                 if (this->hasIntegerType()) {
                     int_fast64_t firstOperandEvaluation = firstOperandSimplified->evaluateAsInt();
                     int_fast64_t secondOperandEvaluation = secondOperandSimplified->evaluateAsInt();
@@ -74,10 +75,10 @@ namespace storm {
                         case OperatorType::Plus: newValue = firstOperandEvaluation + secondOperandEvaluation; break;
                         case OperatorType::Minus: newValue = firstOperandEvaluation - secondOperandEvaluation; break;
                         case OperatorType::Times: newValue = firstOperandEvaluation * secondOperandEvaluation; break;
-                        case OperatorType::Divide: newValue = firstOperandEvaluation / secondOperandEvaluation; break;
                         case OperatorType::Min: newValue = std::min(firstOperandEvaluation, secondOperandEvaluation); break;
                         case OperatorType::Max: newValue = std::max(firstOperandEvaluation, secondOperandEvaluation); break;
                         case OperatorType::Power: newValue = static_cast<int_fast64_t>(std::pow(firstOperandEvaluation, secondOperandEvaluation)); break;
+                        case OperatorType::Divide: STORM_LOG_THROW(false, storm::exceptions::InvalidStateException, "Unable to simplify division."); break;
                     }
                     return std::shared_ptr<BaseExpression>(new IntegerLiteralExpression(this->getManager(), newValue));
                 } else if (this->hasRationalType()) {
@@ -88,10 +89,10 @@ namespace storm {
                         case OperatorType::Plus: newValue = firstOperandEvaluation + secondOperandEvaluation; break;
                         case OperatorType::Minus: newValue = firstOperandEvaluation - secondOperandEvaluation; break;
                         case OperatorType::Times: newValue = firstOperandEvaluation * secondOperandEvaluation; break;
-                        case OperatorType::Divide: newValue = firstOperandEvaluation / secondOperandEvaluation; break;
                         case OperatorType::Min: newValue = std::min(firstOperandEvaluation, secondOperandEvaluation); break;
                         case OperatorType::Max: newValue = std::max(firstOperandEvaluation, secondOperandEvaluation); break;
                         case OperatorType::Power: newValue = static_cast<int_fast64_t>(std::pow(firstOperandEvaluation, secondOperandEvaluation)); break;
+                        case OperatorType::Divide: STORM_LOG_THROW(false, storm::exceptions::InvalidStateException, "Unable to simplify division."); break;
                     }
                     return std::shared_ptr<BaseExpression>(new DoubleLiteralExpression(this->getManager(), newValue));
                 }

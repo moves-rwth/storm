@@ -325,6 +325,11 @@ namespace storm {
                     }
                     options.addConstantDefinitionsFromString(program, settings.getConstantDefinitionString());
                     
+                    // Generate command labels if we are going to build a counterexample later.
+                    if (storm::settings::counterexampleGeneratorSettings().isMinimalCommandSetGenerationSet()) {
+                        options.buildCommandLabels = true;
+                    }
+                    
                     result = storm::builder::ExplicitPrismModelBuilder<ValueType>::translateProgram(program, options);
                 } else if (settings.getEngine() == storm::settings::modules::GeneralSettings::Engine::Dd) {
                     typename storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::Options options;
@@ -336,6 +341,7 @@ namespace storm {
                     result = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program, options);
                 }
                 
+                // Then, build the model from the symbolic description.
                 return result;
             }
             

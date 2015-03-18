@@ -87,7 +87,7 @@ namespace storm {
         std::unique_ptr<CheckResult> AbstractModelChecker::computeLongRunAverage(storm::logic::StateFormula const& eventuallyFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the computation of long-run averages.");
         }
-
+        
         std::unique_ptr<CheckResult> AbstractModelChecker::computeExpectedTimes(storm::logic::EventuallyFormula const& eventuallyFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the computation of expected times.");
         }
@@ -164,6 +164,12 @@ namespace storm {
             std::unique_ptr<CheckResult> result;
             if (stateFormula.hasOptimalityType()) {
                 result = this->computeProbabilities(stateFormula.getSubformula().asPathFormula(), qualitative, stateFormula.getOptimalityType());
+            } else if (stateFormula.hasBound()) {
+                if (stateFormula.getComparisonType() == storm::logic::ComparisonType::Less || stateFormula.getComparisonType() == storm::logic::ComparisonType::LessEqual) {
+                    result = this->computeProbabilities(stateFormula.getSubformula().asPathFormula(), qualitative, storm::logic::OptimalityType::Maximize);
+                } else {
+                    result = this->computeProbabilities(stateFormula.getSubformula().asPathFormula(), qualitative, storm::logic::OptimalityType::Minimize);
+                }
             } else {
                 result = this->computeProbabilities(stateFormula.getSubformula().asPathFormula(), qualitative);
             }
@@ -190,6 +196,12 @@ namespace storm {
             std::unique_ptr<CheckResult> result;
             if (stateFormula.hasOptimalityType()) {
                 result = this->computeRewards(stateFormula.getSubformula().asRewardPathFormula(), qualitative, stateFormula.getOptimalityType());
+            } else if (stateFormula.hasBound()) {
+                if (stateFormula.getComparisonType() == storm::logic::ComparisonType::Less || stateFormula.getComparisonType() == storm::logic::ComparisonType::LessEqual) {
+                    result = this->computeRewards(stateFormula.getSubformula().asRewardPathFormula(), qualitative, storm::logic::OptimalityType::Maximize);
+                } else {
+                    result = this->computeRewards(stateFormula.getSubformula().asRewardPathFormula(), qualitative, storm::logic::OptimalityType::Minimize);
+                }
             } else {
                 result = this->computeRewards(stateFormula.getSubformula().asRewardPathFormula(), qualitative);
             }
@@ -216,6 +228,12 @@ namespace storm {
             std::unique_ptr<CheckResult> result;
             if (stateFormula.hasOptimalityType()) {
                 result = this->computeExpectedTimes(stateFormula.getSubformula().asEventuallyFormula(), qualitative, stateFormula.getOptimalityType());
+            } else if (stateFormula.hasBound()) {
+                if (stateFormula.getComparisonType() == storm::logic::ComparisonType::Less || stateFormula.getComparisonType() == storm::logic::ComparisonType::LessEqual) {
+                    result = this->computeExpectedTimes(stateFormula.getSubformula().asEventuallyFormula(), qualitative, storm::logic::OptimalityType::Maximize);
+                } else {
+                    result = this->computeExpectedTimes(stateFormula.getSubformula().asEventuallyFormula(), qualitative, storm::logic::OptimalityType::Minimize);
+                }
             } else {
                 result = this->computeExpectedTimes(stateFormula.getSubformula().asEventuallyFormula(), qualitative);
             }
@@ -231,13 +249,19 @@ namespace storm {
         std::unique_ptr<CheckResult> AbstractModelChecker::checkLongRunAverageOperatorFormula(storm::logic::LongRunAverageOperatorFormula const& stateFormula) {
             STORM_LOG_THROW(stateFormula.getSubformula().isEventuallyFormula(), storm::exceptions::InvalidArgumentException, "The given formula is invalid.");
             
+            std::unique_ptr<CheckResult> result;
             if (stateFormula.hasOptimalityType()) {
-                return this->computeLongRunAverage(stateFormula.getSubformula().asStateFormula(), false, stateFormula.getOptimalityType());
+                result = this->computeLongRunAverage(stateFormula.getSubformula().asStateFormula(), false, stateFormula.getOptimalityType());
+            } else if (stateFormula.hasBound()) {
+                if (stateFormula.getComparisonType() == storm::logic::ComparisonType::Less || stateFormula.getComparisonType() == storm::logic::ComparisonType::LessEqual) {
+                    result = this->computeLongRunAverage(stateFormula.getSubformula().asStateFormula(), false, storm::logic::OptimalityType::Maximize);
+                } else {
+                    result = this->computeLongRunAverage(stateFormula.getSubformula().asStateFormula(), false, storm::logic::OptimalityType::Minimize);
+                }
             } else {
-                return this->computeLongRunAverage(stateFormula.getSubformula().asStateFormula(), false);
+                result = this->computeLongRunAverage(stateFormula.getSubformula().asStateFormula(), false);
             }
             
-            std::unique_ptr<CheckResult> result;
             if (stateFormula.hasBound()) {
                 return result->asQuantitativeCheckResult().compareAgainstBound(stateFormula.getComparisonType(), stateFormula.getBound());
             } else {

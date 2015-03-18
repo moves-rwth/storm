@@ -76,7 +76,7 @@ namespace storm {
                         case OperatorType::Floor: value = std::floor(boost::get<double>(operandEvaluation)); break;
                         case OperatorType::Ceil: value = std::ceil(boost::get<double>(operandEvaluation)); break;
                     }
-                    return std::shared_ptr<BaseExpression>(new DoubleLiteralExpression(this->getManager(), boost::get<double>(result)));
+                    return std::shared_ptr<BaseExpression>(new DoubleLiteralExpression(this->getManager(), value));
                 }
             }
             

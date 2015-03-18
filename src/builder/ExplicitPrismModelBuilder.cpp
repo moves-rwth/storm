@@ -131,6 +131,7 @@ namespace storm {
             // all expressions in the program so we can then evaluate them without having to store the values of the
             // constants in the state (i.e., valuation).
             preparedProgram = preparedProgram.substituteConstants();
+                
             storm::prism::RewardModel rewardModel = storm::prism::RewardModel();
             
             // Select the appropriate reward model.
@@ -565,7 +566,11 @@ namespace storm {
                             }
                             
                             for (auto const& stateProbabilityPair : choice) {
-                                globalChoice.getOrAddEntry(stateProbabilityPair.first) += stateProbabilityPair.second / totalNumberOfChoices;
+                                if (discreteTimeModel) {
+                                    globalChoice.getOrAddEntry(stateProbabilityPair.first) += stateProbabilityPair.second / totalNumberOfChoices;
+                                } else {
+                                    globalChoice.getOrAddEntry(stateProbabilityPair.first) += stateProbabilityPair.second;
+                                }
                                 
                                 // Now add all rewards that match this choice.
                                 for (auto const& transitionReward : transitionRewards) {
@@ -581,7 +586,11 @@ namespace storm {
                             }
                             
                             for (auto const& stateProbabilityPair : choice) {
-                                globalChoice.getOrAddEntry(stateProbabilityPair.first) += stateProbabilityPair.second / totalNumberOfChoices;
+                                if (discreteTimeModel) {
+                                    globalChoice.getOrAddEntry(stateProbabilityPair.first) += stateProbabilityPair.second / totalNumberOfChoices;
+                                } else {
+                                    globalChoice.getOrAddEntry(stateProbabilityPair.first) += stateProbabilityPair.second;
+                                }
                                 
                                 // Now add all rewards that match this choice.
                                 for (auto const& transitionReward : transitionRewards) {
