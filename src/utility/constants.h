@@ -93,6 +93,8 @@ namespace storm {
             
             bool isZero(double const& value) const;
             
+            bool isInfinity(double const& value) const;
+            
             bool isEqual(double const& value1, double const& value2) const;
             
             bool isConstant(double const& value) const;

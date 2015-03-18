@@ -52,7 +52,24 @@ namespace storm {
                 Ctmc(Ctmc<ValueType>&& ctmc) = default;
                 Ctmc& operator=(Ctmc<ValueType>&& ctmc) = default;
 #endif
-
+                /*!
+                 * Retrieves the vector of exit rates of the model.
+                 *
+                 * @return The exit rate vector.
+                 */
+                std::vector<ValueType> const& getExitRateVector() const;
+                
+            private:
+                /*!
+                 * Computes the exit rate vector based on the given rate matrix.
+                 *
+                 * @param rateMatrix The rate matrix.
+                 * @return The exit rate vector.
+                 */
+                static std::vector<ValueType> createExitRateVector(storm::storage::SparseMatrix<ValueType> const& rateMatrix);
+                
+                // A vector containing the exit rates of all states.
+                std::vector<ValueType> exitRates;
             };
             
         } // namespace sparse

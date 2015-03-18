@@ -110,6 +110,10 @@ namespace storm {
             return std::abs(value) <= precision;
         }
         
+        bool ConstantsComparator<double>::isInfinity(double const& value) const {
+            return value == infinity<double>();
+        }
+        
         bool ConstantsComparator<double>::isEqual(double const& value1, double const& value2) const {
             return std::abs(value1 - value2) <= precision;
         }

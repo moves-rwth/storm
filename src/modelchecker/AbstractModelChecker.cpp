@@ -32,6 +32,8 @@ namespace storm {
                 return this->computeGloballyProbabilities(pathFormula.asGloballyFormula(), qualitative, optimalityType);
             } else if (pathFormula.isUntilFormula()) {
                 return this->computeUntilProbabilities(pathFormula.asUntilFormula(), qualitative, optimalityType);
+            } else if (pathFormula.isNextFormula()) {
+                return this->computeNextProbabilities(pathFormula.asNextFormula(), qualitative, optimalityType);
             }
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The given formula '" << pathFormula << "' is invalid.");
         }

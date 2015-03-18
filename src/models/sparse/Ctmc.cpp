@@ -12,7 +12,7 @@ namespace storm {
                                   boost::optional<storm::storage::SparseMatrix<ValueType>> const& optionalTransitionRewardMatrix,
                                   boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> const& optionalChoiceLabeling)
             : DeterministicModel<ValueType>(storm::models::ModelType::Ctmc, rateMatrix, stateLabeling, optionalStateRewardVector, optionalTransitionRewardMatrix, optionalChoiceLabeling) {
-                // Intentionally left empty.
+                exitRates = createExitRateVector(this->getTransitionMatrix());
             }
             
             template<typename ValueType>
@@ -21,7 +21,22 @@ namespace storm {
                                   boost::optional<storm::storage::SparseMatrix<ValueType>>&& optionalTransitionRewardMatrix,
                                   boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>&& optionalChoiceLabeling)
             : DeterministicModel<ValueType>(storm::models::ModelType::Ctmc, std::move(rateMatrix), std::move(stateLabeling), std::move(optionalStateRewardVector), std::move(optionalTransitionRewardMatrix), std::move(optionalChoiceLabeling)) {
-                // Intentionally left empty.
+                // It is important to refer to the transition matrix here, because the given rate matrix has been move elsewhere.
+                exitRates = createExitRateVector(this->getTransitionMatrix());
+            }
+            
+            template<typename ValueType>
+            std::vector<ValueType> const& Ctmc<ValueType>::getExitRateVector() const {
+                return exitRates;
+            }
+            
+            template<typename ValueType>
+            std::vector<ValueType> Ctmc<ValueType>::createExitRateVector(storm::storage::SparseMatrix<ValueType> const& rateMatrix) {
+                std::vector<ValueType> exitRates(rateMatrix.getRowCount());
+                for (uint_fast64_t row = 0; row < rateMatrix.getRowCount(); ++row) {
+                    exitRates[row] = rateMatrix.getRowSum(row);
+                }
+                return exitRates;
             }
             
             template class Ctmc<double>;

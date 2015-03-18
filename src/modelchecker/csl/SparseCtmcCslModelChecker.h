@@ -36,8 +36,28 @@ namespace storm {
              * @param absorbingStates The states that need to be made absorbing.
              * @param uniformizationRate The rate to be used for uniformization.
              * @param exitRates The exit rates of all states.
+             * @return The uniformized matrix.
              */
-            storm::storage::SparseMatrix<ValueType> computeUniformizedMatrix(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates, storm::storage::BitVector const& absorbingStates, ValueType uniformizationRate, std::vector<ValueType> const& exitRates);
+            static storm::storage::SparseMatrix<ValueType> computeUniformizedMatrix(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates, storm::storage::BitVector const& absorbingStates, ValueType uniformizationRate, std::vector<ValueType> const& exitRates);
+            
+            /*!
+             * Computes the transient probabilities for lambda time steps.
+             *
+             * @param uniformizedMatrix The uniformized transition matrix.
+             * @param lambda The number of time steps.
+             * @param values A vector mapping each state to an initial probability.
+             * @param linearEquationSolver The linear equation solver to use.
+             * @return The vector of transient probabilities.
+             */
+            std::vector<ValueType> computeTransientProbabilities(storm::storage::SparseMatrix<ValueType> const& uniformizedMatrix, ValueType const& lambda, std::vector<ValueType> values, storm::solver::LinearEquationSolver<ValueType> const& linearEquationSolver) const;
+            
+            /*!
+             * Converts the given rate-matrix into a time-abstract probability matrix.
+             *
+             * @param rateMatrix The rate matrix.
+             * @param exitRates The exit rate vector.
+             */
+            static storm::storage::SparseMatrix<ValueType> computeProbabilityMatrix(storm::storage::SparseMatrix<ValueType> const& rateMatrix, std::vector<ValueType> const& exitRates);
             
             // An object that is used for solving linear equations and performing matrix-vector multiplication.
             std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> linearEquationSolver;

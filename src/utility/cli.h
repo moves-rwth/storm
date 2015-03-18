@@ -67,6 +67,7 @@ log4cplus::Logger printer;
 #include "src/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
 #include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "src/modelchecker/prctl/TopologicalValueIterationMdpPrctlModelChecker.h"
+#include "src/modelchecker/csl/SparseCtmcCslModelChecker.h"
 
 // Headers for counterexample generation.
 #include "src/counterexamples/MILPMinimalLabelSetGenerator.h"
@@ -441,6 +442,11 @@ namespace storm {
                         storm::modelchecker::SparseMdpPrctlModelChecker<ValueType> modelchecker(*mdp);
                         result = modelchecker.check(*formula.get());
 #endif
+                    } else if (model->getType() == storm::models::ModelType::Ctmc) {
+                        std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> ctmc = sparseModel->template as<storm::models::sparse::Ctmc<ValueType>>();
+
+                        storm::modelchecker::SparseCtmcCslModelChecker<ValueType> modelchecker(*ctmc);
+                        result = modelchecker.check(*formula.get());
                     }
                     
                     if (result) {

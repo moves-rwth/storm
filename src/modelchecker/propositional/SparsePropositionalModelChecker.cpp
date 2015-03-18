@@ -3,6 +3,7 @@
 #include "src/adapters/CarlAdapter.h"
 
 #include "src/models/sparse/Dtmc.h"
+#include "src/models/sparse/Ctmc.h"
 #include "src/models/sparse/Mdp.h"
 
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
@@ -50,6 +51,7 @@ namespace storm {
         
         // Explicitly instantiate the template class.
         template storm::models::sparse::Dtmc<double> const& SparsePropositionalModelChecker<double>::getModelAs() const;
+        template storm::models::sparse::Ctmc<double> const& SparsePropositionalModelChecker<double>::getModelAs() const;
         template storm::models::sparse::Mdp<double> const& SparsePropositionalModelChecker<double>::getModelAs() const;
         template class SparsePropositionalModelChecker<double>;
         
