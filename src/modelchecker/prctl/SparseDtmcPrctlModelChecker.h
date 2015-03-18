@@ -3,15 +3,18 @@
 
 #include "src/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "src/models/Dtmc.h"
-#include "src/utility/solver.h"
 #include "src/solver/LinearEquationSolver.h"
 
 namespace storm {
     namespace modelchecker {
+        // Forward-declare CTMC model checker so we can make it a friend.
+        template<typename ValueType> class SparseCtmcCslModelChecker;
         
         template<class ValueType>
         class SparseDtmcPrctlModelChecker : public SparsePropositionalModelChecker<ValueType> {
         public:
+            friend class SparseCtmcCslModelChecker<ValueType>;
+            
             explicit SparseDtmcPrctlModelChecker(storm::models::Dtmc<ValueType> const& model);
             explicit SparseDtmcPrctlModelChecker(storm::models::Dtmc<ValueType> const& model, std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>>&& linearEquationSolver);
             
@@ -30,8 +33,8 @@ namespace storm {
         private:
             // The methods that perform the actual checking.
             std::vector<ValueType> computeBoundedUntilProbabilitiesHelper(storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, uint_fast64_t stepBound) const;
-            std::vector<ValueType> computeNextProbabilitiesHelper(storm::storage::BitVector const& nextStates);
-            std::vector<ValueType> computeUntilProbabilitiesHelper(storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative) const;
+            static std::vector<ValueType> computeNextProbabilitiesHelper(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& nextStates, storm::solver::LinearEquationSolver<ValueType> const& linearEquationSolver);
+            static std::vector<ValueType> computeUntilProbabilitiesHelper(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative, storm::solver::LinearEquationSolver<ValueType> const& linearEquationSolver);
             std::vector<ValueType> computeInstantaneousRewardsHelper(uint_fast64_t stepCount) const;
             std::vector<ValueType> computeCumulativeRewardsHelper(uint_fast64_t stepBound) const;
             std::vector<ValueType> computeReachabilityRewardsHelper(storm::storage::BitVector const& targetStates, bool qualitative) const;

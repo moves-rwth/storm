@@ -5,6 +5,7 @@
 #include "src/utility/macros.h"
 #include "src/utility/vector.h"
 #include "src/utility/graph.h"
+#include "src/utility/solver.h"
 
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
@@ -74,14 +75,13 @@ namespace storm {
         }
         
         template<typename ValueType>
-        std::vector<ValueType> SparseDtmcPrctlModelChecker<ValueType>::computeNextProbabilitiesHelper(storm::storage::BitVector const& nextStates) {
+        std::vector<ValueType> SparseDtmcPrctlModelChecker<ValueType>::computeNextProbabilitiesHelper(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& nextStates, storm::solver::LinearEquationSolver<ValueType> const& linearEquationSolver) {
             // Create the vector with which to multiply and initialize it correctly.
-            std::vector<ValueType> result(this->getModel().getNumberOfStates());
+            std::vector<ValueType> result(transitionMatrix.getRowCount());
             storm::utility::vector::setVectorValues(result, nextStates, storm::utility::one<ValueType>());
             
             // Perform one single matrix-vector multiplication.
-            STORM_LOG_THROW(linearEquationSolver != nullptr, storm::exceptions::InvalidStateException, "No valid linear equation solver available.");
-            this->linearEquationSolver->performMatrixVectorMultiplication(this->getModel().getTransitionMatrix(), result);
+            linearEquationSolver.performMatrixVectorMultiplication(transitionMatrix, result);
             return result;
         }
         
@@ -89,14 +89,14 @@ namespace storm {
         std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<ValueType>::computeNextProbabilities(storm::logic::NextFormula const& pathFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
             std::unique_ptr<CheckResult> subResultPointer = this->check(pathFormula.getSubformula());
             ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();
-            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(this->computeNextProbabilitiesHelper(subResult.getTruthValuesVector())));
+            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(this->computeNextProbabilitiesHelper(this->getModel().getTransitionMatrix(), subResult.getTruthValuesVector(), *this->linearEquationSolver)));
         }
         
         template<typename ValueType>
-        std::vector<ValueType> SparseDtmcPrctlModelChecker<ValueType>::computeUntilProbabilitiesHelper(storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative) const {
+        std::vector<ValueType> SparseDtmcPrctlModelChecker<ValueType>::computeUntilProbabilitiesHelper(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative, storm::solver::LinearEquationSolver<ValueType> const& linearEquationSolver) {
             // We need to identify the states which have to be taken out of the matrix, i.e.
             // all states that have probability 0 and 1 of satisfying the until-formula.
-            std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(this->getModel(), phiStates, psiStates);
+            std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(backwardTransitions, phiStates, psiStates);
             storm::storage::BitVector statesWithProbability0 = std::move(statesWithProbability01.first);
             storm::storage::BitVector statesWithProbability1 = std::move(statesWithProbability01.second);
             
@@ -107,7 +107,7 @@ namespace storm {
             STORM_LOG_INFO("Found " << maybeStates.getNumberOfSetBits() << " 'maybe' states.");
             
             // Create resulting vector.
-            std::vector<ValueType> result(this->getModel().getNumberOfStates());
+            std::vector<ValueType> result(transitionMatrix.getRowCount());
             
             // Check whether we need to compute exact probabilities for some states.
             if (qualitative) {
@@ -118,7 +118,7 @@ namespace storm {
                     // In this case we have have to compute the probabilities.
                     
                     // We can eliminate the rows and columns from the original transition probability matrix.
-                    storm::storage::SparseMatrix<ValueType> submatrix = this->getModel().getTransitionMatrix().getSubmatrix(true, maybeStates, maybeStates, true);
+                    storm::storage::SparseMatrix<ValueType> submatrix = transitionMatrix.getSubmatrix(true, maybeStates, maybeStates, true);
                     
                     // Converting the matrix from the fixpoint notation to the form needed for the equation
                     // system. That is, we go from x = A*x + b to (I-A)x = b.
@@ -131,11 +131,10 @@ namespace storm {
                     
                     // Prepare the right-hand side of the equation system. For entry i this corresponds to
                     // the accumulated probability of going from state i to some 'yes' state.
-                    std::vector<ValueType> b = this->getModel().getTransitionMatrix().getConstrainedRowSumVector(maybeStates, statesWithProbability1);
+                    std::vector<ValueType> b = transitionMatrix.getConstrainedRowSumVector(maybeStates, statesWithProbability1);
                     
                     // Now solve the created system of linear equations.
-                    STORM_LOG_THROW(linearEquationSolver != nullptr, storm::exceptions::InvalidStateException, "No valid linear equation solver available.");
-                    this->linearEquationSolver->solveEquationSystem(submatrix, x, b);
+                    linearEquationSolver.solveEquationSystem(submatrix, x, b);
                     
                     // Set values of resulting vector according to result.
                     storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, x);
@@ -155,7 +154,7 @@ namespace storm {
             std::unique_ptr<CheckResult> rightResultPointer = this->check(pathFormula.getRightSubformula());
             ExplicitQualitativeCheckResult const& leftResult = leftResultPointer->asExplicitQualitativeCheckResult();;
             ExplicitQualitativeCheckResult const& rightResult = rightResultPointer->asExplicitQualitativeCheckResult();;
-            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(this->computeUntilProbabilitiesHelper(leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(), qualitative)));
+            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(this->computeUntilProbabilitiesHelper(this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(), qualitative, *this->linearEquationSolver)));
         }
         
         template<typename ValueType>

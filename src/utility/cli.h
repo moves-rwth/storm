@@ -75,9 +75,6 @@ log4cplus::Logger printer;
 #include "src/exceptions/InvalidSettingsException.h"
 #include "src/exceptions/InvalidTypeException.h"
 
-// FIXME: remove this
-#include "src/utility/numerical.h"
-
 namespace storm {
     namespace utility {
         namespace cli {
@@ -509,8 +506,6 @@ namespace storm {
                 if (storm::settings::debugSettings().isLogfileSet()) {
                     initializeFileLogging();
                 }
-                
-                auto fgresult = storm::utility::numerical::getFoxGlynnCutoff<double>(500, 1e-300, 1e+300, 1e-6);
                 
                 std::cout << "left: " << std::get<0>(fgresult) << " and right: " << std::get<1>(fgresult) << std::endl;
                 std::cout << "weight: " << std::get<2>(fgresult) << std::endl;
