@@ -14,8 +14,6 @@ namespace storm {
                 storm::utility::ConstantsComparator<ValueType> comparator;
                 STORM_LOG_THROW(!comparator.isZero(lambda), storm::exceptions::InvalidArgumentException, "Error in Fox-Glynn algorithm: lambda must not be zero.");
                 
-                std::cout << "calling Fox-Glynn with " << lambda << ", " << overflow << ", " << underflow << ", " << accuracy << std::endl;
-                
                 // This code is a modified version of the one in PRISM. According to their implementation, for lambda
                 // smaller than 400, we compute the result using the naive method.
                 if (lambda < 400) {
@@ -79,8 +77,6 @@ namespace storm {
                             dkl = 1.0 / (1 - std::exp(-(2.0 / 9.0)*(k * sqrt2 * sqrtLambda + 1.5)));
                         }
                         
-                        std::cout << "k for upper: " << k << std::endl;
-                        
                         // Left hand side of the equation in Corollary 1.
                         rightTruncationPoint = static_cast<uint_fast64_t>(std::ceil((m + k * sqrt2 * sqrtLambda + 1.5)));
                         
@@ -89,11 +85,8 @@ namespace storm {
                         
                         // Right hand side of the equation in Corollary 2.
                         while ((accuracy / 2.0) < ((bLambda * std::exp(-(k*k / 2.0))) / (k * sqrt2 * sqrtpi))) {
-                            std::cout << "k=" << k << " produces: " << ((bLambda * std::exp(-(k*k / 2.0))) / (k * sqrt2 * sqrtpi)) << std::endl;
                             ++k;
                         }
-                        std::cout << "k=" << k << " produces: " << ((bLambda * std::exp(-(k*k / 2.0))) / (k * sqrt2 * sqrtpi)) << std::endl;
-                        std::cout << "k for lower: " << k << std::endl;
                         
                         // Left hand side of the equation in Corollary 2.
                         leftTruncationPoint = static_cast<uint_fast64_t>(std::max(std::trunc(m - k * sqrtLambda - 1.5), storm::utility::zero<ValueType>()));
