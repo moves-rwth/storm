@@ -5,6 +5,8 @@
 #include "src/models/Mdp.h"
 #include "src/utility/solver.h"
 #include "src/solver/NondeterministicLinearEquationSolver.h"
+#include "src/storage/MaximalEndComponent.h"
+
 
 namespace storm {
     namespace counterexamples {

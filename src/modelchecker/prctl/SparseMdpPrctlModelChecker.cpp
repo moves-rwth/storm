@@ -1,6 +1,7 @@
 #include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 
 #include <vector>
+#include <memory>
 
 #include "src/utility/constants.h"
 #include "src/utility/macros.h"
@@ -10,10 +11,12 @@
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
+#include "src/solver/LpSolver.h"
+
 #include "src/exceptions/InvalidPropertyException.h"
+#include "src/storage/expressions/Expressions.h"
 
 #include "src/storage/MaximalEndComponentDecomposition.h"
-#include "src/storage/MaximalEndComponent.h"
 
 namespace storm {
     namespace modelchecker {
@@ -320,28 +323,28 @@ namespace storm {
 		template<typename ValueType>
 		std::vector<ValueType> SparseMdpPrctlModelChecker<ValueType>::computeLongRunAverageHelper(bool minimize, storm::storage::BitVector const& psiStates, bool qualitative) const {
 			// If there are no goal states, we avoid the computation and directly return zero.
+			auto numOfStates = this->getModel().getNumberOfStates();
 			if (psiStates.empty()) {
-				return std::vector<ValueType>(model.getNumberOfStates(), storm::utility::zero<ValueType>());
+				return std::vector<ValueType>(numOfStates, storm::utility::zero<ValueType>());
 			}
 
 			// Likewise, if all bits are set, we can avoid the computation and set.
 			if ((~psiStates).empty()) {
-				return std::vector<ValueType>(model.getNumberOfStates(), storm::utility::one<ValueType>());
+				return std::vector<ValueType>(numOfStates, storm::utility::one<ValueType>());
 			}
 
 			// Start by decomposing the MDP into its MECs.
-			storm::storage::MaximalEndComponentDecomposition<double> mecDecomposition(model);
+			storm::storage::MaximalEndComponentDecomposition<double> mecDecomposition(this->getModelAs<storm::models::AbstractNondeterministicModel<ValueType>>());
 
 			// Get some data members for convenience.
-			typename storm::storage::SparseMatrix<ValueType> const& transitionMatrix = model.getTransitionMatrix();
-			std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = model.getNondeterministicChoiceIndices();
+			typename storm::storage::SparseMatrix<ValueType> const& transitionMatrix = this->getModel().getTransitionMatrix();
 
 			// Now start with compute the long-run average for all end components in isolation.
 			std::vector<ValueType> lraValuesForEndComponents;
 
 			// While doing so, we already gather some information for the following steps.
-			std::vector<uint_fast64_t> stateToMecIndexMap(model.getNumberOfStates());
-			storm::storage::BitVector statesInMecs(model.getNumberOfStates());
+			std::vector<uint_fast64_t> stateToMecIndexMap(numOfStates);
+			storm::storage::BitVector statesInMecs(numOfStates);
 
 			for (uint_fast64_t currentMecIndex = 0; currentMecIndex < mecDecomposition.size(); ++currentMecIndex) {
 				storm::storage::MaximalEndComponent const& mec = mecDecomposition[currentMecIndex];
@@ -362,7 +365,7 @@ namespace storm {
 			storm::storage::BitVector statesNotContainedInAnyMec = ~statesInMecs;
 			
 			// Prepare result vector.
-			std::vector<ValueType> result(model.getNumberOfStates());
+			std::vector<ValueType> result(numOfStates);
 
 			//Set the values for all states in MECs.
 			for (auto state : statesInMecs) {
@@ -374,10 +377,10 @@ namespace storm {
 			for (auto state : statesNotContainedInAnyMec){
 
 				//calculate what result values the reachable states in MECs have
-				storm::storage::BitVector currentState(model.getNumberOfStates);
+				storm::storage::BitVector currentState(numOfStates);
 				currentState.set(state);
 				storm::storage::BitVector reachableStates = storm::utility::graph::getReachableStates(
-					transitionMatrix, currentState, storm::storage::BitVector(model.getNumberOfStates, true), statesInMecs
+					transitionMatrix, currentState, storm::storage::BitVector(numOfStates, true), statesInMecs
 					);
 
 				storm::storage::BitVector reachableMecStates = statesInMecs & reachableStates;
@@ -406,62 +409,47 @@ namespace storm {
 		}
 
 		template<typename ValueType>
-		ValueType SparseMarkovAutomatonCslModelChecker<ValueType>::computeLraForMaximalEndComponent(bool minimize, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& psiStates, storm::storage::MaximalEndComponent const& mec) {
+		ValueType SparseMdpPrctlModelChecker<ValueType>::computeLraForMaximalEndComponent(bool minimize, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& psiStates, storm::storage::MaximalEndComponent const& mec) {
 			std::shared_ptr<storm::solver::LpSolver> solver = storm::utility::solver::getLpSolver("LRA for MEC");
 			solver->setModelSense(minimize ? storm::solver::LpSolver::ModelSense::Maximize : storm::solver::LpSolver::ModelSense::Minimize);
 
 			//// First, we need to create the variables for the problem.
-			//std::map<uint_fast64_t, storm::expressions::Variable> stateToVariableMap;
-			//for (auto const& stateChoicesPair : mec) {
-			//	std::string variableName = "x" + std::to_string(stateChoicesPair.first);
-			//	stateToVariableMap[stateChoicesPair.first] = solver->addUnboundedContinuousVariable(variableName);
-			//}
-			//storm::expressions::Variable k = solver->addUnboundedContinuousVariable("k", 1);
-			//solver->update();
+			std::map<uint_fast64_t, storm::expressions::Variable> stateToVariableMap;
+			for (auto const& stateChoicesPair : mec) {
+				std::string variableName = "h" + std::to_string(stateChoicesPair.first);
+				stateToVariableMap[stateChoicesPair.first] = solver->addUnboundedContinuousVariable(variableName);
+			}
+			storm::expressions::Variable lambda = solver->addUnboundedContinuousVariable("L", 1);
+			solver->update();
 
-			//// Now we encode the problem as constraints.
-			//for (auto const& stateChoicesPair : mec) {
-			//	uint_fast64_t state = stateChoicesPair.first;
+			// Now we encode the problem as constraints.
+			for (auto const& stateChoicesPair : mec) {
+				uint_fast64_t state = stateChoicesPair.first;
 
-			//	// Now, based on the type of the state, create a suitable constraint.
-			//	if (markovianStates.get(state)) {
-			//		storm::expressions::Expression constraint = stateToVariableMap.at(state);
+				// Now, based on the type of the state, create a suitable constraint.
+				for (auto choice : stateChoicesPair.second) {
+					storm::expressions::Expression constraint = solver->getConstant(1);
+					ValueType w = 0;
 
-			//		for (auto element : transitionMatrix.getRow(nondeterministicChoiceIndices[state])) {
-			//			constraint = constraint - stateToVariableMap.at(element.getColumn()) * solver->getConstant(element.getValue());
-			//		}
+					for (auto element : transitionMatrix.getRow(choice)) {
+						constraint = constraint + stateToVariableMap.at(element.getColumn()) * solver->getConstant(element.getValue());
+						if (psiStates.get(element.getColumn())) {
+							w += element.getValue();
+						}
+					}
+					constraint = constraint - solver->getConstant(w) * lambda;
 
-			//		constraint = constraint + solver->getConstant(storm::utility::one<ValueType>() / exitRates[state]) * k;
-			//		storm::expressions::Expression rightHandSide = psiStates.get(state) ? solver->getConstant(storm::utility::one<ValueType>() / exitRates[state]) : solver->getConstant(0);
-			//		if (minimize) {
-			//			constraint = constraint <= rightHandSide;
-			//		} else {
-			//			constraint = constraint >= rightHandSide;
-			//		}
-			//		solver->addConstraint("state" + std::to_string(state), constraint);
-			//	} else {
-			//		// For probabilistic states, we want to add the constraint x_s <= sum P(s, a, s') * x_s' where a is the current action
-			//		// and the sum ranges over all states s'.
-			//		for (auto choice : stateChoicesPair.second) {
-			//			storm::expressions::Expression constraint = stateToVariableMap.at(state);
+					if (minimize) {
+						constraint = stateToVariableMap.at(state) <= constraint;
+					} else {
+						constraint = stateToVariableMap.at(state) >= constraint;
+					}
+					solver->addConstraint("state" + std::to_string(state) + "," + std::to_string(choice), constraint);
+				}
+			}
 
-			//			for (auto element : transitionMatrix.getRow(choice)) {
-			//				constraint = constraint - stateToVariableMap.at(element.getColumn()) * solver->getConstant(element.getValue());
-			//			}
-
-			//			storm::expressions::Expression rightHandSide = solver->getConstant(storm::utility::zero<ValueType>());
-			//			if (minimize) {
-			//				constraint = constraint <= rightHandSide;
-			//			} else {
-			//				constraint = constraint >= rightHandSide;
-			//			}
-			//			solver->addConstraint("state" + std::to_string(state), constraint);
-			//		}
-			//	}
-			//}
-
-			//solver->optimize();
-			//return solver->getContinuousValue(k);
+			solver->optimize();
+			return solver->getContinuousValue(lambda);
 		}
 
         template<typename ValueType>
