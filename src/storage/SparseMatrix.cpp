@@ -239,7 +239,7 @@ namespace storm {
         template<typename ValueType>
         SparseMatrix<ValueType>::SparseMatrix(index_type columnCount, std::vector<index_type> const& rowIndications, std::vector<MatrixEntry<index_type, ValueType>> const& columnsAndValues, std::vector<index_type> const& rowGroupIndices) : rowCount(rowIndications.size() - 1), columnCount(columnCount), entryCount(columnsAndValues.size()), nonzeroEntryCount(0), columnsAndValues(columnsAndValues), rowIndications(rowIndications), rowGroupIndices(rowGroupIndices) {
             for (auto const& element : *this) {
-                if (!comparator.isZero(element.getValue())) {
+                if (element.getValue() != storm::utility::zero<ValueType>()) {
                     ++this->nonzeroEntryCount;
                 }
             }
@@ -248,7 +248,7 @@ namespace storm {
         template<typename ValueType>
         SparseMatrix<ValueType>::SparseMatrix(index_type columnCount, std::vector<index_type>&& rowIndications, std::vector<MatrixEntry<index_type, ValueType>>&& columnsAndValues, std::vector<index_type>&& rowGroupIndices) : rowCount(rowIndications.size() - 1), columnCount(columnCount), entryCount(columnsAndValues.size()), nonzeroEntryCount(0), columnsAndValues(std::move(columnsAndValues)), rowIndications(std::move(rowIndications)), rowGroupIndices(std::move(rowGroupIndices)) {
             for (auto const& element : *this) {
-                if (!comparator.isZero(element.getValue())) {
+                if (element.getValue() != storm::utility::zero<ValueType>()) {
                     ++this->nonzeroEntryCount;
                 }
             }
@@ -613,7 +613,7 @@ namespace storm {
             // First, we need to count how many entries each column has.
             for (index_type group = 0; group < columnCount; ++group) {
                 for (auto const& transition : joinGroups ? this->getRowGroup(group) : this->getRow(group)) {
-                    if (!comparator.isZero(transition.getValue())) {
+                    if (transition.getValue() != storm::utility::zero<ValueType>()) {
                         ++rowIndications[transition.getColumn() + 1];
                     }
                 }
@@ -632,7 +632,7 @@ namespace storm {
             // Now we are ready to actually fill in the values of the transposed matrix.
             for (index_type group = 0; group < columnCount; ++group) {
                 for (auto const& transition : joinGroups ? this->getRowGroup(group) : this->getRow(group)) {
-                    if (!comparator.isZero(transition.getValue())) {
+                    if (transition.getValue() != storm::utility::zero<ValueType>()) {
                         columnsAndValues[nextIndices[transition.getColumn()]] = std::make_pair(group, transition.getValue());
                         nextIndices[transition.getColumn()]++;
                     }

@@ -839,9 +839,6 @@ namespace storm {
             
             // A vector indicating the row groups of the matrix.
             std::vector<index_type> rowGroupIndices;
-            
-            // A comparator that can be used to check whether some values satisfy some conditions.
-            storm::utility::ConstantsComparator<value_type> comparator;
         };
 
     } // namespace storage

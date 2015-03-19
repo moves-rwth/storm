@@ -44,7 +44,7 @@ namespace storm {
             notStateFormula = (-unaryBooleanOperator_ >> atomicStateFormula)[qi::_val = phoenix::bind(&FormulaParser::createUnaryBooleanStateFormula, phoenix::ref(*this), qi::_2, qi::_1)];
             notStateFormula.name("negation formula");
             
-            eventuallyFormula = (qi::lit("F") >> -(qi::lit("<=") >> qi::uint_) >> pathFormulaWithoutUntil)[qi::_val = phoenix::bind(&FormulaParser::createEventuallyFormula, phoenix::ref(*this), qi::_1, qi::_2)];
+            eventuallyFormula = (qi::lit("F") >> -timeBound >> pathFormulaWithoutUntil)[qi::_val = phoenix::bind(&FormulaParser::createEventuallyFormula, phoenix::ref(*this), qi::_1, qi::_2)];
             eventuallyFormula.name("eventually formula");
             
             globallyFormula = (qi::lit("G") >> pathFormulaWithoutUntil)[qi::_val = phoenix::bind(&FormulaParser::createGloballyFormula, phoenix::ref(*this), qi::_1)];
@@ -56,11 +56,14 @@ namespace storm {
             pathFormulaWithoutUntil = eventuallyFormula | globallyFormula | nextFormula | stateFormula;
             pathFormulaWithoutUntil.name("path formula");
             
-            untilFormula = pathFormulaWithoutUntil[qi::_val = qi::_1] >> *(qi::lit("U") >> -(qi::lit("<=") >> qi::uint_) >> pathFormulaWithoutUntil)[qi::_val = phoenix::bind(&FormulaParser::createUntilFormula, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)];
+            untilFormula = pathFormulaWithoutUntil[qi::_val = qi::_1] >> *(qi::lit("U") >> -timeBound >> pathFormulaWithoutUntil)[qi::_val = phoenix::bind(&FormulaParser::createUntilFormula, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)];
             untilFormula.name("until formula");
             
             conditionalFormula = untilFormula[qi::_val = qi::_1] >> *(qi::lit("||") >> untilFormula)[qi::_val = phoenix::bind(&FormulaParser::createConditionalFormula, phoenix::ref(*this), qi::_val, qi::_1)];
             conditionalFormula.name("conditional formula");
+            
+            timeBound = (qi::lit("[") > qi::double_ > qi::lit(",") > qi::double_ > qi::lit("]"))[qi::_val = phoenix::construct<std::pair<double, double>>(qi::_1, qi::_2)] | (qi::lit("<=") >> strict_double)[qi::_val = phoenix::construct<std::pair<double, double>>(0, qi::_1)] | (qi::lit("<=") >  qi::uint_)[qi::_val = qi::_1];
+            timeBound.name("time bound");
             
             pathFormula = conditionalFormula;
             pathFormula.name("path formula");
@@ -193,9 +196,14 @@ namespace storm {
             return std::shared_ptr<storm::logic::Formula>(new storm::logic::AtomicLabelFormula(label));
         }
         
-        std::shared_ptr<storm::logic::Formula> FormulaParser::createEventuallyFormula(boost::optional<unsigned> const& stepBound, std::shared_ptr<storm::logic::Formula> const& subformula) const {
-            if (stepBound) {
-                return std::shared_ptr<storm::logic::Formula>(new storm::logic::BoundedUntilFormula(createBooleanLiteralFormula(true), subformula, static_cast<uint_fast64_t>(stepBound.get())));
+        std::shared_ptr<storm::logic::Formula> FormulaParser::createEventuallyFormula(boost::optional<boost::variant<std::pair<double, double>, uint_fast64_t>> const& timeBound, std::shared_ptr<storm::logic::Formula> const& subformula) const {
+            if (timeBound) {
+                if (timeBound.get().which() == 0) {
+                    std::pair<double, double> const& bounds = boost::get<std::pair<double, double>>(timeBound.get());
+                    return std::shared_ptr<storm::logic::Formula>(new storm::logic::BoundedUntilFormula(createBooleanLiteralFormula(true), subformula, bounds.first, bounds.second));
+                } else {
+                    return std::shared_ptr<storm::logic::Formula>(new storm::logic::BoundedUntilFormula(createBooleanLiteralFormula(true), subformula, static_cast<uint_fast64_t>(boost::get<uint_fast64_t>(timeBound.get()))));
+                }
             } else {
                 return std::shared_ptr<storm::logic::Formula>(new storm::logic::EventuallyFormula(subformula));
             }
@@ -209,9 +217,14 @@ namespace storm {
             return std::shared_ptr<storm::logic::Formula>(new storm::logic::NextFormula(subformula));
         }
         
-        std::shared_ptr<storm::logic::Formula> FormulaParser::createUntilFormula(std::shared_ptr<storm::logic::Formula> const& leftSubformula, boost::optional<unsigned> const& stepBound, std::shared_ptr<storm::logic::Formula> const& rightSubformula) {
-            if (stepBound) {
-                return std::shared_ptr<storm::logic::Formula>(new storm::logic::BoundedUntilFormula(leftSubformula, rightSubformula, static_cast<uint_fast64_t>(stepBound.get())));
+        std::shared_ptr<storm::logic::Formula> FormulaParser::createUntilFormula(std::shared_ptr<storm::logic::Formula> const& leftSubformula, boost::optional<boost::variant<std::pair<double, double>, uint_fast64_t>> const& timeBound, std::shared_ptr<storm::logic::Formula> const& rightSubformula) {
+            if (timeBound) {
+                if (timeBound.get().which() == 0) {
+                    std::pair<double, double> const& bounds = boost::get<std::pair<double, double>>(timeBound.get());
+                    return std::shared_ptr<storm::logic::Formula>(new storm::logic::BoundedUntilFormula(leftSubformula, rightSubformula, bounds.first, bounds.second));
+                } else {
+                    return std::shared_ptr<storm::logic::Formula>(new storm::logic::BoundedUntilFormula(leftSubformula, rightSubformula, static_cast<uint_fast64_t>(boost::get<uint_fast64_t>(timeBound.get()))));
+                }
             } else {
                 return std::shared_ptr<storm::logic::Formula>(new storm::logic::UntilFormula(leftSubformula, rightSubformula));
             }

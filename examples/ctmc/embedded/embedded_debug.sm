@@ -1,0 +1,33 @@
+ctmc
+
+// constants
+const int MAX_COUNT;
+const int MIN_SENSORS = 2;
+const int MIN_ACTUATORS = 1;
+
+// rates
+const double lambda_p = 1/(365*24*60*60); // 1 year
+const double lambda_s = 1/(30*24*60*60); // 1 month
+const double lambda_a = 1/(2*30*24*60*60); // 2 months
+const double tau = 1/60; // 1 min
+const double delta_f = 1/(24*60*60); // 1 day
+const double delta_r = 1/30; // 30 secs
+
+// sensors
+module sensors
+	
+	s : [0..3] init 3; // number of sensors working
+	
+	[] s>1 -> s*lambda_s : (s'=s-1); // failure of a single sensor
+	
+endmodule
+
+// input processor
+// (takes data from sensors and passes onto main processor)
+module proci
+	
+	i : [0..2] init 2; // 2=ok, 1=transient fault, 0=failed
+	
+	[] i>0 & s>=MIN_SENSORS -> lambda_p : (i'=0); // failure of processor
+	
+endmodule
