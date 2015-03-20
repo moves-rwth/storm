@@ -228,6 +228,11 @@ namespace storm {
         
         template<class ValueType>
         std::vector<ValueType> SparseCtmcCslModelChecker<ValueType>::computeTransientProbabilities(storm::storage::SparseMatrix<ValueType> const& uniformizedMatrix, ValueType const& lambda, std::vector<ValueType> values, storm::solver::LinearEquationSolver<ValueType> const& linearEquationSolver) const {
+            // If no time can pass, the current values are the result.
+            if (lambda == storm::utility::zero<ValueType>()) {
+                return values;
+            }
+            
             // Use Fox-Glynn to get the truncation points and the weights.
             std::tuple<uint_fast64_t, uint_fast64_t, ValueType, std::vector<ValueType>> foxGlynnResult = storm::utility::numerical::getFoxGlynnCutoff(lambda, 1e-300, 1e+300, storm::settings::generalSettings().getPrecision() / 8.0);
             

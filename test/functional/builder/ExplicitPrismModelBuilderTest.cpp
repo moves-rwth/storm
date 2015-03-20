@@ -32,6 +32,34 @@ TEST(ExplicitPrismModelBuilderTest, Dtmc) {
     EXPECT_EQ(2505, model->getNumberOfTransitions());
 }
 
+TEST(ExplicitPrismModelBuilderTest, Ctmc) {
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/cluster2.sm");
+
+    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitPrismModelBuilder<double>::translateProgram(program);
+    EXPECT_EQ(276, model->getNumberOfStates());
+    EXPECT_EQ(1120, model->getNumberOfTransitions());
+    
+    program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/embedded2.sm");
+    model = storm::builder::ExplicitPrismModelBuilder<double>::translateProgram(program);
+    EXPECT_EQ(3478, model->getNumberOfStates());
+    EXPECT_EQ(14639, model->getNumberOfTransitions());
+    
+    program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/polling2.sm");
+    model = storm::builder::ExplicitPrismModelBuilder<double>::translateProgram(program);
+    EXPECT_EQ(12, model->getNumberOfStates());
+    EXPECT_EQ(22, model->getNumberOfTransitions());
+    
+    program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/fms2.sm");
+    model = storm::builder::ExplicitPrismModelBuilder<double>::translateProgram(program);
+    EXPECT_EQ(810, model->getNumberOfStates());
+    EXPECT_EQ(3699, model->getNumberOfTransitions());
+    
+    program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/tandem5.sm");
+    model = storm::builder::ExplicitPrismModelBuilder<double>::translateProgram(program);
+    EXPECT_EQ(66, model->getNumberOfStates());
+    EXPECT_EQ(189, model->getNumberOfTransitions());
+}
+
 TEST(ExplicitPrismModelBuilderTest, Mdp) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/two_dice.nm");
     

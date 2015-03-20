@@ -1,0 +1,169 @@
+#include "gtest/gtest.h"
+#include "storm-config.h"
+
+#include "src/parser/PrismParser.h"
+#include "src/parser/FormulaParser.h"
+#include "src/logic/Formulas.h"
+#include "src/builder/ExplicitPrismModelBuilder.h"
+
+#include "src/solver/NativeLinearEquationSolver.h"
+#include "src/modelchecker/csl/SparseCtmcCslModelChecker.h"
+#include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+
+#include "src/settings/SettingsManager.h"
+
+TEST(SparseCtmcCslModelCheckerTest, Cluster) {
+    // Parse the model description.
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/cluster2.sm");
+    storm::parser::FormulaParser formulaParser(program.getManager().getSharedPointer());
+    std::shared_ptr<storm::logic::Formula> formula(nullptr);
+    
+    // Build the model.
+    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitPrismModelBuilder<double>::translateProgram(program);
+    ASSERT_EQ(storm::models::ModelType::Ctmc, model->getType());
+    std::shared_ptr<storm::models::sparse::Ctmc<double>> ctmc = model->as<storm::models::sparse::Ctmc<double>>();
+    uint_fast64_t initialState = *ctmc->getInitialStates().begin();
+    
+    // Create model checker.
+    storm::modelchecker::SparseCtmcCslModelChecker<double> modelchecker(*ctmc);
+
+    // Start checking properties.
+    formula = formulaParser.parseFromString("P=? [ F<=100 !\"minimum\"]");
+    std::unique_ptr<storm::modelchecker::CheckResult> checkResult = modelchecker.check(*formula);
+    
+    ASSERT_TRUE(checkResult->isExplicitQuantitativeCheckResult());
+    storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeCheckResult1 = checkResult->asExplicitQuantitativeCheckResult<double>();
+    EXPECT_NEAR(5.5461254704419085E-5, quantitativeCheckResult1[initialState], storm::settings::generalSettings().getPrecision());
+    
+    formula = formulaParser.parseFromString("P=? [ F[100,100] !\"minimum\"]");
+    checkResult = modelchecker.check(*formula);
+    
+    ASSERT_TRUE(checkResult->isExplicitQuantitativeCheckResult());
+    storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeCheckResult2 = checkResult->asExplicitQuantitativeCheckResult<double>();
+    EXPECT_NEAR(2.3397873548343415E-6, quantitativeCheckResult2[initialState], storm::settings::generalSettings().getPrecision());
+
+    formula = formulaParser.parseFromString("P=? [ \"minimum\" U<=10 \"premium\"]");
+    checkResult = modelchecker.check(*formula);
+    
+    ASSERT_TRUE(checkResult->isExplicitQuantitativeCheckResult());
+    storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeCheckResult3 = checkResult->asExplicitQuantitativeCheckResult<double>();
+    EXPECT_NEAR(1, quantitativeCheckResult3[initialState], storm::settings::generalSettings().getPrecision());
+
+    formula = formulaParser.parseFromString("P=? [ !\"minimum\" U[1,inf] \"minimum\"]");
+    checkResult = modelchecker.check(*formula);
+    
+    ASSERT_TRUE(checkResult->isExplicitQuantitativeCheckResult());
+    storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeCheckResult4 = checkResult->asExplicitQuantitativeCheckResult<double>();
+    EXPECT_NEAR(0, quantitativeCheckResult4[initialState], storm::settings::generalSettings().getPrecision());
+}
+
+TEST(SparseCtmcCslModelCheckerTest, Embedded) {
+    // Parse the model description.
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/embedded2.sm");
+    storm::parser::FormulaParser formulaParser(program.getManager().getSharedPointer());
+    std::shared_ptr<storm::logic::Formula> formula(nullptr);
+    
+    // Build the model.
+    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitPrismModelBuilder<double>::translateProgram(program);
+    ASSERT_EQ(storm::models::ModelType::Ctmc, model->getType());
+    std::shared_ptr<storm::models::sparse::Ctmc<double>> ctmc = model->as<storm::models::sparse::Ctmc<double>>();
+    uint_fast64_t initialState = *ctmc->getInitialStates().begin();
+    
+    // Create model checker.
+    storm::modelchecker::SparseCtmcCslModelChecker<double> modelchecker(*ctmc);
+
+    // Start checking properties.
+    formula = formulaParser.parseFromString("P=? [ F<=10000 \"down\"]");
+    std::unique_ptr<storm::modelchecker::CheckResult> checkResult = modelchecker.check(*formula);
+    
+    ASSERT_TRUE(checkResult->isExplicitQuantitativeCheckResult());
+    storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeCheckResult1 = checkResult->asExplicitQuantitativeCheckResult<double>();
+    EXPECT_NEAR(0.0019216435246119591, quantitativeCheckResult1[initialState], storm::settings::generalSettings().getPrecision());
+    
+    formula = formulaParser.parseFromString("P=? [ !\"down\" U<=10000 \"fail_actuators\"]");
+    checkResult = modelchecker.check(*formula);
+    
+    ASSERT_TRUE(checkResult->isExplicitQuantitativeCheckResult());
+    storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeCheckResult2 = checkResult->asExplicitQuantitativeCheckResult<double>();
+    EXPECT_NEAR(3.7079151806696567E-6, quantitativeCheckResult2[initialState], storm::settings::generalSettings().getPrecision());
+
+    formula = formulaParser.parseFromString("P=? [ !\"down\" U<=10000 \"fail_io\"]");
+    checkResult = modelchecker.check(*formula);
+    
+    ASSERT_TRUE(checkResult->isExplicitQuantitativeCheckResult());
+    storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeCheckResult3 = checkResult->asExplicitQuantitativeCheckResult<double>();
+    EXPECT_NEAR(0.001556839327673734, quantitativeCheckResult3[initialState], storm::settings::generalSettings().getPrecision());
+
+    formula = formulaParser.parseFromString("P=? [ !\"down\" U<=10000 \"fail_sensors\"]");
+    checkResult = modelchecker.check(*formula);
+    
+    ASSERT_TRUE(checkResult->isExplicitQuantitativeCheckResult());
+    storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeCheckResult4 = checkResult->asExplicitQuantitativeCheckResult<double>();
+    EXPECT_NEAR(4.429620626755424E-5, quantitativeCheckResult4[initialState], storm::settings::generalSettings().getPrecision());
+}
+
+TEST(SparseCtmcCslModelCheckerTest, Polling) {
+    // Parse the model description.
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/polling2.sm");
+    storm::parser::FormulaParser formulaParser(program.getManager().getSharedPointer());
+    std::shared_ptr<storm::logic::Formula> formula(nullptr);
+    
+    // Build the model.
+    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitPrismModelBuilder<double>::translateProgram(program);
+    ASSERT_EQ(storm::models::ModelType::Ctmc, model->getType());
+    std::shared_ptr<storm::models::sparse::Ctmc<double>> ctmc = model->as<storm::models::sparse::Ctmc<double>>();
+    uint_fast64_t initialState = *ctmc->getInitialStates().begin();
+    
+    // Create model checker.
+    storm::modelchecker::SparseCtmcCslModelChecker<double> modelchecker(*ctmc);
+    
+    // Start checking properties.
+    formula = formulaParser.parseFromString("P=?[ F<=10 \"target\"]");
+    std::unique_ptr<storm::modelchecker::CheckResult> checkResult = modelchecker.check(*formula);
+    
+    ASSERT_TRUE(checkResult->isExplicitQuantitativeCheckResult());
+    storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeCheckResult1 = checkResult->asExplicitQuantitativeCheckResult<double>();
+    EXPECT_NEAR(1, quantitativeCheckResult1[initialState], storm::settings::generalSettings().getPrecision());
+}
+
+TEST(SparseCtmcCslModelCheckerTest, Fms) {
+    // No properties to check at this point.
+}
+
+TEST(SparseCtmcCslModelCheckerTest, Tandem) {
+    // Parse the model description.
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/tandem5.sm");
+    storm::parser::FormulaParser formulaParser(program.getManager().getSharedPointer());
+    std::shared_ptr<storm::logic::Formula> formula(nullptr);
+    
+    // Build the model.
+    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitPrismModelBuilder<double>::translateProgram(program);
+    ASSERT_EQ(storm::models::ModelType::Ctmc, model->getType());
+    std::shared_ptr<storm::models::sparse::Ctmc<double>> ctmc = model->as<storm::models::sparse::Ctmc<double>>();
+    uint_fast64_t initialState = *ctmc->getInitialStates().begin();
+    
+    // Create model checker.
+    storm::modelchecker::SparseCtmcCslModelChecker<double> modelchecker(*ctmc);
+    
+    // Start checking properties.
+    formula = formulaParser.parseFromString("P=? [ F<=10 \"network_full\" ]");
+    std::unique_ptr<storm::modelchecker::CheckResult> checkResult = modelchecker.check(*formula);
+    
+    ASSERT_TRUE(checkResult->isExplicitQuantitativeCheckResult());
+    storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeCheckResult1 = checkResult->asExplicitQuantitativeCheckResult<double>();
+    EXPECT_NEAR(0.015446370562428037, quantitativeCheckResult1[initialState], storm::settings::generalSettings().getPrecision());
+
+    formula = formulaParser.parseFromString("P=? [ F<=10 \"first_queue_full\" ]");
+    checkResult = modelchecker.check(*formula);
+    
+    ASSERT_TRUE(checkResult->isExplicitQuantitativeCheckResult());
+    storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeCheckResult2 = checkResult->asExplicitQuantitativeCheckResult<double>();
+    EXPECT_NEAR(0.999999837225515, quantitativeCheckResult2[initialState], storm::settings::generalSettings().getPrecision());
+    
+    formula = formulaParser.parseFromString("P=? [\"second_queue_full\" U<=1 !\"second_queue_full\"]");
+    checkResult = modelchecker.check(*formula);
+    
+    ASSERT_TRUE(checkResult->isExplicitQuantitativeCheckResult());
+    storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeCheckResult3 = checkResult->asExplicitQuantitativeCheckResult<double>();
+    EXPECT_NEAR(1, quantitativeCheckResult3[initialState], storm::settings::generalSettings().getPrecision());
+}
