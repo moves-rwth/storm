@@ -264,7 +264,8 @@ namespace storm {
             } else {
                 if (computeCumulativeReward) {
                     result = std::vector<ValueType>(values.size());
-                    storm::utility::vector::applyPointwiseInPlace(result, [&uniformizationRate] (ValueType const& a) { return a / uniformizationRate; });
+                    std::function<ValueType (ValueType const&)> scaleWithUniformizationRate = [&uniformizationRate] (ValueType const& a) -> ValueType { return a / uniformizationRate; };
+                    storm::utility::vector::applyPointwiseInPlace(result, scaleWithUniformizationRate);
                 } else {
                     result = std::vector<ValueType>(values.size());
                 }
@@ -367,6 +368,24 @@ namespace storm {
                 }
             }
             return result;
+        }
+        
+        template<class ValueType>
+        std::unique_ptr<CheckResult> SparseCtmcCslModelChecker<ValueType>::computeReachabilityRewards(storm::logic::ReachabilityRewardFormula const& rewardPathFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
+            std::unique_ptr<CheckResult> subResultPointer = this->check(rewardPathFormula.getSubformula());
+            ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();
+            storm::storage::SparseMatrix<ValueType> probabilityMatrix = computeProbabilityMatrix(this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector());
+            
+            boost::optional<std::vector<ValueType>> modifiedStateRewardVector;
+            if (this->getModel().hasStateRewards()) {
+                modifiedStateRewardVector = std::vector<ValueType>(this->getModel().getStateRewardVector());
+                typename std::vector<ValueType>::const_iterator it2 = this->getModel().getExitRateVector().begin();
+                for (typename std::vector<ValueType>::iterator it1 = modifiedStateRewardVector.get().begin(), ite1 = modifiedStateRewardVector.get().end(); it1 != ite1; ++it1, ++it2) {
+                    *it1 /= *it2;
+                }
+            }
+            
+            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(SparseDtmcPrctlModelChecker<ValueType>::computeReachabilityRewardsHelper(probabilityMatrix, modifiedStateRewardVector, this->getModel().getOptionalTransitionRewardMatrix(),  this->getModel().getBackwardTransitions(), subResult.getTruthValuesVector(), *linearEquationSolver, qualitative)));
         }
         
         // Explicitly instantiate the model checker.

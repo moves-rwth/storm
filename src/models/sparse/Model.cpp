@@ -94,8 +94,18 @@ namespace storm {
             }
             
             template <typename ValueType>
+            boost::optional<storm::storage::SparseMatrix<ValueType>> const& Model<ValueType>::getOptionalTransitionRewardMatrix() const {
+                return transitionRewardMatrix;
+            }
+            
+            template <typename ValueType>
             std::vector<ValueType> const& Model<ValueType>::getStateRewardVector() const {
                 return stateRewardVector.get();
+            }
+            
+            template <typename ValueType>
+            boost::optional<std::vector<ValueType>> const& Model<ValueType>::getOptionalStateRewardVector() const {
+                return stateRewardVector;
             }
             
             template <typename ValueType>

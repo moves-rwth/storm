@@ -160,7 +160,7 @@ namespace storm {
              * @param function The function to apply.
              */
             template<class T>
-            void applyPointwiseInPlace(std::vector<T>& target, std::function<T (T const&)> function) {
+            void applyPointwiseInPlace(std::vector<T>& target, std::function<T (T const&)> const& function) {
 #ifdef STORM_HAVE_INTELTBB
                 tbb::parallel_for(tbb::blocked_range<uint_fast64_t>(0, target.size()),
                                   [&](tbb::blocked_range<uint_fast64_t> const& range) {

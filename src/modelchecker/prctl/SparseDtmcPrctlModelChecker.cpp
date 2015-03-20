@@ -217,13 +217,13 @@ namespace storm {
         }
         
         template<typename ValueType>
-        std::vector<ValueType> SparseDtmcPrctlModelChecker<ValueType>::computeReachabilityRewardsHelper(storm::storage::BitVector const& targetStates, bool qualitative) const {
+        std::vector<ValueType> SparseDtmcPrctlModelChecker<ValueType>::computeReachabilityRewardsHelper(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, boost::optional<std::vector<ValueType>> const& stateRewardVector, boost::optional<storm::storage::SparseMatrix<ValueType>> const& transitionRewardMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& targetStates, storm::solver::LinearEquationSolver<ValueType> const& linearEquationSolver, bool qualitative) {
             // Only compute the result if the model has at least one reward this->getModel().
-            STORM_LOG_THROW(this->getModel().hasStateRewards() || this->getModel().hasTransitionRewards(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
+            STORM_LOG_THROW(stateRewardVector || transitionRewardMatrix, storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
             
             // Determine which states have a reward of infinity by definition.
-            storm::storage::BitVector trueStates(this->getModel().getNumberOfStates(), true);
-            storm::storage::BitVector infinityStates = storm::utility::graph::performProb1(this->getModel().getBackwardTransitions(), trueStates, targetStates);
+            storm::storage::BitVector trueStates(transitionMatrix.getRowCount(), true);
+            storm::storage::BitVector infinityStates = storm::utility::graph::performProb1(backwardTransitions, trueStates, targetStates);
             infinityStates.complement();
             storm::storage::BitVector maybeStates = ~targetStates & ~infinityStates;
             STORM_LOG_INFO("Found " << infinityStates.getNumberOfSetBits() << " 'infinity' states.");
@@ -231,7 +231,7 @@ namespace storm {
             STORM_LOG_INFO("Found " << maybeStates.getNumberOfSetBits() << " 'maybe' states.");
             
             // Create resulting vector.
-            std::vector<ValueType> result(this->getModel().getNumberOfStates());
+            std::vector<ValueType> result(transitionMatrix.getRowCount());
             
             // Check whether we need to compute exact rewards for some states.
             if (qualitative) {
@@ -241,7 +241,7 @@ namespace storm {
             } else {
                 // In this case we have to compute the reward values for the remaining states.
                 // We can eliminate the rows and columns from the original transition probability matrix.
-                storm::storage::SparseMatrix<ValueType> submatrix = this->getModel().getTransitionMatrix().getSubmatrix(true, maybeStates, maybeStates, true);
+                storm::storage::SparseMatrix<ValueType> submatrix = transitionMatrix.getSubmatrix(true, maybeStates, maybeStates, true);
                 
                 // Converting the matrix from the fixpoint notation to the form needed for the equation
                 // system. That is, we go from x = A*x + b to (I-A)x = b.
@@ -253,20 +253,20 @@ namespace storm {
                 
                 // Prepare the right-hand side of the equation system.
                 std::vector<ValueType> b(submatrix.getRowCount());
-                if (this->getModel().hasTransitionRewards()) {
+                if (transitionRewardMatrix) {
                     // If a transition-based reward model is available, we initialize the right-hand
                     // side to the vector resulting from summing the rows of the pointwise product
                     // of the transition probability matrix and the transition reward matrix.
-                    std::vector<ValueType> pointwiseProductRowSumVector = this->getModel().getTransitionMatrix().getPointwiseProductRowSumVector(this->getModel().getTransitionRewardMatrix());
+                    std::vector<ValueType> pointwiseProductRowSumVector = transitionMatrix.getPointwiseProductRowSumVector(transitionRewardMatrix.get());
                     storm::utility::vector::selectVectorValues(b, maybeStates, pointwiseProductRowSumVector);
                     
-                    if (this->getModel().hasStateRewards()) {
+                    if (stateRewardVector) {
                         // If a state-based reward model is also available, we need to add this vector
                         // as well. As the state reward vector contains entries not just for the states
                         // that we still consider (i.e. maybeStates), we need to extract these values
                         // first.
                         std::vector<ValueType> subStateRewards(b.size());
-                        storm::utility::vector::selectVectorValues(subStateRewards, maybeStates, this->getModel().getStateRewardVector());
+                        storm::utility::vector::selectVectorValues(subStateRewards, maybeStates, stateRewardVector.get());
                         storm::utility::vector::addVectorsInPlace(b, subStateRewards);
                     }
                 } else {
@@ -274,12 +274,11 @@ namespace storm {
                     // right-hand side. As the state reward vector contains entries not just for the
                     // states that we still consider (i.e. maybeStates), we need to extract these values
                     // first.
-                    storm::utility::vector::selectVectorValues(b, maybeStates, this->getModel().getStateRewardVector());
+                    storm::utility::vector::selectVectorValues(b, maybeStates, stateRewardVector.get());
                 }
                 
                 // Now solve the resulting equation system.
-                STORM_LOG_THROW(linearEquationSolver != nullptr, storm::exceptions::InvalidStateException, "No valid linear equation solver available.");
-                this->linearEquationSolver->solveEquationSystem(submatrix, x, b);
+                linearEquationSolver.solveEquationSystem(submatrix, x, b);
                 
                 // Set values of resulting vector according to result.
                 storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, x);
@@ -296,7 +295,7 @@ namespace storm {
         std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<ValueType>::computeReachabilityRewards(storm::logic::ReachabilityRewardFormula const& rewardPathFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
             std::unique_ptr<CheckResult> subResultPointer = this->check(rewardPathFormula.getSubformula());
             ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();
-            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(this->computeReachabilityRewardsHelper(subResult.getTruthValuesVector(), qualitative)));
+            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(this->computeReachabilityRewardsHelper(this->getModel().getTransitionMatrix(), this->getModel().getOptionalStateRewardVector(), this->getModel().getOptionalTransitionRewardMatrix(), this->getModel().getBackwardTransitions(), subResult.getTruthValuesVector(), *this->linearEquationSolver, qualitative)));
         }
         
         template<typename ValueType>

@@ -140,6 +140,13 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> const& getTransitionRewardMatrix() const;
                 
                 /*!
+                 * Retrieves an optional value that contains the transition reward matrix if there is one.
+                 *
+                 * @return The transition reward matrix if there is one.
+                 */
+                boost::optional<storm::storage::SparseMatrix<ValueType>> const& getOptionalTransitionRewardMatrix() const;
+                
+                /*!
                  * Retrieves the matrix representing the transition rewards of the model. Note that calling this method
                  * is only valid if the model has transition rewards.
                  *
@@ -154,6 +161,13 @@ namespace storm {
                  * @return A vector representing the state rewards of the model.
                  */
                 std::vector<ValueType> const& getStateRewardVector() const;
+                
+                /*!
+                 * Retrieves an optional value that contains the state reward vector if there is one.
+                 *
+                 * @return The state reward vector if there is one.
+                 */
+                boost::optional<std::vector<ValueType>> const& getOptionalStateRewardVector() const;
                 
                 /*!
                  * Retrieves the labels for the choices of the model. Note that calling this method is only valud if the
