@@ -1,6 +1,7 @@
 #include "src/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 
 #include <vector>
+#include <memory>
 
 #include "src/utility/macros.h"
 #include "src/utility/vector.h"
@@ -8,6 +9,8 @@
 
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+
+#include "src/storage/StronglyConnectedComponentDecomposition.h"
 
 #include "src/exceptions/InvalidPropertyException.h"
 
@@ -297,6 +300,132 @@ namespace storm {
             return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(this->computeReachabilityRewardsHelper(subResult.getTruthValuesVector(), qualitative)));
         }
         
+		template<typename ValueType>
+		std::vector<ValueType> SparseDtmcPrctlModelChecker<ValueType>::computeLongRunAverageHelper(bool minimize, storm::storage::BitVector const& psiStates, bool qualitative) const {
+			// If there are no goal states, we avoid the computation and directly return zero.
+			auto numOfStates = this->getModel().getNumberOfStates();
+			if (psiStates.empty()) {
+				return std::vector<ValueType>(numOfStates, storm::utility::zero<ValueType>());
+			}
+
+			// Likewise, if all bits are set, we can avoid the computation and set.
+			if ((~psiStates).empty()) {
+				return std::vector<ValueType>(numOfStates, storm::utility::one<ValueType>());
+			}
+
+			// Start by decomposing the DTMC into its BSCCs.
+			storm::storage::StronglyConnectedComponentDecomposition<double> bsccDecomposition(this->getModelAs<storm::models::AbstractModel<ValueType>>(), false, true);
+
+			// Get some data members for convenience.
+			typename storm::storage::SparseMatrix<ValueType> const& transitionMatrix = this->getModel().getTransitionMatrix();
+
+			// Now start with compute the long-run average for all BSCCs in isolation.
+			std::vector<ValueType> lraValuesForBsccs;
+
+			// While doing so, we already gather some information for the following steps.
+			std::vector<uint_fast64_t> stateToBsccIndexMap(numOfStates);
+			storm::storage::BitVector statesInBsccs(numOfStates);
+
+			for (uint_fast64_t currentBsccIndex = 0; currentBsccIndex < bsccDecomposition.size(); ++currentBsccIndex) {
+				storm::storage::StronglyConnectedComponent const& bscc = bsccDecomposition[currentBsccIndex];
+
+				// Gather information for later use.
+				for (auto const& state : bscc) {
+					statesInBsccs.set(state);
+					stateToBsccIndexMap[state] = currentBsccIndex;
+				}
+
+				// Compute the LRA value for the current BSCC
+				lraValuesForBsccs.push_back(this->computeLraForBSCC(transitionMatrix, psiStates, bscc));
+			}
+
+			// For fast transition rewriting, we build some auxiliary data structures.
+			storm::storage::BitVector statesNotContainedInAnyBscc = ~statesInBsccs;
+
+			// Prepare result vector.
+			std::vector<ValueType> result(numOfStates);
+
+			//Set the values for all states in BSCCs.
+			for (auto state : statesInBsccs) {
+				result[state] = lraValuesForBsccs[stateToBsccIndexMap[state]];
+			}
+
+			//for all states not in any bscc set the result to the minimal/maximal value of the reachable BSCCs
+			//there might be a more efficient way to do this...
+			for (auto state : statesNotContainedInAnyBscc){
+
+				//calculate what result values the reachable states in BSCCs have
+				storm::storage::BitVector currentState(numOfStates);
+				currentState.set(state);
+				storm::storage::BitVector reachableStates = storm::utility::graph::getReachableStates(
+					transitionMatrix, currentState, storm::storage::BitVector(numOfStates, true), statesInBsccs
+					);
+
+				storm::storage::BitVector reachableBsccStates = statesInBsccs & reachableStates;
+				std::vector<ValueType> reachableResults(reachableBsccStates.getNumberOfSetBits());
+				storm::utility::vector::selectVectorValues(reachableResults, reachableBsccStates, result);
+
+				//now select the minimal/maximal element
+				if (minimize){
+					result[state] = *std::min_element(reachableResults.begin(), reachableResults.end());
+				} else {
+					result[state] = *std::max_element(reachableResults.begin(), reachableResults.end());
+				}
+			}
+
+			return result;
+		}
+
+		template<typename ValueType>
+		std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<ValueType>::computeLongRunAverage(storm::logic::StateFormula const& stateFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
+			STORM_LOG_THROW(optimalityType, storm::exceptions::InvalidArgumentException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
+
+			std::unique_ptr<CheckResult> subResultPointer = this->check(stateFormula);
+			ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();
+
+			return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(this->computeLongRunAverageHelper(optimalityType.get() == storm::logic::OptimalityType::Minimize, subResult.getTruthValuesVector(), qualitative)));
+		}
+
+
+		template<typename ValueType>
+		ValueType SparseDtmcPrctlModelChecker<ValueType>::computeLraForBSCC(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& psiStates, storm::storage::StronglyConnectedComponent const& bscc) {
+			//if size is one we can immediately derive the result
+			if (bscc.size() == 1){
+				if (psiStates.get(*(bscc.begin()))) {
+					return storm::utility::one<ValueType>();
+				} else{
+					return storm::utility::zero<ValueType>();
+				}
+			}
+			std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = storm::utility::solver::getLinearEquationSolver<ValueType>();
+
+			storm::storage::BitVector subsystem = storm::storage::BitVector(transitionMatrix.getRowCount());
+			subsystem.set(bscc.begin(), bscc.end());
+
+			storm::storage::SparseMatrix<ValueType> subsystemMatrix = transitionMatrix.getSubmatrix(false, subsystem, subsystem);
+			std::vector<ValueType> steadyStateDist(subsystemMatrix.getRowCount(), storm::utility::zero<ValueType>());
+			steadyStateDist[0] = storm::utility::one<ValueType>();
+
+			solver->solveEquationSystem(subsystemMatrix, steadyStateDist, steadyStateDist);
+
+			ValueType length = storm::utility::zero<ValueType>();
+			for (auto value : steadyStateDist) {
+				length += value;
+			}
+			storm::utility::vector::scaleVectorInPlace(steadyStateDist, storm::utility::one<ValueType>() / length);
+
+			std::vector<ValueType> steadyStateForPsiStates(transitionMatrix.getRowCount(), storm::utility::zero<ValueType>());
+			storm::utility::vector::setVectorValues(steadyStateForPsiStates, psiStates & subsystem, steadyStateDist);
+
+			ValueType result = storm::utility::zero<ValueType>();
+
+			for (auto value : steadyStateForPsiStates) {
+				result += value;
+			}
+
+			return result;
+		}
+
         template<typename ValueType>
         storm::models::Dtmc<ValueType> const& SparseDtmcPrctlModelChecker<ValueType>::getModel() const {
             return this->template getModelAs<storm::models::Dtmc<ValueType>>();
