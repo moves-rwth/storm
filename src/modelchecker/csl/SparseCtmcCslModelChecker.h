@@ -19,7 +19,9 @@ namespace storm {
             virtual std::unique_ptr<CheckResult> computeBoundedUntilProbabilities(storm::logic::BoundedUntilFormula const& pathFormula, bool qualitative = false, boost::optional<storm::logic::OptimalityType> const& optimalityType = boost::optional<storm::logic::OptimalityType>()) override;
             virtual std::unique_ptr<CheckResult> computeNextProbabilities(storm::logic::NextFormula const& pathFormula, bool qualitative = false, boost::optional<storm::logic::OptimalityType> const& optimalityType = boost::optional<storm::logic::OptimalityType>()) override;
             virtual std::unique_ptr<CheckResult> computeUntilProbabilities(storm::logic::UntilFormula const& pathFormula, bool qualitative = false, boost::optional<storm::logic::OptimalityType> const& optimalityType = boost::optional<storm::logic::OptimalityType>()) override;
-            
+            virtual std::unique_ptr<CheckResult> computeInstantaneousRewards(storm::logic::InstantaneousRewardFormula const& rewardPathFormula, bool qualitative = false, boost::optional<storm::logic::OptimalityType> const& optimalityType = boost::optional<storm::logic::OptimalityType>()) override;
+            virtual std::unique_ptr<CheckResult> computeCumulativeRewards(storm::logic::CumulativeRewardFormula const& rewardPathFormula, bool qualitative = false, boost::optional<storm::logic::OptimalityType> const& optimalityType = boost::optional<storm::logic::OptimalityType>()) override;
+
         protected:
             storm::models::sparse::Ctmc<ValueType> const& getModel() const override;
             
@@ -27,7 +29,9 @@ namespace storm {
             // The methods that perform the actual checking.
             std::vector<ValueType> computeBoundedUntilProbabilitiesHelper(storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, std::vector<ValueType> const& exitRates, bool qualitative, double lowerBound, double upperBound) const;
             static std::vector<ValueType> computeUntilProbabilitiesHelper(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative, storm::solver::LinearEquationSolver<ValueType> const& linearEquationSolver);
-            
+            std::vector<ValueType> computeInstantaneousRewardsHelper(double timeBound) const;
+            std::vector<ValueType> computeCumulativeRewardsHelper(double timeBound) const;
+
             /*!
              * Computes the matrix representing the transitions of the uniformized CTMC.
              *
@@ -44,12 +48,16 @@ namespace storm {
              * Computes the transient probabilities for lambda time steps.
              *
              * @param uniformizedMatrix The uniformized transition matrix.
-             * @param lambda The number of time steps.
+             * @param timeBound The time bound to use.
+             * @param uniformizationRate The used uniformization rate.
              * @param values A vector mapping each state to an initial probability.
              * @param linearEquationSolver The linear equation solver to use.
+             * @param useMixedPoissonProbabilities If set to true, instead of taking the poisson probabilities,  mixed
+             * poisson probabilities are used.
              * @return The vector of transient probabilities.
              */
-            std::vector<ValueType> computeTransientProbabilities(storm::storage::SparseMatrix<ValueType> const& uniformizedMatrix, ValueType const& lambda, std::vector<ValueType> values, storm::solver::LinearEquationSolver<ValueType> const& linearEquationSolver) const;
+            template<bool useMixedPoissonProbabilities = false>
+            std::vector<ValueType> computeTransientProbabilities(storm::storage::SparseMatrix<ValueType> const& uniformizedMatrix, ValueType timeBound, ValueType uniformizationRate, std::vector<ValueType> values, storm::solver::LinearEquationSolver<ValueType> const& linearEquationSolver) const;
             
             /*!
              * Converts the given rate-matrix into a time-abstract probability matrix.

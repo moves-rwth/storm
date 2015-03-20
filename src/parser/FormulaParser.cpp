@@ -14,10 +14,10 @@ namespace storm {
             // Set the identifier mapping to actually generate expressions.
             expressionParser.setIdentifierMapping(&identifiers_);
             
-            instantaneousRewardFormula = (qi::lit("I=") > qi::uint_)[qi::_val = phoenix::bind(&FormulaParser::createInstantaneousRewardFormula, phoenix::ref(*this), qi::_1)];
+            instantaneousRewardFormula = (qi::lit("I=") >> strict_double)[qi::_val = phoenix::bind(&FormulaParser::createInstantaneousRewardFormula, phoenix::ref(*this), qi::_1)] | (qi::lit("I=") > qi::uint_)[qi::_val = phoenix::bind(&FormulaParser::createInstantaneousRewardFormula, phoenix::ref(*this), qi::_1)];
             instantaneousRewardFormula.name("instantaneous reward formula");
             
-            cumulativeRewardFormula = (qi::lit("C<=") > qi::uint_)[qi::_val = phoenix::bind(&FormulaParser::createCumulativeRewardFormula, phoenix::ref(*this), qi::_1)];
+            cumulativeRewardFormula = (qi::lit("C<=") >> strict_double)[qi::_val = phoenix::bind(&FormulaParser::createCumulativeRewardFormula, phoenix::ref(*this), qi::_1)] | (qi::lit("C<=") > qi::uint_)[qi::_val = phoenix::bind(&FormulaParser::createCumulativeRewardFormula, phoenix::ref(*this), qi::_1)];
             cumulativeRewardFormula.name("cumulative reward formula");
             
             reachabilityRewardFormula = (qi::lit("F") > stateFormula)[qi::_val = phoenix::bind(&FormulaParser::createReachabilityRewardFormula, phoenix::ref(*this), qi::_1)];
@@ -171,12 +171,24 @@ namespace storm {
             return result;
         }
         
-        std::shared_ptr<storm::logic::Formula> FormulaParser::createInstantaneousRewardFormula(unsigned stepCount) const {
-            return std::shared_ptr<storm::logic::Formula>(new storm::logic::InstantaneousRewardFormula(static_cast<uint_fast64_t>(stepCount)));
+        std::shared_ptr<storm::logic::Formula> FormulaParser::createInstantaneousRewardFormula(boost::variant<unsigned, double> const& timeBound) const {
+            if (timeBound.which() == 0) {
+                return std::shared_ptr<storm::logic::Formula>(new storm::logic::InstantaneousRewardFormula(static_cast<uint_fast64_t>(boost::get<unsigned>(timeBound))));
+            } else {
+                double timeBoundAsDouble = boost::get<double>(timeBound);
+                STORM_LOG_THROW(timeBoundAsDouble >= 0, storm::exceptions::WrongFormatException, "Cumulative reward property must have non-negative bound.");
+                return std::shared_ptr<storm::logic::Formula>(new storm::logic::InstantaneousRewardFormula(static_cast<uint_fast64_t>(timeBoundAsDouble)));
+            }
         }
         
-        std::shared_ptr<storm::logic::Formula> FormulaParser::createCumulativeRewardFormula(unsigned stepBound) const {
-            return std::shared_ptr<storm::logic::Formula>(new storm::logic::CumulativeRewardFormula(static_cast<uint_fast64_t>(stepBound)));
+        std::shared_ptr<storm::logic::Formula> FormulaParser::createCumulativeRewardFormula(boost::variant<unsigned, double> const& timeBound) const {
+            if (timeBound.which() == 0) {
+                return std::shared_ptr<storm::logic::Formula>(new storm::logic::CumulativeRewardFormula(static_cast<uint_fast64_t>(boost::get<unsigned>(timeBound))));
+            } else {
+                double timeBoundAsDouble = boost::get<double>(timeBound);
+                STORM_LOG_THROW(timeBoundAsDouble >= 0, storm::exceptions::WrongFormatException, "Cumulative reward property must have non-negative bound.");
+                return std::shared_ptr<storm::logic::Formula>(new storm::logic::CumulativeRewardFormula(static_cast<uint_fast64_t>(timeBoundAsDouble)));
+            }
         }
         
         std::shared_ptr<storm::logic::Formula> FormulaParser::createReachabilityRewardFormula(std::shared_ptr<storm::logic::Formula> const& stateFormula) const {

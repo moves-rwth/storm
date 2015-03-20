@@ -157,8 +157,8 @@ namespace storm {
             boost::spirit::qi::real_parser<double, boost::spirit::qi::strict_real_policies<double>> strict_double;
             
             // Methods that actually create the expression objects.
-            std::shared_ptr<storm::logic::Formula> createInstantaneousRewardFormula(unsigned stepCount) const;
-            std::shared_ptr<storm::logic::Formula> createCumulativeRewardFormula(unsigned stepBound) const;
+            std::shared_ptr<storm::logic::Formula> createInstantaneousRewardFormula(boost::variant<unsigned, double> const& timeBound) const;
+            std::shared_ptr<storm::logic::Formula> createCumulativeRewardFormula(boost::variant<unsigned, double> const& timeBound) const;
             std::shared_ptr<storm::logic::Formula> createReachabilityRewardFormula(std::shared_ptr<storm::logic::Formula> const& stateFormula) const;
             std::shared_ptr<storm::logic::Formula> createAtomicExpressionFormula(storm::expressions::Expression const& expression) const;
             std::shared_ptr<storm::logic::Formula> createBooleanLiteralFormula(bool literal) const;
