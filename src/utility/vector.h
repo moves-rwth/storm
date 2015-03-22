@@ -205,6 +205,40 @@ namespace storm {
             }
             
             /*!
+             * Retrieves a bit vector containing all the indices for which the value at this position makes the given
+             * function evaluate to true.
+             *
+             * @param values The vector of values.
+             * @param function The function that selects some elements.
+             * @return The resulting bit vector.
+             */
+            template<class T>
+            storm::storage::BitVector filter(std::vector<T> const& values, std::function<bool (T const& value)> const& function) {
+                storm::storage::BitVector result(values.size());
+                
+                uint_fast64_t currentIndex = 0;
+                for (auto const& value : values) {
+                    result.set(currentIndex, function(value));
+                    ++currentIndex;
+                }
+                
+                return result;
+            }
+            
+            /*!
+             * Retrieves a bit vector containing all the indices for which the value at this position is greater than
+             * zero
+             *
+             * @param values The vector of values.
+             * @return The resulting bit vector.
+             */
+            template<class T>
+            storm::storage::BitVector filterGreaterZero(std::vector<T> const& values) {
+                std::function<bool (T const&)> fnc = [] (T const& value) -> bool { return value > storm::utility::zero<T>(); };
+                return filter(values,  fnc);
+            }
+            
+            /*!
              * Reduces the given source vector by selecting an element according to the given filter out of each row group.
              *
              * @param source The source vector which is to be reduced.

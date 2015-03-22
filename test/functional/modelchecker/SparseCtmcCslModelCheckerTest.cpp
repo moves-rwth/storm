@@ -119,7 +119,7 @@ TEST(SparseCtmcCslModelCheckerTest, Embedded) {
     
     ASSERT_TRUE(checkResult->isExplicitQuantitativeCheckResult());
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeCheckResult5 = checkResult->asExplicitQuantitativeCheckResult<double>();
-    EXPECT_NEAR(2.7719776270427521, quantitativeCheckResult5[initialState], storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(2.7720429852369946, quantitativeCheckResult5[initialState], storm::settings::generalSettings().getPrecision());
 }
 
 TEST(SparseCtmcCslModelCheckerTest, Polling) {
