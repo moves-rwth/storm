@@ -127,11 +127,6 @@ namespace storm {
 #endif
             }
             
-            // Now that we have defined all the constants in the program, we need to substitute their appearances in
-            // all expressions in the program so we can then evaluate them without having to store the values of the
-            // constants in the state (i.e., valuation).
-            preparedProgram = preparedProgram.substituteConstants();
-                
             storm::prism::RewardModel rewardModel = storm::prism::RewardModel();
             
             // Select the appropriate reward model.
@@ -165,6 +160,9 @@ namespace storm {
                 }
             }
             
+            // Now that the program is fixed, we we need to substitute all constants with their concrete value.
+            preparedProgram = preparedProgram.substituteConstants();
+                
             ModelComponents modelComponents = buildModelComponents(preparedProgram, rewardModel, options);
             
             std::shared_ptr<storm::models::sparse::Model<ValueType>> result;

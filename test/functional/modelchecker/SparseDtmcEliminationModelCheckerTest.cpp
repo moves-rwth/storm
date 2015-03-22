@@ -2,7 +2,6 @@
 #include "storm-config.h"
 
 #include "src/logic/Formulas.h"
-#include "src/solver/GmmxxLinearEquationSolver.h"
 #include "src/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "src/settings/SettingsManager.h"
@@ -27,7 +26,7 @@ TEST(SparseDtmcEliminationModelCheckerTest, Die) {
     std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*eventuallyFormula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
     
-    EXPECT_NEAR(1.0/6.0, quantitativeResult1[0], storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(1.0/6.0, quantitativeResult1[0], storm::settings::generalSettings().getPrecision());
     
     labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("two");
     eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(labelFormula);
@@ -35,7 +34,7 @@ TEST(SparseDtmcEliminationModelCheckerTest, Die) {
     result = checker.check(*eventuallyFormula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult2 = result->asExplicitQuantitativeCheckResult<double>();
     
-    EXPECT_NEAR(1.0/6.0, quantitativeResult2[0], storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(1.0/6.0, quantitativeResult2[0], storm::settings::generalSettings().getPrecision());
     
     labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("three");
     eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(labelFormula);
@@ -43,7 +42,7 @@ TEST(SparseDtmcEliminationModelCheckerTest, Die) {
     result = checker.check(*eventuallyFormula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult3 = result->asExplicitQuantitativeCheckResult<double>();
     
-    EXPECT_NEAR(1.0/6.0, quantitativeResult3[0], storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(1.0/6.0, quantitativeResult3[0], storm::settings::generalSettings().getPrecision());
     
     auto done = std::make_shared<storm::logic::AtomicLabelFormula>("done");
     auto reachabilityRewardFormula = std::make_shared<storm::logic::ReachabilityRewardFormula>(done);
@@ -51,7 +50,7 @@ TEST(SparseDtmcEliminationModelCheckerTest, Die) {
     result = checker.check(*reachabilityRewardFormula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult4 = result->asExplicitQuantitativeCheckResult<double>();
     
-    EXPECT_NEAR(11.0/3.0, quantitativeResult4[0], storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(11.0/3.0, quantitativeResult4[0], storm::settings::generalSettings().getPrecision());
 }
 
 TEST(SparseDtmcEliminationModelCheckerTest, Crowds) {
@@ -72,7 +71,7 @@ TEST(SparseDtmcEliminationModelCheckerTest, Crowds) {
     std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*eventuallyFormula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
     
-    EXPECT_NEAR(0.3328800375801578281, quantitativeResult1[0], storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(0.3328800375801578281, quantitativeResult1[0], storm::settings::generalSettings().getPrecision());
     
     labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("observeIGreater1");
     eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(labelFormula);
@@ -80,7 +79,7 @@ TEST(SparseDtmcEliminationModelCheckerTest, Crowds) {
     result = checker.check(*eventuallyFormula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult2 = result->asExplicitQuantitativeCheckResult<double>();
     
-    EXPECT_NEAR(0.1522194965, quantitativeResult2[0], storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(0.1522194965, quantitativeResult2[0], storm::settings::generalSettings().getPrecision());
     
     labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("observeOnlyTrueSender");
     eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(labelFormula);
@@ -88,7 +87,7 @@ TEST(SparseDtmcEliminationModelCheckerTest, Crowds) {
     result = checker.check(*eventuallyFormula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult3 = result->asExplicitQuantitativeCheckResult<double>();
     
-    EXPECT_NEAR(0.32153724292835045, quantitativeResult3[0], storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(0.32153724292835045, quantitativeResult3[0], storm::settings::generalSettings().getPrecision());
     
     labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("observe0Greater1");
     eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(labelFormula);
@@ -100,7 +99,7 @@ TEST(SparseDtmcEliminationModelCheckerTest, Crowds) {
     result = checker.check(*conditionalFormula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult4 = result->asExplicitQuantitativeCheckResult<double>();
     
-    EXPECT_NEAR(0.15330064292476167, quantitativeResult4[0], storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(0.15330064292476167, quantitativeResult4[0], storm::settings::generalSettings().getPrecision());
     
     labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("observeOnlyTrueSender");
     eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(labelFormula);
@@ -112,7 +111,7 @@ TEST(SparseDtmcEliminationModelCheckerTest, Crowds) {
     result = checker.check(*conditionalFormula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult5 = result->asExplicitQuantitativeCheckResult<double>();
     
-    EXPECT_NEAR(0.96592521978041668, quantitativeResult5[0], storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(0.96592521978041668, quantitativeResult5[0], storm::settings::generalSettings().getPrecision());
 }
 
 TEST(SparseDtmcEliminationModelCheckerTest, SynchronousLeader) {
@@ -132,7 +131,7 @@ TEST(SparseDtmcEliminationModelCheckerTest, SynchronousLeader) {
     std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*eventuallyFormula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
     
-    EXPECT_NEAR(1.0, quantitativeResult1[0], storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(1.0, quantitativeResult1[0], storm::settings::generalSettings().getPrecision());
     
     labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("elected");
     auto reachabilityRewardFormula = std::make_shared<storm::logic::ReachabilityRewardFormula>(labelFormula);
@@ -140,5 +139,5 @@ TEST(SparseDtmcEliminationModelCheckerTest, SynchronousLeader) {
     result = checker.check(*reachabilityRewardFormula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult3 = result->asExplicitQuantitativeCheckResult<double>();
     
-    EXPECT_NEAR(1.0448979, quantitativeResult3[0], storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(1.0448979, quantitativeResult3[0], storm::settings::generalSettings().getPrecision());
 }

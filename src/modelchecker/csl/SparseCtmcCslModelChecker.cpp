@@ -339,23 +339,35 @@ namespace storm {
         template<class ValueType>
         std::vector<ValueType> SparseCtmcCslModelChecker<ValueType>::computeCumulativeRewardsHelper(double timeBound) const {
             // Only compute the result if the model has a state-based reward this->getModel().
-            STORM_LOG_THROW(this->getModel().hasStateRewards(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
+            STORM_LOG_THROW(this->getModel().hasStateRewards() || this->getModel().hasTransitionRewards(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
             
-            // Initialize result to state rewards of the this->getModel().
-            std::vector<ValueType> result(this->getModel().getStateRewardVector());
-            
-            // If the time-bound is not zero, we need to perform a transient analysis.
-            if (timeBound > 0) {
-                ValueType uniformizationRate = 0;
-                for (auto const& rate : this->getModel().getExitRateVector()) {
-                    uniformizationRate = std::max(uniformizationRate, rate);
-                }
-                
-                storm::storage::SparseMatrix<ValueType> uniformizedMatrix = this->computeUniformizedMatrix(this->getModel().getTransitionMatrix(), storm::storage::BitVector(this->getModel().getNumberOfStates(), true), storm::storage::BitVector(this->getModel().getNumberOfStates()), uniformizationRate, this->getModel().getExitRateVector());
-                result = this->computeTransientProbabilities<true>(uniformizedMatrix, timeBound, uniformizationRate, result, *this->linearEquationSolver);
+            // If the time bound is zero, the result is the constant zero vector.
+            if (timeBound == 0) {
+                return std::vector<ValueType>(this->getModel().getNumberOfStates(), storm::utility::zero<ValueType>());
             }
             
-            return result;
+            // Otherwise, we need to perform some computations.
+            
+            // Start with the uniformization.
+            ValueType uniformizationRate = 0;
+            for (auto const& rate : this->getModel().getExitRateVector()) {
+                uniformizationRate = std::max(uniformizationRate, rate);
+            }
+            storm::storage::SparseMatrix<ValueType> uniformizedMatrix = this->computeUniformizedMatrix(this->getModel().getTransitionMatrix(), storm::storage::BitVector(this->getModel().getNumberOfStates(), true), storm::storage::BitVector(this->getModel().getNumberOfStates()), uniformizationRate, this->getModel().getExitRateVector());
+            
+            // Compute the total state reward vector.
+            std::vector<ValueType> totalRewardVector;
+            if (this->getModel().hasTransitionRewards()) {
+                totalRewardVector = this->getModel().getTransitionMatrix().getPointwiseProductRowSumVector(this->getModel().getTransitionRewardMatrix());
+                if (this->getModel().hasStateRewards()) {
+                    storm::utility::vector::addVectorsInPlace(totalRewardVector, this->getModel().getStateRewardVector());
+                }
+            } else {
+                totalRewardVector = std::vector<ValueType>(this->getModel().getStateRewardVector());
+            }
+            
+            // Finally, compute the transient probabilities.
+            return this->computeTransientProbabilities<true>(uniformizedMatrix, timeBound, uniformizationRate, totalRewardVector, *this->linearEquationSolver);
         }
         
         template<class ValueType>
@@ -385,7 +397,7 @@ namespace storm {
                 }
             }
             
-            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(SparseDtmcPrctlModelChecker<ValueType>::computeReachabilityRewardsHelper(probabilityMatrix, modifiedStateRewardVector, this->getModel().getOptionalTransitionRewardMatrix(),  this->getModel().getBackwardTransitions(), subResult.getTruthValuesVector(), *linearEquationSolver, qualitative)));
+            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(SparseDtmcPrctlModelChecker<ValueType>::computeReachabilityRewardsHelper(probabilityMatrix, modifiedStateRewardVector, this->getModel().getOptionalTransitionRewardMatrix(), this->getModel().getBackwardTransitions(), subResult.getTruthValuesVector(), *linearEquationSolver, qualitative)));
         }
         
         // Explicitly instantiate the model checker.
