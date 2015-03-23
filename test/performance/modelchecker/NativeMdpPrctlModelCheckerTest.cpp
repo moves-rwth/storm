@@ -4,7 +4,7 @@
 #include "src/settings/SettingsManager.h"
 #include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-#include "src/solver/NativeNondeterministicLinearEquationSolver.h"
+#include "src/utility/solver.h"
 #include "src/parser/AutoParser.h"
 
 TEST(SparseMdpPrctlModelCheckerTest, AsynchronousLeader) {
@@ -17,7 +17,7 @@ TEST(SparseMdpPrctlModelCheckerTest, AsynchronousLeader) {
 	ASSERT_EQ(2095783ull, mdp->getNumberOfStates());
 	ASSERT_EQ(7714385ull, mdp->getNumberOfTransitions());
 
-	storm::modelchecker::SparseMdpPrctlModelChecker<double> checker(*mdp, std::shared_ptr<storm::solver::NativeNondeterministicLinearEquationSolver<double>>(new storm::solver::NativeNondeterministicLinearEquationSolver<double>()));
+    storm::modelchecker::SparseMdpPrctlModelChecker<double> checker(*mdp, std::unique_ptr<storm::utility::solver::NondeterministicLinearEquationSolverFactory<double>>(new storm::utility::solver::NativeNondeterministicLinearEquationSolverFactory<double>()));
 
     auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("elected");
     auto eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(labelFormula);
@@ -79,7 +79,7 @@ TEST(SparseMdpPrctlModelCheckerTest, Consensus) {
 	ASSERT_EQ(63616ull, mdp->getNumberOfStates());
 	ASSERT_EQ(213472ull, mdp->getNumberOfTransitions());
     
-	storm::modelchecker::SparseMdpPrctlModelChecker<double> checker(*mdp, std::shared_ptr<storm::solver::NativeNondeterministicLinearEquationSolver<double>>(new storm::solver::NativeNondeterministicLinearEquationSolver<double>()));
+	storm::modelchecker::SparseMdpPrctlModelChecker<double> checker(*mdp, std::unique_ptr<storm::utility::solver::NondeterministicLinearEquationSolverFactory<double>>(new storm::utility::solver::NativeNondeterministicLinearEquationSolverFactory<double>()));
     
     auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("finished");
     auto eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(labelFormula);

@@ -74,6 +74,11 @@ namespace storm {
                 return std::unique_ptr<storm::solver::LpSolver>(new storm::solver::GurobiLpSolver(name));
             }
             
+            std::unique_ptr<storm::solver::LpSolver> getLpSolver(std::string const& name) {
+                std::unique_ptr<storm::utility::solver::LpSolverFactory> factory(new LpSolverFactory());
+                return factory->create(name);
+            }
+            
             template class LinearEquationSolverFactory<double>;
             template class GmmxxLinearEquationSolverFactory<double>;
             template class NativeLinearEquationSolverFactory<double>;

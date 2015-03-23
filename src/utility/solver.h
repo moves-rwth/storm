@@ -81,6 +81,8 @@ namespace storm {
             public:
                 virtual std::unique_ptr<storm::solver::LpSolver> create(std::string const& name) const override;
             };
+            
+            std::unique_ptr<storm::solver::LpSolver> getLpSolver(std::string const& name);
         }
     }
 }

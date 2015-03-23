@@ -66,7 +66,6 @@ log4cplus::Logger printer;
 #include "src/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "src/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
 #include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
-#include "src/modelchecker/prctl/TopologicalValueIterationMdpPrctlModelChecker.h"
 #include "src/modelchecker/csl/SparseCtmcCslModelChecker.h"
 
 // Headers for counterexample generation.

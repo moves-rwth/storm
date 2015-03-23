@@ -51,6 +51,7 @@ namespace storm {
              * Computes the transient probabilities for lambda time steps.
              *
              * @param uniformizedMatrix The uniformized transition matrix.
+             * @param b A vector that is added in each step as a possible compensation for the removed absorbing states.
              * @param timeBound The time bound to use.
              * @param uniformizationRate The used uniformization rate.
              * @param values A vector mapping each state to an initial probability.
@@ -60,7 +61,7 @@ namespace storm {
              * @return The vector of transient probabilities.
              */
             template<bool useMixedPoissonProbabilities = false>
-            std::vector<ValueType> computeTransientProbabilities(storm::storage::SparseMatrix<ValueType> const& uniformizedMatrix, ValueType timeBound, ValueType uniformizationRate, std::vector<ValueType> values, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) const;
+            std::vector<ValueType> computeTransientProbabilities(storm::storage::SparseMatrix<ValueType> const& uniformizedMatrix, std::vector<ValueType> const& b, ValueType timeBound, ValueType uniformizationRate, std::vector<ValueType> values, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) const;
             
             /*!
              * Converts the given rate-matrix into a time-abstract probability matrix.

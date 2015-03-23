@@ -142,10 +142,7 @@ namespace storm {
 				storm::storage::BitVector fullSystem(this->A.getRowGroupCount(), true);
 				storm::storage::StronglyConnectedComponentDecomposition<ValueType> sccDecomposition(this->A, fullSystem, false, false);
 
-				if (sccDecomposition.size() == 0) {
-					LOG4CPLUS_ERROR(logger, "Can not solve given Equation System as the SCC Decomposition returned no SCCs.");
-					throw storm::exceptions::IllegalArgumentException() << "Can not solve given Equation System as the SCC Decomposition returned no SCCs.";
-				}
+                STORM_LOG_THROW(sccDecomposition.size() > 0, storm::exceptions::IllegalArgumentException, "Can not solve given equation system as the SCC decomposition returned no SCCs.");
 
                 storm::storage::SparseMatrix<ValueType> stronglyConnectedComponentsDependencyGraph = sccDecomposition.extractPartitionDependencyGraph(this->A);
 				std::vector<uint_fast64_t> topologicalSort = storm::utility::graph::getTopologicalSort(stronglyConnectedComponentsDependencyGraph);

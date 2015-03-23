@@ -117,15 +117,22 @@ namespace storm {
                         STORM_LOG_THROW(uniformizationRate > 0, storm::exceptions::InvalidStateException, "The uniformization rate must be positive.");
                         
                         // Compute the uniformized matrix.
-                        storm::storage::SparseMatrix<ValueType> uniformizedMatrix = this->computeUniformizedMatrix(this->getModel().getTransitionMatrix(), statesWithProbabilityGreater0, psiStates, uniformizationRate, exitRates);
+                        storm::storage::SparseMatrix<ValueType> uniformizedMatrix = this->computeUniformizedMatrix(this->getModel().getTransitionMatrix(), statesWithProbabilityGreater0NonPsi, storm::storage::BitVector(this->getModel().getNumberOfStates()), uniformizationRate, exitRates);
+                        
+                        // Compute the vector that is to be added as a compensation for removing the absorbing states.
+                        std::vector<ValueType> b = this->getModel().getTransitionMatrix().getConstrainedRowSumVector(statesWithProbabilityGreater0NonPsi, psiStates);
+                        for (auto& element : b) {
+                            element /= uniformizationRate;
+                        }
+                        
+                        std::vector<ValueType> values(statesWithProbabilityGreater0NonPsi.getNumberOfSetBits(), storm::utility::zero<ValueType>());
                         
                         // Finally compute the transient probabilities.
-                        std::vector<ValueType> psiStateValues(statesWithProbabilityGreater0.getNumberOfSetBits(), storm::utility::zero<ValueType>());
-                        storm::utility::vector::setVectorValues(psiStateValues, psiStates % statesWithProbabilityGreater0, storm::utility::one<ValueType>());
-                        
-                        std::vector<ValueType> subresult = this->computeTransientProbabilities(uniformizedMatrix, upperBound, uniformizationRate, psiStateValues, *this->linearEquationSolverFactory);
+                        std::vector<ValueType> subresult = this->computeTransientProbabilities(uniformizedMatrix, b, upperBound, uniformizationRate, values, *this->linearEquationSolverFactory);
                         result = std::vector<ValueType>(this->getModel().getNumberOfStates(), storm::utility::zero<ValueType>());
-                        storm::utility::vector::setVectorValues(result, statesWithProbabilityGreater0, subresult);
+                        
+                        storm::utility::vector::setVectorValues(result, statesWithProbabilityGreater0NonPsi, subresult);
+                        storm::utility::vector::setVectorValues(result, psiStates, storm::utility::one<ValueType>());
                     } else if (comparator.isInfinity(upperBound)) {
                         // In this case, the interval is of the form [t, inf] with t != 0.
                         
@@ -150,7 +157,7 @@ namespace storm {
                         storm::storage::SparseMatrix<ValueType> uniformizedMatrix = this->computeUniformizedMatrix(this->getModel().getTransitionMatrix(), relevantStates, storm::storage::BitVector(result.size()), uniformizationRate, exitRates);
                         
                         // Compute the transient probabilities.
-                        subResult = this->computeTransientProbabilities(uniformizedMatrix, lowerBound, uniformizationRate, subResult, *this->linearEquationSolverFactory);
+                        subResult = this->computeTransientProbabilities(uniformizedMatrix, std::vector<ValueType>(relevantStates.getNumberOfSetBits(), storm::utility::zero<ValueType>()), lowerBound, uniformizationRate, subResult, *this->linearEquationSolverFactory);
                         
                         // Fill in the correct values.
                         storm::utility::vector::setVectorValues(result, ~relevantStates, storm::utility::zero<ValueType>());
@@ -172,7 +179,7 @@ namespace storm {
                         // Start by computing the transient probabilities of reaching a psi state in time t' - t.
                         std::vector<ValueType> psiStateValues(statesWithProbabilityGreater0.getNumberOfSetBits(), storm::utility::zero<ValueType>());
                         storm::utility::vector::setVectorValues(psiStateValues, psiStates % statesWithProbabilityGreater0, storm::utility::one<ValueType>());
-                        std::vector<ValueType> subresult = this->computeTransientProbabilities(uniformizedMatrix, upperBound - lowerBound, uniformizationRate, psiStateValues, *this->linearEquationSolverFactory);
+                        std::vector<ValueType> subresult = this->computeTransientProbabilities(uniformizedMatrix, std::vector<ValueType>(statesWithProbabilityGreater0.getNumberOfSetBits(), storm::utility::zero<ValueType>()), upperBound - lowerBound, uniformizationRate, psiStateValues, *this->linearEquationSolverFactory);
                         
                         // Determine the set of states that must be considered further.
                         storm::storage::BitVector relevantStates = storm::utility::vector::filterGreaterZero(subresult);
@@ -192,7 +199,7 @@ namespace storm {
                         
                         // Finally, we compute the second set of transient probabilities.
                         uniformizedMatrix = this->computeUniformizedMatrix(this->getModel().getTransitionMatrix(), relevantStates, storm::storage::BitVector(this->getModel().getNumberOfStates()), uniformizationRate, exitRates);
-                        newSubresult = this->computeTransientProbabilities(uniformizedMatrix, lowerBound, uniformizationRate, newSubresult, *this->linearEquationSolverFactory);
+                        newSubresult = this->computeTransientProbabilities(uniformizedMatrix, std::vector<ValueType>(relevantStates.getNumberOfSetBits(), storm::utility::zero<ValueType>()), lowerBound, uniformizationRate, newSubresult, *this->linearEquationSolverFactory);
                         
                         // Fill in the correct values.
                         result = std::vector<ValueType>(this->getModel().getNumberOfStates(), storm::utility::zero<ValueType>());
@@ -207,6 +214,9 @@ namespace storm {
         
         template<class ValueType>
         storm::storage::SparseMatrix<ValueType> SparseCtmcCslModelChecker<ValueType>::computeUniformizedMatrix(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates, storm::storage::BitVector const& absorbingStates, ValueType uniformizationRate, std::vector<ValueType> const& exitRates) {
+            STORM_LOG_DEBUG("Computing uniformized matrix using uniformization rate " << uniformizationRate << ".");
+            STORM_LOG_DEBUG("Keeping " << maybeStates.getNumberOfSetBits() << " rows.");
+            
             // Create the submatrix that only contains the states with a positive probability (including the
             // psi states) and reserve space for elements on the diagonal.
             storm::storage::SparseMatrix<ValueType> uniformizedMatrix = transitionMatrix.getSubmatrix(false, maybeStates, maybeStates, true);
@@ -240,7 +250,8 @@ namespace storm {
         
         template<class ValueType>
         template<bool computeCumulativeReward>
-        std::vector<ValueType> SparseCtmcCslModelChecker<ValueType>::computeTransientProbabilities(storm::storage::SparseMatrix<ValueType> const& uniformizedMatrix, ValueType timeBound, ValueType uniformizationRate, std::vector<ValueType> values, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) const {
+        std::vector<ValueType> SparseCtmcCslModelChecker<ValueType>::computeTransientProbabilities(storm::storage::SparseMatrix<ValueType> const& uniformizedMatrix, std::vector<ValueType> const& b, ValueType timeBound, ValueType uniformizationRate, std::vector<ValueType> values, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) const {
+            
             ValueType lambda = timeBound * uniformizationRate;
             
             // If no time can pass, the current values are the result.
@@ -250,6 +261,7 @@ namespace storm {
             
             // Use Fox-Glynn to get the truncation points and the weights.
             std::tuple<uint_fast64_t, uint_fast64_t, ValueType, std::vector<ValueType>> foxGlynnResult = storm::utility::numerical::getFoxGlynnCutoff(lambda, 1e-300, 1e+300, storm::settings::generalSettings().getPrecision() / 8.0);
+            STORM_LOG_DEBUG("Fox-Glynn cutoff points: left=" << std::get<0>(foxGlynnResult) << ", right=" << std::get<1>(foxGlynnResult));
             
             // Scale the weights so they add up to one.
             for (auto& element : std::get<3>(foxGlynnResult)) {
@@ -266,12 +278,16 @@ namespace storm {
                 }
             }
             
+            STORM_LOG_DEBUG("Starting iterations with " << uniformizedMatrix.getRowCount() << " x " << uniformizedMatrix.getColumnCount() << " matrix.");
+            
             // Initialize result.
             std::vector<ValueType> result;
             uint_fast64_t startingIteration = std::get<0>(foxGlynnResult);
             if (startingIteration == 0) {
                 result = values;
                 storm::utility::vector::scaleVectorInPlace(result, std::get<3>(foxGlynnResult)[0]);
+                std::function<ValueType(ValueType const&, ValueType const&)> addAndScale = [&foxGlynnResult] (ValueType const& a, ValueType const& b) { return a + std::get<3>(foxGlynnResult)[0] * b; };
+                storm::utility::vector::applyPointwiseInPlace(result, b, addAndScale);
                 ++startingIteration;
             } else {
                 if (computeCumulativeReward) {
@@ -288,7 +304,7 @@ namespace storm {
             
             if (!computeCumulativeReward && std::get<0>(foxGlynnResult) > 1) {
                 // Perform the matrix-vector multiplications (without adding).
-                solver->performMatrixVectorMultiplication(values, nullptr, std::get<0>(foxGlynnResult) - 1, &multiplicationResult);
+                solver->performMatrixVectorMultiplication(values, &b, std::get<0>(foxGlynnResult) - 1, &multiplicationResult);
             } else if (computeCumulativeReward) {
                 std::function<ValueType(ValueType const&, ValueType const&)> addAndScale = [&uniformizationRate] (ValueType const& a, ValueType const& b) { return a + b / uniformizationRate; };
                 
@@ -304,7 +320,7 @@ namespace storm {
             ValueType weight = 0;
             std::function<ValueType(ValueType const&, ValueType const&)> addAndScale = [&weight] (ValueType const& a, ValueType const& b) { return a + weight * b; };
             for (uint_fast64_t index = startingIteration; index <= std::get<1>(foxGlynnResult); ++index) {
-                solver->performMatrixVectorMultiplication(values, nullptr, 1, &multiplicationResult);
+                solver->performMatrixVectorMultiplication(values, &b, 1, &multiplicationResult);
                 
                 weight = std::get<3>(foxGlynnResult)[index - std::get<0>(foxGlynnResult)];
                 storm::utility::vector::applyPointwiseInPlace(result, values, addAndScale);
@@ -341,7 +357,7 @@ namespace storm {
                 STORM_LOG_THROW(uniformizationRate > 0, storm::exceptions::InvalidStateException, "The uniformization rate must be positive.");
                 
                 storm::storage::SparseMatrix<ValueType> uniformizedMatrix = this->computeUniformizedMatrix(this->getModel().getTransitionMatrix(), storm::storage::BitVector(this->getModel().getNumberOfStates(), true), storm::storage::BitVector(this->getModel().getNumberOfStates()), uniformizationRate, this->getModel().getExitRateVector());
-                result = this->computeTransientProbabilities(uniformizedMatrix, timeBound, uniformizationRate, result, *this->linearEquationSolverFactory);
+                result = this->computeTransientProbabilities(uniformizedMatrix, std::vector<ValueType>(this->getModel().getNumberOfStates(), storm::utility::zero<ValueType>()), timeBound, uniformizationRate, result, *this->linearEquationSolverFactory);
             }
             
             return result;
@@ -386,7 +402,7 @@ namespace storm {
             }
             
             // Finally, compute the transient probabilities.
-            return this->computeTransientProbabilities<true>(uniformizedMatrix, timeBound, uniformizationRate, totalRewardVector, *this->linearEquationSolverFactory);
+            return this->computeTransientProbabilities<true>(uniformizedMatrix, std::vector<ValueType>(this->getModel().getNumberOfStates(), storm::utility::zero<ValueType>()), timeBound, uniformizationRate, totalRewardVector, *this->linearEquationSolverFactory);
         }
         
         template<class ValueType>

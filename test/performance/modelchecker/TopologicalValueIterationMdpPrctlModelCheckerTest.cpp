@@ -1,20 +1,20 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
-#include "src/modelchecker/prctl/TopologicalValueIterationMdpPrctlModelChecker.h"
-#include "src/solver/NativeNondeterministicLinearEquationSolver.h"
+#include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
+#include "src/utility/solver.h"
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "src/settings/SettingsManager.h"
 #include "src/settings/SettingMemento.h"
 #include "src/parser/AutoParser.h"
 
 TEST(TopologicalValueIterationMdpPrctlModelCheckerTest, AsynchronousLeader) {
-	std::shared_ptr<storm::models::Mdp<double>> mdp = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader7.tra", STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader7.lab", "", STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader7.trans.rew")->as<storm::models::Mdp<double>>();
+    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader7.tra", STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader7.lab", "", STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader7.trans.rew")->as<storm::models::sparse::Mdp<double>>();
 
 	ASSERT_EQ(mdp->getNumberOfStates(), 2095783ull);
 	ASSERT_EQ(mdp->getNumberOfTransitions(), 7714385ull);
 
-	storm::modelchecker::TopologicalValueIterationMdpPrctlModelChecker<double> mc(*mdp);
+	storm::modelchecker::SparseMdpPrctlModelChecker<double> mc(*mdp, std::unique_ptr<storm::utility::solver::NondeterministicLinearEquationSolverFactory<double>>(new storm::utility::solver::TopologicalNondeterministicLinearEquationSolverFactory<double>()));
 
 	auto apFormula = std::make_shared<storm::logic::AtomicLabelFormula>("elected");
 	auto eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(apFormula);
@@ -81,12 +81,12 @@ TEST(TopologicalValueIterationMdpPrctlModelCheckerTest, Consensus) {
     // Increase the maximal number of iterations, because the solver does not converge otherwise.
 	// This is done in the main cpp unit
     
-	std::shared_ptr<storm::models::Mdp<double>> mdp = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/mdp/consensus/coin4_6.tra", STORM_CPP_BASE_PATH "/examples/mdp/consensus/coin4_6.lab", STORM_CPP_BASE_PATH "/examples/mdp/consensus/coin4_6.steps.state.rew", "")->as<storm::models::Mdp<double>>();
+    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/mdp/consensus/coin4_6.tra", STORM_CPP_BASE_PATH "/examples/mdp/consensus/coin4_6.lab", STORM_CPP_BASE_PATH "/examples/mdp/consensus/coin4_6.steps.state.rew", "")->as<storm::models::sparse::Mdp<double>>();
     
 	ASSERT_EQ(mdp->getNumberOfStates(), 63616ull);
 	ASSERT_EQ(mdp->getNumberOfTransitions(), 213472ull);
     
-	storm::modelchecker::TopologicalValueIterationMdpPrctlModelChecker<double> mc(*mdp);
+	storm::modelchecker::SparseMdpPrctlModelChecker<double> mc(*mdp, std::unique_ptr<storm::utility::solver::NondeterministicLinearEquationSolverFactory<double>>(new storm::utility::solver::TopologicalNondeterministicLinearEquationSolverFactory<double>()));
 
 	auto apFormula = std::make_shared<storm::logic::AtomicLabelFormula>("finished");
 	auto eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(apFormula);

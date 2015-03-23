@@ -256,6 +256,13 @@ namespace storm {
                 EquationSolver getEquationSolver() const;
                 
                 /*!
+                 * Retrieves whether a equation solver has been set.
+                 *
+                 * @return True iff an equation solver has been set.
+                 */
+                bool isEquationSolverSet() const;
+                
+                /*!
                  * Retrieves the selected LP solver.
                  *
                  * @return The selected LP solver.

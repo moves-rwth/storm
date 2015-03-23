@@ -95,7 +95,7 @@ namespace storm {
         void GmmxxNondeterministicLinearEquationSolver<ValueType>::performMatrixVectorMultiplication(bool minimize, std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n, std::vector<ValueType>* multiplyResult) const {
             bool multiplyResultMemoryProvided = true;
             if (multiplyResult == nullptr) {
-                multiplyResult = new std::vector<ValueType>(rowGroupIndices.size() - 1);
+                multiplyResult = new std::vector<ValueType>(gmmxxMatrix->nr);
                 multiplyResultMemoryProvided = false;
             }
             

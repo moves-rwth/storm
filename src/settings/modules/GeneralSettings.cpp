@@ -233,6 +233,10 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown equation solver '" << equationSolverName << "'.");
             }
             
+            bool GeneralSettings::isEquationSolverSet() const {
+                return this->getOption(eqSolverOptionName).getHasOptionBeenSet();
+            }
+            
             GeneralSettings::LpSolver GeneralSettings::getLpSolver() const {
                 std::string lpSolverName = this->getOption(lpSolverOptionName).getArgumentByName("name").getValueAsString();
                 if (lpSolverName == "gurobi") {

@@ -106,7 +106,7 @@ namespace storm {
                 storm::utility::vector::addVectorsInPlace(bProbabilistic, bProbabilisticFixed);
                 
                 // Now perform the inner value iteration for probabilistic states.
-                solver->solveEquationSystem(min, aProbabilistic, probabilisticNonGoalValues, bProbabilistic, &multiplicationResultScratchMemory, &aProbabilisticScratchMemory);
+                solver->solveEquationSystem(min, probabilisticNonGoalValues, bProbabilistic, &multiplicationResultScratchMemory, &aProbabilisticScratchMemory);
                 
                 // (Re-)compute bMarkovian = bMarkovianFixed + aMarkovianToProbabilistic * vProbabilistic.
                 aMarkovianToProbabilistic.multiplyWithVector(probabilisticNonGoalValues, bMarkovian);
@@ -119,7 +119,7 @@ namespace storm {
             // After the loop, perform one more step of the value iteration for PS states.
             aProbabilisticToMarkovian.multiplyWithVector(markovianNonGoalValues, bProbabilistic);
             storm::utility::vector::addVectorsInPlace(bProbabilistic, bProbabilisticFixed);
-            solver->solveEquationSystem(min, aProbabilistic, probabilisticNonGoalValues, bProbabilistic, &multiplicationResultScratchMemory, &aProbabilisticScratchMemory);
+            solver->solveEquationSystem(min, probabilisticNonGoalValues, bProbabilistic, &multiplicationResultScratchMemory, &aProbabilisticScratchMemory);
         }
         
         template<typename ValueType>
@@ -380,7 +380,7 @@ namespace storm {
             
             std::vector<ValueType> x(numberOfStatesNotInMecs + mecDecomposition.size());
             std::unique_ptr<storm::solver::NondeterministicLinearEquationSolver<ValueType>> solver = nondeterministicLinearEquationSolverFactory->create(sspMatrix);
-            solver->solveEquationSystem(minimize, sspMatrix, x, b);
+            solver->solveEquationSystem(minimize, x, b);
             
             // Prepare result vector.
             std::vector<ValueType> result(model.getNumberOfStates());
@@ -564,7 +564,7 @@ namespace storm {
             
             // Solve the corresponding system of equations.
             std::unique_ptr<storm::solver::NondeterministicLinearEquationSolver<ValueType>> solver = nondeterministicLinearEquationSolverFactory->create(submatrix);
-            solver->solveEquationSystem(minimize, submatrix, x, b);
+            solver->solveEquationSystem(minimize, x, b);
             
             // Create resulting vector.
             std::vector<ValueType> result(model.getNumberOfStates());
