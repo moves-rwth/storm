@@ -3,6 +3,7 @@
 
 #include "src/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "src/models/sparse/Ctmc.h"
+#include "src/utility/solver.h"
 #include "src/solver/LinearEquationSolver.h"
 
 namespace storm {
@@ -12,7 +13,7 @@ namespace storm {
         class SparseCtmcCslModelChecker : public SparsePropositionalModelChecker<ValueType> {
         public:
             explicit SparseCtmcCslModelChecker(storm::models::sparse::Ctmc<ValueType> const& model);
-            explicit SparseCtmcCslModelChecker(storm::models::sparse::Ctmc<ValueType> const& model, std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>>&& linearEquationSolver);
+            explicit SparseCtmcCslModelChecker(storm::models::sparse::Ctmc<ValueType> const& model, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory);
             
             // The implemented methods of the AbstractModelChecker interface.
             virtual bool canHandle(storm::logic::Formula const& formula) const override;
@@ -29,7 +30,7 @@ namespace storm {
         private:
             // The methods that perform the actual checking.
             std::vector<ValueType> computeBoundedUntilProbabilitiesHelper(storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, std::vector<ValueType> const& exitRates, bool qualitative, double lowerBound, double upperBound) const;
-            static std::vector<ValueType> computeUntilProbabilitiesHelper(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative, storm::solver::LinearEquationSolver<ValueType> const& linearEquationSolver);
+            static std::vector<ValueType> computeUntilProbabilitiesHelper(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory);
             std::vector<ValueType> computeInstantaneousRewardsHelper(double timeBound) const;
             std::vector<ValueType> computeCumulativeRewardsHelper(double timeBound) const;
             std::vector<ValueType> computeReachabilityRewardsHelper(storm::storage::BitVector const& targetStates, bool qualitative) const;
@@ -53,13 +54,13 @@ namespace storm {
              * @param timeBound The time bound to use.
              * @param uniformizationRate The used uniformization rate.
              * @param values A vector mapping each state to an initial probability.
-             * @param linearEquationSolver The linear equation solver to use.
+             * @param linearEquationSolverFactory The factory to use when instantiating new linear equation solvers.
              * @param useMixedPoissonProbabilities If set to true, instead of taking the poisson probabilities,  mixed
              * poisson probabilities are used.
              * @return The vector of transient probabilities.
              */
             template<bool useMixedPoissonProbabilities = false>
-            std::vector<ValueType> computeTransientProbabilities(storm::storage::SparseMatrix<ValueType> const& uniformizedMatrix, ValueType timeBound, ValueType uniformizationRate, std::vector<ValueType> values, storm::solver::LinearEquationSolver<ValueType> const& linearEquationSolver) const;
+            std::vector<ValueType> computeTransientProbabilities(storm::storage::SparseMatrix<ValueType> const& uniformizedMatrix, ValueType timeBound, ValueType uniformizationRate, std::vector<ValueType> values, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) const;
             
             /*!
              * Converts the given rate-matrix into a time-abstract probability matrix.
@@ -70,7 +71,7 @@ namespace storm {
             static storm::storage::SparseMatrix<ValueType> computeProbabilityMatrix(storm::storage::SparseMatrix<ValueType> const& rateMatrix, std::vector<ValueType> const& exitRates);
             
             // An object that is used for solving linear equations and performing matrix-vector multiplication.
-            std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> linearEquationSolver;
+            std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<ValueType>> linearEquationSolverFactory;
         };
         
     } // namespace modelchecker

@@ -28,7 +28,7 @@ TEST(GmmxxCtmcCslModelCheckerTest, Cluster) {
     uint_fast64_t initialState = *ctmc->getInitialStates().begin();
     
     // Create model checker.
-    storm::modelchecker::SparseCtmcCslModelChecker<double> modelchecker(*ctmc, std::unique_ptr<storm::solver::LinearEquationSolver<double>>(new storm::solver::GmmxxLinearEquationSolver<double>()));
+    storm::modelchecker::SparseCtmcCslModelChecker<double> modelchecker(*ctmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::GmmxxLinearEquationSolverFactory<double>()));
     
     // Start checking properties.
     formula = formulaParser.parseFromString("P=? [ F<=100 !\"minimum\"]");
@@ -83,7 +83,7 @@ TEST(GmmxxCtmcCslModelCheckerTest, Embedded) {
     uint_fast64_t initialState = *ctmc->getInitialStates().begin();
     
     // Create model checker.
-    storm::modelchecker::SparseCtmcCslModelChecker<double> modelchecker(*ctmc, std::unique_ptr<storm::solver::LinearEquationSolver<double>>(new storm::solver::GmmxxLinearEquationSolver<double>()));
+    storm::modelchecker::SparseCtmcCslModelChecker<double> modelchecker(*ctmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::GmmxxLinearEquationSolverFactory<double>()));
     
     // Start checking properties.
     formula = formulaParser.parseFromString("P=? [ F<=10000 \"down\"]");
@@ -135,7 +135,7 @@ TEST(GmmxxCtmcCslModelCheckerTest, Polling) {
     uint_fast64_t initialState = *ctmc->getInitialStates().begin();
     
     // Create model checker.
-    storm::modelchecker::SparseCtmcCslModelChecker<double> modelchecker(*ctmc, std::unique_ptr<storm::solver::LinearEquationSolver<double>>(new storm::solver::GmmxxLinearEquationSolver<double>()));
+    storm::modelchecker::SparseCtmcCslModelChecker<double> modelchecker(*ctmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::GmmxxLinearEquationSolverFactory<double>()));
     
     // Start checking properties.
     formula = formulaParser.parseFromString("P=?[ F<=10 \"target\"]");
@@ -166,7 +166,7 @@ TEST(GmmxxCtmcCslModelCheckerTest, Tandem) {
     uint_fast64_t initialState = *ctmc->getInitialStates().begin();
     
     // Create model checker.
-    storm::modelchecker::SparseCtmcCslModelChecker<double> modelchecker(*ctmc, std::unique_ptr<storm::solver::LinearEquationSolver<double>>(new storm::solver::GmmxxLinearEquationSolver<double>()));
+    storm::modelchecker::SparseCtmcCslModelChecker<double> modelchecker(*ctmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::GmmxxLinearEquationSolverFactory<double>()));
     
     // Start checking properties.
     formula = formulaParser.parseFromString("P=? [ F<=10 \"network_full\" ]");

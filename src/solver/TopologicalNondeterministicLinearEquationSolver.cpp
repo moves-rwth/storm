@@ -1,4 +1,4 @@
-#include "src/solver/TopologicalValueIterationNondeterministicLinearEquationSolver.h"
+#include "src/solver/TopologicalNondeterministicLinearEquationSolver.h"
 
 #include <utility>
 #include <chrono>
@@ -23,7 +23,7 @@ namespace storm {
     namespace solver {
         
         template<typename ValueType>
-		TopologicalValueIterationNondeterministicLinearEquationSolver<ValueType>::TopologicalValueIterationNondeterministicLinearEquationSolver() {
+        TopologicalNondeterministicLinearEquationSolver<ValueType>::TopologicalNondeterministicLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A) : NativeNondeterministicLinearEquationSolver<ValueType>(A) {
 			// Get the settings object to customize solving.
 			
 			//storm::settings::Settings* settings = storm::settings::Settings::getInstance();
@@ -44,31 +44,28 @@ namespace storm {
         }
         
         template<typename ValueType>
-		TopologicalValueIterationNondeterministicLinearEquationSolver<ValueType>::TopologicalValueIterationNondeterministicLinearEquationSolver(double precision, uint_fast64_t maximalNumberOfIterations, bool relative) : NativeNondeterministicLinearEquationSolver<ValueType>(precision, maximalNumberOfIterations, relative) {
+		TopologicalNondeterministicLinearEquationSolver<ValueType>::TopologicalNondeterministicLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, double precision, uint_fast64_t maximalNumberOfIterations, bool relative) : NativeNondeterministicLinearEquationSolver<ValueType>(A, precision, maximalNumberOfIterations, relative) {
             // Intentionally left empty.
         }
         
         template<typename ValueType>
-		NondeterministicLinearEquationSolver<ValueType>* TopologicalValueIterationNondeterministicLinearEquationSolver<ValueType>::clone() const {
-			return new TopologicalValueIterationNondeterministicLinearEquationSolver<ValueType>(*this);
-        }
-        
-        template<typename ValueType>
-		void TopologicalValueIterationNondeterministicLinearEquationSolver<ValueType>::solveEquationSystem(bool minimize, storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const {
+		void TopologicalNondeterministicLinearEquationSolver<ValueType>::solveEquationSystem(bool minimize, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const {
 			
 #ifdef GPU_USE_FLOAT
 #define __FORCE_FLOAT_CALCULATION true
 #else
 #define __FORCE_FLOAT_CALCULATION false
 #endif
-			if (__FORCE_FLOAT_CALCULATION && (sizeof(ValueType) == sizeof(double))) {
-				TopologicalValueIterationNondeterministicLinearEquationSolver<float> tvindles{ this->precision, this->maximalNumberOfIterations, this->relative };
+            if (__FORCE_FLOAT_CALCULATION && std::is_same<ValueType, double>::value) {
+                // FIXME: This actually allocates quite some storage, because of this conversion, is it really necessary?
+				storm::storage::SparseMatrix<float> newA = this->A.template toValueType<float>();
+                
+                TopologicalNondeterministicLinearEquationSolver<float> newSolver(newA, this->precision, this->maximalNumberOfIterations, this->relative);
 
-				storm::storage::SparseMatrix<float> new_A = A.template toValueType<float>();
 				std::vector<float> new_x = storm::utility::vector::toValueType<float>(x);
 				std::vector<float> const new_b = storm::utility::vector::toValueType<float>(b);
 
-				tvindles.solveEquationSystem(minimize, new_A, new_x, new_b, nullptr, nullptr);
+				newSolver.solveEquationSystem(minimize, new_x, new_b, nullptr, nullptr);
 
 				for (size_t i = 0, size = new_x.size(); i < size; ++i) {
 					x.at(i) = new_x.at(i);
@@ -86,7 +83,7 @@ namespace storm {
 			}
 
 			// Now, we need to determine the SCCs of the MDP and perform a topological sort.
-			std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = A.getRowGroupIndices();
+			std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = this->A.getRowGroupIndices();
 			
 			// Check if the decomposition is necessary
 #ifdef STORM_HAVE_CUDA
@@ -104,10 +101,7 @@ namespace storm {
 				//std::cout << "Computing the SCC Decomposition took 0ms" << std::endl;
 
 #ifdef STORM_HAVE_CUDA
-				if (!resetCudaDevice()) {
-					LOG4CPLUS_ERROR(logger, "Could not reset CUDA Device, can not use CUDA Equation Solver.");
-					throw storm::exceptions::InvalidStateException() << "Could not reset CUDA Device, can not use CUDA Equation Solver.";
-				}
+                STORM_LOG_THROW(resetCudaDevice(), storm::exceptions::InvalidStateException, "Could not reset CUDA Device, can not use CUDA Equation Solver.");
 
 				std::chrono::high_resolution_clock::time_point calcStartTime = std::chrono::high_resolution_clock::now();
 				bool result = false;
@@ -145,19 +139,19 @@ namespace storm {
 #endif
 			} else {
 				std::chrono::high_resolution_clock::time_point sccStartTime = std::chrono::high_resolution_clock::now();
-				storm::storage::BitVector fullSystem(A.getRowGroupCount(), true);
-				storm::storage::StronglyConnectedComponentDecomposition<ValueType> sccDecomposition(A, fullSystem, false, false);
+				storm::storage::BitVector fullSystem(this->A.getRowGroupCount(), true);
+				storm::storage::StronglyConnectedComponentDecomposition<ValueType> sccDecomposition(this->A, fullSystem, false, false);
 
 				if (sccDecomposition.size() == 0) {
 					LOG4CPLUS_ERROR(logger, "Can not solve given Equation System as the SCC Decomposition returned no SCCs.");
 					throw storm::exceptions::IllegalArgumentException() << "Can not solve given Equation System as the SCC Decomposition returned no SCCs.";
 				}
 
-                storm::storage::SparseMatrix<ValueType> stronglyConnectedComponentsDependencyGraph = sccDecomposition.extractPartitionDependencyGraph(A);
+                storm::storage::SparseMatrix<ValueType> stronglyConnectedComponentsDependencyGraph = sccDecomposition.extractPartitionDependencyGraph(this->A);
 				std::vector<uint_fast64_t> topologicalSort = storm::utility::graph::getTopologicalSort(stronglyConnectedComponentsDependencyGraph);
 
 				// Calculate the optimal distribution of sccs
-				std::vector<std::pair<bool, storm::storage::StateBlock>> optimalSccs = this->getOptimalGroupingFromTopologicalSccDecomposition(sccDecomposition, topologicalSort, A);
+				std::vector<std::pair<bool, storm::storage::StateBlock>> optimalSccs = this->getOptimalGroupingFromTopologicalSccDecomposition(sccDecomposition, topologicalSort, this->A);
 				LOG4CPLUS_INFO(logger, "Optimized SCC Decomposition, originally " << topologicalSort.size() << " SCCs, optimized to " << optimalSccs.size() << " SCCs.");
 
 				std::chrono::high_resolution_clock::time_point sccEndTime = std::chrono::high_resolution_clock::now();
@@ -181,8 +175,8 @@ namespace storm {
 					storm::storage::StateBlock const& scc = sccIndexIt->second;
 
 					// Generate a sub matrix
-					storm::storage::BitVector subMatrixIndices(A.getColumnCount(), scc.cbegin(), scc.cend());
-					storm::storage::SparseMatrix<ValueType> sccSubmatrix = A.getSubmatrix(true, subMatrixIndices, subMatrixIndices);
+					storm::storage::BitVector subMatrixIndices(this->A.getColumnCount(), scc.cbegin(), scc.cend());
+					storm::storage::SparseMatrix<ValueType> sccSubmatrix = this->A.getSubmatrix(true, subMatrixIndices, subMatrixIndices);
 					std::vector<ValueType> sccSubB(sccSubmatrix.getRowCount());
 					storm::utility::vector::selectVectorValues<ValueType>(sccSubB, subMatrixIndices, nondeterministicChoiceIndices, b);
 					std::vector<ValueType> sccSubX(sccSubmatrix.getColumnCount());
@@ -206,7 +200,7 @@ namespace storm {
 						sccSubNondeterministicChoiceIndices.at(outerIndex + 1) = sccSubNondeterministicChoiceIndices.at(outerIndex) + (nondeterministicChoiceIndices[state + 1] - nondeterministicChoiceIndices[state]);
 
 						for (auto rowGroupIt = nondeterministicChoiceIndices[state]; rowGroupIt != nondeterministicChoiceIndices[state + 1]; ++rowGroupIt) {
-							typename storm::storage::SparseMatrix<ValueType>::const_rows row = A.getRow(rowGroupIt);
+							typename storm::storage::SparseMatrix<ValueType>::const_rows row = this->A.getRow(rowGroupIt);
 							for (auto rowIt = row.begin(); rowIt != row.end(); ++rowIt) {
 								if (!subMatrixIndices.get(rowIt->getColumn())) {
 									// This is an outgoing transition of a state in the SCC to a state not included in the SCC
@@ -222,10 +216,7 @@ namespace storm {
 					// For the current SCC, we need to perform value iteration until convergence.
 					if (useGpu) {
 #ifdef STORM_HAVE_CUDA
-						if (!resetCudaDevice()) {
-							LOG4CPLUS_ERROR(logger, "Could not reset CUDA Device, can not use CUDA Equation Solver.");
-							throw storm::exceptions::InvalidStateException() << "Could not reset CUDA Device, can not use CUDA Equation Solver.";
-						}
+                        STORM_LOG_THROW(resetCudaDevice(), storm::exceptions::InvalidStateException, "Could not reset CUDA Device, can not use CUDA-based equation solver.");
 
 						//LOG4CPLUS_INFO(logger, "Device has " << getTotalCudaMemory() << " Bytes of Memory with " << getFreeCudaMemory() << "Bytes free (" << (static_cast<double>(getFreeCudaMemory()) / static_cast<double>(getTotalCudaMemory())) * 100 << "%).");
 						//LOG4CPLUS_INFO(logger, "We will allocate " << (sizeof(uint_fast64_t)* sccSubmatrix.rowIndications.size() + sizeof(uint_fast64_t)* sccSubmatrix.columnsAndValues.size() * 2 + sizeof(double)* sccSubX.size() + sizeof(double)* sccSubX.size() + sizeof(double)* sccSubB.size() + sizeof(double)* sccSubB.size() + sizeof(uint_fast64_t)* sccSubNondeterministicChoiceIndices.size()) << " Bytes.");
@@ -334,7 +325,7 @@ namespace storm {
 
 		template<typename ValueType>
 		std::vector<std::pair<bool, storm::storage::StateBlock>>
-			TopologicalValueIterationNondeterministicLinearEquationSolver<ValueType>::getOptimalGroupingFromTopologicalSccDecomposition(storm::storage::StronglyConnectedComponentDecomposition<ValueType> const& sccDecomposition, std::vector<uint_fast64_t> const& topologicalSort, storm::storage::SparseMatrix<ValueType> const& matrix) const {
+			TopologicalNondeterministicLinearEquationSolver<ValueType>::getOptimalGroupingFromTopologicalSccDecomposition(storm::storage::StronglyConnectedComponentDecomposition<ValueType> const& sccDecomposition, std::vector<uint_fast64_t> const& topologicalSort, storm::storage::SparseMatrix<ValueType> const& matrix) const {
 				std::vector<std::pair<bool, storm::storage::StateBlock>> result;
 #ifdef STORM_HAVE_CUDA
 				// 95% to have a bit of padding
@@ -430,11 +421,11 @@ namespace storm {
 						std::vector<uint_fast64_t> tempGroups;
 						tempGroups.reserve(neededReserveSize);
 						
-						// Copy the first group to make inplace_merge possible
+						// Copy the first group to make inplace_merge possible.
 						storm::storage::StateBlock const& scc_first = sccDecomposition[topologicalSort[startIndex]];
 						tempGroups.insert(tempGroups.cend(), scc_first.cbegin(), scc_first.cend());
 
-						// For set counts <= 80, Inplace Merge is faster
+						// For set counts <= 80, in-place merge is faster.
 						if (((startIndex + 1) + 80) >= topologicalSortSize) {
 							size_t lastSize = 0;
 							for (size_t j = startIndex + 1; j < topologicalSort.size(); ++j) {
@@ -471,7 +462,7 @@ namespace storm {
 		}
 
         // Explicitly instantiate the solver.
-		template class TopologicalValueIterationNondeterministicLinearEquationSolver<double>;
-		template class TopologicalValueIterationNondeterministicLinearEquationSolver<float>;
+		template class TopologicalNondeterministicLinearEquationSolver<double>;
+		template class TopologicalNondeterministicLinearEquationSolver<float>;
     } // namespace solver
 } // namespace storm

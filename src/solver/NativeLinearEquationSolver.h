@@ -19,25 +19,26 @@ namespace storm {
             
             /*!
              * Constructs a linear equation solver with parameters being set according to the settings object.
+             *
+             * @param A The matrix defining the coefficients of the linear equation system.
              */
-            NativeLinearEquationSolver();
+            NativeLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A);
 
             /*!
              * Constructs a linear equation solver with the given parameters.
              *
+             * @param A The matrix defining the coefficients of the linear equation system.
              * @param method The method to use for linear equation solving.
              * @param precision The precision to use for convergence detection.
              * @param maximalNumberOfIterations The maximal number of iterations do perform before iteration is aborted.
              * @param relative If set, the relative error rather than the absolute error is considered for convergence
              * detection.
              */
-            NativeLinearEquationSolver(SolutionMethod method, double precision, uint_fast64_t maximalNumberOfIterations, bool relative = true);
+            NativeLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, SolutionMethod method, double precision, uint_fast64_t maximalNumberOfIterations, bool relative = true);
+                        
+            virtual void solveEquationSystem(std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult = nullptr) const override;
             
-            virtual LinearEquationSolver<ValueType>* clone() const override;
-            
-            virtual void solveEquationSystem(storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult = nullptr) const override;
-            
-            virtual void performMatrixVectorMultiplication(storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n = 1, std::vector<ValueType>* multiplyResult = nullptr) const override;
+            virtual void performMatrixVectorMultiplication(std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n = 1, std::vector<ValueType>* multiplyResult = nullptr) const override;
 
         private:
             /*!
@@ -46,6 +47,9 @@ namespace storm {
              * @return The string representation of the solution method associated with this solver.
              */
             std::string methodToString() const;
+            
+            // A reference to the matrix the gives the coefficients of the linear equation system.
+            storm::storage::SparseMatrix<ValueType> const& A;
             
             // The method to use for solving linear equation systems.
             SolutionMethod method;

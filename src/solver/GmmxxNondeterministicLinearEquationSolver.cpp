@@ -10,7 +10,7 @@ namespace storm {
     namespace solver {
         
         template<typename ValueType>
-        GmmxxNondeterministicLinearEquationSolver<ValueType>::GmmxxNondeterministicLinearEquationSolver() {
+        GmmxxNondeterministicLinearEquationSolver<ValueType>::GmmxxNondeterministicLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A) : gmmxxMatrix(storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(A)), rowGroupIndices(A.getRowGroupIndices()) {
             // Get the settings object to customize solving.
             storm::settings::modules::GmmxxEquationSolverSettings const& settings = storm::settings::gmmxxEquationSolverSettings();
             
@@ -21,25 +21,17 @@ namespace storm {
         }
         
         template<typename ValueType>
-        GmmxxNondeterministicLinearEquationSolver<ValueType>::GmmxxNondeterministicLinearEquationSolver(double precision, uint_fast64_t maximalNumberOfIterations, bool relative) : precision(precision), relative(relative), maximalNumberOfIterations(maximalNumberOfIterations) {
+        GmmxxNondeterministicLinearEquationSolver<ValueType>::GmmxxNondeterministicLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, double precision, uint_fast64_t maximalNumberOfIterations, bool relative) : gmmxxMatrix(storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(A)), rowGroupIndices(A.getRowGroupIndices()), precision(precision), relative(relative), maximalNumberOfIterations(maximalNumberOfIterations) {
             // Intentionally left empty.
         }
 
         
         template<typename ValueType>
-        NondeterministicLinearEquationSolver<ValueType>* GmmxxNondeterministicLinearEquationSolver<ValueType>::clone() const {
-            return new GmmxxNondeterministicLinearEquationSolver<ValueType>(*this);
-        }
-        
-        template<typename ValueType>
-        void GmmxxNondeterministicLinearEquationSolver<ValueType>::solveEquationSystem(bool minimize, storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const {
-            // Transform the transition probability matrix to the gmm++ format to use its arithmetic.
-            std::unique_ptr<gmm::csr_matrix<ValueType>> gmmxxMatrix = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(A);
-            
+        void GmmxxNondeterministicLinearEquationSolver<ValueType>::solveEquationSystem(bool minimize, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const {
             // Set up the environment for the power method. If scratch memory was not provided, we need to create it.
             bool multiplyResultMemoryProvided = true;
             if (multiplyResult == nullptr) {
-                multiplyResult = new std::vector<ValueType>(A.getRowCount());
+                multiplyResult = new std::vector<ValueType>(b.size());
                 multiplyResultMemoryProvided = false;
             }
             
@@ -64,9 +56,9 @@ namespace storm {
                 
                 // Reduce the vector x by applying min/max over all nondeterministic choices.
                 if (minimize) {
-                    storm::utility::vector::reduceVectorMin(*multiplyResult, *newX, A.getRowGroupIndices());
+                    storm::utility::vector::reduceVectorMin(*multiplyResult, *newX, rowGroupIndices);
                 } else {
-                    storm::utility::vector::reduceVectorMax(*multiplyResult, *newX, A.getRowGroupIndices());
+                    storm::utility::vector::reduceVectorMax(*multiplyResult, *newX, rowGroupIndices);
                 }
                 
                 // Determine whether the method converged.
@@ -100,13 +92,10 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void GmmxxNondeterministicLinearEquationSolver<ValueType>::performMatrixVectorMultiplication(bool minimize, storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n, std::vector<ValueType>* multiplyResult) const {
-            // Transform the transition probability matrix to the gmm++ format to use its arithmetic.
-            std::unique_ptr<gmm::csr_matrix<ValueType>> gmmxxMatrix = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(A);
-            
+        void GmmxxNondeterministicLinearEquationSolver<ValueType>::performMatrixVectorMultiplication(bool minimize, std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n, std::vector<ValueType>* multiplyResult) const {
             bool multiplyResultMemoryProvided = true;
             if (multiplyResult == nullptr) {
-                multiplyResult = new std::vector<ValueType>(A.getRowCount());
+                multiplyResult = new std::vector<ValueType>(rowGroupIndices.size() - 1);
                 multiplyResultMemoryProvided = false;
             }
             
@@ -119,9 +108,9 @@ namespace storm {
                 }
                 
                 if (minimize) {
-                    storm::utility::vector::reduceVectorMin(*multiplyResult, x, A.getRowGroupIndices());
+                    storm::utility::vector::reduceVectorMin(*multiplyResult, x, rowGroupIndices);
                 } else {
-                    storm::utility::vector::reduceVectorMax(*multiplyResult, x, A.getRowGroupIndices());
+                    storm::utility::vector::reduceVectorMax(*multiplyResult, x, rowGroupIndices);
                 }
             }
             

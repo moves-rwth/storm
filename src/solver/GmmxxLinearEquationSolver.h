@@ -1,6 +1,8 @@
 #ifndef STORM_SOLVER_GMMXXLINEAREQUATIONSOLVER_H_
 #define STORM_SOLVER_GMMXXLINEAREQUATIONSOLVER_H_
 
+#include "gmm/gmm_matrix.h"
+
 #include "LinearEquationSolver.h"
 
 namespace storm {
@@ -25,6 +27,7 @@ namespace storm {
             /*!
              * Constructs a linear equation solver with the given parameters.
              *
+             * @param A The matrix defining the coefficients of the linear equation system.
              * @param method The method to use for linear equation solving.
              * @param precision The precision to use for convergence detection.
              * @param maximalNumberOfIterations The maximal number of iterations do perform before iteration is aborted.
@@ -34,18 +37,18 @@ namespace storm {
              * @param restart An optional argument that specifies after how many iterations restarted methods are
              * supposed to actually to a restart.
              */
-            GmmxxLinearEquationSolver(SolutionMethod method, double precision, uint_fast64_t maximalNumberOfIterations, Preconditioner preconditioner, bool relative = true, uint_fast64_t restart = 0);
+            GmmxxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, SolutionMethod method, double precision, uint_fast64_t maximalNumberOfIterations, Preconditioner preconditioner, bool relative = true, uint_fast64_t restart = 0);
             
             /*!
              * Constructs a linear equation solver with parameters being set according to the settings object.
+             *
+             * @param A The matrix defining the coefficients of the linear equation system.
              */
-            GmmxxLinearEquationSolver();
+            GmmxxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A);
+                        
+            virtual void solveEquationSystem(std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult = nullptr) const override;
             
-            virtual LinearEquationSolver<ValueType>* clone() const override;
-            
-            virtual void solveEquationSystem(storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult = nullptr) const override;
-            
-            virtual void performMatrixVectorMultiplication(storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n = 1, std::vector<ValueType>* multiplyResult = nullptr) const override;
+            virtual void performMatrixVectorMultiplication(std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n = 1, std::vector<ValueType>* multiplyResult = nullptr) const override;
             
         private:
             /*!
@@ -75,6 +78,12 @@ namespace storm {
              * @return The string representation of the preconditioner associated with this solver.
              */
             std::string preconditionerToString() const;
+            
+            // A pointer to the original sparse matrix given to this solver.
+            storm::storage::SparseMatrix<ValueType> const* originalA;
+            
+            // The (gmm++) matrix associated with this equation solver.
+            std::unique_ptr<gmm::csr_matrix<ValueType>> gmmxxMatrix;
             
             // The method to use for solving linear equation systems.
             SolutionMethod method;

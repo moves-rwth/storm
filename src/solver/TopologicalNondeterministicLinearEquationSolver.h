@@ -19,30 +19,31 @@ namespace storm {
     namespace solver {
         
         /*!
-         * A class that uses SCC Decompositions to solve a linear equation system
+         * A class that uses SCC Decompositions to solve a linear equation system.
          */
         template<class ValueType>
-		class TopologicalValueIterationNondeterministicLinearEquationSolver : public NativeNondeterministicLinearEquationSolver<ValueType> {
+		class TopologicalNondeterministicLinearEquationSolver : public NativeNondeterministicLinearEquationSolver<ValueType> {
         public:
             /*!
              * Constructs a nondeterministic linear equation solver with parameters being set according to the settings
              * object.
+             *
+             * @param A The matrix defining the coefficients of the linear equation system.
              */
-			TopologicalValueIterationNondeterministicLinearEquationSolver();
+			TopologicalNondeterministicLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A);
             
             /*!
              * Constructs a nondeterminstic linear equation solver with the given parameters.
              *
+             * @param A The matrix defining the coefficients of the linear equation system.
              * @param precision The precision to use for convergence detection.
              * @param maximalNumberOfIterations The maximal number of iterations do perform before iteration is aborted.
              * @param relative If set, the relative error rather than the absolute error is considered for convergence
              * detection.
              */
-			TopologicalValueIterationNondeterministicLinearEquationSolver(double precision, uint_fast64_t maximalNumberOfIterations, bool relative = true);
+			TopologicalNondeterministicLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, double precision, uint_fast64_t maximalNumberOfIterations, bool relative = true);
             
-            virtual NondeterministicLinearEquationSolver<ValueType>* clone() const override;
-            
-            virtual void solveEquationSystem(bool minimize, storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult = nullptr, std::vector<ValueType>* newX = nullptr) const override;
+            virtual void solveEquationSystem(bool minimize, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult = nullptr, std::vector<ValueType>* newX = nullptr) const override;
 		private:
 
 			bool enableCuda;

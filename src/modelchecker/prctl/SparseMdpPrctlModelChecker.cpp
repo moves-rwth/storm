@@ -16,12 +16,12 @@
 namespace storm {
     namespace modelchecker {
         template<typename ValueType>
-        SparseMdpPrctlModelChecker<ValueType>::SparseMdpPrctlModelChecker(storm::models::sparse::Mdp<ValueType> const& model) : SparsePropositionalModelChecker<ValueType>(model), nondeterministicLinearEquationSolver(storm::utility::solver::getNondeterministicLinearEquationSolver<ValueType>()) {
+        SparseMdpPrctlModelChecker<ValueType>::SparseMdpPrctlModelChecker(storm::models::sparse::Mdp<ValueType> const& model) : SparsePropositionalModelChecker<ValueType>(model), nondeterministicLinearEquationSolverFactory(new storm::utility::solver::NondeterministicLinearEquationSolverFactory<ValueType>()) {
             // Intentionally left empty.
         }
         
         template<typename ValueType>
-        SparseMdpPrctlModelChecker<ValueType>::SparseMdpPrctlModelChecker(storm::models::sparse::Mdp<ValueType> const& model, std::shared_ptr<storm::solver::NondeterministicLinearEquationSolver<ValueType>> nondeterministicLinearEquationSolver) : SparsePropositionalModelChecker<ValueType>(model), nondeterministicLinearEquationSolver(nondeterministicLinearEquationSolver) {
+        SparseMdpPrctlModelChecker<ValueType>::SparseMdpPrctlModelChecker(storm::models::sparse::Mdp<ValueType> const& model, std::unique_ptr<storm::utility::solver::NondeterministicLinearEquationSolverFactory<ValueType>>&& nondeterministicLinearEquationSolverFactory) : SparsePropositionalModelChecker<ValueType>(model), nondeterministicLinearEquationSolverFactory(std::move(nondeterministicLinearEquationSolverFactory)) {
             // Intentionally left empty.
         }
         
@@ -57,8 +57,9 @@ namespace storm {
                 std::vector<ValueType> subresult(statesWithProbabilityGreater0.getNumberOfSetBits());
                 storm::utility::vector::setVectorValues(subresult, rightStatesInReducedSystem, storm::utility::one<ValueType>());
             
-                STORM_LOG_THROW(nondeterministicLinearEquationSolver != nullptr, storm::exceptions::InvalidStateException, "No valid equation solver available.");
-                this->nondeterministicLinearEquationSolver->performMatrixVectorMultiplication(minimize, submatrix, subresult, nullptr, stepBound);
+                STORM_LOG_THROW(nondeterministicLinearEquationSolverFactory != nullptr, storm::exceptions::InvalidStateException, "No valid equation solver available.");
+                std::unique_ptr<storm::solver::NondeterministicLinearEquationSolver<ValueType>> solver = nondeterministicLinearEquationSolverFactory->create(submatrix);
+                solver->performMatrixVectorMultiplication(minimize, subresult, nullptr, stepBound);
                 
                 // Set the values of the resulting vector accordingly.
                 storm::utility::vector::setVectorValues(result, statesWithProbabilityGreater0, subresult);
@@ -85,8 +86,9 @@ namespace storm {
             std::vector<ValueType> result(this->getModel().getNumberOfStates());
             storm::utility::vector::setVectorValues(result, nextStates, storm::utility::one<ValueType>());
             
-            STORM_LOG_THROW(nondeterministicLinearEquationSolver != nullptr, storm::exceptions::InvalidStateException, "No valid equation solver available.");
-            this->nondeterministicLinearEquationSolver->performMatrixVectorMultiplication(minimize, this->getModel().getTransitionMatrix(), result);
+            STORM_LOG_THROW(nondeterministicLinearEquationSolverFactory != nullptr, storm::exceptions::InvalidStateException, "No valid equation solver available.");
+            std::unique_ptr<storm::solver::NondeterministicLinearEquationSolver<ValueType>> solver = nondeterministicLinearEquationSolverFactory->create(this->getModel().getTransitionMatrix());
+            solver->performMatrixVectorMultiplication(minimize, result);
             
             return result;
         }
@@ -101,11 +103,11 @@ namespace storm {
         
         template<typename ValueType>
         std::vector<ValueType> SparseMdpPrctlModelChecker<ValueType>::computeUntilProbabilitiesHelper(bool minimize, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative) const {
-            return computeUntilProbabilitiesHelper(minimize, this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), phiStates, psiStates, nondeterministicLinearEquationSolver, qualitative);
+            return computeUntilProbabilitiesHelper(minimize, this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), phiStates, psiStates, *nondeterministicLinearEquationSolverFactory, qualitative);
         }
         
         template<typename ValueType>
-        std::vector<ValueType> SparseMdpPrctlModelChecker<ValueType>::computeUntilProbabilitiesHelper(bool minimize, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, std::shared_ptr<storm::solver::NondeterministicLinearEquationSolver<ValueType>> nondeterministicLinearEquationSolver, bool qualitative) {
+        std::vector<ValueType> SparseMdpPrctlModelChecker<ValueType>::computeUntilProbabilitiesHelper(bool minimize, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::utility::solver::NondeterministicLinearEquationSolverFactory<ValueType> const& nondeterministicLinearEquationSolverFactory, bool qualitative) {
             size_t numberOfStates = phiStates.size();
             
             // We need to identify the states which have to be taken out of the matrix, i.e.
@@ -146,7 +148,8 @@ namespace storm {
                     std::vector<ValueType> x(maybeStates.getNumberOfSetBits());
                     
                     // Solve the corresponding system of equations.
-                    nondeterministicLinearEquationSolver->solveEquationSystem(minimize, submatrix, x, b);
+                    std::unique_ptr<storm::solver::NondeterministicLinearEquationSolver<ValueType>> solver = nondeterministicLinearEquationSolverFactory.create(submatrix);
+                    solver->solveEquationSystem(minimize, x, b);
                     
                     // Set values of resulting vector according to result.
                     storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, x);
@@ -167,7 +170,7 @@ namespace storm {
             std::unique_ptr<CheckResult> rightResultPointer = this->check(pathFormula.getRightSubformula());
             ExplicitQualitativeCheckResult const& leftResult = leftResultPointer->asExplicitQualitativeCheckResult();
             ExplicitQualitativeCheckResult const& rightResult = rightResultPointer->asExplicitQualitativeCheckResult();
-            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(SparseMdpPrctlModelChecker<ValueType>::computeUntilProbabilitiesHelper(optimalityType.get() == storm::logic::OptimalityType::Minimize, this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(), nondeterministicLinearEquationSolver, qualitative)));
+            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(SparseMdpPrctlModelChecker<ValueType>::computeUntilProbabilitiesHelper(optimalityType.get() == storm::logic::OptimalityType::Minimize, this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(), *nondeterministicLinearEquationSolverFactory, qualitative)));
         }
         
         template<typename ValueType>
@@ -194,7 +197,8 @@ namespace storm {
                 result.resize(this->getModel().getNumberOfStates());
             }
             
-            this->nondeterministicLinearEquationSolver->performMatrixVectorMultiplication(minimize, this->getModel().getTransitionMatrix(), result, &totalRewardVector, stepBound);
+            std::unique_ptr<storm::solver::NondeterministicLinearEquationSolver<ValueType>> solver = nondeterministicLinearEquationSolverFactory->create(this->getModel().getTransitionMatrix());
+            solver->performMatrixVectorMultiplication(minimize, result, &totalRewardVector, stepBound);
             
             return result;
         }
@@ -214,8 +218,9 @@ namespace storm {
             // Initialize result to state rewards of the this->getModel().
             std::vector<ValueType> result(this->getModel().getStateRewardVector());
             
-            STORM_LOG_THROW(nondeterministicLinearEquationSolver != nullptr, storm::exceptions::InvalidStateException, "No valid linear equation solver available.");
-            this->nondeterministicLinearEquationSolver->performMatrixVectorMultiplication(minimize, this->getModel().getTransitionMatrix(), result, nullptr, stepCount);
+            STORM_LOG_THROW(nondeterministicLinearEquationSolverFactory != nullptr, storm::exceptions::InvalidStateException, "No valid linear equation solver available.");
+            std::unique_ptr<storm::solver::NondeterministicLinearEquationSolver<ValueType>> solver = nondeterministicLinearEquationSolverFactory->create(this->getModel().getTransitionMatrix());
+            solver->performMatrixVectorMultiplication(minimize, result, nullptr, stepCount);
             
             return result;
         }
@@ -228,7 +233,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        std::vector<ValueType> SparseMdpPrctlModelChecker<ValueType>::computeReachabilityRewardsHelper(bool minimize, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, boost::optional<std::vector<ValueType>> const& stateRewardVector, boost::optional<storm::storage::SparseMatrix<ValueType>> const& transitionRewardMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& targetStates, storm::solver::NondeterministicLinearEquationSolver<ValueType> const& nondeterministicLinearEquationSolver, bool qualitative) const {
+        std::vector<ValueType> SparseMdpPrctlModelChecker<ValueType>::computeReachabilityRewardsHelper(bool minimize, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, boost::optional<std::vector<ValueType>> const& stateRewardVector, boost::optional<storm::storage::SparseMatrix<ValueType>> const& transitionRewardMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& targetStates, storm::utility::solver::NondeterministicLinearEquationSolverFactory<ValueType> const& nondeterministicLinearEquationSolverFactory, bool qualitative) const {
             // Only compute the result if the model has at least one reward this->getModel().
             STORM_LOG_THROW(stateRewardVector || transitionRewardMatrix, storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
             
@@ -294,7 +299,8 @@ namespace storm {
                 std::vector<ValueType> x(maybeStates.getNumberOfSetBits());
                 
                 // Solve the corresponding system of equations.
-                this->nondeterministicLinearEquationSolver->solveEquationSystem(minimize, submatrix, x, b);
+                std::unique_ptr<storm::solver::NondeterministicLinearEquationSolver<ValueType>> solver = nondeterministicLinearEquationSolverFactory.create(submatrix);
+                solver->solveEquationSystem(minimize, x, b);
                 
                 // Set values of resulting vector according to result.
                 storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, x);
@@ -312,7 +318,7 @@ namespace storm {
             STORM_LOG_THROW(optimalityType, storm::exceptions::InvalidArgumentException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic.");
             std::unique_ptr<CheckResult> subResultPointer = this->check(rewardPathFormula.getSubformula());
             ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();
-            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(this->computeReachabilityRewardsHelper(optimalityType.get() == storm::logic::OptimalityType::Minimize, this->getModel().getTransitionMatrix(), this->getModel().getOptionalStateRewardVector(), this->getModel().getOptionalTransitionRewardMatrix(), this->getModel().getBackwardTransitions(), subResult.getTruthValuesVector(), *this->nondeterministicLinearEquationSolver, qualitative)));
+            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(this->computeReachabilityRewardsHelper(optimalityType.get() == storm::logic::OptimalityType::Minimize, this->getModel().getTransitionMatrix(), this->getModel().getOptionalStateRewardVector(), this->getModel().getOptionalTransitionRewardMatrix(), this->getModel().getBackwardTransitions(), subResult.getTruthValuesVector(), *this->nondeterministicLinearEquationSolverFactory, qualitative)));
         }
         
         template<typename ValueType>

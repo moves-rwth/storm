@@ -9,7 +9,7 @@ namespace storm {
     namespace solver {
         
         template<typename ValueType>
-        NativeNondeterministicLinearEquationSolver<ValueType>::NativeNondeterministicLinearEquationSolver() {
+        NativeNondeterministicLinearEquationSolver<ValueType>::NativeNondeterministicLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A) : A(A) {
             // Get the settings object to customize solving.
             storm::settings::modules::NativeEquationSolverSettings const& settings = storm::settings::nativeEquationSolverSettings();
             
@@ -20,17 +20,12 @@ namespace storm {
         }
         
         template<typename ValueType>
-        NativeNondeterministicLinearEquationSolver<ValueType>::NativeNondeterministicLinearEquationSolver(double precision, uint_fast64_t maximalNumberOfIterations, bool relative) : precision(precision), relative(relative), maximalNumberOfIterations(maximalNumberOfIterations) {
+        NativeNondeterministicLinearEquationSolver<ValueType>::NativeNondeterministicLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, double precision, uint_fast64_t maximalNumberOfIterations, bool relative) : A(A), precision(precision), relative(relative), maximalNumberOfIterations(maximalNumberOfIterations) {
             // Intentionally left empty.
         }
         
         template<typename ValueType>
-        NondeterministicLinearEquationSolver<ValueType>* NativeNondeterministicLinearEquationSolver<ValueType>::clone() const {
-            return new NativeNondeterministicLinearEquationSolver<ValueType>(*this);
-        }
-        
-        template<typename ValueType>
-        void NativeNondeterministicLinearEquationSolver<ValueType>::solveEquationSystem(bool minimize, storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const {
+        void NativeNondeterministicLinearEquationSolver<ValueType>::solveEquationSystem(bool minimize, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const {
             
             // Set up the environment for the power method. If scratch memory was not provided, we need to create it.
             bool multiplyResultMemoryProvided = true;
@@ -96,7 +91,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void NativeNondeterministicLinearEquationSolver<ValueType>::performMatrixVectorMultiplication(bool minimize, storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n, std::vector<ValueType>* multiplyResult) const {
+        void NativeNondeterministicLinearEquationSolver<ValueType>::performMatrixVectorMultiplication(bool minimize, std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n, std::vector<ValueType>* multiplyResult) const {
             
             // If scratch memory was not provided, we need to create it.
             bool multiplyResultMemoryProvided = true;

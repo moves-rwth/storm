@@ -19,18 +19,17 @@
 namespace storm {
     namespace modelchecker {
         template<class ValueType>
-        SparseCtmcCslModelChecker<ValueType>::SparseCtmcCslModelChecker(storm::models::sparse::Ctmc<ValueType> const& model) : SparsePropositionalModelChecker<ValueType>(model), linearEquationSolver(storm::utility::solver::getLinearEquationSolver<ValueType>()) {
+        SparseCtmcCslModelChecker<ValueType>::SparseCtmcCslModelChecker(storm::models::sparse::Ctmc<ValueType> const& model) : SparsePropositionalModelChecker<ValueType>(model), linearEquationSolverFactory(new storm::utility::solver::LinearEquationSolverFactory<ValueType>()) {
             // Intentionally left empty.
         }
         
         template<class ValueType>
-        SparseCtmcCslModelChecker<ValueType>::SparseCtmcCslModelChecker(storm::models::sparse::Ctmc<ValueType> const& model, std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>>&& linearEquationSolver) : SparsePropositionalModelChecker<ValueType>(model), linearEquationSolver(std::move(linearEquationSolver)) {
+        SparseCtmcCslModelChecker<ValueType>::SparseCtmcCslModelChecker(storm::models::sparse::Ctmc<ValueType> const& model, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory) : SparsePropositionalModelChecker<ValueType>(model), linearEquationSolverFactory(std::move(linearEquationSolverFactory)) {
             // Intentionally left empty.
         }
         
         template<class ValueType>
         bool SparseCtmcCslModelChecker<ValueType>::canHandle(storm::logic::Formula const& formula) const {
-            // FIXME: refine.
             return formula.isCslStateFormula() || formula.isCslPathFormula() || formula.isRewardPathFormula();
         }
         
@@ -59,7 +58,7 @@ namespace storm {
         std::unique_ptr<CheckResult> SparseCtmcCslModelChecker<ValueType>::computeNextProbabilities(storm::logic::NextFormula const& pathFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
             std::unique_ptr<CheckResult> subResultPointer = this->check(pathFormula.getSubformula());
             ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();
-            std::vector<ValueType> result = SparseDtmcPrctlModelChecker<ValueType>::computeNextProbabilitiesHelper(this->computeProbabilityMatrix(this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector()), subResult.getTruthValuesVector(), *this->linearEquationSolver);
+            std::vector<ValueType> result = SparseDtmcPrctlModelChecker<ValueType>::computeNextProbabilitiesHelper(this->computeProbabilityMatrix(this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector()), subResult.getTruthValuesVector(), *this->linearEquationSolverFactory);
             return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(result)));
         }
         
@@ -69,7 +68,7 @@ namespace storm {
             std::unique_ptr<CheckResult> rightResultPointer = this->check(pathFormula.getRightSubformula());
             ExplicitQualitativeCheckResult const& leftResult = leftResultPointer->asExplicitQualitativeCheckResult();
             ExplicitQualitativeCheckResult const& rightResult = rightResultPointer->asExplicitQualitativeCheckResult();
-            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(this->computeUntilProbabilitiesHelper(this->computeProbabilityMatrix(this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector()), this->getModel().getBackwardTransitions(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(), qualitative, *this->linearEquationSolver)));
+            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(this->computeUntilProbabilitiesHelper(this->computeProbabilityMatrix(this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector()), this->getModel().getBackwardTransitions(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(), qualitative, *this->linearEquationSolverFactory)));
         }
         
         template<class ValueType>
@@ -82,7 +81,7 @@ namespace storm {
             // If the time bounds are [0, inf], we rather call untimed reachability.
             storm::utility::ConstantsComparator<ValueType> comparator;
             if (comparator.isZero(lowerBound) && comparator.isInfinity(upperBound)) {
-                return this->computeUntilProbabilitiesHelper(this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), phiStates, psiStates, qualitative, *this->linearEquationSolver);
+                return this->computeUntilProbabilitiesHelper(this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), phiStates, psiStates, qualitative, *this->linearEquationSolverFactory);
             }
             
             // From this point on, we know that we have to solve a more complicated problem [t, t'] with either t != 0
@@ -124,7 +123,7 @@ namespace storm {
                         std::vector<ValueType> psiStateValues(statesWithProbabilityGreater0.getNumberOfSetBits(), storm::utility::zero<ValueType>());
                         storm::utility::vector::setVectorValues(psiStateValues, psiStates % statesWithProbabilityGreater0, storm::utility::one<ValueType>());
                         
-                        std::vector<ValueType> subresult = this->computeTransientProbabilities(uniformizedMatrix, upperBound, uniformizationRate, psiStateValues, *this->linearEquationSolver);
+                        std::vector<ValueType> subresult = this->computeTransientProbabilities(uniformizedMatrix, upperBound, uniformizationRate, psiStateValues, *this->linearEquationSolverFactory);
                         result = std::vector<ValueType>(this->getModel().getNumberOfStates(), storm::utility::zero<ValueType>());
                         storm::utility::vector::setVectorValues(result, statesWithProbabilityGreater0, subresult);
                     } else if (comparator.isInfinity(upperBound)) {
@@ -132,7 +131,7 @@ namespace storm {
                         
                         // Start by computing the (unbounded) reachability probabilities of reaching psi states while
                         // staying in phi states.
-                        result = this->computeUntilProbabilitiesHelper(this->getModel().getTransitionMatrix(), backwardTransitions, phiStates, psiStates, qualitative, *this->linearEquationSolver);
+                        result = this->computeUntilProbabilitiesHelper(this->getModel().getTransitionMatrix(), backwardTransitions, phiStates, psiStates, qualitative, *this->linearEquationSolverFactory);
                         
                         // Determine the set of states that must be considered further.
                         storm::storage::BitVector relevantStates = storm::utility::vector::filterGreaterZero(result);
@@ -151,7 +150,7 @@ namespace storm {
                         storm::storage::SparseMatrix<ValueType> uniformizedMatrix = this->computeUniformizedMatrix(this->getModel().getTransitionMatrix(), relevantStates, storm::storage::BitVector(result.size()), uniformizationRate, exitRates);
                         
                         // Compute the transient probabilities.
-                        subResult = this->computeTransientProbabilities(uniformizedMatrix, lowerBound, uniformizationRate, subResult, *this->linearEquationSolver);
+                        subResult = this->computeTransientProbabilities(uniformizedMatrix, lowerBound, uniformizationRate, subResult, *this->linearEquationSolverFactory);
                         
                         // Fill in the correct values.
                         storm::utility::vector::setVectorValues(result, ~relevantStates, storm::utility::zero<ValueType>());
@@ -173,7 +172,7 @@ namespace storm {
                         // Start by computing the transient probabilities of reaching a psi state in time t' - t.
                         std::vector<ValueType> psiStateValues(statesWithProbabilityGreater0.getNumberOfSetBits(), storm::utility::zero<ValueType>());
                         storm::utility::vector::setVectorValues(psiStateValues, psiStates % statesWithProbabilityGreater0, storm::utility::one<ValueType>());
-                        std::vector<ValueType> subresult = this->computeTransientProbabilities(uniformizedMatrix, upperBound - lowerBound, uniformizationRate, psiStateValues, *this->linearEquationSolver);
+                        std::vector<ValueType> subresult = this->computeTransientProbabilities(uniformizedMatrix, upperBound - lowerBound, uniformizationRate, psiStateValues, *this->linearEquationSolverFactory);
                         
                         // Determine the set of states that must be considered further.
                         storm::storage::BitVector relevantStates = storm::utility::vector::filterGreaterZero(subresult);
@@ -193,7 +192,7 @@ namespace storm {
                         
                         // Finally, we compute the second set of transient probabilities.
                         uniformizedMatrix = this->computeUniformizedMatrix(this->getModel().getTransitionMatrix(), relevantStates, storm::storage::BitVector(this->getModel().getNumberOfStates()), uniformizationRate, exitRates);
-                        newSubresult = this->computeTransientProbabilities(uniformizedMatrix, lowerBound, uniformizationRate, newSubresult, *this->linearEquationSolver);
+                        newSubresult = this->computeTransientProbabilities(uniformizedMatrix, lowerBound, uniformizationRate, newSubresult, *this->linearEquationSolverFactory);
                         
                         // Fill in the correct values.
                         result = std::vector<ValueType>(this->getModel().getNumberOfStates(), storm::utility::zero<ValueType>());
@@ -241,7 +240,7 @@ namespace storm {
         
         template<class ValueType>
         template<bool computeCumulativeReward>
-        std::vector<ValueType> SparseCtmcCslModelChecker<ValueType>::computeTransientProbabilities(storm::storage::SparseMatrix<ValueType> const& uniformizedMatrix, ValueType timeBound, ValueType uniformizationRate, std::vector<ValueType> values, storm::solver::LinearEquationSolver<ValueType> const& linearEquationSolver) const {
+        std::vector<ValueType> SparseCtmcCslModelChecker<ValueType>::computeTransientProbabilities(storm::storage::SparseMatrix<ValueType> const& uniformizedMatrix, ValueType timeBound, ValueType uniformizationRate, std::vector<ValueType> values, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) const {
             ValueType lambda = timeBound * uniformizationRate;
             
             // If no time can pass, the current values are the result.
@@ -285,15 +284,17 @@ namespace storm {
             }
             std::vector<ValueType> multiplicationResult(result.size());
             
+            std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(uniformizedMatrix);
+            
             if (!computeCumulativeReward && std::get<0>(foxGlynnResult) > 1) {
                 // Perform the matrix-vector multiplications (without adding).
-                linearEquationSolver.performMatrixVectorMultiplication(uniformizedMatrix, values, nullptr, std::get<0>(foxGlynnResult) - 1, &multiplicationResult);
+                solver->performMatrixVectorMultiplication(values, nullptr, std::get<0>(foxGlynnResult) - 1, &multiplicationResult);
             } else if (computeCumulativeReward) {
                 std::function<ValueType(ValueType const&, ValueType const&)> addAndScale = [&uniformizationRate] (ValueType const& a, ValueType const& b) { return a + b / uniformizationRate; };
                 
                 // For the iterations below the left truncation point, we need to add and scale the result with the uniformization rate.
                 for (uint_fast64_t index = 1; index < startingIteration; ++index) {
-                    linearEquationSolver.performMatrixVectorMultiplication(uniformizedMatrix, values, nullptr, 1, &multiplicationResult);
+                    solver->performMatrixVectorMultiplication(values, nullptr, 1, &multiplicationResult);
                     storm::utility::vector::applyPointwiseInPlace(result, values, addAndScale);
                 }
             }
@@ -303,7 +304,7 @@ namespace storm {
             ValueType weight = 0;
             std::function<ValueType(ValueType const&, ValueType const&)> addAndScale = [&weight] (ValueType const& a, ValueType const& b) { return a + weight * b; };
             for (uint_fast64_t index = startingIteration; index <= std::get<1>(foxGlynnResult); ++index) {
-                linearEquationSolver.performMatrixVectorMultiplication(uniformizedMatrix, values, nullptr, 1, &multiplicationResult);
+                solver->performMatrixVectorMultiplication(values, nullptr, 1, &multiplicationResult);
                 
                 weight = std::get<3>(foxGlynnResult)[index - std::get<0>(foxGlynnResult)];
                 storm::utility::vector::applyPointwiseInPlace(result, values, addAndScale);
@@ -313,8 +314,8 @@ namespace storm {
         }
         
         template<class ValueType>
-        std::vector<ValueType> SparseCtmcCslModelChecker<ValueType>::computeUntilProbabilitiesHelper(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative, storm::solver::LinearEquationSolver<ValueType> const& linearEquationSolver) {
-            return SparseDtmcPrctlModelChecker<ValueType>::computeUntilProbabilitiesHelper(transitionMatrix, backwardTransitions, phiStates, psiStates, qualitative, linearEquationSolver);
+        std::vector<ValueType> SparseCtmcCslModelChecker<ValueType>::computeUntilProbabilitiesHelper(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+            return SparseDtmcPrctlModelChecker<ValueType>::computeUntilProbabilitiesHelper(transitionMatrix, backwardTransitions, phiStates, psiStates, qualitative, linearEquationSolverFactory);
         }
         
         template<class ValueType>
@@ -340,7 +341,7 @@ namespace storm {
                 STORM_LOG_THROW(uniformizationRate > 0, storm::exceptions::InvalidStateException, "The uniformization rate must be positive.");
                 
                 storm::storage::SparseMatrix<ValueType> uniformizedMatrix = this->computeUniformizedMatrix(this->getModel().getTransitionMatrix(), storm::storage::BitVector(this->getModel().getNumberOfStates(), true), storm::storage::BitVector(this->getModel().getNumberOfStates()), uniformizationRate, this->getModel().getExitRateVector());
-                result = this->computeTransientProbabilities(uniformizedMatrix, timeBound, uniformizationRate, result, *this->linearEquationSolver);
+                result = this->computeTransientProbabilities(uniformizedMatrix, timeBound, uniformizationRate, result, *this->linearEquationSolverFactory);
             }
             
             return result;
@@ -385,7 +386,7 @@ namespace storm {
             }
             
             // Finally, compute the transient probabilities.
-            return this->computeTransientProbabilities<true>(uniformizedMatrix, timeBound, uniformizationRate, totalRewardVector, *this->linearEquationSolver);
+            return this->computeTransientProbabilities<true>(uniformizedMatrix, timeBound, uniformizationRate, totalRewardVector, *this->linearEquationSolverFactory);
         }
         
         template<class ValueType>
@@ -415,7 +416,7 @@ namespace storm {
                 }
             }
             
-            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(SparseDtmcPrctlModelChecker<ValueType>::computeReachabilityRewardsHelper(probabilityMatrix, modifiedStateRewardVector, this->getModel().getOptionalTransitionRewardMatrix(), this->getModel().getBackwardTransitions(), subResult.getTruthValuesVector(), *linearEquationSolver, qualitative)));
+            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(SparseDtmcPrctlModelChecker<ValueType>::computeReachabilityRewardsHelper(probabilityMatrix, modifiedStateRewardVector, this->getModel().getOptionalTransitionRewardMatrix(), this->getModel().getBackwardTransitions(), subResult.getTruthValuesVector(), *linearEquationSolverFactory, qualitative)));
         }
         
         // Explicitly instantiate the model checker.
