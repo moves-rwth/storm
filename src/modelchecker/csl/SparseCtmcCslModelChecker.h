@@ -40,12 +40,11 @@ namespace storm {
              *
              * @param transitionMatrix The matrix to uniformize.
              * @param maybeStates The states that need to be considered.
-             * @param absorbingStates The states that need to be made absorbing.
              * @param uniformizationRate The rate to be used for uniformization.
              * @param exitRates The exit rates of all states.
              * @return The uniformized matrix.
              */
-            static storm::storage::SparseMatrix<ValueType> computeUniformizedMatrix(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates, storm::storage::BitVector const& absorbingStates, ValueType uniformizationRate, std::vector<ValueType> const& exitRates);
+            static storm::storage::SparseMatrix<ValueType> computeUniformizedMatrix(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates, ValueType uniformizationRate, std::vector<ValueType> const& exitRates);
             
             /*!
              * Computes the transient probabilities for lambda time steps.
