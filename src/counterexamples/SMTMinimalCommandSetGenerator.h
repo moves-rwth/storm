@@ -10,7 +10,7 @@
 #include "src/storage/expressions/Expression.h"
 #include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-#include "src/solver/GmmxxNondeterministicLinearEquationSolver.h"
+#include "src/solver/GmmxxMinMaxLinearEquationSolver.h"
 
 #include "src/utility/counterexamples.h"
 #include "src/utility/prism.h"

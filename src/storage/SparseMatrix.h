@@ -24,7 +24,7 @@ namespace storm {
 	}
 	namespace solver {
 		template<typename T>
-		class TopologicalValueIterationNondeterministicLinearEquationSolver;
+		class TopologicalValueIterationMinMaxLinearEquationSolver;
 	}
 }
 
@@ -276,7 +276,7 @@ namespace storm {
             friend class storm::adapters::GmmxxAdapter;
             friend class storm::adapters::EigenAdapter;
             friend class storm::adapters::StormAdapter;
-			friend class storm::solver::TopologicalValueIterationNondeterministicLinearEquationSolver<ValueType>;
+			friend class storm::solver::TopologicalValueIterationMinMaxLinearEquationSolver<ValueType>;
             
             typedef uint_fast64_t index_type;
             typedef ValueType value_type;

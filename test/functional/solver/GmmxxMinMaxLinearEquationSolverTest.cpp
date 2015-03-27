@@ -1,10 +1,10 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
-#include "src/solver/GmmxxNondeterministicLinearEquationSolver.h"
+#include "src/solver/GmmxxMinMaxLinearEquationSolver.h"
 #include "src/settings/SettingsManager.h"
 
-TEST(GmmxxNondeterministicLinearEquationSolver, SolveWithStandardOptions) {
+TEST(GmmxxMinMaxLinearEquationSolver, SolveWithStandardOptions) {
     storm::storage::SparseMatrixBuilder<double> builder(0, 0, 0, false, true);
     ASSERT_NO_THROW(builder.newRowGroup(0));
     ASSERT_NO_THROW(builder.addNextValue(0, 0, 0.9));
@@ -15,7 +15,7 @@ TEST(GmmxxNondeterministicLinearEquationSolver, SolveWithStandardOptions) {
     std::vector<double> x(1);
     std::vector<double> b = {0.099, 0.5};
         
-    storm::solver::GmmxxNondeterministicLinearEquationSolver<double> solver(A);
+    storm::solver::GmmxxMinMaxLinearEquationSolver<double> solver(A);
     ASSERT_NO_THROW(solver.solveEquationSystem(true, x, b));
     ASSERT_LT(std::abs(x[0] - 0.5), storm::settings::gmmxxEquationSolverSettings().getPrecision());
     
@@ -23,7 +23,7 @@ TEST(GmmxxNondeterministicLinearEquationSolver, SolveWithStandardOptions) {
     ASSERT_LT(std::abs(x[0] - 0.989991), storm::settings::gmmxxEquationSolverSettings().getPrecision());
 }
 
-TEST(GmmxxNondeterministicLinearEquationSolver, MatrixVectorMultiplication) {
+TEST(GmmxxMinMaxLinearEquationSolver, MatrixVectorMultiplication) {
     storm::storage::SparseMatrixBuilder<double> builder(0, 0, 0, false, true);
     ASSERT_NO_THROW(builder.newRowGroup(0));
     ASSERT_NO_THROW(builder.addNextValue(0, 0, 0.9));
@@ -41,9 +41,9 @@ TEST(GmmxxNondeterministicLinearEquationSolver, MatrixVectorMultiplication) {
     
     std::vector<double> x = {0, 1, 0};
     
-    ASSERT_NO_THROW(storm::solver::GmmxxNondeterministicLinearEquationSolver<double> solver(A));
+    ASSERT_NO_THROW(storm::solver::GmmxxMinMaxLinearEquationSolver<double> solver(A));
     
-    storm::solver::GmmxxNondeterministicLinearEquationSolver<double> solver(A);
+    storm::solver::GmmxxMinMaxLinearEquationSolver<double> solver(A);
     ASSERT_NO_THROW(solver.performMatrixVectorMultiplication(true, x, nullptr, 1));
     ASSERT_LT(std::abs(x[0] - 0.099), storm::settings::gmmxxEquationSolverSettings().getPrecision());
     

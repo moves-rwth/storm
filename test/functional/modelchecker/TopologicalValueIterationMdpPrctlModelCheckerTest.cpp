@@ -19,7 +19,7 @@ TEST(TopologicalValueIterationMdpPrctlModelCheckerTest, Dice) {
 	ASSERT_EQ(mdp->getNumberOfStates(), 169ull);
 	ASSERT_EQ(mdp->getNumberOfTransitions(), 436ull);
     
-    storm::modelchecker::SparseMdpPrctlModelChecker<double> mc(*mdp, std::unique_ptr<storm::utility::solver::NondeterministicLinearEquationSolverFactory<double>>(new storm::utility::solver::TopologicalNondeterministicLinearEquationSolverFactory<double>()));
+    storm::modelchecker::SparseMdpPrctlModelChecker<double> mc(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::TopologicalMinMaxLinearEquationSolverFactory<double>()));
     
 	//storm::property::prctl::Ap<double>* apFormula = new storm::property::prctl::Ap<double>("two");
 	auto apFormula = std::make_shared<storm::logic::AtomicLabelFormula>("two");
@@ -137,7 +137,7 @@ TEST(TopologicalValueIterationMdpPrctlModelCheckerTest, Dice) {
 	// ------------- state rewards --------------
 	std::shared_ptr<storm::models::sparse::Mdp<double>> stateRewardMdp = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.tra", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.lab", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.flip.state.rew", "")->as<storm::models::sparse::Mdp<double>>();
     
-	storm::modelchecker::SparseMdpPrctlModelChecker<double> stateRewardModelChecker(*stateRewardMdp, std::unique_ptr<storm::utility::solver::NondeterministicLinearEquationSolverFactory<double>>(new storm::utility::solver::TopologicalNondeterministicLinearEquationSolverFactory<double>()));
+	storm::modelchecker::SparseMdpPrctlModelChecker<double> stateRewardModelChecker(*stateRewardMdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::TopologicalMinMaxLinearEquationSolverFactory<double>()));
 
 	apFormula = std::make_shared<storm::logic::AtomicLabelFormula>("done");
 	reachabilityRewardFormula = std::make_shared<storm::logic::ReachabilityRewardFormula>(apFormula);
@@ -172,7 +172,7 @@ TEST(TopologicalValueIterationMdpPrctlModelCheckerTest, Dice) {
 	// -------------------------------- state and transition reward ------------------------
 	std::shared_ptr<storm::models::sparse::Mdp<double>> stateAndTransitionRewardMdp = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.tra", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.lab", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.flip.state.rew", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.flip.trans.rew")->as<storm::models::sparse::Mdp<double>>();
     
-	storm::modelchecker::SparseMdpPrctlModelChecker<double> stateAndTransitionRewardModelChecker(*stateAndTransitionRewardMdp, std::unique_ptr<storm::utility::solver::NondeterministicLinearEquationSolverFactory<double>>(new storm::utility::solver::TopologicalNondeterministicLinearEquationSolverFactory<double>()));
+	storm::modelchecker::SparseMdpPrctlModelChecker<double> stateAndTransitionRewardModelChecker(*stateAndTransitionRewardMdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::TopologicalMinMaxLinearEquationSolverFactory<double>()));
     
 
 	apFormula = std::make_shared<storm::logic::AtomicLabelFormula>("done");
@@ -212,7 +212,7 @@ TEST(TopologicalValueIterationMdpPrctlModelCheckerTest, AsynchronousLeader) {
 	ASSERT_EQ(mdp->getNumberOfStates(), 3172ull);
 	ASSERT_EQ(mdp->getNumberOfTransitions(), 7144ull);
 
-	storm::modelchecker::SparseMdpPrctlModelChecker<double> mc(*mdp, std::unique_ptr<storm::utility::solver::NondeterministicLinearEquationSolverFactory<double>>(new storm::utility::solver::TopologicalNondeterministicLinearEquationSolverFactory<double>()));
+	storm::modelchecker::SparseMdpPrctlModelChecker<double> mc(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::TopologicalMinMaxLinearEquationSolverFactory<double>()));
 
 	auto apFormula = std::make_shared<storm::logic::AtomicLabelFormula>("elected");
 	auto eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(apFormula);

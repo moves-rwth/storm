@@ -1,5 +1,5 @@
-#ifndef STORM_SOLVER_NONDETERMINISTICLINEAREQUATIONSOLVER_H_
-#define STORM_SOLVER_NONDETERMINISTICLINEAREQUATIONSOLVER_H_
+#ifndef STORM_SOLVER_MINMAXLINEAREQUATIONSOLVER_H_
+#define STORM_SOLVER_MINMAXLINEAREQUATIONSOLVER_H_
 
 #include <vector>
 
@@ -14,7 +14,7 @@ namespace storm {
          * provided.
          */
         template<class ValueType>
-        class NondeterministicLinearEquationSolver {
+        class MinMaxLinearEquationSolver {
         public:
             /*!
              * Solves the equation system x = min/max(A*x + b) given by the parameters. Note that the matrix A has
@@ -56,4 +56,4 @@ namespace storm {
     } // namespace solver
 } // namespace storm
 
-#endif /* STORM_SOLVER_NONDETERMINISTICLINEAREQUATIONSOLVER_H_ */
+#endif /* STORM_SOLVER_MINMAXLINEAREQUATIONSOLVER_H_ */

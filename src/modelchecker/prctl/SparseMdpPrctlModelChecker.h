@@ -4,7 +4,7 @@
 #include "src/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "src/models/sparse/Mdp.h"
 #include "src/utility/solver.h"
-#include "src/solver/NondeterministicLinearEquationSolver.h"
+#include "src/solver/MinMaxLinearEquationSolver.h"
 
 namespace storm {
     namespace counterexamples {
@@ -29,7 +29,7 @@ namespace storm {
             friend class storm::counterexamples::MILPMinimalLabelSetGenerator<ValueType>;
             
             explicit SparseMdpPrctlModelChecker(storm::models::sparse::Mdp<ValueType> const& model);
-            explicit SparseMdpPrctlModelChecker(storm::models::sparse::Mdp<ValueType> const& model, std::unique_ptr<storm::utility::solver::NondeterministicLinearEquationSolverFactory<ValueType>>&& nondeterministicLinearEquationSolverFactory);
+            explicit SparseMdpPrctlModelChecker(storm::models::sparse::Mdp<ValueType> const& model, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType>>&& MinMaxLinearEquationSolverFactory);
             
             // The implemented methods of the AbstractModelChecker interface.
             virtual bool canHandle(storm::logic::Formula const& formula) const override;
@@ -48,13 +48,13 @@ namespace storm {
             std::vector<ValueType> computeBoundedUntilProbabilitiesHelper(bool minimize, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, uint_fast64_t stepBound) const;
             std::vector<ValueType> computeNextProbabilitiesHelper(bool minimize, storm::storage::BitVector const& nextStates);
             std::vector<ValueType> computeUntilProbabilitiesHelper(bool minimize, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative) const;
-            static std::vector<ValueType> computeUntilProbabilitiesHelper(bool minimize, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::utility::solver::NondeterministicLinearEquationSolverFactory<ValueType> const& nondeterministicLinearEquationSolverFactory, bool qualitative);
+            static std::vector<ValueType> computeUntilProbabilitiesHelper(bool minimize, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& MinMaxLinearEquationSolverFactory, bool qualitative);
             std::vector<ValueType> computeInstantaneousRewardsHelper(bool minimize, uint_fast64_t stepCount) const;
             std::vector<ValueType> computeCumulativeRewardsHelper(bool minimize, uint_fast64_t stepBound) const;
-            std::vector<ValueType> computeReachabilityRewardsHelper(bool minimize, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, boost::optional<std::vector<ValueType>> const& stateRewardVector, boost::optional<storm::storage::SparseMatrix<ValueType>> const& transitionRewardMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& targetStates, storm::utility::solver::NondeterministicLinearEquationSolverFactory<ValueType> const& nondeterministicLinearEquationSolverFactory, bool qualitative) const;
+            std::vector<ValueType> computeReachabilityRewardsHelper(bool minimize, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, boost::optional<std::vector<ValueType>> const& stateRewardVector, boost::optional<storm::storage::SparseMatrix<ValueType>> const& transitionRewardMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& targetStates, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& MinMaxLinearEquationSolverFactory, bool qualitative) const;
             
             // An object that is used for retrieving solvers for systems of linear equations that are the result of nondeterministic choices.
-            std::unique_ptr<storm::utility::solver::NondeterministicLinearEquationSolverFactory<ValueType>> nondeterministicLinearEquationSolverFactory;
+            std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType>> MinMaxLinearEquationSolverFactory;
         };
     } // namespace modelchecker
 } // namespace storm

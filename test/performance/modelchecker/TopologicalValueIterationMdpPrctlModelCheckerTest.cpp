@@ -14,7 +14,7 @@ TEST(TopologicalValueIterationMdpPrctlModelCheckerTest, AsynchronousLeader) {
 	ASSERT_EQ(mdp->getNumberOfStates(), 2095783ull);
 	ASSERT_EQ(mdp->getNumberOfTransitions(), 7714385ull);
 
-	storm::modelchecker::SparseMdpPrctlModelChecker<double> mc(*mdp, std::unique_ptr<storm::utility::solver::NondeterministicLinearEquationSolverFactory<double>>(new storm::utility::solver::TopologicalNondeterministicLinearEquationSolverFactory<double>()));
+	storm::modelchecker::SparseMdpPrctlModelChecker<double> mc(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::TopologicalMinMaxLinearEquationSolverFactory<double>()));
 
 	auto apFormula = std::make_shared<storm::logic::AtomicLabelFormula>("elected");
 	auto eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(apFormula);
@@ -86,7 +86,7 @@ TEST(TopologicalValueIterationMdpPrctlModelCheckerTest, Consensus) {
 	ASSERT_EQ(mdp->getNumberOfStates(), 63616ull);
 	ASSERT_EQ(mdp->getNumberOfTransitions(), 213472ull);
     
-	storm::modelchecker::SparseMdpPrctlModelChecker<double> mc(*mdp, std::unique_ptr<storm::utility::solver::NondeterministicLinearEquationSolverFactory<double>>(new storm::utility::solver::TopologicalNondeterministicLinearEquationSolverFactory<double>()));
+	storm::modelchecker::SparseMdpPrctlModelChecker<double> mc(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::TopologicalMinMaxLinearEquationSolverFactory<double>()));
 
 	auto apFormula = std::make_shared<storm::logic::AtomicLabelFormula>("finished");
 	auto eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(apFormula);

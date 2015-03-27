@@ -1,4 +1,4 @@
-#include "src/solver/GmmxxNondeterministicLinearEquationSolver.h"
+#include "src/solver/GmmxxMinMaxLinearEquationSolver.h"
 
 #include <utility>
 
@@ -10,7 +10,7 @@ namespace storm {
     namespace solver {
         
         template<typename ValueType>
-        GmmxxNondeterministicLinearEquationSolver<ValueType>::GmmxxNondeterministicLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A) : gmmxxMatrix(storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(A)), rowGroupIndices(A.getRowGroupIndices()) {
+        GmmxxMinMaxLinearEquationSolver<ValueType>::GmmxxMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A) : gmmxxMatrix(storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(A)), rowGroupIndices(A.getRowGroupIndices()) {
             // Get the settings object to customize solving.
             storm::settings::modules::GmmxxEquationSolverSettings const& settings = storm::settings::gmmxxEquationSolverSettings();
             
@@ -21,13 +21,13 @@ namespace storm {
         }
         
         template<typename ValueType>
-        GmmxxNondeterministicLinearEquationSolver<ValueType>::GmmxxNondeterministicLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, double precision, uint_fast64_t maximalNumberOfIterations, bool relative) : gmmxxMatrix(storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(A)), rowGroupIndices(A.getRowGroupIndices()), precision(precision), relative(relative), maximalNumberOfIterations(maximalNumberOfIterations) {
+        GmmxxMinMaxLinearEquationSolver<ValueType>::GmmxxMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, double precision, uint_fast64_t maximalNumberOfIterations, bool relative) : gmmxxMatrix(storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(A)), rowGroupIndices(A.getRowGroupIndices()), precision(precision), relative(relative), maximalNumberOfIterations(maximalNumberOfIterations) {
             // Intentionally left empty.
         }
 
         
         template<typename ValueType>
-        void GmmxxNondeterministicLinearEquationSolver<ValueType>::solveEquationSystem(bool minimize, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const {
+        void GmmxxMinMaxLinearEquationSolver<ValueType>::solveEquationSystem(bool minimize, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const {
             // Set up the environment for the power method. If scratch memory was not provided, we need to create it.
             bool multiplyResultMemoryProvided = true;
             if (multiplyResult == nullptr) {
@@ -92,7 +92,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void GmmxxNondeterministicLinearEquationSolver<ValueType>::performMatrixVectorMultiplication(bool minimize, std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n, std::vector<ValueType>* multiplyResult) const {
+        void GmmxxMinMaxLinearEquationSolver<ValueType>::performMatrixVectorMultiplication(bool minimize, std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n, std::vector<ValueType>* multiplyResult) const {
             bool multiplyResultMemoryProvided = true;
             if (multiplyResult == nullptr) {
                 multiplyResult = new std::vector<ValueType>(gmmxxMatrix->nr);
@@ -120,6 +120,6 @@ namespace storm {
         }
 
         // Explicitly instantiate the solver.
-        template class GmmxxNondeterministicLinearEquationSolver<double>;
+        template class GmmxxMinMaxLinearEquationSolver<double>;
     } // namespace solver
 } // namespace storm

@@ -17,7 +17,7 @@ TEST(GmxxMdpPrctlModelCheckerTest, AsynchronousLeader) {
     ASSERT_EQ(2095783ull, mdp->getNumberOfStates());
     ASSERT_EQ(7714385ull, mdp->getNumberOfTransitions());
     
-    storm::modelchecker::SparseMdpPrctlModelChecker<double> checker(*mdp, std::unique_ptr<storm::utility::solver::NondeterministicLinearEquationSolverFactory<double>>(new storm::utility::solver::GmmxxNondeterministicLinearEquationSolverFactory<double>()));
+    storm::modelchecker::SparseMdpPrctlModelChecker<double> checker(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::GmmxxMinMaxLinearEquationSolverFactory<double>()));
     
     auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("elected");
     auto eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(labelFormula);
@@ -79,7 +79,7 @@ TEST(GmxxMdpPrctlModelCheckerTest, Consensus) {
     ASSERT_EQ(63616ull, mdp->getNumberOfStates());
     ASSERT_EQ(213472ull, mdp->getNumberOfTransitions());
     
-    storm::modelchecker::SparseMdpPrctlModelChecker<double> checker(*mdp, std::unique_ptr<storm::utility::solver::NondeterministicLinearEquationSolverFactory<double>>(new storm::utility::solver::GmmxxNondeterministicLinearEquationSolverFactory<double>()));
+    storm::modelchecker::SparseMdpPrctlModelChecker<double> checker(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::GmmxxMinMaxLinearEquationSolverFactory<double>()));
     
     auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("finished");
     auto eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(labelFormula);

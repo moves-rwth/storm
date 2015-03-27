@@ -1,29 +1,29 @@
-#ifndef STORM_SOLVER_GMMXXNONDETERMINISTICLINEAREQUATIONSOLVER_H_
-#define STORM_SOLVER_GMMXXNONDETERMINISTICLINEAREQUATIONSOLVER_H_
+#ifndef STORM_SOLVER_GMMXXMINMAXLINEAREQUATIONSOLVER_H_
+#define STORM_SOLVER_GMMXXMINMAXLINEAREQUATIONSOLVER_H_
 
 #include "gmm/gmm_matrix.h"
 
-#include "src/solver/NondeterministicLinearEquationSolver.h"
+#include "src/solver/MinMaxLinearEquationSolver.h"
 
 namespace storm {
     namespace solver {
         
         /*!
-         * A class that uses the gmm++ library to implement the NondeterministicLinearEquationSolver interface.
+         * A class that uses the gmm++ library to implement the MinMaxLinearEquationSolver interface.
          */
         template<class ValueType>
-        class GmmxxNondeterministicLinearEquationSolver : public NondeterministicLinearEquationSolver<ValueType> {
+        class GmmxxMinMaxLinearEquationSolver : public MinMaxLinearEquationSolver<ValueType> {
         public:
             /*!
-             * Constructs a nondeterministic linear equation solver with parameters being set according to the settings
+             * Constructs a min/max linear equation solver with parameters being set according to the settings
              * object.
              *
              * @param A The matrix defining the coefficients of the linear equation system.             
              */
-            GmmxxNondeterministicLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A);
+            GmmxxMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A);
             
             /*!
-             * Constructs a nondeterminstic linear equation solver with the given parameters.
+             * Constructs a min/max linear equation solver with the given parameters.
              *
              * @param A The matrix defining the coefficients of the linear equation system.
              * @param precision The precision to use for convergence detection.
@@ -31,7 +31,7 @@ namespace storm {
              * @param relative If set, the relative error rather than the absolute error is considered for convergence
              * detection.
              */
-            GmmxxNondeterministicLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, double precision, uint_fast64_t maximalNumberOfIterations, bool relative = true);
+            GmmxxMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, double precision, uint_fast64_t maximalNumberOfIterations, bool relative = true);
 
             virtual void performMatrixVectorMultiplication(bool minimize, std::vector<ValueType>& x, std::vector<ValueType>* b = nullptr, uint_fast64_t n = 1, std::vector<ValueType>* multiplyResult = nullptr) const override;
             
@@ -56,4 +56,4 @@ namespace storm {
     } // namespace solver
 } // namespace storm
 
-#endif /* STORM_SOLVER_GMMXXNONDETERMINISTICLINEAREQUATIONSOLVER_H_ */
+#endif /* STORM_SOLVER_GMMXXMINMAXLINEAREQUATIONSOLVER_H_ */

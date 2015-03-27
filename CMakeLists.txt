@@ -417,7 +417,7 @@ file(GLOB_RECURSE STORM_UTILITY_FILES ${PROJECT_SOURCE_DIR}/src/utility/*.h ${PR
 file(GLOB STORM_FUNCTIONAL_TEST_MAIN_FILE ${STORM_CPP_TESTS_BASE_PATH}/functional/storm-functional-tests.cpp)
 file(GLOB_RECURSE STORM_FUNCTIONAL_TEST_FILES ${STORM_CPP_TESTS_BASE_PATH}/functional/*.h ${STORM_CPP_TESTS_BASE_PATH}/functional/*.cpp)
 file(GLOB STORM_PERFORMANCE_TEST_MAIN_FILE ${STORM_CPP_TESTS_BASE_PATH}/performance/storm-performance-tests.cpp)
-file(GLOB_RECURSE STORM_PERFORMANCE_TEST_FILES ${STORM_CPP_TESTS_BASE_PATH}/performance/*/*.h ${STORM_CPP_TESTS_BASE_PATH}/performance/*/*.cpp)
+file(GLOB_RECURSE STORM_PERFORMANCE_TEST_FILES ${STORM_CPP_TESTS_BASE_PATH}/performance/*.h ${STORM_CPP_TESTS_BASE_PATH}/performance/*.cpp)
 
 # Additional include files like the storm-config.h
 file(GLOB_RECURSE STORM_BUILD_HEADERS ${PROJECT_BINARY_DIR}/include/*.h)
@@ -451,7 +451,7 @@ source_group(storage\\prism FILES ${STORM_STORAGE_PRISM_FILES})
 source_group(storage\\sparse FILES ${STORM_STORAGE_SPARSE_FILES})
 source_group(utility FILES ${STORM_UTILITY_FILES})
 source_group(functional-test FILES ${STORM_FUNCTIONAL_TEST_FILES})
-source_group(performance-test FILES ${STORM_PERFORMANCE_TEST_FILES})
+source_group(performance-test FILES ${STORM_PERFORMANCE_TEST_FILES} ${})
 
 # Add custom additional include or link directories
 if (ADDITIONAL_INCLUDE_DIRS)

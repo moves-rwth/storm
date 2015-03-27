@@ -1,4 +1,4 @@
-#include "src/solver/TopologicalNondeterministicLinearEquationSolver.h"
+#include "src/solver/TopologicalMinMaxLinearEquationSolver.h"
 
 #include <utility>
 #include <chrono>
@@ -23,7 +23,7 @@ namespace storm {
     namespace solver {
         
         template<typename ValueType>
-        TopologicalNondeterministicLinearEquationSolver<ValueType>::TopologicalNondeterministicLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A) : NativeNondeterministicLinearEquationSolver<ValueType>(A) {
+        TopologicalMinMaxLinearEquationSolver<ValueType>::TopologicalMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A) : NativeMinMaxLinearEquationSolver<ValueType>(A) {
 			// Get the settings object to customize solving.
 			
 			//storm::settings::Settings* settings = storm::settings::Settings::getInstance();
@@ -44,12 +44,12 @@ namespace storm {
         }
         
         template<typename ValueType>
-		TopologicalNondeterministicLinearEquationSolver<ValueType>::TopologicalNondeterministicLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, double precision, uint_fast64_t maximalNumberOfIterations, bool relative) : NativeNondeterministicLinearEquationSolver<ValueType>(A, precision, maximalNumberOfIterations, relative) {
+		TopologicalMinMaxLinearEquationSolver<ValueType>::TopologicalMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, double precision, uint_fast64_t maximalNumberOfIterations, bool relative) : NativeMinMaxLinearEquationSolver<ValueType>(A, precision, maximalNumberOfIterations, relative) {
             // Intentionally left empty.
         }
         
         template<typename ValueType>
-		void TopologicalNondeterministicLinearEquationSolver<ValueType>::solveEquationSystem(bool minimize, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const {
+		void TopologicalMinMaxLinearEquationSolver<ValueType>::solveEquationSystem(bool minimize, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const {
 			
 #ifdef GPU_USE_FLOAT
 #define __FORCE_FLOAT_CALCULATION true
@@ -60,7 +60,7 @@ namespace storm {
                 // FIXME: This actually allocates quite some storage, because of this conversion, is it really necessary?
 				storm::storage::SparseMatrix<float> newA = this->A.template toValueType<float>();
                 
-                TopologicalNondeterministicLinearEquationSolver<float> newSolver(newA, this->precision, this->maximalNumberOfIterations, this->relative);
+                TopologicalMinMaxLinearEquationSolver<float> newSolver(newA, this->precision, this->maximalNumberOfIterations, this->relative);
 
 				std::vector<float> new_x = storm::utility::vector::toValueType<float>(x);
 				std::vector<float> const new_b = storm::utility::vector::toValueType<float>(b);
@@ -322,7 +322,7 @@ namespace storm {
 
 		template<typename ValueType>
 		std::vector<std::pair<bool, storm::storage::StateBlock>>
-			TopologicalNondeterministicLinearEquationSolver<ValueType>::getOptimalGroupingFromTopologicalSccDecomposition(storm::storage::StronglyConnectedComponentDecomposition<ValueType> const& sccDecomposition, std::vector<uint_fast64_t> const& topologicalSort, storm::storage::SparseMatrix<ValueType> const& matrix) const {
+			TopologicalMinMaxLinearEquationSolver<ValueType>::getOptimalGroupingFromTopologicalSccDecomposition(storm::storage::StronglyConnectedComponentDecomposition<ValueType> const& sccDecomposition, std::vector<uint_fast64_t> const& topologicalSort, storm::storage::SparseMatrix<ValueType> const& matrix) const {
 				std::vector<std::pair<bool, storm::storage::StateBlock>> result;
 #ifdef STORM_HAVE_CUDA
 				// 95% to have a bit of padding
@@ -459,7 +459,7 @@ namespace storm {
 		}
 
         // Explicitly instantiate the solver.
-		template class TopologicalNondeterministicLinearEquationSolver<double>;
-		template class TopologicalNondeterministicLinearEquationSolver<float>;
+		template class TopologicalMinMaxLinearEquationSolver<double>;
+		template class TopologicalMinMaxLinearEquationSolver<float>;
     } // namespace solver
 } // namespace storm
