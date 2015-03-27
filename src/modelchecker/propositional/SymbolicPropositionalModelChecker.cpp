@@ -25,7 +25,7 @@ namespace storm {
             if (stateFormula.isTrueFormula()) {
                 return std::unique_ptr<CheckResult>(new SymbolicQualitativeCheckResult<Type>(model.getReachableStates(), model.getReachableStates()));
             } else {
-                return std::unique_ptr<CheckResult>(new SymbolicQualitativeCheckResult<Type>(model.getReachableStates(), model.getManager().getZero()));
+                return std::unique_ptr<CheckResult>(new SymbolicQualitativeCheckResult<Type>(model.getReachableStates(), model.getManager().getBddZero()));
             }
         }
         

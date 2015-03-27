@@ -37,27 +37,28 @@ namespace storm {
             }
         }
         
-        Dd<DdType::CUDD> DdManager<DdType::CUDD>::getOne(bool asMtbdd) const {
-            if (asMtbdd) {
-                return Dd<DdType::CUDD>(this->shared_from_this(), cuddManager.addOne());
-            } else {
-                return Dd<DdType::CUDD>(this->shared_from_this(), cuddManager.bddOne());
-            }
+        Bdd<DdType::CUDD> DdManager<DdType::CUDD>::getBddOne() const {
+            return Bdd<DdType::CUDD>(this->shared_from_this(), cuddManager.bddOne());
+        }
+
+        Add<DdType::CUDD> DdManager<DdType::CUDD>::getAddOne() const {
+            return Add<DdType::CUDD>(this->shared_from_this(), cuddManager.addOne());
         }
         
-        Dd<DdType::CUDD> DdManager<DdType::CUDD>::getZero(bool asMtbdd) const {
-            if (asMtbdd) {
-                return Dd<DdType::CUDD>(this->shared_from_this(), cuddManager.addZero());
-            } else {
-                return Dd<DdType::CUDD>(this->shared_from_this(), cuddManager.bddZero());
-            }
+        Bdd<DdType::CUDD> DdManager<DdType::CUDD>::getBddZero() const {
+            return Bdd<DdType::CUDD>(this->shared_from_this(), cuddManager.bddZero());
         }
         
-        Dd<DdType::CUDD> DdManager<DdType::CUDD>::getConstant(double value) const {
-            return Dd<DdType::CUDD>(this->shared_from_this(), cuddManager.constant(value));
+        Add<DdType::CUDD> DdManager<DdType::CUDD>::getAddZero() const {
+            return Add<DdType::CUDD>(this->shared_from_this(), cuddManager.addZero());
         }
         
-        Dd<DdType::CUDD> DdManager<DdType::CUDD>::getEncoding(storm::expressions::Variable const& variable, int_fast64_t value, bool asMtbdd) const {
+        
+        Add<DdType::CUDD> DdManager<DdType::CUDD>::getConstant(double value) const {
+            return Add<DdType::CUDD>(this->shared_from_this(), cuddManager.constant(value));
+        }
+        
+        Bdd<DdType::CUDD> DdManager<DdType::CUDD>::getEncoding(storm::expressions::Variable const& variable, int_fast64_t value) const {
             DdMetaVariable<DdType::CUDD> const& metaVariable = this->getMetaVariable(variable);
             
             STORM_LOG_THROW(value >= metaVariable.getLow() && value <= metaVariable.getHigh(), storm::exceptions::InvalidArgumentException, "Illegal value " << value << " for meta variable '" << variable.getName() << "'.");
@@ -65,9 +66,9 @@ namespace storm {
             // Now compute the encoding relative to the low value of the meta variable.
             value -= metaVariable.getLow();
             
-            std::vector<Dd<DdType::CUDD>> const& ddVariables = metaVariable.getDdVariables();
+            std::vector<Bdd<DdType::CUDD>> const& ddVariables = metaVariable.getDdVariables();
 
-            Dd<DdType::CUDD> result;
+            Bdd<DdType::CUDD> result;
             if (value & (1ull << (ddVariables.size() - 1))) {
                 result = ddVariables[0];
             } else {
@@ -82,31 +83,27 @@ namespace storm {
                 }
             }
             
-            if (asMtbdd) {
-                return result.toMtbdd();
-            } else {
-                return result;
-            }
+            return result;
         }
         
-        Dd<DdType::CUDD> DdManager<DdType::CUDD>::getRange(storm::expressions::Variable const& variable, bool asMtbdd) const {
+        Bdd<DdType::CUDD> DdManager<DdType::CUDD>::getRange(storm::expressions::Variable const& variable) const {
             storm::dd::DdMetaVariable<DdType::CUDD> const& metaVariable = this->getMetaVariable(variable);
             
-            Dd<DdType::CUDD> result = this->getZero(asMtbdd);
+            Bdd<DdType::CUDD> result = this->getBddZero();
             
             for (int_fast64_t value = metaVariable.getLow(); value <= metaVariable.getHigh(); ++value) {
-                result.setValue(variable, value, static_cast<double>(1));
+                result |= this->getEncoding(variable, value);
             }
             
             return result;
         }
         
-        Dd<DdType::CUDD> DdManager<DdType::CUDD>::getIdentity(storm::expressions::Variable const& variable) const {
+        Add<DdType::CUDD> DdManager<DdType::CUDD>::getIdentity(storm::expressions::Variable const& variable) const {
             storm::dd::DdMetaVariable<DdType::CUDD> const& metaVariable = this->getMetaVariable(variable);
             
-            Dd<DdType::CUDD> result = this->getZero(true);
+            Add<DdType::CUDD> result = this->getAddZero();
             for (int_fast64_t value = metaVariable.getLow(); value <= metaVariable.getHigh(); ++value) {
-                result.setValue(variable, value, static_cast<double>(value));
+                result += this->getEncoding(variable, value).toAdd() * this->getConstant(value);
             }
             return result;
         }
@@ -126,11 +123,11 @@ namespace storm {
             storm::expressions::Variable unprimed = manager->declareBitVectorVariable(name, numberOfBits);
             storm::expressions::Variable primed = manager->declareBitVectorVariable(name + "'", numberOfBits);
             
-            std::vector<Dd<DdType::CUDD>> variables;
-            std::vector<Dd<DdType::CUDD>> variablesPrime;
+            std::vector<Bdd<DdType::CUDD>> variables;
+            std::vector<Bdd<DdType::CUDD>> variablesPrime;
             for (std::size_t i = 0; i < numberOfBits; ++i) {
-                variables.emplace_back(Dd<DdType::CUDD>(this->shared_from_this(), cuddManager.bddVar(), {unprimed}));
-                variablesPrime.emplace_back(Dd<DdType::CUDD>(this->shared_from_this(), cuddManager.bddVar(), {primed}));
+                variables.emplace_back(Bdd<DdType::CUDD>(this->shared_from_this(), cuddManager.bddVar(), {unprimed}));
+                variablesPrime.emplace_back(Bdd<DdType::CUDD>(this->shared_from_this(), cuddManager.bddVar(), {primed}));
             }
             
             // Now group the non-primed and primed variable.
@@ -154,10 +151,10 @@ namespace storm {
             storm::expressions::Variable unprimed = manager->declareBooleanVariable(name);
             storm::expressions::Variable primed = manager->declareBooleanVariable(name + "'");
 
-            std::vector<Dd<DdType::CUDD>> variables;
-            std::vector<Dd<DdType::CUDD>> variablesPrime;
-            variables.emplace_back(Dd<DdType::CUDD>(this->shared_from_this(), cuddManager.bddVar(), {unprimed}));
-            variablesPrime.emplace_back(Dd<DdType::CUDD>(this->shared_from_this(), cuddManager.bddVar(), {primed}));
+            std::vector<Bdd<DdType::CUDD>> variables;
+            std::vector<Bdd<DdType::CUDD>> variablesPrime;
+            variables.emplace_back(Bdd<DdType::CUDD>(this->shared_from_this(), cuddManager.bddVar(), {unprimed}));
+            variablesPrime.emplace_back(Bdd<DdType::CUDD>(this->shared_from_this(), cuddManager.bddVar(), {primed}));
 
             // Now group the non-primed and primed variable.
             this->getCuddManager().MakeTreeNode(variables.front().getIndex(), 2, MTR_FIXED);

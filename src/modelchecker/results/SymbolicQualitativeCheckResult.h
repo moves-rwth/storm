@@ -2,7 +2,7 @@
 #define STORM_MODELCHECKER_SYMBOLICQUALITATIVECHECKRESULT_H_
 
 #include "src/storage/dd/DdType.h"
-#include "src/storage/dd/Dd.h"
+#include "src/storage/dd/CuddBdd.h"
 #include "src/modelchecker/results/QualitativeCheckResult.h"
 #include "src/utility/OsDetection.h"
 
@@ -12,7 +12,7 @@ namespace storm {
         class SymbolicQualitativeCheckResult : public QualitativeCheckResult {
         public:
             SymbolicQualitativeCheckResult() = default;
-            SymbolicQualitativeCheckResult(storm::dd::Dd<Type> const& allStates, storm::dd::Dd<Type> const& truthValues);
+            SymbolicQualitativeCheckResult(storm::dd::Bdd<Type> const& allStates, storm::dd::Bdd<Type> const& truthValues);
             
             SymbolicQualitativeCheckResult(SymbolicQualitativeCheckResult const& other) = default;
             SymbolicQualitativeCheckResult& operator=(SymbolicQualitativeCheckResult const& other) = default;
@@ -38,10 +38,10 @@ namespace storm {
             
         private:
             // The set of all states.
-            storm::dd::Dd<Type> allStates;
+            storm::dd::Bdd<Type> allStates;
             
             // The values of the qualitative check result.
-            storm::dd::Dd<Type> truthValues;
+            storm::dd::Bdd<Type> truthValues;
         };
     }
 }

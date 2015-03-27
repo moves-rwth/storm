@@ -23,6 +23,7 @@ namespace storm {
             // Declare the DdManager and DdIterator class as friend so it can access the internals of a DD.
             friend class DdManager<DdType::CUDD>;
             friend class DdForwardIterator<DdType::CUDD>;
+            friend class Add<DdType::CUDD>;
             friend class Odd<DdType::CUDD>;
             
             // Instantiate all copy/move constructors/assignments with the default implementation.
@@ -199,6 +200,13 @@ namespace storm {
             virtual uint_fast64_t getNonZeroCount() const override;
             
             /*!
+             * Retrieves the number of leaves of the DD.
+             *
+             * @return The number of leaves of the DD.
+             */
+            virtual uint_fast64_t getLeafCount() const override;
+            
+            /*!
              * Retrieves the number of nodes necessary to represent the DD.
              *
              * @return The number of nodes in this DD.
@@ -261,10 +269,10 @@ namespace storm {
              * Creates a DD that encapsulates the given CUDD ADD.
              *
              * @param ddManager The manager responsible for this DD.
-             * @param cuddDd The CUDD ADD to store.
+             * @param cuddBdd The CUDD BDD to store.
              * @param containedMetaVariables The meta variables that appear in the DD.
              */
-            Bdd(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, BDD cuddDd, std::set<storm::expressions::Variable> const& containedMetaVariables = std::set<storm::expressions::Variable>());
+            Bdd(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, BDD cuddBdd, std::set<storm::expressions::Variable> const& containedMetaVariables = std::set<storm::expressions::Variable>());
             
             // The BDD created by CUDD.
             BDD cuddBdd;

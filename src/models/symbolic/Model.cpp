@@ -6,17 +6,17 @@ namespace storm {
             template<storm::dd::DdType Type>
             Model<Type>::Model(storm::models::ModelType const& modelType,
                                std::shared_ptr<storm::dd::DdManager<Type>> manager,
-                               storm::dd::Dd<Type> reachableStates,
-                               storm::dd::Dd<Type> initialStates,
-                               storm::dd::Dd<Type> transitionMatrix,
+                               storm::dd::Bdd<Type> reachableStates,
+                               storm::dd::Bdd<Type> initialStates,
+                               storm::dd::Add<Type> transitionMatrix,
                                std::set<storm::expressions::Variable> const& rowVariables,
-                               std::shared_ptr<storm::adapters::DdExpressionAdapter<Type>> rowExpressionAdapter,
+                               std::shared_ptr<storm::adapters::AddExpressionAdapter<Type>> rowExpressionAdapter,
                                std::set<storm::expressions::Variable> const& columnVariables,
-                               std::shared_ptr<storm::adapters::DdExpressionAdapter<Type>> columnExpressionAdapter,
+                               std::shared_ptr<storm::adapters::AddExpressionAdapter<Type>> columnExpressionAdapter,
                                std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs,
                                std::map<std::string, storm::expressions::Expression> labelToExpressionMap,
-                               boost::optional<storm::dd::Dd<Type>> const& optionalStateRewardVector,
-                               boost::optional<storm::dd::Dd<Type>> const& optionalTransitionRewardMatrix)
+                               boost::optional<storm::dd::Add<Type>> const& optionalStateRewardVector,
+                               boost::optional<storm::dd::Add<Type>> const& optionalTransitionRewardMatrix)
             : ModelBase(modelType), manager(manager), reachableStates(reachableStates), initialStates(initialStates), transitionMatrix(transitionMatrix), rowVariables(rowVariables), rowExpressionAdapter(rowExpressionAdapter), columnVariables(columnVariables), columnExpressionAdapter(columnExpressionAdapter), rowColumnMetaVariablePairs(rowColumnMetaVariablePairs), labelToExpressionMap(labelToExpressionMap), stateRewardVector(optionalStateRewardVector), transitionRewardMatrix(optionalTransitionRewardMatrix) {
                 // Intentionally left empty.
             }
@@ -42,23 +42,23 @@ namespace storm {
             }
             
             template<storm::dd::DdType Type>
-            storm::dd::Dd<Type> const& Model<Type>::getReachableStates() const {
+            storm::dd::Bdd<Type> const& Model<Type>::getReachableStates() const {
                 return reachableStates;
             }
             
             template<storm::dd::DdType Type>
-            storm::dd::Dd<Type> const& Model<Type>::getInitialStates() const {
+            storm::dd::Bdd<Type> const& Model<Type>::getInitialStates() const {
                 return initialStates;
             }
             
             template<storm::dd::DdType Type>
-            storm::dd::Dd<Type> Model<Type>::getStates(std::string const& label) const {
+            storm::dd::Bdd<Type> Model<Type>::getStates(std::string const& label) const {
                 STORM_LOG_THROW(labelToExpressionMap.find(label) != labelToExpressionMap.end(), storm::exceptions::InvalidArgumentException, "The label " << label << " is invalid for the labeling of the model.");
                 return rowExpressionAdapter->translateExpression(labelToExpressionMap.at(label)).toBdd() && this->reachableStates;
             }
             
             template<storm::dd::DdType Type>
-            storm::dd::Dd<Type> Model<Type>::getStates(storm::expressions::Expression const& expression) const {
+            storm::dd::Bdd<Type> Model<Type>::getStates(storm::expressions::Expression const& expression) const {
                 return rowExpressionAdapter->translateExpression(expression).toBdd() && this->reachableStates;
             }
             
@@ -68,27 +68,27 @@ namespace storm {
             }
             
             template<storm::dd::DdType Type>
-            storm::dd::Dd<Type> const& Model<Type>::getTransitionMatrix() const {
+            storm::dd::Add<Type> const& Model<Type>::getTransitionMatrix() const {
                 return transitionMatrix;
             }
             
             template<storm::dd::DdType Type>
-            storm::dd::Dd<Type>& Model<Type>::getTransitionMatrix() {
+            storm::dd::Add<Type>& Model<Type>::getTransitionMatrix() {
                 return transitionMatrix;
             }
             
             template<storm::dd::DdType Type>
-            storm::dd::Dd<Type> const& Model<Type>::getTransitionRewardMatrix() const {
+            storm::dd::Add<Type> const& Model<Type>::getTransitionRewardMatrix() const {
                 return transitionRewardMatrix.get();
             }
             
             template<storm::dd::DdType Type>
-            storm::dd::Dd<Type>& Model<Type>::getTransitionRewardMatrix() {
+            storm::dd::Add<Type>& Model<Type>::getTransitionRewardMatrix() {
                 return transitionRewardMatrix.get();
             }
             
             template<storm::dd::DdType Type>
-            storm::dd::Dd<Type> const& Model<Type>::getStateRewardVector() const {
+            storm::dd::Add<Type> const& Model<Type>::getStateRewardVector() const {
                 return stateRewardVector.get();
             }
             
@@ -123,7 +123,7 @@ namespace storm {
             }
             
             template<storm::dd::DdType Type>
-            void Model<Type>::setTransitionMatrix(storm::dd::Dd<Type> const& transitionMatrix) {
+            void Model<Type>::setTransitionMatrix(storm::dd::Add<Type> const& transitionMatrix) {
                 this->transitionMatrix = transitionMatrix;
             }
             

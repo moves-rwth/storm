@@ -1,16 +1,10 @@
-#ifndef STORM_STORAGE_DD_CUDDDD_H_
-#define STORM_STORAGE_DD_CUDDDD_H_
+#ifndef STORM_STORAGE_DD_CUDDADD_H_
+#define STORM_STORAGE_DD_CUDDADD_H_
 
-#include <map>
-#include <set>
-#include <memory>
-#include <iostream>
-#include <boost/variant.hpp>
-
-#include "src/storage/dd/Dd.h"
+#include "src/storage/dd/Add.h"
+#include "src/storage/dd/CuddDd.h"
 #include "src/storage/dd/CuddDdForwardIterator.h"
 #include "src/storage/SparseMatrix.h"
-#include "src/storage/expressions/Expression.h"
 #include "src/storage/expressions/Variable.h"
 #include "src/utility/OsDetection.h"
 
@@ -22,22 +16,24 @@ namespace storm {
         // Forward-declare some classes.
         template<DdType Type> class DdManager;
         template<DdType Type> class Odd;
+        template<DdType Type> class Bdd;
         
         template<>
-        class Dd<DdType::CUDD> {
+        class Add<DdType::CUDD> : public Dd<DdType::CUDD> {
         public:
             // Declare the DdManager and DdIterator class as friend so it can access the internals of a DD.
             friend class DdManager<DdType::CUDD>;
             friend class DdForwardIterator<DdType::CUDD>;
+            friend class Bdd<DdType::CUDD>;
             friend class Odd<DdType::CUDD>;
             
             // Instantiate all copy/move constructors/assignments with the default implementation.
-            Dd() = default;
-            Dd(Dd<DdType::CUDD> const& other) = default;
-            Dd& operator=(Dd<DdType::CUDD> const& other) = default;
+            Add() = default;
+            Add(Add<DdType::CUDD> const& other) = default;
+            Add& operator=(Add<DdType::CUDD> const& other) = default;
 #ifndef WINDOWS
-            Dd(Dd<DdType::CUDD>&& other) = default;
-            Dd& operator=(Dd<DdType::CUDD>&& other) = default;
+            Add(Add<DdType::CUDD>&& other) = default;
+            Add& operator=(Add<DdType::CUDD>&& other) = default;
 #endif
             
             /*!
@@ -46,7 +42,7 @@ namespace storm {
              * @param other The DD that is to be compared with the current one.
              * @return True if the DDs represent the same function.
              */
-            bool operator==(Dd<DdType::CUDD> const& other) const;
+            bool operator==(Add<DdType::CUDD> const& other) const;
             
             /*!
              * Retrieves whether the two DDs represent different functions.
@@ -54,375 +50,309 @@ namespace storm {
              * @param other The DD that is to be compared with the current one.
              * @return True if the DDs represent the different functions.
              */
-            bool operator!=(Dd<DdType::CUDD> const& other) const;
+            bool operator!=(Add<DdType::CUDD> const& other) const;
             
             /*!
              * Performs an if-then-else with the given operands, i.e. maps all valuations that are mapped to a non-zero
              * function value to the function values specified by the first DD and all others to the function values
              * specified by the second DD.
+             *
+             * @param thenDd The ADD specifying the 'then' part.
+             * @param elseDd The ADD specifying the 'else' part.
+             * @return The ADD corresponding to the if-then-else of the operands.
              */
-            Dd<DdType::CUDD> ite(Dd<DdType::CUDD> const& thenDd, Dd<DdType::CUDD> const& elseDd) const;
+            Add<DdType::CUDD> ite(Add<DdType::CUDD> const& thenDd, Add<DdType::CUDD> const& elseDd) const;
             
             /*!
-             * Performs a logical or of the current and the given DD.
+             * Logically inverts the current ADD. That is, all inputs yielding non-zero values will be mapped to zero in
+             * the result and vice versa.
              *
-             * @param other The second DD used for the operation.
+             * @return The resulting ADD.
+             */
+            Add<DdType::CUDD> operator!() const;
+            
+            /*!
+             * Performs a logical or of the current anBd the given ADD. As a prerequisite, the operand ADDs need to be
+             * 0/1 ADDs.
+             *
+             * @param other The second ADD used for the operation.
              * @return The logical or of the operands.
              */
-            Dd<DdType::CUDD> operator||(Dd<DdType::CUDD> const& other) const;
+            Add<DdType::CUDD> operator||(Add<DdType::CUDD> const& other) const;
             
             /*!
-             * Performs a logical or of the current and the given DD and assigns it to the current DD.
+             * Performs a logical or of the current and the given ADD and assigns it to the current ADD. As a
+             * prerequisite, the operand ADDs need to be 0/1 ADDs.
              *
-             * @param other The second DD used for the operation.
-             * @return A reference to the current DD after the operation
+             * @param other The second ADD used for the operation.
+             * @return A reference to the current ADD after the operation
              */
-            Dd<DdType::CUDD>& operator|=(Dd<DdType::CUDD> const& other);
+            Add<DdType::CUDD>& operator|=(Add<DdType::CUDD> const& other);
             
             /*!
-             * Performs a logical and of the current and the given DD.
+             * Adds the two ADDs.
              *
-             * @param other The second DD used for the operation.
-             * @return The logical and of the operands.
-             */
-            Dd<DdType::CUDD> operator&&(Dd<DdType::CUDD> const& other) const;
-            
-            /*!
-             * Performs a logical and of the current and the given DD and assigns it to the current DD.
-             *
-             * @param other The second DD used for the operation.
-             * @return A reference to the current DD after the operation
-             */
-            Dd<DdType::CUDD>& operator&=(Dd<DdType::CUDD> const& other);
-            
-            /*!
-             * Performs a logical iff of the current and the given DD.
-             *
-             * @param other The second DD used for the operation.
-             * @return The logical iff of the operands.
-             */
-            Dd<DdType::CUDD> iff(Dd<DdType::CUDD> const& other) const;
-            
-            /*!
-             * Performs a logical exclusive-or of the current and the given DD.
-             *
-             * @param other The second DD used for the operation.
-             * @return The logical exclusive-or of the operands.
-             */
-            Dd<DdType::CUDD> exclusiveOr(Dd<DdType::CUDD> const& other) const;
-            
-            /*!
-             * Performs a logical implication of the current and the given DD.
-             *
-             * @param other The second DD used for the operation.
-             * @return The logical implication of the operands.
-             */
-            Dd<DdType::CUDD> implies(Dd<DdType::CUDD> const& other) const;
-            
-            /*!
-             * Adds the two DDs.
-             *
-             * @param other The DD to add to the current one.
+             * @param other The ADD to add to the current one.
              * @return The result of the addition.
              */
-            Dd<DdType::CUDD> operator+(Dd<DdType::CUDD> const& other) const;
+            Add<DdType::CUDD> operator+(Add<DdType::CUDD> const& other) const;
             
             /*!
-             * Adds the given DD to the current one.
+             * Adds the given ADD to the current one.
              *
-             * @param other The DD to add to the current one.
-             * @return A reference to the current DD after the operation.
+             * @param other The ADD to add to the current one.
+             * @return A reference to the current ADD after the operation.
              */
-            Dd<DdType::CUDD>& operator+=(Dd<DdType::CUDD> const& other);
+            Add<DdType::CUDD>& operator+=(Add<DdType::CUDD> const& other);
             
             /*!
-             * Multiplies the two DDs.
+             * Multiplies the two ADDs.
              *
-             * @param other The DD to multiply with the current one.
+             * @param other The ADD to multiply with the current one.
              * @return The result of the multiplication.
              */
-            Dd<DdType::CUDD> operator*(Dd<DdType::CUDD> const& other) const;
+            Add<DdType::CUDD> operator*(Add<DdType::CUDD> const& other) const;
             
             /*!
-             * Multiplies the given DD with the current one and assigns the result to the current DD.
+             * Multiplies the given ADD with the current one and assigns the result to the current ADD.
              *
-             * @param other The DD to multiply with the current one.
-             * @return A reference to the current DD after the operation.
+             * @param other The ADD to multiply with the current one.
+             * @return A reference to the current ADD after the operation.
              */
-            Dd<DdType::CUDD>& operator*=(Dd<DdType::CUDD> const& other);
+            Add<DdType::CUDD>& operator*=(Add<DdType::CUDD> const& other);
             
             /*!
-             * Subtracts the given DD from the current one.
+             * Subtracts the given ADD from the current one.
              *
-             * @param other The DD to subtract from the current one.
+             * @param other The ADD to subtract from the current one.
              * @return The result of the subtraction.
              */
-            Dd<DdType::CUDD> operator-(Dd<DdType::CUDD> const& other) const;
+            Add<DdType::CUDD> operator-(Add<DdType::CUDD> const& other) const;
             
             /*!
-             * Subtracts the DD from the constant zero function.
+             * Subtracts the ADD from the constant zero function.
              *
-             * @return The resulting function represented as a DD.
+             * @return The resulting function represented as a ADD.
              */
-            Dd<DdType::CUDD> operator-() const;
+            Add<DdType::CUDD> operator-() const;
             
             /*!
-             * Subtracts the given DD from the current one and assigns the result to the current DD.
+             * Subtracts the given ADD from the current one and assigns the result to the current ADD.
              *
-             * @param other The DD to subtract from the current one.
-             * @return A reference to the current DD after the operation.
+             * @param other The ADD to subtract from the current one.
+             * @return A reference to the current ADD after the operation.
              */
-            Dd<DdType::CUDD>& operator-=(Dd<DdType::CUDD> const& other);
+            Add<DdType::CUDD>& operator-=(Add<DdType::CUDD> const& other);
             
             /*!
-             * Divides the current DD by the given one.
+             * Divides the current ADD by the given one.
              *
-             * @param other The DD by which to divide the current one.
+             * @param other The ADD by which to divide the current one.
              * @return The result of the division.
              */
-            Dd<DdType::CUDD> operator/(Dd<DdType::CUDD> const& other) const;
+            Add<DdType::CUDD> operator/(Add<DdType::CUDD> const& other) const;
             
             /*!
-             * Divides the current DD by the given one and assigns the result to the current DD.
+             * Divides the current ADD by the given one and assigns the result to the current ADD.
              *
-             * @param other The DD by which to divide the current one.
-             * @return A reference to the current DD after the operation.
+             * @param other The ADD by which to divide the current one.
+             * @return A reference to the current ADD after the operation.
              */
-            Dd<DdType::CUDD>& operator/=(Dd<DdType::CUDD> const& other);
+            Add<DdType::CUDD>& operator/=(Add<DdType::CUDD> const& other);
             
             /*!
-             * Retrieves the logical complement of the current DD. The result will map all encodings with a value
-             * unequal to zero to false and all others to true.
+             * Retrieves the function that maps all evaluations to one that have identical function values.
              *
-             * @return The logical complement of the current DD.
+             * @param other The ADD with which to perform the operation.
+             * @return The resulting function represented as an ADD.
              */
-            Dd<DdType::CUDD> operator!() const;
-            
-            /*!
-             * Logically complements the current DD. The result will map all encodings with a value
-             * unequal to zero to false and all others to true.
-             *
-             * @return A reference to the current DD after the operation.
-             */
-            Dd<DdType::CUDD>& complement();
-            
-            /*!
-             * Retrieves the function that maps all evaluations to one that have an identical function values.
-             *
-             * @param other The DD with which to perform the operation.
-             * @return The resulting function represented as a DD.
-             */
-            Dd<DdType::CUDD> equals(Dd<DdType::CUDD> const& other) const;
+            Add<DdType::CUDD> equals(Add<DdType::CUDD> const& other) const;
             
             /*!
              * Retrieves the function that maps all evaluations to one that have distinct function values.
              *
-             * @param other The DD with which to perform the operation.
-             * @return The resulting function represented as a DD.
+             * @param other The ADD with which to perform the operation.
+             * @return The resulting function represented as an ADD.
              */
-            Dd<DdType::CUDD> notEquals(Dd<DdType::CUDD> const& other) const;
+            Add<DdType::CUDD> notEquals(Add<DdType::CUDD> const& other) const;
             
             /*!
-             * Retrieves the function that maps all evaluations to one whose function value in the first DD are less
-             * than the one in the given DD.
+             * Retrieves the function that maps all evaluations to one whose function value in the first ADD are less
+             * than the one in the given ADD.
+             *
+             * @param other The ADD with which to perform the operation.
+             * @return The resulting function represented as an ADD.
+             */
+            Add<DdType::CUDD> less(Add<DdType::CUDD> const& other) const;
+            
+            /*!
+             * Retrieves the function that maps all evaluations to one whose function value in the first ADD are less or
+             * equal than the one in the given ADD.
              *
              * @param other The DD with which to perform the operation.
-             * @return The resulting function represented as a DD.
+             * @return The resulting function represented as an ADD.
              */
-            Dd<DdType::CUDD> less(Dd<DdType::CUDD> const& other) const;
+            Add<DdType::CUDD> lessOrEqual(Add<DdType::CUDD> const& other) const;
             
             /*!
-             * Retrieves the function that maps all evaluations to one whose function value in the first DD are less or
-             * equal than the one in the given DD.
+             * Retrieves the function that maps all evaluations to one whose function value in the first ADD are greater
+             * than the one in the given ADD.
              *
-             * @param other The DD with which to perform the operation.
-             * @return The resulting function represented as a DD.
+             * @param other The ADD with which to perform the operation.
+             * @return The resulting function represented as an ADD.
              */
-            Dd<DdType::CUDD> lessOrEqual(Dd<DdType::CUDD> const& other) const;
+            Add<DdType::CUDD> greater(Add<DdType::CUDD> const& other) const;
             
             /*!
-             * Retrieves the function that maps all evaluations to one whose function value in the first DD are greater
-             * than the one in the given DD.
+             * Retrieves the function that maps all evaluations to one whose function value in the first ADD are greater
+             * or equal than the one in the given ADD.
              *
-             * @param other The DD with which to perform the operation.
-             * @return The resulting function represented as a DD.
+             * @param other The ADD with which to perform the operation.
+             * @return The resulting function represented as an ADD.
              */
-            Dd<DdType::CUDD> greater(Dd<DdType::CUDD> const& other) const;
+            Add<DdType::CUDD> greaterOrEqual(Add<DdType::CUDD> const& other) const;
             
             /*!
-             * Retrieves the function that maps all evaluations to one whose function value in the first DD are greater
-             * or equal than the one in the given DD.
+             * Retrieves the function that maps all evaluations to the minimum of the function values of the two ADDs.
              *
-             * @param other The DD with which to perform the operation.
-             * @return The resulting function represented as a DD.
+             * @param other The ADD with which to perform the operation.
+             * @return The resulting function represented as an ADD.
              */
-            Dd<DdType::CUDD> greaterOrEqual(Dd<DdType::CUDD> const& other) const;
+            Add<DdType::CUDD> minimum(Add<DdType::CUDD> const& other) const;
             
             /*!
-             * Retrieves the function that maps all evaluations to the minimum of the function values of the two DDs.
+             * Retrieves the function that maps all evaluations to the maximum of the function values of the two ADDs.
              *
-             * @param other The DD with which to perform the operation.
-             * @return The resulting function represented as a DD.
+             * @param other The ADD with which to perform the operation.
+             * @return The resulting function represented as an ADD.
              */
-            Dd<DdType::CUDD> minimum(Dd<DdType::CUDD> const& other) const;
-            
-            /*!
-             * Retrieves the function that maps all evaluations to the maximum of the function values of the two DDs.
-             *
-             * @param other The DD with which to perform the operation.
-             * @return The resulting function represented as a DD.
-             */
-            Dd<DdType::CUDD> maximum(Dd<DdType::CUDD> const& other) const;
-            
-            /*!
-             * Existentially abstracts from the given meta variables.
-             *
-             * @param metaVariables The meta variables from which to abstract.
-             */
-            Dd<DdType::CUDD> existsAbstract(std::set<storm::expressions::Variable> const& metaVariables) const;
-            
-            /*!
-             * Universally abstracts from the given meta variables.
-             *
-             * @param metaVariables The meta variables from which to abstract.
-             */
-            Dd<DdType::CUDD> universalAbstract(std::set<storm::expressions::Variable> const& metaVariables) const;
+            Add<DdType::CUDD> maximum(Add<DdType::CUDD> const& other) const;
             
             /*!
              * Sum-abstracts from the given meta variables.
              *
              * @param metaVariables The meta variables from which to abstract.
              */
-            Dd<DdType::CUDD> sumAbstract(std::set<storm::expressions::Variable> const& metaVariables) const;
+            Add<DdType::CUDD> sumAbstract(std::set<storm::expressions::Variable> const& metaVariables) const;
             
             /*!
              * Min-abstracts from the given meta variables.
              *
              * @param metaVariables The meta variables from which to abstract.
              */
-            Dd<DdType::CUDD> minAbstract(std::set<storm::expressions::Variable> const& metaVariables) const;
+            Add<DdType::CUDD> minAbstract(std::set<storm::expressions::Variable> const& metaVariables) const;
             
             /*!
              * Max-abstracts from the given meta variables.
              *
              * @param metaVariables The meta variables from which to abstract.
              */
-            Dd<DdType::CUDD> maxAbstract(std::set<storm::expressions::Variable> const& metaVariables) const;
+            Add<DdType::CUDD> maxAbstract(std::set<storm::expressions::Variable> const& metaVariables) const;
             
             /*!
-             * Checks whether the current and the given DD represent the same function modulo some given precision.
+             * Checks whether the current and the given ADD represent the same function modulo some given precision.
              *
-             * @param other The DD with which to compare.
+             * @param other The ADD with which to compare.
              * @param precision An upper bound on the maximal difference between any two function values that is to be
              * tolerated.
              * @param relative If set to true, not the absolute values have to be within the precision, but the relative
              * values.
              */
-            bool equalModuloPrecision(Dd<DdType::CUDD> const& other, double precision, bool relative = true) const;
+            bool equalModuloPrecision(Add<DdType::CUDD> const& other, double precision, bool relative = true) const;
             
             /*!
-             * Swaps the given pairs of meta variables in the DD. The pairs of meta variables must be guaranteed to have
-             * the same number of underlying DD variables.
+             * Swaps the given pairs of meta variables in the ADD. The pairs of meta variables must be guaranteed to have
+             * the same number of underlying ADD variables.
              *
              * @param metaVariablePairs A vector of meta variable pairs that are to be swapped for one another.
-             * @return The resulting DD.
+             * @return The resulting ADD.
              */
-            Dd<DdType::CUDD> swapVariables(std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& metaVariablePairs);
+            Add<DdType::CUDD> swapVariables(std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& metaVariablePairs);
             
             /*!
-             * Multiplies the current DD (representing a matrix) with the given matrix by summing over the given meta
+             * Multiplies the current ADD (representing a matrix) with the given matrix by summing over the given meta
              * variables.
              *
              * @param otherMatrix The matrix with which to multiply.
              * @param summationMetaVariables The names of the meta variables over which to sum during the matrix-
              * matrix multiplication.
-             * @return A DD representing the result of the matrix-matrix multiplication.
+             * @return An ADD representing the result of the matrix-matrix multiplication.
              */
-            Dd<DdType::CUDD> multiplyMatrix(Dd<DdType::CUDD> const& otherMatrix, std::set<storm::expressions::Variable> const& summationMetaVariables) const;
+            Add<DdType::CUDD> multiplyMatrix(Add<DdType::CUDD> const& otherMatrix, std::set<storm::expressions::Variable> const& summationMetaVariables) const;
             
             /*!
-             * Computes the logical and of the current and the given DD and existentially abstracts from the given set
-             * of variables.
-             *
-             * @param other The second DD for the logical and.
-             * @param existentialVariables The variables from which to existentially abstract.
-             * @return A DD representing the result.
-             */
-            Dd<DdType::CUDD> andExists(Dd<DdType::CUDD> const& other, std::set<storm::expressions::Variable> const& existentialVariables) const;
-            
-            /*!
-             * Computes a DD that represents the function in which all assignments with a function value strictly larger
-             * than the given value are mapped to one and all others to zero.
+             * Computes a BDD that represents the function in which all assignments with a function value strictly
+             * larger than the given value are mapped to one and all others to zero.
              *
              * @param value The value used for the comparison.
-             * @return The resulting DD.
+             * @return The resulting BDD.
              */
-            Dd<DdType::CUDD> greater(double value) const;
+            Bdd<DdType::CUDD> greater(double value) const;
             
             /*!
-             * Computes a DD that represents the function in which all assignments with a function value larger or equal
+             * Computes a BDD that represents the function in which all assignments with a function value larger or equal
              * to the given value are mapped to one and all others to zero.
              *
              * @param value The value used for the comparison.
-             * @return The resulting DD.
+             * @return The resulting BDD.
              */
-            Dd<DdType::CUDD> greaterOrEqual(double value) const;
+            Bdd<DdType::CUDD> greaterOrEqual(double value) const;
             
             /*!
-             * Computes a DD that represents the function in which all assignments with a function value unequal to zero
-             * are mapped to one and all others to zero.
+             * Computes a BDD that represents the function in which all assignments with a function value unequal to
+             * zero are mapped to one and all others to zero.
              *
              * @return The resulting DD.
              */
-            Dd<DdType::CUDD> notZero() const;
+            Bdd<DdType::CUDD> notZero() const;
             
             /*!
-             * Computes the constraint of the current DD with the given constraint. That is, the function value of the
+             * Computes the constraint of the current ADD with the given constraint. That is, the function value of the
+             * resulting ADD will be the same as the current ones for all assignments mapping to one in the constraint
+             * and may be different otherwise.
+             *
+             * @param constraint The constraint to use for the operation.
+             * @return The resulting ADD.
+             */
+            Add<DdType::CUDD> constrain(Add<DdType::CUDD> const& constraint) const;
+            
+            /*!
+             * Computes the restriction of the current ADD with the given constraint. That is, the function value of the
              * resulting DD will be the same as the current ones for all assignments mapping to one in the constraint
              * and may be different otherwise.
              *
              * @param constraint The constraint to use for the operation.
-             * @return The resulting DD.
+             * @return The resulting ADD.
              */
-            Dd<DdType::CUDD> constrain(Dd<DdType::CUDD> const& constraint) const;
+            Add<DdType::CUDD> restrict(Add<DdType::CUDD> const& constraint) const;
             
             /*!
-             * Computes the restriction of the current DD with the given constraint. That is, the function value of the
-             * resulting DD will be the same as the current ones for all assignments mapping to one in the constraint
-             * and may be different otherwise.
+             * Retrieves the support of the current ADD.
              *
-             * @param constraint The constraint to use for the operation.
-             * @return The resulting DD.
+             * @return The support represented as a BDD.
              */
-            Dd<DdType::CUDD> restrict(Dd<DdType::CUDD> const& constraint) const;
-            
-            /*!
-             * Retrieves the support of the current DD.
-             *
-             * @return The support represented as a DD.
-             */
-            Dd<DdType::CUDD> getSupport() const;
+            Bdd<DdType::CUDD> getSupport() const;
             
             /*!
              * Retrieves the number of encodings that are mapped to a non-zero value.
              *
              * @return The number of encodings that are mapped to a non-zero value.
              */
-            uint_fast64_t getNonZeroCount() const;
+            virtual uint_fast64_t getNonZeroCount() const override;
             
             /*!
-             * Retrieves the number of leaves of the DD.
+             * Retrieves the number of leaves of the ADD.
              *
-             * @return The number of leaves of the DD.
+             * @return The number of leaves of the ADD.
              */
-            uint_fast64_t getLeafCount() const;
+            virtual uint_fast64_t getLeafCount() const override;
             
             /*!
              * Retrieves the number of nodes necessary to represent the DD.
              *
              * @return The number of nodes in this DD.
              */
-            uint_fast64_t getNodeCount() const;
+            virtual uint_fast64_t getNodeCount() const override;
             
             /*!
              * Retrieves the lowest function value of any encoding.
@@ -485,23 +415,23 @@ namespace storm {
             double getValue(std::map<storm::expressions::Variable, int_fast64_t> const& metaVariableToValueMap = std::map<storm::expressions::Variable, int_fast64_t>()) const;
             
             /*!
-             * Retrieves whether this DD represents the constant one function.
+             * Retrieves whether this ADD represents the constant one function.
              *
-             * @return True if this DD represents the constant one function.
+             * @return True if this ADD represents the constant one function.
              */
             bool isOne() const;
             
             /*!
-             * Retrieves whether this DD represents the constant zero function.
+             * Retrieves whether this ADD represents the constant zero function.
              *
-             * @return True if this DD represents the constant zero function.
+             * @return True if this ADD represents the constant zero function.
              */
             bool isZero() const;
             
             /*!
-             * Retrieves whether this DD represents a constant function.
+             * Retrieves whether this ADD represents a constant function.
              *
-             * @return True if this DD represents a constants function.
+             * @return True if this ADD represents a constants function.
              */
             bool isConstant() const;
             
@@ -510,100 +440,70 @@ namespace storm {
              *
              * @return The index of the topmost variable in DD.
              */
-            uint_fast64_t getIndex() const;
+            virtual uint_fast64_t getIndex() const override;
             
             /*!
-             * Converts the DD to a vector.
+             * Converts the ADD to a vector.
              *
-             * @return The double vector that is represented by this DD.
+             * @return The double vector that is represented by this ADD.
              */
             template<typename ValueType>
             std::vector<ValueType> toVector() const;
             
             /*!
-             * Converts the DD to a vector. The given offset-labeled DD is used to determine the correct row of
+             * Converts the ADD to a vector. The given offset-labeled DD is used to determine the correct row of
              * each entry.
              *
              * @param rowOdd The ODD used for determining the correct row.
-             * @return The double vector that is represented by this DD.
+             * @return The double vector that is represented by this ADD.
              */
             template<typename ValueType>
             std::vector<ValueType> toVector(storm::dd::Odd<DdType::CUDD> const& rowOdd) const;
             
             /*!
-             * Converts the DD to a (sparse) double matrix. All contained non-primed variables are assumed to encode the
+             * Converts the ADD to a (sparse) double matrix. All contained non-primed variables are assumed to encode the
              * row, whereas all primed variables are assumed to encode the column.
              *
-             * @return The matrix that is represented by this DD.
+             * @return The matrix that is represented by this ADD.
              */
             storm::storage::SparseMatrix<double> toMatrix() const;
             
             /*!
-             * Converts the DD to a (sparse) double matrix. All contained non-primed variables are assumed to encode the
+             * Converts the ADD to a (sparse) double matrix. All contained non-primed variables are assumed to encode the
              * row, whereas all primed variables are assumed to encode the column. The given offset-labeled DDs are used
              * to determine the correct row and column, respectively, for each entry.
              *
              * @param rowOdd The ODD used for determining the correct row.
              * @param columnOdd The ODD used for determining the correct column.
-             * @return The matrix that is represented by this DD.
+             * @return The matrix that is represented by this ADD.
              */
             storm::storage::SparseMatrix<double> toMatrix(storm::dd::Odd<DdType::CUDD> const& rowOdd, storm::dd::Odd<DdType::CUDD> const& columnOdd) const;
             
             /*!
-             * Converts the DD to a (sparse) double matrix. The given offset-labeled DDs are used to determine the
+             * Converts the ADD to a (sparse) double matrix. The given offset-labeled DDs are used to determine the
              * correct row and column, respectively, for each entry.
              *
              * @param rowMetaVariables The meta variables that encode the rows of the matrix.
              * @param columnMetaVariables The meta variables that encode the columns of the matrix.
              * @param rowOdd The ODD used for determining the correct row.
              * @param columnOdd The ODD used for determining the correct column.
-             * @return The matrix that is represented by this DD.
+             * @return The matrix that is represented by this ADD.
              */
             storm::storage::SparseMatrix<double> toMatrix(std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, storm::dd::Odd<DdType::CUDD> const& rowOdd, storm::dd::Odd<DdType::CUDD> const& columnOdd) const;
             
             /*!
-             * Converts the DD to a row-grouped (sparse) double matrix. The given offset-labeled DDs are used to
+             * Converts the ADD to a row-grouped (sparse) double matrix. The given offset-labeled DDs are used to
              * determine the correct row and column, respectively, for each entry. Note: this function assumes that
-             * the meta variables used to distinguish different row groups are at the very top of the DD.
+             * the meta variables used to distinguish different row groups are at the very top of the ADD.
              *
              * @param rowMetaVariables The meta variables that encode the rows of the matrix.
              * @param columnMetaVariables The meta variables that encode the columns of the matrix.
              * @param groupMetaVariables The meta variables that are used to distinguish different row groups.
              * @param rowOdd The ODD used for determining the correct row.
              * @param columnOdd The ODD used for determining the correct column.
-             * @return The matrix that is represented by this DD.
+             * @return The matrix that is represented by this ADD.
              */
             storm::storage::SparseMatrix<double> toMatrix(std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd<DdType::CUDD> const& rowOdd, storm::dd::Odd<DdType::CUDD> const& columnOdd) const;
-            
-            /*!
-             * Retrieves whether the given meta variable is contained in the DD.
-             *
-             * @param metaVariable The meta variable for which to query membership.
-             * @return True iff the meta variable is contained in the DD.
-             */
-            bool containsMetaVariable(storm::expressions::Variable const& metaVariable) const;
-            
-            /*!
-             * Retrieves whether the given meta variables are all contained in the DD.
-             *
-             * @param metaVariables The meta variables for which to query membership.
-             * @return True iff all meta variables are contained in the DD.
-             */
-            bool containsMetaVariables(std::set<storm::expressions::Variable> const& metaVariables) const;
-            
-            /*!
-             * Retrieves the set of all meta variables contained in the DD.
-             *
-             * @return The set of all meta variables contained in the DD.
-             */
-            std::set<storm::expressions::Variable> const& getContainedMetaVariables() const;
-            
-            /*!
-             * Retrieves the set of all meta variables contained in the DD.
-             *
-             * @return The set of all meta variables contained in the DD.
-             */
-            std::set<storm::expressions::Variable>& getContainedMetaVariables();
             
             /*!
              * Exports the DD to the given file in the dot format.
@@ -611,13 +511,6 @@ namespace storm {
              * @param filename The name of the file to which the DD is to be exported.
              */
             void exportToDot(std::string const& filename = "") const;
-            
-            /*!
-             * Retrieves the manager that is responsible for this DD.
-             *
-             * A pointer to the manager that is responsible for this DD.
-             */
-            std::shared_ptr<DdManager<DdType::CUDD> const> getDdManager() const;
             
             /*!
              * Retrieves an iterator that points to the first meta variable assignment with a non-zero function value.
@@ -637,137 +530,40 @@ namespace storm {
              */
             DdForwardIterator<DdType::CUDD> end(bool enumerateDontCareMetaVariables = true) const;
             
-            /*!
-             * Converts the DD into a (heavily nested) if-then-else expression that represents the very same function.
-             * The variable names used in the expression are derived from the meta variable name and are extended with a
-             * suffix ".i" if the meta variable is integer-valued, expressing that the variable is the i-th bit of the
-             * meta variable.
-             *
-             * @return The resulting expression.
-             */
-            storm::expressions::Expression toExpression() const;
+            friend std::ostream & operator<<(std::ostream& out, const Add<DdType::CUDD>& add);
             
             /*!
-             * Converts the DD into a (heavily nested) if-then-else (with negations) expression that evaluates to true
-             * if and only if the assignment is minterm of the DD. The variable names used in the expression are derived
-             * from the meta variable name and are extended with a suffix ".i" if the meta variable is integer-valued,
-             * expressing that the variable is the i-th bit of the meta variable.
-             *
-             * @return The resulting expression.
-             */
-            storm::expressions::Expression getMintermExpression() const;
-            
-            friend std::ostream & operator<<(std::ostream& out, const Dd<DdType::CUDD>& dd);
-            
-            /*!
-             * Converts an MTBDD to a BDD by mapping all values unequal to zero to 1. This effectively does the same as
+             * Converts the ADD to a BDD by mapping all values unequal to zero to 1. This effectively does the same as
              * a call to notZero().
              *
              * @return The corresponding BDD.
              */
-            Dd<DdType::CUDD> toBdd() const;
-            
-            /*!
-             * Converts a BDD to an equivalent MTBDD.
-             *
-             * @return The corresponding MTBDD.
-             */
-            Dd<DdType::CUDD> toMtbdd() const;
-            
-            /*!
-             * Retrieves whether this DD is a BDD.
-             *
-             * @return True iff this DD is a BDD.
-             */
-            bool isBdd() const;
-            
-            /*!
-             * Retrieves whether this DD is an MTBDD. Even though MTBDDs technicall subsume BDDs, this will return false
-             * if the DD is actually a BDD.
-             *
-             * @return True iff this DD is an MTBDD.
-             */
-            bool isMtbdd() const;
+            Bdd<DdType::CUDD> toBdd() const;
             
         private:
-            /*!
-             * Retrieves the CUDD BDD object associated with this DD.
-             *
-             * @return The CUDD BDD object associated with this DD.
-             */
-            BDD getCuddBdd() const;
             
             /*!
-             * Retrieves the CUDD MTBDD object associated with this DD.
+             * Retrieves the CUDD ADD object associated with this ADD.
              *
-             * @return The CUDD MTBDD object associated with this DD.
+             * @return The CUDD ADD object associated with this ADD.
              */
-            ADD getCuddMtbdd() const;
+            ADD getCuddAdd() const;
             
             /*!
-             * Retrieves the CUDD object associated with this DD.
+             * Retrieves the raw DD node of CUDD associated with this ADD.
              *
-             * @return The CUDD object associated with this DD.
-             */
-            ABDD const& getCuddDd() const;
-            
-            /*!
-             * Retrieves the raw DD node of CUDD associated with this DD.
-             *
-             * @return The DD node of CUDD associated with this DD.
+             * @return The DD node of CUDD associated with this ADD.
              */
             DdNode* getCuddDdNode() const;
             
             /*!
-             * Adds the given meta variable to the set of meta variables that are contained in this DD.
-             *
-             * @param metaVariable The name of the meta variable to add.
-             */
-            void addContainedMetaVariable(storm::expressions::Variable const& metaVariable);
-            
-            /*!
-             * Removes the given meta variable to the set of meta variables that are contained in this DD.
-             *
-             * @param metaVariable The name of the meta variable to remove.
-             */
-            void removeContainedMetaVariable(storm::expressions::Variable const& metaVariable);
-            
-            /*!
-             * Performs the recursive step of toExpression on the given DD.
-             *
-             * @param dd The dd to translate into an expression.
-             * @param variables The variables to use in the expression.
-             * @return The resulting expression.
-             */
-            static storm::expressions::Expression toExpressionRecur(DdNode const* dd, std::vector<storm::expressions::Variable> const& variables);
-            
-            /*!
-             * Performs the recursive step of getMintermExpression on the given DD.
-             *
-             * @param manager The manager of the DD.
-             * @param dd The dd whose minterms to translate into an expression.
-             * @param variables The variables to use in the expression.
-             * @return The resulting expression.
-             */
-            static storm::expressions::Expression getMintermExpressionRecur(::DdManager* manager, DdNode const* dd, std::vector<storm::expressions::Variable> const& variables);
-            
-            /*!
-             * Creates a DD that encapsulates the given CUDD ADD.
+             * Creates an ADD that encapsulates the given CUDD ADD.
              *
              * @param ddManager The manager responsible for this DD.
-             * @param cuddDd The CUDD ADD to store.
+             * @param cuddAdd The CUDD ADD to store.
              * @param containedMetaVariables The meta variables that appear in the DD.
              */
-            Dd(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, ADD cuddDd, std::set<storm::expressions::Variable> const& containedMetaVariables = std::set<storm::expressions::Variable>());
-            
-            /*!
-             * Creates a DD that encapsulates the given CUDD ADD.
-             *
-             * @param ddManager The manager responsible for this DD.
-             * @param cuddDd The CUDD ADD to store.
-             * @param containedMetaVariables The meta variables that appear in the DD.
-             */
-            Dd(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, BDD cuddDd, std::set<storm::expressions::Variable> const& containedMetaVariables = std::set<storm::expressions::Variable>());
+            Add(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, ADD cuddAdd, std::set<storm::expressions::Variable> const& containedMetaVariables = std::set<storm::expressions::Variable>());
             
             /*!
              * Helper function to convert the DD into a (sparse) matrix.
@@ -806,7 +602,7 @@ namespace storm {
              * @param maxLevel The number of levels that need to be considered.
              * @param remainingMetaVariables The meta variables that remain in the DDs after the groups have been split.
              */
-            void splitGroupsRec(DdNode* dd, std::vector<Dd<DdType::CUDD>>& groups, std::vector<uint_fast64_t> const& ddGroupVariableIndices, uint_fast64_t currentLevel, uint_fast64_t maxLevel, std::set<storm::expressions::Variable> const& remainingMetaVariables) const;
+            void splitGroupsRec(DdNode* dd, std::vector<Add<DdType::CUDD>>& groups, std::vector<uint_fast64_t> const& ddGroupVariableIndices, uint_fast64_t currentLevel, uint_fast64_t maxLevel, std::set<storm::expressions::Variable> const& remainingMetaVariables) const;
             
             /*!
              * Performs a recursive step to add the given DD-based vector to the given explicit vector.
@@ -822,24 +618,10 @@ namespace storm {
             template<typename ValueType>
             void addToVectorRec(DdNode const* dd, uint_fast64_t currentLevel, uint_fast64_t maxLevel, uint_fast64_t currentOffset, Odd<DdType::CUDD> const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType>& targetVector) const;
             
-            /*!
-             * Retrieves the indices of all DD variables that are contained in this DD (not necessarily in the support,
-             * because they could be "don't cares"). Additionally, the indices are sorted to allow for easy access.
-             *
-             * @return The (sorted) indices of all DD variables that are contained in this DD.
-             */
-            std::vector<uint_fast64_t> getSortedVariableIndices() const;
-            
-            // A pointer to the manager responsible for this DD.
-            std::shared_ptr<DdManager<DdType::CUDD> const> ddManager;
-            
             // The ADD created by CUDD.
-            boost::variant<BDD, ADD> cuddDd;
-            
-            // The meta variables that appear in this DD.
-            std::set<storm::expressions::Variable> containedMetaVariables;
+            ADD cuddAdd;
         };
     }
 }
 
-#endif /* STORM_STORAGE_DD_CUDDDD_H_ */
+#endif /* STORM_STORAGE_DD_CUDDADD_H_ */

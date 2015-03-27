@@ -17,7 +17,7 @@ TEST(GraphTest, SymbolicProb01) {
     
     ASSERT_TRUE(model->getType() == storm::models::ModelType::Dtmc);
     
-    std::pair<storm::dd::Dd<storm::dd::DdType::CUDD>, storm::dd::Dd<storm::dd::DdType::CUDD>> statesWithProbability01;
+    std::pair<storm::dd::Bdd<storm::dd::DdType::CUDD>, storm::dd::Bdd<storm::dd::DdType::CUDD>> statesWithProbability01;
 
     ASSERT_NO_THROW(statesWithProbability01 = storm::utility::graph::performProb01(*model->as<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD>>(), model->getReachableStates(), model->getStates("observe0Greater1")));
     EXPECT_EQ(4409, statesWithProbability01.first.getNonZeroCount());
@@ -38,7 +38,7 @@ TEST(GraphTest, SymbolicProb01MinMax) {
     
     ASSERT_TRUE(model->getType() == storm::models::ModelType::Mdp);
     
-    std::pair<storm::dd::Dd<storm::dd::DdType::CUDD>, storm::dd::Dd<storm::dd::DdType::CUDD>> statesWithProbability01;
+    std::pair<storm::dd::Bdd<storm::dd::DdType::CUDD>, storm::dd::Bdd<storm::dd::DdType::CUDD>> statesWithProbability01;
     
     ASSERT_NO_THROW(statesWithProbability01 = storm::utility::graph::performProb01Min(*model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>(), model->getReachableStates(), model->getStates("elected")));
     EXPECT_EQ(0, statesWithProbability01.first.getNonZeroCount());

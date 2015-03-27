@@ -1,4 +1,4 @@
-#include "src/adapters/DdExpressionAdapter.h"
+#include "src/adapters/AddExpressionAdapter.h"
 
 #include "src/utility/macros.h"
 #include "src/exceptions/ExpressionEvaluationException.h"
@@ -9,44 +9,44 @@ namespace storm {
     namespace adapters {
         
         template<storm::dd::DdType Type>
-        DdExpressionAdapter<Type>::DdExpressionAdapter(std::shared_ptr<storm::dd::DdManager<Type>> ddManager, std::map<storm::expressions::Variable, storm::expressions::Variable> const& variableMapping) : ddManager(ddManager), variableMapping(variableMapping) {
+        AddExpressionAdapter<Type>::AddExpressionAdapter(std::shared_ptr<storm::dd::DdManager<Type>> ddManager, std::map<storm::expressions::Variable, storm::expressions::Variable> const& variableMapping) : ddManager(ddManager), variableMapping(variableMapping) {
             // Intentionally left empty.
         }
         
         template<storm::dd::DdType Type>
-        storm::dd::Dd<Type> DdExpressionAdapter<Type>::translateExpression(storm::expressions::Expression const& expression) {
-            return boost::any_cast<storm::dd::Dd<Type>>(expression.accept(*this));
+        storm::dd::Add<Type> AddExpressionAdapter<Type>::translateExpression(storm::expressions::Expression const& expression) {
+            return boost::any_cast<storm::dd::Add<Type>>(expression.accept(*this));
         }
         
         template<storm::dd::DdType Type>
-        boost::any DdExpressionAdapter<Type>::visit(storm::expressions::IfThenElseExpression const& expression) {
-            storm::dd::Dd<Type> elseDd = boost::any_cast<storm::dd::Dd<Type>>(expression.getElseExpression()->accept(*this));
-            storm::dd::Dd<Type> thenDd = boost::any_cast<storm::dd::Dd<Type>>(expression.getThenExpression()->accept(*this));
-            storm::dd::Dd<Type> conditionDd = boost::any_cast<storm::dd::Dd<Type>>(expression.getCondition()->accept(*this));
+        boost::any AddExpressionAdapter<Type>::visit(storm::expressions::IfThenElseExpression const& expression) {
+            storm::dd::Add<Type> elseDd = boost::any_cast<storm::dd::Add<Type>>(expression.getElseExpression()->accept(*this));
+            storm::dd::Add<Type> thenDd = boost::any_cast<storm::dd::Add<Type>>(expression.getThenExpression()->accept(*this));
+            storm::dd::Add<Type> conditionDd = boost::any_cast<storm::dd::Add<Type>>(expression.getCondition()->accept(*this));
             return conditionDd.ite(thenDd, elseDd);
         }
         
         template<storm::dd::DdType Type>
-        boost::any DdExpressionAdapter<Type>::visit(storm::expressions::BinaryBooleanFunctionExpression const& expression) {
-            storm::dd::Dd<Type> leftResult = boost::any_cast<storm::dd::Dd<Type>>(expression.getFirstOperand()->accept(*this));
-            storm::dd::Dd<Type> rightResult = boost::any_cast<storm::dd::Dd<Type>>(expression.getSecondOperand()->accept(*this));
+        boost::any AddExpressionAdapter<Type>::visit(storm::expressions::BinaryBooleanFunctionExpression const& expression) {
+            storm::dd::Bdd<Type> leftResult = boost::any_cast<storm::dd::Add<Type>>(expression.getFirstOperand()->accept(*this)).toBdd();
+            storm::dd::Bdd<Type> rightResult = boost::any_cast<storm::dd::Add<Type>>(expression.getSecondOperand()->accept(*this)).toBdd();
             
-            storm::dd::Dd<Type> result;
+            storm::dd::Add<Type> result;
             switch (expression.getOperatorType()) {
                 case storm::expressions::BinaryBooleanFunctionExpression::OperatorType::And:
-                    result = leftResult && rightResult;
+                    result = (leftResult && rightResult).toAdd();
                     break;
                 case storm::expressions::BinaryBooleanFunctionExpression::OperatorType::Or:
-                    result = leftResult || rightResult;
+                    result = (leftResult || rightResult).toAdd();
                     break;
                 case storm::expressions::BinaryBooleanFunctionExpression::OperatorType::Iff:
-                    result = leftResult.iff(rightResult);
+                    result = (leftResult.iff(rightResult)).toAdd();
                     break;
                 case storm::expressions::BinaryBooleanFunctionExpression::OperatorType::Implies:
-                    result = !leftResult || rightResult;
+                    result = (!leftResult || rightResult).toAdd();
                     break;
                 case storm::expressions::BinaryBooleanFunctionExpression::OperatorType::Xor:
-                    result = leftResult.exclusiveOr(rightResult);
+                    result = (leftResult.exclusiveOr(rightResult)).toAdd();
                     break;
             }
             
@@ -54,11 +54,11 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type>
-        boost::any DdExpressionAdapter<Type>::visit(storm::expressions::BinaryNumericalFunctionExpression const& expression) {
-            storm::dd::Dd<Type> leftResult = boost::any_cast<storm::dd::Dd<Type>>(expression.getFirstOperand()->accept(*this));
-            storm::dd::Dd<Type> rightResult = boost::any_cast<storm::dd::Dd<Type>>(expression.getSecondOperand()->accept(*this));
+        boost::any AddExpressionAdapter<Type>::visit(storm::expressions::BinaryNumericalFunctionExpression const& expression) {
+            storm::dd::Add<Type> leftResult = boost::any_cast<storm::dd::Add<Type>>(expression.getFirstOperand()->accept(*this));
+            storm::dd::Add<Type> rightResult = boost::any_cast<storm::dd::Add<Type>>(expression.getSecondOperand()->accept(*this));
             
-            storm::dd::Dd<Type> result;
+            storm::dd::Add<Type> result;
             switch (expression.getOperatorType()) {
                 case storm::expressions::BinaryNumericalFunctionExpression::OperatorType::Plus:
                     result = leftResult + rightResult;
@@ -86,11 +86,11 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type>
-        boost::any DdExpressionAdapter<Type>::visit(storm::expressions::BinaryRelationExpression const& expression) {
-            storm::dd::Dd<Type> leftResult = boost::any_cast<storm::dd::Dd<Type>>(expression.getFirstOperand()->accept(*this));
-            storm::dd::Dd<Type> rightResult = boost::any_cast<storm::dd::Dd<Type>>(expression.getSecondOperand()->accept(*this));
+        boost::any AddExpressionAdapter<Type>::visit(storm::expressions::BinaryRelationExpression const& expression) {
+            storm::dd::Add<Type> leftResult = boost::any_cast<storm::dd::Add<Type>>(expression.getFirstOperand()->accept(*this));
+            storm::dd::Add<Type> rightResult = boost::any_cast<storm::dd::Add<Type>>(expression.getSecondOperand()->accept(*this));
 
-            storm::dd::Dd<Type> result;
+            storm::dd::Add<Type> result;
             switch (expression.getRelationType()) {
                 case storm::expressions::BinaryRelationExpression::RelationType::Equal:
                     result = leftResult.equals(rightResult);
@@ -116,15 +116,15 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type>
-        boost::any DdExpressionAdapter<Type>::visit(storm::expressions::VariableExpression const& expression) {
+        boost::any AddExpressionAdapter<Type>::visit(storm::expressions::VariableExpression const& expression) {
             auto const& variablePair = variableMapping.find(expression.getVariable());
             STORM_LOG_THROW(variablePair != variableMapping.end(), storm::exceptions::InvalidArgumentException, "Cannot translate the given expression, because it contains the variable '" << expression.getVariableName() << "' for which no DD counterpart is known.");
             return ddManager->getIdentity(variablePair->second);
         }
         
         template<storm::dd::DdType Type>
-        boost::any DdExpressionAdapter<Type>::visit(storm::expressions::UnaryBooleanFunctionExpression const& expression) {
-            storm::dd::Dd<Type> result = boost::any_cast<storm::dd::Dd<Type>>(expression.getOperand()->accept(*this));
+        boost::any AddExpressionAdapter<Type>::visit(storm::expressions::UnaryBooleanFunctionExpression const& expression) {
+            storm::dd::Bdd<Type> result = boost::any_cast<storm::dd::Add<Type>>(expression.getOperand()->accept(*this)).toBdd();
             
             switch (expression.getOperatorType()) {
                 case storm::expressions::UnaryBooleanFunctionExpression::OperatorType::Not:
@@ -132,12 +132,12 @@ namespace storm {
                     break;
             }
             
-            return result;
+            return result.toAdd();
         }
         
         template<storm::dd::DdType Type>
-        boost::any DdExpressionAdapter<Type>::visit(storm::expressions::UnaryNumericalFunctionExpression const& expression) {
-            storm::dd::Dd<Type> result = boost::any_cast<storm::dd::Dd<Type>>(expression.getOperand()->accept(*this));
+        boost::any AddExpressionAdapter<Type>::visit(storm::expressions::UnaryNumericalFunctionExpression const& expression) {
+            storm::dd::Add<Type> result = boost::any_cast<storm::dd::Add<Type>>(expression.getOperand()->accept(*this));
             
             switch (expression.getOperatorType()) {
                 case storm::expressions::UnaryNumericalFunctionExpression::OperatorType::Minus:
@@ -151,22 +151,22 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type>
-        boost::any DdExpressionAdapter<Type>::visit(storm::expressions::BooleanLiteralExpression const& expression) {
+        boost::any AddExpressionAdapter<Type>::visit(storm::expressions::BooleanLiteralExpression const& expression) {
             return ddManager->getConstant(expression.getValue());
         }
         
         template<storm::dd::DdType Type>
-        boost::any DdExpressionAdapter<Type>::visit(storm::expressions::IntegerLiteralExpression const& expression) {
+        boost::any AddExpressionAdapter<Type>::visit(storm::expressions::IntegerLiteralExpression const& expression) {
             return ddManager->getConstant(expression.getValue());
         }
         
         template<storm::dd::DdType Type>
-        boost::any DdExpressionAdapter<Type>::visit(storm::expressions::DoubleLiteralExpression const& expression) {
+        boost::any AddExpressionAdapter<Type>::visit(storm::expressions::DoubleLiteralExpression const& expression) {
             return ddManager->getConstant(expression.getValue());
         }
         
         // Explicitly instantiate the symbolic expression adapter
-        template class DdExpressionAdapter<storm::dd::DdType::CUDD>;
+        template class AddExpressionAdapter<storm::dd::DdType::CUDD>;
         
     } // namespace adapters
 } // namespace storm

@@ -4,7 +4,7 @@
 #include <memory>
 
 #include "src/storage/dd/Odd.h"
-#include "src/storage/dd/CuddDd.h"
+#include "src/storage/dd/CuddAdd.h"
 #include "src/utility/OsDetection.h"
 
 // Include the C++-interface of CUDD.
@@ -18,9 +18,9 @@ namespace storm {
             /*!
              * Constructs an offset-labeled DD from the given DD.
              *
-             * @param dd The DD for which to build the offset-labeled DD.
+             * @param add The ADD for which to build the offset-labeled DD.
              */
-            Odd(Dd<DdType::CUDD> const& dd);
+            Odd(Add<DdType::CUDD> const& add);
             
             // Instantiate all copy/move constructors/assignments with the default implementation.
             Odd() = default;

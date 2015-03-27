@@ -104,7 +104,14 @@ namespace storm {
              * A pointer to the manager that is responsible for this DD.
              */
             std::shared_ptr<DdManager<DdType::CUDD> const> getDdManager() const;
-                        
+            
+            /*!
+             * Retrieves the (sorted) list of the variable indices of DD variables contained in this DD.
+             *
+             * @return The sorted list of variable indices.
+             */
+            std::vector<uint_fast64_t> getSortedVariableIndices() const;
+            
         protected:
             
             /*!

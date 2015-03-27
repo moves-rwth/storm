@@ -6,7 +6,7 @@
 namespace storm {
     namespace modelchecker {
         template <storm::dd::DdType Type>
-        SymbolicQualitativeCheckResult<Type>::SymbolicQualitativeCheckResult(storm::dd::Dd<Type> const& allStates, storm::dd::Dd<Type> const& truthValues) : allStates(allStates), truthValues(truthValues) {
+        SymbolicQualitativeCheckResult<Type>::SymbolicQualitativeCheckResult(storm::dd::Bdd<Type> const& allStates, storm::dd::Bdd<Type> const& truthValues) : allStates(allStates), truthValues(truthValues) {
             // Intentionally left empty.
         }
         

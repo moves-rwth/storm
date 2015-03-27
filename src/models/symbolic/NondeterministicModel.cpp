@@ -7,18 +7,18 @@ namespace storm {
             template<storm::dd::DdType Type>
             NondeterministicModel<Type>::NondeterministicModel(storm::models::ModelType const& modelType,
                                                                std::shared_ptr<storm::dd::DdManager<Type>> manager,
-                                                               storm::dd::Dd<Type> reachableStates,
-                                                               storm::dd::Dd<Type> initialStates,
-                                                               storm::dd::Dd<Type> transitionMatrix,
+                                                               storm::dd::Bdd<Type> reachableStates,
+                                                               storm::dd::Bdd<Type> initialStates,
+                                                               storm::dd::Add<Type> transitionMatrix,
                                                                std::set<storm::expressions::Variable> const& rowVariables,
-                                                               std::shared_ptr<storm::adapters::DdExpressionAdapter<Type>> rowExpressionAdapter,
+                                                               std::shared_ptr<storm::adapters::AddExpressionAdapter<Type>> rowExpressionAdapter,
                                                                std::set<storm::expressions::Variable> const& columnVariables,
-                                                               std::shared_ptr<storm::adapters::DdExpressionAdapter<Type>> columnExpressionAdapter,
+                                                               std::shared_ptr<storm::adapters::AddExpressionAdapter<Type>> columnExpressionAdapter,
                                                                std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs,
                                                                std::set<storm::expressions::Variable> const& nondeterminismVariables,
                                                                std::map<std::string, storm::expressions::Expression> labelToExpressionMap,
-                                                               boost::optional<storm::dd::Dd<Type>> const& optionalStateRewardVector,
-                                                               boost::optional<storm::dd::Dd<Type>> const& optionalTransitionRewardMatrix)
+                                                               boost::optional<storm::dd::Add<Type>> const& optionalStateRewardVector,
+                                                               boost::optional<storm::dd::Add<Type>> const& optionalTransitionRewardMatrix)
             : Model<Type>(modelType, manager, reachableStates, initialStates, transitionMatrix, rowVariables, rowExpressionAdapter, columnVariables, columnExpressionAdapter, rowColumnMetaVariablePairs, labelToExpressionMap, optionalStateRewardVector, optionalTransitionRewardMatrix), nondeterminismVariables(nondeterminismVariables) {
                 
                 // Prepare the mask of illegal nondeterministic choices.
@@ -31,7 +31,7 @@ namespace storm {
                 std::set<storm::expressions::Variable> rowAndNondeterminsmVariables;
                 std::set_union(this->getNondeterminismVariables().begin(), this->getNondeterminismVariables().end(), this->getRowVariables().begin(), this->getRowVariables().end(), std::inserter(rowAndNondeterminsmVariables, rowAndNondeterminsmVariables.begin()));
                 
-                storm::dd::Dd<Type> tmp = this->getTransitionMatrix().notZero().existsAbstract(this->getColumnVariables()).toMtbdd().sumAbstract(rowAndNondeterminsmVariables);
+                storm::dd::Add<Type> tmp = this->getTransitionMatrix().notZero().existsAbstract(this->getColumnVariables()).toAdd().sumAbstract(rowAndNondeterminsmVariables);
                 return static_cast<uint_fast64_t>(tmp.getValue());
             }
             
@@ -41,7 +41,7 @@ namespace storm {
             }
             
             template<storm::dd::DdType Type>
-            storm::dd::Dd<Type> const& NondeterministicModel<Type>::getIllegalMask() const {
+            storm::dd::Bdd<Type> const& NondeterministicModel<Type>::getIllegalMask() const {
                 return illegalMask;
             }
             

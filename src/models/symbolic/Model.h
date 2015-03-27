@@ -7,7 +7,7 @@
 
 #include "src/storage/expressions/Expression.h"
 #include "src/storage/expressions/Variable.h"
-#include "src/adapters/DdExpressionAdapter.h"
+#include "src/adapters/AddExpressionAdapter.h"
 #include "src/storage/dd/CuddDd.h"
 #include "src/storage/dd/CuddDdManager.h"
 #include "src/models/ModelBase.h"
@@ -52,17 +52,17 @@ namespace storm {
                  */
                 Model(storm::models::ModelType const& modelType,
                       std::shared_ptr<storm::dd::DdManager<Type>> manager,
-                      storm::dd::Dd<Type> reachableStates,
-                      storm::dd::Dd<Type> initialStates,
-                      storm::dd::Dd<Type> transitionMatrix,
+                      storm::dd::Bdd<Type> reachableStates,
+                      storm::dd::Bdd<Type> initialStates,
+                      storm::dd::Add<Type> transitionMatrix,
                       std::set<storm::expressions::Variable> const& rowVariables,
-                      std::shared_ptr<storm::adapters::DdExpressionAdapter<Type>> rowExpressionAdapter,
+                      std::shared_ptr<storm::adapters::AddExpressionAdapter<Type>> rowExpressionAdapter,
                       std::set<storm::expressions::Variable> const& columnVariables,
-                      std::shared_ptr<storm::adapters::DdExpressionAdapter<Type>> columnExpressionAdapter,
+                      std::shared_ptr<storm::adapters::AddExpressionAdapter<Type>> columnExpressionAdapter,
                       std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs,
                       std::map<std::string, storm::expressions::Expression> labelToExpressionMap = std::map<std::string, storm::expressions::Expression>(),
-                      boost::optional<storm::dd::Dd<Type>> const& optionalStateRewardVector = boost::optional<storm::dd::Dd<Type>>(),
-                      boost::optional<storm::dd::Dd<Type>> const& optionalTransitionRewardMatrix = boost::optional<storm::dd::Dd<Type>>());
+                      boost::optional<storm::dd::Add<Type>> const& optionalStateRewardVector = boost::optional<storm::dd::Dd<Type>>(),
+                      boost::optional<storm::dd::Add<Type>> const& optionalTransitionRewardMatrix = boost::optional<storm::dd::Dd<Type>>());
                 
                 virtual uint_fast64_t getNumberOfStates() const override;
                 
@@ -87,14 +87,14 @@ namespace storm {
                  *
                  * @return The reachble states of the model.
                  */
-                storm::dd::Dd<Type> const& getReachableStates() const;
+                storm::dd::Bdd<Type> const& getReachableStates() const;
                 
                 /*!
                  * Retrieves the initial states of the model.
                  *
                  * @return The initial states of the model.
                  */
-                storm::dd::Dd<Type> const& getInitialStates() const;
+                storm::dd::Bdd<Type> const& getInitialStates() const;
                 
                 /*!
                  * Returns the sets of states labeled with the given label.
@@ -102,7 +102,7 @@ namespace storm {
                  * @param label The label for which to get the labeled states.
                  * @return The set of states labeled with the requested label in the form of a bit vector.
                  */
-                storm::dd::Dd<Type> getStates(std::string const& label) const;
+                storm::dd::Bdd<Type> getStates(std::string const& label) const;
                 
                 /*!
                  * Returns the set of states labeled satisfying the given expression (that must be of boolean type).
@@ -110,7 +110,7 @@ namespace storm {
                  * @param expression The expression that needs to hold in the states.
                  * @return The set of states labeled satisfying the given expression.
                  */
-                storm::dd::Dd<Type> getStates(storm::expressions::Expression const& expression) const;
+                storm::dd::Bdd<Type> getStates(storm::expressions::Expression const& expression) const;
                 
                 /*!
                  * Retrieves whether the given label is a valid label in this model.
@@ -125,14 +125,14 @@ namespace storm {
                  *
                  * @return A matrix representing the transitions of the model.
                  */
-                storm::dd::Dd<Type> const& getTransitionMatrix() const;
+                storm::dd::Add<Type> const& getTransitionMatrix() const;
                 
                 /*!
                  * Retrieves the matrix representing the transitions of the model.
                  *
                  * @return A matrix representing the transitions of the model.
                  */
-                storm::dd::Dd<Type>& getTransitionMatrix();
+                storm::dd::Add<Type>& getTransitionMatrix();
                 
                 /*!
                  * Retrieves the matrix representing the transition rewards of the model. Note that calling this method
@@ -140,7 +140,7 @@ namespace storm {
                  *
                  * @return The matrix representing the transition rewards of the model.
                  */
-                storm::dd::Dd<Type> const& getTransitionRewardMatrix() const;
+                storm::dd::Add<Type> const& getTransitionRewardMatrix() const;
                 
                 /*!
                  * Retrieves the matrix representing the transition rewards of the model. Note that calling this method
@@ -148,7 +148,7 @@ namespace storm {
                  *
                  * @return The matrix representing the transition rewards of the model.
                  */
-                storm::dd::Dd<Type>& getTransitionRewardMatrix();
+                storm::dd::Add<Type>& getTransitionRewardMatrix();
                 
                 /*!
                  * Retrieves a vector representing the state rewards of the model. Note that calling this method is only
@@ -156,7 +156,7 @@ namespace storm {
                  *
                  * @return A vector representing the state rewards of the model.
                  */
-                storm::dd::Dd<Type> const& getStateRewardVector() const;
+                storm::dd::Add<Type> const& getStateRewardVector() const;
                 
                 /*!
                  * Retrieves whether this model has state rewards.
@@ -206,7 +206,7 @@ namespace storm {
                  *
                  * @param transitionMatrix The new transition matrix of the model.
                  */
-                void setTransitionMatrix(storm::dd::Dd<Type> const& transitionMatrix);
+                void setTransitionMatrix(storm::dd::Add<Type> const& transitionMatrix);
                 
                 /*!
                  * Retrieves the mapping of labels to their defining expressions.
@@ -220,25 +220,25 @@ namespace storm {
                 std::shared_ptr<storm::dd::DdManager<Type>> manager;
                 
                 // A vector representing the reachable states of the model.
-                storm::dd::Dd<Type> reachableStates;
+                storm::dd::Bdd<Type> reachableStates;
                 
                 // A vector representing the initial states of the model.
-                storm::dd::Dd<Type> initialStates;
+                storm::dd::Bdd<Type> initialStates;
                 
                 // A matrix representing transition relation.
-                storm::dd::Dd<Type> transitionMatrix;
+                storm::dd::Add<Type> transitionMatrix;
                 
                 // The meta variables used to encode the rows of the transition matrix.
                 std::set<storm::expressions::Variable> rowVariables;
                 
                 // An adapter that can translate expressions to DDs over the row meta variables.
-                std::shared_ptr<storm::adapters::DdExpressionAdapter<Type>> rowExpressionAdapter;
+                std::shared_ptr<storm::adapters::AddExpressionAdapter<Type>> rowExpressionAdapter;
                 
                 // The meta variables used to encode the columns of the transition matrix.
                 std::set<storm::expressions::Variable> columnVariables;
                 
                 // An adapter that can translate expressions to DDs over the column meta variables.
-                std::shared_ptr<storm::adapters::DdExpressionAdapter<Type>> columnExpressionAdapter;
+                std::shared_ptr<storm::adapters::AddExpressionAdapter<Type>> columnExpressionAdapter;
                 
                 // A vector holding all pairs of row and column meta variable pairs. This is used to swap the variables
                 // in the DDs from row to column variables and vice versa.
@@ -248,10 +248,10 @@ namespace storm {
                 std::map<std::string, storm::expressions::Expression> labelToExpressionMap;
                 
                 // If set, a vector representing the rewards of the states.
-                boost::optional<storm::dd::Dd<Type>> stateRewardVector;
+                boost::optional<storm::dd::Add<Type>> stateRewardVector;
                 
                 // If set, a matrix representing the rewards of transitions.
-                boost::optional<storm::dd::Dd<Type>> transitionRewardMatrix;
+                boost::optional<storm::dd::Add<Type>> transitionRewardMatrix;
             };
             
         } // namespace symbolic

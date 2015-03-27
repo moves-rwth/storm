@@ -48,5 +48,19 @@ namespace storm {
             std::set_difference(containedMetaVariables.begin(), containedMetaVariables.end(), metaVariables.begin(), metaVariables.end(), std::inserter(result, result.begin()));
             containedMetaVariables = std::move(result);
         }
+        
+        std::vector<uint_fast64_t> Dd<DdType::CUDD>::getSortedVariableIndices() const {
+            std::vector<uint_fast64_t> ddVariableIndices;
+            for (auto const& metaVariableName : this->getContainedMetaVariables()) {
+                auto const& metaVariable = this->getDdManager()->getMetaVariable(metaVariableName);
+                for (auto const& ddVariable : metaVariable.getDdVariables()) {
+                    ddVariableIndices.push_back(ddVariable.getIndex());
+                }
+            }
+            
+            // Next, we need to sort them, since they may be arbitrarily ordered otherwise.
+            std::sort(ddVariableIndices.begin(), ddVariableIndices.end());
+            return ddVariableIndices;
+        }
     }
 }

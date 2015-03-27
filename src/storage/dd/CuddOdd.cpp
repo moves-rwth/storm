@@ -7,18 +7,18 @@
 
 namespace storm {
     namespace dd {
-        Odd<DdType::CUDD>::Odd(Dd<DdType::CUDD> const& dd) {
-            std::shared_ptr<DdManager<DdType::CUDD> const> manager = dd.getDdManager();
+        Odd<DdType::CUDD>::Odd(Add<DdType::CUDD> const& add) {
+            std::shared_ptr<DdManager<DdType::CUDD> const> manager = add.getDdManager();
             
             // First, we need to determine the involved DD variables indices.
-            std::vector<uint_fast64_t> ddVariableIndices = dd.getSortedVariableIndices();
+            std::vector<uint_fast64_t> ddVariableIndices = add.getSortedVariableIndices();
             
             // Prepare a unique table for each level that keeps the constructed ODD nodes unique.
             std::vector<std::map<DdNode*, std::shared_ptr<Odd<DdType::CUDD>>>> uniqueTableForLevels(ddVariableIndices.size() + 1);
             
             // Now construct the ODD structure.
             // Currently, the DD needs to be an MTBDD, because complement edges are not supported.
-            std::shared_ptr<Odd<DdType::CUDD>> rootOdd = buildOddRec(dd.toMtbdd().getCuddDdNode(), manager->getCuddManager(), 0, ddVariableIndices.size(), ddVariableIndices, uniqueTableForLevels);
+            std::shared_ptr<Odd<DdType::CUDD>> rootOdd = buildOddRec(add.getCuddDdNode(), manager->getCuddManager(), 0, ddVariableIndices.size(), ddVariableIndices, uniqueTableForLevels);
             
             // Finally, move the children of the root ODD into this ODD.
             this->elseNode = std::move(rootOdd->elseNode);
