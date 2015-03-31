@@ -138,7 +138,17 @@ namespace storm {
                 out << "Model type: \t" << this->getType() << " (symbolic)" << std::endl;
                 out << "States: \t" << this->getNumberOfStates() << " (" << reachableStates.getNodeCount() << " nodes)" << std::endl;
                 out << "Transitions: \t" << this->getNumberOfTransitions() << " (" << transitionMatrix.getNodeCount() << " nodes)" << std::endl;
-                out << "Variables: \t" << "rows: " << this->rowVariables.size() << ", columns: " << this->columnVariables.size() << std::endl;
+                
+                uint_fast64_t rowVariableCount = 0;
+                for (auto const& metaVariable : this->rowVariables) {
+                    rowVariableCount += this->getManager().getMetaVariable(metaVariable).getNumberOfDdVariables();
+                }
+                uint_fast64_t columnVariableCount = 0;
+                for (auto const& metaVariable : this->columnVariables) {
+                    columnVariableCount += this->getManager().getMetaVariable(metaVariable).getNumberOfDdVariables();
+                }
+                
+                out << "Variables: \t" << "rows: " << this->rowVariables.size() << "(" << rowVariableCount << " dd variables)" << ", columns: " << this->columnVariables.size() << "(" << columnVariableCount << " dd variables)" << std::endl;
                 out << "Labels: \t" << this->labelToExpressionMap.size() << std::endl;
                 for (auto const& label : labelToExpressionMap) {
                     out << "   * " << label.first << std::endl;

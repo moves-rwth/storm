@@ -1,6 +1,7 @@
 #include "src/builder/DdPrismModelBuilder.h"
 
 #include "src/models/symbolic/Dtmc.h"
+#include "src/models/symbolic/Ctmc.h"
 #include "src/models/symbolic/Mdp.h"
 
 #include "src/storage/dd/CuddDd.h"
@@ -171,6 +172,7 @@ namespace storm {
             if (!commandDds.empty()) {
                 switch (generationInfo.program.getModelType()){
                     case storm::prism::Program::ModelType::DTMC:
+                    case storm::prism::Program::ModelType::CTMC:
                         result = combineCommandsToActionDTMC(generationInfo, commandDds);
                         break;
                     case storm::prism::Program::ModelType::MDP:
@@ -193,7 +195,9 @@ namespace storm {
             for (auto const& commandDd : commandDds) {
                 // Check for overlapping guards.
                 temporary = commandDd.guardDd * allGuards;
-                STORM_LOG_WARN_COND(temporary.isZero(), "Guard of a command overlaps with previous guards.");
+                
+                // Issue a warning if there are overlapping guards in a non-CTMC model.
+                STORM_LOG_WARN_COND(temporary.isZero() || generationInfo.program.getModelType() == storm::prism::Program::ModelType::CTMC, "Guard of a command overlaps with previous guards.");
                 
                 allGuards += commandDd.guardDd;
                 allCommands += commandDd.guardDd * commandDd.transitionsDd;
@@ -325,7 +329,7 @@ namespace storm {
             storm::dd::Add<Type> action1Extended = action1.transitionsDd * identityDd2;
             storm::dd::Add<Type> action2Extended = action2.transitionsDd * identityDd1;
 
-            if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::DTMC) {
+            if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::DTMC || generationInfo.program.getModelType() == storm::prism::Program::ModelType::CTMC) {
                 return ActionDecisionDiagram(action1.guardDd + action2.guardDd, action1Extended + action2Extended, 0);
             } else if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::MDP) {
                 if (action1.transitionsDd.isZero()) {
@@ -432,7 +436,7 @@ namespace storm {
                 }
 
                 return result;
-            } else if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::DTMC) {
+            } else if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::DTMC || generationInfo.program.getModelType() == storm::prism::Program::ModelType::CTMC) {
                 // Simply add all actions.
                 storm::dd::Add<Type> result = module.independentAction.transitionsDd;
                 for (auto const& synchronizingAction : module.synchronizingActionToDecisionDiagramMap) {
@@ -673,6 +677,8 @@ namespace storm {
             
             if (program.getModelType() == storm::prism::Program::ModelType::DTMC) {
                 return std::shared_ptr<storm::models::symbolic::Model<Type>>(new storm::models::symbolic::Dtmc<Type>(generationInfo.manager, reachableStates, initialStates, transitionMatrix, generationInfo.rowMetaVariables, generationInfo.rowExpressionAdapter, generationInfo.columnMetaVariables, generationInfo.columnExpressionAdapter, generationInfo.rowColumnMetaVariablePairs, labelToExpressionMapping, stateAndTransitionRewards ? stateAndTransitionRewards.get().first : boost::optional<storm::dd::Add<Type>>(), stateAndTransitionRewards ? stateAndTransitionRewards.get().second : boost::optional<storm::dd::Add<Type>>()));
+            } else if (program.getModelType() == storm::prism::Program::ModelType::CTMC) {
+                return std::shared_ptr<storm::models::symbolic::Model<Type>>(new storm::models::symbolic::Ctmc<Type>(generationInfo.manager, reachableStates, initialStates, transitionMatrix, generationInfo.rowMetaVariables, generationInfo.rowExpressionAdapter, generationInfo.columnMetaVariables, generationInfo.columnExpressionAdapter, generationInfo.rowColumnMetaVariablePairs, labelToExpressionMapping, stateAndTransitionRewards ? stateAndTransitionRewards.get().first : boost::optional<storm::dd::Add<Type>>(), stateAndTransitionRewards ? stateAndTransitionRewards.get().second : boost::optional<storm::dd::Add<Type>>()));
             } else if (program.getModelType() == storm::prism::Program::ModelType::MDP) {
                 return std::shared_ptr<storm::models::symbolic::Model<Type>>(new storm::models::symbolic::Mdp<Type>(generationInfo.manager, reachableStates, initialStates, transitionMatrix, generationInfo.rowMetaVariables, generationInfo.rowExpressionAdapter, generationInfo.columnMetaVariables, generationInfo.columnExpressionAdapter, generationInfo.rowColumnMetaVariablePairs, generationInfo.allNondeterminismVariables, labelToExpressionMapping, stateAndTransitionRewards ? stateAndTransitionRewards.get().first : boost::optional<storm::dd::Add<Type>>(), stateAndTransitionRewards ? stateAndTransitionRewards.get().second : boost::optional<storm::dd::Add<Type>>()));
             } else {
