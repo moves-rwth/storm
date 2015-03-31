@@ -235,6 +235,15 @@ namespace storm {
                 std::unique_ptr<storm::settings::SettingMemento> overrideDontFixDeadlocksSet(bool stateToSet);
                 
                 /*!
+                 * Overrides the option to enable the PRISM compatibility mode by setting it to the specified value. As
+                 * soon as the returned memento goes out of scope, the original value is restored.
+                 *
+                 * @param stateToSet The value that is to be set for the option.
+                 * @return The memento that will eventually restore the original value.
+                 */
+                std::unique_ptr<storm::settings::SettingMemento> overridePrismCompatibilityMode(bool stateToSet);
+                
+                /*!
                  * Retrieves whether the timeout option was set.
                  *
                  * @return True if the timeout option was set.

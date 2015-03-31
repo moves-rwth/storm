@@ -78,6 +78,9 @@ namespace storm {
                 case storm::expressions::BinaryNumericalFunctionExpression::OperatorType::Min:
                     result = leftResult.minimum(rightResult);
                     break;
+                case storm::expressions::BinaryNumericalFunctionExpression::OperatorType::Power:
+                    result = leftResult.pow(rightResult);
+                    break;
                 default:
                     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Cannot translate expression containing power operator.");
             }
@@ -142,6 +145,12 @@ namespace storm {
             switch (expression.getOperatorType()) {
                 case storm::expressions::UnaryNumericalFunctionExpression::OperatorType::Minus:
                     result = -result;
+                    break;
+                case storm::expressions::UnaryNumericalFunctionExpression::OperatorType::Floor:
+                    result = result.floor();
+                    break;
+                case storm::expressions::UnaryNumericalFunctionExpression::OperatorType::Ceil:
+                    result = result.ceil();
                     break;
                 default:
                     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Cannot translate expression containing floor/ceil operator.");

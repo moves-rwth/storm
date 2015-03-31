@@ -211,6 +211,45 @@ namespace storm {
              * @return The resulting function represented as an ADD.
              */
             Add<DdType::CUDD> greaterOrEqual(Add<DdType::CUDD> const& other) const;
+
+            /*!
+             * Retrieves the function that represents the current ADD to the power of the given ADD.
+             *
+             * @other The exponent function (given as an ADD).
+             * @retur The resulting ADD.
+             */
+            Add<DdType::CUDD> pow(Add<DdType::CUDD> const& other) const;
+
+            /*!
+             * Retrieves the function that represents the current ADD modulo the given ADD.
+             *
+             * @other The modul function (given as an ADD).
+             * @retur The resulting ADD.
+             */
+            Add<DdType::CUDD> mod(Add<DdType::CUDD> const& other) const;
+
+            /*!
+             * Retrieves the function that represents the logarithm of the current ADD to the bases given by the second
+             * ADD.
+             *
+             * @other The base function (given as an ADD).
+             * @retur The resulting ADD.
+             */
+            Add<DdType::CUDD> logxy(Add<DdType::CUDD> const& other) const;
+            
+            /*!
+             * Retrieves the function that floors all values in the current ADD.
+             *
+             * @retur The resulting ADD.
+             */
+            Add<DdType::CUDD> floor() const;
+            
+            /*!
+             * Retrieves the function that ceils all values in the current ADD.
+             *
+             * @retur The resulting ADD.
+             */
+            Add<DdType::CUDD> ceil() const;
             
             /*!
              * Retrieves the function that maps all evaluations to the minimum of the function values of the two ADDs.

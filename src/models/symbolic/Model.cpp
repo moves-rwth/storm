@@ -148,7 +148,7 @@ namespace storm {
                     columnVariableCount += this->getManager().getMetaVariable(metaVariable).getNumberOfDdVariables();
                 }
                 
-                out << "Variables: \t" << "rows: " << this->rowVariables.size() << "(" << rowVariableCount << " dd variables)" << ", columns: " << this->columnVariables.size() << "(" << columnVariableCount << " dd variables)" << std::endl;
+                out << "Variables: \t" << "rows: " << this->rowVariables.size() << " meta variables (" << rowVariableCount << " DD variables)" << ", columns: " << this->columnVariables.size() << " meta variables (" << columnVariableCount << " DD variables)" << std::endl;
                 out << "Labels: \t" << this->labelToExpressionMap.size() << std::endl;
                 for (auto const& label : labelToExpressionMap) {
                     out << "   * " << label.first << std::endl;

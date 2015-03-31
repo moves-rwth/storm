@@ -218,6 +218,10 @@ namespace storm {
                 return this->overrideOption(dontFixDeadlockOptionName, stateToSet);
             }
             
+            std::unique_ptr<storm::settings::SettingMemento> GeneralSettings::overridePrismCompatibilityMode(bool stateToSet) {
+                return this->overrideOption(prismCompatibilityOptionName, stateToSet);
+            }
+            
             bool GeneralSettings::isTimeoutSet() const {
                 return this->getOption(timeoutOptionName).getHasOptionBeenSet();
             }

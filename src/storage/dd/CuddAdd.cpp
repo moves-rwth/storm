@@ -150,6 +150,32 @@ namespace storm {
             return Add<DdType::CUDD>(this->getDdManager(), this->getCuddAdd().GreaterThanOrEqual(other.getCuddAdd()), metaVariables);
         }
         
+        Add<DdType::CUDD> Add<DdType::CUDD>::pow(Add<DdType::CUDD> const& other) const {
+            std::set<storm::expressions::Variable> metaVariables;
+            std::set_union(this->getContainedMetaVariables().begin(), this->getContainedMetaVariables().end(), other.getContainedMetaVariables().begin(), other.getContainedMetaVariables().end(), std::inserter(metaVariables, metaVariables.begin()));
+            return Add<DdType::CUDD>(this->getDdManager(), this->getCuddAdd().Pow(other.getCuddAdd()), metaVariables);
+        }
+
+        Add<DdType::CUDD> Add<DdType::CUDD>::mod(Add<DdType::CUDD> const& other) const {
+            std::set<storm::expressions::Variable> metaVariables;
+            std::set_union(this->getContainedMetaVariables().begin(), this->getContainedMetaVariables().end(), other.getContainedMetaVariables().begin(), other.getContainedMetaVariables().end(), std::inserter(metaVariables, metaVariables.begin()));
+            return Add<DdType::CUDD>(this->getDdManager(), this->getCuddAdd().Mod(other.getCuddAdd()), metaVariables);
+        }
+
+        Add<DdType::CUDD> Add<DdType::CUDD>::logxy(Add<DdType::CUDD> const& other) const {
+            std::set<storm::expressions::Variable> metaVariables;
+            std::set_union(this->getContainedMetaVariables().begin(), this->getContainedMetaVariables().end(), other.getContainedMetaVariables().begin(), other.getContainedMetaVariables().end(), std::inserter(metaVariables, metaVariables.begin()));
+            return Add<DdType::CUDD>(this->getDdManager(), this->getCuddAdd().LogXY(other.getCuddAdd()), metaVariables);
+        }
+
+        Add<DdType::CUDD> Add<DdType::CUDD>::floor() const {
+            return Add<DdType::CUDD>(this->getDdManager(), this->getCuddAdd().Floor(), this->getContainedMetaVariables());
+        }
+        
+        Add<DdType::CUDD> Add<DdType::CUDD>::ceil() const {
+            return Add<DdType::CUDD>(this->getDdManager(), this->getCuddAdd().Ceil(), this->getContainedMetaVariables());
+        }
+        
         Add<DdType::CUDD> Add<DdType::CUDD>::minimum(Add<DdType::CUDD> const& other) const {
             std::set<storm::expressions::Variable> metaVariables;
             std::set_union(this->getContainedMetaVariables().begin(), this->getContainedMetaVariables().end(), other.getContainedMetaVariables().begin(), other.getContainedMetaVariables().end(), std::inserter(metaVariables, metaVariables.begin()));

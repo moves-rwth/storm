@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
-
+#include "src/settings/SettingMemento.h"
 #include "src/parser/PrismParser.h"
 #include "src/builder/ExplicitPrismModelBuilder.h"
 
@@ -33,6 +33,9 @@ TEST(ExplicitPrismModelBuilderTest, Dtmc) {
 }
 
 TEST(ExplicitPrismModelBuilderTest, Ctmc) {
+    // Set the PRISM compatibility mode temporarily. It is set to its old value once the returned object is destructed.
+    std::unique_ptr<storm::settings::SettingMemento> enablePrismCompatibility = storm::settings::mutableGeneralSettings().overridePrismCompatibilityMode(true);
+
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/cluster2.sm");
 
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitPrismModelBuilder<double>::translateProgram(program);

@@ -52,7 +52,21 @@ namespace storm {
                 out << "States: \t" << this->getNumberOfStates() << " (" << this->getReachableStates().getNodeCount() << " nodes)" << std::endl;
                 out << "Transitions: \t" << this->getNumberOfTransitions() << " (" << this->getTransitionMatrix().getNodeCount() << " nodes)" << std::endl;
                 out << "Choices: \t" << this->getNumberOfChoices() << std::endl;
-                out << "Variables: \t" << "rows: " << this->getRowVariables().size() << ", columns: " << this->getColumnVariables().size() << ", nondeterminism: " << this->getNondeterminismVariables().size() << std::endl;
+                
+                uint_fast64_t rowVariableCount = 0;
+                for (auto const& metaVariable : this->getRowVariables()) {
+                    rowVariableCount += this->getManager().getMetaVariable(metaVariable).getNumberOfDdVariables();
+                }
+                uint_fast64_t columnVariableCount = 0;
+                for (auto const& metaVariable : this->getColumnVariables()) {
+                    columnVariableCount += this->getManager().getMetaVariable(metaVariable).getNumberOfDdVariables();
+                }
+                uint_fast64_t nondeterminismVariableCount = 0;
+                for (auto const& metaVariable : this->getNondeterminismVariables()) {
+                    nondeterminismVariableCount += this->getManager().getMetaVariable(metaVariable).getNumberOfDdVariables();
+                }
+                
+                out << "Variables: \t" << "rows: " << this->getRowVariables().size() << " meta variables (" << rowVariableCount << " DD variables)" << ", columns: " << this->getColumnVariables().size() << "meta variables (" << columnVariableCount << " DD variables), nondeterminism: " << this->getNondeterminismVariables().size() << " meta variables (" << nondeterminismVariableCount << " DD variables)" << std::endl;
                 out << "Labels: \t" << this->getLabelToExpressionMap().size() << std::endl;
                 for (auto const& label : this->getLabelToExpressionMap()) {
                     out << "   * " << label.first << std::endl;
