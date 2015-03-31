@@ -52,6 +52,7 @@ namespace storm {
                     STORM_LOG_WARN_COND(!hasProbabilisticCommands, "The input model is a CTMC, but uses probabilistic commands like they are used in PRISM. Consider rewriting the commands to use Markovian commands instead.");
                 }
                 
+                // Then check the validity.
                 this->checkValidity();
             }
         }
@@ -615,6 +616,16 @@ namespace storm {
                         hasMarkovianCommand = true;
                     } else {
                         hasProbabilisticCommand = true;
+                    }
+                    
+                    // If the command is Markovian and labeled, we throw an error or raise a warning, depending on
+                    // whether or not the PRISM compatibility mode was enabled.
+                    if (command.isMarkovian() && command.isLabeled()) {
+                        if (storm::settings::generalSettings().isPrismCompatibilityEnabled()) {
+                            STORM_LOG_WARN_COND(false, "The model uses synchronizing Markovian commands. This may lead to unexpected verification results, because of unclear semantics.");
+                        } else {
+                            STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "The model uses synchronizing Markovian commands. This may lead to unexpected verification results, because of unclear semantics.");
+                        }
                     }
                     
                     // Check all updates.
