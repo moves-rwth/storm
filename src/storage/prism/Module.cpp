@@ -63,6 +63,10 @@ namespace storm {
             return this->commands;
         }
         
+        std::vector<storm::prism::Command>& Module::getCommands() {
+            return this->commands;
+        }
+        
         std::string const& Module::getName() const {
             return this->moduleName;
         }

@@ -3,6 +3,7 @@
 #include <algorithm>
 
 #include "src/storage/expressions/ExpressionManager.h"
+#include "src/settings/SettingsManager.h"
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/exceptions/OutOfRangeException.h"
@@ -34,8 +35,23 @@ namespace storm {
                 }
                 this->initialConstruct = storm::prism::InitialConstruct(newInitialExpression, this->getInitialConstruct().getFilename(), this->getInitialConstruct().getLineNumber());
             }
-            
+
             if (checkValidity) {
+                // If the model is supposed to be a CTMC, but contains probabilistic commands, we transform them to Markovian
+                // commands and issue a warning.
+                if (modelType == storm::prism::Program::ModelType::CTMC && storm::settings::generalSettings().isPrismCompatibilityEnabled()) {
+                    bool hasProbabilisticCommands = false;
+                    for (auto& module : this->modules) {
+                        for (auto& command : module.getCommands()) {
+                            if (!command.isMarkovian()) {
+                                command.setMarkovian(true);
+                                hasProbabilisticCommands = true;
+                            }
+                        }
+                    }
+                    STORM_LOG_WARN_COND(!hasProbabilisticCommands, "The input model is a CTMC, but uses probabilistic commands like they are used in PRISM. Consider rewriting the commands to use Markovian commands instead.");
+                }
+                
                 this->checkValidity();
             }
         }
@@ -576,6 +592,8 @@ namespace storm {
             std::set_union(variables.begin(), variables.end(), constants.begin(), constants.end(), std::inserter(variablesAndConstants, variablesAndConstants.begin()));
             
             // Check the commands of the modules.
+            bool hasProbabilisticCommand = false;
+            bool hasMarkovianCommand = false;
             for (auto const& module : this->getModules()) {
                 std::set<storm::expressions::Variable> legalVariables = globalVariables;
                 for (auto const& variable : module.getBooleanVariables()) {
@@ -585,12 +603,19 @@ namespace storm {
                     legalVariables.insert(variable.getExpressionVariable());
                 }
                 
-                for (auto const& command : module.getCommands()) {
+                for (auto& command : module.getCommands()) {
                     // Check the guard.
                     std::set<storm::expressions::Variable> containedVariables = command.getGuardExpression().getVariables();
                     bool isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedVariables.begin(), containedVariables.end());
                     STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << command.getFilename() << ", line " << command.getLineNumber() << ": guard refers to unknown identifiers.");
                     STORM_LOG_THROW(command.getGuardExpression().hasBooleanType(), storm::exceptions::WrongFormatException, "Error in " << command.getFilename() << ", line " << command.getLineNumber() << ": expression for guard must evaluate to type 'bool'.");
+                    
+                    // Record which types of commands were seen.
+                    if (command.isMarkovian()) {
+                        hasMarkovianCommand = true;
+                    } else {
+                        hasProbabilisticCommand = true;
+                    }
                     
                     // Check all updates.
                     for (auto const& update : command.getUpdates()) {
@@ -627,6 +652,12 @@ namespace storm {
                         }
                     }
                 }
+            }
+            
+            if (this->getModelType() == Program::ModelType::DTMC || this->getModelType() == Program::ModelType::MDP) {
+                STORM_LOG_THROW(!hasMarkovianCommand, storm::exceptions::WrongFormatException, "Discrete-time model must not have Markovian commands.");
+            } else if (this->getModelType() == Program::ModelType::CTMC) {
+                STORM_LOG_THROW(!hasProbabilisticCommand, storm::exceptions::WrongFormatException, "The input model is a CTMC, but uses probabilistic commands like they are used in PRISM. Please use Markovian commands instead or turn on the PRISM compatibility mode using the appropriate flag.");
             }
             
             // Now check the reward models.

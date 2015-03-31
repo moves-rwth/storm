@@ -8,7 +8,7 @@
 #include "src/settings/SettingMemento.h"
 #include "src/parser/AutoParser.h"
 
-TEST(TopologicalValueIterationMdpPrctlModelCheckerTest, AsynchronousLeader) {
+TEST(DISABLED_TopologicalValueIterationMdpPrctlModelCheckerTest, AsynchronousLeader) {
     std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader7.tra", STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader7.lab", "", STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader7.trans.rew")->as<storm::models::sparse::Mdp<double>>();
 
 	ASSERT_EQ(mdp->getNumberOfStates(), 2095783ull);
@@ -77,7 +77,7 @@ TEST(TopologicalValueIterationMdpPrctlModelCheckerTest, AsynchronousLeader) {
 	rewardFormula.reset();
 }
 
-TEST(TopologicalValueIterationMdpPrctlModelCheckerTest, Consensus) {
+TEST(DISABLED_TopologicalValueIterationMdpPrctlModelCheckerTest, Consensus) {
     // Increase the maximal number of iterations, because the solver does not converge otherwise.
 	// This is done in the main cpp unit
     

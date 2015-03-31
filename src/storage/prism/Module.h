@@ -126,6 +126,13 @@ namespace storm {
              * @return The commands of the module.
              */
             std::vector<storm::prism::Command> const& getCommands() const;
+
+            /*!
+             * Retrieves the commands of the module.
+             *
+             * @return The commands of the module.
+             */
+            std::vector<storm::prism::Command>& getCommands();
             
             /*!
              * Retrieves the name of the module.

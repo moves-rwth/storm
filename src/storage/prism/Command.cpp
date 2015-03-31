@@ -2,12 +2,20 @@
 
 namespace storm {
     namespace prism {
-        Command::Command(uint_fast64_t globalIndex, uint_fast64_t actionIndex, std::string const& actionName, storm::expressions::Expression const& guardExpression, std::vector<storm::prism::Update> const& updates, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), actionIndex(actionIndex), actionName(actionName), guardExpression(guardExpression), updates(updates), globalIndex(globalIndex), labeled(actionName != "") {
+        Command::Command(uint_fast64_t globalIndex, bool markovian, uint_fast64_t actionIndex, std::string const& actionName, storm::expressions::Expression const& guardExpression, std::vector<storm::prism::Update> const& updates, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), actionIndex(actionIndex), markovian(markovian), actionName(actionName), guardExpression(guardExpression), updates(updates), globalIndex(globalIndex), labeled(actionName != "") {
             // Nothing to do here.
         }
 
         uint_fast64_t Command::getActionIndex() const {
             return this->actionIndex;
+        }
+        
+        bool Command::isMarkovian() const {
+            return this->markovian;
+        }
+        
+        void Command::setMarkovian(bool value) {
+            this->markovian = value;
         }
         
         std::string const& Command::getActionName() const {
@@ -41,7 +49,7 @@ namespace storm {
                 newUpdates.emplace_back(update.substitute(substitution));
             }
             
-            return Command(this->getGlobalIndex(), this->getActionIndex(), this->getActionName(), this->getGuardExpression().substitute(substitution).simplify(), newUpdates, this->getFilename(), this->getLineNumber());
+            return Command(this->getGlobalIndex(), this->isMarkovian(), this->getActionIndex(), this->getActionName(), this->getGuardExpression().substitute(substitution).simplify(), newUpdates, this->getFilename(), this->getLineNumber());
         }
         
         bool Command::isLabeled() const {
@@ -64,7 +72,12 @@ namespace storm {
         }
         
         std::ostream& operator<<(std::ostream& stream, Command const& command) {
-            stream << "[" << command.getActionName() << "] " << command.getGuardExpression() << " -> ";
+            if (command.isMarkovian()) {
+                stream << "<" << command.getActionName() << "> ";
+            } else {
+                stream << "[" << command.getActionName() << "] ";
+            }
+            stream << command.getGuardExpression() << " -> ";
             for (uint_fast64_t i = 0; i < command.getUpdates().size(); ++i) {
                 stream << command.getUpdate(i);
                 if (i < command.getUpdates().size() - 1) {

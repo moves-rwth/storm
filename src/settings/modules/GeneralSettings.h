@@ -311,6 +311,13 @@ namespace storm {
                  */
                 Engine getEngine() const;
                 
+                /*!
+                 * Retrieves whether the PRISM compatibility mode was enabled.
+                 *
+                 * @return True iff the PRISM compatibility mode was enabled.
+                 */
+                bool isPrismCompatibilityEnabled() const;
+                
 #ifdef STORM_HAVE_CARL
                 /*!
                  * Retrieves whether the option enabling parametric model checking is set.
@@ -362,6 +369,8 @@ namespace storm {
                 static const std::string engineOptionName;
                 static const std::string engineOptionShortName;
                 static const std::string cudaOptionName;
+                static const std::string prismCompatibilityOptionName;
+                static const std::string prismCompatibilityOptionShortName;
                 
 #ifdef STORM_HAVE_CARL
                 static const std::string parametricOptionName;

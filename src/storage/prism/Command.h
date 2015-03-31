@@ -17,6 +17,8 @@ namespace storm {
              * Creates a command with the given action name, guard and updates.
              *
              * @param globalIndex The global index of the command.
+             * @param markovian A flag indicating whether the command's update probabilities are to be interpreted as
+             * rates in a continuous-time model.
              * @param actionIndex The index of the action of the command.
              * @param actionName The action name of the command.
              * @param guardExpression the expression that defines the guard of the command.
@@ -24,7 +26,7 @@ namespace storm {
              * @param filename The filename in which the command is defined.
              * @param lineNumber The line number in which the command is defined.
              */
-            Command(uint_fast64_t globalIndex, uint_fast64_t actionIndex, std::string const& actionName, storm::expressions::Expression const& guardExpression, std::vector<storm::prism::Update> const& updates, std::string const& filename = "", uint_fast64_t lineNumber = 0);
+            Command(uint_fast64_t globalIndex, bool markovian, uint_fast64_t actionIndex, std::string const& actionName, storm::expressions::Expression const& guardExpression, std::vector<storm::prism::Update> const& updates, std::string const& filename = "", uint_fast64_t lineNumber = 0);
             
             // Create default implementations of constructors/assignment.
             Command() = default;
@@ -48,6 +50,22 @@ namespace storm {
              * @return The action index of the command.
              */
             uint_fast64_t getActionIndex() const;
+            
+            /*!
+             * Retrieves whether the command is a Markovian command, i.e. it's update likelihoods are to be interpreted
+             * as rates in a continuous-time model.
+             *
+             * @return True iff the command is Markovian.
+             */
+            bool isMarkovian() const;
+            
+            /*!
+             * Sets whether this command is a Markovian command, i.e. it's update likelihoods are to be interpreted as
+             * rates in a continuous-time model.
+             *
+             * @param value The command is flagged as Markovian iff this flag is set.
+             */
+            void setMarkovian(bool value);
             
             /*!
              * Retrieves a reference to the guard of the command.
@@ -114,6 +132,10 @@ namespace storm {
             //  The index of the action associated with this command.
             uint_fast64_t actionIndex;
 
+            // A flag indicating whether the likelihoods attached to the updates are to be interpreted as rates rather
+            // than probabilities.
+            bool markovian;
+            
             // The name of the command.
             std::string actionName;
             
