@@ -541,15 +541,6 @@ target_link_libraries(storm cudd)
 
 #############################################################
 ##
-##	LTL2DSTAR
-##
-#############################################################
-add_subdirectory("${PROJECT_SOURCE_DIR}/resources/3rdparty/ltl2dstar-0.5.1")
-include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/ltl2dstar-0.5.1/src")
-target_link_libraries(storm ltl2dstar)
-
-#############################################################
-##
 ##	Gurobi (optional)
 ##
 #############################################################
