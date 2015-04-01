@@ -2,6 +2,7 @@
 #define STORM_STORAGE_DD_CUDDODD_H_
 
 #include <memory>
+#include <unordered_map>
 
 #include "src/storage/dd/Odd.h"
 #include "src/storage/dd/CuddAdd.h"
@@ -96,6 +97,12 @@ namespace storm {
             uint_fast64_t getNodeCount() const;
             
         private:
+            // Declare a hash functor that is used for the unique tables in the construction process.
+            class HashFunctor {
+            public:
+                std::size_t operator()(std::pair<DdNode*, bool> const& key) const;
+            };
+            
             /*!
              * Constructs an offset-labeled DD with the given topmost DD node, else- and then-successor.
              *
@@ -119,7 +126,7 @@ namespace storm {
              * ODD nodes for the same DD and level unique.
              * @return A pointer to the constructed ODD for the given arguments.
              */
-            static std::shared_ptr<Odd<DdType::CUDD>> buildOddFromAddRec(DdNode* dd, Cudd const& manager, uint_fast64_t currentLevel, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<std::map<DdNode*, std::shared_ptr<Odd<DdType::CUDD>>>>& uniqueTableForLevels);
+            static std::shared_ptr<Odd<DdType::CUDD>> buildOddFromAddRec(DdNode* dd, Cudd const& manager, uint_fast64_t currentLevel, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<std::unordered_map<DdNode*, std::shared_ptr<Odd<DdType::CUDD>>>>& uniqueTableForLevels);
 
             /*!
              * Recursively builds the ODD from a BDD (that potentially has complement edges).
@@ -134,7 +141,7 @@ namespace storm {
              * ODD nodes for the same DD and level unique.
              * @return A pointer to the constructed ODD for the given arguments.
              */
-            static std::shared_ptr<Odd<DdType::CUDD>> buildOddFromBddRec(DdNode* dd, Cudd const& manager, uint_fast64_t currentLevel, bool complement, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<std::map<DdNode*, std::shared_ptr<Odd<DdType::CUDD>>>>& uniqueTableForLevels);
+            static std::shared_ptr<Odd<DdType::CUDD>> buildOddFromBddRec(DdNode* dd, Cudd const& manager, uint_fast64_t currentLevel, bool complement, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<std::unordered_map<std::pair<DdNode*, bool>, std::shared_ptr<Odd<DdType::CUDD>>, HashFunctor>>& uniqueTableForLevels);
             
             // The then- and else-nodes.
             std::shared_ptr<Odd<DdType::CUDD>> elseNode;

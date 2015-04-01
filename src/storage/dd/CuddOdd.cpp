@@ -14,7 +14,7 @@ namespace storm {
             std::vector<uint_fast64_t> ddVariableIndices = add.getSortedVariableIndices();
             
             // Prepare a unique table for each level that keeps the constructed ODD nodes unique.
-            std::vector<std::map<DdNode*, std::shared_ptr<Odd<DdType::CUDD>>>> uniqueTableForLevels(ddVariableIndices.size() + 1);
+            std::vector<std::unordered_map<DdNode*, std::shared_ptr<Odd<DdType::CUDD>>>> uniqueTableForLevels(ddVariableIndices.size() + 1);
             
             // Now construct the ODD structure from the ADD.
             std::shared_ptr<Odd<DdType::CUDD>> rootOdd = buildOddFromAddRec(add.getCuddDdNode(), manager->getCuddManager(), 0, ddVariableIndices.size(), ddVariableIndices, uniqueTableForLevels);
@@ -33,7 +33,7 @@ namespace storm {
             std::vector<uint_fast64_t> ddVariableIndices = bdd.getSortedVariableIndices();
             
             // Prepare a unique table for each level that keeps the constructed ODD nodes unique.
-            std::vector<std::map<DdNode*, std::shared_ptr<Odd<DdType::CUDD>>>> uniqueTableForLevels(ddVariableIndices.size() + 1);
+            std::vector<std::unordered_map<std::pair<DdNode*, bool>, std::shared_ptr<Odd<DdType::CUDD>>, HashFunctor>> uniqueTableForLevels(ddVariableIndices.size() + 1);
             
             // Now construct the ODD structure from the BDD.
             std::shared_ptr<Odd<DdType::CUDD>> rootOdd = buildOddFromBddRec(Cudd_Regular(bdd.getCuddDdNode()), manager->getCuddManager(), 0, Cudd_IsComplement(bdd.getCuddDdNode()), ddVariableIndices.size(), ddVariableIndices, uniqueTableForLevels);
@@ -91,7 +91,7 @@ namespace storm {
             }
         }
         
-        std::shared_ptr<Odd<DdType::CUDD>> Odd<DdType::CUDD>::buildOddFromAddRec(DdNode* dd, Cudd const& manager, uint_fast64_t currentLevel, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<std::map<DdNode*, std::shared_ptr<Odd<DdType::CUDD>>>>& uniqueTableForLevels) {
+        std::shared_ptr<Odd<DdType::CUDD>> Odd<DdType::CUDD>::buildOddFromAddRec(DdNode* dd, Cudd const& manager, uint_fast64_t currentLevel, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<std::unordered_map<DdNode*, std::shared_ptr<Odd<DdType::CUDD>>>>& uniqueTableForLevels) {
             // Check whether the ODD for this node has already been computed (for this level) and if so, return this instead.
             auto const& iterator = uniqueTableForLevels[currentLevel].find(dd);
             if (iterator != uniqueTableForLevels[currentLevel].end()) {
@@ -130,9 +130,16 @@ namespace storm {
             }
         }
         
-        std::shared_ptr<Odd<DdType::CUDD>> Odd<DdType::CUDD>::buildOddFromBddRec(DdNode* dd, Cudd const& manager, uint_fast64_t currentLevel, bool complement, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<std::map<DdNode*, std::shared_ptr<Odd<DdType::CUDD>>>>& uniqueTableForLevels) {
+        std::size_t Odd<DdType::CUDD>::HashFunctor::operator()(std::pair<DdNode*, bool> const& key) const {
+            std::size_t result = 0;
+            boost::hash_combine(result, key.first);
+            boost::hash_combine(result, key.second);
+            return result;
+        }
+    
+        std::shared_ptr<Odd<DdType::CUDD>> Odd<DdType::CUDD>::buildOddFromBddRec(DdNode* dd, Cudd const& manager, uint_fast64_t currentLevel, bool complement, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<std::unordered_map<std::pair<DdNode*, bool>, std::shared_ptr<Odd<DdType::CUDD>>, HashFunctor>>& uniqueTableForLevels) {
             // Check whether the ODD for this node has already been computed (for this level) and if so, return this instead.
-            auto const& iterator = uniqueTableForLevels[currentLevel].find(dd);
+            auto const& iterator = uniqueTableForLevels[currentLevel].find(std::make_pair(dd, complement));
             if (iterator != uniqueTableForLevels[currentLevel].end()) {
                 return iterator->second;
             } else {
