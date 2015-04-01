@@ -318,7 +318,7 @@ TEST(CuddDd, OddTest) {
     std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::CUDD>> manager(new storm::dd::DdManager<storm::dd::DdType::CUDD>());
     std::pair<storm::expressions::Variable, storm::expressions::Variable> a = manager->addMetaVariable("a");
     std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
-    
+        
     storm::dd::Add<storm::dd::DdType::CUDD> dd = manager->getIdentity(x.first);
     storm::dd::Odd<storm::dd::DdType::CUDD> odd;
     ASSERT_NO_THROW(odd = storm::dd::Odd<storm::dd::DdType::CUDD>(dd));
@@ -348,6 +348,28 @@ TEST(CuddDd, OddTest) {
     
     EXPECT_EQ(9, matrix.getRowCount());
     EXPECT_EQ(9, matrix.getColumnCount());
+    EXPECT_EQ(25, matrix.getNonzeroEntryCount());
+    
+    dd = manager->getRange(x.first).toAdd() * manager->getRange(x.second).toAdd() * manager->getEncoding(a.first, 0).toAdd().ite(dd, dd + manager->getConstant(1));
+    ASSERT_NO_THROW(matrix = dd.toMatrix({x.first}, {x.second}, {a.first}, rowOdd, columnOdd));
+    EXPECT_EQ(18, matrix.getRowCount());
+    EXPECT_EQ(9, matrix.getRowGroupCount());
+    EXPECT_EQ(9, matrix.getColumnCount());
+    EXPECT_EQ(106, matrix.getNonzeroEntryCount());
+    
+    std::cout << "########################################################################################" << std::endl;
+    
+    // Recreate the ODDs, this time starting from a BDD.
+    ASSERT_NO_THROW(rowOdd = storm::dd::Odd<storm::dd::DdType::CUDD>(manager->getRange(x.first)));
+    ASSERT_NO_THROW(columnOdd = storm::dd::Odd<storm::dd::DdType::CUDD>(manager->getRange(x.second)));
+    
+    // Try to translate the matrix.
+    ASSERT_NO_THROW(matrix = dd.toMatrix({x.first}, {x.second}, rowOdd, columnOdd));
+    
+    EXPECT_EQ(9, matrix.getRowCount());
+    EXPECT_EQ(9, matrix.getColumnCount());
+
+    std::cout << matrix << std::endl;
     EXPECT_EQ(25, matrix.getNonzeroEntryCount());
     
     dd = manager->getRange(x.first).toAdd() * manager->getRange(x.second).toAdd() * manager->getEncoding(a.first, 0).toAdd().ite(dd, dd + manager->getConstant(1));

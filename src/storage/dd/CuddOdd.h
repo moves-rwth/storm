@@ -16,11 +16,18 @@ namespace storm {
         class Odd<DdType::CUDD> {
         public:
             /*!
-             * Constructs an offset-labeled DD from the given DD.
+             * Constructs an offset-labeled DD from the given ADD.
              *
-             * @param add The ADD for which to build the offset-labeled DD.
+             * @param add The ADD for which to build the offset-labeled ADD.
              */
             Odd(Add<DdType::CUDD> const& add);
+            
+            /*!
+             * Constructs an offset-labeled DD from the given BDD.
+             *
+             * @param bdd The BDD for which to build the offset-labeled ADD.
+             */
+            Odd(Bdd<DdType::CUDD> const& bdd);
             
             // Instantiate all copy/move constructors/assignments with the default implementation.
             Odd() = default;
@@ -101,7 +108,7 @@ namespace storm {
             Odd(std::shared_ptr<Odd<DdType::CUDD>> elseNode, uint_fast64_t elseOffset, std::shared_ptr<Odd<DdType::CUDD>> thenNode, uint_fast64_t thenOffset);
             
             /*!
-             * Recursively builds the ODD.
+             * Recursively builds the ODD from an ADD (that has no complement edges).
              *
              * @param dd The DD for which to build the ODD.
              * @param manager The manager responsible for the DD.
@@ -112,7 +119,9 @@ namespace storm {
              * ODD nodes for the same DD and level unique.
              * @return A pointer to the constructed ODD for the given arguments.
              */
-            static std::shared_ptr<Odd<DdType::CUDD>> buildOddRec(DdNode* dd, Cudd const& manager, uint_fast64_t currentLevel, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<std::map<DdNode*, std::shared_ptr<Odd<DdType::CUDD>>>>& uniqueTableForLevels);
+            static std::shared_ptr<Odd<DdType::CUDD>> buildOddFromAddRec(DdNode* dd, Cudd const& manager, uint_fast64_t currentLevel, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<std::map<DdNode*, std::shared_ptr<Odd<DdType::CUDD>>>>& uniqueTableForLevels);
+
+            static std::shared_ptr<Odd<DdType::CUDD>> buildOddFromBddRec(DdNode* dd, Cudd const& manager, uint_fast64_t currentLevel, bool complement, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<std::map<DdNode*, std::shared_ptr<Odd<DdType::CUDD>>>>& uniqueTableForLevels);
             
             // The then- and else-nodes.
             std::shared_ptr<Odd<DdType::CUDD>> elseNode;
