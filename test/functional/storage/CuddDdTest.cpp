@@ -314,7 +314,7 @@ TEST(CuddDd, ForwardIteratorTest) {
     EXPECT_EQ(1, numberOfValuations);
 }
 
-TEST(CuddDd, OddTest) {
+TEST(CuddDd, AddOddTest) {
     std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::CUDD>> manager(new storm::dd::DdManager<storm::dd::DdType::CUDD>());
     std::pair<storm::expressions::Variable, storm::expressions::Variable> a = manager->addMetaVariable("a");
     std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
@@ -345,7 +345,7 @@ TEST(CuddDd, OddTest) {
     // Try to translate the matrix.
     storm::storage::SparseMatrix<double> matrix;
     ASSERT_NO_THROW(matrix = dd.toMatrix({x.first}, {x.second}, rowOdd, columnOdd));
-    
+
     EXPECT_EQ(9, matrix.getRowCount());
     EXPECT_EQ(9, matrix.getColumnCount());
     EXPECT_EQ(25, matrix.getNonzeroEntryCount());
@@ -356,20 +356,42 @@ TEST(CuddDd, OddTest) {
     EXPECT_EQ(9, matrix.getRowGroupCount());
     EXPECT_EQ(9, matrix.getColumnCount());
     EXPECT_EQ(106, matrix.getNonzeroEntryCount());
+}
+
+TEST(CuddDd, BddOddTest) {
+    std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::CUDD>> manager(new storm::dd::DdManager<storm::dd::DdType::CUDD>());
+    std::pair<storm::expressions::Variable, storm::expressions::Variable> a = manager->addMetaVariable("a");
+    std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
     
-    std::cout << "########################################################################################" << std::endl;
+    storm::dd::Add<storm::dd::DdType::CUDD> dd = manager->getIdentity(x.first);
+    storm::dd::Odd<storm::dd::DdType::CUDD> odd;
+    ASSERT_NO_THROW(odd = storm::dd::Odd<storm::dd::DdType::CUDD>(dd));
+    EXPECT_EQ(9, odd.getTotalOffset());
+    EXPECT_EQ(12, odd.getNodeCount());
     
-    // Recreate the ODDs, this time starting from a BDD.
+    std::vector<double> ddAsVector;
+    ASSERT_NO_THROW(ddAsVector = dd.toVector<double>());
+    EXPECT_EQ(9, ddAsVector.size());
+    for (uint_fast64_t i = 0; i < ddAsVector.size(); ++i) {
+        EXPECT_TRUE(i+1 == ddAsVector[i]);
+    }
+    
+    // Create a non-trivial matrix.
+    dd = manager->getIdentity(x.first).equals(manager->getIdentity(x.second)) * manager->getRange(x.first).toAdd();
+    dd += manager->getEncoding(x.first, 1).toAdd() * manager->getRange(x.second).toAdd() + manager->getEncoding(x.second, 1).toAdd() * manager->getRange(x.first).toAdd();
+    
+    // Create the ODDs.
+    storm::dd::Odd<storm::dd::DdType::CUDD> rowOdd;
     ASSERT_NO_THROW(rowOdd = storm::dd::Odd<storm::dd::DdType::CUDD>(manager->getRange(x.first)));
+    storm::dd::Odd<storm::dd::DdType::CUDD> columnOdd;
     ASSERT_NO_THROW(columnOdd = storm::dd::Odd<storm::dd::DdType::CUDD>(manager->getRange(x.second)));
     
     // Try to translate the matrix.
+    storm::storage::SparseMatrix<double> matrix;
     ASSERT_NO_THROW(matrix = dd.toMatrix({x.first}, {x.second}, rowOdd, columnOdd));
     
     EXPECT_EQ(9, matrix.getRowCount());
     EXPECT_EQ(9, matrix.getColumnCount());
-
-    std::cout << matrix << std::endl;
     EXPECT_EQ(25, matrix.getNonzeroEntryCount());
     
     dd = manager->getRange(x.first).toAdd() * manager->getRange(x.second).toAdd() * manager->getEncoding(a.first, 0).toAdd().ite(dd, dd + manager->getConstant(1));

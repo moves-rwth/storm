@@ -466,7 +466,7 @@ namespace storm {
             // Prepare the vectors that represent the matrix.
             std::vector<uint_fast64_t> rowIndications(rowOdd.getTotalOffset() + 1);
             std::vector<storm::storage::MatrixEntry<uint_fast64_t, double>> columnsAndValues(this->getNonZeroCount());
-            
+
             // Create a trivial row grouping.
             std::vector<uint_fast64_t> trivialRowGroupIndices(rowIndications.size());
             uint_fast64_t i = 0;
