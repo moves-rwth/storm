@@ -82,9 +82,9 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The file from which to read the state rewards.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, dontFixDeadlockOptionName, false, "If the model contains deadlock states, they need to be fixed by setting this option.").setShortName(dontFixDeadlockOptionShortName).build());
                 
-                std::vector<std::string> engines = {"sparse", "dd"};
+                std::vector<std::string> engines = {"sparse", "hybrid", "dd"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, engineOptionName, false, "Sets which engine is used for model building and model checking.").setShortName(engineOptionShortName)
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the engine to use. Available are {sparse, dd}.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(engines)).setDefaultValueString("sparse").build()).build());
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the engine to use. Available are {sparse, hybrid, dd}.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(engines)).setDefaultValueString("sparse").build()).build());
                 
                 std::vector<std::string> linearEquationSolver = {"gmm++", "native"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, eqSolverOptionName, false, "Sets which solver is preferred for solving systems of linear equations.")
@@ -274,6 +274,8 @@ namespace storm {
                 std::string engine = this->getOption(engineOptionName).getArgumentByName("name").getValueAsString();
                 if (engine == "sparse") {
                     return GeneralSettings::Engine::Sparse;
+                } else if (engine == "hybrid") {
+                    return GeneralSettings::Engine::Hybrid;
                 } else if (engine == "dd") {
                     return GeneralSettings::Engine::Dd;
                 }
@@ -298,7 +300,7 @@ namespace storm {
                 uint_fast64_t propertySources = 0 + (isPropertySet() ? 1 : 0) + (isPropertyFileSet() ? 1 : 0);
                 STORM_LOG_THROW(propertySources <= 1, storm::exceptions::InvalidSettingsException, "Please specify either a file that contains the properties or a property on the command line, but not both.");
                 
-                STORM_LOG_THROW(this->getEngine() != Engine::Dd || !isExplicitSet(), storm::exceptions::InvalidSettingsException, "Decision-diagram engine can only be used with symbolic input models.");
+                STORM_LOG_THROW(this->getEngine() == Engine::Sparse || !isExplicitSet(), storm::exceptions::InvalidSettingsException, "Cannot use explicit input models with this engine.");
                 
                 return true;
             }

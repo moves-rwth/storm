@@ -133,6 +133,16 @@ namespace storm {
             }
             
             template<storm::dd::DdType Type>
+            storm::dd::Add<Type> Model<Type>::getRowColumnIdentity() const {
+                storm::dd::Add<Type> result = this->getManager().getAddOne();
+                for (auto const& pair : this->getRowColumnMetaVariablePairs()) {
+                    result *= this->getManager().getIdentity(pair.first).equals(this->getManager().getIdentity(pair.second));
+                    result *= this->getManager().getRange(pair.first).toAdd() * this->getManager().getRange(pair.second).toAdd();
+                }
+                return result;
+            }
+            
+            template<storm::dd::DdType Type>
             void Model<Type>::printModelInformationToStream(std::ostream& out) const {
                 out << "-------------------------------------------------------------- " << std::endl;
                 out << "Model type: \t" << this->getType() << " (symbolic)" << std::endl;

@@ -7,22 +7,23 @@
 namespace storm {
     namespace modelchecker {
         template<storm::dd::DdType Type>
-        SymbolicQuantitativeCheckResult<Type>::SymbolicQuantitativeCheckResult(storm::dd::Add<Type> const& allStates, storm::dd::Add<Type> const& values) : allStates(allStates), values(values) {
+        SymbolicQuantitativeCheckResult<Type>::SymbolicQuantitativeCheckResult(storm::dd::Bdd<Type> const& reachableStates, storm::dd::Add<Type> const& values) : reachableStates(reachableStates), values(values) {
             // Intentionally left empty.
         }
         
         template<storm::dd::DdType Type>
         std::unique_ptr<CheckResult> SymbolicQuantitativeCheckResult<Type>::compareAgainstBound(storm::logic::ComparisonType comparisonType, double bound) const {
-            std::unique_ptr<SymbolicQualitativeCheckResult<Type>> result;
-            if (comparisonType == storm::logic::ComparisonType::Less || comparisonType == storm::logic::ComparisonType::GreaterEqual) {
-                result = std::unique_ptr<SymbolicQualitativeCheckResult<Type>>(new SymbolicQualitativeCheckResult<Type>(allStates, values.greaterOrEqual(bound)));
-            } else {
-                result = std::unique_ptr<SymbolicQualitativeCheckResult<Type>>(new SymbolicQualitativeCheckResult<Type>(allStates, values.greater(bound)));
+            storm::dd::Bdd<Type> states;
+            if (comparisonType == storm::logic::ComparisonType::Less) {
+                states = values.less(bound);
+            } else if (comparisonType == storm::logic::ComparisonType::LessEqual) {
+                states = values.lessOrEqual(bound);
+            } else if (comparisonType == storm::logic::ComparisonType::Greater) {
+                states = values.greater(bound);
+            } else if (comparisonType == storm::logic::ComparisonType::GreaterEqual) {
+                states = values.greaterOrEqual(bound);
             }
-            if (comparisonType == storm::logic::ComparisonType::Less || comparisonType == storm::logic::ComparisonType::LessEqual) {
-                result->complement();
-            }
-            return result;
+            return std::unique_ptr<SymbolicQualitativeCheckResult<Type>>(new SymbolicQualitativeCheckResult<Type>(reachableStates, values.greaterOrEqual(bound)));;
         }
         
         template<storm::dd::DdType Type>
@@ -64,7 +65,10 @@ namespace storm {
         template<storm::dd::DdType Type>
         void SymbolicQuantitativeCheckResult<Type>::filter(QualitativeCheckResult const& filter) {
             STORM_LOG_THROW(filter.isSymbolicQualitativeCheckResult(), storm::exceptions::InvalidOperationException, "Cannot filter symbolic check result with non-symbolic filter.");
-            this->truthValues *= filter.asSymbolicQualitativeCheckResult<Type>().getTruthValuesVector().toMtbdd();
+            this->values *= filter.asSymbolicQualitativeCheckResult<Type>().getTruthValuesVector().toAdd();
         }
+        
+        // Explicitly instantiate the class.
+        template class SymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD>;
     }
 }

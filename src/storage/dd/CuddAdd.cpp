@@ -300,6 +300,14 @@ namespace storm {
             return Bdd<DdType::CUDD>(this->getDdManager(), this->getCuddAdd().BddThreshold(value), this->getContainedMetaVariables());
         }
         
+        Bdd<DdType::CUDD> Add<DdType::CUDD>::less(double value) const {
+            return Bdd<DdType::CUDD>(this->getDdManager(), ~this->getCuddAdd().BddThreshold(value), this->getContainedMetaVariables());
+        }
+        
+        Bdd<DdType::CUDD> Add<DdType::CUDD>::lessOrEqual(double value) const {
+            return Bdd<DdType::CUDD>(this->getDdManager(), ~this->getCuddAdd().BddStrictThreshold(value), this->getContainedMetaVariables());
+        }
+        
         Bdd<DdType::CUDD> Add<DdType::CUDD>::notZero() const {
             return this->toBdd();
         }

@@ -12,7 +12,7 @@ namespace storm {
         class SymbolicQualitativeCheckResult : public QualitativeCheckResult {
         public:
             SymbolicQualitativeCheckResult() = default;
-            SymbolicQualitativeCheckResult(storm::dd::Bdd<Type> const& allStates, storm::dd::Bdd<Type> const& truthValues);
+            SymbolicQualitativeCheckResult(storm::dd::Bdd<Type> const& reachableStates, storm::dd::Bdd<Type> const& truthValues);
             
             SymbolicQualitativeCheckResult(SymbolicQualitativeCheckResult const& other) = default;
             SymbolicQualitativeCheckResult& operator=(SymbolicQualitativeCheckResult const& other) = default;
@@ -30,15 +30,15 @@ namespace storm {
             virtual QualitativeCheckResult& operator|=(QualitativeCheckResult const& other) override;
             virtual void complement() override;
             
-            storm::dd::Dd<Type> const& getTruthValuesVector() const;
+            storm::dd::Bdd<Type> const& getTruthValuesVector() const;
             
             virtual std::ostream& writeToStream(std::ostream& out) const override;
             
             virtual void filter(QualitativeCheckResult const& filter) override;
             
         private:
-            // The set of all states.
-            storm::dd::Bdd<Type> allStates;
+            // The set of all reachable states.
+            storm::dd::Bdd<Type> reachableStates;
             
             // The values of the qualitative check result.
             storm::dd::Bdd<Type> truthValues;

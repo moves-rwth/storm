@@ -12,7 +12,7 @@ namespace storm {
         class SymbolicQuantitativeCheckResult : public QuantitativeCheckResult {
         public:
             SymbolicQuantitativeCheckResult() = default;
-            SymbolicQuantitativeCheckResult(storm::dd::Add<Type> const& allStates, storm::dd::Add<Type> const& values);
+            SymbolicQuantitativeCheckResult(storm::dd::Bdd<Type> const& reachableStates, storm::dd::Add<Type> const& values);
             
             SymbolicQuantitativeCheckResult(SymbolicQuantitativeCheckResult const& other) = default;
             SymbolicQuantitativeCheckResult& operator=(SymbolicQuantitativeCheckResult const& other) = default;
@@ -35,8 +35,8 @@ namespace storm {
             virtual void filter(QualitativeCheckResult const& filter) override;
             
         private:
-            // The set of all states.
-            storm::dd::Add<Type> allStates;
+            // The set of all reachable states.
+            storm::dd::Bdd<Type> reachableStates;
             
             // The values of the quantitative check result.
             storm::dd::Add<Type> values;

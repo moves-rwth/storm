@@ -2,7 +2,6 @@
 #define STORM_MODELCHECKER_SYMBOLICPROPOSITIONALMODELCHECKER_H_
 
 #include "src/modelchecker/AbstractModelChecker.h"
-
 #include "src/models/symbolic/Model.h"
 
 namespace storm {

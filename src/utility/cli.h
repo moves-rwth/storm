@@ -67,6 +67,9 @@ log4cplus::Logger printer;
 #include "src/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
 #include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "src/modelchecker/csl/SparseCtmcCslModelChecker.h"
+#include "src/modelchecker/prctl/HybridDtmcPrctlModelChecker.h"
+#include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
+#include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"
 
 // Headers for counterexample generation.
 #include "src/counterexamples/MILPMinimalLabelSetGenerator.h"
@@ -77,6 +80,7 @@ log4cplus::Logger printer;
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/exceptions/InvalidSettingsException.h"
 #include "src/exceptions/InvalidTypeException.h"
+#include "src/exceptions/NotImplementedException.h"
 
 namespace storm {
     namespace utility {
@@ -331,7 +335,7 @@ namespace storm {
                     }
                     
                     result = storm::builder::ExplicitPrismModelBuilder<ValueType>::translateProgram(program, options);
-                } else if (settings.getEngine() == storm::settings::modules::GeneralSettings::Engine::Dd) {
+                } else if (settings.getEngine() == storm::settings::modules::GeneralSettings::Engine::Dd || settings.getEngine() == storm::settings::modules::GeneralSettings::Engine::Hybrid) {
                     typename storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::Options options;
                     if (formula) {
                         options = typename storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::Options(*formula.get());
@@ -409,26 +413,24 @@ namespace storm {
                 
                 // If we were requested to generate a counterexample, we now do so.
                 if (settings.isCounterexampleSet()) {
-                    STORM_LOG_THROW(model->isSparseModel(), storm::exceptions::InvalidSettingsException, "Counterexample generation is only available for sparse models.");
                     STORM_LOG_THROW(program, storm::exceptions::InvalidSettingsException, "Unable to generate counterexample for non-symbolic model.");
                     generateCounterexample<ValueType>(program.get(), model, formula);
                 } else {
-                    std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = model->template as<storm::models::sparse::Model<ValueType>>();
                     std::cout << std::endl << "Model checking property: " << *formula << " ...";
                     std::unique_ptr<storm::modelchecker::CheckResult> result;
                     if (model->getType() == storm::models::ModelType::Dtmc) {
-                        std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> dtmc = sparseModel->template as<storm::models::sparse::Dtmc<ValueType>>();
-                        storm::modelchecker::SparseDtmcEliminationModelChecker<ValueType> modelchecker(*dtmc);
+                        std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> dtmc = model->template as<storm::models::sparse::Dtmc<ValueType>>();
+                        storm::modelchecker::SparseDtmcPrctlModelChecker<ValueType> modelchecker(*dtmc);
                         if (modelchecker.canHandle(*formula.get())) {
                             result = modelchecker.check(*formula.get());
                         } else {
-                            storm::modelchecker::SparseDtmcPrctlModelChecker<ValueType> modelchecker2(*dtmc);
+                            storm::modelchecker::SparseDtmcEliminationModelChecker<ValueType> modelchecker2(*dtmc);
                             if (modelchecker2.canHandle(*formula.get())) {
                                 modelchecker2.check(*formula.get());
                             }
                         }
                     } else if (model->getType() == storm::models::ModelType::Mdp) {
-                        std::shared_ptr<storm::models::sparse::Mdp<ValueType>> mdp = sparseModel->template as<storm::models::sparse::Mdp<ValueType>>();
+                        std::shared_ptr<storm::models::sparse::Mdp<ValueType>> mdp = model->template as<storm::models::sparse::Mdp<ValueType>>();
 #ifdef STORM_HAVE_CUDA
                         if (settings.isCudaSet()) {
                             storm::modelchecker::TopologicalValueIterationMdpPrctlModelChecker<ValueType> modelchecker(*mdp);
@@ -442,7 +444,7 @@ namespace storm {
                         result = modelchecker.check(*formula.get());
 #endif
                     } else if (model->getType() == storm::models::ModelType::Ctmc) {
-                        std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> ctmc = sparseModel->template as<storm::models::sparse::Ctmc<ValueType>>();
+                        std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> ctmc = model->template as<storm::models::sparse::Ctmc<ValueType>>();
 
                         storm::modelchecker::SparseCtmcCslModelChecker<ValueType> modelchecker(*ctmc);
                         result = modelchecker.check(*formula.get());
@@ -451,7 +453,7 @@ namespace storm {
                     if (result) {
                         std::cout << " done." << std::endl;
                         std::cout << "Result (initial states): ";
-                        result->filter(storm::modelchecker::ExplicitQualitativeCheckResult(sparseModel->getInitialStates()));
+                        result->filter(storm::modelchecker::ExplicitQualitativeCheckResult(model->getInitialStates()));
                         std::cout << *result << std::endl;
                     } else {
                         std::cout << " skipped, because the modelling formalism is currently unsupported." << std::endl;
@@ -489,6 +491,32 @@ namespace storm {
             }
 #endif
             
+            template<storm::dd::DdType DdType>
+            void verifySymbolicModel(boost::optional<storm::prism::Program> const& program, std::shared_ptr<storm::models::symbolic::Model<DdType>> model, std::shared_ptr<storm::logic::Formula> formula) {
+                storm::settings::modules::GeneralSettings const& settings = storm::settings::generalSettings();
+                
+                std::cout << std::endl << "Model checking property: " << *formula << " ...";
+                std::unique_ptr<storm::modelchecker::CheckResult> result;
+                if (model->getType() == storm::models::ModelType::Dtmc) {
+                    std::shared_ptr<storm::models::symbolic::Dtmc<DdType>> dtmc = model->template as<storm::models::symbolic::Dtmc<DdType>>();
+                    storm::modelchecker::HybridDtmcPrctlModelChecker<DdType, double> modelchecker(*dtmc);
+                    if (modelchecker.canHandle(*formula.get())) {
+                        modelchecker.check(*formula.get());
+                    }
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This functionality is not yet implemented.");
+                }
+                
+                if (result) {
+                    std::cout << " done." << std::endl;
+                    std::cout << "Result (initial states): ";
+                    result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<DdType>(model->getReachableStates(), model->getInitialStates()));
+                    std::cout << *result << std::endl;
+                } else {
+                    std::cout << " skipped, because the modelling formalism is currently unsupported." << std::endl;
+                }
+            }
+            
             template<typename ValueType>
             void buildAndCheckSymbolicModel(boost::optional<storm::prism::Program> const& program, boost::optional<std::shared_ptr<storm::logic::Formula>> formula) {
                 // Now we are ready to actually build the model.
@@ -507,8 +535,15 @@ namespace storm {
                 if (formula) {
                     if (model->isSparseModel()) {
                         verifySparseModel<ValueType>(program, model->as<storm::models::sparse::Model<ValueType>>(), formula.get());
+                    } else if (model->isSymbolicModel()) {
+                        if (storm::settings::generalSettings().getEngine() == storm::settings::modules::GeneralSettings::Engine::Hybrid) {
+                            verifySymbolicModel(program, model->as<storm::models::symbolic::Model<storm::dd::DdType::CUDD>>(), formula.get());
+                        } else {
+                            // Not handled yet.
+                            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This functionality is not yet implemented.");
+                        }
                     } else {
-                        // Not handled yet.
+                        STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Invalid input model type.");
                     }
                 }
             }

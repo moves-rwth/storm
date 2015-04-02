@@ -14,7 +14,7 @@ namespace storm {
             class GeneralSettings : public ModuleSettings {
             public:                
                 // An enumeration of all engines.
-                enum class Engine { Sparse, Dd };
+                enum class Engine { Sparse, Hybrid, Dd };
                 
                 // An enumeration of all available LP solvers.
                 enum class LpSolver { Gurobi, glpk };

@@ -264,7 +264,7 @@ namespace storm {
              * @return All states with positive probability.
              */
             template <storm::dd::DdType Type>
-            storm::dd::Bdd<Type> performProbGreater0(storm::models::symbolic::DeterministicModel<Type> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates) {
+            storm::dd::Bdd<Type> performProbGreater0(storm::models::symbolic::Model<Type> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates) {
                 // Initialize environment for backward search.
                 storm::dd::DdManager<Type> const& manager = model.getManager();
                 storm::dd::Bdd<Type> lastIterationStates = manager.getBddZero();
@@ -299,6 +299,26 @@ namespace storm {
                 storm::dd::Bdd<Type> transitionMatrix = model.getTransitionMatrix().notZero();
                 result.first = performProbGreater0(model, transitionMatrix, phiStates, psiStates);
                 result.second = !performProbGreater0(model, transitionMatrix, !psiStates && model.getReachableStates(), !result.first && model.getReachableStates()) && model.getReachableStates();
+                result.first = !result.first && model.getReachableStates();
+                return result;
+            }
+            
+            /*!
+             * Computes the sets of states that have probability 0 or 1, respectively, of satisfying phi until psi in a
+             * deterministic model.
+             *
+             * @param model The (symbolic) model for which to compute the set of states. This is used for retrieving the
+             * manager and information about the meta variables.
+             * @param phiStates The BDD containing all  phi states of the model.
+             * @param psiStates The BDD containing all psi states of the model.
+             * @return A pair of BDDs that represent all states with probability 0 and 1, respectively.
+             */
+            template <storm::dd::DdType Type>
+            static std::pair<storm::dd::Bdd<Type>, storm::dd::Bdd<Type>> performProb01(storm::models::symbolic::Model<Type> const& model, storm::dd::Add<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates) {
+                std::pair<storm::dd::Bdd<Type>, storm::dd::Bdd<Type>> result;
+                storm::dd::Bdd<Type> transitionMatrixBdd = transitionMatrix.notZero();
+                result.first = performProbGreater0(model, transitionMatrixBdd, phiStates, psiStates);
+                result.second = !performProbGreater0(model, transitionMatrixBdd, !psiStates && model.getReachableStates(), !result.first && model.getReachableStates()) && model.getReachableStates();
                 result.first = !result.first && model.getReachableStates();
                 return result;
             }

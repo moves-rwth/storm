@@ -193,6 +193,13 @@ namespace storm {
                  */
                 std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& getRowColumnMetaVariablePairs() const;
                 
+                /*!
+                 * Retrieves an ADD that represents the diagonal of the transition matrix.
+                 *
+                 * @return An ADD that represents the diagonal of the transition matrix.
+                 */
+                storm::dd::Add<Type> getRowColumnIdentity() const;
+                
                 virtual std::size_t getSizeInBytes() const override;
                 
                 virtual void printModelInformationToStream(std::ostream& out) const override;

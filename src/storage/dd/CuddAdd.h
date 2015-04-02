@@ -338,6 +338,24 @@ namespace storm {
             Bdd<DdType::CUDD> greaterOrEqual(double value) const;
             
             /*!
+             * Computes a BDD that represents the function in which all assignments with a function value strictly
+             * lower than the given value are mapped to one and all others to zero.
+             *
+             * @param value The value used for the comparison.
+             * @return The resulting BDD.
+             */
+            Bdd<DdType::CUDD> less(double value) const;
+            
+            /*!
+             * Computes a BDD that represents the function in which all assignments with a function value less or equal
+             * to the given value are mapped to one and all others to zero.
+             *
+             * @param value The value used for the comparison.
+             * @return The resulting BDD.
+             */
+            Bdd<DdType::CUDD> lessOrEqual(double value) const;
+            
+            /*!
              * Computes a BDD that represents the function in which all assignments with a function value unequal to
              * zero are mapped to one and all others to zero.
              *
