@@ -300,14 +300,14 @@ namespace storm {
                 storm::utility::vector::scaleVectorInPlace(result, std::get<3>(foxGlynnResult)[0]);
                 std::function<ValueType(ValueType const&, ValueType const&)> addAndScale = [&foxGlynnResult] (ValueType const& a, ValueType const& b) { return a + std::get<3>(foxGlynnResult)[0] * b; };
                 if (addVector != nullptr) {
-                    storm::utility::vector::applyPointwiseInPlace(result, *addVector, addAndScale);
+                    storm::utility::vector::applyPointwise(result, *addVector, result, addAndScale);
                 }
                 ++startingIteration;
             } else {
                 if (computeCumulativeReward) {
                     result = std::vector<ValueType>(values.size());
                     std::function<ValueType (ValueType const&)> scaleWithUniformizationRate = [&uniformizationRate] (ValueType const& a) -> ValueType { return a / uniformizationRate; };
-                    storm::utility::vector::applyPointwiseInPlace(result, scaleWithUniformizationRate);
+                    storm::utility::vector::applyPointwise(result, result, scaleWithUniformizationRate);
                 } else {
                     result = std::vector<ValueType>(values.size());
                 }
@@ -325,7 +325,7 @@ namespace storm {
                 // For the iterations below the left truncation point, we need to add and scale the result with the uniformization rate.
                 for (uint_fast64_t index = 1; index < startingIteration; ++index) {
                     solver->performMatrixVectorMultiplication(values, nullptr, 1, &multiplicationResult);
-                    storm::utility::vector::applyPointwiseInPlace(result, values, addAndScale);
+                    storm::utility::vector::applyPointwise(result, values, result, addAndScale);
                 }
             }
             
@@ -337,7 +337,7 @@ namespace storm {
                 solver->performMatrixVectorMultiplication(values, addVector, 1, &multiplicationResult);
                 
                 weight = std::get<3>(foxGlynnResult)[index - std::get<0>(foxGlynnResult)];
-                storm::utility::vector::applyPointwiseInPlace(result, values, addAndScale);
+                storm::utility::vector::applyPointwise(result, values, result, addAndScale);
             }
             
             return result;
@@ -409,7 +409,7 @@ namespace storm {
             if (this->getModel().hasTransitionRewards()) {
                 totalRewardVector = this->getModel().getTransitionMatrix().getPointwiseProductRowSumVector(this->getModel().getTransitionRewardMatrix());
                 if (this->getModel().hasStateRewards()) {
-                    storm::utility::vector::addVectorsInPlace(totalRewardVector, this->getModel().getStateRewardVector());
+                    storm::utility::vector::addVectors(totalRewardVector, this->getModel().getStateRewardVector(), totalRewardVector);
                 }
             } else {
                 totalRewardVector = std::vector<ValueType>(this->getModel().getStateRewardVector());

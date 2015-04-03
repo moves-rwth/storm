@@ -605,9 +605,9 @@ namespace storm {
             /*!
              * Calculates the Jacobi decomposition of this sparse matrix. For this operation, the matrix must be square.
              *
-             * @return A pair (L+U, D^-1) containing the matrix L+U and the inverted diagonal matrix D^-1.
+             * @return A pair (L+U, D^-1) containing the matrix L+U and the inverted diagonal D^-1 (as a vector).
              */
-            std::pair<storm::storage::SparseMatrix<value_type>, storm::storage::SparseMatrix<value_type>> getJacobiDecomposition() const;
+            std::pair<storm::storage::SparseMatrix<value_type>, std::vector<value_type>> getJacobiDecomposition() const;
             
             /*!
              * Performs a pointwise matrix multiplication of the matrix with the given matrix and returns a vector

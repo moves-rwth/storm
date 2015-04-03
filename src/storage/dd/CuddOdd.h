@@ -96,6 +96,13 @@ namespace storm {
              */
             uint_fast64_t getNodeCount() const;
             
+            /*!
+             * Checks whether the given ODD node is a terminal node, i.e. has no successors.
+             *
+             * @return True iff the node is terminal.
+             */
+            bool isTerminalNode() const;
+            
         private:
             // Declare a hash functor that is used for the unique tables in the construction process.
             class HashFunctor {

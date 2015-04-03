@@ -278,5 +278,9 @@ namespace storm {
         void DdManager<DdType::CUDD>::triggerReordering() {
             this->getCuddManager().ReduceHeap(this->reorderingTechnique, 0);
         }
+        
+        std::shared_ptr<DdManager<DdType::CUDD> const> DdManager<DdType::CUDD>::asSharedPointer() const {
+            return this->shared_from_this();
+        }
     }
 }

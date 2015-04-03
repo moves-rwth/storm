@@ -50,9 +50,13 @@ namespace storm {
         }
         
         std::vector<uint_fast64_t> Dd<DdType::CUDD>::getSortedVariableIndices() const {
+            return getSortedVariableIndices(*this->getDdManager(), this->getContainedMetaVariables());
+        }
+        
+        std::vector<uint_fast64_t> Dd<DdType::CUDD>::getSortedVariableIndices(DdManager<DdType::CUDD> const& manager, std::set<storm::expressions::Variable> const& metaVariables) {
             std::vector<uint_fast64_t> ddVariableIndices;
-            for (auto const& metaVariableName : this->getContainedMetaVariables()) {
-                auto const& metaVariable = this->getDdManager()->getMetaVariable(metaVariableName);
+            for (auto const& metaVariableName : metaVariables) {
+                auto const& metaVariable = manager.getMetaVariable(metaVariableName);
                 for (auto const& ddVariable : metaVariable.getDdVariables()) {
                     ddVariableIndices.push_back(ddVariable.getIndex());
                 }

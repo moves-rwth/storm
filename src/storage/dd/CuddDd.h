@@ -105,6 +105,8 @@ namespace storm {
              */
             std::shared_ptr<DdManager<DdType::CUDD> const> getDdManager() const;
             
+        protected:
+            
             /*!
              * Retrieves the (sorted) list of the variable indices of DD variables contained in this DD.
              *
@@ -112,7 +114,14 @@ namespace storm {
              */
             std::vector<uint_fast64_t> getSortedVariableIndices() const;
             
-        protected:
+            /*!
+             * Retrieves the (sorted) list of the variable indices of the DD variables given by the meta variable set.
+             *
+             * @param manager The manager responsible for the DD.
+             * @param metaVariable The set of meta variables for which to retrieve the index list.
+             * @return The sorted list of variable indices.
+             */
+            static std::vector<uint_fast64_t> getSortedVariableIndices(DdManager<DdType::CUDD> const& manager, std::set<storm::expressions::Variable> const& metaVariables);
             
             /*!
              * Retrieves the set of all meta variables contained in the DD.

@@ -69,18 +69,26 @@ namespace storm {
                     submatrix *= maybeStatesAdd.swapVariables(model.getRowColumnMetaVariablePairs());
                     submatrix = (model.getRowColumnIdentity() * maybeStatesAdd) - submatrix;
                     
+                    submatrix.exportToDot("submatrix.dot");
+                    
                     // Create the solution vector.
                     std::vector<ValueType> x(maybeStates.getNonZeroCount(), ValueType(0.5));
                     
                     // Translate the symbolic matrix/vector to their explicit representations and solve the equation system.
+                    STORM_LOG_DEBUG("Converting the symbolic matrix to a sparse matrix.");
                     storm::storage::SparseMatrix<ValueType> explicitSubmatrix = submatrix.toMatrix(odd, odd);
+                    
+                    STORM_LOG_DEBUG("Converting the symbolic vector to an explicit vector.");
                     std::vector<ValueType> b = subvector.template toVector<ValueType>(odd);
                     
+                    STORM_LOG_DEBUG("Solving explicit linear equation system.");
                     std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(explicitSubmatrix);
                     solver->solveEquationSystem(x, b);
                     
                     // Now that we have the explicit solution of the system, we need to transform it to a symbolic representation.
-                    storm::dd::Add<DdType> numericResult; // = storm::dd::Add<DdType>(x, odd);
+                    STORM_LOG_DEBUG("Converting the explicit result to a symbolic form.");
+                    storm::dd::Add<DdType> numericResult(model.getManager().asSharedPointer(), x, odd, model.getRowVariables());
+                    
                     return statesWithProbability01.second.toAdd() + numericResult;
                 } else {
                     return statesWithProbability01.second.toAdd();

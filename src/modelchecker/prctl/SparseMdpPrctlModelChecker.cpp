@@ -183,7 +183,7 @@ namespace storm {
             if (this->getModel().hasTransitionRewards()) {
                 totalRewardVector = this->getModel().getTransitionMatrix().getPointwiseProductRowSumVector(this->getModel().getTransitionRewardMatrix());
                 if (this->getModel().hasStateRewards()) {
-                    storm::utility::vector::addVectorsInPlace(totalRewardVector, this->getModel().getStateRewardVector());
+                    storm::utility::vector::addVectors(totalRewardVector, this->getModel().getStateRewardVector(), totalRewardVector);
                 }
             } else {
                 totalRewardVector = std::vector<ValueType>(this->getModel().getStateRewardVector());
@@ -285,7 +285,7 @@ namespace storm {
                         // first.
                         std::vector<ValueType> subStateRewards(b.size());
                         storm::utility::vector::selectVectorValuesRepeatedly(subStateRewards, maybeStates, transitionMatrix.getRowGroupIndices(), stateRewardVector.get());
-                        storm::utility::vector::addVectorsInPlace(b, subStateRewards);
+                        storm::utility::vector::addVectors(b, subStateRewards, b);
                     }
                 } else {
                     // If only a state-based reward model is  available, we take this vector as the

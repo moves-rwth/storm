@@ -91,6 +91,10 @@ namespace storm {
             }
         }
         
+        bool Odd<DdType::CUDD>::isTerminalNode() const {
+            return this->elseNode == nullptr && this->thenNode == nullptr;
+        }
+        
         std::shared_ptr<Odd<DdType::CUDD>> Odd<DdType::CUDD>::buildOddFromAddRec(DdNode* dd, Cudd const& manager, uint_fast64_t currentLevel, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<std::unordered_map<DdNode*, std::shared_ptr<Odd<DdType::CUDD>>>>& uniqueTableForLevels) {
             // Check whether the ODD for this node has already been computed (for this level) and if so, return this instead.
             auto const& iterator = uniqueTableForLevels[currentLevel].find(dd);

@@ -130,67 +130,78 @@ namespace storm {
             }
             
             /*!
-             * Applies the given operation pointwise on the two given vectors and writes the result into the first
-             * vector.
+             * Applies the given operation pointwise on the two given vectors and writes the result to the third vector.
+             * To botain an in-place operation, the third vector may be equal to any of the other two vectors.
              *
-             * @param target The first operand and target vector.
+             * @param firstOperand The first operand.
              * @param secondOperand The second operand.
+             * @param target The target vector.
              */
             template<class T>
-            void applyPointwiseInPlace(std::vector<T>& target, std::vector<T> const& secondOperand, std::function<T (T const&, T const&)> function) {
-#ifdef DEBUG
-                if (target.size() != summand.size()) {
-                    throw storm::exceptions::InvalidArgumentException() << "Invalid call to storm::utility::vector::applyPointwiseInPlace: operand lengths mismatch.";
-                }
-#endif
+            void applyPointwise(std::vector<T> const& firstOperand, std::vector<T> const& secondOperand, std::vector<T>& target, std::function<T (T const&, T const&)> function) {
 #ifdef STORM_HAVE_INTELTBB
                 tbb::parallel_for(tbb::blocked_range<uint_fast64_t>(0, target.size()),
                                   [&](tbb::blocked_range<uint_fast64_t> const& range) {
-                                      std::transform(target.begin() + range.begin(), target.begin() + range.end(), secondOperand.begin() + range.begin(), target.begin() + range.begin(), function);
+                                      std::transform(firstOperand.begin() + range.begin(), firstOperand.begin() + range.end(), secondOperand.begin() + range.begin(), target.begin() + range.begin(), function);
                                   });
 #else
-                std::transform(target.begin(), target.end(), secondOperand.begin(), target.begin(), function);
+                std::transform(firstOperand.begin(), firstOperand.end(), secondOperand.begin(), target.begin(), function);
 #endif
             }
             
             /*!
              * Applies the given function pointwise on the given vector.
              *
-             * @param target The vector to which to apply the function.
+             * @param operand The vector to which to apply the function.
+             * @param target The target vector.
              * @param function The function to apply.
              */
             template<class T>
-            void applyPointwiseInPlace(std::vector<T>& target, std::function<T (T const&)> const& function) {
+            void applyPointwise(std::vector<T> const& operand, std::vector<T>& target, std::function<T (T const&)> const& function) {
 #ifdef STORM_HAVE_INTELTBB
                 tbb::parallel_for(tbb::blocked_range<uint_fast64_t>(0, target.size()),
                                   [&](tbb::blocked_range<uint_fast64_t> const& range) {
-                                      std::transform(target.begin() + range.begin(), target.begin() + range.end(), target.begin() + range.begin(), function);
+                                      std::transform(operand.begin() + range.begin(), operand.begin() + range.end(), target.begin() + range.begin(), function);
                                   });
 #else
-                std::transform(target.begin(), target.end(), target.begin(), function);
+                std::transform(operand.begin(), operand.end(), target.begin(), function);
 #endif
             }
             
             /*!
-             * Adds the two given vectors and writes the result into the first operand.
+             * Adds the two given vectors and writes the result to the target vector.
              *
-             * @param target The first summand and target vector.
-             * @param summand The second summand.
+             * @param firstOperand The first operand.
+             * @param secondOperand The second operand
+             * @param target The target vector.
              */
             template<class T>
-            void addVectorsInPlace(std::vector<T>& target, std::vector<T> const& summand) {
-                applyPointwiseInPlace<T>(target, summand, std::plus<T>());
+            void addVectors(std::vector<T> const& firstOperand, std::vector<T> const& secondOperand, std::vector<T>& target) {
+                applyPointwise<T>(firstOperand, secondOperand, target, std::plus<T>());
             }
             
             /*!
-             * Subtracts the two given vectors and writes the result into the first operand.
+             * Subtracts the two given vectors and writes the result to the target vector.
              *
-             * @param target The first summand and target vector.
-             * @param summand The second summand.
+             * @param firstOperand The first operand.
+             * @param secondOperand The second operand
+             * @param target The target vector.
              */
             template<class T>
-            void subtractVectorsInPlace(std::vector<T>& target, std::vector<T> const& summand) {
-                applyPointwiseInPlace<T>(target, summand, std::minus<T>());
+            void subtractVectors(std::vector<T> const& firstOperand, std::vector<T> const& secondOperand, std::vector<T>& target) {
+                applyPointwise<T>(firstOperand, secondOperand, target, std::minus<T>());
+            }
+            
+            /*!
+             * Multiplies the two given vectors (pointwise) and writes the result to the target vector.
+             *
+             * @param firstOperand The first operand.
+             * @param secondOperand The second operand
+             * @param target The target vector.
+             */
+            template<class T>
+            void multiplyVectorsPointwise(std::vector<T> const& firstOperand, std::vector<T> const& secondOperand, std::vector<T>& target) {
+                applyPointwise<T>(firstOperand, secondOperand, target, std::multiplies<T>());
             }
             
             /*!
@@ -201,7 +212,7 @@ namespace storm {
              */
             template<class T>
             void scaleVectorInPlace(std::vector<T>& target, T const& factor) {
-                applyPointwiseInPlace<T>(target, [&] (T const& argument) { return argument * factor; });
+                applyPointwise<T>(target, target, [&] (T const& argument) { return argument * factor; });
             }
             
             /*!

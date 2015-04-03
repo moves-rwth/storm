@@ -103,22 +103,22 @@ namespace storm {
             for (uint_fast64_t currentStep = 0; currentStep < numberOfSteps; ++currentStep) {
                 // Start by (re-)computing bProbabilistic = bProbabilisticFixed + aProbabilisticToMarkovian * vMarkovian.
                 aProbabilisticToMarkovian.multiplyWithVector(markovianNonGoalValues, bProbabilistic);
-                storm::utility::vector::addVectorsInPlace(bProbabilistic, bProbabilisticFixed);
+                storm::utility::vector::addVectors(bProbabilistic, bProbabilisticFixed, bProbabilistic);
                 
                 // Now perform the inner value iteration for probabilistic states.
                 solver->solveEquationSystem(min, probabilisticNonGoalValues, bProbabilistic, &multiplicationResultScratchMemory, &aProbabilisticScratchMemory);
                 
                 // (Re-)compute bMarkovian = bMarkovianFixed + aMarkovianToProbabilistic * vProbabilistic.
                 aMarkovianToProbabilistic.multiplyWithVector(probabilisticNonGoalValues, bMarkovian);
-                storm::utility::vector::addVectorsInPlace(bMarkovian, bMarkovianFixed);
+                storm::utility::vector::addVectors(bMarkovian, bMarkovianFixed, bMarkovian);
                 aMarkovian.multiplyWithVector(markovianNonGoalValues, markovianNonGoalValuesSwap);
                 std::swap(markovianNonGoalValues, markovianNonGoalValuesSwap);
-                storm::utility::vector::addVectorsInPlace(markovianNonGoalValues, bMarkovian);
+                storm::utility::vector::addVectors(markovianNonGoalValues, bMarkovian, markovianNonGoalValues);
             }
             
             // After the loop, perform one more step of the value iteration for PS states.
             aProbabilisticToMarkovian.multiplyWithVector(markovianNonGoalValues, bProbabilistic);
-            storm::utility::vector::addVectorsInPlace(bProbabilistic, bProbabilisticFixed);
+            storm::utility::vector::addVectors(bProbabilistic, bProbabilisticFixed, bProbabilistic);
             solver->solveEquationSystem(min, probabilisticNonGoalValues, bProbabilistic, &multiplicationResultScratchMemory, &aProbabilisticScratchMemory);
         }
         
@@ -217,7 +217,7 @@ namespace storm {
             if (model.hasTransitionRewards()) {
                 totalRewardVector = model.getTransitionMatrix().getPointwiseProductRowSumVector(model.getTransitionRewardMatrix());
                 if (model.hasStateRewards()) {
-                    storm::utility::vector::addVectorsInPlace(totalRewardVector, model.getStateRewardVector());
+                    storm::utility::vector::addVectors(totalRewardVector, model.getStateRewardVector(), totalRewardVector);
                 }
             } else {
                 totalRewardVector = std::vector<ValueType>(model.getStateRewardVector());

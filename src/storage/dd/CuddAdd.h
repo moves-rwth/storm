@@ -27,6 +27,16 @@ namespace storm {
             friend class Bdd<DdType::CUDD>;
             friend class Odd<DdType::CUDD>;
             
+            /*!
+             * Creates an ADD from the given explicit vector.
+             *
+             * @param ddManager The manager responsible for this DD.
+             * @param values The vector that is to be represented by the ADD.
+             * @param odd An ODD that is used to do the translation.
+             * @param metaVariables The meta variables to use to encode the vector.
+             */
+            Add(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, std::vector<double> const& values, Odd<DdType::CUDD> const& odd, std::set<storm::expressions::Variable> const& metaVariables);
+            
             // Instantiate all copy/move constructors/assignments with the default implementation.
             Add() = default;
             Add(Add<DdType::CUDD> const& other) = default;
@@ -674,6 +684,33 @@ namespace storm {
              */
             template<typename ValueType>
             void addToVectorRec(DdNode const* dd, uint_fast64_t currentLevel, uint_fast64_t maxLevel, uint_fast64_t currentOffset, Odd<DdType::CUDD> const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType>& targetVector) const;
+            
+            /*!
+             * Builds an ADD representing the given vector.
+             *
+             * @param ddManager The manager responsible for the ADD.
+             * @param values The vector that is to be represented by the ADD.
+             * @param odd The ODD used for the translation.
+             * @param metaVariables The meta variables used for the translation.
+             * @return The resulting (CUDD) ADD.
+             */
+            template<typename ValueType>
+            static ADD fromVector(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, std::vector<ValueType> const& values, Odd<DdType::CUDD> const& odd, std::set<storm::expressions::Variable> const& metaVariables);
+            
+            /*!
+             * Builds an ADD representing the given vector.
+             *
+             * @param manager The manager responsible for the ADD.
+             * @param currentOffset The current offset in the vector.
+             * @param currentLevel The current level in the DD.
+             * @param maxLevel The maximal level in the DD.
+             * @param values The vector that is to be represented by the ADD.
+             * @param odd The ODD used for the translation.
+             * @param ddVariableIndices The (sorted) list of DD variable indices to use.
+             * @return The resulting (CUDD) ADD node.
+             */
+            template<typename ValueType>
+            static DdNode* fromVectorRec(::DdManager* manager, uint_fast64_t& currentOffset, uint_fast64_t currentLevel, uint_fast64_t maxLevel, std::vector<ValueType> const& values, Odd<DdType::CUDD> const& odd, std::vector<uint_fast64_t> const& ddVariableIndices);
             
             // The ADD created by CUDD.
             ADD cuddAdd;

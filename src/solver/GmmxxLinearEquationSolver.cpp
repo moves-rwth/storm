@@ -148,10 +148,8 @@ namespace storm {
         template<typename ValueType>
         uint_fast64_t GmmxxLinearEquationSolver<ValueType>::solveLinearEquationSystemWithJacobi(storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult) const {
             // Get a Jacobi decomposition of the matrix A.
-            std::pair<storm::storage::SparseMatrix<ValueType>, storm::storage::SparseMatrix<ValueType>> jacobiDecomposition = A.getJacobiDecomposition();
+            std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> jacobiDecomposition = A.getJacobiDecomposition();
             
-            // Convert the (inverted) diagonal matrix to gmm++'s format.
-            std::unique_ptr<gmm::csr_matrix<ValueType>> gmmDinv = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(std::move(jacobiDecomposition.second));
             // Convert the LU matrix to gmm++'s format.
             std::unique_ptr<gmm::csr_matrix<ValueType>> gmmLU = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(std::move(jacobiDecomposition.first));
         
@@ -176,7 +174,7 @@ namespace storm {
                 // Compute D^-1 * (b - LU * x) and store result in nextX.
                 gmm::mult(*gmmLU, *currentX, tmpX);
                 gmm::add(b, gmm::scaled(tmpX, -storm::utility::one<ValueType>()), tmpX);
-                gmm::mult(*gmmDinv, tmpX, *nextX);
+                storm::utility::vector::multiplyVectorsPointwise(jacobiDecomposition.second, tmpX, *nextX);
                 
                 // Now check if the process already converged within our precision.
                 converged = storm::utility::vector::equalModuloPrecision(*currentX, *nextX, precision, relative);

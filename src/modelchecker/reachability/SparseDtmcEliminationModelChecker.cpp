@@ -176,7 +176,7 @@ namespace storm {
                     // first.
                     std::vector<ValueType> subStateRewards(stateRewards.size());
                     storm::utility::vector::selectVectorValues(subStateRewards, maybeStates, model.getStateRewardVector());
-                    storm::utility::vector::addVectorsInPlace(stateRewards, subStateRewards);
+                    storm::utility::vector::addVectors(stateRewards, subStateRewards, stateRewards);
                 }
             } else {
                 // If only a state-based reward model is  available, we take this vector as the

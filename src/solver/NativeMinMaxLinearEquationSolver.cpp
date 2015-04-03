@@ -50,7 +50,7 @@ namespace storm {
             while (!converged && iterations < maximalNumberOfIterations) {
                 // Compute x' = A*x + b.
                 A.multiplyWithVector(*currentX, *multiplyResult);
-                storm::utility::vector::addVectorsInPlace(*multiplyResult, b);
+                storm::utility::vector::addVectors(*multiplyResult, b, *multiplyResult);
                 
                 // Reduce the vector x' by applying min/max for all non-deterministic choices as given by the topmost
                 // element of the min/max operator stack.
@@ -106,7 +106,7 @@ namespace storm {
                 
                 // Add b if it is non-null.
                 if (b != nullptr) {
-                    storm::utility::vector::addVectorsInPlace(*multiplyResult, *b);
+                    storm::utility::vector::addVectors(*multiplyResult, *b, *multiplyResult);
                 }
                 
                 // Reduce the vector x' by applying min/max for all non-deterministic choices as given by the topmost

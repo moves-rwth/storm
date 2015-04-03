@@ -11,6 +11,7 @@
 #include "src/adapters/CarlAdapter.h"
 
 #include "src/exceptions/InvalidStateException.h"
+#include "src/exceptions/NotImplementedException.h"
 #include "src/utility/macros.h"
 
 #include "log4cplus/logger.h"
@@ -701,40 +702,31 @@ namespace storm {
         }
         
         template<typename ValueType>
-        typename std::pair<storm::storage::SparseMatrix<ValueType>, storm::storage::SparseMatrix<ValueType>> SparseMatrix<ValueType>::getJacobiDecomposition() const {
-            if (rowCount != columnCount) {
-                throw storm::exceptions::InvalidArgumentException() << "Illegal call to SparseMatrix::invertDiagonal: matrix is non-square.";
-            }
-            storm::storage::SparseMatrix<ValueType> resultLU(*this);
-            resultLU.deleteDiagonalEntries();
+        typename std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> SparseMatrix<ValueType>::getJacobiDecomposition() const {
+            STORM_LOG_THROW(this->getRowCount() == this->getColumnCount(), storm::exceptions::InvalidArgumentException, "Canno compute Jacobi decomposition of non-square matrix.");
             
-            SparseMatrixBuilder<ValueType> dInvBuilder(rowCount, columnCount, rowCount);
+            // Prepare the resulting data structures.
+            SparseMatrixBuilder<ValueType> luBuilder(this->getRowCount(), this->getColumnCount());
+            std::vector<ValueType> invertedDiagonal(rowCount);
             
             // Copy entries to the appropriate matrices.
             for (index_type rowNumber = 0; rowNumber < rowCount; ++rowNumber) {
-                
-                // Because the matrix may have several entries on the diagonal, we need to sum them before we are able
-                // to invert the entry.
-                ValueType diagonalValue = storm::utility::zero<ValueType>();
                 for (const_iterator it = this->begin(rowNumber), ite = this->end(rowNumber); it != ite; ++it) {
                     if (it->getColumn() == rowNumber) {
-                        diagonalValue += it->getValue();
-                    } else if (it->getColumn() > rowNumber) {
-                        break;
+                        invertedDiagonal[rowNumber] = storm::utility::one<ValueType>() / it->getValue();
+                    } else {
+                        luBuilder.addNextValue(rowNumber, it->getColumn(), it->getValue());
                     }
                 }
-                dInvBuilder.addNextValue(rowNumber, rowNumber, storm::utility::one<ValueType>() / diagonalValue);
             }
             
-            return std::make_pair(std::move(resultLU), dInvBuilder.build());
+            return std::make_pair(luBuilder.build(), std::move(invertedDiagonal));
         }
         
 #ifdef STORM_HAVE_CARL
         template<>
-        typename std::pair<storm::storage::SparseMatrix<RationalFunction>, storm::storage::SparseMatrix<RationalFunction>> SparseMatrix<RationalFunction>::getJacobiDecomposition() const {
-            // NOT SUPPORTED
-            // TODO do whatever storm does in such cases.
-            assert(false);
+        typename std::pair<storm::storage::SparseMatrix<RationalFunction>, std::vector<RationalFunction>> SparseMatrix<RationalFunction>::getJacobiDecomposition() const {
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This operation is not supported.");
         }
 #endif
         

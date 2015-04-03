@@ -254,7 +254,7 @@ namespace storm {
 						while (!converged && localIterations < this->maximalNumberOfIterations) {
 							// Compute x' = A*x + b.
 							sccSubmatrix.multiplyWithVector(*currentX, sccMultiplyResult);
-							storm::utility::vector::addVectorsInPlace<ValueType>(sccMultiplyResult, sccSubB);
+							storm::utility::vector::addVectors<ValueType>(sccMultiplyResult, sccSubB, sccMultiplyResult);
 
 							//A.multiplyWithVector(scc, nondeterministicChoiceIndices, *currentX, multiplyResult);
 							//storm::utility::addVectors(scc, nondeterministicChoiceIndices, multiplyResult, b);

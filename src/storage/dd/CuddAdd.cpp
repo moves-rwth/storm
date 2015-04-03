@@ -18,6 +18,10 @@ namespace storm {
             // Intentionally left empty.
         }
         
+        Add<DdType::CUDD>::Add(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, std::vector<double> const& values, Odd<DdType::CUDD> const& odd, std::set<storm::expressions::Variable> const& metaVariables) : Dd<DdType::CUDD>(ddManager, metaVariables) {
+            cuddAdd = fromVector(ddManager, values, odd, metaVariables);
+        }
+        
         Bdd<DdType::CUDD> Add<DdType::CUDD>::toBdd() const {
             return Bdd<DdType::CUDD>(this->getDdManager(), this->getCuddAdd().BddPattern(), this->getContainedMetaVariables());
         }
@@ -155,19 +159,19 @@ namespace storm {
             std::set_union(this->getContainedMetaVariables().begin(), this->getContainedMetaVariables().end(), other.getContainedMetaVariables().begin(), other.getContainedMetaVariables().end(), std::inserter(metaVariables, metaVariables.begin()));
             return Add<DdType::CUDD>(this->getDdManager(), this->getCuddAdd().Pow(other.getCuddAdd()), metaVariables);
         }
-
+        
         Add<DdType::CUDD> Add<DdType::CUDD>::mod(Add<DdType::CUDD> const& other) const {
             std::set<storm::expressions::Variable> metaVariables;
             std::set_union(this->getContainedMetaVariables().begin(), this->getContainedMetaVariables().end(), other.getContainedMetaVariables().begin(), other.getContainedMetaVariables().end(), std::inserter(metaVariables, metaVariables.begin()));
             return Add<DdType::CUDD>(this->getDdManager(), this->getCuddAdd().Mod(other.getCuddAdd()), metaVariables);
         }
-
+        
         Add<DdType::CUDD> Add<DdType::CUDD>::logxy(Add<DdType::CUDD> const& other) const {
             std::set<storm::expressions::Variable> metaVariables;
             std::set_union(this->getContainedMetaVariables().begin(), this->getContainedMetaVariables().end(), other.getContainedMetaVariables().begin(), other.getContainedMetaVariables().end(), std::inserter(metaVariables, metaVariables.begin()));
             return Add<DdType::CUDD>(this->getDdManager(), this->getCuddAdd().LogXY(other.getCuddAdd()), metaVariables);
         }
-
+        
         Add<DdType::CUDD> Add<DdType::CUDD>::floor() const {
             return Add<DdType::CUDD>(this->getDdManager(), this->getCuddAdd().Floor(), this->getContainedMetaVariables());
         }
@@ -464,17 +468,20 @@ namespace storm {
                     ddRowVariableIndices.push_back(ddVariable.getIndex());
                 }
             }
+            std::sort(ddRowVariableIndices.begin(), ddRowVariableIndices.end());
+            
             for (auto const& variable : columnMetaVariables) {
                 DdMetaVariable<DdType::CUDD> const& metaVariable = this->getDdManager()->getMetaVariable(variable);
                 for (auto const& ddVariable : metaVariable.getDdVariables()) {
                     ddColumnVariableIndices.push_back(ddVariable.getIndex());
                 }
             }
+            std::sort(ddColumnVariableIndices.begin(), ddColumnVariableIndices.end());
             
             // Prepare the vectors that represent the matrix.
             std::vector<uint_fast64_t> rowIndications(rowOdd.getTotalOffset() + 1);
             std::vector<storm::storage::MatrixEntry<uint_fast64_t, double>> columnsAndValues(this->getNonZeroCount());
-
+            
             // Create a trivial row grouping.
             std::vector<uint_fast64_t> trivialRowGroupIndices(rowIndications.size());
             uint_fast64_t i = 0;
@@ -526,6 +533,7 @@ namespace storm {
                 }
                 rowAndColumnMetaVariables.insert(variable);
             }
+            std::sort(ddRowVariableIndices.begin(), ddRowVariableIndices.end());
             for (auto const& variable : columnMetaVariables) {
                 DdMetaVariable<DdType::CUDD> const& metaVariable = this->getDdManager()->getMetaVariable(variable);
                 for (auto const& ddVariable : metaVariable.getDdVariables()) {
@@ -533,12 +541,14 @@ namespace storm {
                 }
                 rowAndColumnMetaVariables.insert(variable);
             }
+            std::sort(ddColumnVariableIndices.begin(), ddColumnVariableIndices.end());
             for (auto const& variable : groupMetaVariables) {
                 DdMetaVariable<DdType::CUDD> const& metaVariable = this->getDdManager()->getMetaVariable(variable);
                 for (auto const& ddVariable : metaVariable.getDdVariables()) {
                     ddGroupVariableIndices.push_back(ddVariable.getIndex());
                 }
             }
+            std::sort(ddGroupVariableIndices.begin(), ddGroupVariableIndices.end());
             
             // TODO: assert that the group variables are at the very top of the variable ordering?
             
@@ -705,7 +715,67 @@ namespace storm {
                 addToVectorRec(Cudd_T(dd), currentLevel + 1, maxLevel, currentOffset + odd.getElseOffset(), odd.getThenSuccessor(), ddVariableIndices, targetVector);
             }
         }
-
+        
+        template<typename ValueType>
+        ADD Add<DdType::CUDD>::fromVector(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, std::vector<ValueType> const& values, Odd<DdType::CUDD> const& odd, std::set<storm::expressions::Variable> const& metaVariables) {
+            std::vector<uint_fast64_t> ddVariableIndices = getSortedVariableIndices(*ddManager, metaVariables);
+            uint_fast64_t offset = 0;
+            return ADD(ddManager->getCuddManager(), fromVectorRec(ddManager->getCuddManager().getManager(), offset, 0, ddVariableIndices.size(), values, odd, ddVariableIndices));
+        }
+        
+        template<typename ValueType>
+        DdNode* Add<DdType::CUDD>::fromVectorRec(::DdManager* manager, uint_fast64_t& currentOffset, uint_fast64_t currentLevel, uint_fast64_t maxLevel, std::vector<ValueType> const& values, Odd<DdType::CUDD> const& odd, std::vector<uint_fast64_t> const& ddVariableIndices) {
+            if (currentLevel == maxLevel) {
+                // If we are in a terminal node of the ODD, we need to check whether the then-offset of the ODD is one
+                // (meaning the encoding is a valid one) or zero (meaning the encoding is not valid). Consequently, we
+                // need to copy the next value of the vector iff the then-offset is greater than zero.
+                if (odd.getThenOffset() > 0) {
+                    return Cudd_addConst(manager, values[currentOffset++]);
+                } else {
+                    return Cudd_ReadZero(manager);
+                }
+            } else {
+                // If the total offset is zero, we can just return the constant zero DD.
+                if (odd.getThenOffset() + odd.getElseOffset() == 0) {
+                    return Cudd_ReadZero(manager);
+                }
+                
+                // Determine the new else-successor.
+                DdNode* elseSuccessor = nullptr;
+                if (odd.getElseOffset() > 0) {
+                    elseSuccessor = fromVectorRec(manager, currentOffset, currentLevel + 1, maxLevel, values, odd.getElseSuccessor(), ddVariableIndices);
+                } else {
+                    elseSuccessor = Cudd_ReadZero(manager);
+                }
+                Cudd_Ref(elseSuccessor);
+                
+                // Determine the new then-successor.
+                DdNode* thenSuccessor = nullptr;
+                if (odd.getThenOffset() > 0) {
+                    thenSuccessor = fromVectorRec(manager, currentOffset, currentLevel + 1, maxLevel, values, odd.getThenSuccessor(), ddVariableIndices);
+                } else {
+                    thenSuccessor = Cudd_ReadZero(manager);
+                }
+                Cudd_Ref(thenSuccessor);
+                
+                // Create a node representing ITE(currentVar, thenSuccessor, elseSuccessor);
+                DdNode* result = Cudd_addIthVar(manager, static_cast<int>(ddVariableIndices[currentLevel]));
+                Cudd_Ref(result);
+                DdNode* newResult = Cudd_addIte(manager, result, thenSuccessor, elseSuccessor);
+                Cudd_Ref(newResult);
+                
+                // Dispose of the intermediate results
+                Cudd_RecursiveDeref(manager, result);
+                Cudd_RecursiveDeref(manager, thenSuccessor);
+                Cudd_RecursiveDeref(manager, elseSuccessor);
+                
+                // Before returning, we remove the protection imposed by the previous call to Cudd_Ref.
+                Cudd_Deref(newResult);
+                
+                return newResult;
+            }
+        }
+        
         void Add<DdType::CUDD>::exportToDot(std::string const& filename) const {
             if (filename.empty()) {
                 std::vector<ADD> cuddAddVector = { this->getCuddAdd() };
@@ -751,7 +821,7 @@ namespace storm {
         DdForwardIterator<DdType::CUDD> Add<DdType::CUDD>::end(bool enumerateDontCareMetaVariables) const {
             return DdForwardIterator<DdType::CUDD>(this->getDdManager(), nullptr, nullptr, 0, true, nullptr, enumerateDontCareMetaVariables);
         }
-                
+        
         std::ostream& operator<<(std::ostream& out, const Add<DdType::CUDD>& add) {
             add.exportToDot();
             return out;

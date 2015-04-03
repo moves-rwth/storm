@@ -142,7 +142,7 @@ namespace storm {
             void Model<ValueType>::convertTransitionRewardsToStateRewards() {
                 STORM_LOG_THROW(this->hasTransitionRewards(), storm::exceptions::InvalidOperationException, "Cannot reduce non-existant transition rewards to state rewards.");
                 if (this->hasStateRewards()) {
-                    storm::utility::vector::addVectorsInPlace(stateRewardVector.get(), transitionMatrix.getPointwiseProductRowSumVector(transitionRewardMatrix.get()));
+                    storm::utility::vector::addVectors(stateRewardVector.get(), transitionMatrix.getPointwiseProductRowSumVector(transitionRewardMatrix.get()), stateRewardVector.get());
                 } else {
                     this->stateRewardVector = transitionMatrix.getPointwiseProductRowSumVector(transitionRewardMatrix.get());
                 }

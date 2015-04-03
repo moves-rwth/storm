@@ -34,7 +34,9 @@ namespace storm {
         template<typename ValueType>
         void NativeLinearEquationSolver<ValueType>::solveEquationSystem(std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult) const {
             // Get a Jacobi decomposition of the matrix A.
-            std::pair<storm::storage::SparseMatrix<ValueType>, storm::storage::SparseMatrix<ValueType>> jacobiDecomposition = A.getJacobiDecomposition();
+            std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> jacobiDecomposition = A.getJacobiDecomposition();
+            
+            std::cout << "LU has " << jacobiDecomposition.first.getNonzeroEntryCount() << " nonzeros." << std::endl;
             
             // To avoid copying the contents of the vector in the loop, we create a temporary x to swap with.
             bool multiplyResultProvided = true;
@@ -56,9 +58,8 @@ namespace storm {
             while (!converged && iterationCount < maximalNumberOfIterations) {
                 // Compute D^-1 * (b - LU * x) and store result in nextX.
                 jacobiDecomposition.first.multiplyWithVector(*currentX, tmpX);
-                storm::utility::vector::scaleVectorInPlace(tmpX, -storm::utility::one<ValueType>());
-                storm::utility::vector::addVectorsInPlace(tmpX, b);
-                jacobiDecomposition.second.multiplyWithVector(tmpX, *nextX);
+                storm::utility::vector::subtractVectors(b, tmpX, tmpX);
+                storm::utility::vector::multiplyVectorsPointwise(jacobiDecomposition.second, tmpX, *nextX);
                 
                 // Swap the two pointers as a preparation for the next iteration.
                 std::swap(nextX, currentX);
@@ -103,7 +104,7 @@ namespace storm {
                 
                 // If requested, add an offset to the current result vector.
                 if (b != nullptr) {
-                    storm::utility::vector::addVectorsInPlace(*currentX, *b);
+                    storm::utility::vector::addVectors(*currentX, *b, *currentX);
                 }
             }
             

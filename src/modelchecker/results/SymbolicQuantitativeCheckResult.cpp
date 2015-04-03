@@ -49,14 +49,18 @@ namespace storm {
         template<storm::dd::DdType Type>
         std::ostream& SymbolicQuantitativeCheckResult<Type>::writeToStream(std::ostream& out) const {
             out << "[";
-            bool first = true;
-            for (auto valuationValuePair : this->values) {
-                if (!first) {
-                    out << ", ";
-                } else {
-                    first = false;
+            if (this->values.isZero()) {
+                out << "0";
+            } else {
+                bool first = true;
+                for (auto valuationValuePair : this->values) {
+                    if (!first) {
+                        out << ", ";
+                    } else {
+                        first = false;
+                    }
+                    out << valuationValuePair.second;
                 }
-                out << valuationValuePair.second;
             }
             out << "]";
             return out;

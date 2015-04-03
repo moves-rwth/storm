@@ -376,6 +376,9 @@ TEST(CuddDd, BddOddTest) {
         EXPECT_TRUE(i+1 == ddAsVector[i]);
     }
     
+    storm::dd::Add<storm::dd::DdType::CUDD> vectorAdd(manager, ddAsVector, odd, {x.first});
+    EXPECT_EQ(dd, vectorAdd);
+    
     // Create a non-trivial matrix.
     dd = manager->getIdentity(x.first).equals(manager->getIdentity(x.second)) * manager->getRange(x.first).toAdd();
     dd += manager->getEncoding(x.first, 1).toAdd() * manager->getRange(x.second).toAdd() + manager->getEncoding(x.second, 1).toAdd() * manager->getRange(x.first).toAdd();

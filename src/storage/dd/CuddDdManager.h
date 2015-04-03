@@ -165,6 +165,13 @@ namespace storm {
              */
             DdMetaVariable<DdType::CUDD> const& getMetaVariable(storm::expressions::Variable const& variable) const;
             
+            /*!
+             * Retrieves the manager as a shared pointer.
+             *
+             * @return A shared pointer to the manager.
+             */
+            std::shared_ptr<DdManager<DdType::CUDD> const> asSharedPointer() const;
+            
         private:
             /*!
              * Retrieves a list of names of the DD variables in the order of their index.

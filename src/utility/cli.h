@@ -501,7 +501,7 @@ namespace storm {
                     std::shared_ptr<storm::models::symbolic::Dtmc<DdType>> dtmc = model->template as<storm::models::symbolic::Dtmc<DdType>>();
                     storm::modelchecker::HybridDtmcPrctlModelChecker<DdType, double> modelchecker(*dtmc);
                     if (modelchecker.canHandle(*formula.get())) {
-                        modelchecker.check(*formula.get());
+                        result = modelchecker.check(*formula.get());
                     }
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This functionality is not yet implemented.");
