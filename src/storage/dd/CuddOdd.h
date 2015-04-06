@@ -103,6 +103,15 @@ namespace storm {
              */
             bool isTerminalNode() const;
             
+            /*!
+             * Filters the given explicit vector using the symbolic representation of which values to select.
+             *
+             * @param selectedValues A symbolic representation of which values to select.
+             * @param values The value vector from which to select the values.
+             * @return The resulting vector.
+             */
+            std::vector<double> filterExplicitVector(storm::dd::Bdd<DdType::CUDD> const& selectedValues, std::vector<double> const& values) const;
+            
         private:
             // Declare a hash functor that is used for the unique tables in the construction process.
             class HashFunctor {
@@ -149,6 +158,23 @@ namespace storm {
              * @return A pointer to the constructed ODD for the given arguments.
              */
             static std::shared_ptr<Odd<DdType::CUDD>> buildOddFromBddRec(DdNode* dd, Cudd const& manager, uint_fast64_t currentLevel, bool complement, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<std::unordered_map<std::pair<DdNode*, bool>, std::shared_ptr<Odd<DdType::CUDD>>, HashFunctor>>& uniqueTableForLevels);
+            
+            
+            /*!
+             * Adds the selected values the target vector.
+             *
+             * @param dd The current node of the DD representing the selected values.
+             * @param manager The manager responsible for the DD.
+             * @param currentLevel The currently considered level in the DD.
+             * @param maxLevel The number of levels that need to be considered.
+             * @param ddVariableIndices The sorted list of variable indices to use.
+             * @param currentOffset The offset along the path taken in the DD representing the selected values.
+             * @param odd The current ODD node.
+             * @param result The target vector to which to write the values.
+             * @param currentIndex The index at which the next element is to be written.
+             * @param values The value vector from which to select the values.
+             */
+            static void addSelectedValuesToVectorRec(DdNode* dd, Cudd const& manager, uint_fast64_t currentLevel, bool complement, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, uint_fast64_t currentOffset, storm::dd::Odd<DdType::CUDD> const& odd, std::vector<double>& result, uint_fast64_t& currentIndex, std::vector<double> const& values);
             
             // The then- and else-nodes.
             std::shared_ptr<Odd<DdType::CUDD>> elseNode;

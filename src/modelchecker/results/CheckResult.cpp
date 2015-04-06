@@ -8,6 +8,7 @@
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"
 #include "src/modelchecker/results/SymbolicQuantitativeCheckResult.h"
+#include "src/modelchecker/results/HybridQuantitativeCheckResult.h"
 
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidOperationException.h"
@@ -19,6 +20,10 @@ namespace storm {
         }
         
         bool CheckResult::isSymbolic() const {
+            return false;
+        }
+        
+        bool CheckResult::isHybrid() const {
             return false;
         }
         
@@ -52,6 +57,10 @@ namespace storm {
         }
         
         bool CheckResult::isSymbolicQuantitativeCheckResult() const {
+            return false;
+        }
+        
+        bool CheckResult::isHybridQuantitativeCheckResult() const {
             return false;
         }
         
@@ -108,6 +117,16 @@ namespace storm {
         SymbolicQuantitativeCheckResult<Type> const& CheckResult::asSymbolicQuantitativeCheckResult() const {
             return dynamic_cast<SymbolicQuantitativeCheckResult<Type> const&>(*this);
         }
+
+        template <storm::dd::DdType Type>
+        HybridQuantitativeCheckResult<Type>& CheckResult::asHybridQuantitativeCheckResult() {
+            return dynamic_cast<HybridQuantitativeCheckResult<Type>&>(*this);
+        }
+        
+        template <storm::dd::DdType Type>
+        HybridQuantitativeCheckResult<Type> const& CheckResult::asHybridQuantitativeCheckResult() const {
+            return dynamic_cast<HybridQuantitativeCheckResult<Type> const&>(*this);
+        }
         
         // Explicitly instantiate the template functions.
         template ExplicitQuantitativeCheckResult<double>& CheckResult::asExplicitQuantitativeCheckResult();
@@ -116,6 +135,8 @@ namespace storm {
         template SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD> const& CheckResult::asSymbolicQualitativeCheckResult() const;
         template SymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD>& CheckResult::asSymbolicQuantitativeCheckResult();
         template SymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD> const& CheckResult::asSymbolicQuantitativeCheckResult() const;
+        template HybridQuantitativeCheckResult<storm::dd::DdType::CUDD>& CheckResult::asHybridQuantitativeCheckResult();
+        template HybridQuantitativeCheckResult<storm::dd::DdType::CUDD> const& CheckResult::asHybridQuantitativeCheckResult() const;
 
 #ifdef STORM_HAVE_CARL
         template ExplicitQuantitativeCheckResult<storm::RationalFunction>& CheckResult::asExplicitQuantitativeCheckResult();

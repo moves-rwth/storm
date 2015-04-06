@@ -28,7 +28,7 @@ namespace storm {
             
             virtual bool isSymbolicQuantitativeCheckResult() const override;
             
-            storm::dd::Dd<Type> const& getValueVector() const;
+            storm::dd::Add<Type> const& getValueVector() const;
             
             virtual std::ostream& writeToStream(std::ostream& out) const override;
             

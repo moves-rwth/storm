@@ -42,7 +42,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type>
-        storm::dd::Dd<Type> const& SymbolicQuantitativeCheckResult<Type>::getValueVector() const {
+        storm::dd::Add<Type> const& SymbolicQuantitativeCheckResult<Type>::getValueVector() const {
             return values;
         }
         

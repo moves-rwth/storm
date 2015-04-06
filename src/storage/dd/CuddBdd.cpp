@@ -1,8 +1,10 @@
 #include <cstring>
 #include <algorithm>
+#include <functional>
 
-#include "src/storage/dd/CuddBdd.h"
 #include "src/storage/dd/CuddAdd.h"
+#include "src/storage/dd/CuddBdd.h"
+#include "src/storage/dd/CuddOdd.h"
 #include "src/storage/dd/CuddDdManager.h"
 
 #include "src/utility/macros.h"
@@ -12,6 +14,24 @@ namespace storm {
     namespace dd {
         Bdd<DdType::CUDD>::Bdd(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, BDD cuddBdd, std::set<storm::expressions::Variable> const& containedMetaVariables) : Dd<DdType::CUDD>(ddManager, containedMetaVariables), cuddBdd(cuddBdd) {
             // Intentionally left empty.
+        }
+        
+        Bdd<DdType::CUDD>::Bdd(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, std::vector<double> const& explicitValues, storm::dd::Odd<DdType::CUDD> const& odd, std::set<storm::expressions::Variable> const& metaVariables, storm::logic::ComparisonType comparisonType, double value) : Dd<DdType::CUDD>(ddManager, metaVariables) {
+            switch (comparisonType) {
+                case storm::logic::ComparisonType::Less:
+                    this->cuddBdd = fromVector<double>(ddManager, explicitValues, odd, metaVariables, std::bind(std::greater<double>(), value, std::placeholders::_1));
+                    break;
+                case storm::logic::ComparisonType::LessEqual:
+                    this->cuddBdd = fromVector<double>(ddManager, explicitValues, odd, metaVariables, std::bind(std::greater_equal<double>(), value, std::placeholders::_1));
+                    break;
+                case storm::logic::ComparisonType::Greater:
+                    this->cuddBdd = fromVector<double>(ddManager, explicitValues, odd, metaVariables, std::bind(std::less<double>(), value, std::placeholders::_1));
+                    break;
+                case storm::logic::ComparisonType::GreaterEqual:
+                    this->cuddBdd = fromVector<double>(ddManager, explicitValues, odd, metaVariables, std::bind(std::less_equal<double>(), value, std::placeholders::_1));
+                    break;
+            }
+
         }
         
         Add<DdType::CUDD> Bdd<DdType::CUDD>::toAdd() const {
@@ -250,6 +270,70 @@ namespace storm {
                 for (char* element : ddVariableNames) {
                     delete element;
                 }
+            }
+        }
+        
+        template<typename ValueType>
+        BDD Bdd<DdType::CUDD>::fromVector(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, std::vector<ValueType> const& values, Odd<DdType::CUDD> const& odd, std::set<storm::expressions::Variable> const& metaVariables, std::function<bool (ValueType const&)> const& filter) {
+            std::vector<uint_fast64_t> ddVariableIndices = getSortedVariableIndices(*ddManager, metaVariables);
+            uint_fast64_t offset = 0;
+            return BDD(ddManager->getCuddManager(), fromVectorRec(ddManager->getCuddManager().getManager(), offset, 0, ddVariableIndices.size(), values, odd, ddVariableIndices, filter));
+        }
+        
+        template<typename ValueType>
+        DdNode* Bdd<DdType::CUDD>::fromVectorRec(::DdManager* manager, uint_fast64_t& currentOffset, uint_fast64_t currentLevel, uint_fast64_t maxLevel, std::vector<ValueType> const& values, Odd<DdType::CUDD> const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::function<bool (ValueType const&)> const& filter) {
+            if (currentLevel == maxLevel) {
+                // If we are in a terminal node of the ODD, we need to check whether the then-offset of the ODD is one
+                // (meaning the encoding is a valid one) or zero (meaning the encoding is not valid). Consequently, we
+                // need to copy the next value of the vector iff the then-offset is greater than zero.
+                if (odd.getThenOffset() > 0) {
+                    if (filter(values[currentOffset++])) {
+                        return Cudd_ReadOne(manager);
+                    } else {
+                        return Cudd_ReadLogicZero(manager);
+                    }
+                } else {
+                    return Cudd_ReadZero(manager);
+                }
+            } else {
+                // If the total offset is zero, we can just return the constant zero DD.
+                if (odd.getThenOffset() + odd.getElseOffset() == 0) {
+                    return Cudd_ReadZero(manager);
+                }
+                
+                // Determine the new else-successor.
+                DdNode* elseSuccessor = nullptr;
+                if (odd.getElseOffset() > 0) {
+                    elseSuccessor = fromVectorRec(manager, currentOffset, currentLevel + 1, maxLevel, values, odd.getElseSuccessor(), ddVariableIndices, filter);
+                } else {
+                    elseSuccessor = Cudd_ReadLogicZero(manager);
+                }
+                Cudd_Ref(elseSuccessor);
+                
+                // Determine the new then-successor.
+                DdNode* thenSuccessor = nullptr;
+                if (odd.getThenOffset() > 0) {
+                    thenSuccessor = fromVectorRec(manager, currentOffset, currentLevel + 1, maxLevel, values, odd.getThenSuccessor(), ddVariableIndices, filter);
+                } else {
+                    thenSuccessor = Cudd_ReadLogicZero(manager);
+                }
+                Cudd_Ref(thenSuccessor);
+                
+                // Create a node representing ITE(currentVar, thenSuccessor, elseSuccessor);
+                DdNode* result = Cudd_bddIthVar(manager, static_cast<int>(ddVariableIndices[currentLevel]));
+                Cudd_Ref(result);
+                DdNode* newResult = Cudd_bddIte(manager, result, thenSuccessor, elseSuccessor);
+                Cudd_Ref(newResult);
+                
+                // Dispose of the intermediate results
+                Cudd_RecursiveDeref(manager, result);
+                Cudd_RecursiveDeref(manager, thenSuccessor);
+                Cudd_RecursiveDeref(manager, elseSuccessor);
+                
+                // Before returning, we remove the protection imposed by the previous call to Cudd_Ref.
+                Cudd_Deref(newResult);
+                
+                return newResult;
             }
         }
         

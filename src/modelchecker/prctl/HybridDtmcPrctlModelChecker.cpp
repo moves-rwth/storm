@@ -7,6 +7,7 @@
 
 #include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"
 #include "src/modelchecker/results/SymbolicQuantitativeCheckResult.h"
+#include "src/modelchecker/results/HybridQuantitativeCheckResult.h"
 
 #include "src/exceptions/InvalidStateException.h"
 #include "src/exceptions/InvalidPropertyException.h"
@@ -29,7 +30,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        storm::dd::Add<DdType> HybridDtmcPrctlModelChecker<DdType, ValueType>::computeUntilProbabilitiesHelper(storm::models::symbolic::Model<DdType> const& model, storm::dd::Add<DdType> const& transitionMatrix, storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+        std::unique_ptr<CheckResult> HybridDtmcPrctlModelChecker<DdType, ValueType>::computeUntilProbabilitiesHelper(storm::models::symbolic::Model<DdType> const& model, storm::dd::Add<DdType> const& transitionMatrix, storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
             // We need to identify the states which have to be taken out of the matrix, i.e. all states that have
             // probability 0 and 1 of satisfying the until-formula.
             std::pair<storm::dd::Bdd<DdType>, storm::dd::Bdd<DdType>> statesWithProbability01 = storm::utility::graph::performProb01(model, transitionMatrix, phiStates, psiStates);
@@ -46,7 +47,7 @@ namespace storm {
             // Check whether we need to compute exact probabilities for some states.
             if (qualitative) {
                 // Set the values for all maybe-states to 0.5 to indicate that their probability values are neither 0 nor 1.
-                return statesWithProbability01.second.toAdd() + maybeStates.toAdd() * model.getManager().getConstant(0.5);
+                return std::unique_ptr<CheckResult>(new storm::modelchecker::SymbolicQuantitativeCheckResult<DdType>(model.getReachableStates(), statesWithProbability01.second.toAdd() + maybeStates.toAdd() * model.getManager().getConstant(0.5)));
             } else {
                 // If there are maybe states, we need to solve an equation system.
                 if (!maybeStates.isZero()) {
@@ -86,17 +87,11 @@ namespace storm {
                     solver->solveEquationSystem(x, b);
                     
                     // Now that we have the explicit solution of the system, we need to transform it to a symbolic representation.
-                    STORM_LOG_DEBUG("Converting the explicit result to a symbolic form.");
-                    storm::dd::Add<DdType> numericResult(model.getManager().asSharedPointer(), x, odd, model.getRowVariables());
-                    
-                    return statesWithProbability01.second.toAdd() + numericResult;
+                    return std::unique_ptr<CheckResult>(new storm::modelchecker::HybridQuantitativeCheckResult<DdType>(model.getReachableStates(), model.getReachableStates() && !maybeStates, statesWithProbability01.second.toAdd(), maybeStates, odd, x));
                 } else {
-                    return statesWithProbability01.second.toAdd();
+                    return std::unique_ptr<CheckResult>(new storm::modelchecker::SymbolicQuantitativeCheckResult<DdType>(model.getReachableStates(), statesWithProbability01.second.toAdd()));
                 }
             }
-            
-            exit(-1);
-            return storm::dd::Add<DdType>();
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
@@ -105,7 +100,7 @@ namespace storm {
             std::unique_ptr<CheckResult> rightResultPointer = this->check(pathFormula.getRightSubformula());
             SymbolicQualitativeCheckResult<DdType> const& leftResult = leftResultPointer->asSymbolicQualitativeCheckResult<DdType>();
             SymbolicQualitativeCheckResult<DdType> const& rightResult = rightResultPointer->asSymbolicQualitativeCheckResult<DdType>();
-            return std::unique_ptr<CheckResult>(new SymbolicQuantitativeCheckResult<DdType>(this->getModel().getReachableStates(), this->computeUntilProbabilitiesHelper(this->getModel(), this->getModel().getTransitionMatrix(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(), qualitative, *this->linearEquationSolverFactory)));
+            return this->computeUntilProbabilitiesHelper(this->getModel(), this->getModel().getTransitionMatrix(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(), qualitative, *this->linearEquationSolverFactory);
         }
         
         template<storm::dd::DdType DdType, typename ValueType>

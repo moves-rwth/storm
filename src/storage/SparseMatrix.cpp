@@ -730,7 +730,6 @@ namespace storm {
         }
 #endif
         
-        
         template<typename ValueType>
         std::vector<ValueType> SparseMatrix<ValueType>::getPointwiseProductRowSumVector(storm::storage::SparseMatrix<ValueType> const& otherMatrix) const {
             std::vector<ValueType> result(rowCount, storm::utility::zero<ValueType>());
@@ -754,7 +753,6 @@ namespace storm {
             
             return result;
         }
-        
         
         template<typename ValueType>
         void SparseMatrix<ValueType>::multiplyWithVector(std::vector<ValueType> const& vector, std::vector<ValueType>& result) const {
