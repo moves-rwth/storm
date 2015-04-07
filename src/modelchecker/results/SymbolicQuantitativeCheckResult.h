@@ -34,9 +34,16 @@ namespace storm {
             
             virtual void filter(QualitativeCheckResult const& filter) override;
             
+            virtual double getMin() const;
+            
+            virtual double getMax() const;
+            
         private:
             // The set of all reachable states.
             storm::dd::Bdd<Type> reachableStates;
+            
+            // The set of states for which this check result contains values.
+            storm::dd::Bdd<Type> states;
             
             // The values of the quantitative check result.
             storm::dd::Add<Type> values;

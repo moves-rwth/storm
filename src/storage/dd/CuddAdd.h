@@ -316,7 +316,7 @@ namespace storm {
              * @param metaVariablePairs A vector of meta variable pairs that are to be swapped for one another.
              * @return The resulting ADD.
              */
-            Add<DdType::CUDD> swapVariables(std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& metaVariablePairs);
+            Add<DdType::CUDD> swapVariables(std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& metaVariablePairs) const;
             
             /*!
              * Multiplies the current ADD (representing a matrix) with the given matrix by summing over the given meta

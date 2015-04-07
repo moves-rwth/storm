@@ -36,8 +36,6 @@ namespace storm {
             // Get a Jacobi decomposition of the matrix A.
             std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> jacobiDecomposition = A.getJacobiDecomposition();
             
-            std::cout << "LU has " << jacobiDecomposition.first.getNonzeroEntryCount() << " nonzeros." << std::endl;
-            
             // To avoid copying the contents of the vector in the loop, we create a temporary x to swap with.
             bool multiplyResultProvided = true;
             std::vector<ValueType>* nextX = multiplyResult;

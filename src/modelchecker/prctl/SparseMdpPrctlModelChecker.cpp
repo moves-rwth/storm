@@ -35,36 +35,31 @@ namespace storm {
             std::vector<ValueType> result(this->getModel().getNumberOfStates(), storm::utility::zero<ValueType>());
             
             // Determine the states that have 0 probability of reaching the target states.
-            storm::storage::BitVector statesWithProbabilityGreater0;
+            storm::storage::BitVector maybeStates;
             if (minimize) {
-                statesWithProbabilityGreater0 = storm::utility::graph::performProbGreater0A(this->getModel().getTransitionMatrix(), this->getModel().getTransitionMatrix().getRowGroupIndices(), this->getModel().getBackwardTransitions(), phiStates, psiStates, true, stepBound);
+                maybeStates = storm::utility::graph::performProbGreater0A(this->getModel().getTransitionMatrix(), this->getModel().getTransitionMatrix().getRowGroupIndices(), this->getModel().getBackwardTransitions(), phiStates, psiStates, true, stepBound);
             } else {
-                statesWithProbabilityGreater0 = storm::utility::graph::performProbGreater0E(this->getModel().getTransitionMatrix(), this->getModel().getTransitionMatrix().getRowGroupIndices(), this->getModel().getBackwardTransitions(), phiStates, psiStates, true, stepBound);
+                maybeStates = storm::utility::graph::performProbGreater0E(this->getModel().getTransitionMatrix(), this->getModel().getTransitionMatrix().getRowGroupIndices(), this->getModel().getBackwardTransitions(), phiStates, psiStates, true, stepBound);
             }
-            STORM_LOG_INFO("Found " << statesWithProbabilityGreater0.getNumberOfSetBits() << " 'maybe' states.");
+            maybeStates &= ~psiStates;
+            STORM_LOG_INFO("Found " << maybeStates.getNumberOfSetBits() << " 'maybe' states.");
             
-            if (!statesWithProbabilityGreater0.empty()) {
+            if (!maybeStates.empty()) {
                 // We can eliminate the rows and columns from the original transition probability matrix that have probability 0.
-                storm::storage::SparseMatrix<ValueType> submatrix = this->getModel().getTransitionMatrix().getSubmatrix(true, statesWithProbabilityGreater0, statesWithProbabilityGreater0, false);
-                
-                // Compute the new set of target states in the reduced system.
-                storm::storage::BitVector rightStatesInReducedSystem = psiStates % statesWithProbabilityGreater0;
-                
-                // Make all rows absorbing that satisfy the second sub-formula.
-                submatrix.makeRowGroupsAbsorbing(rightStatesInReducedSystem);
+                storm::storage::SparseMatrix<ValueType> submatrix = this->getModel().getTransitionMatrix().getSubmatrix(true, maybeStates, maybeStates, false);
+                std::vector<ValueType> b = this->getModel().getTransitionMatrix().getConstrainedRowGroupSumVector(maybeStates, psiStates);
                 
                 // Create the vector with which to multiply.
-                std::vector<ValueType> subresult(statesWithProbabilityGreater0.getNumberOfSetBits());
-                storm::utility::vector::setVectorValues(subresult, rightStatesInReducedSystem, storm::utility::one<ValueType>());
+                std::vector<ValueType> subresult(maybeStates.getNumberOfSetBits());
             
                 STORM_LOG_THROW(MinMaxLinearEquationSolverFactory != nullptr, storm::exceptions::InvalidStateException, "No valid equation solver available.");
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = MinMaxLinearEquationSolverFactory->create(submatrix);
-                solver->performMatrixVectorMultiplication(minimize, subresult, nullptr, stepBound);
+                solver->performMatrixVectorMultiplication(minimize, subresult, &b, stepBound);
                 
                 // Set the values of the resulting vector accordingly.
-                storm::utility::vector::setVectorValues(result, statesWithProbabilityGreater0, subresult);
-                storm::utility::vector::setVectorValues(result, ~statesWithProbabilityGreater0, storm::utility::zero<ValueType>());
+                storm::utility::vector::setVectorValues(result, maybeStates, subresult);
             }
+            storm::utility::vector::setVectorValues(result, psiStates, storm::utility::one<ValueType>());
             
             return result;
         }
@@ -76,7 +71,7 @@ namespace storm {
             std::unique_ptr<CheckResult> rightResultPointer = this->check(pathFormula.getRightSubformula());
             ExplicitQualitativeCheckResult const& leftResult = leftResultPointer->asExplicitQualitativeCheckResult();
             ExplicitQualitativeCheckResult const& rightResult = rightResultPointer->asExplicitQualitativeCheckResult();
-            std::unique_ptr<CheckResult> result = std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(this->computeBoundedUntilProbabilitiesHelper(optimalityType.get() == storm::logic::OptimalityType::Minimize, leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(), pathFormula.getUpperBound())));
+            std::unique_ptr<CheckResult> result = std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(this->computeBoundedUntilProbabilitiesHelper(optimalityType.get() == storm::logic::OptimalityType::Minimize, leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(), pathFormula.getDiscreteTimeBound())));
             return result;
         }
         

@@ -245,7 +245,7 @@ namespace storm {
             }
         }
         
-        Add<DdType::CUDD> Add<DdType::CUDD>::swapVariables(std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& metaVariablePairs) {
+        Add<DdType::CUDD> Add<DdType::CUDD>::swapVariables(std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& metaVariablePairs) const {
             std::set<storm::expressions::Variable> newContainedMetaVariables;
             std::vector<ADD> from;
             std::vector<ADD> to;

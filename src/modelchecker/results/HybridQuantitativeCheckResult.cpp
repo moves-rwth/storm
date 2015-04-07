@@ -1,5 +1,6 @@
 #include "src/modelchecker/results/HybridQuantitativeCheckResult.h"
 #include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"
+#include "src/storage/dd/CuddDdManager.h"
 
 #include "src/exceptions/InvalidOperationException.h"
 
@@ -120,6 +121,31 @@ namespace storm {
             // Then compute the new vector of explicit values and set the new data fields.
             this->explicitValues = this->odd.filterExplicitVector(explicitStates, this->explicitValues);
             this->odd = newOdd;
+        }
+        
+        template<storm::dd::DdType Type>
+        double HybridQuantitativeCheckResult<Type>::getMin() const {
+            // In order to not get false zeros, we need to set the values of all states whose values is not stored
+            // symbolically to infinity.
+            storm::dd::Add<Type> tmp = symbolicStates.toAdd().ite(this->symbolicValues, reachableStates.getDdManager()->getConstant(storm::utility::infinity<double>()));
+            double min = tmp.getMin();
+            if (!explicitStates.isZero()) {
+                for (auto const& element : explicitValues) {
+                    min = std::min(min, element);
+                }
+            }
+            return min;
+        }
+        
+        template<storm::dd::DdType Type>
+        double HybridQuantitativeCheckResult<Type>::getMax() const {
+            double max = this->symbolicValues.getMin();
+            if (!explicitStates.isZero()) {
+                for (auto const& element : explicitValues) {
+                    max = std::max(max, element);
+                }
+            }
+            return max;
         }
         
         // Explicitly instantiate the class.

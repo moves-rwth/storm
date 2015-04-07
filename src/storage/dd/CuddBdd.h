@@ -166,7 +166,7 @@ namespace storm {
              * @param metaVariablePairs A vector of meta variable pairs that are to be swapped for one another.
              * @return The resulting BDD.
              */
-            Bdd<DdType::CUDD> swapVariables(std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& metaVariablePairs);
+            Bdd<DdType::CUDD> swapVariables(std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& metaVariablePairs) const;
 
             /*!
              * Computes the logical and of the current and the given BDD and existentially abstracts from the given set

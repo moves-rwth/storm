@@ -258,13 +258,14 @@ namespace storm {
              * through phi states before.
              *
              * @param model The (symbolic) model for which to compute the set of states.
-             * @param transitionMatrixBdd The transition matrix of the model as a BDD.
+             * @param transitionMatrix The transition matrix of the model as a BDD.
              * @param phiStates The BDD containing all phi states of the model.
              * @param psiStates The BDD containing all psi states of the model.
+             * @param stepBound If given, this number indicates the maximal amount of steps allowed.
              * @return All states with positive probability.
              */
             template <storm::dd::DdType Type>
-            storm::dd::Bdd<Type> performProbGreater0(storm::models::symbolic::Model<Type> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates) {
+            storm::dd::Bdd<Type> performProbGreater0(storm::models::symbolic::Model<Type> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates, boost::optional<uint_fast64_t> const& stepBound = boost::optional<uint_fast64_t>()) {
                 // Initialize environment for backward search.
                 storm::dd::DdManager<Type> const& manager = model.getManager();
                 storm::dd::Bdd<Type> lastIterationStates = manager.getBddZero();
@@ -272,6 +273,10 @@ namespace storm {
                 
                 uint_fast64_t iterations = 0;
                 while (lastIterationStates != statesWithProbabilityGreater0) {
+                    if (stepBound && iterations >= stepBound.get()) {
+                        break;
+                    }
+                    
                     lastIterationStates = statesWithProbabilityGreater0;
                     statesWithProbabilityGreater0 = statesWithProbabilityGreater0.swapVariables(model.getRowColumnMetaVariablePairs());
                     statesWithProbabilityGreater0 &= transitionMatrix;
@@ -282,6 +287,41 @@ namespace storm {
                 }
 
                 return statesWithProbabilityGreater0;
+            }
+            
+            /*!
+             * Computes the set of states that have a probability of one of reaching psi states after only passing
+             * through phi states before.
+             *
+             * @param model The (symbolic) model for which to compute the set of states.
+             * @param transitionMatrix The transition matrix of the model as a BDD.
+             * @param phiStates The BDD containing all phi states of the model.
+             * @param psiStates The BDD containing all psi states of the model.
+             * @param statesWithProbabilityGreater0 The set of states with a positive probability of satisfying phi
+             * until psi as a BDD.
+             * @return All states with probability 1.
+             */
+            template <storm::dd::DdType Type>
+            storm::dd::Bdd<Type> performProb1(storm::models::symbolic::Model<Type> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates, storm::dd::Bdd<Type> const& statesWithProbabilityGreater0) {
+                storm::dd::Bdd<Type> statesWithProbability1 = performProbGreater0(model, transitionMatrix, !psiStates && model.getReachableStates(), !statesWithProbabilityGreater0 && model.getReachableStates());
+                statesWithProbability1 = !statesWithProbability1 && model.getReachableStates();
+                return statesWithProbability1;
+            }
+            
+            /*!
+             * Computes the set of states that have a probability of one of reaching psi states after only passing
+             * through phi states before.
+             *
+             * @param model The (symbolic) model for which to compute the set of states.
+             * @param transitionMatrix The transition matrix of the model as a BDD.
+             * @param phiStates The BDD containing all phi states of the model.
+             * @param psiStates The BDD containing all psi states of the model.
+             * @return All states with probability 1.
+             */
+            template <storm::dd::DdType Type>
+            storm::dd::Bdd<Type> performProb1(storm::models::symbolic::Model<Type> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates) {
+                storm::dd::Bdd<Type> statesWithProbabilityGreater0 = performProbGreater0(model, transitionMatrix, phiStates, psiStates);
+                return performProb1(model, transitionMatrix, phiStates, psiStates, statesWithProbabilityGreater0);
             }
             
             /*!

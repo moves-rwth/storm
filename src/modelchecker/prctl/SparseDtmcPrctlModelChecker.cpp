@@ -35,44 +35,41 @@ namespace storm {
             std::vector<ValueType> result(this->getModel().getNumberOfStates(), storm::utility::zero<ValueType>());
             
             // If we identify the states that have probability 0 of reaching the target states, we can exclude them in the further analysis.
-            storm::storage::BitVector statesWithProbabilityGreater0 = storm::utility::graph::performProbGreater0(this->getModel().getBackwardTransitions(), phiStates, psiStates, true, stepBound);
-            STORM_LOG_INFO("Found " << statesWithProbabilityGreater0.getNumberOfSetBits() << " 'maybe' states.");
+            storm::storage::BitVector maybeStates = storm::utility::graph::performProbGreater0(this->getModel().getBackwardTransitions(), phiStates, psiStates, true, stepBound);
+            maybeStates &= ~psiStates;
+            STORM_LOG_INFO("Found " << maybeStates.getNumberOfSetBits() << " 'maybe' states.");
             
-            if (!statesWithProbabilityGreater0.empty()) {
+            if (!maybeStates.empty()) {
                 // We can eliminate the rows and columns from the original transition probability matrix that have probability 0.
-                storm::storage::SparseMatrix<ValueType> submatrix = this->getModel().getTransitionMatrix().getSubmatrix(true, statesWithProbabilityGreater0, statesWithProbabilityGreater0, true);
+                storm::storage::SparseMatrix<ValueType> submatrix = this->getModel().getTransitionMatrix().getSubmatrix(true, maybeStates, maybeStates, true);
                 
-                // Compute the new set of target states in the reduced system.
-                storm::storage::BitVector rightStatesInReducedSystem = psiStates % statesWithProbabilityGreater0;
-                
-                // Make all rows absorbing that satisfy the second sub-formula.
-                submatrix.makeRowsAbsorbing(rightStatesInReducedSystem);
+                // Create the vector of one-step probabilities to go to target states.
+                std::vector<ValueType> b = this->getModel().getTransitionMatrix().getConstrainedRowSumVector(maybeStates, psiStates);
                 
                 // Create the vector with which to multiply.
-                std::vector<ValueType> subresult(statesWithProbabilityGreater0.getNumberOfSetBits());
-                storm::utility::vector::setVectorValues(subresult, rightStatesInReducedSystem, storm::utility::one<ValueType>());
+                std::vector<ValueType> subresult(maybeStates.getNumberOfSetBits());
                 
                 // Perform the matrix vector multiplication as often as required by the formula bound.
                 STORM_LOG_THROW(linearEquationSolverFactory != nullptr, storm::exceptions::InvalidStateException, "No valid linear equation solver available.");
                 std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory->create(submatrix);
-                solver->performMatrixVectorMultiplication(subresult, nullptr, stepBound);
+                solver->performMatrixVectorMultiplication(subresult, &b, stepBound);
                 
                 // Set the values of the resulting vector accordingly.
-                storm::utility::vector::setVectorValues(result, statesWithProbabilityGreater0, subresult);
-                storm::utility::vector::setVectorValues<ValueType>(result, ~statesWithProbabilityGreater0, storm::utility::zero<ValueType>());
+                storm::utility::vector::setVectorValues(result, maybeStates, subresult);
             }
+            storm::utility::vector::setVectorValues<ValueType>(result, psiStates, storm::utility::one<ValueType>());
             
             return result;
         }
         
         template<typename ValueType>
         std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<ValueType>::computeBoundedUntilProbabilities(storm::logic::BoundedUntilFormula const& pathFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
+            STORM_LOG_THROW(pathFormula.hasDiscreteTimeBound(), storm::exceptions::InvalidArgumentException, "Formula needs to have a discrete time bound.");
             std::unique_ptr<CheckResult> leftResultPointer = this->check(pathFormula.getLeftSubformula());
             std::unique_ptr<CheckResult> rightResultPointer = this->check(pathFormula.getRightSubformula());
             ExplicitQualitativeCheckResult const& leftResult = leftResultPointer->asExplicitQualitativeCheckResult();;
             ExplicitQualitativeCheckResult const& rightResult = rightResultPointer->asExplicitQualitativeCheckResult();
-            std::unique_ptr<CheckResult> result = std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(this->computeBoundedUntilProbabilitiesHelper(leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(), pathFormula.getUpperBound())));
-            
+            std::unique_ptr<CheckResult> result = std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(this->computeBoundedUntilProbabilitiesHelper(leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(), pathFormula.getDiscreteTimeBound())));
             return result;
         }
         
@@ -163,7 +160,7 @@ namespace storm {
         
         template<typename ValueType>
         std::vector<ValueType> SparseDtmcPrctlModelChecker<ValueType>::computeCumulativeRewardsHelper(uint_fast64_t stepBound) const {
-            // Only compute the result if the model has at least one reward this->getModel().
+            // Only compute the result if the model has at least one reward model.
             STORM_LOG_THROW(this->getModel().hasStateRewards() || this->getModel().hasTransitionRewards(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
             
             // Compute the reward vector to add in each step based on the available reward models.
@@ -204,7 +201,7 @@ namespace storm {
             // Only compute the result if the model has a state-based reward this->getModel().
             STORM_LOG_THROW(this->getModel().hasStateRewards(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
             
-            // Initialize result to state rewards of the this->getModel().
+            // Initialize result to state rewards of the model.
             std::vector<ValueType> result(this->getModel().getStateRewardVector());
             
             // Perform the matrix vector multiplication as often as required by the formula bound.
@@ -223,7 +220,7 @@ namespace storm {
         
         template<typename ValueType>
         std::vector<ValueType> SparseDtmcPrctlModelChecker<ValueType>::computeReachabilityRewardsHelper(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, boost::optional<std::vector<ValueType>> const& stateRewardVector, boost::optional<storm::storage::SparseMatrix<ValueType>> const& transitionRewardMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& targetStates, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory, bool qualitative) {
-            // Only compute the result if the model has at least one reward this->getModel().
+            // Only compute the result if the model has at least one reward model.
             STORM_LOG_THROW(stateRewardVector || transitionRewardMatrix, storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
             
             // Determine which states have a reward of infinity by definition.
@@ -236,7 +233,7 @@ namespace storm {
             STORM_LOG_INFO("Found " << maybeStates.getNumberOfSetBits() << " 'maybe' states.");
             
             // Create resulting vector.
-            std::vector<ValueType> result(transitionMatrix.getRowCount());
+            std::vector<ValueType> result(transitionMatrix.getRowCount(), storm::utility::zero<ValueType>());
             
             // Check whether we need to compute exact rewards for some states.
             if (qualitative) {
@@ -291,7 +288,6 @@ namespace storm {
             }
             
             // Set values of resulting vector that are known exactly.
-            storm::utility::vector::setVectorValues(result, targetStates, storm::utility::zero<ValueType>());
             storm::utility::vector::setVectorValues(result, infinityStates, storm::utility::infinity<ValueType>());
             
             return result;

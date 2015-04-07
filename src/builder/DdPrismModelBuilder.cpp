@@ -546,21 +546,26 @@ namespace storm {
                 storm::dd::Add<Type> states = generationInfo.rowExpressionAdapter->translateExpression(transitionReward.getStatePredicateExpression());
                 storm::dd::Add<Type> rewards = generationInfo.rowExpressionAdapter->translateExpression(transitionReward.getRewardValueExpression());
                 
-                storm::dd::Add<Type> synchronization;
+                storm::dd::Add<Type> synchronization = generationInfo.manager->getAddOne();
+                
                 storm::dd::Add<Type> transitions;
                 if (transitionReward.isLabeled()) {
-                    synchronization = getSynchronizationDecisionDiagram(generationInfo, transitionReward.getActionIndex());
+                    if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::MDP) {
+                        synchronization = getSynchronizationDecisionDiagram(generationInfo, transitionReward.getActionIndex());
+                    }
                     transitions = globalModule.synchronizingActionToDecisionDiagramMap.at(transitionReward.getActionIndex()).transitionsDd;
                 } else {
-                    synchronization = getSynchronizationDecisionDiagram(generationInfo);
+                    if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::MDP) {
+                        synchronization = getSynchronizationDecisionDiagram(generationInfo);
+                    }
                     transitions = globalModule.independentAction.transitionsDd;
                 }
                 
                 storm::dd::Add<Type> transitionRewardDd = synchronization * states * rewards;
                 if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::MDP) {
-                    transitionRewardDd += transitions.notZero().toAdd() * transitionRewardDd;
+                    transitionRewardDd = transitions.notZero().toAdd() * transitionRewardDd;
                 } else {
-                    transitionRewardDd += transitions * transitionRewardDd;
+                    transitionRewardDd = transitions * transitionRewardDd;
                 }
                 
                 // Perform some sanity checks.
@@ -575,7 +580,7 @@ namespace storm {
             if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::DTMC) {
                 transitionRewards /= fullTransitionMatrix;
             }
-            
+                        
             return std::make_pair(stateRewards, transitionRewards);
         }
     
@@ -636,14 +641,19 @@ namespace storm {
                 stateAndTransitionRewards = createRewardDecisionDiagrams(generationInfo, rewardModel, globalModule, transitionMatrix);
             }
             
-            // Cut the transition matrix to the reachable fragment of the state space.
+            // Cut the transitions and rewards to the reachable fragment of the state space.
             storm::dd::Bdd<Type> initialStates = createInitialStatesDecisionDiagram(generationInfo);
             storm::dd::Bdd<Type> transitionMatrixBdd = transitionMatrix.notZero();
             if (program.getModelType() == storm::prism::Program::ModelType::MDP) {
                 transitionMatrixBdd = transitionMatrixBdd.existsAbstract(generationInfo.allNondeterminismVariables);
             }
             storm::dd::Bdd<Type> reachableStates = computeReachableStates(generationInfo, initialStates, transitionMatrixBdd);
-            transitionMatrix *= reachableStates.toAdd();
+            storm::dd::Add<Type> reachableStatesAdd = reachableStates.toAdd();
+            transitionMatrix *= reachableStatesAdd;
+            if (stateAndTransitionRewards) {
+                stateAndTransitionRewards.get().first *= reachableStatesAdd;
+                stateAndTransitionRewards.get().second *= reachableStatesAdd;
+            }
 
             // Detect deadlocks and 1) fix them if requested 2) throw an error otherwise.
             storm::dd::Bdd<Type> statesWithTransition = transitionMatrixBdd.existsAbstract(generationInfo.columnMetaVariables);

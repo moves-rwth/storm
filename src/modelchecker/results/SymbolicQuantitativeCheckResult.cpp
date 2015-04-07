@@ -2,12 +2,13 @@
 #include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"
 
 #include "src/storage/dd/CuddDd.h"
+#include "src/storage/dd/CuddDdManager.h"
 #include "src/exceptions/InvalidOperationException.h"
 
 namespace storm {
     namespace modelchecker {
         template<storm::dd::DdType Type>
-        SymbolicQuantitativeCheckResult<Type>::SymbolicQuantitativeCheckResult(storm::dd::Bdd<Type> const& reachableStates, storm::dd::Add<Type> const& values) : reachableStates(reachableStates), values(values) {
+        SymbolicQuantitativeCheckResult<Type>::SymbolicQuantitativeCheckResult(storm::dd::Bdd<Type> const& reachableStates, storm::dd::Add<Type> const& values) : reachableStates(reachableStates), states(reachableStates), values(values) {
             // Intentionally left empty.
         }
         
@@ -33,7 +34,7 @@ namespace storm {
 
         template<storm::dd::DdType Type>
         bool SymbolicQuantitativeCheckResult<Type>::isResultForAllStates() const {
-            return true;
+            return states == reachableStates;
         }
         
         template<storm::dd::DdType Type>
@@ -69,7 +70,20 @@ namespace storm {
         template<storm::dd::DdType Type>
         void SymbolicQuantitativeCheckResult<Type>::filter(QualitativeCheckResult const& filter) {
             STORM_LOG_THROW(filter.isSymbolicQualitativeCheckResult(), storm::exceptions::InvalidOperationException, "Cannot filter symbolic check result with non-symbolic filter.");
+            this->states &= filter.asSymbolicQualitativeCheckResult<Type>().getTruthValuesVector();
             this->values *= filter.asSymbolicQualitativeCheckResult<Type>().getTruthValuesVector().toAdd();
+        }
+        
+        template<storm::dd::DdType Type>
+        double SymbolicQuantitativeCheckResult<Type>::getMin() const {
+            // In order to not get false zeros, we need to set the values of all states whose values is not stored
+            // symbolically to infinity.
+            return states.toAdd().ite(this->values, states.getDdManager()->getConstant(storm::utility::infinity<double>())).getMin();
+        }
+        
+        template<storm::dd::DdType Type>
+        double SymbolicQuantitativeCheckResult<Type>::getMax() const {
+            return this->values.getMax();
         }
         
         // Explicitly instantiate the class.

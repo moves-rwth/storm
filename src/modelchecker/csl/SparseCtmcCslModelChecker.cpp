@@ -41,12 +41,12 @@ namespace storm {
             ExplicitQualitativeCheckResult const& rightResult = rightResultPointer->asExplicitQualitativeCheckResult();
             double lowerBound = 0;
             double upperBound = 0;
-            if (pathFormula.isIntervalBounded()) {
+            if (!pathFormula.hasDiscreteTimeBound()) {
                 std::pair<double, double> const& intervalBounds =  pathFormula.getIntervalBounds();
                 lowerBound = intervalBounds.first;
                 upperBound = intervalBounds.second;
             } else {
-                upperBound = pathFormula.getUpperBound();
+                upperBound = pathFormula.getDiscreteTimeBound();
             }
             
             std::unique_ptr<CheckResult> result = std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(this->computeBoundedUntilProbabilitiesHelper(leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(), this->getModel().getExitRateVector(), qualitative, lowerBound, upperBound)));

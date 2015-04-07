@@ -147,7 +147,7 @@ namespace storm {
             return Bdd<DdType::CUDD>(this->getDdManager(), this->getCuddBdd().UnivAbstract(cubeBdd.getCuddBdd()), newMetaVariables);
         }
         
-        Bdd<DdType::CUDD> Bdd<DdType::CUDD>::swapVariables(std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& metaVariablePairs) {
+        Bdd<DdType::CUDD> Bdd<DdType::CUDD>::swapVariables(std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& metaVariablePairs) const {
             std::set<storm::expressions::Variable> newContainedMetaVariables;
             std::vector<BDD> from;
             std::vector<BDD> to;
