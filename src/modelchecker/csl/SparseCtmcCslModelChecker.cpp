@@ -138,8 +138,7 @@ namespace storm {
                         result = this->computeUntilProbabilitiesHelper(this->getModel().getTransitionMatrix(), backwardTransitions, phiStates, psiStates, qualitative, *this->linearEquationSolverFactory);
                         
                         // Determine the set of states that must be considered further.
-                        storm::storage::BitVector relevantStates = storm::utility::vector::filterGreaterZero(result);
-                        relevantStates = storm::utility::graph::performProbGreater0(backwardTransitions, phiStates, relevantStates & phiStates);
+                        storm::storage::BitVector relevantStates = statesWithProbabilityGreater0 & phiStates;
                         std::vector<ValueType> subResult(relevantStates.getNumberOfSetBits());
                         storm::utility::vector::selectVectorValues(subResult, relevantStates, result);
                         
@@ -163,14 +162,11 @@ namespace storm {
                         // In this case, the interval is of the form [t, t'] with t != 0 and t' != inf.
                         
                         // Prepare some variables that are used by the two following blocks.
-                        storm::storage::BitVector relevantStates;
                         ValueType uniformizationRate = 0;
                         storm::storage::SparseMatrix<ValueType> uniformizedMatrix;
                         std::vector<ValueType> newSubresult;
                         
-                        if (lowerBound == upperBound) {
-                            relevantStates = statesWithProbabilityGreater0;
-                        } else {
+                        if (lowerBound != upperBound) {
                             // Find the maximal rate of all 'maybe' states to take it as the uniformization rate.
                             uniformizationRate = 0;
                             for (auto const& state : statesWithProbabilityGreater0NonPsi) {
@@ -192,38 +188,51 @@ namespace storm {
                             std::vector<ValueType> values(statesWithProbabilityGreater0NonPsi.getNumberOfSetBits(), storm::utility::zero<ValueType>());
                             std::vector<ValueType> subresult = computeTransientProbabilities(uniformizedMatrix, &b, upperBound - lowerBound, uniformizationRate, values, *this->linearEquationSolverFactory);
                             
-                            // Determine the set of states that must be considered further.
-                            relevantStates = storm::utility::vector::filterGreaterZero(subresult);
-                            relevantStates = storm::utility::graph::performProbGreater0(uniformizedMatrix.transpose(), phiStates % statesWithProbabilityGreater0NonPsi, relevantStates & (phiStates % statesWithProbabilityGreater0NonPsi));
-                            
+                            storm::storage::BitVector relevantStates = statesWithProbabilityGreater0 & phiStates;
                             newSubresult = std::vector<ValueType>(relevantStates.getNumberOfSetBits());
-                            storm::utility::vector::selectVectorValues(newSubresult, relevantStates, subresult);
-                        }
-                        
-                        // Then compute the transient probabilities of being in such a state after t time units. For this,
-                        // we must re-uniformize the CTMC, so we need to compute the second uniformized matrix.
-                        uniformizationRate = 0;
-                        for (auto const& state : relevantStates) {
-                            uniformizationRate = std::max(uniformizationRate, exitRates[state]);
-                        }
-                        uniformizationRate *= 1.02;
-                        STORM_LOG_THROW(uniformizationRate > 0, storm::exceptions::InvalidStateException, "The uniformization rate must be positive.");
-                        
-                        // If the lower and upper bounds coincide, we have only determined the relevant states at this
-                        // point, but we still need to construct the starting vector.
-                        if (lowerBound == upperBound) {
-                            newSubresult = std::vector<ValueType>(relevantStates.getNumberOfSetBits());
+                            storm::utility::vector::selectVectorValues(newSubresult, statesWithProbabilityGreater0NonPsi % relevantStates, subresult);
                             storm::utility::vector::setVectorValues(newSubresult, psiStates % relevantStates, storm::utility::one<ValueType>());
+                            
+                            // Then compute the transient probabilities of being in such a state after t time units. For this,
+                            // we must re-uniformize the CTMC, so we need to compute the second uniformized matrix.
+                            uniformizationRate = 0;
+                            for (auto const& state : relevantStates) {
+                                uniformizationRate = std::max(uniformizationRate, exitRates[state]);
+                            }
+                            uniformizationRate *= 1.02;
+                            STORM_LOG_THROW(uniformizationRate > 0, storm::exceptions::InvalidStateException, "The uniformization rate must be positive.");
+                            
+                            // Finally, we compute the second set of transient probabilities.
+                            uniformizedMatrix = this->computeUniformizedMatrix(this->getModel().getTransitionMatrix(), relevantStates, uniformizationRate, exitRates);
+                            newSubresult = computeTransientProbabilities(uniformizedMatrix, nullptr, lowerBound, uniformizationRate, newSubresult, *this->linearEquationSolverFactory);
+                            
+                            // Fill in the correct values.
+                            result = std::vector<ValueType>(this->getModel().getNumberOfStates(), storm::utility::zero<ValueType>());
+                            storm::utility::vector::setVectorValues(result, ~relevantStates, storm::utility::zero<ValueType>());
+                            storm::utility::vector::setVectorValues(result, relevantStates, newSubresult);
+                        } else {
+                            newSubresult = std::vector<ValueType>(statesWithProbabilityGreater0.getNumberOfSetBits());
+                            storm::utility::vector::setVectorValues(newSubresult, psiStates % statesWithProbabilityGreater0, storm::utility::one<ValueType>());
+                            
+                            // Then compute the transient probabilities of being in such a state after t time units. For this,
+                            // we must re-uniformize the CTMC, so we need to compute the second uniformized matrix.
+                            uniformizationRate = 0;
+                            for (auto const& state : statesWithProbabilityGreater0) {
+                                uniformizationRate = std::max(uniformizationRate, exitRates[state]);
+                            }
+                            uniformizationRate *= 1.02;
+                            STORM_LOG_THROW(uniformizationRate > 0, storm::exceptions::InvalidStateException, "The uniformization rate must be positive.");
+                            
+                            // Finally, we compute the second set of transient probabilities.
+                            uniformizedMatrix = this->computeUniformizedMatrix(this->getModel().getTransitionMatrix(), statesWithProbabilityGreater0, uniformizationRate, exitRates);
+                            newSubresult = computeTransientProbabilities(uniformizedMatrix, nullptr, lowerBound, uniformizationRate, newSubresult, *this->linearEquationSolverFactory);
+                            
+                            // Fill in the correct values.
+                            result = std::vector<ValueType>(this->getModel().getNumberOfStates(), storm::utility::zero<ValueType>());
+                            storm::utility::vector::setVectorValues(result, ~statesWithProbabilityGreater0, storm::utility::zero<ValueType>());
+                            storm::utility::vector::setVectorValues(result, statesWithProbabilityGreater0, newSubresult);
+
                         }
-                        
-                        // Finally, we compute the second set of transient probabilities.
-                        uniformizedMatrix = this->computeUniformizedMatrix(this->getModel().getTransitionMatrix(), relevantStates, uniformizationRate, exitRates);
-                        newSubresult = computeTransientProbabilities(uniformizedMatrix, nullptr, lowerBound, uniformizationRate, newSubresult, *this->linearEquationSolverFactory);
-                        
-                        // Fill in the correct values.
-                        result = std::vector<ValueType>(this->getModel().getNumberOfStates(), storm::utility::zero<ValueType>());
-                        storm::utility::vector::setVectorValues(result, ~relevantStates, storm::utility::zero<ValueType>());
-                        storm::utility::vector::setVectorValues(result, relevantStates, newSubresult);
                     }
                 }
             }
@@ -337,7 +346,7 @@ namespace storm {
                 weight = std::get<3>(foxGlynnResult)[index - std::get<0>(foxGlynnResult)];
                 storm::utility::vector::applyPointwise(result, values, result, addAndScale);
             }
-            
+
             return result;
         }
         
@@ -438,6 +447,7 @@ namespace storm {
             boost::optional<std::vector<ValueType>> modifiedStateRewardVector;
             if (this->getModel().hasStateRewards()) {
                 modifiedStateRewardVector = std::vector<ValueType>(this->getModel().getStateRewardVector());
+                
                 typename std::vector<ValueType>::const_iterator it2 = this->getModel().getExitRateVector().begin();
                 for (typename std::vector<ValueType>::iterator it1 = modifiedStateRewardVector.get().begin(), ite1 = modifiedStateRewardVector.get().end(); it1 != ite1; ++it1, ++it2) {
                     *it1 /= *it2;

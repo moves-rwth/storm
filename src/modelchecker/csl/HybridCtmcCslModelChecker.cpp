@@ -10,6 +10,7 @@
 #include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"
 #include "src/modelchecker/results/SymbolicQuantitativeCheckResult.h"
 #include "src/modelchecker/results/HybridQuantitativeCheckResult.h"
+#include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
 #include "src/exceptions/InvalidStateException.h"
 #include "src/exceptions/InvalidPropertyException.h"
@@ -33,7 +34,7 @@ namespace storm {
         
         template<storm::dd::DdType DdType, class ValueType>
         storm::dd::Add<DdType> HybridCtmcCslModelChecker<DdType, ValueType>::computeProbabilityMatrix(storm::models::symbolic::Model<DdType> const& model, storm::dd::Add<DdType> const& rateMatrix, storm::dd::Add<DdType> const& exitRateVector) {
-            return rateMatrix / exitRateVector.swapVariables(model.getRowColumnMetaVariablePairs());
+            return rateMatrix / exitRateVector;
         }
         
         template<storm::dd::DdType DdType, class ValueType>
@@ -68,9 +69,10 @@ namespace storm {
             
             // Now perform the uniformization.
             uniformizedMatrix = uniformizedMatrix / model.getManager().getConstant(uniformizationRate);
-            storm::dd::Add<DdType> diagonalOffset = model.getRowColumnIdentity();
-            diagonalOffset -= model.getRowColumnIdentity() * (exitRateVector / model.getManager().getConstant(uniformizationRate));
-            uniformizedMatrix = uniformizedMatrix + diagonalOffset;
+            storm::dd::Add<DdType> diagonal = model.getRowColumnIdentity() * maybeStates.toAdd();
+            storm::dd::Add<DdType> diagonalOffset = diagonal;
+            diagonalOffset -= diagonal * (exitRateVector / model.getManager().getConstant(uniformizationRate));
+            uniformizedMatrix += diagonalOffset;
             
             return uniformizedMatrix;
         }
@@ -82,7 +84,7 @@ namespace storm {
 
             boost::optional<storm::dd::Add<DdType>> modifiedStateRewardVector;
             if (this->getModel().hasStateRewards()) {
-                modifiedStateRewardVector = this->getModel().getStateRewardVector() / this->getModel().getTransitionMatrix().sumAbstract(this->getModel().getColumnVariables());
+                modifiedStateRewardVector = this->getModel().getStateRewardVector() / this->getModel().getExitRateVector();
             }
             
             return HybridDtmcPrctlModelChecker<DdType, ValueType>::computeReachabilityRewardsHelper(this->getModel(), this->computeProbabilityMatrix(this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector()), modifiedStateRewardVector, this->getModel().getOptionalTransitionRewardMatrix(), subResult.getTruthValuesVector(), *linearEquationSolverFactory, qualitative);
@@ -171,7 +173,7 @@ namespace storm {
                         std::unique_ptr<CheckResult> statesWithValuesGreaterZero = unboundedResult->asQuantitativeCheckResult().compareAgainstBound(storm::logic::ComparisonType::Greater, storm::utility::zero<ValueType>());
                         
                         // And use it to compute the set of relevant states.
-                        storm::dd::Bdd<DdType> relevantStates = storm::utility::graph::performProbGreater0(this->getModel(), this->getModel().getTransitionMatrix(), phiStates, statesWithValuesGreaterZero->asSymbolicQualitativeCheckResult<DdType>().getTruthValuesVector());
+                        storm::dd::Bdd<DdType> relevantStates = storm::utility::graph::performProbGreater0(this->getModel(), this->getModel().getTransitionMatrix().notZero(), phiStates, statesWithValuesGreaterZero->asSymbolicQualitativeCheckResult<DdType>().getTruthValuesVector());
 
                         // Filter the unbounded result such that it only contains values for the relevant states.
                         unboundedResult->filter(SymbolicQualitativeCheckResult<DdType>(this->getModel().getReachableStates(), relevantStates));
@@ -185,7 +187,7 @@ namespace storm {
                             result = std::move(explicitUnboundedResult->asExplicitQuantitativeCheckResult<ValueType>().getValueVector());
                         } else {
                             STORM_LOG_THROW(unboundedResult->isSymbolicQuantitativeCheckResult(), storm::exceptions::InvalidStateException, "Expected check result of different type.");
-                            result = unboundedResult->asSymbolicQuantitativeCheckResult<DdType>().getValueVector().toVector(odd);
+                            result = unboundedResult->asSymbolicQuantitativeCheckResult<DdType>().getValueVector().template toVector<ValueType>(odd);
                         }
                         
                         // Determine the uniformization rate for the transient probability computation.
@@ -196,9 +198,9 @@ namespace storm {
                         storm::storage::SparseMatrix<ValueType> explicitUniformizedMatrix = uniformizedMatrix.toMatrix(odd, odd);
                         
                         // Compute the transient probabilities.
-                        std::vector<ValueType> subResult = SparseCtmcCslModelChecker<ValueType>::computeTransientProbabilities(explicitUniformizedMatrix, nullptr, lowerBound, uniformizationRate, subResult, *this->linearEquationSolverFactory);
+                        result = SparseCtmcCslModelChecker<ValueType>::computeTransientProbabilities(explicitUniformizedMatrix, nullptr, lowerBound, uniformizationRate, result, *this->linearEquationSolverFactory);
                         
-                        return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType>(this->getModel().getReachableStates(), !relevantStates && this->getModel().getReachableStates(), this->getModel().getManager().getAddZero(), relevantStates, odd, subResult));
+                        return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType>(this->getModel().getReachableStates(), !relevantStates && this->getModel().getReachableStates(), this->getModel().getManager().getAddZero(), relevantStates, odd, result));
                     } else {
                         // In this case, the interval is of the form [t, t'] with t != 0 and t' != inf.
                         
@@ -223,9 +225,9 @@ namespace storm {
                             storm::dd::Add<DdType> b = (statesWithProbabilityGreater0NonPsi.toAdd() * this->getModel().getTransitionMatrix() * psiStates.swapVariables(this->getModel().getRowColumnMetaVariablePairs()).toAdd()).sumAbstract(this->getModel().getColumnVariables()) / this->getModel().getManager().getConstant(uniformizationRate);
                             
                             // Build an ODD for the relevant states and translate the symbolic parts to their explicit representation.
-                            odd(statesWithProbabilityGreater0NonPsi);
+                            odd = storm::dd::Odd<DdType>(statesWithProbabilityGreater0NonPsi);
                             storm::storage::SparseMatrix<ValueType> explicitUniformizedMatrix = uniformizedMatrix.toMatrix(odd, odd);
-                            std::vector<ValueType> explicitB = b.toVector(odd);
+                            std::vector<ValueType> explicitB = b.template toVector<ValueType>(odd);
                             
                             // Compute the transient probabilities.
                             std::vector<ValueType> values(statesWithProbabilityGreater0NonPsi.getNonZeroCount(), storm::utility::zero<ValueType>());
@@ -234,16 +236,16 @@ namespace storm {
                             // Transform the explicit result to a hybrid check result, so we can easily convert it to
                             // a symbolic qualitative format.
                             HybridQuantitativeCheckResult<DdType> hybridResult(this->getModel().getReachableStates(), psiStates || (!statesWithProbabilityGreater0 && this->getModel().getReachableStates()),
-                                                                               psiStates.toAdd(), statesWithProbabilityGreater0NonPsi, subResult);
+                                                                               psiStates.toAdd(), statesWithProbabilityGreater0NonPsi, odd, subResult);
                             
                             // Determine the set of states that achieved a strictly positive probability.
                             std::unique_ptr<CheckResult> statesWithValuesGreaterZero = hybridResult.compareAgainstBound(storm::logic::ComparisonType::Greater, storm::utility::zero<ValueType>());
                             
                             // And use it to compute the set of relevant states.
-                            storm::dd::Bdd<DdType> relevantStates = storm::utility::graph::performProbGreater0(this->getModel(), this->getModel().getTransitionMatrix(), phiStates, statesWithValuesGreaterZero->asSymbolicQualitativeCheckResult<DdType>().getTruthValuesVector());
+                            storm::dd::Bdd<DdType> relevantStates = storm::utility::graph::performProbGreater0(this->getModel(), this->getModel().getTransitionMatrix().notZero(), phiStates, statesWithValuesGreaterZero->asSymbolicQualitativeCheckResult<DdType>().getTruthValuesVector());
                             
                             // Filter the unbounded result such that it only contains values for the relevant states.
-                            hybridResult->filter(SymbolicQualitativeCheckResult<DdType>(this->getModel().getReachableStates(), relevantStates));
+                            hybridResult.filter(SymbolicQualitativeCheckResult<DdType>(this->getModel().getReachableStates(), relevantStates));
                             
                             // Build an ODD for the relevant states.
                             odd = storm::dd::Odd<DdType>(relevantStates);
@@ -261,7 +263,8 @@ namespace storm {
                         // If the lower and upper bounds coincide, we have only determined the relevant states at this
                         // point, but we still need to construct the starting vector.
                         if (lowerBound == upperBound) {
-                            newSubresult = psiStates.toAdd().toVector(odd);  std::vector<ValueType>(relevantStates.getNonZeroCount());
+                            odd = storm::dd::Odd<DdType>(relevantStates);
+                            newSubresult = psiStates.toAdd().template toVector<ValueType>(odd);
                         }
                         
                         // Finally, we compute the second set of transient probabilities.
@@ -270,11 +273,11 @@ namespace storm {
                         
                         newSubresult = SparseCtmcCslModelChecker<ValueType>::computeTransientProbabilities(explicitUniformizedMatrix, nullptr, lowerBound, uniformizationRate, newSubresult, *this->linearEquationSolverFactory);
                         
-                        return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType>(this->getModel().getReachableStates(), !relevantStates && this->getModel().getReachableStates(), this->getModel().getManager().getAddZero(), relevantStates, newSubresult));
+                        return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType>(this->getModel().getReachableStates(), !relevantStates && this->getModel().getReachableStates(), this->getModel().getManager().getAddZero(), relevantStates, odd, newSubresult));
                     }
                 }
             } else {
-                return std::unique_ptr<CheckResult>(new SymbolicQuantitativeCheckResult<DdType>>(this->getModel().getReachableStates(), psiStates.toAdd()));
+                return std::unique_ptr<CheckResult>(new SymbolicQuantitativeCheckResult<DdType>(this->getModel().getReachableStates(), psiStates.toAdd()));
             }
         }
         

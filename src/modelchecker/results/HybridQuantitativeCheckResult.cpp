@@ -150,7 +150,7 @@ namespace storm {
         
         template<storm::dd::DdType Type>
         double HybridQuantitativeCheckResult<Type>::getMax() const {
-            double max = this->symbolicValues.getMin();
+            double max = this->symbolicValues.getMax();
             if (!explicitStates.isZero()) {
                 for (auto const& element : explicitValues) {
                     max = std::max(max, element);

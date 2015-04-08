@@ -16,6 +16,8 @@ namespace storm {
         template<class ValueType>
         class SparseCtmcCslModelChecker : public SparsePropositionalModelChecker<ValueType> {
         public:
+            friend class HybridCtmcCslModelChecker<storm::dd::DdType::CUDD, ValueType>;
+            
             explicit SparseCtmcCslModelChecker(storm::models::sparse::Ctmc<ValueType> const& model);
             explicit SparseCtmcCslModelChecker(storm::models::sparse::Ctmc<ValueType> const& model, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory);
             

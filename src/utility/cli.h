@@ -68,6 +68,7 @@ log4cplus::Logger printer;
 #include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "src/modelchecker/csl/SparseCtmcCslModelChecker.h"
 #include "src/modelchecker/prctl/HybridDtmcPrctlModelChecker.h"
+#include "src/modelchecker/csl/HybridCtmcCslModelChecker.h"
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"
 
@@ -500,6 +501,12 @@ namespace storm {
                 if (model->getType() == storm::models::ModelType::Dtmc) {
                     std::shared_ptr<storm::models::symbolic::Dtmc<DdType>> dtmc = model->template as<storm::models::symbolic::Dtmc<DdType>>();
                     storm::modelchecker::HybridDtmcPrctlModelChecker<DdType, double> modelchecker(*dtmc);
+                    if (modelchecker.canHandle(*formula.get())) {
+                        result = modelchecker.check(*formula.get());
+                    }
+                } else if (model->getType() == storm::models::ModelType::Ctmc) {
+                    std::shared_ptr<storm::models::symbolic::Ctmc<DdType>> ctmc = model->template as<storm::models::symbolic::Ctmc<DdType>>();
+                    storm::modelchecker::HybridCtmcCslModelChecker<DdType, double> modelchecker(*ctmc);
                     if (modelchecker.canHandle(*formula.get())) {
                         result = modelchecker.check(*formula.get());
                     }

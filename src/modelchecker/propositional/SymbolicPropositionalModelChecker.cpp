@@ -1,6 +1,7 @@
 #include "src/modelchecker/propositional/SymbolicPropositionalModelChecker.h"
 
 #include "src/models/symbolic/Dtmc.h"
+#include "src/models/symbolic/Ctmc.h"
 #include "src/models/symbolic/Mdp.h"
 
 #include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"
@@ -48,6 +49,7 @@ namespace storm {
         
         // Explicitly instantiate the template class.
         template storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD> const& SymbolicPropositionalModelChecker<storm::dd::DdType::CUDD>::getModelAs() const;
+        template storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD> const& SymbolicPropositionalModelChecker<storm::dd::DdType::CUDD>::getModelAs() const;
         template storm::models::symbolic::Mdp<storm::dd::DdType::CUDD> const& SymbolicPropositionalModelChecker<storm::dd::DdType::CUDD>::getModelAs() const;
         template class SymbolicPropositionalModelChecker<storm::dd::DdType::CUDD>;
     }

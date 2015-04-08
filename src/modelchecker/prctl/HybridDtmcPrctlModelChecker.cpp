@@ -231,7 +231,7 @@ namespace storm {
         std::unique_ptr<CheckResult> HybridDtmcPrctlModelChecker<DdType, ValueType>::computeReachabilityRewards(storm::logic::ReachabilityRewardFormula const& rewardPathFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
             std::unique_ptr<CheckResult> subResultPointer = this->check(rewardPathFormula.getSubformula());
             SymbolicQualitativeCheckResult<DdType> const& subResult = subResultPointer->asSymbolicQualitativeCheckResult<DdType>();
-            return this->computeReachabilityRewardsHelper(this->getModel(), this->getModel().getTransitionMatrix(), subResult.getTruthValuesVector(), *this->linearEquationSolverFactory, qualitative);
+            return this->computeReachabilityRewardsHelper(this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getOptionalStateRewardVector(), this->getModel().getOptionalTransitionRewardMatrix(), subResult.getTruthValuesVector(), *this->linearEquationSolverFactory, qualitative);
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
@@ -247,7 +247,7 @@ namespace storm {
             STORM_LOG_INFO("Found " << infinityStates.getNonZeroCount() << " 'infinity' states.");
             STORM_LOG_INFO("Found " << targetStates.getNonZeroCount() << " 'target' states.");
             STORM_LOG_INFO("Found " << maybeStates.getNonZeroCount() << " 'maybe' states.");
-
+            
             // Check whether we need to compute exact rewards for some states.
             if (qualitative) {
                 // Set the values for all maybe-states to 1 to indicate that their reward values
