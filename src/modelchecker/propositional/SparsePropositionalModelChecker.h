@@ -3,7 +3,7 @@
 
 #include "src/modelchecker/AbstractModelChecker.h"
 
-#include "src/models/AbstractModel.h"
+#include "src/models/sparse/Model.h"
 
 namespace storm {
     namespace modelchecker {
@@ -11,7 +11,7 @@ namespace storm {
         template<typename ValueType>
         class SparsePropositionalModelChecker : public AbstractModelChecker {
         public:
-            explicit SparsePropositionalModelChecker(storm::models::AbstractModel<ValueType> const& model);
+            explicit SparsePropositionalModelChecker(storm::models::sparse::Model<ValueType> const& model);
             
             // The implemented methods of the AbstractModelChecker interface.
             virtual bool canHandle(storm::logic::Formula const& formula) const override;
@@ -24,7 +24,7 @@ namespace storm {
              *
              * @return The model associated with this model checker instance.
              */
-            virtual storm::models::AbstractModel<ValueType> const& getModel() const;
+            virtual storm::models::sparse::Model<ValueType> const& getModel() const;
             
             /*!
              * Retrieves the model associated with this model checker instance as the given template parameter type.
@@ -36,7 +36,7 @@ namespace storm {
             
         private:
             // The model that is to be analyzed by the model checker.
-            storm::models::AbstractModel<ValueType> const& model;
+            storm::models::sparse::Model<ValueType> const& model;
         };
     }
 }

@@ -3,6 +3,8 @@
 #include <utility>
 #include <vector>
 
+#include "src/storage/StronglyConnectedComponentDecomposition.h"
+
 #include "src/utility/constants.h"
 #include "src/utility/macros.h"
 #include "src/utility/vector.h"
@@ -19,12 +21,12 @@
 namespace storm {
     namespace modelchecker {
         template<typename ValueType>
-        SparseMarkovAutomatonCslModelChecker<ValueType>::SparseMarkovAutomatonCslModelChecker(storm::models::MarkovAutomaton<ValueType> const& model, std::shared_ptr<storm::solver::NondeterministicLinearEquationSolver<ValueType>> nondeterministicLinearEquationSolver) : model(model), nondeterministicLinearEquationSolver(nondeterministicLinearEquationSolver) {
+        SparseMarkovAutomatonCslModelChecker<ValueType>::SparseMarkovAutomatonCslModelChecker(storm::models::sparse::MarkovAutomaton<ValueType> const& model, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType>>&& MinMaxLinearEquationSolverFactory) : model(model), MinMaxLinearEquationSolverFactory(std::move(MinMaxLinearEquationSolverFactory)) {
             // Intentionally left empty.
         }
         
         template<typename ValueType>
-        SparseMarkovAutomatonCslModelChecker<ValueType>::SparseMarkovAutomatonCslModelChecker(storm::models::MarkovAutomaton<ValueType> const& model) : model(model), nondeterministicLinearEquationSolver(storm::utility::solver::getNondeterministicLinearEquationSolver<ValueType>()) {
+        SparseMarkovAutomatonCslModelChecker<ValueType>::SparseMarkovAutomatonCslModelChecker(storm::models::sparse::MarkovAutomaton<ValueType> const& model) : model(model), MinMaxLinearEquationSolverFactory(new storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType>()) {
             // Intentionally left empty.
         }
         
@@ -34,7 +36,7 @@ namespace storm {
         }
 
         template<typename ValueType>
-        void SparseMarkovAutomatonCslModelChecker<ValueType>::computeBoundedReachabilityProbabilities(bool min, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& exitRates, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& goalStates, storm::storage::BitVector const& markovianNonGoalStates, storm::storage::BitVector const& probabilisticNonGoalStates, std::vector<ValueType>& markovianNonGoalValues, std::vector<ValueType>& probabilisticNonGoalValues, ValueType delta, uint_fast64_t numberOfSteps) {
+        void SparseMarkovAutomatonCslModelChecker<ValueType>::computeBoundedReachabilityProbabilities(bool min, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& exitRates, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& goalStates, storm::storage::BitVector const& markovianNonGoalStates, storm::storage::BitVector const& probabilisticNonGoalStates, std::vector<ValueType>& markovianNonGoalValues, std::vector<ValueType>& probabilisticNonGoalValues, ValueType delta, uint_fast64_t numberOfSteps, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& MinMaxLinearEquationSolverFactory) {
             // Start by computing four sparse matrices:
             // * a matrix aMarkovian with all (discretized) transitions from Markovian non-goal states to all Markovian non-goal states.
             // * a matrix aMarkovianToProbabilistic with all (discretized) transitions from Markovian non-goal states to all probabilistic non-goal states.
@@ -87,8 +89,8 @@ namespace storm {
                 }
             }
             
-            std::shared_ptr<storm::solver::NondeterministicLinearEquationSolver<ValueType>> nondeterministiclinearEquationSolver = storm::utility::solver::getNondeterministicLinearEquationSolver<ValueType>();
-            
+            std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = MinMaxLinearEquationSolverFactory.create(aProbabilistic);
+                        
             // Perform the actual value iteration
             // * loop until the step bound has been reached
             // * in the loop:
@@ -101,23 +103,23 @@ namespace storm {
             for (uint_fast64_t currentStep = 0; currentStep < numberOfSteps; ++currentStep) {
                 // Start by (re-)computing bProbabilistic = bProbabilisticFixed + aProbabilisticToMarkovian * vMarkovian.
                 aProbabilisticToMarkovian.multiplyWithVector(markovianNonGoalValues, bProbabilistic);
-                storm::utility::vector::addVectorsInPlace(bProbabilistic, bProbabilisticFixed);
+                storm::utility::vector::addVectors(bProbabilistic, bProbabilisticFixed, bProbabilistic);
                 
                 // Now perform the inner value iteration for probabilistic states.
-                nondeterministiclinearEquationSolver->solveEquationSystem(min, aProbabilistic, probabilisticNonGoalValues, bProbabilistic, &multiplicationResultScratchMemory, &aProbabilisticScratchMemory);
+                solver->solveEquationSystem(min, probabilisticNonGoalValues, bProbabilistic, &multiplicationResultScratchMemory, &aProbabilisticScratchMemory);
                 
                 // (Re-)compute bMarkovian = bMarkovianFixed + aMarkovianToProbabilistic * vProbabilistic.
                 aMarkovianToProbabilistic.multiplyWithVector(probabilisticNonGoalValues, bMarkovian);
-                storm::utility::vector::addVectorsInPlace(bMarkovian, bMarkovianFixed);
+                storm::utility::vector::addVectors(bMarkovian, bMarkovianFixed, bMarkovian);
                 aMarkovian.multiplyWithVector(markovianNonGoalValues, markovianNonGoalValuesSwap);
                 std::swap(markovianNonGoalValues, markovianNonGoalValuesSwap);
-                storm::utility::vector::addVectorsInPlace(markovianNonGoalValues, bMarkovian);
+                storm::utility::vector::addVectors(markovianNonGoalValues, bMarkovian, markovianNonGoalValues);
             }
             
             // After the loop, perform one more step of the value iteration for PS states.
             aProbabilisticToMarkovian.multiplyWithVector(markovianNonGoalValues, bProbabilistic);
-            storm::utility::vector::addVectorsInPlace(bProbabilistic, bProbabilisticFixed);
-            nondeterministiclinearEquationSolver->solveEquationSystem(min, aProbabilistic, probabilisticNonGoalValues, bProbabilistic, &multiplicationResultScratchMemory, &aProbabilisticScratchMemory);
+            storm::utility::vector::addVectors(bProbabilistic, bProbabilisticFixed, bProbabilistic);
+            solver->solveEquationSystem(min, probabilisticNonGoalValues, bProbabilistic, &multiplicationResultScratchMemory, &aProbabilisticScratchMemory);
         }
         
         template<typename ValueType>
@@ -147,7 +149,7 @@ namespace storm {
             std::vector<ValueType> vProbabilistic(probabilisticNonGoalStates.getNumberOfSetBits());
             std::vector<ValueType> vMarkovian(markovianNonGoalStates.getNumberOfSetBits());
             
-            computeBoundedReachabilityProbabilities(minimize, transitionMatrix, exitRates, markovianStates, psiStates, markovianNonGoalStates, probabilisticNonGoalStates, vMarkovian, vProbabilistic, delta, numberOfSteps);
+            computeBoundedReachabilityProbabilities(minimize, transitionMatrix, exitRates, markovianStates, psiStates, markovianNonGoalStates, probabilisticNonGoalStates, vMarkovian, vProbabilistic, delta, numberOfSteps, *MinMaxLinearEquationSolverFactory);
             
             // (4) If the lower bound of interval was non-zero, we need to take the current values as the starting values for a subsequent value iteration.
             if (lowerBound != storm::utility::zero<ValueType>()) {
@@ -165,7 +167,7 @@ namespace storm {
                 STORM_LOG_INFO("Performing " << numberOfSteps << " iterations (delta=" << delta << ") for interval [0, " << lowerBound << "]." << std::endl);
                 
                 // Compute the bounded reachability for interval [0, b-a].
-                computeBoundedReachabilityProbabilities(minimize, transitionMatrix, exitRates, markovianStates, storm::storage::BitVector(model.getNumberOfStates()), markovianStates, ~markovianStates, vAllMarkovian, vAllProbabilistic, delta, numberOfSteps);
+                computeBoundedReachabilityProbabilities(minimize, transitionMatrix, exitRates, markovianStates, storm::storage::BitVector(model.getNumberOfStates()), markovianStates, ~markovianStates, vAllMarkovian, vAllProbabilistic, delta, numberOfSteps, *MinMaxLinearEquationSolverFactory);
                 
                 // Create the result vector out of vAllProbabilistic and vAllMarkovian and return it.
                 std::vector<ValueType> result(model.getNumberOfStates());
@@ -196,7 +198,7 @@ namespace storm {
         
         template<typename ValueType>
         std::vector<ValueType> SparseMarkovAutomatonCslModelChecker<ValueType>::computeUntilProbabilitiesHelper(bool minimize, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative) const {
-            return storm::modelchecker::SparseMdpPrctlModelChecker<ValueType>::computeUntilProbabilitiesHelper(minimize, model.getTransitionMatrix(), model.getBackwardTransitions(), phiStates, psiStates, nondeterministicLinearEquationSolver, qualitative);
+            return storm::modelchecker::SparseMdpPrctlModelChecker<ValueType>::computeUntilProbabilitiesHelper(minimize, model.getTransitionMatrix(), model.getBackwardTransitions(), phiStates, psiStates, *MinMaxLinearEquationSolverFactory, qualitative);
         }
         
         template<typename ValueType>
@@ -215,7 +217,7 @@ namespace storm {
             if (model.hasTransitionRewards()) {
                 totalRewardVector = model.getTransitionMatrix().getPointwiseProductRowSumVector(model.getTransitionRewardMatrix());
                 if (model.hasStateRewards()) {
-                    storm::utility::vector::addVectorsInPlace(totalRewardVector, model.getStateRewardVector());
+                    storm::utility::vector::addVectors(totalRewardVector, model.getStateRewardVector(), totalRewardVector);
                 }
             } else {
                 totalRewardVector = std::vector<ValueType>(model.getStateRewardVector());
@@ -377,7 +379,8 @@ namespace storm {
             storm::storage::SparseMatrix<ValueType> sspMatrix = sspMatrixBuilder.build(currentChoice);
             
             std::vector<ValueType> x(numberOfStatesNotInMecs + mecDecomposition.size());
-            nondeterministicLinearEquationSolver->solveEquationSystem(minimize, sspMatrix, x, b);
+            std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = MinMaxLinearEquationSolverFactory->create(sspMatrix);
+            solver->solveEquationSystem(minimize, x, b);
             
             // Prepare result vector.
             std::vector<ValueType> result(model.getNumberOfStates());
@@ -429,13 +432,14 @@ namespace storm {
         
         template<typename ValueType>
         std::unique_ptr<CheckResult> SparseMarkovAutomatonCslModelChecker<ValueType>::checkAtomicLabelFormula(storm::logic::AtomicLabelFormula const& stateFormula) {
-            STORM_LOG_THROW(model.hasAtomicProposition(stateFormula.getLabel()), storm::exceptions::InvalidPropertyException, "The property refers to unknown label '" << stateFormula.getLabel() << "'.");
-            return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult(model.getLabeledStates(stateFormula.getLabel())));
+            STORM_LOG_THROW(model.hasLabel(stateFormula.getLabel()), storm::exceptions::InvalidPropertyException, "The property refers to unknown label '" << stateFormula.getLabel() << "'.");
+            return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult(model.getStates(stateFormula.getLabel())));
         }
                 
         template<typename ValueType>
         ValueType SparseMarkovAutomatonCslModelChecker<ValueType>::computeLraForMaximalEndComponent(bool minimize, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::BitVector const& markovianStates, std::vector<ValueType> const& exitRates, storm::storage::BitVector const& psiStates, storm::storage::MaximalEndComponent const& mec, uint_fast64_t mecIndex) {
-            std::shared_ptr<storm::solver::LpSolver> solver = storm::utility::solver::getLpSolver("LRA for MEC");
+            std::unique_ptr<storm::utility::solver::LpSolverFactory> lpSolverFactory(new storm::utility::solver::LpSolverFactory());
+            std::unique_ptr<storm::solver::LpSolver> solver = lpSolverFactory->create("LRA for MEC");
             solver->setModelSense(minimize ? storm::solver::LpSolver::ModelSense::Maximize : storm::solver::LpSolver::ModelSense::Minimize);
             
             // First, we need to create the variables for the problem.
@@ -559,8 +563,8 @@ namespace storm {
             storm::utility::vector::selectVectorValuesRepeatedly(b, maybeStates, model.getNondeterministicChoiceIndices(), rewardValues);
             
             // Solve the corresponding system of equations.
-            std::shared_ptr<storm::solver::NondeterministicLinearEquationSolver<ValueType>> nondeterministiclinearEquationSolver = storm::utility::solver::getNondeterministicLinearEquationSolver<ValueType>();
-            nondeterministiclinearEquationSolver->solveEquationSystem(minimize, submatrix, x, b);
+            std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = MinMaxLinearEquationSolverFactory->create(submatrix);
+            solver->solveEquationSystem(minimize, x, b);
             
             // Create resulting vector.
             std::vector<ValueType> result(model.getNumberOfStates());

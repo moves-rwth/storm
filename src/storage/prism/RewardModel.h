@@ -83,6 +83,15 @@ namespace storm {
              */
             RewardModel substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const;
             
+            /*!
+             * Checks whether any of the given variables only appear in the expressions defining the reward value.
+             *
+             * @param undefinedConstantVariables A set of variables that may only appear in the expressions defining the
+             * reward values.
+             * @return True iff the given variables only appear in the expressions defining the reward value.
+             */
+            bool containsVariablesOnlyInRewardValueExpressions(std::set<storm::expressions::Variable> const& undefinedConstantVariables) const;
+            
             friend std::ostream& operator<<(std::ostream& stream, RewardModel const& rewardModel);
 
         private:

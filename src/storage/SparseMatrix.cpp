@@ -11,6 +11,7 @@
 #include "src/adapters/CarlAdapter.h"
 
 #include "src/exceptions/InvalidStateException.h"
+#include "src/exceptions/NotImplementedException.h"
 #include "src/utility/macros.h"
 
 #include "log4cplus/logger.h"
@@ -239,7 +240,7 @@ namespace storm {
         template<typename ValueType>
         SparseMatrix<ValueType>::SparseMatrix(index_type columnCount, std::vector<index_type> const& rowIndications, std::vector<MatrixEntry<index_type, ValueType>> const& columnsAndValues, std::vector<index_type> const& rowGroupIndices) : rowCount(rowIndications.size() - 1), columnCount(columnCount), entryCount(columnsAndValues.size()), nonzeroEntryCount(0), columnsAndValues(columnsAndValues), rowIndications(rowIndications), rowGroupIndices(rowGroupIndices) {
             for (auto const& element : *this) {
-                if (!comparator.isZero(element.getValue())) {
+                if (element.getValue() != storm::utility::zero<ValueType>()) {
                     ++this->nonzeroEntryCount;
                 }
             }
@@ -248,7 +249,7 @@ namespace storm {
         template<typename ValueType>
         SparseMatrix<ValueType>::SparseMatrix(index_type columnCount, std::vector<index_type>&& rowIndications, std::vector<MatrixEntry<index_type, ValueType>>&& columnsAndValues, std::vector<index_type>&& rowGroupIndices) : rowCount(rowIndications.size() - 1), columnCount(columnCount), entryCount(columnsAndValues.size()), nonzeroEntryCount(0), columnsAndValues(std::move(columnsAndValues)), rowIndications(std::move(rowIndications)), rowGroupIndices(std::move(rowGroupIndices)) {
             for (auto const& element : *this) {
-                if (!comparator.isZero(element.getValue())) {
+                if (element.getValue() != storm::utility::zero<ValueType>()) {
                     ++this->nonzeroEntryCount;
                 }
             }
@@ -613,7 +614,7 @@ namespace storm {
             // First, we need to count how many entries each column has.
             for (index_type group = 0; group < columnCount; ++group) {
                 for (auto const& transition : joinGroups ? this->getRowGroup(group) : this->getRow(group)) {
-                    if (!comparator.isZero(transition.getValue())) {
+                    if (transition.getValue() != storm::utility::zero<ValueType>()) {
                         ++rowIndications[transition.getColumn() + 1];
                     }
                 }
@@ -632,7 +633,7 @@ namespace storm {
             // Now we are ready to actually fill in the values of the transposed matrix.
             for (index_type group = 0; group < columnCount; ++group) {
                 for (auto const& transition : joinGroups ? this->getRowGroup(group) : this->getRow(group)) {
-                    if (!comparator.isZero(transition.getValue())) {
+                    if (transition.getValue() != storm::utility::zero<ValueType>()) {
                         columnsAndValues[nextIndices[transition.getColumn()]] = std::make_pair(group, transition.getValue());
                         nextIndices[transition.getColumn()]++;
                     }
@@ -701,43 +702,33 @@ namespace storm {
         }
         
         template<typename ValueType>
-        typename std::pair<storm::storage::SparseMatrix<ValueType>, storm::storage::SparseMatrix<ValueType>> SparseMatrix<ValueType>::getJacobiDecomposition() const {
-            if (rowCount != columnCount) {
-                throw storm::exceptions::InvalidArgumentException() << "Illegal call to SparseMatrix::invertDiagonal: matrix is non-square.";
-            }
-            storm::storage::SparseMatrix<ValueType> resultLU(*this);
-            resultLU.deleteDiagonalEntries();
+        typename std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> SparseMatrix<ValueType>::getJacobiDecomposition() const {
+            STORM_LOG_THROW(this->getRowCount() == this->getColumnCount(), storm::exceptions::InvalidArgumentException, "Canno compute Jacobi decomposition of non-square matrix.");
             
-            SparseMatrixBuilder<ValueType> dInvBuilder(rowCount, columnCount, rowCount);
+            // Prepare the resulting data structures.
+            SparseMatrixBuilder<ValueType> luBuilder(this->getRowCount(), this->getColumnCount());
+            std::vector<ValueType> invertedDiagonal(rowCount);
             
             // Copy entries to the appropriate matrices.
             for (index_type rowNumber = 0; rowNumber < rowCount; ++rowNumber) {
-                
-                // Because the matrix may have several entries on the diagonal, we need to sum them before we are able
-                // to invert the entry.
-                ValueType diagonalValue = storm::utility::zero<ValueType>();
                 for (const_iterator it = this->begin(rowNumber), ite = this->end(rowNumber); it != ite; ++it) {
                     if (it->getColumn() == rowNumber) {
-                        diagonalValue += it->getValue();
-                    } else if (it->getColumn() > rowNumber) {
-                        break;
+                        invertedDiagonal[rowNumber] = storm::utility::one<ValueType>() / it->getValue();
+                    } else {
+                        luBuilder.addNextValue(rowNumber, it->getColumn(), it->getValue());
                     }
                 }
-                dInvBuilder.addNextValue(rowNumber, rowNumber, storm::utility::one<ValueType>() / diagonalValue);
             }
             
-            return std::make_pair(std::move(resultLU), dInvBuilder.build());
+            return std::make_pair(luBuilder.build(), std::move(invertedDiagonal));
         }
         
 #ifdef STORM_HAVE_CARL
         template<>
-        typename std::pair<storm::storage::SparseMatrix<RationalFunction>, storm::storage::SparseMatrix<RationalFunction>> SparseMatrix<RationalFunction>::getJacobiDecomposition() const {
-            // NOT SUPPORTED
-            // TODO do whatever storm does in such cases.
-            assert(false);
+        typename std::pair<storm::storage::SparseMatrix<RationalFunction>, std::vector<RationalFunction>> SparseMatrix<RationalFunction>::getJacobiDecomposition() const {
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This operation is not supported.");
         }
 #endif
-        
         
         template<typename ValueType>
         std::vector<ValueType> SparseMatrix<ValueType>::getPointwiseProductRowSumVector(storm::storage::SparseMatrix<ValueType> const& otherMatrix) const {
@@ -762,7 +753,6 @@ namespace storm {
             
             return result;
         }
-        
         
         template<typename ValueType>
         void SparseMatrix<ValueType>::multiplyWithVector(std::vector<ValueType> const& vector, std::vector<ValueType>& result) const {
@@ -820,7 +810,7 @@ namespace storm {
 #endif
 
         template<typename ValueType>
-        uint_fast64_t SparseMatrix<ValueType>::getSizeInMemory() const {
+        std::size_t SparseMatrix<ValueType>::getSizeInBytes() const {
             uint_fast64_t size = sizeof(*this);
             
             // Add size of columns and values.

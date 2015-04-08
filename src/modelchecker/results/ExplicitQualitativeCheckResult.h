@@ -39,18 +39,19 @@ namespace storm {
             
             virtual bool isExplicitQualitativeCheckResult() const override;
             
-            virtual CheckResult& operator&=(CheckResult const& other) override;
-            virtual CheckResult& operator|=(CheckResult const& other) override;
+            virtual QualitativeCheckResult& operator&=(QualitativeCheckResult const& other) override;
+            virtual QualitativeCheckResult& operator|=(QualitativeCheckResult const& other) override;
             virtual void complement() override;
 
             vector_type const& getTruthValuesVector() const;
             map_type const& getTruthValuesVectorMap() const;
             
             virtual std::ostream& writeToStream(std::ostream& out) const override;
-            virtual std::ostream& writeToStream(std::ostream& out, storm::storage::BitVector const& filter) const override;
+            
+            virtual void filter(QualitativeCheckResult const& filter) override;
 
         private:
-            static void performLogicalOperation(ExplicitQualitativeCheckResult& first, CheckResult const& second, std::function<bool (bool, bool)> const& function);
+            static void performLogicalOperation(ExplicitQualitativeCheckResult& first, QualitativeCheckResult const& second, std::function<bool (bool, bool)> const& function);
             
             // The values of the quantitative check result.
             boost::variant<vector_type, map_type> truthValues;

@@ -70,6 +70,30 @@ namespace storm {
             return value1 == value2;
         }
         
+        ConstantsComparator<float>::ConstantsComparator() : precision(static_cast<float>(storm::settings::generalSettings().getPrecision())) {
+            // Intentionally left empty.
+        }
+        
+        ConstantsComparator<float>::ConstantsComparator(float precision) : precision(precision) {
+            // Intentionally left empty.
+        }
+        
+        bool ConstantsComparator<float>::isOne(float const& value) const {
+            return std::abs(value - one<float>()) <= precision;
+        }
+        
+        bool ConstantsComparator<float>::isZero(float const& value) const {
+            return std::abs(value) <= precision;
+        }
+        
+        bool ConstantsComparator<float>::isEqual(float const& value1, float const& value2) const {
+            return std::abs(value1 - value2) <= precision;
+        }
+        
+        bool ConstantsComparator<float>::isConstant(float const& value) const {
+            return true;
+        }
+        
         ConstantsComparator<double>::ConstantsComparator() : precision(storm::settings::generalSettings().getPrecision()) {
             // Intentionally left empty.
         }
@@ -84,6 +108,10 @@ namespace storm {
         
         bool ConstantsComparator<double>::isZero(double const& value) const {
             return std::abs(value) <= precision;
+        }
+        
+        bool ConstantsComparator<double>::isInfinity(double const& value) const {
+            return value == infinity<double>();
         }
         
         bool ConstantsComparator<double>::isEqual(double const& value1, double const& value2) const {

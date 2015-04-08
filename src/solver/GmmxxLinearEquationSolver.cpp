@@ -9,19 +9,18 @@
 #include "src/utility/constants.h"
 #include "src/exceptions/InvalidStateException.h"
 
-#include "gmm/gmm_matrix.h"
 #include "gmm/gmm_iter_solvers.h"
 
 namespace storm {
     namespace solver {
         
         template<typename ValueType>
-        GmmxxLinearEquationSolver<ValueType>::GmmxxLinearEquationSolver(SolutionMethod method, double precision, uint_fast64_t maximalNumberOfIterations, Preconditioner preconditioner, bool relative, uint_fast64_t restart) : method(method), precision(precision), maximalNumberOfIterations(maximalNumberOfIterations), preconditioner(preconditioner), relative(relative), restart(restart) {
+        GmmxxLinearEquationSolver<ValueType>::GmmxxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, SolutionMethod method, double precision, uint_fast64_t maximalNumberOfIterations, Preconditioner preconditioner, bool relative, uint_fast64_t restart) : originalA(&A), gmmxxMatrix(storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(A)), method(method), precision(precision), maximalNumberOfIterations(maximalNumberOfIterations), preconditioner(preconditioner), relative(relative), restart(restart) {
             // Intentionally left empty.
         }
 
         template<typename ValueType>
-        GmmxxLinearEquationSolver<ValueType>::GmmxxLinearEquationSolver() {
+        GmmxxLinearEquationSolver<ValueType>::GmmxxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A) : originalA(&A), gmmxxMatrix(storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(A)) {
             // Get the settings object to customize linear solving.
             storm::settings::modules::GmmxxEquationSolverSettings const& settings = storm::settings::gmmxxEquationSolverSettings();
             
@@ -55,46 +54,39 @@ namespace storm {
         }
         
         template<typename ValueType>
-        LinearEquationSolver<ValueType>* GmmxxLinearEquationSolver<ValueType>::clone() const {
-            return new GmmxxLinearEquationSolver<ValueType>(*this);
-        }
-        
-        template<typename ValueType>
-        void GmmxxLinearEquationSolver<ValueType>::solveEquationSystem(storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult) const {
+        void GmmxxLinearEquationSolver<ValueType>::solveEquationSystem(std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult) const {
             LOG4CPLUS_INFO(logger, "Using method '" << methodToString() << "' with preconditioner " << preconditionerToString() << "'.");
             if (method == SolutionMethod::Jacobi && preconditioner != Preconditioner::None) {
                 LOG4CPLUS_WARN(logger, "Jacobi method currently does not support preconditioners. The requested preconditioner will be ignored.");
             }
             
             if (method == SolutionMethod::Bicgstab || method == SolutionMethod::Qmr || method == SolutionMethod::Gmres) {
-                std::unique_ptr<gmm::csr_matrix<ValueType>> gmmA = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(A);
-                
                 // Prepare an iteration object that determines the accuracy and the maximum number of iterations.
                 gmm::iteration iter(precision, 0, maximalNumberOfIterations);
                 
                 if (method == SolutionMethod::Bicgstab) {
                     if (preconditioner == Preconditioner::Ilu) {
-                        gmm::bicgstab(*gmmA, x, b, gmm::ilu_precond<gmm::csr_matrix<ValueType>>(*gmmA), iter);
+                        gmm::bicgstab(*gmmxxMatrix, x, b, gmm::ilu_precond<gmm::csr_matrix<ValueType>>(*gmmxxMatrix), iter);
                     } else if (preconditioner == Preconditioner::Diagonal) {
-                        gmm::bicgstab(*gmmA, x, b, gmm::diagonal_precond<gmm::csr_matrix<ValueType>>(*gmmA), iter);
+                        gmm::bicgstab(*gmmxxMatrix, x, b, gmm::diagonal_precond<gmm::csr_matrix<ValueType>>(*gmmxxMatrix), iter);
                     } else if (preconditioner == Preconditioner::None) {
-                        gmm::bicgstab(*gmmA, x, b, gmm::identity_matrix(), iter);
+                        gmm::bicgstab(*gmmxxMatrix, x, b, gmm::identity_matrix(), iter);
                     }
                 } else if (method == SolutionMethod::Qmr) {
                     if (preconditioner == Preconditioner::Ilu) {
-                        gmm::qmr(*gmmA, x, b, gmm::ilu_precond<gmm::csr_matrix<ValueType>>(*gmmA), iter);
+                        gmm::qmr(*gmmxxMatrix, x, b, gmm::ilu_precond<gmm::csr_matrix<ValueType>>(*gmmxxMatrix), iter);
                     } else if (preconditioner == Preconditioner::Diagonal) {
-                        gmm::qmr(*gmmA, x, b, gmm::diagonal_precond<gmm::csr_matrix<ValueType>>(*gmmA), iter);
+                        gmm::qmr(*gmmxxMatrix, x, b, gmm::diagonal_precond<gmm::csr_matrix<ValueType>>(*gmmxxMatrix), iter);
                     } else if (preconditioner == Preconditioner::None) {
-                        gmm::qmr(*gmmA, x, b, gmm::identity_matrix(), iter);
+                        gmm::qmr(*gmmxxMatrix, x, b, gmm::identity_matrix(), iter);
                     }
                 } else if (method == SolutionMethod::Gmres) {
                     if (preconditioner == Preconditioner::Ilu) {
-                        gmm::gmres(*gmmA, x, b, gmm::ilu_precond<gmm::csr_matrix<ValueType>>(*gmmA), restart, iter);
+                        gmm::gmres(*gmmxxMatrix, x, b, gmm::ilu_precond<gmm::csr_matrix<ValueType>>(*gmmxxMatrix), restart, iter);
                     } else if (preconditioner == Preconditioner::Diagonal) {
-                        gmm::gmres(*gmmA, x, b, gmm::diagonal_precond<gmm::csr_matrix<ValueType>>(*gmmA), restart, iter);
+                        gmm::gmres(*gmmxxMatrix, x, b, gmm::diagonal_precond<gmm::csr_matrix<ValueType>>(*gmmxxMatrix), restart, iter);
                     } else if (preconditioner == Preconditioner::None) {
-                        gmm::gmres(*gmmA, x, b, gmm::identity_matrix(), restart, iter);
+                        gmm::gmres(*gmmxxMatrix, x, b, gmm::identity_matrix(), restart, iter);
                     }
                 }
                 
@@ -105,7 +97,7 @@ namespace storm {
                     LOG4CPLUS_WARN(logger, "Iterative solver did not converge.");
                 }
             } else if (method == SolutionMethod::Jacobi) {
-                uint_fast64_t iterations = solveLinearEquationSystemWithJacobi(A, x, b, multiplyResult);
+                uint_fast64_t iterations = solveLinearEquationSystemWithJacobi(*originalA, x, b, multiplyResult);
                 
                 // Check if the solver converged and issue a warning otherwise.
                 if (iterations < maximalNumberOfIterations) {
@@ -117,10 +109,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void GmmxxLinearEquationSolver<ValueType>::performMatrixVectorMultiplication(storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n, std::vector<ValueType>* multiplyResult) const {
-            // Transform the transition probability A to the gmm++ format to use its arithmetic.
-            std::unique_ptr<gmm::csr_matrix<ValueType>> gmmxxMatrix = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(A);
-
+        void GmmxxLinearEquationSolver<ValueType>::performMatrixVectorMultiplication(std::vector<ValueType>& x, std::vector<ValueType> const* b, uint_fast64_t n, std::vector<ValueType>* multiplyResult) const {
             // Set up some temporary variables so that we can just swap pointers instead of copying the result after
             // each iteration.
             std::vector<ValueType>* currentX = &x;
@@ -159,10 +148,8 @@ namespace storm {
         template<typename ValueType>
         uint_fast64_t GmmxxLinearEquationSolver<ValueType>::solveLinearEquationSystemWithJacobi(storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult) const {
             // Get a Jacobi decomposition of the matrix A.
-            std::pair<storm::storage::SparseMatrix<ValueType>, storm::storage::SparseMatrix<ValueType>> jacobiDecomposition = A.getJacobiDecomposition();
+            std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> jacobiDecomposition = A.getJacobiDecomposition();
             
-            // Convert the (inverted) diagonal matrix to gmm++'s format.
-            std::unique_ptr<gmm::csr_matrix<ValueType>> gmmDinv = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(std::move(jacobiDecomposition.second));
             // Convert the LU matrix to gmm++'s format.
             std::unique_ptr<gmm::csr_matrix<ValueType>> gmmLU = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(std::move(jacobiDecomposition.first));
         
@@ -187,7 +174,7 @@ namespace storm {
                 // Compute D^-1 * (b - LU * x) and store result in nextX.
                 gmm::mult(*gmmLU, *currentX, tmpX);
                 gmm::add(b, gmm::scaled(tmpX, -storm::utility::one<ValueType>()), tmpX);
-                gmm::mult(*gmmDinv, tmpX, *nextX);
+                storm::utility::vector::multiplyVectorsPointwise(jacobiDecomposition.second, tmpX, *nextX);
                 
                 // Now check if the process already converged within our precision.
                 converged = storm::utility::vector::equalModuloPrecision(*currentX, *nextX, precision, relative);

@@ -1,10 +1,3 @@
-/*
- * MarkovAutomatonParserTest.cpp
- *
- *  Created on: 25.02.2014
- *      Author: Manuel Sascha Weiand
- */
-
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
@@ -20,7 +13,7 @@ TEST(MarkovAutomatonParserTest, NonExistingFile) {
 TEST(MarkovAutomatonParserTest, BasicParsing) {
 
 	// Get the parsing result.
-	storm::models::MarkovAutomaton<double> result = storm::parser::MarkovAutomatonParser::parseMarkovAutomaton(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/ma_general.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/ma_general.lab", STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/ma_general.state.rew");
+	storm::models::sparse::MarkovAutomaton<double> result = storm::parser::MarkovAutomatonParser::parseMarkovAutomaton(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/ma_general.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/ma_general.lab", STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/ma_general.state.rew");
 
 	// Test sizes and counts.
 	ASSERT_EQ(6, result.getNumberOfStates());
@@ -41,15 +34,15 @@ TEST(MarkovAutomatonParserTest, BasicParsing) {
 	ASSERT_EQ(0, result.getExitRate(5));
 
 	// Test the labeling.
-	ASSERT_EQ(3, result.getStateLabeling().getNumberOfAtomicPropositions());
+	ASSERT_EQ(3, result.getStateLabeling().getNumberOfLabels());
 	ASSERT_EQ(1, result.getInitialStates().getNumberOfSetBits());
-	ASSERT_EQ(0, result.getLabelsForState(4).size());
-	ASSERT_EQ(1, result.getStateLabeling().getLabeledStates("goal").getNumberOfSetBits());
+	ASSERT_EQ(0, result.getLabelsOfState(4).size());
+	ASSERT_EQ(1, result.getStateLabeling().getStates("goal").getNumberOfSetBits());
 
 	// Test the state rewards.
 	ASSERT_TRUE(result.hasStateRewards());
 	double rewardSum = 0;
-	for(uint_fast64_t i = 0; i < result.getStateRewardVector().size(); i++) {
+	for (uint_fast64_t i = 0; i < result.getStateRewardVector().size(); i++) {
 		rewardSum += result.getStateRewardVector()[i];
 	}
 	ASSERT_EQ(1015.765099984, rewardSum);

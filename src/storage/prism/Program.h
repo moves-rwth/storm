@@ -73,6 +73,15 @@ namespace storm {
             bool hasUndefinedConstants() const;
 
             /*!
+             * Retrieves whether there are undefined constants appearing in any place other than the update probabilities
+             * of the commands and the reward expressions. This is to be used for parametric model checking where the
+             * parameters are only allowed to govern the probabilities, not the underlying graph of the model.
+             *
+             * @return True iff all undefined constants of the model only appear in update probabilities.
+             */
+            bool hasUndefinedConstantsOnlyInUpdateProbabilitiesAndRewards() const;
+            
+            /*!
              * Retrieves the undefined constants in the program.
              *
              * @return The undefined constants in the program.
@@ -224,6 +233,14 @@ namespace storm {
              * @return The set of action indices present in the program.
              */
             std::set<uint_fast64_t> const& getActionIndices() const;
+            
+            /*!
+             * Retrieves the action name of the given action index.
+             *
+             * @param actionIndex The index of the action whose name to retrieve.
+             * @return The name of the action.
+             */
+            std::string const& getActionName(uint_fast64_t actionIndex) const;
             
             /*!
              * Retrieves the indices of all modules within this program that contain commands that are labelled with the
@@ -442,6 +459,9 @@ namespace storm {
             
             // A mapping from action names to their indices.
             std::map<std::string, uint_fast64_t> actionToIndexMap;
+
+            // A mapping from action indices to their names.
+            std::map<uint_fast64_t, std::string> indexToActionMap;
             
             // The set of actions present in this program.
             std::set<std::string> actions;

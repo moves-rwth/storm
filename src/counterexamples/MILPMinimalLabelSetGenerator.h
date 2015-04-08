@@ -3,7 +3,7 @@
 
 #include <chrono>
 
-#include "src/models/Mdp.h"
+#include "src/models/sparse/Mdp.h"
 #include "src/logic/Formulas.h"
 #include "src/storage/prism/Program.h"
 #include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
@@ -87,7 +87,7 @@ namespace storm {
              * @param psiStates A bit vector characterizing all states satisfying psi.
              * @return A structure that stores the relevant and problematic states.
              */
-            static struct StateInformation determineRelevantAndProblematicStates(storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
+            static struct StateInformation determineRelevantAndProblematicStates(storm::models::sparse::Mdp<T> const& labeledMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
                 StateInformation result;
                 result.relevantStates = storm::utility::graph::performProbGreater0E(labeledMdp.getTransitionMatrix(), labeledMdp.getNondeterministicChoiceIndices(), labeledMdp.getBackwardTransitions(), phiStates, psiStates);
                 result.relevantStates &= ~psiStates;
@@ -109,7 +109,7 @@ namespace storm {
              * @return A structure that stores the relevant and problematic choices in the model as well as the set
              * of relevant labels.
              */
-            static struct ChoiceInformation determineRelevantAndProblematicChoices(storm::models::Mdp<T> const& labeledMdp, StateInformation const& stateInformation, storm::storage::BitVector const& psiStates) {
+            static struct ChoiceInformation determineRelevantAndProblematicChoices(storm::models::sparse::Mdp<T> const& labeledMdp, StateInformation const& stateInformation, storm::storage::BitVector const& psiStates) {
                 // Create result and shortcuts to needed data for convenience.
                 ChoiceInformation result;
                 storm::storage::SparseMatrix<T> const& transitionMatrix = labeledMdp.getTransitionMatrix();
@@ -213,12 +213,12 @@ namespace storm {
              * @param stateInformation The information about the states of the model.
              * @return A mapping from initial states to choice variable indices.
              */
-            static std::pair<std::unordered_map<uint_fast64_t, storm::expressions::Variable>, uint_fast64_t> createInitialChoiceVariables(storm::solver::LpSolver& solver, storm::models::Mdp<T> const& labeledMdp, StateInformation const& stateInformation) {
+            static std::pair<std::unordered_map<uint_fast64_t, storm::expressions::Variable>, uint_fast64_t> createInitialChoiceVariables(storm::solver::LpSolver& solver, storm::models::sparse::Mdp<T> const& labeledMdp, StateInformation const& stateInformation) {
                 std::stringstream variableNameBuffer;
                 uint_fast64_t numberOfVariablesCreated = 0;
                 std::unordered_map<uint_fast64_t, storm::expressions::Variable> resultingMap;
                 
-                for (auto initialState : labeledMdp.getLabeledStates("init")) {
+                for (auto initialState : labeledMdp.getStates("init")) {
                     // Only consider this initial state if it is relevant.
                     if (stateInformation.relevantStates.get(initialState)) {
                         variableNameBuffer.str("");
@@ -276,7 +276,7 @@ namespace storm {
              * @param stateInformation The information about the states in the model.
              * @return A mapping from problematic states to the index of the corresponding variables.
              */
-            static std::pair<std::unordered_map<uint_fast64_t, storm::expressions::Variable>, uint_fast64_t> createProblematicStateVariables(storm::solver::LpSolver& solver, storm::models::Mdp<T> const& labeledMdp, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation) {
+            static std::pair<std::unordered_map<uint_fast64_t, storm::expressions::Variable>, uint_fast64_t> createProblematicStateVariables(storm::solver::LpSolver& solver, storm::models::sparse::Mdp<T> const& labeledMdp, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation) {
                 std::stringstream variableNameBuffer;
                 uint_fast64_t numberOfVariablesCreated = 0;
                 std::unordered_map<uint_fast64_t, storm::expressions::Variable> resultingMap;
@@ -319,7 +319,7 @@ namespace storm {
              * @param choiceInformation The information about the choices in the model.
              * @return A mapping from problematic choices to the index of the corresponding variables.
              */
-            static std::pair<std::unordered_map<std::pair<uint_fast64_t, uint_fast64_t>, storm::expressions::Variable, PairHash>, uint_fast64_t> createProblematicChoiceVariables(storm::solver::LpSolver& solver, storm::models::Mdp<T> const& labeledMdp, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation) {
+            static std::pair<std::unordered_map<std::pair<uint_fast64_t, uint_fast64_t>, storm::expressions::Variable, PairHash>, uint_fast64_t> createProblematicChoiceVariables(storm::solver::LpSolver& solver, storm::models::sparse::Mdp<T> const& labeledMdp, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation) {
                 std::stringstream variableNameBuffer;
                 uint_fast64_t numberOfVariablesCreated = 0;
                 std::unordered_map<std::pair<uint_fast64_t, uint_fast64_t>, storm::expressions::Variable, PairHash> resultingMap;
@@ -351,7 +351,7 @@ namespace storm {
              * @param stateInformation The information about the states in the model.
              * @param choiceInformation The information about the choices in the model.
              */
-            static VariableInformation createVariables(storm::solver::LpSolver& solver, storm::models::Mdp<T> const& labeledMdp, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation) {
+            static VariableInformation createVariables(storm::solver::LpSolver& solver, storm::models::sparse::Mdp<T> const& labeledMdp, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation) {
                 // Create a struct that stores all information about variables.
                 VariableInformation result;
                 
@@ -416,7 +416,7 @@ namespace storm {
              * @param strictBound A flag indicating whether the threshold must be exceeded or only matched.
              * @return The total number of constraints that were created.
              */
-            static uint_fast64_t assertProbabilityGreaterThanThreshold(storm::solver::LpSolver& solver, storm::models::Mdp<T> const& labeledMdp, VariableInformation const& variableInformation, double probabilityThreshold, bool strictBound) {
+            static uint_fast64_t assertProbabilityGreaterThanThreshold(storm::solver::LpSolver& solver, storm::models::sparse::Mdp<T> const& labeledMdp, VariableInformation const& variableInformation, double probabilityThreshold, bool strictBound) {
                 storm::expressions::Expression constraint;
                 if (strictBound) {
                     constraint = variableInformation.virtualInitialStateVariable > solver.getConstant(probabilityThreshold);
@@ -477,7 +477,7 @@ namespace storm {
              * @param variableInformation A struct with information about the variables of the model.
              * @return The total number of constraints that were created.
              */
-            static uint_fast64_t assertChoicesImplyLabels(storm::solver::LpSolver& solver, storm::models::Mdp<T> const& labeledMdp, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation, VariableInformation const& variableInformation) {
+            static uint_fast64_t assertChoicesImplyLabels(storm::solver::LpSolver& solver, storm::models::sparse::Mdp<T> const& labeledMdp, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation, VariableInformation const& variableInformation) {
                 uint_fast64_t numberOfConstraintsCreated = 0;
 
                 std::vector<boost::container::flat_set<uint_fast64_t>> const& choiceLabeling = labeledMdp.getChoiceLabeling();
@@ -530,7 +530,7 @@ namespace storm {
              * @param variableInformation A struct with information about the variables of the model.
              * @return The total number of constraints that were created.
              */
-            static uint_fast64_t assertReachabilityProbabilities(storm::solver::LpSolver& solver, storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& psiStates, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation, VariableInformation const& variableInformation) {
+            static uint_fast64_t assertReachabilityProbabilities(storm::solver::LpSolver& solver, storm::models::sparse::Mdp<T> const& labeledMdp, storm::storage::BitVector const& psiStates, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation, VariableInformation const& variableInformation) {
                 uint_fast64_t numberOfConstraintsCreated = 0;
                 for (auto state : stateInformation.relevantStates) {
                     std::list<storm::expressions::Variable>::const_iterator choiceVariableIterator = variableInformation.stateToChoiceVariablesMap.at(state).begin();
@@ -575,7 +575,7 @@ namespace storm {
              * @param variableInformation A struct with information about the variables of the model.
              * @return The total number of constraints that were created.
              */
-            static uint_fast64_t assertUnproblematicStateReachable(storm::solver::LpSolver& solver, storm::models::Mdp<T> const& labeledMdp, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation, VariableInformation const& variableInformation) {
+            static uint_fast64_t assertUnproblematicStateReachable(storm::solver::LpSolver& solver, storm::models::sparse::Mdp<T> const& labeledMdp, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation, VariableInformation const& variableInformation) {
                 uint_fast64_t numberOfConstraintsCreated = 0;
 
                 for (auto stateListPair : choiceInformation.problematicChoicesForProblematicStates) {
@@ -625,7 +625,7 @@ namespace storm {
              * @param variableInformation A struct with information about the variables of the model.
              * @return The total number of constraints that were created.
              */
-            static uint_fast64_t assertKnownLabels(storm::solver::LpSolver& solver, storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& psiStates, ChoiceInformation const& choiceInformation, VariableInformation const& variableInformation) {
+            static uint_fast64_t assertKnownLabels(storm::solver::LpSolver& solver, storm::models::sparse::Mdp<T> const& labeledMdp, storm::storage::BitVector const& psiStates, ChoiceInformation const& choiceInformation, VariableInformation const& variableInformation) {
                 uint_fast64_t numberOfConstraintsCreated = 0;
 
                 for (auto label : choiceInformation.knownLabels) {
@@ -648,7 +648,7 @@ namespace storm {
              * @param variableInformation A struct with information about the variables of the model.
              * @return The total number of constraints that were created.
              */
-            static uint_fast64_t assertSchedulerCuts(storm::solver::LpSolver& solver, storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& psiStates, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation, VariableInformation const& variableInformation) {
+            static uint_fast64_t assertSchedulerCuts(storm::solver::LpSolver& solver, storm::models::sparse::Mdp<T> const& labeledMdp, storm::storage::BitVector const& psiStates, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation, VariableInformation const& variableInformation) {
                 storm::storage::SparseMatrix<T> backwardTransitions = labeledMdp.getBackwardTransitions();
                 uint_fast64_t numberOfConstraintsCreated = 0;
                 
@@ -728,7 +728,7 @@ namespace storm {
                     
                     // If the current state is an initial state and is selected as a successor state by the virtual
                     // initial state, then this also justifies making a choice in the current state.
-                    if (labeledMdp.getLabeledStates("init").get(state)) {
+                    if (labeledMdp.getStates("init").get(state)) {
                         constraint = constraint - variableInformation.initialStateToChoiceVariableMap.at(state);
                     }
                     constraint = constraint <= solver.getConstant(0);
@@ -739,7 +739,7 @@ namespace storm {
                 
                 // Assert that at least one initial state selects at least one action.
                 storm::expressions::Expression constraint = solver.getConstant(0);
-                for (auto initialState : labeledMdp.getLabeledStates("init")) {
+                for (auto initialState : labeledMdp.getStates("init")) {
                     for (auto const& choiceVariable : variableInformation.stateToChoiceVariablesMap.at(initialState)) {
                         constraint = constraint + choiceVariable;
                     }
@@ -808,7 +808,7 @@ namespace storm {
              * @param includeSchedulerCuts If set to true, additional constraints are asserted that reduce the set of
              * possible choices.
              */
-            static void buildConstraintSystem(storm::solver::LpSolver& solver, storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& psiStates, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation, VariableInformation const& variableInformation, double probabilityThreshold, bool strictBound, bool includeSchedulerCuts = false) {
+            static void buildConstraintSystem(storm::solver::LpSolver& solver, storm::models::sparse::Mdp<T> const& labeledMdp, storm::storage::BitVector const& psiStates, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation, VariableInformation const& variableInformation, double probabilityThreshold, bool strictBound, bool includeSchedulerCuts = false) {
                 // Assert that the reachability probability in the subsystem exceeds the given threshold.
                 uint_fast64_t numberOfConstraints = assertProbabilityGreaterThanThreshold(solver, labeledMdp, variableInformation, probabilityThreshold, strictBound);
                 LOG4CPLUS_DEBUG(logger, "Asserted that reachability probability exceeds threshold.");
@@ -879,7 +879,7 @@ namespace storm {
              * @param choiceInformation The information about the choices in the model.
              * @param variableInformation A struct with information about the variables of the model.
              */
-            static std::map<uint_fast64_t, uint_fast64_t> getChoices(storm::solver::LpSolver const& solver, storm::models::Mdp<T> const& labeledMdp, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation, VariableInformation const& variableInformation) {
+            static std::map<uint_fast64_t, uint_fast64_t> getChoices(storm::solver::LpSolver const& solver, storm::models::sparse::Mdp<T> const& labeledMdp, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation, VariableInformation const& variableInformation) {
                 std::map<uint_fast64_t, uint_fast64_t> result;
                 
                 for (auto state : stateInformation.relevantStates) {
@@ -903,7 +903,7 @@ namespace storm {
              * @param labeledMdp The labeled MDP.
              * @param variableInformation A struct with information about the variables of the model.
              */
-            static std::pair<uint_fast64_t, double> getReachabilityProbability(storm::solver::LpSolver const& solver, storm::models::Mdp<T> const& labeledMdp, VariableInformation const& variableInformation) {
+            static std::pair<uint_fast64_t, double> getReachabilityProbability(storm::solver::LpSolver const& solver, storm::models::sparse::Mdp<T> const& labeledMdp, VariableInformation const& variableInformation) {
                 uint_fast64_t selectedInitialState = 0;
                 for (auto const& initialStateVariablePair : variableInformation.initialStateToChoiceVariableMap) {
                     bool initialStateChosen = solver.getBinaryValue(initialStateVariablePair.second);
@@ -919,7 +919,7 @@ namespace storm {
                 
         public:
 
-            static boost::container::flat_set<uint_fast64_t> getMinimalLabelSet(storm::logic::Formula const& pathFormula, storm::models::Mdp<T> const& labeledMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool strictBound, bool checkThresholdFeasible = false, bool includeSchedulerCuts = false) {
+            static boost::container::flat_set<uint_fast64_t> getMinimalLabelSet(storm::logic::Formula const& pathFormula, storm::models::sparse::Mdp<T> const& labeledMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool strictBound, bool checkThresholdFeasible = false, bool includeSchedulerCuts = false) {
                 // (0) Check whether the MDP is indeed labeled.
                 if (!labeledMdp.hasChoiceLabeling()) {
                     throw storm::exceptions::InvalidArgumentException() << "Minimal label set generation is impossible for unlabeled model.";
@@ -975,7 +975,7 @@ namespace storm {
              * @param formulaPtr A pointer to a safety formula. The outermost operator must be a probabilistic bound operator with a strict upper bound. The nested
              * formula can be either an unbounded until formula or an eventually formula.
              */
-            static void computeCounterexample(storm::prism::Program const& program, storm::models::Mdp<T> const& labeledMdp, std::shared_ptr<storm::logic::Formula> const& formula) {
+            static void computeCounterexample(storm::prism::Program const& program, storm::models::sparse::Mdp<T> const& labeledMdp, std::shared_ptr<storm::logic::Formula> const& formula) {
                 std::cout << std::endl << "Generating minimal label counterexample for formula " << *formula << std::endl;
                 
                 STORM_LOG_THROW(formula->isProbabilityOperatorFormula(), storm::exceptions::InvalidPropertyException, "Counterexample generation does not support this kind of formula. Expecting a probability operator as the outermost formula element.");

@@ -2,9 +2,10 @@
 #define STORM_STORAGE_DD_CUDDODD_H_
 
 #include <memory>
+#include <unordered_map>
 
 #include "src/storage/dd/Odd.h"
-#include "src/storage/dd/CuddDd.h"
+#include "src/storage/dd/CuddAdd.h"
 #include "src/utility/OsDetection.h"
 
 // Include the C++-interface of CUDD.
@@ -16,11 +17,18 @@ namespace storm {
         class Odd<DdType::CUDD> {
         public:
             /*!
-             * Constructs an offset-labeled DD from the given DD.
+             * Constructs an offset-labeled DD from the given ADD.
              *
-             * @param dd The DD for which to build the offset-labeled DD.
+             * @param add The ADD for which to build the offset-labeled ADD.
              */
-            Odd(Dd<DdType::CUDD> const& dd);
+            Odd(Add<DdType::CUDD> const& add);
+            
+            /*!
+             * Constructs an offset-labeled DD from the given BDD.
+             *
+             * @param bdd The BDD for which to build the offset-labeled ADD.
+             */
+            Odd(Bdd<DdType::CUDD> const& bdd);
             
             // Instantiate all copy/move constructors/assignments with the default implementation.
             Odd() = default;
@@ -88,20 +96,42 @@ namespace storm {
              */
             uint_fast64_t getNodeCount() const;
             
+            /*!
+             * Checks whether the given ODD node is a terminal node, i.e. has no successors.
+             *
+             * @return True iff the node is terminal.
+             */
+            bool isTerminalNode() const;
+            
+            /*!
+             * Filters the given explicit vector using the symbolic representation of which values to select.
+             *
+             * @param selectedValues A symbolic representation of which values to select.
+             * @param values The value vector from which to select the values.
+             * @return The resulting vector.
+             */
+            std::vector<double> filterExplicitVector(storm::dd::Bdd<DdType::CUDD> const& selectedValues, std::vector<double> const& values) const;
+            
         private:
+            // Declare a hash functor that is used for the unique tables in the construction process.
+            class HashFunctor {
+            public:
+                std::size_t operator()(std::pair<DdNode*, bool> const& key) const;
+            };
+            
             /*!
              * Constructs an offset-labeled DD with the given topmost DD node, else- and then-successor.
              *
-             * @param dd The DD associated with this ODD node.
+             * @param dd The DD node associated with this ODD node.
              * @param elseNode The else-successor of thie ODD node.
              * @param elseOffset The offset of the else-successor.
              * @param thenNode The then-successor of thie ODD node.
              * @param thenOffset The offset of the then-successor.
              */
-            Odd(ADD dd, std::shared_ptr<Odd<DdType::CUDD>>&& elseNode, uint_fast64_t elseOffset, std::shared_ptr<Odd<DdType::CUDD>>&& thenNode, uint_fast64_t thenOffset);
+            Odd(std::shared_ptr<Odd<DdType::CUDD>> elseNode, uint_fast64_t elseOffset, std::shared_ptr<Odd<DdType::CUDD>> thenNode, uint_fast64_t thenOffset);
             
             /*!
-             * Recursively builds the ODD.
+             * Recursively builds the ODD from an ADD (that has no complement edges).
              *
              * @param dd The DD for which to build the ODD.
              * @param manager The manager responsible for the DD.
@@ -112,10 +142,39 @@ namespace storm {
              * ODD nodes for the same DD and level unique.
              * @return A pointer to the constructed ODD for the given arguments.
              */
-            static std::shared_ptr<Odd<DdType::CUDD>> buildOddRec(DdNode* dd, Cudd const& manager, uint_fast64_t currentLevel, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<std::map<DdNode*, std::shared_ptr<Odd<DdType::CUDD>>>>& uniqueTableForLevels);
+            static std::shared_ptr<Odd<DdType::CUDD>> buildOddFromAddRec(DdNode* dd, Cudd const& manager, uint_fast64_t currentLevel, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<std::unordered_map<DdNode*, std::shared_ptr<Odd<DdType::CUDD>>>>& uniqueTableForLevels);
+
+            /*!
+             * Recursively builds the ODD from a BDD (that potentially has complement edges).
+             *
+             * @param dd The DD for which to build the ODD.
+             * @param manager The manager responsible for the DD.
+             * @param currentLevel The currently considered level in the DD.
+             * @param complement A flag indicating whether or not the given node is to be considered as complemented.
+             * @param maxLevel The number of levels that need to be considered.
+             * @param ddVariableIndices The (sorted) indices of all DD variables that need to be considered.
+             * @param uniqueTableForLevels A vector of unique tables, one for each level to be considered, that keeps
+             * ODD nodes for the same DD and level unique.
+             * @return A pointer to the constructed ODD for the given arguments.
+             */
+            static std::shared_ptr<Odd<DdType::CUDD>> buildOddFromBddRec(DdNode* dd, Cudd const& manager, uint_fast64_t currentLevel, bool complement, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<std::unordered_map<std::pair<DdNode*, bool>, std::shared_ptr<Odd<DdType::CUDD>>, HashFunctor>>& uniqueTableForLevels);
             
-            // The DD associated with this ODD node.
-            ADD dd;
+            
+            /*!
+             * Adds the selected values the target vector.
+             *
+             * @param dd The current node of the DD representing the selected values.
+             * @param manager The manager responsible for the DD.
+             * @param currentLevel The currently considered level in the DD.
+             * @param maxLevel The number of levels that need to be considered.
+             * @param ddVariableIndices The sorted list of variable indices to use.
+             * @param currentOffset The offset along the path taken in the DD representing the selected values.
+             * @param odd The current ODD node.
+             * @param result The target vector to which to write the values.
+             * @param currentIndex The index at which the next element is to be written.
+             * @param values The value vector from which to select the values.
+             */
+            static void addSelectedValuesToVectorRec(DdNode* dd, Cudd const& manager, uint_fast64_t currentLevel, bool complement, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, uint_fast64_t currentOffset, storm::dd::Odd<DdType::CUDD> const& odd, std::vector<double>& result, uint_fast64_t& currentIndex, std::vector<double> const& values);
             
             // The then- and else-nodes.
             std::shared_ptr<Odd<DdType::CUDD>> elseNode;

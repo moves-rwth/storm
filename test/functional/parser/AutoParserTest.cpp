@@ -1,10 +1,3 @@
-/*
- * AutoParserTest.cpp
- *
- *  Created on: Feb 10, 2014
- *      Author: Manuel Sascha Weiand
- */
-
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
@@ -19,24 +12,16 @@ TEST(AutoParserTest, NonExistingFile) {
 
 TEST(AutoParserTest, BasicParsing) {
 	// Parse model, which is a Dtmc.
-	std::shared_ptr<storm::models::AbstractModel<double>> modelPtr = storm::parser::AutoParser::parseModel(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/autoParser/dtmc.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/autoParser.lab");
+	std::shared_ptr<storm::models::sparse::Model<double>> modelPtr = storm::parser::AutoParser::parseModel(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/autoParser/dtmc.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/autoParser.lab");
 
 	// Test if parsed correctly.
-	ASSERT_EQ(storm::models::DTMC, modelPtr->getType());
+    ASSERT_EQ(storm::models::ModelType::Dtmc, modelPtr->getType());
 	ASSERT_EQ(12, modelPtr->getNumberOfStates());
 	ASSERT_EQ(26, modelPtr->getNumberOfTransitions());
 	ASSERT_EQ(1, modelPtr->getInitialStates().getNumberOfSetBits());
-	ASSERT_TRUE(modelPtr->hasAtomicProposition("three"));
+	ASSERT_TRUE(modelPtr->hasLabel("three"));
 	ASSERT_FALSE(modelPtr->hasStateRewards());
 	ASSERT_FALSE(modelPtr->hasTransitionRewards());
-}
-
-TEST(AutoParserTest, Whitespaces) {
-	// Test different whitespace combinations by comparing the hash of the model parsed from files without whitespaces with the hash of the models parsed from files with whitespaces.
-	uint_fast64_t correctHash = storm::parser::AutoParser::parseModel(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/autoParser/dtmc.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/autoParser.lab")->getHash();
-
-	ASSERT_EQ(correctHash, storm::parser::AutoParser::parseModel(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/autoParser/dtmcWhitespaces1.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/autoParser.lab")->getHash());
-	ASSERT_EQ(correctHash, storm::parser::AutoParser::parseModel(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/autoParser/dtmcWhitespaces2.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/autoParser.lab")->getHash());
 }
 
 TEST(AutoParserTest, WrongHint) {
@@ -53,39 +38,29 @@ TEST(AutoParserTest, Decision) {
 	// Test if the AutoParser recognizes each model kind and correctly parses it.
 
 	// Dtmc
-	std::shared_ptr<storm::models::AbstractModel<double>> modelPtr = storm::parser::AutoParser::parseModel(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/autoParser/dtmc.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/autoParser.lab");
-	ASSERT_EQ(storm::models::DTMC, modelPtr->getType());
+	std::shared_ptr<storm::models::sparse::Model<double>> modelPtr = storm::parser::AutoParser::parseModel(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/autoParser/dtmc.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/autoParser.lab");
+	ASSERT_EQ(storm::models::ModelType::Dtmc, modelPtr->getType());
 	ASSERT_EQ(12, modelPtr->getNumberOfStates());
 	ASSERT_EQ(26, modelPtr->getNumberOfTransitions());
 
 	// Ctmc
 	modelPtr.reset();
 	modelPtr = storm::parser::AutoParser::parseModel(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/autoParser/ctmc.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/autoParser.lab");
-	ASSERT_EQ(storm::models::CTMC, modelPtr->getType());
+	ASSERT_EQ(storm::models::ModelType::Ctmc, modelPtr->getType());
 	ASSERT_EQ(12, modelPtr->getNumberOfStates());
 	ASSERT_EQ(26, modelPtr->getNumberOfTransitions());
 
 	// Mdp
 	modelPtr.reset();
 	modelPtr = storm::parser::AutoParser::parseModel(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/autoParser/mdp.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/autoParser.lab");
-	ASSERT_EQ(storm::models::MDP, modelPtr->getType());
-	ASSERT_EQ(12, modelPtr->getNumberOfStates());
-	ASSERT_EQ(28, modelPtr->getNumberOfTransitions());
-
-	// Ctmdp
-	// Note: For now we use the Mdp from above just given the ctmdp hint, since the implementation of the Ctmdp model seems not Quite right yet.
-	//       We still do this test so that the code responsible for Ctmdps is executed at least once during testing.
-	// TODO: Fix the Ctmdp implementation and use an actual Ctmdp for testing.
-	modelPtr.reset();
-	modelPtr = storm::parser::AutoParser::parseModel(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/autoParser/ctmdp.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/autoParser.lab");
-	ASSERT_EQ(storm::models::CTMDP, modelPtr->getType());
+	ASSERT_EQ(storm::models::ModelType::Mdp, modelPtr->getType());
 	ASSERT_EQ(12, modelPtr->getNumberOfStates());
 	ASSERT_EQ(28, modelPtr->getNumberOfTransitions());
 
 	// MA
 	modelPtr.reset();
 	modelPtr = storm::parser::AutoParser::parseModel(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/autoParser/ma.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/autoParser.lab");
-	ASSERT_EQ(storm::models::MA, modelPtr->getType());
+	ASSERT_EQ(storm::models::ModelType::MarkovAutomaton, modelPtr->getType());
 	ASSERT_EQ(12, modelPtr->getNumberOfStates());
 	ASSERT_EQ(27, modelPtr->getNumberOfTransitions());
 }

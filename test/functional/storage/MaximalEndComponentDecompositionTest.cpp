@@ -2,12 +2,12 @@
 #include "storm-config.h"
 #include "src/parser/AutoParser.h"
 #include "src/storage/MaximalEndComponentDecomposition.h"
-#include "src/models/MarkovAutomaton.h"
+#include "src/models/sparse/MarkovAutomaton.h"
 
 TEST(MaximalEndComponentDecomposition, FullSystem1) {
-    std::shared_ptr<storm::models::AbstractModel<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/ma/tiny/tiny1.tra", STORM_CPP_BASE_PATH "/examples/ma/tiny/tiny1.lab", "", "");
+    std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/ma/tiny/tiny1.tra", STORM_CPP_BASE_PATH "/examples/ma/tiny/tiny1.lab", "", "");
 
-    std::shared_ptr<storm::models::MarkovAutomaton<double>> markovAutomaton = abstractModel->as<storm::models::MarkovAutomaton<double>>();
+    std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> markovAutomaton = abstractModel->as<storm::models::sparse::MarkovAutomaton<double>>();
 
     storm::storage::MaximalEndComponentDecomposition<double> mecDecomposition;
     ASSERT_NO_THROW(mecDecomposition = storm::storage::MaximalEndComponentDecomposition<double>(*markovAutomaton));
@@ -73,9 +73,9 @@ TEST(MaximalEndComponentDecomposition, FullSystem1) {
 }
 
 TEST(MaximalEndComponentDecomposition, FullSystem2) {
-	std::shared_ptr<storm::models::AbstractModel<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/ma/tiny/tiny2.tra", STORM_CPP_BASE_PATH "/examples/ma/tiny/tiny2.lab", "", "");
+	std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/ma/tiny/tiny2.tra", STORM_CPP_BASE_PATH "/examples/ma/tiny/tiny2.lab", "", "");
     
-    std::shared_ptr<storm::models::MarkovAutomaton<double>> markovAutomaton = abstractModel->as<storm::models::MarkovAutomaton<double>>();
+    std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> markovAutomaton = abstractModel->as<storm::models::sparse::MarkovAutomaton<double>>();
     
     storm::storage::MaximalEndComponentDecomposition<double> mecDecomposition;
     ASSERT_NO_THROW(mecDecomposition = storm::storage::MaximalEndComponentDecomposition<double>(*markovAutomaton));
@@ -102,9 +102,9 @@ TEST(MaximalEndComponentDecomposition, FullSystem2) {
 }
 
 TEST(MaximalEndComponentDecomposition, Subsystem) {
-	std::shared_ptr<storm::models::AbstractModel<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/ma/tiny/tiny1.tra", STORM_CPP_BASE_PATH "/examples/ma/tiny/tiny1.lab", "", "");
+	std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/ma/tiny/tiny1.tra", STORM_CPP_BASE_PATH "/examples/ma/tiny/tiny1.lab", "", "");
     
-    std::shared_ptr<storm::models::MarkovAutomaton<double>> markovAutomaton = abstractModel->as<storm::models::MarkovAutomaton<double>>();
+    std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> markovAutomaton = abstractModel->as<storm::models::sparse::MarkovAutomaton<double>>();
     
     storm::storage::BitVector subsystem(markovAutomaton->getNumberOfStates(), true);
     subsystem.set(7, false);

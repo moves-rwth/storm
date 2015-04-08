@@ -596,7 +596,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        DeterministicModelBisimulationDecomposition<ValueType>::Options::Options(storm::models::AbstractModel<ValueType> const& model, storm::logic::Formula const& formula) : Options() {
+        DeterministicModelBisimulationDecomposition<ValueType>::Options::Options(storm::models::sparse::Model<ValueType> const& model, storm::logic::Formula const& formula) : Options() {
             if (!formula.containsRewardOperator()) {
                 this->keepRewards = false;
             }
@@ -665,7 +665,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        DeterministicModelBisimulationDecomposition<ValueType>::DeterministicModelBisimulationDecomposition(storm::models::Dtmc<ValueType> const& model, Options const& options) {
+        DeterministicModelBisimulationDecomposition<ValueType>::DeterministicModelBisimulationDecomposition(storm::models::sparse::Dtmc<ValueType> const& model, Options const& options) {
             STORM_LOG_THROW(!model.hasTransitionRewards(), storm::exceptions::IllegalFunctionCallException, "Bisimulation is currently only supported for models without transition rewards. Consider converting the transition rewards to state rewards (via suitable function calls).");
             STORM_LOG_THROW(!options.weak || !options.bounded, storm::exceptions::IllegalFunctionCallException, "Weak bisimulation cannot preserve bounded properties.");
             storm::storage::SparseMatrix<ValueType> backwardTransitions = model.getBackwardTransitions();
@@ -675,7 +675,7 @@ namespace storm {
             if (options.respectedAtomicPropositions) {
                 atomicPropositions = options.respectedAtomicPropositions.get();
             } else {
-                atomicPropositions = model.getStateLabeling().getAtomicPropositions();
+                atomicPropositions = model.getStateLabeling().getLabels();
             }
             
             Partition initialPartition;
@@ -691,7 +691,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        DeterministicModelBisimulationDecomposition<ValueType>::DeterministicModelBisimulationDecomposition(storm::models::Ctmc<ValueType> const& model, Options const& options) {
+        DeterministicModelBisimulationDecomposition<ValueType>::DeterministicModelBisimulationDecomposition(storm::models::sparse::Ctmc<ValueType> const& model, Options const& options) {
             STORM_LOG_THROW(!model.hasTransitionRewards(), storm::exceptions::IllegalFunctionCallException, "Bisimulation is currently only supported for models without transition rewards. Consider converting the transition rewards to state rewards (via suitable function calls).");
             STORM_LOG_THROW(!options.weak || !options.bounded, storm::exceptions::IllegalFunctionCallException, "Weak bisimulation cannot preserve bounded properties.");
             storm::storage::SparseMatrix<ValueType> backwardTransitions = model.getBackwardTransitions();
@@ -701,7 +701,7 @@ namespace storm {
             if (options.respectedAtomicPropositions) {
                 atomicPropositions = options.respectedAtomicPropositions.get();
             } else {
-                atomicPropositions = model.getStateLabeling().getAtomicPropositions();
+                atomicPropositions = model.getStateLabeling().getLabels();
             }
             
             Partition initialPartition;
@@ -717,7 +717,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        std::shared_ptr<storm::models::AbstractDeterministicModel<ValueType>> DeterministicModelBisimulationDecomposition<ValueType>::getQuotient() const {
+        std::shared_ptr<storm::models::sparse::DeterministicModel<ValueType>> DeterministicModelBisimulationDecomposition<ValueType>::getQuotient() const {
             STORM_LOG_THROW(this->quotient != nullptr, storm::exceptions::IllegalFunctionCallException, "Unable to retrieve quotient model from bisimulation decomposition, because it was not built.");
             return this->quotient;
         }
@@ -734,12 +734,12 @@ namespace storm {
             storm::storage::SparseMatrixBuilder<ValueType> builder(this->size(), this->size());
             
             // Prepare the new state labeling for (b).
-            storm::models::AtomicPropositionsLabeling newLabeling(this->size(), model.getStateLabeling().getNumberOfAtomicPropositions());
+            storm::models::sparse::StateLabeling newLabeling(this->size());
             std::set<std::string> atomicPropositionsSet = selectedAtomicPropositions;
             atomicPropositionsSet.insert("init");
             std::vector<std::string> atomicPropositions = std::vector<std::string>(atomicPropositionsSet.begin(), atomicPropositionsSet.end());
             for (auto const& ap : atomicPropositions) {
-                newLabeling.addAtomicProposition(ap);
+                newLabeling.addLabel(ap);
             }
             
             // If the model had state rewards, we need to build the state rewards for the quotient as well.
@@ -781,8 +781,8 @@ namespace storm {
                     // Add all of the selected atomic propositions that hold in the representative state to the state
                     // representing the block.
                     for (auto const& ap : atomicPropositions) {
-                        if (model.getStateLabeling().getStateHasAtomicProposition(ap, representativeState)) {
-                            newLabeling.addAtomicPropositionToState(ap, blockIndex);
+                        if (model.getStateLabeling().getStateHasLabel(ap, representativeState)) {
+                            newLabeling.addLabelToState(ap, blockIndex);
                         }
                     }
                 } else {
@@ -816,8 +816,8 @@ namespace storm {
                     // Otherwise add all atomic propositions to the equivalence class that the representative state
                     // satisfies.
                     for (auto const& ap : atomicPropositions) {
-                        if (model.getStateLabeling().getStateHasAtomicProposition(ap, representativeState)) {
-                            newLabeling.addAtomicPropositionToState(ap, blockIndex);
+                        if (model.getStateLabeling().getStateHasLabel(ap, representativeState)) {
+                            newLabeling.addLabelToState(ap, blockIndex);
                         }
                     }
                 }
@@ -832,11 +832,11 @@ namespace storm {
             // Now check which of the blocks of the partition contain at least one initial state.
             for (auto initialState : model.getInitialStates()) {
                 Block const& initialBlock = partition.getBlock(initialState);
-                newLabeling.addAtomicPropositionToState("init", initialBlock.getId());
+                newLabeling.addLabelToState("init", initialBlock.getId());
             }
             
             // Finally construct the quotient model.
-            this->quotient = std::shared_ptr<storm::models::AbstractDeterministicModel<ValueType>>(new ModelType(builder.build(), std::move(newLabeling), std::move(stateRewards)));
+            this->quotient = std::shared_ptr<storm::models::sparse::DeterministicModel<ValueType>>(new ModelType(builder.build(), std::move(newLabeling), std::move(stateRewards)));
         }
         
         template<typename ValueType>
@@ -1399,14 +1399,14 @@ namespace storm {
                     if (label == "init") {
                         continue;
                     }
-                    partition.splitLabel(model.getLabeledStates(label));
+                    partition.splitLabel(model.getStates(label));
                 }
             } else {
-                for (auto const& label : model.getStateLabeling().getAtomicPropositions()) {
+                for (auto const& label : model.getStateLabeling().getLabels()) {
                     if (label == "init") {
                         continue;
                     }
-                    partition.splitLabel(model.getLabeledStates(label));
+                    partition.splitLabel(model.getStates(label));
                 }
             }
             

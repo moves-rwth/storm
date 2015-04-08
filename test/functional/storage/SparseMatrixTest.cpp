@@ -447,7 +447,7 @@ TEST(SparseMatrix, JacobiDecomposition) {
     ASSERT_NO_THROW(matrix = matrixBuilder.build());
     
     ASSERT_NO_THROW(matrix.getJacobiDecomposition());
-    std::pair<storm::storage::SparseMatrix<double>, storm::storage::SparseMatrix<double>> jacobiDecomposition = matrix.getJacobiDecomposition();
+    std::pair<storm::storage::SparseMatrix<double>, std::vector<double>> jacobiDecomposition = matrix.getJacobiDecomposition();
     
     storm::storage::SparseMatrixBuilder<double> luBuilder(4, 4, 3);
     ASSERT_NO_THROW(luBuilder.addNextValue(0, 1, 1.2));
@@ -456,14 +456,7 @@ TEST(SparseMatrix, JacobiDecomposition) {
     storm::storage::SparseMatrix<double> lu;
     ASSERT_NO_THROW(lu = luBuilder.build());
     
-    storm::storage::SparseMatrixBuilder<double> dinvBuilder(4, 4, 4);
-    ASSERT_NO_THROW(dinvBuilder.addNextValue(0, 0, 1 / 1.1));
-    ASSERT_NO_THROW(dinvBuilder.addNextValue(1, 1, 1 / 0.5));
-    ASSERT_NO_THROW(dinvBuilder.addNextValue(2, 2, 1 / 0.99));
-    ASSERT_NO_THROW(dinvBuilder.addNextValue(3, 3, 1 / 0.11));
-    storm::storage::SparseMatrix<double> dinv;
-    ASSERT_NO_THROW(dinv = dinvBuilder.build());
-    
+    std::vector<double> dinv = {1/1.1, 1/0.5, 1/0.99, 1/0.11};    
     ASSERT_TRUE(lu == jacobiDecomposition.first);
     ASSERT_TRUE(dinv == jacobiDecomposition.second);
 }

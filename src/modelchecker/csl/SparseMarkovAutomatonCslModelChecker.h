@@ -3,9 +3,9 @@
 
 #include "src/modelchecker/AbstractModelChecker.h"
 #include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
-#include "src/models/MarkovAutomaton.h"
+#include "src/models/sparse/MarkovAutomaton.h"
 #include "src/storage/MaximalEndComponentDecomposition.h"
-#include "src/solver/NondeterministicLinearEquationSolver.h"
+#include "src/solver/MinMaxLinearEquationSolver.h"
 #include "src/utility/solver.h"
 
 namespace storm {
@@ -14,8 +14,8 @@ namespace storm {
         template<typename ValueType>
         class SparseMarkovAutomatonCslModelChecker : public AbstractModelChecker {
         public:
-            explicit SparseMarkovAutomatonCslModelChecker(storm::models::MarkovAutomaton<ValueType> const& model, std::shared_ptr<storm::solver::NondeterministicLinearEquationSolver<ValueType>> nondeterministicLinearEquationSolver);
-            explicit SparseMarkovAutomatonCslModelChecker(storm::models::MarkovAutomaton<ValueType> const& model);
+            explicit SparseMarkovAutomatonCslModelChecker(storm::models::sparse::MarkovAutomaton<ValueType> const& model, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType>>&& MinMaxLinearEquationSolver);
+            explicit SparseMarkovAutomatonCslModelChecker(storm::models::sparse::MarkovAutomaton<ValueType> const& model);
             
             // The implemented methods of the AbstractModelChecker interface.
             virtual bool canHandle(storm::logic::Formula const& formula) const override;
@@ -29,9 +29,8 @@ namespace storm {
             
         private:
             // The methods that perform the actual checking.
-
             std::vector<ValueType> computeBoundedUntilProbabilitiesHelper(bool minimize, storm::storage::BitVector const& psiStates, std::pair<double, double> const& boundsPair) const;
-            static void computeBoundedReachabilityProbabilities(bool minimize, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& exitRates, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& goalStates, storm::storage::BitVector const& markovianNonGoalStates, storm::storage::BitVector const& probabilisticNonGoalStates, std::vector<ValueType>& markovianNonGoalValues, std::vector<ValueType>& probabilisticNonGoalValues, ValueType delta, uint_fast64_t numberOfSteps);
+            static void computeBoundedReachabilityProbabilities(bool minimize, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& exitRates, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& goalStates, storm::storage::BitVector const& markovianNonGoalStates, storm::storage::BitVector const& probabilisticNonGoalStates, std::vector<ValueType>& markovianNonGoalValues, std::vector<ValueType>& probabilisticNonGoalValues, ValueType delta, uint_fast64_t numberOfSteps, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& MinMaxLinearEquationSolverFactory);
             std::vector<ValueType> computeUntilProbabilitiesHelper(bool minimize, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative) const;
             std::vector<ValueType> computeReachabilityRewardsHelper(bool minimize, storm::storage::BitVector const& psiStates, bool qualitative) const;
             std::vector<ValueType> computeLongRunAverageHelper(bool minimize, storm::storage::BitVector const& psiStates, bool qualitative) const;
@@ -65,10 +64,10 @@ namespace storm {
             std::vector<ValueType> computeExpectedRewards(bool minimize, storm::storage::BitVector const& goalStates, std::vector<ValueType> const& stateRewards) const;
             
             // The model this model checker is supposed to analyze.
-            storm::models::MarkovAutomaton<ValueType> const& model;
+            storm::models::sparse::MarkovAutomaton<ValueType> const& model;
             
-            // A solver that is used for solving systems of linear equations that are the result of nondeterministic choices.
-            std::shared_ptr<storm::solver::NondeterministicLinearEquationSolver<ValueType>> nondeterministicLinearEquationSolver;
+            // An object that is used for retrieving solvers for systems of linear equations that are the result of nondeterministic choices.
+            std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType>> MinMaxLinearEquationSolverFactory;
         };
     }
 }

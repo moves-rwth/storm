@@ -126,6 +126,13 @@ namespace storm {
              * @return The commands of the module.
              */
             std::vector<storm::prism::Command> const& getCommands() const;
+
+            /*!
+             * Retrieves the commands of the module.
+             *
+             * @return The commands of the module.
+             */
+            std::vector<storm::prism::Command>& getCommands();
             
             /*!
              * Retrieves the name of the module.
@@ -195,6 +202,14 @@ namespace storm {
              * @return The resulting module.
              */
             Module substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const;
+            
+            /*!
+             * Checks whether the given variables only appear in the update probabilities of the module and nowhere else.
+             *
+             * @param undefinedConstantVariables A set of variables that may only appear in the update probabilities.
+             * @return True iff the given variables only appear in the update probabilities of the module and nowhere else.
+             */
+            bool containsVariablesOnlyInUpdateProbabilities(std::set<storm::expressions::Variable> const& undefinedConstantVariables) const;
             
             friend std::ostream& operator<<(std::ostream& stream, Module const& module);
 

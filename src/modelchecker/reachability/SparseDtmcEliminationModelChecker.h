@@ -2,7 +2,7 @@
 #define STORM_MODELCHECKER_REACHABILITY_SPARSEDTMCELIMINATIONMODELCHECKER_H_
 
 #include "src/storage/sparse/StateType.h"
-#include "src/models/Dtmc.h"
+#include "src/models/sparse/Dtmc.h"
 #include "src/modelchecker/AbstractModelChecker.h"
 #include "src/utility/constants.h"
 
@@ -12,7 +12,7 @@ namespace storm {
         template<typename ValueType>
         class SparseDtmcEliminationModelChecker : public AbstractModelChecker {
         public:
-            explicit SparseDtmcEliminationModelChecker(storm::models::Dtmc<ValueType> const& model);
+            explicit SparseDtmcEliminationModelChecker(storm::models::sparse::Dtmc<ValueType> const& model);
             
             // The implemented methods of the AbstractModelChecker interface.
             virtual bool canHandle(storm::logic::Formula const& formula) const override;
@@ -91,7 +91,7 @@ namespace storm {
             std::vector<std::size_t> getStatePriorities(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& transitionMatrixTransposed, storm::storage::BitVector const& initialStates, std::vector<ValueType> const& oneStepProbabilities);
             
             // The model this model checker is supposed to analyze.
-            storm::models::Dtmc<ValueType> const& model;
+            storm::models::sparse::Dtmc<ValueType> const& model;
             
             // A comparator that can be used to compare constants.
             storm::utility::ConstantsComparator<ValueType> comparator;

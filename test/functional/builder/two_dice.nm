@@ -1,0 +1,40 @@
+// sum of two dice as the asynchronous parallel composition of
+// two copies of Knuth's model of a fair die using only fair coins
+
+mdp
+
+module die1
+
+	// local state
+	s1 : [0..7] init 0;
+	// value of the dice
+	d1 : [0..6] init 0;
+
+	[] s1=0 -> 0.5 : (s1'=1) + 0.5 : (s1'=2);
+	[] s1=1 -> 0.5 : (s1'=3) + 0.5 : (s1'=4);
+	[] s1=2 -> 0.5 : (s1'=5) + 0.5 : (s1'=6);
+	[] s1=3 -> 0.5 : (s1'=1) + 0.5 : (s1'=7) & (d1'=1);
+	[] s1=4 -> 0.5 : (s1'=7) & (d1'=2) + 0.5 : (s1'=7) & (d1'=3);
+	[] s1=5 -> 0.5 : (s1'=7) & (d1'=4) + 0.5 : (s1'=7) & (d1'=5);
+	[] s1=6 -> 0.5 : (s1'=2) + 0.5 : (s1'=7) & (d1'=6);
+	[] s1=7 & s2=7 -> 1: (s1'=7);
+endmodule
+
+module die2 = die1 [ s1=s2, s2=s1, d1=d2 ] endmodule
+
+rewards "coinflips"
+	[] s1<7 | s2<7 : 1;
+endrewards
+
+label "done" = s1=7 & s2=7;
+label "two" = s1=7 & s2=7 & d1+d2=2;
+label "three" = s1=7 & s2=7 & d1+d2=3;
+label "four" = s1=7 & s2=7 & d1+d2=4;
+label "five" = s1=7 & s2=7 & d1+d2=5;
+label "six" = s1=7 & s2=7 & d1+d2=6;
+label "seven" = s1=7 & s2=7 & d1+d2=7;
+label "eight" = s1=7 & s2=7 & d1+d2=8;
+label "nine" = s1=7 & s2=7 & d1+d2=9;
+label "ten" = s1=7 & s2=7 & d1+d2=10;
+label "eleven" = s1=7 & s2=7 & d1+d2=11;
+label "twelve" = s1=7 & s2=7 & d1+d2=12;

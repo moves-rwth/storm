@@ -22,16 +22,12 @@ namespace storm {
             return true;
         }
         
-        bool BoundedUntilFormula::isIntervalBounded() const {
-            return bounds.which() == 1;
-        }
-        
-        bool BoundedUntilFormula::isIntegerUpperBounded() const {
+        bool BoundedUntilFormula::hasDiscreteTimeBound() const {
             return bounds.which() == 0;
         }
         
         bool BoundedUntilFormula::isPctlPathFormula() const {
-            return this->isIntegerUpperBounded() && this->getLeftSubformula().isPctlStateFormula() && this->getRightSubformula().isPctlStateFormula();
+            return this->hasDiscreteTimeBound() && this->getLeftSubformula().isPctlStateFormula() && this->getRightSubformula().isPctlStateFormula();
         }
         
         bool BoundedUntilFormula::isCslPathFormula() const {
@@ -42,7 +38,7 @@ namespace storm {
             return boost::get<std::pair<double, double>>(bounds);
         }
         
-        uint_fast64_t BoundedUntilFormula::getUpperBound() const {
+        uint_fast64_t BoundedUntilFormula::getDiscreteTimeBound() const {
             return boost::get<uint_fast64_t>(bounds);
         }
         
@@ -50,11 +46,11 @@ namespace storm {
             this->getLeftSubformula().writeToStream(out);
             
             out << " U";
-            if (this->isIntervalBounded()) {
+            if (!this->hasDiscreteTimeBound()) {
                 std::pair<double, double> const& intervalBounds = getIntervalBounds();
                 out << "[" << intervalBounds.first << "," << intervalBounds.second << "] ";
             } else {
-                out << "<=" << getUpperBound() << " ";
+                out << "<=" << getDiscreteTimeBound() << " ";
             }
             
             this->getRightSubformula().writeToStream(out);

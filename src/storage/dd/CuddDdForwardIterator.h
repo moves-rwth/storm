@@ -17,12 +17,12 @@ namespace storm {
     namespace dd {
         // Forward-declare the DdManager class.
         template<DdType Type> class DdManager;
-        template<DdType Type> class Dd;
+        template<DdType Type> class Add;
         
         template<>
         class DdForwardIterator<DdType::CUDD> {
         public:
-            friend class Dd<DdType::CUDD>;
+            friend class Add<DdType::CUDD>;
 
             // Default-instantiate the constructor.
             DdForwardIterator();
@@ -85,7 +85,7 @@ namespace storm {
              * @param enumerateDontCareMetaVariables If set to true, all meta variable assignments are enumerated, even
              * if a meta variable does not at all influence the the function value.
              */
-            DdForwardIterator(std::shared_ptr<DdManager<DdType::CUDD>> ddManager, DdGen* generator, int* cube, double value, bool isAtEnd, std::set<storm::expressions::Variable> const* metaVariables = nullptr, bool enumerateDontCareMetaVariables = true);
+            DdForwardIterator(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, DdGen* generator, int* cube, double value, bool isAtEnd, std::set<storm::expressions::Variable> const* metaVariables = nullptr, bool enumerateDontCareMetaVariables = true);
             
             /*!
              * Recreates the internal information when a new cube needs to be treated.
@@ -98,7 +98,7 @@ namespace storm {
             void treatNextInCube();
             
             // The manager responsible for the meta variables (and therefore the underlying DD).
-            std::shared_ptr<DdManager<DdType::CUDD>> ddManager;
+            std::shared_ptr<DdManager<DdType::CUDD> const> ddManager;
             
             // The CUDD generator used to enumerate the cubes of the DD.
             DdGen* generator;
@@ -124,8 +124,8 @@ namespace storm {
             // This is needed, because cubes may represent many assignments (if they have don't care variables).
             uint_fast64_t cubeCounter;
             
-            // A vector of tuples of the form <variable, metaVariable, bitIndex>.
-            std::vector<std::tuple<ADD, storm::expressions::Variable, uint_fast64_t>> relevantDontCareDdVariables;
+            // A vector of tuples of the form <metaVariable, bitIndex>.
+            std::vector<std::tuple<storm::expressions::Variable, uint_fast64_t>> relevantDontCareDdVariables;
             
             // The current valuation of meta variables.
             storm::expressions::SimpleValuation currentValuation;

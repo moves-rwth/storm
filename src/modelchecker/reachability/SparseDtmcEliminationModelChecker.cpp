@@ -23,7 +23,7 @@ namespace storm {
     namespace modelchecker {
         
         template<typename ValueType>
-        SparseDtmcEliminationModelChecker<ValueType>::SparseDtmcEliminationModelChecker(storm::models::Dtmc<ValueType> const& model) : model(model) {
+        SparseDtmcEliminationModelChecker<ValueType>::SparseDtmcEliminationModelChecker(storm::models::sparse::Dtmc<ValueType> const& model) : model(model) {
             // Intentionally left empty.
         }
         
@@ -178,7 +178,7 @@ namespace storm {
                     // first.
                     std::vector<ValueType> subStateRewards(stateRewards.size());
                     storm::utility::vector::selectVectorValues(subStateRewards, maybeStates, model.getStateRewardVector());
-                    storm::utility::vector::addVectorsInPlace(stateRewards, subStateRewards);
+                    storm::utility::vector::addVectors(stateRewards, subStateRewards, stateRewards);
                 }
             } else {
                 // If only a state-based reward model is  available, we take this vector as the
@@ -438,8 +438,8 @@ namespace storm {
         
         template<typename ValueType>
         std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<ValueType>::checkAtomicLabelFormula(storm::logic::AtomicLabelFormula const& stateFormula) {
-            STORM_LOG_THROW(model.hasAtomicProposition(stateFormula.getLabel()), storm::exceptions::InvalidPropertyException, "The property refers to unknown label '" << stateFormula.getLabel() << "'.");
-            return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult(model.getLabeledStates(stateFormula.getLabel())));
+            STORM_LOG_THROW(model.hasLabel(stateFormula.getLabel()), storm::exceptions::InvalidPropertyException, "The property refers to unknown label '" << stateFormula.getLabel() << "'.");
+            return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult(model.getStates(stateFormula.getLabel())));
         }
         
         template<typename ValueType>

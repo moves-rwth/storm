@@ -1,4 +1,7 @@
 #include "src/parser/PrismParser.h"
+
+#include "src/settings/SettingsManager.h"
+
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/exceptions/InvalidTypeException.h"
 #include "src/exceptions/WrongFormatException.h"
@@ -139,10 +142,15 @@ namespace storm {
             updateListDefinition %= +updateDefinition(qi::_r1) % "+";
             updateListDefinition.name("update list");
             
-            commandDefinition = (qi::lit("[") > -(identifier[qi::_a = qi::_1]) > qi::lit("]") > +(qi::char_ - qi::lit(";")) > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createCommand, phoenix::ref(*this), qi::_a, qi::_r1)];
+            // This is a dummy command-definition (it ignores the actual contents of the command) that is overwritten when the parser is moved to the second run.
+            commandDefinition = (((qi::lit("[") > -(identifier[qi::_a = qi::_1]) > qi::lit("]"))
+                                  |
+                                 (qi::lit("<") > -(identifier[qi::_a = qi::_1]) > qi::lit(">")[qi::_b = true]))
+                                 > +(qi::char_ - qi::lit(";"))
+                                 > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createCommand, phoenix::ref(*this), qi::_a, qi::_r1)];
             commandDefinition.name("command definition");
             
-            moduleDefinition = ((qi::lit("module") >> identifier >> *(variableDefinition(qi::_a, qi::_b))) > +commandDefinition(qi::_r1) > qi::lit("endmodule"))[qi::_val = phoenix::bind(&PrismParser::createModule, phoenix::ref(*this), qi::_1, qi::_a, qi::_b, qi::_2, qi::_r1)];
+            moduleDefinition = ((qi::lit("module") >> identifier >> *(variableDefinition(qi::_a, qi::_b))) > *commandDefinition(qi::_r1) > qi::lit("endmodule"))[qi::_val = phoenix::bind(&PrismParser::createModule, phoenix::ref(*this), qi::_1, qi::_a, qi::_b, qi::_2, qi::_r1)];
             moduleDefinition.name("module definition");
             
             moduleRenaming = ((qi::lit("module") >> identifier >> qi::lit("=")) > identifier > qi::lit("[")
@@ -191,7 +199,13 @@ namespace storm {
         void PrismParser::moveToSecondRun() {
             // In the second run, we actually need to parse the commands instead of just skipping them,
             // so we adapt the rule for parsing commands.
-            commandDefinition = (qi::lit("[") > -(identifier[qi::_a = qi::_1]) > qi::lit("]") > expressionParser > qi::lit("->") > updateListDefinition(qi::_r1) > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createCommand, phoenix::ref(*this), qi::_a, qi::_2, qi::_3, qi::_r1)];
+            commandDefinition = (((qi::lit("[") > -(identifier[qi::_a = qi::_1]) > qi::lit("]"))
+                                 |
+                                  (qi::lit("<") > -(identifier[qi::_a = qi::_1]) > qi::lit(">")[qi::_b = true]))
+                                 > expressionParser
+                                 > qi::lit("->")
+                                 > updateListDefinition(qi::_r1)
+                                 > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createCommand, phoenix::ref(*this), qi::_b, qi::_a, qi::_2, qi::_3, qi::_r1)];
             
             this->secondRun = true;
             this->expressionParser.setIdentifierMapping(&this->identifiers_);
@@ -359,7 +373,7 @@ namespace storm {
             return storm::prism::Update(globalProgramInformation.currentUpdateIndex - 1, likelihoodExpression, assignments, this->getFilename());
         }
         
-        storm::prism::Command PrismParser::createCommand(std::string const& actionName, storm::expressions::Expression guardExpression, std::vector<storm::prism::Update> const& updates, GlobalProgramInformation& globalProgramInformation) const {
+        storm::prism::Command PrismParser::createCommand(bool markovian, std::string const& actionName, storm::expressions::Expression guardExpression, std::vector<storm::prism::Update> const& updates, GlobalProgramInformation& globalProgramInformation) const {
             ++globalProgramInformation.currentCommandIndex;
             if (!actionName.empty()) {
                 auto const& nameIndexPair = globalProgramInformation.actionIndices.find(actionName);
@@ -367,7 +381,8 @@ namespace storm {
                     globalProgramInformation.actionIndices[actionName] = globalProgramInformation.actionIndices.size();
                 }
             }
-            return storm::prism::Command(globalProgramInformation.currentCommandIndex - 1, actionName.empty() ? 0 : globalProgramInformation.actionIndices[actionName], actionName, guardExpression, updates, this->getFilename());
+            
+            return storm::prism::Command(globalProgramInformation.currentCommandIndex - 1, markovian, actionName.empty() ? 0 : globalProgramInformation.actionIndices[actionName], actionName, guardExpression, updates, this->getFilename());
         }
         
         storm::prism::Command PrismParser::createCommand(std::string const& actionName, GlobalProgramInformation& globalProgramInformation) const {
@@ -507,7 +522,7 @@ namespace storm {
                         }
                     }
                     
-                    commands.emplace_back(globalProgramInformation.currentCommandIndex, newActionName.empty() ? 0 : globalProgramInformation.actionIndices[newActionName], newActionName, command.getGuardExpression().substitute(expressionRenaming), updates, this->getFilename(), get_line(qi::_1));
+                    commands.emplace_back(globalProgramInformation.currentCommandIndex, command.isMarkovian(), newActionName.empty() ? 0 : globalProgramInformation.actionIndices[newActionName], newActionName, command.getGuardExpression().substitute(expressionRenaming), updates, this->getFilename(), get_line(qi::_1));
                     ++globalProgramInformation.currentCommandIndex;
                 }
                 

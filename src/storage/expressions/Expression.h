@@ -214,6 +214,14 @@ namespace storm {
             std::set<storm::expressions::Variable> getVariables() const;
 
             /*!
+             * Retrieves whether the expression contains any of the given variables.
+             *
+             * @param variables The variables to search for.
+             * @return True iff any of the variables appear in the expression.
+             */
+            bool containsVariable(std::set<storm::expressions::Variable> const& variables) const;
+            
+            /*!
              * Retrieves the base expression underlying this expression object. Note that prior to calling this, the
              * expression object must be properly initialized.
              *

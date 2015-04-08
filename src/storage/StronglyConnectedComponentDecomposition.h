@@ -8,8 +8,10 @@
 
 namespace storm {
     namespace models {
-        // Forward declare the abstract model class.
-        template <typename ValueType> class AbstractModel;
+        namespace sparse {
+            // Forward declare the model class.
+            template <typename ValueType> class Model;
+        }
     }
     
     namespace storage {
@@ -34,7 +36,7 @@ namespace storm {
              * @param onlyBottomSccs If set to true, only bottom SCCs, i.e. SCCs in which all states have no way of
              * leaving the SCC), are kept.
              */
-            StronglyConnectedComponentDecomposition(storm::models::AbstractModel<ValueType> const& model, bool dropNaiveSccs = false, bool onlyBottomSccs = false);
+            StronglyConnectedComponentDecomposition(storm::models::sparse::Model<ValueType> const& model, bool dropNaiveSccs = false, bool onlyBottomSccs = false);
             
             /*
              * Creates an SCC decomposition of the given block in the given model.
@@ -46,7 +48,7 @@ namespace storm {
              * @param onlyBottomSccs If set to true, only bottom SCCs, i.e. SCCs in which all states have no way of
              * leaving the SCC), are kept.
              */
-            StronglyConnectedComponentDecomposition(storm::models::AbstractModel<ValueType> const& model, StateBlock const& block, bool dropNaiveSccs = false, bool onlyBottomSccs = false);
+            StronglyConnectedComponentDecomposition(storm::models::sparse::Model<ValueType> const& model, StateBlock const& block, bool dropNaiveSccs = false, bool onlyBottomSccs = false);
             
             /*
              * Creates an SCC decomposition of the given subsystem in the given model.
@@ -58,7 +60,7 @@ namespace storm {
              * @param onlyBottomSccs If set to true, only bottom SCCs, i.e. SCCs in which all states have no way of
              * leaving the SCC), are kept.
              */
-            StronglyConnectedComponentDecomposition(storm::models::AbstractModel<ValueType> const& model, storm::storage::BitVector const& subsystem, bool dropNaiveSccs = false, bool onlyBottomSccs = false);
+            StronglyConnectedComponentDecomposition(storm::models::sparse::Model<ValueType> const& model, storm::storage::BitVector const& subsystem, bool dropNaiveSccs = false, bool onlyBottomSccs = false);
 
             /*
              * Creates an SCC decomposition of the given subsystem in the given system (whose transition relation is 
@@ -112,7 +114,7 @@ namespace storm {
              * @param onlyBottomSccs If set to true, only bottom SCCs, i.e. SCCs in which all states have no way of
              * leaving the SCC), are kept.
              */
-            void performSccDecomposition(storm::models::AbstractModel<ValueType> const& model, bool dropNaiveSccs, bool onlyBottomSccs);
+            void performSccDecomposition(storm::models::sparse::Model<ValueType> const& model, bool dropNaiveSccs, bool onlyBottomSccs);
             
             /*
              * Performs the SCC decomposition of the given block in the given model. As a side-effect this fills

@@ -18,6 +18,7 @@ namespace storm {
             }
             
             virtual bool isPctlStateFormula() const override;
+            virtual bool isCslStateFormula() const override;
             virtual bool isPltlFormula() const override;
             virtual bool containsProbabilityOperator() const override;
             virtual bool containsNestedProbabilityOperators() const override;
