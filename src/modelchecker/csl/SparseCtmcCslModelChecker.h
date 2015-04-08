@@ -3,11 +3,15 @@
 
 #include "src/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "src/models/sparse/Ctmc.h"
+#include "src/storage/dd/DdType.h"
 #include "src/utility/solver.h"
 #include "src/solver/LinearEquationSolver.h"
 
 namespace storm {
     namespace modelchecker {
+        
+        template<storm::dd::DdType DdType, typename ValueType>
+        class HybridCtmcCslModelChecker;
         
         template<class ValueType>
         class SparseCtmcCslModelChecker : public SparsePropositionalModelChecker<ValueType> {
@@ -33,7 +37,6 @@ namespace storm {
             static std::vector<ValueType> computeUntilProbabilitiesHelper(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory);
             std::vector<ValueType> computeInstantaneousRewardsHelper(double timeBound) const;
             std::vector<ValueType> computeCumulativeRewardsHelper(double timeBound) const;
-            std::vector<ValueType> computeReachabilityRewardsHelper(storm::storage::BitVector const& targetStates, bool qualitative) const;
 
             /*!
              * Computes the matrix representing the transitions of the uniformized CTMC.
@@ -61,7 +64,7 @@ namespace storm {
              * @return The vector of transient probabilities.
              */
             template<bool useMixedPoissonProbabilities = false>
-            std::vector<ValueType> computeTransientProbabilities(storm::storage::SparseMatrix<ValueType> const& uniformizedMatrix, std::vector<ValueType> const* addVector, ValueType timeBound, ValueType uniformizationRate, std::vector<ValueType> values, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) const;
+            static std::vector<ValueType> computeTransientProbabilities(storm::storage::SparseMatrix<ValueType> const& uniformizedMatrix, std::vector<ValueType> const* addVector, ValueType timeBound, ValueType uniformizationRate, std::vector<ValueType> values, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory);
             
             /*!
              * Converts the given rate-matrix into a time-abstract probability matrix.

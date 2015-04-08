@@ -135,6 +135,13 @@ namespace storm {
                 storm::dd::Add<Type>& getTransitionMatrix();
                 
                 /*!
+                 * Retrieves the (optional) matrix representing the transition rewards of the model.
+                 *
+                 * @return The matrix representing the transition rewards of the model.
+                 */
+                boost::optional<storm::dd::Add<Type>> const& getOptionalTransitionRewardMatrix() const;
+                
+                /*!
                  * Retrieves the matrix representing the transition rewards of the model. Note that calling this method
                  * is only valid if the model has transition rewards.
                  *
@@ -157,6 +164,13 @@ namespace storm {
                  * @return A vector representing the state rewards of the model.
                  */
                 storm::dd::Add<Type> const& getStateRewardVector() const;
+
+                /*!
+                 * Retrieves an (optional) vector representing the state rewards of the model.
+                 *
+                 * @return A vector representing the state rewards of the model.
+                 */
+                boost::optional<storm::dd::Add<Type>> const& getOptionalStateRewardVector() const;
                 
                 /*!
                  * Retrieves whether this model has state rewards.

@@ -235,9 +235,10 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        std::unique_ptr<CheckResult> HybridDtmcPrctlModelChecker<DdType, ValueType>::computeReachabilityRewardsHelper(storm::models::symbolic::Model<DdType> const& model, storm::dd::Add<DdType> const& transitionMatrix, storm::dd::Bdd<DdType> const& targetStates, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory, bool qualitative) {
-            // Only compute the result if the model has at least one reward model.
-            STORM_LOG_THROW(model.hasStateRewards() || model.hasTransitionRewards(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
+        std::unique_ptr<CheckResult> HybridDtmcPrctlModelChecker<DdType, ValueType>::computeReachabilityRewardsHelper(storm::models::symbolic::Model<DdType> const& model, storm::dd::Add<DdType> const& transitionMatrix, boost::optional<storm::dd::Add<DdType>> const& stateRewardVector, boost::optional<storm::dd::Add<DdType>> const& transitionRewardMatrix, storm::dd::Bdd<DdType> const& targetStates, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory, bool qualitative) {
+            
+            // Only compute the result if there is at least one reward model.
+            STORM_LOG_THROW(stateRewardVector || transitionRewardMatrix, storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
 
             // Determine which states have a reward of infinity by definition.
             storm::dd::Bdd<DdType> infinityStates = storm::utility::graph::performProb1(model, transitionMatrix.notZero(), model.getReachableStates(), targetStates);
@@ -266,9 +267,9 @@ namespace storm {
                     storm::dd::Add<DdType> submatrix = transitionMatrix * maybeStatesAdd;
                     
                     // Then compute the state reward vector to use in the computation.
-                    storm::dd::Add<DdType> subvector = model.hasStateRewards() ? maybeStatesAdd * model.getStateRewardVector() : model.getManager().getAddZero();
-                    if (model.hasTransitionRewards()) {
-                        subvector += (submatrix * model.getTransitionRewardMatrix()).sumAbstract(model.getColumnVariables());
+                    storm::dd::Add<DdType> subvector = stateRewardVector ? maybeStatesAdd * stateRewardVector.get() : model.getManager().getAddZero();
+                    if (transitionRewardMatrix) {
+                        subvector += (submatrix * transitionRewardMatrix.get()).sumAbstract(model.getColumnVariables());
                     }
                     
                     // Finally cut away all columns targeting non-maybe states and convert the matrix into the matrix needed

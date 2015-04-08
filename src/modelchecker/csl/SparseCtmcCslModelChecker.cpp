@@ -49,9 +49,7 @@ namespace storm {
                 upperBound = pathFormula.getDiscreteTimeBound();
             }
             
-            std::unique_ptr<CheckResult> result = std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(this->computeBoundedUntilProbabilitiesHelper(leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(), this->getModel().getExitRateVector(), qualitative, lowerBound, upperBound)));
-            
-            return result;
+            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(this->computeBoundedUntilProbabilitiesHelper(leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(), this->getModel().getExitRateVector(), qualitative, lowerBound, upperBound)));
         }
         
         template<class ValueType>
@@ -192,7 +190,7 @@ namespace storm {
                             
                             // Start by computing the transient probabilities of reaching a psi state in time t' - t.
                             std::vector<ValueType> values(statesWithProbabilityGreater0NonPsi.getNumberOfSetBits(), storm::utility::zero<ValueType>());
-                            std::vector<ValueType> subresult = this->computeTransientProbabilities(uniformizedMatrix, &b, upperBound - lowerBound, uniformizationRate, values, *this->linearEquationSolverFactory);
+                            std::vector<ValueType> subresult = computeTransientProbabilities(uniformizedMatrix, &b, upperBound - lowerBound, uniformizationRate, values, *this->linearEquationSolverFactory);
                             
                             // Determine the set of states that must be considered further.
                             relevantStates = storm::utility::vector::filterGreaterZero(subresult);
@@ -215,12 +213,12 @@ namespace storm {
                         // point, but we still need to construct the starting vector.
                         if (lowerBound == upperBound) {
                             newSubresult = std::vector<ValueType>(relevantStates.getNumberOfSetBits());
-                            storm::utility::vector::setVectorValues(newSubresult, psiStates % statesWithProbabilityGreater0, storm::utility::one<ValueType>());
+                            storm::utility::vector::setVectorValues(newSubresult, psiStates % relevantStates, storm::utility::one<ValueType>());
                         }
                         
                         // Finally, we compute the second set of transient probabilities.
                         uniformizedMatrix = this->computeUniformizedMatrix(this->getModel().getTransitionMatrix(), relevantStates, uniformizationRate, exitRates);
-                        newSubresult = this->computeTransientProbabilities(uniformizedMatrix, nullptr, lowerBound, uniformizationRate, newSubresult, *this->linearEquationSolverFactory);
+                        newSubresult = computeTransientProbabilities(uniformizedMatrix, nullptr, lowerBound, uniformizationRate, newSubresult, *this->linearEquationSolverFactory);
                         
                         // Fill in the correct values.
                         result = std::vector<ValueType>(this->getModel().getNumberOfStates(), storm::utility::zero<ValueType>());
@@ -249,7 +247,7 @@ namespace storm {
             for (auto const& state : maybeStates) {
                 for (auto& element : uniformizedMatrix.getRow(currentRow)) {
                     if (element.getColumn() == currentRow) {
-                        element.setValue(-(exitRates[state] - element.getValue()) / uniformizationRate + storm::utility::one<ValueType>());
+                        element.setValue((element.getValue() - exitRates[state]) / uniformizationRate + storm::utility::one<ValueType>());
                     } else {
                         element.setValue(element.getValue() / uniformizationRate);
                     }
@@ -262,7 +260,7 @@ namespace storm {
         
         template<class ValueType>
         template<bool computeCumulativeReward>
-        std::vector<ValueType> SparseCtmcCslModelChecker<ValueType>::computeTransientProbabilities(storm::storage::SparseMatrix<ValueType> const& uniformizedMatrix, std::vector<ValueType> const* addVector, ValueType timeBound, ValueType uniformizationRate, std::vector<ValueType> values, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) const {
+        std::vector<ValueType> SparseCtmcCslModelChecker<ValueType>::computeTransientProbabilities(storm::storage::SparseMatrix<ValueType> const& uniformizedMatrix, std::vector<ValueType> const* addVector, ValueType timeBound, ValueType uniformizationRate, std::vector<ValueType> values, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
             
             ValueType lambda = timeBound * uniformizationRate;
             

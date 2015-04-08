@@ -18,7 +18,12 @@ namespace storm {
                              boost::optional<storm::dd::Add<Type>> const& optionalStateRewardVector,
                              boost::optional<storm::dd::Add<Type>> const& optionalTransitionRewardMatrix)
             : DeterministicModel<Type>(storm::models::ModelType::Ctmc, manager, reachableStates, initialStates, transitionMatrix, rowVariables, rowExpressionAdapter, columnVariables, columnExpressionAdapter, rowColumnMetaVariablePairs, labelToExpressionMap, optionalStateRewardVector, optionalTransitionRewardMatrix) {
-                // Intentionally left empty.
+                exitRates = this->getTransitionMatrix().sumAbstract(this->getColumnVariables());
+            }
+            
+            template<storm::dd::DdType Type>
+            storm::dd::Add<Type> const& Ctmc<Type>::getExitRateVector() const {
+                return exitRates;
             }
             
             // Explicitly instantiate the template class.
