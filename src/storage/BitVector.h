@@ -277,27 +277,6 @@ namespace storm {
              */
             BitVector operator%(BitVector const& filter) const;
             
-//            /*!
-//             * Computes a bit vector that is as long as the number of set bits in the given filter that has bit i is set
-//             * iff the i-th set bit of the current bit vector is set in the filter. Note: this functionality is exactly
-//             * the same as operator%.
-//             *
-//             * @param filter A reference the bit vector to use as the filter.
-//             * @return A bit vector that is as long as the number of set bits in the given filter that has bit i is set
-//             * iff the i-th set bit of the current bit vector is set in the filter.
-//             */
-//            BitVector operator<<(BitVector const& filter) const;
-//            
-//            /*!
-//             * Computes a bit vector that is as long as the number of set bits in the given filter that has bit i is set
-//             * iff the i-th set bit of the current bit vector is set in the filter.
-//             *
-//             * @param filter A reference the bit vector to use as the filter.
-//             * @return A bit vector that is as long as the number of set bits in the given filter that has bit i is set
-//             * iff the i-th set bit of the current bit vector is set in the filter.
-//             */
-//            BitVector operator>>(BitVector const& filter) const;
-            
             /*!
              * Performs a logical "not" on the bit vector.
              *
