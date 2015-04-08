@@ -301,6 +301,13 @@ namespace storm {
                  * @return True iff the option was set.
                  */
                 bool isParametricSet() const;
+                
+                /*!
+                 * Retrieves whether the option enabling parametric region model checking is set.
+                 *
+                 * @return True iff the option was set.
+                 */
+                bool isParametricRegionSet() const;
 #endif
                 
                 bool check() const override;
@@ -346,6 +353,7 @@ namespace storm {
                 
 #ifdef STORM_HAVE_CARL
                 static const std::string parametricOptionName;
+                static const std::string parametricRegionOptionName;
 #endif
             };
             

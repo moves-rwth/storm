@@ -445,22 +445,53 @@ namespace storm {
                 std::shared_ptr<storm::models::Dtmc<storm::RationalFunction>> dtmc = model->template as<storm::models::Dtmc<storm::RationalFunction>>();
 
                 std::cout << std::endl << "Model checking property: " << *formula << " ...";
-                std::unique_ptr<storm::modelchecker::CheckResult> result;
+                //do we want to check for a parameter region?
+                if(settings.isParametricRegionSet()){
+                    std::cout << std::endl;
+                    //experimental implementation! check some hardcoded region
+                    std::vector<storm::modelchecker::SparseDtmcEliminationModelChecker<storm::RationalFunction>::ParameterRegion> regions;
+                    storm::RationalFunction::CoeffType zeroPointOne(1);
+                    zeroPointOne = zeroPointOne/10;
+                    storm::modelchecker::SparseDtmcEliminationModelChecker<storm::RationalFunction>::ParameterRegion param1;
+                    param1.lowerBound= zeroPointOne*2;
+                    param1.upperBound= zeroPointOne*4;
+                    param1.variable=carl::VariablePool::getInstance().findVariableWithName("pL");
+                    regions.push_back(param1);
+                    storm::modelchecker::SparseDtmcEliminationModelChecker<storm::RationalFunction>::ParameterRegion param2;
+                    param2.lowerBound= zeroPointOne*3;
+                    param2.upperBound= zeroPointOne*5;
+                    param2.variable=carl::VariablePool::getInstance().findVariableWithName("pK");
+                    regions.push_back(param2);
+                            
+                    storm::modelchecker::SparseDtmcEliminationModelChecker<storm::RationalFunction> modelchecker(*dtmc);
+                    bool result = modelchecker.checkRegion(*formula.get(), regions);
+                    std::cout << "... done." << std::endl;
+                    if (result){
+                    std::cout << "the property holds for all parameters in the given region" << std::endl;
+                    }else{
+                    std::cout << "the property does NOT hold for all parameters in the given region" << std::endl;
+                    }
+                    
+                    
+                }else{
+                    //just obtain the resulting rational function
+                    std::unique_ptr<storm::modelchecker::CheckResult> result;
 
-                storm::modelchecker::SparseDtmcEliminationModelChecker<storm::RationalFunction> modelchecker(*dtmc);
-                if (modelchecker.canHandle(*formula.get())) {
-                    result = modelchecker.check(*formula.get());
-                } else {
-                    STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "The parametric engine currently does not support this property.");
-                }
+                    storm::modelchecker::SparseDtmcEliminationModelChecker<storm::RationalFunction> modelchecker(*dtmc);
+                    if (modelchecker.canHandle(*formula.get())) {
+                        result = modelchecker.check(*formula.get());
+                    } else {
+                        STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "The parametric engine currently does not support this property.");
+                    }
 
-                if (result) {
-                    std::cout << " done." << std::endl;
-                    std::cout << "Result (initial states): ";
-                    result->writeToStream(std::cout, model->getInitialStates());
-                    std::cout << std::endl << std::endl;
-                } else {
-                    std::cout << " skipped, because the modelling formalism is currently unsupported." << std::endl;
+                    if (result) {
+                        std::cout << " done." << std::endl;
+                        std::cout << "Result (initial states): ";
+                        result->writeToStream(std::cout, model->getInitialStates());
+                        std::cout << std::endl << std::endl;
+                    } else {
+                        std::cout << " skipped, because the modelling formalism is currently unsupported." << std::endl;
+                    }
                 }
             }
 #endif

@@ -45,6 +45,7 @@ namespace storm {
             
 #ifdef STORM_HAVE_CARL
             const std::string GeneralSettings::parametricOptionName = "parametric";
+            const std::string GeneralSettings::parametricRegionOptionName = "parametricRegion";
 #endif
 
             GeneralSettings::GeneralSettings(storm::settings::SettingsManager& settingsManager) : ModuleSettings(settingsManager, moduleName) {
@@ -93,6 +94,7 @@ namespace storm {
 
 #ifdef STORM_HAVE_CARL
                 this->addOption(storm::settings::OptionBuilder(moduleName, parametricOptionName, false, "Sets whether to use the parametric engine.").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, parametricRegionOptionName, false, "Sets whether to use the parametric Region engine.").build());
 #endif
             }
             
@@ -256,6 +258,9 @@ namespace storm {
 #ifdef STORM_HAVE_CARL
             bool GeneralSettings::isParametricSet() const {
                 return this->getOption(parametricOptionName).getHasOptionBeenSet();
+            }
+            bool GeneralSettings::isParametricRegionSet() const {
+                return this->getOption(parametricRegionOptionName).getHasOptionBeenSet();
             }
 #endif
             

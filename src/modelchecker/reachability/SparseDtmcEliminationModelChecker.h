@@ -22,6 +22,20 @@ namespace storm {
             virtual std::unique_ptr<CheckResult> checkBooleanLiteralFormula(storm::logic::BooleanLiteralFormula const& stateFormula) override;
             virtual std::unique_ptr<CheckResult> checkAtomicLabelFormula(storm::logic::AtomicLabelFormula const& stateFormula) override;
             
+            struct ParameterRegion{
+                storm::Variable variable;
+                storm::RationalFunction::CoeffType lowerBound;
+                storm::RationalFunction::CoeffType upperBound;
+            };
+            
+            /*!
+             * Checks whether the given formula holds for all possible parameters that satisfy the given parameter regions
+             * ParameterRegions should contain all parameters (not mentioned parameters are assumed to be arbitrary reals)
+             */
+            bool checkRegion(storm::logic::Formula const& formula, std::vector<ParameterRegion> parameterRegions);
+            
+            
+            
         private:
             class FlexibleSparseMatrix {
             public:
@@ -51,6 +65,16 @@ namespace storm {
                  * @return True iff the given state has a self-loop with an arbitrary probability in the given probability matrix.
                  */
                 bool hasSelfLoop(storm::storage::sparse::state_type state);
+                
+                /*!
+                 * Instantiates the matrix, i.e., evaluate the occurring functions according to the given substitution of the variables
+                 * 
+                 * @param substitutions A mapping that assigns a constant value to every variable
+                 * 
+                 * @return A matrix with constant (double) entries
+                 */
+                storm::storage::SparseMatrix<double> instantiateAsDouble(std::map<storm::Variable, storm::RationalFunction::CoeffType> substitutions);
+                
                 
             private:
                 std::vector<row_type> data;
