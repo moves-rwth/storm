@@ -21,19 +21,21 @@ namespace storm {
             virtual std::unique_ptr<CheckResult> computeConditionalProbabilities(storm::logic::ConditionalPathFormula const& pathFormula, bool qualitative = false, boost::optional<storm::logic::OptimalityType> const& optimalityType = boost::optional<storm::logic::OptimalityType>()) override;
             virtual std::unique_ptr<CheckResult> checkBooleanLiteralFormula(storm::logic::BooleanLiteralFormula const& stateFormula) override;
             virtual std::unique_ptr<CheckResult> checkAtomicLabelFormula(storm::logic::AtomicLabelFormula const& stateFormula) override;
-            
+
+#ifdef STORM_HAVE_CARL
             struct ParameterRegion{
                 storm::Variable variable;
                 storm::RationalFunction::CoeffType lowerBound;
                 storm::RationalFunction::CoeffType upperBound;
             };
+
             
             /*!
              * Checks whether the given formula holds for all possible parameters that satisfy the given parameter regions
              * ParameterRegions should contain all parameters (not mentioned parameters are assumed to be arbitrary reals)
              */
             bool checkRegion(storm::logic::Formula const& formula, std::vector<ParameterRegion> parameterRegions);
-            
+#endif            
             
             
         private:
@@ -66,6 +68,7 @@ namespace storm {
                  */
                 bool hasSelfLoop(storm::storage::sparse::state_type state);
                 
+#ifdef STORM_HAVE_CARL
                 /*!
                  * Instantiates the matrix, i.e., evaluate the occurring functions according to the given substitution of the variables
                  * 
@@ -74,7 +77,7 @@ namespace storm {
                  * @return A matrix with constant (double) entries
                  */
                 storm::storage::SparseMatrix<double> instantiateAsDouble(std::map<storm::Variable, storm::RationalFunction::CoeffType> substitutions);
-                
+#endif         
                 
             private:
                 std::vector<row_type> data;

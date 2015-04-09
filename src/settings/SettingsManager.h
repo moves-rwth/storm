@@ -28,6 +28,7 @@
 #include "src/settings/modules/BisimulationSettings.h"
 #include "src/settings/modules/GlpkSettings.h"
 #include "src/settings/modules/GurobiSettings.h"
+#include "src/settings/modules/Smt2SmtSolverSettings.h"
 #include "src/settings/modules/ParametricSettings.h"
 #include "src/settings/modules/SparseDtmcEliminationModelCheckerSettings.h"
 #include "src/settings/modules/TopologicalValueIterationEquationSolverSettings.h"
@@ -311,6 +312,13 @@ namespace storm {
          * @return An object that allows accessing the settings of Gurobi.
          */
 		storm::settings::modules::GurobiSettings const& gurobiSettings();
+
+        /*!
+        * Retrieves the settings of the SMT-LIBv2 SMT solver.
+        *
+        * @return the settings of SMT-LIBv2 SMT solver.
+        */
+        storm::settings::modules::Smt2SmtSolverSettings const& smt2SmtSolverSettings();
 
 		/*!
 		* Retrieves the settings of the topological value iteration-based equation solver.

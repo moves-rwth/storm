@@ -988,6 +988,7 @@ namespace storm {
             }
         }
         
+#ifdef STORM_HAVE_CARL
         template<>
         storm::storage::SparseMatrix<double> SparseDtmcEliminationModelChecker<storm::RationalFunction>::FlexibleSparseMatrix::instantiateAsDouble(std::map<storm::Variable, storm::RationalFunction::CoeffType> substitutions){
             
@@ -1016,6 +1017,7 @@ namespace storm {
         storm::storage::SparseMatrix<double> SparseDtmcEliminationModelChecker<ValueType>::FlexibleSparseMatrix::instantiateAsDouble(std::map<storm::Variable, storm::RationalFunction::CoeffType> substitutions){
             STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Instantiation of flexible matrix is not supported for this type");
         }
+#endif
         
         
         template<typename ValueType>
@@ -1045,7 +1047,7 @@ namespace storm {
             
             return flexibleMatrix;
         }
-        
+#ifdef STORM_HAVE_CARL
         template<>
         bool SparseDtmcEliminationModelChecker<storm::RationalFunction>::checkRegion(storm::logic::Formula const& formula, std::vector<SparseDtmcEliminationModelChecker<storm::RationalFunction>::ParameterRegion> parameterRegions){
             //Note: this is an 'experimental' implementation
@@ -1318,13 +1320,14 @@ namespace storm {
             
             return false;
         }
-        
+
         template<typename ValueType>
         bool SparseDtmcEliminationModelChecker<ValueType>::checkRegion(storm::logic::Formula const& formula, std::vector<SparseDtmcEliminationModelChecker<ValueType>::ParameterRegion> parameterRegions){
             
             STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Region check is not supported for this type");
         }
-        
+
+#endif        
         template class SparseDtmcEliminationModelChecker<double>;
         
 #ifdef STORM_HAVE_CARL

@@ -1,12 +1,13 @@
 #include "src/solver/Smt2SmtSolver.h"
 
+#include "src/settings/SettingsManager.h"
 #include "src/exceptions/NotSupportedException.h"
-#include "src/exceptions/InvalidStateException.h"
 #include "src/exceptions/NotImplementedException.h"
+#include "src/exceptions/InvalidStateException.h"
+#include "src/exceptions/IllegalArgumentException.h"
+#include "src/exceptions/IllegalFunctionCallException.h"
 #include "utility/macros.h"
 #include "adapters/CarlAdapter.h"
-#include "exceptions/IllegalArgumentException.h"
-#include "exceptions/IllegalFunctionCallException.h"
 
 namespace storm {
     namespace solver {
@@ -99,7 +100,14 @@ namespace storm {
 
         SmtSolver::CheckResult Smt2SmtSolver::check() {
             writeCommand("( check-sat )");
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "functionality not (yet) implemented");
+            if (storm::settings::smt2SmtSolverSettings().isSolverCommandSet()){
+                // todo get the result
+                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "functionality not (yet) implemented");
+            }
+            else{
+                STORM_LOG_WARN("No SMT-LIBv2 Solver Command specified, which means that no actual SMT solving is done... Assume that the result is \"unknown\"");
+                return SmtSolver::CheckResult::Unknown;
+            }
         }
 
         SmtSolver::CheckResult Smt2SmtSolver::checkWithAssumptions(std::set<storm::expressions::Expression> const& assumptions) {
@@ -114,9 +122,19 @@ namespace storm {
 #endif
 
         void Smt2SmtSolver::init() {
-            //hard coded output file.. for now
-            commandFile.open("/home/tim/Desktop/smtlibcommand.txt", std::ios::trunc);
-            STORM_LOG_THROW(commandFile.is_open(), storm::exceptions::InvalidArgumentException, "The file where the smt2commands should be written to could not be opened");
+            if (storm::settings::smt2SmtSolverSettings().isSolverCommandSet()){
+                //todo call the solver!
+                std::string cmd = storm::settings::smt2SmtSolverSettings().getSolverCommand();
+            }
+            else{
+                STORM_LOG_WARN("No SMT-LIBv2 Solver Command specified, which means that no actual SMT solving can be done");
+            }
+
+            if (storm::settings::smt2SmtSolverSettings().isExportSmtLibScriptSet()){
+                STORM_LOG_DEBUG("The SMT-LIBv2 commands are exportet to the given file");
+                commandFile.open(storm::settings::smt2SmtSolverSettings().getExportSmtLibScriptPath(), std::ios::trunc);
+                STORM_LOG_THROW(commandFile.is_open(), storm::exceptions::InvalidArgumentException, "The file where the smt2commands should be written to could not be opened");
+            }
 
             //some initial commands
             writeCommand("( set-logic QF_NRA )");
