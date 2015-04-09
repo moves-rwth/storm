@@ -20,8 +20,8 @@ namespace storm {
             virtual std::unique_ptr<CheckResult> computeBoundedUntilProbabilities(storm::logic::BoundedUntilFormula const& pathFormula, bool qualitative = false, boost::optional<storm::logic::OptimalityType> const& optimalityType = boost::optional<storm::logic::OptimalityType>()) override;
             virtual std::unique_ptr<CheckResult> computeNextProbabilities(storm::logic::NextFormula const& pathFormula, bool qualitative = false, boost::optional<storm::logic::OptimalityType> const& optimalityType = boost::optional<storm::logic::OptimalityType>()) override;
             virtual std::unique_ptr<CheckResult> computeUntilProbabilities(storm::logic::UntilFormula const& pathFormula, bool qualitative = false, boost::optional<storm::logic::OptimalityType> const& optimalityType = boost::optional<storm::logic::OptimalityType>()) override;
-//            virtual std::unique_ptr<CheckResult> computeInstantaneousRewards(storm::logic::InstantaneousRewardFormula const& rewardPathFormula, bool qualitative = false, boost::optional<storm::logic::OptimalityType> const& optimalityType = boost::optional<storm::logic::OptimalityType>()) override;
-//            virtual std::unique_ptr<CheckResult> computeCumulativeRewards(storm::logic::CumulativeRewardFormula const& rewardPathFormula, bool qualitative = false, boost::optional<storm::logic::OptimalityType> const& optimalityType = boost::optional<storm::logic::OptimalityType>()) override;
+            virtual std::unique_ptr<CheckResult> computeInstantaneousRewards(storm::logic::InstantaneousRewardFormula const& rewardPathFormula, bool qualitative = false, boost::optional<storm::logic::OptimalityType> const& optimalityType = boost::optional<storm::logic::OptimalityType>()) override;
+            virtual std::unique_ptr<CheckResult> computeCumulativeRewards(storm::logic::CumulativeRewardFormula const& rewardPathFormula, bool qualitative = false, boost::optional<storm::logic::OptimalityType> const& optimalityType = boost::optional<storm::logic::OptimalityType>()) override;
             virtual std::unique_ptr<CheckResult> computeReachabilityRewards(storm::logic::ReachabilityRewardFormula const& rewardPathFormula, bool qualitative = false, boost::optional<storm::logic::OptimalityType> const& optimalityType = boost::optional<storm::logic::OptimalityType>()) override;
             
         protected:
@@ -52,39 +52,8 @@ namespace storm {
             
             // The methods that perform the actual checking.
             std::unique_ptr<CheckResult> computeBoundedUntilProbabilitiesHelper(storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates, storm::dd::Add<DdType> const& exitRates, bool qualitative, double lowerBound, double upperBound) const;
-            
-//            std::vector<ValueType> computeBoundedUntilProbabilitiesHelper(storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, std::vector<ValueType> const& exitRates, bool qualitative, double lowerBound, double upperBound) const;
-//            std::vector<ValueType> computeInstantaneousRewardsHelper(double timeBound) const;
-//            std::vector<ValueType> computeCumulativeRewardsHelper(double timeBound) const;
-//            std::vector<ValueType> computeReachabilityRewardsHelper(storm::storage::BitVector const& targetStates, bool qualitative) const;
-//            
-//            /*!
-//             * Computes the matrix representing the transitions of the uniformized CTMC.
-//             *
-//             * @param transitionMatrix The matrix to uniformize.
-//             * @param maybeStates The states that need to be considered.
-//             * @param uniformizationRate The rate to be used for uniformization.
-//             * @param exitRates The exit rates of all states.
-//             * @return The uniformized matrix.
-//             */
-//            static storm::storage::SparseMatrix<ValueType> computeUniformizedMatrix(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates, ValueType uniformizationRate, std::vector<ValueType> const& exitRates);
-//
-//            /*!
-//             * Computes the transient probabilities for lambda time steps.
-//             *
-//             * @param uniformizedMatrix The uniformized transition matrix.
-//             * @param addVector A vector that is added in each step as a possible compensation for removing absorbing states
-//             * with a non-zero initial value. If this is not supposed to be used, it can be set to nullptr.
-//             * @param timeBound The time bound to use.
-//             * @param uniformizationRate The used uniformization rate.
-//             * @param values A vector mapping each state to an initial probability.
-//             * @param linearEquationSolverFactory The factory to use when instantiating new linear equation solvers.
-//             * @param useMixedPoissonProbabilities If set to true, instead of taking the poisson probabilities,  mixed
-//             * poisson probabilities are used.
-//             * @return The vector of transient probabilities.
-//             */
-//            template<bool useMixedPoissonProbabilities = false>
-//            std::vector<ValueType> computeTransientProbabilities(storm::storage::SparseMatrix<ValueType> const& uniformizedMatrix, std::vector<ValueType> const* addVector, ValueType timeBound, ValueType uniformizationRate, std::vector<ValueType> values, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) const;
+            std::unique_ptr<CheckResult> computeInstantaneousRewardsHelper(double timeBound) const;
+            std::unique_ptr<CheckResult> computeCumulativeRewardsHelper(double timeBound) const;
             
             // An object that is used for solving linear equations and performing matrix-vector multiplication.
             std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<ValueType>> linearEquationSolverFactory;

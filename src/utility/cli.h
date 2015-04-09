@@ -318,8 +318,12 @@ namespace storm {
                 std::string constants = settings.getConstantDefinitionString();
                 
                 bool buildRewards = false;
-                if (formula) {
+                boost::optional<std::string> rewardModelName;
+                if (formula || settings.isSymbolicRewardModelNameSet()) {
                     buildRewards = formula.get()->isRewardOperatorFormula() || formula.get()->isRewardPathFormula();
+                    if (settings.isSymbolicRewardModelNameSet()) {
+                        rewardModelName = settings.getSymbolicRewardModelName();
+                    }
                 }
                 
                 // Customize and perform model-building.
@@ -329,6 +333,8 @@ namespace storm {
                         options = typename storm::builder::ExplicitPrismModelBuilder<ValueType>::Options(*formula.get());
                     }
                     options.addConstantDefinitionsFromString(program, settings.getConstantDefinitionString());
+                    options.buildRewards = buildRewards;
+                    options.rewardModelName = rewardModelName;
                     
                     // Generate command labels if we are going to build a counterexample later.
                     if (storm::settings::counterexampleGeneratorSettings().isMinimalCommandSetGenerationSet()) {
@@ -342,7 +348,9 @@ namespace storm {
                         options = typename storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::Options(*formula.get());
                     }
                     options.addConstantDefinitionsFromString(program, settings.getConstantDefinitionString());
-                    
+                    options.buildRewards = buildRewards;
+                    options.rewardModelName = rewardModelName;
+
                     result = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program, options);
                 }
                 

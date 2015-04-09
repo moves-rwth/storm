@@ -169,11 +169,8 @@ namespace storm {
                         // staying in phi states.
                         std::unique_ptr<CheckResult> unboundedResult = HybridDtmcPrctlModelChecker<DdType, ValueType>::computeUntilProbabilitiesHelper(this->getModel(), this->computeProbabilityMatrix(this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector()), phiStates, psiStates, qualitative, *this->linearEquationSolverFactory);
                         
-                        // Determine the set of states that achieved a strictly positive probability.
-                        std::unique_ptr<CheckResult> statesWithValuesGreaterZero = unboundedResult->asQuantitativeCheckResult().compareAgainstBound(storm::logic::ComparisonType::Greater, storm::utility::zero<ValueType>());
-                        
-                        // And use it to compute the set of relevant states.
-                        storm::dd::Bdd<DdType> relevantStates = storm::utility::graph::performProbGreater0(this->getModel(), this->getModel().getTransitionMatrix().notZero(), phiStates, statesWithValuesGreaterZero->asSymbolicQualitativeCheckResult<DdType>().getTruthValuesVector());
+                        // Compute the set of relevant states.
+                        storm::dd::Bdd<DdType> relevantStates = statesWithProbabilityGreater0 && phiStates;
 
                         // Filter the unbounded result such that it only contains values for the relevant states.
                         unboundedResult->filter(SymbolicQualitativeCheckResult<DdType>(this->getModel().getReachableStates(), relevantStates));
@@ -204,28 +201,21 @@ namespace storm {
                     } else {
                         // In this case, the interval is of the form [t, t'] with t != 0 and t' != inf.
                         
-                        // Prepare some variables that are used by the two following blocks.
-                        storm::dd::Bdd<DdType> relevantStates;
-                        ValueType uniformizationRate = 0;
-                        storm::dd::Add<DdType> uniformizedMatrix;
-                        std::vector<ValueType> newSubresult;
-                        storm::dd::Odd<DdType> odd;
-                        
-                        if (lowerBound == upperBound) {
-                            relevantStates = statesWithProbabilityGreater0;
-                        } else {
+                        if (lowerBound != upperBound) {
+                            // In this case, the interval is of the form [t, t'] with t != 0, t' != inf and t != t'.
+
                             // Find the maximal rate of all 'maybe' states to take it as the uniformization rate.
                             ValueType uniformizationRate =  1.02 * (statesWithProbabilityGreater0NonPsi.toAdd() * exitRates).getMax();
                             STORM_LOG_THROW(uniformizationRate > 0, storm::exceptions::InvalidStateException, "The uniformization rate must be positive.");
                         
                             // Compute the (first) uniformized matrix.
-                            uniformizedMatrix = this->computeUniformizedMatrix(this->getModel(), this->getModel().getTransitionMatrix(), exitRates,  statesWithProbabilityGreater0NonPsi, uniformizationRate);
+                            storm::dd::Add<DdType> uniformizedMatrix = this->computeUniformizedMatrix(this->getModel(), this->getModel().getTransitionMatrix(), exitRates,  statesWithProbabilityGreater0NonPsi, uniformizationRate);
                             
                             // Create the one-step vector.
                             storm::dd::Add<DdType> b = (statesWithProbabilityGreater0NonPsi.toAdd() * this->getModel().getTransitionMatrix() * psiStates.swapVariables(this->getModel().getRowColumnMetaVariablePairs()).toAdd()).sumAbstract(this->getModel().getColumnVariables()) / this->getModel().getManager().getConstant(uniformizationRate);
                             
                             // Build an ODD for the relevant states and translate the symbolic parts to their explicit representation.
-                            odd = storm::dd::Odd<DdType>(statesWithProbabilityGreater0NonPsi);
+                            storm::dd::Odd<DdType> odd = storm::dd::Odd<DdType>(statesWithProbabilityGreater0NonPsi);
                             storm::storage::SparseMatrix<ValueType> explicitUniformizedMatrix = uniformizedMatrix.toMatrix(odd, odd);
                             std::vector<ValueType> explicitB = b.template toVector<ValueType>(odd);
                             
@@ -241,8 +231,8 @@ namespace storm {
                             // Determine the set of states that achieved a strictly positive probability.
                             std::unique_ptr<CheckResult> statesWithValuesGreaterZero = hybridResult.compareAgainstBound(storm::logic::ComparisonType::Greater, storm::utility::zero<ValueType>());
                             
-                            // And use it to compute the set of relevant states.
-                            storm::dd::Bdd<DdType> relevantStates = storm::utility::graph::performProbGreater0(this->getModel(), this->getModel().getTransitionMatrix().notZero(), phiStates, statesWithValuesGreaterZero->asSymbolicQualitativeCheckResult<DdType>().getTruthValuesVector());
+                            // Compute the set of relevant states.
+                            storm::dd::Bdd<DdType> relevantStates = statesWithProbabilityGreater0 && phiStates;
                             
                             // Filter the unbounded result such that it only contains values for the relevant states.
                             hybridResult.filter(SymbolicQualitativeCheckResult<DdType>(this->getModel().getReachableStates(), relevantStates));
@@ -252,28 +242,48 @@ namespace storm {
                             
                             std::vector<ValueType> result;
                             std::unique_ptr<CheckResult> explicitResult = hybridResult.toExplicitQuantitativeCheckResult();
-                            newSubresult = std::move(explicitResult->asExplicitQuantitativeCheckResult<ValueType>().getValueVector());
+                            std::vector<ValueType> newSubresult = std::move(explicitResult->asExplicitQuantitativeCheckResult<ValueType>().getValueVector());
+                            
+                            // Then compute the transient probabilities of being in such a state after t time units. For this,
+                            // we must re-uniformize the CTMC, so we need to compute the second uniformized matrix.
+                            uniformizationRate =  1.02 * (relevantStates.toAdd() * exitRates).getMax();
+                            STORM_LOG_THROW(uniformizationRate > 0, storm::exceptions::InvalidStateException, "The uniformization rate must be positive.");
+                            
+                            // If the lower and upper bounds coincide, we have only determined the relevant states at this
+                            // point, but we still need to construct the starting vector.
+                            if (lowerBound == upperBound) {
+                                odd = storm::dd::Odd<DdType>(relevantStates);
+                                newSubresult = psiStates.toAdd().template toVector<ValueType>(odd);
+                            }
+                            
+                            // Finally, we compute the second set of transient probabilities.
+                            uniformizedMatrix = this->computeUniformizedMatrix(this->getModel(), this->getModel().getTransitionMatrix(), exitRates,  relevantStates, uniformizationRate);
+                            explicitUniformizedMatrix = uniformizedMatrix.toMatrix(odd, odd);
+                            
+                            newSubresult = SparseCtmcCslModelChecker<ValueType>::computeTransientProbabilities(explicitUniformizedMatrix, nullptr, lowerBound, uniformizationRate, newSubresult, *this->linearEquationSolverFactory);
+                            
+                            return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType>(this->getModel().getReachableStates(), !relevantStates && this->getModel().getReachableStates(), this->getModel().getManager().getAddZero(), relevantStates, odd, newSubresult));
+                        } else {
+                            // In this case, the interval is of the form [t, t] with t != 0, t != inf.
+
+                            // Build an ODD for the relevant states.
+                            storm::dd::Odd<DdType> odd = storm::dd::Odd<DdType>(statesWithProbabilityGreater0);
+                            
+                            std::vector<ValueType> newSubresult = psiStates.toAdd().template toVector<ValueType>(odd);
+                            
+                            // Then compute the transient probabilities of being in such a state after t time units. For this,
+                            // we must re-uniformize the CTMC, so we need to compute the second uniformized matrix.
+                            ValueType uniformizationRate =  1.02 * (statesWithProbabilityGreater0.toAdd() * exitRates).getMax();
+                            STORM_LOG_THROW(uniformizationRate > 0, storm::exceptions::InvalidStateException, "The uniformization rate must be positive.");
+                            
+                            // Finally, we compute the second set of transient probabilities.
+                            storm::dd::Add<DdType> uniformizedMatrix = this->computeUniformizedMatrix(this->getModel(), this->getModel().getTransitionMatrix(), exitRates,  statesWithProbabilityGreater0, uniformizationRate);
+                            storm::storage::SparseMatrix<ValueType> explicitUniformizedMatrix = uniformizedMatrix.toMatrix(odd, odd);
+                            
+                            newSubresult = SparseCtmcCslModelChecker<ValueType>::computeTransientProbabilities(explicitUniformizedMatrix, nullptr, lowerBound, uniformizationRate, newSubresult, *this->linearEquationSolverFactory);
+                            
+                            return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType>(this->getModel().getReachableStates(), !statesWithProbabilityGreater0 && this->getModel().getReachableStates(), this->getModel().getManager().getAddZero(), statesWithProbabilityGreater0, odd, newSubresult));
                         }
-                        
-                        // Then compute the transient probabilities of being in such a state after t time units. For this,
-                        // we must re-uniformize the CTMC, so we need to compute the second uniformized matrix.
-                        uniformizationRate =  1.02 * (relevantStates.toAdd() * exitRates).getMax();
-                        STORM_LOG_THROW(uniformizationRate > 0, storm::exceptions::InvalidStateException, "The uniformization rate must be positive.");
-                        
-                        // If the lower and upper bounds coincide, we have only determined the relevant states at this
-                        // point, but we still need to construct the starting vector.
-                        if (lowerBound == upperBound) {
-                            odd = storm::dd::Odd<DdType>(relevantStates);
-                            newSubresult = psiStates.toAdd().template toVector<ValueType>(odd);
-                        }
-                        
-                        // Finally, we compute the second set of transient probabilities.
-                        uniformizedMatrix = this->computeUniformizedMatrix(this->getModel(), this->getModel().getTransitionMatrix(), exitRates,  relevantStates, uniformizationRate);
-                        storm::storage::SparseMatrix<ValueType> explicitUniformizedMatrix = uniformizedMatrix.toMatrix(odd, odd);
-                        
-                        newSubresult = SparseCtmcCslModelChecker<ValueType>::computeTransientProbabilities(explicitUniformizedMatrix, nullptr, lowerBound, uniformizationRate, newSubresult, *this->linearEquationSolverFactory);
-                        
-                        return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType>(this->getModel().getReachableStates(), !relevantStates && this->getModel().getReachableStates(), this->getModel().getManager().getAddZero(), relevantStates, odd, newSubresult));
                     }
                 }
             } else {
@@ -281,76 +291,75 @@ namespace storm {
             }
         }
         
-//        template<storm::dd::DdType DdType, class ValueType>
-//        std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<DdType, ValueType>::computeInstantaneousRewards(storm::logic::InstantaneousRewardFormula const& rewardPathFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
-//            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(this->computeInstantaneousRewardsHelper(rewardPathFormula.getContinuousTimeBound())));
-//        }
-//        
-//        template<storm::dd::DdType DdType, class ValueType>
-//        std::vector<ValueType> HybridCtmcCslModelChecker<DdType, ValueType>::computeInstantaneousRewardsHelper(double timeBound) const {
-//            // Only compute the result if the model has a state-based reward this->getModel().
-//            STORM_LOG_THROW(this->getModel().hasStateRewards(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
-//            
-//            // Initialize result to state rewards of the this->getModel().
-//            std::vector<ValueType> result(this->getModel().getStateRewardVector());
-//            
-//            // If the time-bound is not zero, we need to perform a transient analysis.
-//            if (timeBound > 0) {
-//                ValueType uniformizationRate = 0;
-//                for (auto const& rate : this->getModel().getExitRateVector()) {
-//                    uniformizationRate = std::max(uniformizationRate, rate);
-//                }
-//                uniformizationRate *= 1.02;
-//                STORM_LOG_THROW(uniformizationRate > 0, storm::exceptions::InvalidStateException, "The uniformization rate must be positive.");
-//                
-//                storm::storage::SparseMatrix<ValueType> uniformizedMatrix = this->computeUniformizedMatrix(this->getModel().getTransitionMatrix(), storm::storage::BitVector(this->getModel().getNumberOfStates(), true), uniformizationRate, this->getModel().getExitRateVector());
-//                result = this->computeTransientProbabilities(uniformizedMatrix, nullptr, timeBound, uniformizationRate, result, *this->linearEquationSolverFactory);
-//            }
-//            
-//            return result;
-//        }
-//        
-//        template<storm::dd::DdType DdType, class ValueType>
-//        std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<DdType, ValueType>::computeCumulativeRewards(storm::logic::CumulativeRewardFormula const& rewardPathFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
-//            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(this->computeCumulativeRewardsHelper(rewardPathFormula.getContinuousTimeBound())));
-//        }
-//        
-//        template<storm::dd::DdType DdType, class ValueType>
-//        std::vector<ValueType> HybridCtmcCslModelChecker<DdType, ValueType>::computeCumulativeRewardsHelper(double timeBound) const {
-//            // Only compute the result if the model has a state-based reward this->getModel().
-//            STORM_LOG_THROW(this->getModel().hasStateRewards() || this->getModel().hasTransitionRewards(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
-//            
-//            // If the time bound is zero, the result is the constant zero vector.
-//            if (timeBound == 0) {
-//                return std::vector<ValueType>(this->getModel().getNumberOfStates(), storm::utility::zero<ValueType>());
-//            }
-//            
-//            // Otherwise, we need to perform some computations.
-//            
-//            // Start with the uniformization.
-//            ValueType uniformizationRate = 0;
-//            for (auto const& rate : this->getModel().getExitRateVector()) {
-//                uniformizationRate = std::max(uniformizationRate, rate);
-//            }
-//            uniformizationRate *= 1.02;
-//            STORM_LOG_THROW(uniformizationRate > 0, storm::exceptions::InvalidStateException, "The uniformization rate must be positive.");
-//            
-//            storm::storage::SparseMatrix<ValueType> uniformizedMatrix = this->computeUniformizedMatrix(this->getModel().getTransitionMatrix(), storm::storage::BitVector(this->getModel().getNumberOfStates(), true), uniformizationRate, this->getModel().getExitRateVector());
-//            
-//            // Compute the total state reward vector.
-//            std::vector<ValueType> totalRewardVector;
-//            if (this->getModel().hasTransitionRewards()) {
-//                totalRewardVector = this->getModel().getTransitionMatrix().getPointwiseProductRowSumVector(this->getModel().getTransitionRewardMatrix());
-//                if (this->getModel().hasStateRewards()) {
-//                    storm::utility::vector::addVectors(totalRewardVector, this->getModel().getStateRewardVector(), totalRewardVector);
-//                }
-//            } else {
-//                totalRewardVector = std::vector<ValueType>(this->getModel().getStateRewardVector());
-//            }
-//            
-//            // Finally, compute the transient probabilities.
-//            return this->computeTransientProbabilities<true>(uniformizedMatrix, nullptr, timeBound, uniformizationRate, totalRewardVector, *this->linearEquationSolverFactory);
-//        }
+        template<storm::dd::DdType DdType, class ValueType>
+        std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<DdType, ValueType>::computeInstantaneousRewards(storm::logic::InstantaneousRewardFormula const& rewardPathFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
+            return this->computeInstantaneousRewardsHelper(rewardPathFormula.getContinuousTimeBound());
+        }
+        
+        template<storm::dd::DdType DdType, class ValueType>
+        std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<DdType, ValueType>::computeInstantaneousRewardsHelper(double timeBound) const {
+            // Only compute the result if the model has a state-based reward this->getModel().
+            STORM_LOG_THROW(this->getModel().hasStateRewards(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
+            
+            // Create ODD for the translation.
+            storm::dd::Odd<DdType> odd(this->getModel().getReachableStates());
+            
+            // Initialize result to state rewards of the this->getModel().
+            std::vector<ValueType> result = this->getModel().getStateRewardVector().template toVector<ValueType>(odd);
+            
+            // If the time-bound is not zero, we need to perform a transient analysis.
+            if (timeBound > 0) {
+                ValueType uniformizationRate = 1.02 * this->getModel().getExitRateVector().getMax();
+                STORM_LOG_THROW(uniformizationRate > 0, storm::exceptions::InvalidStateException, "The uniformization rate must be positive.");
+                
+                storm::dd::Add<DdType> uniformizedMatrix = this->computeUniformizedMatrix(this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector(),  this->getModel().getReachableStates(), uniformizationRate);
+                
+                storm::storage::SparseMatrix<ValueType> explicitUniformizedMatrix = uniformizedMatrix.toMatrix(odd, odd);
+                result = SparseCtmcCslModelChecker<ValueType>::computeTransientProbabilities(explicitUniformizedMatrix, nullptr, timeBound, uniformizationRate, result, *this->linearEquationSolverFactory);
+            }
+            
+            return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType>(this->getModel().getReachableStates(), this->getModel().getManager().getBddZero(), this->getModel().getManager().getAddZero(), this->getModel().getReachableStates(), odd, result));
+        }
+
+        template<storm::dd::DdType DdType, class ValueType>
+        std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<DdType, ValueType>::computeCumulativeRewards(storm::logic::CumulativeRewardFormula const& rewardPathFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
+            return this->computeCumulativeRewardsHelper(rewardPathFormula.getContinuousTimeBound());
+        }
+        
+        template<storm::dd::DdType DdType, class ValueType>
+        std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<DdType, ValueType>::computeCumulativeRewardsHelper(double timeBound) const {
+            // Only compute the result if the model has a state-based reward this->getModel().
+            STORM_LOG_THROW(this->getModel().hasStateRewards() || this->getModel().hasTransitionRewards(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
+            
+            // If the time bound is zero, the result is the constant zero vector.
+            if (timeBound == 0) {
+                return std::unique_ptr<CheckResult>(new SymbolicQuantitativeCheckResult<DdType>(this->getModel().getReachableStates(), this->getModel().getManager().getAddZero()));
+            }
+            
+            // Otherwise, we need to perform some computations.
+            
+            // Start with the uniformization.
+            ValueType uniformizationRate = 1.02 * this->getModel().getExitRateVector().getMax();
+            STORM_LOG_THROW(uniformizationRate > 0, storm::exceptions::InvalidStateException, "The uniformization rate must be positive.");
+            
+            // Create ODD for the translation.
+            storm::dd::Odd<DdType> odd(this->getModel().getReachableStates());
+            
+            // Compute the uniformized matrix.
+            storm::dd::Add<DdType> uniformizedMatrix = this->computeUniformizedMatrix(this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector(),  this->getModel().getReachableStates(), uniformizationRate);
+            storm::storage::SparseMatrix<ValueType> explicitUniformizedMatrix = uniformizedMatrix.toMatrix(odd, odd);
+
+            // Then compute the state reward vector to use in the computation.
+            storm::dd::Add<DdType> totalRewardVector = this->getModel().hasStateRewards() ? this->getModel().getStateRewardVector() : this->getModel().getManager().getAddZero();
+            if (this->getModel().hasTransitionRewards()) {
+                totalRewardVector += (this->getModel().getTransitionMatrix() * this->getModel().getTransitionRewardMatrix()).sumAbstract(this->getModel().getColumnVariables());
+            }
+            std::vector<ValueType> explicitTotalRewardVector = totalRewardVector.template toVector<ValueType>(odd);
+            
+            // Finally, compute the transient probabilities.
+            std::vector<ValueType> result = SparseCtmcCslModelChecker<ValueType>::template computeTransientProbabilities<true>(explicitUniformizedMatrix, nullptr, timeBound, uniformizationRate, explicitTotalRewardVector, *this->linearEquationSolverFactory);
+            return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType>(this->getModel().getReachableStates(), this->getModel().getManager().getBddZero(), this->getModel().getManager().getAddZero(), this->getModel().getReachableStates(), odd, result));
+        }
         
         // Explicitly instantiate the model checker.
         template class HybridCtmcCslModelChecker<storm::dd::DdType::CUDD, double>;
