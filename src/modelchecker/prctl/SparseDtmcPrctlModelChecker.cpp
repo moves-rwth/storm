@@ -403,147 +403,55 @@ namespace storm {
 			subsystem.set(bscc.begin(), bscc.end());
 
 			//we now have to solve ((P')^t - I) * x = 0, where P' is the submatrix of transitionMatrix,
-			// ^t means transose, and I is the identity matrix. As a memory optimisation, we calculate
-			// ((P')^t - I) in one step from transitionMatrix instead of calling the appropriate methods
+			// ^t means transose, and I is the identity matrix.
 			
-			// First, we need to determine the number of entries and the number of rows of the submatrix.
-			typename transitionMatrix::index_type subEntries = 0;
-			typename transitionMatrix::index_type subRows = 0;
-			for (auto index : rowGroupConstraint) {
-				subRows += rowGroupIndices[index + 1] - rowGroupIndices[index];
-				for (index_type i = rowGroupIndices[index]; i < rowGroupIndices[index + 1]; ++i) {
-					bool foundDiagonalElement = false;
+			storm::storage::SparseMatrix<ValueType> subsystemMatrix = transitionMatrix.getSubmatrix(false, subsystem, subsystem, true);
+			subsystemMatrix = subsystemMatrix.transpose();
 
-					for (const_iterator it = transitionMatrix->begin(i), ite = transitionMatrix->end(i); it != ite; ++it) {
-						if (columnConstraint.get(it->getColumn())) {
-							++subEntries;
-
-							if (index == it->getColumn()) {
-								foundDiagonalElement = true;
-							}
-						}
-					}
-
-					// If requested, we need to reserve one entry more for inserting the diagonal zero entry.
-					if (!foundDiagonalElement) {
-						++subEntries;
+			// subtract 1 on the diagonal and at the same time add a row with all ones to enforce that the result of the equation system is unique
+			storm::storage::SparseMatrixBuilder<ValueType> equationSystemBuilder(subsystemMatrix.getRowCount() + 1, subsystemMatrix.getColumnCount(), subsystemMatrix.getEntryCount() + subsystemMatrix.getColumnCount());
+			ValueType one = storm::utility::one<ValueType>();
+			ValueType zero = storm::utility::zero<ValueType>();
+			bool foundDiagonalElement = false;
+			for (uint_fast64_t row = 0; row < subsystemMatrix.getRowCount(); ++row) {
+				for (auto& entry : subsystemMatrix.getRowGroup(row)) {
+					if (entry.getColumn() == row) {
+						equationSystemBuilder.addNextValue(row, entry.getColumn(), entry.getValue() - one);
+						foundDiagonalElement = true;
+					} else {
+						equationSystemBuilder.addNextValue(row, entry.getColumn(), entry.getValue());
 					}
 				}
+
+				// Throw an exception if a row did not have an element on the diagonal.
+				STORM_LOG_THROW(foundDiagonalElement, storm::exceptions::InvalidOperationException, "Internal Error, no diagonal entry found.");
 			}
-
-			// Create a temporary vector that stores for each index whose bit is set to true the number of bits that
-			// were set before that particular index.
-			std::vector<index_type> bitsSetBeforeIndex;
-			bitsSetBeforeIndex.reserve(columnCount);
-
-			// Compute the information to fill this vector.
-			index_type lastIndex = 0;
-			index_type currentNumberOfSetBits = 0;
-
-			// If we are requested to add missing diagonal entries, we need to make sure the corresponding rows are also
-			// taken.
-			storm::storage::BitVector columnBitCountConstraint = columnConstraint;
-			if (insertDiagonalEntries) {
-				columnBitCountConstraint |= rowGroupConstraint;
+			for (uint_fast64_t column = 0; column + 1 < subsystemMatrix.getColumnCount(); ++column) {
+				equationSystemBuilder.addNextValue(subsystemMatrix.getRowCount(), column, one);
 			}
-			for (auto index : columnBitCountConstraint) {
-				while (lastIndex <= index) {
-					bitsSetBeforeIndex.push_back(currentNumberOfSetBits);
-					++lastIndex;
-				}
-				++currentNumberOfSetBits;
-			}
+			equationSystemBuilder.addNextValue(subsystemMatrix.getRowCount(), subsystemMatrix.getColumnCount() - 1, zero);
+			subsystemMatrix = equationSystemBuilder.build();
 
-			// Copy over selected entries.
-			index_type rowCount = 0;
-			for (auto index : rowGroupConstraint) {
-				matrixBuilder.newRowGroup(rowCount);
-				for (index_type i = rowGroupIndices[index]; i < rowGroupIndices[index + 1]; ++i) {
-					bool insertedDiagonalElement = false;
+			// create x and b for the equation system. setting the last entry of b to one enforces the sum over the unique solution vector is one
+			std::vector<ValueType> steadyStateDist(subsystemMatrix.getRowCount(), zero);
+			std::vector<ValueType> b(subsystemMatrix.getRowCount(), zero);
+			b[subsystemMatrix.getRowCount() - 1] = one;
 
-					for (const_iterator it = this->begin(i), ite = this->end(i); it != ite; ++it) {
-						if (columnConstraint.get(it->getColumn())) {
-							if (index == it->getColumn()) {
-								insertedDiagonalElement = true;
-							} else if (insertDiagonalEntries && !insertedDiagonalElement && it->getColumn() > index) {
-								matrixBuilder.addNextValue(rowCount, bitsSetBeforeIndex[index], storm::utility::zero<ValueType>());
-								insertedDiagonalElement = true;
-							}
-							matrixBuilder.addNextValue(rowCount, bitsSetBeforeIndex[it->getColumn()], it->getValue());
-						}
-					}
-					if (insertDiagonalEntries && !insertedDiagonalElement) {
-						matrixBuilder.addNextValue(rowCount, bitsSetBeforeIndex[index], storm::utility::zero<ValueType>());
-					}
+			solver->solveEquationSystem(subsystemMatrix, steadyStateDist, b);
 
-					++rowCount;
-				}
-			}
-			matrixBuilder.build();
-
-			//transpose code
-			std::vector<index_type> rowIndications(rowCount + 1);
-			std::vector<MatrixEntry<index_type, ValueType>> columnsAndValues(entryCount);
-
-			// First, we need to count how many entries each column has.
-			for (index_type group = 0; group < columnCount; ++group) {
-				for (auto const& transition : transitionMatrix->getRow(group)) {
-					if (!comparator.isZero(transition.getValue())) {
-						++rowIndications[transition.getColumn() + 1];
-					}
-				}
-			}
-
-			// Now compute the accumulated offsets.
-			for (index_type i = 1; i < rowCount + 1; ++i) {
-				rowIndications[i] = rowIndications[i - 1] + rowIndications[i];
-			}
-
-			// Create an array that stores the index for the next value to be added for
-			// each row in the transposed matrix. Initially this corresponds to the previously
-			// computed accumulated offsets.
-			std::vector<index_type> nextIndices = rowIndications;
-
-			// Now we are ready to actually fill in the values of the transposed matrix.
-			for (index_type group = 0; group < columnCount; ++group) {
-				for (auto const& transition : transitionMatrix->getRow(group)) {
-					if (!comparator.isZero(transition.getValue())) {
-						columnsAndValues[nextIndices[transition.getColumn()]] = std::make_pair(group, transition.getValue());
-						nextIndices[transition.getColumn()]++;
-					}
-				}
-			}
-
-			std::vector<index_type> rowGroupIndices(rowCount + 1);
-			for (index_type i = 0; i <= rowCount; ++i) {
-				rowGroupIndices[i] = i;
-			}
-
-			storm::storage::SparseMatrix<ValueType> transposedMatrix(columnCount, std::move(rowIndications), std::move(columnsAndValues), std::move(rowGroupIndices));
-
-
-			/*
-			storm::storage::SparseMatrix<ValueType> subsystemMatrix = transitionMatrix.getSubmatrix(false, subsystem, subsystem);
-			std::vector<ValueType> steadyStateDist(subsystemMatrix.getRowCount(), storm::utility::zero<ValueType>());
-			steadyStateDist[0] = storm::utility::one<ValueType>();
-
-			solver->solveEquationSystem(subsystemMatrix, steadyStateDist, steadyStateDist);
-
-			ValueType length = storm::utility::zero<ValueType>();
-			for (auto value : steadyStateDist) {
-				length += value;
-			}
-			storm::utility::vector::scaleVectorInPlace(steadyStateDist, storm::utility::one<ValueType>() / length);
-
-			std::vector<ValueType> steadyStateForPsiStates(transitionMatrix.getRowCount(), storm::utility::zero<ValueType>());
+			//remove the last entry of the vector as it was just there to enforce the unique solution
+			steadyStateDist.pop_back();
+			
+			//calculate the fraction we spend in psi states on the long run
+			std::vector<ValueType> steadyStateForPsiStates(transitionMatrix.getRowCount() - 1, zero);
 			storm::utility::vector::setVectorValues(steadyStateForPsiStates, psiStates & subsystem, steadyStateDist);
 
-			ValueType result = storm::utility::zero<ValueType>();
+			ValueType result = zero;
 
 			for (auto value : steadyStateForPsiStates) {
 				result += value;
 			}
-			*/
+
 			return result;
 		}
 
