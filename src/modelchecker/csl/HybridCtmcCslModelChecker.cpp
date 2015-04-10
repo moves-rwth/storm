@@ -228,9 +228,6 @@ namespace storm {
                             HybridQuantitativeCheckResult<DdType> hybridResult(this->getModel().getReachableStates(), psiStates || (!statesWithProbabilityGreater0 && this->getModel().getReachableStates()),
                                                                                psiStates.toAdd(), statesWithProbabilityGreater0NonPsi, odd, subResult);
                             
-                            // Determine the set of states that achieved a strictly positive probability.
-                            std::unique_ptr<CheckResult> statesWithValuesGreaterZero = hybridResult.compareAgainstBound(storm::logic::ComparisonType::Greater, storm::utility::zero<ValueType>());
-                            
                             // Compute the set of relevant states.
                             storm::dd::Bdd<DdType> relevantStates = statesWithProbabilityGreater0 && phiStates;
                             
@@ -240,7 +237,6 @@ namespace storm {
                             // Build an ODD for the relevant states.
                             odd = storm::dd::Odd<DdType>(relevantStates);
                             
-                            std::vector<ValueType> result;
                             std::unique_ptr<CheckResult> explicitResult = hybridResult.toExplicitQuantitativeCheckResult();
                             std::vector<ValueType> newSubresult = std::move(explicitResult->asExplicitQuantitativeCheckResult<ValueType>().getValueVector());
                             

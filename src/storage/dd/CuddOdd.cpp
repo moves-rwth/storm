@@ -113,7 +113,9 @@ namespace storm {
         void Odd<DdType::CUDD>::expandValuesToVectorRec(uint_fast64_t oldOffset, storm::dd::Odd<DdType::CUDD> const& oldOdd, std::vector<double> const& oldValues, uint_fast64_t newOffset, storm::dd::Odd<DdType::CUDD> const& newOdd, std::vector<double>& newValues) {
             if (oldOdd.isTerminalNode()) {
                 STORM_LOG_THROW(newOdd.isTerminalNode(), storm::exceptions::InvalidArgumentException, "The ODDs for the translation must have the same height.");
-                newValues[newOffset] += oldValues[oldOffset];
+                if (oldOdd.getThenOffset() != 0) {
+                    newValues[newOffset] += oldValues[oldOffset];
+                }
             } else {
                 expandValuesToVectorRec(oldOffset, oldOdd.getElseSuccessor(), oldValues, newOffset, newOdd.getElseSuccessor(), newValues);
                 expandValuesToVectorRec(oldOffset + oldOdd.getElseOffset(), oldOdd.getThenSuccessor(), oldValues, newOffset + newOdd.getElseOffset(), newOdd.getThenSuccessor(), newValues);

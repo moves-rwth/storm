@@ -53,7 +53,7 @@ TEST(GmmxxCtmcCslModelCheckerTest, Cluster) {
     
     ASSERT_TRUE(checkResult->isExplicitQuantitativeCheckResult());
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeCheckResult3 = checkResult->asExplicitQuantitativeCheckResult<double>();
-    EXPECT_NEAR(0.001105335651650576, quantitativeCheckResult3[initialState], storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(0.001105335651670241, quantitativeCheckResult3[initialState], storm::settings::generalSettings().getPrecision());
     
     formula = formulaParser.parseFromString("P=? [ \"minimum\" U<=10 \"premium\"]");
     checkResult = modelchecker.check(*formula);
@@ -139,7 +139,7 @@ TEST(GmmxxCtmcCslModelCheckerTest, Embedded) {
     
     ASSERT_TRUE(checkResult->isExplicitQuantitativeCheckResult());
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeCheckResult5 = checkResult->asExplicitQuantitativeCheckResult<double>();
-    EXPECT_NEAR(2.7720429852369946, quantitativeCheckResult5[initialState], storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(2.7745274082080154, quantitativeCheckResult5[initialState], storm::settings::generalSettings().getPrecision());
 }
 
 TEST(GmmxxCtmcCslModelCheckerTest, Polling) {

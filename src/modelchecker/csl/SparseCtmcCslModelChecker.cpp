@@ -187,9 +187,9 @@ namespace storm {
                             
                             storm::storage::BitVector relevantStates = statesWithProbabilityGreater0 & phiStates;
                             std::vector<ValueType> newSubresult = std::vector<ValueType>(relevantStates.getNumberOfSetBits());
-                            storm::utility::vector::selectVectorValues(newSubresult, statesWithProbabilityGreater0NonPsi % relevantStates, subresult);
+                            storm::utility::vector::setVectorValues(newSubresult, statesWithProbabilityGreater0NonPsi % relevantStates, subresult);
                             storm::utility::vector::setVectorValues(newSubresult, psiStates % relevantStates, storm::utility::one<ValueType>());
-                            
+
                             // Then compute the transient probabilities of being in such a state after t time units. For this,
                             // we must re-uniformize the CTMC, so we need to compute the second uniformized matrix.
                             uniformizationRate = storm::utility::zero<ValueType>();
@@ -312,7 +312,7 @@ namespace storm {
                 if (computeCumulativeReward) {
                     result = std::vector<ValueType>(values.size());
                     std::function<ValueType (ValueType const&)> scaleWithUniformizationRate = [&uniformizationRate] (ValueType const& a) -> ValueType { return a / uniformizationRate; };
-                    storm::utility::vector::applyPointwise(result, result, scaleWithUniformizationRate);
+                    storm::utility::vector::applyPointwise(values, result, scaleWithUniformizationRate);
                 } else {
                     result = std::vector<ValueType>(values.size());
                 }

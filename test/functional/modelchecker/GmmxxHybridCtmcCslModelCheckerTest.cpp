@@ -60,8 +60,8 @@ TEST(GmmxxHybridCtmcCslModelCheckerTest, Cluster) {
     ASSERT_TRUE(checkResult->isHybridQuantitativeCheckResult());
     checkResult->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(ctmc->getReachableStates(), ctmc->getInitialStates()));
     storm::modelchecker::HybridQuantitativeCheckResult<storm::dd::DdType::CUDD>  quantitativeCheckResult3 = checkResult->asHybridQuantitativeCheckResult<storm::dd::DdType::CUDD>();
-    EXPECT_NEAR(0.001112543139248814, quantitativeCheckResult3.getMin(), storm::settings::generalSettings().getPrecision());
-    EXPECT_NEAR(0.001112543139248814, quantitativeCheckResult3.getMax(), storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(0.001105335651670241, quantitativeCheckResult3.getMin(), storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(0.001105335651670241, quantitativeCheckResult3.getMax(), storm::settings::generalSettings().getPrecision());
 
     formula = formulaParser.parseFromString("P=? [ \"minimum\" U<=10 \"premium\"]");
     checkResult = modelchecker.check(*formula);
@@ -163,8 +163,8 @@ TEST(GmmxxHybridCtmcCslModelCheckerTest, Embedded) {
     ASSERT_TRUE(checkResult->isHybridQuantitativeCheckResult());
     checkResult->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(ctmc->getReachableStates(), ctmc->getInitialStates()));
     storm::modelchecker::HybridQuantitativeCheckResult<storm::dd::DdType::CUDD> quantitativeCheckResult5 = checkResult->asHybridQuantitativeCheckResult<storm::dd::DdType::CUDD>();
-    EXPECT_NEAR(2.7720429852369946, quantitativeCheckResult5.getMin(), storm::settings::generalSettings().getPrecision());
-    EXPECT_NEAR(2.7720429852369946, quantitativeCheckResult5.getMax(), storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(2.7745274082080154, quantitativeCheckResult5.getMin(), storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(2.7745274082080154, quantitativeCheckResult5.getMax(), storm::settings::generalSettings().getPrecision());
 }
 
 TEST(GmmxxHybridCtmcCslModelCheckerTest, Polling) {
