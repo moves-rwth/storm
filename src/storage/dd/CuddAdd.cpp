@@ -428,6 +428,62 @@ namespace storm {
             return result;
         }
         
+        template<typename ValueType>
+        std::vector<ValueType> Add<DdType::CUDD>::toVector(std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd<DdType::CUDD> const& rowOdd) const {
+            std::set<storm::expressions::Variable> rowMetaVariables;
+            
+            // Prepare the proper sets of meta variables.
+            for (auto const& variable : this->getContainedMetaVariables()) {
+                if (groupMetaVariables.find(variable) != groupMetaVariables.end()) {
+                    continue;
+                }
+                
+                rowMetaVariables.insert(variable);
+            }
+            std::vector<uint_fast64_t> ddGroupVariableIndices;
+            for (auto const& variable : groupMetaVariables) {
+                DdMetaVariable<DdType::CUDD> const& metaVariable = this->getDdManager()->getMetaVariable(variable);
+                for (auto const& ddVariable : metaVariable.getDdVariables()) {
+                    ddGroupVariableIndices.push_back(ddVariable.getIndex());
+                }
+            }
+            std::vector<uint_fast64_t> ddRowVariableIndices;
+            for (auto const& variable : rowMetaVariables) {
+                DdMetaVariable<DdType::CUDD> const& metaVariable = this->getDdManager()->getMetaVariable(variable);
+                for (auto const& ddVariable : metaVariable.getDdVariables()) {
+                    ddRowVariableIndices.push_back(ddVariable.getIndex());
+                }
+            }
+            
+            // Start by computing the offsets (in terms of rows) for each row group.
+            Add<DdType::CUDD> stateToNumberOfChoices = this->notZero().toAdd().sumAbstract(groupMetaVariables);
+            std::vector<uint_fast64_t> rowGroupIndices = stateToNumberOfChoices.toVector<uint_fast64_t>(rowOdd);
+            rowGroupIndices.resize(rowGroupIndices.size() + 1);
+            uint_fast64_t tmp = 0;
+            uint_fast64_t tmp2 = 0;
+            for (uint_fast64_t i = 1; i < rowGroupIndices.size(); ++i) {
+                tmp2 = rowGroupIndices[i];
+                rowGroupIndices[i] = rowGroupIndices[i - 1] + tmp;
+                std::swap(tmp, tmp2);
+            }
+            rowGroupIndices[0] = 0;
+            
+            // Then split the symbolic vector into groups.
+            std::vector<Add<DdType::CUDD>> groups;
+            splitGroupsRec(this->getCuddDdNode(), groups, ddGroupVariableIndices, 0, ddGroupVariableIndices.size(), rowMetaVariables);
+            
+            // Now iterate over the groups and add them to the resulting vector.
+            std::vector<ValueType> result(rowGroupIndices.back(), storm::utility::zero<ValueType>());
+            for (uint_fast64_t i = 0; i < groups.size(); ++i) {
+                auto const& dd = groups[i];
+                
+                toVectorRec(dd.getCuddDdNode(), result, rowGroupIndices, rowOdd, 0, ddRowVariableIndices.size(), 0, ddRowVariableIndices);
+                addToVectorRec(dd.notZero().toAdd().getCuddDdNode(), 0, ddRowVariableIndices.size(), 0, rowOdd, ddRowVariableIndices, rowGroupIndices);
+            }
+            
+            return result;
+        }
+        
         storm::storage::SparseMatrix<double> Add<DdType::CUDD>::toMatrix() const {
             std::set<storm::expressions::Variable> rowVariables;
             std::set<storm::expressions::Variable> columnVariables;
@@ -518,6 +574,26 @@ namespace storm {
             
             // Construct matrix and return result.
             return storm::storage::SparseMatrix<double>(columnOdd.getTotalOffset(), std::move(rowIndications), std::move(columnsAndValues), std::move(trivialRowGroupIndices));
+        }
+        
+        storm::storage::SparseMatrix<double> Add<DdType::CUDD>::toMatrix(std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd<DdType::CUDD> const& rowOdd, storm::dd::Odd<DdType::CUDD> const& columnOdd) const {
+            std::set<storm::expressions::Variable> rowMetaVariables;
+            std::set<storm::expressions::Variable> columnMetaVariables;
+            
+            for (auto const& variable : this->getContainedMetaVariables()) {
+                // If the meta variable is a group meta variable, we do not insert it into the set of row/column meta variables.
+                if (groupMetaVariables.find(variable) != groupMetaVariables.end()) {
+                    continue;
+                }
+                
+                if (variable.getName().size() > 0 && variable.getName().back() == '\'') {
+                    columnMetaVariables.insert(variable);
+                } else {
+                    rowMetaVariables.insert(variable);
+                }
+            }
+            
+            return toMatrix(rowMetaVariables, columnMetaVariables, groupMetaVariables, rowOdd, columnOdd);
         }
         
         storm::storage::SparseMatrix<double> Add<DdType::CUDD>::toMatrix(std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd<DdType::CUDD> const& rowOdd, storm::dd::Odd<DdType::CUDD> const& columnOdd) const {
@@ -623,6 +699,26 @@ namespace storm {
             rowIndications[0] = 0;
             
             return storm::storage::SparseMatrix<double>(columnOdd.getTotalOffset(), std::move(rowIndications), std::move(columnsAndValues), std::move(rowGroupIndices));
+        }
+        
+        template<typename ValueType>
+        void Add<DdType::CUDD>::toVectorRec(DdNode const* dd, std::vector<ValueType>& result, std::vector<uint_fast64_t>& rowGroupOffsets, Odd<DdType::CUDD> const& rowOdd, uint_fast64_t currentRowLevel, uint_fast64_t maxLevel, uint_fast64_t currentRowOffset, std::vector<uint_fast64_t> const& ddRowVariableIndices) {
+            // For the empty DD, we do not need to add any entries.
+            if (dd == Cudd_ReadZero(this->getDdManager()->getCuddManager().getManager())) {
+                return;
+            }
+
+            // If we are at the maximal level, the value to be set is stored as a constant in the DD.
+            if (currentRowLevel == maxLevel) {
+                result[rowGroupOffsets[currentRowOffset]] = Cudd_V(dd);
+                ++rowGroupOffsets[currentRowOffset];
+            } else if (ddRowVariableIndices[currentRowLevel] < dd->index) {
+                toVectorRec(dd, result, rowGroupOffsets, rowOdd.getElseSuccessor(), currentRowLevel + 1, maxLevel, currentRowOffset, ddRowVariableIndices);
+                toVectorRec(dd, result, rowGroupOffsets, rowOdd.getThenSuccessor(), currentRowLevel + 1, maxLevel, currentRowOffset + rowOdd.getElseOffset(), ddRowVariableIndices);
+            } else {
+                toVectorRec(Cudd_E(dd), result, rowGroupOffsets, rowOdd.getElseSuccessor(), currentRowLevel + 1, maxLevel, currentRowOffset, ddRowVariableIndices);
+                toVectorRec(Cudd_T(dd), result, rowGroupOffsets, rowOdd.getThenSuccessor(), currentRowLevel + 1, maxLevel, currentRowOffset + rowOdd.getElseOffset(), ddRowVariableIndices);
+            }
         }
         
         void Add<DdType::CUDD>::toMatrixRec(DdNode const* dd, std::vector<uint_fast64_t>& rowIndications, std::vector<storm::storage::MatrixEntry<uint_fast64_t, double>>& columnsAndValues, std::vector<uint_fast64_t> const& rowGroupOffsets, Odd<DdType::CUDD> const& rowOdd, Odd<DdType::CUDD> const& columnOdd, uint_fast64_t currentRowLevel, uint_fast64_t currentColumnLevel, uint_fast64_t maxLevel, uint_fast64_t currentRowOffset, uint_fast64_t currentColumnOffset, std::vector<uint_fast64_t> const& ddRowVariableIndices, std::vector<uint_fast64_t> const& ddColumnVariableIndices, bool generateValues) const {
