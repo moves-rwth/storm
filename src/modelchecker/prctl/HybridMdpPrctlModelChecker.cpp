@@ -73,14 +73,13 @@ namespace storm {
                     // Finally cut away all columns targeting non-maybe states and convert the matrix into the matrix needed
                     // for solving the equation system (i.e. compute (I-A)).
                     submatrix *= maybeStatesAdd.swapVariables(model.getRowColumnMetaVariablePairs());
-                    submatrix = (model.getRowColumnIdentity() * maybeStatesAdd) - submatrix;
                     
                     // Create the solution vector.
                     std::vector<ValueType> x(maybeStates.getNonZeroCount(), ValueType(0.5));
                     
                     // Translate the symbolic matrix/vector to their explicit representations and solve the equation system.
                     storm::storage::SparseMatrix<ValueType> explicitSubmatrix = submatrix.toMatrix(model.getNondeterminismVariables(), odd, odd);
-                    std::vector<ValueType> b = subvector.template toVector<ValueType>(odd);
+                    std::vector<ValueType> b = subvector.template toVector<ValueType>(model.getNondeterminismVariables(), odd, explicitSubmatrix.getRowGroupIndices());
                     
                     std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(explicitSubmatrix);
                     solver->solveEquationSystem(minimize, x, b);
@@ -165,7 +164,7 @@ namespace storm {
                 
                 // Translate the symbolic matrix/vector to their explicit representations.
                 storm::storage::SparseMatrix<ValueType> explicitSubmatrix = submatrix.toMatrix(model.getNondeterminismVariables(), odd, odd);
-                std::vector<ValueType> b = subvector.template toVector<ValueType>(odd);
+                std::vector<ValueType> b = subvector.template toVector<ValueType>(model.getNondeterminismVariables(), odd, explicitSubmatrix.getRowGroupIndices());
                 
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(explicitSubmatrix);
                 solver->performMatrixVectorMultiplication(minimize, x, &b, stepBound);
@@ -203,7 +202,7 @@ namespace storm {
             
             // Translate the symbolic matrix/vector to their explicit representations.
             storm::storage::SparseMatrix<ValueType> explicitMatrix = transitionMatrix.toMatrix(model.getNondeterminismVariables(), odd, odd);
-            std::vector<ValueType> b = totalRewardVector.template toVector<ValueType>(odd);
+            std::vector<ValueType> b = totalRewardVector.template toVector<ValueType>(model.getNondeterminismVariables(), odd, explicitMatrix.getRowGroupIndices());
             
             // Perform the matrix-vector multiplication.
             std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(explicitMatrix);
@@ -227,12 +226,12 @@ namespace storm {
             
             // Create the ODD for the translation between symbolic and explicit storage.
             storm::dd::Odd<DdType> odd(model.getReachableStates());
-            
-            // Create the solution vector (and initialize it to the state rewards of the model).
-            std::vector<ValueType> x = model.getStateRewardVector().template toVector<ValueType>(odd);
-            
+
             // Translate the symbolic matrix to its explicit representations.
             storm::storage::SparseMatrix<ValueType> explicitMatrix = transitionMatrix.toMatrix(model.getNondeterminismVariables(), odd, odd);
+
+            // Create the solution vector (and initialize it to the state rewards of the model).
+            std::vector<ValueType> x = model.getStateRewardVector().template toVector<ValueType>(model.getNondeterminismVariables(), odd, explicitMatrix.getRowGroupIndices());
             
             // Perform the matrix-vector multiplication.
             std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(explicitMatrix);
@@ -297,14 +296,13 @@ namespace storm {
                     // Finally cut away all columns targeting non-maybe states and convert the matrix into the matrix needed
                     // for solving the equation system (i.e. compute (I-A)).
                     submatrix *= maybeStatesAdd.swapVariables(model.getRowColumnMetaVariablePairs());
-                    submatrix = (model.getRowColumnIdentity() * maybeStatesAdd) - submatrix;
                     
                     // Create the solution vector.
                     std::vector<ValueType> x(maybeStates.getNonZeroCount(), ValueType(0.5));
                     
                     // Translate the symbolic matrix/vector to their explicit representations.
                     storm::storage::SparseMatrix<ValueType> explicitSubmatrix = submatrix.toMatrix(model.getNondeterminismVariables(), odd, odd);
-                    std::vector<ValueType> b = subvector.template toVector<ValueType>(odd);
+                    std::vector<ValueType> b = subvector.template toVector<ValueType>(model.getNondeterminismVariables(), odd, explicitSubmatrix.getRowGroupIndices());
                     
                     // Now solve the resulting equation system.
                     std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(explicitSubmatrix);

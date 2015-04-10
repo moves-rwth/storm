@@ -429,7 +429,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        std::vector<ValueType> Add<DdType::CUDD>::toVector(std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd<DdType::CUDD> const& rowOdd) const {
+        std::vector<ValueType> Add<DdType::CUDD>::toVector(std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd<DdType::CUDD> const& rowOdd, std::vector<uint_fast64_t> groupOffsets) const {
             std::set<storm::expressions::Variable> rowMetaVariables;
             
             // Prepare the proper sets of meta variables.
@@ -455,30 +455,14 @@ namespace storm {
                 }
             }
             
-            // Start by computing the offsets (in terms of rows) for each row group.
-            Add<DdType::CUDD> stateToNumberOfChoices = this->notZero().toAdd().sumAbstract(groupMetaVariables);
-            std::vector<uint_fast64_t> rowGroupIndices = stateToNumberOfChoices.toVector<uint_fast64_t>(rowOdd);
-            rowGroupIndices.resize(rowGroupIndices.size() + 1);
-            uint_fast64_t tmp = 0;
-            uint_fast64_t tmp2 = 0;
-            for (uint_fast64_t i = 1; i < rowGroupIndices.size(); ++i) {
-                tmp2 = rowGroupIndices[i];
-                rowGroupIndices[i] = rowGroupIndices[i - 1] + tmp;
-                std::swap(tmp, tmp2);
-            }
-            rowGroupIndices[0] = 0;
-            
-            // Then split the symbolic vector into groups.
+            // Start by splitting the symbolic vector into groups.
             std::vector<Add<DdType::CUDD>> groups;
             splitGroupsRec(this->getCuddDdNode(), groups, ddGroupVariableIndices, 0, ddGroupVariableIndices.size(), rowMetaVariables);
             
             // Now iterate over the groups and add them to the resulting vector.
-            std::vector<ValueType> result(rowGroupIndices.back(), storm::utility::zero<ValueType>());
+            std::vector<ValueType> result(groupOffsets.back(), storm::utility::zero<ValueType>());
             for (uint_fast64_t i = 0; i < groups.size(); ++i) {
-                auto const& dd = groups[i];
-                
-                toVectorRec(dd.getCuddDdNode(), result, rowGroupIndices, rowOdd, 0, ddRowVariableIndices.size(), 0, ddRowVariableIndices);
-                addToVectorRec(dd.notZero().toAdd().getCuddDdNode(), 0, ddRowVariableIndices.size(), 0, rowOdd, ddRowVariableIndices, rowGroupIndices);
+                toVectorRec(groups[i].getCuddDdNode(), result, groupOffsets, rowOdd, 0, ddRowVariableIndices.size(), 0, ddRowVariableIndices);
             }
             
             return result;
@@ -702,7 +686,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void Add<DdType::CUDD>::toVectorRec(DdNode const* dd, std::vector<ValueType>& result, std::vector<uint_fast64_t>& rowGroupOffsets, Odd<DdType::CUDD> const& rowOdd, uint_fast64_t currentRowLevel, uint_fast64_t maxLevel, uint_fast64_t currentRowOffset, std::vector<uint_fast64_t> const& ddRowVariableIndices) {
+        void Add<DdType::CUDD>::toVectorRec(DdNode const* dd, std::vector<ValueType>& result, std::vector<uint_fast64_t>& rowGroupOffsets, Odd<DdType::CUDD> const& rowOdd, uint_fast64_t currentRowLevel, uint_fast64_t maxLevel, uint_fast64_t currentRowOffset, std::vector<uint_fast64_t> const& ddRowVariableIndices) const {
             // For the empty DD, we do not need to add any entries.
             if (dd == Cudd_ReadZero(this->getDdManager()->getCuddManager().getManager())) {
                 return;
@@ -927,6 +911,8 @@ namespace storm {
         template std::vector<double> Add<DdType::CUDD>::toVector() const;
         template std::vector<double> Add<DdType::CUDD>::toVector(Odd<DdType::CUDD> const& rowOdd) const;
         template void Add<DdType::CUDD>::addToVectorRec(DdNode const* dd, uint_fast64_t currentLevel, uint_fast64_t maxLevel, uint_fast64_t currentOffset, Odd<DdType::CUDD> const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<double>& targetVector) const;
+        template std::vector<double> Add<DdType::CUDD>::toVector(std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd<DdType::CUDD> const& rowOdd, std::vector<uint_fast64_t> groupOffsets) const;
+        template void Add<DdType::CUDD>::toVectorRec(DdNode const* dd, std::vector<double>& result, std::vector<uint_fast64_t>& rowGroupOffsets, Odd<DdType::CUDD> const& rowOdd, uint_fast64_t currentRowLevel, uint_fast64_t maxLevel, uint_fast64_t currentRowOffset, std::vector<uint_fast64_t> const& ddRowVariableIndices) const;
         template std::vector<uint_fast64_t> Add<DdType::CUDD>::toVector() const;
         template std::vector<uint_fast64_t> Add<DdType::CUDD>::toVector(Odd<DdType::CUDD> const& rowOdd) const;
         template void Add<DdType::CUDD>::addToVectorRec(DdNode const* dd, uint_fast64_t currentLevel, uint_fast64_t maxLevel, uint_fast64_t currentOffset, Odd<DdType::CUDD> const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<uint_fast64_t>& targetVector) const;

@@ -537,7 +537,7 @@ namespace storm {
              * @return The vector that is represented by this ADD.
              */
             template<typename ValueType>
-            std::vector<ValueType> toVector(std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd<DdType::CUDD> const& rowOdd) const;
+            std::vector<ValueType> toVector(std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd<DdType::CUDD> const& rowOdd, std::vector<uint_fast64_t> groupOffsets) const;
             
             /*!
              * Converts the ADD to a (sparse) double matrix. All contained non-primed variables are assumed to encode the
@@ -698,7 +698,7 @@ namespace storm {
              * @param ddRowVariableIndices The (sorted) indices of all DD row variables that need to be considered.
              */
             template<typename ValueType>
-            void toVectorRec(DdNode const* dd, std::vector<ValueType>& result, std::vector<uint_fast64_t>& rowGroupOffsets, Odd<DdType::CUDD> const& rowOdd, uint_fast64_t currentRowLevel, uint_fast64_t maxLevel, uint_fast64_t currentRowOffset, std::vector<uint_fast64_t> const& ddRowVariableIndices);
+            void toVectorRec(DdNode const* dd, std::vector<ValueType>& result, std::vector<uint_fast64_t>& rowGroupOffsets, Odd<DdType::CUDD> const& rowOdd, uint_fast64_t currentRowLevel, uint_fast64_t maxLevel, uint_fast64_t currentRowOffset, std::vector<uint_fast64_t> const& ddRowVariableIndices) const;
             
             /*!
              * Splits the given matrix DD into the groups using the given group variables.
