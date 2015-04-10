@@ -338,9 +338,9 @@ namespace storm {
 			for (uint_fast64_t currentBsccIndex = 0; currentBsccIndex < bsccDecomposition.size(); ++currentBsccIndex) {
 				storm::storage::StronglyConnectedComponent const& bscc = bsccDecomposition[currentBsccIndex];
 
-				storm::storage::BitVector statesInThisBsccs(numOfStates);
+				storm::storage::BitVector statesInThisBscc(numOfStates);
 				for (auto const& state : bscc) {
-					statesInThisBsccs.set(state);
+					statesInThisBscc.set(state);
 				}
 
 				ValueType lraForThisBscc = this->computeLraForBSCC(transitionMatrix, psiStates, bscc);
@@ -349,7 +349,7 @@ namespace storm {
 				//thus we add Prob(Eventually statesInThisBscc) * lraForThisBscc to the result vector
 
 				//the reachability probabilities will be zero in other BSCCs, thus we can set the left operand of the until formula to statesNotInBsccs as an optimization
-				std::vector<ValueType> reachProbThisBscc = this->computeUntilProbabilitiesHelper(statesNotInBsccs, statesInThisBsccs, false);
+				std::vector<ValueType> reachProbThisBscc = this->computeUntilProbabilitiesHelper(statesNotInBsccs, statesInThisBscc, false);
 				
 				storm::utility::vector::scaleVectorInPlace<ValueType>(reachProbThisBscc, lraForThisBscc);
 				storm::utility::vector::addVectorsInPlace<ValueType>(result, reachProbThisBscc);

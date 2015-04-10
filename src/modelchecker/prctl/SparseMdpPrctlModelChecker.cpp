@@ -339,61 +339,45 @@ namespace storm {
 			// Get some data members for convenience.
 			typename storm::storage::SparseMatrix<ValueType> const& transitionMatrix = this->getModel().getTransitionMatrix();
 
-			// Now start with compute the long-run average for all end components in isolation.
-			std::vector<ValueType> lraValuesForEndComponents;
-
-			// While doing so, we already gather some information for the following steps.
-			std::vector<uint_fast64_t> stateToMecIndexMap(numOfStates);
-			storm::storage::BitVector statesInMecs(numOfStates);
+			// First we check which states are in MECs. We use this later to speed up reachability analysis
+			storm::storage::BitVector statesNotInMecs(numOfStates, true);
 
 			for (uint_fast64_t currentMecIndex = 0; currentMecIndex < mecDecomposition.size(); ++currentMecIndex) {
 				storm::storage::MaximalEndComponent const& mec = mecDecomposition[currentMecIndex];
 
 				// Gather information for later use.
 				for (auto const& stateChoicesPair : mec) {
-					uint_fast64_t state = stateChoicesPair.first;
-
-					statesInMecs.set(state);
-					stateToMecIndexMap[state] = currentMecIndex;
+					statesInMecs.set(stateChoicesPair.first, false);
 				}
-
-				// Compute the LRA value for the current MEC.
-				lraValuesForEndComponents.push_back(this->computeLraForMaximalEndComponent(minimize, transitionMatrix, psiStates, mec));
 			}
 
-			// For fast transition rewriting, we build some auxiliary data structures.
-			storm::storage::BitVector statesNotContainedInAnyMec = ~statesInMecs;
-			
 			// Prepare result vector.
 			std::vector<ValueType> result(numOfStates);
 
-			//Set the values for all states in MECs.
-			for (auto state : statesInMecs) {
-				result[state] = lraValuesForEndComponents[stateToMecIndexMap[state]];
-			}
+			//FIXME: This doesn't work for MDP. Simple counterexample, an MPD with precisely two MECs, both with LRA of 1. Max Reach Prob for both is 1 from the initial state
+			//       Then this approach would yield an LRA value of 2 for the initial state, which is incorrect.
 
-			//for all states not in any mec set the result to the minimal/maximal value of the reachable MECs
-			//there might be a more efficient way to do this...
-			for (auto state : statesNotContainedInAnyMec){
+			////now we calculate the long run average for each MEC in isolation and compute the weighted contribution of the MEC to the LRA value of all states
+			//for (uint_fast64_t currentMecIndex = 0; currentMecIndex < mecDecomposition.size(); ++currentMecIndex) {
+			//	storm::storage::MaximalEndComponent const& mec = mecDecomposition[currentMecIndex];
 
-				//calculate what result values the reachable states in MECs have
-				storm::storage::BitVector currentState(numOfStates);
-				currentState.set(state);
-				storm::storage::BitVector reachableStates = storm::utility::graph::getReachableStates(
-					transitionMatrix, currentState, storm::storage::BitVector(numOfStates, true), statesInMecs
-					);
+			//	storm::storage::BitVector statesInThisMec(numOfStates);
+			//	for (auto const& state : bscc) {
+			//		statesInThisMec.set(state);
+			//	}
 
-				storm::storage::BitVector reachableMecStates = statesInMecs & reachableStates;
-				std::vector<ValueType> reachableResults(reachableMecStates.getNumberOfSetBits());
-				storm::utility::vector::selectVectorValues(reachableResults, reachableMecStates, result);
+			//	// Compute the LRA value for the current MEC.
+			//	lraValuesForEndComponents.push_back(this->computeLraForMaximalEndComponent(minimize, transitionMatrix, psiStates, mec));
 
-				//now select the minimal/maximal element
-				if (minimize){
-					result[state] = *std::min_element(reachableResults.begin(), reachableResults.end());
-				} else {
-					result[state] = *std::max_element(reachableResults.begin(), reachableResults.end());
-				}
-			}
+			//	//the LRA value of a MEC contributes to the LRA value of a state with the probability of reaching that MEC from that state
+			//	//thus we add Min/MaxProb(Eventually statesInThisBscc) * lraForThisBscc to the result vector
+
+			//	//the reachability probabilities will be zero in other MECs, thus we can set the left operand of the until formula to statesNotInMecs as an optimization
+			//	std::vector<ValueType> reachProbThisBscc = this->computeUntilProbabilitiesHelper(minimize, statesNotInMecs, statesInThisMec, false);
+
+			//	storm::utility::vector::scaleVectorInPlace<ValueType>(reachProbThisBscc, lraForThisBscc);
+			//	storm::utility::vector::addVectorsInPlace<ValueType>(result, reachProbThisBscc);
+			//}
 
 			return result;
 		}
