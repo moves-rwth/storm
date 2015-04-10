@@ -37,7 +37,7 @@ namespace storm {
             std::vector<ValueType> computeInstantaneousRewardsHelper(uint_fast64_t stepCount) const;
             std::vector<ValueType> computeCumulativeRewardsHelper(uint_fast64_t stepBound) const;
             std::vector<ValueType> computeReachabilityRewardsHelper(storm::storage::BitVector const& targetStates, bool qualitative) const;
-			std::vector<ValueType> computeLongRunAverageHelper(bool minimize, storm::storage::BitVector const& psiStates, bool qualitative) const;
+			std::vector<ValueType> computeLongRunAverageHelper(storm::storage::BitVector const& psiStates, bool qualitative) const;
 
 			static ValueType computeLraForBSCC(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& goalStates, storm::storage::StronglyConnectedComponent const& bscc);
 

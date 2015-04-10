@@ -301,7 +301,7 @@ namespace storm {
         }
         
 		template<typename ValueType>
-		std::vector<ValueType> SparseDtmcPrctlModelChecker<ValueType>::computeLongRunAverageHelper(bool minimize, storm::storage::BitVector const& psiStates, bool qualitative) const {
+		std::vector<ValueType> SparseDtmcPrctlModelChecker<ValueType>::computeLongRunAverageHelper(storm::storage::BitVector const& psiStates, bool qualitative) const {
 			// If there are no goal states, we avoid the computation and directly return zero.
 			auto numOfStates = this->getModel().getNumberOfStates();
 			if (psiStates.empty()) {
@@ -319,71 +319,51 @@ namespace storm {
 			// Get some data members for convenience.
 			typename storm::storage::SparseMatrix<ValueType> const& transitionMatrix = this->getModel().getTransitionMatrix();
 
-			// Now start with compute the long-run average for all BSCCs in isolation.
-			std::vector<ValueType> lraValuesForBsccs;
-
-			// While doing so, we already gather some information for the following steps.
-			std::vector<uint_fast64_t> stateToBsccIndexMap(numOfStates);
-			storm::storage::BitVector statesInBsccs(numOfStates);
+			// First we check which states are in BSCCs. We use this later to speed up reachability analysis
+			storm::storage::BitVector statesNotInBsccs(numOfStates, true);
 
 			for (uint_fast64_t currentBsccIndex = 0; currentBsccIndex < bsccDecomposition.size(); ++currentBsccIndex) {
 				storm::storage::StronglyConnectedComponent const& bscc = bsccDecomposition[currentBsccIndex];
 
 				// Gather information for later use.
 				for (auto const& state : bscc) {
-					statesInBsccs.set(state);
-					stateToBsccIndexMap[state] = currentBsccIndex;
+					statesNotInBsccs.set(state, false);
 				}
-
-				// Compute the LRA value for the current BSCC
-				lraValuesForBsccs.push_back(this->computeLraForBSCC(transitionMatrix, psiStates, bscc));
 			}
-
-			// For fast transition rewriting, we build some auxiliary data structures.
-			storm::storage::BitVector statesNotContainedInAnyBscc = ~statesInBsccs;
 
 			// Prepare result vector.
 			std::vector<ValueType> result(numOfStates);
 
-			//Set the values for all states in BSCCs.
-			for (auto state : statesInBsccs) {
-				result[state] = lraValuesForBsccs[stateToBsccIndexMap[state]];
-			}
+			//now we calculate the long run average for each BSCC in isolation and compute the weighted contribution of the BSCC to the LRA value of all states
+			for (uint_fast64_t currentBsccIndex = 0; currentBsccIndex < bsccDecomposition.size(); ++currentBsccIndex) {
+				storm::storage::StronglyConnectedComponent const& bscc = bsccDecomposition[currentBsccIndex];
 
-			//for all states not in any bscc set the result to the minimal/maximal value of the reachable BSCCs
-			//there might be a more efficient way to do this...
-			for (auto state : statesNotContainedInAnyBscc){
-
-				//calculate what result values the reachable states in BSCCs have
-				storm::storage::BitVector currentState(numOfStates);
-				currentState.set(state);
-				storm::storage::BitVector reachableStates = storm::utility::graph::getReachableStates(
-					transitionMatrix, currentState, storm::storage::BitVector(numOfStates, true), statesInBsccs
-					);
-
-				storm::storage::BitVector reachableBsccStates = statesInBsccs & reachableStates;
-				std::vector<ValueType> reachableResults(reachableBsccStates.getNumberOfSetBits());
-				storm::utility::vector::selectVectorValues(reachableResults, reachableBsccStates, result);
-
-				//now select the minimal/maximal element
-				if (minimize){
-					result[state] = *std::min_element(reachableResults.begin(), reachableResults.end());
-				} else {
-					result[state] = *std::max_element(reachableResults.begin(), reachableResults.end());
+				storm::storage::BitVector statesInThisBsccs(numOfStates);
+				for (auto const& state : bscc) {
+					statesInThisBsccs.set(state);
 				}
+
+				ValueType lraForThisBscc = this->computeLraForBSCC(transitionMatrix, psiStates, bscc);
+
+				//the LRA value of a BSCC contributes to the LRA value of a state with the probability of reaching that BSCC from that state
+				//thus we add Prob(Eventually statesInThisBscc) * lraForThisBscc to the result vector
+
+				//the reachability probabilities will be zero in other BSCCs, thus we can set the left operand of the until formula to statesNotInBsccs as an optimization
+				std::vector<ValueType> reachProbThisBscc = this->computeUntilProbabilitiesHelper(statesNotInBsccs, statesInThisBsccs, false);
+				
+				storm::utility::vector::scaleVectorInPlace<ValueType>(reachProbThisBscc, lraForThisBscc);
+				storm::utility::vector::addVectorsInPlace<ValueType>(result, reachProbThisBscc);
 			}
 
 			return result;
 		}
 
 		template<typename ValueType>
-		std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<ValueType>::computeLongRunAverage(storm::logic::StateFormula const& stateFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
-			STORM_LOG_THROW(optimalityType, storm::exceptions::InvalidArgumentException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
-
+		std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<ValueType>::computeLongRunAverage(storm::logic::StateFormula const& stateFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType = boost::optional<storm::logic::OptimalityType>()) {
 			std::unique_ptr<CheckResult> subResultPointer = this->check(stateFormula);
 			ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();
 
-			return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(this->computeLongRunAverageHelper(optimalityType.get() == storm::logic::OptimalityType::Minimize, subResult.getTruthValuesVector(), qualitative)));
+			return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(this->computeLongRunAverageHelper(subResult.getTruthValuesVector(), qualitative)));
 		}
 
 
