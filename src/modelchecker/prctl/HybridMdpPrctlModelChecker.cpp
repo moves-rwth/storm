@@ -70,19 +70,20 @@ namespace storm {
                     storm::dd::Add<DdType> subvector = submatrix * prob1StatesAsColumn;
                     subvector = subvector.sumAbstract(model.getColumnVariables());
                     
-                    // Finally cut away all columns targeting non-maybe states and convert the matrix into the matrix needed
-                    // for solving the equation system (i.e. compute (I-A)).
+                    // Before cutting the non-maybe columns, we need to compute the sizes of the row groups.
+                    std::vector<uint_fast64_t> rowGroupSizes = submatrix.notZero().existsAbstract(model.getColumnVariables()).toAdd().sumAbstract(model.getNondeterminismVariables()).template toVector<uint_fast64_t>(odd);
+                    
+                    // Finally cut away all columns targeting non-maybe states.
                     submatrix *= maybeStatesAdd.swapVariables(model.getRowColumnMetaVariablePairs());
                     
                     // Create the solution vector.
                     std::vector<ValueType> x(maybeStates.getNonZeroCount(), ValueType(0.5));
                     
                     // Translate the symbolic matrix/vector to their explicit representations and solve the equation system.
-                    storm::storage::SparseMatrix<ValueType> explicitSubmatrix = submatrix.toMatrix(model.getNondeterminismVariables(), odd, odd);
-                    std::vector<ValueType> b = subvector.template toVector<ValueType>(model.getNondeterminismVariables(), odd, explicitSubmatrix.getRowGroupIndices());
+                    std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> explicitRepresentation = submatrix.toMatrixVector(subvector, std::move(rowGroupSizes), model.getNondeterminismVariables(), odd, odd);
                     
-                    std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(explicitSubmatrix);
-                    solver->solveEquationSystem(minimize, x, b);
+                    std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(explicitRepresentation.first);
+                    solver->solveEquationSystem(minimize, x, explicitRepresentation.second);
                     
                     // Return a hybrid check result that stores the numerical values explicitly.
                     return std::unique_ptr<CheckResult>(new storm::modelchecker::HybridQuantitativeCheckResult<DdType>(model.getReachableStates(), model.getReachableStates() && !maybeStates, statesWithProbability01.second.toAdd(), maybeStates, odd, x));
@@ -138,7 +139,7 @@ namespace storm {
                 statesWithProbabilityGreater0 = storm::utility::graph::performProbGreater0E(model, transitionMatrix.notZero(), phiStates, psiStates);
             }
             storm::dd::Bdd<DdType> maybeStates = statesWithProbabilityGreater0 && !psiStates && model.getReachableStates();
-            
+                        
             // If there are maybe states, we need to perform matrix-vector multiplications.
             if (!maybeStates.isZero()) {
                 // Create the ODD for the translation between symbolic and explicit storage.
@@ -156,6 +157,9 @@ namespace storm {
                 storm::dd::Add<DdType> prob1StatesAsColumn = psiStates.toAdd().swapVariables(model.getRowColumnMetaVariablePairs());
                 storm::dd::Add<DdType> subvector = (submatrix * prob1StatesAsColumn).sumAbstract(model.getColumnVariables());
                 
+                // Before cutting the non-maybe columns, we need to compute the sizes of the row groups.
+                std::vector<uint_fast64_t> rowGroupSizes = submatrix.notZero().existsAbstract(model.getColumnVariables()).toAdd().sumAbstract(model.getNondeterminismVariables()).template toVector<uint_fast64_t>(odd);
+                
                 // Finally cut away all columns targeting non-maybe states.
                 submatrix *= maybeStatesAdd.swapVariables(model.getRowColumnMetaVariablePairs());
                 
@@ -163,11 +167,10 @@ namespace storm {
                 std::vector<ValueType> x(maybeStates.getNonZeroCount(), storm::utility::zero<ValueType>());
                 
                 // Translate the symbolic matrix/vector to their explicit representations.
-                storm::storage::SparseMatrix<ValueType> explicitSubmatrix = submatrix.toMatrix(model.getNondeterminismVariables(), odd, odd);
-                std::vector<ValueType> b = subvector.template toVector<ValueType>(model.getNondeterminismVariables(), odd, explicitSubmatrix.getRowGroupIndices());
+                std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> explicitRepresentation = submatrix.toMatrixVector(subvector, std::move(rowGroupSizes), model.getNondeterminismVariables(), odd, odd);
                 
-                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(explicitSubmatrix);
-                solver->performMatrixVectorMultiplication(minimize, x, &b, stepBound);
+                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(explicitRepresentation.first);
+                solver->performMatrixVectorMultiplication(minimize, x, &explicitRepresentation.second, stepBound);
                 
                 // Return a hybrid check result that stores the numerical values explicitly.
                 return std::unique_ptr<CheckResult>(new storm::modelchecker::HybridQuantitativeCheckResult<DdType>(model.getReachableStates(), model.getReachableStates() && !maybeStates, psiStates.toAdd(), maybeStates, odd, x));
@@ -259,9 +262,9 @@ namespace storm {
             storm::dd::Bdd<DdType> infinityStates;
             storm::dd::Bdd<DdType> transitionMatrixBdd = transitionMatrix.notZero();
             if (minimize) {
-                infinityStates = storm::utility::graph::performProb1A(model, transitionMatrixBdd, model.getReachableStates(), targetStates, storm::utility::graph::performProbGreater0A(model, transitionMatrixBdd, model.getManager().getBddZero(), targetStates));
+                infinityStates = storm::utility::graph::performProb1A(model, transitionMatrixBdd, model.getReachableStates(), targetStates, storm::utility::graph::performProbGreater0A(model, transitionMatrixBdd, model.getReachableStates(), targetStates));
             } else {
-                infinityStates = storm::utility::graph::performProb1E(model, transitionMatrixBdd, model.getReachableStates(), targetStates, storm::utility::graph::performProbGreater0E(model, transitionMatrixBdd, model.getManager().getBddZero(), targetStates));
+                infinityStates = storm::utility::graph::performProb1E(model, transitionMatrixBdd, model.getReachableStates(), targetStates, storm::utility::graph::performProbGreater0E(model, transitionMatrixBdd, model.getReachableStates(), targetStates));
             }
             infinityStates = !infinityStates && model.getReachableStates();
             storm::dd::Bdd<DdType> maybeStates = (!targetStates && !infinityStates) && model.getReachableStates();
@@ -293,21 +296,22 @@ namespace storm {
                         subvector += (submatrix * transitionRewardMatrix.get()).sumAbstract(model.getColumnVariables());
                     }
                     
-                    // Finally cut away all columns targeting non-maybe states and convert the matrix into the matrix needed
-                    // for solving the equation system (i.e. compute (I-A)).
+                    // Before cutting the non-maybe columns, we need to compute the sizes of the row groups.
+                    std::vector<uint_fast64_t> rowGroupSizes = submatrix.notZero().existsAbstract(model.getColumnVariables()).toAdd().sumAbstract(model.getNondeterminismVariables()).template toVector<uint_fast64_t>(odd);
+                    
+                    // Finally cut away all columns targeting non-maybe states.
                     submatrix *= maybeStatesAdd.swapVariables(model.getRowColumnMetaVariablePairs());
                     
                     // Create the solution vector.
                     std::vector<ValueType> x(maybeStates.getNonZeroCount(), ValueType(0.5));
                     
                     // Translate the symbolic matrix/vector to their explicit representations.
-                    storm::storage::SparseMatrix<ValueType> explicitSubmatrix = submatrix.toMatrix(model.getNondeterminismVariables(), odd, odd);
-                    std::vector<ValueType> b = subvector.template toVector<ValueType>(model.getNondeterminismVariables(), odd, explicitSubmatrix.getRowGroupIndices());
+                    std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> explicitRepresentation = submatrix.toMatrixVector(subvector, std::move(rowGroupSizes), model.getNondeterminismVariables(), odd, odd);
                     
                     // Now solve the resulting equation system.
-                    std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(explicitSubmatrix);
-                    solver->solveEquationSystem(minimize, x, b);
-                    
+                    std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(explicitRepresentation.first);
+                    solver->solveEquationSystem(minimize, x, explicitRepresentation.second);
+                                        
                     // Return a hybrid check result that stores the numerical values explicitly.
                     return std::unique_ptr<CheckResult>(new storm::modelchecker::HybridQuantitativeCheckResult<DdType>(model.getReachableStates(), model.getReachableStates() && !maybeStates, infinityStates.toAdd() * model.getManager().getConstant(storm::utility::infinity<ValueType>()), maybeStates, odd, x));
                 } else {

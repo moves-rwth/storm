@@ -12,7 +12,7 @@
 #include "src/models/symbolic/Dtmc.h"
 #include "src/settings/SettingsManager.h"
 
-TEST(NativeHybridMdpPrctlModelCheckerTest, Dice) {
+TEST(GmmxxHybridMdpPrctlModelCheckerTest, Dice) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/two_dice.nm");
     
     // Build the die model with its reward model.
@@ -27,7 +27,7 @@ TEST(NativeHybridMdpPrctlModelCheckerTest, Dice) {
     
     std::shared_ptr<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>> mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>();
     
-    storm::modelchecker::HybridMdpPrctlModelChecker<storm::dd::DdType::CUDD, double> checker(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::NativeMinMaxLinearEquationSolverFactory<double>()));
+    storm::modelchecker::HybridMdpPrctlModelChecker<storm::dd::DdType::CUDD, double> checker(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::GmmxxMinMaxLinearEquationSolverFactory<double>()));
     
     auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("two");
     auto eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(labelFormula);
@@ -110,7 +110,7 @@ TEST(NativeHybridMdpPrctlModelCheckerTest, Dice) {
     EXPECT_NEAR(7.3333283960819244, quantitativeResult8.getMax(), storm::settings::nativeEquationSolverSettings().getPrecision());
 }
 
-TEST(NativeHybridMdpPrctlModelCheckerTest, AsynchronousLeader) {
+TEST(GmmxxHybridMdpPrctlModelCheckerTest, AsynchronousLeader) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/leader4.nm");
     
     // Build the die model with its reward model.
@@ -125,7 +125,7 @@ TEST(NativeHybridMdpPrctlModelCheckerTest, AsynchronousLeader) {
     
     std::shared_ptr<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>> mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>();
     
-    storm::modelchecker::HybridMdpPrctlModelChecker<storm::dd::DdType::CUDD, double> checker(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::NativeMinMaxLinearEquationSolverFactory<double>()));
+    storm::modelchecker::HybridMdpPrctlModelChecker<storm::dd::DdType::CUDD, double> checker(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::GmmxxMinMaxLinearEquationSolverFactory<double>()));
     
     auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("elected");
     auto eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(labelFormula);

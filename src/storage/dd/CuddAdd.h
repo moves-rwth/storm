@@ -1,6 +1,8 @@
 #ifndef STORM_STORAGE_DD_CUDDADD_H_
 #define STORM_STORAGE_DD_CUDDADD_H_
 
+#include <boost/optional.hpp>
+
 #include "src/storage/dd/Add.h"
 #include "src/storage/dd/CuddDd.h"
 #include "src/storage/dd/CuddDdForwardIterator.h"
@@ -581,20 +583,21 @@ namespace storm {
              * @return The matrix that is represented by this ADD.
              */
             storm::storage::SparseMatrix<double> toMatrix(std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd<DdType::CUDD> const& rowOdd, storm::dd::Odd<DdType::CUDD> const& columnOdd) const;
-            
+                        
             /*!
-             * Converts the ADD to a row-grouped (sparse) double matrix. The given offset-labeled DDs are used to
-             * determine the correct row and column, respectively, for each entry. Note: this function assumes that
-             * the meta variables used to distinguish different row groups are at the very top of the ADD.
+             * Converts the ADD to a row-grouped (sparse) double matrix and the given vector to a row-grouped vector.
+             * The given offset-labeled DDs are used to determine the correct row and column, respectively, for each
+             * entry. Note: this function assumes that the meta variables used to distinguish different row groups are
+             * at the very top of the ADD.
              *
-             * @param rowMetaVariables The meta variables that encode the rows of the matrix.
-             * @param columnMetaVariables The meta variables that encode the columns of the matrix.
+             * @param vector The symbolic vector to convert.
+             * @param rowGroupSizes A vector specifying the sizes of the row groups.
              * @param groupMetaVariables The meta variables that are used to distinguish different row groups.
              * @param rowOdd The ODD used for determining the correct row.
              * @param columnOdd The ODD used for determining the correct column.
              * @return The matrix that is represented by this ADD.
              */
-            storm::storage::SparseMatrix<double> toMatrix(std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd<DdType::CUDD> const& rowOdd, storm::dd::Odd<DdType::CUDD> const& columnOdd) const;
+            std::pair<storm::storage::SparseMatrix<double>, std::vector<double>> toMatrixVector(storm::dd::Add<storm::dd::DdType::CUDD> const& vector, std::vector<uint_fast64_t>&& rowGroupSizes, std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd<DdType::CUDD> const& rowOdd, storm::dd::Odd<DdType::CUDD> const& columnOdd) const;
             
             /*!
              * Exports the DD to the given file in the dot format.
@@ -657,6 +660,40 @@ namespace storm {
             Add(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, ADD cuddAdd, std::set<storm::expressions::Variable> const& containedMetaVariables = std::set<storm::expressions::Variable>());
             
             /*!
+             * Converts the ADD to a row-grouped (sparse) double matrix. If the optional vector is given, it is also
+             * translated to an explicit row-grouped vector with the same row-grouping. The given offset-labeled DDs
+             * are used to determine the correct row and column, respectively, for each entry. Note: this function
+             * assumes that the meta variables used to distinguish different row groups are at the very top of the ADD.
+             *
+             * @param rowMetaVariables The meta variables that encode the rows of the matrix.
+             * @param columnMetaVariables The meta variables that encode the columns of the matrix.
+             * @param groupMetaVariables The meta variables that are used to distinguish different row groups.
+             * @param rowOdd The ODD used for determining the correct row.
+             * @param columnOdd The ODD used for determining the correct column.
+             * @return The matrix that is represented by this ADD and and a vector corresponding to the symbolic vector
+             * (if it was given).
+             */
+            storm::storage::SparseMatrix<double> toMatrix(std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd<DdType::CUDD> const& rowOdd, storm::dd::Odd<DdType::CUDD> const& columnOdd) const;
+            
+            /*!
+             * Converts the ADD to a row-grouped (sparse) double matrix and the given vector to an equally row-grouped
+             * explicit vector. The given offset-labeled DDs are used to determine the correct row and column,
+             * respectively, for each entry. Note: this function assumes that the meta variables used to distinguish
+             * different row groups are at the very top of the ADD.
+             *
+             * @param vector The vector that is to be transformed to an equally grouped explicit vector.
+             * @param rowGroupSizes A vector specifying the sizes of the row groups.
+             * @param rowMetaVariables The meta variables that encode the rows of the matrix.
+             * @param columnMetaVariables The meta variables that encode the columns of the matrix.
+             * @param groupMetaVariables The meta variables that are used to distinguish different row groups.
+             * @param rowOdd The ODD used for determining the correct row.
+             * @param columnOdd The ODD used for determining the correct column.
+             * @return The matrix that is represented by this ADD and and a vector corresponding to the symbolic vector
+             * (if it was given).
+             */
+            std::pair<storm::storage::SparseMatrix<double>,std::vector<double>> toMatrixVector(storm::dd::Add<storm::dd::DdType::CUDD> const& vector, std::vector<uint_fast64_t>&& rowGroupSizes, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd<DdType::CUDD> const& rowOdd, storm::dd::Odd<DdType::CUDD> const& columnOdd) const;
+            
+            /*!
              * Helper function to convert the DD into a (sparse) matrix.
              *
              * @param dd The DD to convert.
@@ -688,9 +725,7 @@ namespace storm {
              *
              * @param dd The DD to convert.
              * @param result The vector that will hold the values upon successful completion.
-             * @param rowGroupOffsets The row offsets at which a given row group starts. Note this vector is modified in
-             * the computation. More concretely, each entry i in the vector will be increased by one iff there was a
-             * non-zero entry in that row-group.
+             * @param rowGroupOffsets The row offsets at which a given row group starts.
              * @param rowOdd The ODD used for the row translation.
              * @param currentRowLevel The currently considered row level in the DD.
              * @param maxLevel The number of levels that need to be considered.
@@ -698,7 +733,7 @@ namespace storm {
              * @param ddRowVariableIndices The (sorted) indices of all DD row variables that need to be considered.
              */
             template<typename ValueType>
-            void toVectorRec(DdNode const* dd, std::vector<ValueType>& result, std::vector<uint_fast64_t>& rowGroupOffsets, Odd<DdType::CUDD> const& rowOdd, uint_fast64_t currentRowLevel, uint_fast64_t maxLevel, uint_fast64_t currentRowOffset, std::vector<uint_fast64_t> const& ddRowVariableIndices) const;
+            void toVectorRec(DdNode const* dd, std::vector<ValueType>& result, std::vector<uint_fast64_t> const& rowGroupOffsets, Odd<DdType::CUDD> const& rowOdd, uint_fast64_t currentRowLevel, uint_fast64_t maxLevel, uint_fast64_t currentRowOffset, std::vector<uint_fast64_t> const& ddRowVariableIndices) const;
             
             /*!
              * Splits the given matrix DD into the groups using the given group variables.
@@ -713,7 +748,32 @@ namespace storm {
             void splitGroupsRec(DdNode* dd, std::vector<Add<DdType::CUDD>>& groups, std::vector<uint_fast64_t> const& ddGroupVariableIndices, uint_fast64_t currentLevel, uint_fast64_t maxLevel, std::set<storm::expressions::Variable> const& remainingMetaVariables) const;
             
             /*!
-             * Performs a recursive step to add the given DD-based vector to the given explicit vector.
+             * Splits the given matrix and vector DDs into the groups using the given group variables.
+             *
+             * @param dd1 The matrix DD to split.
+             * @param dd2 The vector DD to split.
+             * @param groups A vector that is to be filled with the pairs of matrix/vector DDs for the individual groups.
+             * @param ddGroupVariableIndices The (sorted) indices of all DD group variables that need to be considered.
+             * @param currentLevel The currently considered level in the DD.
+             * @param maxLevel The number of levels that need to be considered.
+             * @param remainingMetaVariables1 The meta variables that remain in the matrix DD after the groups have been split.
+             * @param remainingMetaVariables2 The meta variables that remain in the vector DD after the groups have been split.
+             */
+            void splitGroupsRec(DdNode* dd1, DdNode* dd2, std::vector<std::pair<Add<DdType::CUDD>, Add<DdType::CUDD>>>& groups, std::vector<uint_fast64_t> const& ddGroupVariableIndices, uint_fast64_t currentLevel, uint_fast64_t maxLevel, std::set<storm::expressions::Variable> const& remainingMetaVariables1, std::set<storm::expressions::Variable> const& remainingMetaVariables2) const;
+            
+            /*!
+             * Adds the current (DD-based) vector to the given explicit one.
+             *
+             * @param odd The ODD used for the translation.
+             * @param ddVariableIndices The (sorted) indices of all DD variables that need to be considered.
+             * @param targetVector The vector to which the translated DD-based vector is to be added.
+             */
+            template<typename ValueType>
+            void addToVector(Odd<DdType::CUDD> const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType>& targetVector) const;
+            
+            /*!
+             * Performs a recursive step to perform the given function between the given DD-based vector to the given
+             * explicit vector.
              *
              * @param dd The DD to add to the explicit vector.
              * @param currentLevel The currently considered level in the DD.
@@ -724,7 +784,7 @@ namespace storm {
              * @param targetVector The vector to which the translated DD-based vector is to be added.
              */
             template<typename ValueType>
-            void addToVectorRec(DdNode const* dd, uint_fast64_t currentLevel, uint_fast64_t maxLevel, uint_fast64_t currentOffset, Odd<DdType::CUDD> const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType>& targetVector) const;
+            void modifyVectorRec(DdNode const* dd, uint_fast64_t currentLevel, uint_fast64_t maxLevel, uint_fast64_t currentOffset, Odd<DdType::CUDD> const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType>& targetVector, std::function<ValueType (ValueType const&, double const&)> const& function) const;
             
             /*!
              * Builds an ADD representing the given vector.

@@ -297,6 +297,7 @@ namespace storm {
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = MinMaxLinearEquationSolverFactory.create(submatrix);
                 solver->solveEquationSystem(minimize, x, b);
                 
+                
                 // Set values of resulting vector according to result.
                 storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, x);
             }
