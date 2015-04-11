@@ -3,6 +3,10 @@
 
 #include <iostream>
 #include <fstream>
+#ifndef WINDOWS
+    #include <unistd.h>
+    #include <sys/ioctl.h>
+#endif
 
 #include "storm-config.h"
 #include "src/solver/SmtSolver.h"
@@ -11,7 +15,12 @@
 
 namespace storm {
     namespace solver {
-
+        /*!
+         * This class represents an SMT-LIBv2 conforming solver. 
+         * Any SMT-LIBv2 conforming solver can be called and will be opened as a child process.
+         * It is also possible to export the SMT2 script for later use.
+         * @note The parsing of the solver responses is a little bit crude and might cause bugs (e.g., if a variable name has the infix "error")
+         */
         class Smt2SmtSolver : public SmtSolver {
         public:
 
@@ -31,7 +40,7 @@ namespace storm {
         public:
             /*!
              * Creates a new solver with the given manager.
-             * In addition to storm expressions, this solver also allows carl expressions (but not both).
+             * In addition to storm expressions, this solver also allows carl expressions (but not both to not confuse variables).
              * Hence, there is a flag to chose between the two
              */
             Smt2SmtSolver(storm::expressions::ExpressionManager& manager, bool useCarlExpressions = false);
@@ -79,21 +88,51 @@ namespace storm {
 
 
             /*!
-             * Initializes the solver
+             * Initializes the solver, i.e. opens a new process for it and creates a file stream for the script file  (if demanded)
+             * Moreover, some initial commands are send to the solver
              */
             void init();
 
 
-            /*! Writes the given command to the solver
+            /*! 
+             * Writes the given command to the solver
              * @param smt2Command the command that the solver will receive
+             * @param expectSuccess set this flag to true whenever a success response from the solver is expected.
              */
-            void writeCommand(std::string smt2Command);
+            void writeCommand(std::string smt2Command, bool expectSuccess);
+            
+            /*! 
+             * Reads from the solver. The output is checked for an error message and an exception is thrown in that case.
+             * @param waitForOutput if this is true and there is currently no output, we will wait until there is output.
+             * @return the output of the solver. Every entry of the vector corresponds to one output line
+             */
+            std::vector<std::string> readSolverOutput(bool waitForOutput=true);
+            
+            /*! 
+             * Checks if the given message contains an error message and throws an exception.
+             * More precisely, an exception is thrown whenever the word "error" is contained in the message.
+             * This function is directly called when reading the solver output via readSolverOutput()
+             * We will try to parse the message in the SMT-LIBv2 format, i.e.,
+             * ( error "this is the error message from the solver" ) to give some debug information
+             * However, the whole message is always written to the debug log (providing there is an error)
+             * @param message the considered message which should be an output of the solver.
+             */
+            void checkForErrorMessage(const std::string message);
 
-
+#ifndef WINDOWS
+            // descriptors for the pipe from and to the solver
+            int toSolver;
+            int fromSolver;
+            // A flag storing the Process ID of the solver. If this is zero, then the solver is not running 
+            pid_t processIdOfSolver;
+#endif
+            
 
             // a filestream where the commands that we send to the solver will be stored (can be used for debugging purposes)
             std::ofstream commandFile;
 
+            bool isCommandFileOpen;
+            
             // An expression adapter that is used for translating the expression into Smt2's format.
             std::unique_ptr<storm::adapters::Smt2ExpressionAdapter> expressionAdapter;
 

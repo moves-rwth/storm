@@ -55,7 +55,7 @@ namespace storm {
             private:
                 // Define the string names of the options as constants.
                 static const std::string solverCommandOption;
-                static const std::string exportSmtLibScriptOption;
+                static const std::string exportScriptOption;
             };
             
         } // namespace modules

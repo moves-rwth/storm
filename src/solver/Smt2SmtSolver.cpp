@@ -8,6 +8,7 @@
 #include "src/exceptions/IllegalFunctionCallException.h"
 #include "utility/macros.h"
 #include "adapters/CarlAdapter.h"
+#include "exceptions/UnexpectedException.h"
 
 namespace storm {
     namespace solver {
@@ -28,32 +29,42 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "functionality not (yet) implemented");
         }
 
-        Smt2SmtSolver::Smt2SmtSolver(storm::expressions::ExpressionManager& manager, bool useCarlExpressions) : SmtSolver(manager), expressionAdapter(nullptr), lastCheckAssumptions(false), lastResult(CheckResult::Unknown), useCarlExpressions(useCarlExpressions) {
+        Smt2SmtSolver::Smt2SmtSolver(storm::expressions::ExpressionManager& manager, bool useCarlExpressions) : SmtSolver(manager), isCommandFileOpen(false), expressionAdapter(nullptr), lastCheckAssumptions(false), lastResult(CheckResult::Unknown), useCarlExpressions(useCarlExpressions) {
 #ifndef STORM_HAVE_CARL
             STORM_LOG_THROW(!useCarlExpressions, storm::exceptions::IllegalArgumentException, "Tried to use carl expressions but storm is not linked with CARL");
+#endif
+#ifndef WINDOWS
+            processIdOfSolver=0;
 #endif
             expressionAdapter = std::unique_ptr<storm::adapters::Smt2ExpressionAdapter>(new storm::adapters::Smt2ExpressionAdapter(this->getManager(), true));
             init();
         }
 
         Smt2SmtSolver::~Smt2SmtSolver() {
-            writeCommand("( exit )");
-            //todo make sure that the process exits
+            writeCommand("( exit )", true);
+#ifndef WINDOWS
+            if(processIdOfSolver!=0){
+                //Since the process has been open successfully, it means that we have to close our fds   
+                close(fromSolver);
+                close(toSolver);
+                //todo make sure that the process exits  waitpid kill(pid, ..);
+            }
+#endif
         }
 
         void Smt2SmtSolver::push() {
             expressionAdapter->increaseScope();
-            writeCommand("( push 1 ) ");
+            writeCommand("( push 1 ) ", true);
         }
 
         void Smt2SmtSolver::pop() {
             expressionAdapter->decreaseScope();
-            writeCommand("( pop 1 ) ");
+            writeCommand("( pop 1 ) ", true);
         }
 
         void Smt2SmtSolver::pop(uint_fast64_t n) {
             expressionAdapter->decreaseScope(n);
-            writeCommand("( pop " + std::to_string(n) + " ) ");
+            writeCommand("( pop " + std::to_string(n) + " ) ", true);
         }
 
         void Smt2SmtSolver::reset() {
@@ -74,9 +85,9 @@ namespace storm {
             rightHandSide.gatherVariables(variables);
             std::vector<std::string> const varDeclarations = expressionAdapter->checkForUndeclaredVariables(variables);
             for (auto declaration : varDeclarations){
-                writeCommand(declaration);
+                writeCommand(declaration, true);
             }
-            writeCommand("( assert " + expressionAdapter->translateExpression(leftHandSide, relation, rightHandSide) + " )");
+            writeCommand("( assert " + expressionAdapter->translateExpression(leftHandSide, relation, rightHandSide) + " )", true);
         }
         
         template<>
@@ -90,24 +101,34 @@ namespace storm {
             std::set<storm::Variable> variables = constraint.lhs().gatherVariables();
             std::vector<std::string> const varDeclarations = expressionAdapter->checkForUndeclaredVariables(variables);
             for (auto declaration : varDeclarations){
-                writeCommand(declaration);
+                writeCommand(declaration, true);
             }
-            writeCommand("( assert " + expressionAdapter->translateExpression(constraint) + " )");
+            writeCommand("( assert " + expressionAdapter->translateExpression(constraint) + " )", true);
         }
         
         
 #endif
 
         SmtSolver::CheckResult Smt2SmtSolver::check() {
-            writeCommand("( check-sat )");
-            if (storm::settings::smt2SmtSolverSettings().isSolverCommandSet()){
-                // todo get the result
-                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "functionality not (yet) implemented");
+            writeCommand("( check-sat )", false);
+#ifdef WINDOWS
+                STORM_LOG_WARN("SMT-LIBv2 Solver can not be started on Windows as this is not yet implemented. Assume that the check-result is \"unknown\"");
+                return SmtSolver::CheckResult::Unknown;
+#else
+                
+            if (processIdOfSolver!=0){
+                auto solverOutput = readSolverOutput();
+                STORM_LOG_THROW(solverOutput.size()==1, storm::exceptions::UnexpectedException, "expected a single line of output after smt2 command ( check-sat ). Got " + std::to_string(solverOutput.size()) + " lines of output instead.");
+                solverOutput[0].erase(std::remove_if(solverOutput[0].begin(), solverOutput[0].end(), isspace), solverOutput[0].end()); //remove spaces
+                if(solverOutput[0]=="sat") return SmtSolver::CheckResult::Sat;
+                if(solverOutput[0]=="unsat") return SmtSolver::CheckResult::Unsat;
+                if(solverOutput[0]=="unknown") return SmtSolver::CheckResult::Unknown;
             }
             else{
                 STORM_LOG_WARN("No SMT-LIBv2 Solver Command specified, which means that no actual SMT solving is done... Assume that the result is \"unknown\"");
                 return SmtSolver::CheckResult::Unknown;
             }
+#endif
         }
 
         SmtSolver::CheckResult Smt2SmtSolver::checkWithAssumptions(std::set<storm::expressions::Expression> const& assumptions) {
@@ -123,8 +144,53 @@ namespace storm {
 
         void Smt2SmtSolver::init() {
             if (storm::settings::smt2SmtSolverSettings().isSolverCommandSet()){
-                //todo call the solver!
-                std::string cmd = storm::settings::smt2SmtSolverSettings().getSolverCommand();
+#ifdef WINDOWS
+                STORM_LOG_WARN("opening a thread for the smt solver is not implemented on Windows. Hence, no actual solving will be done")
+#else
+                //for executing the solver we will need the path to the executable file as well as the arguments as a char* array
+                //where the first argument is the path to the executable file and the last is NULL
+                const std::string cmdString = storm::settings::smt2SmtSolverSettings().getSolverCommand();
+                std::vector<std::string> solverCommandVec;
+                boost::split(solverCommandVec, cmdString, boost::is_any_of("\t "));
+                char** solverArgs = new char* [solverCommandVec.size()+1];
+                solverArgs[0] = const_cast<char*>(solverCommandVec[0].substr(0, cmdString.rfind('/')+1).c_str());
+                for(uint_fast64_t argumentIndex = 1; argumentIndex<solverCommandVec.size(); ++argumentIndex){
+                    solverArgs[argumentIndex]=const_cast<char*>(solverCommandVec[argumentIndex].c_str());
+                }
+                solverArgs[solverCommandVec.size()] = NULL;
+                
+                //get the pipes started
+                int pipeIn[2];
+                int pipeOut[2];                
+                const int READ=0;
+                const int WRITE=1;
+                STORM_LOG_THROW(pipe(pipeIn) == 0 && pipe(pipeOut)==0, storm::exceptions::UnexpectedException, "Could not open pipe to new process");
+                
+                //now start the child process, i.e., the solver
+                pid_t pid = fork();
+                STORM_LOG_THROW(pid>=0, storm::exceptions::UnexpectedException, "Could not start new process for the smt solver");
+                if (pid == 0){
+                    // Child process
+                    // duplicate the fd so that standard input and output will be send to our pipes
+                    dup2(pipeIn[READ], STDIN_FILENO); 
+                    dup2(pipeOut[WRITE], STDOUT_FILENO);
+                    // we can now close everything since our child process will use std in and out to address the pipes
+                    close(pipeIn[READ]);
+                    close(pipeIn[WRITE]); 
+                    close(pipeOut[READ]); 
+                    close(pipeOut[WRITE]); 
+                    
+                    execv(solverCommandVec[0].c_str(), solverArgs); //"-smt2 -in"
+                    // if we reach this point, execl was not successful
+                    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Could not execute the solver correctly");
+                }
+                // Parent Process
+                toSolver=pipeIn[WRITE];
+                fromSolver=pipeOut[READ];   
+                close(pipeOut[WRITE]);
+                close(pipeIn[READ]);
+                processIdOfSolver=pid;
+#endif  
             }
             else{
                 STORM_LOG_WARN("No SMT-LIBv2 Solver Command specified, which means that no actual SMT solving can be done");
@@ -133,22 +199,95 @@ namespace storm {
             if (storm::settings::smt2SmtSolverSettings().isExportSmtLibScriptSet()){
                 STORM_LOG_DEBUG("The SMT-LIBv2 commands are exportet to the given file");
                 commandFile.open(storm::settings::smt2SmtSolverSettings().getExportSmtLibScriptPath(), std::ios::trunc);
-                STORM_LOG_THROW(commandFile.is_open(), storm::exceptions::InvalidArgumentException, "The file where the smt2commands should be written to could not be opened");
+                isCommandFileOpen=commandFile.is_open();
+                STORM_LOG_THROW(isCommandFileOpen, storm::exceptions::InvalidArgumentException, "The file where the smt2commands should be written to could not be opened");
             }
 
             //some initial commands
-            writeCommand("( set-logic QF_NRA )");
-
+            writeCommand("( set-option :print-success true )", true);
+            writeCommand("( set-logic QF_NRA )", true);
+            //writeCommand("( get-info :name )");
         }
 
-        void Smt2SmtSolver::writeCommand(std::string smt2Command) {
-            if (commandFile.is_open()) {
+        void Smt2SmtSolver::writeCommand(std::string smt2Command, bool expectSuccess) {
+            if (isCommandFileOpen) {
                 commandFile << smt2Command << std::endl;
-            } else{
-                std::cout << "COMMAND FILE IS CLOSED" <<std::endl;
             }
             
-            //todo actually write to the solver
+#ifndef WINDOWS
+            if (processIdOfSolver!=0){
+                write(toSolver, (smt2Command+"\n").c_str(), smt2Command.length()+1);
+                if(expectSuccess){
+                    auto output=readSolverOutput();
+                    STORM_LOG_THROW(output.size()==1, storm::exceptions::UnexpectedException, "expected a single success response after smt2 command " + smt2Command + ". Got " + std::to_string(output.size()) + " lines of output instead.");
+                    output[0].erase(std::remove_if(output[0].begin(), output[0].end(), isspace), output[0].end());
+                    STORM_LOG_THROW(output[0]=="success", storm::exceptions::UnexpectedException, "expected <<success>> response after smt2 command " + smt2Command + ". Got <<" + output[0] + ">> instead");
+                }
+            }
+#endif
+        }
+        
+        std::vector<std::string> Smt2SmtSolver::readSolverOutput(bool waitForOutput){
+#ifndef WINDOWS
+            if (processIdOfSolver==0){
+                STORM_LOG_DEBUG("failed to read solver output as the solver is not running");
+                return std::vector<std::string>();
+            }
+            int bytesReadable;
+            if(waitForOutput){
+                bytesReadable=1;//just assume that there are bytes readable
+            }
+            else if(ioctl(fromSolver, FIONREAD, &bytesReadable)< 0){ //actually obtain the readable bytes
+                STORM_LOG_ERROR("Could not check if the solver has output");
+                return std::vector<std::string>();
+            }
+            std::string solverOutput="";
+            const ssize_t MAX_CHUNK_SIZE=256;
+            char chunk[MAX_CHUNK_SIZE];
+            while(bytesReadable>0){
+                ssize_t chunkSize = read(fromSolver, chunk, MAX_CHUNK_SIZE);
+                STORM_LOG_THROW(chunkSize>=0, storm::exceptions::UnexpectedException, "failed to read solver output");
+                solverOutput += std::string(chunk, chunkSize);
+                if(ioctl(fromSolver, FIONREAD, &bytesReadable)< 0){//obtain the new amount of readable bytes
+                    STORM_LOG_ERROR("Could not check if the solver has output");
+                    return std::vector<std::string>();
+                }
+                if(bytesReadable==0 && solverOutput.back()!='\n'){
+                    STORM_LOG_DEBUG("Solver Output did not end with newline symbol (\\n). Since we assume that this should case, we will wait for more output from the solver");
+                    bytesReadable=1; //we expect more output!
+                }
+            }
+            checkForErrorMessage(solverOutput);
+            std::vector<std::string> solverOutputAsVector;
+            if(solverOutput.length()>0){
+                solverOutput=solverOutput.substr(0,solverOutput.length()-1);
+                boost::split(solverOutputAsVector, solverOutput, boost::is_any_of("\n"));
+                //note: this is a little bit unsafe as \n can be contained within a solver response
+            }
+            return solverOutputAsVector;
+#endif
+        }
+        
+        void Smt2SmtSolver::checkForErrorMessage(const std::string message){
+            size_t errorOccurrance = message.find("error");
+            if (errorOccurrance!=std::string::npos){
+                std::string errorMsg = "An error was detected while checking the solver output. ";
+                STORM_LOG_DEBUG("Detected an error message in the solver response:\n" + message);
+                size_t firstQuoteSign = message.find('\"',errorOccurrance);
+                if(firstQuoteSign!=std::string::npos && message.find("\\\"", firstQuoteSign-1)!=firstQuoteSign-1){
+                    size_t secondQuoteSign = message.find('\"', firstQuoteSign+1);
+                    while(secondQuoteSign!=std::string::npos && message.find("\\\"", secondQuoteSign-1)==secondQuoteSign-1){
+                        secondQuoteSign = message.find('\"',secondQuoteSign+1);
+                    }
+                    if(secondQuoteSign!=std::string::npos){
+                        errorMsg += "The error message was:\n" + message.substr(errorOccurrance,secondQuoteSign-errorOccurrance+1) + ".";
+                        STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, errorMsg);
+                        return;
+                    }
+                }
+                errorMsg += "The error message could not be parsed correctly. Snippet:\n" + message.substr(errorOccurrance,200);
+                STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, errorMsg);
+            }
         }
     }
 }

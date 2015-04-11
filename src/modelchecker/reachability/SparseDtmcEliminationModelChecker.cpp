@@ -10,6 +10,7 @@
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
+#include "src/solver/SmtSolver.h"
 #include "src/solver/Smt2SmtSolver.h"
 
 #include "src/utility/graph.h"
@@ -1072,7 +1073,6 @@ namespace storm {
             // Then, compute the subset of states that has a probability of 0 or 1, respectively.
             std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(model, storm::storage::BitVector(model.getNumberOfStates(),true), targetStates);
             storm::storage::BitVector statesWithProbability0 = statesWithProbability01.first;
-            std::cout << "states with prob 0" << statesWithProbability0 << std::endl;
             storm::storage::BitVector statesWithProbability1 = statesWithProbability01.second;
             storm::storage::BitVector maybeStates = ~(statesWithProbability0 | statesWithProbability1);
             
@@ -1142,9 +1142,6 @@ namespace storm {
             //now lets add the actual transitions
             for (storm::storage::sparse::state_type state = 0; state < flexibleMatrix.getNumberOfRows(); ++state){
                 storm::RationalFunction reachProbability(oneStepProbabilities[state]);
-                if(!reachProbability.isZero()){
-                    std::cout << "non zero " << state << ":  " << reachProbability << std::endl;
-                }
                 for(auto const& transition : flexibleMatrix.getRow(state)){
                     reachProbability += transition.getValue() * stateProbVars[transition.getColumn()];
                 }
@@ -1187,8 +1184,17 @@ namespace storm {
                 solver.add(carl::Constraint<storm::RawPolynomial>(uB,storm::CompareRelation::LEQ));
             }
             
-            flexibleMatrix.print();
-                
+            switch (solver.check()){
+                case storm::solver::SmtSolver::CheckResult::Sat:
+                    std::cout << "sat!" << std::endl;
+                    break;
+                case storm::solver::SmtSolver::CheckResult::Unsat:
+                    std::cout << "unsat!" << std::endl;
+                    break;
+                case storm::solver::SmtSolver::CheckResult::Unknown:
+                    std::cout << "unknown!" << std::endl;
+                    break;
+            }
             
             /*
             //testing stuff...
@@ -1290,7 +1296,7 @@ namespace storm {
                     flexibleMatrix.getRow(*initialStates.begin()).clear();
                 }
             }
-            */
+            
                         std::cout << std::endl << "-----------------------" << std::endl << "testing stuff..." << std::endl;
             std::map<storm::Variable, storm::RationalFunction::CoeffType> testmap;
             

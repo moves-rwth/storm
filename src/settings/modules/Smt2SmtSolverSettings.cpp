@@ -6,14 +6,14 @@ namespace storm {
     namespace settings {
         namespace modules {
             
-            const std::string Smt2SmtSolverSettings::moduleName = "smt2smtsolver";
+            const std::string Smt2SmtSolverSettings::moduleName = "smt2";
             const std::string Smt2SmtSolverSettings::solverCommandOption = "solvercommand";
-            const std::string Smt2SmtSolverSettings::exportSmtLibScriptOption = "exportSmtLibScript";
+            const std::string Smt2SmtSolverSettings::exportScriptOption = "exportscript";
             
             Smt2SmtSolverSettings::Smt2SmtSolverSettings(storm::settings::SettingsManager& settingsManager) : ModuleSettings(settingsManager, moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, solverCommandOption, true, "If set, this command is used to call the solver and to let the solver know that it should read SMT-LIBv2 commands from standard input. If not set, only a SMT-LIB script file might be exported.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("command", "path to the solver + command line arguments.").setDefaultValueString("").build()).build());
                 
-                this->addOption(storm::settings::OptionBuilder(moduleName, exportSmtLibScriptOption, true, "If set, the SMT-LIBv2 script will be exportet to this file.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("path", "path and filename to the location where the script file should be exportet to").setDefaultValueString("").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, exportScriptOption, true, "If set, the SMT-LIBv2 script will be exportet to this file.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("path", "path and filename to the location where the script file should be exportet to").setDefaultValueString("").build()).build());
             }
             
             bool Smt2SmtSolverSettings::isSolverCommandSet() const{
@@ -26,12 +26,12 @@ namespace storm {
 
 
             bool Smt2SmtSolverSettings::isExportSmtLibScriptSet() const{
-                return this->getOption(exportSmtLibScriptOption).getHasOptionBeenSet();
+                return this->getOption(exportScriptOption).getHasOptionBeenSet();
             }
 
 
             std::string Smt2SmtSolverSettings::getExportSmtLibScriptPath() const{
-                return this->getOption(solverCommandOption).getArgumentByName("path").getValueAsString();
+                return this->getOption(exportScriptOption).getArgumentByName("path").getValueAsString();
             }
 
 
