@@ -5,6 +5,8 @@
 #include "src/models/sparse/Dtmc.h"
 #include "src/modelchecker/AbstractModelChecker.h"
 #include "src/utility/constants.h"
+#include "src/solver/SmtSolver.h"
+#include "src/solver/Smt2SmtSolver.h"
 
 namespace storm {
     namespace modelchecker {
@@ -92,6 +94,11 @@ namespace storm {
             void eliminateState(FlexibleSparseMatrix& matrix, std::vector<ValueType>& oneStepProbabilities, uint_fast64_t state, FlexibleSparseMatrix& backwardTransitions, boost::optional<std::vector<ValueType>>& stateRewards, bool removeForwardTransitions = true, bool constrained = false, storm::storage::BitVector const& predecessorConstraint = storm::storage::BitVector());
             
             std::vector<std::size_t> getStatePriorities(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& transitionMatrixTransposed, storm::storage::BitVector const& initialStates, std::vector<ValueType> const& oneStepProbabilities);
+            
+            //eliminates some of the states according to different strategies.
+            void eliminateStates(storm::storage::BitVector& subsystem, FlexibleSparseMatrix& flexibleMatrix, std::vector<ValueType>& oneStepProbabilities, FlexibleSparseMatrix& flexibleBackwardTransitions, storm::storage::BitVector const& initialStates);
+            
+            void formulateModelWithSMT(storm::solver::Smt2SmtSolver& solver, std::vector<storm::RationalFunction::PolyType>& stateProbVars, storm::storage::BitVector const& subsystem, FlexibleSparseMatrix const& flexibleMatrix, std::vector<storm::RationalFunction> const& oneStepProbabilities);
             
             // The model this model checker is supposed to analyze.
             storm::models::sparse::Dtmc<ValueType> const& model;
