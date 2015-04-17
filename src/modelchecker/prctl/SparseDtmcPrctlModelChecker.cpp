@@ -321,6 +321,7 @@ namespace storm {
 
 			// First we check which states are in BSCCs. We use this later to speed up reachability analysis
 			storm::storage::BitVector statesNotInBsccs(numOfStates, true);
+			std::vector<uint_fast64_t> stateToBsccIndexMap(model.getNumberOfStates());
 
 			for (uint_fast64_t currentBsccIndex = 0; currentBsccIndex < bsccDecomposition.size(); ++currentBsccIndex) {
 				storm::storage::StronglyConnectedComponent const& bscc = bsccDecomposition[currentBsccIndex];
@@ -328,7 +329,43 @@ namespace storm {
 				// Gather information for later use.
 				for (auto const& state : bscc) {
 					statesNotInBsccs.set(state, false);
+					stateToBsccIndexMap[state] = currentBsccIndex;
 				}
+			}
+
+			uint_fast64_t numStatesNotInBsccs = statesNotInBsccs.size() - statesNotInBsccs.getNumberOfSetBits();
+
+			// calculate steady state distribution for all BSCCs by calculating an eigenvector for the eigenvalue 1 of the transposed transition matrix for the bsccs
+			std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = storm::utility::solver::getLinearEquationSolver<ValueType>();
+			storm::storage::SparseMatrix bsccEquationSystem = transitionMatrix.getSubmatrix(false, !statesNotInBsccs, !statesNotInBsccs, true).transpose();
+
+			ValueType one = storm::utility::one<ValueType>();
+			ValueType zero = storm::utility::zero<ValueType>();
+
+			for (index_type row = 0; row < this->getRowCount(); ++row) {
+				for (auto& entry : this->getRow(row)) {
+					if (entry.getColumn() == row) {
+						entry.setValue(entry.getValue() - one);
+					}
+				}
+			}
+
+			std::vector<ValueType> bsccEquationSystemRightSide(numStatesNotInBsccs, zero);
+			std::vector<ValueType> bsccEquationSystemSolution(numStatesNotInBsccs, one);
+			solver->solveEquationSystem(bsccEquationSystem, bsccEquationSystemSolution, bsccEquationSystemRightSide);
+
+			//calculate LRA Value for each BSCC from steady state distribution in BSCCs
+			// we have to do some scaling, as the probabilities for each BSCC have to sum up to one, which they don't necessarily do in the solution of the equation system
+			vector<ValueType> bsccLra(bsccDecomposition.size(), zero);
+			vector<ValueType> bsccTotalValue(bsccDecomposition.size(), zero);
+			for (size_t i = 0, auto stateIter = !statesNotInBsccs.begin(); stateIter != !statesNotInBsccs.end(); ++i, ++stateIter) {
+				if (psiStates.get(*stateIter)) {
+					bsccLra[stateToBsccIndexMap[*stateIter]] += bsccEquationSystemSolution[i];
+				}
+				bsccTotalValue[stateToBsccIndexMap[*stateIter]] += bsccEquationSystemSolution[i];
+			}
+			for (size_t i = 0; i < bsccLra.size(); ++i) {
+				bsccLra[i] /= bsccTotalValue[i];
 			}
 
 			// Prepare result vector.
@@ -343,7 +380,8 @@ namespace storm {
 					statesInThisBscc.set(state);
 				}
 
-				ValueType lraForThisBscc = this->computeLraForBSCC(transitionMatrix, psiStates, bscc);
+				//ValueType lraForThisBscc = this->computeLraForBSCC(transitionMatrix, psiStates, bscc);
+				ValueType lraForThisBscc = bsccLra[currentBsccIndex];
 
 				//the LRA value of a BSCC contributes to the LRA value of a state with the probability of reaching that BSCC from that state
 				//thus we add Prob(Eventually statesInThisBscc) * lraForThisBscc to the result vector
