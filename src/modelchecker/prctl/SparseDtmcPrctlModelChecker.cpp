@@ -320,80 +320,124 @@ namespace storm {
 			typename storm::storage::SparseMatrix<ValueType> const& transitionMatrix = this->getModel().getTransitionMatrix();
 
 			// First we check which states are in BSCCs. We use this later to speed up reachability analysis
-			storm::storage::BitVector statesNotInBsccs(numOfStates, true);
-			std::vector<uint_fast64_t> stateToBsccIndexMap(model.getNumberOfStates());
+			storm::storage::BitVector statesInBsccs(numOfStates);
+			
+			std::vector<uint_fast64_t> stateToBsccIndexMap(transitionMatrix.getColumnCount());
 
 			for (uint_fast64_t currentBsccIndex = 0; currentBsccIndex < bsccDecomposition.size(); ++currentBsccIndex) {
 				storm::storage::StronglyConnectedComponent const& bscc = bsccDecomposition[currentBsccIndex];
 
 				// Gather information for later use.
 				for (auto const& state : bscc) {
-					statesNotInBsccs.set(state, false);
+					statesInBsccs.set(state);
 					stateToBsccIndexMap[state] = currentBsccIndex;
 				}
 			}
 
-			uint_fast64_t numStatesNotInBsccs = statesNotInBsccs.size() - statesNotInBsccs.getNumberOfSetBits();
+			storm::storage::BitVector statesNotInBsccs = ~statesInBsccs;
 
 			// calculate steady state distribution for all BSCCs by calculating an eigenvector for the eigenvalue 1 of the transposed transition matrix for the bsccs
 			std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = storm::utility::solver::getLinearEquationSolver<ValueType>();
-			storm::storage::SparseMatrix bsccEquationSystem = transitionMatrix.getSubmatrix(false, !statesNotInBsccs, !statesNotInBsccs, true).transpose();
+			storm::storage::SparseMatrix<ValueType> bsccEquationSystem = transitionMatrix.getSubmatrix(false, statesInBsccs, statesInBsccs, true).transpose();
 
 			ValueType one = storm::utility::one<ValueType>();
 			ValueType zero = storm::utility::zero<ValueType>();
 
-			for (index_type row = 0; row < this->getRowCount(); ++row) {
-				for (auto& entry : this->getRow(row)) {
+			for (uint_fast64_t row = 0; row < bsccEquationSystem.getRowCount(); ++row) {
+				for (auto& entry : bsccEquationSystem.getRow(row)) {
 					if (entry.getColumn() == row) {
 						entry.setValue(entry.getValue() - one);
 					}
 				}
 			}
 
-			std::vector<ValueType> bsccEquationSystemRightSide(numStatesNotInBsccs, zero);
-			std::vector<ValueType> bsccEquationSystemSolution(numStatesNotInBsccs, one);
+			std::vector<ValueType> bsccEquationSystemRightSide(bsccEquationSystem.getColumnCount(), zero);
+			std::vector<ValueType> bsccEquationSystemSolution(bsccEquationSystem.getColumnCount(), one);
 			solver->solveEquationSystem(bsccEquationSystem, bsccEquationSystemSolution, bsccEquationSystemRightSide);
 
 			//calculate LRA Value for each BSCC from steady state distribution in BSCCs
 			// we have to do some scaling, as the probabilities for each BSCC have to sum up to one, which they don't necessarily do in the solution of the equation system
-			vector<ValueType> bsccLra(bsccDecomposition.size(), zero);
-			vector<ValueType> bsccTotalValue(bsccDecomposition.size(), zero);
-			for (size_t i = 0, auto stateIter = !statesNotInBsccs.begin(); stateIter != !statesNotInBsccs.end(); ++i, ++stateIter) {
+			std::vector<ValueType> bsccLra(bsccDecomposition.size(), zero);
+			std::vector<ValueType> bsccTotalValue(bsccDecomposition.size(), zero);
+			size_t i = 0;
+			for (auto stateIter = statesInBsccs.begin(); stateIter != statesInBsccs.end(); ++i, ++stateIter) {
 				if (psiStates.get(*stateIter)) {
 					bsccLra[stateToBsccIndexMap[*stateIter]] += bsccEquationSystemSolution[i];
 				}
 				bsccTotalValue[stateToBsccIndexMap[*stateIter]] += bsccEquationSystemSolution[i];
 			}
-			for (size_t i = 0; i < bsccLra.size(); ++i) {
+			for (i = 0; i < bsccLra.size(); ++i) {
 				bsccLra[i] /= bsccTotalValue[i];
 			}
 
-			// Prepare result vector.
+			//calculate LRA for states not in bsccs as expected reachability rewards
+			//target states are states in bsccs, transition reward is the lra of the bscc for each transition into a bscc and 0 otherwise
+			//this corresponds to sum of LRAs in BSCC weighted by the reachability probability of the BSCC
+
+			std::vector<ValueType> rewardRightSide;
+			rewardRightSide.reserve(statesNotInBsccs.getNumberOfSetBits());
+
+			for (auto state : statesNotInBsccs) {
+				ValueType reward = zero;
+				for (auto entry : transitionMatrix.getRow(state)) {
+					if (statesInBsccs.get(entry.getColumn())) {
+						reward += entry.getValue() * bsccLra[stateToBsccIndexMap[entry.getColumn()]];
+					}
+				}
+				rewardRightSide.push_back(reward);
+			}
+
+			storm::storage::SparseMatrix<ValueType> rewardEquationSystemMatrix = transitionMatrix.getSubmatrix(false, statesNotInBsccs, statesNotInBsccs);
+			rewardEquationSystemMatrix.convertToEquationSystem();
+
+			std::vector<ValueType> rewardSolution(rewardEquationSystemMatrix.getColumnCount(), one);
+
+			solver->solveEquationSystem(rewardEquationSystemMatrix, rewardSolution, rewardRightSide);
+
+			// now fill the result vector
 			std::vector<ValueType> result(numOfStates);
 
-			//now we calculate the long run average for each BSCC in isolation and compute the weighted contribution of the BSCC to the LRA value of all states
-			for (uint_fast64_t currentBsccIndex = 0; currentBsccIndex < bsccDecomposition.size(); ++currentBsccIndex) {
-				storm::storage::StronglyConnectedComponent const& bscc = bsccDecomposition[currentBsccIndex];
-
-				storm::storage::BitVector statesInThisBscc(numOfStates);
-				for (auto const& state : bscc) {
-					statesInThisBscc.set(state);
+			auto rewardSolutionIter = rewardSolution.begin();
+			for (size_t state = 0; state < numOfStates; ++state) {
+				if (statesInBsccs.get(state)) {
+					//assign the value of the bscc the state is in
+					result[state] = bsccLra[stateToBsccIndexMap[state]];
+				} else {
+					assert(rewardSolutionIter != rewardSolution.end());
+					//take the value from the reward computation
+					//since the n-th state not in any bscc is the n-th entry in rewardSolution we can just take the next value from the iterator
+					result[state] = *rewardSolutionIter;
+					++rewardSolutionIter;
 				}
-
-				//ValueType lraForThisBscc = this->computeLraForBSCC(transitionMatrix, psiStates, bscc);
-				ValueType lraForThisBscc = bsccLra[currentBsccIndex];
-
-				//the LRA value of a BSCC contributes to the LRA value of a state with the probability of reaching that BSCC from that state
-				//thus we add Prob(Eventually statesInThisBscc) * lraForThisBscc to the result vector
-
-				//the reachability probabilities will be zero in other BSCCs, thus we can set the left operand of the until formula to statesNotInBsccs as an optimization
-				std::vector<ValueType> reachProbThisBscc = this->computeUntilProbabilitiesHelper(statesNotInBsccs, statesInThisBscc, false);
-				
-				storm::utility::vector::scaleVectorInPlace<ValueType>(reachProbThisBscc, lraForThisBscc);
-				storm::utility::vector::addVectorsInPlace<ValueType>(result, reachProbThisBscc);
 			}
 
 			return result;
+
+			//old implementeation
+
+			//now we calculate the long run average for each BSCC in isolation and compute the weighted contribution of the BSCC to the LRA value of all states
+			//for (uint_fast64_t currentBsccIndex = 0; currentBsccIndex < bsccDecomposition.size(); ++currentBsccIndex) {
+			//	storm::storage::StronglyConnectedComponent const& bscc = bsccDecomposition[currentBsccIndex];
+
+			//	storm::storage::BitVector statesInThisBscc(numOfStates);
+			//	for (auto const& state : bscc) {
+			//		statesInThisBscc.set(state);
+			//	}
+
+			//	//ValueType lraForThisBscc = this->computeLraForBSCC(transitionMatrix, psiStates, bscc);
+			//	ValueType lraForThisBscc = bsccLra[currentBsccIndex];
+
+			//	//the LRA value of a BSCC contributes to the LRA value of a state with the probability of reaching that BSCC from that state
+			//	//thus we add Prob(Eventually statesInThisBscc) * lraForThisBscc to the result vector
+
+			//	//the reachability probabilities will be zero in other BSCCs, thus we can set the left operand of the until formula to statesNotInBsccs as an optimization
+			//	std::vector<ValueType> reachProbThisBscc = this->computeUntilProbabilitiesHelper(statesNotInBsccs, statesInThisBscc, false);
+			//	
+			//	storm::utility::vector::scaleVectorInPlace<ValueType>(reachProbThisBscc, lraForThisBscc);
+			//	storm::utility::vector::addVectorsInPlace<ValueType>(result, reachProbThisBscc);
+			//}
+
+			//return result;
 		}
 
 		template<typename ValueType>
