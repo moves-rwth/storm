@@ -17,6 +17,7 @@
 #include "src/exceptions/InvalidPropertyException.h"
 #include "src/exceptions/InvalidStateException.h"
 #include "exceptions/UnexpectedException.h"
+#include "modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 
 namespace storm {
     namespace modelchecker {
@@ -963,7 +964,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        bool SparseDtmcEliminationModelChecker<ValueType>::FlexibleSparseMatrix::hasSelfLoop(storm::storage::sparse::state_type state) {
+        bool SparseDtmcEliminationModelChecker<ValueType>::FlexibleSparseMatrix::hasSelfLoop(storm::storage::sparse::state_type state) const {
             for (auto const& entry : this->getRow(state)) {
                 if (entry.getColumn() < state) {
                     continue;
@@ -989,32 +990,96 @@ namespace storm {
         
 #ifdef STORM_HAVE_CARL
         template<>
-        storm::storage::SparseMatrix<double> SparseDtmcEliminationModelChecker<storm::RationalFunction>::FlexibleSparseMatrix::instantiateAsDouble(std::map<storm::Variable, storm::RationalFunction::CoeffType> substitutions){
+        storm::storage::SparseMatrix<double> SparseDtmcEliminationModelChecker<storm::RationalFunction>::FlexibleSparseMatrix::instantiateAsDouble(std::map<storm::Variable, storm::RationalFunction::CoeffType> const& substitutions, storm::storage::BitVector const& filter, bool addSinkState, std::vector<storm::RationalFunction> const& oneStepProbabilities, bool addSelfLoops) const {
             
-            //Check if the CoeffType is as expected
+            //Check if the arguments are as expected
             STORM_LOG_THROW((std::is_same<storm::RationalFunction::CoeffType, cln::cl_RA>::value), storm::exceptions::IllegalArgumentException, "Unexpected Type of Coefficients");
+            STORM_LOG_THROW(filter.size()==this->getNumberOfRows(), storm::exceptions::IllegalArgumentException, "Unexpected size of the filter");
+            STORM_LOG_THROW(oneStepProbabilities.empty() || oneStepProbabilities.size()==this->getNumberOfRows(), storm::exceptions::IllegalArgumentException, "Unexpected size of the oneStepProbabilities");
             
-            //get a Matrix builder
-            index_type numElements=0;
-            for(row_type const& row : this->data){
-                numElements += row.size();
-            }
-            storm::storage::SparseMatrixBuilder<double> matrixBuilder(this->getNumberOfRows(), this->getNumberOfRows(), numElements);
-            
-            //fill in the data...
-            for(index_type rowIndex=0; rowIndex < this->getNumberOfRows(); ++rowIndex){
-                for(auto const& entry : this->getRow(rowIndex)){
-                    double value = cln::double_approx(entry.getValue().evaluate(substitutions));
-                    matrixBuilder.addNextValue(rowIndex, entry.getColumn(), value);
+            //get data for a Matrix builder as well as a mapping from old state indices to the new ones
+            index_type numTransitions=0;
+            std::vector<storm::storage::sparse::state_type> newStateIndexMap(this->getNumberOfRows(), this->getNumberOfRows()); //initialize with some illegal index to easily check if a transition leads to an unselected state
+            storm::storage::sparse::state_type newStateIndex=0;
+            for(auto const& state : filter){
+                numTransitions += this->getRow(state).size();
+                if(addSelfLoops && !hasSelfLoop(state)){
+                    ++numTransitions;
                 }
+                if(!oneStepProbabilities.empty() && !oneStepProbabilities[state].isZero()){
+                    ++numTransitions;
+                }
+                if(addSinkState){
+                    ++numTransitions; //we always add a transition here.. Todo: consider other ways with less memory consumption to handle this
+                }
+                newStateIndexMap[state]=newStateIndex;
+                ++newStateIndex;
+            }
+            index_type numStates=filter.getNumberOfSetBits();
+            STORM_LOG_ASSERT(newStateIndex==numStates, "unexpected number of new states");
+            storm::storage::sparse::state_type targetState =0;
+            storm::storage::sparse::state_type sinkState=0;
+            if(!oneStepProbabilities.empty()){
+                targetState=numStates;
+                ++numStates;
+                ++numTransitions;
+            }
+            if(addSinkState){
+                sinkState=numStates;
+                ++numStates;
+                ++numTransitions;
+            }
+            storm::storage::SparseMatrixBuilder<double> matrixBuilder(numStates, numStates, numTransitions);
+            //fill in the data row by row            
+            for(auto const& oldStateIndex : filter){
+                double missingProbability = 1.0;
+                if(this->getRow(oldStateIndex).empty()){
+                    if(addSelfLoops){
+                        matrixBuilder.addNextValue(newStateIndexMap[oldStateIndex], newStateIndexMap[oldStateIndex], 0.0);
+                    }
+                }
+                else{
+                    const_iterator entry = this->getRow(oldStateIndex).begin();
+                    for(; entry<this->getRow(oldStateIndex).end() && entry->getColumn()<oldStateIndex; ++entry){
+                        double value = cln::double_approx(entry->getValue().evaluate(substitutions));
+                        missingProbability-=value;
+                        storm::storage::sparse::state_type column = newStateIndexMap[entry->getColumn()];
+                        STORM_LOG_THROW(column<numStates, storm::exceptions::IllegalArgumentException, "Illegal filter: Selected a state that has a transition to an unselected state.");
+                        matrixBuilder.addNextValue(newStateIndexMap[oldStateIndex], column, value);
+                    }
+                    if(addSelfLoops && entry->getColumn()!=oldStateIndex){
+                        matrixBuilder.addNextValue(newStateIndexMap[oldStateIndex], newStateIndexMap[oldStateIndex], 0.0);
+                    }
+                    for(; entry < this->getRow(oldStateIndex).end(); ++entry){
+                        double value = cln::double_approx(entry->getValue().evaluate(substitutions));
+                        missingProbability-=value;
+                        storm::storage::sparse::state_type column = newStateIndexMap[entry->getColumn()];
+                        STORM_LOG_THROW(column<numStates, storm::exceptions::IllegalArgumentException, "Illegal filter: Selected a state that has a transition to an unselected state.");
+                        matrixBuilder.addNextValue(newStateIndexMap[oldStateIndex], column, value);
+                    }
+                }
+                if(!oneStepProbabilities.empty() && !oneStepProbabilities[oldStateIndex].isZero()){
+                    double value = cln::double_approx(oneStepProbabilities[oldStateIndex].evaluate(substitutions));
+                    missingProbability-=value;
+                    matrixBuilder.addNextValue(newStateIndexMap[oldStateIndex], targetState, value);
+                }
+                if(addSinkState){ // one could also check if the missing probability is not zero, but then the number of transitions is not clear at the beginning...  && !storm::utility::ConstantsComparator<double>.isZero(missingProbability)){
+                    STORM_LOG_ASSERT(missingProbability> -storm::settings::generalSettings().getPrecision(), "The missing probability is negative.");
+                    matrixBuilder.addNextValue(newStateIndexMap[oldStateIndex], sinkState, missingProbability);
+                }
+            }
+            if (!oneStepProbabilities.empty()){
+                matrixBuilder.addNextValue(targetState, targetState, 1.0);
+            }
+            if (addSinkState){
+                matrixBuilder.addNextValue(sinkState, sinkState, 1.0);
             }
        
             return matrixBuilder.build();
         }
         
          template<typename ValueType>
-        storm::storage::SparseMatrix<double> SparseDtmcEliminationModelChecker<ValueType>::FlexibleSparseMatrix::instantiateAsDouble(std::map<storm::Variable, storm::RationalFunction::CoeffType> substitutions){
-            STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Instantiation of flexible matrix is not supported for this type");
+        storm::storage::SparseMatrix<double> SparseDtmcEliminationModelChecker<ValueType>::FlexibleSparseMatrix::instantiateAsDouble(std::map<storm::Variable, storm::RationalFunction::CoeffType> const& substitutions, storm::storage::BitVector const& filter, bool addSinkState, std::vector<ValueType> const& oneStepProbabilities, bool addSelfLoops) const{            STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Instantiation of flexible matrix is not supported for this type");
         }
 #endif
         
@@ -1051,7 +1116,7 @@ namespace storm {
         template<typename ValueType>
         void SparseDtmcEliminationModelChecker<ValueType>::eliminateStates(storm::storage::BitVector& subsystem, FlexibleSparseMatrix& flexibleMatrix, std::vector<ValueType>& oneStepProbabilities, FlexibleSparseMatrix& flexibleBackwardTransitions, storm::storage::BitVector const& initialstates){
             //.. simple strategy for now... do not eliminate anything
-            /*
+            /* ... or all?
             boost::optional<std::vector<ValueType>> missingStateRewards;
             storm::storage::BitVector statesToEliminate = ~initialstates;
             
@@ -1102,6 +1167,67 @@ namespace storm {
         }
         
         template<>
+        void SparseDtmcEliminationModelChecker<storm::RationalFunction>::restrictProbabilityVariables(storm::solver::Smt2SmtSolver& solver, std::vector<storm::RationalFunction::PolyType> const& stateProbVars, storm::storage::BitVector const& subsystem, FlexibleSparseMatrix const& flexibleMatrix, std::vector<storm::RationalFunction> const& oneStepProbabilities, std::vector<ParameterRegion> const& regions, storm::logic::ComparisonType const& compType){
+            //We are going to build a new (non parametric) DTMC 
+            STORM_LOG_WARN("the probability restriction is not really correct, it only helps if there is a 'sat' answer");
+            storm::storage::sparse::state_type const numOfStates=subsystem.getNumberOfSetBits() + 2; //subsystem + target state + sink state
+            storm::models::sparse::StateLabeling stateLabeling(numOfStates);
+            stateLabeling.addLabel("init", storm::storage::BitVector(numOfStates, true));
+            storm::storage::BitVector targetLabel(numOfStates, false);
+            targetLabel.set(numOfStates-2, true);
+            stateLabeling.addLabel("target", std::move(targetLabel));
+            storm::storage::BitVector sinkLabel(numOfStates, false);
+            sinkLabel.set(numOfStates-1, true);
+            stateLabeling.addLabel("sink", std::move(sinkLabel));
+            std::map<storm::Variable, storm::RationalFunction::CoeffType> substitutions;
+            for(auto const& parRegion : regions){
+                substitutions.insert(std::pair<storm::Variable,storm::RationalFunction::CoeffType>(parRegion.variable, parRegion.upperBound)); //todo: (upper+lower)/2 ?
+            }
+            storm::models::sparse::Dtmc<double> dtmc(flexibleMatrix.instantiateAsDouble(substitutions, subsystem, true, oneStepProbabilities, true), std::move(stateLabeling));
+            
+            //perform model checking on this dtmc
+            storm::modelchecker::SparseDtmcPrctlModelChecker<double> modelChecker(dtmc);
+            std::shared_ptr<storm::logic::Formula> targetFormulaPtr(new storm::logic::AtomicLabelFormula("target"));
+            storm::logic::EventuallyFormula eventuallyFormula(targetFormulaPtr);
+            std::unique_ptr<CheckResult> resultPtr = modelChecker.computeEventuallyProbabilities(eventuallyFormula);
+            std::vector<double> resultVector = resultPtr->asExplicitQuantitativeCheckResult<double>().getValueVector();
+            
+            //formulate constraints for the solver
+            storm::CompareRelation boundRelation;
+            switch (compType){
+                case storm::logic::ComparisonType::Greater:
+                    boundRelation=storm::CompareRelation::LEQ;
+                    break;
+                case storm::logic::ComparisonType::GreaterEqual:
+                    boundRelation=storm::CompareRelation::LEQ;
+                    break;
+                case storm::logic::ComparisonType::Less:
+                    boundRelation=storm::CompareRelation::GEQ;
+                    break;
+                case storm::logic::ComparisonType::LessEqual:
+                    boundRelation=storm::CompareRelation::GEQ;
+                    break;
+                default:
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "the comparison relation of the formula is not supported");
+            }
+            uint_fast64_t boundDenominator = 1.0/storm::settings::generalSettings().getPrecision(); //we need to approx. the obtained bounds as rational numbers
+            storm::storage::sparse::state_type subsystemState=0; //the subsystem uses other state indices
+            for(storm::storage::sparse::state_type state : subsystem){
+                uint_fast64_t boundNumerator = resultVector[subsystemState]*boundDenominator;
+                storm::RationalFunction bound(boundNumerator);
+                bound = bound/boundDenominator;
+                //Todo: non-exact values might be problematic here...
+                solver.add(storm::RationalFunction(stateProbVars[state]), boundRelation, bound);
+                ++subsystemState;
+            }
+        }
+        
+        template<typename ValueType>
+        void SparseDtmcEliminationModelChecker<ValueType>::restrictProbabilityVariables(storm::solver::Smt2SmtSolver& solver, std::vector<storm::RationalFunction::PolyType> const& stateProbVars, storm::storage::BitVector const& subsystem, FlexibleSparseMatrix const& flexibleMatrix, std::vector<storm::RationalFunction> const& oneStepProbabilities, std::vector<ParameterRegion> const& regions, storm::logic::ComparisonType const& compType){
+            STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "restricting Probability Variables is not supported for this type");
+        }
+        
+        template<>
         bool SparseDtmcEliminationModelChecker<storm::RationalFunction>::checkRegion(storm::logic::Formula const& formula, std::vector<SparseDtmcEliminationModelChecker<storm::RationalFunction>::ParameterRegion> parameterRegions){
             //Note: this is an 'experimental' implementation
             
@@ -1115,8 +1241,8 @@ namespace storm {
             storm::logic::ProbabilityOperatorFormula const& probOpForm=formula.asStateFormula().asProbabilityOperatorFormula();
             STORM_LOG_THROW(probOpForm.hasBound(), storm::exceptions::IllegalArgumentException, "The formula has no bound");
             STORM_LOG_THROW(probOpForm.getSubformula().asPathFormula().isEventuallyFormula(), storm::exceptions::IllegalArgumentException, "expected an eventually subformula");
-            storm::logic::EventuallyFormula const& eventFormula = probOpForm.getSubformula().asPathFormula().asEventuallyFormula();
-            std::unique_ptr<CheckResult> targetStatesResultPtr = this->check(eventFormula.getSubformula());
+            storm::logic::EventuallyFormula const& eventuallyFormula = probOpForm.getSubformula().asPathFormula().asEventuallyFormula();
+            std::unique_ptr<CheckResult> targetStatesResultPtr = this->check(eventuallyFormula.getSubformula());
             storm::storage::BitVector const& targetStates = targetStatesResultPtr->asExplicitQualitativeCheckResult().getTruthValuesVector();
             // Do some sanity checks to establish some required properties.
             STORM_LOG_THROW(model.getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::IllegalArgumentException, "Input model is required to have exactly one initial state.");
@@ -1215,7 +1341,8 @@ namespace storm {
             
             std::chrono::high_resolution_clock::time_point timeSmtFormulationEnd = std::chrono::high_resolution_clock::now();
             
-            // TODO find further restriction on probabilities
+            // find further restriction on probabilities
+            restrictProbabilityVariables(solver,stateProbVars,subsystem,flexibleMatrix,oneStepProbabilities, parameterRegions, probOpForm.getComparisonType());
             
             std::chrono::high_resolution_clock::time_point timeRestrictingEnd = std::chrono::high_resolution_clock::now();
             
