@@ -1113,24 +1113,55 @@ namespace storm {
         }
 #ifdef STORM_HAVE_CARL
                 
-        template<typename ValueType>
-        void SparseDtmcEliminationModelChecker<ValueType>::eliminateStates(storm::storage::BitVector& subsystem, FlexibleSparseMatrix& flexibleMatrix, std::vector<ValueType>& oneStepProbabilities, FlexibleSparseMatrix& flexibleBackwardTransitions, storm::storage::BitVector const& initialstates){
-            //.. simple strategy for now... do not eliminate anything
-            /* ... or all?
-            boost::optional<std::vector<ValueType>> missingStateRewards;
+        template<>
+        void SparseDtmcEliminationModelChecker<storm::RationalFunction>::eliminateStates(storm::storage::BitVector& subsystem, FlexibleSparseMatrix& flexibleMatrix, std::vector<storm::RationalFunction>& oneStepProbabilities, FlexibleSparseMatrix& flexibleBackwardTransitions, storm::storage::BitVector const& initialstates){
+            //.. Todo: chose between different strategies for elimination of states
+            
+            //only eliminate states with constant outgoing transitions and non-initial states.
+            /* this does not work since the transitions change while processing
+            storm::storage::BitVector constantOutgoing(subsystem.size(), true);
+            storm::storage::BitVector constantIncoming(subsystem.size(), true);
+            for(FlexibleSparseMatrix::index_type row=0; row<flexibleMatrix.getNumberOfRows(); ++row){
+                for(auto const& entry : flexibleMatrix.getRow(row)){
+                    std::cout << "en " << entry.getValue() << std::endl;
+                    if(!entry.getValue().isConstant()){
+                        std::cout << "    its not const" << std::endl;
+                        constantOutgoing.set(row,false);
+                        constantIncoming.set(entry.getColumn(), false);
+                    }
+                }
+            }*/
             storm::storage::BitVector statesToEliminate = ~initialstates;
+            std::cout << "can eliminate " << statesToEliminate.getNumberOfSetBits() << " of " << statesToEliminate.size() << "states." << std::endl;
             
             std::vector<storm::storage::sparse::state_type> states(statesToEliminate.begin(), statesToEliminate.end());
-
+            //todo some special ordering?
             STORM_LOG_DEBUG("Eliminating " << states.size() << " states." << std::endl);
+            boost::optional<std::vector<storm::RationalFunction>> missingStateRewards;
             for (auto const& state : states) {
-                eliminateState(flexibleMatrix, oneStepProbabilities, state, flexibleBackwardTransitions, missingStateRewards);
-                subsystem.set(state,false);
+                bool onlyConstantOutgoingTransitions=true;
+                for(auto const& entry : flexibleMatrix.getRow(state)){
+                    if(!entry.getValue().isConstant()){
+                        onlyConstantOutgoingTransitions=false;
+                        break;
+                    }
+                }
+                if(onlyConstantOutgoingTransitions){
+                    eliminateState(flexibleMatrix, oneStepProbabilities, state, flexibleBackwardTransitions, missingStateRewards);
+                    subsystem.set(state,false);
+                }
             }
             STORM_LOG_DEBUG("Eliminated " << states.size() << " states." << std::endl);
             //Note: we could also "eliminate" the initial state to get rid of its selfloop
-            */
+            //*/
+            
         }
+        
+        template<typename ValueType>
+        void SparseDtmcEliminationModelChecker<ValueType>::eliminateStates(storm::storage::BitVector& subsystem, FlexibleSparseMatrix& flexibleMatrix, std::vector<ValueType>& oneStepProbabilities, FlexibleSparseMatrix& flexibleBackwardTransitions, storm::storage::BitVector const& initialstates){
+            STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "elimination of states not suported for this type");
+        }
+
         
         template<>
         void SparseDtmcEliminationModelChecker<storm::RationalFunction>::formulateModelWithSMT(storm::solver::Smt2SmtSolver& solver, std::vector<storm::RationalFunction::PolyType>& stateProbVars, storm::storage::BitVector const& subsystem, FlexibleSparseMatrix const& flexibleMatrix, std::vector<storm::RationalFunction> const& oneStepProbabilities){
@@ -1342,7 +1373,7 @@ namespace storm {
             std::chrono::high_resolution_clock::time_point timeSmtFormulationEnd = std::chrono::high_resolution_clock::now();
             
             // find further restriction on probabilities
-            restrictProbabilityVariables(solver,stateProbVars,subsystem,flexibleMatrix,oneStepProbabilities, parameterRegions, probOpForm.getComparisonType());
+            //restrictProbabilityVariables(solver,stateProbVars,subsystem,flexibleMatrix,oneStepProbabilities, parameterRegions, probOpForm.getComparisonType());
             
             std::chrono::high_resolution_clock::time_point timeRestrictingEnd = std::chrono::high_resolution_clock::now();
             
