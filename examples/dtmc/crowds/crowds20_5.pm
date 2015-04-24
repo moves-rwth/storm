@@ -2,9 +2,9 @@ dtmc
 
 // probability of forwarding
 const double    PF = 0.8;
-const double notPF = .2;  // must be 1-PF
+const double notPF = 0.2;  // must be 1-PF
 // probability that a crowd member is bad
-const double  badC = .167;
+const double  badC = 0.167;
  // probability that a crowd member is good
 const double goodC = 0.833;
 // Total number of protocol runs to analyze
@@ -108,3 +108,4 @@ endmodule
 label "observe0Greater1" = observe0 > 1;
 label "observeIGreater1" = observe1 > 1 | observe2 > 1 | observe3 > 1 | observe4 > 1 | observe5 > 1 | observe6 > 1 | observe7 > 1 | observe8 > 1 | observe9 > 1 | observe10 > 1 | observe11 > 1 | observe12 > 1 | observe13 > 1 | observe14 > 1 | observe15 > 1 | observe16 > 1 | observe17 > 1 | observe18 > 1 | observe19 > 1;
 label "observeOnlyTrueSender" = observe0 > 1 & observe1 <= 1 & observe2 <= 1 & observe3 <= 1 & observe4 <= 1 & observe5 <= 1 & observe6 <= 1 & observe7 <= 1 & observe8 <= 1 & observe9 <= 1 & observe10 <= 1 & observe11 <= 1 & observe12 <= 1 & observe13 <= 1 & observe14 <= 1 & observe15 <= 1 & observe16 <= 1 & observe17 <= 1 & observe18 <= 1 & observe19 <= 1;
+
