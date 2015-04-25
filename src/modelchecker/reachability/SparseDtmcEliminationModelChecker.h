@@ -107,7 +107,7 @@ namespace storm {
             std::vector<std::size_t> getStatePriorities(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& transitionMatrixTransposed, storm::storage::BitVector const& initialStates, std::vector<ValueType> const& oneStepProbabilities);
             
             //eliminates some of the states according to different strategies.
-            void eliminateStates(storm::storage::BitVector& subsystem, FlexibleSparseMatrix& flexibleMatrix, std::vector<ValueType>& oneStepProbabilities, FlexibleSparseMatrix& flexibleBackwardTransitions, storm::storage::BitVector const& initialStates);
+            void eliminateStates(storm::storage::BitVector& subsystem, FlexibleSparseMatrix& flexibleMatrix, std::vector<ValueType>& oneStepProbabilities, FlexibleSparseMatrix& flexibleBackwardTransitions, storm::storage::BitVector const& initialStates, storm::storage::SparseMatrix<ValueType> const& forwardTransitions, boost::optional<std::vector<std::size_t>> const& statePriorities = {});
             
             void formulateModelWithSMT(storm::solver::Smt2SmtSolver& solver, std::vector<storm::RationalFunction::PolyType>& stateProbVars, storm::storage::BitVector const& subsystem, FlexibleSparseMatrix const& flexibleMatrix, std::vector<storm::RationalFunction> const& oneStepProbabilities);
             
