@@ -334,50 +334,75 @@ namespace storm {
 			}
 
 			// Start by decomposing the MDP into its MECs.
-			storm::storage::MaximalEndComponentDecomposition<double> mecDecomposition(this->getModelAs<storm::models::AbstractNondeterministicModel<ValueType>>());
+			storm::storage::MaximalEndComponentDecomposition<double> mecDecomposition(this->getModel());
 
 			// Get some data members for convenience.
 			typename storm::storage::SparseMatrix<ValueType> const& transitionMatrix = this->getModel().getTransitionMatrix();
+			ValueType one = storm::utility::one<ValueType>();
+			ValueType zero = storm::utility::zero<ValueType>();
 
-			// First we check which states are in MECs. We use this later to speed up reachability analysis
-			storm::storage::BitVector statesNotInMecs(numOfStates, true);
+			//first calculate LRA for the Maximal End Components.
+			storm::storage::BitVector statesInMecs(numOfStates);
+			std::vector<uint_fast64_t> stateToMecIndexMap(transitionMatrix.getColumnCount());
+			std::vector<ValueType> mecLra(mecDecomposition.size(), zero);
 
 			for (uint_fast64_t currentMecIndex = 0; currentMecIndex < mecDecomposition.size(); ++currentMecIndex) {
 				storm::storage::MaximalEndComponent const& mec = mecDecomposition[currentMecIndex];
 
+				mecLra[currentMecIndex] = computeLraForMaximalEndComponent(minimize, transitionMatrix, psiStates, mec);
+
 				// Gather information for later use.
 				for (auto const& stateChoicesPair : mec) {
-					statesInMecs.set(stateChoicesPair.first, false);
+					statesInMecs.set(stateChoicesPair.first);
+					stateToMecIndexMap[stateChoicesPair.first] = currentMecIndex;
 				}
 			}
 
-			// Prepare result vector.
-			std::vector<ValueType> result(numOfStates);
+			//calculate LRA for states not in MECs as expected reachability rewards
+			//we add an auxiliary target state, every state in any MEC has a choice to move to that state with prob 1.
+			//This transitions have the LRA of the MEC as reward.
+			//The expected reward corresponds to sum of LRAs in MEC weighted by the reachability probability of the MEC
 
-			//FIXME: This doesn't work for MDP. Simple counterexample, an MPD with precisely two MECs, both with LRA of 1. Max Reach Prob for both is 1 from the initial state
-			//       Then this approach would yield an LRA value of 2 for the initial state, which is incorrect.
+			std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = storm::utility::solver::getLinearEquationSolver<ValueType>();
 
-			////now we calculate the long run average for each MEC in isolation and compute the weighted contribution of the MEC to the LRA value of all states
-			//for (uint_fast64_t currentMecIndex = 0; currentMecIndex < mecDecomposition.size(); ++currentMecIndex) {
-			//	storm::storage::MaximalEndComponent const& mec = mecDecomposition[currentMecIndex];
+			//we now build the submatrix of the transition matrix of the system with the auxiliary state, that only contains the states from
+			//the original state, i.e. all "maybe-states"
+			storm::storage::SparseMatrixBuilder<ValueType> rewardEquationSystemMatrixBuilder(transitionMatrix.getRowCount() + statesInMecs.getNumberOfSetBits(),
+				transitionMatrix.getColumnCount(),
+				transitionMatrix.getEntryCount(),
+				true,
+				true,
+				transitionMatrix.getRowGroupCount());
 
-			//	storm::storage::BitVector statesInThisMec(numOfStates);
-			//	for (auto const& state : bscc) {
-			//		statesInThisMec.set(state);
-			//	}
+			std::vector<ValueType> rewardRightSide(transitionMatrix.getRowCount() + statesInMecs.getNumberOfSetBits(), zero);
 
-			//	// Compute the LRA value for the current MEC.
-			//	lraValuesForEndComponents.push_back(this->computeLraForMaximalEndComponent(minimize, transitionMatrix, psiStates, mec));
+			uint_fast64_t rowIndex = 0;
+			uint_fast64_t oldRowIndex = 0;
+			for (uint_fast64_t rowGroupIndex = 0; rowGroupIndex < transitionMatrix.getRowGroupCount(); ++rowGroupIndex) {
+				rewardEquationSystemMatrixBuilder.newRowGroup(rowIndex);
+				for (uint_fast64_t i = 0; i < transitionMatrix.getRowGroupSize(rowGroupIndex); ++i) {
+					for (auto entry : transitionMatrix.getRow(oldRowIndex)) {
+						//copy over values from transition matrix of the actual system
+						rewardEquationSystemMatrixBuilder.addNextValue(rowIndex, entry.getColumn(), entry.getValue());
+					}
+					++oldRowIndex;
+					++rowIndex;
+				}
+				++rowGroupIndex;
+				if (statesInMecs.get(rowGroupIndex)) {
+					//add the choice where we go to the auxiliary state, which is a row with all zeros in the submatrix we build
+					++rowIndex;
+					//put the transition-reward on the right side
+					rewardRightSide[rowIndex] = mecLra[rowGroupIndex];
+				}
+			}
 
-			//	//the LRA value of a MEC contributes to the LRA value of a state with the probability of reaching that MEC from that state
-			//	//thus we add Min/MaxProb(Eventually statesInThisBscc) * lraForThisBscc to the result vector
+			storm::storage::SparseMatrix<ValueType> rewardEquationSystemMatrix = rewardEquationSystemMatrixBuilder.build();
+			rewardEquationSystemMatrix.convertToEquationSystem();
 
-			//	//the reachability probabilities will be zero in other MECs, thus we can set the left operand of the until formula to statesNotInMecs as an optimization
-			//	std::vector<ValueType> reachProbThisBscc = this->computeUntilProbabilitiesHelper(minimize, statesNotInMecs, statesInThisMec, false);
+			std::vector<ValueType> result(rewardEquationSystemMatrix.getColumnCount(), one);
 
-			//	storm::utility::vector::scaleVectorInPlace<ValueType>(reachProbThisBscc, lraForThisBscc);
-			//	storm::utility::vector::addVectorsInPlace<ValueType>(result, reachProbThisBscc);
-			//}
+			solver->solveEquationSystem(rewardEquationSystemMatrix, result, rewardRightSide);
 
 			return result;
 		}

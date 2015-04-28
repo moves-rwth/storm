@@ -314,7 +314,7 @@ namespace storm {
 			}
 
 			// Start by decomposing the DTMC into its BSCCs.
-			storm::storage::StronglyConnectedComponentDecomposition<double> bsccDecomposition(this->getModelAs<storm::models::AbstractModel<ValueType>>(), false, true);
+			storm::storage::StronglyConnectedComponentDecomposition<double> bsccDecomposition(this->getModel(), false, true);
 
 			// Get some data members for convenience.
 			typename storm::storage::SparseMatrix<ValueType> const& transitionMatrix = this->getModel().getTransitionMatrix();
