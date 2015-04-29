@@ -398,7 +398,9 @@ file(GLOB_RECURSE STORM_MODELCHECKER_REACHABILITY_FILES ${PROJECT_SOURCE_DIR}/sr
 file(GLOB_RECURSE STORM_MODELCHECKER_PROPOSITIONAL_FILES ${PROJECT_SOURCE_DIR}/src/modelchecker/propositional/*.h ${PROJECT_SOURCE_DIR}/src/modelchecker/propositional/*.cpp)
 file(GLOB_RECURSE STORM_MODELCHECKER_RESULTS_FILES ${PROJECT_SOURCE_DIR}/src/modelchecker/results/*.h ${PROJECT_SOURCE_DIR}/src/modelchecker/results/*.cpp)
 file(GLOB_RECURSE STORM_COUNTEREXAMPLES_FILES ${PROJECT_SOURCE_DIR}/src/counterexamples/*.h ${PROJECT_SOURCE_DIR}/src/counterexamples/*.cpp)
-file(GLOB_RECURSE STORM_MODELS_FILES ${PROJECT_SOURCE_DIR}/src/models/*.h ${PROJECT_SOURCE_DIR}/src/models/*.cpp)
+file(GLOB STORM_MODELS_FILES ${PROJECT_SOURCE_DIR}/src/models/*.h ${PROJECT_SOURCE_DIR}/src/models/*.cpp)
+file(GLOB_RECURSE STORM_MODELS_SPARSE_FILES ${PROJECT_SOURCE_DIR}/src/models/sparse/*.h ${PROJECT_SOURCE_DIR}/src/models/sparse/*.cpp)
+file(GLOB_RECURSE STORM_MODELS_SYMBOLIC_FILES ${PROJECT_SOURCE_DIR}/src/models/symbolic/*.h ${PROJECT_SOURCE_DIR}/src/models/symbolic/*.cpp)
 file(GLOB STORM_PARSER_FILES ${PROJECT_SOURCE_DIR}/src/parser/*.h ${PROJECT_SOURCE_DIR}/src/parser/*.cpp)
 file(GLOB_RECURSE STORM_PARSER_PRISMPARSER_FILES ${PROJECT_SOURCE_DIR}/src/parser/prismparser/*.h ${PROJECT_SOURCE_DIR}/src/parser/prismparser/*.cpp)
 file(GLOB STORM_SETTINGS_FILES ${PROJECT_SOURCE_DIR}/src/settings/*.h ${PROJECT_SOURCE_DIR}/src/settings/*.cpp)
@@ -415,11 +417,10 @@ file(GLOB_RECURSE STORM_UTILITY_FILES ${PROJECT_SOURCE_DIR}/src/utility/*.h ${PR
 file(GLOB STORM_FUNCTIONAL_TEST_MAIN_FILE ${STORM_CPP_TESTS_BASE_PATH}/functional/storm-functional-tests.cpp)
 file(GLOB_RECURSE STORM_FUNCTIONAL_TEST_FILES ${STORM_CPP_TESTS_BASE_PATH}/functional/*.h ${STORM_CPP_TESTS_BASE_PATH}/functional/*.cpp)
 file(GLOB STORM_PERFORMANCE_TEST_MAIN_FILE ${STORM_CPP_TESTS_BASE_PATH}/performance/storm-performance-tests.cpp)
-file(GLOB_RECURSE STORM_PERFORMANCE_TEST_FILES ${STORM_CPP_TESTS_BASE_PATH}/performance/*/*.h ${STORM_CPP_TESTS_BASE_PATH}/performance/*/*.cpp)
+file(GLOB_RECURSE STORM_PERFORMANCE_TEST_FILES ${STORM_CPP_TESTS_BASE_PATH}/performance/*.h ${STORM_CPP_TESTS_BASE_PATH}/performance/*.cpp)
 
 # Additional include files like the storm-config.h
 file(GLOB_RECURSE STORM_BUILD_HEADERS ${PROJECT_BINARY_DIR}/include/*.h)
-
 
 # Group the headers and sources
 source_group(main FILES ${STORM_MAIN_FILE})
@@ -436,6 +437,8 @@ source_group(modelchecker\\propositional FILES ${STORM_MODELCHECKER_PROPOSITIONA
 source_group(modelchecker\\results FILES ${STORM_MODELCHECKER_RESULTS_FILES})
 source_group(counterexamples FILES ${STORM_COUNTEREXAMPLES_FILES})
 source_group(models FILES ${STORM_MODELS_FILES})
+source_group(models\\sparse FILES ${STORM_MODELS_SPARSE_FILES})
+source_group(models\\symbolic FILES ${STORM_MODELS_SYMBOLIC_FILES})
 source_group(parser FILES ${STORM_PARSER_FILES})
 source_group(parser\\prismparser FILES ${STORM_PARSER_PRISMPARSER_FILES})
 source_group(settings FILES ${STORM_SETTINGS_FILES})
@@ -448,7 +451,7 @@ source_group(storage\\prism FILES ${STORM_STORAGE_PRISM_FILES})
 source_group(storage\\sparse FILES ${STORM_STORAGE_SPARSE_FILES})
 source_group(utility FILES ${STORM_UTILITY_FILES})
 source_group(functional-test FILES ${STORM_FUNCTIONAL_TEST_FILES})
-source_group(performance-test FILES ${STORM_PERFORMANCE_TEST_FILES})
+source_group(performance-test FILES ${STORM_PERFORMANCE_TEST_FILES} ${})
 
 # Add custom additional include or link directories
 if (ADDITIONAL_INCLUDE_DIRS)
@@ -535,15 +538,6 @@ include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/src/obj
 include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/src/st")
 include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/cudd-2.5.0/src/util")
 target_link_libraries(storm cudd)
-
-#############################################################
-##
-##	LTL2DSTAR
-##
-#############################################################
-add_subdirectory("${PROJECT_SOURCE_DIR}/resources/3rdparty/ltl2dstar-0.5.1")
-include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/ltl2dstar-0.5.1/src")
-target_link_libraries(storm ltl2dstar)
 
 #############################################################
 ##

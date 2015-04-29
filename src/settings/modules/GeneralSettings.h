@@ -13,6 +13,9 @@ namespace storm {
              */
             class GeneralSettings : public ModuleSettings {
             public:                
+                // An enumeration of all engines.
+                enum class Engine { Sparse, Hybrid, Dd };
+                
                 // An enumeration of all available LP solvers.
                 enum class LpSolver { Gurobi, glpk };
                 
@@ -232,6 +235,15 @@ namespace storm {
                 std::unique_ptr<storm::settings::SettingMemento> overrideDontFixDeadlocksSet(bool stateToSet);
                 
                 /*!
+                 * Overrides the option to enable the PRISM compatibility mode by setting it to the specified value. As
+                 * soon as the returned memento goes out of scope, the original value is restored.
+                 *
+                 * @param stateToSet The value that is to be set for the option.
+                 * @return The memento that will eventually restore the original value.
+                 */
+                std::unique_ptr<storm::settings::SettingMemento> overridePrismCompatibilityMode(bool stateToSet);
+                
+                /*!
                  * Retrieves whether the timeout option was set.
                  *
                  * @return True if the timeout option was set.
@@ -251,6 +263,13 @@ namespace storm {
                  * @return The selected convergence criterion.
                  */
                 EquationSolver getEquationSolver() const;
+                
+                /*!
+                 * Retrieves whether a equation solver has been set.
+                 *
+                 * @return True iff an equation solver has been set.
+                 */
+                bool isEquationSolverSet() const;
                 
                 /*!
                  * Retrieves the selected LP solver.
@@ -293,6 +312,20 @@ namespace storm {
                  * @return True iff the option was set.
                  */
                 bool isCudaSet() const;
+                
+                /*!
+                 * Retrieves the selected engine.
+                 *
+                 * @return The selecte engine.
+                 */
+                Engine getEngine() const;
+                
+                /*!
+                 * Retrieves whether the PRISM compatibility mode was enabled.
+                 *
+                 * @return True iff the PRISM compatibility mode was enabled.
+                 */
+                bool isPrismCompatibilityEnabled() const;
                 
 #ifdef STORM_HAVE_CARL
                 /*!
@@ -342,7 +375,11 @@ namespace storm {
                 static const std::string statisticsOptionShortName;
                 static const std::string bisimulationOptionName;
                 static const std::string bisimulationOptionShortName;
+                static const std::string engineOptionName;
+                static const std::string engineOptionShortName;
                 static const std::string cudaOptionName;
+                static const std::string prismCompatibilityOptionName;
+                static const std::string prismCompatibilityOptionShortName;
                 
 #ifdef STORM_HAVE_CARL
                 static const std::string parametricOptionName;

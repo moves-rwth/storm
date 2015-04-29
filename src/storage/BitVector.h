@@ -409,11 +409,11 @@ namespace storm {
             size_t size() const;
             
             /*!
-             * Returns the size of the bit vector in memory measured in bytes.
+             * Returns (an approximation of) the size of the bit vector measured in bytes.
              *
-             * @return The size of the bit vector in memory measured in bytes.
+             * @return The size of the bit vector measured in bytes.
              */
-            uint_fast64_t getSizeInMemory() const;
+            std::size_t getSizeInBytes() const;
             
             /*!
              * Returns an iterator to the indices of the set bits in the bit vector.

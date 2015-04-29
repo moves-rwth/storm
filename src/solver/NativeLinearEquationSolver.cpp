@@ -10,12 +10,12 @@ namespace storm {
     namespace solver {
         
         template<typename ValueType>
-        NativeLinearEquationSolver<ValueType>::NativeLinearEquationSolver(SolutionMethod method, double precision, uint_fast64_t maximalNumberOfIterations, bool relative) : method(method), precision(precision), relative(relative), maximalNumberOfIterations(maximalNumberOfIterations) {
+        NativeLinearEquationSolver<ValueType>::NativeLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, SolutionMethod method, double precision, uint_fast64_t maximalNumberOfIterations, bool relative) : A(A), method(method), precision(precision), relative(relative), maximalNumberOfIterations(maximalNumberOfIterations) {
             // Intentionally left empty.
         }
         
         template<typename ValueType>
-        NativeLinearEquationSolver<ValueType>::NativeLinearEquationSolver() {
+        NativeLinearEquationSolver<ValueType>::NativeLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A) : A(A) {
             // Get the settings object to customize linear solving.
             storm::settings::modules::NativeEquationSolverSettings const& settings = storm::settings::nativeEquationSolverSettings();
             
@@ -30,16 +30,11 @@ namespace storm {
                 method = SolutionMethod::Jacobi;
             }
         }
-        
+                
         template<typename ValueType>
-        LinearEquationSolver<ValueType>* NativeLinearEquationSolver<ValueType>::clone() const {
-            return new NativeLinearEquationSolver<ValueType>(*this);
-        }
-        
-        template<typename ValueType>
-        void NativeLinearEquationSolver<ValueType>::solveEquationSystem(storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult) const {
+        void NativeLinearEquationSolver<ValueType>::solveEquationSystem(std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult) const {
             // Get a Jacobi decomposition of the matrix A.
-            std::pair<storm::storage::SparseMatrix<ValueType>, storm::storage::SparseMatrix<ValueType>> jacobiDecomposition = A.getJacobiDecomposition();
+            std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> jacobiDecomposition = A.getJacobiDecomposition();
             
             // To avoid copying the contents of the vector in the loop, we create a temporary x to swap with.
             bool multiplyResultProvided = true;
@@ -61,9 +56,8 @@ namespace storm {
             while (!converged && iterationCount < maximalNumberOfIterations) {
                 // Compute D^-1 * (b - LU * x) and store result in nextX.
                 jacobiDecomposition.first.multiplyWithVector(*currentX, tmpX);
-                storm::utility::vector::scaleVectorInPlace(tmpX, -storm::utility::one<ValueType>());
-                storm::utility::vector::addVectorsInPlace(tmpX, b);
-                jacobiDecomposition.second.multiplyWithVector(tmpX, *nextX);
+                storm::utility::vector::subtractVectors(b, tmpX, tmpX);
+                storm::utility::vector::multiplyVectorsPointwise(jacobiDecomposition.second, tmpX, *nextX);
                 
                 // Swap the two pointers as a preparation for the next iteration.
                 std::swap(nextX, currentX);
@@ -88,7 +82,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void NativeLinearEquationSolver<ValueType>::performMatrixVectorMultiplication(storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n, std::vector<ValueType>* multiplyResult) const {
+        void NativeLinearEquationSolver<ValueType>::performMatrixVectorMultiplication(std::vector<ValueType>& x, std::vector<ValueType> const* b, uint_fast64_t n, std::vector<ValueType>* multiplyResult) const {
             // Set up some temporary variables so that we can just swap pointers instead of copying the result after
             // each iteration.
             std::vector<ValueType>* currentX = &x;
@@ -108,7 +102,7 @@ namespace storm {
                 
                 // If requested, add an offset to the current result vector.
                 if (b != nullptr) {
-                    storm::utility::vector::addVectorsInPlace(*currentX, *b);
+                    storm::utility::vector::addVectors(*currentX, *b, *currentX);
                 }
             }
             

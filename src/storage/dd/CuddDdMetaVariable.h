@@ -7,8 +7,10 @@
 #include <string>
 
 #include "utility/OsDetection.h"
-#include "src/storage/dd/CuddDd.h"
+#include "src/storage/dd/CuddBdd.h"
+#include "src/storage/dd/CuddAdd.h"
 #include "src/storage/dd/DdMetaVariable.h"
+#include "src/storage/dd/CuddDdForwardIterator.h"
 #include "src/storage/expressions/Expression.h"
 
 namespace storm {
@@ -23,6 +25,8 @@ namespace storm {
             // Declare the DdManager class as friend so it can access the internals of a meta variable.
             friend class DdManager<DdType::CUDD>;
             friend class Dd<DdType::CUDD>;
+            friend class Bdd<DdType::CUDD>;
+            friend class Add<DdType::CUDD>;
             friend class Odd<DdType::CUDD>;
             friend class DdForwardIterator<DdType::CUDD>;
             
@@ -38,7 +42,7 @@ namespace storm {
              * @param ddVariables The vector of variables used to encode this variable.
              * @param manager A pointer to the manager that is responsible for this meta variable.
              */
-            DdMetaVariable(std::string const& name, int_fast64_t low, int_fast64_t high, std::vector<Dd<DdType::CUDD>> const& ddVariables, std::shared_ptr<DdManager<DdType::CUDD>> manager);
+            DdMetaVariable(std::string const& name, int_fast64_t low, int_fast64_t high, std::vector<Bdd<DdType::CUDD>> const& ddVariables, std::shared_ptr<DdManager<DdType::CUDD>> manager);
             
             /*!
              * Creates a boolean meta variable with the given name.
@@ -46,7 +50,7 @@ namespace storm {
              * @param ddVariables The vector of variables used to encode this variable.
              * @param manager A pointer to the manager that is responsible for this meta variable.
              */
-            DdMetaVariable(std::string const& name, std::vector<Dd<DdType::CUDD>> const& ddVariables, std::shared_ptr<DdManager<DdType::CUDD>> manager);
+            DdMetaVariable(std::string const& name, std::vector<Bdd<DdType::CUDD>> const& ddVariables, std::shared_ptr<DdManager<DdType::CUDD>> manager);
             
             // Explictly generate all default versions of copy/move constructors/assignments.
             DdMetaVariable(DdMetaVariable const& other) = default;
@@ -104,14 +108,14 @@ namespace storm {
              *
              * @return A vector of variables used to encode the meta variable.
              */
-            std::vector<Dd<DdType::CUDD>> const& getDdVariables() const;
+            std::vector<Bdd<DdType::CUDD>> const& getDdVariables() const;
             
             /*!
              * Retrieves the cube of all variables that encode this meta variable.
              *
              * @return The cube of all variables that encode this meta variable.
              */
-            Dd<DdType::CUDD> const& getCube() const;
+            Bdd<DdType::CUDD> const& getCube() const;
             
             // The name of the meta variable.
             std::string name;
@@ -126,10 +130,10 @@ namespace storm {
             int_fast64_t high;
             
             // The vector of variables that are used to encode the meta variable.
-            std::vector<Dd<DdType::CUDD>> ddVariables;
+            std::vector<Bdd<DdType::CUDD>> ddVariables;
             
             // The cube consisting of all variables that encode the meta variable.
-            Dd<DdType::CUDD> cube;
+            Bdd<DdType::CUDD> cube;
             
             // A pointer to the manager responsible for this meta variable.
             std::shared_ptr<DdManager<DdType::CUDD>> manager;

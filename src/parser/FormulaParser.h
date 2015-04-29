@@ -126,10 +126,10 @@ namespace storm {
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> expectedTimeOperator;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> steadyStateOperator;
             
-            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> formula;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> simpleFormula;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> stateFormula;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> pathFormula;
+            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> pathFormulaWithoutUntil;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> simplePathFormula;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> atomicStateFormula;
             qi::rule<Iterator, std::string(), Skipper> label;
@@ -145,26 +145,28 @@ namespace storm {
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> eventuallyFormula;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> nextFormula;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> globallyFormula;
-            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> boundedUntilFormula;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> untilFormula;
+            qi::rule<Iterator, boost::variant<std::pair<double, double>, uint_fast64_t>(), Skipper> timeBound;
             
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> rewardPathFormula;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> cumulativeRewardFormula;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> reachabilityRewardFormula;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> instantaneousRewardFormula;
             
+            // Parser that is used to recognize doubles only (as opposed to Spirit's double_ parser).
+            boost::spirit::qi::real_parser<double, boost::spirit::qi::strict_real_policies<double>> strict_double;
+            
             // Methods that actually create the expression objects.
-            std::shared_ptr<storm::logic::Formula> createInstantaneousRewardFormula(unsigned stepCount) const;
-            std::shared_ptr<storm::logic::Formula> createCumulativeRewardFormula(unsigned stepBound) const;
+            std::shared_ptr<storm::logic::Formula> createInstantaneousRewardFormula(boost::variant<unsigned, double> const& timeBound) const;
+            std::shared_ptr<storm::logic::Formula> createCumulativeRewardFormula(boost::variant<unsigned, double> const& timeBound) const;
             std::shared_ptr<storm::logic::Formula> createReachabilityRewardFormula(std::shared_ptr<storm::logic::Formula> const& stateFormula) const;
             std::shared_ptr<storm::logic::Formula> createAtomicExpressionFormula(storm::expressions::Expression const& expression) const;
             std::shared_ptr<storm::logic::Formula> createBooleanLiteralFormula(bool literal) const;
             std::shared_ptr<storm::logic::Formula> createAtomicLabelFormula(std::string const& label) const;
-            std::shared_ptr<storm::logic::Formula> createEventuallyFormula(std::shared_ptr<storm::logic::Formula> const& subformula) const;
+            std::shared_ptr<storm::logic::Formula> createEventuallyFormula(boost::optional<boost::variant<std::pair<double, double>, uint_fast64_t>> const& timeBound, std::shared_ptr<storm::logic::Formula> const& subformula) const;
             std::shared_ptr<storm::logic::Formula> createGloballyFormula(std::shared_ptr<storm::logic::Formula> const& subformula) const;
             std::shared_ptr<storm::logic::Formula> createNextFormula(std::shared_ptr<storm::logic::Formula> const& subformula) const;
-            std::shared_ptr<storm::logic::Formula> createUntilFormula(std::shared_ptr<storm::logic::Formula> const& leftSubformula, std::shared_ptr<storm::logic::Formula> const& rightSubformula);
-            std::shared_ptr<storm::logic::Formula> createBoundedUntilFormula(std::shared_ptr<storm::logic::Formula> const& leftSubformula, unsigned stepBound, std::shared_ptr<storm::logic::Formula> const& rightSubformula) const;
+            std::shared_ptr<storm::logic::Formula> createUntilFormula(std::shared_ptr<storm::logic::Formula> const& leftSubformula, boost::optional<boost::variant<std::pair<double, double>, uint_fast64_t>> const& timeBound, std::shared_ptr<storm::logic::Formula> const& rightSubformula);
             std::shared_ptr<storm::logic::Formula> createConditionalFormula(std::shared_ptr<storm::logic::Formula> const& leftSubformula, std::shared_ptr<storm::logic::Formula> const& rightSubformula) const;
             std::shared_ptr<storm::logic::Formula> createLongRunAverageOperatorFormula(std::tuple<boost::optional<storm::logic::OptimalityType>, boost::optional<storm::logic::ComparisonType>, boost::optional<double>> const& operatorInformation, std::shared_ptr<storm::logic::Formula> const& subformula) const;
             std::shared_ptr<storm::logic::Formula> createRewardOperatorFormula(std::tuple<boost::optional<storm::logic::OptimalityType>, boost::optional<storm::logic::ComparisonType>, boost::optional<double>> const& operatorInformation, std::shared_ptr<storm::logic::Formula> const& subformula) const;

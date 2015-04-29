@@ -1,15 +1,7 @@
-/*
- * NonDeterministicModelParser.h
- *
- *  Created on: 14.01.2013
- *      Author: thomas
- */
-
 #ifndef STORM_PARSER_NONDETERMINISTICMODELPARSER_H_
 #define STORM_PARSER_NONDETERMINISTICMODELPARSER_H_
 
-#include "src/models/Mdp.h"
-#include "src/models/Ctmdp.h"
+#include "src/models/sparse/Mdp.h"
 
 namespace storm {
 	namespace parser {
@@ -35,7 +27,7 @@ namespace storm {
 				 * @param transitionSystem The transition system to be contained in the Result.
 				 * @param labeling The the labeling of the transition system to be contained in the Result.
 				 */
-				Result(storm::storage::SparseMatrix<double>& transitionSystem, storm::models::AtomicPropositionsLabeling& labeling) : transitionSystem(transitionSystem), labeling(labeling) {
+				Result(storm::storage::SparseMatrix<double>& transitionSystem, storm::models::sparse::StateLabeling& labeling) : transitionSystem(transitionSystem), labeling(labeling) {
 					// Intentionally left empty.
 				}
 
@@ -45,7 +37,7 @@ namespace storm {
 				 * @param transitionSystem The transition system to be contained in the Result.
 				 * @param labeling The the labeling of the transition system to be contained in the Result.
 				 */
-				Result(storm::storage::SparseMatrix<double>&& transitionSystem, storm::models::AtomicPropositionsLabeling&& labeling) : transitionSystem(std::move(transitionSystem)), labeling(std::move(labeling)) {
+				Result(storm::storage::SparseMatrix<double>&& transitionSystem, storm::models::sparse::StateLabeling&& labeling) : transitionSystem(std::move(transitionSystem)), labeling(std::move(labeling)) {
 					// Intentionally left empty.
 				}
 
@@ -57,7 +49,7 @@ namespace storm {
 				/*!
 				 * The labels of each state.
 				 */
-				storm::models::AtomicPropositionsLabeling labeling;
+				storm::models::sparse::StateLabeling labeling;
 
 				/*!
 				 * Optional rewards for each state.
@@ -85,25 +77,7 @@ namespace storm {
 			 * @param transitionRewardFilename The path and name of the file containing the transition rewards of the model. This file is optional.
 			 * @return The parsed Mdp.
 			 */
-			static storm::models::Mdp<double> parseMdp(std::string const & transitionsFilename, std::string const & labelingFilename, std::string const & stateRewardFilename = "", std::string const & transitionRewardFilename = "");
-
-
-			/*!
-			 * Parse a Ctmdp.
-			 *
-			 * This method is an adapter to the actual parsing function.
-			 * I.e. it uses @parseNondeterministicModel internally to parse the given input files, takes its result and compiles it into a Dtmc.
-			 *
-			 * @note The number of states of the model is determined by the transitions file.
-			 *       The labeling file may therefore not contain labels of states that are not contained in the transitions file.
-			 *
-			 * @param transitionsFilename The path and name of the file containing the transitions of the model.
-			 * @param labelingFilename The path and name of the file containing the labels for the states of the model.
-			 * @param stateRewardFilename The path and name of the file containing the state reward of the model. This file is optional.
-			 * @param transitionRewardFilename The path and name of the file containing the transition rewards of the model. This file is optional.
-			 * @return The parsed Ctmdp.
-			 */
-			static storm::models::Ctmdp<double> parseCtmdp(std::string const & transitionsFilename, std::string const & labelingFilename, std::string const & stateRewardFilename = "", std::string const & transitionRewardFilename = "");
+            static storm::models::sparse::Mdp<double> parseMdp(std::string const & transitionsFilename, std::string const & labelingFilename, std::string const & stateRewardFilename = "", std::string const & transitionRewardFilename = "");
 
 		private:
 

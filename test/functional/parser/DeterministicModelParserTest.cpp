@@ -1,16 +1,9 @@
-/*
- * DeterministicModelParserTest.cpp
- *
- *  Created on: Feb 24, 2014
- *      Author: Manuel Sascha Weiand
- */
-
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
 #include "src/parser/DeterministicModelParser.h"
-#include "src/models/Dtmc.h"
-#include "src/models/Ctmc.h"
+#include "src/models/sparse/Dtmc.h"
+#include "src/models/sparse/Ctmc.h"
 #include "src/exceptions/FileIoException.h"
 
 TEST(DeterministicModelParserTest, NonExistingFile) {
@@ -23,7 +16,7 @@ TEST(DeterministicModelParserTest, NonExistingFile) {
 TEST(DeterministicModelParserTest, BasicDtmcParsing) {
 
 	// Parse a Dtmc and check the result.
-	storm::models::Dtmc<double> dtmc(storm::parser::DeterministicModelParser::parseDtmc(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_general.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/dtmc_general.lab", STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/dtmc_general.state.rew", STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/dtmc_general.trans.rew"));
+    storm::models::sparse::Dtmc<double> dtmc(storm::parser::DeterministicModelParser::parseDtmc(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_general.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/dtmc_general.lab", STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/dtmc_general.state.rew", STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/dtmc_general.trans.rew"));
 
 	ASSERT_EQ(8, dtmc.getNumberOfStates());
 	ASSERT_EQ(16, dtmc.getNumberOfTransitions());
@@ -31,8 +24,8 @@ TEST(DeterministicModelParserTest, BasicDtmcParsing) {
 	ASSERT_EQ(2, dtmc.getInitialStates().getNumberOfSetBits());
 	ASSERT_TRUE(dtmc.getInitialStates().get(0));
 	ASSERT_TRUE(dtmc.getInitialStates().get(7));
-	ASSERT_EQ(5, dtmc.getStateLabeling().getNumberOfAtomicPropositions());
-	ASSERT_EQ(2, dtmc.getLabelsForState(6).size());
+	ASSERT_EQ(5, dtmc.getStateLabeling().getNumberOfLabels());
+	ASSERT_EQ(2, dtmc.getLabelsOfState(6).size());
 
 	ASSERT_TRUE(dtmc.hasStateRewards());
 	ASSERT_EQ(42, dtmc.getStateRewardVector()[7]);
@@ -55,7 +48,7 @@ TEST(DeterministicModelParserTest, BasicDtmcParsing) {
 TEST(DeterministicModelParserTest, BasicCtmcParsing) {
 
 	// Parse a Ctmc and check the result.
-	storm::models::Ctmc<double> ctmc(storm::parser::DeterministicModelParser::parseCtmc(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_general.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/dtmc_general.lab", STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/dtmc_general.state.rew", STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/dtmc_general.trans.rew"));
+	storm::models::sparse::Ctmc<double> ctmc(storm::parser::DeterministicModelParser::parseCtmc(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_general.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/dtmc_general.lab", STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/dtmc_general.state.rew", STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/dtmc_general.trans.rew"));
 
 	ASSERT_EQ(8, ctmc.getNumberOfStates());
 	ASSERT_EQ(16, ctmc.getNumberOfTransitions());
@@ -63,8 +56,8 @@ TEST(DeterministicModelParserTest, BasicCtmcParsing) {
 	ASSERT_EQ(2, ctmc.getInitialStates().getNumberOfSetBits());
 	ASSERT_TRUE(ctmc.getInitialStates().get(0));
 	ASSERT_TRUE(ctmc.getInitialStates().get(7));
-	ASSERT_EQ(5, ctmc.getStateLabeling().getNumberOfAtomicPropositions());
-	ASSERT_EQ(2, ctmc.getLabelsForState(6).size());
+	ASSERT_EQ(5, ctmc.getStateLabeling().getNumberOfLabels());
+	ASSERT_EQ(2, ctmc.getLabelsOfState(6).size());
 
 	ASSERT_TRUE(ctmc.hasStateRewards());
 	ASSERT_EQ(42, ctmc.getStateRewardVector()[7]);

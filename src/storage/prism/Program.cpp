@@ -3,6 +3,7 @@
 #include <algorithm>
 
 #include "src/storage/expressions/ExpressionManager.h"
+#include "src/settings/SettingsManager.h"
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/exceptions/OutOfRangeException.h"
@@ -11,7 +12,7 @@
 
 namespace storm {
     namespace prism {
-        Program::Program(std::shared_ptr<storm::expressions::ExpressionManager> manager, ModelType modelType, std::vector<Constant> const& constants, std::vector<BooleanVariable> const& globalBooleanVariables, std::vector<IntegerVariable> const& globalIntegerVariables, std::vector<Formula> const& formulas, std::vector<Module> const& modules, std::map<std::string, uint_fast64_t> const& actionToIndexMap, std::vector<RewardModel> const& rewardModels, bool fixInitialConstruct, storm::prism::InitialConstruct const& initialConstruct, std::vector<Label> const& labels, std::string const& filename, uint_fast64_t lineNumber, bool checkValidity) : LocatedInformation(filename, lineNumber), manager(manager), modelType(modelType), constants(constants), constantToIndexMap(), globalBooleanVariables(globalBooleanVariables), globalBooleanVariableToIndexMap(), globalIntegerVariables(globalIntegerVariables), globalIntegerVariableToIndexMap(), formulas(formulas), formulaToIndexMap(), modules(modules), moduleToIndexMap(), rewardModels(rewardModels), rewardModelToIndexMap(), initialConstruct(initialConstruct), labels(labels), actionToIndexMap(actionToIndexMap), actions(), actionIndices(), actionIndicesToModuleIndexMap(), variableToModuleIndexMap() {
+        Program::Program(std::shared_ptr<storm::expressions::ExpressionManager> manager, ModelType modelType, std::vector<Constant> const& constants, std::vector<BooleanVariable> const& globalBooleanVariables, std::vector<IntegerVariable> const& globalIntegerVariables, std::vector<Formula> const& formulas, std::vector<Module> const& modules, std::map<std::string, uint_fast64_t> const& actionToIndexMap, std::vector<RewardModel> const& rewardModels, bool fixInitialConstruct, storm::prism::InitialConstruct const& initialConstruct, std::vector<Label> const& labels, std::string const& filename, uint_fast64_t lineNumber, bool checkValidity) : LocatedInformation(filename, lineNumber), manager(manager), modelType(modelType), constants(constants), constantToIndexMap(), globalBooleanVariables(globalBooleanVariables), globalBooleanVariableToIndexMap(), globalIntegerVariables(globalIntegerVariables), globalIntegerVariableToIndexMap(), formulas(formulas), formulaToIndexMap(), modules(modules), moduleToIndexMap(), rewardModels(rewardModels), rewardModelToIndexMap(), initialConstruct(initialConstruct), labels(labels), actionToIndexMap(actionToIndexMap), indexToActionMap(), actions(), actionIndices(), actionIndicesToModuleIndexMap(), variableToModuleIndexMap() {
             this->createMappings();
             
             // Create a new initial construct if the corresponding flag was set.
@@ -34,8 +35,24 @@ namespace storm {
                 }
                 this->initialConstruct = storm::prism::InitialConstruct(newInitialExpression, this->getInitialConstruct().getFilename(), this->getInitialConstruct().getLineNumber());
             }
-            
+
             if (checkValidity) {
+                // If the model is supposed to be a CTMC, but contains probabilistic commands, we transform them to Markovian
+                // commands and issue a warning.
+                if (modelType == storm::prism::Program::ModelType::CTMC && storm::settings::generalSettings().isPrismCompatibilityEnabled()) {
+                    bool hasProbabilisticCommands = false;
+                    for (auto& module : this->modules) {
+                        for (auto& command : module.getCommands()) {
+                            if (!command.isMarkovian()) {
+                                command.setMarkovian(true);
+                                hasProbabilisticCommands = true;
+                            }
+                        }
+                    }
+                    STORM_LOG_WARN_COND(!hasProbabilisticCommands, "The input model is a CTMC, but uses probabilistic commands like they are used in PRISM. Consider rewriting the commands to use Markovian commands instead.");
+                }
+                
+                // Then check the validity.
                 this->checkValidity();
             }
         }
@@ -51,6 +68,81 @@ namespace storm {
                 }
             }
             return false;
+        }
+        
+        bool Program::hasUndefinedConstantsOnlyInUpdateProbabilitiesAndRewards() const {
+            if (!this->hasUndefinedConstants()) {
+                return true;
+            }
+            
+            // Gather the variables of all undefined constants.
+            std::set<storm::expressions::Variable> undefinedConstantVariables;
+            for (auto const& constant : this->getConstants()) {
+                if (!constant.isDefined()) {
+                    undefinedConstantVariables.insert(constant.getExpressionVariable());
+                }
+            }
+            
+            // Now it remains to check that the intersection of the variables used in the program with the undefined
+            // constants' variables is empty (except for the update probabilities).
+            
+            // Start by checking the defining expressions of all defined constants.
+            for (auto const& constant : this->getConstants()) {
+                if (constant.isDefined()) {
+                    if (constant.getExpression().containsVariable(undefinedConstantVariables)) {
+                        return false;
+                    }
+                }
+            }
+            
+            // Now check initial value expressions of global variables.
+            for (auto const& booleanVariable : this->getGlobalBooleanVariables()) {
+                if (booleanVariable.getInitialValueExpression().containsVariable(undefinedConstantVariables)) {
+                    return false;
+                }
+            }
+            for (auto const& integerVariable : this->getGlobalIntegerVariables()) {
+                if (integerVariable.getInitialValueExpression().containsVariable(undefinedConstantVariables)) {
+                    return false;
+                }
+                if (integerVariable.getLowerBoundExpression().containsVariable(undefinedConstantVariables)) {
+                    return false;
+                }
+                if (integerVariable.getUpperBoundExpression().containsVariable(undefinedConstantVariables)) {
+                    return false;
+                }
+            }
+            
+            // Then check the formulas.
+            for (auto const& formula : this->getFormulas()) {
+                if (formula.getExpression().containsVariable(undefinedConstantVariables)) {
+                    return false;
+                }
+            }
+            
+            // Proceed by checking each of the modules.
+            for (auto const& module : this->getModules()) {
+                module.containsVariablesOnlyInUpdateProbabilities(undefinedConstantVariables);
+            }
+
+            // Check the reward models.
+            for (auto const& rewardModel : this->getRewardModels()) {
+                rewardModel.containsVariablesOnlyInRewardValueExpressions(undefinedConstantVariables);
+            }
+                     
+            // Initial construct.
+            if (this->getInitialConstruct().getInitialStatesExpression().containsVariable(undefinedConstantVariables)) {
+                return false;
+            }
+            
+            // Labels.
+            for (auto const& label : this->getLabels()) {
+                if (label.getStatePredicateExpression().containsVariable(undefinedConstantVariables)) {
+                    return false;
+                }
+            }
+            
+            return true;
         }
         
         std::vector<std::reference_wrapper<storm::prism::Constant const>> Program::getUndefinedConstants() const {
@@ -148,6 +240,12 @@ namespace storm {
         
         std::set<uint_fast64_t> const& Program::getActionIndices() const {
             return this->actionIndices;
+        }
+        
+        std::string const& Program::getActionName(uint_fast64_t actionIndex) const {
+            auto const& indexNamePair = this->indexToActionMap.find(actionIndex);
+            STORM_LOG_THROW(indexNamePair != this->indexToActionMap.end(), storm::exceptions::InvalidArgumentException, "Unknown action index " << actionIndex << ".");
+            return indexNamePair->second;
         }
         
         std::set<uint_fast64_t> const& Program::getModuleIndicesByAction(std::string const& action) const {
@@ -272,6 +370,7 @@ namespace storm {
             for (auto const& actionIndexPair : this->getActionNameToIndexMapping()) {
                 this->actions.insert(actionIndexPair.first);
                 this->actionIndices.insert(actionIndexPair.second);
+                this->indexToActionMap.emplace(actionIndexPair.second, actionIndexPair.first);
             }
             
             // Build the mapping from action names to module indices so that the lookup can later be performed quickly.
@@ -403,7 +502,8 @@ namespace storm {
         void Program::checkValidity() const {
             // Start by checking the constant declarations.
             std::set<storm::expressions::Variable> all;
-            std::set<storm::expressions::Variable> global;
+            std::set<storm::expressions::Variable> allGlobals;
+            std::set<storm::expressions::Variable> globalVariables;
             std::set<storm::expressions::Variable> constants;
             for (auto const& constant : this->getConstants()) {
                 // Check defining expressions of defined constants.
@@ -416,7 +516,7 @@ namespace storm {
                 // Record the new identifier for future checks.
                 constants.insert(constant.getExpressionVariable());
                 all.insert(constant.getExpressionVariable());
-                global.insert(constant.getExpressionVariable());
+                allGlobals.insert(constant.getExpressionVariable());
             }
             
             // Now we check the variable declarations. We start with the global variables.
@@ -430,7 +530,8 @@ namespace storm {
                 // Record the new identifier for future checks.
                 variables.insert(variable.getExpressionVariable());
                 all.insert(variable.getExpressionVariable());
-                global.insert(variable.getExpressionVariable());
+                allGlobals.insert(variable.getExpressionVariable());
+                globalVariables.insert(variable.getExpressionVariable());
             }
             for (auto const& variable : this->getGlobalIntegerVariables()) {
                 // Check that bound expressions of the range.
@@ -450,7 +551,8 @@ namespace storm {
                 // Record the new identifier for future checks.
                 variables.insert(variable.getExpressionVariable());
                 all.insert(variable.getExpressionVariable());
-                global.insert(variable.getExpressionVariable());
+                allGlobals.insert(variable.getExpressionVariable());
+                globalVariables.insert(variable.getExpressionVariable());
             }
 
             // Now go through the variables of the modules.
@@ -491,8 +593,10 @@ namespace storm {
             std::set_union(variables.begin(), variables.end(), constants.begin(), constants.end(), std::inserter(variablesAndConstants, variablesAndConstants.begin()));
             
             // Check the commands of the modules.
+            bool hasProbabilisticCommand = false;
+            bool hasMarkovianCommand = false;
             for (auto const& module : this->getModules()) {
-                std::set<storm::expressions::Variable> legalVariables = global;
+                std::set<storm::expressions::Variable> legalVariables = globalVariables;
                 for (auto const& variable : module.getBooleanVariables()) {
                     legalVariables.insert(variable.getExpressionVariable());
                 }
@@ -500,12 +604,29 @@ namespace storm {
                     legalVariables.insert(variable.getExpressionVariable());
                 }
                 
-                for (auto const& command : module.getCommands()) {
+                for (auto& command : module.getCommands()) {
                     // Check the guard.
                     std::set<storm::expressions::Variable> containedVariables = command.getGuardExpression().getVariables();
                     bool isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedVariables.begin(), containedVariables.end());
                     STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << command.getFilename() << ", line " << command.getLineNumber() << ": guard refers to unknown identifiers.");
                     STORM_LOG_THROW(command.getGuardExpression().hasBooleanType(), storm::exceptions::WrongFormatException, "Error in " << command.getFilename() << ", line " << command.getLineNumber() << ": expression for guard must evaluate to type 'bool'.");
+                    
+                    // Record which types of commands were seen.
+                    if (command.isMarkovian()) {
+                        hasMarkovianCommand = true;
+                    } else {
+                        hasProbabilisticCommand = true;
+                    }
+                    
+                    // If the command is Markovian and labeled, we throw an error or raise a warning, depending on
+                    // whether or not the PRISM compatibility mode was enabled.
+                    if (command.isMarkovian() && command.isLabeled()) {
+                        if (storm::settings::generalSettings().isPrismCompatibilityEnabled()) {
+                            STORM_LOG_WARN_COND(false, "The model uses synchronizing Markovian commands. This may lead to unexpected verification results, because of unclear semantics.");
+                        } else {
+                            STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "The model uses synchronizing Markovian commands. This may lead to unexpected verification results, because of unclear semantics.");
+                        }
+                    }
                     
                     // Check all updates.
                     for (auto const& update : command.getUpdates()) {
@@ -517,6 +638,12 @@ namespace storm {
                         std::set<storm::expressions::Variable> alreadyAssignedVariables;
                         for (auto const& assignment : update.getAssignments()) {
                             storm::expressions::Variable assignedVariable = manager->getVariable(assignment.getVariableName());
+
+                            // If the command is labeled, i.e. may synchronize, we need to make sure no global variable is written.
+                            if (command.isLabeled()) {
+                                STORM_LOG_THROW(globalVariables.find(assignedVariable) == globalVariables.end(), storm::exceptions::WrongFormatException, "Error in " << command.getFilename() << ", line " << command.getLineNumber() << ": assignment of (possibly) synchronizing command writes to global variable '" << assignment.getVariableName() << "'.");
+                            }
+
                             if (legalVariables.find(assignedVariable) == legalVariables.end()) {
                                 if (all.find(assignedVariable) != all.end()) {
                                     STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Error in " << command.getFilename() << ", line " << command.getLineNumber() << ": assignment illegally refers to variable '" << assignment.getVariableName() << "'.");
@@ -529,13 +656,19 @@ namespace storm {
                             
                             containedVariables = assignment.getExpression().getVariables();
                             isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedVariables.begin(), containedVariables.end());
-                            STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << command.getFilename() << ", line " << command.getLineNumber() << ": likelihood expression refers to unknown identifiers.");
+                            STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << command.getFilename() << ", line " << command.getLineNumber() << ": assigned expression refers to unknown identifiers.");
                             
                             // Add the current variable to the set of assigned variables (of this update).
                             alreadyAssignedVariables.insert(assignedVariable);
                         }
                     }
                 }
+            }
+            
+            if (this->getModelType() == Program::ModelType::DTMC || this->getModelType() == Program::ModelType::MDP) {
+                STORM_LOG_THROW(!hasMarkovianCommand, storm::exceptions::WrongFormatException, "Discrete-time model must not have Markovian commands.");
+            } else if (this->getModelType() == Program::ModelType::CTMC) {
+                STORM_LOG_THROW(!hasProbabilisticCommand, storm::exceptions::WrongFormatException, "The input model is a CTMC, but uses probabilistic commands like they are used in PRISM. Please use Markovian commands instead or turn on the PRISM compatibility mode using the appropriate flag.");
             }
             
             // Now check the reward models.

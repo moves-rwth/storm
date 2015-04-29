@@ -3,6 +3,7 @@
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "src/storage/BitVector.h"
 #include "src/utility/macros.h"
+#include "src/utility/vector.h"
 #include "src/exceptions/InvalidOperationException.h"
 #include "src/adapters/CarlAdapter.h"
 
@@ -49,40 +50,32 @@ namespace storm {
         }
         
         template<typename ValueType>
-        std::ostream& ExplicitQuantitativeCheckResult<ValueType>::writeToStream(std::ostream& out, storm::storage::BitVector const& filter) const {
-            out << "[";
-            storm::storage::BitVector::const_iterator it = filter.begin();
-            storm::storage::BitVector::const_iterator itPlusOne = filter.begin();
-            ++itPlusOne;
-            storm::storage::BitVector::const_iterator ite = filter.end();
-            
+        void ExplicitQuantitativeCheckResult<ValueType>::filter(QualitativeCheckResult const& filter) {
+            STORM_LOG_THROW(filter.isExplicitQualitativeCheckResult(), storm::exceptions::InvalidOperationException, "Cannot filter explicit check result with non-explicit filter.");
+            STORM_LOG_THROW(filter.isResultForAllStates(), storm::exceptions::InvalidOperationException, "Cannot filter check result with non-complete filter.");
+            ExplicitQualitativeCheckResult const& explicitFilter = filter.asExplicitQualitativeCheckResult();
+            ExplicitQualitativeCheckResult::vector_type const& filterTruthValues = explicitFilter.getTruthValuesVector();
+
             if (this->isResultForAllStates()) {
-                vector_type const& valuesAsVector = boost::get<vector_type>(values);
-                for (; it != ite; ++itPlusOne, ++it) {
-                    out << valuesAsVector[*it];
-                    if (itPlusOne != ite) {
-                        out << ", ";
-                    }
+                map_type newMap;
+                for (auto const& element : filterTruthValues) {
+                    newMap.emplace(element, this->getValueVector()[element]);
                 }
+                this->values = newMap;
             } else {
-                map_type const& valuesAsMap = boost::get<map_type>(values);
-                bool allResultsAvailable = true;
-                for (; it != ite; ++itPlusOne, ++it) {
-                    auto const& keyValuePair = valuesAsMap.find(*it);
-                    if (keyValuePair != valuesAsMap.end()) {
-                        out << keyValuePair->second;
-                        if (itPlusOne != ite) {
-                            out << ", ";
-                        }
-                    } else {
-                        allResultsAvailable = false;
+                map_type const& map = boost::get<map_type>(values);
+                
+                map_type newMap;
+                for (auto const& element : map) {
+                    if (filterTruthValues.get(element.first)) {
+                        newMap.insert(element);
                     }
                 }
-                STORM_LOG_THROW(allResultsAvailable, storm::exceptions::InvalidOperationException, "Unable to print result for some states, because the result is not available.");
+                
+                STORM_LOG_THROW(newMap.size() == filterTruthValues.getNumberOfSetBits(), storm::exceptions::InvalidOperationException, "The check result fails to contain some results referred to by the filter.");
+                
+                this->values = newMap;
             }
-            
-            out << "]";
-            return out;
         }
         
         template<typename ValueType>
@@ -90,29 +83,25 @@ namespace storm {
             out << "[";
             if (this->isResultForAllStates()) {
                 vector_type const& valuesAsVector = boost::get<vector_type>(values);
-                typename vector_type::const_iterator it = valuesAsVector.begin();
-                typename vector_type::const_iterator itPlusOne = valuesAsVector.begin();
-                ++itPlusOne;
-                typename vector_type::const_iterator ite = valuesAsVector.end();
-                
-                for (; it != ite; ++itPlusOne, ++it) {
-                    out << *it;
-                    if (itPlusOne != ite) {
+                bool first = true;
+                for (auto const& element : valuesAsVector) {
+                    if (!first) {
                         out << ", ";
+                    } else {
+                        first = false;
                     }
+                    out << element;
                 }
             } else {
                 map_type const& valuesAsMap = boost::get<map_type>(values);
-                typename map_type::const_iterator it = valuesAsMap.begin();
-                typename map_type::const_iterator itPlusOne = valuesAsMap.begin();
-                ++itPlusOne;
-                typename map_type::const_iterator ite = valuesAsMap.end();
-                
-                for (; it != ite; ++itPlusOne, ++it) {
-                    out << it->second;
-                    if (itPlusOne != ite) {
+                bool first = true;
+                for (auto const& element : valuesAsMap) {
+                    if (!first) {
                         out << ", ";
+                    } else {
+                        first = false;
                     }
+                    out << element.second;
                 }
             }
             out << "]";

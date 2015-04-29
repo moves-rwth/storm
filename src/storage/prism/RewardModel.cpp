@@ -45,6 +45,20 @@ namespace storm {
             return RewardModel(this->getName(), newStateRewards, newTransitionRewards, this->getFilename(), this->getLineNumber());
         }
         
+        bool RewardModel::containsVariablesOnlyInRewardValueExpressions(std::set<storm::expressions::Variable> const& undefinedConstantVariables) const {
+            for (auto const& stateReward : this->getStateRewards()) {
+                if (stateReward.getStatePredicateExpression().containsVariable(undefinedConstantVariables)) {
+                    return false;
+                }
+            }
+            for (auto const& transitionReward : this->getTransitionRewards()) {
+                if (transitionReward.getStatePredicateExpression().containsVariable(undefinedConstantVariables)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        
         std::ostream& operator<<(std::ostream& stream, RewardModel const& rewardModel) {
             stream << "rewards";
             if (rewardModel.getName() != "") {

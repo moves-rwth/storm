@@ -16,11 +16,10 @@ namespace storm {
 
             virtual bool containsBoundedUntilFormula() const override;
             
-            bool isIntervalBounded() const;
-            bool isIntegerUpperBounded() const;
+            bool hasDiscreteTimeBound() const;
             
             std::pair<double, double> const& getIntervalBounds() const;
-            uint_fast64_t getUpperBound() const;
+            uint_fast64_t getDiscreteTimeBound() const;
             
             virtual bool isPctlPathFormula() const override;
             virtual bool isCslPathFormula() const override;

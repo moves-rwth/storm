@@ -20,7 +20,7 @@ namespace storm {
             const std::string GeneralSettings::configOptionName = "config";
             const std::string GeneralSettings::configOptionShortName = "c";
             const std::string GeneralSettings::explicitOptionName = "explicit";
-            const std::string GeneralSettings::explicitOptionShortName = "e";
+            const std::string GeneralSettings::explicitOptionShortName = "exp";
             const std::string GeneralSettings::symbolicOptionName = "symbolic";
             const std::string GeneralSettings::symbolicOptionShortName = "s";
             const std::string GeneralSettings::propertyOptionName = "prop";
@@ -41,7 +41,11 @@ namespace storm {
             const std::string GeneralSettings::statisticsOptionShortName = "stats";
             const std::string GeneralSettings::bisimulationOptionName = "bisimulation";
             const std::string GeneralSettings::bisimulationOptionShortName = "bisim";
+            const std::string GeneralSettings::engineOptionName = "engine";
+            const std::string GeneralSettings::engineOptionShortName = "e";
             const std::string GeneralSettings::cudaOptionName = "cuda";
+            const std::string GeneralSettings::prismCompatibilityOptionName = "prismcompat";
+            const std::string GeneralSettings::prismCompatibilityOptionShortName = "pc";
             
 #ifdef STORM_HAVE_CARL
             const std::string GeneralSettings::parametricOptionName = "parametric";
@@ -50,6 +54,7 @@ namespace storm {
             GeneralSettings::GeneralSettings(storm::settings::SettingsManager& settingsManager) : ModuleSettings(settingsManager, moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, helpOptionName, false, "Shows all available options, arguments and descriptions.").setShortName(helpOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("hint", "A regular expression to show help for all matching entities or 'all' for the complete help.").setDefaultValueString("all").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, prismCompatibilityOptionName, false, "Enables PRISM compatibility. This may be necessary to process some PRISM models.").setShortName(prismCompatibilityOptionShortName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, versionOptionName, false, "Prints the version information.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, verboseOptionName, false, "Enables more verbose output.").setShortName(verboseOptionShortName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, precisionOptionName, false, "The internally used precision.").setShortName(precisionOptionShortName)
@@ -71,11 +76,15 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, counterexampleOptionName, false, "Generates a counterexample for the given PRCTL formulas if not satisfied by the model")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file to which the counterexample is to be written.").setDefaultValueString("-").setIsOptional(true).build()).setShortName(counterexampleOptionShortName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, bisimulationOptionName, false, "Sets whether to perform bisimulation minimization.").setShortName(bisimulationOptionShortName).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, transitionRewardsOptionName, "", "If given, the transition rewards are read from this file and added to the explicit model. Note that this requires the model to be given as an explicit model (i.e., via --" + explicitOptionName + ").")
+                this->addOption(storm::settings::OptionBuilder(moduleName, transitionRewardsOptionName, false, "If given, the transition rewards are read from this file and added to the explicit model. Note that this requires the model to be given as an explicit model (i.e., via --" + explicitOptionName + ").")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The file from which to read the transition rewards.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, stateRewardsOptionName, false, "If given, the state rewards are read from this file and added to the explicit model. Note that this requires the model to be given as an explicit model (i.e., via --" + explicitOptionName + ").")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The file from which to read the state rewards.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, dontFixDeadlockOptionName, false, "If the model contains deadlock states, they need to be fixed by setting this option.").setShortName(dontFixDeadlockOptionShortName).build());
+                
+                std::vector<std::string> engines = {"sparse", "hybrid", "dd"};
+                this->addOption(storm::settings::OptionBuilder(moduleName, engineOptionName, false, "Sets which engine is used for model building and model checking.").setShortName(engineOptionShortName)
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the engine to use. Available are {sparse, hybrid, dd}.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(engines)).setDefaultValueString("sparse").build()).build());
                 
                 std::vector<std::string> linearEquationSolver = {"gmm++", "native"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, eqSolverOptionName, false, "Sets which solver is preferred for solving systems of linear equations.")
@@ -209,6 +218,10 @@ namespace storm {
                 return this->overrideOption(dontFixDeadlockOptionName, stateToSet);
             }
             
+            std::unique_ptr<storm::settings::SettingMemento> GeneralSettings::overridePrismCompatibilityMode(bool stateToSet) {
+                return this->overrideOption(prismCompatibilityOptionName, stateToSet);
+            }
+            
             bool GeneralSettings::isTimeoutSet() const {
                 return this->getOption(timeoutOptionName).getHasOptionBeenSet();
             }
@@ -225,6 +238,10 @@ namespace storm {
                     return GeneralSettings::EquationSolver::Native;
                 }
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown equation solver '" << equationSolverName << "'.");
+            }
+            
+            bool GeneralSettings::isEquationSolverSet() const {
+                return this->getOption(eqSolverOptionName).getHasOptionBeenSet();
             }
             
             GeneralSettings::LpSolver GeneralSettings::getLpSolver() const {
@@ -253,6 +270,22 @@ namespace storm {
                 return this->getOption(bisimulationOptionName).getHasOptionBeenSet();
             }
             
+            GeneralSettings::Engine GeneralSettings::getEngine() const {
+                std::string engine = this->getOption(engineOptionName).getArgumentByName("name").getValueAsString();
+                if (engine == "sparse") {
+                    return GeneralSettings::Engine::Sparse;
+                } else if (engine == "hybrid") {
+                    return GeneralSettings::Engine::Hybrid;
+                } else if (engine == "dd") {
+                    return GeneralSettings::Engine::Dd;
+                }
+                STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown engine '" << engine << "'.");
+            }
+            
+            bool GeneralSettings::isPrismCompatibilityEnabled() const {
+                return this->getOption(prismCompatibilityOptionName).getHasOptionBeenSet();
+            }
+            
 #ifdef STORM_HAVE_CARL
             bool GeneralSettings::isParametricSet() const {
                 return this->getOption(parametricOptionName).getHasOptionBeenSet();
@@ -266,6 +299,8 @@ namespace storm {
                 // Make sure that one "source" for properties is given.
                 uint_fast64_t propertySources = 0 + (isPropertySet() ? 1 : 0) + (isPropertyFileSet() ? 1 : 0);
                 STORM_LOG_THROW(propertySources <= 1, storm::exceptions::InvalidSettingsException, "Please specify either a file that contains the properties or a property on the command line, but not both.");
+                
+                STORM_LOG_THROW(this->getEngine() == Engine::Sparse || !isExplicitSet(), storm::exceptions::InvalidSettingsException, "Cannot use explicit input models with this engine.");
                 
                 return true;
             }

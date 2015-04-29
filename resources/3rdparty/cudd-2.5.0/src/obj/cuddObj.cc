@@ -2614,6 +2614,38 @@ ADD::Xnor(
 
 } // ADD::Xnor
 
+ADD
+ADD::Pow(
+  const ADD& g) const
+{
+    DdManager *mgr = checkSameManager(g);
+    DdNode *result = Cudd_addApply(mgr, Cudd_addPow, node, g.node);
+    checkReturnValue(result);
+    return ADD(p, result);
+    
+} // ADD::Pow
+
+ADD
+ADD::Mod(
+  const ADD& g) const
+{
+    DdManager *mgr = checkSameManager(g);
+    DdNode *result = Cudd_addApply(mgr, Cudd_addMod, node, g.node);
+    checkReturnValue(result);
+    return ADD(p, result);
+    
+} // ADD::Mod
+
+ADD
+ADD::LogXY(
+  const ADD& g) const
+{
+    DdManager *mgr = checkSameManager(g);
+    DdNode *result = Cudd_addApply(mgr, Cudd_addLogXY, node, g.node);
+    checkReturnValue(result);
+    return ADD(p, result);
+    
+} // ADD::LogXY
 
 ADD
 ADD::Log() const
@@ -2625,6 +2657,25 @@ ADD::Log() const
 
 } // ADD::Log
 
+ADD
+ADD::Floor() const
+{
+    DdManager *mgr = p->manager;
+    DdNode *result = Cudd_addMonadicApply(mgr, Cudd_addFloor, node);
+    checkReturnValue(result);
+    return ADD(p, result);
+    
+} // ADD::Floor
+
+ADD
+ADD::Ceil() const
+{
+    DdManager *mgr = p->manager;
+    DdNode *result = Cudd_addMonadicApply(mgr, Cudd_addCeil, node);
+    checkReturnValue(result);
+    return ADD(p, result);
+    
+} // ADD::Ceil
 
 ADD
 ADD::FindMax() const

@@ -1,13 +1,17 @@
 #ifndef STORM_LOGIC_CUMULATIVEREWARDFORMULA_H_
 #define STORM_LOGIC_CUMULATIVEREWARDFORMULA_H_
 
+#include <boost/variant.hpp>
+
 #include "src/logic/RewardPathFormula.h"
 
 namespace storm {
     namespace logic {
         class CumulativeRewardFormula : public RewardPathFormula {
         public:
-            CumulativeRewardFormula(uint_fast64_t stepBound);
+            CumulativeRewardFormula(uint_fast64_t timeBound);
+            
+            CumulativeRewardFormula(double timeBound);
             
             virtual ~CumulativeRewardFormula() {
                 // Intentionally left empty.
@@ -17,10 +21,16 @@ namespace storm {
             
             virtual std::ostream& writeToStream(std::ostream& out) const override;
             
-            uint_fast64_t getStepBound() const;
+            bool hasDiscreteTimeBound() const;
+            
+            uint_fast64_t getDiscreteTimeBound() const;
+            
+            bool hasContinuousTimeBound() const;
+            
+            double getContinuousTimeBound() const;
             
         private:
-            uint_fast64_t stepBound;
+            boost::variant<uint_fast64_t, double> timeBound;
         };
     }
 }

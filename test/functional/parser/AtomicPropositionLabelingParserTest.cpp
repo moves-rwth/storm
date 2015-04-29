@@ -7,7 +7,7 @@
 
 #include "gtest/gtest.h"
 #include "storm-config.h"
-#include "src/models/AtomicPropositionsLabeling.h"
+#include "src/models/sparse/StateLabeling.h"
 #include "src/parser/AtomicPropositionLabelingParser.h"
 #include "src/exceptions/FileIoException.h"
 #include "src/exceptions/WrongFormatException.h"
@@ -24,59 +24,59 @@ TEST(AtomicPropositionLabelingParserTest, BasicParsing) {
 	// This test is based on a test case from the original MRMC.
 	
 	// Parsing the file
-	storm::models::AtomicPropositionsLabeling labeling = storm::parser::AtomicPropositionLabelingParser::parseAtomicPropositionLabeling(12, STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/pctl_general.lab");
+	storm::models::sparse::StateLabeling labeling = storm::parser::AtomicPropositionLabelingParser::parseAtomicPropositionLabeling(12, STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/pctl_general.lab");
 
 	// Checking whether all propositions are in the labelling
 
 	char phi[] = "phi", psi[] = "psi", smth[] = "smth";
 
-	ASSERT_TRUE(labeling.containsAtomicProposition(phi));
-	ASSERT_TRUE(labeling.containsAtomicProposition(psi));
-	ASSERT_TRUE(labeling.containsAtomicProposition(smth));
+	ASSERT_TRUE(labeling.containsLabel(phi));
+	ASSERT_TRUE(labeling.containsLabel(psi));
+	ASSERT_TRUE(labeling.containsLabel(smth));
 
 	// Testing whether all and only the correct nodes are labeled with "phi"
-	ASSERT_TRUE(labeling.getStateHasAtomicProposition(phi,0));
-	ASSERT_TRUE(labeling.getStateHasAtomicProposition(phi,1));
-	ASSERT_TRUE(labeling.getStateHasAtomicProposition(phi,2));
+	ASSERT_TRUE(labeling.getStateHasLabel(phi,0));
+	ASSERT_TRUE(labeling.getStateHasLabel(phi,1));
+	ASSERT_TRUE(labeling.getStateHasLabel(phi,2));
 
-	ASSERT_FALSE(labeling.getStateHasAtomicProposition(phi,3));
-	ASSERT_FALSE(labeling.getStateHasAtomicProposition(phi,4));
-	ASSERT_FALSE(labeling.getStateHasAtomicProposition(phi,5));
-	ASSERT_FALSE(labeling.getStateHasAtomicProposition(phi,6));
-	ASSERT_FALSE(labeling.getStateHasAtomicProposition(phi,7));
-	ASSERT_FALSE(labeling.getStateHasAtomicProposition(phi,8));
-	ASSERT_FALSE(labeling.getStateHasAtomicProposition(phi,9));
-	ASSERT_FALSE(labeling.getStateHasAtomicProposition(phi,10));
-	ASSERT_FALSE(labeling.getStateHasAtomicProposition(phi,11));
+	ASSERT_FALSE(labeling.getStateHasLabel(phi,3));
+	ASSERT_FALSE(labeling.getStateHasLabel(phi,4));
+	ASSERT_FALSE(labeling.getStateHasLabel(phi,5));
+	ASSERT_FALSE(labeling.getStateHasLabel(phi,6));
+	ASSERT_FALSE(labeling.getStateHasLabel(phi,7));
+	ASSERT_FALSE(labeling.getStateHasLabel(phi,8));
+	ASSERT_FALSE(labeling.getStateHasLabel(phi,9));
+	ASSERT_FALSE(labeling.getStateHasLabel(phi,10));
+	ASSERT_FALSE(labeling.getStateHasLabel(phi,11));
 
 	//Testing whether all and only the correct nodes are labeled with "psi"
-	ASSERT_FALSE(labeling.getStateHasAtomicProposition(psi,0));
-	ASSERT_FALSE(labeling.getStateHasAtomicProposition(psi,1));
-	ASSERT_FALSE(labeling.getStateHasAtomicProposition(psi,2));
-	ASSERT_FALSE(labeling.getStateHasAtomicProposition(psi,3));
-	ASSERT_FALSE(labeling.getStateHasAtomicProposition(psi,4));
-	ASSERT_FALSE(labeling.getStateHasAtomicProposition(psi,5));
-	ASSERT_FALSE(labeling.getStateHasAtomicProposition(psi,6));
-	ASSERT_FALSE(labeling.getStateHasAtomicProposition(psi,7));
-	ASSERT_FALSE(labeling.getStateHasAtomicProposition(psi,8));
-	ASSERT_FALSE(labeling.getStateHasAtomicProposition(psi,9));
-	ASSERT_FALSE(labeling.getStateHasAtomicProposition(psi,10));
-	ASSERT_FALSE(labeling.getStateHasAtomicProposition(psi,11));
+	ASSERT_FALSE(labeling.getStateHasLabel(psi,0));
+	ASSERT_FALSE(labeling.getStateHasLabel(psi,1));
+	ASSERT_FALSE(labeling.getStateHasLabel(psi,2));
+	ASSERT_FALSE(labeling.getStateHasLabel(psi,3));
+	ASSERT_FALSE(labeling.getStateHasLabel(psi,4));
+	ASSERT_FALSE(labeling.getStateHasLabel(psi,5));
+	ASSERT_FALSE(labeling.getStateHasLabel(psi,6));
+	ASSERT_FALSE(labeling.getStateHasLabel(psi,7));
+	ASSERT_FALSE(labeling.getStateHasLabel(psi,8));
+	ASSERT_FALSE(labeling.getStateHasLabel(psi,9));
+	ASSERT_FALSE(labeling.getStateHasLabel(psi,10));
+	ASSERT_FALSE(labeling.getStateHasLabel(psi,11));
 
 	//Testing whether all and only the correct nodes are labeled with "smth"
-	ASSERT_TRUE(labeling.getStateHasAtomicProposition(smth,2));
+	ASSERT_TRUE(labeling.getStateHasLabel(smth,2));
 
-	ASSERT_FALSE(labeling.getStateHasAtomicProposition(smth,0));
-	ASSERT_FALSE(labeling.getStateHasAtomicProposition(smth,1));
-	ASSERT_FALSE(labeling.getStateHasAtomicProposition(smth,3));
-	ASSERT_FALSE(labeling.getStateHasAtomicProposition(smth,4));
-	ASSERT_FALSE(labeling.getStateHasAtomicProposition(smth,5));
-	ASSERT_FALSE(labeling.getStateHasAtomicProposition(smth,6));
-	ASSERT_FALSE(labeling.getStateHasAtomicProposition(smth,7));
-	ASSERT_FALSE(labeling.getStateHasAtomicProposition(smth,8));
-	ASSERT_FALSE(labeling.getStateHasAtomicProposition(smth,9));
-	ASSERT_FALSE(labeling.getStateHasAtomicProposition(smth,10));
-	ASSERT_FALSE(labeling.getStateHasAtomicProposition(smth,11));
+	ASSERT_FALSE(labeling.getStateHasLabel(smth,0));
+	ASSERT_FALSE(labeling.getStateHasLabel(smth,1));
+	ASSERT_FALSE(labeling.getStateHasLabel(smth,3));
+	ASSERT_FALSE(labeling.getStateHasLabel(smth,4));
+	ASSERT_FALSE(labeling.getStateHasLabel(smth,5));
+	ASSERT_FALSE(labeling.getStateHasLabel(smth,6));
+	ASSERT_FALSE(labeling.getStateHasLabel(smth,7));
+	ASSERT_FALSE(labeling.getStateHasLabel(smth,8));
+	ASSERT_FALSE(labeling.getStateHasLabel(smth,9));
+	ASSERT_FALSE(labeling.getStateHasLabel(smth,10));
+	ASSERT_FALSE(labeling.getStateHasLabel(smth,11));
 }
 
 TEST(AtomicPropositionLabelingParserTest, NoDeclarationTagHeader) {
@@ -101,10 +101,10 @@ TEST(AtomicPropositionLabelingParserTest, MisspelledEndTagHeader) {
 
 TEST(AtomicPropositionLabelingParserTest, NoLabelDeclaredNoneGiven) {
 	// No label between #DECLARATION and #END and no labels given.
-	storm::models::AtomicPropositionsLabeling labeling = storm::parser::AtomicPropositionLabelingParser::parseAtomicPropositionLabeling(13, STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/labParser/noLabelsDecNoneGiven.lab");
-	ASSERT_EQ(labeling.getNumberOfAtomicPropositions(), 0);
+	storm::models::sparse::StateLabeling labeling = storm::parser::AtomicPropositionLabelingParser::parseAtomicPropositionLabeling(13, STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/labParser/noLabelsDecNoneGiven.lab");
+	ASSERT_EQ(labeling.getNumberOfLabels(), 0);
 	for(uint_fast64_t i = 0; i < 13; i++) {
-		ASSERT_TRUE(labeling.getPropositionsForState(i).empty());
+		ASSERT_TRUE(labeling.getLabelsOfState(i).empty());
 	}
 }
 
@@ -137,10 +137,9 @@ TEST(AtomicPropositionLabelingParserTest, Whitespaces) {
 	// Different configurations of allowed whitespaces are tested.
 
 	// First parse the labeling file without added whitespaces and obtain the hash of its parsed representation.
-	storm::models::AtomicPropositionsLabeling labeling = storm::parser::AtomicPropositionLabelingParser::parseAtomicPropositionLabeling(13, STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/labParser/withoutWhitespaces.lab");
-	uint_fast64_t correctHash = labeling.getHash();
+	storm::models::sparse::StateLabeling labeling = storm::parser::AtomicPropositionLabelingParser::parseAtomicPropositionLabeling(13, STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/labParser/withoutWhitespaces.lab");
 
 	// Now parse the labeling file with the added whitespaces and compare the hashes.
-	labeling = storm::parser::AtomicPropositionLabelingParser::parseAtomicPropositionLabeling(13, STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/labParser/withWhitespaces.lab");
-	ASSERT_EQ(correctHash, labeling.getHash());
+	storm::models::sparse::StateLabeling labeling2 = storm::parser::AtomicPropositionLabelingParser::parseAtomicPropositionLabeling(13, STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/labParser/withWhitespaces.lab");
+	ASSERT_TRUE(labeling == labeling2);
 }

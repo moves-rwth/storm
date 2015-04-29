@@ -1,7 +1,7 @@
 #ifndef STORM_PARSER_ATOMICPROPOSITIONLABELINGPARSER_H_
 #define STORM_PARSER_ATOMICPROPOSITIONLABELINGPARSER_H_
 
-#include "src/models/AtomicPropositionsLabeling.h"
+#include "src/models/sparse/StateLabeling.h"
 #include <cstdint>
 
 namespace storm {
@@ -23,7 +23,7 @@ namespace storm {
 			 * @param filename The path and name of the labeling (.lab) file.
 			 * @return The parsed labeling as an AtomicPropositionsLabeling object.
 			 */
-			static storm::models::AtomicPropositionsLabeling parseAtomicPropositionLabeling(uint_fast64_t stateCount, std::string const &filename);
+			static storm::models::sparse::StateLabeling parseAtomicPropositionLabeling(uint_fast64_t stateCount, std::string const &filename);
 
 		};
 

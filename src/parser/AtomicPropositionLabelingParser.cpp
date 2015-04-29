@@ -25,7 +25,7 @@ namespace storm {
 
 		using namespace storm::utility::cstring;
 
-		storm::models::AtomicPropositionsLabeling AtomicPropositionLabelingParser::parseAtomicPropositionLabeling(uint_fast64_t stateCount, std::string const & filename) {
+		storm::models::sparse::StateLabeling AtomicPropositionLabelingParser::parseAtomicPropositionLabeling(uint_fast64_t stateCount, std::string const & filename) {
 
 			// Open the given file.
 			if (!MappedFile::fileExistsAndIsReadable(filename.c_str())) {
@@ -74,9 +74,8 @@ namespace storm {
 				throw storm::exceptions::WrongFormatException() << "Error while parsing " << filename << ": File header is corrupted (#DECLARATION or #END missing - case sensitive).";
 			}
 
-
 			// Create labeling object with given node and proposition count.
-			storm::models::AtomicPropositionsLabeling labeling(stateCount, proposition_count);
+			storm::models::sparse::StateLabeling labeling(stateCount);
 
 			// Second pass: Add propositions and node labels to labeling.
 			// First thing to do: Reset the file pointer.
@@ -114,7 +113,7 @@ namespace storm {
 					// Otherwise copy the token to the buffer, append a trailing null byte and hand it to labeling.
 					strncpy(proposition, buf, cnt);
 					proposition[cnt] = '\0';
-					labeling.addAtomicProposition(proposition);
+					labeling.addLabel(proposition);
 				}
 			}
 
@@ -159,11 +158,11 @@ namespace storm {
 						proposition[cnt] = '\0';
 
 						// Has the label been declared in the header?
-						if(!labeling.containsAtomicProposition(proposition)) {
+						if(!labeling.containsLabel(proposition)) {
 							LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": Atomic proposition" << proposition << " was found but not declared.");
 							throw storm::exceptions::WrongFormatException() << "Error while parsing " << filename << ": Atomic proposition" << proposition << " was found but not declared.";
 						}
-						labeling.addAtomicPropositionToState(proposition, state);
+						labeling.addLabelToState(proposition, state);
 						buf += cnt;
 					}
 				}

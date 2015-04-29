@@ -10,7 +10,7 @@ extern log4cplus::Logger logger;
 namespace storm {
 	namespace parser {
 
-		storm::models::MarkovAutomaton<double> MarkovAutomatonParser::parseMarkovAutomaton(std::string const& transitionsFilename, std::string const& labelingFilename, std::string const& stateRewardFilename, std::string const& transitionRewardFilename) {
+        storm::models::sparse::MarkovAutomaton<double> MarkovAutomatonParser::parseMarkovAutomaton(std::string const& transitionsFilename, std::string const& labelingFilename, std::string const& stateRewardFilename, std::string const& transitionRewardFilename) {
 
 			// Parse the transitions of the Markov Automaton.
 			storm::parser::MarkovAutomatonSparseTransitionParser::Result transitionResult(storm::parser::MarkovAutomatonSparseTransitionParser::parseMarkovAutomatonTransitions(transitionsFilename));
@@ -19,7 +19,7 @@ namespace storm {
 			storm::storage::SparseMatrix<double> transitionMatrix(transitionResult.transitionMatrixBuilder.build());
 
 			// Parse the state labeling.
-			storm::models::AtomicPropositionsLabeling resultLabeling(storm::parser::AtomicPropositionLabelingParser::parseAtomicPropositionLabeling(transitionMatrix.getColumnCount(), labelingFilename));
+			storm::models::sparse::StateLabeling resultLabeling(storm::parser::AtomicPropositionLabelingParser::parseAtomicPropositionLabeling(transitionMatrix.getColumnCount(), labelingFilename));
 
 			// If given, parse the state rewards file.
 			boost::optional<std::vector<double>> stateRewards;
@@ -34,7 +34,7 @@ namespace storm {
 			}
 
 			// Put the pieces together to generate the Markov Automaton.
-			storm::models::MarkovAutomaton<double> resultingAutomaton(std::move(transitionMatrix), std::move(resultLabeling), std::move(transitionResult.markovianStates), std::move(transitionResult.exitRates), std::move(stateRewards), boost::optional<storm::storage::SparseMatrix<double>>(), boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>());
+			storm::models::sparse::MarkovAutomaton<double> resultingAutomaton(std::move(transitionMatrix), std::move(resultLabeling), std::move(transitionResult.markovianStates), std::move(transitionResult.exitRates), std::move(stateRewards), boost::optional<storm::storage::SparseMatrix<double>>(), boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>());
 
 			return resultingAutomaton;
 		}

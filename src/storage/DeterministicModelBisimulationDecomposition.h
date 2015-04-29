@@ -6,9 +6,10 @@
 
 #include "src/storage/sparse/StateType.h"
 #include "src/storage/Decomposition.h"
+#include "src/storage/StateBlock.h"
 #include "src/logic/Formulas.h"
-#include "src/models/Dtmc.h"
-#include "src/models/Ctmc.h"
+#include "src/models/sparse/Dtmc.h"
+#include "src/models/sparse/Ctmc.h"
 #include "src/storage/Distribution.h"
 #include "src/utility/constants.h"
 #include "src/utility/OsDetection.h"
@@ -35,7 +36,7 @@ namespace storm {
                  * derive a suitable initial partition.
                  * @param formula The formula that is to be preserved.
                  */
-                Options(storm::models::AbstractModel<ValueType> const& model, storm::logic::Formula const& formula);
+                Options(storm::models::sparse::Model<ValueType> const& model, storm::logic::Formula const& formula);
                 
                 // A flag that indicates whether a measure driven initial partition is to be used. If this flag is set
                 // to true, the two optional pairs phiStatesAndLabel and psiStatesAndLabel must be set. Then, the
@@ -70,7 +71,7 @@ namespace storm {
              * @param model The model to decompose.
              * @param options The options that customize the computed bisimulation.
              */
-            DeterministicModelBisimulationDecomposition(storm::models::Dtmc<ValueType> const& model, Options const& options = Options());
+            DeterministicModelBisimulationDecomposition(storm::models::sparse::Dtmc<ValueType> const& model, Options const& options = Options());
             
             /*!
              * Decomposes the given CTMC into equivalance classes of a bisimulation. Which kind of bisimulation is
@@ -79,14 +80,14 @@ namespace storm {
              * @param model The model to decompose.
              * @param options The options that customize the computed bisimulation.
              */
-            DeterministicModelBisimulationDecomposition(storm::models::Ctmc<ValueType> const& model, Options const& options = Options());
+            DeterministicModelBisimulationDecomposition(storm::models::sparse::Ctmc<ValueType> const& model, Options const& options = Options());
             
             /*!
              * Retrieves the quotient of the model under the previously computed bisimulation.
              *
              * @return The quotient model.
              */
-            std::shared_ptr<storm::models::AbstractDeterministicModel<ValueType>> getQuotient() const;
+            std::shared_ptr<storm::models::sparse::DeterministicModel<ValueType>> getQuotient() const;
             
         private:
             enum class BisimulationType { Strong, WeakDtmc, WeakCtmc };
@@ -550,7 +551,7 @@ namespace storm {
             void splitRewards(ModelType const& model, Partition& partition);
             
             // If required, a quotient model is built and stored in this member.
-            std::shared_ptr<storm::models::AbstractDeterministicModel<ValueType>> quotient;
+            std::shared_ptr<storm::models::sparse::DeterministicModel<ValueType>> quotient;
             
             // A comparator that is used for determining whether two probabilities are considered to be equal.
             storm::utility::ConstantsComparator<ValueType> comparator;

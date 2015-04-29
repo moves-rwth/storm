@@ -37,19 +37,28 @@ namespace storm {
             }
         }
         
-        Dd<DdType::CUDD> DdManager<DdType::CUDD>::getOne() {
-            return Dd<DdType::CUDD>(this->shared_from_this(), cuddManager.addOne());
+        Bdd<DdType::CUDD> DdManager<DdType::CUDD>::getBddOne() const {
+            return Bdd<DdType::CUDD>(this->shared_from_this(), cuddManager.bddOne());
+        }
+
+        Add<DdType::CUDD> DdManager<DdType::CUDD>::getAddOne() const {
+            return Add<DdType::CUDD>(this->shared_from_this(), cuddManager.addOne());
         }
         
-        Dd<DdType::CUDD> DdManager<DdType::CUDD>::getZero() {
-            return Dd<DdType::CUDD>(this->shared_from_this(), cuddManager.addZero());
+        Bdd<DdType::CUDD> DdManager<DdType::CUDD>::getBddZero() const {
+            return Bdd<DdType::CUDD>(this->shared_from_this(), cuddManager.bddZero());
         }
         
-        Dd<DdType::CUDD> DdManager<DdType::CUDD>::getConstant(double value) {
-            return Dd<DdType::CUDD>(this->shared_from_this(), cuddManager.constant(value));
+        Add<DdType::CUDD> DdManager<DdType::CUDD>::getAddZero() const {
+            return Add<DdType::CUDD>(this->shared_from_this(), cuddManager.addZero());
         }
         
-        Dd<DdType::CUDD> DdManager<DdType::CUDD>::getEncoding(storm::expressions::Variable const& variable, int_fast64_t value) {
+        
+        Add<DdType::CUDD> DdManager<DdType::CUDD>::getConstant(double value) const {
+            return Add<DdType::CUDD>(this->shared_from_this(), cuddManager.constant(value));
+        }
+        
+        Bdd<DdType::CUDD> DdManager<DdType::CUDD>::getEncoding(storm::expressions::Variable const& variable, int_fast64_t value) const {
             DdMetaVariable<DdType::CUDD> const& metaVariable = this->getMetaVariable(variable);
             
             STORM_LOG_THROW(value >= metaVariable.getLow() && value <= metaVariable.getHigh(), storm::exceptions::InvalidArgumentException, "Illegal value " << value << " for meta variable '" << variable.getName() << "'.");
@@ -57,9 +66,9 @@ namespace storm {
             // Now compute the encoding relative to the low value of the meta variable.
             value -= metaVariable.getLow();
             
-            std::vector<Dd<DdType::CUDD>> const& ddVariables = metaVariable.getDdVariables();
+            std::vector<Bdd<DdType::CUDD>> const& ddVariables = metaVariable.getDdVariables();
 
-            Dd<DdType::CUDD> result;
+            Bdd<DdType::CUDD> result;
             if (value & (1ull << (ddVariables.size() - 1))) {
                 result = ddVariables[0];
             } else {
@@ -68,32 +77,33 @@ namespace storm {
             
             for (std::size_t i = 1; i < ddVariables.size(); ++i) {
                 if (value & (1ull << (ddVariables.size() - i - 1))) {
-                    result *= ddVariables[i];
+                    result &= ddVariables[i];
                 } else {
-                    result *= !ddVariables[i];
+                    result &= !ddVariables[i];
                 }
             }
-                        
+            
             return result;
         }
         
-        Dd<DdType::CUDD> DdManager<DdType::CUDD>::getRange(storm::expressions::Variable const& variable) {
+        Bdd<DdType::CUDD> DdManager<DdType::CUDD>::getRange(storm::expressions::Variable const& variable) const {
             storm::dd::DdMetaVariable<DdType::CUDD> const& metaVariable = this->getMetaVariable(variable);
             
-            Dd<DdType::CUDD> result = this->getZero();
+            Bdd<DdType::CUDD> result = this->getBddZero();
             
             for (int_fast64_t value = metaVariable.getLow(); value <= metaVariable.getHigh(); ++value) {
-                result.setValue(variable, value, static_cast<double>(1));
+                result |= this->getEncoding(variable, value);
             }
+            
             return result;
         }
         
-        Dd<DdType::CUDD> DdManager<DdType::CUDD>::getIdentity(storm::expressions::Variable const& variable) {
+        Add<DdType::CUDD> DdManager<DdType::CUDD>::getIdentity(storm::expressions::Variable const& variable) const {
             storm::dd::DdMetaVariable<DdType::CUDD> const& metaVariable = this->getMetaVariable(variable);
             
-            Dd<DdType::CUDD> result = this->getZero();
+            Add<DdType::CUDD> result = this->getAddZero();
             for (int_fast64_t value = metaVariable.getLow(); value <= metaVariable.getHigh(); ++value) {
-                result.setValue(variable, value, static_cast<double>(value));
+                result += this->getEncoding(variable, value).toAdd() * this->getConstant(value);
             }
             return result;
         }
@@ -113,16 +123,16 @@ namespace storm {
             storm::expressions::Variable unprimed = manager->declareBitVectorVariable(name, numberOfBits);
             storm::expressions::Variable primed = manager->declareBitVectorVariable(name + "'", numberOfBits);
             
-            std::vector<Dd<DdType::CUDD>> variables;
-            std::vector<Dd<DdType::CUDD>> variablesPrime;
+            std::vector<Bdd<DdType::CUDD>> variables;
+            std::vector<Bdd<DdType::CUDD>> variablesPrime;
             for (std::size_t i = 0; i < numberOfBits; ++i) {
-                variables.emplace_back(Dd<DdType::CUDD>(this->shared_from_this(), cuddManager.addVar(), {unprimed}));
-                variablesPrime.emplace_back(Dd<DdType::CUDD>(this->shared_from_this(), cuddManager.addVar(), {primed}));
+                variables.emplace_back(Bdd<DdType::CUDD>(this->shared_from_this(), cuddManager.bddVar(), {unprimed}));
+                variablesPrime.emplace_back(Bdd<DdType::CUDD>(this->shared_from_this(), cuddManager.bddVar(), {primed}));
             }
             
             // Now group the non-primed and primed variable.
             for (uint_fast64_t i = 0; i < numberOfBits; ++i) {
-                this->getCuddManager().MakeTreeNode(variables[i].getCuddAdd().NodeReadIndex(), 2, MTR_FIXED);
+                this->getCuddManager().MakeTreeNode(variables[i].getIndex(), 2, MTR_FIXED);
             }
             
             metaVariableMap.emplace(unprimed, DdMetaVariable<DdType::CUDD>(name, low, high, variables, this->shared_from_this()));
@@ -141,13 +151,13 @@ namespace storm {
             storm::expressions::Variable unprimed = manager->declareBooleanVariable(name);
             storm::expressions::Variable primed = manager->declareBooleanVariable(name + "'");
 
-            std::vector<Dd<DdType::CUDD>> variables;
-            std::vector<Dd<DdType::CUDD>> variablesPrime;
-            variables.emplace_back(Dd<DdType::CUDD>(this->shared_from_this(), cuddManager.addVar(), {unprimed}));
-            variablesPrime.emplace_back(Dd<DdType::CUDD>(this->shared_from_this(), cuddManager.addVar(), {primed}));
+            std::vector<Bdd<DdType::CUDD>> variables;
+            std::vector<Bdd<DdType::CUDD>> variablesPrime;
+            variables.emplace_back(Bdd<DdType::CUDD>(this->shared_from_this(), cuddManager.bddVar(), {unprimed}));
+            variablesPrime.emplace_back(Bdd<DdType::CUDD>(this->shared_from_this(), cuddManager.bddVar(), {primed}));
 
             // Now group the non-primed and primed variable.
-            this->getCuddManager().MakeTreeNode(variables.front().getCuddAdd().NodeReadIndex(), 2, MTR_FIXED);
+            this->getCuddManager().MakeTreeNode(variables.front().getIndex(), 2, MTR_FIXED);
             
             metaVariableMap.emplace(unprimed, DdMetaVariable<DdType::CUDD>(name, variables, this->shared_from_this()));
             metaVariableMap.emplace(primed, DdMetaVariable<DdType::CUDD>(name + "'", variablesPrime, this->shared_from_this()));
@@ -198,22 +208,22 @@ namespace storm {
         
         std::vector<std::string> DdManager<DdType::CUDD>::getDdVariableNames() const {
             // First, we initialize a list DD variables and their names.
-            std::vector<std::pair<ADD, std::string>> variablePairs;
+            std::vector<std::pair<uint_fast64_t, std::string>> variablePairs;
             for (auto const& variablePair : this->metaVariableMap) {
                 DdMetaVariable<DdType::CUDD> const& metaVariable = variablePair.second;
                 // If the meta variable is of type bool, we don't need to suffix it with the bit number.
                 if (metaVariable.getType() == DdMetaVariable<storm::dd::DdType::CUDD>::MetaVariableType::Bool) {
-                    variablePairs.emplace_back(metaVariable.getDdVariables().front().getCuddAdd(), variablePair.first.getName());
+                    variablePairs.emplace_back(metaVariable.getDdVariables().front().getIndex(), variablePair.first.getName());
                 } else {
                     // For integer-valued meta variables, we, however, have to add the suffix.
                     for (uint_fast64_t variableIndex = 0; variableIndex < metaVariable.getNumberOfDdVariables(); ++variableIndex) {
-                        variablePairs.emplace_back(metaVariable.getDdVariables()[variableIndex].getCuddAdd(), variablePair.first.getName() + '.' + std::to_string(variableIndex));
+                        variablePairs.emplace_back(metaVariable.getDdVariables()[variableIndex].getIndex(), variablePair.first.getName() + '.' + std::to_string(variableIndex));
                     }
                 }
             }
             
             // Then, we sort this list according to the indices of the ADDs.
-            std::sort(variablePairs.begin(), variablePairs.end(), [](std::pair<ADD, std::string> const& a, std::pair<ADD, std::string> const& b) { return a.first.NodeReadIndex() < b.first.NodeReadIndex(); });
+            std::sort(variablePairs.begin(), variablePairs.end(), [](std::pair<uint_fast64_t, std::string> const& a, std::pair<uint_fast64_t, std::string> const& b) { return a.first < b.first; });
             
             // Now, we project the sorted vector to its second component.
             std::vector<std::string> result;
@@ -226,22 +236,22 @@ namespace storm {
         
         std::vector<storm::expressions::Variable> DdManager<DdType::CUDD>::getDdVariables() const {
             // First, we initialize a list DD variables and their names.
-            std::vector<std::pair<ADD, storm::expressions::Variable>> variablePairs;
+            std::vector<std::pair<uint_fast64_t, storm::expressions::Variable>> variablePairs;
             for (auto const& variablePair : this->metaVariableMap) {
                 DdMetaVariable<DdType::CUDD> const& metaVariable = variablePair.second;
                 // If the meta variable is of type bool, we don't need to suffix it with the bit number.
                 if (metaVariable.getType() == DdMetaVariable<storm::dd::DdType::CUDD>::MetaVariableType::Bool) {
-                    variablePairs.emplace_back(metaVariable.getDdVariables().front().getCuddAdd(), variablePair.first);
+                    variablePairs.emplace_back(metaVariable.getDdVariables().front().getIndex(), variablePair.first);
                 } else {
                     // For integer-valued meta variables, we, however, have to add the suffix.
                     for (uint_fast64_t variableIndex = 0; variableIndex < metaVariable.getNumberOfDdVariables(); ++variableIndex) {
-                        variablePairs.emplace_back(metaVariable.getDdVariables()[variableIndex].getCuddAdd(), variablePair.first);
+                        variablePairs.emplace_back(metaVariable.getDdVariables()[variableIndex].getIndex(), variablePair.first);
                     }
                 }
             }
             
             // Then, we sort this list according to the indices of the ADDs.
-            std::sort(variablePairs.begin(), variablePairs.end(), [](std::pair<ADD, storm::expressions::Variable> const& a, std::pair<ADD, storm::expressions::Variable> const& b) { return a.first.NodeReadIndex() < b.first.NodeReadIndex(); });
+            std::sort(variablePairs.begin(), variablePairs.end(), [](std::pair<uint_fast64_t, storm::expressions::Variable> const& a, std::pair<uint_fast64_t, storm::expressions::Variable> const& b) { return a.first < b.first; });
             
             // Now, we project the sorted vector to its second component.
             std::vector<storm::expressions::Variable> result;
@@ -267,6 +277,10 @@ namespace storm {
         
         void DdManager<DdType::CUDD>::triggerReordering() {
             this->getCuddManager().ReduceHeap(this->reorderingTechnique, 0);
+        }
+        
+        std::shared_ptr<DdManager<DdType::CUDD> const> DdManager<DdType::CUDD>::asSharedPointer() const {
+            return this->shared_from_this();
         }
     }
 }

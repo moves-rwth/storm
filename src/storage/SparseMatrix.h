@@ -24,7 +24,7 @@ namespace storm {
 	}
 	namespace solver {
 		template<typename T>
-		class TopologicalValueIterationNondeterministicLinearEquationSolver;
+		class TopologicalValueIterationMinMaxLinearEquationSolver;
 	}
 }
 
@@ -276,7 +276,7 @@ namespace storm {
             friend class storm::adapters::GmmxxAdapter;
             friend class storm::adapters::EigenAdapter;
             friend class storm::adapters::StormAdapter;
-			friend class storm::solver::TopologicalValueIterationNondeterministicLinearEquationSolver<ValueType>;
+			friend class storm::solver::TopologicalValueIterationMinMaxLinearEquationSolver<ValueType>;
             
             typedef uint_fast64_t index_type;
             typedef ValueType value_type;
@@ -605,9 +605,9 @@ namespace storm {
             /*!
              * Calculates the Jacobi decomposition of this sparse matrix. For this operation, the matrix must be square.
              *
-             * @return A pair (L+U, D^-1) containing the matrix L+U and the inverted diagonal matrix D^-1.
+             * @return A pair (L+U, D^-1) containing the matrix L+U and the inverted diagonal D^-1 (as a vector).
              */
-            std::pair<storm::storage::SparseMatrix<value_type>, storm::storage::SparseMatrix<value_type>> getJacobiDecomposition() const;
+            std::pair<storm::storage::SparseMatrix<value_type>, std::vector<value_type>> getJacobiDecomposition() const;
             
             /*!
              * Performs a pointwise matrix multiplication of the matrix with the given matrix and returns a vector
@@ -679,7 +679,7 @@ namespace storm {
              *
              * @return The size of the matrix in memory measured in bytes.
              */
-            uint_fast64_t getSizeInMemory() const;
+            std::size_t getSizeInBytes() const;
             
             /*!
              * Calculates a hash value over all values contained in the matrix.
@@ -839,9 +839,6 @@ namespace storm {
             
             // A vector indicating the row groups of the matrix.
             std::vector<index_type> rowGroupIndices;
-            
-            // A comparator that can be used to check whether some values satisfy some conditions.
-            storm::utility::ConstantsComparator<value_type> comparator;
         };
 
     } // namespace storage

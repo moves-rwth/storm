@@ -392,7 +392,12 @@ public:
     ADD Nor(const ADD& g) const;
     ADD Xor(const ADD& g) const;
     ADD Xnor(const ADD& g) const;
+    ADD Pow(const ADD& g) const;
+    ADD Mod(const ADD& g) const;
+    ADD LogXY(const ADD& g) const;
     ADD Log() const;
+    ADD Floor() const;
+    ADD Ceil() const;
     ADD FindMax() const;
     ADD FindMin() const;
     ADD IthBit(int bit) const;

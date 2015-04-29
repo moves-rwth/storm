@@ -559,7 +559,7 @@ namespace storm {
             return static_cast<size_t>(bitCount);
         }
         
-        uint_fast64_t BitVector::getSizeInMemory() const {
+        std::size_t BitVector::getSizeInBytes() const {
             return sizeof(*this) + sizeof(uint64_t) * bucketVector.size();
         }
         

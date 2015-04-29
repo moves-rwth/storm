@@ -70,10 +70,11 @@ TEST(PrismParser, ComplexTest) {
         k : [125..a] init a;
 
         [a] test&false -> (i'=true)&(k'=1+1) + 1 : (k'=floor(e) + max(k, b) - 1 + k);
+        [b] true -> (i'=i);
     endmodule
                                               
     module mod2
-        [b] (k > 3) & false & (min(a, 0) < max(h, k)) -> 1-e: (g'=(1-a) * 2 + floor(f) > 2);
+        [] (k > 3) & false & (min(a, 0) < max(h, k)) -> 1-e: (g'=(1-a) * 2 + floor(f) > 2);
     endmodule
     
     module mod3 = mod1 [ i = i1, j = j1, k = k1 ] endmodule
