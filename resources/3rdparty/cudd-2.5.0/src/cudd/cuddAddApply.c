@@ -1078,7 +1078,7 @@ Cudd_addMod(
     F = *f; G = *g;
     if (cuddIsConstant(F) && cuddIsConstant(G)) {
         // If g is <=0, then result is NaN
-        if (cuddV(G) <= 0) value = (0.0/0.0);
+        if (cuddV(G) <= 0) value = (NAN);
         // Take care of negative case (% is remainder, not modulo)
         else {
             rem = ((int)cuddV(F) % (int)cuddV(G));
@@ -1119,9 +1119,9 @@ Cudd_addLogXY(
     F = *f; G = *g;
     if (cuddIsConstant(F) && cuddIsConstant(G)) {
         // If base is <=0 or ==1 (or +Inf/NaN), then result is NaN
-        if (cuddV(G) <= 0 || cuddV(G) == 1.0 || G==DD_PLUS_INFINITY(dd) || cuddV(G) != cuddV(G)) value = (0.0/0.0);
+        if (cuddV(G) <= 0 || cuddV(G) == 1.0 || G==DD_PLUS_INFINITY(dd) || cuddV(G) != cuddV(G)) value = (NAN);
         // If arg is <0 or NaN, then result is NaN
-        else if (cuddV(F) < 0 || cuddV(F) != cuddV(F)) value = (0.0/0.0);
+        else if (cuddV(F) < 0 || cuddV(F) != cuddV(F)) value = (NAN);
         // If arg is +Inf, then result is +Inf
         else if (F==DD_PLUS_INFINITY(dd)) return DD_PLUS_INFINITY(dd);
         // If arg is (positive/negative) 0, then result is -Inf
