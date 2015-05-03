@@ -479,13 +479,13 @@ namespace storm {
                     storm::RationalFunction::CoeffType zeroPointOne(1);
                     zeroPointOne = zeroPointOne/10;
                     storm::modelchecker::SparseDtmcEliminationModelChecker<storm::RationalFunction>::ParameterRegion param1;
-                    param1.lowerBound= zeroPointOne*8;
-                    param1.upperBound= zeroPointOne*9;
+                    param1.lowerBound= zeroPointOne*zeroPointOne*78;
+                    param1.upperBound= zeroPointOne*zeroPointOne*82;
                     param1.variable=carl::VariablePool::getInstance().findVariableWithName("pL");
                     regions.push_back(param1);
                     storm::modelchecker::SparseDtmcEliminationModelChecker<storm::RationalFunction>::ParameterRegion param2;
-                    param2.lowerBound= zeroPointOne*7;
-                    param2.upperBound= zeroPointOne*9;
+                    param2.lowerBound= zeroPointOne*zeroPointOne*78;
+                    param2.upperBound= zeroPointOne*zeroPointOne*82;;
                     param2.variable=carl::VariablePool::getInstance().findVariableWithName("pK");
                     regions.push_back(param2);
                             

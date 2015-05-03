@@ -3,6 +3,7 @@
 
 #include "src/storage/sparse/StateType.h"
 #include "src/models/sparse/Dtmc.h"
+#include "src/models/sparse/Mdp.h"
 #include "src/modelchecker/AbstractModelChecker.h"
 #include "src/utility/constants.h"
 #include "src/solver/SmtSolver.h"
@@ -72,7 +73,8 @@ namespace storm {
                 
 #ifdef STORM_HAVE_CARL
                 /*!
-                 * Instantiates the matrix, i.e., evaluate the occurring functions according to the given substitution of the variables.
+                 * Instantiates the matrix, i.e., evaluate the occurring functions according to the given substitutions of the variables.
+                 * If there are multiple substitutions, the matrix will consist of multiple row groups. It can be seen as the transition matrix of an MDP
                  * Only the rows selected by the given filter are considered. (filter should have size==this->getNumberOfRows())
                  * An exception is thrown if there is a transition from a selected state to an unselected state
                  * If one step probabilities are given, a new state is added which can be considered as target state.
@@ -80,15 +82,15 @@ namespace storm {
                  * By convention, the target state will have index filter.getNumberOfSetBits() and the sink state will be the state with the highest index (so right after the target state)
                  * 
                  * 
-                 * @param substitutions A mapping that assigns a constant value to every variable
+                 * @param substitutions A list of mappings, each assigning a constant value to every variable
                  * @param filter selects the rows of this flexibleMatrix, that will be considered
                  * @param addSinkState adds a state with a self loop to which the "missing" probability will lead
                  * @param oneStepProbabilities if given, a new state is added to which there are transitions for all non-zero entries in this vector
                  * @param addSelfLoops if set, zero valued selfloops will be added in every row
                  * 
-                 * @return A matrix with constant (double) entries
+                 * @return A matrix with constant (double) entries and a choice labeling
                  */
-                storm::storage::SparseMatrix<double> instantiateAsDouble(std::map<storm::Variable, storm::RationalFunction::CoeffType> const& substitutions, storm::storage::BitVector const& filter, bool addSinkState=true, std::vector<ValueType> const& oneStepProbabilities=std::vector<ValueType>(), bool addSelfLoops=true) const;
+                std::pair<storm::storage::SparseMatrix<double>,std::vector<boost::container::flat_set<uint_fast64_t>>> instantiateAsDouble(std::vector<std::map<storm::Variable, storm::RationalFunction::CoeffType>> const& substitutions, storm::storage::BitVector const& filter, bool addSinkState=true, std::vector<ValueType> const& oneStepProbabilities=std::vector<ValueType>(), bool addSelfLoops=true) const;
                 //todo add const keyword
 #endif         
                 
