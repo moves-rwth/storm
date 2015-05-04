@@ -22,7 +22,11 @@ TEST(SparseCtmcCslModelCheckerTest, Cluster) {
     std::shared_ptr<storm::logic::Formula> formula(nullptr);
     
     // Build the model.
-    typename storm::builder::ExplicitPrismModelBuilder<double>::Options options;
+#ifdef WINDOWS
+    storm::builder::ExplicitPrismModelBuilder<double>::Options options;
+#else
+	typename storm::builder::ExplicitPrismModelBuilder<double>::Options options;
+#endif
     options.buildRewards = true;
     options.rewardModelName = "num_repairs";
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitPrismModelBuilder<double>::translateProgram(program, options);
@@ -80,7 +84,11 @@ TEST(SparseCtmcCslModelCheckerTest, Embedded) {
     std::shared_ptr<storm::logic::Formula> formula(nullptr);
     
     // Build the model.
-    typename storm::builder::ExplicitPrismModelBuilder<double>::Options options;
+#ifdef WINDOWS
+    storm::builder::ExplicitPrismModelBuilder<double>::Options options;
+#else
+	typename storm::builder::ExplicitPrismModelBuilder<double>::Options options;
+#endif
     options.buildRewards = true;
     options.rewardModelName = "up";
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitPrismModelBuilder<double>::translateProgram(program, options);
@@ -172,7 +180,11 @@ TEST(SparseCtmcCslModelCheckerTest, Tandem) {
     std::shared_ptr<storm::logic::Formula> formula(nullptr);
     
     // Build the model with the customers reward structure.
-    typename storm::builder::ExplicitPrismModelBuilder<double>::Options options;
+#ifdef WINDOWS
+    storm::builder::ExplicitPrismModelBuilder<double>::Options options;
+#else
+	typename storm::builder::ExplicitPrismModelBuilder<double>::Options options;
+#endif
     options.buildRewards = true;
     options.rewardModelName = "customers";
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitPrismModelBuilder<double>::translateProgram(program, options);

@@ -22,7 +22,11 @@ TEST(GmmxxCtmcCslModelCheckerTest, Cluster) {
     std::shared_ptr<storm::logic::Formula> formula(nullptr);
     
     // Build the model.
-    typename storm::builder::ExplicitPrismModelBuilder<double>::Options options;
+#ifdef WINDOWS
+    storm::builder::ExplicitPrismModelBuilder<double>::Options options;
+#else
+	typename storm::builder::ExplicitPrismModelBuilder<double>::Options options;
+#endif
     options.buildRewards = true;
     options.rewardModelName = "num_repairs";
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitPrismModelBuilder<double>::translateProgram(program, options);
@@ -80,7 +84,12 @@ TEST(GmmxxCtmcCslModelCheckerTest, Embedded) {
     std::shared_ptr<storm::logic::Formula> formula(nullptr);
     
     // Build the model.
-    typename storm::builder::ExplicitPrismModelBuilder<double>::Options options;
+#ifdef WINDOWS
+	storm::builder::ExplicitPrismModelBuilder<double>::Options options;
+#else
+	typename storm::builder::ExplicitPrismModelBuilder<double>::Options options;
+#endif
+
     options.buildRewards = true;
     options.rewardModelName = "up";
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitPrismModelBuilder<double>::translateProgram(program, options);
@@ -172,8 +181,12 @@ TEST(GmmxxCtmcCslModelCheckerTest, Tandem) {
     std::shared_ptr<storm::logic::Formula> formula(nullptr);
     
     // Build the model.
-    typename storm::builder::ExplicitPrismModelBuilder<double>::Options options;
-    options.buildRewards = true;
+#ifdef WINDOWS
+	storm::builder::ExplicitPrismModelBuilder<double>::Options options;
+#else
+	typename storm::builder::ExplicitPrismModelBuilder<double>::Options options;
+#endif
+	options.buildRewards = true;
     options.rewardModelName = "customers";
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitPrismModelBuilder<double>::translateProgram(program, options);
     ASSERT_EQ(storm::models::ModelType::Ctmc, model->getType());
