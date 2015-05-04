@@ -366,14 +366,12 @@ namespace storm {
 			//This transitions have the LRA of the MEC as reward.
 			//The expected reward corresponds to sum of LRAs in MEC weighted by the reachability probability of the MEC
 
-			std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = storm::utility::solver::getLinearEquationSolver<ValueType>();
-
 			//we now build the submatrix of the transition matrix of the system with the auxiliary state, that only contains the states from
 			//the original state, i.e. all "maybe-states"
 			storm::storage::SparseMatrixBuilder<ValueType> rewardEquationSystemMatrixBuilder(transitionMatrix.getRowCount() + statesInMecs.getNumberOfSetBits(),
 				transitionMatrix.getColumnCount(),
 				transitionMatrix.getEntryCount(),
-				true,
+				false,
 				true,
 				transitionMatrix.getRowGroupCount());
 
@@ -384,19 +382,32 @@ namespace storm {
 			for (uint_fast64_t rowGroupIndex = 0; rowGroupIndex < transitionMatrix.getRowGroupCount(); ++rowGroupIndex) {
 				rewardEquationSystemMatrixBuilder.newRowGroup(rowIndex);
 				for (uint_fast64_t i = 0; i < transitionMatrix.getRowGroupSize(rowGroupIndex); ++i) {
+					//we have to make sure that an entry exists for all diagonal elements, even if it is zero. Other wise the call to convertToEquationSystem will produce wrong results or fail.
+					bool foundDiagonal = false;
 					for (auto entry : transitionMatrix.getRow(oldRowIndex)) {
+						if (!foundDiagonal) {
+							if (entry.getColumn() > rowGroupIndex) {
+								foundDiagonal = true;
+								rewardEquationSystemMatrixBuilder.addNextValue(rowIndex, rowGroupIndex, zero);
+							} else if (entry.getColumn() == rowGroupIndex) {
+								foundDiagonal = true;
+							}
+						}
 						//copy over values from transition matrix of the actual system
 						rewardEquationSystemMatrixBuilder.addNextValue(rowIndex, entry.getColumn(), entry.getValue());
+					}
+					if (!foundDiagonal) {
+						rewardEquationSystemMatrixBuilder.addNextValue(rowIndex, rowGroupIndex, zero);
 					}
 					++oldRowIndex;
 					++rowIndex;
 				}
-				++rowGroupIndex;
 				if (statesInMecs.get(rowGroupIndex)) {
-					//add the choice where we go to the auxiliary state, which is a row with all zeros in the submatrix we build
-					++rowIndex;
 					//put the transition-reward on the right side
-					rewardRightSide[rowIndex] = mecLra[rowGroupIndex];
+					rewardRightSide[rowIndex] = mecLra[stateToMecIndexMap[rowGroupIndex]];
+					//add the choice where we go to the auxiliary state, which is a row with all zeros in the submatrix we build
+					rewardEquationSystemMatrixBuilder.addNextValue(rowIndex, rowGroupIndex, zero);
+					++rowIndex;
 				}
 			}
 
@@ -405,7 +416,11 @@ namespace storm {
 
 			std::vector<ValueType> result(rewardEquationSystemMatrix.getColumnCount(), one);
 
-			solver->solveEquationSystem(rewardEquationSystemMatrix, result, rewardRightSide);
+			{
+				auto solver = this->MinMaxLinearEquationSolverFactory->create(rewardEquationSystemMatrix);
+				solver->solveEquationSystem(minimize, result, rewardRightSide);
+			}
+			
 
 			return result;
 		}

@@ -197,7 +197,7 @@ TEST(SparseMdpPrctlModelCheckerTest, AsynchronousLeader) {
 
 TEST(SparseMdpPrctlModelCheckerTest, LRA) {
 	storm::storage::SparseMatrixBuilder<double> matrixBuilder;
-	std::shared_ptr<storm::models::Mdp<double>> mdp;
+	std::shared_ptr<storm::models::sparse::Mdp<double>> mdp;
 
 	{
 		matrixBuilder = storm::storage::SparseMatrixBuilder<double>(2, 2, 2);
@@ -205,16 +205,16 @@ TEST(SparseMdpPrctlModelCheckerTest, LRA) {
 		matrixBuilder.addNextValue(1, 0, 1.);
 		storm::storage::SparseMatrix<double> transitionMatrix = matrixBuilder.build();
 
-		storm::models::AtomicPropositionsLabeling ap(2, 1);
-		ap.addAtomicProposition("a");
-		ap.addAtomicPropositionToState("a", 1);
+		storm::models::sparse::StateLabeling ap(2);
+		ap.addLabel("a");
+		ap.addLabelToState("a", 1);
 
-		mdp.reset(new storm::models::Mdp<double>(transitionMatrix, ap, boost::none, boost::none, boost::none));
+		mdp.reset(new storm::models::sparse::Mdp<double>(transitionMatrix, ap, boost::none, boost::none, boost::none));
 
-		storm::modelchecker::SparseMdpPrctlModelChecker<double> checker(*mdp, std::shared_ptr<storm::solver::NativeNondeterministicLinearEquationSolver<double>>(new storm::solver::NativeNondeterministicLinearEquationSolver<double>()));
+		storm::modelchecker::SparseMdpPrctlModelChecker<double> checker(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::NativeMinMaxLinearEquationSolverFactory<double>()));
 
 		auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("a");
-		auto lraFormula = std::make_shared<storm::logic::LongRunAverageOperatorFormula>(storm::logic::OptimalityType::Minimize, labelFormula);
+		auto lraFormula = std::make_shared<storm::logic::LongRunAverageOperatorFormula>(storm::logic::OptimalityType::Maximize, labelFormula);
 
 		std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*lraFormula);
 		storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult = result->asExplicitQuantitativeCheckResult<double>();

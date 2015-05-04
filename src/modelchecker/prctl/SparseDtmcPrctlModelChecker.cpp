@@ -340,7 +340,6 @@ namespace storm {
 			storm::storage::BitVector statesNotInBsccs = ~statesInBsccs;
 
 			// calculate steady state distribution for all BSCCs by calculating an eigenvector for the eigenvalue 1 of the transposed transition matrix for the bsccs
-			std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = storm::utility::solver::getLinearEquationSolver<ValueType>();
 			storm::storage::SparseMatrix<ValueType> bsccEquationSystem = transitionMatrix.getSubmatrix(false, statesInBsccs, statesInBsccs, true).transpose();
 
 			ValueType one = storm::utility::one<ValueType>();
@@ -356,7 +355,10 @@ namespace storm {
 
 			std::vector<ValueType> bsccEquationSystemRightSide(bsccEquationSystem.getColumnCount(), zero);
 			std::vector<ValueType> bsccEquationSystemSolution(bsccEquationSystem.getColumnCount(), one);
-			solver->solveEquationSystem(bsccEquationSystem, bsccEquationSystemSolution, bsccEquationSystemRightSide);
+			{
+				auto solver = this->linearEquationSolverFactory->create(bsccEquationSystem);
+				solver->solveEquationSystem(bsccEquationSystemSolution, bsccEquationSystemRightSide);
+			}
 
 			//calculate LRA Value for each BSCC from steady state distribution in BSCCs
 			// we have to do some scaling, as the probabilities for each BSCC have to sum up to one, which they don't necessarily do in the solution of the equation system
@@ -395,7 +397,10 @@ namespace storm {
 
 			std::vector<ValueType> rewardSolution(rewardEquationSystemMatrix.getColumnCount(), one);
 
-			solver->solveEquationSystem(rewardEquationSystemMatrix, rewardSolution, rewardRightSide);
+			{
+				auto solver = this->linearEquationSolverFactory->create(rewardEquationSystemMatrix);
+				solver->solveEquationSystem(rewardSolution, rewardRightSide);
+			}
 
 			// now fill the result vector
 			std::vector<ValueType> result(numOfStates);
@@ -453,7 +458,7 @@ namespace storm {
 
 
 		template<typename ValueType>
-		ValueType SparseDtmcPrctlModelChecker<ValueType>::computeLraForBSCC(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& psiStates, storm::storage::StronglyConnectedComponent const& bscc) {
+		ValueType SparseDtmcPrctlModelChecker<ValueType>::computeLraForBSCC(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& psiStates, storm::storage::StronglyConnectedComponent const& bscc, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
 			//if size is one we can immediately derive the result
 			if (bscc.size() == 1){
 				if (psiStates.get(*(bscc.begin()))) {
@@ -462,7 +467,6 @@ namespace storm {
 					return storm::utility::zero<ValueType>();
 				}
 			}
-			std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = storm::utility::solver::getLinearEquationSolver<ValueType>();
 
 			storm::storage::BitVector subsystem = storm::storage::BitVector(transitionMatrix.getRowCount());
 			subsystem.set(bscc.begin(), bscc.end());
@@ -502,7 +506,11 @@ namespace storm {
 			std::vector<ValueType> b(subsystemMatrix.getRowCount(), zero);
 			b[subsystemMatrix.getRowCount() - 1] = one;
 
-			solver->solveEquationSystem(subsystemMatrix, steadyStateDist, b);
+
+			{
+				auto solver = linearEquationSolverFactory.create(subsystemMatrix);
+				solver->solveEquationSystem(steadyStateDist, b);
+			}
 
 			//remove the last entry of the vector as it was just there to enforce the unique solution
 			steadyStateDist.pop_back();
