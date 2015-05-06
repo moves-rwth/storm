@@ -390,7 +390,7 @@ namespace storm {
             
             // Set the values for all states in MECs.
             for (auto state : statesInMecs) {
-                result[state] = lraValuesForEndComponents[stateToMecIndexMap[state]];
+				result[state] = x[firstAuxiliaryStateIndex + stateToMecIndexMap[state]];
             }
             
             return result;
