@@ -341,18 +341,19 @@ namespace storm {
 
 			// Get some data members for convenience.
 			typename storm::storage::SparseMatrix<ValueType> const& transitionMatrix = this->getModel().getTransitionMatrix();
+			std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = this->getModel().getNondeterministicChoiceIndices();
 			ValueType one = storm::utility::one<ValueType>();
 			ValueType zero = storm::utility::zero<ValueType>();
 
 			//first calculate LRA for the Maximal End Components.
 			storm::storage::BitVector statesInMecs(numOfStates);
 			std::vector<uint_fast64_t> stateToMecIndexMap(transitionMatrix.getColumnCount());
-			std::vector<ValueType> mecLra(mecDecomposition.size(), zero);
+			std::vector<ValueType> lraValuesForEndComponents(mecDecomposition.size(), zero);
 
 			for (uint_fast64_t currentMecIndex = 0; currentMecIndex < mecDecomposition.size(); ++currentMecIndex) {
 				storm::storage::MaximalEndComponent const& mec = mecDecomposition[currentMecIndex];
 
-				mecLra[currentMecIndex] = computeLraForMaximalEndComponent(minimize, transitionMatrix, psiStates, mec);
+				lraValuesForEndComponents[currentMecIndex] = computeLraForMaximalEndComponent(minimize, transitionMatrix, psiStates, mec);
 
 				// Gather information for later use.
 				for (auto const& stateChoicesPair : mec) {
@@ -361,66 +362,122 @@ namespace storm {
 				}
 			}
 
-			//calculate LRA for states not in MECs as expected reachability rewards
-			//we add an auxiliary target state, every state in any MEC has a choice to move to that state with prob 1.
-			//This transitions have the LRA of the MEC as reward.
-			//The expected reward corresponds to sum of LRAs in MEC weighted by the reachability probability of the MEC
+			// For fast transition rewriting, we build some auxiliary data structures.
+			storm::storage::BitVector statesNotContainedInAnyMec = ~statesInMecs;
+			uint_fast64_t firstAuxiliaryStateIndex = statesNotContainedInAnyMec.getNumberOfSetBits();
+			uint_fast64_t lastStateNotInMecs = 0;
+			uint_fast64_t numberOfStatesNotInMecs = 0;
+			std::vector<uint_fast64_t> statesNotInMecsBeforeIndex;
+			statesNotInMecsBeforeIndex.reserve(this->getModel().getNumberOfStates());
+			for (auto state : statesNotContainedInAnyMec) {
+				while (lastStateNotInMecs <= state) {
+					statesNotInMecsBeforeIndex.push_back(numberOfStatesNotInMecs);
+					++lastStateNotInMecs;
+				}
+				++numberOfStatesNotInMecs;
+			}
 
-			//we now build the submatrix of the transition matrix of the system with the auxiliary state, that only contains the states from
-			//the original state, i.e. all "maybe-states"
-			storm::storage::SparseMatrixBuilder<ValueType> rewardEquationSystemMatrixBuilder(transitionMatrix.getRowCount() + statesInMecs.getNumberOfSetBits(),
-				transitionMatrix.getColumnCount(),
-				transitionMatrix.getEntryCount(),
-				false,
-				true,
-				transitionMatrix.getRowGroupCount());
+			// Finally, we are ready to create the SSP matrix and right-hand side of the SSP.
+			std::vector<ValueType> b;
+			typename storm::storage::SparseMatrixBuilder<ValueType> sspMatrixBuilder(0, 0, 0, false, true, numberOfStatesNotInMecs + mecDecomposition.size());
 
-			std::vector<ValueType> rewardRightSide(transitionMatrix.getRowCount() + statesInMecs.getNumberOfSetBits(), zero);
+			// If the source state is not contained in any MEC, we copy its choices (and perform the necessary modifications).
+			uint_fast64_t currentChoice = 0;
+			for (auto state : statesNotContainedInAnyMec) {
+				sspMatrixBuilder.newRowGroup(currentChoice);
 
-			uint_fast64_t rowIndex = 0;
-			uint_fast64_t oldRowIndex = 0;
-			for (uint_fast64_t rowGroupIndex = 0; rowGroupIndex < transitionMatrix.getRowGroupCount(); ++rowGroupIndex) {
-				rewardEquationSystemMatrixBuilder.newRowGroup(rowIndex);
-				for (uint_fast64_t i = 0; i < transitionMatrix.getRowGroupSize(rowGroupIndex); ++i) {
-					//we have to make sure that an entry exists for all diagonal elements, even if it is zero. Other wise the call to convertToEquationSystem will produce wrong results or fail.
-					bool foundDiagonal = false;
-					for (auto entry : transitionMatrix.getRow(oldRowIndex)) {
-						if (!foundDiagonal) {
-							if (entry.getColumn() > rowGroupIndex) {
-								foundDiagonal = true;
-								rewardEquationSystemMatrixBuilder.addNextValue(rowIndex, rowGroupIndex, zero);
-							} else if (entry.getColumn() == rowGroupIndex) {
-								foundDiagonal = true;
-							}
+				for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice, ++currentChoice) {
+					std::vector<ValueType> auxiliaryStateToProbabilityMap(mecDecomposition.size());
+					b.push_back(storm::utility::zero<ValueType>());
+
+					for (auto element : transitionMatrix.getRow(choice)) {
+						if (statesNotContainedInAnyMec.get(element.getColumn())) {
+							// If the target state is not contained in an MEC, we can copy over the entry.
+							sspMatrixBuilder.addNextValue(currentChoice, statesNotInMecsBeforeIndex[element.getColumn()], element.getValue());
+						} else {
+							// If the target state is contained in MEC i, we need to add the probability to the corresponding field in the vector
+							// so that we are able to write the cumulative probability to the MEC into the matrix.
+							auxiliaryStateToProbabilityMap[stateToMecIndexMap[element.getColumn()]] += element.getValue();
 						}
-						//copy over values from transition matrix of the actual system
-						rewardEquationSystemMatrixBuilder.addNextValue(rowIndex, entry.getColumn(), entry.getValue());
 					}
-					if (!foundDiagonal) {
-						rewardEquationSystemMatrixBuilder.addNextValue(rowIndex, rowGroupIndex, zero);
+
+					// Now insert all (cumulative) probability values that target an MEC.
+					for (uint_fast64_t mecIndex = 0; mecIndex < auxiliaryStateToProbabilityMap.size(); ++mecIndex) {
+						if (auxiliaryStateToProbabilityMap[mecIndex] != 0) {
+							sspMatrixBuilder.addNextValue(currentChoice, firstAuxiliaryStateIndex + mecIndex, auxiliaryStateToProbabilityMap[mecIndex]);
+						}
 					}
-					++oldRowIndex;
-					++rowIndex;
-				}
-				if (statesInMecs.get(rowGroupIndex)) {
-					//put the transition-reward on the right side
-					rewardRightSide[rowIndex] = mecLra[stateToMecIndexMap[rowGroupIndex]];
-					//add the choice where we go to the auxiliary state, which is a row with all zeros in the submatrix we build
-					rewardEquationSystemMatrixBuilder.addNextValue(rowIndex, rowGroupIndex, zero);
-					++rowIndex;
 				}
 			}
 
-			storm::storage::SparseMatrix<ValueType> rewardEquationSystemMatrix = rewardEquationSystemMatrixBuilder.build();
-			rewardEquationSystemMatrix.convertToEquationSystem();
+			// Now we are ready to construct the choices for the auxiliary states.
+			for (uint_fast64_t mecIndex = 0; mecIndex < mecDecomposition.size(); ++mecIndex) {
+				storm::storage::MaximalEndComponent const& mec = mecDecomposition[mecIndex];
+				sspMatrixBuilder.newRowGroup(currentChoice);
 
-			std::vector<ValueType> result(rewardEquationSystemMatrix.getColumnCount(), one);
+				for (auto const& stateChoicesPair : mec) {
+					uint_fast64_t state = stateChoicesPair.first;
+					boost::container::flat_set<uint_fast64_t> const& choicesInMec = stateChoicesPair.second;
 
-			{
-				auto solver = this->MinMaxLinearEquationSolverFactory->create(rewardEquationSystemMatrix);
-				solver->solveEquationSystem(minimize, result, rewardRightSide);
+					for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
+						std::vector<ValueType> auxiliaryStateToProbabilityMap(mecDecomposition.size());
+
+						// If the choice is not contained in the MEC itself, we have to add a similar distribution to the auxiliary state.
+						if (choicesInMec.find(choice) == choicesInMec.end()) {
+							b.push_back(storm::utility::zero<ValueType>());
+
+							for (auto element : transitionMatrix.getRow(choice)) {
+								if (statesNotContainedInAnyMec.get(element.getColumn())) {
+									// If the target state is not contained in an MEC, we can copy over the entry.
+									sspMatrixBuilder.addNextValue(currentChoice, statesNotInMecsBeforeIndex[element.getColumn()], element.getValue());
+								} else {
+									// If the target state is contained in MEC i, we need to add the probability to the corresponding field in the vector
+									// so that we are able to write the cumulative probability to the MEC into the matrix.
+									auxiliaryStateToProbabilityMap[stateToMecIndexMap[element.getColumn()]] += element.getValue();
+								}
+							}
+
+							// Now insert all (cumulative) probability values that target an MEC.
+							for (uint_fast64_t targetMecIndex = 0; targetMecIndex < auxiliaryStateToProbabilityMap.size(); ++targetMecIndex) {
+								if (auxiliaryStateToProbabilityMap[targetMecIndex] != 0) {
+									// If the target MEC is the same as the current one, instead of adding a transition, we need to add the weighted reward
+									// to the right-hand side vector of the SSP.
+									if (mecIndex == targetMecIndex) {
+										b.back() += auxiliaryStateToProbabilityMap[mecIndex] * lraValuesForEndComponents[mecIndex];
+									} else {
+										// Otherwise, we add a transition to the auxiliary state that is associated with the target MEC.
+										sspMatrixBuilder.addNextValue(currentChoice, firstAuxiliaryStateIndex + targetMecIndex, auxiliaryStateToProbabilityMap[targetMecIndex]);
+									}
+								}
+							}
+
+							++currentChoice;
+						}
+					}
+				}
+
+				// For each auxiliary state, there is the option to achieve the reward value of the LRA associated with the MEC.
+				++currentChoice;
+				b.push_back(lraValuesForEndComponents[mecIndex]);
 			}
-			
+
+			// Finalize the matrix and solve the corresponding system of equations.
+			storm::storage::SparseMatrix<ValueType> sspMatrix = sspMatrixBuilder.build(currentChoice);
+
+			std::vector<ValueType> sspResult(numberOfStatesNotInMecs + mecDecomposition.size());
+			std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = MinMaxLinearEquationSolverFactory->create(sspMatrix);
+			solver->solveEquationSystem(minimize, sspResult, b);
+
+			// Prepare result vector.
+			std::vector<ValueType> result(this->getModel().getNumberOfStates());
+
+			// Set the values for states not contained in MECs.
+			storm::utility::vector::setVectorValues(result, statesNotContainedInAnyMec, sspResult);
+
+			// Set the values for all states in MECs.
+			for (auto state : statesInMecs) {
+				result[state] = sspResult[firstAuxiliaryStateIndex + stateToMecIndexMap[state]];
+			}
 
 			return result;
 		}
@@ -455,16 +512,16 @@ namespace storm {
 
 				// Now, based on the type of the state, create a suitable constraint.
 				for (auto choice : stateChoicesPair.second) {
-					storm::expressions::Expression constraint = solver->getConstant(1);
-					ValueType w = 0;
+					storm::expressions::Expression constraint = -lambda;
+					ValueType r = 0;
 
 					for (auto element : transitionMatrix.getRow(choice)) {
 						constraint = constraint + stateToVariableMap.at(element.getColumn()) * solver->getConstant(element.getValue());
 						if (psiStates.get(element.getColumn())) {
-							w += element.getValue();
+							r += element.getValue();
 						}
 					}
-					constraint = constraint - solver->getConstant(w) * lambda;
+					constraint = solver->getConstant(r) + constraint;
 
 					if (minimize) {
 						constraint = stateToVariableMap.at(state) <= constraint;
