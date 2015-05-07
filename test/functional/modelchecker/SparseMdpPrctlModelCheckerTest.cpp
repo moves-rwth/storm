@@ -518,12 +518,12 @@ TEST(SparseMdpPrctlModelCheckerTest, LRA) {
 		result = std::move(checker.check(*lraFormula));
 		storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult2 = result->asExplicitQuantitativeCheckResult<double>();
 
-		EXPECT_NEAR(1./3., quantitativeResult2[0], storm::settings::nativeEquationSolverSettings().getPrecision());
-		EXPECT_NEAR(0.4, quantitativeResult2[3], storm::settings::nativeEquationSolverSettings().getPrecision());
+		EXPECT_NEAR(0.3 / 3., quantitativeResult2[0], storm::settings::nativeEquationSolverSettings().getPrecision());
+		EXPECT_NEAR(0.0, quantitativeResult2[3], storm::settings::nativeEquationSolverSettings().getPrecision());
 		EXPECT_NEAR(1./3., quantitativeResult2[6], storm::settings::nativeEquationSolverSettings().getPrecision());
 		EXPECT_NEAR(0.0, quantitativeResult2[9], storm::settings::nativeEquationSolverSettings().getPrecision());
-		EXPECT_NEAR(.26, quantitativeResult2[12], storm::settings::nativeEquationSolverSettings().getPrecision());
-		EXPECT_NEAR(467./1500., quantitativeResult2[13], storm::settings::nativeEquationSolverSettings().getPrecision());
-		EXPECT_NEAR(.26, quantitativeResult2[14], storm::settings::nativeEquationSolverSettings().getPrecision());
+		EXPECT_NEAR(0.3 / 3., quantitativeResult2[12], storm::settings::nativeEquationSolverSettings().getPrecision());
+		EXPECT_NEAR(.79 / 3., quantitativeResult2[13], storm::settings::nativeEquationSolverSettings().getPrecision());
+		EXPECT_NEAR(0.3 / 3., quantitativeResult2[14], storm::settings::nativeEquationSolverSettings().getPrecision());
 	}
 }

@@ -440,14 +440,7 @@ namespace storm {
 							// Now insert all (cumulative) probability values that target an MEC.
 							for (uint_fast64_t targetMecIndex = 0; targetMecIndex < auxiliaryStateToProbabilityMap.size(); ++targetMecIndex) {
 								if (auxiliaryStateToProbabilityMap[targetMecIndex] != 0) {
-									// If the target MEC is the same as the current one, instead of adding a transition, we need to add the weighted reward
-									// to the right-hand side vector of the SSP.
-									if (mecIndex == targetMecIndex) {
-										b.back() += auxiliaryStateToProbabilityMap[mecIndex] * lraValuesForEndComponents[mecIndex];
-									} else {
-										// Otherwise, we add a transition to the auxiliary state that is associated with the target MEC.
-										sspMatrixBuilder.addNextValue(currentChoice, firstAuxiliaryStateIndex + targetMecIndex, auxiliaryStateToProbabilityMap[targetMecIndex]);
-									}
+									sspMatrixBuilder.addNextValue(currentChoice, firstAuxiliaryStateIndex + targetMecIndex, auxiliaryStateToProbabilityMap[targetMecIndex]);
 								}
 							}
 
