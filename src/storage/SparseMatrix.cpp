@@ -239,20 +239,12 @@ namespace storm {
         
         template<typename ValueType>
         SparseMatrix<ValueType>::SparseMatrix(index_type columnCount, std::vector<index_type> const& rowIndications, std::vector<MatrixEntry<index_type, ValueType>> const& columnsAndValues, std::vector<index_type> const& rowGroupIndices) : rowCount(rowIndications.size() - 1), columnCount(columnCount), entryCount(columnsAndValues.size()), nonzeroEntryCount(0), columnsAndValues(columnsAndValues), rowIndications(rowIndications), rowGroupIndices(rowGroupIndices) {
-            for (auto const& element : *this) {
-                if (element.getValue() != storm::utility::zero<ValueType>()) {
-                    ++this->nonzeroEntryCount;
-                }
-            }
+			this->updateNonzeroEntryCount();
         }
         
         template<typename ValueType>
         SparseMatrix<ValueType>::SparseMatrix(index_type columnCount, std::vector<index_type>&& rowIndications, std::vector<MatrixEntry<index_type, ValueType>>&& columnsAndValues, std::vector<index_type>&& rowGroupIndices) : rowCount(rowIndications.size() - 1), columnCount(columnCount), entryCount(columnsAndValues.size()), nonzeroEntryCount(0), columnsAndValues(std::move(columnsAndValues)), rowIndications(std::move(rowIndications)), rowGroupIndices(std::move(rowGroupIndices)) {
-            for (auto const& element : *this) {
-                if (element.getValue() != storm::utility::zero<ValueType>()) {
-                    ++this->nonzeroEntryCount;
-                }
-            }
+			this->updateNonzeroEntryCount();
         }
                 
         template<typename ValueType>
@@ -366,7 +358,23 @@ namespace storm {
         template<typename ValueType>
         typename SparseMatrix<ValueType>::index_type SparseMatrix<ValueType>::getNonzeroEntryCount() const {
             return nonzeroEntryCount;
-        }
+		}
+
+		template<typename ValueType>
+		void SparseMatrix<ValueType>::updateNonzeroEntryCount() const {
+			//SparseMatrix<ValueType>* self = const_cast<SparseMatrix<ValueType>*>(this);
+			this->nonzeroEntryCount = 0;
+			for (auto const& element : *this) {
+				if (element.getValue() != storm::utility::zero<ValueType>()) {
+					++this->nonzeroEntryCount;
+				}
+			}
+		}
+
+		template<typename ValueType>
+		void SparseMatrix<ValueType>::updateNonzeroEntryCount(std::make_signed<index_type>::type difference) {
+			this->nonzeroEntryCount += difference;
+		}
         
         template<typename ValueType>
         typename SparseMatrix<ValueType>::index_type SparseMatrix<ValueType>::getRowGroupCount() const {
@@ -416,6 +424,7 @@ namespace storm {
             columnValuePtr->setValue(storm::utility::one<ValueType>());
             ++columnValuePtr;
             for (; columnValuePtr != columnValuePtrEnd; ++columnValuePtr) {
+				++this->nonzeroEntryCount;
                 columnValuePtr->setColumn(0);
                 columnValuePtr->setValue(storm::utility::zero<ValueType>());
             }
@@ -606,8 +615,12 @@ namespace storm {
         SparseMatrix<ValueType> SparseMatrix<ValueType>::transpose(bool joinGroups, bool keepZeros) const {
             index_type rowCount = this->getColumnCount();
             index_type columnCount = joinGroups ? this->getRowGroupCount() : this->getRowCount();
-            //index_type entryCount = keepZeros ? this->getEntryCount() : this->getNonzeroEntryCount(); this wont work if someone modified the matrix after creation...
-			index_type entryCount = this->getEntryCount();
+			if (keepZeros) {
+				index_type entryCount = this->getEntryCount();
+			} else {
+				this->updateNonzeroEntryCount();
+				index_type entryCount = this->getNonzeroEntryCount();
+			}
             
             std::vector<index_type> rowIndications(rowCount + 1);
             std::vector<MatrixEntry<index_type, ValueType>> columnsAndValues(entryCount);
@@ -660,13 +673,22 @@ namespace storm {
         template<typename ValueType>
         void SparseMatrix<ValueType>::invertDiagonal() {
             // Now iterate over all row groups and set the diagonal elements to the inverted value.
-            // If there is a row without the diagonal element, an exception is thrown.
-            ValueType one = storm::utility::one<ValueType>();
+			// If there is a row without the diagonal element, an exception is thrown.
+			ValueType one = storm::utility::one<ValueType>();
+			ValueType zero = storm::utility::zero<ValueType>();
             bool foundDiagonalElement = false;
             for (index_type group = 0; group < this->getRowGroupCount(); ++group) {
                 for (auto& entry : this->getRowGroup(group)) {
                     if (entry.getColumn() == group) {
-                        entry.setValue(one - entry.getValue());
+						if (entry.getValue() == one) {
+							--this->nonzeroEntryCount;
+							entry.setValue(zero);
+						} else if (entry.getValue() == zero) {
+							++this->nonzeroEntryCount;
+							entry.setValue(one);
+						} else {
+							entry.setValue(one - entry.getValue());
+						}
                         foundDiagonalElement = true;
                     }
                 }
@@ -696,6 +718,7 @@ namespace storm {
             for (index_type group = 0; group < this->getRowGroupCount(); ++group) {
                 for (auto& entry : this->getRowGroup(group)) {
                     if (entry.getColumn() == group) {
+						--this->nonzeroEntryCount;
                         entry.setValue(storm::utility::zero<ValueType>());
                     }
                 }

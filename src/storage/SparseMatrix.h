@@ -465,12 +465,26 @@ namespace storm {
 			*/
 			uint_fast64_t getRowGroupEntryCount(uint_fast64_t const group) const;
 
-            /*!
-             * Returns the number of nonzero entries in the matrix.
-             *
-             * @return The number of nonzero entries in the matrix.
-             */
-            index_type getNonzeroEntryCount() const;
+			/*!
+			* Returns the cached number of nonzero entries in the matrix.
+			*
+			* @see updateNonzeroEntryCount()
+			*
+			* @return The number of nonzero entries in the matrix.
+			*/
+			index_type getNonzeroEntryCount() const;
+
+			/*!
+			* Recompute the nonzero entry count
+			*/
+			void updateNonzeroEntryCount() const;
+
+			/*!
+			* Change the nonzero entry count by the provided value.
+			*
+			* @param difference Difference between old and new nonzero entry count.
+			*/
+			void updateNonzeroEntryCount(std::make_signed<index_type>::type difference);
             
             /*!
              * Returns the number of row groups in the matrix.
@@ -827,7 +841,7 @@ namespace storm {
             index_type entryCount;
             
             // The number of nonzero entries in the matrix.
-            index_type nonzeroEntryCount;
+            mutable index_type nonzeroEntryCount;
             
             // The storage for the columns and values of all entries in the matrix.
             std::vector<MatrixEntry<index_type, value_type>> columnsAndValues;
