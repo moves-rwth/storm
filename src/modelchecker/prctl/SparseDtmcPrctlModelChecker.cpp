@@ -321,6 +321,8 @@ namespace storm {
 
 			// Get some data members for convenience.
 			typename storm::storage::SparseMatrix<ValueType> const& transitionMatrix = this->getModel().getTransitionMatrix();
+			ValueType one = storm::utility::one<ValueType>();
+			ValueType zero = storm::utility::zero<ValueType>();
 
 			// First we check which states are in BSCCs. We use this later to speed up reachability analysis
 			storm::storage::BitVector statesInBsccs(numOfStates);
@@ -340,11 +342,9 @@ namespace storm {
 			storm::storage::BitVector statesNotInBsccs = ~statesInBsccs;
 
 			// calculate steady state distribution for all BSCCs by calculating an eigenvector for the eigenvalue 1 of the transposed transition matrix for the bsccs
-			storm::storage::SparseMatrix<ValueType> bsccEquationSystem = transitionMatrix.getSubmatrix(false, statesInBsccs, statesInBsccs, true).transpose();
+			storm::storage::SparseMatrix<ValueType> bsccEquationSystem = transitionMatrix.getSubmatrix(false, statesInBsccs, statesInBsccs, true);
 
-			ValueType one = storm::utility::one<ValueType>();
-			ValueType zero = storm::utility::zero<ValueType>();
-
+			//subtract identity matrix
 			for (uint_fast64_t row = 0; row < bsccEquationSystem.getRowCount(); ++row) {
 				for (auto& entry : bsccEquationSystem.getRow(row)) {
 					if (entry.getColumn() == row) {
@@ -352,6 +352,8 @@ namespace storm {
 					}
 				}
 			}
+			//now transpose, this internally removes all explicit zeros from the matrix that where introduced when subtracting the identity matrix
+			bsccEquationSystem = bsccEquationSystem.transpose();
 
 			std::vector<ValueType> bsccEquationSystemRightSide(bsccEquationSystem.getColumnCount(), zero);
 			std::vector<ValueType> bsccEquationSystemSolution(bsccEquationSystem.getColumnCount(), one);
@@ -392,7 +394,7 @@ namespace storm {
 				rewardRightSide.push_back(reward);
 			}
 
-			storm::storage::SparseMatrix<ValueType> rewardEquationSystemMatrix = transitionMatrix.getSubmatrix(false, statesNotInBsccs, statesNotInBsccs);
+			storm::storage::SparseMatrix<ValueType> rewardEquationSystemMatrix = transitionMatrix.getSubmatrix(false, statesNotInBsccs, statesNotInBsccs, true);
 			rewardEquationSystemMatrix.convertToEquationSystem();
 
 			std::vector<ValueType> rewardSolution(rewardEquationSystemMatrix.getColumnCount(), one);
