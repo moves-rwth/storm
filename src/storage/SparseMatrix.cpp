@@ -603,10 +603,11 @@ namespace storm {
         }
         
         template <typename ValueType>
-        SparseMatrix<ValueType> SparseMatrix<ValueType>::transpose(bool joinGroups) const {
+        SparseMatrix<ValueType> SparseMatrix<ValueType>::transpose(bool joinGroups, bool keepZeros) const {
             index_type rowCount = this->getColumnCount();
             index_type columnCount = joinGroups ? this->getRowGroupCount() : this->getRowCount();
-            index_type entryCount = this->getEntryCount();
+            //index_type entryCount = keepZeros ? this->getEntryCount() : this->getNonzeroEntryCount(); this wont work if someone modified the matrix after creation...
+			index_type entryCount = this->getEntryCount();
             
             std::vector<index_type> rowIndications(rowCount + 1);
             std::vector<MatrixEntry<index_type, ValueType>> columnsAndValues(entryCount);
@@ -614,7 +615,7 @@ namespace storm {
             // First, we need to count how many entries each column has.
             for (index_type group = 0; group < columnCount; ++group) {
                 for (auto const& transition : joinGroups ? this->getRowGroup(group) : this->getRow(group)) {
-                    if (transition.getValue() != storm::utility::zero<ValueType>()) {
+					if (transition.getValue() != storm::utility::zero<ValueType>() || keepZeros) {
                         ++rowIndications[transition.getColumn() + 1];
                     }
                 }
@@ -633,7 +634,7 @@ namespace storm {
             // Now we are ready to actually fill in the values of the transposed matrix.
             for (index_type group = 0; group < columnCount; ++group) {
                 for (auto const& transition : joinGroups ? this->getRowGroup(group) : this->getRow(group)) {
-                    if (transition.getValue() != storm::utility::zero<ValueType>()) {
+					if (transition.getValue() != storm::utility::zero<ValueType>() || keepZeros) {
                         columnsAndValues[nextIndices[transition.getColumn()]] = std::make_pair(group, transition.getValue());
                         nextIndices[transition.getColumn()]++;
                     }

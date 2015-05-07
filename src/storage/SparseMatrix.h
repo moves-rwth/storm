@@ -574,12 +574,13 @@ namespace storm {
             
             /*!
              * Transposes the matrix.
-             *
-             * @param joinGroups A flag indicating whether the row groups are supposed to be treated as single rows.
+			 *
+			 * @param joinGroups A flag indicating whether the row groups are supposed to be treated as single rows.
+			 * @param keepZeros A flag indicating whether entries with value zero should be kept.
              *
              * @return A sparse matrix that represents the transpose of this matrix.
              */
-            storm::storage::SparseMatrix<value_type> transpose(bool joinGroups = false) const;
+			storm::storage::SparseMatrix<value_type> transpose(bool joinGroups = false, bool keepZeros = false) const;
             
             /*!
              * Transforms the matrix into an equation system. That is, it transforms the matrix A into a matrix (1-A).
