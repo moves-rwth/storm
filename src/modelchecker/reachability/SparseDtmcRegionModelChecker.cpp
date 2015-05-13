@@ -22,10 +22,73 @@
 
 #include "src/exceptions/InvalidPropertyException.h"
 #include "src/exceptions/InvalidStateException.h"
-#include "exceptions/UnexpectedException.h"
+#include "src/exceptions/UnexpectedException.h"
+
 
 namespace storm {
     namespace modelchecker {
+        
+        
+        template<typename ParametricType, typename ConstantType>
+        SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::ParameterRegion(std::map<VariableType, BoundType> lowerBounds, std::map<VariableType, BoundType> upperBounds) : lowerBounds(lowerBounds), upperBounds(upperBounds) {
+            // Intentionally left empty.
+            //todo: check whether both mappings map the same variables
+        }
+                
+        template<typename ParametricType, typename ConstantType>
+        std::set<typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::VariableType> SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::getVariables() const{
+            std::set<VariableType> result;
+            for(auto const& variableWithBound : lowerBounds) {
+                result.insert(variableWithBound.first);
+            }
+            return result;
+        }
+        
+        template<typename ParametricType, typename ConstantType>
+        typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::BoundType const& SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::getLowerBound(VariableType const& variable) const{
+            auto const& result = lowerBounds.find(variable);
+            STORM_LOG_THROW(result!=lowerBounds.end(), storm::exceptions::IllegalArgumentException, "tried to find a lower bound of a variable that is not specified by this region");
+            return (*result).second;
+        }
+        
+        template<typename ParametricType, typename ConstantType>
+        typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::BoundType const& SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::getUpperBound(VariableType const& variable) const{
+            auto const& result = upperBounds.find(variable);
+            STORM_LOG_THROW(result!=upperBounds.end(), storm::exceptions::IllegalArgumentException, "tried to find an upper bound of a variable that is not specified by this region");
+            return (*result).second;
+        }
+        
+        template<typename ParametricType, typename ConstantType>
+        std::vector<std::map<typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::VariableType, typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::BoundType>> SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::getVerticesOfRegion(std::set<VariableType> const& consideredVariables) const{
+            std::size_t const numOfVariables=consideredVariables.size();
+            std::size_t const numOfVertices=std::pow(2,numOfVariables);
+            std::vector<std::map<VariableType, BoundType>> resultingVector(numOfVertices,std::map<VariableType, BoundType>());
+            if(numOfVertices==1){
+                //no variables are given, the returned vector will still contain an empty map
+                return resultingVector;
+            }
+            
+            for(uint_fast64_t vertexId=0; vertexId<numOfVertices; ++vertexId){
+                //interprete vertexId as a bit sequence
+                //the consideredVariables.size() least significant bits of vertex will always represent the next vertex
+                //(00...0 = lower bounds for all variables, 11...1 = upper bounds for all variables)
+                std::size_t variableIndex=0;
+                for(auto const& variable : consideredVariables){
+                    if( (vertexId>>variableIndex)%2==0  ){
+                        resultingVector[vertexId].insert(std::pair<VariableType, BoundType>(variable, getLowerBound(variable)));
+                    }
+                    else{
+                        resultingVector[vertexId].insert(std::pair<VariableType, BoundType>(variable, getUpperBound(variable)));
+                    }
+                    ++variableIndex;
+                }
+            }
+            return resultingVector;
+        }
+            
+        
+                
+        
         
         template<typename ParametricType, typename ConstantType>
         SparseDtmcRegionModelChecker<ParametricType, ConstantType>::SparseDtmcRegionModelChecker(storm::models::sparse::Dtmc<ParametricType> const& model) : model(model), eliminationModelChecker(model) {
@@ -275,14 +338,14 @@ namespace storm {
         }
         
         template<>
-        void SparseDtmcRegionModelChecker<storm::RationalFunction, double>::restrictProbabilityVariables(storm::solver::Smt2SmtSolver& solver, std::vector<storm::RationalFunction::PolyType> const& stateProbVars, storm::storage::BitVector const& subsystem, FlexibleMatrix const& flexibleMatrix, std::vector<storm::RationalFunction> const& oneStepProbabilities, std::vector<ParameterRegion> const& regions, storm::logic::ComparisonType const& compType){
+        void SparseDtmcRegionModelChecker<storm::RationalFunction, double>::restrictProbabilityVariables(storm::solver::Smt2SmtSolver& solver, std::vector<storm::RationalFunction::PolyType> const& stateProbVars, storm::storage::BitVector const& subsystem, FlexibleMatrix const& flexibleMatrix, std::vector<storm::RationalFunction> const& oneStepProbabilities, ParameterRegion const& region, storm::logic::ComparisonType const& compType){
             //We are going to build a new (non parametric) MDP which has an action for the lower bound and an action for the upper bound of every parameter 
                         
             //todo invent something better to obtain the substitutions.
             //this only works as long as there is only one parameter per state,
             // also: check whether the terms are linear/monotone(?)
             
-            STORM_LOG_WARN("the probability restriction is experimental.. only works on linear terms with one parameter per state");
+            STORM_LOG_WARN("the probability restriction only works on linear terms which is not checked");
             storm::storage::sparse::state_type const numOfStates=subsystem.getNumberOfSetBits() + 2; //subsystem + target state + sink state
             storm::models::sparse::StateLabeling stateLabeling(numOfStates);
             stateLabeling.addLabel("init", storm::storage::BitVector(numOfStates, true));
@@ -293,19 +356,7 @@ namespace storm {
             sinkLabel.set(numOfStates-1, true);
             stateLabeling.addLabel("sink", std::move(sinkLabel));
 
-            std::map<storm::Variable, storm::RationalFunction::CoeffType> substitutionLB;
-            for(auto const& parRegion : regions){
-                substitutionLB.insert(std::pair<storm::Variable,storm::RationalFunction::CoeffType>(parRegion.variable, parRegion.lowerBound));
-            }
-            std::map<storm::Variable, storm::RationalFunction::CoeffType> substitutionUB;
-            for(auto const& parRegion : regions){
-                substitutionUB.insert(std::pair<storm::Variable,storm::RationalFunction::CoeffType>(parRegion.variable, parRegion.upperBound));
-            }
-            std::vector<std::map<storm::Variable, storm::RationalFunction::CoeffType>> substitutions;
-            substitutions.push_back(substitutionLB);
-            substitutions.push_back(substitutionUB);
-            
-            std::pair<storm::storage::SparseMatrix<double>,std::vector<boost::container::flat_set<uint_fast64_t>>> instantiation = instantiateFlexibleMatrix(flexibleMatrix, substitutions, subsystem, true, oneStepProbabilities, true);
+            std::pair<storm::storage::SparseMatrix<double>,std::vector<boost::container::flat_set<uint_fast64_t>>> instantiation = instantiateFlexibleMatrix(flexibleMatrix, region.getVerticesOfRegion(region.getVariables()), subsystem, true, oneStepProbabilities, true);
             boost::optional<std::vector<double>> noStateRewards;
             boost::optional<storm::storage::SparseMatrix<double>> noTransitionRewards;            
             storm::models::sparse::Mdp<double> mdp(instantiation.first, std::move(stateLabeling),noStateRewards,noTransitionRewards,instantiation.second);
@@ -339,23 +390,7 @@ namespace storm {
             storm::logic::EventuallyFormula eventuallyFormula(targetFormulaPtr);
             storm::modelchecker::SparseMdpPrctlModelChecker<double> modelChecker(mdp);
             std::unique_ptr<CheckResult> resultPtr = modelChecker.computeEventuallyProbabilities(eventuallyFormula,false,opType);
-            std::vector<double> resultVector = resultPtr->asExplicitQuantitativeCheckResult<double>().getValueVector();
-            
-            //todo this is experimental..
-            if (true){
-                std::cout << "the matrix has " << mdp.getTransitionMatrix().getRowGroupCount() << "row groups, " << mdp.getTransitionMatrix().getRowCount() << " rows, and " << mdp.getTransitionMatrix().getColumnCount() << "columns" << std::endl;
-                boost::container::flat_set< uint_fast64_t> lbChoiceLabel;
-                lbChoiceLabel.insert(1);
-                lbChoiceLabel.insert(2);
-                storm::models::sparse::Dtmc<double> dtmc(mdp.restrictChoiceLabels(lbChoiceLabel).getTransitionMatrix(), std::move(stateLabeling));
-                //modelchecking on dtmc
-                storm::modelchecker::SparseDtmcPrctlModelChecker<double> dtmcModelChecker(dtmc);
-                std::unique_ptr<CheckResult> resultPtrDtmc = dtmcModelChecker.computeEventuallyProbabilities(eventuallyFormula);
-                std::vector<double> resultVectorDtmc = resultPtrDtmc->asExplicitQuantitativeCheckResult<double>().getValueVector();
-                std::cout << "dtmc result with lower bounds:" << resultVectorDtmc[0];
-                std::cout << "mdp result:" << resultVector[0];
-            }
-            
+            std::vector<double> resultVector = resultPtr->asExplicitQuantitativeCheckResult<double>().getValueVector();            
             
             //formulate constraints for the solver
             uint_fast64_t boundDenominator = 1.0/storm::settings::generalSettings().getPrecision(); //we need to approx. the obtained bounds as rational numbers
@@ -371,12 +406,12 @@ namespace storm {
         }
         
         template<typename ParametricType, typename ConstantType>
-        void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::restrictProbabilityVariables(storm::solver::Smt2SmtSolver& solver, std::vector<storm::RationalFunction::PolyType> const& stateProbVars, storm::storage::BitVector const& subsystem, FlexibleMatrix const& flexibleMatrix, std::vector<storm::RationalFunction> const& oneStepProbabilities, std::vector<ParameterRegion> const& regions, storm::logic::ComparisonType const& compType){
+        void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::restrictProbabilityVariables(storm::solver::Smt2SmtSolver& solver, std::vector<storm::RationalFunction::PolyType> const& stateProbVars, storm::storage::BitVector const& subsystem, FlexibleMatrix const& flexibleMatrix, std::vector<storm::RationalFunction> const& oneStepProbabilities, ParameterRegion const& region, storm::logic::ComparisonType const& compType){
             STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "restricting Probability Variables is not supported for this type");
         }
         
         template<>
-        bool SparseDtmcRegionModelChecker<storm::RationalFunction, double>::checkRegion(storm::logic::Formula const& formula, std::vector<SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion> parameterRegions){
+        bool SparseDtmcRegionModelChecker<storm::RationalFunction, double>::checkRegion(storm::logic::Formula const& formula, std::vector<ParameterRegion> parameterRegions){
             //Note: this is an 'experimental' implementation
             
             std::chrono::high_resolution_clock::time_point timeStart = std::chrono::high_resolution_clock::now();
@@ -481,20 +516,22 @@ namespace storm {
             
             //the bounds for the parameters
             solver.push();
-            for(auto param : parameterRegions){
-                storm::RawPolynomial lB(param.variable);
-                lB -= param.lowerBound;
+            //STORM_LOG_THROW(parameterRegions.size()==1, storm::exceptions::NotImplementedException, "multiple regions not yet implemented");
+            ParameterRegion region=parameterRegions[0];
+            for(auto variable : region.getVariables()){
+                storm::RawPolynomial lB(variable);
+                lB -= region.getLowerBound(variable);
                 solver.add(carl::Constraint<storm::RawPolynomial>(lB,storm::CompareRelation::GEQ));
-                storm::RawPolynomial uB(param.variable);
-                uB -= param.upperBound;
+                storm::RawPolynomial uB(variable);
+                uB -= region.getUpperBound(variable);
                 solver.add(carl::Constraint<storm::RawPolynomial>(uB,storm::CompareRelation::LEQ));
             }
             
             std::chrono::high_resolution_clock::time_point timeSmtFormulationEnd = std::chrono::high_resolution_clock::now();
             
             // find further restriction on probabilities
-            restrictProbabilityVariables(solver,stateProbVars,subsystem,flexibleMatrix,oneStepProbabilities, parameterRegions, storm::logic::ComparisonType::Less); //probOpForm.getComparisonType());
-            restrictProbabilityVariables(solver,stateProbVars,subsystem,flexibleMatrix,oneStepProbabilities, parameterRegions, storm::logic::ComparisonType::Greater);
+            restrictProbabilityVariables(solver,stateProbVars,subsystem,flexibleMatrix,oneStepProbabilities, parameterRegions[0], storm::logic::ComparisonType::Less); //probOpForm.getComparisonType());
+            restrictProbabilityVariables(solver,stateProbVars,subsystem,flexibleMatrix,oneStepProbabilities, parameterRegions[0], storm::logic::ComparisonType::Greater);
             
             std::chrono::high_resolution_clock::time_point timeRestrictingEnd = std::chrono::high_resolution_clock::now();
             
@@ -544,7 +581,7 @@ namespace storm {
         }
 
         template<typename ParametricType, typename ConstantType>
-        bool SparseDtmcRegionModelChecker<ParametricType, ConstantType>::checkRegion(storm::logic::Formula const& formula, std::vector<SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion> parameterRegions){
+        bool SparseDtmcRegionModelChecker<ParametricType, ConstantType>::checkRegion(storm::logic::Formula const& formula, std::vector<ParameterRegion> parameterRegions){
             STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Region check is not supported for this type");
         }
         
@@ -553,5 +590,7 @@ namespace storm {
 #ifdef STORM_HAVE_CARL
         template class SparseDtmcRegionModelChecker<storm::RationalFunction, double>;
 #endif
+        //note: for other template instantiations, add a rule for the typedefs of VariableType and BoundType
+        
     } // namespace modelchecker
 } // namespace storm

@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <sstream>
 #include <memory>
+#include <map>
 
 #include "storm-config.h"
 // Includes for the linked libraries and versions header.
@@ -17,7 +18,7 @@
 #	include "glpk.h"
 #endif
 #ifdef STORM_HAVE_GUROBI
-#	include "gurobi_c.h"
+#include "gurobi_c.h"
 #endif
 #ifdef STORM_HAVE_Z3
 #	include "z3.h"
@@ -66,6 +67,7 @@ log4cplus::Logger printer;
 #include "src/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "src/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
 #include "src/modelchecker/reachability/SparseDtmcRegionModelChecker.h"
+#include "src/utility/regions.h"
 #include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "src/modelchecker/csl/SparseCtmcCslModelChecker.h"
 #include "src/modelchecker/prctl/HybridDtmcPrctlModelChecker.h"
@@ -476,20 +478,9 @@ namespace storm {
                 if(settings.isParametricRegionSet()){
                     std::cout << std::endl;
                     //experimental implementation! check some hardcoded region
-                    std::vector<storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion> regions;
-                    storm::RationalFunction::CoeffType zeroPointOne(1);
-                    zeroPointOne = zeroPointOne/10;
-                    storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion param1;
-                    param1.lowerBound= zeroPointOne*zeroPointOne*78;
-                    param1.upperBound= zeroPointOne*zeroPointOne*82;
-                    param1.variable=carl::VariablePool::getInstance().findVariableWithName("pL");
-                    regions.push_back(param1);
-                    storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion param2;
-                    param2.lowerBound= zeroPointOne*zeroPointOne*78;
-                    param2.upperBound= zeroPointOne*zeroPointOne*82;;
-                    param2.variable=carl::VariablePool::getInstance().findVariableWithName("pK");
-                    regions.push_back(param2);
-                            
+                    
+                    std::vector<storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction,double>::ParameterRegion> regions=storm::utility::regions::RegionParser<storm::RationalFunction, double>::parseMultipleRegions("0.78<=pL<=0.82,0.78<=pK<=0.82; 0.3<=pL<=0.5,0.1<=pK<=0.7;0.6<=pL<=0.7,0.8<=pK<=0.9");                    
+                    
                     storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double> modelchecker(*dtmc);
                     bool result = modelchecker.checkRegion(*formula.get(), regions);
                     std::cout << "... done." << std::endl;

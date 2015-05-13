@@ -1,14 +1,13 @@
 #ifndef STORM_MODELCHECKER_REACHABILITY_SPARSEDTMCREGIONMODELCHECKER_H_
 #define STORM_MODELCHECKER_REACHABILITY_SPARSEDTMCREGIONMODELCHECKER_H_
 
-//TODO remove useless includes
+#include <type_traits>
 
 #include "src/storage/sparse/StateType.h"
 #include "src/models/sparse/Dtmc.h"
 #include "src/models/sparse/Mdp.h"
-//#include "src/modelchecker/AbstractModelChecker.h"
 #include "src/utility/constants.h"
-//#include "src/solver/SmtSolver.h"
+#include "utility/regions.h"
 #include "src/solver/Smt2SmtSolver.h"
 #include "SparseDtmcEliminationModelChecker.h"
 
@@ -18,24 +17,45 @@ namespace storm {
         template<typename ParametricType, typename ConstantType>
         class SparseDtmcRegionModelChecker {
         public:
-            explicit SparseDtmcRegionModelChecker(storm::models::sparse::Dtmc<ParametricType> const& model);
             
+            //The type of variables and bounds depends on the template arguments
+            typedef typename std::conditional<(std::is_same<ParametricType,storm::RationalFunction>::value), storm::Variable,std::nullptr_t>::type VariableType;
+            typedef typename std::conditional<(std::is_same<ParametricType,storm::RationalFunction>::value), storm::RationalFunction::CoeffType,std::nullptr_t>::type BoundType;
+            
+            class ParameterRegion{
+            public:
+                
+                ParameterRegion(std::map<VariableType, BoundType> lowerBounds, std::map<VariableType, BoundType> upperBounds);
+                
+                std::set<VariableType> getVariables() const;
+                BoundType const& getLowerBound(VariableType const& variable) const;
+                BoundType const& getUpperBound(VariableType const& variable) const;
+                
+                /*
+                 * Returns a vector of all possible combinations of lower and upper bounds of the given variables.
+                 * The first entry of the returned vector will map every variable to its lower bound
+                 * The second entry will map every variable to its lower bound, except the first one (i.e. *consVariables.begin())
+                 * ...
+                 * The last entry will map every variable to its upper bound
+                 */
+                std::vector<std::map<VariableType, BoundType>> getVerticesOfRegion(std::set<VariableType> const& consideredVariables) const;
+                
+            private:
+                
+                std::map<VariableType, BoundType> const lowerBounds;
+                std::map<VariableType, BoundType> const upperBounds;
+                
+            };
+            
+            explicit SparseDtmcRegionModelChecker(storm::models::sparse::Dtmc<ParametricType> const& model);
+
             virtual bool canHandle(storm::logic::Formula const& formula) const;
 
-#ifdef STORM_HAVE_CARL
-            struct ParameterRegion{
-                storm::Variable variable;
-                storm::RationalFunction::CoeffType lowerBound;
-                storm::RationalFunction::CoeffType upperBound;
-            };
-
-            
             /*!
              * Checks whether the given formula holds for all possible parameters that satisfy the given parameter regions
              * ParameterRegions should contain all parameters (not mentioned parameters are assumed to be arbitrary reals)
              */
             bool checkRegion(storm::logic::Formula const& formula, std::vector<ParameterRegion> parameterRegions);
-#endif            
         private:
             typedef typename storm::modelchecker::SparseDtmcEliminationModelChecker<ParametricType>::FlexibleSparseMatrix FlexibleMatrix;
             
@@ -67,7 +87,7 @@ namespace storm {
             
             void formulateModelWithSMT(storm::solver::Smt2SmtSolver& solver, std::vector<storm::RationalFunction::PolyType>& stateProbVars, storm::storage::BitVector const& subsystem, FlexibleMatrix const& flexibleMatrix, std::vector<storm::RationalFunction> const& oneStepProbabilities);
             
-            void restrictProbabilityVariables(storm::solver::Smt2SmtSolver& solver, std::vector<storm::RationalFunction::PolyType> const& stateProbVars, storm::storage::BitVector const& subsystem, FlexibleMatrix const& flexibleMatrix, std::vector<storm::RationalFunction> const& oneStepProbabilities, std::vector<ParameterRegion> const& regions, storm::logic::ComparisonType const& compTypeOfProperty);
+            void restrictProbabilityVariables(storm::solver::Smt2SmtSolver& solver, std::vector<storm::RationalFunction::PolyType> const& stateProbVars, storm::storage::BitVector const& subsystem, FlexibleMatrix const& flexibleMatrix, std::vector<storm::RationalFunction> const& oneStepProbabilities, ParameterRegion const& region, storm::logic::ComparisonType const& compTypeOfProperty);
 #endif         
                 
             
