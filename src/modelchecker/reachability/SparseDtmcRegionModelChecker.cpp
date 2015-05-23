@@ -30,7 +30,7 @@ namespace storm {
         
         
         template<typename ParametricType, typename ConstantType>
-        SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::ParameterRegion(std::map<VariableType, BoundType> lowerBounds, std::map<VariableType, BoundType> upperBounds) : lowerBounds(lowerBounds), upperBounds(upperBounds) {
+        SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::ParameterRegion(std::map<VariableType, BoundType> lowerBounds, std::map<VariableType, BoundType> upperBounds) : lowerBounds(lowerBounds), upperBounds(upperBounds), checkResult(RegionCheckResult::UNKNOWN) {
             // Intentionally left empty.
             //todo: check whether both mappings map the same variables
         }
@@ -96,41 +96,31 @@ namespace storm {
         }
         
         template<typename ParametricType, typename ConstantType>
-        //Todo adapt
         bool SparseDtmcRegionModelChecker<ParametricType, ConstantType>::canHandle(storm::logic::Formula const& formula) const {
-            if (formula.isProbabilityOperatorFormula()) {
-                storm::logic::ProbabilityOperatorFormula const& probabilityOperatorFormula = formula.asProbabilityOperatorFormula();
-                return this->canHandle(probabilityOperatorFormula.getSubformula());
-            } else if (formula.isRewardOperatorFormula()) {
-                storm::logic::RewardOperatorFormula const& rewardOperatorFormula = formula.asRewardOperatorFormula();
-                return this->canHandle(rewardOperatorFormula.getSubformula());
-            } else if (formula.isUntilFormula() || formula.isEventuallyFormula()) {
-                if (formula.isUntilFormula()) {
-                    storm::logic::UntilFormula const& untilFormula = formula.asUntilFormula();
-                    if (untilFormula.getLeftSubformula().isPropositionalFormula() && untilFormula.getRightSubformula().isPropositionalFormula()) {
-                        return true;
-                    }
-                } else if (formula.isEventuallyFormula()) {
-                    storm::logic::EventuallyFormula const& eventuallyFormula = formula.asEventuallyFormula();
-                    if (eventuallyFormula.getSubformula().isPropositionalFormula()) {
-                        return true;
-                    }
-                }
-            } else if (formula.isReachabilityRewardFormula()) {
-                storm::logic::ReachabilityRewardFormula reachabilityRewardFormula = formula.asReachabilityRewardFormula();
-                if (reachabilityRewardFormula.getSubformula().isPropositionalFormula()) {
-                    return true;
-                }
-            } else if (formula.isConditionalPathFormula()) {
-                storm::logic::ConditionalPathFormula conditionalPathFormula = formula.asConditionalPathFormula();
-                if (conditionalPathFormula.getLeftSubformula().isEventuallyFormula() && conditionalPathFormula.getRightSubformula().isEventuallyFormula()) {
-                    return this->canHandle(conditionalPathFormula.getLeftSubformula()) && this->canHandle(conditionalPathFormula.getRightSubformula());
-                }
-            } else if (formula.isPropositionalFormula()) {
-                return true;
+             //for simplicity we only support state formulas with eventually (e.g. P<0.5 [ F "target" ])
+            if(!formula.isStateFormula()){
+                STORM_LOG_DEBUG("Region Model Checker could not handle formula " << formula << " Reason: expected a stateFormula");
+                return false;
             }
-            return false;
+            if(!formula.asStateFormula().isProbabilityOperatorFormula()){
+                STORM_LOG_DEBUG("Region Model Checker could not handle formula " << formula << " Reason: expected a probabilityOperatorFormula");
+                return false;
+            }
+            storm::logic::ProbabilityOperatorFormula const& probOpForm=formula.asStateFormula().asProbabilityOperatorFormula();
+            if(!probOpForm.hasBound()){
+                STORM_LOG_DEBUG("Region Model Checker could not handle formula " << formula << " Reason: The formula has no bound");
+                return false;
+            }
+            if(!probOpForm.getSubformula().asPathFormula().isEventuallyFormula()){
+                STORM_LOG_DEBUG("Region Model Checker could not handle formula " << formula << " Reason: expected an eventually subformula");
+                return false;
+            }
+            return true;
         }
+            
+            
+            
+            
         
         template<>
         std::pair<storm::storage::SparseMatrix<double>,std::vector<boost::container::flat_set<uint_fast64_t>>> SparseDtmcRegionModelChecker<storm::RationalFunction, double>::instantiateFlexibleMatrix(FlexibleMatrix const& matrix, std::vector<std::map<storm::Variable, storm::RationalFunction::CoeffType>> const& substitutions, storm::storage::BitVector const& filter, bool addSinkState, std::vector<storm::RationalFunction> const& oneStepProbabilities, bool addSelfLoops) const {

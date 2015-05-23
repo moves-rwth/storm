@@ -30,6 +30,7 @@
 #include "src/settings/modules/GurobiSettings.h"
 #include "src/settings/modules/Smt2SmtSolverSettings.h"
 #include "src/settings/modules/ParametricSettings.h"
+#include "src/settings/modules/RegionSettings.h"
 #include "src/settings/modules/SparseDtmcEliminationModelCheckerSettings.h"
 #include "src/settings/modules/TopologicalValueIterationEquationSolverSettings.h"
 
@@ -333,6 +334,13 @@ namespace storm {
          * @return An object that allows accessing the settings for parameteric model checking.
          */
         storm::settings::modules::ParametricSettings const& parametricSettings();
+        
+        /*!
+         * Retrieves the settings for parametric region model checking.
+         *
+         * @return An object that allows accessing the settings for parametric region model checking.
+         */
+        storm::settings::modules::RegionSettings const& regionSettings();
 
         /* Retrieves the settings of the elimination-based DTMC model checker.
          *

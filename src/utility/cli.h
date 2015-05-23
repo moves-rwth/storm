@@ -473,16 +473,13 @@ namespace storm {
                 STORM_LOG_THROW(model->getType() == storm::models::ModelType::Dtmc, storm::exceptions::InvalidSettingsException, "Currently parametric verification is only available for DTMCs.");
                 std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
                 
-                std::cout << std::endl << "Model checking property: " << *formula << " ...";
-                //do we want to check for a parameter region?
                 if(settings.isParametricRegionSet()){
-                    std::cout << std::endl;
-                    //experimental implementation! check some hardcoded region
+                    std::cout << std::endl << "Model checking property: " << *formula << " for all parameters in the given regions." << std::endl;
                     
-                    std::vector<storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction,double>::ParameterRegion> regions=storm::utility::regions::RegionParser<storm::RationalFunction, double>::parseMultipleRegions("0.78<=pL<=0.82,0.78<=pK<=0.82; 0.3<=pL<=0.5,0.1<=pK<=0.7;0.6<=pL<=0.7,0.8<=pK<=0.9");                    
+                    auto regions=storm::utility::regions::RegionParser<storm::RationalFunction, double>::getRegionsFromSettings();                    
                     
                     storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double> modelchecker(*dtmc);
-                    bool result = modelchecker.checkRegion(*formula.get(), regions);
+                    auto result = modelchecker.checkRegion(*formula.get(), regions);
                     std::cout << "... done." << std::endl;
                     if (result){
                     std::cout << "the property holds for all parameters in the given region" << std::endl;
@@ -490,9 +487,9 @@ namespace storm {
                     std::cout << "the property does NOT hold for all parameters in the given region" << std::endl;
                     }
                     
-                    
                 }else{
-                    //just obtain the resulting rational function
+                    // obtain the resulting rational function
+                    std::cout << std::endl << "Model checking property: " << *formula << " ...";
                     std::unique_ptr<storm::modelchecker::CheckResult> result;
 
                     storm::modelchecker::SparseDtmcEliminationModelChecker<storm::RationalFunction> modelchecker(*dtmc);

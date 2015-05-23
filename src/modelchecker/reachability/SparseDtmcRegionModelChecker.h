@@ -22,6 +22,8 @@ namespace storm {
             typedef typename std::conditional<(std::is_same<ParametricType,storm::RationalFunction>::value), storm::Variable,std::nullptr_t>::type VariableType;
             typedef typename std::conditional<(std::is_same<ParametricType,storm::RationalFunction>::value), storm::RationalFunction::CoeffType,std::nullptr_t>::type BoundType;
             
+            enum class RegionCheckResult { UNKNOWN, ALLSAT, ALLUNSAT, INCONCLUSIVE};
+            
             class ParameterRegion{
             public:
                 
@@ -44,6 +46,7 @@ namespace storm {
                 
                 std::map<VariableType, BoundType> const lowerBounds;
                 std::map<VariableType, BoundType> const upperBounds;
+                RegionCheckResult checkResult;
                 
             };
             
@@ -53,7 +56,7 @@ namespace storm {
 
             /*!
              * Checks whether the given formula holds for all possible parameters that satisfy the given parameter regions
-             * ParameterRegions should contain all parameters (not mentioned parameters are assumed to be arbitrary reals)
+             * ParameterRegions should contain all parameters.
              */
             bool checkRegion(storm::logic::Formula const& formula, std::vector<ParameterRegion> parameterRegions);
         private:

@@ -11,6 +11,8 @@
 #include "src/exceptions/NotImplementedException.h"
 #include "src/exceptions/InvalidArgumentException.h"
 #include "adapters/CarlAdapter.h"
+#include "exceptions/InvalidSettingsException.h"
+#include "parser/MappedFile.h"
 
 namespace storm {
     namespace utility{
@@ -45,7 +47,9 @@ namespace storm {
                 
                 VariableType var = getVariableFromString<VariableType>(parameter);
                 BoundType lb = convertNumber<double, BoundType>(lowerBound, true, actualPrecision);
+                STORM_LOG_WARN_COND((lowerBound==convertNumber<BoundType, double>(lb, true, actualPrecision)), "The lower bound of '"<< parameterBoundsString << "' could not be parsed accurately. Increase precision?");
                 BoundType ub = convertNumber<double, BoundType>(upperBound, false, actualPrecision);
+                STORM_LOG_WARN_COND((upperBound==convertNumber<BoundType, double>(ub, true, actualPrecision)), "The upper bound of '"<< parameterBoundsString << "' could not be parsed accurately. Increase precision?");
                 lowerBounds.emplace(std::make_pair(var, lb));  
                 upperBounds.emplace(std::make_pair(var, ub));
                 std::cout << "parsed bounds " << parameterBoundsString << ": lb=" << lowerBound << " ub=" << upperBound << " param='" << parameter << "' precision=" << actualPrecision << std::endl;
@@ -59,10 +63,7 @@ namespace storm {
                 std::vector<std::string> parameterBounds;
                 boost::split(parameterBounds, regionString, boost::is_any_of(","));
                 for(auto const& parameterBound : parameterBounds){
-                    std::cout << "parsing a parameter bound" << std::endl;
                     RegionParser<ParametricType, ConstantType>::parseParameterBounds(lowerBounds, upperBounds, parameterBound, actualPrecision);
-                    std::cout << "created a parameter bound. lower bound has size" << lowerBounds.size() << std::endl;
-                    std::cout << "parsing a param bound is done" << std::endl;
                 }
                 return ParameterRegion(lowerBounds, upperBounds);
             }
@@ -74,12 +75,31 @@ namespace storm {
                 std::vector<std::string> regionsStrVec;
                 boost::split(regionsStrVec, regionsString, boost::is_any_of(";"));
                 for(auto const& regionStr : regionsStrVec){
-                    std::cout << "parsing a region" << std::endl;
+                    if(!std::all_of(regionStr.begin(),regionStr.end(),isspace)){ //skip this string if it only consists of space
                     result.emplace_back(RegionParser<ParametricType, ConstantType>::parseRegion(regionStr, actualPrecision));
-                    std::cout << "parsing a region is done" << std::endl;
+                    }
                 }
                 return result;
             }
+            
+            template<typename ParametricType, typename ConstantType>
+            std::vector<typename RegionParser<ParametricType, ConstantType>::ParameterRegion> RegionParser<ParametricType, ConstantType>::getRegionsFromSettings(double precision){
+                STORM_LOG_THROW(storm::settings::regionSettings().isRegionsSet() || storm::settings::regionSettings().isRegionFileSet(), storm::exceptions::InvalidSettingsException, "Tried to obtain regions from the settings but no regions are specified.");
+                STORM_LOG_THROW(!(storm::settings::regionSettings().isRegionsSet() && storm::settings::regionSettings().isRegionFileSet()), storm::exceptions::InvalidSettingsException, "Regions are specified via file AND cmd line. Only one option is allowed.");
+                
+                std::string regionsString;
+                if(storm::settings::regionSettings().isRegionsSet()){
+                    regionsString = storm::settings::regionSettings().getRegionsFromCmdLine();
+                }
+                else{
+                    //if we reach this point we can assume that the region is given as a file.
+                    STORM_LOG_THROW(storm::parser::MappedFile::fileExistsAndIsReadable(storm::settings::regionSettings().getRegionFilePath().c_str()), storm::exceptions::InvalidSettingsException, "The path to the file in which the regions are specified is not valid.");
+                    storm::parser::MappedFile mf(storm::settings::regionSettings().getRegionFilePath().c_str());
+                    regionsString = std::string(mf.getData(),mf.getDataSize());
+                }
+                return RegionParser<ParametricType, ConstantType>::parseMultipleRegions(regionsString,precision);
+            }
+            
             
             template<>
             storm::RationalFunction::CoeffType convertNumber<double, storm::RationalFunction::CoeffType>(double const& number, bool const& roundDown, double const& precision){
@@ -87,15 +107,11 @@ namespace storm {
                 uint_fast64_t denominator = 1.0/actualPrecision;
                 uint_fast64_t numerator;
                 if(roundDown){
-                    numerator= number*denominator; //this will always round down if necessary
+                    numerator= number*denominator; //this will always round down
                 } else{
-                    numerator = number*denominator*10; //*10 to look whether we have to round up
-                    if(numerator%10>0){
-                        numerator+=10;
-                    }
-                    numerator/=10;
+                    numerator = std::ceil(number*denominator);
                 }
-                storm::RationalFunction::CoeffType result=numerator;
+                storm::RationalFunction::CoeffType result(numerator);
                 result = result/denominator;
                 return result;
             }

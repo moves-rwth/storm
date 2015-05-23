@@ -51,7 +51,7 @@ namespace storm {
 
 			/*!
 			 * Tests whether the given file exists and is readable.
-			 *
+			 *qi
 			 * @param filename Path and name of the file to be tested.
 			 * @return True iff the file exists and is readable.
 			 */

@@ -65,6 +65,16 @@ namespace storm {
                         std::string const& regionsString,
                         double precision=0.0);
             
+
+                /*
+                 * Retrieves the regions that are specified in the settings.
+                 * The numbers are parsed as doubles and then converted to SparseDtmcRegionModelChecker::Boundtype.
+                 * According to the given precision, the lower bound may be rounded down and the upper bound may be rounded up.
+                 * If no precision is given, the one from the settings is used.
+                 * 
+                 */
+                static std::vector<ParameterRegion> getRegionsFromSettings(double precision=0.0);
+            
             };
             
             

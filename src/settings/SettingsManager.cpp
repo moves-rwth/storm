@@ -30,6 +30,7 @@ namespace storm {
             this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::Smt2SmtSolverSettings(*this)));
 			this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::TopologicalValueIterationEquationSolverSettings(*this)));
             this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::ParametricSettings(*this)));
+            this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::RegionSettings(*this)));
             this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::SparseDtmcEliminationModelCheckerSettings(*this)));
         }
         
@@ -522,6 +523,10 @@ namespace storm {
         
         storm::settings::modules::ParametricSettings const& parametricSettings() {
             return dynamic_cast<storm::settings::modules::ParametricSettings const&>(manager().getModule(storm::settings::modules::ParametricSettings::moduleName));
+        }
+        
+        storm::settings::modules::RegionSettings const& regionSettings() {
+            return dynamic_cast<storm::settings::modules::RegionSettings const&>(manager().getModule(storm::settings::modules::RegionSettings::moduleName));
         }
 
         storm::settings::modules::SparseDtmcEliminationModelCheckerSettings const& sparseDtmcEliminationModelCheckerSettings() {
