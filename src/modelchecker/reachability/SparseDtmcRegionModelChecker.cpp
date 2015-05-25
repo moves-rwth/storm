@@ -1,8 +1,5 @@
 #include "src/modelchecker/reachability/SparseDtmcRegionModelChecker.h"
 
-//TODO remove useless includes
-
-//#include <algorithm>
 #include <chrono>
 
 #include "src/adapters/CarlAdapter.h"
@@ -122,7 +119,7 @@ namespace storm {
         
         
         template<typename ParametricType, typename ConstantType>
-        SparseDtmcRegionModelChecker<ParametricType, ConstantType>::SparseDtmcRegionModelChecker(storm::models::sparse::Dtmc<ParametricType> const& model) : model(model), eliminationModelChecker(model) {
+        SparseDtmcRegionModelChecker<ParametricType, ConstantType>::SparseDtmcRegionModelChecker(storm::models::sparse::Dtmc<ParametricType> const& model) : model(model), eliminationModelChecker(model), probabilityOperatorFormula(nullptr) {
             // Intentionally left empty.
         }
         
@@ -155,14 +152,13 @@ namespace storm {
             
         template<typename ParametricType, typename ConstantType>
         void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::specifyFormula(storm::logic::Formula const& formula) {
-            std::chrono::high_resolution_clock::time_point timeStart = std::chrono::high_resolution_clock::now();
+            std::chrono::high_resolution_clock::time_point timePreprocessingStart = std::chrono::high_resolution_clock::now();
             STORM_LOG_THROW(this->canHandle(formula), storm::exceptions::IllegalArgumentException, "Tried to specify a formula that can not be handled.");
             
             //Get subformula, initial state, target states
             //Note: canHandle already ensures that the formula has the right shape and that the model has a single initial state.
             this->probabilityOperatorFormula= std::unique_ptr<storm::logic::ProbabilityOperatorFormula>(new storm::logic::ProbabilityOperatorFormula(formula.asStateFormula().asProbabilityOperatorFormula()));
             storm::logic::EventuallyFormula const& eventuallyFormula = this->probabilityOperatorFormula->getSubformula().asPathFormula().asEventuallyFormula();
-            storm::storage::sparse::state_type initialState = *model.getInitialStates().begin();
             std::unique_ptr<CheckResult> targetStatesResultPtr = this->eliminationModelChecker.check(eventuallyFormula.getSubformula());
             storm::storage::BitVector const& targetStates = targetStatesResultPtr->asExplicitQualitativeCheckResult().getTruthValuesVector();
 
@@ -184,31 +180,129 @@ namespace storm {
             maybeStates &= reachableStates;
             // Create a vector for the probabilities to go to a state with probability 1 in one step.
             this->oneStepProbabilities = model.getTransitionMatrix().getConstrainedRowSumVector(maybeStates, statesWithProbability1);
-            // Determine the set of initial states of the sub-model.
-            storm::storage::BitVector newInitialStates = model.getInitialStates() % maybeStates;
+            // Determine the initial state of the sub-model.
+            //storm::storage::BitVector newInitialStates = model.getInitialStates() % maybeStates;
+            this->initialState = *(model.getInitialStates() % maybeStates).begin();
             // We then build the submatrix that only has the transitions of the maybe states.
             storm::storage::SparseMatrix<ParametricType> submatrix = model.getTransitionMatrix().getSubmatrix(false, maybeStates, maybeStates);
             storm::storage::SparseMatrix<ParametricType> submatrixTransposed = submatrix.transpose();
             
-  //TODO do we need this? 
-            std::vector<std::size_t> statePriorities = this->eliminationModelChecker.getStatePriorities(submatrix, submatrixTransposed, newInitialStates, oneStepProbabilities);
-            
             // Then, we convert the reduced matrix to a more flexible format to be able to perform state elimination more easily.
-            FlexibleMatrix flexibleMatrix = this->eliminationModelChecker.getFlexibleSparseMatrix(submatrix);
-            FlexibleMatrix flexibleBackwardTransitions = this->eliminationModelChecker.getFlexibleSparseMatrix(submatrixTransposed, true);
+            this->flexibleTransitions = this->eliminationModelChecker.getFlexibleSparseMatrix(submatrix);
+            this->flexibleBackwardTransitions = this->eliminationModelChecker.getFlexibleSparseMatrix(submatrixTransposed, true);
             
-           // Create a bit vector that represents the current subsystem, i.e., states that we have not eliminated.
-            storm::storage::BitVector subsystem = storm::storage::BitVector(submatrix.getRowCount(), true);
-            eliminateStates(subsystem, flexibleMatrix, oneStepProbabilities, flexibleBackwardTransitions, newInitialStates, submatrix, statePriorities);
+            // Create a bit vector that represents the current subsystem, i.e., states that we have not eliminated.
+            this->subsystem = storm::storage::BitVector(submatrix.getRowCount(), true);
             
+            std::chrono::high_resolution_clock::time_point timeInitialStateEliminationStart = std::chrono::high_resolution_clock::now();
+            // eliminate all states with only constant outgoing transitions
+            //TODO: maybe also states with constant incoming tranistions. THEN the ordering of the eliminated states does matter.
+            eliminateStatesConstSucc(this->subsystem, this->flexibleTransitions, this->flexibleBackwardTransitions, this->oneStepProbabilities, this->initialState);
+            STORM_LOG_DEBUG("Eliminated " << subsystem.size() - subsystem.getNumberOfSetBits() << " of " << subsystem.size() << " states that had constant outgoing transitions." << std::endl);
+            std::cout << "Eliminated " << subsystem.size() - subsystem.getNumberOfSetBits() << " of " << subsystem.size() << " states that had constant outgoing transitions." << std::endl;
+            //eliminate the remaining states to get the reachability probability function
+            this->sparseTransitions = flexibleTransitions.getSparseMatrix();
+            this->sparseBackwardTransitions = this->sparseTransitions.transpose();
+            this->reachProbFunction = computeReachProbFunction(this->subsystem, this->flexibleTransitions, this->flexibleBackwardTransitions, this->sparseTransitions, this->sparseBackwardTransitions, this->oneStepProbabilities, this->initialState);
+            std::cout << std::endl <<"the resulting reach prob function is " << std::endl << this->reachProbFunction << std::endl << std::endl;
+            std::chrono::high_resolution_clock::time_point timeInitialStateEliminationEnd = std::chrono::high_resolution_clock::now();
             
-    //        std::chrono::high_resolution_clock::time_point timeStateElemEnd = std::chrono::high_resolution_clock::now();
-            
-            
+            //some information for statistics...
             std::chrono::high_resolution_clock::time_point timePreprocessingEnd = std::chrono::high_resolution_clock::now();
+            this->timePreprocessing= timePreprocessingEnd - timePreprocessingStart;
+            this->timeInitialStateElimination = timeInitialStateEliminationEnd-timeInitialStateEliminationStart;
+            this->numOfCheckedRegions=0;
         }
-           
+        
+        template<typename ParametricType, typename ConstantType>
+        void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::eliminateStatesConstSucc(
+                storm::storage::BitVector& subsys, 
+                FlexibleMatrix& flexTransitions,
+                FlexibleMatrix& flexBackwardTransitions,
+                std::vector<ParametricType>& oneStepProbs,
+                storm::storage::sparse::state_type const& initialState) {
             
+            //temporarily unselect the initial state to skip it.
+            subsys.set(initialState, false);
+            
+            boost::optional<std::vector<ParametricType>> missingStateRewards;
+            for (auto const& state : subsys) {
+                bool onlyConstantOutgoingTransitions=true;
+                for(auto const& entry : flexTransitions.getRow(state)){
+                    if(!this->parametricTypeComparator.isConstant(entry.getValue())){
+                        onlyConstantOutgoingTransitions=false;
+                        break;
+                    }
+                }
+                if(onlyConstantOutgoingTransitions){
+                    this->eliminationModelChecker.eliminateState(flexTransitions, oneStepProbs, state, flexBackwardTransitions, missingStateRewards);
+                    subsys.set(state,false);
+                }
+            }
+            subsys.set(initialState, true);
+        }
+        
+        
+        template<typename ParametricType, typename ConstantType>
+        ParametricType SparseDtmcRegionModelChecker<ParametricType, ConstantType>::computeReachProbFunction(
+                storm::storage::BitVector const& subsys,
+                FlexibleMatrix const& flexTransitions,
+                FlexibleMatrix const& flexBackwardTransitions,
+                storm::storage::SparseMatrix<ParametricType> const& spTransitions,
+                storm::storage::SparseMatrix<ParametricType> const& spBackwardTransitions,
+                std::vector<ParametricType> const& oneStepProbs,
+                storm::storage::sparse::state_type const& initState){
+            
+            //Note: this function is very similar to eliminationModelChecker.computeReachabilityValue
+            
+            //get working copies of the flexible transitions and oneStepProbabilities with which we will actually work (eliminate states etc).
+            FlexibleMatrix workingCopyFlexTrans(flexTransitions);
+            FlexibleMatrix workingCopyFlexBackwTrans(flexBackwardTransitions);
+            std::vector<ParametricType> workingCopyOneStepProbs(oneStepProbs);
+            
+            storm::storage::BitVector initialStates(subsys.size(),false);
+            initialStates.set(initState, true);
+            std::vector<std::size_t> statePriorities = this->eliminationModelChecker.getStatePriorities(spTransitions, spBackwardTransitions, initialStates, workingCopyOneStepProbs);
+            boost::optional<std::vector<ParametricType>> missingStateRewards;
+            
+            // Remove the initial state from the states which we need to eliminate.
+            storm::storage::BitVector statesToEliminate(subsys);
+            statesToEliminate.set(initState, false);
+            
+            //pure state elimination or hybrid method?
+            if (storm::settings::sparseDtmcEliminationModelCheckerSettings().getEliminationMethod() == storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::EliminationMethod::State) {
+                std::vector<storm::storage::sparse::state_type> states(statesToEliminate.begin(), statesToEliminate.end());
+                std::sort(states.begin(), states.end(), [&statePriorities] (storm::storage::sparse::state_type const& a, storm::storage::sparse::state_type const& b) { return statePriorities[a] < statePriorities[b]; });
+                
+                STORM_LOG_DEBUG("Eliminating " << states.size() << " states using the state elimination technique." << std::endl);
+                for (auto const& state : states) {
+                    this->eliminationModelChecker.eliminateState(workingCopyFlexTrans, workingCopyOneStepProbs, state, workingCopyFlexBackwTrans, missingStateRewards);
+                }
+            }
+            else if (storm::settings::sparseDtmcEliminationModelCheckerSettings().getEliminationMethod() == storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::EliminationMethod::Hybrid) {
+                uint_fast64_t maximalDepth = 0;
+                std::vector<storm::storage::sparse::state_type> entryStateQueue;
+                STORM_LOG_DEBUG("Eliminating " << statesToEliminate.size() << " states using the hybrid elimination technique." << std::endl);
+                maximalDepth = eliminationModelChecker.treatScc(workingCopyFlexTrans, workingCopyOneStepProbs, initialStates, statesToEliminate, spTransitions, workingCopyFlexBackwTrans, false, 0, storm::settings::sparseDtmcEliminationModelCheckerSettings().getMaximalSccSize(), entryStateQueue, missingStateRewards, statePriorities);
+                
+                // If the entry states were to be eliminated last, we need to do so now.
+                STORM_LOG_DEBUG("Eliminating " << entryStateQueue.size() << " entry states as a last step.");
+                if (storm::settings::sparseDtmcEliminationModelCheckerSettings().isEliminateEntryStatesLastSet()) {
+                    for (auto const& state : entryStateQueue) {
+                        eliminationModelChecker.eliminateState(workingCopyFlexTrans, workingCopyOneStepProbs, state, workingCopyFlexBackwTrans, missingStateRewards);
+                    }
+                }
+            }
+            else {
+                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "The selected state elimination Method has not been implemented.");
+            }
+            //finally, eliminate the initial state
+            this->eliminationModelChecker.eliminateState(workingCopyFlexTrans, workingCopyOneStepProbs, initState, workingCopyFlexBackwTrans, missingStateRewards);
+            
+            return workingCopyOneStepProbs[initState];
+        }
+            
+ 
             
         
         template<>
@@ -681,6 +775,31 @@ namespace storm {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "the comparison relation of the formula is not supported");
             }
         }
+
+        template<typename ParametricType, typename ConstantType>
+        void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::printStatisticsToStream(std::ostream& outstream) {
+            
+            std::chrono::milliseconds timePreprocessingInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timePreprocessing);
+            std::chrono::milliseconds timeInitialStateEliminationInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timeInitialStateElimination);
+            
+            std::chrono::high_resolution_clock::duration timeOverall = timePreprocessing; // + ...
+            std::chrono::milliseconds timeOverallInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(timeOverall);
+            
+            outstream << std::endl << "Statistics Region Model Checker:" << std::endl;
+            outstream << "-----------------------------------------------" << std::endl;
+            outstream << "Model: " << this->model.getNumberOfStates() << " states, " << this->model.getNumberOfTransitions() << " transitions." << std::endl;
+            outstream << "Reduced model: " << this->subsystem.getNumberOfSetBits() << " states, " << this->sparseTransitions.getEntryCount() << "transitions" << std::endl;
+            outstream << "Formula: " << *this->probabilityOperatorFormula << std::endl;
+            outstream << "Number of checked regions: " << this->numOfCheckedRegions << std::endl;
+            outstream << "Running times:" << std::endl;
+            outstream << "  " << timeOverallInMilliseconds.count() << "ms overall" << std::endl;
+            outstream << "  " << timePreprocessingInMilliseconds.count() << "ms Preprocessing including... " << std::endl;
+            outstream << "    " << timeInitialStateEliminationInMilliseconds.count() << "ms Initial state elimination" << std::endl;
+            //outstream << "  " << timeInMilliseconds.count() << "ms " << std::endl;
+            outstream << "-----------------------------------------------" << std::endl;
+            
+        }
+
         
 #endif
         

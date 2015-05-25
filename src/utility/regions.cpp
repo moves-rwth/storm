@@ -52,7 +52,7 @@ namespace storm {
                 STORM_LOG_WARN_COND((upperBound==convertNumber<BoundType, double>(ub, true, actualPrecision)), "The upper bound of '"<< parameterBoundsString << "' could not be parsed accurately. Increase precision?");
                 lowerBounds.emplace(std::make_pair(var, lb));  
                 upperBounds.emplace(std::make_pair(var, ub));
-                std::cout << "parsed bounds " << parameterBoundsString << ": lb=" << lowerBound << " ub=" << upperBound << " param='" << parameter << "' precision=" << actualPrecision << std::endl;
+               // std::cout << "parsed bounds " << parameterBoundsString << ": lb=" << lowerBound << " ub=" << upperBound << " param='" << parameter << "' precision=" << actualPrecision << std::endl;
             }
             
             template<typename ParametricType, typename ConstantType>

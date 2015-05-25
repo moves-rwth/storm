@@ -58,6 +58,8 @@ namespace storm {
             bool isZero(ValueType const& value) const;
             
             bool isEqual(ValueType const& value1, ValueType const& value2) const;
+            
+            bool isConstant(ValueType const& value) const;
         };
         
         // For floats we specialize this class and consider the comparison modulo some predefined precision.

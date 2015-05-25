@@ -92,6 +92,11 @@ namespace storm {
              * ParameterRegions should contain all parameters.
              */
             bool checkRegion(storm::logic::Formula const& formula, std::vector<ParameterRegion> parameterRegions);
+            
+            /*!
+             * Prints statistical information (mostly running times) to the given stream.
+             */
+            void printStatisticsToStream(std::ostream& outstream);
         private:
             
             typedef typename storm::modelchecker::SparseDtmcEliminationModelChecker<ParametricType>::FlexibleSparseMatrix FlexibleMatrix;
@@ -137,29 +142,68 @@ namespace storm {
             template <typename ValueType>
             bool valueIsInBoundOfFormula(ValueType value);
             
+            //eliminates all states for which the outgoing transitions are constant.
+            void eliminateStatesConstSucc(
+                    storm::storage::BitVector& subsys,
+                    FlexibleMatrix& flexTransitions,
+                     FlexibleMatrix& flexBackwardTransitions,
+                    std::vector<ParametricType>& oneStepProbs,
+                    storm::storage::sparse::state_type const& initState
+            );
+            
+            //Computes the reachability probability function by performing state elimination
+            ParametricType computeReachProbFunction(
+                storm::storage::BitVector const& subsys,
+                FlexibleMatrix const& flexTransitions,
+                FlexibleMatrix const& flexBackwardTransitions,
+                storm::storage::SparseMatrix<ParametricType> const& spTransitions,
+                storm::storage::SparseMatrix<ParametricType> const& spBackwardTransitions,
+                std::vector<ParametricType> const& oneStepProbs,
+                storm::storage::sparse::state_type const& initState
+            );
+            
+            
+            
+            
             
             // The model this model checker is supposed to analyze.
             storm::models::sparse::Dtmc<ParametricType> const& model;
-            
+
+            //classes that provide auxilliary functions
             // Instance of an elimination model checker to access its functions
             storm::modelchecker::SparseDtmcEliminationModelChecker<ParametricType> eliminationModelChecker;
+            // comparators that can be used to compare constants.
+            storm::utility::ConstantsComparator<ParametricType> parametricTypeComparator;
+            storm::utility::ConstantsComparator<ConstantType> constantTypeComparator;
             
-            // 
+
+            //the following members depend on the currently specified formula:
             
-            // A comparator that can be used to compare constants.
-            //storm::utility::ConstantsComparator<ParametricType> comparator;
-            
-            //the following members depend on the currently specified formula
             //the currently specified formula
             std::unique_ptr<storm::logic::ProbabilityOperatorFormula> probabilityOperatorFormula;
-            // the propabilities to go to a state with probability 1 in one step
+            
+            // The ingredients of the model where constant transitions have been eliminated as much as possible
+            // the probability matrix
+            FlexibleMatrix flexibleTransitions;
+            storm::storage::SparseMatrix<ParametricType>  sparseTransitions;
+            //the corresponding backward transitions
+            FlexibleMatrix flexibleBackwardTransitions;
+            storm::storage::SparseMatrix<ParametricType>  sparseBackwardTransitions;
+            // the propabilities to go to a state with probability 1 in one step (belongs to flexibleTransitions)
             std::vector<ParametricType> oneStepProbabilities;
+            // the initial state
+            storm::storage::sparse::state_type initialState;
+            // the set of states that have not been eliminated
+            storm::storage::BitVector subsystem;
             
             // The  function for the reachability probability in the initial state 
             ParametricType reachProbFunction;
             
-            // running times
             
+            // runtimes and other information for statistics. 
+            uint_fast64_t numOfCheckedRegions;
+            std::chrono::high_resolution_clock::duration timePreprocessing;
+            std::chrono::high_resolution_clock::duration timeInitialStateElimination;
         };
         
     } // namespace modelchecker
