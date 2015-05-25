@@ -987,6 +987,26 @@ namespace storm {
         }        
         
         template<typename ValueType>
+        storm::storage::SparseMatrix<ValueType> SparseDtmcEliminationModelChecker<ValueType>::FlexibleSparseMatrix::getSparseMatrix() const {
+            //first get the number of entries
+            index_type numEntries=0;
+            for(index_type rowIndex=0; rowIndex<this->getNumberOfRows(); ++rowIndex){
+                auto const& row=this->getRow(rowIndex);
+                numEntries += row.size();
+            }
+            //fill the data
+            storm::storage::SparseMatrixBuilder<ValueType> matrixBuilder(this->getNumberOfRows(), this->getNumberOfRows(),numEntries);
+            for(index_type rowIndex=0; rowIndex<this->getNumberOfRows(); ++rowIndex){
+                auto const& row=this->getRow(rowIndex);
+                for(auto const& entry : row){
+                    matrixBuilder.addNextValue(rowIndex,entry.getColumn(),entry.getValue());
+                }
+            }
+            return matrixBuilder.build();
+        }
+
+        
+        template<typename ValueType>
         typename SparseDtmcEliminationModelChecker<ValueType>::FlexibleSparseMatrix SparseDtmcEliminationModelChecker<ValueType>::getFlexibleSparseMatrix(storm::storage::SparseMatrix<ValueType> const& matrix, bool setAllValuesToOne) {
             FlexibleSparseMatrix flexibleMatrix(matrix.getRowCount());
             

@@ -91,6 +91,12 @@ namespace storm {
              */
             template<typename VariableType>
             VariableType getVariableFromString(std::string variableString);
+            
+            /*
+             * retrieves the variable name  from the given variable
+             */
+            template<typename VariableType>
+            std::string getVariableName(VariableType variable);
         }
     }
 }

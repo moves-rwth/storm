@@ -22,12 +22,29 @@ namespace storm {
             typedef typename std::conditional<(std::is_same<ParametricType,storm::RationalFunction>::value), storm::Variable,std::nullptr_t>::type VariableType;
             typedef typename std::conditional<(std::is_same<ParametricType,storm::RationalFunction>::value), storm::RationalFunction::CoeffType,std::nullptr_t>::type BoundType;
             
-            enum class RegionCheckResult { UNKNOWN, ALLSAT, ALLUNSAT, INCONCLUSIVE};
+            /*!
+             * The possible results for a single region
+             */
+            enum class RegionCheckResult { 
+                UNKNOWN, /*!< the result is unknown */
+                ALLSAT, /*!< the formula is satisfied for all parameters in the given region */
+                ALLUNSAT, /*!< the formula is violated for all parameters in the given region */
+                INCONCLUSIVE /*!< the formula is satisfied for some parameters but also violated for others */
+            };
             
             class ParameterRegion{
             public:
-                
+
                 ParameterRegion(std::map<VariableType, BoundType> lowerBounds, std::map<VariableType, BoundType> upperBounds);
+                
+                void setCheckResult(RegionCheckResult checkResult) {
+                    this->checkResult = checkResult;
+                }
+
+                RegionCheckResult getCheckResult() const {
+                    return checkResult;
+                }
+                
                 
                 std::set<VariableType> getVariables() const;
                 BoundType const& getLowerBound(VariableType const& variable) const;
@@ -42,6 +59,9 @@ namespace storm {
                  */
                 std::vector<std::map<VariableType, BoundType>> getVerticesOfRegion(std::set<VariableType> const& consideredVariables) const;
                 
+                std::string getCheckResultAsString() const;
+                std::string getRegionAsString() const;
+                
             private:
                 
                 std::map<VariableType, BoundType> const lowerBounds;
@@ -52,7 +72,20 @@ namespace storm {
             
             explicit SparseDtmcRegionModelChecker(storm::models::sparse::Dtmc<ParametricType> const& model);
 
-            virtual bool canHandle(storm::logic::Formula const& formula) const;
+            /*!
+             * Checks if the given formula can be handled by this
+             * @param formula the formula to be checked
+             */
+            bool canHandle(storm::logic::Formula const& formula) const;
+            
+            /*!
+             * Specifies the considered formula.
+             * A few preprocessing steps are performed.
+             * If another formula has been specified before, all 'context' regarding the old formula is lost.
+             * 
+             * @param formula the formula to be considered.
+             */
+            void specifyFormula(storm::logic::Formula const& formula);
 
             /*!
              * Checks whether the given formula holds for all possible parameters that satisfy the given parameter regions
@@ -60,9 +93,18 @@ namespace storm {
              */
             bool checkRegion(storm::logic::Formula const& formula, std::vector<ParameterRegion> parameterRegions);
         private:
+            
             typedef typename storm::modelchecker::SparseDtmcEliminationModelChecker<ParametricType>::FlexibleSparseMatrix FlexibleMatrix;
             
-                            #ifdef STORM_HAVE_CARL
+            /*!
+             * Represents the current state of this
+             */
+           // enum class RegionCheckerState{
+         //       NOFORMULA, /*!< there is no formula */
+         //       INITIALIZED, /*!< a formula has been specified. Ready to get regions*/
+        //    };
+            
+   #ifdef STORM_HAVE_CARL
                 /*!
                  * Instantiates the matrix, i.e., evaluate the occurring functions according to the given substitutions of the variables.
                  * One row of the given flexible matrix will be one rowgroup in the returned matrix, consisting of one row for every substitution.
@@ -92,7 +134,8 @@ namespace storm {
             
             void restrictProbabilityVariables(storm::solver::Smt2SmtSolver& solver, std::vector<storm::RationalFunction::PolyType> const& stateProbVars, storm::storage::BitVector const& subsystem, FlexibleMatrix const& flexibleMatrix, std::vector<storm::RationalFunction> const& oneStepProbabilities, ParameterRegion const& region, storm::logic::ComparisonType const& compTypeOfProperty);
 #endif         
-                
+            template <typename ValueType>
+            bool valueIsInBoundOfFormula(ValueType value);
             
             
             // The model this model checker is supposed to analyze.
@@ -101,8 +144,21 @@ namespace storm {
             // Instance of an elimination model checker to access its functions
             storm::modelchecker::SparseDtmcEliminationModelChecker<ParametricType> eliminationModelChecker;
             
+            // 
+            
             // A comparator that can be used to compare constants.
-            storm::utility::ConstantsComparator<ParametricType> comparator;
+            //storm::utility::ConstantsComparator<ParametricType> comparator;
+            
+            //the following members depend on the currently specified formula
+            //the currently specified formula
+            std::unique_ptr<storm::logic::ProbabilityOperatorFormula> probabilityOperatorFormula;
+            // the propabilities to go to a state with probability 1 in one step
+            std::vector<ParametricType> oneStepProbabilities;
+            
+            // The  function for the reachability probability in the initial state 
+            ParametricType reachProbFunction;
+            
+            // running times
             
         };
         

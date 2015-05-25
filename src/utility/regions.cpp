@@ -126,10 +126,16 @@ namespace storm {
                 return cln::double_approx(number);
             }
             
+            template<>
+            double convertNumber<double, double>(double const& number, bool const& roundDown, double const& precision){
+                return number;
+            }
+            
             template<typename SourceType, typename TargetType>
             TargetType convertNumber(SourceType const& number, bool const& roundDown, double const& precision){
                 STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "number conversion between the given types not implemented");
             }
+            
             
             template<>
             storm::Variable getVariableFromString<storm::Variable>(std::string variableString){
@@ -140,7 +146,17 @@ namespace storm {
             
             template<typename VariableType>
             VariableType getVariableFromString(std::string variableString){
-                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Variable from String not implemented for this Type");
+                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Variable from String not implemented for this type");
+            }
+            
+            template<>
+            std::string getVariableName<storm::Variable>(storm::Variable variable){
+                return carl::VariablePool::getInstance().getName(variable);
+            }
+            
+            template<typename VariableType>
+            std::string getVariableName(VariableType variable){
+                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "VariableName from Variable not implemented for this type");
             }
             
             //explicit instantiations
@@ -150,8 +166,10 @@ namespace storm {
        template storm::RationalFunction convertNumber<double, storm::RationalFunction>(double const& number, bool const& roundDown, double const& precision);
        template storm::RationalFunction::CoeffType convertNumber<double, storm::RationalFunction::CoeffType>(double const& number, bool const& roundDown, double const& precision);
        template double convertNumber<cln::cl_RA, double>(storm::RationalFunction::CoeffType const& number, bool const& roundDown, double const& precision);
+       template double convertNumber<double, double>(double const& number, bool const& roundDown, double const& precision);
        
        template storm::Variable getVariableFromString<storm::Variable>(std::string variableString);
+       template std::string getVariableName<storm::Variable>(storm::Variable variable);
 #endif 
         }
     }

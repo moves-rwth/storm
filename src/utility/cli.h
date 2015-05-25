@@ -477,17 +477,18 @@ namespace storm {
                     std::cout << std::endl << "Model checking property: " << *formula << " for all parameters in the given regions." << std::endl;
                     
                     auto regions=storm::utility::regions::RegionParser<storm::RationalFunction, double>::getRegionsFromSettings();                    
-                    
                     storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double> modelchecker(*dtmc);
                     auto result = modelchecker.checkRegion(*formula.get(), regions);
                     std::cout << "... done." << std::endl;
-                    if (result){
-                    std::cout << "the property holds for all parameters in the given region" << std::endl;
-                    }else{
-                    std::cout << "the property does NOT hold for all parameters in the given region" << std::endl;
+                    if (!result){
+                        std::cout << "The result of one or more regions is still unknown." << std::endl;    
+                    }
+                    for(auto const& reg : regions){
+                        std::cout << reg.getRegionAsString() << "      Result: " << reg.getCheckResultAsString() << std::endl;
                     }
                     
-                }else{
+                }
+                else{
                     // obtain the resulting rational function
                     std::cout << std::endl << "Model checking property: " << *formula << " ...";
                     std::unique_ptr<storm::modelchecker::CheckResult> result;

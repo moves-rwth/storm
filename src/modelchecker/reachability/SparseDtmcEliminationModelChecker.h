@@ -61,6 +61,8 @@ namespace storm {
                  */
                 bool hasSelfLoop(storm::storage::sparse::state_type state) const;
                 
+                storm::storage::SparseMatrix<ValueType> getSparseMatrix() const;
+                
             private:
                 std::vector<row_type> data;
             };

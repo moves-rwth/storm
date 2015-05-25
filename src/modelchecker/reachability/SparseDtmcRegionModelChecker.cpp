@@ -85,8 +85,39 @@ namespace storm {
             }
             return resultingVector;
         }
+
+        template<typename ParametricType, typename ConstantType>
+        std::string SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::getCheckResultAsString() const {
+            switch (this->checkResult) {
+                case RegionCheckResult::UNKNOWN:
+                    return "unknown";
+                case RegionCheckResult::ALLSAT:
+                    return "allSat";
+                case RegionCheckResult::ALLUNSAT:
+                    return "allUnsat";
+                case RegionCheckResult::INCONCLUSIVE:
+                    return "Inconclusive";
+            }
+            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Could not identify check result")
+            return "ERROR";
+        }
             
-        
+        template<typename ParametricType, typename ConstantType>
+        std::string SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::getRegionAsString() const {
+            std::stringstream regionstringstream;
+            for(auto var : this->getVariables()){
+                regionstringstream << storm::utility::regions::convertNumber<SparseDtmcRegionModelChecker<ParametricType, ConstantType>::BoundType,double>(this->getLowerBound(var));
+                regionstringstream << "<=";
+                regionstringstream << storm::utility::regions::getVariableName(var);
+                regionstringstream << "<=";
+                regionstringstream << storm::utility::regions::convertNumber<SparseDtmcRegionModelChecker<ParametricType, ConstantType>::BoundType,double>(this->getUpperBound(var));
+                regionstringstream << ",";
+            }
+            std::string regionstring = regionstringstream.str();
+            //the last comma should actually be a semicolon
+            regionstring = regionstring.substr(0,regionstring.length()-1) + ";";
+            return regionstring;
+        }
                 
         
         
@@ -115,10 +146,68 @@ namespace storm {
                 STORM_LOG_DEBUG("Region Model Checker could not handle formula " << formula << " Reason: expected an eventually subformula");
                 return false;
             }
+            if(model.getInitialStates().getNumberOfSetBits() != 1){
+                STORM_LOG_DEBUG("Input model is required to have exactly one initial state.");
+                return false;
+            }
             return true;
         }
             
+        template<typename ParametricType, typename ConstantType>
+        void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::specifyFormula(storm::logic::Formula const& formula) {
+            std::chrono::high_resolution_clock::time_point timeStart = std::chrono::high_resolution_clock::now();
+            STORM_LOG_THROW(this->canHandle(formula), storm::exceptions::IllegalArgumentException, "Tried to specify a formula that can not be handled.");
             
+            //Get subformula, initial state, target states
+            //Note: canHandle already ensures that the formula has the right shape and that the model has a single initial state.
+            this->probabilityOperatorFormula= std::unique_ptr<storm::logic::ProbabilityOperatorFormula>(new storm::logic::ProbabilityOperatorFormula(formula.asStateFormula().asProbabilityOperatorFormula()));
+            storm::logic::EventuallyFormula const& eventuallyFormula = this->probabilityOperatorFormula->getSubformula().asPathFormula().asEventuallyFormula();
+            storm::storage::sparse::state_type initialState = *model.getInitialStates().begin();
+            std::unique_ptr<CheckResult> targetStatesResultPtr = this->eliminationModelChecker.check(eventuallyFormula.getSubformula());
+            storm::storage::BitVector const& targetStates = targetStatesResultPtr->asExplicitQualitativeCheckResult().getTruthValuesVector();
+
+            // Then, compute the subset of states that has a probability of 0 or 1, respectively.
+            std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(model, storm::storage::BitVector(model.getNumberOfStates(),true), targetStates);
+            storm::storage::BitVector statesWithProbability0 = statesWithProbability01.first;
+            storm::storage::BitVector statesWithProbability1 = statesWithProbability01.second;
+            storm::storage::BitVector maybeStates = ~(statesWithProbability0 | statesWithProbability1);
+            
+            // If the initial state is known to have either probability 0 or 1, we can directly set the reachProbFunction.
+            if (model.getInitialStates().isDisjointFrom(maybeStates)) {
+                STORM_LOG_DEBUG("The probability of the initial state is constant (0 or 1)");
+                this->reachProbFunction = statesWithProbability0.get(*model.getInitialStates().begin()) ? storm::utility::zero<ParametricType>() : storm::utility::one<ParametricType>();
+            }
+            
+            // Determine the set of states that is reachable from the initial state without jumping over a target state.
+            storm::storage::BitVector reachableStates = storm::utility::graph::getReachableStates(model.getTransitionMatrix(), model.getInitialStates(), maybeStates, statesWithProbability1);
+            // Subtract from the maybe states the set of states that is not reachable (on a path from the initial to a target state).
+            maybeStates &= reachableStates;
+            // Create a vector for the probabilities to go to a state with probability 1 in one step.
+            this->oneStepProbabilities = model.getTransitionMatrix().getConstrainedRowSumVector(maybeStates, statesWithProbability1);
+            // Determine the set of initial states of the sub-model.
+            storm::storage::BitVector newInitialStates = model.getInitialStates() % maybeStates;
+            // We then build the submatrix that only has the transitions of the maybe states.
+            storm::storage::SparseMatrix<ParametricType> submatrix = model.getTransitionMatrix().getSubmatrix(false, maybeStates, maybeStates);
+            storm::storage::SparseMatrix<ParametricType> submatrixTransposed = submatrix.transpose();
+            
+  //TODO do we need this? 
+            std::vector<std::size_t> statePriorities = this->eliminationModelChecker.getStatePriorities(submatrix, submatrixTransposed, newInitialStates, oneStepProbabilities);
+            
+            // Then, we convert the reduced matrix to a more flexible format to be able to perform state elimination more easily.
+            FlexibleMatrix flexibleMatrix = this->eliminationModelChecker.getFlexibleSparseMatrix(submatrix);
+            FlexibleMatrix flexibleBackwardTransitions = this->eliminationModelChecker.getFlexibleSparseMatrix(submatrixTransposed, true);
+            
+           // Create a bit vector that represents the current subsystem, i.e., states that we have not eliminated.
+            storm::storage::BitVector subsystem = storm::storage::BitVector(submatrix.getRowCount(), true);
+            eliminateStates(subsystem, flexibleMatrix, oneStepProbabilities, flexibleBackwardTransitions, newInitialStates, submatrix, statePriorities);
+            
+            
+    //        std::chrono::high_resolution_clock::time_point timeStateElemEnd = std::chrono::high_resolution_clock::now();
+            
+            
+            std::chrono::high_resolution_clock::time_point timePreprocessingEnd = std::chrono::high_resolution_clock::now();
+        }
+           
             
             
         
@@ -573,6 +662,24 @@ namespace storm {
         template<typename ParametricType, typename ConstantType>
         bool SparseDtmcRegionModelChecker<ParametricType, ConstantType>::checkRegion(storm::logic::Formula const& formula, std::vector<ParameterRegion> parameterRegions){
             STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Region check is not supported for this type");
+        }
+        
+        template<typename ParametricType, typename ConstantType>
+        template<typename ValueType>
+        bool SparseDtmcRegionModelChecker<ParametricType, ConstantType>::valueIsInBoundOfFormula(ValueType value){
+            double valueAsDouble = storm::utility::regions::convertNumber<ValueType, double>(value);
+            switch (this->probabilityOperatorFormula->getComparisonType()) {
+                case storm::logic::ComparisonType::Greater:
+                    return (valueAsDouble > this->probabilityOperatorFormula->getBound());
+                case storm::logic::ComparisonType::GreaterEqual:
+                    return (valueAsDouble >= this->probabilityOperatorFormula->getBound());
+                case storm::logic::ComparisonType::Less:
+                    return (valueAsDouble < this->probabilityOperatorFormula->getBound());
+                case storm::logic::ComparisonType::LessEqual:
+                    return (valueAsDouble <= this->probabilityOperatorFormula->getBound());
+                default:
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "the comparison relation of the formula is not supported");
+            }
         }
         
 #endif
