@@ -131,11 +131,11 @@ namespace storm {
                 return number;
             }
             
-            template<typename SourceType, typename TargetType>
-            TargetType convertNumber(SourceType const& number, bool const& roundDown, double const& precision){
-                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "number conversion between the given types not implemented");
+            template<>
+            cln::cl_RA convertNumber<cln::cl_RA, cln::cl_RA>(cln::cl_RA const& number, bool const& roundDown, double const& precision){
+                return number;
             }
-            
+                       
             
             template<>
             storm::Variable getVariableFromString<storm::Variable>(std::string variableString){
@@ -143,33 +143,46 @@ namespace storm {
                 STORM_LOG_THROW(var!=carl::Variable::NO_VARIABLE, storm::exceptions::InvalidArgumentException, "Variable '" + variableString + "' could not be found.");
                 return var;
             }
-            
-            template<typename VariableType>
-            VariableType getVariableFromString(std::string variableString){
-                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Variable from String not implemented for this type");
-            }
-            
+                      
             template<>
             std::string getVariableName<storm::Variable>(storm::Variable variable){
                 return carl::VariablePool::getInstance().getName(variable);
             }
+                        
+            template<>
+            typename storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction,double>::BoundType evaluateFunction<storm::RationalFunction, double>(
+                    storm::RationalFunction const& function, 
+                    std::map<typename storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction,double>::VariableType,
+                             typename storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction,double>::BoundType> const& point){
+                return function.evaluate(point);
+            }
             
-            template<typename VariableType>
-            std::string getVariableName(VariableType variable){
-                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "VariableName from Variable not implemented for this type");
+            template<>
+            bool functionIsLinear<storm::RationalFunction>(storm::RationalFunction const& function){
+                // Note: At this moment there is no function in carl for rationalFunctions.
+                // We therefore check whether the numerator is linear and the denominator constant.
+                // We simplify the function to (hopefully) avoid wrong answers for situations like x^2/x
+                storm::utility::simplify(function);
+                bool result=(function.nominator().isLinear() && function.denominator().isConstant());
+                STORM_LOG_WARN_COND(result, "The function " << function << "is not considered as linear.");
+                return result;
             }
             
             //explicit instantiations
+       template double convertNumber<double, double>(double const& number, bool const& roundDown, double const& precision);
+       
 #ifdef STORM_HAVE_CARL
        template class RegionParser<storm::RationalFunction, double>;
        
        template storm::RationalFunction convertNumber<double, storm::RationalFunction>(double const& number, bool const& roundDown, double const& precision);
        template storm::RationalFunction::CoeffType convertNumber<double, storm::RationalFunction::CoeffType>(double const& number, bool const& roundDown, double const& precision);
        template double convertNumber<cln::cl_RA, double>(storm::RationalFunction::CoeffType const& number, bool const& roundDown, double const& precision);
-       template double convertNumber<double, double>(double const& number, bool const& roundDown, double const& precision);
+       template cln::cl_RA convertNumber<cln::cl_RA, cln::cl_RA>(cln::cl_RA const& number, bool const& roundDown, double const& precision);
        
        template storm::Variable getVariableFromString<storm::Variable>(std::string variableString);
        template std::string getVariableName<storm::Variable>(storm::Variable variable);
+       
+       template bool functionIsLinear<storm::RationalFunction>(storm::RationalFunction const& function);
 #endif 
         }
     }

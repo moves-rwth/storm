@@ -28,9 +28,40 @@ namespace storm {
         
         template<typename ParametricType, typename ConstantType>
         SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::ParameterRegion(std::map<VariableType, BoundType> lowerBounds, std::map<VariableType, BoundType> upperBounds) : lowerBounds(lowerBounds), upperBounds(upperBounds), checkResult(RegionCheckResult::UNKNOWN) {
-            // Intentionally left empty.
             //todo: check whether both mappings map the same variables
         }
+
+        template<typename ParametricType, typename ConstantType>        
+        void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::setUnSatPoint(std::map<VariableType, BoundType> const& unSatPoint) {
+            this->unSatPoint = unSatPoint;
+        }
+        
+        template<typename ParametricType, typename ConstantType>
+        std::map<typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::VariableType, typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::BoundType> SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::getUnSatPoint() const {
+            return unSatPoint;
+        }
+        
+        template<typename ParametricType, typename ConstantType>
+        void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::setSatPoint(std::map<VariableType, BoundType> const& satPoint) {
+            this->satPoint = satPoint;
+        }
+
+        template<typename ParametricType, typename ConstantType>
+        std::map<typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::VariableType, typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::BoundType> SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::getSatPoint() const {
+            return satPoint;
+        }
+        
+        template<typename ParametricType, typename ConstantType>
+        void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::setCheckResult(RegionCheckResult checkResult) {
+            this->checkResult = checkResult;
+        }
+
+        template<typename ParametricType, typename ConstantType>        
+        typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::RegionCheckResult SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::getCheckResult() const {
+            return checkResult;
+        }
+
+      
                 
         template<typename ParametricType, typename ConstantType>
         std::set<typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::VariableType> SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::getVariables() const{
@@ -84,7 +115,7 @@ namespace storm {
         }
 
         template<typename ParametricType, typename ConstantType>
-        std::string SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::getCheckResultAsString() const {
+        std::string SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::checkResultToString() const {
             switch (this->checkResult) {
                 case RegionCheckResult::UNKNOWN:
                     return "unknown";
@@ -100,7 +131,7 @@ namespace storm {
         }
             
         template<typename ParametricType, typename ConstantType>
-        std::string SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::getRegionAsString() const {
+        std::string SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::toString() const {
             std::stringstream regionstringstream;
             for(auto var : this->getVariables()){
                 regionstringstream << storm::utility::regions::convertNumber<SparseDtmcRegionModelChecker<ParametricType, ConstantType>::BoundType,double>(this->getLowerBound(var));
@@ -197,14 +228,14 @@ namespace storm {
             std::chrono::high_resolution_clock::time_point timeInitialStateEliminationStart = std::chrono::high_resolution_clock::now();
             // eliminate all states with only constant outgoing transitions
             //TODO: maybe also states with constant incoming tranistions. THEN the ordering of the eliminated states does matter.
-            eliminateStatesConstSucc(this->subsystem, this->flexibleTransitions, this->flexibleBackwardTransitions, this->oneStepProbabilities, this->initialState);
+            eliminateStatesConstSucc(this->subsystem, this->flexibleTransitions, this->flexibleBackwardTransitions, this->oneStepProbabilities, this->hasOnlyLinearFunctions, this->initialState);
             STORM_LOG_DEBUG("Eliminated " << subsystem.size() - subsystem.getNumberOfSetBits() << " of " << subsystem.size() << " states that had constant outgoing transitions." << std::endl);
             std::cout << "Eliminated " << subsystem.size() - subsystem.getNumberOfSetBits() << " of " << subsystem.size() << " states that had constant outgoing transitions." << std::endl;
             //eliminate the remaining states to get the reachability probability function
             this->sparseTransitions = flexibleTransitions.getSparseMatrix();
             this->sparseBackwardTransitions = this->sparseTransitions.transpose();
             this->reachProbFunction = computeReachProbFunction(this->subsystem, this->flexibleTransitions, this->flexibleBackwardTransitions, this->sparseTransitions, this->sparseBackwardTransitions, this->oneStepProbabilities, this->initialState);
-            std::cout << std::endl <<"the resulting reach prob function is " << std::endl << this->reachProbFunction << std::endl << std::endl;
+      //      std::cout << std::endl <<"the resulting reach prob function is " << std::endl << this->reachProbFunction << std::endl << std::endl;
             std::chrono::high_resolution_clock::time_point timeInitialStateEliminationEnd = std::chrono::high_resolution_clock::now();
             
             //some information for statistics...
@@ -220,19 +251,26 @@ namespace storm {
                 FlexibleMatrix& flexTransitions,
                 FlexibleMatrix& flexBackwardTransitions,
                 std::vector<ParametricType>& oneStepProbs,
+                bool& allFunctionsAreLinear,
                 storm::storage::sparse::state_type const& initialState) {
             
             //temporarily unselect the initial state to skip it.
             subsys.set(initialState, false);
             
+            allFunctionsAreLinear=true;
+            
             boost::optional<std::vector<ParametricType>> missingStateRewards;
             for (auto const& state : subsys) {
                 bool onlyConstantOutgoingTransitions=true;
-                for(auto const& entry : flexTransitions.getRow(state)){
+                for(auto& entry : flexTransitions.getRow(state)){
                     if(!this->parametricTypeComparator.isConstant(entry.getValue())){
                         onlyConstantOutgoingTransitions=false;
-                        break;
+                        allFunctionsAreLinear &= storm::utility::regions::functionIsLinear<ParametricType>(entry.getValue());
                     }
+                }
+                if(!this->parametricTypeComparator.isConstant(oneStepProbs[state])){
+                    onlyConstantOutgoingTransitions=false;
+                    allFunctionsAreLinear &= storm::utility::regions::functionIsLinear<ParametricType>(oneStepProbs[state]);
                 }
                 if(onlyConstantOutgoingTransitions){
                     this->eliminationModelChecker.eliminateState(flexTransitions, oneStepProbs, state, flexBackwardTransitions, missingStateRewards);
@@ -301,9 +339,131 @@ namespace storm {
             
             return workingCopyOneStepProbs[initState];
         }
+        
+
+
+
+        template<typename ParametricType, typename ConstantType>
+        void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::checkRegion(ParameterRegion& region) {
+            std::chrono::high_resolution_clock::time_point timeCheckRegionStart = std::chrono::high_resolution_clock::now();
+            ++this->numOfCheckedRegions;
             
- 
+            STORM_LOG_THROW(this->probabilityOperatorFormula!=nullptr, storm::exceptions::InvalidStateException, "Tried to analyze a region although no property has been specified" );
+            STORM_LOG_DEBUG("Analyzing the region " << region.toString());
             
+            //switches for the different steps.
+            bool doSampling=true;
+            bool doApproximation=this->hasOnlyLinearFunctions; // this approach is only correct if the model has only linear functions
+            bool doSubsystemSmt=false; //this->hasOnlyLinearFunctions;  // this approach is only correct if the model has only linear functions
+            bool doFullSmt=false; //true;
+            
+            std::chrono::high_resolution_clock::time_point timeSamplingStart = std::chrono::high_resolution_clock::now();
+            if(doSampling){
+                STORM_LOG_DEBUG("Testing Sample points...");
+                if(testSamplePoints(region)){
+                    ++this->numOfRegionsSolvedThroughSampling;
+                    STORM_LOG_DEBUG("Result '" << region.checkResultToString() <<"' obtained through sampling.");
+                    doApproximation=false;
+                    doSubsystemSmt=false;
+                    doFullSmt=false;
+                }
+            }
+            std::chrono::high_resolution_clock::time_point timeSamplingEnd = std::chrono::high_resolution_clock::now();
+            
+            std::chrono::high_resolution_clock::time_point timeApproximationStart = std::chrono::high_resolution_clock::now();
+            if(doApproximation){
+                STORM_LOG_WARN("Approximation approach not yet implemented");
+            }
+            std::chrono::high_resolution_clock::time_point timeApproximationEnd = std::chrono::high_resolution_clock::now();
+            
+            std::chrono::high_resolution_clock::time_point timeSubsystemSmtStart = std::chrono::high_resolution_clock::now();
+            if(doSubsystemSmt){
+                STORM_LOG_WARN("SubsystemSmt approach not yet implemented");
+            }
+            std::chrono::high_resolution_clock::time_point timeSubsystemSmtEnd = std::chrono::high_resolution_clock::now();
+            
+            std::chrono::high_resolution_clock::time_point timeFullSmtStart = std::chrono::high_resolution_clock::now();
+            if(doFullSmt){
+                STORM_LOG_WARN("FullSmt approach not yet implemented");
+            }
+            std::chrono::high_resolution_clock::time_point timeFullSmtEnd = std::chrono::high_resolution_clock::now();
+            
+            
+            
+            //some information for statistics...
+            std::chrono::high_resolution_clock::time_point timeCheckRegionEnd = std::chrono::high_resolution_clock::now();
+            this->timeCheckRegion = timeCheckRegionEnd-timeCheckRegionStart;
+            this->timeSampling = timeSamplingEnd - timeSamplingStart;
+            this->timeApproximation = timeApproximationEnd - timeApproximationStart;
+            this->timeSubsystemSmt = timeSubsystemSmtEnd - timeSubsystemSmtStart;
+            this->timeFullSmt = timeFullSmtEnd - timeFullSmtStart;
+            
+        }
+
+        template<typename ParametricType, typename ConstantType>
+        void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::checkRegions(std::vector<ParameterRegion>& regions) {
+            for(auto& region : regions){
+                this->checkRegion(region);
+            }
+        }
+        
+        template<typename ParametricType, typename ConstantType>
+        bool SparseDtmcRegionModelChecker<ParametricType, ConstantType>::testSamplePoints(ParameterRegion& region) {
+
+            auto samplingPoints = region.getVerticesOfRegion(region.getVariables()); //only test the 4 corner points (for now)
+            
+            bool regionHasSatPoint = !region.getSatPoint().empty();
+            bool regionHasUnSatPoint = !region.getUnSatPoint().empty();
+            for (auto const& point : samplingPoints){
+                // check whether the property is satisfied or not at the given point
+                if(this->valueIsInBoundOfFormula(storm::utility::regions::evaluateFunction<ParametricType, ConstantType>(this->reachProbFunction, point))){
+                    if (!regionHasSatPoint){
+                        region.setSatPoint(point);
+                        regionHasSatPoint=true;
+                        if(regionHasUnSatPoint){
+                            region.setCheckResult(RegionCheckResult::INCONCLUSIVE);
+                            return true;
+                        }
+                    }
+                }
+                else{
+                    if (!regionHasUnSatPoint){
+                        region.setUnSatPoint(point);
+                        regionHasUnSatPoint=true;
+                        if(regionHasSatPoint){
+                            region.setCheckResult(RegionCheckResult::INCONCLUSIVE);
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         
         template<>
         std::pair<storm::storage::SparseMatrix<double>,std::vector<boost::container::flat_set<uint_fast64_t>>> SparseDtmcRegionModelChecker<storm::RationalFunction, double>::instantiateFlexibleMatrix(FlexibleMatrix const& matrix, std::vector<std::map<storm::Variable, storm::RationalFunction::CoeffType>> const& substitutions, storm::storage::BitVector const& filter, bool addSinkState, std::vector<storm::RationalFunction> const& oneStepProbabilities, bool addSelfLoops) const {
@@ -584,7 +744,7 @@ namespace storm {
         }
         
         template<>
-        bool SparseDtmcRegionModelChecker<storm::RationalFunction, double>::checkRegion(storm::logic::Formula const& formula, std::vector<ParameterRegion> parameterRegions){
+        bool SparseDtmcRegionModelChecker<storm::RationalFunction, double>::checkRegionOld(storm::logic::Formula const& formula, std::vector<ParameterRegion> parameterRegions){
             //Note: this is an 'experimental' implementation
             
             std::chrono::high_resolution_clock::time_point timeStart = std::chrono::high_resolution_clock::now();
@@ -754,13 +914,14 @@ namespace storm {
         }
 
         template<typename ParametricType, typename ConstantType>
-        bool SparseDtmcRegionModelChecker<ParametricType, ConstantType>::checkRegion(storm::logic::Formula const& formula, std::vector<ParameterRegion> parameterRegions){
+        bool SparseDtmcRegionModelChecker<ParametricType, ConstantType>::checkRegionOld(storm::logic::Formula const& formula, std::vector<ParameterRegion> parameterRegions){
             STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Region check is not supported for this type");
         }
         
         template<typename ParametricType, typename ConstantType>
         template<typename ValueType>
         bool SparseDtmcRegionModelChecker<ParametricType, ConstantType>::valueIsInBoundOfFormula(ValueType value){
+            STORM_LOG_THROW(this->probabilityOperatorFormula!=nullptr, storm::exceptions::InvalidStateException, "Tried to compare a value to the bound of a formula, but no formula specified.");
             double valueAsDouble = storm::utility::regions::convertNumber<ValueType, double>(value);
             switch (this->probabilityOperatorFormula->getComparisonType()) {
                 case storm::logic::ComparisonType::Greater:
@@ -779,17 +940,30 @@ namespace storm {
         template<typename ParametricType, typename ConstantType>
         void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::printStatisticsToStream(std::ostream& outstream) {
             
+            if(this->probabilityOperatorFormula==nullptr){
+                outstream << "Statistic Region Model Checker Statistics Error: No formula specified." << std::endl; 
+                return;
+            }
+            
             std::chrono::milliseconds timePreprocessingInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timePreprocessing);
             std::chrono::milliseconds timeInitialStateEliminationInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timeInitialStateElimination);
             
             std::chrono::high_resolution_clock::duration timeOverall = timePreprocessing; // + ...
             std::chrono::milliseconds timeOverallInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(timeOverall);
             
-            outstream << std::endl << "Statistics Region Model Checker:" << std::endl;
+            std::size_t subsystemTransitions = this->sparseTransitions.getNonzeroEntryCount();
+            for(auto const& transition : this->oneStepProbabilities){
+                if(!this->parametricTypeComparator.isZero(transition)){
+                    ++subsystemTransitions;
+                }
+            }
+            
+            outstream << std::endl << "Statistics Region Model Checker Statistics:" << std::endl;
             outstream << "-----------------------------------------------" << std::endl;
             outstream << "Model: " << this->model.getNumberOfStates() << " states, " << this->model.getNumberOfTransitions() << " transitions." << std::endl;
-            outstream << "Reduced model: " << this->subsystem.getNumberOfSetBits() << " states, " << this->sparseTransitions.getEntryCount() << "transitions" << std::endl;
+            outstream << "Reduced model: " << this->subsystem.getNumberOfSetBits() << " states, " << subsystemTransitions << "transitions" << std::endl;
             outstream << "Formula: " << *this->probabilityOperatorFormula << std::endl;
+            outstream << "All occuring functions in the model are " << (this->hasOnlyLinearFunctions ? "" : "not") << " linear" << std::endl;
             outstream << "Number of checked regions: " << this->numOfCheckedRegions << std::endl;
             outstream << "Running times:" << std::endl;
             outstream << "  " << timeOverallInMilliseconds.count() << "ms overall" << std::endl;

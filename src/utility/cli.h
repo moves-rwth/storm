@@ -480,18 +480,14 @@ namespace storm {
                     storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double> modelchecker(*dtmc);
                     if (modelchecker.canHandle(*formula.get())) {
                         modelchecker.specifyFormula(*formula.get());
+                        modelchecker.checkRegions(regions);
                     }
                     else {
                         STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "The parametric region check engine currently does not support this property.");
                     }
-                    
-                    auto result = modelchecker.checkRegion(*formula.get(), regions);
                     std::cout << "... done." << std::endl;
-                    if (!result){
-                        std::cout << "The result of one or more regions is still unknown." << std::endl;    
-                    }
                     for(auto const& reg : regions){
-                        std::cout << reg.getRegionAsString() << "      Result: " << reg.getCheckResultAsString() << std::endl;
+                        std::cout << reg.toString() << "      Result: " << reg.checkResultToString() << std::endl;
                     }
                     modelchecker.printStatisticsToStream(std::cout);
                     

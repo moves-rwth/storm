@@ -97,6 +97,16 @@ namespace storm {
              */
             template<typename VariableType>
             std::string getVariableName(VariableType variable);
+            
+            template<typename ParametricType, typename ConstantType>
+            typename storm::modelchecker::SparseDtmcRegionModelChecker<ParametricType,ConstantType>::BoundType evaluateFunction(ParametricType const& function, std::map<typename storm::modelchecker::SparseDtmcRegionModelChecker<ParametricType,ConstantType>::VariableType, typename storm::modelchecker::SparseDtmcRegionModelChecker<ParametricType,ConstantType>::BoundType> const& point);
+            
+            /*!
+             * Returns true if the function is rational. Note that the function might be simplified.
+             */
+            template<typename ParametricType>
+            bool functionIsLinear(ParametricType const& function);
+            
         }
     }
 }

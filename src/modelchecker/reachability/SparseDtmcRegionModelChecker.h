@@ -37,13 +37,6 @@ namespace storm {
 
                 ParameterRegion(std::map<VariableType, BoundType> lowerBounds, std::map<VariableType, BoundType> upperBounds);
                 
-                void setCheckResult(RegionCheckResult checkResult) {
-                    this->checkResult = checkResult;
-                }
-
-                RegionCheckResult getCheckResult() const {
-                    return checkResult;
-                }
                 
                 
                 std::set<VariableType> getVariables() const;
@@ -59,14 +52,46 @@ namespace storm {
                  */
                 std::vector<std::map<VariableType, BoundType>> getVerticesOfRegion(std::set<VariableType> const& consideredVariables) const;
                 
-                std::string getCheckResultAsString() const;
-                std::string getRegionAsString() const;
+                //returns the currently set check result as a string
+                std::string checkResultToString() const;
+                
+                //returns the region as string in the format 0.3<=p<=0.4,0.2<=q<=0.5;
+                std::string toString() const;
+                
+                void setCheckResult(RegionCheckResult checkResult);
+                RegionCheckResult getCheckResult() const;
+                
+                /*!
+                 * Sets a point in the region for which the considered property is not satisfied. 
+                 */
+                void setUnSatPoint(std::map<VariableType, BoundType> const& unSatPoint);
+                
+                /*!
+                 * Retrieves a point in the region for which is considered property is not satisfied.
+                 * If such a point is not known, the returned map is empty.
+                 */
+                std::map<VariableType, BoundType> getUnSatPoint() const;
+                
+                
+                /*!
+                 * Sets a point in the region for which the considered property is satisfied. 
+                 */
+                void setSatPoint(std::map<VariableType, BoundType> const& satPoint);
+                
+                /*!
+                 * Retrieves a point in the region for which is considered property is satisfied.
+                 * If such a point is not known, the returned map is empty.
+                 */
+                std::map<VariableType, BoundType> getSatPoint() const;
                 
             private:
                 
                 std::map<VariableType, BoundType> const lowerBounds;
                 std::map<VariableType, BoundType> const upperBounds;
                 RegionCheckResult checkResult;
+                std::map<VariableType, BoundType> satPoint;
+                std::map<VariableType, BoundType> unSatPoint;
+                
                 
             };
             
@@ -88,10 +113,31 @@ namespace storm {
             void specifyFormula(storm::logic::Formula const& formula);
 
             /*!
+             * Checks whether the given formula holds for all parameters that lie in the given region.
+             * Sets the region checkresult accordingly. Moreover, region.satPoint and/or an region.unSatPoint will be set.
+             * 
+             * @note A formula has to be specified first.
+             * 
+             * @param region The considered region
+             * 
+             */
+            void checkRegion(ParameterRegion& region);
+            
+            /*!
+             * Checks for every given region whether the specified formula holds for all parameters that lie in that region.
+             * Sets the region checkresult accordingly. Moreover, region.satPoint and/or an region.unSatPoint will be set.
+             * 
+             * @note A formula has to be specified first.
+             * 
+             * @param region The considered region
+             */
+            void checkRegions(std::vector<ParameterRegion>& regions);
+            
+            /*!
              * Checks whether the given formula holds for all possible parameters that satisfy the given parameter regions
              * ParameterRegions should contain all parameters.
              */
-            bool checkRegion(storm::logic::Formula const& formula, std::vector<ParameterRegion> parameterRegions);
+            bool checkRegionOld(storm::logic::Formula const& formula, std::vector<ParameterRegion> parameterRegions);
             
             /*!
              * Prints statistical information (mostly running times) to the given stream.
@@ -142,12 +188,16 @@ namespace storm {
             template <typename ValueType>
             bool valueIsInBoundOfFormula(ValueType value);
             
-            //eliminates all states for which the outgoing transitions are constant.
+            /*!
+             * eliminates all states for which the outgoing transitions are constant.
+             * Also checks whether the non constant functions are linear
+             */
             void eliminateStatesConstSucc(
                     storm::storage::BitVector& subsys,
                     FlexibleMatrix& flexTransitions,
                      FlexibleMatrix& flexBackwardTransitions,
                     std::vector<ParametricType>& oneStepProbs,
+                    bool& allFunctionsAreLinear,
                     storm::storage::sparse::state_type const& initState
             );
             
@@ -163,6 +213,14 @@ namespace storm {
             );
             
             
+            /*!
+             * Checks the value of the function at some sampling points within the given region
+             * may set the satPoint and unSatPoint of the regions if they are not yet specified and such points are found
+             * may also change the regioncheckresult of the region
+             * 
+             * @return true if an unsat point as well as a sat point has been found during the process
+             */
+            bool testSamplePoints(ParameterRegion& region);
             
             
             
@@ -195,6 +253,8 @@ namespace storm {
             storm::storage::sparse::state_type initialState;
             // the set of states that have not been eliminated
             storm::storage::BitVector subsystem;
+            // a flag that is true if there are only linear functions at transitions of the model
+            bool hasOnlyLinearFunctions;
             
             // The  function for the reachability probability in the initial state 
             ParametricType reachProbFunction;
@@ -202,8 +262,18 @@ namespace storm {
             
             // runtimes and other information for statistics. 
             uint_fast64_t numOfCheckedRegions;
+            uint_fast64_t numOfRegionsSolvedThroughSampling;
+            uint_fast64_t numOfRegionsSolvedThroughApproximation;
+            uint_fast64_t numOfRegionsSolvedThroughSubsystemSmt;
+            uint_fast64_t numOfRegionsSolvedThroughFullSmt;
+            
             std::chrono::high_resolution_clock::duration timePreprocessing;
             std::chrono::high_resolution_clock::duration timeInitialStateElimination;
+            std::chrono::high_resolution_clock::duration timeCheckRegion;
+            std::chrono::high_resolution_clock::duration timeSampling;
+            std::chrono::high_resolution_clock::duration timeApproximation;
+            std::chrono::high_resolution_clock::duration timeSubsystemSmt;
+            std::chrono::high_resolution_clock::duration timeFullSmt;
         };
         
     } // namespace modelchecker
