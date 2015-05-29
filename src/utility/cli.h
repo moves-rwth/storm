@@ -583,8 +583,9 @@ namespace storm {
                 }
                 
                 // Then proceed to parsing the property (if given), since the model we are building may depend on the property.
-                boost::optional<std::shared_ptr<storm::logic::Formula>> formula;
+                std::vector<boost::optional<std::shared_ptr<storm::logic::Formula>>> formulas;
                 if (settings.isPropertySet()) {
+					boost::optional<std::shared_ptr<storm::logic::Formula>> formula;
                     if (program) {
                         storm::parser::FormulaParser formulaParser(program.get().getManager().getSharedPointer());
                         formula = formulaParser.parseFromString(settings.getProperty());
@@ -592,23 +593,61 @@ namespace storm {
                         storm::parser::FormulaParser formulaParser;
                         formula = formulaParser.parseFromString(settings.getProperty());
                     }
+					formulas.push_back(formula);
                 }
+				else if (settings.isPropertyFileSet()) {
+					std::cout << "Reading properties from " << settings.getPropertiesFilename() << std::endl;
+
+					std::ifstream inputFileStream(settings.getPropertiesFilename(), std::ios::in);
+
+					std::vector<std::string> properties;
+
+					if (inputFileStream.good()) {
+						try {
+							std::string prop;
+							std::getline(inputFileStream, prop);
+							properties.push_back(prop);
+						}
+						catch (std::exception& e) {
+							inputFileStream.close();
+							throw e;
+						}
+						inputFileStream.close();
+					} else {
+						STORM_LOG_ERROR("Unable to read property file.");
+					}
+
+					for (std::string prop : properties) {
+						boost::optional<std::shared_ptr<storm::logic::Formula>> formula;
+						if (program) {
+							storm::parser::FormulaParser formulaParser(program.get().getManager().getSharedPointer());
+							formula = formulaParser.parseFromString(prop);
+						} else {
+							storm::parser::FormulaParser formulaParser;
+							formula = formulaParser.parseFromString(prop);
+						}
+						formulas.push_back(formula);
+					}
+					std::cout << "Parsed " << formulas.size() << " properties from file " << settings.getPropertiesFilename() << std::endl;
+				}
                 
-                if (settings.isSymbolicSet()) {
+				for (boost::optional<std::shared_ptr<storm::logic::Formula>> formula : formulas) {
+					if (settings.isSymbolicSet()) {
 #ifdef STORM_HAVE_CARL
-                    if (settings.isParametricSet()) {
-                        buildAndCheckSymbolicModel<storm::RationalFunction>(program.get(), formula);
-                    } else {
+						if (settings.isParametricSet()) {
+							buildAndCheckSymbolicModel<storm::RationalFunction>(program.get(), formula);
+						} else {
 #endif
-                        buildAndCheckSymbolicModel<double>(program.get(), formula);
+							buildAndCheckSymbolicModel<double>(program.get(), formula);
 #ifdef STORM_HAVE_CARL
-                    }
+						}
 #endif
-                } else if (settings.isExplicitSet()) {
-                    buildAndCheckExplicitModel<double>(formula);
-                } else {
-                    STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No input model.");
-                }
+					} else if (settings.isExplicitSet()) {
+						buildAndCheckExplicitModel<double>(formula);
+					} else {
+						STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No input model.");
+					}
+				}
             }
         }
     }
