@@ -46,6 +46,7 @@ namespace storm {
             const std::string GeneralSettings::cudaOptionName = "cuda";
             const std::string GeneralSettings::prismCompatibilityOptionName = "prismcompat";
             const std::string GeneralSettings::prismCompatibilityOptionShortName = "pc";
+			const std::string GeneralSettings::minMaxEquationSolvingTechniqueOptionName = "minMaxEquationSolvingTechnique";
             
 #ifdef STORM_HAVE_CARL
             const std::string GeneralSettings::parametricOptionName = "parametric";
@@ -99,6 +100,10 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("values", "A comma separated list of constants and their value, e.g. a=1,b=2,c=3.").setDefaultValueString("").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, statisticsOptionName, false, "Sets whether to display statistics if available.").setShortName(statisticsOptionShortName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, cudaOptionName, false, "Sets whether to use CUDA to speed up computation time.").build());
+
+				std::vector<std::string> minMaxSolvingTechniques = {"policyIteration", "valueIteration"};
+				this->addOption(storm::settings::OptionBuilder(moduleName, minMaxEquationSolvingTechniqueOptionName, false, "Sets which min/max linear equation solving technique is preferred.")
+					.addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of a min/max linear equation solving technique. Available are: valueIteration and policyIteration.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(minMaxSolvingTechniques)).setDefaultValueString("valueIteration").build()).build());
 
 #ifdef STORM_HAVE_CARL
                 this->addOption(storm::settings::OptionBuilder(moduleName, parametricOptionName, false, "Sets whether to use the parametric engine.").build());
@@ -285,6 +290,20 @@ namespace storm {
             bool GeneralSettings::isPrismCompatibilityEnabled() const {
                 return this->getOption(prismCompatibilityOptionName).getHasOptionBeenSet();
             }
+
+			GeneralSettings::MinMaxTechnique GeneralSettings::getMinMaxEquationSolvingTechnique() const {
+				std::string minMaxEquationSolvingTechnique = this->getOption(minMaxEquationSolvingTechniqueOptionName).getArgumentByName("name").getValueAsString();
+				if (minMaxEquationSolvingTechnique == "valueIteration") {
+					return GeneralSettings::MinMaxTechnique::ValueIteration;
+				} else if (minMaxEquationSolvingTechnique == "policyIteration") {
+					return GeneralSettings::MinMaxTechnique::PolicyIteration;
+				}
+				STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown min/max equation solving technique '" << minMaxEquationSolvingTechnique << "'.");
+			}
+
+			bool GeneralSettings::isMinMaxEquationSolvingTechniqueSet() const {
+				return this->getOption(minMaxEquationSolvingTechniqueOptionName).getHasOptionBeenSet();
+			}
             
 #ifdef STORM_HAVE_CARL
             bool GeneralSettings::isParametricSet() const {

@@ -21,6 +21,9 @@ namespace storm {
                 
                 // An enumeration of all available equation solvers.
                 enum class EquationSolver { Gmmxx, Native };
+
+				// An enumeration of all available Min/Max equation solver techniques.
+				enum class MinMaxTechnique { ValueIteration, PolicyIteration };
                 
                 /*!
                  * Creates a new set of general settings that is managed by the given manager.
@@ -316,7 +319,7 @@ namespace storm {
                 /*!
                  * Retrieves the selected engine.
                  *
-                 * @return The selecte engine.
+                 * @return The selected engine.
                  */
                 Engine getEngine() const;
                 
@@ -335,6 +338,20 @@ namespace storm {
                  */
                 bool isParametricSet() const;
 #endif
+				/*!
+				* Retrieves whether a min/max equation solving technique has been set.
+				*
+				* @return True iff an equation solving technique has been set.
+				*/
+				bool isMinMaxEquationSolvingTechniqueSet() const;
+
+				/*!
+				* Retrieves the selected min/max equation solving technique.
+				*
+				* @return The selected min/max equation solving technique.
+				*/
+				MinMaxTechnique getMinMaxEquationSolvingTechnique() const;
+
                 
                 bool check() const override;
 
@@ -380,7 +397,8 @@ namespace storm {
                 static const std::string cudaOptionName;
                 static const std::string prismCompatibilityOptionName;
                 static const std::string prismCompatibilityOptionShortName;
-                
+				static const std::string minMaxEquationSolvingTechniqueOptionName;
+
 #ifdef STORM_HAVE_CARL
                 static const std::string parametricOptionName;
 #endif
