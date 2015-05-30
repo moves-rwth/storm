@@ -16,7 +16,11 @@ TEST(GmmxxHybridMdpPrctlModelCheckerTest, Dice) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/two_dice.nm");
     
     // Build the die model with its reward model.
-    typename storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::Options options;
+#ifdef WINDOWS
+	storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::Options options;
+#else
+	typename storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::Options options;
+#endif
     options.buildRewards = true;
     options.rewardModelName = "coinflips";
     std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program, options);
@@ -113,8 +117,12 @@ TEST(GmmxxHybridMdpPrctlModelCheckerTest, Dice) {
 TEST(GmmxxHybridMdpPrctlModelCheckerTest, AsynchronousLeader) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/leader4.nm");
     
-    // Build the die model with its reward model.
-    typename storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::Options options;
+	// Build the die model with its reward model.
+#ifdef WINDOWS
+	storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::Options options;
+#else
+	typename storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::Options options;
+#endif
     options.buildRewards = true;
     options.rewardModelName = "rounds";
     std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program, options);

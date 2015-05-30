@@ -25,7 +25,11 @@ TEST(GmmxxHybridCtmcCslModelCheckerTest, Cluster) {
     std::shared_ptr<storm::logic::Formula> formula(nullptr);
     
     // Build the model.
-    typename storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::Options options;
+#ifdef WINDOWS
+	storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::Options options;
+#else
+	typename storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::Options options;
+#endif
     options.buildRewards = true;
     options.rewardModelName = "num_repairs";
     std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program, options);
@@ -110,7 +114,11 @@ TEST(GmmxxHybridCtmcCslModelCheckerTest, Embedded) {
     std::shared_ptr<storm::logic::Formula> formula(nullptr);
     
     // Build the model.
-    typename storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::Options options;
+#ifdef WINDOWS
+	storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::Options options;
+#else
+	typename storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::Options options;
+#endif
     options.buildRewards = true;
     options.rewardModelName = "up";
     std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program, options);
@@ -212,7 +220,11 @@ TEST(GmmxxHybridCtmcCslModelCheckerTest, Tandem) {
     std::shared_ptr<storm::logic::Formula> formula(nullptr);
     
     // Build the model with the customers reward structure.
-    typename storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::Options options;
+#ifdef WINDOWS
+	storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::Options options;
+#else
+	typename storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::Options options;
+#endif
     options.buildRewards = true;
     options.rewardModelName = "customers";
     std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program, options);

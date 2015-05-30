@@ -16,7 +16,11 @@ TEST(NativeHybridDtmcPrctlModelCheckerTest, Die) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/die.pm");
     
     // Build the die model with its reward model.
-    typename storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::Options options;
+#ifdef WINDOWS
+	storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::Options options;
+#else
+	typename storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::Options options;
+#endif
     options.buildRewards = true;
     options.rewardModelName = "coin_flips";
     std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program, options);
@@ -118,7 +122,11 @@ TEST(NativeHybridDtmcPrctlModelCheckerTest, SynchronousLeader) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/leader-3-5.pm");
     
     // Build the die model with its reward model.
-    typename storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::Options options;
+#ifdef WINDOWS
+	storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::Options options;
+#else
+	typename storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::Options options;
+#endif
     options.buildRewards = true;
     options.rewardModelName = "num_rounds";
     std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program, options);
