@@ -52,6 +52,16 @@ namespace storm {
                      std::map<std::string, storm::expressions::Expression> labelToExpressionMap = std::map<std::string, storm::expressions::Expression>(),
                      boost::optional<storm::dd::Add<Type>> const& optionalStateRewardVector = boost::optional<storm::dd::Dd<Type>>(),
                      boost::optional<storm::dd::Add<Type>> const& optionalTransitionRewardMatrix = boost::optional<storm::dd::Dd<Type>>());
+                
+                /*!
+                 * Retrieves the exit rate vector of the CTMC.
+                 *
+                 * @return The exit rate vector.
+                 */
+                storm::dd::Add<Type> const& getExitRateVector() const;
+                
+            private:
+                storm::dd::Add<Type> exitRates;
             };
             
         } // namespace symbolic

@@ -88,8 +88,18 @@ namespace storm {
             }
             
             template<storm::dd::DdType Type>
+            boost::optional<storm::dd::Add<Type>> const& Model<Type>::getOptionalTransitionRewardMatrix() const {
+                return transitionRewardMatrix;
+            }
+            
+            template<storm::dd::DdType Type>
             storm::dd::Add<Type> const& Model<Type>::getStateRewardVector() const {
                 return stateRewardVector.get();
+            }
+            
+            template<storm::dd::DdType Type>
+            boost::optional<storm::dd::Add<Type>> const& Model<Type>::getOptionalStateRewardVector() const {
+                return stateRewardVector;
             }
             
             template<storm::dd::DdType Type>

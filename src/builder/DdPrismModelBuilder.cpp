@@ -562,10 +562,12 @@ namespace storm {
                 }
                 
                 storm::dd::Add<Type> transitionRewardDd = synchronization * states * rewards;
-                if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::MDP) {
-                    transitionRewardDd = transitions.notZero().toAdd() * transitionRewardDd;
-                } else {
+                if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::DTMC) {
+                    // For DTMCs we need to keep the weighting for the scaling that follows.
                     transitionRewardDd = transitions * transitionRewardDd;
+                } else {
+                    // For all other model types, we do not scale the rewards.
+                    transitionRewardDd = transitions.notZero().toAdd() * transitionRewardDd;
                 }
                 
                 // Perform some sanity checks.

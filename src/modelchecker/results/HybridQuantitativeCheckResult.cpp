@@ -1,5 +1,6 @@
 #include "src/modelchecker/results/HybridQuantitativeCheckResult.h"
 #include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"
+#include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "src/storage/dd/CuddDdManager.h"
 
 #include "src/exceptions/InvalidOperationException.h"
@@ -30,6 +31,16 @@ namespace storm {
             symbolicResult |= storm::dd::Bdd<Type>(this->reachableStates.getDdManager(), this->explicitValues, this->odd, this->symbolicValues.getContainedMetaVariables(), comparisonType, bound);
             
             return std::unique_ptr<SymbolicQualitativeCheckResult<Type>>(new SymbolicQualitativeCheckResult<Type>(reachableStates, symbolicResult));
+        }
+        
+        template<storm::dd::DdType Type>
+        std::unique_ptr<CheckResult> HybridQuantitativeCheckResult<Type>::toExplicitQuantitativeCheckResult() const {
+            storm::dd::Bdd<Type> allStates = symbolicStates || explicitStates;
+            storm::dd::Odd<Type> allStatesOdd(allStates);
+            
+            std::vector<double> fullExplicitValues = symbolicValues.template toVector<double>(allStatesOdd);
+            this->odd.expandExplicitVector(allStatesOdd, this->explicitValues, fullExplicitValues);
+            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<double>(std::move(fullExplicitValues)));
         }
         
         template<storm::dd::DdType Type>
@@ -139,7 +150,7 @@ namespace storm {
         
         template<storm::dd::DdType Type>
         double HybridQuantitativeCheckResult<Type>::getMax() const {
-            double max = this->symbolicValues.getMin();
+            double max = this->symbolicValues.getMax();
             if (!explicitStates.isZero()) {
                 for (auto const& element : explicitValues) {
                     max = std::max(max, element);

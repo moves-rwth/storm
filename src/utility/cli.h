@@ -68,6 +68,8 @@ log4cplus::Logger printer;
 #include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "src/modelchecker/csl/SparseCtmcCslModelChecker.h"
 #include "src/modelchecker/prctl/HybridDtmcPrctlModelChecker.h"
+#include "src/modelchecker/csl/HybridCtmcCslModelChecker.h"
+#include "src/modelchecker/prctl/HybridMdpPrctlModelChecker.h"
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"
 
@@ -317,8 +319,12 @@ namespace storm {
                 std::string constants = settings.getConstantDefinitionString();
                 
                 bool buildRewards = false;
-                if (formula) {
+                boost::optional<std::string> rewardModelName;
+                if (formula || settings.isSymbolicRewardModelNameSet()) {
                     buildRewards = formula.get()->isRewardOperatorFormula() || formula.get()->isRewardPathFormula();
+                    if (settings.isSymbolicRewardModelNameSet()) {
+                        rewardModelName = settings.getSymbolicRewardModelName();
+                    }
                 }
                 
                 // Customize and perform model-building.
@@ -328,6 +334,8 @@ namespace storm {
                         options = typename storm::builder::ExplicitPrismModelBuilder<ValueType>::Options(*formula.get());
                     }
                     options.addConstantDefinitionsFromString(program, settings.getConstantDefinitionString());
+                    options.buildRewards = buildRewards;
+                    options.rewardModelName = rewardModelName;
                     
                     // Generate command labels if we are going to build a counterexample later.
                     if (storm::settings::counterexampleGeneratorSettings().isMinimalCommandSetGenerationSet()) {
@@ -341,7 +349,9 @@ namespace storm {
                         options = typename storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::Options(*formula.get());
                     }
                     options.addConstantDefinitionsFromString(program, settings.getConstantDefinitionString());
-                    
+                    options.buildRewards = buildRewards;
+                    options.rewardModelName = rewardModelName;
+
                     result = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program, options);
                 }
                 
@@ -500,6 +510,18 @@ namespace storm {
                 if (model->getType() == storm::models::ModelType::Dtmc) {
                     std::shared_ptr<storm::models::symbolic::Dtmc<DdType>> dtmc = model->template as<storm::models::symbolic::Dtmc<DdType>>();
                     storm::modelchecker::HybridDtmcPrctlModelChecker<DdType, double> modelchecker(*dtmc);
+                    if (modelchecker.canHandle(*formula.get())) {
+                        result = modelchecker.check(*formula.get());
+                    }
+                } else if (model->getType() == storm::models::ModelType::Ctmc) {
+                    std::shared_ptr<storm::models::symbolic::Ctmc<DdType>> ctmc = model->template as<storm::models::symbolic::Ctmc<DdType>>();
+                    storm::modelchecker::HybridCtmcCslModelChecker<DdType, double> modelchecker(*ctmc);
+                    if (modelchecker.canHandle(*formula.get())) {
+                        result = modelchecker.check(*formula.get());
+                    }
+                } else if (model->getType() == storm::models::ModelType::Mdp) {
+                    std::shared_ptr<storm::models::symbolic::Mdp<DdType>> mdp = model->template as<storm::models::symbolic::Mdp<DdType>>();
+                    storm::modelchecker::HybridMdpPrctlModelChecker<DdType, double> modelchecker(*mdp);
                     if (modelchecker.canHandle(*formula.get())) {
                         result = modelchecker.check(*formula.get());
                     }

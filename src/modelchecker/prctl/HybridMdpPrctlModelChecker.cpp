@@ -1,4 +1,4 @@
-#include "src/modelchecker/prctl/HybridDtmcPrctlModelChecker.h"
+#include "src/modelchecker/prctl/HybridMdpPrctlModelChecker.h"
 
 #include "src/storage/dd/CuddOdd.h"
 
@@ -15,25 +15,30 @@
 namespace storm {
     namespace modelchecker {
         template<storm::dd::DdType DdType, typename ValueType>
-        HybridDtmcPrctlModelChecker<DdType, ValueType>::HybridDtmcPrctlModelChecker(storm::models::symbolic::Dtmc<DdType> const& model, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory) : SymbolicPropositionalModelChecker<DdType>(model), linearEquationSolverFactory(std::move(linearEquationSolverFactory)) {
+        HybridMdpPrctlModelChecker<DdType, ValueType>::HybridMdpPrctlModelChecker(storm::models::symbolic::Mdp<DdType> const& model, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory) : SymbolicPropositionalModelChecker<DdType>(model), linearEquationSolverFactory(std::move(linearEquationSolverFactory)) {
             // Intentionally left empty.
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        HybridDtmcPrctlModelChecker<DdType, ValueType>::HybridDtmcPrctlModelChecker(storm::models::symbolic::Dtmc<DdType> const& model) : SymbolicPropositionalModelChecker<DdType>(model), linearEquationSolverFactory(new storm::utility::solver::LinearEquationSolverFactory<ValueType>()) {
+        HybridMdpPrctlModelChecker<DdType, ValueType>::HybridMdpPrctlModelChecker(storm::models::symbolic::Mdp<DdType> const& model) : SymbolicPropositionalModelChecker<DdType>(model), linearEquationSolverFactory(new storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType>()) {
             // Intentionally left empty.
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        bool HybridDtmcPrctlModelChecker<DdType, ValueType>::canHandle(storm::logic::Formula const& formula) const {
+        bool HybridMdpPrctlModelChecker<DdType, ValueType>::canHandle(storm::logic::Formula const& formula) const {
             return formula.isPctlStateFormula() || formula.isPctlPathFormula() || formula.isRewardPathFormula();
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        std::unique_ptr<CheckResult> HybridDtmcPrctlModelChecker<DdType, ValueType>::computeUntilProbabilitiesHelper(storm::models::symbolic::Model<DdType> const& model, storm::dd::Add<DdType> const& transitionMatrix, storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+        std::unique_ptr<CheckResult> HybridMdpPrctlModelChecker<DdType, ValueType>::computeUntilProbabilitiesHelper(bool minimize, storm::models::symbolic::NondeterministicModel<DdType> const& model, storm::dd::Add<DdType> const& transitionMatrix, storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates, bool qualitative, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
             // We need to identify the states which have to be taken out of the matrix, i.e. all states that have
             // probability 0 and 1 of satisfying the until-formula.
-            std::pair<storm::dd::Bdd<DdType>, storm::dd::Bdd<DdType>> statesWithProbability01 = storm::utility::graph::performProb01(model, transitionMatrix, phiStates, psiStates);
+            std::pair<storm::dd::Bdd<DdType>, storm::dd::Bdd<DdType>> statesWithProbability01;
+            if (minimize) {
+                statesWithProbability01 = storm::utility::graph::performProb01Min(model, phiStates, psiStates);
+            } else {
+                statesWithProbability01 = storm::utility::graph::performProb01Max(model, phiStates, psiStates);
+            }
             storm::dd::Bdd<DdType> maybeStates = !statesWithProbability01.first && !statesWithProbability01.second && model.getReachableStates();
             
             // Perform some logging.
@@ -65,20 +70,20 @@ namespace storm {
                     storm::dd::Add<DdType> subvector = submatrix * prob1StatesAsColumn;
                     subvector = subvector.sumAbstract(model.getColumnVariables());
                     
-                    // Finally cut away all columns targeting non-maybe states and convert the matrix into the matrix needed
-                    // for solving the equation system (i.e. compute (I-A)).
+                    // Before cutting the non-maybe columns, we need to compute the sizes of the row groups.
+                    std::vector<uint_fast64_t> rowGroupSizes = submatrix.notZero().existsAbstract(model.getColumnVariables()).toAdd().sumAbstract(model.getNondeterminismVariables()).template toVector<uint_fast64_t>(odd);
+                    
+                    // Finally cut away all columns targeting non-maybe states.
                     submatrix *= maybeStatesAdd.swapVariables(model.getRowColumnMetaVariablePairs());
-                    submatrix = (model.getRowColumnIdentity() * maybeStatesAdd) - submatrix;
                     
                     // Create the solution vector.
                     std::vector<ValueType> x(maybeStates.getNonZeroCount(), ValueType(0.5));
                     
                     // Translate the symbolic matrix/vector to their explicit representations and solve the equation system.
-                    storm::storage::SparseMatrix<ValueType> explicitSubmatrix = submatrix.toMatrix(odd, odd);
-                    std::vector<ValueType> b = subvector.template toVector<ValueType>(odd);
+                    std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> explicitRepresentation = submatrix.toMatrixVector(subvector, std::move(rowGroupSizes), model.getNondeterminismVariables(), odd, odd);
                     
-                    std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(explicitSubmatrix);
-                    solver->solveEquationSystem(x, b);
+                    std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(explicitRepresentation.first);
+                    solver->solveEquationSystem(minimize, x, explicitRepresentation.second);
                     
                     // Return a hybrid check result that stores the numerical values explicitly.
                     return std::unique_ptr<CheckResult>(new storm::modelchecker::HybridQuantitativeCheckResult<DdType>(model.getReachableStates(), model.getReachableStates() && !maybeStates, statesWithProbability01.second.toAdd(), maybeStates, odd, x));
@@ -89,44 +94,52 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        std::unique_ptr<CheckResult> HybridDtmcPrctlModelChecker<DdType, ValueType>::computeUntilProbabilities(storm::logic::UntilFormula const& pathFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
+        std::unique_ptr<CheckResult> HybridMdpPrctlModelChecker<DdType, ValueType>::computeUntilProbabilities(storm::logic::UntilFormula const& pathFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
+            STORM_LOG_THROW(optimalityType, storm::exceptions::InvalidArgumentException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
             std::unique_ptr<CheckResult> leftResultPointer = this->check(pathFormula.getLeftSubformula());
             std::unique_ptr<CheckResult> rightResultPointer = this->check(pathFormula.getRightSubformula());
             SymbolicQualitativeCheckResult<DdType> const& leftResult = leftResultPointer->asSymbolicQualitativeCheckResult<DdType>();
             SymbolicQualitativeCheckResult<DdType> const& rightResult = rightResultPointer->asSymbolicQualitativeCheckResult<DdType>();
-            return this->computeUntilProbabilitiesHelper(this->getModel(), this->getModel().getTransitionMatrix(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(), qualitative, *this->linearEquationSolverFactory);
+            return this->computeUntilProbabilitiesHelper(optimalityType.get() == storm::logic::OptimalityType::Minimize, this->getModel(), this->getModel().getTransitionMatrix(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(), qualitative, *this->linearEquationSolverFactory);
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        std::unique_ptr<CheckResult> HybridDtmcPrctlModelChecker<DdType, ValueType>::computeNextProbabilities(storm::logic::NextFormula const& pathFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
+        std::unique_ptr<CheckResult> HybridMdpPrctlModelChecker<DdType, ValueType>::computeNextProbabilities(storm::logic::NextFormula const& pathFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
+            STORM_LOG_THROW(optimalityType, storm::exceptions::InvalidArgumentException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
             std::unique_ptr<CheckResult> subResultPointer = this->check(pathFormula.getSubformula());
             SymbolicQualitativeCheckResult<DdType> const& subResult = subResultPointer->asSymbolicQualitativeCheckResult<DdType>();
-            return std::unique_ptr<CheckResult>(new SymbolicQuantitativeCheckResult<DdType>(this->getModel().getReachableStates(), this->computeNextProbabilitiesHelper(this->getModel(), this->getModel().getTransitionMatrix(), subResult.getTruthValuesVector())));
+            return std::unique_ptr<CheckResult>(new SymbolicQuantitativeCheckResult<DdType>(this->getModel().getReachableStates(), this->computeNextProbabilitiesHelper(optimalityType.get() == storm::logic::OptimalityType::Minimize, this->getModel(), this->getModel().getTransitionMatrix(), subResult.getTruthValuesVector())));
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        storm::dd::Add<DdType> HybridDtmcPrctlModelChecker<DdType, ValueType>::computeNextProbabilitiesHelper(storm::models::symbolic::Model<DdType> const& model, storm::dd::Add<DdType> const& transitionMatrix, storm::dd::Bdd<DdType> const& nextStates) {
+        storm::dd::Add<DdType> HybridMdpPrctlModelChecker<DdType, ValueType>::computeNextProbabilitiesHelper(bool minimize, storm::models::symbolic::NondeterministicModel<DdType> const& model, storm::dd::Add<DdType> const& transitionMatrix, storm::dd::Bdd<DdType> const& nextStates) {
             storm::dd::Add<DdType> result = transitionMatrix * nextStates.swapVariables(model.getRowColumnMetaVariablePairs()).toAdd();
             return result.sumAbstract(model.getColumnVariables());
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        std::unique_ptr<CheckResult> HybridDtmcPrctlModelChecker<DdType, ValueType>::computeBoundedUntilProbabilities(storm::logic::BoundedUntilFormula const& pathFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
+        std::unique_ptr<CheckResult> HybridMdpPrctlModelChecker<DdType, ValueType>::computeBoundedUntilProbabilities(storm::logic::BoundedUntilFormula const& pathFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
+            STORM_LOG_THROW(optimalityType, storm::exceptions::InvalidArgumentException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
             STORM_LOG_THROW(pathFormula.hasDiscreteTimeBound(), storm::exceptions::InvalidArgumentException, "Formula needs to have a discrete time bound.");
             std::unique_ptr<CheckResult> leftResultPointer = this->check(pathFormula.getLeftSubformula());
             std::unique_ptr<CheckResult> rightResultPointer = this->check(pathFormula.getRightSubformula());
             SymbolicQualitativeCheckResult<DdType> const& leftResult = leftResultPointer->asSymbolicQualitativeCheckResult<DdType>();
             SymbolicQualitativeCheckResult<DdType> const& rightResult = rightResultPointer->asSymbolicQualitativeCheckResult<DdType>();
-            return this->computeBoundedUntilProbabilitiesHelper(this->getModel(), this->getModel().getTransitionMatrix(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(), pathFormula.getDiscreteTimeBound(), *this->linearEquationSolverFactory);
+            return this->computeBoundedUntilProbabilitiesHelper(optimalityType.get() == storm::logic::OptimalityType::Minimize, this->getModel(), this->getModel().getTransitionMatrix(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(), pathFormula.getDiscreteTimeBound(), *this->linearEquationSolverFactory);
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        std::unique_ptr<CheckResult> HybridDtmcPrctlModelChecker<DdType, ValueType>::computeBoundedUntilProbabilitiesHelper(storm::models::symbolic::Model<DdType> const& model, storm::dd::Add<DdType> const& transitionMatrix, storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates, uint_fast64_t stepBound, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+        std::unique_ptr<CheckResult> HybridMdpPrctlModelChecker<DdType, ValueType>::computeBoundedUntilProbabilitiesHelper(bool minimize, storm::models::symbolic::NondeterministicModel<DdType> const& model, storm::dd::Add<DdType> const& transitionMatrix, storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates, uint_fast64_t stepBound, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
             // We need to identify the states which have to be taken out of the matrix, i.e. all states that have
             // probability 0 or 1 of satisfying the until-formula.
-            storm::dd::Bdd<DdType> statesWithProbabilityGreater0 = storm::utility::graph::performProbGreater0(model, transitionMatrix.notZero(), phiStates, psiStates, stepBound);
+            storm::dd::Bdd<DdType> statesWithProbabilityGreater0;
+            if (minimize) {
+                statesWithProbabilityGreater0 = storm::utility::graph::performProbGreater0A(model, transitionMatrix.notZero(), phiStates, psiStates);
+            } else {
+                statesWithProbabilityGreater0 = storm::utility::graph::performProbGreater0E(model, transitionMatrix.notZero(), phiStates, psiStates);
+            }
             storm::dd::Bdd<DdType> maybeStates = statesWithProbabilityGreater0 && !psiStates && model.getReachableStates();
-            
+                        
             // If there are maybe states, we need to perform matrix-vector multiplications.
             if (!maybeStates.isZero()) {
                 // Create the ODD for the translation between symbolic and explicit storage.
@@ -144,6 +157,9 @@ namespace storm {
                 storm::dd::Add<DdType> prob1StatesAsColumn = psiStates.toAdd().swapVariables(model.getRowColumnMetaVariablePairs());
                 storm::dd::Add<DdType> subvector = (submatrix * prob1StatesAsColumn).sumAbstract(model.getColumnVariables());
                 
+                // Before cutting the non-maybe columns, we need to compute the sizes of the row groups.
+                std::vector<uint_fast64_t> rowGroupSizes = submatrix.notZero().existsAbstract(model.getColumnVariables()).toAdd().sumAbstract(model.getNondeterminismVariables()).template toVector<uint_fast64_t>(odd);
+                
                 // Finally cut away all columns targeting non-maybe states.
                 submatrix *= maybeStatesAdd.swapVariables(model.getRowColumnMetaVariablePairs());
                 
@@ -151,11 +167,10 @@ namespace storm {
                 std::vector<ValueType> x(maybeStates.getNonZeroCount(), storm::utility::zero<ValueType>());
                 
                 // Translate the symbolic matrix/vector to their explicit representations.
-                storm::storage::SparseMatrix<ValueType> explicitSubmatrix = submatrix.toMatrix(odd, odd);
-                std::vector<ValueType> b = subvector.template toVector<ValueType>(odd);
+                std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> explicitRepresentation = submatrix.toMatrixVector(subvector, std::move(rowGroupSizes), model.getNondeterminismVariables(), odd, odd);
                 
-                std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(explicitSubmatrix);
-                solver->performMatrixVectorMultiplication(x, &b, stepBound);
+                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(explicitRepresentation.first);
+                solver->performMatrixVectorMultiplication(minimize, x, &explicitRepresentation.second, stepBound);
                 
                 // Return a hybrid check result that stores the numerical values explicitly.
                 return std::unique_ptr<CheckResult>(new storm::modelchecker::HybridQuantitativeCheckResult<DdType>(model.getReachableStates(), model.getReachableStates() && !maybeStates, psiStates.toAdd(), maybeStates, odd, x));
@@ -165,13 +180,14 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        std::unique_ptr<CheckResult> HybridDtmcPrctlModelChecker<DdType, ValueType>::computeCumulativeRewards(storm::logic::CumulativeRewardFormula const& rewardPathFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
+        std::unique_ptr<CheckResult> HybridMdpPrctlModelChecker<DdType, ValueType>::computeCumulativeRewards(storm::logic::CumulativeRewardFormula const& rewardPathFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
+            STORM_LOG_THROW(optimalityType, storm::exceptions::InvalidArgumentException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
             STORM_LOG_THROW(rewardPathFormula.hasDiscreteTimeBound(), storm::exceptions::InvalidArgumentException, "Formula needs to have a discrete time bound.");
-            return this->computeCumulativeRewardsHelper(this->getModel(), this->getModel().getTransitionMatrix(), rewardPathFormula.getDiscreteTimeBound(), *this->linearEquationSolverFactory);
+            return this->computeCumulativeRewardsHelper(optimalityType.get() == storm::logic::OptimalityType::Minimize, this->getModel(), this->getModel().getTransitionMatrix(), rewardPathFormula.getDiscreteTimeBound(), *this->linearEquationSolverFactory);
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        std::unique_ptr<CheckResult> HybridDtmcPrctlModelChecker<DdType, ValueType>::computeCumulativeRewardsHelper(storm::models::symbolic::Model<DdType> const& model, storm::dd::Add<DdType> const& transitionMatrix, uint_fast64_t stepBound, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+        std::unique_ptr<CheckResult> HybridMdpPrctlModelChecker<DdType, ValueType>::computeCumulativeRewardsHelper(bool minimize, storm::models::symbolic::NondeterministicModel<DdType> const& model, storm::dd::Add<DdType> const& transitionMatrix, uint_fast64_t stepBound, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
             // Only compute the result if the model has at least one reward this->getModel().
             STORM_LOG_THROW(model.hasStateRewards() || model.hasTransitionRewards(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
             
@@ -188,60 +204,68 @@ namespace storm {
             std::vector<ValueType> x(model.getNumberOfStates(), storm::utility::zero<ValueType>());
             
             // Translate the symbolic matrix/vector to their explicit representations.
-            storm::storage::SparseMatrix<ValueType> explicitMatrix = transitionMatrix.toMatrix(odd, odd);
-            std::vector<ValueType> b = totalRewardVector.template toVector<ValueType>(odd);
+            storm::storage::SparseMatrix<ValueType> explicitMatrix = transitionMatrix.toMatrix(model.getNondeterminismVariables(), odd, odd);
+            std::vector<ValueType> b = totalRewardVector.template toVector<ValueType>(model.getNondeterminismVariables(), odd, explicitMatrix.getRowGroupIndices());
             
             // Perform the matrix-vector multiplication.
-            std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(explicitMatrix);
-            solver->performMatrixVectorMultiplication(x, &b, stepBound);
+            std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(explicitMatrix);
+            solver->performMatrixVectorMultiplication(minimize, x, &b, stepBound);
             
             // Return a hybrid check result that stores the numerical values explicitly.
             return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType>(model.getReachableStates(), model.getManager().getBddZero(), model.getManager().getAddZero(), model.getReachableStates(), odd, x));
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        std::unique_ptr<CheckResult> HybridDtmcPrctlModelChecker<DdType, ValueType>::computeInstantaneousRewards(storm::logic::InstantaneousRewardFormula const& rewardPathFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
+        std::unique_ptr<CheckResult> HybridMdpPrctlModelChecker<DdType, ValueType>::computeInstantaneousRewards(storm::logic::InstantaneousRewardFormula const& rewardPathFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
+            STORM_LOG_THROW(optimalityType, storm::exceptions::InvalidArgumentException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
             STORM_LOG_THROW(rewardPathFormula.hasDiscreteTimeBound(), storm::exceptions::InvalidArgumentException, "Formula needs to have a discrete time bound.");
-            return this->computeInstantaneousRewardsHelper(this->getModel(), this->getModel().getTransitionMatrix(), rewardPathFormula.getDiscreteTimeBound(), *this->linearEquationSolverFactory);
+            return this->computeInstantaneousRewardsHelper(optimalityType.get() == storm::logic::OptimalityType::Minimize, this->getModel(), this->getModel().getTransitionMatrix(), rewardPathFormula.getDiscreteTimeBound(), *this->linearEquationSolverFactory);
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        std::unique_ptr<CheckResult> HybridDtmcPrctlModelChecker<DdType, ValueType>::computeInstantaneousRewardsHelper(storm::models::symbolic::Model<DdType> const& model, storm::dd::Add<DdType> const& transitionMatrix, uint_fast64_t stepBound, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+        std::unique_ptr<CheckResult> HybridMdpPrctlModelChecker<DdType, ValueType>::computeInstantaneousRewardsHelper(bool minimize, storm::models::symbolic::NondeterministicModel<DdType> const& model, storm::dd::Add<DdType> const& transitionMatrix, uint_fast64_t stepBound, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
             // Only compute the result if the model has at least one reward this->getModel().
             STORM_LOG_THROW(model.hasStateRewards(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
             
             // Create the ODD for the translation between symbolic and explicit storage.
             storm::dd::Odd<DdType> odd(model.getReachableStates());
-            
-            // Create the solution vector (and initialize it to the state rewards of the model).
-            std::vector<ValueType> x = model.getStateRewardVector().template toVector<ValueType>(odd);
-            
+
             // Translate the symbolic matrix to its explicit representations.
-            storm::storage::SparseMatrix<ValueType> explicitMatrix = transitionMatrix.toMatrix(odd, odd);
+            storm::storage::SparseMatrix<ValueType> explicitMatrix = transitionMatrix.toMatrix(model.getNondeterminismVariables(), odd, odd);
+
+            // Create the solution vector (and initialize it to the state rewards of the model).
+            std::vector<ValueType> x = model.getStateRewardVector().template toVector<ValueType>(model.getNondeterminismVariables(), odd, explicitMatrix.getRowGroupIndices());
             
             // Perform the matrix-vector multiplication.
-            std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(explicitMatrix);
-            solver->performMatrixVectorMultiplication(x, nullptr, stepBound);
+            std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(explicitMatrix);
+            solver->performMatrixVectorMultiplication(minimize, x, nullptr, stepBound);
             
             // Return a hybrid check result that stores the numerical values explicitly.
             return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType>(model.getReachableStates(), model.getManager().getBddZero(), model.getManager().getAddZero(), model.getReachableStates(), odd, x));
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        std::unique_ptr<CheckResult> HybridDtmcPrctlModelChecker<DdType, ValueType>::computeReachabilityRewards(storm::logic::ReachabilityRewardFormula const& rewardPathFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
+        std::unique_ptr<CheckResult> HybridMdpPrctlModelChecker<DdType, ValueType>::computeReachabilityRewards(storm::logic::ReachabilityRewardFormula const& rewardPathFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
+            STORM_LOG_THROW(optimalityType, storm::exceptions::InvalidArgumentException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
             std::unique_ptr<CheckResult> subResultPointer = this->check(rewardPathFormula.getSubformula());
             SymbolicQualitativeCheckResult<DdType> const& subResult = subResultPointer->asSymbolicQualitativeCheckResult<DdType>();
-            return this->computeReachabilityRewardsHelper(this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getOptionalStateRewardVector(), this->getModel().getOptionalTransitionRewardMatrix(), subResult.getTruthValuesVector(), *this->linearEquationSolverFactory, qualitative);
+            return this->computeReachabilityRewardsHelper(optimalityType.get() == storm::logic::OptimalityType::Minimize, this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getOptionalStateRewardVector(), this->getModel().getOptionalTransitionRewardMatrix(), subResult.getTruthValuesVector(), *this->linearEquationSolverFactory, qualitative);
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        std::unique_ptr<CheckResult> HybridDtmcPrctlModelChecker<DdType, ValueType>::computeReachabilityRewardsHelper(storm::models::symbolic::Model<DdType> const& model, storm::dd::Add<DdType> const& transitionMatrix, boost::optional<storm::dd::Add<DdType>> const& stateRewardVector, boost::optional<storm::dd::Add<DdType>> const& transitionRewardMatrix, storm::dd::Bdd<DdType> const& targetStates, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory, bool qualitative) {
+        std::unique_ptr<CheckResult> HybridMdpPrctlModelChecker<DdType, ValueType>::computeReachabilityRewardsHelper(bool minimize, storm::models::symbolic::NondeterministicModel<DdType> const& model, storm::dd::Add<DdType> const& transitionMatrix, boost::optional<storm::dd::Add<DdType>> const& stateRewardVector, boost::optional<storm::dd::Add<DdType>> const& transitionRewardMatrix, storm::dd::Bdd<DdType> const& targetStates, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory, bool qualitative) {
             
             // Only compute the result if there is at least one reward model.
             STORM_LOG_THROW(stateRewardVector || transitionRewardMatrix, storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
-
+            
             // Determine which states have a reward of infinity by definition.
-            storm::dd::Bdd<DdType> infinityStates = storm::utility::graph::performProb1(model, transitionMatrix.notZero(), model.getReachableStates(), targetStates);
+            storm::dd::Bdd<DdType> infinityStates;
+            storm::dd::Bdd<DdType> transitionMatrixBdd = transitionMatrix.notZero();
+            if (minimize) {
+                infinityStates = storm::utility::graph::performProb1A(model, transitionMatrixBdd, model.getReachableStates(), targetStates, storm::utility::graph::performProbGreater0A(model, transitionMatrixBdd, model.getReachableStates(), targetStates));
+            } else {
+                infinityStates = storm::utility::graph::performProb1E(model, transitionMatrixBdd, model.getReachableStates(), targetStates, storm::utility::graph::performProbGreater0E(model, transitionMatrixBdd, model.getReachableStates(), targetStates));
+            }
             infinityStates = !infinityStates && model.getReachableStates();
             storm::dd::Bdd<DdType> maybeStates = (!targetStates && !infinityStates) && model.getReachableStates();
             STORM_LOG_INFO("Found " << infinityStates.getNonZeroCount() << " 'infinity' states.");
@@ -272,22 +296,22 @@ namespace storm {
                         subvector += (submatrix * transitionRewardMatrix.get()).sumAbstract(model.getColumnVariables());
                     }
                     
-                    // Finally cut away all columns targeting non-maybe states and convert the matrix into the matrix needed
-                    // for solving the equation system (i.e. compute (I-A)).
+                    // Before cutting the non-maybe columns, we need to compute the sizes of the row groups.
+                    std::vector<uint_fast64_t> rowGroupSizes = submatrix.notZero().existsAbstract(model.getColumnVariables()).toAdd().sumAbstract(model.getNondeterminismVariables()).template toVector<uint_fast64_t>(odd);
+                    
+                    // Finally cut away all columns targeting non-maybe states.
                     submatrix *= maybeStatesAdd.swapVariables(model.getRowColumnMetaVariablePairs());
-                    submatrix = (model.getRowColumnIdentity() * maybeStatesAdd) - submatrix;
                     
                     // Create the solution vector.
                     std::vector<ValueType> x(maybeStates.getNonZeroCount(), ValueType(0.5));
                     
                     // Translate the symbolic matrix/vector to their explicit representations.
-                    storm::storage::SparseMatrix<ValueType> explicitSubmatrix = submatrix.toMatrix(odd, odd);
-                    std::vector<ValueType> b = subvector.template toVector<ValueType>(odd);
+                    std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> explicitRepresentation = submatrix.toMatrixVector(subvector, std::move(rowGroupSizes), model.getNondeterminismVariables(), odd, odd);
                     
                     // Now solve the resulting equation system.
-                    std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(explicitSubmatrix);
-                    solver->solveEquationSystem(x, b);
-                    
+                    std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(explicitRepresentation.first);
+                    solver->solveEquationSystem(minimize, x, explicitRepresentation.second);
+                                        
                     // Return a hybrid check result that stores the numerical values explicitly.
                     return std::unique_ptr<CheckResult>(new storm::modelchecker::HybridQuantitativeCheckResult<DdType>(model.getReachableStates(), model.getReachableStates() && !maybeStates, infinityStates.toAdd() * model.getManager().getConstant(storm::utility::infinity<ValueType>()), maybeStates, odd, x));
                 } else {
@@ -297,10 +321,10 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        storm::models::symbolic::Dtmc<DdType> const& HybridDtmcPrctlModelChecker<DdType, ValueType>::getModel() const {
-            return this->template getModelAs<storm::models::symbolic::Dtmc<DdType>>();
+        storm::models::symbolic::Mdp<DdType> const& HybridMdpPrctlModelChecker<DdType, ValueType>::getModel() const {
+            return this->template getModelAs<storm::models::symbolic::Mdp<DdType>>();
         }
         
-        template class HybridDtmcPrctlModelChecker<storm::dd::DdType::CUDD, double>;
+        template class HybridMdpPrctlModelChecker<storm::dd::DdType::CUDD, double>;
     }
 }

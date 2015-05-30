@@ -112,6 +112,16 @@ namespace storm {
              */
             std::vector<double> filterExplicitVector(storm::dd::Bdd<DdType::CUDD> const& selectedValues, std::vector<double> const& values) const;
             
+            /*!
+             * Adds the old values to the new values. It does so by writing the old values at their correct positions
+             * wrt. to the new ODD.
+             *
+             * @param newOdd The new ODD to use.
+             * @param oldValues The old vector of values (which is being read).
+             * @param newValues The new vector of values (which is being written).
+             */
+            void expandExplicitVector(storm::dd::Odd<DdType::CUDD> const& newOdd, std::vector<double> const& oldValues, std::vector<double>& newValues) const;
+            
         private:
             // Declare a hash functor that is used for the unique tables in the construction process.
             class HashFunctor {
@@ -159,7 +169,6 @@ namespace storm {
              */
             static std::shared_ptr<Odd<DdType::CUDD>> buildOddFromBddRec(DdNode* dd, Cudd const& manager, uint_fast64_t currentLevel, bool complement, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<std::unordered_map<std::pair<DdNode*, bool>, std::shared_ptr<Odd<DdType::CUDD>>, HashFunctor>>& uniqueTableForLevels);
             
-            
             /*!
              * Adds the selected values the target vector.
              *
@@ -175,6 +184,19 @@ namespace storm {
              * @param values The value vector from which to select the values.
              */
             static void addSelectedValuesToVectorRec(DdNode* dd, Cudd const& manager, uint_fast64_t currentLevel, bool complement, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, uint_fast64_t currentOffset, storm::dd::Odd<DdType::CUDD> const& odd, std::vector<double>& result, uint_fast64_t& currentIndex, std::vector<double> const& values);
+            
+            /*!
+             * Adds the values of the old explicit values to the new explicit values where the positions in the old vector
+             * are given by the current old ODD and the positions in the new vector are given by the new ODD.
+             *
+             * @param oldOffset The offset in the old explicit values.
+             * @param oldOdd The ODD to use for the old explicit values.
+             * @param oldValues The vector of old values.
+             * @param newOffset The offset in the new explicit values.
+             * @param newOdd The ODD to use for the new explicit values.
+             * @param newValues The vector of new values.
+             */
+            static void expandValuesToVectorRec(uint_fast64_t oldOffset, storm::dd::Odd<DdType::CUDD> const& oldOdd, std::vector<double> const& oldValues, uint_fast64_t newOffset, storm::dd::Odd<DdType::CUDD> const& newOdd, std::vector<double>& newValues);
             
             // The then- and else-nodes.
             std::shared_ptr<Odd<DdType::CUDD>> elseNode;

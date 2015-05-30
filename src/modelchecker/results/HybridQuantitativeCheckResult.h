@@ -25,6 +25,8 @@ namespace storm {
             
             virtual std::unique_ptr<CheckResult> compareAgainstBound(storm::logic::ComparisonType comparisonType, double bound) const override;
             
+            std::unique_ptr<CheckResult> toExplicitQuantitativeCheckResult() const;
+            
             virtual bool isHybrid() const override;
             virtual bool isResultForAllStates() const override;
             
