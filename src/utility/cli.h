@@ -607,7 +607,9 @@ namespace storm {
 							while (inputFileStream.good()) {
 								std::string prop;
 								std::getline(inputFileStream, prop);
-								properties.push_back(prop);
+								if (!prop.empty()) {
+									properties.push_back(prop);
+								}
 							}
 						}
 						catch (std::exception& e) {
@@ -621,14 +623,19 @@ namespace storm {
 
 					for (std::string prop : properties) {
 						boost::optional<std::shared_ptr<storm::logic::Formula>> formula;
-						if (program) {
-							storm::parser::FormulaParser formulaParser(program.get().getManager().getSharedPointer());
-							formula = formulaParser.parseFromString(prop);
-						} else {
-							storm::parser::FormulaParser formulaParser;
-							formula = formulaParser.parseFromString(prop);
+						try {
+							if (program) {
+								storm::parser::FormulaParser formulaParser(program.get().getManager().getSharedPointer());
+								formula = formulaParser.parseFromString(prop);
+							} else {
+								storm::parser::FormulaParser formulaParser;
+								formula = formulaParser.parseFromString(prop);
+							}
+							formulas.push_back(formula);
 						}
-						formulas.push_back(formula);
+						catch (storm::exceptions::WrongFormatException &e) {
+							STORM_LOG_WARN("Unable to parse line as formula: " << prop);
+						}
 					}
 					std::cout << "Parsed " << formulas.size() << " properties from file " << settings.getPropertiesFilename() << std::endl;
 				}
