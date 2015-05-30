@@ -29,7 +29,7 @@ namespace storm {
              * @param relative If set, the relative error rather than the absolute error is considered for convergence
              * detection.
              */
-            NativeMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, double precision, uint_fast64_t maximalNumberOfIterations, bool relative = true);
+			NativeMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, double precision, uint_fast64_t maximalNumberOfIterations, bool useValueIteration, bool relative = true);
             
             virtual void performMatrixVectorMultiplication(bool minimize, std::vector<ValueType>& x, std::vector<ValueType>* b = nullptr, uint_fast64_t n = 1, std::vector<ValueType>* newX = nullptr) const override;
             
@@ -47,6 +47,9 @@ namespace storm {
             
             // The maximal number of iterations to do before iteration is aborted.
             uint_fast64_t maximalNumberOfIterations;
+
+			// Whether value iteration or policy iteration is to be used.
+			bool useValueIteration;
         };
     } // namespace solver
 } // namespace storm

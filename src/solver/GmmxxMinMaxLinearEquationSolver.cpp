@@ -95,7 +95,6 @@ namespace storm {
 				}
 			} else {
 				// We will use Policy Iteration to solve the given system.
-
 				// We first define an initial choice resolution which will be refined after each iteration.
 				std::vector<storm::storage::SparseMatrix<ValueType>::index_type> choiceVector(rowGroupIndices.size() - 1);
 
@@ -150,7 +149,7 @@ namespace storm {
 					}
 
 					// Determine whether the method converged.
-					converged = storm::utility::vector::equalModuloPrecision(*currentX, *newX, this->precision, this->relative);
+					converged = storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *newX, static_cast<ValueType>(this->precision), this->relative);
 
 					// Update environment variables.
 					std::swap(currentX, newX);

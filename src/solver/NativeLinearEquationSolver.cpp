@@ -63,7 +63,7 @@ namespace storm {
                 std::swap(nextX, currentX);
                 
                 // Now check if the process already converged within our precision.
-                converged = storm::utility::vector::equalModuloPrecision(*currentX, *nextX, precision, relative);
+                converged = storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *nextX, static_cast<ValueType>(precision), relative);
                 
                 // Increase iteration count so we can abort if convergence is too slow.
                 ++iterationCount;
@@ -128,5 +128,6 @@ namespace storm {
         
         // Explicitly instantiate the linear equation solver.
         template class NativeLinearEquationSolver<double>;
+		template class NativeLinearEquationSolver<float>;
     }
 }
