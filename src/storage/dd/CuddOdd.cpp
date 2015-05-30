@@ -106,6 +106,22 @@ namespace storm {
             return result;
         }
         
+        void Odd<DdType::CUDD>::expandExplicitVector(storm::dd::Odd<DdType::CUDD> const& newOdd, std::vector<double> const& oldValues, std::vector<double>& newValues) const {
+            expandValuesToVectorRec(0, *this, oldValues, 0, newOdd, newValues);
+        }
+        
+        void Odd<DdType::CUDD>::expandValuesToVectorRec(uint_fast64_t oldOffset, storm::dd::Odd<DdType::CUDD> const& oldOdd, std::vector<double> const& oldValues, uint_fast64_t newOffset, storm::dd::Odd<DdType::CUDD> const& newOdd, std::vector<double>& newValues) {
+            if (oldOdd.isTerminalNode()) {
+                STORM_LOG_THROW(newOdd.isTerminalNode(), storm::exceptions::InvalidArgumentException, "The ODDs for the translation must have the same height.");
+                if (oldOdd.getThenOffset() != 0) {
+                    newValues[newOffset] += oldValues[oldOffset];
+                }
+            } else {
+                expandValuesToVectorRec(oldOffset, oldOdd.getElseSuccessor(), oldValues, newOffset, newOdd.getElseSuccessor(), newValues);
+                expandValuesToVectorRec(oldOffset + oldOdd.getElseOffset(), oldOdd.getThenSuccessor(), oldValues, newOffset + newOdd.getElseOffset(), newOdd.getThenSuccessor(), newValues);
+            }
+        }
+        
         void Odd<DdType::CUDD>::addSelectedValuesToVectorRec(DdNode* dd, Cudd const& manager, uint_fast64_t currentLevel, bool complement, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, uint_fast64_t currentOffset, storm::dd::Odd<DdType::CUDD> const& odd, std::vector<double>& result, uint_fast64_t& currentIndex, std::vector<double> const& values) {
             // If there are no more values to select, we can directly return.
             if (dd == Cudd_ReadLogicZero(manager.getManager()) && !complement) {

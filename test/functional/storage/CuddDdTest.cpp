@@ -351,7 +351,7 @@ TEST(CuddDd, AddOddTest) {
     EXPECT_EQ(25, matrix.getNonzeroEntryCount());
     
     dd = manager->getRange(x.first).toAdd() * manager->getRange(x.second).toAdd() * manager->getEncoding(a.first, 0).toAdd().ite(dd, dd + manager->getConstant(1));
-    ASSERT_NO_THROW(matrix = dd.toMatrix({x.first}, {x.second}, {a.first}, rowOdd, columnOdd));
+    ASSERT_NO_THROW(matrix = dd.toMatrix({a.first}, rowOdd, columnOdd));
     EXPECT_EQ(18, matrix.getRowCount());
     EXPECT_EQ(9, matrix.getRowGroupCount());
     EXPECT_EQ(9, matrix.getColumnCount());
@@ -398,7 +398,7 @@ TEST(CuddDd, BddOddTest) {
     EXPECT_EQ(25, matrix.getNonzeroEntryCount());
     
     dd = manager->getRange(x.first).toAdd() * manager->getRange(x.second).toAdd() * manager->getEncoding(a.first, 0).toAdd().ite(dd, dd + manager->getConstant(1));
-    ASSERT_NO_THROW(matrix = dd.toMatrix({x.first}, {x.second}, {a.first}, rowOdd, columnOdd));
+    ASSERT_NO_THROW(matrix = dd.toMatrix({a.first}, rowOdd, columnOdd));
     EXPECT_EQ(18, matrix.getRowCount());
     EXPECT_EQ(9, matrix.getRowGroupCount());
     EXPECT_EQ(9, matrix.getColumnCount());

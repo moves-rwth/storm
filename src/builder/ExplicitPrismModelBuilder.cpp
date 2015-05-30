@@ -127,21 +127,6 @@ namespace storm {
 #endif
             }
             
-            storm::prism::RewardModel rewardModel = storm::prism::RewardModel();
-            
-            // Select the appropriate reward model.
-            if (options.buildRewards) {
-                // If a specific reward model was selected or one with the empty name exists, select it.
-                if (options.rewardModelName) {
-                    rewardModel = preparedProgram.getRewardModel(options.rewardModelName.get());
-                } else if (preparedProgram.hasRewardModel("")) {
-                    rewardModel = preparedProgram.getRewardModel("");
-                } else if (preparedProgram.hasRewardModel()) {
-                    // Otherwise, we select the first one.
-                    rewardModel = preparedProgram.getRewardModel(0);
-                }
-            }
-            
             // If the set of labels we are supposed to built is restricted, we need to remove the other labels from the program.
             if (options.labelsToBuild) {
                 preparedProgram.filterLabels(options.labelsToBuild.get());
@@ -162,6 +147,20 @@ namespace storm {
             
             // Now that the program is fixed, we we need to substitute all constants with their concrete value.
             preparedProgram = preparedProgram.substituteConstants();
+            
+            // Select the appropriate reward model (after the constants have been substituted).
+            storm::prism::RewardModel rewardModel = storm::prism::RewardModel();
+            if (options.buildRewards) {
+                // If a specific reward model was selected or one with the empty name exists, select it.
+                if (options.rewardModelName) {
+                    rewardModel = preparedProgram.getRewardModel(options.rewardModelName.get());
+                } else if (preparedProgram.hasRewardModel("")) {
+                    rewardModel = preparedProgram.getRewardModel("");
+                } else if (preparedProgram.hasRewardModel()) {
+                    // Otherwise, we select the first one.
+                    rewardModel = preparedProgram.getRewardModel(0);
+                }
+            }
                 
             ModelComponents modelComponents = buildModelComponents(preparedProgram, rewardModel, options);
             

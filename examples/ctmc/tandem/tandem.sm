@@ -36,3 +36,7 @@ endmodule
 rewards "customers"
 	true : sc + sm;
 endrewards
+
+label "network_full" = sc=c&sm=c&ph=2;
+label "first_queue_full" = sc=c;
+label "second_queue_full" = sm=c;
