@@ -626,9 +626,11 @@ namespace storm {
 
 					if (inputFileStream.good()) {
 						try {
-							std::string prop;
-							std::getline(inputFileStream, prop);
-							properties.push_back(prop);
+							while (inputFileStream.good()) {
+								std::string prop;
+								std::getline(inputFileStream, prop);
+								properties.push_back(prop);
+							}
 						}
 						catch (std::exception& e) {
 							inputFileStream.close();
