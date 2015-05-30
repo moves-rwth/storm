@@ -73,12 +73,12 @@ namespace storm {
 				return this->setFromTypeValue(newValue);
 			}
             
-			bool setFromTypeValue(T const& newValue) {
+			bool setFromTypeValue(T const& newValue, bool hasBeenSet = true) {
 				if (!this->validate(newValue)) {
                     return false;
 				}
 				this->argumentValue = newValue;
-				this->hasBeenSet = true;
+				this->hasBeenSet = hasBeenSet;
 				return true;
 			}
             
@@ -120,7 +120,7 @@ namespace storm {
             
 			void setFromDefaultValue() override {
                 STORM_LOG_THROW(this->hasDefaultValue, storm::exceptions::IllegalFunctionCallException, "Unable to set value from default value, because the argument has none.");
-				bool result = this->setFromTypeValue(this->defaultValue);
+				bool result = this->setFromTypeValue(this->defaultValue, false);
                 STORM_LOG_THROW(result, storm::exceptions::IllegalArgumentValueException, "Unable to assign default value to argument, because it was rejected.");
 			}
             

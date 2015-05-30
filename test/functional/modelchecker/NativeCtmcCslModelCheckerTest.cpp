@@ -51,27 +51,41 @@ TEST(SparseCtmcCslModelCheckerTest, Cluster) {
     ASSERT_TRUE(checkResult->isExplicitQuantitativeCheckResult());
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeCheckResult2 = checkResult->asExplicitQuantitativeCheckResult<double>();
     EXPECT_NEAR(2.3397873548343415E-6, quantitativeCheckResult2[initialState], storm::settings::generalSettings().getPrecision());
-
-    formula = formulaParser.parseFromString("P=? [ \"minimum\" U<=10 \"premium\"]");
+    
+    formula = formulaParser.parseFromString("P=? [ F[100,2000] !\"minimum\"]");
     checkResult = modelchecker.check(*formula);
     
     ASSERT_TRUE(checkResult->isExplicitQuantitativeCheckResult());
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeCheckResult3 = checkResult->asExplicitQuantitativeCheckResult<double>();
-    EXPECT_NEAR(1, quantitativeCheckResult3[initialState], storm::settings::generalSettings().getPrecision());
-
-    formula = formulaParser.parseFromString("P=? [ !\"minimum\" U[1,inf] \"minimum\"]");
+    EXPECT_NEAR(0.001105335651670241, quantitativeCheckResult3[initialState], storm::settings::generalSettings().getPrecision());
+    
+    formula = formulaParser.parseFromString("P=? [ \"minimum\" U<=10 \"premium\"]");
     checkResult = modelchecker.check(*formula);
     
     ASSERT_TRUE(checkResult->isExplicitQuantitativeCheckResult());
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeCheckResult4 = checkResult->asExplicitQuantitativeCheckResult<double>();
-    EXPECT_NEAR(0, quantitativeCheckResult4[initialState], storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(1, quantitativeCheckResult4[initialState], storm::settings::generalSettings().getPrecision());
+    
+    formula = formulaParser.parseFromString("P=? [ !\"minimum\" U[1,inf] \"minimum\"]");
+    checkResult = modelchecker.check(*formula);
+    
+    ASSERT_TRUE(checkResult->isExplicitQuantitativeCheckResult());
+    storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeCheckResult5 = checkResult->asExplicitQuantitativeCheckResult<double>();
+    EXPECT_NEAR(0, quantitativeCheckResult5[initialState], storm::settings::generalSettings().getPrecision());
+    
+    formula = formulaParser.parseFromString("P=? [ \"minimum\" U[1,inf] !\"minimum\"]");
+    checkResult = modelchecker.check(*formula);
+    
+    ASSERT_TRUE(checkResult->isExplicitQuantitativeCheckResult());
+    storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeCheckResult6 = checkResult->asExplicitQuantitativeCheckResult<double>();
+    EXPECT_NEAR(0.9999999033633374, quantitativeCheckResult6[initialState], storm::settings::generalSettings().getPrecision());
     
     formula = formulaParser.parseFromString("R=? [C<=100]");
     checkResult = modelchecker.check(*formula);
     
     ASSERT_TRUE(checkResult->isExplicitQuantitativeCheckResult());
-    storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeCheckResult5 = checkResult->asExplicitQuantitativeCheckResult<double>();
-    EXPECT_NEAR(0.8602815057967503, quantitativeCheckResult5[initialState], storm::settings::generalSettings().getPrecision());
+    storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeCheckResult7 = checkResult->asExplicitQuantitativeCheckResult<double>();
+    EXPECT_NEAR(0.8602815057967503, quantitativeCheckResult7[initialState], storm::settings::generalSettings().getPrecision());
 }
 
 TEST(SparseCtmcCslModelCheckerTest, Embedded) {
@@ -133,7 +147,7 @@ TEST(SparseCtmcCslModelCheckerTest, Embedded) {
     
     ASSERT_TRUE(checkResult->isExplicitQuantitativeCheckResult());
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeCheckResult5 = checkResult->asExplicitQuantitativeCheckResult<double>();
-    EXPECT_NEAR(2.7720429852369946, quantitativeCheckResult5[initialState], storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(2.7745274082080154, quantitativeCheckResult5[initialState], storm::settings::generalSettings().getPrecision());
 }
 
 TEST(SparseCtmcCslModelCheckerTest, Polling) {

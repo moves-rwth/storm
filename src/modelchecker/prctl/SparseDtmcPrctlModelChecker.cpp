@@ -251,7 +251,7 @@ namespace storm {
                 // Converting the matrix from the fixpoint notation to the form needed for the equation
                 // system. That is, we go from x = A*x + b to (I-A)x = b.
                 submatrix.convertToEquationSystem();
-                
+                                
                 // Initialize the x vector with 1 for each element. This is the initial guess for
                 // the iterative solvers.
                 std::vector<ValueType> x(submatrix.getColumnCount(), storm::utility::one<ValueType>());
