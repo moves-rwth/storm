@@ -95,10 +95,10 @@ namespace storm {
 				}
 			} else {
 				// We will use Policy Iteration to solve the given system.
-				// We first define an initial choice resolution which will be refined after each iteration.
+				// We first guess an initial choice resolution which will be refined after each iteration.
 				std::vector<storm::storage::SparseMatrix<ValueType>::index_type> choiceVector(rowGroupIndices.size() - 1);
 
-				// Create our own multiplyResult for solving the deterministic instances.
+				// Create our own multiplyResult for solving the deterministic sub-instances.
 				std::vector<ValueType> deterministicMultiplyResult(rowGroupIndices.size() - 1);
 				std::vector<ValueType> subB(rowGroupIndices.size() - 1);
 
@@ -142,6 +142,7 @@ namespace storm {
 					gmm::add(b, *multiplyResult);
 
 					// Reduce the vector x by applying min/max over all nondeterministic choices.
+					// Here, we capture which choice was taken in each state, thereby refining our initial guess.
 					if (minimize) {
 						storm::utility::vector::reduceVectorMin(*multiplyResult, *newX, rowGroupIndices, &choiceVector);
 					} else {

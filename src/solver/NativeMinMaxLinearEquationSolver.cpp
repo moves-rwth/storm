@@ -93,13 +93,14 @@ namespace storm {
 				}
 			} else {
 				// We will use Policy Iteration to solve the given system.
-				// We first define an initial choice resolution which will be refined after each iteration.
+				// We first guess an initial choice resolution which will be refined after each iteration.
 				std::vector<storm::storage::SparseMatrix<ValueType>::index_type> choiceVector(A.getRowGroupIndices().size() - 1);
 
-				// Create our own multiplyResult for solving the deterministic instances.
+				// Create our own multiplyResult for solving the deterministic sub-instances.
 				std::vector<ValueType> deterministicMultiplyResult(A.getRowGroupIndices().size() - 1);
 				std::vector<ValueType> subB(A.getRowGroupIndices().size() - 1);
 
+				// Check whether intermediate storage was provided and create it otherwise.
 				bool multiplyResultMemoryProvided = true;
 				if (multiplyResult == nullptr) {
 					multiplyResult = new std::vector<ValueType>(b.size());
@@ -132,7 +133,7 @@ namespace storm {
 					// Copy X since we will overwrite it
 					std::copy(currentX->begin(), currentX->end(), newX->begin());
 
-					// Solve the resulting linear equation system
+					// Solve the resulting linear equation system of the sub-instance for x under the current choices
 					nativeLinearEquationSolver.solveEquationSystem(*newX, subB, &deterministicMultiplyResult);
 
 					// Compute x' = A*x + b. This step is necessary to allow the choosing of the optimal policy for the next iteration.
@@ -140,6 +141,7 @@ namespace storm {
 					storm::utility::vector::addVectors(*multiplyResult, b, *multiplyResult);
 
 					// Reduce the vector x by applying min/max over all nondeterministic choices.
+					// Here, we capture which choice was taken in each state, thereby refining our initial guess.
 					if (minimize) {
 						storm::utility::vector::reduceVectorMin(*multiplyResult, *newX, A.getRowGroupIndices(), &choiceVector);
 					} else {
