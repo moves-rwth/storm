@@ -17,14 +17,14 @@ namespace storm {
 			storm::settings::modules::GeneralSettings const& generalSettings = storm::settings::generalSettings();
             
             // Get appropriate settings.
-            maximalNumberOfIterations = settings.getMaximalIterationCount();
-            precision = settings.getPrecision();
+			precision = settings.getPrecision();            
             relative = settings.getConvergenceCriterion() == storm::settings::modules::GmmxxEquationSolverSettings::ConvergenceCriterion::Relative;
+			maximalNumberOfIterations = settings.getMaximalIterationCount();
 			useValueIteration = (generalSettings.getMinMaxEquationSolvingTechnique() == storm::settings::modules::GeneralSettings::MinMaxTechnique::ValueIteration);
         }
         
         template<typename ValueType>
-		GmmxxMinMaxLinearEquationSolver<ValueType>::GmmxxMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, double precision, uint_fast64_t maximalNumberOfIterations, bool useValueIteration, bool relative) : gmmxxMatrix(storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(A)), stormMatrix(A), rowGroupIndices(A.getRowGroupIndices()), precision(precision), maximalNumberOfIterations(maximalNumberOfIterations), useValueIteration(useValueIteration), relative(relative) {
+		GmmxxMinMaxLinearEquationSolver<ValueType>::GmmxxMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, double precision, uint_fast64_t maximalNumberOfIterations, bool useValueIteration, bool relative) : gmmxxMatrix(storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(A)), stormMatrix(A), rowGroupIndices(A.getRowGroupIndices()), precision(precision), relative(relative), maximalNumberOfIterations(maximalNumberOfIterations), useValueIteration(useValueIteration) {
             // Intentionally left empty.
         }
 
@@ -96,7 +96,7 @@ namespace storm {
 			} else {
 				// We will use Policy Iteration to solve the given system.
 				// We first guess an initial choice resolution which will be refined after each iteration.
-				std::vector<storm::storage::SparseMatrix<ValueType>::index_type> choiceVector(rowGroupIndices.size() - 1);
+				std::vector<typename storm::storage::SparseMatrix<ValueType>::index_type> choiceVector(rowGroupIndices.size() - 1);
 
 				// Create our own multiplyResult for solving the deterministic sub-instances.
 				std::vector<ValueType> deterministicMultiplyResult(rowGroupIndices.size() - 1);

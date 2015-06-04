@@ -16,14 +16,14 @@ namespace storm {
 			storm::settings::modules::GeneralSettings const& generalSettings = storm::settings::generalSettings();
             
             // Get appropriate settings.
+			precision = settings.getPrecision();
+			relative = settings.getConvergenceCriterion() == storm::settings::modules::NativeEquationSolverSettings::ConvergenceCriterion::Relative;
             maximalNumberOfIterations = settings.getMaximalIterationCount();
-            precision = settings.getPrecision();
-            relative = settings.getConvergenceCriterion() == storm::settings::modules::NativeEquationSolverSettings::ConvergenceCriterion::Relative;
 			useValueIteration = (generalSettings.getMinMaxEquationSolvingTechnique() == storm::settings::modules::GeneralSettings::MinMaxTechnique::ValueIteration);
         }
         
         template<typename ValueType>
-		NativeMinMaxLinearEquationSolver<ValueType>::NativeMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, double precision, uint_fast64_t maximalNumberOfIterations, bool useValueIteration, bool relative) : A(A), precision(precision), maximalNumberOfIterations(maximalNumberOfIterations), useValueIteration(useValueIteration), relative(relative) {
+		NativeMinMaxLinearEquationSolver<ValueType>::NativeMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, double precision, uint_fast64_t maximalNumberOfIterations, bool useValueIteration, bool relative) : A(A), precision(precision), relative(relative), maximalNumberOfIterations(maximalNumberOfIterations), useValueIteration(useValueIteration) {
             // Intentionally left empty.
         }
         
@@ -94,7 +94,7 @@ namespace storm {
 			} else {
 				// We will use Policy Iteration to solve the given system.
 				// We first guess an initial choice resolution which will be refined after each iteration.
-				std::vector<storm::storage::SparseMatrix<ValueType>::index_type> choiceVector(A.getRowGroupIndices().size() - 1);
+				std::vector<typename storm::storage::SparseMatrix<ValueType>::index_type> choiceVector(A.getRowGroupIndices().size() - 1);
 
 				// Create our own multiplyResult for solving the deterministic sub-instances.
 				std::vector<ValueType> deterministicMultiplyResult(A.getRowGroupIndices().size() - 1);
