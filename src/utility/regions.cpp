@@ -168,6 +168,11 @@ namespace storm {
                 return result;
             }
             
+            template<>
+            void gatherOccurringVariables<storm::RationalFunction, storm::Variable>(storm::RationalFunction const& function, std::set<storm::Variable>& variableSet){
+                function.gatherVariables(variableSet);
+            }
+            
             //explicit instantiations
        template double convertNumber<double, double>(double const& number, bool const& roundDown, double const& precision);
        
@@ -183,6 +188,9 @@ namespace storm {
        template std::string getVariableName<storm::Variable>(storm::Variable variable);
        
        template bool functionIsLinear<storm::RationalFunction>(storm::RationalFunction const& function);
+       
+       template void gatherOccurringVariables<storm::RationalFunction, storm::Variable>(storm::RationalFunction const& function, std::set<storm::Variable>& variableSet);
+       
 #endif 
         }
     }

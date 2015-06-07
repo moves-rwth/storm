@@ -27,9 +27,11 @@ namespace storm {
              */
             enum class RegionCheckResult { 
                 UNKNOWN, /*!< the result is unknown */
+                EXISTSSAT, /*!< the formula is satisfied for at least one parameter evaluation that lies in the given region */
+                EXISTSUNSAT, /*!< the formula is violated for at least one parameter evaluation that lies in the given region */
+                EXISTSBOTH, /*!< the formula is satisfied for some parameters but also violated for others */
                 ALLSAT, /*!< the formula is satisfied for all parameters in the given region */
-                ALLUNSAT, /*!< the formula is violated for all parameters in the given region */
-                INCONCLUSIVE /*!< the formula is satisfied for some parameters but also violated for others */
+                ALLUNSAT /*!< the formula is violated for all parameters in the given region */
             };
             
             class ParameterRegion{
@@ -49,6 +51,8 @@ namespace storm {
                  * The second entry will map every variable to its lower bound, except the first one (i.e. *consVariables.begin())
                  * ...
                  * The last entry will map every variable to its upper bound
+                 * 
+                 * If the given set of variables is empty, the returned vector will contain an empty map
                  */
                 std::vector<std::map<VariableType, BoundType>> getVerticesOfRegion(std::set<VariableType> const& consideredVariables) const;
                 
@@ -216,11 +220,27 @@ namespace storm {
             /*!
              * Checks the value of the function at some sampling points within the given region
              * may set the satPoint and unSatPoint of the regions if they are not yet specified and such points are found
-             * may also change the regioncheckresult of the region
+             * Also changes the regioncheckresult of the region to EXISTSSAT, EXISTSUNSAT, or EXISTSBOTH
              * 
              * @return true if an unsat point as well as a sat point has been found during the process
              */
-            bool testSamplePoints(ParameterRegion& region);
+            bool checkSamplePoints(ParameterRegion& region);
+            
+            /*!
+             * Builds an MDP that is used to compute bounds on the maximal/minimal reachability probability,
+             * If this approximation already yields that the property is satisfied/violated in the whole region,
+             * true is returned and the regioncheckresult of the region is changed accordingly.
+             * The computed bounds are stored in the given vectors.
+             * However, it only the lowerBounds (or upperBounds) need to be computed in order to get a conclusive result, 
+             * the upperBounds (or lowerBounds) vector remains untouched.
+             */
+            bool checkApproximativeProbabilities(ParameterRegion& region, std::vector<ConstantType>& lowerBounds, std::vector<ConstantType>& upperBounds); 
+            
+            
+            /*!
+             * Actually builds the mdp that is used to obtain bounds on the maximal/minimal reachability probability
+             */
+            storm::models::sparse::Mdp<ConstantType> buildMdpForApproximation(ParameterRegion const& region);
             
             
             
@@ -269,9 +289,11 @@ namespace storm {
             
             std::chrono::high_resolution_clock::duration timePreprocessing;
             std::chrono::high_resolution_clock::duration timeInitialStateElimination;
+            std::chrono::high_resolution_clock::duration timeComputeReachProbFunction;
             std::chrono::high_resolution_clock::duration timeCheckRegion;
             std::chrono::high_resolution_clock::duration timeSampling;
             std::chrono::high_resolution_clock::duration timeApproximation;
+            std::chrono::high_resolution_clock::duration timeMDPBuild;
             std::chrono::high_resolution_clock::duration timeSubsystemSmt;
             std::chrono::high_resolution_clock::duration timeFullSmt;
         };

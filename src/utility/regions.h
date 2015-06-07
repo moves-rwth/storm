@@ -107,6 +107,12 @@ namespace storm {
             template<typename ParametricType>
             bool functionIsLinear(ParametricType const& function);
             
+            /*!
+             *  Add all variables that occur in the given function to the the given set
+             */
+            template<typename ParametricType, typename VariableType>
+            void gatherOccurringVariables(ParametricType const& function, std::set<VariableType>& variableSet);
+            
         }
     }
 }
