@@ -31,7 +31,7 @@ namespace storm {
                                 std::vector<ValueType> const& exitRates,
                                 boost::optional<std::vector<ValueType>> const& optionalStateRewardVector = boost::optional<std::vector<ValueType>>(),
                                 boost::optional<storm::storage::SparseMatrix<ValueType>> const& optionalTransitionRewardMatrix = boost::optional<storm::storage::SparseMatrix<ValueType>>(),
-                                boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> const& optionalChoiceLabeling = boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>());
+                                boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling = boost::optional<std::vector<LabelSet>>());
                 
                 /*!
                  * Constructs a model by moving the given data.
@@ -50,7 +50,7 @@ namespace storm {
                                 std::vector<ValueType> const& exitRates,
                                 boost::optional<std::vector<ValueType>>&& optionalStateRewardVector = boost::optional<std::vector<ValueType>>(),
                                 boost::optional<storm::storage::SparseMatrix<ValueType>>&& optionalTransitionRewardMatrix = boost::optional<storm::storage::SparseMatrix<ValueType>>(),
-                                boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>&& optionalChoiceLabeling = boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>());
+                                boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling = boost::optional<std::vector<LabelSet>>());
                 
                 MarkovAutomaton(MarkovAutomaton const& other) = default;
                 MarkovAutomaton& operator=(MarkovAutomaton const& other) = default;

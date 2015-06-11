@@ -12,7 +12,7 @@ namespace storm {
                  storm::models::sparse::StateLabeling const& stateLabeling,
                  boost::optional<std::vector<ValueType>> const& optionalStateRewardVector,
                  boost::optional<storm::storage::SparseMatrix<ValueType>> const& optionalTransitionRewardMatrix,
-                 boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> const& optionalChoiceLabeling)
+                 boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling)
             : DeterministicModel<ValueType>(storm::models::ModelType::Dtmc, probabilityMatrix, stateLabeling, optionalStateRewardVector, optionalTransitionRewardMatrix, optionalChoiceLabeling) {
                 STORM_LOG_THROW(this->checkValidityOfProbabilityMatrix(), storm::exceptions::InvalidArgumentException, "The probability matrix is invalid.");
                 STORM_LOG_THROW(!this->hasTransitionRewards() || this->getTransitionRewardMatrix().isSubmatrixOf(this->getTransitionMatrix()), storm::exceptions::InvalidArgumentException, "The transition reward matrix is not a submatrix of the transition matrix, i.e. there are rewards for transitions that do not exist.");
@@ -22,7 +22,7 @@ namespace storm {
             Dtmc<ValueType>::Dtmc(storm::storage::SparseMatrix<ValueType>&& probabilityMatrix, storm::models::sparse::StateLabeling&& stateLabeling,
                  boost::optional<std::vector<ValueType>>&& optionalStateRewardVector,
                  boost::optional<storm::storage::SparseMatrix<ValueType>>&& optionalTransitionRewardMatrix,
-                 boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>&& optionalChoiceLabeling)
+                 boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling)
             : DeterministicModel<ValueType>(storm::models::ModelType::Dtmc, std::move(probabilityMatrix), std::move(stateLabeling), std::move(optionalStateRewardVector), std::move(optionalTransitionRewardMatrix), std::move(optionalChoiceLabeling)) {
                 STORM_LOG_THROW(this->checkValidityOfProbabilityMatrix(), storm::exceptions::InvalidArgumentException, "The probability matrix is invalid.");
                 STORM_LOG_THROW(!this->hasTransitionRewards() || this->getTransitionRewardMatrix().isSubmatrixOf(this->getTransitionMatrix()), storm::exceptions::InvalidArgumentException, "The transition reward matrix is not a submatrix of the transition matrix, i.e. there are rewards for transitions that do not exist.");
@@ -41,7 +41,7 @@ namespace storm {
                 //					  	  	  	  	  	  storm::models::sparse::StateLabeling(this->getStateLabeling(), subSysStates),
                 //					  	  	  	  	  	  boost::optional<std::vector<ValueType>>(),
                 //					  	  	  	  	  	  boost::optional<storm::storage::SparseMatrix<ValueType>>(),
-                //					  	  	  	  	  	  boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>());
+                //					  	  	  	  	  	  boost::optional<std::vector<LabelSet>>());
                 //		}
                 //
                 //		// Does the vector have the right size?
@@ -164,16 +164,16 @@ namespace storm {
                 //			newTransitionRewards = newTransRewardsBuilder.build();
                 //		}
                 //
-                //		boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> newChoiceLabels;
+                //		boost::optional<std::vector<LabelSet>> newChoiceLabels;
                 //		if(this->hasChoiceLabeling()) {
                 //
                 //			// Get the choice label sets and move the needed values to the front.
-                //			std::vector<boost::container::flat_set<uint_fast64_t>> newChoice(this->getChoiceLabeling());
+                //			std::vector<LabelSet> newChoice(this->getChoiceLabeling());
                 //			storm::utility::vector::selectVectorValues(newChoice, subSysStates, this->getChoiceLabeling());
                 //
                 //			// Throw away all values after the last state and set the choice label set for s_b as empty.
                 //			newChoice.resize(newStateCount);
-                //			newChoice[newStateCount - 1] = boost::container::flat_set<uint_fast64_t>();
+                //			newChoice[newStateCount - 1] = LabelSet();
                 //
                 //			newChoiceLabels = newChoice;
                 //		}

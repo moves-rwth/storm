@@ -9,12 +9,12 @@ namespace storm {
         namespace symbolic {
             
             /*!
-             * This class represents a discrete-time Markov decision process.
+             * This class represents a discrete-time stochastic two-player game.
              */
             template<storm::dd::DdType Type>
             class StochasticTwoPlayerGame : public NondeterministicModel<Type> {
             public:
-                StochasticTwoPlayerGame(Mdp<Type> const& other) = default;
+                StochasticTwoPlayerGame(StochasticTwoPlayerGame<Type> const& other) = default;
                 StochasticTwoPlayerGame& operator=(StochasticTwoPlayerGame<Type> const& other) = default;
                 
 #ifndef WINDOWS
@@ -25,7 +25,6 @@ namespace storm {
                 /*!
                  * Constructs a model from the given data.
                  *
-                 * @param modelType The type of the model.
                  * @param manager The manager responsible for the decision diagrams.
                  * @param reachableStates A DD representing the reachable states.
                  * @param initialStates A DD representing the initial states of the model.
@@ -59,7 +58,27 @@ namespace storm {
                                         std::map<std::string, storm::expressions::Expression> labelToExpressionMap = std::map<std::string, storm::expressions::Expression>(),
                                         boost::optional<storm::dd::Add<Type>> const& optionalStateRewardVector = boost::optional<storm::dd::Dd<Type>>(),
                                         boost::optional<storm::dd::Add<Type>> const& optionalTransitionRewardMatrix = boost::optional<storm::dd::Dd<Type>>());
+
+                /*!
+                 * Retrieeves the set of meta variables used to encode the nondeterministic choices of player 1.
+                 *
+                 * @return The set of meta variables used to encode the nondeterministic choices of player 1.
+                 */
+                std::set<storm::expressions::Variable> const& getPlayer1Variables() const;
                 
+                /*!
+                 * Retrieeves the set of meta variables used to encode the nondeterministic choices of player 2.
+                 *
+                 * @return The set of meta variables used to encode the nondeterministic choices of player 2.
+                 */
+                std::set<storm::expressions::Variable> const& getPlayer2Variables() const;
+                
+            private:
+                // The meta variables used to encode the nondeterministic choices of player 1.
+                std::set<storm::expressions::Variable> player1Variables;
+                
+                // The meta variables used to encode the nondeterministic choices of player 2.
+                std::set<storm::expressions::Variable> player2Variables;
             };
             
         } // namespace symbolic

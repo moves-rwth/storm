@@ -16,6 +16,9 @@ namespace storm {
     namespace models {
         namespace sparse {
             
+            // The type used for storing a set of labels.
+            typedef boost::container::flat_set<uint_fast64_t> LabelSet;
+            
             /*!
              * Base class for all sparse models.
              */
@@ -45,7 +48,7 @@ namespace storm {
                       storm::models::sparse::StateLabeling const& stateLabeling,
                       boost::optional<std::vector<ValueType>> const& optionalStateRewardVector = boost::optional<std::vector<ValueType>>(),
                       boost::optional<storm::storage::SparseMatrix<ValueType>> const& optionalTransitionRewardMatrix = boost::optional<storm::storage::SparseMatrix<ValueType>>(),
-                      boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> const& optionalChoiceLabeling = boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>());
+                      boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling = boost::optional<std::vector<LabelSet>>());
                 
                 /*!
                  * Constructs a model by moving the given data.
@@ -62,7 +65,7 @@ namespace storm {
                       storm::models::sparse::StateLabeling&& stateLabeling,
                       boost::optional<std::vector<ValueType>>&& optionalStateRewardVector = boost::optional<std::vector<ValueType>>(),
                       boost::optional<storm::storage::SparseMatrix<ValueType>>&& optionalTransitionRewardMatrix = boost::optional<storm::storage::SparseMatrix<ValueType>>(),
-                      boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>&& optionalChoiceLabeling = boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>());
+                      boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling = boost::optional<std::vector<LabelSet>>());
                                 
                 /*!
                  * Retrieves the backward transition relation of the model, i.e. a set of transitions between states
@@ -175,7 +178,7 @@ namespace storm {
                  *
                  * @return The labels for the choices of the model.
                  */
-                std::vector<boost::container::flat_set<uint_fast64_t>> const& getChoiceLabeling() const;
+                std::vector<LabelSet> const& getChoiceLabeling() const;
                 
                 /*!
                  * Returns the state labeling associated with this model.
@@ -287,7 +290,7 @@ namespace storm {
                 boost::optional<storm::storage::SparseMatrix<ValueType>> transitionRewardMatrix;
                 
                 // If set, a vector representing the labels of choices.
-                boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> choiceLabeling;
+                boost::optional<std::vector<LabelSet>> choiceLabeling;
             };
             
         } // namespace sparse
