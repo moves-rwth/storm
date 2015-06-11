@@ -2,6 +2,8 @@
 
 #include "src/settings/SettingsManager.h"
 
+#include "src/solver/FullySymbolicGameSolver.h"
+
 #include "src/solver/NativeLinearEquationSolver.h"
 #include "src/solver/GmmxxLinearEquationSolver.h"
 
@@ -15,6 +17,11 @@
 namespace storm {
     namespace utility {
         namespace solver {
+            template<storm::dd::DdType Type>
+            std::unique_ptr<storm::solver::SymbolicGameSolver<Type>> SymbolicGameSolverFactory<Type>::create(storm::dd::Add<Type> const& A, storm::dd::Bdd<Type> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs, std::set<storm::expressions::Variable> const& player1Variables, std::set<storm::expressions::Variable> const& player2Variables) const {
+                return std::unique_ptr<storm::solver::SymbolicGameSolver<Type>>(new storm::solver::FullySymbolicGameSolver<Type>(A, allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs, player1Variables, player2Variables));
+            }
+            
             template<typename ValueType>
             std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> LinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType> const& matrix) const {
                 storm::settings::modules::GeneralSettings::EquationSolver equationSolver = storm::settings::generalSettings().getEquationSolver();
@@ -79,6 +86,7 @@ namespace storm {
                 return factory->create(name);
             }
             
+            template class SymbolicGameSolverFactory<storm::dd::DdType::CUDD>;
             template class LinearEquationSolverFactory<double>;
             template class GmmxxLinearEquationSolverFactory<double>;
             template class NativeLinearEquationSolverFactory<double>;

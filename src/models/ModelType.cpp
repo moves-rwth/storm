@@ -8,6 +8,7 @@ namespace storm {
                 case ModelType::Ctmc: os << "CTMC"; break;
                 case ModelType::Mdp: os << "MDP"; break;
                 case ModelType::MarkovAutomaton: os << "Markov Automaton"; break;
+                case ModelType::S2pg: os << "S2PG"; break;
             }
             return os;
         }
