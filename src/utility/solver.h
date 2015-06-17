@@ -3,6 +3,7 @@
 
 #include "src/solver/SymbolicGameSolver.h"
 
+#include "src/solver/SymbolicLinearEquationSolver.h"
 #include "src/solver/LinearEquationSolver.h"
 #include "src/solver/MinMaxLinearEquationSolver.h"
 #include "src/solver/LpSolver.h"
@@ -14,6 +15,12 @@
 namespace storm {
     namespace utility {
         namespace solver {
+            template<storm::dd::DdType Type, typename ValueType>
+            class SymbolicLinearEquationSolverFactory {
+            public:
+                virtual std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<Type, ValueType>> create(storm::dd::Add<Type> const& A, storm::dd::Bdd<Type> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) const;
+            };
+            
             template<storm::dd::DdType Type>
             class SymbolicGameSolverFactory {
             public:

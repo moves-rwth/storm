@@ -2,7 +2,7 @@
 
 #include "src/settings/SettingsManager.h"
 
-#include "src/solver/FullySymbolicGameSolver.h"
+#include "src/solver/SymbolicGameSolver.h"
 
 #include "src/solver/NativeLinearEquationSolver.h"
 #include "src/solver/GmmxxLinearEquationSolver.h"
@@ -17,9 +17,14 @@
 namespace storm {
     namespace utility {
         namespace solver {
+            template<storm::dd::DdType Type, typename ValueType>
+            std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<Type, ValueType>> SymbolicLinearEquationSolverFactory<Type, ValueType>::create(storm::dd::Add<Type> const& A, storm::dd::Bdd<Type> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) const {
+                return std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<Type, ValueType>>(new storm::solver::SymbolicLinearEquationSolver<Type, ValueType>(A, allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs));
+            }
+            
             template<storm::dd::DdType Type>
             std::unique_ptr<storm::solver::SymbolicGameSolver<Type>> SymbolicGameSolverFactory<Type>::create(storm::dd::Add<Type> const& A, storm::dd::Bdd<Type> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs, std::set<storm::expressions::Variable> const& player1Variables, std::set<storm::expressions::Variable> const& player2Variables) const {
-                return std::unique_ptr<storm::solver::SymbolicGameSolver<Type>>(new storm::solver::FullySymbolicGameSolver<Type>(A, allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs, player1Variables, player2Variables));
+                return std::unique_ptr<storm::solver::SymbolicGameSolver<Type>>(new storm::solver::SymbolicGameSolver<Type>(A, allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs, player1Variables, player2Variables));
             }
             
             template<typename ValueType>
@@ -86,6 +91,7 @@ namespace storm {
                 return factory->create(name);
             }
             
+            template class SymbolicLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>;
             template class SymbolicGameSolverFactory<storm::dd::DdType::CUDD>;
             template class LinearEquationSolverFactory<double>;
             template class GmmxxLinearEquationSolverFactory<double>;
