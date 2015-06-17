@@ -304,23 +304,22 @@ namespace storm {
         }
         
 		template<typename ValueType>
-		std::vector<ValueType> SparseDtmcPrctlModelChecker<ValueType>::computeLongRunAverageHelper(storm::storage::BitVector const& psiStates, bool qualitative) const {
+        std::vector<ValueType> SparseDtmcPrctlModelChecker<ValueType>::computeLongRunAverageHelper(storm::models::sparse::DeterministicModel<ValueType> const& model, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& psiStates, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
 			// If there are no goal states, we avoid the computation and directly return zero.
-			auto numOfStates = this->getModel().getNumberOfStates();
+			uint_fast64_t numOfStates = transitionMatrix.getRowCount();
 			if (psiStates.empty()) {
 				return std::vector<ValueType>(numOfStates, storm::utility::zero<ValueType>());
 			}
 
-			// Likewise, if all bits are set, we can avoid the computation and set.
-			if ((~psiStates).empty()) {
+			// Likewise, if all bits are set, we can avoid the computation.
+			if (psiStates.full()) {
 				return std::vector<ValueType>(numOfStates, storm::utility::one<ValueType>());
 			}
 
 			// Start by decomposing the DTMC into its BSCCs.
-			storm::storage::StronglyConnectedComponentDecomposition<double> bsccDecomposition(this->getModel(), false, true);
+			storm::storage::StronglyConnectedComponentDecomposition<double> bsccDecomposition(model, false, true);
 
 			// Get some data members for convenience.
-			typename storm::storage::SparseMatrix<ValueType> const& transitionMatrix = this->getModel().getTransitionMatrix();
 			ValueType one = storm::utility::one<ValueType>();
 			ValueType zero = storm::utility::zero<ValueType>();
 
@@ -341,10 +340,11 @@ namespace storm {
 
 			storm::storage::BitVector statesNotInBsccs = ~statesInBsccs;
 
-			// calculate steady state distribution for all BSCCs by calculating an eigenvector for the eigenvalue 1 of the transposed transition matrix for the bsccs
+			// Calculate steady state distribution for all BSCCs by calculating an eigenvector for the eigenvalue 1 of
+            // the transposed transition matrix for the bsccs
 			storm::storage::SparseMatrix<ValueType> bsccEquationSystem = transitionMatrix.getSubmatrix(false, statesInBsccs, statesInBsccs, true);
 
-			//subtract identity matrix
+			// Subtract identity matrix.
 			for (uint_fast64_t row = 0; row < bsccEquationSystem.getRowCount(); ++row) {
 				for (auto& entry : bsccEquationSystem.getRow(row)) {
 					if (entry.getColumn() == row) {
@@ -352,18 +352,21 @@ namespace storm {
 					}
 				}
 			}
-			//now transpose, this internally removes all explicit zeros from the matrix that where introduced when subtracting the identity matrix
+            
+			// Now transpose the matrix. This internally removes all explicit zeros from the matrix that were.
+            // introduced when subtracting the identity matrix.
 			bsccEquationSystem = bsccEquationSystem.transpose();
-
+            
 			std::vector<ValueType> bsccEquationSystemRightSide(bsccEquationSystem.getColumnCount(), zero);
 			std::vector<ValueType> bsccEquationSystemSolution(bsccEquationSystem.getColumnCount(), one);
 			{
-				auto solver = this->linearEquationSolverFactory->create(bsccEquationSystem);
+                std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(bsccEquationSystem);
 				solver->solveEquationSystem(bsccEquationSystemSolution, bsccEquationSystemRightSide);
 			}
 
-			//calculate LRA Value for each BSCC from steady state distribution in BSCCs
-			// we have to do some scaling, as the probabilities for each BSCC have to sum up to one, which they don't necessarily do in the solution of the equation system
+			// Calculate LRA Value for each BSCC from steady state distribution in BSCCs.
+			// We have to scale the results, as the probabilities for each BSCC have to sum up to one, which they don't
+            // necessarily do in the solution of the equation system.
 			std::vector<ValueType> bsccLra(bsccDecomposition.size(), zero);
 			std::vector<ValueType> bsccTotalValue(bsccDecomposition.size(), zero);
 			size_t i = 0;
@@ -376,50 +379,53 @@ namespace storm {
 			for (i = 0; i < bsccLra.size(); ++i) {
 				bsccLra[i] /= bsccTotalValue[i];
 			}
-
-			//calculate LRA for states not in bsccs as expected reachability rewards
-			//target states are states in bsccs, transition reward is the lra of the bscc for each transition into a bscc and 0 otherwise
-			//this corresponds to sum of LRAs in BSCC weighted by the reachability probability of the BSCC
-
-			std::vector<ValueType> rewardRightSide;
-			rewardRightSide.reserve(statesNotInBsccs.getNumberOfSetBits());
-
-			for (auto state : statesNotInBsccs) {
-				ValueType reward = zero;
-				for (auto entry : transitionMatrix.getRow(state)) {
-					if (statesInBsccs.get(entry.getColumn())) {
-						reward += entry.getValue() * bsccLra[stateToBsccIndexMap[entry.getColumn()]];
-					}
-				}
-				rewardRightSide.push_back(reward);
-			}
-
-			storm::storage::SparseMatrix<ValueType> rewardEquationSystemMatrix = transitionMatrix.getSubmatrix(false, statesNotInBsccs, statesNotInBsccs, true);
-			rewardEquationSystemMatrix.convertToEquationSystem();
-
-			std::vector<ValueType> rewardSolution(rewardEquationSystemMatrix.getColumnCount(), one);
-
-			{
-				auto solver = this->linearEquationSolverFactory->create(rewardEquationSystemMatrix);
-				solver->solveEquationSystem(rewardSolution, rewardRightSide);
-			}
-
-			// now fill the result vector
-			std::vector<ValueType> result(numOfStates);
-
-			auto rewardSolutionIter = rewardSolution.begin();
-			for (size_t state = 0; state < numOfStates; ++state) {
-				if (statesInBsccs.get(state)) {
-					//assign the value of the bscc the state is in
-					result[state] = bsccLra[stateToBsccIndexMap[state]];
-				} else {
-					assert(rewardSolutionIter != rewardSolution.end());
-					//take the value from the reward computation
-					//since the n-th state not in any bscc is the n-th entry in rewardSolution we can just take the next value from the iterator
-					result[state] = *rewardSolutionIter;
-					++rewardSolutionIter;
-				}
-			}
+            
+            std::vector<ValueType> rewardSolution;
+            if (!statesNotInBsccs.empty()) {
+                // Calculate LRA for states not in bsccs as expected reachability rewards.
+                // Target states are states in bsccs, transition reward is the lra of the bscc for each transition into a
+                // bscc and 0 otherwise. This corresponds to the sum of LRAs in BSCC weighted by the reachability probability
+                // of the BSCC.
+                
+                std::vector<ValueType> rewardRightSide;
+                rewardRightSide.reserve(statesNotInBsccs.getNumberOfSetBits());
+                
+                for (auto state : statesNotInBsccs) {
+                    ValueType reward = zero;
+                    for (auto entry : transitionMatrix.getRow(state)) {
+                        if (statesInBsccs.get(entry.getColumn())) {
+                            reward += entry.getValue() * bsccLra[stateToBsccIndexMap[entry.getColumn()]];
+                        }
+                    }
+                    rewardRightSide.push_back(reward);
+                }
+                
+                storm::storage::SparseMatrix<ValueType> rewardEquationSystemMatrix = transitionMatrix.getSubmatrix(false, statesNotInBsccs, statesNotInBsccs, true);
+                rewardEquationSystemMatrix.convertToEquationSystem();
+                
+                rewardSolution = std::vector<ValueType>(rewardEquationSystemMatrix.getColumnCount(), one);
+                
+                {
+                    std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(rewardEquationSystemMatrix);
+                    solver->solveEquationSystem(rewardSolution, rewardRightSide);
+                }
+            }
+            
+            // Fill the result vector.
+            std::vector<ValueType> result(numOfStates);
+            auto rewardSolutionIter = rewardSolution.begin();
+            for (size_t state = 0; state < numOfStates; ++state) {
+                if (statesInBsccs.get(state)) {
+                    //assign the value of the bscc the state is in
+                    result[state] = bsccLra[stateToBsccIndexMap[state]];
+                } else {
+                    STORM_LOG_ASSERT(rewardSolutionIter != rewardSolution.end(), "Too few elements in solution.");
+                    //take the value from the reward computation
+                    //since the n-th state not in any bscc is the n-th entry in rewardSolution we can just take the next value from the iterator
+                    result[state] = *rewardSolutionIter;
+                    ++rewardSolutionIter;
+                }
+            }
 
 			return result;
 
@@ -455,7 +461,7 @@ namespace storm {
 			std::unique_ptr<CheckResult> subResultPointer = this->check(stateFormula);
 			ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();
 
-			return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(this->computeLongRunAverageHelper(subResult.getTruthValuesVector(), qualitative)));
+			return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(this->computeLongRunAverageHelper(this->getModel(), this->getModel().getTransitionMatrix(), subResult.getTruthValuesVector(), qualitative, *linearEquationSolverFactory)));
 		}
 
 

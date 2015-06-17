@@ -455,6 +455,15 @@ namespace storm {
             return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(SparseDtmcPrctlModelChecker<ValueType>::computeReachabilityRewardsHelper(probabilityMatrix, modifiedStateRewardVector, this->getModel().getOptionalTransitionRewardMatrix(), this->getModel().getBackwardTransitions(), subResult.getTruthValuesVector(), *linearEquationSolverFactory, qualitative)));
         }
         
+        template<class ValueType>
+        std::unique_ptr<CheckResult> SparseCtmcCslModelChecker<ValueType>::computeLongRunAverage(storm::logic::StateFormula const& stateFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
+            std::unique_ptr<CheckResult> subResultPointer = this->check(stateFormula);
+            ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();
+            storm::storage::SparseMatrix<ValueType> probabilityMatrix = computeProbabilityMatrix(this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector());
+                        
+            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(SparseDtmcPrctlModelChecker<ValueType>::computeLongRunAverageHelper(this->getModel(), probabilityMatrix, subResult.getTruthValuesVector(), qualitative, *linearEquationSolverFactory)));
+        }
+        
         // Explicitly instantiate the model checker.
         template class SparseCtmcCslModelChecker<double>;
         

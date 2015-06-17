@@ -55,7 +55,7 @@ namespace storm {
         
         template<typename ValueType>
         void GmmxxLinearEquationSolver<ValueType>::solveEquationSystem(std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult) const {
-            LOG4CPLUS_INFO(logger, "Using method '" << methodToString() << "' with preconditioner " << preconditionerToString() << "'.");
+            LOG4CPLUS_INFO(logger, "Using method '" << methodToString() << "' with preconditioner '" << preconditionerToString() << "' (max. " << maximalNumberOfIterations << " iterations).");
             if (method == SolutionMethod::Jacobi && preconditioner != Preconditioner::None) {
                 LOG4CPLUS_WARN(logger, "Jacobi method currently does not support preconditioners. The requested preconditioner will be ignored.");
             }

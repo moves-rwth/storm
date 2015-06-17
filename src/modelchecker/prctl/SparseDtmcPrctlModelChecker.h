@@ -41,7 +41,7 @@ namespace storm {
             std::vector<ValueType> computeInstantaneousRewardsHelper(uint_fast64_t stepCount) const;
             std::vector<ValueType> computeCumulativeRewardsHelper(uint_fast64_t stepBound) const;
             static std::vector<ValueType> computeReachabilityRewardsHelper(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, boost::optional<std::vector<ValueType>> const& stateRewardVector, boost::optional<storm::storage::SparseMatrix<ValueType>> const& transitionRewardMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& targetStates, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory, bool qualitative);
-			std::vector<ValueType> computeLongRunAverageHelper(storm::storage::BitVector const& psiStates, bool qualitative) const;
+			static std::vector<ValueType> computeLongRunAverageHelper(storm::models::sparse::DeterministicModel<ValueType> const& model, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& psiStates, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory);
 
 			static ValueType computeLraForBSCC(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& goalStates, storm::storage::StronglyConnectedComponent const& bscc, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory);
 
