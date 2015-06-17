@@ -459,6 +459,7 @@ namespace storm {
         std::unique_ptr<CheckResult> SparseCtmcCslModelChecker<ValueType>::computeLongRunAverage(storm::logic::StateFormula const& stateFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
             std::unique_ptr<CheckResult> subResultPointer = this->check(stateFormula);
             ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();
+            std::cout << this->getModel().getTransitionMatrix() << std::endl;
             storm::storage::SparseMatrix<ValueType> probabilityMatrix = computeProbabilityMatrix(this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector());
                         
             return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(SparseDtmcPrctlModelChecker<ValueType>::computeLongRunAverageHelper(this->getModel(), probabilityMatrix, subResult.getTruthValuesVector(), qualitative, *linearEquationSolverFactory)));

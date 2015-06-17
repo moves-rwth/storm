@@ -356,13 +356,29 @@ namespace storm {
 			// Now transpose the matrix. This internally removes all explicit zeros from the matrix that were.
             // introduced when subtracting the identity matrix.
 			bsccEquationSystem = bsccEquationSystem.transpose();
+
+            std::cout << bsccEquationSystem << std::endl;
+
+            // Add a row to the matrix that expresses that the sum over all entries needs to be one.
+            storm::storage::SparseMatrixBuilder<ValueType> builder(std::move(bsccEquationSystem));
+            typename storm::storage::SparseMatrixBuilder<ValueType>::index_type row = builder.getLastRow();
+            for (uint_fast64_t i = 0; i <= row; ++i) {
+                builder.addNextValue(row + 1, i, 1);
+            }
+            bsccEquationSystem = builder.build();
+            std::cout << bsccEquationSystem << std::endl;
             
 			std::vector<ValueType> bsccEquationSystemRightSide(bsccEquationSystem.getColumnCount(), zero);
+            bsccEquationSystemRightSide.back() = one;
 			std::vector<ValueType> bsccEquationSystemSolution(bsccEquationSystem.getColumnCount(), one);
 			{
                 std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(bsccEquationSystem);
 				solver->solveEquationSystem(bsccEquationSystemSolution, bsccEquationSystemRightSide);
 			}
+            
+            for (auto const& elem : bsccEquationSystemSolution) {
+                std::cout << "sol " << elem << std::endl;
+            }
 
 			// Calculate LRA Value for each BSCC from steady state distribution in BSCCs.
 			// We have to scale the results, as the probabilities for each BSCC have to sum up to one, which they don't
