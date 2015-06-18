@@ -97,8 +97,12 @@ endif()
 
 find_package(carl QUIET)
 if(carl_FOUND)
-    message(STATUS "StoRM - Activating CArL.")
     set(STORM_HAVE_CARL ON)
+endif()
+
+find_package(smtrat QUIET)
+if(smtrat_FOUND)
+    set(STORM_HAVE_SMTRAT ON)
 endif()
 
 message(STATUS "StoRM - CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
@@ -607,6 +611,20 @@ if(STORM_HAVE_CARL)
     target_link_libraries(storm lib_carl)
     target_link_libraries(storm-functional-tests lib_carl)
     target_link_libraries(storm-performance-tests lib_carl)
+endif()
+
+#############################################################
+##
+##      SMT-RAT
+##
+#############################################################
+
+if(STORM_HAVE_SMTRAT)
+message(STATUS "StoRM - Linking with smtrat.")
+    include_directories("${smtrat_INCLUDE_DIR}")
+    target_link_libraries(storm lib_smtrat)
+    target_link_libraries(storm-functional-tests lib_smtrat)
+    target_link_libraries(storm-performance-tests lib_smtrat)
 endif()
 
 #############################################################
