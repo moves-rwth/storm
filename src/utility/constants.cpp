@@ -25,7 +25,7 @@ namespace storm {
         template<>
         storm::RationalFunction infinity() {
             // FIXME: this does not work.
-            return storm::RationalFunction(carl::rationalize<cln::cl_RA>(std::numeric_limits<double>::infinity()));
+            return storm::RationalFunction(carl::rationalize<storm::RationalNumber>(std::numeric_limits<double>::infinity()));
         }
 #endif
         

@@ -87,12 +87,12 @@ namespace storm {
         
         template<typename RationalFunctionType>
         boost::any ToRationalFunctionVisitor<RationalFunctionType>::visit(IntegerLiteralExpression const& expression) {
-            return RationalFunctionType(typename RationalFunctionType::PolyType(typename RationalFunctionType::CoeffType(expression.getValue())));
+            return RationalFunctionType(carl::rationalize<storm::RationalNumber>(static_cast<size_t>(expression.getValue())));
         }
         
         template<typename RationalFunctionType>
         boost::any ToRationalFunctionVisitor<RationalFunctionType>::visit(DoubleLiteralExpression const& expression) {
-            return RationalFunctionType(carl::rationalize<cln::cl_RA>(expression.getValue()));
+            return RationalFunctionType(carl::rationalize<storm::RationalNumber>(expression.getValue()));
         }
 
         template class ToRationalFunctionVisitor<storm::RationalFunction>;

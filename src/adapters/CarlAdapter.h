@@ -7,11 +7,13 @@
 #ifdef STORM_HAVE_CARL
 
 #include <cln/cln.h>
+#include <gmpxx.h>
 #include <carl/core/MultivariatePolynomial.h>
 #include <carl/core/RationalFunction.h>
 #include <carl/core/VariablePool.h>
-#include <carl/core/Constraint.h>
 #include <carl/core/FactorizedPolynomial.h>
+#include <carl/formula/Relation.h>
+#include <carl/formula/Formula.h>
 
 namespace carl {
     // Define hash values for all polynomials and rational function.
@@ -35,11 +37,12 @@ namespace carl {
 }
 
 namespace storm {
-	typedef carl::Variable Variable;
-    typedef carl::MultivariatePolynomial<cln::cl_RA> RawPolynomial;
+    typedef mpq_class RationalNumber;
+    typedef carl::Variable Variable;
+    typedef carl::MultivariatePolynomial<RationalNumber> RawPolynomial;
     typedef carl::FactorizedPolynomial<RawPolynomial> Polynomial;
-	typedef carl::CompareRelation CompareRelation;
-	typedef carl::RationalFunction<Polynomial> RationalFunction;
+    typedef carl::Relation CompareRelation;
+    typedef carl::RationalFunction<Polynomial> RationalFunction;
 }
 
 #endif
