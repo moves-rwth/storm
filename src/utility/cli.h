@@ -30,9 +30,6 @@
 #include <cuda_runtime.h>
 #endif
 
-#ifdef STORM_HAVE_CARL
-#include "carl/carl.h"
-#endif 
 
 #ifdef STORM_HAVE_SMTRAT
 #include "lib/smtrat.h"
