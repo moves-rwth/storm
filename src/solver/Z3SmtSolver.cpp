@@ -1,5 +1,5 @@
 #include "src/solver/Z3SmtSolver.h"
-
+#include "src/utility/macros.h"
 #include "src/exceptions/NotSupportedException.h"
 #include "src/exceptions/InvalidStateException.h"
 
