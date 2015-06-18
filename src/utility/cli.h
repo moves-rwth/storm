@@ -30,6 +30,14 @@
 #include <cuda_runtime.h>
 #endif
 
+#ifdef STORM_HAVE_CARL
+#include "carl/carl.h"
+#endif 
+
+#ifdef STORM_HAVE_SMTRAT
+#include "lib/smtrat.h"
+#endif
+
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
 #include "log4cplus/consoleappender.h"
@@ -165,6 +173,14 @@ namespace storm {
                 std::cout << "Linked with " << msatVersion << "." << std::endl;
                 msat_free(msatVersion);
 #endif
+#ifdef STORM_HAVE_SMTRAT
+                std::cout << "Linked with SMT-RAT " << SMTRAT_VERSION << "." << std::endl;
+#endif 
+#ifdef STORM_HAVE_CARL
+                std::cout << "Linked with CARL." << std::endl;
+                // TODO get version string
+#endif
+                
 #ifdef STORM_HAVE_CUDA
 				int deviceCount = 0;
 				cudaError_t error_id = cudaGetDeviceCount(&deviceCount);
