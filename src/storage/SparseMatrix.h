@@ -671,6 +671,17 @@ namespace storm {
              * @return The product of the matrix and the given vector as the content of the given result vector.
              */
             void multiplyWithVector(std::vector<value_type> const& vector, std::vector<value_type>& result) const;
+
+            /*!
+             * Multiplies the vector to the matrix from the left and writes the result to the given result vector.
+             *
+             * @param vector The vector with which the matrix is to be multiplied. This vector is interpreted as being
+             * a row vector.
+             * @param result The vector that is supposed to hold the result of the multiplication after the operation.
+             * @return The product of the matrix and the given vector as the content of the given result vector. The 
+             * result is to be interpreted as a row vector.
+             */
+            void multiplyVectorWithMatrix(std::vector<value_type> const& vector, std::vector<value_type>& result) const;
             
             /*!
              * Multiplies the matrix with the given vector in a sequential way and writes the result to the given result

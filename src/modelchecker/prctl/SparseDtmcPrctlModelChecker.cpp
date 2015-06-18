@@ -343,7 +343,7 @@ namespace storm {
 			// Calculate steady state distribution for all BSCCs by calculating an eigenvector for the eigenvalue 1 of
             // the transposed transition matrix for the bsccs
 			storm::storage::SparseMatrix<ValueType> bsccEquationSystem = transitionMatrix.getSubmatrix(false, statesInBsccs, statesInBsccs, true);
-
+            
 			// Subtract identity matrix.
 			for (uint_fast64_t row = 0; row < bsccEquationSystem.getRowCount(); ++row) {
 				for (auto& entry : bsccEquationSystem.getRow(row)) {
@@ -357,16 +357,14 @@ namespace storm {
             // introduced when subtracting the identity matrix.
 			bsccEquationSystem = bsccEquationSystem.transpose();
 
-            std::cout << bsccEquationSystem << std::endl;
-
             // Add a row to the matrix that expresses that the sum over all entries needs to be one.
             storm::storage::SparseMatrixBuilder<ValueType> builder(std::move(bsccEquationSystem));
             typename storm::storage::SparseMatrixBuilder<ValueType>::index_type row = builder.getLastRow();
             for (uint_fast64_t i = 0; i <= row; ++i) {
                 builder.addNextValue(row + 1, i, 1);
             }
+            builder.addNextValue(row + 1, row + 1, 0);
             bsccEquationSystem = builder.build();
-            std::cout << bsccEquationSystem << std::endl;
             
 			std::vector<ValueType> bsccEquationSystemRightSide(bsccEquationSystem.getColumnCount(), zero);
             bsccEquationSystemRightSide.back() = one;
@@ -375,10 +373,6 @@ namespace storm {
                 std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(bsccEquationSystem);
 				solver->solveEquationSystem(bsccEquationSystemSolution, bsccEquationSystemRightSide);
 			}
-            
-            for (auto const& elem : bsccEquationSystemSolution) {
-                std::cout << "sol " << elem << std::endl;
-            }
 
 			// Calculate LRA Value for each BSCC from steady state distribution in BSCCs.
 			// We have to scale the results, as the probabilities for each BSCC have to sum up to one, which they don't

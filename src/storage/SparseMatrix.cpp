@@ -862,6 +862,22 @@ namespace storm {
 #endif
 
         template<typename ValueType>
+        void SparseMatrix<ValueType>::multiplyVectorWithMatrix(std::vector<value_type> const& vector, std::vector<value_type>& result) const {
+            const_iterator it = this->begin();
+            const_iterator ite;
+            std::vector<index_type>::const_iterator rowIterator = rowIndications.begin();
+            std::vector<index_type>::const_iterator rowIteratorEnd = rowIndications.end();
+            
+            uint_fast64_t currentRow = 0;
+            for (; rowIterator != rowIteratorEnd - 1; ++rowIterator) {
+                for (ite = this->begin() + *(rowIterator + 1); it != ite; ++it) {
+                    result[it->getColumn()] += it->getValue() * vector[currentRow];
+                }
+                ++currentRow;
+            }
+        }
+        
+        template<typename ValueType>
         std::size_t SparseMatrix<ValueType>::getSizeInBytes() const {
             uint_fast64_t size = sizeof(*this);
             

@@ -459,10 +459,18 @@ namespace storm {
         std::unique_ptr<CheckResult> SparseCtmcCslModelChecker<ValueType>::computeLongRunAverage(storm::logic::StateFormula const& stateFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
             std::unique_ptr<CheckResult> subResultPointer = this->check(stateFormula);
             ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();
-            std::cout << this->getModel().getTransitionMatrix() << std::endl;
-            storm::storage::SparseMatrix<ValueType> probabilityMatrix = computeProbabilityMatrix(this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector());
-                        
-            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(SparseDtmcPrctlModelChecker<ValueType>::computeLongRunAverageHelper(this->getModel(), probabilityMatrix, subResult.getTruthValuesVector(), qualitative, *linearEquationSolverFactory)));
+
+            // Since we use the uniformized matrix to compute the steady state probabilities, we need to build it first.
+            ValueType uniformizationRate = 0;
+            for (auto const& rate : this->getModel().getExitRateVector()) {
+                uniformizationRate = std::max(uniformizationRate, rate);
+            }
+            uniformizationRate *= 1.02;
+            STORM_LOG_THROW(uniformizationRate > 0, storm::exceptions::InvalidStateException, "The uniformization rate must be positive.");
+            
+            storm::storage::SparseMatrix<ValueType> uniformizedMatrix = this->computeUniformizedMatrix(this->getModel().getTransitionMatrix(), storm::storage::BitVector(this->getModel().getNumberOfStates(), true), uniformizationRate, this->getModel().getExitRateVector());
+            
+            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(SparseDtmcPrctlModelChecker<ValueType>::computeLongRunAverageHelper(this->getModel(), uniformizedMatrix, subResult.getTruthValuesVector(), qualitative, *linearEquationSolverFactory)));
         }
         
         // Explicitly instantiate the model checker.
