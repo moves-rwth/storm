@@ -325,24 +325,38 @@ namespace storm {
 
 			// First we check which states are in BSCCs. We use this later to speed up reachability analysis
 			storm::storage::BitVector statesInBsccs(numOfStates);
-			
+            storm::storage::BitVector statesInBsccsWithoutFirst(numOfStates);
+    
 			std::vector<uint_fast64_t> stateToBsccIndexMap(transitionMatrix.getColumnCount());
 
 			for (uint_fast64_t currentBsccIndex = 0; currentBsccIndex < bsccDecomposition.size(); ++currentBsccIndex) {
 				storm::storage::StronglyConnectedComponent const& bscc = bsccDecomposition[currentBsccIndex];
 
 				// Gather information for later use.
+                bool first = true;
 				for (auto const& state : bscc) {
 					statesInBsccs.set(state);
+                    if (!first) {
+                        statesInBsccsWithoutFirst.set(state);
+                    }
 					stateToBsccIndexMap[state] = currentBsccIndex;
+                    first = false;
 				}
 			}
 
 			storm::storage::BitVector statesNotInBsccs = ~statesInBsccs;
 
+            std::cout << transitionMatrix << std::endl;
+            
 			// Calculate steady state distribution for all BSCCs by calculating an eigenvector for the eigenvalue 1 of
-            // the transposed transition matrix for the bsccs
+            // the transposed transition matrix for the BSCCs.
 			storm::storage::SparseMatrix<ValueType> bsccEquationSystem = transitionMatrix.getSubmatrix(false, statesInBsccs, statesInBsccs, true);
+            
+            std::cout << bsccEquationSystem << std::endl;
+            
+            bsccEquationSystem = bsccEquationSystem.transpose(false, true);
+
+            std::cout << bsccEquationSystem << std::endl;
             
 			// Subtract identity matrix.
 			for (uint_fast64_t row = 0; row < bsccEquationSystem.getRowCount(); ++row) {
@@ -353,18 +367,28 @@ namespace storm {
 				}
 			}
             
-			// Now transpose the matrix. This internally removes all explicit zeros from the matrix that were.
-            // introduced when subtracting the identity matrix.
-			bsccEquationSystem = bsccEquationSystem.transpose();
+            std::cout << bsccEquationSystem << std::endl;
+            
+            std::cout << statesInBsccsWithoutFirst << " // " << statesInBsccs << std::endl;
+            bsccEquationSystem = bsccEquationSystem.getSubmatrix(false, statesInBsccsWithoutFirst, statesInBsccs, false);
+            
+            std::cout << bsccEquationSystem << std::endl;
 
-            // Add a row to the matrix that expresses that the sum over all entries needs to be one.
+            // For each BSCC, add a row to the matrix that expresses that the sum over all entries in this BSCC needs to be one.
             storm::storage::SparseMatrixBuilder<ValueType> builder(std::move(bsccEquationSystem));
-            typename storm::storage::SparseMatrixBuilder<ValueType>::index_type row = builder.getLastRow();
-            for (uint_fast64_t i = 0; i <= row; ++i) {
-                builder.addNextValue(row + 1, i, 1);
+            typename storm::storage::SparseMatrixBuilder<ValueType>::index_type row = builder.getLastRow() + 1;
+            
+            for (uint_fast64_t currentBsccIndex = 0; currentBsccIndex < bsccDecomposition.size(); ++currentBsccIndex) {
+                storm::storage::StronglyConnectedComponent const& bscc = bsccDecomposition[currentBsccIndex];
+                
+                for (auto const& state : bscc) {
+                    builder.addNextValue(row, state, one);
+                }
+                ++row;
             }
-            builder.addNextValue(row + 1, row + 1, 0);
             bsccEquationSystem = builder.build();
+            
+            std::cout << bsccEquationSystem << std::endl;
             
 			std::vector<ValueType> bsccEquationSystemRightSide(bsccEquationSystem.getColumnCount(), zero);
             bsccEquationSystemRightSide.back() = one;
@@ -374,6 +398,14 @@ namespace storm {
 				solver->solveEquationSystem(bsccEquationSystemSolution, bsccEquationSystemRightSide);
 			}
 
+            ValueType sum = zero;
+            for (auto const& elem : bsccEquationSystemSolution) {
+                std::cout << "sol " << elem << std::endl;
+                sum += elem;
+            }
+            std::cout << "sum: " << sum << std::endl;
+            std::cout << "in " << bsccDecomposition.size() << "bsccs" << std::endl;
+            
 			// Calculate LRA Value for each BSCC from steady state distribution in BSCCs.
 			// We have to scale the results, as the probabilities for each BSCC have to sum up to one, which they don't
             // necessarily do in the solution of the equation system.
@@ -426,12 +458,12 @@ namespace storm {
             auto rewardSolutionIter = rewardSolution.begin();
             for (size_t state = 0; state < numOfStates; ++state) {
                 if (statesInBsccs.get(state)) {
-                    //assign the value of the bscc the state is in
+                    // Assign the value of the bscc the state is in.
                     result[state] = bsccLra[stateToBsccIndexMap[state]];
                 } else {
                     STORM_LOG_ASSERT(rewardSolutionIter != rewardSolution.end(), "Too few elements in solution.");
-                    //take the value from the reward computation
-                    //since the n-th state not in any bscc is the n-th entry in rewardSolution we can just take the next value from the iterator
+                    // Take the value from the reward computation. Since the n-th state not in any bscc is the n-th
+                    // entry in rewardSolution we can just take the next value from the iterator.
                     result[state] = *rewardSolutionIter;
                     ++rewardSolutionIter;
                 }

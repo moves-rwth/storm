@@ -128,7 +128,7 @@ TEST(SparseDtmcPrctlModelCheckerTest, SynchronousLeader) {
     EXPECT_NEAR(1.0448979589010925, quantitativeResult3[0], storm::settings::nativeEquationSolverSettings().getPrecision());
 }
 
-TEST(SparseDtmcPrctlModelCheckerTest, LRA_SingleBscc) {
+TEST(SparseDtmcPrctlModelCheckerTest, LRASingleBscc) {
 	storm::storage::SparseMatrixBuilder<double> matrixBuilder;
 	std::shared_ptr<storm::models::sparse::Dtmc<double>> dtmc;
 

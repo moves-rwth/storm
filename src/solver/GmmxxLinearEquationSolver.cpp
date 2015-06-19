@@ -149,6 +149,12 @@ namespace storm {
         uint_fast64_t GmmxxLinearEquationSolver<ValueType>::solveLinearEquationSystemWithJacobi(storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult) const {
             // Get a Jacobi decomposition of the matrix A.
             std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> jacobiDecomposition = A.getJacobiDecomposition();
+            std::cout << "LU" << std::endl;
+            std::cout << jacobiDecomposition.first << std::endl;
+            for (auto const& elem : jacobiDecomposition.second) {
+                std::cout << elem << std::endl;
+            }
+            std::cout << "----" << std::endl;
             
             // Convert the LU matrix to gmm++'s format.
             std::unique_ptr<gmm::csr_matrix<ValueType>> gmmLU = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(std::move(jacobiDecomposition.first));

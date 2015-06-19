@@ -376,7 +376,9 @@ namespace storm {
 					if (val2 == 0) {
 						return (std::abs(val1) <= precision);
 					}
-                    if (std::abs((val1 - val2)/val2) > precision) return false;
+                    if (std::abs((val1 - val2)/val2) > precision) {
+                        return false;
+                    }
                 } else {
                     if (std::abs(val1 - val2) > precision) return false;
                 }

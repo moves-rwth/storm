@@ -74,8 +74,18 @@ namespace storm {
              *
              * @param rateMatrix The rate matrix.
              * @param exitRates The exit rate vector.
+             * @return The †ransition matrix of the embedded DTMC.
              */
             static storm::storage::SparseMatrix<ValueType> computeProbabilityMatrix(storm::storage::SparseMatrix<ValueType> const& rateMatrix, std::vector<ValueType> const& exitRates);
+
+            /*!
+             * Converts the given rate-matrix into the generator matrix.
+             *
+             * @param rateMatrix The rate matrix.
+             * @param exitRates The exit rate vector.
+             * @return The generator matrix.
+             */
+            static storm::storage::SparseMatrix<ValueType> computeGeneratorMatrix(storm::storage::SparseMatrix<ValueType> const& rateMatrix, std::vector<ValueType> const& exitRates);
             
             // An object that is used for solving linear equations and performing matrix-vector multiplication.
             std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<ValueType>> linearEquationSolverFactory;

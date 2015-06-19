@@ -437,6 +437,22 @@ namespace storm {
         }
         
         template<class ValueType>
+        storm::storage::SparseMatrix<ValueType> SparseCtmcCslModelChecker<ValueType>::computeGeneratorMatrix(storm::storage::SparseMatrix<ValueType> const& rateMatrix, std::vector<ValueType> const& exitRates) {
+            storm::storage::SparseMatrix<ValueType> generatorMatrix(rateMatrix, true);
+            
+            // Place the negative exit rate on the diagonal.
+            for (uint_fast64_t row = 0; row < generatorMatrix.getRowCount(); ++row) {
+                for (auto& entry : generatorMatrix.getRow(row)) {
+                    if (entry.getColumn() == row) {
+                        entry.setValue(-exitRates[row]);
+                    }
+                }
+            }
+            
+            return generatorMatrix;
+        }
+        
+        template<class ValueType>
         std::unique_ptr<CheckResult> SparseCtmcCslModelChecker<ValueType>::computeReachabilityRewards(storm::logic::ReachabilityRewardFormula const& rewardPathFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
             std::unique_ptr<CheckResult> subResultPointer = this->check(rewardPathFormula.getSubformula());
             ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();
@@ -468,9 +484,15 @@ namespace storm {
             uniformizationRate *= 1.02;
             STORM_LOG_THROW(uniformizationRate > 0, storm::exceptions::InvalidStateException, "The uniformization rate must be positive.");
             
-            storm::storage::SparseMatrix<ValueType> uniformizedMatrix = this->computeUniformizedMatrix(this->getModel().getTransitionMatrix(), storm::storage::BitVector(this->getModel().getNumberOfStates(), true), uniformizationRate, this->getModel().getExitRateVector());
+//            storm::storage::SparseMatrix<ValueType> uniformizedMatrix = this->computeUniformizedMatrix(this->getModel().getTransitionMatrix(), storm::storage::BitVector(this->getModel().getNumberOfStates(), true), uniformizationRate, this->getModel().getExitRateVector());
+
+//            storm::storage::SparseMatrix<ValueType> uniformizedMatrix = this->computeGeneratorMatrix(this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector());
+            storm::storage::SparseMatrix<ValueType> uniformizedMatrix = this->computeProbabilityMatrix(this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector());
             
-            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(SparseDtmcPrctlModelChecker<ValueType>::computeLongRunAverageHelper(this->getModel(), uniformizedMatrix, subResult.getTruthValuesVector(), qualitative, *linearEquationSolverFactory)));
+            std::vector<ValueType> result = SparseDtmcPrctlModelChecker<ValueType>::computeLongRunAverageHelper(this->getModel(), uniformizedMatrix, subResult.getTruthValuesVector(), qualitative, *linearEquationSolverFactory);
+            
+            
+            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>());
         }
         
         // Explicitly instantiate the model checker.

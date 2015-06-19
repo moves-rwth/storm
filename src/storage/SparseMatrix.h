@@ -412,6 +412,15 @@ namespace storm {
             SparseMatrix(SparseMatrix<value_type> const& other);
             
             /*!
+             * Constructs a sparse matrix by performing a deep-copy of the given matrix.
+             *
+             * @param other The matrix from which to copy the content.
+             * @param insertDiagonalElements If set to true, the copy will have all diagonal elements. If they did not
+             * exist in the original matrix, they are inserted and set to value zero.
+             */
+            SparseMatrix(SparseMatrix<value_type> const& other, bool insertDiagonalElements);
+            
+            /*!
              * Constructs a sparse matrix by moving the contents of the given matrix to the newly created one.
              *
              * @param other The matrix from which to move the content.

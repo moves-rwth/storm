@@ -254,6 +254,13 @@ namespace storm {
         }
         
         template<typename ValueType>
+        SparseMatrix<ValueType>::SparseMatrix(SparseMatrix<value_type> const& other, bool insertDiagonalElements) {
+            storm::storage::BitVector rowConstraint(other.getRowCount(), true);
+            storm::storage::BitVector columnConstraint(other.getColumnCount(), true);
+            *this = other.getSubmatrix(false, rowConstraint, columnConstraint, insertDiagonalElements);
+        }
+        
+        template<typename ValueType>
         SparseMatrix<ValueType>::SparseMatrix(SparseMatrix<ValueType>&& other) : rowCount(other.rowCount), columnCount(other.columnCount), entryCount(other.entryCount), nonzeroEntryCount(other.nonzeroEntryCount), columnsAndValues(std::move(other.columnsAndValues)), rowIndications(std::move(other.rowIndications)), nontrivialRowGrouping(other.nontrivialRowGrouping), rowGroupIndices(std::move(other.rowGroupIndices)) {
             // Now update the source matrix
             other.rowCount = 0;
@@ -506,9 +513,35 @@ namespace storm {
                 
         template<typename ValueType>
         SparseMatrix<ValueType> SparseMatrix<ValueType>::getSubmatrix(storm::storage::BitVector const& rowGroupConstraint, storm::storage::BitVector const& columnConstraint, std::vector<index_type> const& rowGroupIndices, bool insertDiagonalEntries) const {
-            // First, we need to determine the number of entries and the number of rows of the submatrix.
+            uint_fast64_t submatrixColumnCount = columnConstraint.getNumberOfSetBits();
+            
+            // Start by creating a temporary vector that stores for each index whose bit is set to true the number of
+            // bits that were set before that particular index.
+            std::vector<index_type> bitsSetBeforeIndex;
+            bitsSetBeforeIndex.reserve(columnCount);
+            
+            // Compute the information to fill this vector.
+            index_type lastIndex = 0;
+            index_type currentNumberOfSetBits = 0;
+            
+            // If we are requested to add missing diagonal entries, we need to make sure the corresponding rows are also
+            // taken.
+//            storm::storage::BitVector columnBitCountConstraint = columnConstraint;
+//            if (insertDiagonalEntries) {
+//                columnBitCountConstraint |= rowGroupConstraint;
+//            }
+            for (auto index : columnConstraint) {
+                while (lastIndex <= index) {
+                    bitsSetBeforeIndex.push_back(currentNumberOfSetBits);
+                    ++lastIndex;
+                }
+                ++currentNumberOfSetBits;
+            }
+            
+            // Then, we need to determine the number of entries and the number of rows of the submatrix.
             index_type subEntries = 0;
             index_type subRows = 0;
+            index_type rowGroupCount = 0;
             for (auto index : rowGroupConstraint) {
                 subRows += rowGroupIndices[index + 1] - rowGroupIndices[index];
                 for (index_type i = rowGroupIndices[index]; i < rowGroupIndices[index + 1]; ++i) {
@@ -525,39 +558,18 @@ namespace storm {
                     }
                     
                     // If requested, we need to reserve one entry more for inserting the diagonal zero entry.
-                    if (insertDiagonalEntries && !foundDiagonalElement) {
+                    if (insertDiagonalEntries && !foundDiagonalElement && rowGroupCount < submatrixColumnCount) {
                         ++subEntries;
                     }
                 }
+                ++rowGroupCount;
             }
             
             // Create and initialize resulting matrix.
-            SparseMatrixBuilder<ValueType> matrixBuilder(subRows, columnConstraint.getNumberOfSetBits(), subEntries, true, this->hasNontrivialRowGrouping());
-            
-            // Create a temporary vector that stores for each index whose bit is set to true the number of bits that
-            // were set before that particular index.
-            std::vector<index_type> bitsSetBeforeIndex;
-            bitsSetBeforeIndex.reserve(columnCount);
-            
-            // Compute the information to fill this vector.
-            index_type lastIndex = 0;
-            index_type currentNumberOfSetBits = 0;
-            
-            // If we are requested to add missing diagonal entries, we need to make sure the corresponding rows are also
-            // taken.
-            storm::storage::BitVector columnBitCountConstraint = columnConstraint;
-            if (insertDiagonalEntries) {
-                columnBitCountConstraint |= rowGroupConstraint;
-            }
-            for (auto index : columnBitCountConstraint) {
-                while (lastIndex <= index) {
-                    bitsSetBeforeIndex.push_back(currentNumberOfSetBits);
-                    ++lastIndex;
-                }
-                ++currentNumberOfSetBits;
-            }
+            SparseMatrixBuilder<ValueType> matrixBuilder(subRows, submatrixColumnCount, subEntries, true, this->hasNontrivialRowGrouping());
             
             // Copy over selected entries.
+            rowGroupCount = 0;
             index_type rowCount = 0;
             for (auto index : rowGroupConstraint) {
                 if (this->hasNontrivialRowGrouping()) {
@@ -571,18 +583,18 @@ namespace storm {
                             if (index == it->getColumn()) {
                                 insertedDiagonalElement = true;
                             } else if (insertDiagonalEntries && !insertedDiagonalElement && it->getColumn() > index) {
-                                matrixBuilder.addNextValue(rowCount, bitsSetBeforeIndex[index], storm::utility::zero<ValueType>());
+                                matrixBuilder.addNextValue(rowCount, rowCount, storm::utility::zero<ValueType>());
                                 insertedDiagonalElement = true;
                             }
                             matrixBuilder.addNextValue(rowCount, bitsSetBeforeIndex[it->getColumn()], it->getValue());
                         }
                     }
-                    if (insertDiagonalEntries && !insertedDiagonalElement) {
-                        matrixBuilder.addNextValue(rowCount, bitsSetBeforeIndex[index], storm::utility::zero<ValueType>());
+                    if (insertDiagonalEntries && !insertedDiagonalElement && rowGroupCount < submatrixColumnCount) {
+                        matrixBuilder.addNextValue(rowGroupCount, rowGroupCount, storm::utility::zero<ValueType>());
                     }
-                    
                     ++rowCount;
                 }
+                ++rowGroupCount;
             }
             
             return matrixBuilder.build();
