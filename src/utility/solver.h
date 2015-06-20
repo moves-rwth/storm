@@ -5,10 +5,12 @@
 
 #include "src/solver/SymbolicLinearEquationSolver.h"
 #include "src/solver/LinearEquationSolver.h"
+#include "src/solver/NativeLinearEquationSolver.h"
 #include "src/solver/MinMaxLinearEquationSolver.h"
 #include "src/solver/LpSolver.h"
 
 #include "src/storage/dd/DdType.h"
+#include "src/settings/modules/NativeEquationSolverSettings.h"
 
 #include "src/exceptions/InvalidSettingsException.h"
 
@@ -42,7 +44,14 @@ namespace storm {
             template<typename ValueType>
             class NativeLinearEquationSolverFactory : public LinearEquationSolverFactory<ValueType> {
             public:
+                NativeLinearEquationSolverFactory();
+                NativeLinearEquationSolverFactory(typename storm::solver::NativeLinearEquationSolver<ValueType>::SolutionMethod method, ValueType omega);
+                
                 virtual std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType> const& matrix) const override;
+                
+            private:
+                typename storm::solver::NativeLinearEquationSolver<ValueType>::SolutionMethod method;
+                ValueType omega;
             };
             
             template<typename ValueType>

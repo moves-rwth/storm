@@ -13,10 +13,14 @@ namespace storm {
         template<storm::dd::DdType DdType, typename ValueType>
         class HybridCtmcCslModelChecker;
         
+        template<typename ValueType>
+        class SparseDtmcPrctlModelChecker;
+        
         template<class ValueType>
         class SparseCtmcCslModelChecker : public SparsePropositionalModelChecker<ValueType> {
         public:
             friend class HybridCtmcCslModelChecker<storm::dd::DdType::CUDD, ValueType>;
+            friend class SparseDtmcPrctlModelChecker<ValueType>;
             
             explicit SparseCtmcCslModelChecker(storm::models::sparse::Ctmc<ValueType> const& model);
             explicit SparseCtmcCslModelChecker(storm::models::sparse::Ctmc<ValueType> const& model, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory);
@@ -40,7 +44,7 @@ namespace storm {
             static std::vector<ValueType> computeUntilProbabilitiesHelper(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory);
             std::vector<ValueType> computeInstantaneousRewardsHelper(double timeBound) const;
             std::vector<ValueType> computeCumulativeRewardsHelper(double timeBound) const;
-
+            static std::vector<ValueType> computeLongRunAverageHelper(storm::models::sparse::DeterministicModel<ValueType> const& model, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& psiStates, std::vector<ValueType> const* exitRateVector, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory);
             /*!
              * Computes the matrix representing the transitions of the uniformized CTMC.
              *

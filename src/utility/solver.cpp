@@ -42,8 +42,27 @@ namespace storm {
             }
             
             template<typename ValueType>
+            NativeLinearEquationSolverFactory<ValueType>::NativeLinearEquationSolverFactory() {
+                switch (storm::settings::nativeEquationSolverSettings().getLinearEquationSystemMethod()) {
+                    case settings::modules::NativeEquationSolverSettings::LinearEquationMethod::Jacobi:
+                    this->method = storm::solver::NativeLinearEquationSolver<ValueType>::SolutionMethod::Jacobi;
+                    break;
+                    case settings::modules::NativeEquationSolverSettings::LinearEquationMethod::GaussSeidel:
+                    this->method = storm::solver::NativeLinearEquationSolver<ValueType>::SolutionMethod::GaussSeidel;
+                    case settings::modules::NativeEquationSolverSettings::LinearEquationMethod::SOR:
+                    this->method = storm::solver::NativeLinearEquationSolver<ValueType>::SolutionMethod::SOR;
+                }
+                omega = storm::settings::nativeEquationSolverSettings().getOmega();
+            }
+            
+            template<typename ValueType>
+            NativeLinearEquationSolverFactory<ValueType>::NativeLinearEquationSolverFactory(typename storm::solver::NativeLinearEquationSolver<ValueType>::SolutionMethod method, ValueType omega) : method(method), omega(omega) {
+                // Intentionally left empty.
+            }
+            
+            template<typename ValueType>
             std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> NativeLinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType> const& matrix) const {
-                return std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>>(new storm::solver::NativeLinearEquationSolver<ValueType>(matrix));
+                return std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>>(new storm::solver::NativeLinearEquationSolver<ValueType>(matrix, method));
             }
             
             template<typename ValueType>

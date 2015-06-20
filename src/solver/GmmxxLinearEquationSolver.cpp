@@ -31,24 +31,24 @@ namespace storm {
             restart = settings.getRestartIterationCount();
             
             // Determine the method to be used.
-            storm::settings::modules::GmmxxEquationSolverSettings::LinearEquationTechnique methodAsSetting = settings.getLinearEquationSystemTechnique();
-            if (methodAsSetting == storm::settings::modules::GmmxxEquationSolverSettings::LinearEquationTechnique::Bicgstab) {
+            storm::settings::modules::GmmxxEquationSolverSettings::LinearEquationMethod methodAsSetting = settings.getLinearEquationSystemMethod();
+            if (methodAsSetting == storm::settings::modules::GmmxxEquationSolverSettings::LinearEquationMethod::Bicgstab) {
                 method = SolutionMethod::Bicgstab;
-            } else if (methodAsSetting == storm::settings::modules::GmmxxEquationSolverSettings::LinearEquationTechnique::Qmr) {
+            } else if (methodAsSetting == storm::settings::modules::GmmxxEquationSolverSettings::LinearEquationMethod::Qmr) {
                 method = SolutionMethod::Qmr;
-            } else if (methodAsSetting == storm::settings::modules::GmmxxEquationSolverSettings::LinearEquationTechnique::Gmres) {
+            } else if (methodAsSetting == storm::settings::modules::GmmxxEquationSolverSettings::LinearEquationMethod::Gmres) {
                 method = SolutionMethod::Gmres;
-            } else if (methodAsSetting == storm::settings::modules::GmmxxEquationSolverSettings::LinearEquationTechnique::Jacobi) {
+            } else if (methodAsSetting == storm::settings::modules::GmmxxEquationSolverSettings::LinearEquationMethod::Jacobi) {
                 method = SolutionMethod::Jacobi;
             }
             
             // Check which preconditioner to use.
-            storm::settings::modules::GmmxxEquationSolverSettings::PreconditioningTechnique preconditionAsSetting = settings.getPreconditioningTechnique();
-            if (preconditionAsSetting == storm::settings::modules::GmmxxEquationSolverSettings::PreconditioningTechnique::Ilu) {
+            storm::settings::modules::GmmxxEquationSolverSettings::PreconditioningMethod preconditionAsSetting = settings.getPreconditioningMethod();
+            if (preconditionAsSetting == storm::settings::modules::GmmxxEquationSolverSettings::PreconditioningMethod::Ilu) {
                 preconditioner = Preconditioner::Ilu;
-            } else if (preconditionAsSetting == storm::settings::modules::GmmxxEquationSolverSettings::PreconditioningTechnique::Diagonal) {
+            } else if (preconditionAsSetting == storm::settings::modules::GmmxxEquationSolverSettings::PreconditioningMethod::Diagonal) {
                 preconditioner = Preconditioner::Diagonal;
-            } else if (preconditionAsSetting == storm::settings::modules::GmmxxEquationSolverSettings::PreconditioningTechnique::None) {
+            } else if (preconditionAsSetting == storm::settings::modules::GmmxxEquationSolverSettings::PreconditioningMethod::None) {
                 preconditioner = Preconditioner::None;
             }
         }
@@ -149,12 +149,6 @@ namespace storm {
         uint_fast64_t GmmxxLinearEquationSolver<ValueType>::solveLinearEquationSystemWithJacobi(storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult) const {
             // Get a Jacobi decomposition of the matrix A.
             std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> jacobiDecomposition = A.getJacobiDecomposition();
-            std::cout << "LU" << std::endl;
-            std::cout << jacobiDecomposition.first << std::endl;
-            for (auto const& elem : jacobiDecomposition.second) {
-                std::cout << elem << std::endl;
-            }
-            std::cout << "----" << std::endl;
             
             // Convert the LU matrix to gmm++'s format.
             std::unique_ptr<gmm::csr_matrix<ValueType>> gmmLU = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(std::move(jacobiDecomposition.first));

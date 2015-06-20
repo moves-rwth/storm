@@ -12,8 +12,8 @@ namespace storm {
              */
             class NativeEquationSolverSettings : public ModuleSettings {
             public:
-                // An enumeration of all available techniques for solving linear equations.
-                enum class LinearEquationTechnique { Jacobi };
+                // An enumeration of all available methods for solving linear equations.
+                enum class LinearEquationMethod { Jacobi, GaussSeidel, SOR };
                 
                 // An enumeration of all available convergence criteria.
                 enum class ConvergenceCriterion { Absolute, Relative };
@@ -33,11 +33,11 @@ namespace storm {
                 bool isLinearEquationSystemTechniqueSet() const;
                 
                 /*!
-                 * Retrieves the technique that is to be used for solving systems of linear equations.
+                 * Retrieves the method that is to be used for solving systems of linear equations.
                  *
-                 * @return The technique to use.
+                 * @return The method to use.
                  */
-                LinearEquationTechnique getLinearEquationSystemTechnique() const;
+                LinearEquationMethod getLinearEquationSystemMethod() const;
                 
                 /*!
                  * Retrieves whether the maximal iteration count has been set.
@@ -68,6 +68,13 @@ namespace storm {
                 double getPrecision() const;
                 
                 /*!
+                 * Retrieves the value of omega to be used for the SOR method.
+                 *
+                 * @return The value of omega to be used.
+                 */
+                double getOmega() const;
+                
+                /*!
                  * Retrieves whether the convergence criterion has been set.
                  *
                  * @return True iff the convergence criterion has been set.
@@ -89,6 +96,7 @@ namespace storm {
             private:
                 // Define the string names of the options as constants.
                 static const std::string techniqueOptionName;
+                static const std::string omegaOptionName;
                 static const std::string maximalIterationsOptionName;
                 static const std::string maximalIterationsOptionShortName;
                 static const std::string precisionOptionName;

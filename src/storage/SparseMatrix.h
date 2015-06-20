@@ -693,6 +693,15 @@ namespace storm {
             void multiplyVectorWithMatrix(std::vector<value_type> const& vector, std::vector<value_type>& result) const;
             
             /*!
+             * Performs one step of the successive over-relaxation technique.
+             *
+             * @param omega The Omega parameter for SOR.
+             * @param x The current solution vector. The result will be written to the very same vector.
+             * @param b The 'right-hand side' of the problem.
+             */
+            void performSuccessiveOverRelaxationStep(ValueType omega, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
+            
+            /*!
              * Multiplies the matrix with the given vector in a sequential way and writes the result to the given result
              * vector.
              *
