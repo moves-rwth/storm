@@ -308,7 +308,7 @@ namespace storm {
 			std::unique_ptr<CheckResult> subResultPointer = this->check(stateFormula);
 			ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();
 
-            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(SparseCtmcCslModelChecker<ValueType>::computeLongRunAverageHelper(this->getModel(), this->getModel().getTransitionMatrix(), subResult.getTruthValuesVector(), nullptr, qualitative, *linearEquationSolverFactory)));
+            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(SparseCtmcCslModelChecker<ValueType>::computeLongRunAverageHelper(this->getModel().getTransitionMatrix(), subResult.getTruthValuesVector(), nullptr, qualitative, *linearEquationSolverFactory)));
 		}
 
         template<typename ValueType>

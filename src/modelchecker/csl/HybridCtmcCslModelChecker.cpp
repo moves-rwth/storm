@@ -141,7 +141,7 @@ namespace storm {
                         STORM_LOG_THROW(uniformizationRate > 0, storm::exceptions::InvalidStateException, "The uniformization rate must be positive.");
                         
                         // Compute the uniformized matrix.
-                        storm::dd::Add<DdType> uniformizedMatrix = this->computeUniformizedMatrix(this->getModel(), this->getModel().getTransitionMatrix(), exitRates,  statesWithProbabilityGreater0NonPsi, uniformizationRate);
+                        storm::dd::Add<DdType> uniformizedMatrix = this->computeUniformizedMatrix(this->getModel(), this->getModel().getTransitionMatrix(), exitRates, statesWithProbabilityGreater0NonPsi, uniformizationRate);
                         
                         // Compute the vector that is to be added as a compensation for removing the absorbing states.
                         storm::dd::Add<DdType> b = (statesWithProbabilityGreater0NonPsi.toAdd() * this->getModel().getTransitionMatrix() * psiStates.swapVariables(this->getModel().getRowColumnMetaVariablePairs()).toAdd()).sumAbstract(this->getModel().getColumnVariables()) / this->getModel().getManager().getConstant(uniformizationRate);
@@ -354,7 +354,24 @@ namespace storm {
             
             // Finally, compute the transient probabilities.
             std::vector<ValueType> result = SparseCtmcCslModelChecker<ValueType>::template computeTransientProbabilities<true>(explicitUniformizedMatrix, nullptr, timeBound, uniformizationRate, explicitTotalRewardVector, *this->linearEquationSolverFactory);
-            return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType>(this->getModel().getReachableStates(), this->getModel().getManager().getBddZero(), this->getModel().getManager().getAddZero(), this->getModel().getReachableStates(), odd, result));
+            return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType>(this->getModel().getReachableStates(), this->getModel().getManager().getBddZero(), this->getModel().getManager().getAddZero(), this->getModel().getReachableStates(), std::move(odd), std::move(result)));
+        }
+        
+        template<storm::dd::DdType DdType, class ValueType>
+        std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<DdType, ValueType>::computeLongRunAverage(storm::logic::StateFormula const& stateFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
+            std::unique_ptr<CheckResult> subResultPointer = this->check(stateFormula);
+            SymbolicQualitativeCheckResult<DdType> const& subResult = subResultPointer->asSymbolicQualitativeCheckResult<DdType>();
+            
+            storm::dd::Add<DdType> probabilityMatrix = this->computeProbabilityMatrix(this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector());
+            
+            // Create ODD for the translation.
+            storm::dd::Odd<DdType> odd(this->getModel().getReachableStates());
+            
+            storm::storage::SparseMatrix<ValueType> explicitProbabilityMatrix = probabilityMatrix.toMatrix(odd, odd);
+            std::vector<ValueType> explicitExitRateVector = this->getModel().getExitRateVector().template toVector<ValueType>(odd);
+            
+            std::vector<ValueType> result = SparseCtmcCslModelChecker<ValueType>::computeLongRunAverageHelper(explicitProbabilityMatrix, subResult.getTruthValuesVector().toVector(odd), &explicitExitRateVector, qualitative, *this->linearEquationSolverFactory);
+            return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType>(this->getModel().getReachableStates(), this->getModel().getManager().getBddZero(), this->getModel().getManager().getAddZero(), this->getModel().getReachableStates(), std::move(odd), std::move(result)));
         }
         
         // Explicitly instantiate the model checker.

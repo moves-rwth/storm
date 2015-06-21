@@ -479,11 +479,11 @@ namespace storm {
             ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();
 
             storm::storage::SparseMatrix<ValueType> probabilityMatrix = this->computeProbabilityMatrix(this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector());
-            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(computeLongRunAverageHelper(this->getModel(), probabilityMatrix, subResult.getTruthValuesVector(), &this->getModel().getExitRateVector(), qualitative, *linearEquationSolverFactory)));
+            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(computeLongRunAverageHelper(probabilityMatrix, subResult.getTruthValuesVector(), &this->getModel().getExitRateVector(), qualitative, *linearEquationSolverFactory)));
         }
         
         template<typename ValueType>
-        std::vector<ValueType> SparseCtmcCslModelChecker<ValueType>::computeLongRunAverageHelper(storm::models::sparse::DeterministicModel<ValueType> const& model, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& psiStates, std::vector<ValueType> const* exitRateVector, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+        std::vector<ValueType> SparseCtmcCslModelChecker<ValueType>::computeLongRunAverageHelper(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& psiStates, std::vector<ValueType> const* exitRateVector, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
             // If there are no goal states, we avoid the computation and directly return zero.
             uint_fast64_t numOfStates = transitionMatrix.getRowCount();
             if (psiStates.empty()) {
@@ -496,7 +496,7 @@ namespace storm {
             }
             
             // Start by decomposing the DTMC into its BSCCs.
-            storm::storage::StronglyConnectedComponentDecomposition<double> bsccDecomposition(model, false, true);
+            storm::storage::StronglyConnectedComponentDecomposition<double> bsccDecomposition(transitionMatrix, storm::storage::BitVector(transitionMatrix.getRowCount(), true), false, true);
             
             // Get some data members for convenience.
             ValueType one = storm::utility::one<ValueType>();
