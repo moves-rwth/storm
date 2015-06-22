@@ -303,12 +303,17 @@ namespace storm {
             return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(this->computeReachabilityRewardsHelper(this->getModel().getTransitionMatrix(), this->getModel().getOptionalStateRewardVector(), this->getModel().getOptionalTransitionRewardMatrix(), this->getModel().getBackwardTransitions(), subResult.getTruthValuesVector(), *this->linearEquationSolverFactory, qualitative)));
         }
 
+        template<typename ValueType>
+        std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<ValueType>::computeLongRunAverage(storm::logic::StateFormula const& stateFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
+            std::unique_ptr<CheckResult> subResultPointer = this->check(stateFormula);
+            ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();
+            
+            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(computeLongRunAverageHelper(this->getModel().getTransitionMatrix(), subResult.getTruthValuesVector(), qualitative, *linearEquationSolverFactory)));
+        }
+        
 		template<typename ValueType>
-		std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<ValueType>::computeLongRunAverage(storm::logic::StateFormula const& stateFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
-			std::unique_ptr<CheckResult> subResultPointer = this->check(stateFormula);
-			ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();
-
-            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(SparseCtmcCslModelChecker<ValueType>::computeLongRunAverageHelper(this->getModel().getTransitionMatrix(), subResult.getTruthValuesVector(), nullptr, qualitative, *linearEquationSolverFactory)));
+        std::vector<ValueType> SparseDtmcPrctlModelChecker<ValueType>::computeLongRunAverageHelper(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& psiStates, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+            return SparseCtmcCslModelChecker<ValueType>::computeLongRunAverageHelper(transitionMatrix, psiStates, nullptr, qualitative, linearEquationSolverFactory);
 		}
 
         template<typename ValueType>

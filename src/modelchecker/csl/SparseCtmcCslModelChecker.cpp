@@ -498,6 +498,8 @@ namespace storm {
             // Start by decomposing the DTMC into its BSCCs.
             storm::storage::StronglyConnectedComponentDecomposition<double> bsccDecomposition(transitionMatrix, storm::storage::BitVector(transitionMatrix.getRowCount(), true), false, true);
             
+            STORM_LOG_DEBUG("Found " << bsccDecomposition.size() << " BSCCs.");
+            
             // Get some data members for convenience.
             ValueType one = storm::utility::one<ValueType>();
             ValueType zero = storm::utility::zero<ValueType>();
@@ -523,6 +525,8 @@ namespace storm {
                 }
             }
             storm::storage::BitVector statesNotInBsccs = ~statesInBsccs;
+            
+            STORM_LOG_DEBUG("Found " << statesInBsccs.getNumberOfSetBits() << " states in BSCCs.");
             
             // Prepare a vector holding the index within all states that are in BSCCs for every state.
             std::vector<uint_fast64_t> indexInStatesInBsccs;
@@ -629,6 +633,10 @@ namespace storm {
                         }
                     }
                 }
+                
+                for (uint_fast64_t bsccIndex = 0; bsccIndex < bsccDecomposition.size(); ++bsccIndex) {
+                    STORM_LOG_DEBUG("Found LRA " << bsccLra[bsccIndex] << " for BSCC " << bsccIndex << ".");
+                }
             } else {
                 for (uint_fast64_t bsccIndex = 0; bsccIndex < bsccDecomposition.size(); ++bsccIndex) {
                     storm::storage::StronglyConnectedComponent const& bscc = bsccDecomposition[bsccIndex];
@@ -638,6 +646,10 @@ namespace storm {
                     if (psiStates.get(*bscc.begin())) {
                         bsccLra[bsccIndex] = 1;
                     }
+                }
+                
+                for (uint_fast64_t bsccIndex = 0; bsccIndex < bsccDecomposition.size(); ++bsccIndex) {
+                    STORM_LOG_DEBUG("Found LRA " << bsccLra[bsccIndex] << " for BSCC " << bsccIndex << ".");
                 }
             }
             

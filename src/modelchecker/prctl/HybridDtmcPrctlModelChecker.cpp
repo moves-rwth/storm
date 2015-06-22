@@ -1,4 +1,5 @@
 #include "src/modelchecker/prctl/HybridDtmcPrctlModelChecker.h"
+#include "src/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 
 #include "src/storage/dd/CuddOdd.h"
 
@@ -299,6 +300,20 @@ namespace storm {
         template<storm::dd::DdType DdType, typename ValueType>
         storm::models::symbolic::Dtmc<DdType> const& HybridDtmcPrctlModelChecker<DdType, ValueType>::getModel() const {
             return this->template getModelAs<storm::models::symbolic::Dtmc<DdType>>();
+        }
+        
+        template<storm::dd::DdType DdType, class ValueType>
+        std::unique_ptr<CheckResult> HybridDtmcPrctlModelChecker<DdType, ValueType>::computeLongRunAverage(storm::logic::StateFormula const& stateFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
+            std::unique_ptr<CheckResult> subResultPointer = this->check(stateFormula);
+            SymbolicQualitativeCheckResult<DdType> const& subResult = subResultPointer->asSymbolicQualitativeCheckResult<DdType>();
+            
+            // Create ODD for the translation.
+            storm::dd::Odd<DdType> odd(this->getModel().getReachableStates());
+            
+            storm::storage::SparseMatrix<ValueType> explicitProbabilityMatrix = this->getModel().getTransitionMatrix().toMatrix(odd, odd);
+            
+            std::vector<ValueType> result = SparseDtmcPrctlModelChecker<ValueType>::computeLongRunAverageHelper(explicitProbabilityMatrix, subResult.getTruthValuesVector().toVector(odd), qualitative, *this->linearEquationSolverFactory);
+            return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType>(this->getModel().getReachableStates(), this->getModel().getManager().getBddZero(), this->getModel().getManager().getAddZero(), this->getModel().getReachableStates(), std::move(odd), std::move(result)));
         }
         
         template class HybridDtmcPrctlModelChecker<storm::dd::DdType::CUDD, double>;

@@ -190,6 +190,13 @@ TEST(GmmxxCtmcCslModelCheckerTest, Polling) {
     ASSERT_TRUE(checkResult->isExplicitQuantitativeCheckResult());
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeCheckResult1 = checkResult->asExplicitQuantitativeCheckResult<double>();
     EXPECT_NEAR(1, quantitativeCheckResult1[initialState], storm::settings::generalSettings().getPrecision());
+
+    formula = formulaParser.parseFromString("LRA=?[\"target\"]");
+    checkResult = modelchecker.check(*formula);
+    
+    ASSERT_TRUE(checkResult->isExplicitQuantitativeCheckResult());
+    storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeCheckResult2 = checkResult->asExplicitQuantitativeCheckResult<double>();
+    EXPECT_NEAR(0.20079750055570736, quantitativeCheckResult2[initialState], storm::settings::generalSettings().getPrecision());
 }
 
 TEST(GmmxxCtmcCslModelCheckerTest, Fms) {
