@@ -28,10 +28,10 @@ namespace storm {
             enum class RegionCheckResult { 
                 UNKNOWN, /*!< the result is unknown */
                 EXISTSSAT, /*!< the formula is satisfied for at least one parameter evaluation that lies in the given region */
-                EXISTSUNSAT, /*!< the formula is violated for at least one parameter evaluation that lies in the given region */
+                EXISTSVIOLATED, /*!< the formula is violated for at least one parameter evaluation that lies in the given region */
                 EXISTSBOTH, /*!< the formula is satisfied for some parameters but also violated for others */
                 ALLSAT, /*!< the formula is satisfied for all parameters in the given region */
-                ALLUNSAT /*!< the formula is violated for all parameters in the given region */
+                ALLVIOLATED /*!< the formula is violated for all parameters in the given region */
             };
             
             class ParameterRegion{
@@ -44,6 +44,8 @@ namespace storm {
                 std::set<VariableType> getVariables() const;
                 BoundType const& getLowerBound(VariableType const& variable) const;
                 BoundType const& getUpperBound(VariableType const& variable) const;
+                const std::map<VariableType, BoundType> getUpperBounds() const;
+                const std::map<VariableType, BoundType> getLowerBounds() const;
                 
                 /*
                  * Returns a vector of all possible combinations of lower and upper bounds of the given variables.
@@ -68,13 +70,13 @@ namespace storm {
                 /*!
                  * Sets a point in the region for which the considered property is not satisfied. 
                  */
-                void setUnSatPoint(std::map<VariableType, BoundType> const& unSatPoint);
+                void setViolatedPoint(std::map<VariableType, BoundType> const& violatedPoint);
                 
                 /*!
                  * Retrieves a point in the region for which is considered property is not satisfied.
                  * If such a point is not known, the returned map is empty.
                  */
-                std::map<VariableType, BoundType> getUnSatPoint() const;
+                std::map<VariableType, BoundType> getViolatedPoint() const;
                 
                 
                 /*!
@@ -94,7 +96,7 @@ namespace storm {
                 std::map<VariableType, BoundType> const upperBounds;
                 RegionCheckResult checkResult;
                 std::map<VariableType, BoundType> satPoint;
-                std::map<VariableType, BoundType> unSatPoint;
+                std::map<VariableType, BoundType> violatedPoint;
                 
                 
             };
@@ -118,7 +120,7 @@ namespace storm {
 
             /*!
              * Checks whether the given formula holds for all parameters that lie in the given region.
-             * Sets the region checkresult accordingly. Moreover, region.satPoint and/or an region.unSatPoint will be set.
+             * Sets the region checkresult accordingly. Moreover, region.satPoint and/or an region.violatedPoint will be set.
              * 
              * @note A formula has to be specified first.
              * 
@@ -129,7 +131,7 @@ namespace storm {
             
             /*!
              * Checks for every given region whether the specified formula holds for all parameters that lie in that region.
-             * Sets the region checkresult accordingly. Moreover, region.satPoint and/or an region.unSatPoint will be set.
+             * Sets the region checkresult accordingly. Moreover, region.satPoint and/or an region.violatedPoint will be set.
              * 
              * @note A formula has to be specified first.
              * 
@@ -216,15 +218,29 @@ namespace storm {
                 storm::storage::sparse::state_type const& initState
             );
             
+            //initializes the given solver which can later be used to give an exact result regarding the whole model.
+            void initializeSMTSolver(std::shared_ptr<storm::solver::Smt2SmtSolver>& solver, ParametricType const& reachProbFunction, storm::logic::ProbabilityOperatorFormula const& formula);
             
             /*!
-             * Checks the value of the function at some sampling points within the given region
-             * may set the satPoint and unSatPoint of the regions if they are not yet specified and such points are found
-             * Also changes the regioncheckresult of the region to EXISTSSAT, EXISTSUNSAT, or EXISTSBOTH
+             * Checks the value of the function at some sampling points within the given region.
+             * May set the satPoint and violatedPoint of the regions if they are not yet specified and such points are found
+             * Also changes the regioncheckresult of the region to EXISTSSAT, EXISTSVIOLATED, or EXISTSBOTH
              * 
-             * @return true if an unsat point as well as a sat point has been found during the process
+             * @return true if an violated point as well as a sat point has been found during the process
              */
             bool checkSamplePoints(ParameterRegion& region);
+            
+            /*!
+             * Checks the value of the function at the given sampling point.
+             * May set the satPoint and violatedPoint of the regions if thy are not yet specified and such point is given.
+             * Also changes the regioncheckresult of the region to EXISTSSAT, EXISTSVIOLATED, or EXISTSBOTH
+             * 
+             * @param viaReachProbFunction if set, the sampling will be done via the reachProbFunction.
+             *                             Otherwise, the model will be instantiated and checked
+             * 
+             * @return true if an violated point as well as a sat point has been found, i.e., the check result is changed to EXISTSOTH
+             */
+            bool checkPoint(ParameterRegion& region, std::map<VariableType, BoundType>const& point, bool viaReachProbFunction=false);
             
             /*!
              * Builds an MDP that is used to compute bounds on the maximal/minimal reachability probability,
@@ -242,6 +258,15 @@ namespace storm {
              */
             storm::models::sparse::Mdp<ConstantType> buildMdpForApproximation(ParameterRegion const& region);
             
+            /*!
+             * Starts the SMTSolver to get the result.
+             * The current regioncheckresult of the region should be EXISTSSAT or EXISTVIOLATED.
+             * Otherwise, a sampingPoint will be computed.
+             * True is returned iff the solver was successful (i.e., it returned sat or unsat)
+             * A Sat- or Violated point is set, if the solver has found one.
+             * The region checkResult of the given region is changed accordingly.
+             */
+            bool checkFullSmt(ParameterRegion& region); 
             
             
             // The model this model checker is supposed to analyze.
@@ -253,6 +278,9 @@ namespace storm {
             // comparators that can be used to compare constants.
             storm::utility::ConstantsComparator<ParametricType> parametricTypeComparator;
             storm::utility::ConstantsComparator<ConstantType> constantTypeComparator;
+            
+            
+            std::shared_ptr<storm::solver::Smt2SmtSolver> smtSolver;
             
 
             //the following members depend on the currently specified formula:

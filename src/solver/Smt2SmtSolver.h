@@ -60,8 +60,14 @@ namespace storm {
             virtual void add(storm::RationalFunction const& leftHandSide, storm::CompareRelation const& relation, storm::RationalFunction const& rightHandSide=storm::RationalFunction(0));
             
             //adds the given carl constraint
-            template<typename FunctionType>
-            void add(typename carl::Constraint<FunctionType> const& constraint);
+            void add(typename carl::Constraint<storm::RationalFunction> const& constraint);
+            void add(typename carl::Constraint<storm::RawPolynomial> const& constraint);
+            
+            // adds the given carl constraint that is guarded by the given guard. The guard should have type 'bool'
+            void add(storm::Variable const& guard, typename carl::Constraint<storm::Polynomial> const& constraint);
+            
+            // asserts that the given variable has the given value. The variable should have type 'bool'
+            void add(storm::Variable const& variable, bool value);
 #endif
 
             virtual CheckResult check() override;
@@ -145,6 +151,9 @@ namespace storm {
             // A flag that states whether we want to use carl expressions.
             bool useCarlExpressions;
 
+            // A flag that states whether to use readable variable names
+            bool useReadableVarNames=true;
+            
         };
     }
 }

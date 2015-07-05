@@ -32,13 +32,13 @@ namespace storm {
         }
 
         template<typename ParametricType, typename ConstantType>        
-        void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::setUnSatPoint(std::map<VariableType, BoundType> const& unSatPoint) {
-            this->unSatPoint = unSatPoint;
+        void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::setViolatedPoint(std::map<VariableType, BoundType> const& violatedPoint) {
+            this->violatedPoint = violatedPoint;
         }
         
         template<typename ParametricType, typename ConstantType>
-        std::map<typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::VariableType, typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::BoundType> SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::getUnSatPoint() const {
-            return unSatPoint;
+        std::map<typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::VariableType, typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::BoundType> SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::getViolatedPoint() const {
+            return violatedPoint;
         }
         
         template<typename ParametricType, typename ConstantType>
@@ -55,14 +55,14 @@ namespace storm {
         void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::setCheckResult(RegionCheckResult checkResult) {
             //a few sanity checks
             STORM_LOG_THROW((this->checkResult==RegionCheckResult::UNKNOWN || checkResult!=RegionCheckResult::UNKNOWN),storm::exceptions::InvalidArgumentException, "Tried to change the check result of a region from something known to UNKNOWN ");
-            STORM_LOG_THROW((this->checkResult!=RegionCheckResult::EXISTSSAT || checkResult!=RegionCheckResult::EXISTSUNSAT),storm::exceptions::InvalidArgumentException, "Tried to change the check result of a region from EXISTSSAT to EXISTSUNSAT");
-            STORM_LOG_THROW((this->checkResult!=RegionCheckResult::EXISTSSAT || checkResult!=RegionCheckResult::ALLUNSAT),storm::exceptions::InvalidArgumentException, "Tried to change the check result of a region from EXISTSSAT to ALLUNSAT");
-            STORM_LOG_THROW((this->checkResult!=RegionCheckResult::EXISTSUNSAT || checkResult!=RegionCheckResult::EXISTSSAT),storm::exceptions::InvalidArgumentException, "Tried to change the check result of a region from EXISTSUNSAT to EXISTSSAT");
-            STORM_LOG_THROW((this->checkResult!=RegionCheckResult::EXISTSUNSAT || checkResult!=RegionCheckResult::ALLSAT),storm::exceptions::InvalidArgumentException, "Tried to change the check result of a region from EXISTSUNSAT to ALLSAT");
+            STORM_LOG_THROW((this->checkResult!=RegionCheckResult::EXISTSSAT || checkResult!=RegionCheckResult::EXISTSVIOLATED),storm::exceptions::InvalidArgumentException, "Tried to change the check result of a region from EXISTSSAT to EXISTSVIOLATED");
+            STORM_LOG_THROW((this->checkResult!=RegionCheckResult::EXISTSSAT || checkResult!=RegionCheckResult::ALLVIOLATED),storm::exceptions::InvalidArgumentException, "Tried to change the check result of a region from EXISTSSAT to ALLVIOLATED");
+            STORM_LOG_THROW((this->checkResult!=RegionCheckResult::EXISTSVIOLATED || checkResult!=RegionCheckResult::EXISTSSAT),storm::exceptions::InvalidArgumentException, "Tried to change the check result of a region from EXISTSVIOLATED to EXISTSSAT");
+            STORM_LOG_THROW((this->checkResult!=RegionCheckResult::EXISTSVIOLATED || checkResult!=RegionCheckResult::ALLSAT),storm::exceptions::InvalidArgumentException, "Tried to change the check result of a region from EXISTSVIOLATED to ALLSAT");
             STORM_LOG_THROW((this->checkResult!=RegionCheckResult::EXISTSBOTH || checkResult!=RegionCheckResult::ALLSAT),storm::exceptions::InvalidArgumentException, "Tried to change the check result of a region from EXISTSBOTH to ALLSAT");
-            STORM_LOG_THROW((this->checkResult!=RegionCheckResult::EXISTSBOTH || checkResult!=RegionCheckResult::ALLUNSAT),storm::exceptions::InvalidArgumentException, "Tried to change the check result of a region from EXISTSBOTH to ALLUNSAT");
+            STORM_LOG_THROW((this->checkResult!=RegionCheckResult::EXISTSBOTH || checkResult!=RegionCheckResult::ALLVIOLATED),storm::exceptions::InvalidArgumentException, "Tried to change the check result of a region from EXISTSBOTH to ALLVIOLATED");
             STORM_LOG_THROW((this->checkResult!=RegionCheckResult::ALLSAT || checkResult==RegionCheckResult::ALLSAT),storm::exceptions::InvalidArgumentException, "Tried to change the check result of a region from ALLSAT to something else");
-            STORM_LOG_THROW((this->checkResult!=RegionCheckResult::ALLUNSAT || checkResult==RegionCheckResult::ALLUNSAT),storm::exceptions::InvalidArgumentException, "Tried to change the check result of a region from ALLUNSAT to something else");
+            STORM_LOG_THROW((this->checkResult!=RegionCheckResult::ALLVIOLATED || checkResult==RegionCheckResult::ALLVIOLATED),storm::exceptions::InvalidArgumentException, "Tried to change the check result of a region from ALLVIOLATED to something else");
             this->checkResult = checkResult;
         }
 
@@ -94,6 +94,16 @@ namespace storm {
             auto const& result = upperBounds.find(variable);
             STORM_LOG_THROW(result!=upperBounds.end(), storm::exceptions::IllegalArgumentException, "tried to find an upper bound of a variable that is not specified by this region");
             return (*result).second;
+        }
+
+        template<typename ParametricType, typename ConstantType>
+        const std::map<typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::VariableType, typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::BoundType> SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::getUpperBounds() const {
+            return upperBounds;
+        }
+        
+        template<typename ParametricType, typename ConstantType>
+        const std::map<typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::VariableType, typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::BoundType> SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::getLowerBounds() const {
+            return lowerBounds;
         }
         
         template<typename ParametricType, typename ConstantType>
@@ -131,14 +141,14 @@ namespace storm {
                     return "unknown";
                 case RegionCheckResult::EXISTSSAT:
                     return "ExistsSat";
-                case RegionCheckResult::EXISTSUNSAT:
-                    return "ExistsUnsat";
+                case RegionCheckResult::EXISTSVIOLATED:
+                    return "ExistsViolated";
                 case RegionCheckResult::EXISTSBOTH:
                     return "ExistsBoth";
                 case RegionCheckResult::ALLSAT:
                     return "allSat";
-                case RegionCheckResult::ALLUNSAT:
-                    return "allUnsat";
+                case RegionCheckResult::ALLVIOLATED:
+                    return "allViolated";
             }
             STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Could not identify check result")
             return "ERROR";
@@ -164,7 +174,7 @@ namespace storm {
         
         
         template<typename ParametricType, typename ConstantType>
-        SparseDtmcRegionModelChecker<ParametricType, ConstantType>::SparseDtmcRegionModelChecker(storm::models::sparse::Dtmc<ParametricType> const& model) : model(model), eliminationModelChecker(model), probabilityOperatorFormula(nullptr) {
+        SparseDtmcRegionModelChecker<ParametricType, ConstantType>::SparseDtmcRegionModelChecker(storm::models::sparse::Dtmc<ParametricType> const& model) : model(model), eliminationModelChecker(model), smtSolver(nullptr), probabilityOperatorFormula(nullptr) {
             // Intentionally left empty.
         }
         
@@ -253,6 +263,8 @@ namespace storm {
             std::chrono::high_resolution_clock::time_point timeComputeReachProbFunctionEnd = std::chrono::high_resolution_clock::now();
       //      std::cout << std::endl <<"the resulting reach prob function is " << std::endl << this->reachProbFunction << std::endl << std::endl;
             std::chrono::high_resolution_clock::time_point timeInitialStateEliminationEnd = std::chrono::high_resolution_clock::now();
+            
+            initializeSMTSolver(this->smtSolver, this->reachProbFunction,*this->probabilityOperatorFormula);
             
             //some information for statistics...
             std::chrono::high_resolution_clock::time_point timePreprocessingEnd = std::chrono::high_resolution_clock::now();
@@ -366,7 +378,57 @@ namespace storm {
             
             return workingCopyOneStepProbs[initState];
         }
-        
+
+        template<typename ParametricType, typename ConstantType>
+        void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::initializeSMTSolver(std::shared_ptr<storm::solver::Smt2SmtSolver>& solver, const ParametricType& reachProbFunction, const storm::logic::ProbabilityOperatorFormula& formula) {
+                    
+            storm::expressions::ExpressionManager manager; //this manager will do nothing as we will use carl expressions..
+            solver = std::shared_ptr<storm::solver::Smt2SmtSolver>(new storm::solver::Smt2SmtSolver(manager, true));
+            
+            ParametricType bound= storm::utility::regions::convertNumber<double, ParametricType>(this->probabilityOperatorFormula->getBound());
+            std::cout << "bound is " << bound << std::endl;
+            
+            // To prove that the property is satisfied in the initial state for all parameters,
+            // we ask the solver whether the negation of the property is satisfiable and invert the answer.
+            // In this case, assert that this variable is true:
+            VariableType proveAllSatVar=storm::utility::regions::getNewVariable<VariableType>("proveAllSat", storm::utility::regions::VariableSort::VS_BOOL);
+            
+            //Example:
+            //Property:    P<=p [ F 'target' ] holds iff...
+            // f(x)         <= p
+            // Hence: If  f(x) > p is unsat, the property is satisfied for all parameters.
+            
+            storm::logic::ComparisonType proveAllSatRel; //the relation from the property needs to be inverted
+            switch (this->probabilityOperatorFormula->getComparisonType()) {
+                case storm::logic::ComparisonType::Greater:
+                    proveAllSatRel=storm::logic::ComparisonType::LessEqual;
+                    break;
+                case storm::logic::ComparisonType::GreaterEqual:
+                    proveAllSatRel=storm::logic::ComparisonType::Less;
+                    break;
+                case storm::logic::ComparisonType::Less:
+                    proveAllSatRel=storm::logic::ComparisonType::GreaterEqual;
+                    break;
+                case storm::logic::ComparisonType::LessEqual:
+                    proveAllSatRel=storm::logic::ComparisonType::Greater;
+                    break;
+                default:
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "the comparison relation of the formula is not supported");
+            }
+            storm::utility::regions::addGuardedConstraintToSmtSolver(solver, proveAllSatVar, this->reachProbFunction, proveAllSatRel, bound);
+            
+            // To prove that the property is violated in the initial state for all parameters,
+            // we ask the solver whether the the property is satisfiable and invert the answer.
+            // In this case, assert that this variable is true:
+            VariableType proveAllViolatedVar=storm::utility::regions::getNewVariable<VariableType>("proveAllViolated", storm::utility::regions::VariableSort::VS_BOOL);        
+            
+            //Example:
+            //Property:    P<=p [ F 'target' ] holds iff...
+            // f(x)         <= p
+            // Hence: If f(x)  <= p is unsat, the property is violated for all parameters. 
+            storm::logic::ComparisonType proveAllViolatedRel = this->probabilityOperatorFormula->getComparisonType();
+            storm::utility::regions::addGuardedConstraintToSmtSolver(solver, proveAllViolatedVar, this->reachProbFunction, proveAllViolatedRel, bound);          
+        }
 
 
 
@@ -396,7 +458,7 @@ namespace storm {
                     STORM_LOG_DEBUG("Result '" << region.checkResultToString() <<"' obtained through approximation.");
                     doSampling=false;
                     doSubsystemSmt=false;
-                    doFullSmt=false;
+                    doFullSmt=true; //TODO set this back to false.. this is just for testing
                 }
             }
             std::chrono::high_resolution_clock::time_point timeApproximationEnd = std::chrono::high_resolution_clock::now();
@@ -410,7 +472,7 @@ namespace storm {
                     STORM_LOG_DEBUG("Result '" << region.checkResultToString() <<"' obtained through sampling.");
                     doApproximation=false;
                     doSubsystemSmt=false;
-                    doFullSmt=false;
+                    doFullSmt=true;//TODO set this back to false.. this is just for testing
                 }
             }
             std::chrono::high_resolution_clock::time_point timeSamplingEnd = std::chrono::high_resolution_clock::now();
@@ -423,10 +485,17 @@ namespace storm {
             
             std::chrono::high_resolution_clock::time_point timeFullSmtStart = std::chrono::high_resolution_clock::now();
             if(doFullSmt){
-                STORM_LOG_WARN("FullSmt approach not yet implemented");
+                STORM_LOG_DEBUG("Checking with Smt Solving...");
+                std::cout << "  Checking with Smt Solving..." << std::endl;
+                if(checkFullSmt(region)){
+                    ++this->numOfRegionsSolvedThroughFullSmt;
+                    STORM_LOG_DEBUG("Result '" << region.checkResultToString() <<"' obtained through Smt Solving.");
+                    doApproximation=false;
+                    doSampling=false;
+                    doSubsystemSmt=false;
+                }
             }
             std::chrono::high_resolution_clock::time_point timeFullSmtEnd = std::chrono::high_resolution_clock::now();
-            
             
             
             //some information for statistics...
@@ -448,30 +517,46 @@ namespace storm {
         
         template<typename ParametricType, typename ConstantType>
         bool SparseDtmcRegionModelChecker<ParametricType, ConstantType>::checkSamplePoints(ParameterRegion& region) {
-
-            auto samplingPoints = region.getVerticesOfRegion(region.getVariables()); //only test the 4 corner points (for now)
             
+            auto samplingPoints = region.getVerticesOfRegion(region.getVariables()); //test the 4 corner points
             for (auto const& point : samplingPoints){
-                // check whether the property is satisfied or not at the given point
-                if(this->valueIsInBoundOfFormula(storm::utility::regions::evaluateFunction<ParametricType, ConstantType>(this->reachProbFunction, point))){
-                    if (region.getCheckResult()!=RegionCheckResult::EXISTSSAT){
-                        region.setSatPoint(point);
-                        if(region.getCheckResult()==RegionCheckResult::EXISTSUNSAT){
-                            region.setCheckResult(RegionCheckResult::EXISTSBOTH);
-                            return true;
-                        }
-                        region.setCheckResult(RegionCheckResult::EXISTSSAT);
+                if(checkPoint(region, point, true)){
+                    return true;
+                }            
+            }
+            return false;
+        }
+        
+        template<typename ParametricType, typename ConstantType>
+        bool SparseDtmcRegionModelChecker<ParametricType, ConstantType>::checkPoint(ParameterRegion& region, std::map<VariableType, BoundType>const& point, bool viaReachProbFunction) {
+            
+            // check whether the property is satisfied or not at the given point
+            bool valueInBoundOfFormula;
+            if(viaReachProbFunction){
+                valueInBoundOfFormula = this->valueIsInBoundOfFormula(storm::utility::regions::evaluateFunction<ParametricType, ConstantType>(this->reachProbFunction, point));
+            }
+            else{
+                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "sample point check with model instantiation not yet implemented");
+            }
+                
+            if(valueInBoundOfFormula){
+                if (region.getCheckResult()!=RegionCheckResult::EXISTSSAT){
+                    region.setSatPoint(point);
+                    if(region.getCheckResult()==RegionCheckResult::EXISTSVIOLATED){
+                        region.setCheckResult(RegionCheckResult::EXISTSBOTH);
+                        return true;
                     }
+                    region.setCheckResult(RegionCheckResult::EXISTSSAT);
                 }
-                else{
-                    if (region.getCheckResult()!=RegionCheckResult::EXISTSUNSAT){
-                        region.setUnSatPoint(point);
-                        if(region.getCheckResult()==RegionCheckResult::EXISTSSAT){
-                            region.setCheckResult(RegionCheckResult::EXISTSBOTH);
-                            return true;
-                        }
-                        region.setCheckResult(RegionCheckResult::EXISTSUNSAT);
+            }
+            else{
+                if (region.getCheckResult()!=RegionCheckResult::EXISTSVIOLATED){
+                    region.setViolatedPoint(point);
+                    if(region.getCheckResult()==RegionCheckResult::EXISTSSAT){
+                        region.setCheckResult(RegionCheckResult::EXISTSBOTH);
+                        return true;
                     }
+                    region.setCheckResult(RegionCheckResult::EXISTSVIOLATED);
                 }
             }
             return false;
@@ -500,11 +585,11 @@ namespace storm {
                         case RegionCheckResult::UNKNOWN: 
                             firstOpType=storm::logic::OptimalityType::Minimize;
                             break;
-                        case RegionCheckResult::EXISTSUNSAT:
+                        case RegionCheckResult::EXISTSVIOLATED:
                             firstOpType=storm::logic::OptimalityType::Maximize;
                             break;
                         default:
-                            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "The checkresult of the current region should not be conclusive, i.e. it should be either EXISTSSAT or EXISTSUNSAT or UNKNOWN");
+                            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "The checkresult of the current region should not be conclusive, i.e. it should be either EXISTSSAT or EXISTSVIOLATED or UNKNOWN");
                     }
                     break;
                 case storm::logic::ComparisonType::Less:
@@ -514,11 +599,11 @@ namespace storm {
                         case RegionCheckResult::UNKNOWN: 
                             firstOpType=storm::logic::OptimalityType::Maximize;
                             break;
-                        case RegionCheckResult::EXISTSUNSAT:
+                        case RegionCheckResult::EXISTSVIOLATED:
                             firstOpType=storm::logic::OptimalityType::Minimize;
                             break;
                         default:
-                            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "The checkresult of the current region should not be conclusive, i.e. it should be either EXISTSSAT or EXISTSUNSAT or UNKNOWN");
+                            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "The checkresult of the current region should not be conclusive, i.e. it should be either EXISTSSAT or EXISTSVIOLATED or UNKNOWN");
                     }
                     break;
                 default:
@@ -544,7 +629,7 @@ namespace storm {
                     else{
                         if((this->probabilityOperatorFormula->getComparisonType()== storm::logic::ComparisonType::Greater) || 
                                 (this->probabilityOperatorFormula->getComparisonType()== storm::logic::ComparisonType::GreaterEqual)){
-                            region.setCheckResult(RegionCheckResult::ALLUNSAT);
+                            region.setCheckResult(RegionCheckResult::ALLVIOLATED);
                             return true;
                         }
                     }
@@ -564,7 +649,7 @@ namespace storm {
                     else{
                         if((this->probabilityOperatorFormula->getComparisonType()== storm::logic::ComparisonType::Less) || 
                                 (this->probabilityOperatorFormula->getComparisonType()== storm::logic::ComparisonType::LessEqual)){
-                            region.setCheckResult(RegionCheckResult::ALLUNSAT);
+                            region.setCheckResult(RegionCheckResult::ALLVIOLATED);
                             return true;
                         }
                     }                
@@ -697,23 +782,101 @@ namespace storm {
 
         
         
+        template<typename ParametricType, typename ConstantType>
+        bool SparseDtmcRegionModelChecker<ParametricType, ConstantType>::checkFullSmt(ParameterRegion& region) {
+            if (region.getCheckResult()==RegionCheckResult::UNKNOWN){
+                //Sampling needs to be done (on a single point)
+                checkPoint(region,region.getLowerBounds(), true);
+            }
+            
+            this->smtSolver->push();
+            
+            //add constraints for the region
+            for(auto const& variable : region.getVariables()) {
+                storm::utility::regions::addParameterBoundsToSmtSolver(this->smtSolver, variable, storm::logic::ComparisonType::GreaterEqual, region.getLowerBound(variable));
+                storm::utility::regions::addParameterBoundsToSmtSolver(this->smtSolver, variable, storm::logic::ComparisonType::LessEqual, region.getUpperBound(variable));
+            }
+            
+            //add constraint that states what we want to prove            
+            VariableType proveAllSatVar=storm::utility::regions::getVariableFromString<VariableType>("proveAllSat");     
+            VariableType proveAllViolatedVar=storm::utility::regions::getVariableFromString<VariableType>("proveAllViolated");     
+            switch(region.getCheckResult()){
+                case RegionCheckResult::EXISTSBOTH:
+                    STORM_LOG_WARN_COND((region.getCheckResult()!=RegionCheckResult::EXISTSBOTH), "checkFullSmt invoked although the result is already clear (EXISTSBOTH). Will validate this now...");
+                case RegionCheckResult::ALLSAT:
+                    STORM_LOG_WARN_COND((region.getCheckResult()!=RegionCheckResult::ALLSAT), "checkFullSmt invoked although the result is already clear (ALLSAT). Will validate this now...");
+                case RegionCheckResult::EXISTSSAT:
+                    storm::utility::regions::addBoolVariableToSmtSolver(this->smtSolver, proveAllSatVar, true);
+                    storm::utility::regions::addBoolVariableToSmtSolver(this->smtSolver, proveAllViolatedVar, false);
+                    break;
+                case RegionCheckResult::ALLVIOLATED:
+                    STORM_LOG_WARN_COND((region.getCheckResult()!=RegionCheckResult::ALLVIOLATED), "checkFullSmt invoked although the result is already clear (ALLVIOLATED). Will validate this now...");
+                case RegionCheckResult::EXISTSVIOLATED:
+                    storm::utility::regions::addBoolVariableToSmtSolver(this->smtSolver, proveAllSatVar, false);
+                    storm::utility::regions::addBoolVariableToSmtSolver(this->smtSolver, proveAllViolatedVar, true);
+                    break;
+                default:
+                STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Could not handle the current region CheckResult: " << region.checkResultToString());
+            }
+            
+            storm::solver::SmtSolver::CheckResult solverResult= this->smtSolver->check();
+            this->smtSolver->pop();
+            
+            switch(solverResult){
+                case storm::solver::SmtSolver::CheckResult::Sat:
+                    switch(region.getCheckResult()){
+                        case RegionCheckResult::EXISTSSAT:
+                            region.setCheckResult(RegionCheckResult::EXISTSBOTH);
+                            //There is also a violated point
+                            STORM_LOG_WARN("Extracting a violated point from the smt solver is not yet implemented!");
+                            break;
+                        case RegionCheckResult::EXISTSVIOLATED:
+                            region.setCheckResult(RegionCheckResult::EXISTSBOTH);
+                            //There is also a sat point
+                            STORM_LOG_WARN("Extracting a sat point from the smt solver is not yet implemented!");
+                            break;
+                        case RegionCheckResult::EXISTSBOTH:
+                            //That was expected
+                            STORM_LOG_WARN("result EXISTSBOTH Validated!");
+                            break;
+                        default:
+                            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "The solver gave an unexpected result (sat)");
+                    }
+                    return true;
+                case storm::solver::SmtSolver::CheckResult::Unsat:
+                    switch(region.getCheckResult()){
+                        case RegionCheckResult::EXISTSSAT:
+                            region.setCheckResult(RegionCheckResult::ALLSAT);
+                            break;
+                        case RegionCheckResult::EXISTSVIOLATED:
+                            region.setCheckResult(RegionCheckResult::ALLVIOLATED);
+                            break;
+                        case RegionCheckResult::ALLSAT:
+                            //That was expected...
+                            STORM_LOG_WARN("result ALLSAT Validated!");
+                            break;
+                        case RegionCheckResult::ALLVIOLATED:
+                            //That was expected...
+                            STORM_LOG_WARN("result ALLVIOLATED Validated!");
+                            break;
+                        default:
+                            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "The solver gave an unexpected result (unsat)");
+                    }
+                    return true;
+                case storm::solver::SmtSolver::CheckResult::Unknown:
+                default:
+                    STORM_LOG_WARN("The SMT solver was not able to compute a result for this region");
+                    return false;
+            }
+        }
+
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+
+
+
+
+
+
         
         
         
@@ -1204,6 +1367,7 @@ namespace storm {
             std::chrono::milliseconds timeSammplingInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timeSampling);
             std::chrono::milliseconds timeApproximationInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timeApproximation);
             std::chrono::milliseconds timeMDPBuildInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timeMDPBuild);
+            std::chrono::milliseconds timeFullSmtInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timeFullSmt);
             
             std::chrono::high_resolution_clock::duration timeOverall = timePreprocessing + timeCheckRegion; // + ...
             std::chrono::milliseconds timeOverallInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(timeOverall);
@@ -1222,7 +1386,7 @@ namespace storm {
             outstream << "Formula: " << *this->probabilityOperatorFormula << std::endl;
             outstream << (this->hasOnlyLinearFunctions ? "A" : "Not a") << "ll occuring functions in the model are linear" << std::endl;
             outstream << "Number of checked regions: " << this->numOfCheckedRegions << " with..." << std::endl;
-            outstream << "  " << this->numOfRegionsSolvedThroughSampling << " regions solved through sampling" << std::endl;
+            outstream << "  " << this->numOfRegionsSolvedThroughSampling << " regions solved through Sampling" << std::endl;
             outstream << "  " << this->numOfRegionsSolvedThroughApproximation << " regions solved through Approximation" << std::endl;
             outstream << "  " << this->numOfRegionsSolvedThroughSubsystemSmt << " regions solved through SubsystemSmt" << std::endl;
             outstream << "  " << this->numOfRegionsSolvedThroughFullSmt << " regions solved through FullSmt" << std::endl;
@@ -1235,7 +1399,7 @@ namespace storm {
             outstream << "    " << timeSammplingInMilliseconds.count() << "ms Sampling " << std::endl;
             outstream << "    " << timeApproximationInMilliseconds.count() << "ms Approximation including... " << std::endl;
             outstream << "      " << timeMDPBuildInMilliseconds.count() << "ms to build the MDP" << std::endl;
-            //outstream << "  " << timeInMilliseconds.count() << "ms " << std::endl;
+            outstream << "    " << timeFullSmtInMilliseconds.count() << "ms Full Smt solving" << std::endl;
             outstream << "-----------------------------------------------" << std::endl;
             
         }

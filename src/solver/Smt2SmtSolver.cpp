@@ -36,7 +36,7 @@ namespace storm {
 #ifndef WINDOWS
             processIdOfSolver=0;
 #endif
-            expressionAdapter = std::unique_ptr<storm::adapters::Smt2ExpressionAdapter>(new storm::adapters::Smt2ExpressionAdapter(this->getManager(), true));
+            this->expressionAdapter = std::unique_ptr<storm::adapters::Smt2ExpressionAdapter>(new storm::adapters::Smt2ExpressionAdapter(this->getManager(), this->useReadableVarNames));
             init();
         }
 
@@ -90,12 +90,10 @@ namespace storm {
             writeCommand("( assert " + expressionAdapter->translateExpression(leftHandSide, relation, rightHandSide) + " )", true);
         }
         
-        template<>
         void Smt2SmtSolver::add(carl::Constraint<storm::RationalFunction> const& constraint) {
             add(constraint.lhs(), constraint.rel());
         }
         
-        template<>
         void Smt2SmtSolver::add(carl::Constraint<storm::RawPolynomial> const& constraint) {
             //if some of the occurring variables are not declared yet, we will have to.
             std::set<storm::Variable> variables = constraint.lhs().gatherVariables();
@@ -106,6 +104,35 @@ namespace storm {
             writeCommand("( assert " + expressionAdapter->translateExpression(constraint) + " )", true);
         }
         
+        void Smt2SmtSolver::add(storm::Variable const& guard, typename carl::Constraint<storm::Polynomial> const& constraint){
+            STORM_LOG_THROW((guard.getType()==carl::VariableType::VT_BOOL), storm::exceptions::IllegalArgumentException, "Tried to add a guarded constraint, but the guard is not of type bool.");
+            //if some of the occurring variables are not declared yet, we will have to (including the guard!).
+            std::set<storm::Variable> variables = constraint.lhs().gatherVariables();
+            variables.insert(guard);
+            std::vector<std::string> const varDeclarations = expressionAdapter->checkForUndeclaredVariables(variables);
+            for (auto declaration : varDeclarations){
+                writeCommand(declaration, true);
+            }
+            std::string guardName= carl::VariablePool::getInstance().getName(guard, this->useReadableVarNames);
+            writeCommand("( assert (=> " + guardName + " " + expressionAdapter->translateExpression(constraint) + " ) )", true);
+        }
+        
+        void Smt2SmtSolver::add(const storm::Variable& variable, bool value){
+            STORM_LOG_THROW((variable.getType()==carl::VariableType::VT_BOOL), storm::exceptions::IllegalArgumentException, "Tried to add a constraint that consists of a non-boolean variable.");
+            std::set<storm::Variable> variableSet;
+            variableSet.insert(variable);
+            std::vector<std::string> const varDeclarations = expressionAdapter->checkForUndeclaredVariables(variableSet);
+            for (auto declaration : varDeclarations){
+                writeCommand(declaration, true);
+            }
+            std::string varName= carl::VariablePool::getInstance().getName(variable, this->useReadableVarNames);
+            if(value){
+                writeCommand("( assert " + varName + " )", true);
+            }
+            else{
+                writeCommand("( assert (not " + varName + ") )", true);
+            }
+        }
         
 #endif
 

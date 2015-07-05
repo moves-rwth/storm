@@ -3,12 +3,17 @@
  * Author: Tim Quatmann
  *
  * Created on May 13, 2015, 12:54 PM
+ * 
+ * This file provides some auxiliary functions for the Region Model Checker.
+ * The purpose of many of this functions is to deal with the different types (e.g., carl expressions)
  */
 
-#include "src/modelchecker/reachability/SparseDtmcRegionModelChecker.h" //to get the ParameterRegion type
 
 #ifndef STORM_UTILITY_REGIONS_H
 #define	STORM_UTILITY_REGIONS_H
+
+#include "src/modelchecker/reachability/SparseDtmcRegionModelChecker.h"
+#include "src/logic/ComparisonType.h"
 
 // Forward-declare region modelchecker  class.
     namespace storm {
@@ -92,6 +97,16 @@ namespace storm {
             template<typename VariableType>
             VariableType getVariableFromString(std::string variableString);
             
+            
+            enum class VariableSort {VS_BOOL, VS_REAL, VS_INT};
+            
+            /*
+             * Creates a new variable with the given name and the given sort
+             * Throws an exception if there is already a variable with that name.
+             */
+            template<typename VariableType>
+            VariableType getNewVariable(std::string variableName, VariableSort sort);
+            
             /*
              * retrieves the variable name  from the given variable
              */
@@ -113,6 +128,32 @@ namespace storm {
             template<typename ParametricType, typename VariableType>
             void gatherOccurringVariables(ParametricType const& function, std::set<VariableType>& variableSet);
             
+            
+            /*!
+             * Adds the given constraint to the given Smt solver
+             * The constraint is of the form 'guard implies leftHandSide relation rightHandSide'
+             * @attention the numerators and denominators of the left and right hand side should be positive!
+             * 
+             * @param guard variable of type bool
+             * @param leftHandSide left hand side of the constraint
+             * @param relation relation of the constraint
+             * @param rightHandSide right hand side of the constraint
+             */
+            template<typename SolverType, typename ParametricType, typename VariableType>
+            void addGuardedConstraintToSmtSolver(std::shared_ptr<SolverType> solver, VariableType const& guard, ParametricType const& leftHandSide, storm::logic::ComparisonType relation, ParametricType const& rightHandSide);
+            
+            /*!
+             * Adds the given constraint to the given Smt solver
+             * The constraint is of the form 'variable relation bound'
+             */
+            template<typename SolverType, typename VariableType, typename BoundType>
+            void addParameterBoundsToSmtSolver(std::shared_ptr<SolverType> solver, VariableType const& variable, storm::logic::ComparisonType relation, BoundType const& bound);
+            
+            /*!
+             * Adds the given (boolean) variable to the solver. Can be used to assert that guards are true/false
+             */
+            template<typename SolverType, typename VariableType>
+            void addBoolVariableToSmtSolver(std::shared_ptr<SolverType> solver, VariableType const& variable, bool value);
         }
     }
 }

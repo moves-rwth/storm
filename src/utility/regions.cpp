@@ -143,6 +143,28 @@ namespace storm {
                 STORM_LOG_THROW(var!=carl::Variable::NO_VARIABLE, storm::exceptions::InvalidArgumentException, "Variable '" + variableString + "' could not be found.");
                 return var;
             }
+            
+            template<>
+            storm::Variable getNewVariable<storm::Variable>(std::string variableName, VariableSort sort){
+                storm::Variable const& var = carl::VariablePool::getInstance().findVariableWithName(variableName);
+                STORM_LOG_THROW(var==carl::Variable::NO_VARIABLE, storm::exceptions::InvalidArgumentException, "Tried to create a new variable but the name " << variableName << " is already in use.");
+                
+                carl::VariableType carlVarType;
+                switch(sort){
+                    case VariableSort::VS_BOOL:
+                        carlVarType = carl::VariableType::VT_BOOL;
+                        break;
+                    case VariableSort::VS_REAL:
+                        carlVarType = carl::VariableType::VT_REAL;
+                        break;
+                    case VariableSort::VS_INT:
+                        carlVarType = carl::VariableType::VT_INT;
+                        break;
+                    default:
+                        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "The given variable sort is not implemented");
+                }
+                return carl::VariablePool::getInstance().getFreshVariable(variableName, carlVarType);
+            }
                       
             template<>
             std::string getVariableName<storm::Variable>(storm::Variable variable){
@@ -173,6 +195,61 @@ namespace storm {
                 function.gatherVariables(variableSet);
             }
             
+            template<>
+            void addGuardedConstraintToSmtSolver<storm::solver::Smt2SmtSolver, storm::RationalFunction, storm::Variable>(std::shared_ptr<storm::solver::Smt2SmtSolver> solver,storm::Variable const& guard, storm::RationalFunction const& leftHandSide, storm::logic::ComparisonType relation, storm::RationalFunction const& rightHandSide){
+                STORM_LOG_THROW(guard.getType()==carl::VariableType::VT_BOOL, storm::exceptions::IllegalArgumentException, "Tried to add a constraint to the solver whose guard is not of type bool");
+                storm::CompareRelation compRel;
+                switch (relation){
+                    case storm::logic::ComparisonType::Greater:
+                        compRel=storm::CompareRelation::GT;
+                        break;
+                    case storm::logic::ComparisonType::GreaterEqual:
+                        compRel=storm::CompareRelation::GEQ;
+                        break;
+                    case storm::logic::ComparisonType::Less:
+                        compRel=storm::CompareRelation::LT;
+                        break;
+                    case storm::logic::ComparisonType::LessEqual:
+                        compRel=storm::CompareRelation::LEQ;
+                        break;
+                    default:
+                        STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "the comparison relation of the formula is not supported");
+                }        
+               //Note: this only works if numerators and denominators are positive...
+                carl::Constraint<storm::Polynomial> constraint((leftHandSide.nominator() * rightHandSide.denominator()) - (rightHandSide.nominator() * leftHandSide.denominator()), compRel);
+                solver->add(guard,constraint);
+            }
+            
+            template<>
+            void addParameterBoundsToSmtSolver<storm::solver::Smt2SmtSolver, storm::Variable, cln::cl_RA>(std::shared_ptr<storm::solver::Smt2SmtSolver> solver, storm::Variable const& variable, storm::logic::ComparisonType relation, cln::cl_RA const& bound){
+                storm::CompareRelation compRel;
+                switch (relation){
+                    case storm::logic::ComparisonType::Greater:
+                        compRel=storm::CompareRelation::GT;
+                        break;
+                    case storm::logic::ComparisonType::GreaterEqual:
+                        compRel=storm::CompareRelation::GEQ;
+                        break;
+                    case storm::logic::ComparisonType::Less:
+                        compRel=storm::CompareRelation::LT;
+                        break;
+                    case storm::logic::ComparisonType::LessEqual:
+                        compRel=storm::CompareRelation::LEQ;
+                        break;
+                    default:
+                        STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "the comparison relation of the formula is not supported");
+                }
+                storm::RawPolynomial leftHandSide(variable);
+                leftHandSide -= bound;
+                solver->add(carl::Constraint<storm::RawPolynomial>(leftHandSide,compRel));
+            }
+            
+            template<>
+            void addBoolVariableToSmtSolver<storm::solver::Smt2SmtSolver, storm::Variable>(std::shared_ptr<storm::solver::Smt2SmtSolver> solver,storm::Variable const& variable, bool value){
+                STORM_LOG_THROW(variable.getType()==carl::VariableType::VT_BOOL, storm::exceptions::IllegalArgumentException, "Tried to add a constraint to the solver that is a non boolean variable. Only boolean variables are allowed");
+                solver->add(variable, value);
+            }
+            
             //explicit instantiations
        template double convertNumber<double, double>(double const& number, bool const& roundDown, double const& precision);
        
@@ -190,6 +267,10 @@ namespace storm {
        template bool functionIsLinear<storm::RationalFunction>(storm::RationalFunction const& function);
        
        template void gatherOccurringVariables<storm::RationalFunction, storm::Variable>(storm::RationalFunction const& function, std::set<storm::Variable>& variableSet);
+       
+       template void addGuardedConstraintToSmtSolver<storm::solver::Smt2SmtSolver, storm::RationalFunction, storm::Variable>(std::shared_ptr<storm::solver::Smt2SmtSolver> solver,storm::Variable const& guard, storm::RationalFunction const& leftHandSide, storm::logic::ComparisonType relation, storm::RationalFunction const& rightHandSide);
+       template void addParameterBoundsToSmtSolver<storm::solver::Smt2SmtSolver, storm::Variable, cln::cl_RA>(std::shared_ptr<storm::solver::Smt2SmtSolver> solver, storm::Variable const& variable, storm::logic::ComparisonType relation, cln::cl_RA const& bound);
+       template void addBoolVariableToSmtSolver<storm::solver::Smt2SmtSolver, storm::Variable>(std::shared_ptr<storm::solver::Smt2SmtSolver> solver, storm::Variable const& variable, bool value);
        
 #endif 
         }

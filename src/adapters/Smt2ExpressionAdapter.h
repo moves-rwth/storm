@@ -73,6 +73,19 @@ namespace storm {
                             "0 " +
                         ")";
             }
+            /*!
+             * Translates the given constraint "leftHandSide relation 0" to an equivalent expression for Smt2.
+			 
+             * @param constraint
+             * @return An equivalent expression for Smt2.
+             */
+            std::string translateExpression(carl::Constraint<storm::Polynomial> const& constraint) {
+                                
+                return  "(" + carl::toString(constraint.rel()) + " " +
+                            constraint.lhs().toString(false, useReadableVarNames) + " " +
+                            "0 " +
+                        ")";
+            }
 #endif
             /*!
              * Translates the given variable to an equivalent expression for Smt2.
