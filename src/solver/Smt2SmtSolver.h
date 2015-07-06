@@ -6,6 +6,7 @@
 #ifndef WINDOWS
     #include <unistd.h>
     #include <sys/ioctl.h>
+    #include <signal.h>
 #endif
 
 #include "storm-config.h"
@@ -73,10 +74,12 @@ namespace storm {
             virtual CheckResult check() override;
 
             virtual CheckResult checkWithAssumptions(std::set<storm::expressions::Expression> const& assumptions) override;
-
 #ifndef WINDOWS
             virtual CheckResult checkWithAssumptions(std::initializer_list<storm::expressions::Expression> const& assumptions) override;
 #endif
+            
+            bool isNeedsRestart() const;
+            
             //Todo: some of these might be added in the future
             //virtual storm::expressions::SimpleValuation getModelAsValuation() override;
 
@@ -153,6 +156,9 @@ namespace storm {
 
             // A flag that states whether to use readable variable names
             bool useReadableVarNames=true;
+            
+            // A flag that states whether some error has occured
+            bool needsRestart=false;
             
         };
     }

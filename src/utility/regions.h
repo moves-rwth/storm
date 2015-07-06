@@ -102,7 +102,8 @@ namespace storm {
             
             /*
              * Creates a new variable with the given name and the given sort
-             * Throws an exception if there is already a variable with that name.
+             * If there is already a variable with that name, that variable is returned.
+             * An exception is thrown if there already is a variable with the given name, but with a different sort.
              */
             template<typename VariableType>
             VariableType getNewVariable(std::string variableName, VariableSort sort);

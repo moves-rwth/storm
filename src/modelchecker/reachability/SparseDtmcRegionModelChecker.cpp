@@ -261,7 +261,13 @@ namespace storm {
             std::chrono::high_resolution_clock::time_point timeComputeReachProbFunctionStart = std::chrono::high_resolution_clock::now();
             this->reachProbFunction = computeReachProbFunction(this->subsystem, this->flexibleTransitions, this->flexibleBackwardTransitions, this->sparseTransitions, this->sparseBackwardTransitions, this->oneStepProbabilities, this->initialState);
             std::chrono::high_resolution_clock::time_point timeComputeReachProbFunctionEnd = std::chrono::high_resolution_clock::now();
-      //      std::cout << std::endl <<"the resulting reach prob function is " << std::endl << this->reachProbFunction << std::endl << std::endl;
+            
+            //std::string funcStr = " (/ " +
+              //                  this->reachProbFunction.nominator().toString(false, true) + " " +
+               //                 this->reachProbFunction.denominator().toString(false, true) +
+                //            " )";
+           // std::cout << std::endl <<"the resulting reach prob function is " << std::endl << funcStr << std::endl << std::endl;
+
             std::chrono::high_resolution_clock::time_point timeInitialStateEliminationEnd = std::chrono::high_resolution_clock::now();
             
             initializeSMTSolver(this->smtSolver, this->reachProbFunction,*this->probabilityOperatorFormula);
@@ -386,7 +392,6 @@ namespace storm {
             solver = std::shared_ptr<storm::solver::Smt2SmtSolver>(new storm::solver::Smt2SmtSolver(manager, true));
             
             ParametricType bound= storm::utility::regions::convertNumber<double, ParametricType>(this->probabilityOperatorFormula->getBound());
-            std::cout << "bound is " << bound << std::endl;
             
             // To prove that the property is satisfied in the initial state for all parameters,
             // we ask the solver whether the negation of the property is satisfiable and invert the answer.
@@ -529,7 +534,6 @@ namespace storm {
         
         template<typename ParametricType, typename ConstantType>
         bool SparseDtmcRegionModelChecker<ParametricType, ConstantType>::checkPoint(ParameterRegion& region, std::map<VariableType, BoundType>const& point, bool viaReachProbFunction) {
-            
             // check whether the property is satisfied or not at the given point
             bool valueInBoundOfFormula;
             if(viaReachProbFunction){
@@ -865,7 +869,10 @@ namespace storm {
                     return true;
                 case storm::solver::SmtSolver::CheckResult::Unknown:
                 default:
-                    STORM_LOG_WARN("The SMT solver was not able to compute a result for this region");
+                    STORM_LOG_WARN("The SMT solver was not able to compute a result for this region. (Timeout? Memout?)");
+                    if(this->smtSolver->isNeedsRestart()){
+                        initializeSMTSolver(this->smtSolver,this->reachProbFunction, *this->probabilityOperatorFormula);
+                    }
                     return false;
             }
         }

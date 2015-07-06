@@ -146,9 +146,6 @@ namespace storm {
             
             template<>
             storm::Variable getNewVariable<storm::Variable>(std::string variableName, VariableSort sort){
-                storm::Variable const& var = carl::VariablePool::getInstance().findVariableWithName(variableName);
-                STORM_LOG_THROW(var==carl::Variable::NO_VARIABLE, storm::exceptions::InvalidArgumentException, "Tried to create a new variable but the name " << variableName << " is already in use.");
-                
                 carl::VariableType carlVarType;
                 switch(sort){
                     case VariableSort::VS_BOOL:
@@ -163,6 +160,14 @@ namespace storm {
                     default:
                         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "The given variable sort is not implemented");
                 }
+                
+                storm::Variable const& var = carl::VariablePool::getInstance().findVariableWithName(variableName);
+                //STORM_LOG_THROW(var==carl::Variable::NO_VARIABLE, storm::exceptions::InvalidArgumentException, "Tried to create a new variable but the name " << variableName << " is already in use.");
+                if(var!=carl::Variable::NO_VARIABLE){
+                    STORM_LOG_THROW(var.getType()==carlVarType, storm::exceptions::InvalidArgumentException, "Tried to create a new variable but the name " << variableName << " is already in use for a variable of a different sort.");
+                    return var;
+                }
+                
                 return carl::VariablePool::getInstance().getFreshVariable(variableName, carlVarType);
             }
                       
