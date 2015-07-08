@@ -9,6 +9,7 @@
 #include "src/utility/OsDetection.h"
 #include "src/utility/Hash.h"
 #include "src/utility/macros.h"
+#include "resources/3rdparty/glpk-4.53/src/zlib/zconf.h"
 
 namespace storm {
     namespace storage {
@@ -71,6 +72,7 @@ namespace storm {
             } else {
                 bucketVector = std::vector<uint64_t>(bucketCount, 0);
             }
+            
         }
         
         template<typename InputIterator>
@@ -434,6 +436,29 @@ namespace storm {
                 result |= (lowerBits >> (64 - numberOfBits));
                 
                 return result;
+            } else {
+                // In this case, it suffices to take the current mask.
+                return bucketVector[bucket] & mask;
+            }
+        }
+        
+        uint_fast64_t BitVector::getTwoBitsAligned(uint_fast64_t bitIndex) const {
+            // Check whether it is aligned.
+            assert(bitIndex % 64 != 63);
+            uint64_t bucket = bitIndex >> 6;
+            uint64_t bitIndexInBucket = bitIndex & mod64mask;
+            
+            uint64_t mask;
+            if (bitIndexInBucket == 0) {
+                mask = -1ull;
+            } else {
+                mask = (1ull << (64 - bitIndexInBucket)) - 1ull;
+            }
+            
+            if (bitIndexInBucket  < 62) { // bitIndexInBucket + 2 < 64
+                // If the value stops before the end of the bucket, we need to erase some lower bits.
+                mask &= ~((1ull << (62 - (bitIndexInBucket))) - 1ull);
+                return (bucketVector[bucket] & mask) >> (62 - bitIndexInBucket);
             } else {
                 // In this case, it suffices to take the current mask.
                 return bucketVector[bucket] & mask;

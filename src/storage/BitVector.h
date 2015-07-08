@@ -359,6 +359,13 @@ namespace storm {
             uint_fast64_t getAsInt(uint_fast64_t bitIndex, uint_fast64_t numberOfBits) const;
             
             /*!
+             * 
+             * @param bitIndex The index of the first of the two bits to get
+             * @return A value between 0 and 3, encoded as a byte.
+             */
+            uint_fast64_t getTwoBitsAligned(uint_fast64_t bitIndex) const;
+            
+            /*!
              * Sets the selected number of lowermost bits of the provided value at the given bit index.
              *
              * @param bitIndex The index of the first bit to set.
