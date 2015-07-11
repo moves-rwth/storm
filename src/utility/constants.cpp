@@ -253,6 +253,9 @@ namespace storm {
         
         template RationalFunction pow(RationalFunction const& value, uint_fast64_t exponent);
         
+        template Coefficient one();
+        template Coefficient zero();
+        
         template Polynomial one();
         template Polynomial zero();
         template RationalFunction simplify(RationalFunction value);

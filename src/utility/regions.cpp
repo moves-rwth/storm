@@ -102,7 +102,7 @@ namespace storm {
             
             
             template<>
-            storm::RationalFunction::CoeffType convertNumber<double, storm::RationalFunction::CoeffType>(double const& number, bool const& roundDown, double const& precision){
+            storm::Coefficient convertNumber<double, storm::Coefficient>(double const& number, bool const& roundDown, double const& precision){
                 double actualPrecision = (precision==0.0 ? storm::settings::generalSettings().getPrecision() : precision);
                 uint_fast64_t denominator = 1.0/actualPrecision;
                 uint_fast64_t numerator;
@@ -111,14 +111,14 @@ namespace storm {
                 } else{
                     numerator = std::ceil(number*denominator);
                 }
-                storm::RationalFunction::CoeffType result(numerator);
+                storm::Coefficient result(numerator);
                 result = result/denominator;
                 return result;
             }
             
             template<>
             storm::RationalFunction convertNumber<double, storm::RationalFunction>(double const& number, bool const& roundDown, double const& precision){
-                return storm::RationalFunction(convertNumber<double, storm::RationalFunction::CoeffType>(number, roundDown, precision));
+                return storm::RationalFunction(convertNumber<double, storm::Coefficient>(number, roundDown, precision));
             }
             
             template<>
@@ -255,6 +255,19 @@ namespace storm {
                 solver->add(variable, value);
             }
             
+            template<>
+            storm::RationalFunction getNewFunction<storm::RationalFunction, storm::Coefficient>(storm::Coefficient initialValue) {
+                std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<storm::RawPolynomial>>> cache(new carl::Cache<carl::PolynomialFactorizationPair<storm::RawPolynomial>>());
+                return storm::RationalFunction(storm::RationalFunction::PolyType(storm::RationalFunction::PolyType::PolyType(initialValue), cache));
+            }
+            
+            template<>
+            storm::RationalFunction getNewFunction<storm::RationalFunction, storm::Variable>(storm::Variable initialValue) {
+                std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<storm::RawPolynomial>>> cache(new carl::Cache<carl::PolynomialFactorizationPair<storm::RawPolynomial>>());
+                return storm::RationalFunction(storm::RationalFunction::PolyType(storm::RationalFunction::PolyType::PolyType(initialValue), cache));
+            }
+
+            
             //explicit instantiations
        template double convertNumber<double, double>(double const& number, bool const& roundDown, double const& precision);
        
@@ -262,8 +275,8 @@ namespace storm {
        template class RegionParser<storm::RationalFunction, double>;
        
        template storm::RationalFunction convertNumber<double, storm::RationalFunction>(double const& number, bool const& roundDown, double const& precision);
-       template storm::RationalFunction::CoeffType convertNumber<double, storm::RationalFunction::CoeffType>(double const& number, bool const& roundDown, double const& precision);
-       template double convertNumber<cln::cl_RA, double>(storm::RationalFunction::CoeffType const& number, bool const& roundDown, double const& precision);
+       template storm::Coefficient convertNumber<double, storm::Coefficient>(double const& number, bool const& roundDown, double const& precision);
+       template double convertNumber<cln::cl_RA, double>(storm::Coefficient const& number, bool const& roundDown, double const& precision);
        template cln::cl_RA convertNumber<cln::cl_RA, cln::cl_RA>(cln::cl_RA const& number, bool const& roundDown, double const& precision);
        
        template storm::Variable getVariableFromString<storm::Variable>(std::string variableString);
@@ -277,6 +290,8 @@ namespace storm {
        template void addParameterBoundsToSmtSolver<storm::solver::Smt2SmtSolver, storm::Variable, cln::cl_RA>(std::shared_ptr<storm::solver::Smt2SmtSolver> solver, storm::Variable const& variable, storm::logic::ComparisonType relation, cln::cl_RA const& bound);
        template void addBoolVariableToSmtSolver<storm::solver::Smt2SmtSolver, storm::Variable>(std::shared_ptr<storm::solver::Smt2SmtSolver> solver, storm::Variable const& variable, bool value);
        
+       template storm::RationalFunction getNewFunction<storm::RationalFunction, storm::Coefficient>(storm::Coefficient initialValue);
+       template storm::RationalFunction getNewFunction<storm::RationalFunction, storm::Variable>(storm::Variable initialValue);
 #endif 
         }
     }

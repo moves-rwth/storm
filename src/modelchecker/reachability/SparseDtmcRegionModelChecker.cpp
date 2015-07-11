@@ -174,7 +174,7 @@ namespace storm {
         
         
         template<typename ParametricType, typename ConstantType>
-        SparseDtmcRegionModelChecker<ParametricType, ConstantType>::SparseDtmcRegionModelChecker(storm::models::sparse::Dtmc<ParametricType> const& model) : model(model), eliminationModelChecker(model), smtSolver(nullptr), probabilityOperatorFormula(nullptr) {
+        SparseDtmcRegionModelChecker<ParametricType, ConstantType>::SparseDtmcRegionModelChecker(storm::models::sparse::Dtmc<ParametricType> const& model) : model(model), eliminationModelChecker(model), smtSolver(nullptr), probabilityOperatorFormula(nullptr), sampleDtmc(nullptr), approxMdp(nullptr) {
             // Intentionally left empty.
         }
         
@@ -255,6 +255,8 @@ namespace storm {
             eliminateStatesConstSucc(this->subsystem, this->flexibleTransitions, this->flexibleBackwardTransitions, this->oneStepProbabilities, this->hasOnlyLinearFunctions, this->initialState);
             STORM_LOG_DEBUG("Eliminated " << subsystem.size() - subsystem.getNumberOfSetBits() << " of " << subsystem.size() << " states that had constant outgoing transitions." << std::endl);
             std::cout << "Eliminated " << subsystem.size() - subsystem.getNumberOfSetBits() << " of " << subsystem.size() << " states that had constant outgoing transitions." << std::endl;
+            
+            
             //eliminate the remaining states to get the reachability probability function
             this->sparseTransitions = flexibleTransitions.getSparseMatrix();
             this->sparseBackwardTransitions = this->sparseTransitions.transpose();
@@ -270,6 +272,7 @@ namespace storm {
 
             std::chrono::high_resolution_clock::time_point timeInitialStateEliminationEnd = std::chrono::high_resolution_clock::now();
             
+            initializeSampleDtmcAndApproxMdp(this->sampleDtmc,this->sampleDtmcMapping,this->approxMdp,this->approxMdpMapping,this->approxMdpSubstitutions,this->subsystem, this->sparseTransitions,this->oneStepProbabilities, this->initialState);
             initializeSMTSolver(this->smtSolver, this->reachProbFunction,*this->probabilityOperatorFormula);
             
             //some information for statistics...
@@ -282,6 +285,9 @@ namespace storm {
             this->numOfRegionsSolvedThroughApproximation=0;
             this->numOfRegionsSolvedThroughSubsystemSmt=0;
             this->numOfRegionsSolvedThroughFullSmt=0;
+            this->numOfRegionsExistsBoth=0;
+            this->numOfRegionsAllSat=0;
+            this->numOfRegionsAllViolated=0;
             this->timeCheckRegion=std::chrono::high_resolution_clock::duration::zero();
             this->timeSampling=std::chrono::high_resolution_clock::duration::zero();
             this->timeApproximation=std::chrono::high_resolution_clock::duration::zero();
@@ -325,6 +331,203 @@ namespace storm {
             subsys.set(initialState, true);
         }
         
+        template<typename ParametricType, typename ConstantType>
+        void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::initializeSampleDtmcAndApproxMdp(
+                    std::shared_ptr<storm::models::sparse::Dtmc<ConstantType>>& sampleDtmc,
+                    std::vector<std::pair<ParametricType, storm::storage::MatrixEntry<storm::storage::sparse::state_type,ConstantType>&>> & sampleDtmcMapping,
+                    std::shared_ptr<storm::models::sparse::Mdp<ConstantType>> & approxMdp,
+                    std::vector<std::tuple<ParametricType, storm::storage::MatrixEntry<storm::storage::sparse::state_type,ConstantType>&, std::size_t>> & approxMdpMapping,
+                    std::vector<std::map<VariableType, TypeOfBound>> & approxMdpSubstitutions,
+                    storm::storage::BitVector const& subsys,
+                    storm::storage::SparseMatrix<ParametricType> const& transitions,
+                    std::vector<ParametricType> const& oneStepProbs,
+                    storm::storage::sparse::state_type const& initState) {
+            
+            //the matrix "transitions" might have empty rows where states have been eliminated.
+            //The DTMC/ MDP matrices should not have such rows. We therefore leave them out, but we have to change the indices of the states accordingly.
+            std::vector<storm::storage::sparse::state_type> newStateIndexMap(transitions.getRowCount(), transitions.getRowCount()); //initialize with some illegal index to easily check if a transition leads to an unselected state
+            storm::storage::sparse::state_type newStateIndex=0;
+            for(auto const& state : subsys){
+                newStateIndexMap[state]=newStateIndex;
+                ++newStateIndex;
+            }
+            //We need to add a target state to which the oneStepProbabilities will lead as well as a sink state to which the "missing" probability will lead
+            storm::storage::sparse::state_type numStates=newStateIndex+2;
+            storm::storage::sparse::state_type targetState=numStates-2;
+            storm::storage::sparse::state_type sinkState= numStates-1;
+            
+            //We can now fill in the dummy data of the transition matrices for dtmc and mdp
+            std::vector<ParametricType> oneStepToSink(oneStepProbs.size(), storm::utility::zero<ParametricType>()); // -2 because not needed for target and sink state
+            storm::storage::SparseMatrixBuilder<ConstantType> dtmcMatrixBuilder(numStates, numStates);
+            storm::storage::SparseMatrixBuilder<ConstantType> mdpMatrixBuilder(0, numStates, 0, true, true, numStates);
+            std::vector<std::map<VariableType, TypeOfBound> > mdpRowSubstitutions;
+            storm::storage::sparse::state_type currentMdpRow=0;
+            //go through rows:
+            for(storm::storage::sparse::state_type oldStateIndex : subsys){ 
+                ParametricType valueToSinkState=storm::utility::regions::getNewFunction<ParametricType, BoundType>(storm::utility::one<BoundType>());
+                // the dtmc and the mdp rows need to sum up to one, therefore the first entry that we add has value one.
+                ConstantType dummyEntry=storm::utility::one<ConstantType>(); 
+                // store the columns and values that we have added because we need the same information for the next rows in the mdp
+                std::vector<std::pair<storm::storage::sparse::state_type, ConstantType>> rowInformation;
+                mdpMatrixBuilder.newRowGroup(currentMdpRow);
+                std::set<VariableType> occurringParameters;
+                //go through columns:
+                for(auto const& entry: transitions.getRow(oldStateIndex)){ 
+                    valueToSinkState-=entry.getValue();
+                    storm::utility::regions::gatherOccurringVariables(entry.getValue(), occurringParameters);
+                    dtmcMatrixBuilder.addNextValue(newStateIndexMap[oldStateIndex],newStateIndexMap[entry.getColumn()],dummyEntry);
+                    mdpMatrixBuilder.addNextValue(currentMdpRow, newStateIndexMap[entry.getColumn()], dummyEntry);
+                    rowInformation.emplace_back(std::make_pair(newStateIndexMap[entry.getColumn()], dummyEntry));
+                    dummyEntry=storm::utility::zero<ConstantType>(); 
+                    STORM_LOG_THROW(newStateIndexMap[entry.getColumn()]!=transitions.getRowCount(), storm::exceptions::UnexpectedException, "There is a transition to a state that should have been eliminated.");
+                }
+                //transition to target state
+                if(!this->parametricTypeComparator.isZero(oneStepProbs[oldStateIndex])){ 
+                    valueToSinkState-=oneStepProbs[oldStateIndex];
+                    storm::utility::regions::gatherOccurringVariables(oneStepProbs[oldStateIndex], occurringParameters);
+                    
+                    dtmcMatrixBuilder.addNextValue(newStateIndexMap[oldStateIndex], targetState, dummyEntry);
+                    mdpMatrixBuilder.addNextValue(currentMdpRow, targetState, dummyEntry);
+                    rowInformation.emplace_back(std::make_pair(targetState, dummyEntry));
+                    dummyEntry=storm::utility::zero<ConstantType>(); 
+                }
+                //transition to sink state
+                if(!this->parametricTypeComparator.isZero(valueToSinkState)){ 
+                    dtmcMatrixBuilder.addNextValue(newStateIndexMap[oldStateIndex], sinkState, dummyEntry);
+                    mdpMatrixBuilder.addNextValue(currentMdpRow, sinkState, dummyEntry);
+                    rowInformation.emplace_back(std::make_pair(sinkState, dummyEntry));
+                    oneStepToSink[oldStateIndex]=valueToSinkState;
+                }
+                // Find the different combinations of occuring variables and lower/upper bounds (mathematically speaking we want to have the set 'occuringVariables times {u,l}' )
+                std::size_t numOfSubstitutions=std::pow(2,occurringParameters.size()); //1 substitution = 1 combination of lower and upper bounds
+                for(uint_fast64_t substitutionId=0; substitutionId<numOfSubstitutions; ++substitutionId){
+                    //interprete substitutionId as a bit sequence
+                    //the occurringParameters.size() least significant bits of substitutionId will always represent the next substitution that we have to add
+                    //(00...0 = lower bounds for all parameters, 11...1 = upper bounds for all parameters)
+                    mdpRowSubstitutions.emplace_back();
+                    std::size_t parameterIndex=0;
+                    for(auto const& parameter : occurringParameters){
+                        if( (substitutionId>>parameterIndex)%2==0  ){
+                            mdpRowSubstitutions.back().insert(std::make_pair(parameter, TypeOfBound::LOWER));
+                        }
+                        else{
+                            mdpRowSubstitutions.back().insert(std::make_pair(parameter, TypeOfBound::UPPER));
+                        }
+                        ++parameterIndex;
+                    }
+                }
+                //We already added one row in the MDP. Now add the remaining 2^(occuringParameters.size())-1 rows
+                for(++currentMdpRow; currentMdpRow<mdpRowSubstitutions.size(); ++currentMdpRow){
+                    for(auto const& entryOfThisRow : rowInformation){
+                        mdpMatrixBuilder.addNextValue(currentMdpRow, entryOfThisRow.first, entryOfThisRow.second);
+                    }
+                }
+            }
+            //add self loops on the additional states (i.e., target and sink)
+            dtmcMatrixBuilder.addNextValue(targetState, targetState, storm::utility::one<ConstantType>());
+            dtmcMatrixBuilder.addNextValue(sinkState, sinkState, storm::utility::one<ConstantType>());
+            mdpMatrixBuilder.newRowGroup(currentMdpRow);
+            mdpMatrixBuilder.addNextValue(currentMdpRow, targetState, storm::utility::one<ConstantType>());
+            ++currentMdpRow;
+            mdpMatrixBuilder.newRowGroup(currentMdpRow);
+            mdpMatrixBuilder.addNextValue(currentMdpRow, sinkState, storm::utility::one<ConstantType>());
+            ++currentMdpRow;
+            //The DTMC labeling
+            storm::models::sparse::StateLabeling dtmcStateLabeling(numStates);
+            storm::storage::BitVector initLabel(numStates, false);
+            initLabel.set(newStateIndexMap[this->initialState], true);
+            dtmcStateLabeling.addLabel("init", std::move(initLabel));
+            storm::storage::BitVector targetLabel(numStates, false);
+            targetLabel.set(numStates-2, true);
+            dtmcStateLabeling.addLabel("target", std::move(targetLabel));
+            storm::storage::BitVector sinkLabel(numStates, false);
+            sinkLabel.set(numStates-1, true);
+            dtmcStateLabeling.addLabel("sink", std::move(sinkLabel));
+            // The MDP labeling (is the same)
+            storm::models::sparse::StateLabeling mdpStateLabeling(dtmcStateLabeling);
+            // other ingredients
+            boost::optional<std::vector<ConstantType>> dtmcNoStateRewards, mdpNoStateRewards;
+            boost::optional<storm::storage::SparseMatrix<ConstantType>> dtmcNoTransitionRewards, mdpNoTransitionRewards;  
+            boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> dtmcNoChoiceLabeling, mdpNoChoiceLabeling;            
+            // the final dtmc and mdp
+            sampleDtmc=std::make_shared<storm::models::sparse::Dtmc<ConstantType>>(dtmcMatrixBuilder.build(), std::move(dtmcStateLabeling), std::move(dtmcNoStateRewards), std::move(dtmcNoTransitionRewards), std::move(dtmcNoChoiceLabeling));
+            approxMdp=std::make_shared<storm::models::sparse::Mdp<ConstantType>>(mdpMatrixBuilder.build(), std::move(mdpStateLabeling), std::move(mdpNoStateRewards), std::move(mdpNoTransitionRewards), std::move(mdpNoChoiceLabeling));
+            
+            //build mapping vectors and the substitution vector. 
+            sampleDtmcMapping=std::vector<std::pair<ParametricType, storm::storage::MatrixEntry<storm::storage::sparse::state_type,ConstantType>&>>();
+            sampleDtmcMapping.reserve(sampleDtmc->getTransitionMatrix().getEntryCount());
+            approxMdpMapping=std::vector<std::tuple<ParametricType, storm::storage::MatrixEntry<storm::storage::sparse::state_type,ConstantType>&, std::size_t>>();
+            approxMdpMapping.reserve(approxMdp->getTransitionMatrix().getEntryCount());
+            approxMdpSubstitutions = std::vector<std::map<VariableType, TypeOfBound> >();
+            
+            currentMdpRow=0;
+            //go through rows:
+            for(storm::storage::sparse::state_type oldStateIndex : subsys){
+                //Get the index of the substitution for the current mdp row. (add it to approxMdpSubstitutions if we see this substitution the first time)
+                std::size_t substitutionIndex = std::find(approxMdpSubstitutions.begin(),approxMdpSubstitutions.end(), mdpRowSubstitutions[currentMdpRow]) - approxMdpSubstitutions.begin();
+                if(substitutionIndex==approxMdpSubstitutions.size()){
+                    approxMdpSubstitutions.push_back(mdpRowSubstitutions[currentMdpRow]);
+                }
+                typename storm::storage::SparseMatrix<ConstantType>::iterator dtmcEntryIt=sampleDtmc->getTransitionMatrix().getRow(newStateIndexMap[oldStateIndex]).begin();
+                typename storm::storage::SparseMatrix<ConstantType>::iterator mdpEntryIt=approxMdp->getTransitionMatrix().getRow(currentMdpRow).begin();
+                //go through columns to fill the dtmc and the first mdp row (of this group):
+                for(auto const& entry: transitions.getRow(oldStateIndex)){
+                    STORM_LOG_THROW(newStateIndexMap[entry.getColumn()]==dtmcEntryIt->getColumn(), storm::exceptions::UnexpectedException, "The entries of the DTMC matrix and the pDtmc Transitionmatrix do not match");
+                    STORM_LOG_THROW(newStateIndexMap[entry.getColumn()]==mdpEntryIt->getColumn(), storm::exceptions::UnexpectedException, "The entries of the MDP matrix and the pDtmc Transitionmatrix do not match (" << newStateIndexMap[entry.getColumn()] << " vs " << mdpEntryIt->getColumn() << ")");
+                    sampleDtmcMapping.emplace_back(entry.getValue(),*dtmcEntryIt);
+                    approxMdpMapping.emplace_back(entry.getValue(),*mdpEntryIt, substitutionIndex);
+                    ++dtmcEntryIt;
+                    ++mdpEntryIt;
+                }
+                //transition to target state
+                if(!this->parametricTypeComparator.isZero(oneStepProbs[oldStateIndex])){ 
+                    STORM_LOG_THROW(targetState==dtmcEntryIt->getColumn(), storm::exceptions::UnexpectedException, "The entry of the DTMC matrix should match the target state but it does not.");
+                    STORM_LOG_THROW(targetState==mdpEntryIt->getColumn(), storm::exceptions::UnexpectedException, "The entry of the MDP matrix should match the target state but it does not.");
+                    sampleDtmcMapping.emplace_back(oneStepProbs[oldStateIndex],*dtmcEntryIt);
+                    approxMdpMapping.emplace_back(oneStepProbs[oldStateIndex], *mdpEntryIt, substitutionIndex);
+                    ++dtmcEntryIt;
+                    ++mdpEntryIt;
+                }
+                //transition to sink state
+                if(!this->parametricTypeComparator.isZero(oneStepToSink[oldStateIndex])){ 
+                    STORM_LOG_THROW(sinkState==dtmcEntryIt->getColumn(), storm::exceptions::UnexpectedException, "The entry of the DTMC matrix should match the sink state but it does not.");
+                    STORM_LOG_THROW(sinkState==mdpEntryIt->getColumn(), storm::exceptions::UnexpectedException, "The entry of the MDP matrix should match the sink state but it does not.");
+                    sampleDtmcMapping.emplace_back(oneStepToSink[oldStateIndex],*dtmcEntryIt);
+                    approxMdpMapping.emplace_back(oneStepToSink[oldStateIndex], *mdpEntryIt, substitutionIndex);
+                    ++dtmcEntryIt;
+                    ++mdpEntryIt;
+                }
+                //fill in the remaining rows of the mdp
+                storm::storage::sparse::state_type startOfNextRowGroup = currentMdpRow + approxMdp->getTransitionMatrix().getRowGroupSize(newStateIndexMap[oldStateIndex]);
+                for(++currentMdpRow;currentMdpRow<startOfNextRowGroup; ++currentMdpRow){
+                    //Get the new substitution index
+                    substitutionIndex = std::find(approxMdpSubstitutions.begin(),approxMdpSubstitutions.end(), mdpRowSubstitutions[currentMdpRow]) - approxMdpSubstitutions.begin();
+                    if(substitutionIndex==approxMdpSubstitutions.size()){
+                        approxMdpSubstitutions.push_back(mdpRowSubstitutions[currentMdpRow]);
+                    }
+                    //go through columns
+                    mdpEntryIt=approxMdp->getTransitionMatrix().getRow(currentMdpRow).begin();
+                    for(auto const& entry: transitions.getRow(oldStateIndex)){
+                        STORM_LOG_THROW(newStateIndexMap[entry.getColumn()]==mdpEntryIt->getColumn(), storm::exceptions::UnexpectedException, "The entries of the MDP matrix and the pDtmc Transitionmatrix do not match");
+                        approxMdpMapping.emplace_back(entry.getValue(),*mdpEntryIt, substitutionIndex);
+                        ++mdpEntryIt;
+                    }
+                    //transition to target state
+                    if(!this->parametricTypeComparator.isZero(oneStepProbs[oldStateIndex])){ 
+                        STORM_LOG_THROW(targetState==mdpEntryIt->getColumn(), storm::exceptions::UnexpectedException, "The entry of the MDP matrix should match the target state but it does not.");
+                        approxMdpMapping.emplace_back(oneStepProbs[oldStateIndex], *mdpEntryIt, substitutionIndex);
+                        ++mdpEntryIt;
+                    }
+                    //transition to sink state
+                    if(!this->parametricTypeComparator.isZero(oneStepToSink[oldStateIndex])){ 
+                        STORM_LOG_THROW(sinkState==mdpEntryIt->getColumn(), storm::exceptions::UnexpectedException, "The entry of the MDP matrix should match the sink state but it does not.");
+                        approxMdpMapping.emplace_back(oneStepToSink[oldStateIndex], *mdpEntryIt, substitutionIndex);
+                        ++mdpEntryIt;
+                    }
+                }
+            }
+        }
+
         
         template<typename ParametricType, typename ConstantType>
         ParametricType SparseDtmcRegionModelChecker<ParametricType, ConstantType>::computeReachProbFunction(
@@ -444,7 +647,7 @@ namespace storm {
             
             STORM_LOG_THROW(this->probabilityOperatorFormula!=nullptr, storm::exceptions::InvalidStateException, "Tried to analyze a region although no property has been specified" );
             STORM_LOG_DEBUG("Analyzing the region " << region.toString());
-            std::cout << "Analyzing the region " << region.toString() << std::endl;
+           // std::cout << "Analyzing the region " << region.toString() << std::endl;
             
             //switches for the different steps.
             bool doApproximation=this->hasOnlyLinearFunctions; // this approach is only correct if the model has only linear functions
@@ -457,13 +660,13 @@ namespace storm {
             std::vector<ConstantType> upperBounds;
             if(doApproximation){
                 STORM_LOG_DEBUG("Checking approximative probabilities...");
-                std::cout << "  Checking approximative probabilities..." << std::endl;
+          //      std::cout << "  Checking approximative probabilities..." << std::endl;
                 if(checkApproximativeProbabilities(region, lowerBounds, upperBounds)){
                     ++this->numOfRegionsSolvedThroughApproximation;
                     STORM_LOG_DEBUG("Result '" << region.checkResultToString() <<"' obtained through approximation.");
                     doSampling=false;
                     doSubsystemSmt=false;
-                    doFullSmt=true; //TODO set this back to false.. this is just for testing
+                    doFullSmt=false;
                 }
             }
             std::chrono::high_resolution_clock::time_point timeApproximationEnd = std::chrono::high_resolution_clock::now();
@@ -471,13 +674,13 @@ namespace storm {
             std::chrono::high_resolution_clock::time_point timeSamplingStart = std::chrono::high_resolution_clock::now();
             if(doSampling){
                 STORM_LOG_DEBUG("Checking sample points...");
-                std::cout << "  Checking sample points..." << std::endl;
+        //        std::cout << "  Checking sample points..." << std::endl;
                 if(checkSamplePoints(region)){
                     ++this->numOfRegionsSolvedThroughSampling;
                     STORM_LOG_DEBUG("Result '" << region.checkResultToString() <<"' obtained through sampling.");
                     doApproximation=false;
                     doSubsystemSmt=false;
-                    doFullSmt=true;//TODO set this back to false.. this is just for testing
+                    doFullSmt=false;
                 }
             }
             std::chrono::high_resolution_clock::time_point timeSamplingEnd = std::chrono::high_resolution_clock::now();
@@ -491,7 +694,7 @@ namespace storm {
             std::chrono::high_resolution_clock::time_point timeFullSmtStart = std::chrono::high_resolution_clock::now();
             if(doFullSmt){
                 STORM_LOG_DEBUG("Checking with Smt Solving...");
-                std::cout << "  Checking with Smt Solving..." << std::endl;
+     //           std::cout << "  Checking with Smt Solving..." << std::endl;
                 if(checkFullSmt(region)){
                     ++this->numOfRegionsSolvedThroughFullSmt;
                     STORM_LOG_DEBUG("Result '" << region.checkResultToString() <<"' obtained through Smt Solving.");
@@ -510,14 +713,38 @@ namespace storm {
             this->timeApproximation += timeApproximationEnd - timeApproximationStart;
             this->timeSubsystemSmt += timeSubsystemSmtEnd - timeSubsystemSmtStart;
             this->timeFullSmt += timeFullSmtEnd - timeFullSmtStart;
+            switch(region.getCheckResult()){
+                case RegionCheckResult::EXISTSBOTH:
+                    ++this->numOfRegionsExistsBoth;
+                    break;
+                case RegionCheckResult::ALLSAT:
+                    ++this->numOfRegionsAllSat;
+                    break;
+                case RegionCheckResult::ALLVIOLATED:
+                    ++this->numOfRegionsAllViolated;
+                    break;
+                default:
+                    break;
+            }
             
         }
 
         template<typename ParametricType, typename ConstantType>
         void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::checkRegions(std::vector<ParameterRegion>& regions) {
+            STORM_LOG_DEBUG("Checking " << regions.size() << "regions.");
+            std::cout << "Checking " << regions.size() << "regions. Progress: ";
+            std::cout.flush();
+                    
+            uint_fast64_t progress=0;
+            uint_fast64_t checkedRegions=0;
             for(auto& region : regions){
                 this->checkRegion(region);
+                if((checkedRegions++)*10/regions.size()==progress){
+                    std::cout << progress++;
+                    std::cout.flush();
+                }
             }
+            std::cout << std::endl;
         }
         
         template<typename ParametricType, typename ConstantType>
@@ -525,7 +752,7 @@ namespace storm {
             
             auto samplingPoints = region.getVerticesOfRegion(region.getVariables()); //test the 4 corner points
             for (auto const& point : samplingPoints){
-                if(checkPoint(region, point, true)){
+                if(checkPoint(region, point, false)){
                     return true;
                 }            
             }
@@ -540,7 +767,26 @@ namespace storm {
                 valueInBoundOfFormula = this->valueIsInBoundOfFormula(storm::utility::regions::evaluateFunction<ParametricType, ConstantType>(this->reachProbFunction, point));
             }
             else{
-                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "sample point check with model instantiation not yet implemented");
+                //put the values into the dtmc matrix
+                for( std::pair<ParametricType, typename storm::storage::MatrixEntry<storm::storage::sparse::state_type, ConstantType>&>& mappingPair : this->sampleDtmcMapping){
+                    mappingPair.second.setValue(storm::utility::regions::convertNumber<BoundType,ConstantType>(
+                            storm::utility::regions::evaluateFunction<ParametricType,ConstantType>(mappingPair.first, point)
+                            )
+                        );
+                }
+                std::shared_ptr<storm::logic::Formula> targetFormulaPtr(new storm::logic::AtomicLabelFormula("target"));
+                storm::logic::EventuallyFormula eventuallyFormula(targetFormulaPtr);
+                storm::modelchecker::SparseDtmcPrctlModelChecker<ConstantType> modelChecker(*this->sampleDtmc);
+                std::unique_ptr<storm::modelchecker::CheckResult> resultPtr = modelChecker.computeEventuallyProbabilities(eventuallyFormula,false);
+                valueInBoundOfFormula=this->valueIsInBoundOfFormula(resultPtr->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector()[*this->sampleDtmc->getInitialStates().begin()]);
+
+        //Delete from here
+           //     ConstantType result=resultPtr->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector()[*this->sampleDtmc->getInitialStates().begin()];
+            //    ConstantType otherresult=storm::utility::regions::convertNumber<BoundType, ConstantType>(storm::utility::regions::evaluateFunction<ParametricType, ConstantType>(this->reachProbFunction, point));
+                
+            //    STORM_LOG_THROW((std::abs(result - otherresult) <= 0.01),storm::exceptions::UnexpectedException, "The results of new DTMC algorithm does not match: " << result << " vs. " << otherresult);
+        //To here
+                
             }
                 
             if(valueInBoundOfFormula){
@@ -571,12 +817,14 @@ namespace storm {
             STORM_LOG_THROW(this->hasOnlyLinearFunctions, storm::exceptions::UnexpectedException, "Tried to generate bounds on the probability (only applicable if all functions are linear), but there are nonlinear functions.");
             //build the mdp and a reachability formula and create a modelchecker
             std::chrono::high_resolution_clock::time_point timeMDPBuildStart = std::chrono::high_resolution_clock::now();
-            storm::models::sparse::Mdp<ConstantType> mdp = buildMdpForApproximation(region);
+            buildMdpForApproximation(region);
             std::chrono::high_resolution_clock::time_point timeMDPBuildEnd = std::chrono::high_resolution_clock::now();
             this->timeMDPBuild += timeMDPBuildEnd-timeMDPBuildStart;
             std::shared_ptr<storm::logic::Formula> targetFormulaPtr(new storm::logic::AtomicLabelFormula("target"));
             storm::logic::EventuallyFormula eventuallyFormula(targetFormulaPtr);
-            storm::modelchecker::SparseMdpPrctlModelChecker<ConstantType> modelChecker(mdp);
+            storm::modelchecker::SparseMdpPrctlModelChecker<ConstantType> modelChecker(*this->approxMdp);
+            
+            
             
             //Decide whether we should compute lower or upper bounds first.
             //This does not matter if the current result is unknown. However, let us assume that it is more likely that the final result will be ALLSAT. So we test this first.
@@ -619,11 +867,20 @@ namespace storm {
             for(int i=1; i<=2; ++i){   
                 //perform model checking on the mdp
                 std::unique_ptr<storm::modelchecker::CheckResult> resultPtr = modelChecker.computeEventuallyProbabilities(eventuallyFormula,false,opType);
-
+                
+        //DELETE FROM HERE
+          //  storm::models::sparse::Mdp<ConstantType> othermdp = buildMdpForApproximation2(region);
+         //   storm::modelchecker::SparseMdpPrctlModelChecker<ConstantType> othermodelChecker(othermdp);
+          //  std::unique_ptr<storm::modelchecker::CheckResult> otherresultPtr = othermodelChecker.computeEventuallyProbabilities(eventuallyFormula,false,opType);
+         //   ConstantType origResult=resultPtr->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector()[*this->approxMdp->getInitialStates().begin()];
+        //    ConstantType otherResult=otherresultPtr->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector()[*othermdp.getInitialStates().begin()];
+        //    STORM_LOG_THROW(this->constantTypeComparator.isEqual(origResult,otherResult),storm::exceptions::UnexpectedException, "The results of new mdp algorithm does not match: " << origResult << " vs. " << otherResult);
+      //TO HERE
+            
                 //check if the approximation yielded a conclusive result
                 if(opType==storm::logic::OptimalityType::Maximize){
                     upperBounds = resultPtr->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
-                    if(valueIsInBoundOfFormula(upperBounds[*mdp.getInitialStates().begin()])){
+                    if(valueIsInBoundOfFormula(upperBounds[*this->approxMdp->getInitialStates().begin()])){
                         if((this->probabilityOperatorFormula->getComparisonType()== storm::logic::ComparisonType::Less) || 
                                 (this->probabilityOperatorFormula->getComparisonType()== storm::logic::ComparisonType::LessEqual)){
                             region.setCheckResult(RegionCheckResult::ALLSAT);
@@ -639,11 +896,11 @@ namespace storm {
                     }
                     //flip the optype for the next iteration
                     opType=storm::logic::OptimalityType::Minimize;
-                    if(i==1) std::cout << "    Requiring a second model checker run (with Minimize)" << std::endl;
+           //         if(i==1) std::cout << "    Requiring a second model checker run (with Minimize)" << std::endl;
                 }
                 else if(opType==storm::logic::OptimalityType::Minimize){
                     lowerBounds = resultPtr->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
-                    if(valueIsInBoundOfFormula(lowerBounds[*mdp.getInitialStates().begin()])){
+                    if(valueIsInBoundOfFormula(lowerBounds[*this->approxMdp->getInitialStates().begin()])){
                         if((this->probabilityOperatorFormula->getComparisonType()== storm::logic::ComparisonType::Greater) || 
                                 (this->probabilityOperatorFormula->getComparisonType()== storm::logic::ComparisonType::GreaterEqual)){
                             region.setCheckResult(RegionCheckResult::ALLSAT);
@@ -659,7 +916,7 @@ namespace storm {
                     }                
                     //flip the optype for the next iteration
                     opType=storm::logic::OptimalityType::Maximize;
-                    if(i==1) std::cout << "    Requiring a second model checker run (with Maximize)" << std::endl;
+        //            if(i==1) std::cout << "    Requiring a second model checker run (with Maximize)" << std::endl;
                 }
             }
             
@@ -668,7 +925,37 @@ namespace storm {
         }
         
         template<typename ParametricType, typename ConstantType>
-        storm::models::sparse::Mdp<ConstantType> SparseDtmcRegionModelChecker<ParametricType, ConstantType>::buildMdpForApproximation(const ParameterRegion& region) {
+        void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::buildMdpForApproximation(const ParameterRegion& region) {
+            //instantiate the substitutions for the given region
+            std::vector<std::map<VariableType, BoundType>> substitutions(this->approxMdpSubstitutions.size());
+            for(uint_fast64_t substitutionIndex=0; substitutionIndex<this->approxMdpSubstitutions.size(); ++substitutionIndex){
+                for(std::pair<VariableType, TypeOfBound> const& sub : this->approxMdpSubstitutions[substitutionIndex]){
+                    switch(sub.second){
+                        case TypeOfBound::LOWER:
+                            substitutions[substitutionIndex].insert(std::make_pair(sub.first, region.getLowerBound(sub.first)));
+                            break;
+                        case TypeOfBound::UPPER:
+                            substitutions[substitutionIndex].insert(std::make_pair(sub.first, region.getUpperBound(sub.first)));
+                            break;
+                        default:
+                            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected Type of Bound");
+                    }
+                }
+            }
+            
+            //now put the values into the mdp matrix
+            for( std::tuple<ParametricType, typename storm::storage::MatrixEntry<storm::storage::sparse::state_type, ConstantType>&, size_t>& mappingTriple : this->approxMdpMapping){
+                std::get<1>(mappingTriple).setValue(storm::utility::regions::convertNumber<BoundType,ConstantType>(
+                                                storm::utility::regions::evaluateFunction<ParametricType,ConstantType>(std::get<0>(mappingTriple),substitutions[std::get<2>(mappingTriple)])
+                                                )
+                                            );
+            }
+            
+        }
+        
+        //DELETEME
+        template<typename ParametricType, typename ConstantType>
+        storm::models::sparse::Mdp<ConstantType> SparseDtmcRegionModelChecker<ParametricType, ConstantType>::buildMdpForApproximation2(const ParameterRegion& region) {
             //We are going to build a (non parametric) MDP which has an action for the lower bound and an action for the upper bound of every parameter 
             
             //The matrix (and the Choice labeling)
@@ -877,16 +1164,94 @@ namespace storm {
             }
         }
 
+             template<typename ParametricType, typename ConstantType>
+        template<typename ValueType>
+        bool SparseDtmcRegionModelChecker<ParametricType, ConstantType>::valueIsInBoundOfFormula(ValueType value){
+            STORM_LOG_THROW(this->probabilityOperatorFormula!=nullptr, storm::exceptions::InvalidStateException, "Tried to compare a value to the bound of a formula, but no formula specified.");
+            double valueAsDouble = storm::utility::regions::convertNumber<ValueType, double>(value);
+        //    std::cout << "checked whether value: " << value << " (= " << valueAsDouble << " double ) is in bound of formula: " << *this->probabilityOperatorFormula << std::endl;
+        //    std::cout << "     (valueAsDouble >= this->probabilityOperatorFormula->getBound()) is " << (valueAsDouble >= this->probabilityOperatorFormula->getBound()) << std::endl;
+            switch (this->probabilityOperatorFormula->getComparisonType()) {
+                case storm::logic::ComparisonType::Greater:
+                    return (valueAsDouble > this->probabilityOperatorFormula->getBound());
+                case storm::logic::ComparisonType::GreaterEqual:
+                    return (valueAsDouble >= this->probabilityOperatorFormula->getBound());
+                case storm::logic::ComparisonType::Less:
+                    return (valueAsDouble < this->probabilityOperatorFormula->getBound());
+                case storm::logic::ComparisonType::LessEqual:
+                    return (valueAsDouble <= this->probabilityOperatorFormula->getBound());
+                default:
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "the comparison relation of the formula is not supported");
+            }
+        }
+
+        template<typename ParametricType, typename ConstantType>
+        void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::printStatisticsToStream(std::ostream& outstream) {
+            
+            if(this->probabilityOperatorFormula==nullptr){
+                outstream << "Statistic Region Model Checker Statistics Error: No formula specified." << std::endl; 
+                return;
+            }
+            
+            std::chrono::milliseconds timePreprocessingInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timePreprocessing);
+            std::chrono::milliseconds timeInitialStateEliminationInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timeInitialStateElimination);
+            std::chrono::milliseconds timeComputeReachProbFunctionInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timeComputeReachProbFunction);
+            std::chrono::milliseconds timeCheckRegionInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timeCheckRegion);
+            std::chrono::milliseconds timeSammplingInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timeSampling);
+            std::chrono::milliseconds timeApproximationInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timeApproximation);
+            std::chrono::milliseconds timeMDPBuildInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timeMDPBuild);
+            std::chrono::milliseconds timeFullSmtInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timeFullSmt);
+            
+            std::chrono::high_resolution_clock::duration timeOverall = timePreprocessing + timeCheckRegion; // + ...
+            std::chrono::milliseconds timeOverallInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(timeOverall);
+            
+            std::size_t subsystemTransitions = this->sparseTransitions.getNonzeroEntryCount();
+            for(auto const& transition : this->oneStepProbabilities){
+                if(!this->parametricTypeComparator.isZero(transition)){
+                    ++subsystemTransitions;
+                }
+            }
+            
+            uint_fast64_t numOfSolvedRegions= this->numOfRegionsExistsBoth + this->numOfRegionsAllSat + this->numOfRegionsAllViolated;
+            
+            outstream << std::endl << "Statistics Region Model Checker Statistics:" << std::endl;
+            outstream << "-----------------------------------------------" << std::endl;
+            outstream << "Model: " << this->model.getNumberOfStates() << " states, " << this->model.getNumberOfTransitions() << " transitions." << std::endl;
+            outstream << "Reduced model: " << this->subsystem.getNumberOfSetBits() << " states, " << subsystemTransitions << "transitions" << std::endl;
+            outstream << "Formula: " << *this->probabilityOperatorFormula << std::endl;
+            outstream << (this->hasOnlyLinearFunctions ? "A" : "Not a") << "ll occuring functions in the model are linear" << std::endl;
+            outstream << "Number of checked regions: " << this->numOfCheckedRegions << std::endl;
+            outstream << "  Number of solved regions:  " <<  numOfSolvedRegions << "(" << numOfSolvedRegions*100/this->numOfCheckedRegions << "%)" <<  std::endl;
+            outstream << "    AllSat:      " <<  this->numOfRegionsAllSat << "(" << this->numOfRegionsAllSat*100/this->numOfCheckedRegions << "%)" <<  std::endl;
+            outstream << "    AllViolated: " <<  this->numOfRegionsAllViolated << "(" << this->numOfRegionsAllViolated*100/this->numOfCheckedRegions << "%)" <<  std::endl;
+            outstream << "    ExistsBoth:  " <<  this->numOfRegionsExistsBoth << "(" << this->numOfRegionsExistsBoth*100/this->numOfCheckedRegions << "%)" <<  std::endl;
+            outstream << "    Unsolved:    " <<  this->numOfCheckedRegions - numOfSolvedRegions << "(" << (this->numOfCheckedRegions - numOfSolvedRegions)*100/this->numOfCheckedRegions << "%)" <<  std::endl;
+            outstream << "  --  " <<  std::endl;
+            outstream << "  " << this->numOfRegionsSolvedThroughSampling << " regions solved through Sampling" << std::endl;
+            outstream << "  " << this->numOfRegionsSolvedThroughApproximation << " regions solved through Approximation" << std::endl;
+            outstream << "  " << this->numOfRegionsSolvedThroughSubsystemSmt << " regions solved through SubsystemSmt" << std::endl;
+            outstream << "  " << this->numOfRegionsSolvedThroughFullSmt << " regions solved through FullSmt" << std::endl;
+            outstream << std::endl;
+            outstream << "Running times:" << std::endl;
+            outstream << "  " << timeOverallInMilliseconds.count() << "ms overall" << std::endl;
+            outstream << "  " << timePreprocessingInMilliseconds.count() << "ms Preprocessing including... " << std::endl;
+            outstream << "    " << timeInitialStateEliminationInMilliseconds.count() << "ms Initial state elimination including..." << std::endl;
+            outstream << "      " << timeComputeReachProbFunctionInMilliseconds.count() << "ms to compute the reachability probability function" << std::endl;
+            outstream << "  " << timeCheckRegionInMilliseconds.count() << "ms Region Check including... " << std::endl;
+            outstream << "    " << timeSammplingInMilliseconds.count() << "ms Sampling " << std::endl;
+            outstream << "    " << timeApproximationInMilliseconds.count() << "ms Approximation including... " << std::endl;
+            outstream << "      " << timeMDPBuildInMilliseconds.count() << "ms to build the MDP" << std::endl;
+            outstream << "    " << timeFullSmtInMilliseconds.count() << "ms Full Smt solving" << std::endl;
+            outstream << "-----------------------------------------------" << std::endl;
+            
+        }
+   
+
+
+
+#ifdef STORM_HAVE_CARL
         
-
-
-
-
-
-
-        
-        
-        
+        //DELETEME
         template<>
         std::pair<storm::storage::SparseMatrix<double>,std::vector<boost::container::flat_set<uint_fast64_t>>> SparseDtmcRegionModelChecker<storm::RationalFunction, double>::instantiateFlexibleMatrix(FlexibleMatrix const& matrix, std::vector<std::map<storm::Variable, storm::RationalFunction::CoeffType>> const& substitutions, storm::storage::BitVector const& filter, bool addSinkState, std::vector<storm::RationalFunction> const& oneStepProbabilities, bool addSelfLoops) const {
             
@@ -984,13 +1349,14 @@ namespace storm {
             return std::pair<storm::storage::SparseMatrix<double>, std::vector<boost::container::flat_set<uint_fast64_t>>>(matrixBuilder.build(), std::move(choiceLabeling));
         }
         
+        //DELETEME
         template<typename ParametricType, typename ConstantType>
         std::pair<storm::storage::SparseMatrix<double>,std::vector<boost::container::flat_set<uint_fast64_t>>> SparseDtmcRegionModelChecker<ParametricType, ConstantType>::instantiateFlexibleMatrix(FlexibleMatrix const& matrix, std::vector<std::map<storm::Variable, storm::RationalFunction::CoeffType>> const& substitutions, storm::storage::BitVector const& filter, bool addSinkState, std::vector<ParametricType> const& oneStepProbabilities, bool addSelfLoops) const{
             STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Instantiation of flexible matrix is not supported for this type");
         }
 
-#ifdef STORM_HAVE_CARL
-                
+
+      //DELETEME
         template<>
         void SparseDtmcRegionModelChecker<storm::RationalFunction, double>::eliminateStates(storm::storage::BitVector& subsystem, FlexibleMatrix& flexibleMatrix, std::vector<storm::RationalFunction>& oneStepProbabilities, FlexibleMatrix& flexibleBackwardTransitions, storm::storage::BitVector const& initialstates, storm::storage::SparseMatrix<storm::RationalFunction> const& forwardTransitions, boost::optional<std::vector<std::size_t>> const& statePriorities){
     
@@ -1057,7 +1423,7 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "elimination of states not suported for this type");
         }
 
-        
+        //OBSOLETE ... 
         template<>
         void SparseDtmcRegionModelChecker<storm::RationalFunction, double>::formulateModelWithSMT(storm::solver::Smt2SmtSolver& solver, std::vector<storm::RationalFunction::PolyType>& stateProbVars, storm::storage::BitVector const& subsystem, FlexibleMatrix const& flexibleMatrix, std::vector<storm::RationalFunction> const& oneStepProbabilities){
             carl::VariablePool& varPool = carl::VariablePool::getInstance();
@@ -1092,6 +1458,7 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "SMT formulation is not supported for this type");
         }
         
+        //DELETEME
         template<>
         void SparseDtmcRegionModelChecker<storm::RationalFunction, double>::restrictProbabilityVariables(storm::solver::Smt2SmtSolver& solver, std::vector<storm::RationalFunction::PolyType> const& stateProbVars, storm::storage::BitVector const& subsystem, FlexibleMatrix const& flexibleMatrix, std::vector<storm::RationalFunction> const& oneStepProbabilities, ParameterRegion const& region, storm::logic::ComparisonType const& compType){
             //We are going to build a new (non parametric) MDP which has an action for the lower bound and an action for the upper bound of every parameter 
@@ -1165,6 +1532,7 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "restricting Probability Variables is not supported for this type");
         }
         
+        //DELETEME
         template<>
         bool SparseDtmcRegionModelChecker<storm::RationalFunction, double>::checkRegionOld(storm::logic::Formula const& formula, std::vector<ParameterRegion> parameterRegions){
             //Note: this is an 'experimental' implementation
@@ -1340,79 +1708,10 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Region check is not supported for this type");
         }
         
-        template<typename ParametricType, typename ConstantType>
-        template<typename ValueType>
-        bool SparseDtmcRegionModelChecker<ParametricType, ConstantType>::valueIsInBoundOfFormula(ValueType value){
-            STORM_LOG_THROW(this->probabilityOperatorFormula!=nullptr, storm::exceptions::InvalidStateException, "Tried to compare a value to the bound of a formula, but no formula specified.");
-            double valueAsDouble = storm::utility::regions::convertNumber<ValueType, double>(value);
-            switch (this->probabilityOperatorFormula->getComparisonType()) {
-                case storm::logic::ComparisonType::Greater:
-                    return (valueAsDouble > this->probabilityOperatorFormula->getBound());
-                case storm::logic::ComparisonType::GreaterEqual:
-                    return (valueAsDouble >= this->probabilityOperatorFormula->getBound());
-                case storm::logic::ComparisonType::Less:
-                    return (valueAsDouble < this->probabilityOperatorFormula->getBound());
-                case storm::logic::ComparisonType::LessEqual:
-                    return (valueAsDouble <= this->probabilityOperatorFormula->getBound());
-                default:
-                    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "the comparison relation of the formula is not supported");
-            }
-        }
+        #endif
 
-        template<typename ParametricType, typename ConstantType>
-        void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::printStatisticsToStream(std::ostream& outstream) {
-            
-            if(this->probabilityOperatorFormula==nullptr){
-                outstream << "Statistic Region Model Checker Statistics Error: No formula specified." << std::endl; 
-                return;
-            }
-            
-            std::chrono::milliseconds timePreprocessingInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timePreprocessing);
-            std::chrono::milliseconds timeInitialStateEliminationInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timeInitialStateElimination);
-            std::chrono::milliseconds timeComputeReachProbFunctionInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timeComputeReachProbFunction);
-            std::chrono::milliseconds timeCheckRegionInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timeCheckRegion);
-            std::chrono::milliseconds timeSammplingInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timeSampling);
-            std::chrono::milliseconds timeApproximationInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timeApproximation);
-            std::chrono::milliseconds timeMDPBuildInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timeMDPBuild);
-            std::chrono::milliseconds timeFullSmtInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timeFullSmt);
-            
-            std::chrono::high_resolution_clock::duration timeOverall = timePreprocessing + timeCheckRegion; // + ...
-            std::chrono::milliseconds timeOverallInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(timeOverall);
-            
-            std::size_t subsystemTransitions = this->sparseTransitions.getNonzeroEntryCount();
-            for(auto const& transition : this->oneStepProbabilities){
-                if(!this->parametricTypeComparator.isZero(transition)){
-                    ++subsystemTransitions;
-                }
-            }
-            
-            outstream << std::endl << "Statistics Region Model Checker Statistics:" << std::endl;
-            outstream << "-----------------------------------------------" << std::endl;
-            outstream << "Model: " << this->model.getNumberOfStates() << " states, " << this->model.getNumberOfTransitions() << " transitions." << std::endl;
-            outstream << "Reduced model: " << this->subsystem.getNumberOfSetBits() << " states, " << subsystemTransitions << "transitions" << std::endl;
-            outstream << "Formula: " << *this->probabilityOperatorFormula << std::endl;
-            outstream << (this->hasOnlyLinearFunctions ? "A" : "Not a") << "ll occuring functions in the model are linear" << std::endl;
-            outstream << "Number of checked regions: " << this->numOfCheckedRegions << " with..." << std::endl;
-            outstream << "  " << this->numOfRegionsSolvedThroughSampling << " regions solved through Sampling" << std::endl;
-            outstream << "  " << this->numOfRegionsSolvedThroughApproximation << " regions solved through Approximation" << std::endl;
-            outstream << "  " << this->numOfRegionsSolvedThroughSubsystemSmt << " regions solved through SubsystemSmt" << std::endl;
-            outstream << "  " << this->numOfRegionsSolvedThroughFullSmt << " regions solved through FullSmt" << std::endl;
-            outstream << "Running times:" << std::endl;
-            outstream << "  " << timeOverallInMilliseconds.count() << "ms overall" << std::endl;
-            outstream << "  " << timePreprocessingInMilliseconds.count() << "ms Preprocessing including... " << std::endl;
-            outstream << "    " << timeInitialStateEliminationInMilliseconds.count() << "ms Initial state elimination including..." << std::endl;
-            outstream << "      " << timeComputeReachProbFunctionInMilliseconds.count() << "ms to compute the reachability probability function" << std::endl;
-            outstream << "  " << timeCheckRegionInMilliseconds.count() << "ms Region Check including... " << std::endl;
-            outstream << "    " << timeSammplingInMilliseconds.count() << "ms Sampling " << std::endl;
-            outstream << "    " << timeApproximationInMilliseconds.count() << "ms Approximation including... " << std::endl;
-            outstream << "      " << timeMDPBuildInMilliseconds.count() << "ms to build the MDP" << std::endl;
-            outstream << "    " << timeFullSmtInMilliseconds.count() << "ms Full Smt solving" << std::endl;
-            outstream << "-----------------------------------------------" << std::endl;
-            
-        }
 
         
-#endif
         
 #ifdef STORM_HAVE_CARL
         template class SparseDtmcRegionModelChecker<storm::RationalFunction, double>;

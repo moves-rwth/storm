@@ -155,6 +155,14 @@ namespace storm {
              */
             template<typename SolverType, typename VariableType>
             void addBoolVariableToSmtSolver(std::shared_ptr<SolverType> solver, VariableType const& variable, bool value);
+            
+            
+            /*!
+             * Returns a new function that initially has the given value (which might be a constant or a variable)
+             * 
+             */
+            template<typename ParametricType, typename ValueType>
+            ParametricType getNewFunction(ValueType initialValue);
         }
     }
 }

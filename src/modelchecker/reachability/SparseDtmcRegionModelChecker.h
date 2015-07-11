@@ -20,7 +20,7 @@ namespace storm {
             
             //The type of variables and bounds depends on the template arguments
             typedef typename std::conditional<(std::is_same<ParametricType,storm::RationalFunction>::value), storm::Variable,std::nullptr_t>::type VariableType;
-            typedef typename std::conditional<(std::is_same<ParametricType,storm::RationalFunction>::value), storm::RationalFunction::CoeffType,std::nullptr_t>::type BoundType;
+            typedef typename std::conditional<(std::is_same<ParametricType,storm::RationalFunction>::value), storm::Coefficient,std::nullptr_t>::type BoundType;
             
             /*!
              * The possible results for a single region
@@ -149,6 +149,9 @@ namespace storm {
              * Prints statistical information (mostly running times) to the given stream.
              */
             void printStatisticsToStream(std::ostream& outstream);
+            
+            
+            
         private:
             
             typedef typename storm::modelchecker::SparseDtmcEliminationModelChecker<ParametricType>::FlexibleSparseMatrix FlexibleMatrix;
@@ -207,6 +210,44 @@ namespace storm {
                     storm::storage::sparse::state_type const& initState
             );
             
+            
+            
+            enum class TypeOfBound { 
+                LOWER,
+                UPPER
+            };
+            
+            /*!
+             * Initializes a DTMC that can be used to get the probability result for a certain parameter evaluation.
+             * To quickly insert different evaluations, we provide a dtmc with some dummy values in the transition entries.
+             * Furthermore, another matrix is given that is used to connect matrix entries and transition functions.
+             * In a similar way an MDP is initialized. The Mdp can be used to approximate the probabilities.
+             * In addition to matrix entries and transition functions, we specify which variables and which bounds needs to be substituted
+             * 
+             * 
+             * @param sampleDtmc This dtmc can represent different instantiations of the considered pDtmc
+             * @param sampleDtmcMapping Connects the entries of the sampleDtmc Matrix with the corresponding transitionFunctions
+             * @param approxMdp This mdp will later be used to approximate the reachability probabilities
+             * @param approxMdpMapping Connects the entries of the approxMdp Matrix with the corresponding transitionFunctions and a substitution (given as an index in the approxMdpSubstitutionsVector)
+             * @param approxMdpSubstitutions contains the substitutions of the parameters
+             * 
+             * @param subsys the states of the flexTransitions that are still part of the pDTMC (i.e. that have not been eliminated)
+             * @param flexTransitions the transitions of the pDTMC 
+             * @param oneStepProbs the probabilities to move to a target state
+             * @param initState the initial state of the pDtmc
+             */
+            void initializeSampleDtmcAndApproxMdp(
+                    std::shared_ptr<storm::models::sparse::Dtmc<ConstantType>> & sampleDtmc,
+                    std::vector<std::pair<ParametricType, storm::storage::MatrixEntry<storm::storage::sparse::state_type,ConstantType>&>> & sampleDtmcMapping,
+                    std::shared_ptr<storm::models::sparse::Mdp<ConstantType>> & approxMdp,
+                    std::vector<std::tuple<ParametricType, storm::storage::MatrixEntry<storm::storage::sparse::state_type,ConstantType>&, std::size_t>> & approxMdpMapping,
+                    std::vector<std::map<VariableType, TypeOfBound>> & approxMdpSubstitutions,
+                    storm::storage::BitVector const& subsys,
+                    storm::storage::SparseMatrix<ParametricType> const& transitions,
+                    std::vector<ParametricType> const& oneStepProbs,
+                    storm::storage::sparse::state_type const& initState
+            );
+            
             //Computes the reachability probability function by performing state elimination
             ParametricType computeReachProbFunction(
                 storm::storage::BitVector const& subsys,
@@ -254,9 +295,16 @@ namespace storm {
             
             
             /*!
-             * Actually builds the mdp that is used to obtain bounds on the maximal/minimal reachability probability
+             * Builds the mdp that is used to obtain bounds on the maximal/minimal reachability probability
+             * The result is stored in this->approxMdp
              */
-            storm::models::sparse::Mdp<ConstantType> buildMdpForApproximation(ParameterRegion const& region);
+            void buildMdpForApproximation(ParameterRegion const& region);
+            
+            /*!
+             * Builds the mdp that is used to obtain bounds on the maximal/minimal reachability probability
+             
+             */
+            storm::models::sparse::Mdp<ConstantType> buildMdpForApproximation2(ParameterRegion const& region);
             
             /*!
              * Starts the SMTSolver to get the result.
@@ -303,6 +351,20 @@ namespace storm {
             storm::storage::BitVector subsystem;
             // a flag that is true if there are only linear functions at transitions of the model
             bool hasOnlyLinearFunctions;
+            // the dtmc that can be instantiated to check the value at a certain point
+            std::shared_ptr<storm::models::sparse::Dtmc<ConstantType>> sampleDtmc;
+            // a vector that links entries of the dtmc matrix with the corresponding transition functions (for fast instantiation)
+            std::vector<std::pair<ParametricType, storm::storage::MatrixEntry<storm::storage::sparse::state_type,ConstantType>&>> sampleDtmcMapping;
+            // the Mdp that is used to approximate the probability values
+            std::shared_ptr<storm::models::sparse::Mdp<ConstantType>>  approxMdp;
+            // a vector that links entries of the mdp matrix with the corresponding transition functions and substitutions (given as an index of this->approxMdpSubstitutions vector)
+            std::vector<std::tuple<ParametricType, storm::storage::MatrixEntry<storm::storage::sparse::state_type,ConstantType>&, std::size_t>> approxMdpMapping;
+            // stores the different substitutions of the variables
+            std::vector<std::map<VariableType, TypeOfBound>> approxMdpSubstitutions;
+                    
+            
+            
+
             
             // The  function for the reachability probability in the initial state 
             ParametricType reachProbFunction;
@@ -310,10 +372,15 @@ namespace storm {
             
             // runtimes and other information for statistics. 
             uint_fast64_t numOfCheckedRegions;
+            
             uint_fast64_t numOfRegionsSolvedThroughSampling;
             uint_fast64_t numOfRegionsSolvedThroughApproximation;
             uint_fast64_t numOfRegionsSolvedThroughSubsystemSmt;
             uint_fast64_t numOfRegionsSolvedThroughFullSmt;
+            
+            uint_fast64_t numOfRegionsExistsBoth;
+            uint_fast64_t numOfRegionsAllSat;
+            uint_fast64_t numOfRegionsAllViolated;
             
             std::chrono::high_resolution_clock::duration timePreprocessing;
             std::chrono::high_resolution_clock::duration timeInitialStateElimination;

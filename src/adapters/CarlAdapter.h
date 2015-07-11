@@ -36,7 +36,8 @@ namespace carl {
 
 namespace storm {
 	typedef carl::Variable Variable;
-    typedef carl::MultivariatePolynomial<cln::cl_RA> RawPolynomial;
+        typedef cln::cl_RA Coefficient;
+    typedef carl::MultivariatePolynomial<Coefficient> RawPolynomial;
     typedef carl::FactorizedPolynomial<RawPolynomial> Polynomial;
 	typedef carl::CompareRelation CompareRelation;
 	typedef carl::RationalFunction<Polynomial> RationalFunction;
