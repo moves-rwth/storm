@@ -99,6 +99,10 @@ namespace storm {
             virtual void print(std::ostream& = std::cout) const = 0;
             
             virtual bool checkDontCareAnymore(storm::storage::DFTState& state, DFTStateSpaceGenerationQueues& queues) const;
+            
+            virtual std::vector<size_t> independentUnit() const = 0;
+        
+            virtual void  extendUnit(std::set<size_t>& unit) const;
         };
 
 
@@ -166,6 +170,21 @@ namespace storm {
                 }
             }
             
+            virtual std::vector<size_t> independentUnit() const {
+                std::set<size_t> unit = {mId};
+                for(auto const& child : mChildren) {
+                    child->extendUnit(unit);
+                }
+                for(auto const& parent : mParents) {
+                    if(unit.count(parent->id()) != 0) {
+                        return {};
+                    } 
+                }
+                return std::vector<size_t>(unit.begin(), unit.end()); 
+           }
+
+            
+            
             virtual void print(std::ostream& os = std::cout) const {
                 os << "{" << name() << "} " << typestring() << "( ";
                 std::vector<std::shared_ptr<DFTElement>>::const_iterator it = mChildren.begin();
@@ -185,7 +204,16 @@ namespace storm {
                 }
                 return false;
             }
+            
+            virtual void extendUnit(std::set<size_t>& unit) const {
+                DFTElement::extendUnit(unit);
+                for(auto const& child : mChildren) {
+                    child->extendUnit(unit);
+                }
+            }
+            
         protected:
+            
             void fail(DFTState& state, DFTStateSpaceGenerationQueues& queues) const {
                 for(std::shared_ptr<DFTGate> parent : mParents) {
                     if(state.isOperational(parent->id())) {
@@ -269,7 +297,9 @@ namespace storm {
                 return mPassiveFailureRate == 0;
             }
             
-
+            virtual std::vector<size_t> independentUnit() const {
+                return {mId};
+            }
             virtual bool checkDontCareAnymore(storm::storage::DFTState& state, DFTStateSpaceGenerationQueues& queues) const;
         };
         

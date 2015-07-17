@@ -37,7 +37,6 @@ namespace storm {
                     mUsageIndex.insert(std::make_pair(elem->id(), stateIndex));
                     stateIndex += mUsageInfoBits;
 
-
                 }
             }
 
@@ -68,6 +67,8 @@ namespace storm {
                 os << std::endl;
             }
         }
+        
+        
 
         void DFT::printInfo(std::ostream& os) const {
             os << "Top level index: " << mTopLevelIndex << std::endl << "Nr BEs" << mNrOfBEs << std::endl;

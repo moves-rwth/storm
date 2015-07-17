@@ -26,6 +26,19 @@ namespace storm {
             }
         }
         
+        void DFTElement::extendUnit(std::set<size_t>& unit) const {
+            unit.insert(mId);
+            for(auto const& parent : mParents) {
+                if(unit.count(parent->id()) != 0) {
+                    parent->extendUnit(unit);
+                }
+            }
+        }
+        
+        void DFTElement::checkForSymmetricChildren() const {
+            
+        }
+        
         template<>
         bool DFTBE<double>::checkDontCareAnymore(storm::storage::DFTState& state, DFTStateSpaceGenerationQueues& queues) const {
             if(DFTElement::checkDontCareAnymore(state, queues)) {
@@ -34,5 +47,6 @@ namespace storm {
             }
             return false;
         }
+        
     }
 }
