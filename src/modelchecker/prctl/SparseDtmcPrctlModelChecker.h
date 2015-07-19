@@ -5,6 +5,7 @@
 #include "src/models/sparse/Dtmc.h"
 #include "src/utility/solver.h"
 #include "src/solver/LinearEquationSolver.h"
+#include "src/storage/StronglyConnectedComponent.h"
 
 namespace storm {
     namespace modelchecker {
@@ -27,6 +28,7 @@ namespace storm {
             virtual std::unique_ptr<CheckResult> computeCumulativeRewards(storm::logic::CumulativeRewardFormula const& rewardPathFormula, bool qualitative = false, boost::optional<storm::logic::OptimalityType> const& optimalityType = boost::optional<storm::logic::OptimalityType>()) override;
             virtual std::unique_ptr<CheckResult> computeInstantaneousRewards(storm::logic::InstantaneousRewardFormula const& rewardPathFormula, bool qualitative = false, boost::optional<storm::logic::OptimalityType> const& optimalityType = boost::optional<storm::logic::OptimalityType>()) override;
             virtual std::unique_ptr<CheckResult> computeReachabilityRewards(storm::logic::ReachabilityRewardFormula const& rewardPathFormula, bool qualitative = false, boost::optional<storm::logic::OptimalityType> const& optimalityType = boost::optional<storm::logic::OptimalityType>()) override;
+			virtual std::unique_ptr<CheckResult> computeLongRunAverage(storm::logic::StateFormula const& stateFormula, bool qualitative = false, boost::optional<storm::logic::OptimalityType> const& optimalityType = boost::optional<storm::logic::OptimalityType>()) override;
             
         protected:
             storm::models::sparse::Dtmc<ValueType> const& getModel() const override;
@@ -39,7 +41,10 @@ namespace storm {
             std::vector<ValueType> computeInstantaneousRewardsHelper(uint_fast64_t stepCount) const;
             std::vector<ValueType> computeCumulativeRewardsHelper(uint_fast64_t stepBound) const;
             static std::vector<ValueType> computeReachabilityRewardsHelper(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, boost::optional<std::vector<ValueType>> const& stateRewardVector, boost::optional<storm::storage::SparseMatrix<ValueType>> const& transitionRewardMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& targetStates, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory, bool qualitative);
-            
+			std::vector<ValueType> computeLongRunAverageHelper(storm::storage::BitVector const& psiStates, bool qualitative) const;
+
+			static ValueType computeLraForBSCC(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& goalStates, storm::storage::StronglyConnectedComponent const& bscc, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory);
+
             // An object that is used for retrieving linear equation solvers.
             std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<ValueType>> linearEquationSolverFactory;
         };

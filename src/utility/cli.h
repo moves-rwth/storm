@@ -429,7 +429,7 @@ namespace storm {
                         } else {
                             storm::modelchecker::SparseDtmcEliminationModelChecker<ValueType> modelchecker2(*dtmc);
                             if (modelchecker2.canHandle(*formula.get())) {
-                                modelchecker2.check(*formula.get());
+                                result = modelchecker2.check(*formula.get());
                             }
                         }
                     } else if (model->getType() == storm::models::ModelType::Mdp) {

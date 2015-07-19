@@ -5,6 +5,8 @@
 #include "src/models/sparse/Mdp.h"
 #include "src/utility/solver.h"
 #include "src/solver/MinMaxLinearEquationSolver.h"
+#include "src/storage/MaximalEndComponent.h"
+
 
 namespace storm {
     namespace counterexamples {
@@ -39,6 +41,7 @@ namespace storm {
             virtual std::unique_ptr<CheckResult> computeCumulativeRewards(storm::logic::CumulativeRewardFormula const& rewardPathFormula, bool qualitative = false, boost::optional<storm::logic::OptimalityType> const& optimalityType = boost::optional<storm::logic::OptimalityType>()) override;
             virtual std::unique_ptr<CheckResult> computeInstantaneousRewards(storm::logic::InstantaneousRewardFormula const& rewardPathFormula, bool qualitative = false, boost::optional<storm::logic::OptimalityType> const& optimalityType = boost::optional<storm::logic::OptimalityType>()) override;
             virtual std::unique_ptr<CheckResult> computeReachabilityRewards(storm::logic::ReachabilityRewardFormula const& rewardPathFormula, bool qualitative = false, boost::optional<storm::logic::OptimalityType> const& optimalityType = boost::optional<storm::logic::OptimalityType>()) override;
+			virtual std::unique_ptr<CheckResult> computeLongRunAverage(storm::logic::StateFormula const& stateFormula, bool qualitative = false, boost::optional<storm::logic::OptimalityType> const& optimalityType = boost::optional<storm::logic::OptimalityType>()) override;
             
         protected:
             storm::models::sparse::Mdp<ValueType> const& getModel() const override;
@@ -52,7 +55,10 @@ namespace storm {
             std::vector<ValueType> computeInstantaneousRewardsHelper(bool minimize, uint_fast64_t stepCount) const;
             std::vector<ValueType> computeCumulativeRewardsHelper(bool minimize, uint_fast64_t stepBound) const;
             std::vector<ValueType> computeReachabilityRewardsHelper(bool minimize, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, boost::optional<std::vector<ValueType>> const& stateRewardVector, boost::optional<storm::storage::SparseMatrix<ValueType>> const& transitionRewardMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& targetStates, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& MinMaxLinearEquationSolverFactory, bool qualitative) const;
+			std::vector<ValueType> computeLongRunAverageHelper(bool minimize, storm::storage::BitVector const& psiStates, bool qualitative) const;
             
+			static ValueType computeLraForMaximalEndComponent(bool minimize, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& goalStates, storm::storage::MaximalEndComponent const& mec);
+
             // An object that is used for retrieving solvers for systems of linear equations that are the result of nondeterministic choices.
             std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType>> MinMaxLinearEquationSolverFactory;
         };
