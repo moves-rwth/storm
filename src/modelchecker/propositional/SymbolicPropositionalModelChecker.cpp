@@ -1,6 +1,7 @@
 #include "src/modelchecker/propositional/SymbolicPropositionalModelChecker.h"
 
 #include "src/models/symbolic/Dtmc.h"
+#include "src/models/symbolic/Ctmc.h"
 #include "src/models/symbolic/Mdp.h"
 
 #include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"
@@ -36,6 +37,11 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type>
+        std::unique_ptr<CheckResult> SymbolicPropositionalModelChecker<Type>::checkAtomicExpressionFormula(storm::logic::AtomicExpressionFormula const& stateFormula) {
+            return std::unique_ptr<CheckResult>(new SymbolicQualitativeCheckResult<Type>(model.getReachableStates(), model.getStates(stateFormula.getExpression())));
+        }
+        
+        template<storm::dd::DdType Type>
         storm::models::symbolic::Model<Type> const& SymbolicPropositionalModelChecker<Type>::getModel() const {
             return model;
         }
@@ -48,6 +54,7 @@ namespace storm {
         
         // Explicitly instantiate the template class.
         template storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD> const& SymbolicPropositionalModelChecker<storm::dd::DdType::CUDD>::getModelAs() const;
+        template storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD> const& SymbolicPropositionalModelChecker<storm::dd::DdType::CUDD>::getModelAs() const;
         template storm::models::symbolic::Mdp<storm::dd::DdType::CUDD> const& SymbolicPropositionalModelChecker<storm::dd::DdType::CUDD>::getModelAs() const;
         template class SymbolicPropositionalModelChecker<storm::dd::DdType::CUDD>;
     }

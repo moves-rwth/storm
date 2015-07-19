@@ -127,3 +127,148 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, SynchronousLeader) {
 
 	EXPECT_NEAR(1.044879046, quantitativeResult3[0], storm::settings::gmmxxEquationSolverSettings().getPrecision());
 }
+
+TEST(GmmxxDtmcPrctlModelCheckerTest, LRASingleBscc) {
+    storm::storage::SparseMatrixBuilder<double> matrixBuilder;
+    std::shared_ptr<storm::models::sparse::Dtmc<double>> dtmc;
+    
+    {
+        matrixBuilder = storm::storage::SparseMatrixBuilder<double>(2, 2, 2);
+        matrixBuilder.addNextValue(0, 1, 1.);
+        matrixBuilder.addNextValue(1, 0, 1.);
+        storm::storage::SparseMatrix<double> transitionMatrix = matrixBuilder.build();
+        
+        storm::models::sparse::StateLabeling ap(2);
+        ap.addLabel("a");
+        ap.addLabelToState("a", 1);
+        
+        dtmc.reset(new storm::models::sparse::Dtmc<double>(transitionMatrix, ap, boost::none, boost::none, boost::none));
+        
+        storm::modelchecker::SparseDtmcPrctlModelChecker<double> checker(*dtmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::NativeLinearEquationSolverFactory<double>()));
+        
+        auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("a");
+        auto lraFormula = std::make_shared<storm::logic::LongRunAverageOperatorFormula>(labelFormula);
+        
+        std::unique_ptr<storm::modelchecker::CheckResult> result = std::move(checker.check(*lraFormula));
+        storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
+        
+        EXPECT_NEAR(.5, quantitativeResult1[0], storm::settings::nativeEquationSolverSettings().getPrecision());
+        EXPECT_NEAR(.5, quantitativeResult1[1], storm::settings::nativeEquationSolverSettings().getPrecision());
+    }
+    {
+        matrixBuilder = storm::storage::SparseMatrixBuilder<double>(2, 2, 4);
+        matrixBuilder.addNextValue(0, 0, .5);
+        matrixBuilder.addNextValue(0, 1, .5);
+        matrixBuilder.addNextValue(1, 0, .5);
+        matrixBuilder.addNextValue(1, 1, .5);
+        storm::storage::SparseMatrix<double> transitionMatrix = matrixBuilder.build();
+        
+        storm::models::sparse::StateLabeling ap(2);
+        ap.addLabel("a");
+        ap.addLabelToState("a", 1);
+        
+        dtmc.reset(new storm::models::sparse::Dtmc<double>(transitionMatrix, ap, boost::none, boost::none, boost::none));
+        
+        storm::modelchecker::SparseDtmcPrctlModelChecker<double> checker(*dtmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::NativeLinearEquationSolverFactory<double>()));
+        
+        auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("a");
+        auto lraFormula = std::make_shared<storm::logic::LongRunAverageOperatorFormula>(labelFormula);
+        
+        std::unique_ptr<storm::modelchecker::CheckResult> result = std::move(checker.check(*lraFormula));
+        storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
+        
+        EXPECT_NEAR(.5, quantitativeResult1[0], storm::settings::nativeEquationSolverSettings().getPrecision());
+        EXPECT_NEAR(.5, quantitativeResult1[1], storm::settings::nativeEquationSolverSettings().getPrecision());
+    }
+    
+    {
+        matrixBuilder = storm::storage::SparseMatrixBuilder<double>(3, 3, 3);
+        matrixBuilder.addNextValue(0, 1, 1);
+        matrixBuilder.addNextValue(1, 2, 1);
+        matrixBuilder.addNextValue(2, 0, 1);
+        storm::storage::SparseMatrix<double> transitionMatrix = matrixBuilder.build();
+        
+        storm::models::sparse::StateLabeling ap(3);
+        ap.addLabel("a");
+        ap.addLabelToState("a", 2);
+        
+        dtmc.reset(new storm::models::sparse::Dtmc<double>(transitionMatrix, ap, boost::none, boost::none, boost::none));
+        
+        storm::modelchecker::SparseDtmcPrctlModelChecker<double> checker(*dtmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::GmmxxLinearEquationSolverFactory<double>()));
+        
+        auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("a");
+        auto lraFormula = std::make_shared<storm::logic::LongRunAverageOperatorFormula>(labelFormula);
+        
+        std::unique_ptr<storm::modelchecker::CheckResult> result = std::move(checker.check(*lraFormula));
+        storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
+        
+        EXPECT_NEAR(1. / 3., quantitativeResult1[0], storm::settings::nativeEquationSolverSettings().getPrecision());
+        EXPECT_NEAR(1. / 3., quantitativeResult1[1], storm::settings::nativeEquationSolverSettings().getPrecision());
+        EXPECT_NEAR(1. / 3., quantitativeResult1[2], storm::settings::nativeEquationSolverSettings().getPrecision());
+    }
+}
+
+TEST(GmmxxDtmcPrctlModelCheckerTest, LRA) {
+    storm::storage::SparseMatrixBuilder<double> matrixBuilder;
+    std::shared_ptr<storm::models::sparse::Dtmc<double>> mdp;
+    
+    {
+        matrixBuilder = storm::storage::SparseMatrixBuilder<double>(15, 15, 20, true);
+        matrixBuilder.addNextValue(0, 1, 1);
+        matrixBuilder.addNextValue(1, 4, 0.7);
+        matrixBuilder.addNextValue(1, 6, 0.3);
+        matrixBuilder.addNextValue(2, 0, 1);
+        
+        matrixBuilder.addNextValue(3, 5, 0.8);
+        matrixBuilder.addNextValue(3, 9, 0.2);
+        matrixBuilder.addNextValue(4, 3, 1);
+        matrixBuilder.addNextValue(5, 3, 1);
+        
+        matrixBuilder.addNextValue(6, 7, 1);
+        matrixBuilder.addNextValue(7, 8, 1);
+        matrixBuilder.addNextValue(8, 6, 1);
+        
+        matrixBuilder.addNextValue(9, 10, 1);
+        matrixBuilder.addNextValue(10, 9, 1);
+        matrixBuilder.addNextValue(11, 9, 1);
+        
+        matrixBuilder.addNextValue(12, 5, 0.4);
+        matrixBuilder.addNextValue(12, 8, 0.3);
+        matrixBuilder.addNextValue(12, 11, 0.3);
+        
+        matrixBuilder.addNextValue(13, 7, 0.7);
+        matrixBuilder.addNextValue(13, 12, 0.3);
+        
+        matrixBuilder.addNextValue(14, 12, 1);
+        
+        storm::storage::SparseMatrix<double> transitionMatrix = matrixBuilder.build();
+        
+        storm::models::sparse::StateLabeling ap(15);
+        ap.addLabel("a");
+        ap.addLabelToState("a", 1);
+        ap.addLabelToState("a", 4);
+        ap.addLabelToState("a", 5);
+        ap.addLabelToState("a", 7);
+        ap.addLabelToState("a", 11);
+        ap.addLabelToState("a", 13);
+        ap.addLabelToState("a", 14);
+        
+        mdp.reset(new storm::models::sparse::Dtmc<double>(transitionMatrix, ap, boost::none, boost::none, boost::none));
+        
+        storm::modelchecker::SparseDtmcPrctlModelChecker<double> checker(*mdp, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::GmmxxLinearEquationSolverFactory<double>()));
+        
+        auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("a");
+        auto lraFormula = std::make_shared<storm::logic::LongRunAverageOperatorFormula>(labelFormula);
+        
+        std::unique_ptr<storm::modelchecker::CheckResult> result = std::move(checker.check(*lraFormula));
+        storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
+        
+        EXPECT_NEAR(0.3 / 3., quantitativeResult1[0], storm::settings::nativeEquationSolverSettings().getPrecision());
+        EXPECT_NEAR(0.0, quantitativeResult1[3], storm::settings::nativeEquationSolverSettings().getPrecision());
+        EXPECT_NEAR(1. / 3., quantitativeResult1[6], storm::settings::nativeEquationSolverSettings().getPrecision());
+        EXPECT_NEAR(0.0, quantitativeResult1[9], storm::settings::nativeEquationSolverSettings().getPrecision());
+        EXPECT_NEAR(0.3/3., quantitativeResult1[12], storm::settings::nativeEquationSolverSettings().getPrecision());
+        EXPECT_NEAR(.79 / 3., quantitativeResult1[13], storm::settings::nativeEquationSolverSettings().getPrecision());
+        EXPECT_NEAR(0.3 / 3., quantitativeResult1[14], storm::settings::nativeEquationSolverSettings().getPrecision());
+    }
+}

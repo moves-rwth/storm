@@ -1,15 +1,34 @@
 #ifndef STORM_UTILITY_SOLVER_H_
 #define STORM_UTILITY_SOLVER_H_
 
+#include "src/solver/SymbolicGameSolver.h"
+
+#include "src/solver/SymbolicLinearEquationSolver.h"
 #include "src/solver/LinearEquationSolver.h"
+#include "src/solver/NativeLinearEquationSolver.h"
 #include "src/solver/MinMaxLinearEquationSolver.h"
 #include "src/solver/LpSolver.h"
+
+#include "src/storage/dd/DdType.h"
+#include "src/settings/modules/NativeEquationSolverSettings.h"
 
 #include "src/exceptions/InvalidSettingsException.h"
 
 namespace storm {
     namespace utility {
         namespace solver {
+            template<storm::dd::DdType Type, typename ValueType>
+            class SymbolicLinearEquationSolverFactory {
+            public:
+                virtual std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<Type, ValueType>> create(storm::dd::Add<Type> const& A, storm::dd::Bdd<Type> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) const;
+            };
+            
+            template<storm::dd::DdType Type>
+            class SymbolicGameSolverFactory {
+            public:
+                virtual std::unique_ptr<storm::solver::SymbolicGameSolver<Type>> create(storm::dd::Add<Type> const& A, storm::dd::Bdd<Type> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs, std::set<storm::expressions::Variable> const& player1Variables, std::set<storm::expressions::Variable> const& player2Variables) const;
+            };
+            
             template<typename ValueType>
             class LinearEquationSolverFactory {
             public:
@@ -25,7 +44,14 @@ namespace storm {
             template<typename ValueType>
             class NativeLinearEquationSolverFactory : public LinearEquationSolverFactory<ValueType> {
             public:
+                NativeLinearEquationSolverFactory();
+                NativeLinearEquationSolverFactory(typename storm::solver::NativeLinearEquationSolver<ValueType>::SolutionMethod method, ValueType omega);
+                
                 virtual std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType> const& matrix) const override;
+                
+            private:
+                typename storm::solver::NativeLinearEquationSolver<ValueType>::SolutionMethod method;
+                ValueType omega;
             };
             
             template<typename ValueType>

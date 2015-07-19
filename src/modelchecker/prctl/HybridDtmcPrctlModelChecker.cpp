@@ -1,4 +1,5 @@
 #include "src/modelchecker/prctl/HybridDtmcPrctlModelChecker.h"
+#include "src/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 
 #include "src/storage/dd/CuddOdd.h"
 
@@ -231,13 +232,14 @@ namespace storm {
         std::unique_ptr<CheckResult> HybridDtmcPrctlModelChecker<DdType, ValueType>::computeReachabilityRewards(storm::logic::ReachabilityRewardFormula const& rewardPathFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
             std::unique_ptr<CheckResult> subResultPointer = this->check(rewardPathFormula.getSubformula());
             SymbolicQualitativeCheckResult<DdType> const& subResult = subResultPointer->asSymbolicQualitativeCheckResult<DdType>();
-            return this->computeReachabilityRewardsHelper(this->getModel(), this->getModel().getTransitionMatrix(), subResult.getTruthValuesVector(), *this->linearEquationSolverFactory, qualitative);
+            return this->computeReachabilityRewardsHelper(this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getOptionalStateRewardVector(), this->getModel().getOptionalTransitionRewardMatrix(), subResult.getTruthValuesVector(), *this->linearEquationSolverFactory, qualitative);
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        std::unique_ptr<CheckResult> HybridDtmcPrctlModelChecker<DdType, ValueType>::computeReachabilityRewardsHelper(storm::models::symbolic::Model<DdType> const& model, storm::dd::Add<DdType> const& transitionMatrix, storm::dd::Bdd<DdType> const& targetStates, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory, bool qualitative) {
-            // Only compute the result if the model has at least one reward model.
-            STORM_LOG_THROW(model.hasStateRewards() || model.hasTransitionRewards(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
+        std::unique_ptr<CheckResult> HybridDtmcPrctlModelChecker<DdType, ValueType>::computeReachabilityRewardsHelper(storm::models::symbolic::Model<DdType> const& model, storm::dd::Add<DdType> const& transitionMatrix, boost::optional<storm::dd::Add<DdType>> const& stateRewardVector, boost::optional<storm::dd::Add<DdType>> const& transitionRewardMatrix, storm::dd::Bdd<DdType> const& targetStates, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory, bool qualitative) {
+            
+            // Only compute the result if there is at least one reward model.
+            STORM_LOG_THROW(stateRewardVector || transitionRewardMatrix, storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
 
             // Determine which states have a reward of infinity by definition.
             storm::dd::Bdd<DdType> infinityStates = storm::utility::graph::performProb1(model, transitionMatrix.notZero(), model.getReachableStates(), targetStates);
@@ -246,7 +248,7 @@ namespace storm {
             STORM_LOG_INFO("Found " << infinityStates.getNonZeroCount() << " 'infinity' states.");
             STORM_LOG_INFO("Found " << targetStates.getNonZeroCount() << " 'target' states.");
             STORM_LOG_INFO("Found " << maybeStates.getNonZeroCount() << " 'maybe' states.");
-
+            
             // Check whether we need to compute exact rewards for some states.
             if (qualitative) {
                 // Set the values for all maybe-states to 1 to indicate that their reward values
@@ -266,9 +268,9 @@ namespace storm {
                     storm::dd::Add<DdType> submatrix = transitionMatrix * maybeStatesAdd;
                     
                     // Then compute the state reward vector to use in the computation.
-                    storm::dd::Add<DdType> subvector = model.hasStateRewards() ? maybeStatesAdd * model.getStateRewardVector() : model.getManager().getAddZero();
-                    if (model.hasTransitionRewards()) {
-                        subvector += (submatrix * model.getTransitionRewardMatrix()).sumAbstract(model.getColumnVariables());
+                    storm::dd::Add<DdType> subvector = stateRewardVector ? maybeStatesAdd * stateRewardVector.get() : model.getManager().getAddZero();
+                    if (transitionRewardMatrix) {
+                        subvector += (submatrix * transitionRewardMatrix.get()).sumAbstract(model.getColumnVariables());
                     }
                     
                     // Finally cut away all columns targeting non-maybe states and convert the matrix into the matrix needed
@@ -298,6 +300,20 @@ namespace storm {
         template<storm::dd::DdType DdType, typename ValueType>
         storm::models::symbolic::Dtmc<DdType> const& HybridDtmcPrctlModelChecker<DdType, ValueType>::getModel() const {
             return this->template getModelAs<storm::models::symbolic::Dtmc<DdType>>();
+        }
+        
+        template<storm::dd::DdType DdType, class ValueType>
+        std::unique_ptr<CheckResult> HybridDtmcPrctlModelChecker<DdType, ValueType>::computeLongRunAverage(storm::logic::StateFormula const& stateFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
+            std::unique_ptr<CheckResult> subResultPointer = this->check(stateFormula);
+            SymbolicQualitativeCheckResult<DdType> const& subResult = subResultPointer->asSymbolicQualitativeCheckResult<DdType>();
+            
+            // Create ODD for the translation.
+            storm::dd::Odd<DdType> odd(this->getModel().getReachableStates());
+            
+            storm::storage::SparseMatrix<ValueType> explicitProbabilityMatrix = this->getModel().getTransitionMatrix().toMatrix(odd, odd);
+            
+            std::vector<ValueType> result = SparseDtmcPrctlModelChecker<ValueType>::computeLongRunAverageHelper(explicitProbabilityMatrix, subResult.getTruthValuesVector().toVector(odd), qualitative, *this->linearEquationSolverFactory);
+            return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType>(this->getModel().getReachableStates(), this->getModel().getManager().getBddZero(), this->getModel().getManager().getAddZero(), this->getModel().getReachableStates(), std::move(odd), std::move(result)));
         }
         
         template class HybridDtmcPrctlModelChecker<storm::dd::DdType::CUDD, double>;

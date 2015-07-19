@@ -595,6 +595,7 @@ namespace storm {
             // Check the commands of the modules.
             bool hasProbabilisticCommand = false;
             bool hasMarkovianCommand = false;
+            bool hasLabeledMarkovianCommand = false;
             for (auto const& module : this->getModules()) {
                 std::set<storm::expressions::Variable> legalVariables = globalVariables;
                 for (auto const& variable : module.getBooleanVariables()) {
@@ -621,11 +622,7 @@ namespace storm {
                     // If the command is Markovian and labeled, we throw an error or raise a warning, depending on
                     // whether or not the PRISM compatibility mode was enabled.
                     if (command.isMarkovian() && command.isLabeled()) {
-                        if (storm::settings::generalSettings().isPrismCompatibilityEnabled()) {
-                            STORM_LOG_WARN_COND(false, "The model uses synchronizing Markovian commands. This may lead to unexpected verification results, because of unclear semantics.");
-                        } else {
-                            STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "The model uses synchronizing Markovian commands. This may lead to unexpected verification results, because of unclear semantics.");
-                        }
+                        hasLabeledMarkovianCommand = true;
                     }
                     
                     // Check all updates.
@@ -662,6 +659,14 @@ namespace storm {
                             alreadyAssignedVariables.insert(assignedVariable);
                         }
                     }
+                }
+            }
+            
+            if (hasLabeledMarkovianCommand) {
+                if (storm::settings::generalSettings().isPrismCompatibilityEnabled()) {
+                    STORM_LOG_WARN_COND(false, "The model uses synchronizing Markovian commands. This may lead to unexpected verification results, because of unclear semantics.");
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "The model uses synchronizing Markovian commands. This may lead to unexpected verification results, because of unclear semantics.");
                 }
             }
             

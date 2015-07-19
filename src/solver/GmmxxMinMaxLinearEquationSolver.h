@@ -31,7 +31,7 @@ namespace storm {
              * @param relative If set, the relative error rather than the absolute error is considered for convergence
              * detection.
              */
-            GmmxxMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, double precision, uint_fast64_t maximalNumberOfIterations, bool relative = true);
+            GmmxxMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, double precision, uint_fast64_t maximalNumberOfIterations, bool useValueIteration, bool relative = true);
 
             virtual void performMatrixVectorMultiplication(bool minimize, std::vector<ValueType>& x, std::vector<ValueType>* b = nullptr, uint_fast64_t n = 1, std::vector<ValueType>* multiplyResult = nullptr) const override;
             
@@ -40,6 +40,9 @@ namespace storm {
         private:
             // The (gmm++) matrix associated with this equation solver.
             std::unique_ptr<gmm::csr_matrix<ValueType>> gmmxxMatrix;
+
+			// A reference to the original sparse matrix.
+			storm::storage::SparseMatrix<ValueType> const& stormMatrix;
             
             // A reference to the row group indices of the original matrix.
             std::vector<uint_fast64_t> const& rowGroupIndices;
@@ -52,6 +55,9 @@ namespace storm {
             
             // The maximal number of iterations to do before iteration is aborted.
             uint_fast64_t maximalNumberOfIterations;
+
+			// Whether value iteration or policy iteration is to be used.
+			bool useValueIteration;
         };
     } // namespace solver
 } // namespace storm

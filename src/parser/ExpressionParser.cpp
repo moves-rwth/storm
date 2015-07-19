@@ -23,7 +23,7 @@ namespace storm {
             }
             minMaxExpression.name("min/max expression");
             
-            identifierExpression = identifier[qi::_val = phoenix::bind(&ExpressionParser::getIdentifierExpression, phoenix::ref(*this), qi::_1)];
+            identifierExpression = identifier[qi::_val = phoenix::bind(&ExpressionParser::getIdentifierExpression, phoenix::ref(*this), qi::_1, allowBacktracking, phoenix::ref(qi::_pass))];
             identifierExpression.name("identifier expression");
             
             literalExpression = trueFalse_[qi::_val = qi::_1] | strict_double[qi::_val = phoenix::bind(&ExpressionParser::createDoubleLiteralExpression, phoenix::ref(*this), qi::_1, qi::_pass)] | qi::int_[qi::_val = phoenix::bind(&ExpressionParser::createIntegerLiteralExpression, phoenix::ref(*this), qi::_1)];
@@ -53,7 +53,7 @@ namespace storm {
             plusExpression.name("plus expression");
             
             if (allowBacktracking) {
-                relativeExpression = plusExpression[qi::_val = qi::_1] > -(relationalOperator_ >> plusExpression)[qi::_val = phoenix::bind(&ExpressionParser::createRelationalExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)];
+                relativeExpression = plusExpression[qi::_val = qi::_1] >> -(relationalOperator_ >> plusExpression)[qi::_val = phoenix::bind(&ExpressionParser::createRelationalExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)];
             } else {
                 relativeExpression = plusExpression[qi::_val = qi::_1] > -(relationalOperator_ > plusExpression)[qi::_val = phoenix::bind(&ExpressionParser::createRelationalExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)];
             }
@@ -70,7 +70,7 @@ namespace storm {
             andExpression.name("and expression");
             
             if (allowBacktracking) {
-                orExpression = andExpression[qi::_val = qi::_1] > *(orOperator_ >> andExpression)[qi::_val = phoenix::bind(&ExpressionParser::createOrExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)];
+                orExpression = andExpression[qi::_val = qi::_1] >> *(orOperator_ >> andExpression)[qi::_val = phoenix::bind(&ExpressionParser::createOrExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)];
             } else {
                 orExpression = andExpression[qi::_val = qi::_1] > *(orOperator_ > andExpression)[qi::_val = phoenix::bind(&ExpressionParser::createOrExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)];
             }
@@ -81,6 +81,24 @@ namespace storm {
             
             expression %= iteExpression;
             expression.name("expression");
+            
+            /*!
+             * Enable this for debugging purposes.
+            debug(expression);
+            debug(iteExpression);
+            debug(orExpression);
+            debug(andExpression);
+            debug(equalityExpression);
+            debug(relativeExpression);
+            debug(plusExpression);
+            debug(multiplicationExpression);
+            debug(powerExpression);
+            debug(unaryExpression);
+            debug(atomicExpression);
+            debug(literalExpression);
+            debug(identifierExpression);
+             */
+            
             
             // Enable error reporting.
             qi::on_error<qi::fail>(expression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
@@ -304,11 +322,18 @@ namespace storm {
             return manager.boolean(false);
         }
         
-        storm::expressions::Expression ExpressionParser::getIdentifierExpression(std::string const& identifier) const {
+        storm::expressions::Expression ExpressionParser::getIdentifierExpression(std::string const& identifier, bool allowBacktracking, bool& pass) const {
             if (this->createExpressions) {
                 STORM_LOG_THROW(this->identifiers_ != nullptr, storm::exceptions::WrongFormatException, "Unable to substitute identifier expressions without given mapping.");
                 storm::expressions::Expression const* expression = this->identifiers_->find(identifier);
-                STORM_LOG_THROW(expression != nullptr, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": Undeclared identifier '" << identifier << "'.");
+                if (expression == nullptr) {
+                    if (allowBacktracking) {
+                        pass = false;
+                        return manager.boolean(false);
+                    } else {
+                        STORM_LOG_THROW(expression != nullptr, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": Undeclared identifier '" << identifier << "'.");
+                    }
+                }
                 return *expression;
             } else {
                 return manager.boolean(false);

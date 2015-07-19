@@ -7,7 +7,7 @@ namespace storm {
     namespace models {
         // All supported model types.
         enum class ModelType {
-            Dtmc, Ctmc, Mdp, MarkovAutomaton
+            Dtmc, Ctmc, Mdp, MarkovAutomaton, S2pg
         };
         
         std::ostream& operator<<(std::ostream& os, ModelType const& type);

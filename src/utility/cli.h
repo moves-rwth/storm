@@ -71,6 +71,8 @@ log4cplus::Logger printer;
 #include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "src/modelchecker/csl/SparseCtmcCslModelChecker.h"
 #include "src/modelchecker/prctl/HybridDtmcPrctlModelChecker.h"
+#include "src/modelchecker/csl/HybridCtmcCslModelChecker.h"
+#include "src/modelchecker/prctl/HybridMdpPrctlModelChecker.h"
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"
 
@@ -320,8 +322,12 @@ namespace storm {
                 std::string constants = settings.getConstantDefinitionString();
                 
                 bool buildRewards = false;
-                if (formula) {
+                boost::optional<std::string> rewardModelName;
+                if (formula || settings.isSymbolicRewardModelNameSet()) {
                     buildRewards = formula.get()->isRewardOperatorFormula() || formula.get()->isRewardPathFormula();
+                    if (settings.isSymbolicRewardModelNameSet()) {
+                        rewardModelName = settings.getSymbolicRewardModelName();
+                    }
                 }
                 
                 // Customize and perform model-building.
@@ -331,6 +337,8 @@ namespace storm {
                         options = typename storm::builder::ExplicitPrismModelBuilder<ValueType>::Options(*formula.get());
                     }
                     options.addConstantDefinitionsFromString(program, settings.getConstantDefinitionString());
+                    options.buildRewards = buildRewards;
+                    options.rewardModelName = rewardModelName;
                     
                     // Generate command labels if we are going to build a counterexample later.
                     if (storm::settings::counterexampleGeneratorSettings().isMinimalCommandSetGenerationSet()) {
@@ -344,7 +352,9 @@ namespace storm {
                         options = typename storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::Options(*formula.get());
                     }
                     options.addConstantDefinitionsFromString(program, settings.getConstantDefinitionString());
-                    
+                    options.buildRewards = buildRewards;
+                    options.rewardModelName = rewardModelName;
+
                     result = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program, options);
                 }
                 
@@ -528,6 +538,18 @@ namespace storm {
                     if (modelchecker.canHandle(*formula.get())) {
                         result = modelchecker.check(*formula.get());
                     }
+                } else if (model->getType() == storm::models::ModelType::Ctmc) {
+                    std::shared_ptr<storm::models::symbolic::Ctmc<DdType>> ctmc = model->template as<storm::models::symbolic::Ctmc<DdType>>();
+                    storm::modelchecker::HybridCtmcCslModelChecker<DdType, double> modelchecker(*ctmc);
+                    if (modelchecker.canHandle(*formula.get())) {
+                        result = modelchecker.check(*formula.get());
+                    }
+                } else if (model->getType() == storm::models::ModelType::Mdp) {
+                    std::shared_ptr<storm::models::symbolic::Mdp<DdType>> mdp = model->template as<storm::models::symbolic::Mdp<DdType>>();
+                    storm::modelchecker::HybridMdpPrctlModelChecker<DdType, double> modelchecker(*mdp);
+                    if (modelchecker.canHandle(*formula.get())) {
+                        result = modelchecker.check(*formula.get());
+                    }
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This functionality is not yet implemented.");
                 }
@@ -608,8 +630,9 @@ namespace storm {
                 }
                 
                 // Then proceed to parsing the property (if given), since the model we are building may depend on the property.
-                boost::optional<std::shared_ptr<storm::logic::Formula>> formula;
+                std::vector<boost::optional<std::shared_ptr<storm::logic::Formula>>> formulas;
                 if (settings.isPropertySet()) {
+					boost::optional<std::shared_ptr<storm::logic::Formula>> formula;
                     if (program) {
                         storm::parser::FormulaParser formulaParser(program.get().getManager().getSharedPointer());
                         formula = formulaParser.parseFromString(settings.getProperty());
@@ -617,23 +640,70 @@ namespace storm {
                         storm::parser::FormulaParser formulaParser;
                         formula = formulaParser.parseFromString(settings.getProperty());
                     }
+					formulas.push_back(formula);
                 }
+				else if (settings.isPropertyFileSet()) {
+					std::cout << "Reading properties from " << settings.getPropertiesFilename() << std::endl;
+
+					std::ifstream inputFileStream(settings.getPropertiesFilename(), std::ios::in);
+
+					std::vector<std::string> properties;
+
+					if (inputFileStream.good()) {
+						try {
+							while (inputFileStream.good()) {
+								std::string prop;
+								std::getline(inputFileStream, prop);
+								if (!prop.empty()) {
+									properties.push_back(prop);
+								}
+							}
+						}
+						catch (std::exception& e) {
+							inputFileStream.close();
+							throw e;
+						}
+						inputFileStream.close();
+					} else {
+						STORM_LOG_ERROR("Unable to read property file.");
+					}
+
+					for (std::string prop : properties) {
+						boost::optional<std::shared_ptr<storm::logic::Formula>> formula;
+						try {
+							if (program) {
+								storm::parser::FormulaParser formulaParser(program.get().getManager().getSharedPointer());
+								formula = formulaParser.parseFromString(prop);
+							} else {
+								storm::parser::FormulaParser formulaParser;
+								formula = formulaParser.parseFromString(prop);
+							}
+							formulas.push_back(formula);
+						}
+						catch (storm::exceptions::WrongFormatException &e) {
+							STORM_LOG_WARN("Unable to parse line as formula: " << prop);
+						}
+					}
+					std::cout << "Parsed " << formulas.size() << " properties from file " << settings.getPropertiesFilename() << std::endl;
+				}
                 
-                if (settings.isSymbolicSet()) {
+				for (boost::optional<std::shared_ptr<storm::logic::Formula>> formula : formulas) {
+					if (settings.isSymbolicSet()) {
 #ifdef STORM_HAVE_CARL
-                    if (settings.isParametricSet()) {
-                        buildAndCheckSymbolicModel<storm::RationalFunction>(program.get(), formula);
-                    } else {
+						if (settings.isParametricSet()) {
+							buildAndCheckSymbolicModel<storm::RationalFunction>(program.get(), formula);
+						} else {
 #endif
-                        buildAndCheckSymbolicModel<double>(program.get(), formula);
+							buildAndCheckSymbolicModel<double>(program.get(), formula);
 #ifdef STORM_HAVE_CARL
-                    }
+						}
 #endif
-                } else if (settings.isExplicitSet()) {
-                    buildAndCheckExplicitModel<double>(formula);
-                } else {
-                    STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No input model.");
-                }
+					} else if (settings.isExplicitSet()) {
+						buildAndCheckExplicitModel<double>(formula);
+					} else {
+						STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No input model.");
+					}
+				}
             }
         }
     }

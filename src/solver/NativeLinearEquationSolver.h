@@ -14,15 +14,16 @@ namespace storm {
         public:
             // An enumeration specifying the available solution methods.
             enum class SolutionMethod {
-                Jacobi
+                Jacobi, GaussSeidel, SOR
             };
             
             /*!
              * Constructs a linear equation solver with parameters being set according to the settings object.
              *
              * @param A The matrix defining the coefficients of the linear equation system.
+             * @param method The method to use for solving linear equations.
              */
-            NativeLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A);
+            NativeLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, SolutionMethod method = SolutionMethod::Jacobi);
 
             /*!
              * Constructs a linear equation solver with the given parameters.

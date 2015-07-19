@@ -337,6 +337,41 @@ namespace storm {
             }
         }
         
+        storm::storage::BitVector Bdd<DdType::CUDD>::toVector(storm::dd::Odd<DdType::CUDD> const& rowOdd) const {
+            std::vector<uint_fast64_t> ddVariableIndices = this->getSortedVariableIndices();
+            storm::storage::BitVector result(rowOdd.getTotalOffset());
+            this->toVectorRec(this->getCuddDdNode(), this->getDdManager()->getCuddManager(), result, rowOdd, Cudd_IsComplement(this->getCuddDdNode()), 0, ddVariableIndices.size(), 0, ddVariableIndices);
+            return result;
+        }
+        
+        void Bdd<DdType::CUDD>::toVectorRec(DdNode const* dd, Cudd const& manager, storm::storage::BitVector& result, Odd<DdType::CUDD> const& rowOdd, bool complement, uint_fast64_t currentRowLevel, uint_fast64_t maxLevel, uint_fast64_t currentRowOffset, std::vector<uint_fast64_t> const& ddRowVariableIndices) const {
+            // If there are no more values to select, we can directly return.
+            if (dd == Cudd_ReadLogicZero(manager.getManager()) && !complement) {
+                return;
+            } else if (dd == Cudd_ReadOne(manager.getManager()) && complement) {
+                return;
+            }
+            
+            // If we are at the maximal level, the value to be set is stored as a constant in the DD.
+            if (currentRowLevel == maxLevel) {
+                result.set(currentRowOffset, true);
+            } else if (ddRowVariableIndices[currentRowLevel] < dd->index) {
+                toVectorRec(dd, manager, result, rowOdd.getElseSuccessor(), complement, currentRowLevel + 1, maxLevel, currentRowOffset, ddRowVariableIndices);
+                toVectorRec(dd, manager, result, rowOdd.getThenSuccessor(), complement, currentRowLevel + 1, maxLevel, currentRowOffset + rowOdd.getElseOffset(), ddRowVariableIndices);
+            } else {
+                // Otherwise, we compute the ODDs for both the then- and else successors.
+                DdNode* elseDdNode = Cudd_E(dd);
+                DdNode* thenDdNode = Cudd_T(dd);
+                
+                // Determine whether we have to evaluate the successors as if they were complemented.
+                bool elseComplemented = Cudd_IsComplement(elseDdNode) ^ complement;
+                bool thenComplemented = Cudd_IsComplement(thenDdNode) ^ complement;
+                
+                toVectorRec(Cudd_Regular(elseDdNode), manager, result, rowOdd.getElseSuccessor(), elseComplemented, currentRowLevel + 1, maxLevel, currentRowOffset, ddRowVariableIndices);
+                toVectorRec(Cudd_Regular(thenDdNode), manager, result, rowOdd.getThenSuccessor(), thenComplemented, currentRowLevel + 1, maxLevel, currentRowOffset + rowOdd.getElseOffset(), ddRowVariableIndices);
+            }
+        }
+        
         std::ostream& operator<<(std::ostream& out, const Bdd<DdType::CUDD>& bdd) {
             bdd.exportToDot();
             return out;
