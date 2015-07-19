@@ -20,8 +20,8 @@ namespace storm {
             
             template<typename ParametricType, typename ConstantType>
             void RegionParser<ParametricType, ConstantType>::parseParameterBounds(
-                    std::map<VariableType, BoundType>& lowerBounds,
-                    std::map<VariableType, BoundType>& upperBounds,
+                    std::map<VariableType, CoefficientType>& lowerBounds,
+                    std::map<VariableType, CoefficientType>& upperBounds,
                     std::string const& parameterBoundsString,
                     double const precision){
                 double actualPrecision = (precision==0.0 ? storm::settings::generalSettings().getPrecision() : precision);
@@ -46,10 +46,10 @@ namespace storm {
                 }
                 
                 VariableType var = getVariableFromString<VariableType>(parameter);
-                BoundType lb = convertNumber<double, BoundType>(lowerBound, true, actualPrecision);
-                STORM_LOG_WARN_COND((lowerBound==convertNumber<BoundType, double>(lb, true, actualPrecision)), "The lower bound of '"<< parameterBoundsString << "' could not be parsed accurately. Increase precision?");
-                BoundType ub = convertNumber<double, BoundType>(upperBound, false, actualPrecision);
-                STORM_LOG_WARN_COND((upperBound==convertNumber<BoundType, double>(ub, true, actualPrecision)), "The upper bound of '"<< parameterBoundsString << "' could not be parsed accurately. Increase precision?");
+                CoefficientType lb = convertNumber<double, CoefficientType>(lowerBound, true, actualPrecision);
+                STORM_LOG_WARN_COND((lowerBound==convertNumber<CoefficientType, double>(lb, true, actualPrecision)), "The lower bound of '"<< parameterBoundsString << "' could not be parsed accurately. Increase precision?");
+                CoefficientType ub = convertNumber<double, CoefficientType>(upperBound, false, actualPrecision);
+                STORM_LOG_WARN_COND((upperBound==convertNumber<CoefficientType, double>(ub, true, actualPrecision)), "The upper bound of '"<< parameterBoundsString << "' could not be parsed accurately. Increase precision?");
                 lowerBounds.emplace(std::make_pair(var, lb));  
                 upperBounds.emplace(std::make_pair(var, ub));
                // std::cout << "parsed bounds " << parameterBoundsString << ": lb=" << lowerBound << " ub=" << upperBound << " param='" << parameter << "' precision=" << actualPrecision << std::endl;
@@ -58,8 +58,8 @@ namespace storm {
             template<typename ParametricType, typename ConstantType>
             typename RegionParser<ParametricType, ConstantType>::ParameterRegion RegionParser<ParametricType, ConstantType>::parseRegion(std::string const& regionString, double precision){
                 double actualPrecision = (precision==0.0 ? storm::settings::generalSettings().getPrecision() : precision);
-                std::map<VariableType, BoundType> lowerBounds;
-                std::map<VariableType, BoundType> upperBounds;
+                std::map<VariableType, CoefficientType> lowerBounds;
+                std::map<VariableType, CoefficientType> upperBounds;
                 std::vector<std::string> parameterBounds;
                 boost::split(parameterBounds, regionString, boost::is_any_of(","));
                 for(auto const& parameterBound : parameterBounds){
@@ -177,10 +177,10 @@ namespace storm {
             }
                         
             template<>
-            typename storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction,double>::BoundType evaluateFunction<storm::RationalFunction, double>(
+            typename storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction,double>::CoefficientType evaluateFunction<storm::RationalFunction, double>(
                     storm::RationalFunction const& function, 
                     std::map<typename storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction,double>::VariableType,
-                             typename storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction,double>::BoundType> const& point){
+                             typename storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction,double>::CoefficientType> const& point){
                 return function.evaluate(point);
             }
             

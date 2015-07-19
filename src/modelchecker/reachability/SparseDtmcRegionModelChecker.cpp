@@ -27,27 +27,35 @@ namespace storm {
         
         
         template<typename ParametricType, typename ConstantType>
-        SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::ParameterRegion(std::map<VariableType, BoundType> lowerBounds, std::map<VariableType, BoundType> upperBounds) : lowerBounds(lowerBounds), upperBounds(upperBounds), checkResult(RegionCheckResult::UNKNOWN) {
-            //todo: check whether both mappings map the same variables
+        SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::ParameterRegion(std::map<VariableType, CoefficientType> lowerBounds, std::map<VariableType, CoefficientType> upperBounds) : lowerBounds(lowerBounds), upperBounds(upperBounds), checkResult(RegionCheckResult::UNKNOWN) {
+            //check whether both mappings map the same variables and precompute the set of variables
+            for(auto const& variableWithBound : lowerBounds) {
+                STORM_LOG_THROW((upperBounds.find(variableWithBound.first)!=upperBounds.end()), storm::exceptions::InvalidArgumentException, "Couldn't create region. No upper bound specified for Variable " << variableWithBound.first);
+                this->variables.insert(variableWithBound.first);
+            }
+            for(auto const& variableWithBound : upperBounds){
+                STORM_LOG_THROW((this->variables.find(variableWithBound.first)!=this->variables.end()), storm::exceptions::InvalidArgumentException, "Couldn't create region. No lower bound specified for Variable " << variableWithBound.first);
+            }
+            
         }
 
         template<typename ParametricType, typename ConstantType>        
-        void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::setViolatedPoint(std::map<VariableType, BoundType> const& violatedPoint) {
+        void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::setViolatedPoint(std::map<VariableType, CoefficientType> const& violatedPoint) {
             this->violatedPoint = violatedPoint;
         }
         
         template<typename ParametricType, typename ConstantType>
-        std::map<typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::VariableType, typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::BoundType> SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::getViolatedPoint() const {
+        std::map<typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::VariableType, typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::CoefficientType> SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::getViolatedPoint() const {
             return violatedPoint;
         }
         
         template<typename ParametricType, typename ConstantType>
-        void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::setSatPoint(std::map<VariableType, BoundType> const& satPoint) {
+        void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::setSatPoint(std::map<VariableType, CoefficientType> const& satPoint) {
             this->satPoint = satPoint;
         }
 
         template<typename ParametricType, typename ConstantType>
-        std::map<typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::VariableType, typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::BoundType> SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::getSatPoint() const {
+        std::map<typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::VariableType, typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::CoefficientType> SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::getSatPoint() const {
             return satPoint;
         }
         
@@ -75,42 +83,38 @@ namespace storm {
                 
         template<typename ParametricType, typename ConstantType>
         std::set<typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::VariableType> SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::getVariables() const{
-            std::set<VariableType> result;
-            for(auto const& variableWithBound : lowerBounds) {
-                result.insert(variableWithBound.first);
-            }
-            return result;
+            return this->variables;
         }
         
         template<typename ParametricType, typename ConstantType>
-        typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::BoundType const& SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::getLowerBound(VariableType const& variable) const{
+        typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::CoefficientType const& SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::getLowerBound(VariableType const& variable) const{
             auto const& result = lowerBounds.find(variable);
             STORM_LOG_THROW(result!=lowerBounds.end(), storm::exceptions::IllegalArgumentException, "tried to find a lower bound of a variable that is not specified by this region");
             return (*result).second;
         }
         
         template<typename ParametricType, typename ConstantType>
-        typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::BoundType const& SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::getUpperBound(VariableType const& variable) const{
+        typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::CoefficientType const& SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::getUpperBound(VariableType const& variable) const{
             auto const& result = upperBounds.find(variable);
             STORM_LOG_THROW(result!=upperBounds.end(), storm::exceptions::IllegalArgumentException, "tried to find an upper bound of a variable that is not specified by this region");
             return (*result).second;
         }
 
         template<typename ParametricType, typename ConstantType>
-        const std::map<typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::VariableType, typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::BoundType> SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::getUpperBounds() const {
+        const std::map<typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::VariableType, typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::CoefficientType> SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::getUpperBounds() const {
             return upperBounds;
         }
         
         template<typename ParametricType, typename ConstantType>
-        const std::map<typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::VariableType, typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::BoundType> SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::getLowerBounds() const {
+        const std::map<typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::VariableType, typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::CoefficientType> SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::getLowerBounds() const {
             return lowerBounds;
         }
         
         template<typename ParametricType, typename ConstantType>
-        std::vector<std::map<typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::VariableType, typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::BoundType>> SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::getVerticesOfRegion(std::set<VariableType> const& consideredVariables) const{
+        std::vector<std::map<typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::VariableType, typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::CoefficientType>> SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::getVerticesOfRegion(std::set<VariableType> const& consideredVariables) const{
             std::size_t const numOfVariables=consideredVariables.size();
             std::size_t const numOfVertices=std::pow(2,numOfVariables);
-            std::vector<std::map<VariableType, BoundType>> resultingVector(numOfVertices,std::map<VariableType, BoundType>());
+            std::vector<std::map<VariableType, CoefficientType>> resultingVector(numOfVertices,std::map<VariableType, CoefficientType>());
             if(numOfVertices==1){
                 //no variables are given, the returned vector should still contain an empty map
                 return resultingVector;
@@ -123,10 +127,10 @@ namespace storm {
                 std::size_t variableIndex=0;
                 for(auto const& variable : consideredVariables){
                     if( (vertexId>>variableIndex)%2==0  ){
-                        resultingVector[vertexId].insert(std::pair<VariableType, BoundType>(variable, getLowerBound(variable)));
+                        resultingVector[vertexId].insert(std::pair<VariableType, CoefficientType>(variable, getLowerBound(variable)));
                     }
                     else{
-                        resultingVector[vertexId].insert(std::pair<VariableType, BoundType>(variable, getUpperBound(variable)));
+                        resultingVector[vertexId].insert(std::pair<VariableType, CoefficientType>(variable, getUpperBound(variable)));
                     }
                     ++variableIndex;
                 }
@@ -158,11 +162,11 @@ namespace storm {
         std::string SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::toString() const {
             std::stringstream regionstringstream;
             for(auto var : this->getVariables()){
-                regionstringstream << storm::utility::regions::convertNumber<SparseDtmcRegionModelChecker<ParametricType, ConstantType>::BoundType,double>(this->getLowerBound(var));
+                regionstringstream << storm::utility::regions::convertNumber<SparseDtmcRegionModelChecker<ParametricType, ConstantType>::CoefficientType,double>(this->getLowerBound(var));
                 regionstringstream << "<=";
                 regionstringstream << storm::utility::regions::getVariableName(var);
                 regionstringstream << "<=";
-                regionstringstream << storm::utility::regions::convertNumber<SparseDtmcRegionModelChecker<ParametricType, ConstantType>::BoundType,double>(this->getUpperBound(var));
+                regionstringstream << storm::utility::regions::convertNumber<SparseDtmcRegionModelChecker<ParametricType, ConstantType>::CoefficientType,double>(this->getUpperBound(var));
                 regionstringstream << ",";
             }
             std::string regionstring = regionstringstream.str();
@@ -364,7 +368,7 @@ namespace storm {
             storm::storage::sparse::state_type currentMdpRow=0;
             //go through rows:
             for(storm::storage::sparse::state_type oldStateIndex : subsys){ 
-                ParametricType valueToSinkState=storm::utility::regions::getNewFunction<ParametricType, BoundType>(storm::utility::one<BoundType>());
+                ParametricType valueToSinkState=storm::utility::regions::getNewFunction<ParametricType, CoefficientType>(storm::utility::one<CoefficientType>());
                 // the dtmc and the mdp rows need to sum up to one, therefore the first entry that we add has value one.
                 ConstantType dummyEntry=storm::utility::one<ConstantType>(); 
                 // store the columns and values that we have added because we need the same information for the next rows in the mdp
@@ -760,7 +764,7 @@ namespace storm {
         }
         
         template<typename ParametricType, typename ConstantType>
-        bool SparseDtmcRegionModelChecker<ParametricType, ConstantType>::checkPoint(ParameterRegion& region, std::map<VariableType, BoundType>const& point, bool viaReachProbFunction) {
+        bool SparseDtmcRegionModelChecker<ParametricType, ConstantType>::checkPoint(ParameterRegion& region, std::map<VariableType, CoefficientType>const& point, bool viaReachProbFunction) {
             // check whether the property is satisfied or not at the given point
             bool valueInBoundOfFormula;
             if(viaReachProbFunction){
@@ -769,7 +773,7 @@ namespace storm {
             else{
                 //put the values into the dtmc matrix
                 for( std::pair<ParametricType, typename storm::storage::MatrixEntry<storm::storage::sparse::state_type, ConstantType>&>& mappingPair : this->sampleDtmcMapping){
-                    mappingPair.second.setValue(storm::utility::regions::convertNumber<BoundType,ConstantType>(
+                    mappingPair.second.setValue(storm::utility::regions::convertNumber<CoefficientType,ConstantType>(
                             storm::utility::regions::evaluateFunction<ParametricType,ConstantType>(mappingPair.first, point)
                             )
                         );
@@ -782,7 +786,7 @@ namespace storm {
 
         //Delete from here
            //     ConstantType result=resultPtr->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector()[*this->sampleDtmc->getInitialStates().begin()];
-            //    ConstantType otherresult=storm::utility::regions::convertNumber<BoundType, ConstantType>(storm::utility::regions::evaluateFunction<ParametricType, ConstantType>(this->reachProbFunction, point));
+            //    ConstantType otherresult=storm::utility::regions::convertNumber<CoefficientType, ConstantType>(storm::utility::regions::evaluateFunction<ParametricType, ConstantType>(this->reachProbFunction, point));
                 
             //    STORM_LOG_THROW((std::abs(result - otherresult) <= 0.01),storm::exceptions::UnexpectedException, "The results of new DTMC algorithm does not match: " << result << " vs. " << otherresult);
         //To here
@@ -927,7 +931,7 @@ namespace storm {
         template<typename ParametricType, typename ConstantType>
         void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::buildMdpForApproximation(const ParameterRegion& region) {
             //instantiate the substitutions for the given region
-            std::vector<std::map<VariableType, BoundType>> substitutions(this->approxMdpSubstitutions.size());
+            std::vector<std::map<VariableType, CoefficientType>> substitutions(this->approxMdpSubstitutions.size());
             for(uint_fast64_t substitutionIndex=0; substitutionIndex<this->approxMdpSubstitutions.size(); ++substitutionIndex){
                 for(std::pair<VariableType, TypeOfBound> const& sub : this->approxMdpSubstitutions[substitutionIndex]){
                     switch(sub.second){
@@ -945,7 +949,7 @@ namespace storm {
             
             //now put the values into the mdp matrix
             for( std::tuple<ParametricType, typename storm::storage::MatrixEntry<storm::storage::sparse::state_type, ConstantType>&, size_t>& mappingTriple : this->approxMdpMapping){
-                std::get<1>(mappingTriple).setValue(storm::utility::regions::convertNumber<BoundType,ConstantType>(
+                std::get<1>(mappingTriple).setValue(storm::utility::regions::convertNumber<CoefficientType,ConstantType>(
                                                 storm::utility::regions::evaluateFunction<ParametricType,ConstantType>(std::get<0>(mappingTriple),substitutions[std::get<2>(mappingTriple)])
                                                 )
                                             );
@@ -1008,7 +1012,7 @@ namespace storm {
                         selfloopIndex=numStates; // --> selfloop will never be inserted again
                     }
                     for(auto const& entry : this->sparseTransitions.getRow(oldStateIndex)){
-                        ConstantType value = storm::utility::regions::convertNumber<BoundType,ConstantType>(
+                        ConstantType value = storm::utility::regions::convertNumber<CoefficientType,ConstantType>(
                                              storm::utility::regions::evaluateFunction<ParametricType,ConstantType>(entry.getValue(),substitutions[substitutionIndex])
                                              );
                         missingProbability-=value;
@@ -1022,7 +1026,7 @@ namespace storm {
                     }
                     
                     if(!this->parametricTypeComparator.isZero(this->oneStepProbabilities[oldStateIndex])){ //transition to target state
-                        ConstantType value = storm::utility::regions::convertNumber<BoundType,ConstantType>(
+                        ConstantType value = storm::utility::regions::convertNumber<CoefficientType,ConstantType>(
                                              storm::utility::regions::evaluateFunction<ParametricType,ConstantType>(this->oneStepProbabilities[oldStateIndex],substitutions[substitutionIndex])
                                              );
                         missingProbability-=value;
@@ -1716,7 +1720,7 @@ namespace storm {
 #ifdef STORM_HAVE_CARL
         template class SparseDtmcRegionModelChecker<storm::RationalFunction, double>;
 #endif
-        //note: for other template instantiations, add a rule for the typedefs of VariableType and BoundType
+        //note: for other template instantiations, add a rule for the typedefs of VariableType and CoefficientType
         
     } // namespace modelchecker
 } // namespace storm

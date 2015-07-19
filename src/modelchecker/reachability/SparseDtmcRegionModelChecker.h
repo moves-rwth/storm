@@ -20,7 +20,7 @@ namespace storm {
             
             //The type of variables and bounds depends on the template arguments
             typedef typename std::conditional<(std::is_same<ParametricType,storm::RationalFunction>::value), storm::Variable,std::nullptr_t>::type VariableType;
-            typedef typename std::conditional<(std::is_same<ParametricType,storm::RationalFunction>::value), storm::Coefficient,std::nullptr_t>::type BoundType;
+            typedef typename std::conditional<(std::is_same<ParametricType,storm::RationalFunction>::value), storm::Coefficient,std::nullptr_t>::type CoefficientType;
             
             /*!
              * The possible results for a single region
@@ -37,15 +37,15 @@ namespace storm {
             class ParameterRegion{
             public:
 
-                ParameterRegion(std::map<VariableType, BoundType> lowerBounds, std::map<VariableType, BoundType> upperBounds);
+                ParameterRegion(std::map<VariableType, CoefficientType> lowerBounds, std::map<VariableType, CoefficientType> upperBounds);
                 
                 
                 
                 std::set<VariableType> getVariables() const;
-                BoundType const& getLowerBound(VariableType const& variable) const;
-                BoundType const& getUpperBound(VariableType const& variable) const;
-                const std::map<VariableType, BoundType> getUpperBounds() const;
-                const std::map<VariableType, BoundType> getLowerBounds() const;
+                CoefficientType const& getLowerBound(VariableType const& variable) const;
+                CoefficientType const& getUpperBound(VariableType const& variable) const;
+                const std::map<VariableType, CoefficientType> getUpperBounds() const;
+                const std::map<VariableType, CoefficientType> getLowerBounds() const;
                 
                 /*
                  * Returns a vector of all possible combinations of lower and upper bounds of the given variables.
@@ -56,7 +56,7 @@ namespace storm {
                  * 
                  * If the given set of variables is empty, the returned vector will contain an empty map
                  */
-                std::vector<std::map<VariableType, BoundType>> getVerticesOfRegion(std::set<VariableType> const& consideredVariables) const;
+                std::vector<std::map<VariableType, CoefficientType>> getVerticesOfRegion(std::set<VariableType> const& consideredVariables) const;
                 
                 //returns the currently set check result as a string
                 std::string checkResultToString() const;
@@ -70,33 +70,34 @@ namespace storm {
                 /*!
                  * Sets a point in the region for which the considered property is not satisfied. 
                  */
-                void setViolatedPoint(std::map<VariableType, BoundType> const& violatedPoint);
+                void setViolatedPoint(std::map<VariableType, CoefficientType> const& violatedPoint);
                 
                 /*!
                  * Retrieves a point in the region for which is considered property is not satisfied.
                  * If such a point is not known, the returned map is empty.
                  */
-                std::map<VariableType, BoundType> getViolatedPoint() const;
+                std::map<VariableType, CoefficientType> getViolatedPoint() const;
                 
                 
                 /*!
                  * Sets a point in the region for which the considered property is satisfied. 
                  */
-                void setSatPoint(std::map<VariableType, BoundType> const& satPoint);
+                void setSatPoint(std::map<VariableType, CoefficientType> const& satPoint);
                 
                 /*!
                  * Retrieves a point in the region for which is considered property is satisfied.
                  * If such a point is not known, the returned map is empty.
                  */
-                std::map<VariableType, BoundType> getSatPoint() const;
+                std::map<VariableType, CoefficientType> getSatPoint() const;
                 
             private:
                 
-                std::map<VariableType, BoundType> const lowerBounds;
-                std::map<VariableType, BoundType> const upperBounds;
+                std::map<VariableType, CoefficientType> const lowerBounds;
+                std::map<VariableType, CoefficientType> const upperBounds;
+                std::set<VariableType> variables;
                 RegionCheckResult checkResult;
-                std::map<VariableType, BoundType> satPoint;
-                std::map<VariableType, BoundType> violatedPoint;
+                std::map<VariableType, CoefficientType> satPoint;
+                std::map<VariableType, CoefficientType> violatedPoint;
                 
                 
             };
@@ -281,7 +282,7 @@ namespace storm {
              * 
              * @return true if an violated point as well as a sat point has been found, i.e., the check result is changed to EXISTSOTH
              */
-            bool checkPoint(ParameterRegion& region, std::map<VariableType, BoundType>const& point, bool viaReachProbFunction=false);
+            bool checkPoint(ParameterRegion& region, std::map<VariableType, CoefficientType>const& point, bool viaReachProbFunction=false);
             
             /*!
              * Builds an MDP that is used to compute bounds on the maximal/minimal reachability probability,

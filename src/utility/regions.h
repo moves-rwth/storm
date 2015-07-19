@@ -31,26 +31,26 @@ namespace storm {
                 public:
                     typedef typename storm::modelchecker::SparseDtmcRegionModelChecker<ParametricType,ConstantType>::ParameterRegion ParameterRegion;
                     typedef typename storm::modelchecker::SparseDtmcRegionModelChecker<ParametricType,ConstantType>::VariableType VariableType;
-                    typedef typename storm::modelchecker::SparseDtmcRegionModelChecker<ParametricType,ConstantType>::BoundType BoundType;
+                    typedef typename storm::modelchecker::SparseDtmcRegionModelChecker<ParametricType,ConstantType>::CoefficientType CoefficientType;
                     
                 /*
                  * Can be used to parse a single parameter with its bounds from a string of the form "0.3<=p<=0.5".
-                 * The numbers are parsed as doubles and then converted to SparseDtmcRegionModelChecker::Boundtype.
+                 * The numbers are parsed as doubles and then converted to SparseDtmcRegionModelChecker::CoefficientType.
                  * According to the given precision, the lower bound may be rounded down and the upper bound may be rounded up.
                  * If no precision is given, the one from the settings is used.
                  * The results will be inserted in the given maps
                  * 
                  */
                 static void parseParameterBounds( 
-                        std::map<VariableType, BoundType>& lowerBounds,
-                        std::map<VariableType, BoundType>& upperBounds,
+                        std::map<VariableType, CoefficientType>& lowerBounds,
+                        std::map<VariableType, CoefficientType>& upperBounds,
                         std::string const& parameterBoundsString,
                         double const precision=0.0
                 );
 
                 /*
                  * Can be used to parse a single region from a string of the form "0.3<=p<=0.5,0.4<=q<=0.7".
-                 * The numbers are parsed as doubles and then converted to SparseDtmcRegionModelChecker::Boundtype.
+                 * The numbers are parsed as doubles and then converted to SparseDtmcRegionModelChecker::CoefficientType.
                  * According to the given precision, the lower bound may be rounded down and the upper bound may be rounded up.
                  * If no precision is given, the one from the settings is used.
                  * 
@@ -61,7 +61,7 @@ namespace storm {
 
                 /*
                  * Can be used to parse a vector of region from a string of the form "0.3<=p<=0.5,0.4<=q<=0.7;0.1<=p<=0.3,0.2<=q<=0.4".
-                 * The numbers are parsed as doubles and then converted to SparseDtmcRegionModelChecker::Boundtype.
+                 * The numbers are parsed as doubles and then converted to SparseDtmcRegionModelChecker::CoefficientType.
                  * According to the given precision, the lower bound may be rounded down and the upper bound may be rounded up.
                  * If no precision is given, the one from the settings is used.
                  * 
@@ -73,7 +73,7 @@ namespace storm {
 
                 /*
                  * Retrieves the regions that are specified in the settings.
-                 * The numbers are parsed as doubles and then converted to SparseDtmcRegionModelChecker::Boundtype.
+                 * The numbers are parsed as doubles and then converted to SparseDtmcRegionModelChecker::CoefficientType.
                  * According to the given precision, the lower bound may be rounded down and the upper bound may be rounded up.
                  * If no precision is given, the one from the settings is used.
                  * 
@@ -115,7 +115,7 @@ namespace storm {
             std::string getVariableName(VariableType variable);
             
             template<typename ParametricType, typename ConstantType>
-            typename storm::modelchecker::SparseDtmcRegionModelChecker<ParametricType,ConstantType>::BoundType evaluateFunction(ParametricType const& function, std::map<typename storm::modelchecker::SparseDtmcRegionModelChecker<ParametricType,ConstantType>::VariableType, typename storm::modelchecker::SparseDtmcRegionModelChecker<ParametricType,ConstantType>::BoundType> const& point);
+            typename storm::modelchecker::SparseDtmcRegionModelChecker<ParametricType,ConstantType>::CoefficientType evaluateFunction(ParametricType const& function, std::map<typename storm::modelchecker::SparseDtmcRegionModelChecker<ParametricType,ConstantType>::VariableType, typename storm::modelchecker::SparseDtmcRegionModelChecker<ParametricType,ConstantType>::CoefficientType> const& point);
             
             /*!
              * Returns true if the function is rational. Note that the function might be simplified.
