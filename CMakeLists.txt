@@ -390,6 +390,7 @@ endif()
 file(GLOB_RECURSE STORM_HEADERS ${PROJECT_SOURCE_DIR}/src/*.h)
 file(GLOB_RECURSE STORM_SOURCES_WITHOUT_MAIN ${PROJECT_SOURCE_DIR}/src/*/*.cpp)
 file(GLOB_RECURSE STORM_MAIN_FILE ${PROJECT_SOURCE_DIR}/src/storm.cpp)
+file(GLOB_RECURSE STORM_MAIN_FILE ${PROJECT_SOURCE_DIR}/src/storm-dyftee.cpp)
 set(STORM_SOURCES "${STORM_SOURCES_WITHOUT_MAIN};${STORM_MAIN_FILE};")
 file(GLOB_RECURSE STORM_ADAPTERS_FILES ${PROJECT_SOURCE_DIR}/src/adapters/*.h ${PROJECT_SOURCE_DIR}/src/adapters/*.cpp)
 file(GLOB_RECURSE STORM_BUILDER_FILES ${PROJECT_SOURCE_DIR}/src/builder/*.h ${PROJECT_SOURCE_DIR}/src/builder/*.cpp)
@@ -415,6 +416,7 @@ file(GLOB_RECURSE STORM_STORAGE_DD_FILES ${PROJECT_SOURCE_DIR}/src/storage/dd/*.
 file(GLOB_RECURSE STORM_STORAGE_EXPRESSIONS_FILES ${PROJECT_SOURCE_DIR}/src/storage/expressions/*.h ${PROJECT_SOURCE_DIR}/src/storage/expressions/*.cpp)
 file(GLOB_RECURSE STORM_STORAGE_PRISM_FILES ${PROJECT_SOURCE_DIR}/src/storage/prism/*.h ${PROJECT_SOURCE_DIR}/src/storage/prism/*.cpp)
 file(GLOB_RECURSE STORM_STORAGE_SPARSE_FILES ${PROJECT_SOURCE_DIR}/src/storage/sparse/*.h ${PROJECT_SOURCE_DIR}/src/storage/sparse/*.cpp)
+file(GLOB_RECURSE STORM_STORAGE_DFT_FILES ${PROJECT_SOURCE_DIR}/src/storage/dft/*.h ${PROJECT_SOURCE_DIR}/src/storage/sparse/*.cpp)
 file(GLOB_RECURSE STORM_UTILITY_FILES ${PROJECT_SOURCE_DIR}/src/utility/*.h ${PROJECT_SOURCE_DIR}/src/utility/*.cpp)
 # Test Sources
 # Note that the tests also need the source files, except for the main file
@@ -428,6 +430,7 @@ file(GLOB_RECURSE STORM_BUILD_HEADERS ${PROJECT_BINARY_DIR}/include/*.h)
 
 # Group the headers and sources
 source_group(main FILES ${STORM_MAIN_FILE})
+source_group(dft FILES ${STORM_DYFTTEE_FILE})
 source_group(adapters FILES ${STORM_ADAPTERS_FILES})
 source_group(builder FILES ${STORM_BUILDER_FILES})
 source_group(exceptions FILES ${STORM_EXCEPTIONS_FILES})
@@ -453,6 +456,7 @@ source_group(storage\\dd FILES ${STORM_STORAGE_DD_FILES})
 source_group(storage\\expressions FILES ${STORM_STORAGE_EXPRESSIONS_FILES})
 source_group(storage\\prism FILES ${STORM_STORAGE_PRISM_FILES})
 source_group(storage\\sparse FILES ${STORM_STORAGE_SPARSE_FILES})
+source_group(storage\\dft FILES ${STORM_STORAGE_DFT_FILES})
 source_group(utility FILES ${STORM_UTILITY_FILES})
 source_group(functional-test FILES ${STORM_FUNCTIONAL_TEST_FILES})
 source_group(performance-test FILES ${STORM_PERFORMANCE_TEST_FILES} ${})
@@ -517,6 +521,9 @@ add_executable(storm-functional-tests ${STORM_FUNCTIONAL_TEST_MAIN_FILE} ${STORM
 target_link_libraries(storm-functional-tests storm)
 add_executable(storm-performance-tests ${STORM_PERFORMANCE_TEST_MAIN_FILE} ${STORM_PERFORMANCE_TEST_FILES})
 target_link_libraries(storm-performance-tests storm)
+
+add_executable(storm-dyftee ${STORM_MAIN_FILE})
+target_link_libraries(storm-dyftee storm)
 
 #############################################################
 ##
