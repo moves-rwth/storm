@@ -251,6 +251,7 @@ namespace storm {
         template<typename ValueType>
         SparseMatrix<ValueType>::SparseMatrix(SparseMatrix<ValueType> const& other) : rowCount(other.rowCount), columnCount(other.columnCount), entryCount(other.entryCount), nonzeroEntryCount(other.nonzeroEntryCount), columnsAndValues(other.columnsAndValues), rowIndications(other.rowIndications), nontrivialRowGrouping(other.nontrivialRowGrouping), rowGroupIndices(other.rowGroupIndices) {
             // Intentionally left empty.
+            std::cout << "!!!! copying matrix (constructor)" << std::endl;
         }
         
         template<typename ValueType>
@@ -258,6 +259,7 @@ namespace storm {
             storm::storage::BitVector rowConstraint(other.getRowCount(), true);
             storm::storage::BitVector columnConstraint(other.getColumnCount(), true);
             *this = other.getSubmatrix(false, rowConstraint, columnConstraint, insertDiagonalElements);
+            std::cout << "!!!! copying matrix (insertingDiagElements)" << std::endl;
         }
         
         template<typename ValueType>
@@ -271,6 +273,7 @@ namespace storm {
         template<typename ValueType>
         SparseMatrix<ValueType>::SparseMatrix(index_type columnCount, std::vector<index_type> const& rowIndications, std::vector<MatrixEntry<index_type, ValueType>> const& columnsAndValues, std::vector<index_type> const& rowGroupIndices, bool nontrivialRowGrouping) : rowCount(rowIndications.size() - 1), columnCount(columnCount), entryCount(columnsAndValues.size()), nonzeroEntryCount(0), columnsAndValues(columnsAndValues), rowIndications(rowIndications), nontrivialRowGrouping(nontrivialRowGrouping), rowGroupIndices(rowGroupIndices) {
             this->updateNonzeroEntryCount();
+            std::cout << "!!!! copying matrix (copying Ingredients)" << std::endl;
         }
         
         template<typename ValueType>
@@ -280,6 +283,7 @@ namespace storm {
         
         template<typename ValueType>
         SparseMatrix<ValueType>& SparseMatrix<ValueType>::operator=(SparseMatrix<ValueType> const& other) {
+            std::cout << "!!!! copying matrix (operator=)" << std::endl;
             // Only perform assignment if source and target are not the same.
             if (this != &other) {
                 rowCount = other.rowCount;

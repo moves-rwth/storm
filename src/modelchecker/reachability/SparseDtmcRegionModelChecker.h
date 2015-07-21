@@ -249,6 +249,8 @@ namespace storm {
                     storm::storage::sparse::state_type const& initState
             );
             
+            ParametricType getReachProbFunction();
+            
             //Computes the reachability probability function by performing state elimination
             ParametricType computeReachProbFunction(
                 storm::storage::BitVector const& subsys,
@@ -289,7 +291,7 @@ namespace storm {
              * If this approximation already yields that the property is satisfied/violated in the whole region,
              * true is returned and the regioncheckresult of the region is changed accordingly.
              * The computed bounds are stored in the given vectors.
-             * However, it only the lowerBounds (or upperBounds) need to be computed in order to get a conclusive result, 
+             * However, if only the lowerBounds (or upperBounds) need to be computed in order to prove ALLSAT or ALLVIOLATED, 
              * the upperBounds (or lowerBounds) vector remains untouched.
              */
             bool checkApproximativeProbabilities(ParameterRegion& region, std::vector<ConstantType>& lowerBounds, std::vector<ConstantType>& upperBounds); 
@@ -363,12 +365,9 @@ namespace storm {
             // stores the different substitutions of the variables
             std::vector<std::map<VariableType, TypeOfBound>> approxMdpSubstitutions;
                     
-            
-            
-
-            
             // The  function for the reachability probability in the initial state 
             ParametricType reachProbFunction;
+            bool isReachProbFunctionComputed;
             
             
             // runtimes and other information for statistics. 

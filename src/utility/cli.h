@@ -223,7 +223,11 @@ namespace storm {
                 getrusage(RUSAGE_SELF, &ru);
                 
                 std::cout << "===== Statistics ==============================" << std::endl;
+#ifndef LINUX
                 std::cout << "peak memory usage: " << ru.ru_maxrss/1024/1024 << "MB" << std::endl;
+#else                
+                std::cout << "peak memory usage: " << ru.ru_maxrss/1024 << "MB" << std::endl;
+#endif
                 std::cout << "CPU time: " << ru.ru_utime.tv_sec << "." << std::setw(3) << std::setfill('0') << ru.ru_utime.tv_usec/1000 << " seconds" << std::endl;
                 std::cout << "===============================================" << std::endl;
 #else
@@ -704,6 +708,7 @@ namespace storm {
 						STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No input model.");
 					}
 				}
+                printUsage();
             }
         }
     }
