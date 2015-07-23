@@ -59,6 +59,57 @@ namespace storm {
                  */
                 Dtmc<ValueType> getSubDtmc(storm::storage::BitVector const& states) const;
                 
+                class ConstraintCollector {
+                private:
+                    // A set of constraints that says that the DTMC actually has valid probability distributions in all states.
+                    std::unordered_set<carl::Constraint<ValueType>> wellformedConstraintSet;
+                    
+                    // A set of constraints that makes sure that the underlying graph of the model does not change depending
+                    // on the parameter values.
+                    std::unordered_set<carl::Constraint<ValueType>> graphPreservingConstraintSet;
+                    
+                    // A comparator that is used for
+                    storm::utility::ConstantsComparator<ValueType> comparator;
+                    
+                public:
+                    /*!
+                     * Constructs the a constraint collector for the given DTMC. The constraints are built and ready for
+                     * retrieval after the construction.
+                     *
+                     * @param dtmc The DTMC for which to create the constraints.
+                     */
+                    ConstraintCollector(storm::models::sparse::Dtmc<ValueType> const& dtmc);
+                    
+                    /*!
+                     * Returns the set of wellformed-ness constraints.
+                     *
+                     * @return The set of wellformed-ness constraints.
+                     */
+                    std::unordered_set<carl::Constraint<ValueType>> const&  getWellformedConstraints() const;
+                    
+                    /*!
+                     * Returns the set of graph-preserving constraints.
+                     *
+                     * @return The set of graph-preserving constraints.
+                     */
+                    std::unordered_set<carl::Constraint<ValueType>> const&  getGraphPreservingConstraints() const;
+                    
+                    /*!
+                     * Constructs the constraints for the given DTMC.
+                     *
+                     * @param dtmc The DTMC for which to create the constraints.
+                     */
+                    void process(storm::models::sparse::Dtmc<ValueType> const& dtmc);
+                    
+                    /*!
+                     * Constructs the constraints for the given DTMC by calling the process method.
+                     *
+                     * @param dtmc The DTMC for which to create the constraints.
+                     */
+                    void operator()(storm::models::sparse::Dtmc<ValueType> const& dtmc);
+                    
+                };
+                
             private:
                 /*!
                  * Checks the probability matrix for validity.
