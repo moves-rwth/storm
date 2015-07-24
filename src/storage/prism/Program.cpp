@@ -1,10 +1,12 @@
 #include "src/storage/prism/Program.h"
 
 #include <algorithm>
+#include <sstream>
 
 #include "src/storage/expressions/ExpressionManager.h"
 #include "src/settings/SettingsManager.h"
 #include "src/utility/macros.h"
+#include "src/utility/solver.h"
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/exceptions/OutOfRangeException.h"
 #include "src/exceptions/WrongFormatException.h"
@@ -724,6 +726,250 @@ namespace storm {
             }
         }
         
+        Program Program::flattenModules(std::unique_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory) const {
+            // If the current program has only one module, we can simply return a copy.
+            if (this->getNumberOfModules() == 1) {
+                return Program(*this);
+            }
+            
+            STORM_LOG_THROW(this->getModelType() == ModelType::DTMC || this->getModelType() == ModelType::MDP, storm::exceptions::InvalidTypeException, "Unable to flatten modules for model of type '" << this->getModelType() << "'.");
+            
+            // Otherwise, we need to actually flatten the contained modules.
+            
+            // Get an SMT solver for computing the possible guard combinations.
+            std::unique_ptr<storm::solver::SmtSolver> solver = smtSolverFactory->create(*manager);
+            
+            // Set up the data we need to gather to create the flat module.
+            std::stringstream newModuleName;
+            std::vector<storm::prism::BooleanVariable> allBooleanVariables;
+            std::vector<storm::prism::IntegerVariable> allIntegerVariables;
+            std::vector<storm::prism::Command> newCommands;
+            uint_fast64_t nextCommandIndex = 0;
+            uint_fast64_t nextUpdateIndex = 0;
+            
+            // Assert the values of the constants.
+            for (auto const& constant : this->getConstants()) {
+                if (constant.isDefined()) {
+                    solver->add(constant.getExpressionVariable() == constant.getExpression());
+                }
+            }
+            
+            // Assert the bounds of the global variables.
+            for (auto const& variable : this->getGlobalIntegerVariables()) {
+                solver->add(variable.getExpression() >= variable.getLowerBoundExpression());
+                solver->add(variable.getExpression() <= variable.getUpperBoundExpression());
+            }
+            
+            // Make the global variables local, such that the resulting module covers all occurring variables. Note that
+            // this is just for simplicity and is not needed.
+            allBooleanVariables.insert(allBooleanVariables.end(), this->getGlobalBooleanVariables().begin(), this->getGlobalBooleanVariables().end());
+            allIntegerVariables.insert(allIntegerVariables.end(), this->getGlobalIntegerVariables().begin(), this->getGlobalIntegerVariables().end());
+            
+            // Now go through the modules, gather the variables, construct the name of the new module and assert the
+            // bounds of the discovered variables.
+            for (auto const& module : this->getModules()) {
+                newModuleName << module.getName() << "_";
+                allBooleanVariables.insert(allBooleanVariables.end(), module.getBooleanVariables().begin(), module.getBooleanVariables().end());
+                allIntegerVariables.insert(allIntegerVariables.end(), module.getIntegerVariables().begin(), module.getIntegerVariables().end());
+                
+                for (auto const& variable : module.getIntegerVariables()) {
+                    solver->add(variable.getExpression() >= variable.getLowerBoundExpression());
+                    solver->add(variable.getExpression() <= variable.getUpperBoundExpression());
+                }
+                
+                // The commands without a synchronizing action name, can simply be copied (plus adjusting the global
+                // indices of the command and its updates).
+                for (auto const& command : module.getCommands()) {
+                    if (!command.isLabeled()) {
+                        std::vector<storm::prism::Update> updates;
+                        updates.reserve(command.getUpdates().size());
+                        
+                        for (auto const& update : command.getUpdates()) {
+                            updates.push_back(storm::prism::Update(nextUpdateIndex, update.getLikelihoodExpression(), update.getAssignments(), update.getFilename(), 0));
+                            ++nextUpdateIndex;
+                        }
+                        
+                        newCommands.push_back(storm::prism::Command(nextCommandIndex, command.isMarkovian(), actionToIndexMap.find("")->second, "", command.getGuardExpression(), updates, command.getFilename(), 0));
+                        ++nextCommandIndex;
+                    }
+                }
+            }
+            
+            // Save state of solver so that we can always restore the point where we have exactly the constant values
+            // and variables bounds on the assertion stack.
+            solver->push();
+            
+            // Now we need to enumerate all possible combinations of synchronizing commands. For this, we iterate over
+            // all actions and let the solver enumerate the possible combinations of commands that can be enabled together.
+            for (auto const& actionIndex : this->getActionIndices()) {
+                bool noCombinationsForAction = false;
+                
+                // Prepare the list that stores for each module the list of commands with the given action.
+                std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>> possibleCommands;
+                
+                for (auto const& module : this->getModules()) {
+                    // If the module has no command with this action, we can skip it.
+                    if (!module.hasActionIndex(actionIndex)) {
+                        continue;
+                    }
+                    
+                    std::set<uint_fast64_t> const& commandIndices = module.getCommandIndicesByActionIndex(actionIndex);
+                    
+                    // If there is no command even though the module has this action, there is no valid command
+                    // combination with this action.
+                    if (commandIndices.empty()) {
+                        noCombinationsForAction = true;
+                        break;
+                    }
+                    
+                    // Prepare empty list of commands for this module.
+                    possibleCommands.push_back(std::vector<std::reference_wrapper<storm::prism::Command const>>());
+                    
+                    // Add references to the commands labeled with the current action.
+                    for (auto const& commandIndex : commandIndices) {
+                        possibleCommands.back().push_back(module.getCommand(commandIndex));
+                    }
+                }
+                
+                // If there are no valid combinations for the action, we need to skip the generation of synchronizing
+                // commands.
+                if (!noCombinationsForAction) {
+                    // Save the solver state to be able to restore it when this action index is done.
+                    solver->push();
+                    
+                    // Start by creating a fresh auxiliary variable for each command and link it with the guard.
+                    std::vector<std::vector<storm::expressions::Variable>> commandVariables(possibleCommands.size());
+                    std::vector<storm::expressions::Variable> allCommandVariables;
+                    for (uint_fast64_t outerIndex = 0; outerIndex < possibleCommands.size(); ++outerIndex) {
+                        // Create auxiliary variables and link them with the guards.
+                        for (uint_fast64_t innerIndex = 0; innerIndex < possibleCommands[outerIndex].size(); ++innerIndex) {
+                            commandVariables[outerIndex].push_back(manager->declareFreshBooleanVariable());
+                            allCommandVariables.push_back(commandVariables[outerIndex].back());
+                            solver->add(implies(commandVariables[outerIndex].back(), possibleCommands[outerIndex][innerIndex].get().getGuardExpression()));
+                        }
+                        
+                        storm::expressions::Expression atLeastOneCommandFromModule = manager->boolean(false);
+                        for (auto const& commandVariable : commandVariables[outerIndex]) {
+                            atLeastOneCommandFromModule = atLeastOneCommandFromModule || commandVariable;
+                        }
+                        solver->add(atLeastOneCommandFromModule);
+                    }
+                    
+                    // Now we are in a position to start the enumeration over all command variables.
+                    uint_fast64_t modelCount = 0;
+                    solver->allSat(allCommandVariables, [&] (storm::solver::SmtSolver::ModelReference& modelReference) -> bool {
+                        // Now we need to reconstruct the chosen commands from the valuation of the command variables.
+                        std::vector<std::vector<std::reference_wrapper<Command const>>> chosenCommands(possibleCommands.size());
+
+                        for (uint_fast64_t outerIndex = 0; outerIndex < commandVariables.size(); ++outerIndex) {
+                            for (uint_fast64_t innerIndex = 0; innerIndex < commandVariables[outerIndex].size(); ++innerIndex) {
+                                if (modelReference.getBooleanValue(commandVariables[outerIndex][innerIndex])) {
+                                    chosenCommands[outerIndex].push_back(possibleCommands[outerIndex][innerIndex]);
+                                }
+                            }
+                        }
+                        
+                        // Now that we have retrieved the commands, we need to build their synchronizations and add them
+                        // to the flattened module.
+                        std::vector<std::vector<std::reference_wrapper<Command const>>::const_iterator> iterators;
+                        for (auto const& element : chosenCommands) {
+                            iterators.push_back(element.begin());
+                        }
+                        
+                        bool movedAtLeastOneIterator = false;
+                        std::vector<std::reference_wrapper<Command const>> commandCombination(chosenCommands.size(), chosenCommands.front().front());
+                        do {
+                            for (uint_fast64_t index = 0; index < iterators.size(); ++index) {
+                                commandCombination[index] = *iterators[index];
+                            }
+
+                            newCommands.push_back(synchronizeCommands(nextCommandIndex, actionIndex, nextUpdateIndex, indexToActionMap.find(actionIndex)->second, commandCombination));
+                            
+                            // Move the counters appropriately.
+                            ++nextCommandIndex;
+                            nextUpdateIndex += newCommands.back().getNumberOfUpdates();
+
+                            movedAtLeastOneIterator = false;
+                            for (uint_fast64_t index = 0; index < iterators.size(); ++index) {
+                                ++iterators[index];
+                                if (iterators[index] != chosenCommands[index].cend()) {
+                                    movedAtLeastOneIterator = true;
+                                    break;
+                                } else {
+                                    iterators[index] = chosenCommands[index].cbegin();
+                                }
+                            }
+                        } while (movedAtLeastOneIterator);
+                        
+                        return true;
+                    });
+                    
+                    solver->pop();
+                }
+            }
+            
+            // Finally, we can create the module and the program and return it.
+            storm::prism::Module singleModule(newModuleName.str(), allBooleanVariables, allIntegerVariables, newCommands, this->getFilename(), 0);
+            return Program(manager, this->getModelType(), this->getConstants(), std::vector<storm::prism::BooleanVariable>(), std::vector<storm::prism::IntegerVariable>(), this->getFormulas(), {singleModule}, actionToIndexMap, this->getRewardModels(), false, this->getInitialConstruct(), this->getLabels(), this->getFilename(), 0, true);
+        }
+        
+        Command Program::synchronizeCommands(uint_fast64_t newCommandIndex, uint_fast64_t actionIndex, uint_fast64_t firstUpdateIndex, std::string const& actionName, std::vector<std::reference_wrapper<Command const>> const& commands) const {
+            // To construct the synchronous product of the commands, we need to store a list of its updates.
+            std::vector<storm::prism::Update> newUpdates;
+            uint_fast64_t numberOfUpdates = 1;
+            for (uint_fast64_t i = 0; i < commands.size(); ++i) {
+                numberOfUpdates *= commands[i].get().getNumberOfUpdates();
+            }
+            newUpdates.reserve(numberOfUpdates);
+            
+            // Initialize all update iterators.
+            std::vector<std::vector<storm::prism::Update>::const_iterator> updateIterators;
+            for (uint_fast64_t i = 0; i < commands.size(); ++i) {
+                updateIterators.push_back(commands[i].get().getUpdates().cbegin());
+            }
+            
+            bool doneUpdates = false;
+            do {
+                // We create the new likelihood expression by multiplying the particapting updates' expressions.
+                storm::expressions::Expression newLikelihoodExpression = updateIterators[0]->getLikelihoodExpression();
+                for (uint_fast64_t i = 1; i < updateIterators.size(); ++i) {
+                    newLikelihoodExpression = newLikelihoodExpression * updateIterators[i]->getLikelihoodExpression();
+                }
+                
+                // Now concatenate all assignments of all participating updates.
+                std::vector<storm::prism::Assignment> newAssignments;
+                for (uint_fast64_t i = 0; i < updateIterators.size(); ++i) {
+                    newAssignments.insert(newAssignments.end(), updateIterators[i]->getAssignments().begin(), updateIterators[i]->getAssignments().end());
+                }
+                
+                // Then we are ready to create the new update.
+                newUpdates.push_back(storm::prism::Update(firstUpdateIndex, newLikelihoodExpression, newAssignments, this->getFilename(), 0));
+                ++firstUpdateIndex;
+                
+                // Now check whether there is some update combination we have not yet explored.
+                bool movedIterator = false;
+                for (int_fast64_t j = updateIterators.size() - 1; j >= 0; --j) {
+                    ++updateIterators[j];
+                    if (updateIterators[j] != commands[j].get().getUpdates().cend()) {
+                        movedIterator = true;
+                        break;
+                    } else {
+                        // Reset the iterator to the beginning of the list.
+                        updateIterators[j] = commands[j].get().getUpdates().cbegin();
+                    }
+                }
+                
+                doneUpdates = !movedIterator;
+            } while (!doneUpdates);
+            
+            storm::expressions::Expression newGuard = commands[0].get().getGuardExpression();
+            for (uint_fast64_t i = 1; i < commands.size(); ++i) {
+                newGuard = newGuard && commands[i].get().getGuardExpression();
+            }
+            
+            return Command(newCommandIndex, false, actionIndex, actionName, newGuard, newUpdates, this->getFilename(), 0);
+        }
+        
         storm::expressions::ExpressionManager const& Program::getManager() const {
             return *this->manager;
         }
@@ -732,17 +978,20 @@ namespace storm {
             return *this->manager;
         }
 
-        std::ostream& operator<<(std::ostream& stream, Program const& program) {
-            switch (program.getModelType()) {
-                case Program::ModelType::UNDEFINED: stream << "undefined"; break;
-                case Program::ModelType::DTMC: stream << "dtmc"; break;
-                case Program::ModelType::CTMC: stream << "ctmc"; break;
-                case Program::ModelType::MDP: stream << "mdp"; break;
-                case Program::ModelType::CTMDP: stream << "ctmdp"; break;
-                case Program::ModelType::MA: stream << "ma"; break;
+        std::ostream& operator<<(std::ostream& out, Program::ModelType const& type) {
+            switch (type) {
+                case Program::ModelType::UNDEFINED: out << "undefined"; break;
+                case Program::ModelType::DTMC: out << "dtmc"; break;
+                case Program::ModelType::CTMC: out << "ctmc"; break;
+                case Program::ModelType::MDP: out << "mdp"; break;
+                case Program::ModelType::CTMDP: out << "ctmdp"; break;
+                case Program::ModelType::MA: out << "ma"; break;
             }
-            stream << std::endl;
-            
+            return out;
+        }
+        
+        std::ostream& operator<<(std::ostream& stream, Program const& program) {
+            stream << program.getModelType() << std::endl;
             for (auto const& constant : program.getConstants()) {
                 stream << constant << std::endl;
             }

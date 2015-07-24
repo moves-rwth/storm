@@ -204,6 +204,10 @@ namespace storm {
             std::string newName = "__x" + std::to_string(freshVariableCounter++);
             return declareOrGetVariable(newName, variableType, auxiliary, false);
         }
+        
+        Variable ExpressionManager::declareFreshBooleanVariable(bool auxiliary) {
+            return declareFreshVariable(this->getBooleanType());
+        }
 
         uint_fast64_t ExpressionManager::getNumberOfVariables(storm::expressions::Type const& variableType) const {
             if (variableType.isBooleanType()) {

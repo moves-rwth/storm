@@ -15,7 +15,10 @@ namespace storm {
             public:                
                 // An enumeration of all engines.
                 enum class Engine { Sparse, Hybrid, Dd };
-                
+
+                // An enumeration of all available SMT solvers.
+                enum class SmtSolver { Z3, Mathsat };
+
                 // An enumeration of all available LP solvers.
                 enum class LpSolver { Gurobi, glpk };
                 
@@ -280,6 +283,13 @@ namespace storm {
                  * @return The selected LP solver.
                  */
                 LpSolver getLpSolver() const;
+
+                /*!
+                 * Retrieves the selected SMT solver.
+                 *
+                 * @return The selected SMT solver.
+                 */
+                SmtSolver getSmtSolver() const;
                 
                 /*!
                  * Retrieves whether the export-to-dot option was set.
@@ -386,6 +396,7 @@ namespace storm {
                 static const std::string timeoutOptionShortName;
                 static const std::string eqSolverOptionName;
                 static const std::string lpSolverOptionName;
+                static const std::string smtSolverOptionName;
                 static const std::string constantsOptionName;
                 static const std::string constantsOptionShortName;
                 static const std::string statisticsOptionName;

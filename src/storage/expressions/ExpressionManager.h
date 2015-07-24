@@ -235,6 +235,14 @@ namespace storm {
             Variable declareFreshVariable(storm::expressions::Type const& variableType, bool auxiliary = false);
             
             /*!
+             * Declares a boolean variable with the given type whose name is guaranteed to be unique and not yet in use.
+             *
+             * @param auxiliary A flag indicating whether the new variable should be tagged as an auxiliary variable.
+             * @return The variable.
+             */
+            Variable declareFreshBooleanVariable(bool auxiliary = false);
+            
+            /*!
              * Retrieves the number of variables.
              *
              * @return The number of variables.

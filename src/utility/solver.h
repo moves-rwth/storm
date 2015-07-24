@@ -7,7 +7,10 @@
 #include "src/solver/LinearEquationSolver.h"
 #include "src/solver/NativeLinearEquationSolver.h"
 #include "src/solver/MinMaxLinearEquationSolver.h"
+
 #include "src/solver/LpSolver.h"
+
+#include "src/solver/SmtSolver.h"
 
 #include "src/storage/dd/DdType.h"
 #include "src/settings/modules/NativeEquationSolverSettings.h"
@@ -109,6 +112,30 @@ namespace storm {
             };
             
             std::unique_ptr<storm::solver::LpSolver> getLpSolver(std::string const& name);
+            
+            class SmtSolverFactory {
+            public:
+                /*!
+                 * Creates a new SMT solver instance.
+                 *
+                 * @param manager The expression manager responsible for the expressions that will be given to the SMT
+                 * solver.
+                 * @return A pointer to the newly created solver.
+                 */
+                virtual std::unique_ptr<storm::solver::SmtSolver> create(storm::expressions::ExpressionManager& manager) const;
+            };
+            
+            class Z3SmtSolverFactory : public SmtSolverFactory {
+            public:
+                virtual std::unique_ptr<storm::solver::SmtSolver> create(storm::expressions::ExpressionManager& manager) const;
+            };
+
+            class MathsatSmtSolverFactory : public SmtSolverFactory {
+            public:
+                virtual std::unique_ptr<storm::solver::SmtSolver> create(storm::expressions::ExpressionManager& manager) const;
+            };
+            
+            std::unique_ptr<storm::solver::SmtSolver> getSmtSolver(storm::expressions::ExpressionManager& manager);
         }
     }
 }

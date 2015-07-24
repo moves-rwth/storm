@@ -14,6 +14,9 @@
 #include "src/solver/GurobiLpSolver.h"
 #include "src/solver/GlpkLpSolver.h"
 
+#include "src/solver/Z3SmtSolver.h"
+#include "src/solver/MathsatSmtSolver.h"
+
 namespace storm {
     namespace utility {
         namespace solver {
@@ -108,6 +111,28 @@ namespace storm {
             std::unique_ptr<storm::solver::LpSolver> getLpSolver(std::string const& name) {
                 std::unique_ptr<storm::utility::solver::LpSolverFactory> factory(new LpSolverFactory());
                 return factory->create(name);
+            }
+            
+            std::unique_ptr<storm::solver::SmtSolver> SmtSolverFactory::create(storm::expressions::ExpressionManager& manager) const {
+                storm::settings::modules::GeneralSettings::SmtSolver smtSolver = storm::settings::generalSettings().getSmtSolver();
+                switch (smtSolver) {
+                    case storm::settings::modules::GeneralSettings::SmtSolver::Z3: return std::unique_ptr<storm::solver::SmtSolver>(new storm::solver::Z3SmtSolver(manager));
+                    case storm::settings::modules::GeneralSettings::SmtSolver::Mathsat: return std::unique_ptr<storm::solver::SmtSolver>(new storm::solver::MathsatSmtSolver(manager));
+                }
+
+            }
+            
+            std::unique_ptr<storm::solver::SmtSolver> Z3SmtSolverFactory::create(storm::expressions::ExpressionManager& manager) const {
+                return std::unique_ptr<storm::solver::SmtSolver>(new storm::solver::Z3SmtSolver(manager));
+            }
+            
+            std::unique_ptr<storm::solver::SmtSolver> MathsatSmtSolverFactory::create(storm::expressions::ExpressionManager& manager) const {
+                return std::unique_ptr<storm::solver::SmtSolver>(new storm::solver::MathsatSmtSolver(manager));
+            }
+            
+            std::unique_ptr<storm::solver::SmtSolver> getSmtSolver(storm::expressions::ExpressionManager& manager) {
+                std::unique_ptr<storm::utility::solver::SmtSolverFactory> factory(new MathsatSmtSolverFactory());
+                return factory->create(manager);
             }
             
             template class SymbolicLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>;
