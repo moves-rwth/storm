@@ -66,9 +66,16 @@ namespace storm {
                 /*!
                  * Retrieves the vector indicating which matrix rows represent non-deterministic choices of a certain state.
                  *
-                 * @param The vector indicating which matrix rows represent non-deterministic choices of a certain state.
+                 * @return The vector indicating which matrix rows represent non-deterministic choices of a certain state.
                  */
                 std::vector<uint_fast64_t> const& getNondeterministicChoiceIndices() const;
+                
+                /*!
+                 * @param state State for which we want to know how many choices it has
+                 * 
+                 * @return The number of non-deterministic choices for the given state
+                 */
+                uint_fast64_t getNumberOfChoices(uint_fast64_t state) const;
                 
                 virtual void printModelInformationToStream(std::ostream& out) const;
                 

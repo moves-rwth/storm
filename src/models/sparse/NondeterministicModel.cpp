@@ -40,6 +40,12 @@ namespace storm {
             }
             
             template<typename ValueType>
+            uint_fast64_t getNumberOfChoices(uint_fast64_t state) const {
+                auto indices = this->getNondetermininisticChoiceIndices();
+                return indices[state+1] - indices[state];
+            }
+            
+            template<typename ValueType>
             void NondeterministicModel<ValueType>::printModelInformationToStream(std::ostream& out) const {
                 out << "-------------------------------------------------------------- " << std::endl;
                 out << "Model type: \t\t" << this->getType() << " (sparse)" << std::endl;
