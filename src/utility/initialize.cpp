@@ -1,6 +1,7 @@
 #include "initialize.h"
 
-#include "src/settings/SettingsManager.h"
+log4cplus::Logger logger;
+log4cplus::Logger printer;
 
 namespace storm {
     namespace utility {

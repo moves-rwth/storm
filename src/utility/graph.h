@@ -529,6 +529,23 @@ namespace storm {
                 return currentStates;
             }
             
+            /*!
+             * Computes the sets of states that have probability 1 of satisfying phi until psi under at least
+             * one possible resolution of non-determinism in a non-deterministic model. Stated differently,
+             * this means that these states have probability 1 of satisfying phi until psi if the
+             * scheduler tries to maximize this probability.
+             *
+             * @param model The model whose graph structure to search.
+             * @param backwardTransitions The reversed transition relation of the model.
+             * @param phiStates The set of all states satisfying phi.
+             * @param psiStates The set of all states satisfying psi.
+             * @return A bit vector that represents all states with probability 1.
+             */
+            template <typename T>
+            storm::storage::BitVector performProb1E(storm::models::sparse::NondeterministicModel<T> const& model, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
+                return performProb1E(model.getTransitionMatrix(), model.getNondeterministicChoiceIndices(), backwardTransitions, phiStates, psiStates);
+            }
+            
             template <typename T>
             std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01Max(storm::storage::SparseMatrix<T> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
                 std::pair<storm::storage::BitVector, storm::storage::BitVector> result;

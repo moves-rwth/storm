@@ -1,5 +1,5 @@
-#ifndef INITIALIZE_H
-#define	INITIALIZE_H
+#ifndef STORM_UTILITY_INITIALIZE_H
+#define	STORM_UTILITY_INITIALIZE_H
 
 
 
@@ -8,8 +8,10 @@
 #include "log4cplus/loggingmacros.h"
 #include "log4cplus/consoleappender.h"
 #include "log4cplus/fileappender.h"
-log4cplus::Logger logger;
-log4cplus::Logger printer;
+extern log4cplus::Logger logger;
+extern log4cplus::Logger printer;
+
+#include "src/settings/SettingsManager.h"
 
 
 namespace storm {

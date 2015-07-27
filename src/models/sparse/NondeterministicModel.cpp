@@ -40,8 +40,8 @@ namespace storm {
             }
             
             template<typename ValueType>
-            uint_fast64_t getNumberOfChoices(uint_fast64_t state) const {
-                auto indices = this->getNondetermininisticChoiceIndices();
+            uint_fast64_t NondeterministicModel<ValueType>::getNumberOfChoices(uint_fast64_t state) const {
+                auto indices = this->getNondeterministicChoiceIndices();
                 return indices[state+1] - indices[state];
             }
             

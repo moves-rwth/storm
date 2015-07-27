@@ -36,7 +36,7 @@ namespace storm {
 namespace std {
     template<>
     struct hash<storm::storage::StateActionPair> {
-        size_t operator()(storm::storage::StateActionPair const& sap) {
+        size_t operator()(storm::storage::StateActionPair const& sap) const {
             return (sap.getState() << 3 ^ sap.getAction());
         }
     };
