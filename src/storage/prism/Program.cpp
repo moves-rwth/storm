@@ -179,6 +179,16 @@ namespace storm {
         std::vector<IntegerVariable> const& Program::getGlobalIntegerVariables() const {
             return this->globalIntegerVariables;
         }
+        
+        bool Program::globalBooleanVariableExists(std::string const& variableName) const {
+            return this->globalBooleanVariableToIndexMap.count(variableName) > 0;
+        }
+        
+        bool Program::globalIntegerVariableExists(std::string const& variableName) const {
+            return this->globalIntegerVariableToIndexMap.count(variableName) > 0;
+        }
+        
+        
 
         BooleanVariable const& Program::getGlobalBooleanVariable(std::string const& variableName) const {
             auto const& nameIndexPair = this->globalBooleanVariableToIndexMap.find(variableName);
@@ -592,6 +602,41 @@ namespace storm {
             std::set<storm::expressions::Variable> variablesAndConstants;
             std::set_union(variables.begin(), variables.end(), constants.begin(), constants.end(), std::inserter(variablesAndConstants, variablesAndConstants.begin()));
             
+            // We check for each global variable and each labeled command, whether there is at most one instance writing to that variable.
+            std::set<std::pair<std::string, std::string>> globalBVarsWrittenToByCommand;
+            std::set<std::pair<std::string, std::string>> globalIVarsWrittenToByCommand;
+            for(auto const& module : this->getModules()) {
+                std::set<std::pair<std::string, std::string>> globalBVarsWrittenToByCommandInThisModule;
+                std::set<std::pair<std::string, std::string>> globalIVarsWrittenToByCommandInThisModule;
+                for (auto const& command : module.getCommands()) {
+                    if(!command.isLabeled()) continue;
+                    for (auto const& update : command.getUpdates()) {
+                         for (auto const& assignment : update.getAssignments()) {
+                             if(this->globalBooleanVariableExists(assignment.getVariable().getName())) {
+                                 globalBVarsWrittenToByCommandInThisModule.insert({assignment.getVariable().getName(), command.getActionName()});
+                             }
+                             else if(this->globalIntegerVariableExists(assignment.getVariable().getName())) {
+                                 globalIVarsWrittenToByCommandInThisModule.insert({assignment.getVariable().getName(), command.getActionName()});
+                             }
+                         }
+                    }
+                }
+                for(auto const& entry : globalIVarsWrittenToByCommandInThisModule) {
+                    if(globalIVarsWrittenToByCommand.find(entry) != globalIVarsWrittenToByCommand.end()) {
+                        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Error in " << module.getFilename() << ", line " << module.getLineNumber() << ": assignment of (possibly) synchronizing command with label '" << entry.second << "' writes to global variable '" << entry.first << "'.");
+                    }
+                }
+                for(auto const& entry : globalBVarsWrittenToByCommandInThisModule) {
+                    if(globalBVarsWrittenToByCommand.find(entry) != globalBVarsWrittenToByCommand.end()) {
+                        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Error in " << module.getFilename() << ", line " << module.getLineNumber() << ": assignment of (possibly) synchronizing command with label '" << entry.second << "' writes to global variable '" << entry.first << "'.");
+                    }
+                }
+                
+                globalBVarsWrittenToByCommand.insert(globalBVarsWrittenToByCommandInThisModule.begin(), globalBVarsWrittenToByCommandInThisModule.end());
+                globalIVarsWrittenToByCommand.insert(globalIVarsWrittenToByCommandInThisModule.begin(), globalIVarsWrittenToByCommandInThisModule.end());
+                
+            }
+            
             // Check the commands of the modules.
             bool hasProbabilisticCommand = false;
             bool hasMarkovianCommand = false;
@@ -635,11 +680,6 @@ namespace storm {
                         std::set<storm::expressions::Variable> alreadyAssignedVariables;
                         for (auto const& assignment : update.getAssignments()) {
                             storm::expressions::Variable assignedVariable = manager->getVariable(assignment.getVariableName());
-
-                            // If the command is labeled, i.e. may synchronize, we need to make sure no global variable is written.
-                            if (command.isLabeled()) {
-                                STORM_LOG_THROW(globalVariables.find(assignedVariable) == globalVariables.end(), storm::exceptions::WrongFormatException, "Error in " << command.getFilename() << ", line " << command.getLineNumber() << ": assignment of (possibly) synchronizing command writes to global variable '" << assignment.getVariableName() << "'.");
-                            }
 
                             if (legalVariables.find(assignedVariable) == legalVariables.end()) {
                                 if (all.find(assignedVariable) != all.end()) {
