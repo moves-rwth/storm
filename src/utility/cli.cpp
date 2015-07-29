@@ -156,6 +156,46 @@ namespace storm {
                 std::cout << "\tUser Time: " << std::setprecision(5) << userTime << "ms" << std::endl;
 #endif
             }
+            
+            bool parseOptions(const int argc, const char* argv[]) {
+                storm::settings::SettingsManager& manager = storm::settings::mutableManager();
+                try {
+                    manager.setFromCommandLine(argc, argv);
+                } catch (storm::exceptions::OptionParserException& e) {
+                    manager.printHelp();
+                    throw e;
+                    return false;
+                }
+                
+                if (storm::settings::generalSettings().isHelpSet()) {
+                    storm::settings::manager().printHelp(storm::settings::generalSettings().getHelpModuleName());
+                    return false;
+                }
+                
+                if (storm::settings::generalSettings().isVersionSet()) {
+                    storm::settings::manager().printVersion();
+                    return false;
+                }
+                
+                if (storm::settings::generalSettings().isVerboseSet()) {
+                    logger.getAppender("mainConsoleAppender")->setThreshold(log4cplus::INFO_LOG_LEVEL);
+                    LOG4CPLUS_INFO(logger, "Enabled verbose mode, log output gets printed to console.");
+                }
+                if (storm::settings::debugSettings().isDebugSet()) {
+                    logger.setLogLevel(log4cplus::DEBUG_LOG_LEVEL);
+                    logger.getAppender("mainConsoleAppender")->setThreshold(log4cplus::DEBUG_LOG_LEVEL);
+                    LOG4CPLUS_INFO(logger, "Enabled very verbose mode, log output gets printed to console.");
+                }
+                if (storm::settings::debugSettings().isTraceSet()) {
+                    logger.setLogLevel(log4cplus::TRACE_LOG_LEVEL);
+                    logger.getAppender("mainConsoleAppender")->setThreshold(log4cplus::TRACE_LOG_LEVEL);
+                    LOG4CPLUS_INFO(logger, "Enabled trace mode, log output gets printed to console.");
+                }
+                if (storm::settings::debugSettings().isLogfileSet()) {
+                    initializeFileLogging();
+                }
+                return true;
+            }
 
         }
     }

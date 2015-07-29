@@ -67,7 +67,11 @@ namespace storm {
             
           
          
+             std::string getCurrentWorkingDirectory();
             
+            void printHeader(const int argc, const char* argv[]);
+            
+            void printUsage();
             
             /*!
              * Parses the given command line arguments.
@@ -76,45 +80,7 @@ namespace storm {
              * @param argv The argv argument of main().
              * @return True iff the program should continue to run after parsing the options.
              */
-            bool parseOptions(const int argc, const char* argv[]) {
-                storm::settings::SettingsManager& manager = storm::settings::mutableManager();
-                try {
-                    manager.setFromCommandLine(argc, argv);
-                } catch (storm::exceptions::OptionParserException& e) {
-                    manager.printHelp();
-                    throw e;
-                    return false;
-                }
-                
-                if (storm::settings::generalSettings().isHelpSet()) {
-                    storm::settings::manager().printHelp(storm::settings::generalSettings().getHelpModuleName());
-                    return false;
-                }
-                
-                if (storm::settings::generalSettings().isVersionSet()) {
-                    storm::settings::manager().printVersion();
-                    return false;
-                }
-                
-                if (storm::settings::generalSettings().isVerboseSet()) {
-                    logger.getAppender("mainConsoleAppender")->setThreshold(log4cplus::INFO_LOG_LEVEL);
-                    LOG4CPLUS_INFO(logger, "Enabled verbose mode, log output gets printed to console.");
-                }
-                if (storm::settings::debugSettings().isDebugSet()) {
-                    logger.setLogLevel(log4cplus::DEBUG_LOG_LEVEL);
-                    logger.getAppender("mainConsoleAppender")->setThreshold(log4cplus::DEBUG_LOG_LEVEL);
-                    LOG4CPLUS_INFO(logger, "Enabled very verbose mode, log output gets printed to console.");
-                }
-                if (storm::settings::debugSettings().isTraceSet()) {
-                    logger.setLogLevel(log4cplus::TRACE_LOG_LEVEL);
-                    logger.getAppender("mainConsoleAppender")->setThreshold(log4cplus::TRACE_LOG_LEVEL);
-                    LOG4CPLUS_INFO(logger, "Enabled trace mode, log output gets printed to console.");
-                }
-                if (storm::settings::debugSettings().isLogfileSet()) {
-                    initializeFileLogging();
-                }
-                return true;
-            }
+            bool parseOptions(const int argc, const char* argv[]);
             
             template<typename ValueType>
             std::shared_ptr<storm::models::sparse::Model<ValueType>> buildExplicitModel(std::string const& transitionsFile, std::string const& labelingFile, boost::optional<std::string> const& stateRewardsFile = boost::optional<std::string>(), boost::optional<std::string> const& transitionRewardsFile = boost::optional<std::string>()) {
@@ -224,7 +190,7 @@ namespace storm {
             
 #ifdef STORM_HAVE_CARL
             template<>
-            void generateCounterexample(storm::prism::Program const& program, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model, std::shared_ptr<storm::logic::Formula> formula) {
+            inline void generateCounterexample(storm::prism::Program const& program, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model, std::shared_ptr<storm::logic::Formula> formula) {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unable to generate counterexample for parametric model.");
             }
 #endif
@@ -286,7 +252,7 @@ namespace storm {
             
 #ifdef STORM_HAVE_CARL
             template<>
-            void verifySparseModel(boost::optional<storm::prism::Program> const& program, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model, std::shared_ptr<storm::logic::Formula> formula) {
+            inline void verifySparseModel(boost::optional<storm::prism::Program> const& program, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model, std::shared_ptr<storm::logic::Formula> formula) {
                 storm::settings::modules::GeneralSettings const& settings = storm::settings::generalSettings();
                 
                 STORM_LOG_THROW(model->getType() == storm::models::ModelType::Dtmc, storm::exceptions::InvalidSettingsException, "Currently parametric verification is only available for DTMCs.");
@@ -402,7 +368,7 @@ namespace storm {
                 }
             }
             
-            void processOptions() {
+            inline void processOptions() {
                 if (storm::settings::debugSettings().isLogfileSet()) {
                     initializeFileLogging();
                 }
