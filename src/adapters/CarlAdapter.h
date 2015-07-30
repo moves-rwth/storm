@@ -34,6 +34,12 @@ namespace carl {
         std::hash<Pol> h;
         return h(f.nominator()) ^ h(f.denominator());
     }
+    
+    template<typename Number>
+    inline size_t hash_value(carl::Interval<Number> const& i) {
+        std::hash<Interval<Number>> h;
+        return h(i);
+    }
 }
 
 namespace storm {
@@ -43,6 +49,7 @@ namespace storm {
     typedef carl::FactorizedPolynomial<RawPolynomial> Polynomial;
     typedef carl::Relation CompareRelation;
     typedef carl::RationalFunction<Polynomial> RationalFunction;
+    typedef carl::Interval<double> Interval;
 }
 
 #endif

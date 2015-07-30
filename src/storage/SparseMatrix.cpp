@@ -993,30 +993,37 @@ namespace storm {
         }
         
         // Explicitly instantiate the entry, builder and the matrix.
-		//double
-		template class MatrixEntry<typename SparseMatrix<double>::index_type, double>;
-		template std::ostream& operator<<(std::ostream& out, MatrixEntry<uint_fast64_t, double> const& entry);
-		template class SparseMatrixBuilder<double>;
-		template class SparseMatrix<double>;
-		template std::ostream& operator<<(std::ostream& out, SparseMatrix<double> const& matrix);
-		//float
-		template class MatrixEntry<typename SparseMatrix<float>::index_type, float>;
-		template std::ostream& operator<<(std::ostream& out, MatrixEntry<uint_fast64_t, float> const& entry);
-		template class SparseMatrixBuilder<float>;
-		template class SparseMatrix<float>;
-		template std::ostream& operator<<(std::ostream& out, SparseMatrix<float> const& matrix);
-		//int
-		template class MatrixEntry<typename SparseMatrix<int>::index_type, int>;
-		template std::ostream& operator<<(std::ostream& out, MatrixEntry<uint_fast64_t, int> const& entry);
+        //double
+        template class MatrixEntry<typename SparseMatrix<double>::index_type, double>;
+        template std::ostream& operator<<(std::ostream& out, MatrixEntry<uint_fast64_t, double> const& entry);
+        template class SparseMatrixBuilder<double>;
+        template class SparseMatrix<double>;
+        template std::ostream& operator<<(std::ostream& out, SparseMatrix<double> const& matrix);
+        //float
+        template class MatrixEntry<typename SparseMatrix<float>::index_type, float>;
+        template std::ostream& operator<<(std::ostream& out, MatrixEntry<uint_fast64_t, float> const& entry);
+        template class SparseMatrixBuilder<float>;
+        template class SparseMatrix<float>;
+        template std::ostream& operator<<(std::ostream& out, SparseMatrix<float> const& matrix);
+        //int
+        template class MatrixEntry<typename SparseMatrix<int>::index_type, int>;
+        template std::ostream& operator<<(std::ostream& out, MatrixEntry<uint_fast64_t, int> const& entry);
         template class SparseMatrixBuilder<int>;
         template class SparseMatrix<int>;
         template std::ostream& operator<<(std::ostream& out, SparseMatrix<int> const& matrix);
 #ifdef STORM_HAVE_CARL
+        // Rat Function
         template class MatrixEntry<typename SparseMatrix<RationalFunction>::index_type, RationalFunction>;
         template std::ostream& operator<<(std::ostream& out, MatrixEntry<uint_fast64_t, RationalFunction> const& entry);
         template class SparseMatrixBuilder<RationalFunction>;
         template class SparseMatrix<RationalFunction>;
         template std::ostream& operator<<(std::ostream& out, SparseMatrix<RationalFunction> const& matrix);
+        // Intervals
+        template class MatrixEntry<typename SparseMatrix<Interval>::index_type, Interval>;
+        template std::ostream& operator<<(std::ostream& out, MatrixEntry<uint_fast64_t, Interval> const& entry);
+        template class SparseMatrixBuilder<Interval>;
+        template class SparseMatrix<Interval>;
+        template std::ostream& operator<<(std::ostream& out, SparseMatrix<Interval> const& matrix);
 #endif
         
         
