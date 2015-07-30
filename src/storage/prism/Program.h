@@ -119,6 +119,22 @@ namespace storm {
             std::size_t getNumberOfConstants() const;
             
             /*!
+             * Retrieves whether a global Boolean variable with the given name exists
+             * 
+             * @param variableName The name of the variable
+             * @return true iff a global variable of type Boolean with the given name exists.
+             */
+            bool globalBooleanVariableExists(std::string const& variableName) const;
+            
+            /**
+             * Retrieves whether a global Integer variable with the given name exists
+             * 
+             * @param variableName The name of the variable
+             * @return true iff a global variable of type Integer with the given name exists.
+             */
+            bool globalIntegerVariableExists(std::string const& variableName) const;
+            
+            /*!
              * Retrieves the global boolean variables of the program.
              *
              * @return The global boolean variables of the program.

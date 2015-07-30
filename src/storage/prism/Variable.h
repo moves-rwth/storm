@@ -55,6 +55,7 @@ namespace storm {
              */
             storm::expressions::Expression getExpression() const;
             
+            
             // Make the constructors protected to forbid instantiation of this class.
         protected:
             Variable() = default;
