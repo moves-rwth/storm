@@ -86,6 +86,13 @@ TEST(GmmxxCtmcCslModelCheckerTest, Cluster) {
     ASSERT_TRUE(checkResult->isExplicitQuantitativeCheckResult());
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeCheckResult7 = checkResult->asExplicitQuantitativeCheckResult<double>();
     EXPECT_NEAR(0.8602815057967503, quantitativeCheckResult7[initialState], storm::settings::generalSettings().getPrecision());
+
+    formula = formulaParser.parseFromString("LRA=? [\"minimum\"]");
+    checkResult = modelchecker.check(*formula);
+    
+    ASSERT_TRUE(checkResult->isExplicitQuantitativeCheckResult());
+    storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeCheckResult8 = checkResult->asExplicitQuantitativeCheckResult<double>();
+    EXPECT_NEAR(0.99999766034263426, quantitativeCheckResult8[initialState], storm::settings::generalSettings().getPrecision());
 }
 
 TEST(GmmxxCtmcCslModelCheckerTest, Embedded) {
@@ -149,6 +156,13 @@ TEST(GmmxxCtmcCslModelCheckerTest, Embedded) {
     ASSERT_TRUE(checkResult->isExplicitQuantitativeCheckResult());
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeCheckResult5 = checkResult->asExplicitQuantitativeCheckResult<double>();
     EXPECT_NEAR(2.7745274082080154, quantitativeCheckResult5[initialState], storm::settings::generalSettings().getPrecision());
+
+    formula = formulaParser.parseFromString("LRA=? [\"fail_sensors\"]");
+    checkResult = modelchecker.check(*formula);
+    
+    ASSERT_TRUE(checkResult->isExplicitQuantitativeCheckResult());
+    storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeCheckResult6 = checkResult->asExplicitQuantitativeCheckResult<double>();
+    EXPECT_NEAR(0.93458866427696596, quantitativeCheckResult6[initialState], storm::settings::generalSettings().getPrecision());
 }
 
 TEST(GmmxxCtmcCslModelCheckerTest, Polling) {
@@ -176,6 +190,13 @@ TEST(GmmxxCtmcCslModelCheckerTest, Polling) {
     ASSERT_TRUE(checkResult->isExplicitQuantitativeCheckResult());
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeCheckResult1 = checkResult->asExplicitQuantitativeCheckResult<double>();
     EXPECT_NEAR(1, quantitativeCheckResult1[initialState], storm::settings::generalSettings().getPrecision());
+
+    formula = formulaParser.parseFromString("LRA=?[\"target\"]");
+    checkResult = modelchecker.check(*formula);
+    
+    ASSERT_TRUE(checkResult->isExplicitQuantitativeCheckResult());
+    storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeCheckResult2 = checkResult->asExplicitQuantitativeCheckResult<double>();
+    EXPECT_NEAR(0.20079750055570736, quantitativeCheckResult2[initialState], storm::settings::generalSettings().getPrecision());
 }
 
 TEST(GmmxxCtmcCslModelCheckerTest, Fms) {
@@ -252,4 +273,11 @@ TEST(GmmxxCtmcCslModelCheckerTest, Tandem) {
     ASSERT_TRUE(checkResult->isExplicitQuantitativeCheckResult());
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeCheckResult6 = checkResult->asExplicitQuantitativeCheckResult<double>();
     EXPECT_NEAR(262.85103661561755, quantitativeCheckResult6[initialState], storm::settings::generalSettings().getPrecision());
+    
+    formula = formulaParser.parseFromString("LRA=? [\"first_queue_full\"]");
+    checkResult = modelchecker.check(*formula);
+    
+    ASSERT_TRUE(checkResult->isExplicitQuantitativeCheckResult());
+    storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeCheckResult7 = checkResult->asExplicitQuantitativeCheckResult<double>();
+    EXPECT_NEAR(0.9100373532, quantitativeCheckResult7[initialState], storm::settings::generalSettings().getPrecision());
 }

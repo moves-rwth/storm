@@ -27,7 +27,7 @@ namespace storm {
                     storm::models::sparse::StateLabeling const& stateLabeling,
                     boost::optional<std::vector<ValueType>> const& optionalStateRewardVector = boost::optional<std::vector<ValueType>>(),
                     boost::optional<storm::storage::SparseMatrix<ValueType>> const& optionalTransitionRewardMatrix = boost::optional<storm::storage::SparseMatrix<ValueType>>(),
-                    boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> const& optionalChoiceLabeling = boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>());
+                    boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling = boost::optional<std::vector<LabelSet>>());
                 
                 /*!
                  * Constructs a model by moving the given data.
@@ -42,7 +42,7 @@ namespace storm {
                     storm::models::sparse::StateLabeling&& stateLabeling,
                     boost::optional<std::vector<ValueType>>&& optionalStateRewardVector = boost::optional<std::vector<ValueType>>(),
                     boost::optional<storm::storage::SparseMatrix<ValueType>>&& optionalTransitionRewardMatrix = boost::optional<storm::storage::SparseMatrix<ValueType>>(),
-                    boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>&& optionalChoiceLabeling = boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>());
+                    boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling = boost::optional<std::vector<LabelSet>>());
                 
                 Mdp(Mdp const& other) = default;
                 Mdp& operator=(Mdp const& other) = default;
@@ -61,7 +61,7 @@ namespace storm {
                  * and which ones need to be ignored.
                  * @return A restricted version of the current MDP that only uses choice labels from the given set.
                  */
-                Mdp<ValueType> restrictChoiceLabels(boost::container::flat_set<uint_fast64_t> const& enabledChoiceLabels) const;
+                Mdp<ValueType> restrictChoiceLabels(LabelSet const& enabledChoiceLabels) const;
                 
             private:
                 /*!

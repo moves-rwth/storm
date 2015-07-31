@@ -154,8 +154,8 @@ TEST(SparseMatrix, CreationWithMovingContents) {
     columnsAndValues.emplace_back(1, 0.7);
     columnsAndValues.emplace_back(3, 0.2);
     
-    ASSERT_NO_THROW(storm::storage::SparseMatrix<double> matrix(4, {0, 2, 5, 5}, columnsAndValues, {0, 1, 2, 3}));
-    storm::storage::SparseMatrix<double> matrix(4, {0, 2, 5, 5}, columnsAndValues, {0, 1, 2, 3});
+    ASSERT_NO_THROW(storm::storage::SparseMatrix<double> matrix(4, {0, 2, 5, 5}, columnsAndValues, {0, 1, 2, 3}, false));
+    storm::storage::SparseMatrix<double> matrix(4, {0, 2, 5, 5}, columnsAndValues, {0, 1, 2, 3}, false);
     ASSERT_EQ(3, matrix.getRowCount());
     ASSERT_EQ(4, matrix.getColumnCount());
     ASSERT_EQ(5, matrix.getEntryCount());
@@ -328,7 +328,7 @@ TEST(SparseMatrix, Submatrix) {
     ASSERT_NO_THROW(matrixBuilder.addNextValue(4, 3, 0.3));
     storm::storage::SparseMatrix<double> matrix;
     ASSERT_NO_THROW(matrix = matrixBuilder.build());
-    
+
     std::vector<uint_fast64_t> rowGroupIndices = {0, 1, 2, 4, 5};
     
     storm::storage::BitVector rowGroupConstraint(4);

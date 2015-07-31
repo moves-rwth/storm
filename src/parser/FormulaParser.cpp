@@ -38,7 +38,10 @@ namespace storm {
             booleanLiteralFormula = (qi::lit("true")[qi::_a = true] | qi::lit("false")[qi::_a = false])[qi::_val = phoenix::bind(&FormulaParser::createBooleanLiteralFormula, phoenix::ref(*this), qi::_a)];
             booleanLiteralFormula.name("boolean literal formula");
             
-            atomicStateFormula = booleanLiteralFormula | labelFormula | expressionFormula | (qi::lit("(") > stateFormula > qi::lit(")"));
+            operatorFormula = probabilityOperator | rewardOperator | steadyStateOperator;
+            operatorFormula.name("operator formulas");
+            
+            atomicStateFormula = booleanLiteralFormula | labelFormula | expressionFormula | (qi::lit("(") > stateFormula > qi::lit(")")) | operatorFormula;
             atomicStateFormula.name("atomic state formula");
 
             notStateFormula = (-unaryBooleanOperator_ >> atomicStateFormula)[qi::_val = phoenix::bind(&FormulaParser::createUnaryBooleanStateFormula, phoenix::ref(*this), qi::_2, qi::_1)];
@@ -89,7 +92,7 @@ namespace storm {
             orStateFormula = andStateFormula[qi::_val = qi::_1] >> *(qi::lit("|") >> andStateFormula)[qi::_val = phoenix::bind(&FormulaParser::createBinaryBooleanStateFormula, phoenix::ref(*this), qi::_val, qi::_1, storm::logic::BinaryBooleanStateFormula::OperatorType::Or)];
             orStateFormula.name("or state formula");
             
-            stateFormula = (probabilityOperator | rewardOperator | steadyStateOperator | orStateFormula);
+            stateFormula = (orStateFormula);
             stateFormula.name("state formula");
             
             start = qi::eps > stateFormula >> qi::skip(boost::spirit::ascii::space | qi::lit("//") >> *(qi::char_ - (qi::eol | qi::eoi)))[qi::eps] >> qi::eoi;

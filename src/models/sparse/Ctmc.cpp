@@ -10,7 +10,7 @@ namespace storm {
             Ctmc<ValueType>::Ctmc(storm::storage::SparseMatrix<ValueType> const& rateMatrix, storm::models::sparse::StateLabeling const& stateLabeling,
                                   boost::optional<std::vector<ValueType>> const& optionalStateRewardVector,
                                   boost::optional<storm::storage::SparseMatrix<ValueType>> const& optionalTransitionRewardMatrix,
-                                  boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> const& optionalChoiceLabeling)
+                                  boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling)
             : DeterministicModel<ValueType>(storm::models::ModelType::Ctmc, rateMatrix, stateLabeling, optionalStateRewardVector, optionalTransitionRewardMatrix, optionalChoiceLabeling) {
                 exitRates = createExitRateVector(this->getTransitionMatrix());
             }
@@ -19,7 +19,7 @@ namespace storm {
             Ctmc<ValueType>::Ctmc(storm::storage::SparseMatrix<ValueType>&& rateMatrix, storm::models::sparse::StateLabeling&& stateLabeling,
                                   boost::optional<std::vector<ValueType>>&& optionalStateRewardVector,
                                   boost::optional<storm::storage::SparseMatrix<ValueType>>&& optionalTransitionRewardMatrix,
-                                  boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>&& optionalChoiceLabeling)
+                                  boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling)
             : DeterministicModel<ValueType>(storm::models::ModelType::Ctmc, std::move(rateMatrix), std::move(stateLabeling), std::move(optionalStateRewardVector), std::move(optionalTransitionRewardMatrix), std::move(optionalChoiceLabeling)) {
                 // It is important to refer to the transition matrix here, because the given rate matrix has been move elsewhere.
                 exitRates = createExitRateVector(this->getTransitionMatrix());

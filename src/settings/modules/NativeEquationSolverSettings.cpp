@@ -7,19 +7,22 @@ namespace storm {
         namespace modules {
             
             const std::string NativeEquationSolverSettings::moduleName = "native";
-            const std::string NativeEquationSolverSettings::techniqueOptionName = "tech";
+            const std::string NativeEquationSolverSettings::techniqueOptionName = "method";
+            const std::string NativeEquationSolverSettings::omegaOptionName = "soromega";
             const std::string NativeEquationSolverSettings::maximalIterationsOptionName = "maxiter";
             const std::string NativeEquationSolverSettings::maximalIterationsOptionShortName = "i";
             const std::string NativeEquationSolverSettings::precisionOptionName = "precision";
             const std::string NativeEquationSolverSettings::absoluteOptionName = "absolute";
             
             NativeEquationSolverSettings::NativeEquationSolverSettings(storm::settings::SettingsManager& settingsManager) : ModuleSettings(settingsManager, moduleName) {
-                std::vector<std::string> methods = { "jacobi" };
+                std::vector<std::string> methods = { "jacobi", "gaussseidel", "sor" };
                 this->addOption(storm::settings::OptionBuilder(moduleName, techniqueOptionName, true, "The method to be used for solving linear equation systems with the native engine. Available are: { jacobi }.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the method to use.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(methods)).setDefaultValueString("jacobi").build()).build());
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, maximalIterationsOptionName, false, "The maximal number of iterations to perform before iterative solving is aborted.").setShortName(maximalIterationsOptionShortName).addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("count", "The maximal iteration count.").setDefaultValueUnsignedInteger(20000).build()).build());
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, precisionOptionName, false, "The precision used for detecting convergence of iterative methods.").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to achieve.").setDefaultValueDouble(1e-06).addValidationFunctionDouble(storm::settings::ArgumentValidators::doubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
+                
+                this->addOption(storm::settings::OptionBuilder(moduleName, omegaOptionName, false, "The omega used for SOR.").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The value of the SOR parameter.").setDefaultValueDouble(0.9).addValidationFunctionDouble(storm::settings::ArgumentValidators::doubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, absoluteOptionName, false, "Sets whether the relative or the absolute error is considered for detecting convergence.").build());
             }
@@ -28,10 +31,14 @@ namespace storm {
                 return this->getOption(techniqueOptionName).getHasOptionBeenSet();
             }
             
-            NativeEquationSolverSettings::LinearEquationTechnique NativeEquationSolverSettings::getLinearEquationSystemTechnique() const {
+            NativeEquationSolverSettings::LinearEquationMethod NativeEquationSolverSettings::getLinearEquationSystemMethod() const {
                 std::string linearEquationSystemTechniqueAsString = this->getOption(techniqueOptionName).getArgumentByName("name").getValueAsString();
                 if (linearEquationSystemTechniqueAsString == "jacobi") {
-                    return NativeEquationSolverSettings::LinearEquationTechnique::Jacobi;
+                    return NativeEquationSolverSettings::LinearEquationMethod::Jacobi;
+                } else if (linearEquationSystemTechniqueAsString == "gaussseidel") {
+                    return NativeEquationSolverSettings::LinearEquationMethod::GaussSeidel;
+                } else if (linearEquationSystemTechniqueAsString == "sor") {
+                    return NativeEquationSolverSettings::LinearEquationMethod::SOR;
                 }
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown solution technique '" << linearEquationSystemTechniqueAsString << "' selected.");
             }
@@ -50,6 +57,10 @@ namespace storm {
             
             double NativeEquationSolverSettings::getPrecision() const {
                 return this->getOption(precisionOptionName).getArgumentByName("value").getValueAsDouble();
+            }
+
+            double NativeEquationSolverSettings::getOmega() const {
+                return this->getOption(omegaOptionName).getArgumentByName("value").getValueAsDouble();
             }
             
             bool NativeEquationSolverSettings::isConvergenceCriterionSet() const {

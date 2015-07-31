@@ -37,6 +37,11 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type>
+        std::unique_ptr<CheckResult> SymbolicPropositionalModelChecker<Type>::checkAtomicExpressionFormula(storm::logic::AtomicExpressionFormula const& stateFormula) {
+            return std::unique_ptr<CheckResult>(new SymbolicQualitativeCheckResult<Type>(model.getReachableStates(), model.getStates(stateFormula.getExpression())));
+        }
+        
+        template<storm::dd::DdType Type>
         storm::models::symbolic::Model<Type> const& SymbolicPropositionalModelChecker<Type>::getModel() const {
             return model;
         }

@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
+#include "src/settings/SettingMemento.h"
 #include "src/logic/Formulas.h"
 #include "src/utility/solver.h"
 #include "src/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
@@ -128,7 +129,7 @@ TEST(SparseDtmcPrctlModelCheckerTest, SynchronousLeader) {
     EXPECT_NEAR(1.0448979589010925, quantitativeResult3[0], storm::settings::nativeEquationSolverSettings().getPrecision());
 }
 
-TEST(SparseDtmcPrctlModelCheckerTest, LRA_SingleBscc) {
+TEST(SparseDtmcPrctlModelCheckerTest, LRASingleBscc) {
 	storm::storage::SparseMatrixBuilder<double> matrixBuilder;
 	std::shared_ptr<storm::models::sparse::Dtmc<double>> dtmc;
 
@@ -144,7 +145,7 @@ TEST(SparseDtmcPrctlModelCheckerTest, LRA_SingleBscc) {
 
 		dtmc.reset(new storm::models::sparse::Dtmc<double>(transitionMatrix, ap, boost::none, boost::none, boost::none));
 
-		storm::modelchecker::SparseDtmcPrctlModelChecker<double> checker(*dtmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::NativeLinearEquationSolverFactory<double>()));
+        storm::modelchecker::SparseDtmcPrctlModelChecker<double> checker(*dtmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::NativeLinearEquationSolverFactory<double>(storm::solver::NativeLinearEquationSolver<double>::SolutionMethod::SOR, 0.9)));
 
 		auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("a");
 		auto lraFormula = std::make_shared<storm::logic::LongRunAverageOperatorFormula>(labelFormula);
@@ -169,7 +170,7 @@ TEST(SparseDtmcPrctlModelCheckerTest, LRA_SingleBscc) {
 
 		dtmc.reset(new storm::models::sparse::Dtmc<double>(transitionMatrix, ap, boost::none, boost::none, boost::none));
 
-		storm::modelchecker::SparseDtmcPrctlModelChecker<double> checker(*dtmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::NativeLinearEquationSolverFactory<double>()));
+        storm::modelchecker::SparseDtmcPrctlModelChecker<double> checker(*dtmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::NativeLinearEquationSolverFactory<double>(storm::solver::NativeLinearEquationSolver<double>::SolutionMethod::SOR, 0.9)));
 
 		auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("a");
 		auto lraFormula = std::make_shared<storm::logic::LongRunAverageOperatorFormula>(labelFormula);
@@ -194,7 +195,7 @@ TEST(SparseDtmcPrctlModelCheckerTest, LRA_SingleBscc) {
 
 		dtmc.reset(new storm::models::sparse::Dtmc<double>(transitionMatrix, ap, boost::none, boost::none, boost::none));
 
-		storm::modelchecker::SparseDtmcPrctlModelChecker<double> checker(*dtmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::NativeLinearEquationSolverFactory<double>()));
+        storm::modelchecker::SparseDtmcPrctlModelChecker<double> checker(*dtmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::NativeLinearEquationSolverFactory<double>(storm::solver::NativeLinearEquationSolver<double>::SolutionMethod::SOR, 0.9)));
 
 		auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("a");
 		auto lraFormula = std::make_shared<storm::logic::LongRunAverageOperatorFormula>(labelFormula);
@@ -255,7 +256,7 @@ TEST(SparseDtmcPrctlModelCheckerTest, LRA) {
 
 		mdp.reset(new storm::models::sparse::Dtmc<double>(transitionMatrix, ap, boost::none, boost::none, boost::none));
 
-		storm::modelchecker::SparseDtmcPrctlModelChecker<double> checker(*mdp, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::NativeLinearEquationSolverFactory<double>()));
+        storm::modelchecker::SparseDtmcPrctlModelChecker<double> checker(*mdp, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::NativeLinearEquationSolverFactory<double>(storm::solver::NativeLinearEquationSolver<double>::SolutionMethod::SOR, 0.9)));
 
 		auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("a");
 		auto lraFormula = std::make_shared<storm::logic::LongRunAverageOperatorFormula>(labelFormula);

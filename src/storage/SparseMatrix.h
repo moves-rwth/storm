@@ -150,6 +150,14 @@ namespace storm {
             SparseMatrixBuilder(index_type rows = 0, index_type columns = 0, index_type entries = 0, bool forceDimensions = true, bool hasCustomRowGrouping = false, index_type rowGroups = 0);
             
             /*!
+             * Moves the contents of the given matrix into the matrix builder so that its contents can be modified again.
+             * This is, for example, useful if rows need to be added to the matrix.
+             *
+             * @param matrix The matrix that is to be made editable again.
+             */
+            SparseMatrixBuilder(SparseMatrix<ValueType>&& matrix);
+            
+            /*!
              * Sets the matrix entry at the given row and column to the given value. After all entries have been added,
              * a call to finalize(false) is mandatory.
              *
@@ -192,6 +200,20 @@ namespace storm {
              * groups added this way will be empty.
              */
             SparseMatrix<value_type> build(index_type overriddenRowCount = 0, index_type overriddenColumnCount = 0, index_type overriddenRowGroupCount = 0);
+            
+            /*!
+             * Retrieves the most recently used row.
+             * 
+             * @return The most recently used row.
+             */
+            index_type getLastRow() const;
+
+            /*!
+             * Retrieves the most recently used row.
+             *
+             * @return The most recently used row.
+             */
+            index_type getLastColumn() const;
             
         private:
             // A flag indicating whether a row count was set upon construction.
@@ -277,6 +299,7 @@ namespace storm {
             friend class storm::adapters::EigenAdapter;
             friend class storm::adapters::StormAdapter;
 			friend class storm::solver::TopologicalValueIterationMinMaxLinearEquationSolver<ValueType>;
+            friend class SparseMatrixBuilder<ValueType>;
             
             typedef uint_fast64_t index_type;
             typedef ValueType value_type;
@@ -389,6 +412,15 @@ namespace storm {
             SparseMatrix(SparseMatrix<value_type> const& other);
             
             /*!
+             * Constructs a sparse matrix by performing a deep-copy of the given matrix.
+             *
+             * @param other The matrix from which to copy the content.
+             * @param insertDiagonalElements If set to true, the copy will have all diagonal elements. If they did not
+             * exist in the original matrix, they are inserted and set to value zero.
+             */
+            SparseMatrix(SparseMatrix<value_type> const& other, bool insertDiagonalElements);
+            
+            /*!
              * Constructs a sparse matrix by moving the contents of the given matrix to the newly created one.
              *
              * @param other The matrix from which to move the content.
@@ -402,8 +434,9 @@ namespace storm {
              * @param rowIndications The row indications vector of the matrix to be constructed.
              * @param columnsAndValues The vector containing the columns and values of the entries in the matrix.
              * @param rowGroupIndices The vector representing the row groups in the matrix.
+             * @param hasNontrivialRowGrouping If set to true, this indicates that the row grouping is non-trivial.
              */
-            SparseMatrix(index_type columnCount, std::vector<index_type> const& rowIndications, std::vector<MatrixEntry<index_type, value_type>> const& columnsAndValues, std::vector<index_type> const& rowGroupIndices);
+            SparseMatrix(index_type columnCount, std::vector<index_type> const& rowIndications, std::vector<MatrixEntry<index_type, value_type>> const& columnsAndValues, std::vector<index_type> const& rowGroupIndices, bool hasNontrivialRowGrouping);
             
             /*!
              * Constructs a sparse matrix by moving the given contents.
@@ -412,8 +445,9 @@ namespace storm {
              * @param rowIndications The row indications vector of the matrix to be constructed.
              * @param columnsAndValues The vector containing the columns and values of the entries in the matrix.
              * @param rowGroupIndices The vector representing the row groups in the matrix.
+             * @param hasNontrivialRowGrouping If set to true, this indicates that the row grouping is non-trivial.
              */
-            SparseMatrix(index_type columnCount, std::vector<index_type>&& rowIndications, std::vector<MatrixEntry<index_type, value_type>>&& columnsAndValues, std::vector<index_type>&& rowGroupIndices);
+            SparseMatrix(index_type columnCount, std::vector<index_type>&& rowIndications, std::vector<MatrixEntry<index_type, value_type>>&& columnsAndValues, std::vector<index_type>&& rowGroupIndices, bool hasNontrivialRowGrouping);
 
             /*!
              * Assigns the contents of the given matrix to the current one by deep-copying its contents.
@@ -646,6 +680,26 @@ namespace storm {
              * @return The product of the matrix and the given vector as the content of the given result vector.
              */
             void multiplyWithVector(std::vector<value_type> const& vector, std::vector<value_type>& result) const;
+
+            /*!
+             * Multiplies the vector to the matrix from the left and writes the result to the given result vector.
+             *
+             * @param vector The vector with which the matrix is to be multiplied. This vector is interpreted as being
+             * a row vector.
+             * @param result The vector that is supposed to hold the result of the multiplication after the operation.
+             * @return The product of the matrix and the given vector as the content of the given result vector. The 
+             * result is to be interpreted as a row vector.
+             */
+            void multiplyVectorWithMatrix(std::vector<value_type> const& vector, std::vector<value_type>& result) const;
+            
+            /*!
+             * Performs one step of the successive over-relaxation technique.
+             *
+             * @param omega The Omega parameter for SOR.
+             * @param x The current solution vector. The result will be written to the very same vector.
+             * @param b The 'right-hand side' of the problem.
+             */
+            void performSuccessiveOverRelaxationStep(ValueType omega, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
             
             /*!
              * Multiplies the matrix with the given vector in a sequential way and writes the result to the given result
@@ -798,6 +852,13 @@ namespace storm {
              * @return An iterator that points past the end of the last row of the matrix.
              */
             iterator end();
+            
+            /*!
+             * Retrieves whether the matrix has a (possibly) non-trivial row grouping.
+             *
+             * @return True iff the matrix has a (possibly) non-trivial row grouping.
+             */
+            bool hasNontrivialRowGrouping() const;
 
 			/*!
 			* Returns a copy of the matrix with the chosen internal data type
@@ -813,7 +874,7 @@ namespace storm {
 					new_columnsAndValues.at(i) = MatrixEntry<SparseMatrix::index_type, NewValueType>(columnsAndValues.at(i).getColumn(), static_cast<NewValueType>(columnsAndValues.at(i).getValue()));
 				}
 
-				return SparseMatrix<NewValueType>(columnCount, std::move(new_rowIndications), std::move(new_columnsAndValues), std::move(new_rowGroupIndices));
+				return SparseMatrix<NewValueType>(columnCount, std::move(new_rowIndications), std::move(new_columnsAndValues), std::move(new_rowGroupIndices), nontrivialRowGrouping);
 			}
             
         private:
@@ -851,6 +912,10 @@ namespace storm {
             // in row i are valueStorage[rowIndications[i]] to valueStorage[rowIndications[i + 1]] where the last
             // entry is not included anymore.
             std::vector<index_type> rowIndications;
+            
+            // A flag that indicates whether the matrix has a non-trivial row-grouping, i.e. (possibly) more than one
+            // row per row group.
+            bool nontrivialRowGrouping;
             
             // A vector indicating the row groups of the matrix.
             std::vector<index_type> rowGroupIndices;

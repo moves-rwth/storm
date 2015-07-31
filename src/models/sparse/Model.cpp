@@ -12,7 +12,7 @@ namespace storm {
                                     storm::models::sparse::StateLabeling const& stateLabeling,
                                     boost::optional<std::vector<ValueType>> const& optionalStateRewardVector,
                                     boost::optional<storm::storage::SparseMatrix<ValueType>> const& optionalTransitionRewardMatrix,
-                                    boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> const& optionalChoiceLabeling)
+                                    boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling)
             : ModelBase(modelType),
             transitionMatrix(transitionMatrix),
             stateLabeling(stateLabeling),
@@ -28,7 +28,7 @@ namespace storm {
                                     storm::models::sparse::StateLabeling&& stateLabeling,
                                     boost::optional<std::vector<ValueType>>&& optionalStateRewardVector,
                                     boost::optional<storm::storage::SparseMatrix<ValueType>>&& optionalTransitionRewardMatrix,
-                                    boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>&& optionalChoiceLabeling)
+                                    boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling)
             : ModelBase(modelType),
             transitionMatrix(std::move(transitionMatrix)),
             stateLabeling(std::move(stateLabeling)),
@@ -109,7 +109,7 @@ namespace storm {
             }
             
             template <typename ValueType>
-            std::vector<boost::container::flat_set<uint_fast64_t>> const& Model<ValueType>::getChoiceLabeling() const {
+            std::vector<LabelSet> const& Model<ValueType>::getChoiceLabeling() const {
                 return choiceLabeling.get();
             }
             
@@ -159,7 +159,7 @@ namespace storm {
                     result += getTransitionRewardMatrix().getSizeInBytes();
                 }
                 if (hasChoiceLabeling()) {
-                    result += getChoiceLabeling().size() * sizeof(boost::container::flat_set<uint_fast64_t>);
+                    result += getChoiceLabeling().size() * sizeof(LabelSet);
                 }
                 return result;
             }

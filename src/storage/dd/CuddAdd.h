@@ -721,7 +721,7 @@ namespace storm {
             void toMatrixRec(DdNode const* dd, std::vector<uint_fast64_t>& rowIndications, std::vector<storm::storage::MatrixEntry<uint_fast64_t, double>>& columnsAndValues, std::vector<uint_fast64_t> const& rowGroupOffsets, Odd<DdType::CUDD> const& rowOdd, Odd<DdType::CUDD> const& columnOdd, uint_fast64_t currentRowLevel, uint_fast64_t currentColumnLevel, uint_fast64_t maxLevel, uint_fast64_t currentRowOffset, uint_fast64_t currentColumnOffset, std::vector<uint_fast64_t> const& ddRowVariableIndices, std::vector<uint_fast64_t> const& ddColumnVariableIndices, bool generateValues = true) const;
             
             /*!
-             * Helper function to convert the DD into a (sparse) vector.
+             * Helper function to convert the DD into an (explicit) vector.
              *
              * @param dd The DD to convert.
              * @param result The vector that will hold the values upon successful completion.
@@ -772,7 +772,7 @@ namespace storm {
             void addToVector(Odd<DdType::CUDD> const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType>& targetVector) const;
             
             /*!
-             * Performs a recursive step to perform the given function between the given DD-based vector to the given
+             * Performs a recursive step to perform the given function between the given DD-based vector and the given
              * explicit vector.
              *
              * @param dd The DD to add to the explicit vector.
