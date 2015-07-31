@@ -11,7 +11,7 @@ namespace storm {
                                 storm::models::sparse::StateLabeling const& stateLabeling,
                                 boost::optional<std::vector<ValueType>> const& optionalStateRewardVector,
                                 boost::optional<storm::storage::SparseMatrix<ValueType>> const& optionalTransitionRewardMatrix,
-                                boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> const& optionalChoiceLabeling)
+                                boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling)
             : NondeterministicModel<ValueType>(storm::models::ModelType::Mdp, transitionMatrix, stateLabeling, optionalStateRewardVector, optionalTransitionRewardMatrix, optionalChoiceLabeling) {
                 STORM_LOG_THROW(this->checkValidityOfProbabilityMatrix(), storm::exceptions::InvalidArgumentException, "The probability matrix is invalid.");
                 STORM_LOG_THROW(!this->hasTransitionRewards() || this->getTransitionRewardMatrix().isSubmatrixOf(this->getTransitionMatrix()), storm::exceptions::InvalidArgumentException, "The transition reward matrix is not a submatrix of the transition matrix, i.e. there are rewards for transitions that do not exist.");
@@ -23,20 +23,20 @@ namespace storm {
                                 storm::models::sparse::StateLabeling&& stateLabeling,
                                 boost::optional<std::vector<ValueType>>&& optionalStateRewardVector,
                                 boost::optional<storm::storage::SparseMatrix<ValueType>>&& optionalTransitionRewardMatrix,
-                                boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>&& optionalChoiceLabeling)
+                                boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling)
             : NondeterministicModel<ValueType>(storm::models::ModelType::Mdp, std::move(transitionMatrix), std::move(stateLabeling), std::move(optionalStateRewardVector), std::move(optionalTransitionRewardMatrix), std::move(optionalChoiceLabeling)) {
                 STORM_LOG_THROW(this->checkValidityOfProbabilityMatrix(), storm::exceptions::InvalidArgumentException, "The probability matrix is invalid.");
                 STORM_LOG_THROW(!this->hasTransitionRewards() || this->getTransitionRewardMatrix().isSubmatrixOf(this->getTransitionMatrix()), storm::exceptions::InvalidArgumentException, "The transition reward matrix is not a submatrix of the transition matrix, i.e. there are rewards for transitions that do not exist.");
             }
             
             template <typename ValueType>
-            Mdp<ValueType> Mdp<ValueType>::restrictChoiceLabels(boost::container::flat_set<uint_fast64_t> const& enabledChoiceLabels) const {
+            Mdp<ValueType> Mdp<ValueType>::restrictChoiceLabels(LabelSet const& enabledChoiceLabels) const {
                 STORM_LOG_THROW(this->hasChoiceLabeling(), storm::exceptions::InvalidArgumentException, "Restriction to label set is impossible for unlabeled model.");
                 
-                std::vector<boost::container::flat_set<uint_fast64_t>> const& choiceLabeling = this->getChoiceLabeling();
+                std::vector<LabelSet> const& choiceLabeling = this->getChoiceLabeling();
                 
                 storm::storage::SparseMatrixBuilder<ValueType> transitionMatrixBuilder(0, this->getTransitionMatrix().getColumnCount(), 0, true, true);
-                std::vector<boost::container::flat_set<uint_fast64_t>> newChoiceLabeling;
+                std::vector<LabelSet> newChoiceLabeling;
                 
                 // Check for each choice of each state, whether the choice labels are fully contained in the given label set.
                 uint_fast64_t currentRow = 0;
@@ -71,7 +71,7 @@ namespace storm {
                 Mdp<ValueType> restrictedMdp(transitionMatrixBuilder.build(), storm::models::sparse::StateLabeling(this->getStateLabeling()),
                                              this->hasStateRewards() ? boost::optional<std::vector<ValueType>>(this->getStateRewardVector()) : boost::optional<std::vector<ValueType>>(),
                                              this->hasTransitionRewards() ? boost::optional<storm::storage::SparseMatrix<ValueType>>(this->getTransitionRewardMatrix()) : boost::optional<storm::storage::SparseMatrix<ValueType>>(),
-                                             boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>(newChoiceLabeling));
+                                             boost::optional<std::vector<LabelSet>>(newChoiceLabeling));
                 return restrictedMdp;
             }
             

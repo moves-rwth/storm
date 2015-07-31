@@ -721,7 +721,12 @@ if (MSVC)
 	target_link_libraries(storm "Dbghelp.lib")   
 endif(MSVC)
 
-# Print Cotire Usage Status
+
+#############################################################
+##
+##	Cotire
+##
+#############################################################
 message (STATUS "StoRM - Using Cotire: ${STORM_USE_COTIRE}")
 
 if (STORM_USE_COTIRE)
@@ -735,12 +740,23 @@ if (STORM_USE_COTIRE)
 	#cotire(storm-performance-tests)
 endif()
 
+#############################################################
+##
+##	libc++abi
+##
+#############################################################
 # Link against libc++abi if requested. May be needed to build on Linux systems using clang.
 if (LINK_LIBCXXABI)
 	message (STATUS "StoRM - Linking against libc++abi.")
 	target_link_libraries(storm "c++abi")
 endif(LINK_LIBCXXABI)
 
+
+#############################################################
+##
+##	Doxygen
+##
+#############################################################
 # Add a target to generate API documentation with Doxygen
 if(DOXYGEN_FOUND)
     set(CMAKE_DOXYGEN_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/doc")
@@ -751,6 +767,11 @@ if(DOXYGEN_FOUND)
     add_custom_target(doc ${DOXYGEN_EXECUTABLE} "${CMAKE_CURRENT_BINARY_DIR}/Doxyfile" DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/Doxyfile" COMMENT "Generating API documentation with Doxygen" VERBATIM)
 endif(DOXYGEN_FOUND)
 
+#############################################################
+##
+##	memcheck targets
+##
+#############################################################
 add_custom_target(memcheck valgrind --leak-check=full --show-reachable=yes ${PROJECT_BINARY_DIR}/storm -v --fix-deadlocks ${PROJECT_SOURCE_DIR}/examples/dtmc/crowds/crowds5_5.tra examples/dtmc/crowds/crowds5_5.lab DEPENDS storm)
 add_custom_target(memcheck-functional-tests valgrind --leak-check=full --show-reachable=yes ${PROJECT_BINARY_DIR}/storm-functional-tests -v --fix-deadlocks	DEPENDS storm-functional-tests)
 add_custom_target(memcheck-performance-tests valgrind --leak-check=full --show-reachable=yes ${PROJECT_BINARY_DIR}/storm-performance-tests -v --fix-deadlocks DEPENDS storm-performance-tests)

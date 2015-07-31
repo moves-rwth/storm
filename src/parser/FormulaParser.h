@@ -132,6 +132,7 @@ namespace storm {
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> pathFormulaWithoutUntil;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> simplePathFormula;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> atomicStateFormula;
+            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> operatorFormula;
             qi::rule<Iterator, std::string(), Skipper> label;
             
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> andStateFormula;

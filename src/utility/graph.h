@@ -245,7 +245,7 @@ namespace storm {
              * with probability 0 and the second stores all indices of states with probability 1.
              */
             template <typename T>
-            static std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01(storm::storage::SparseMatrix<T> backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
+            static std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01(storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
                 std::pair<storm::storage::BitVector, storm::storage::BitVector> result;
                 result.first = performProbGreater0(backwardTransitions, phiStates, psiStates);
                 result.second = performProb1(backwardTransitions, phiStates, psiStates, result.first);

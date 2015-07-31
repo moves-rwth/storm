@@ -223,7 +223,7 @@ namespace storm {
             storm::expressions::Expression createIntegerLiteralExpression(int value) const;
             storm::expressions::Expression createMinimumMaximumExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2) const;
             storm::expressions::Expression createFloorCeilExpression(storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e1) const;
-            storm::expressions::Expression getIdentifierExpression(std::string const& identifier) const;
+            storm::expressions::Expression getIdentifierExpression(std::string const& identifier, bool allowBacktracking, bool& pass) const;
             
             bool isValidIdentifier(std::string const& identifier);
             

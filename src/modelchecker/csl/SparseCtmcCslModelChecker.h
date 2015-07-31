@@ -13,10 +13,14 @@ namespace storm {
         template<storm::dd::DdType DdType, typename ValueType>
         class HybridCtmcCslModelChecker;
         
+        template<typename ValueType>
+        class SparseDtmcPrctlModelChecker;
+        
         template<class ValueType>
         class SparseCtmcCslModelChecker : public SparsePropositionalModelChecker<ValueType> {
         public:
             friend class HybridCtmcCslModelChecker<storm::dd::DdType::CUDD, ValueType>;
+            friend class SparseDtmcPrctlModelChecker<ValueType>;
             
             explicit SparseCtmcCslModelChecker(storm::models::sparse::Ctmc<ValueType> const& model);
             explicit SparseCtmcCslModelChecker(storm::models::sparse::Ctmc<ValueType> const& model, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory);
@@ -29,6 +33,7 @@ namespace storm {
             virtual std::unique_ptr<CheckResult> computeInstantaneousRewards(storm::logic::InstantaneousRewardFormula const& rewardPathFormula, bool qualitative = false, boost::optional<storm::logic::OptimalityType> const& optimalityType = boost::optional<storm::logic::OptimalityType>()) override;
             virtual std::unique_ptr<CheckResult> computeCumulativeRewards(storm::logic::CumulativeRewardFormula const& rewardPathFormula, bool qualitative = false, boost::optional<storm::logic::OptimalityType> const& optimalityType = boost::optional<storm::logic::OptimalityType>()) override;
             virtual std::unique_ptr<CheckResult> computeReachabilityRewards(storm::logic::ReachabilityRewardFormula const& rewardPathFormula, bool qualitative = false, boost::optional<storm::logic::OptimalityType> const& optimalityType = boost::optional<storm::logic::OptimalityType>()) override;
+            virtual std::unique_ptr<CheckResult> computeLongRunAverage(storm::logic::StateFormula const& stateFormula, bool qualitative = false, boost::optional<storm::logic::OptimalityType> const& optimalityType = boost::optional<storm::logic::OptimalityType>()) override;
 
         protected:
             storm::models::sparse::Ctmc<ValueType> const& getModel() const override;
@@ -39,7 +44,7 @@ namespace storm {
             static std::vector<ValueType> computeUntilProbabilitiesHelper(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory);
             std::vector<ValueType> computeInstantaneousRewardsHelper(double timeBound) const;
             std::vector<ValueType> computeCumulativeRewardsHelper(double timeBound) const;
-
+            static std::vector<ValueType> computeLongRunAverageHelper(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& psiStates, std::vector<ValueType> const* exitRateVector, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory);
             /*!
              * Computes the matrix representing the transitions of the uniformized CTMC.
              *
@@ -73,8 +78,18 @@ namespace storm {
              *
              * @param rateMatrix The rate matrix.
              * @param exitRates The exit rate vector.
+             * @return The †ransition matrix of the embedded DTMC.
              */
             static storm::storage::SparseMatrix<ValueType> computeProbabilityMatrix(storm::storage::SparseMatrix<ValueType> const& rateMatrix, std::vector<ValueType> const& exitRates);
+
+            /*!
+             * Converts the given rate-matrix into the generator matrix.
+             *
+             * @param rateMatrix The rate matrix.
+             * @param exitRates The exit rate vector.
+             * @return The generator matrix.
+             */
+            static storm::storage::SparseMatrix<ValueType> computeGeneratorMatrix(storm::storage::SparseMatrix<ValueType> const& rateMatrix, std::vector<ValueType> const& exitRates);
             
             // An object that is used for solving linear equations and performing matrix-vector multiplication.
             std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<ValueType>> linearEquationSolverFactory;

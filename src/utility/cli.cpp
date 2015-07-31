@@ -34,11 +34,11 @@ namespace storm {
             }
             
             void printHeader(const int argc, const char* argv[]) {
-                std::cout << "StoRM" << std::endl;
+                 std::cout << "StoRM" << std::endl;
                 std::cout << "--------" << std::endl << std::endl;
                 
                 
-                //				std::cout << storm::utility::StormVersion::longVersionString() << std::endl;
+                std::cout << storm::utility::StormVersion::longVersionString() << std::endl;
 #ifdef STORM_HAVE_INTELTBB
                 std::cout << "Linked with Intel Threading Building Blocks v" << TBB_VERSION_MAJOR << "." << TBB_VERSION_MINOR << " (Interface version " << TBB_INTERFACE_VERSION << ")." << std::endl;
 #endif
@@ -112,6 +112,7 @@ namespace storm {
                 }
                 std::cout << "Command line arguments: " << commandStream.str() << std::endl;
                 std::cout << "Current working directory: " << getCurrentWorkingDirectory() << std::endl << std::endl;
+            }
             }
             
             

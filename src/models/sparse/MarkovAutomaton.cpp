@@ -13,7 +13,7 @@ namespace storm {
                                                         std::vector<ValueType> const& exitRates,
                                                         boost::optional<std::vector<ValueType>> const& optionalStateRewardVector,
                                                         boost::optional<storm::storage::SparseMatrix<ValueType>> const& optionalTransitionRewardMatrix,
-                                                        boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> const& optionalChoiceLabeling)
+                                                        boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling)
             : NondeterministicModel<ValueType>(storm::models::ModelType::MarkovAutomaton, transitionMatrix, stateLabeling, optionalStateRewardVector, optionalTransitionRewardMatrix, optionalChoiceLabeling), markovianStates(markovianStates), exitRates(exitRates), closed(false) {
                 this->turnRatesToProbabilities();
                 STORM_LOG_THROW(!this->hasTransitionRewards() || this->getTransitionRewardMatrix().isSubmatrixOf(this->getTransitionMatrix()), storm::exceptions::InvalidArgumentException, "There are transition rewards for nonexistent transitions.");
@@ -26,7 +26,7 @@ namespace storm {
                                                         std::vector<ValueType> const& exitRates,
                                                         boost::optional<std::vector<ValueType>>&& optionalStateRewardVector,
                                                         boost::optional<storm::storage::SparseMatrix<ValueType>>&& optionalTransitionRewardMatrix,
-                                                        boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>&& optionalChoiceLabeling)
+                                                        boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling)
             : NondeterministicModel<ValueType>(storm::models::ModelType::MarkovAutomaton, std::move(transitionMatrix), std::move(stateLabeling), std::move(optionalStateRewardVector), std::move(optionalTransitionRewardMatrix), std::move(optionalChoiceLabeling)), markovianStates(markovianStates), exitRates(std::move(exitRates)), closed(false) {
                 this->turnRatesToProbabilities();
                 STORM_LOG_THROW(!this->hasTransitionRewards() || this->getTransitionRewardMatrix().isSubmatrixOf(this->getTransitionMatrix()), storm::exceptions::InvalidArgumentException, "There are transition rewards for nonexistent transitions.");

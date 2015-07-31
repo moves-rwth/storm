@@ -29,13 +29,19 @@ namespace storm {
             // Intentionally left empty.
         }
         
-        void ExplicitQualitativeCheckResult::performLogicalOperation(ExplicitQualitativeCheckResult& first, QualitativeCheckResult const& second, std::function<bool (bool, bool)> const& function) {
+        void ExplicitQualitativeCheckResult::performLogicalOperation(ExplicitQualitativeCheckResult& first, QualitativeCheckResult const& second, bool logicalAnd) {
             STORM_LOG_THROW(second.isExplicitQualitativeCheckResult(), storm::exceptions::InvalidOperationException, "Cannot perform logical 'and' on check results of incompatible type.");
             STORM_LOG_THROW(first.isResultForAllStates() == second.isResultForAllStates(), storm::exceptions::InvalidOperationException, "Cannot perform logical 'and' on check results of incompatible type.");
             ExplicitQualitativeCheckResult const& secondCheckResult = static_cast<ExplicitQualitativeCheckResult const&>(second);
             if (first.isResultForAllStates()) {
-                boost::get<vector_type>(first.truthValues) &= boost::get<vector_type>(secondCheckResult.truthValues);
+                if (logicalAnd) {
+                    boost::get<vector_type>(first.truthValues) &= boost::get<vector_type>(secondCheckResult.truthValues);
+                } else {
+                    boost::get<vector_type>(first.truthValues) |= boost::get<vector_type>(secondCheckResult.truthValues);
+                }
             } else {
+                std::function<bool (bool, bool)> function = logicalAnd ? [] (bool a, bool b) { return a && b; } : [] (bool a, bool b) { return a || b; };
+                
                 map_type& map1 = boost::get<map_type>(first.truthValues);
                 map_type const& map2 = boost::get<map_type>(secondCheckResult.truthValues);
                 for (auto& element1 : map1) {
@@ -53,12 +59,12 @@ namespace storm {
         }
         
         QualitativeCheckResult& ExplicitQualitativeCheckResult::operator&=(QualitativeCheckResult const& other) {
-            performLogicalOperation(*this, other, [] (bool a, bool b) { return a && b; });
+            performLogicalOperation(*this, other, true);
             return *this;
         }
         
         QualitativeCheckResult& ExplicitQualitativeCheckResult::operator|=(QualitativeCheckResult const& other) {
-            performLogicalOperation(*this, other, [] (bool a, bool b) { return a || b; });
+            performLogicalOperation(*this, other, false);
             return *this;
         }
         

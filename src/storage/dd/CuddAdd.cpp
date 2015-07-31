@@ -557,7 +557,7 @@ namespace storm {
             rowIndications[0] = 0;
             
             // Construct matrix and return result.
-            return storm::storage::SparseMatrix<double>(columnOdd.getTotalOffset(), std::move(rowIndications), std::move(columnsAndValues), std::move(trivialRowGroupIndices));
+            return storm::storage::SparseMatrix<double>(columnOdd.getTotalOffset(), std::move(rowIndications), std::move(columnsAndValues), std::move(trivialRowGroupIndices), false);
         }
         
         storm::storage::SparseMatrix<double> Add<DdType::CUDD>::toMatrix(std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd<DdType::CUDD> const& rowOdd, storm::dd::Odd<DdType::CUDD> const& columnOdd) const {
@@ -680,7 +680,7 @@ namespace storm {
             }
             rowIndications[0] = 0;
             
-            return storm::storage::SparseMatrix<double>(columnOdd.getTotalOffset(), std::move(rowIndications), std::move(columnsAndValues), std::move(rowGroupIndices));
+            return storm::storage::SparseMatrix<double>(columnOdd.getTotalOffset(), std::move(rowIndications), std::move(columnsAndValues), std::move(rowGroupIndices), true);
         }
         
         std::pair<storm::storage::SparseMatrix<double>, std::vector<double>> Add<DdType::CUDD>::toMatrixVector(storm::dd::Add<storm::dd::DdType::CUDD> const& vector, std::vector<uint_fast64_t>&& rowGroupSizes, std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd<DdType::CUDD> const& rowOdd, storm::dd::Odd<DdType::CUDD> const& columnOdd) const {
@@ -804,7 +804,7 @@ namespace storm {
             }
             rowIndications[0] = 0;
             
-            return std::make_pair(storm::storage::SparseMatrix<double>(columnOdd.getTotalOffset(), std::move(rowIndications), std::move(columnsAndValues), std::move(rowGroupIndices)), std::move(explicitVector));
+            return std::make_pair(storm::storage::SparseMatrix<double>(columnOdd.getTotalOffset(), std::move(rowIndications), std::move(columnsAndValues), std::move(rowGroupIndices), true), std::move(explicitVector));
         }
         
         template<typename ValueType>

@@ -251,6 +251,22 @@ namespace storm {
             }
             
 #ifdef STORM_HAVE_CARL
+            void exportParametricResultToFile(storm::RationalFunction const& result, storm::models::sparse::Dtmc<storm::RationalFunction>::ConstraintCollector const& constraintCollector, std::string const& path) {
+                std::ofstream filestream;
+                filestream.open(path);
+                // TODO: add checks.
+                filestream << "!Parameters: ";
+                std::set<storm::Variable> vars = result.gatherVariables();
+                std::copy(vars.begin(), vars.end(), std::ostream_iterator<storm::Variable>(filestream, ", "));
+                filestream << std::endl;
+                filestream << "!Result: " << result << std::endl;
+                filestream << "!Well-formed Constraints: " << std::endl;
+                std::copy(constraintCollector.getWellformedConstraints().begin(), constraintCollector.getWellformedConstraints().end(), std::ostream_iterator<carl::Constraint<storm::RationalFunction>>(filestream, "\n"));
+                filestream << "!Graph-preserving Constraints: " << std::endl;
+                std::copy(constraintCollector.getGraphPreservingConstraints().begin(), constraintCollector.getGraphPreservingConstraints().end(), std::ostream_iterator<carl::Constraint<storm::RationalFunction>>(filestream, "\n"));
+                filestream.close();
+            }
+            
             template<>
             inline void verifySparseModel(boost::optional<storm::prism::Program> const& program, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model, std::shared_ptr<storm::logic::Formula> formula) {
                 storm::settings::modules::GeneralSettings const& settings = storm::settings::generalSettings();
@@ -275,6 +291,11 @@ namespace storm {
                     std::cout << *result << std::endl;
                 } else {
                     std::cout << " skipped, because the modelling formalism is currently unsupported." << std::endl;
+                }
+                
+                storm::settings::modules::ParametricSettings const& parametricSettings = storm::settings::parametricSettings();
+                if (parametricSettings.exportResultToFile()) {
+                    exportParametricResultToFile(result->asExplicitQuantitativeCheckResult<storm::RationalFunction>()[*dtmc->getInitialStates().begin()], storm::models::sparse::Dtmc<storm::RationalFunction>::ConstraintCollector(*dtmc), parametricSettings.exportResultPath());
                 }
             }
 #endif
