@@ -200,11 +200,23 @@ namespace storm {
             return nameToIndexMapping.find(name) != nameToIndexMapping.end();
         }
 
-        Variable ExpressionManager::declareFreshVariable(storm::expressions::Type const& variableType, bool auxiliary) {
-            std::string newName = "__x" + std::to_string(freshVariableCounter++);
+        Variable ExpressionManager::declareFreshVariable(storm::expressions::Type const& variableType, bool auxiliary, std::string const& prefix) {
+            std::string newName = prefix + std::to_string(freshVariableCounter++);
             return declareOrGetVariable(newName, variableType, auxiliary, false);
         }
 
+        Variable ExpressionManager::declareFreshBooleanVariable(bool auxiliary, const std::string& prefix) {
+            return declareFreshVariable(this->getBooleanType(), auxiliary, prefix);
+        }
+        
+        Variable ExpressionManager::declareFreshIntegerVariable(bool auxiliary, const std::string& prefix) {
+            return declareFreshVariable(this->getIntegerType(), auxiliary, prefix);
+        }
+        
+        Variable ExpressionManager::declareFreshRationalVariable(bool auxiliary, const std::string& prefix) {
+            return declareFreshVariable(this->getRationalType(), auxiliary, prefix);
+        }
+        
         uint_fast64_t ExpressionManager::getNumberOfVariables(storm::expressions::Type const& variableType) const {
             if (variableType.isBooleanType()) {
                 return numberOfBooleanVariables;
