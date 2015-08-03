@@ -110,7 +110,8 @@ namespace storm {
                     void operator()(storm::models::sparse::Dtmc<ValueType> const& dtmc);
                     
                 };
-                
+#endif
+
             private:
                 /*!
                  * Checks the probability matrix for validity.
@@ -119,7 +120,6 @@ namespace storm {
                  */
                 bool checkValidityOfProbabilityMatrix() const;
             };
-#endif
             
         } // namespace sparse
     } // namespace models
