@@ -59,6 +59,7 @@ namespace storm {
                  */
                 Dtmc<ValueType> getSubDtmc(storm::storage::BitVector const& states) const;
                 
+#ifdef STORM_HAVE_CARL
                 class ConstraintCollector {
                 private:
                     // A set of constraints that says that the DTMC actually has valid probability distributions in all states.
@@ -109,7 +110,8 @@ namespace storm {
                     void operator()(storm::models::sparse::Dtmc<ValueType> const& dtmc);
                     
                 };
-                
+#endif
+
             private:
                 /*!
                  * Checks the probability matrix for validity.

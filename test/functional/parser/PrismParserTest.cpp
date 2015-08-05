@@ -40,6 +40,7 @@ TEST(PrismParser, SimpleTest) {
         [] x=3 -> 1:(x'=1);
         [] x=3 -> 1:(x'=4);
         [] x=4 -> 1:(x'=5);
+        [] x=5 -> 1: true;
     endmodule)";
     EXPECT_NO_THROW(result = storm::parser::PrismParser::parseFromString(testInput, "testfile"));
     EXPECT_EQ(1, result.getNumberOfModules());

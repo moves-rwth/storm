@@ -182,6 +182,7 @@ namespace storm {
                 //		return storm::models::Dtmc<ValueType>(newMatBuilder.build(), newLabeling, newStateRewards, std::move(newTransitionRewards), newChoiceLabels);
             }
             
+#ifdef STORM_HAVE_CARL
             template<typename ValueType>
             Dtmc<ValueType>::ConstraintCollector::ConstraintCollector(Dtmc<ValueType> const& dtmc) {
                 process(dtmc);
@@ -221,6 +222,7 @@ namespace storm {
             void Dtmc<ValueType>::ConstraintCollector::operator()(storm::models::sparse::Dtmc<ValueType> const& dtmc) {
                 process(dtmc);
             }
+#endif
             
             template <typename ValueType>
             bool Dtmc<ValueType>::checkValidityOfProbabilityMatrix() const {

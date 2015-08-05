@@ -133,7 +133,7 @@ namespace storm {
             assignmentDefinition = (qi::lit("(") > identifier > qi::lit("'") > qi::lit("=") > expressionParser > qi::lit(")"))[qi::_val = phoenix::bind(&PrismParser::createAssignment, phoenix::ref(*this), qi::_1, qi::_2)];
             assignmentDefinition.name("assignment");
             
-            assignmentDefinitionList %= +assignmentDefinition % "&";
+            assignmentDefinitionList = (assignmentDefinition % "&")[qi::_val = qi::_1] | (qi::lit("true"))[qi::_val = phoenix::construct<std::vector<storm::prism::Assignment>>()];
             assignmentDefinitionList.name("assignment list");
             
             updateDefinition = (((expressionParser > qi::lit(":")) | qi::attr(manager->rational(1))) >> assignmentDefinitionList)[qi::_val = phoenix::bind(&PrismParser::createUpdate, phoenix::ref(*this), qi::_1, qi::_2, qi::_r1)];
