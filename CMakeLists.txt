@@ -579,10 +579,7 @@ endif(STORM_HAVE_Z3)
 if(STORM_HAVE_CARL)
     message(STATUS "StoRM - Linking with carl.")
     include_directories("${carl_INCLUDE_DIR}")
-<<<<<<< HEAD
     target_link_libraries(storm ${carl_LIBRARIES})
-    target_link_libraries(storm-functional-tests ${carl_LIBRARIES})
-    target_link_libraries(storm-performance-tests ${carl_LIBRARIES})
 endif()
 
 #############################################################
@@ -595,11 +592,6 @@ if(STORM_HAVE_SMTRAT)
 message(STATUS "StoRM - Linking with smtrat.")
     include_directories("${smtrat_INCLUDE_DIR}")
     target_link_libraries(storm ${smtrat_LIBRARIES})
-    target_link_libraries(storm-functional-tests ${smtrat_LIBRARIES})
-    target_link_libraries(storm-performance-tests ${smtrat_LIBRARIES})
-=======
-    target_link_libraries(storm lib_carl)
->>>>>>> master
 endif()
 
 #############################################################
