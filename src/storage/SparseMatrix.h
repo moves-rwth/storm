@@ -385,7 +385,7 @@ namespace storm {
                 index_type getNumberOfEntries() const;
                 
             private:
-                // The pointer to the columnd and value of the first entry.
+                // The pointer to the column and value of the first entry.
                 const_iterator beginIterator;
                 
                 // The number of non-zero entries in the rows.
@@ -492,33 +492,33 @@ namespace storm {
              */
             index_type getEntryCount() const;
             
-			/*!
-			* Returns the number of entries in the given row group of the matrix.
-			*
-			* @return The number of entries in the given row group of the matrix.
-			*/
-			uint_fast64_t getRowGroupEntryCount(uint_fast64_t const group) const;
+            /*!
+            * Returns the number of entries in the given row group of the matrix.
+            *
+            * @return The number of entries in the given row group of the matrix.
+            */
+            uint_fast64_t getRowGroupEntryCount(uint_fast64_t const group) const;
 
-			/*!
-			* Returns the cached number of nonzero entries in the matrix.
-			*
-			* @see updateNonzeroEntryCount()
-			*
-			* @return The number of nonzero entries in the matrix.
-			*/
-			index_type getNonzeroEntryCount() const;
+            /*!
+            * Returns the cached number of nonzero entries in the matrix.
+            *
+            * @see updateNonzeroEntryCount()
+            *
+            * @return The number of nonzero entries in the matrix.
+            */
+            index_type getNonzeroEntryCount() const;
 
-			/*!
-			* Recompute the nonzero entry count
-			*/
-			void updateNonzeroEntryCount() const;
+            /*!
+            * Recompute the nonzero entry count
+            */
+            void updateNonzeroEntryCount() const;
 
-			/*!
-			* Change the nonzero entry count by the provided value.
-			*
-			* @param difference Difference between old and new nonzero entry count.
-			*/
-			void updateNonzeroEntryCount(std::make_signed<index_type>::type difference);
+            /*!
+            * Change the nonzero entry count by the provided value.
+            *
+            * @param difference Difference between old and new nonzero entry count.
+            */
+            void updateNonzeroEntryCount(std::make_signed<index_type>::type difference);
             
             /*!
              * Returns the number of row groups in the matrix.
@@ -622,13 +622,13 @@ namespace storm {
             
             /*!
              * Transposes the matrix.
-			 *
-			 * @param joinGroups A flag indicating whether the row groups are supposed to be treated as single rows.
-			 * @param keepZeros A flag indicating whether entries with value zero should be kept.
+             *
+             * @param joinGroups A flag indicating whether the row groups are supposed to be treated as single rows.
+             * @param keepZeros A flag indicating whether entries with value zero should be kept.
              *
              * @return A sparse matrix that represents the transpose of this matrix.
              */
-			storm::storage::SparseMatrix<value_type> transpose(bool joinGroups = false, bool keepZeros = false) const;
+            storm::storage::SparseMatrix<value_type> transpose(bool joinGroups = false, bool keepZeros = false) const;
             
             /*!
              * Transforms the matrix into an equation system. That is, it transforms the matrix A into a matrix (1-A).

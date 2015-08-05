@@ -28,7 +28,6 @@ option(STORM_USE_COTIRE "Sets whether Cotire should be used (for building precom
 option(LINK_LIBCXXABI "Sets whether libc++abi should be linked." OFF)
 option(USE_LIBCXX "Sets whether the standard library is libc++." OFF)
 set(GUROBI_ROOT "" CACHE STRING "The root directory of Gurobi (if available).")
-set(Z3_ROOT "" CACHE STRING "The root directory of Z3 (if available).")
 set(CUDA_ROOT "" CACHE STRING "The root directory of CUDA.")
 set(MSAT_ROOT "" CACHE STRING "The root directory of MathSAT (if available).")
 set(ADDITIONAL_INCLUDE_DIRS "" CACHE STRING "Additional directories added to the include directories.")
@@ -61,6 +60,7 @@ find_package(Gurobi)
 find_package(TBB)
 find_package(Threads REQUIRED)
 find_package(GMP)
+find_package(Z3)
 
 # If the DEBUG option was turned on, we will target a debug version and a release version otherwise.
 if (STORM_DEBUG)
@@ -82,12 +82,6 @@ else()
     set(ENABLE_CUDA ON)
 endif()
 
-if ("${Z3_ROOT}" STREQUAL "")
-    set(ENABLE_Z3 OFF)
-else()
-    set(ENABLE_Z3 ON)
-	set(Z3_LIB_NAME "z3")
-endif()
 
 if ("${MSAT_ROOT}" STREQUAL "")
     set(ENABLE_MSAT OFF)
@@ -145,10 +139,6 @@ elseif(MSVC)
 	
 	# since nobody cares at the moment
 	add_definitions(/wd4250)
-	
-	if(ENABLE_Z3)
-		set(Z3_LIB_NAME "libz3")
-	endif()
 	
 	# MSVC does not do strict-aliasing, so no option needed
 else(CLANG)
@@ -213,11 +203,7 @@ message(STATUS "StoRM - Version information: ${STORM_CPP_VERSION_MAJOR}.${STORM_
 # Base path for test files
 set(STORM_CPP_TESTS_BASE_PATH "${PROJECT_SOURCE_DIR}/test")
 # Gurobi Defines
-if (ENABLE_GUROBI)
-	set(STORM_CPP_GUROBI_DEF "define")
-else()
-	set(STORM_CPP_GUROBI_DEF "undef")
-endif()
+set(STORM_HAVE_GUROBI ${ENABLE_GUROBI})
 
 # CUDA Defines
 if (ENABLE_CUDA)
@@ -227,24 +213,16 @@ else()
 endif()
 
 # glpk defines
-set(STORM_CPP_GLPK_DEF "define")
+set(STORM_HAVE_GLPK 1)
 
 # CUDA Defines
 set(STORM_CPP_CUDAFORSTORM_DEF "undef")
 
 # Z3 Defines
-if (ENABLE_Z3)
-	set(STORM_CPP_Z3_DEF "define")
-else()
-	set(STORM_CPP_Z3_DEF "undef")
-endif()
+set(STORM_HAVE_Z3 ${FOUND_Z3})
 
 # MathSAT Defines
-if (ENABLE_MSAT)
-	set(STORM_CPP_MSAT_DEF "define")
-else()
-	set(STORM_CPP_MSAT_DEF "undef")
-endif()
+set(STORM_HAVE_MSAT ${ENABLE_MSAT})
 
 # Intel TBB Defines
 if (TBB_FOUND AND STORM_USE_INTELTBB)
@@ -478,9 +456,6 @@ if (ENABLE_GUROBI)
 	endif()
 	#link_directories("${GUROBI_ROOT}/lib")
 endif()
-if (ENABLE_Z3)
-    link_directories("${Z3_ROOT}/bin")
-endif()
 if (ENABLE_MSAT)
     link_directories("${MSAT_ROOT}/lib")
 endif()
@@ -552,8 +527,6 @@ if (ENABLE_GUROBI)
     message (STATUS "StoRM - Linking with Gurobi (include: ${GUROBI_INCLUDE_DIRS})")
 	include_directories(${GUROBI_INCLUDE_DIRS})
     target_link_libraries(storm ${GUROBI_LIBRARY})
-    target_link_libraries(storm-functional-tests ${GUROBI_LIBRARY})
-    target_link_libraries(storm-performance-tests ${GUROBI_LIBRARY})
 endif(ENABLE_GUROBI)
 
 #############################################################
@@ -563,11 +536,8 @@ endif(ENABLE_GUROBI)
 #############################################################
 if (ENABLE_CUDA)
     message (STATUS "StoRM - Linking with CUDA")
-	target_link_libraries(storm ${STORM_CUDA_LIB_NAME})
-    target_link_libraries(storm-functional-tests ${STORM_CUDA_LIB_NAME})
-    target_link_libraries(storm-performance-tests ${STORM_CUDA_LIB_NAME})
-	
-	include_directories("${PROJECT_SOURCE_DIR}/cuda/kernels/")
+    target_link_libraries(storm ${STORM_CUDA_LIB_NAME})
+    include_directories("${PROJECT_SOURCE_DIR}/cuda/kernels/")
 endif(ENABLE_CUDA)
 
 #############################################################
@@ -593,11 +563,12 @@ include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/exprtk")
 ##	Z3 (optional)
 ##
 #############################################################
-if (ENABLE_Z3)
+if(STORM_HAVE_Z3)
     message (STATUS "StoRM - Linking with Z3")
-    include_directories("${Z3_ROOT}/include")
-    target_link_libraries(storm ${Z3_LIB_NAME})
-endif(ENABLE_Z3)
+    include_directories(${Z3_INCLUDE_DIRS})
+    target_link_libraries(storm ${Z3_LIBRARIES})
+endif(STORM_HAVE_Z3)
+
 
 #############################################################
 ##
@@ -608,6 +579,7 @@ endif(ENABLE_Z3)
 if(STORM_HAVE_CARL)
     message(STATUS "StoRM - Linking with carl.")
     include_directories("${carl_INCLUDE_DIR}")
+<<<<<<< HEAD
     target_link_libraries(storm ${carl_LIBRARIES})
     target_link_libraries(storm-functional-tests ${carl_LIBRARIES})
     target_link_libraries(storm-performance-tests ${carl_LIBRARIES})
@@ -625,6 +597,9 @@ message(STATUS "StoRM - Linking with smtrat.")
     target_link_libraries(storm ${smtrat_LIBRARIES})
     target_link_libraries(storm-functional-tests ${smtrat_LIBRARIES})
     target_link_libraries(storm-performance-tests ${smtrat_LIBRARIES})
+=======
+    target_link_libraries(storm lib_carl)
+>>>>>>> master
 endif()
 
 #############################################################
@@ -636,18 +611,12 @@ if (ENABLE_MSAT)
     message (STATUS "StoRM - Linking with MathSAT")
     include_directories("${MSAT_ROOT}/include")
     target_link_libraries(storm "mathsat")
-    target_link_libraries(storm-functional-tests "mathsat")
-    target_link_libraries(storm-performance-tests "mathsat")
     if(GMP_FOUND)
         include_directories("${GMP_INCLUDE_DIR}")
         target_link_libraries(storm "gmp")
-        target_link_libraries(storm-functional-tests "gmp")
-        target_link_libraries(storm-performance-tests "gmp")
     elseif(MPIR_FOUND)
         include_directories("${GMP_INCLUDE_DIR}")
         target_link_libraries(storm "mpir" "mpirxx")
-        target_link_libraries(storm-functional-tests "mpir" "mpirxx")
-        target_link_libraries(storm-performance-tests "mpir" "mpirxx")
     else(GMP_FOUND)
         message(FATAL_ERROR "GMP is required for MathSAT, but was not found!")
     endif(GMP_FOUND)
