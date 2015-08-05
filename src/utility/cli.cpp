@@ -113,7 +113,6 @@ namespace storm {
                 std::cout << "Command line arguments: " << commandStream.str() << std::endl;
                 std::cout << "Current working directory: " << getCurrentWorkingDirectory() << std::endl << std::endl;
             }
-            }
             
             
             void printUsage() {

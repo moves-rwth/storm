@@ -63,11 +63,11 @@ namespace storm {
                 class ConstraintCollector {
                 private:
                     // A set of constraints that says that the DTMC actually has valid probability distributions in all states.
-                    std::unordered_set<carl::Constraint<ValueType>> wellformedConstraintSet;
+                    std::unordered_set<storm::ArithConstraint<ValueType>> wellformedConstraintSet;
                     
                     // A set of constraints that makes sure that the underlying graph of the model does not change depending
                     // on the parameter values.
-                    std::unordered_set<carl::Constraint<ValueType>> graphPreservingConstraintSet;
+                    std::unordered_set<storm::ArithConstraint<ValueType>> graphPreservingConstraintSet;
                     
                     // A comparator that is used for
                     storm::utility::ConstantsComparator<ValueType> comparator;
@@ -86,14 +86,14 @@ namespace storm {
                      *
                      * @return The set of wellformed-ness constraints.
                      */
-                    std::unordered_set<carl::Constraint<ValueType>> const&  getWellformedConstraints() const;
+                    std::unordered_set<storm::ArithConstraint<ValueType>> const&  getWellformedConstraints() const;
                     
                     /*!
                      * Returns the set of graph-preserving constraints.
                      *
                      * @return The set of graph-preserving constraints.
                      */
-                    std::unordered_set<carl::Constraint<ValueType>> const&  getGraphPreservingConstraints() const;
+                    std::unordered_set<storm::ArithConstraint<ValueType>> const&  getGraphPreservingConstraints() const;
                     
                     /*!
                      * Constructs the constraints for the given DTMC.

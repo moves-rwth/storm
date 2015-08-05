@@ -12,8 +12,8 @@
 #include <carl/core/RationalFunction.h>
 #include <carl/core/VariablePool.h>
 #include <carl/core/FactorizedPolynomial.h>
-#include <carl/formula/Relation.h>
-#include <carl/formula/Formula.h>
+#include <carl/core/Relation.h>
+#include <carl/core/SimpleConstraint.h>
 
 namespace carl {
     // Define hash values for all polynomials and rational function.
@@ -48,8 +48,10 @@ namespace storm {
     typedef carl::MultivariatePolynomial<RationalNumber> RawPolynomial;
     typedef carl::FactorizedPolynomial<RawPolynomial> Polynomial;
     typedef carl::Relation CompareRelation;
+    
     typedef carl::RationalFunction<Polynomial> RationalFunction;
     typedef carl::Interval<double> Interval;
+    template<typename T> using ArithConstraint = carl::SimpleConstraint<T>;
 }
 
 #endif

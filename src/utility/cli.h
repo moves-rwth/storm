@@ -251,7 +251,7 @@ namespace storm {
             }
             
 #ifdef STORM_HAVE_CARL
-            void exportParametricResultToFile(storm::RationalFunction const& result, storm::models::sparse::Dtmc<storm::RationalFunction>::ConstraintCollector const& constraintCollector, std::string const& path) {
+            inline void exportParametricResultToFile(storm::RationalFunction const& result, storm::models::sparse::Dtmc<storm::RationalFunction>::ConstraintCollector const& constraintCollector, std::string const& path) {
                 std::ofstream filestream;
                 filestream.open(path);
                 // TODO: add checks.
@@ -261,9 +261,9 @@ namespace storm {
                 filestream << std::endl;
                 filestream << "!Result: " << result << std::endl;
                 filestream << "!Well-formed Constraints: " << std::endl;
-                std::copy(constraintCollector.getWellformedConstraints().begin(), constraintCollector.getWellformedConstraints().end(), std::ostream_iterator<carl::Constraint<storm::RationalFunction>>(filestream, "\n"));
+                std::copy(constraintCollector.getWellformedConstraints().begin(), constraintCollector.getWellformedConstraints().end(), std::ostream_iterator<storm::ArithConstraint<storm::RationalFunction>>(filestream, "\n"));
                 filestream << "!Graph-preserving Constraints: " << std::endl;
-                std::copy(constraintCollector.getGraphPreservingConstraints().begin(), constraintCollector.getGraphPreservingConstraints().end(), std::ostream_iterator<carl::Constraint<storm::RationalFunction>>(filestream, "\n"));
+                std::copy(constraintCollector.getGraphPreservingConstraints().begin(), constraintCollector.getGraphPreservingConstraints().end(), std::ostream_iterator<storm::ArithConstraint<storm::RationalFunction>>(filestream, "\n"));
                 filestream.close();
             }
             
