@@ -26,7 +26,7 @@ namespace storm {
 			virtual void pop(uint_fast64_t n) override;
 
 			virtual CheckResult check() override;
-#ifdef STORM_HAVE_CARL 
+
                         void add(storm::RawPolynomial const&, storm::CompareRelation);
                         
                         template<typename ReturnType>
@@ -38,7 +38,6 @@ namespace storm {
                         
                         
                         
-#endif
             
             // The last result that was returned by any of the check methods.
 			CheckResult lastResult;
