@@ -620,6 +620,7 @@ namespace storm {
 
             std::pair<storm::dd::Add<Type>, ModuleDecisionDiagram> transitionMatrixModulePair = createSystemDecisionDiagram(generationInfo);
             storm::dd::Add<Type> transitionMatrix = transitionMatrixModulePair.first;
+            transitionMatrix.exportToDot("trans.dot");
             ModuleDecisionDiagram const& globalModule = transitionMatrixModulePair.second;
             
             // Finally, we build the DDs for a reward structure, if requested. It is important to do this now, because
