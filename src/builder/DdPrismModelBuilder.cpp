@@ -613,6 +613,7 @@ namespace storm {
             }
             
             preparedProgram = preparedProgram.substituteConstants();
+            std::cout << "translating: " << preparedProgram << std::endl;
             
             // Start by initializing the structure used for storing all information needed during the model generation.
             // In particular, this creates the meta variables used to encode the model.
@@ -621,8 +622,6 @@ namespace storm {
             std::pair<storm::dd::Add<Type>, ModuleDecisionDiagram> transitionMatrixModulePair = createSystemDecisionDiagram(generationInfo);
             storm::dd::Add<Type> transitionMatrix = transitionMatrixModulePair.first;
             transitionMatrix.exportToDot("trans.dot");
-            std::cout << "nnz: " << transitionMatrix.getNonZeroCount() << std::endl;
-            std::cout << "node: " << transitionMatrix.getNodeCount() << std::endl;
             std::cout << "trans: " << transitionMatrix << std::endl;
             ModuleDecisionDiagram const& globalModule = transitionMatrixModulePair.second;
             
