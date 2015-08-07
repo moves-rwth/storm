@@ -623,6 +623,7 @@ namespace storm {
             transitionMatrix.exportToDot("trans.dot");
             std::cout << "nnz: " << transitionMatrix.getNonZeroCount() << std::endl;
             std::cout << "node: " << transitionMatrix.getNodeCount() << std::endl;
+            std::cout << "trans: " << transitionMatrix << std::endl;
             ModuleDecisionDiagram const& globalModule = transitionMatrixModulePair.second;
             
             // Finally, we build the DDs for a reward structure, if requested. It is important to do this now, because
@@ -653,9 +654,6 @@ namespace storm {
                 transitionMatrixBdd = transitionMatrixBdd.existsAbstract(generationInfo.allNondeterminismVariables);
             }
             storm::dd::Bdd<Type> reachableStates = computeReachableStates(generationInfo, initialStates, transitionMatrixBdd);
-            reachableStates.exportToDot("reach.dot");
-            std::cout << "reach nnz: " << reachableStates.getNonZeroCount() << std::endl;
-            std::cout << "reach node: " << reachableStates.getNodeCount() << std::endl;
             storm::dd::Add<Type> reachableStatesAdd = reachableStates.toAdd();
             transitionMatrix *= reachableStatesAdd;
             if (stateAndTransitionRewards) {
