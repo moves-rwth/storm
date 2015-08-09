@@ -2815,7 +2815,7 @@ Cudd::Walsh(
     size_t n = x.size();
     DdNode **X = new DdNode *[n];
     DdNode **Y = new DdNode *[n];
-    for (int i = 0; i < n; i++) {
+    for (size_t i = 0; i < n; i++) {
 	X[i] = x[i].getNode();
 	Y[i] = y[i].getNode();
     }
@@ -3612,7 +3612,7 @@ ADD::SwapVariables(
     DdManager *mgr = p->manager;
     DdNode **X = new DdNode *[n];
     DdNode **Y = new DdNode *[n];
-    for (int i = 0; i < n; i++) {
+    for (size_t i = 0; i < n; i++) {
 	X[i] = x[i].node;
 	Y[i] = y[i].node;
     }
@@ -3646,7 +3646,7 @@ BDD::SwapVariables(
     DdManager *mgr = p->manager;
     DdNode **X = new DdNode *[n];
     DdNode **Y = new DdNode *[n];
-    for (int i = 0; i < n; i++) {
+    for (size_t i = 0; i < n; i++) {
         X[i] = x[i].node;
         Y[i] = y[i].node;
     }
@@ -3666,7 +3666,7 @@ BDD::AdjPermuteX(
     size_t n = x.size();
     DdManager *mgr = p->manager;
     DdNode **X = new DdNode *[n];
-    for (int i = 0; i < n; i++) {
+    for (size_t i = 0; i < n; i++) {
 	X[i] = x[i].node;
     }
     DdNode *result = Cudd_bddAdjPermuteX(mgr, node, X, static_cast<int>(n));

@@ -20,9 +20,13 @@ include_directories("${PROJECT_SOURCE_DIR}/src/nanotrav")
 include_directories("${PROJECT_SOURCE_DIR}/src/st")
 include_directories("${PROJECT_SOURCE_DIR}/src/util")
 
-if(MSVC)
+if(CMAKE_COMPILER_IS_GNUCC)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-function")
+elseif(MSVC)
 	# required for GMM to compile, ugly error directive in their code
 	add_definitions(/D_SCL_SECURE_NO_DEPRECATE /D_CRT_SECURE_NO_WARNINGS)
+else(CLANG)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-function")
 endif()
 
 # Since we do not target Alphas, this symbol is always set

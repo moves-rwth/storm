@@ -114,8 +114,10 @@ if(CMAKE_COMPILER_IS_GNUCC)
     set(STORM_COMPILED_BY "GCC")
     # Set standard flags for GCC
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -funroll-loops")
+    set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -funroll-loops")
     add_definitions(-DBOOST_RESULT_OF_USE_DECLTYPE)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -pedantic")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -pedantic -Wno-deprecated-declarations")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -pedantic -Wno-deprecated-declarations")
 
     # Turn on popcnt instruction if desired (yes by default)
     if (STORM_USE_POPCNT)
@@ -123,7 +125,7 @@ if(CMAKE_COMPILER_IS_GNUCC)
     endif(STORM_USE_POPCNT)
 	
 	# Set the no-strict-aliasing target for GCC
-	set_source_files_properties(${CONVERSIONHELPER_TARGET} PROPERTIES COMPILE_FLAGS " -fno-strict-aliasing ")
+	set_source_files_properties(${CONVERSIONHELPER_TARGET} PROPERTIES COMPILE_FLAGS " -fno-strict-aliasing")
 elseif(MSVC)
     set(STORM_COMPILED_BY "MSVC")
 	# required for GMM to compile, ugly error directive in their code
@@ -146,7 +148,7 @@ else(CLANG)
 	# As CLANG is not set as a variable, we need to set it in case we have not matched another compiler.
 	set (CLANG ON)
     # Set standard flags for clang
-    set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -funroll-loops -O3")
+    set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -funroll-loops -O4")
     if(UNIX AND NOT APPLE AND NOT USE_LIBCXX)
 		set(CLANG_STDLIB libstdc++)
 		message(STATUS "StoRM - Linking against libstdc++")
@@ -162,6 +164,7 @@ else(CLANG)
     
     add_definitions(-DBOOST_RESULT_OF_USE_DECLTYPE)
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -stdlib=${CLANG_STDLIB} -Wall -pedantic -Wno-unused-variable -ftemplate-depth=1024")
+    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -pedantic")
 
     # Turn on popcnt instruction if desired (yes by default)
     if (STORM_USE_POPCNT)
