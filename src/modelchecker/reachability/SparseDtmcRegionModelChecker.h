@@ -9,7 +9,9 @@
 #include "src/utility/constants.h"
 #include "utility/regions.h"
 #include "src/solver/Smt2SmtSolver.h"
-#include "SparseDtmcEliminationModelChecker.h"
+#include "src/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
+
+
 
 namespace storm {
     namespace modelchecker {
@@ -17,6 +19,8 @@ namespace storm {
         template<typename ParametricType, typename ConstantType>
         class SparseDtmcRegionModelChecker {
         public:
+            
+           
             
             //The type of variables and bounds depends on the template arguments
             typedef typename std::conditional<(std::is_same<ParametricType,storm::RationalFunction>::value), storm::Variable,std::nullptr_t>::type VariableType;
@@ -33,6 +37,9 @@ namespace storm {
                 ALLSAT, /*!< the formula is satisfied for all parameters in the given region */
                 ALLVIOLATED /*!< the formula is violated for all parameters in the given region */
             };
+            
+            class ApproximationModel;
+            class SamplingModel;
             
             class ParameterRegion{
             public:
@@ -202,21 +209,13 @@ namespace storm {
              * eliminates all states for which the outgoing transitions are constant.
              * Also checks whether the non constant functions are linear
              */
-            void eliminateStatesConstSucc(
-                    storm::storage::BitVector& subsys,
-                    FlexibleMatrix& flexTransitions,
-                     FlexibleMatrix& flexBackwardTransitions,
-                    std::vector<ParametricType>& oneStepProbs,
-                    bool& allFunctionsAreLinear,
-                    storm::storage::sparse::state_type const& initState
-            );
+            void computeSimplifiedModel(storm::storage::BitVector const& targetStates);
             
-            
-            
-            enum class TypeOfBound { 
-                LOWER,
-                UPPER
-            };
+            /*!
+             * Initializes a Sample-Model that can be used to get the probability result for a certain parameter evaluation.
+             * Initializes an Approximation-Model that can be used to approximate the reachability probabilities.
+             */
+            void initializeSampleAndApproxModel();
             
             /*!
              * Initializes a DTMC that can be used to get the probability result for a certain parameter evaluation.
@@ -236,8 +235,7 @@ namespace storm {
              * @param flexTransitions the transitions of the pDTMC 
              * @param oneStepProbs the probabilities to move to a target state
              * @param initState the initial state of the pDtmc
-             */
-            void initializeSampleDtmcAndApproxMdp(
+            void initializeSampleDtmcAndApproxMdp2(
                     std::shared_ptr<storm::models::sparse::Dtmc<ConstantType>> & sampleDtmc,
                     std::vector<std::pair<ParametricType, storm::storage::MatrixEntry<storm::storage::sparse::state_type,ConstantType>&>> & sampleDtmcMapping,
                     std::shared_ptr<storm::models::sparse::Mdp<ConstantType>> & approxMdp,
@@ -248,19 +246,10 @@ namespace storm {
                     std::vector<ParametricType> const& oneStepProbs,
                     storm::storage::sparse::state_type const& initState
             );
+             */
             
             ParametricType getReachProbFunction();
             
-            //Computes the reachability probability function by performing state elimination
-            ParametricType computeReachProbFunction(
-                storm::storage::BitVector const& subsys,
-                FlexibleMatrix const& flexTransitions,
-                FlexibleMatrix const& flexBackwardTransitions,
-                storm::storage::SparseMatrix<ParametricType> const& spTransitions,
-                storm::storage::SparseMatrix<ParametricType> const& spBackwardTransitions,
-                std::vector<ParametricType> const& oneStepProbs,
-                storm::storage::sparse::state_type const& initState
-            );
             
             //initializes the given solver which can later be used to give an exact result regarding the whole model.
             void initializeSMTSolver(std::shared_ptr<storm::solver::Smt2SmtSolver>& solver, ParametricType const& reachProbFunction, storm::logic::ProbabilityOperatorFormula const& formula);
@@ -339,21 +328,18 @@ namespace storm {
             //the currently specified formula
             std::unique_ptr<storm::logic::ProbabilityOperatorFormula> probabilityOperatorFormula;
             
-            // The ingredients of the model where constant transitions have been eliminated as much as possible
-            // the probability matrix
-            FlexibleMatrix flexibleTransitions;
-            storm::storage::SparseMatrix<ParametricType>  sparseTransitions;
-            //the corresponding backward transitions
-            FlexibleMatrix flexibleBackwardTransitions;
-            storm::storage::SparseMatrix<ParametricType>  sparseBackwardTransitions;
-            // the propabilities to go to a state with probability 1 in one step (belongs to flexibleTransitions)
-            std::vector<ParametricType> oneStepProbabilities;
-            // the initial state
-            storm::storage::sparse::state_type initialState;
-            // the set of states that have not been eliminated
-            storm::storage::BitVector subsystem;
+            // the original model after states with constant transitions have been eliminated
+            std::shared_ptr<storm::models::sparse::Dtmc<ParametricType>> simplifiedModel;
+            
             // a flag that is true if there are only linear functions at transitions of the model
             bool hasOnlyLinearFunctions;
+            
+            // the model that can be instantiated to check the value at a certain point
+            std::shared_ptr<SamplingModel> samplingModel;
+            // the model that  is used to approximate the probability values
+            std::shared_ptr<ApproximationModel> approximationModel;
+            
+            /*
             // the dtmc that can be instantiated to check the value at a certain point
             std::shared_ptr<storm::models::sparse::Dtmc<ConstantType>> sampleDtmc;
             // a vector that links entries of the dtmc matrix with the corresponding transition functions (for fast instantiation)
@@ -364,10 +350,11 @@ namespace storm {
             std::vector<std::tuple<ParametricType, storm::storage::MatrixEntry<storm::storage::sparse::state_type,ConstantType>&, std::size_t>> approxMdpMapping;
             // stores the different substitutions of the variables
             std::vector<std::map<VariableType, TypeOfBound>> approxMdpSubstitutions;
-                    
+              */      
             // The  function for the reachability probability in the initial state 
             ParametricType reachProbFunction;
             bool isReachProbFunctionComputed;
+            bool isResultConstant;
             
             
             // runtimes and other information for statistics. 

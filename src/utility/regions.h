@@ -114,8 +114,18 @@ namespace storm {
             template<typename VariableType>
             std::string getVariableName(VariableType variable);
             
+            /*
+             * evaluates the given function at the given point and returns the result
+             */
             template<typename ParametricType, typename ConstantType>
             typename storm::modelchecker::SparseDtmcRegionModelChecker<ParametricType,ConstantType>::CoefficientType evaluateFunction(ParametricType const& function, std::map<typename storm::modelchecker::SparseDtmcRegionModelChecker<ParametricType,ConstantType>::VariableType, typename storm::modelchecker::SparseDtmcRegionModelChecker<ParametricType,ConstantType>::CoefficientType> const& point);
+            
+            /*!
+             * retrieves the constant part of the given function.
+             * If the function is constant, then the result is the same value as the original function
+             */
+            template<typename ParametricType, typename ConstantType>
+            typename storm::modelchecker::SparseDtmcRegionModelChecker<ParametricType,ConstantType>::CoefficientType getConstantPart(ParametricType const& function);
             
             /*!
              * Returns true if the function is rational. Note that the function might be simplified.

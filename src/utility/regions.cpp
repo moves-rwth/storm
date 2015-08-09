@@ -185,6 +185,11 @@ namespace storm {
             }
             
             template<>
+            typename storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction,double>::CoefficientType getConstantPart<storm::RationalFunction, double>(storm::RationalFunction const& function){
+                return function.constantPart();
+            }
+            
+            template<>
             bool functionIsLinear<storm::RationalFunction>(storm::RationalFunction const& function){
                 // Note: At this moment there is no function in carl for rationalFunctions.
                 // We therefore check whether the numerator is linear and the denominator constant.
