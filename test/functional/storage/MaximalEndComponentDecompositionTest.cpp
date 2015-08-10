@@ -12,7 +12,7 @@ TEST(MaximalEndComponentDecomposition, FullSystem1) {
     storm::storage::MaximalEndComponentDecomposition<double> mecDecomposition;
     ASSERT_NO_THROW(mecDecomposition = storm::storage::MaximalEndComponentDecomposition<double>(*markovAutomaton));
     
-    ASSERT_EQ(2, mecDecomposition.size());
+    ASSERT_EQ(2ul, mecDecomposition.size());
     
     // Now, because there is no ordering we have to check the contents of the MECs in a symmetrical way.
     storm::storage::MaximalEndComponent const& mec1 = mecDecomposition[0];
@@ -80,7 +80,7 @@ TEST(MaximalEndComponentDecomposition, FullSystem2) {
     storm::storage::MaximalEndComponentDecomposition<double> mecDecomposition;
     ASSERT_NO_THROW(mecDecomposition = storm::storage::MaximalEndComponentDecomposition<double>(*markovAutomaton));
     
-    ASSERT_EQ(1, mecDecomposition.size());
+    ASSERT_EQ(1ul, mecDecomposition.size());
     
     // Now, because there is no ordering we have to check the contents of the MECs in a symmetrical way.
     storm::storage::MaximalEndComponent const& mec1 = mecDecomposition[0];
@@ -112,7 +112,7 @@ TEST(MaximalEndComponentDecomposition, Subsystem) {
     storm::storage::MaximalEndComponentDecomposition<double> mecDecomposition;
     ASSERT_NO_THROW(mecDecomposition = storm::storage::MaximalEndComponentDecomposition<double>(*markovAutomaton, subsystem));
     
-    ASSERT_EQ(1, mecDecomposition.size());
+    ASSERT_EQ(1ul, mecDecomposition.size());
     
     storm::storage::MaximalEndComponent const& mec1 = mecDecomposition[0];
     

@@ -18,7 +18,7 @@ TEST(BitVectorHashMapTest, FindOrAdd) {
     second.set(18);
     ASSERT_NO_THROW(map.findOrAdd(second, 2));
     
-    EXPECT_EQ(1, map.findOrAdd(first, 3));
+    EXPECT_EQ(1ul, map.findOrAdd(first, 3));
     
     storm::storage::BitVector third(64);
     third.set(10);
@@ -44,10 +44,10 @@ TEST(BitVectorHashMapTest, FindOrAdd) {
     
     ASSERT_NO_THROW(map.findOrAdd(sixth, 6));
     
-    EXPECT_EQ(1, map.findOrAdd(first, 0));
-    EXPECT_EQ(2, map.findOrAdd(second, 0));
-    EXPECT_EQ(3, map.findOrAdd(third, 0));
-    EXPECT_EQ(4, map.findOrAdd(fourth, 0));
-    EXPECT_EQ(5, map.findOrAdd(fifth, 0));
-    EXPECT_EQ(6, map.findOrAdd(sixth, 0));
+    EXPECT_EQ(1ul, map.findOrAdd(first, 0));
+    EXPECT_EQ(2ul, map.findOrAdd(second, 0));
+    EXPECT_EQ(3ul, map.findOrAdd(third, 0));
+    EXPECT_EQ(4ul, map.findOrAdd(fourth, 0));
+    EXPECT_EQ(5ul, map.findOrAdd(fifth, 0));
+    EXPECT_EQ(6ul, map.findOrAdd(sixth, 0));
 }

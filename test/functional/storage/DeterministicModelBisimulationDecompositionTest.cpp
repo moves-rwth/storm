@@ -14,8 +14,8 @@ TEST(DeterministicModelBisimulationDecomposition, Die) {
     ASSERT_NO_THROW(result = bisim.getQuotient());
 
     EXPECT_EQ(storm::models::ModelType::Dtmc, result->getType());
-    EXPECT_EQ(13, result->getNumberOfStates());
-    EXPECT_EQ(20, result->getNumberOfTransitions());
+    EXPECT_EQ(13ul, result->getNumberOfStates());
+    EXPECT_EQ(20ul, result->getNumberOfTransitions());
 
 #ifdef WINDOWS
 	storm::storage::DeterministicModelBisimulationDecomposition<double>::Options options;
@@ -28,8 +28,8 @@ TEST(DeterministicModelBisimulationDecomposition, Die) {
     ASSERT_NO_THROW(result = bisim2.getQuotient());
     
     EXPECT_EQ(storm::models::ModelType::Dtmc, result->getType());
-    EXPECT_EQ(5, result->getNumberOfStates());
-    EXPECT_EQ(8, result->getNumberOfTransitions());
+    EXPECT_EQ(5ul, result->getNumberOfStates());
+    EXPECT_EQ(8ul, result->getNumberOfTransitions());
 
     options.bounded = false;
     options.weak = true;
@@ -38,8 +38,8 @@ TEST(DeterministicModelBisimulationDecomposition, Die) {
     ASSERT_NO_THROW(result = bisim3.getQuotient());
     
     EXPECT_EQ(storm::models::ModelType::Dtmc, result->getType());
-    EXPECT_EQ(5, result->getNumberOfStates());
-    EXPECT_EQ(8, result->getNumberOfTransitions());
+    EXPECT_EQ(5ul, result->getNumberOfStates());
+    EXPECT_EQ(8ul, result->getNumberOfTransitions());
     
     auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("one");
     auto eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(labelFormula);
@@ -53,8 +53,8 @@ TEST(DeterministicModelBisimulationDecomposition, Die) {
     storm::storage::DeterministicModelBisimulationDecomposition<double> bisim4(*dtmc, options2);
     ASSERT_NO_THROW(result = bisim4.getQuotient());
     EXPECT_EQ(storm::models::ModelType::Dtmc, result->getType());
-    EXPECT_EQ(5, result->getNumberOfStates());
-    EXPECT_EQ(8, result->getNumberOfTransitions());
+    EXPECT_EQ(5ul, result->getNumberOfStates());
+    EXPECT_EQ(8ul, result->getNumberOfTransitions());
 }
 
 TEST(DeterministicModelBisimulationDecomposition, Crowds) {
@@ -68,8 +68,8 @@ TEST(DeterministicModelBisimulationDecomposition, Crowds) {
     ASSERT_NO_THROW(result = bisim.getQuotient());
     
     EXPECT_EQ(storm::models::ModelType::Dtmc, result->getType());
-    EXPECT_EQ(334, result->getNumberOfStates());
-    EXPECT_EQ(546, result->getNumberOfTransitions());
+    EXPECT_EQ(334ul, result->getNumberOfStates());
+    EXPECT_EQ(546ul, result->getNumberOfTransitions());
     
 #ifdef WINDOWS
     storm::storage::DeterministicModelBisimulationDecomposition<double>::Options options;
@@ -82,8 +82,8 @@ TEST(DeterministicModelBisimulationDecomposition, Crowds) {
     ASSERT_NO_THROW(result = bisim2.getQuotient());
     
     EXPECT_EQ(storm::models::ModelType::Dtmc, result->getType());
-    EXPECT_EQ(65, result->getNumberOfStates());
-    EXPECT_EQ(105, result->getNumberOfTransitions());
+    EXPECT_EQ(65ul, result->getNumberOfStates());
+    EXPECT_EQ(105ul, result->getNumberOfTransitions());
 
     options.bounded = false;
     options.weak = true;
@@ -92,8 +92,8 @@ TEST(DeterministicModelBisimulationDecomposition, Crowds) {
     ASSERT_NO_THROW(result = bisim3.getQuotient());
     
     EXPECT_EQ(storm::models::ModelType::Dtmc, result->getType());
-    EXPECT_EQ(43, result->getNumberOfStates());
-    EXPECT_EQ(83, result->getNumberOfTransitions());
+    EXPECT_EQ(43ul, result->getNumberOfStates());
+    EXPECT_EQ(83ul, result->getNumberOfTransitions());
     
     auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("observe0Greater1");
     auto eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(labelFormula);
@@ -107,8 +107,8 @@ TEST(DeterministicModelBisimulationDecomposition, Crowds) {
     ASSERT_NO_THROW(result = bisim4.getQuotient());
 
     EXPECT_EQ(storm::models::ModelType::Dtmc, result->getType());
-    EXPECT_EQ(64, result->getNumberOfStates());
-    EXPECT_EQ(104, result->getNumberOfTransitions());
+    EXPECT_EQ(64ul, result->getNumberOfStates());
+    EXPECT_EQ(104ul, result->getNumberOfTransitions());
     
     auto probabilityOperatorFormula = std::make_shared<storm::logic::ProbabilityOperatorFormula>(eventuallyFormula);
     
@@ -121,8 +121,8 @@ TEST(DeterministicModelBisimulationDecomposition, Crowds) {
     ASSERT_NO_THROW(result = bisim5.getQuotient());
 
     EXPECT_EQ(storm::models::ModelType::Dtmc, result->getType());
-    EXPECT_EQ(64, result->getNumberOfStates());
-    EXPECT_EQ(104, result->getNumberOfTransitions());
+    EXPECT_EQ(64ul, result->getNumberOfStates());
+    EXPECT_EQ(104ul, result->getNumberOfTransitions());
     
     auto boundedUntilFormula = std::make_shared<storm::logic::BoundedUntilFormula>(std::make_shared<storm::logic::BooleanLiteralFormula>(true), labelFormula, 50);
     
@@ -135,6 +135,6 @@ TEST(DeterministicModelBisimulationDecomposition, Crowds) {
     ASSERT_NO_THROW(result = bisim6.getQuotient());
     
     EXPECT_EQ(storm::models::ModelType::Dtmc, result->getType());
-    EXPECT_EQ(65, result->getNumberOfStates());
-    EXPECT_EQ(105, result->getNumberOfTransitions());
+    EXPECT_EQ(65ul, result->getNumberOfStates());
+    EXPECT_EQ(105ul, result->getNumberOfTransitions());
 }

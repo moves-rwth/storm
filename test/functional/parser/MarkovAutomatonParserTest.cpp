@@ -16,9 +16,9 @@ TEST(MarkovAutomatonParserTest, BasicParsing) {
 	storm::models::sparse::MarkovAutomaton<double> result = storm::parser::MarkovAutomatonParser::parseMarkovAutomaton(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/ma_general.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/ma_general.lab", STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/ma_general.state.rew");
 
 	// Test sizes and counts.
-	ASSERT_EQ(6, result.getNumberOfStates());
-	ASSERT_EQ(7, result.getNumberOfChoices());
-	ASSERT_EQ(12, result.getNumberOfTransitions());
+	ASSERT_EQ(6ul, result.getNumberOfStates());
+	ASSERT_EQ(7ul, result.getNumberOfChoices());
+	ASSERT_EQ(12ul, result.getNumberOfTransitions());
 
 	// Test the exit rates. These have to be 0 for all non-Markovian states.
 	std::vector<double> rates = result.getExitRates();
@@ -34,10 +34,10 @@ TEST(MarkovAutomatonParserTest, BasicParsing) {
 	ASSERT_EQ(0, result.getExitRate(5));
 
 	// Test the labeling.
-	ASSERT_EQ(3, result.getStateLabeling().getNumberOfLabels());
-	ASSERT_EQ(1, result.getInitialStates().getNumberOfSetBits());
-	ASSERT_EQ(0, result.getLabelsOfState(4).size());
-	ASSERT_EQ(1, result.getStateLabeling().getStates("goal").getNumberOfSetBits());
+	ASSERT_EQ(3ul, result.getStateLabeling().getNumberOfLabels());
+	ASSERT_EQ(1ul, result.getInitialStates().getNumberOfSetBits());
+	ASSERT_EQ(0ul, result.getLabelsOfState(4).size());
+	ASSERT_EQ(1ul, result.getStateLabeling().getStates("goal").getNumberOfSetBits());
 
 	// Test the state rewards.
 	ASSERT_TRUE(result.hasStateRewards());

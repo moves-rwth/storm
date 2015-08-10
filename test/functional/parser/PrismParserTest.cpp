@@ -43,7 +43,7 @@ TEST(PrismParser, SimpleTest) {
         [] x=5 -> 1: true;
     endmodule)";
     EXPECT_NO_THROW(result = storm::parser::PrismParser::parseFromString(testInput, "testfile"));
-    EXPECT_EQ(1, result.getNumberOfModules());
+    EXPECT_EQ(1ul, result.getNumberOfModules());
     EXPECT_EQ(storm::prism::Program::ModelType::MDP, result.getModelType());
 }
 
@@ -99,9 +99,9 @@ TEST(PrismParser, ComplexTest) {
     storm::prism::Program result;
     EXPECT_NO_THROW(result = storm::parser::PrismParser::parseFromString(testInput, "testfile"));
     EXPECT_EQ(storm::prism::Program::ModelType::MA, result.getModelType());
-    EXPECT_EQ(3, result.getNumberOfModules());
-    EXPECT_EQ(2, result.getNumberOfRewardModels());
-    EXPECT_EQ(1, result.getNumberOfLabels());
+    EXPECT_EQ(3ul, result.getNumberOfModules());
+    EXPECT_EQ(2ul, result.getNumberOfRewardModels());
+    EXPECT_EQ(1ul, result.getNumberOfLabels());
 }
 
 TEST(PrismParser, IllegalInputTest) {

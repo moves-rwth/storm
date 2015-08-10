@@ -158,6 +158,7 @@ namespace storm {
                 case SolutionMethod::Jacobi: return "jacobi";
                 case SolutionMethod::GaussSeidel: return "gauss-seidel";
                 case SolutionMethod::SOR: return "sor";
+                default: return "invalid";
             }
         }
         

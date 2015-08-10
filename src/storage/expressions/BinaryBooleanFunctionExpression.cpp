@@ -15,13 +15,15 @@ namespace storm {
         }
         
         storm::expressions::OperatorType BinaryBooleanFunctionExpression::getOperator() const {
+            storm::expressions::OperatorType result = storm::expressions::OperatorType::And;
             switch (this->getOperatorType()) {
-                case OperatorType::And: return storm::expressions::OperatorType::And; break;
-                case OperatorType::Or: return storm::expressions::OperatorType::Or; break;
-                case OperatorType::Xor: return storm::expressions::OperatorType::Xor; break;
-                case OperatorType::Implies: return storm::expressions::OperatorType::Implies; break;
-                case OperatorType::Iff: return storm::expressions::OperatorType::Iff; break;
+                case OperatorType::And: result = storm::expressions::OperatorType::And; break;
+                case OperatorType::Or: result = storm::expressions::OperatorType::Or; break;
+                case OperatorType::Xor: result = storm::expressions::OperatorType::Xor; break;
+                case OperatorType::Implies: result = storm::expressions::OperatorType::Implies; break;
+                case OperatorType::Iff: result = storm::expressions::OperatorType::Iff; break;
             }
+            return result;
         }
         
         bool BinaryBooleanFunctionExpression::evaluateAsBool(Valuation const* valuation) const {

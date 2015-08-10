@@ -102,7 +102,7 @@ TEST(AtomicPropositionLabelingParserTest, MisspelledEndTagHeader) {
 TEST(AtomicPropositionLabelingParserTest, NoLabelDeclaredNoneGiven) {
 	// No label between #DECLARATION and #END and no labels given.
 	storm::models::sparse::StateLabeling labeling = storm::parser::AtomicPropositionLabelingParser::parseAtomicPropositionLabeling(13, STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/labParser/noLabelsDecNoneGiven.lab");
-	ASSERT_EQ(labeling.getNumberOfLabels(), 0);
+	ASSERT_EQ(0ul, labeling.getNumberOfLabels());
 	for(uint_fast64_t i = 0; i < 13; i++) {
 		ASSERT_TRUE(labeling.getLabelsOfState(i).empty());
 	}
