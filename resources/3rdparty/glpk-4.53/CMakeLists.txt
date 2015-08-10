@@ -68,7 +68,7 @@ else(CLANG)
 	# Set standard flags for clang
 	set (CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -funroll-loops -O3")
 
-	set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-return-type -Wno-return-type-c-linkage -Wno-unused-variable")
+	set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-return-type -Wno-return-type-c-linkage -Wno-unused-label -Wno-unused-value -Wno-unused-function -Wno-unused-variable -Wno-logical-op-parentheses -Wno-macro-redefined -Wno-uninitialized -Wno-sometimes-uninitialized -Wno-self-assign")
 
 	set (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -g")
 	add_definitions(-DHAVE_CONFIG_H=1)
