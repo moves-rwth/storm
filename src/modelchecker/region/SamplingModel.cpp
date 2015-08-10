@@ -50,7 +50,7 @@ namespace storm {
             auto samEntry = this->model->getTransitionMatrix().begin();
             for(auto const& parEntry : parametricModel.getTransitionMatrix()){
                 if(this->parametricTypeComparator.isConstant(parEntry.getValue())){
-                    samEntry->setValue(storm::utility::regions::convertNumber<CoefficientType, ConstantType>(storm::utility::regions::getConstantPart<ParametricType, ConstantType>(parEntry.getValue())));
+                    samEntry->setValue(storm::utility::regions::convertNumber<CoefficientType, ConstantType>(storm::utility::regions::getConstantPart(parEntry.getValue())));
                 }
                 else {
                     std::pair<ParametricType, ConstantType> searchedPair(parEntry.getValue(), storm::utility::zero<ConstantType>());
@@ -77,11 +77,7 @@ namespace storm {
             //write entries into evaluation table
             for(auto& tableEntry : this->evaluationTable){
                 tableEntry.second=storm::utility::regions::convertNumber<CoefficientType, ConstantType>(
-                        storm::utility::regions::evaluateFunction<ParametricType, ConstantType>(
-                                tableEntry.first,
-                                point
-                            )
-                        );
+                        storm::utility::regions::evaluateFunction(tableEntry.first, point));
             }
             //write the instantiated values to the matrix according to the mapping
             for(auto& mappingPair : this->mapping){

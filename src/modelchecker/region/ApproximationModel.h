@@ -8,7 +8,8 @@
 #ifndef STORM_MODELCHECKER_REGION_APPROXIMATIONMODEL_H
 #define	STORM_MODELCHECKER_REGION_APPROXIMATIONMODEL_H
 
-#include "src/modelchecker/reachability/SparseDtmcRegionModelChecker.h"
+#include "src/modelchecker/region/SparseDtmcRegionModelChecker.h"
+#include "src/models/sparse/Mdp.h"
 
 namespace storm {
     namespace modelchecker {

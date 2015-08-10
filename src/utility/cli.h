@@ -66,8 +66,8 @@ log4cplus::Logger printer;
 // Headers for model checking.
 #include "src/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "src/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
-#include "src/modelchecker/reachability/SparseDtmcRegionModelChecker.h"
-#include "src/utility/regions.h"
+#include "src/modelchecker/region/ParameterRegion.h"
+#include "src/modelchecker/region/SparseDtmcRegionModelChecker.h"
 #include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "src/modelchecker/csl/SparseCtmcCslModelChecker.h"
 #include "src/modelchecker/prctl/HybridDtmcPrctlModelChecker.h"
@@ -490,7 +490,7 @@ namespace storm {
                 if(settings.isParametricRegionSet()){
                     std::cout << std::endl << "Model checking property: " << *formula << " for all parameters in the given regions." << std::endl;
                     
-                    auto regions=storm::utility::regions::RegionParser<storm::RationalFunction, double>::getRegionsFromSettings();                    
+                    auto regions=storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction,double>::ParameterRegion::getRegionsFromSettings();                    
                     storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double> modelchecker(*dtmc);
                     if (modelchecker.canHandle(*formula.get())) {
                         modelchecker.specifyFormula(*formula.get());
@@ -499,10 +499,9 @@ namespace storm {
                     else {
                         STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "The parametric region check engine currently does not support this property.");
                     }
-                    std::cout << "... done." << std::endl;
-                    for(auto const& reg : regions){
-                        std::cout << reg.toString() << "      Result: " << reg.checkResultToString() << std::endl;
-                    }
+                    //for(auto const& reg : regions){
+                    //    std::cout << reg.toString() << "      Result: " << reg.checkResultToString() << std::endl;
+                    //}
                     modelchecker.printStatisticsToStream(std::cout);
                     
                 }

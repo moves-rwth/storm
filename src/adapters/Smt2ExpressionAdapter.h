@@ -68,7 +68,7 @@ namespace storm {
              */
             std::string translateExpression(carl::Constraint<storm::RawPolynomial> const& constraint) {
                                 
-                return  "(" + carl::toString(constraint.rel()) + " " +
+                return  "(" + carl::relationToString(constraint.relation()) + " " +
                             constraint.lhs().toString(false, useReadableVarNames) + " " +
                             "0 " +
                         ")";
@@ -81,7 +81,7 @@ namespace storm {
              */
             std::string translateExpression(carl::Constraint<storm::Polynomial> const& constraint) {
                                 
-                return  "(" + carl::toString(constraint.rel()) + " " +
+                return  "(" + carl::relationToString(constraint.relation()) + " " +
                             constraint.lhs().toString(false, useReadableVarNames) + " " +
                             "0 " +
                         ")";

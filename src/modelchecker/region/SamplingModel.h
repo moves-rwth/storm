@@ -8,7 +8,8 @@
 #ifndef STORM_MODELCHECKER_REGION_SAMPLINGMODEL_H
 #define	STORM_MODELCHECKER_REGION_SAMPLINGMODEL_H
 
-#include "src/modelchecker/reachability/SparseDtmcRegionModelChecker.h"
+#include "src/modelchecker/region/SparseDtmcRegionModelChecker.h"
+#include "src/models/sparse/Dtmc.h"
 
 namespace storm {
     namespace modelchecker{

@@ -10,7 +10,7 @@
 #include <carl/core/MultivariatePolynomial.h>
 #include <carl/core/RationalFunction.h>
 #include <carl/core/VariablePool.h>
-#include <carl/core/Constraint.h>
+#include <carl/formula/Constraint.h>
 #include <carl/core/FactorizedPolynomial.h>
 
 namespace carl {
@@ -39,7 +39,7 @@ namespace storm {
         typedef cln::cl_RA Coefficient;
     typedef carl::MultivariatePolynomial<Coefficient> RawPolynomial;
     typedef carl::FactorizedPolynomial<RawPolynomial> Polynomial;
-	typedef carl::CompareRelation CompareRelation;
+	typedef carl::Relation CompareRelation;
 	typedef carl::RationalFunction<Polynomial> RationalFunction;
 }
 

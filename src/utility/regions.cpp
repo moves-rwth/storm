@@ -8,99 +8,26 @@
 #include <string>
 
 #include "src/utility/regions.h"
+#include "src/utility/constants.h"
+#include "src/utility/macros.h"
+
+#include "src/settings/SettingsManager.h"
+#include "src/solver/Smt2SmtSolver.h"
+#include "src/exceptions/IllegalArgumentException.h"
 #include "src/exceptions/NotImplementedException.h"
-#include "src/exceptions/InvalidArgumentException.h"
-#include "adapters/CarlAdapter.h"
-#include "exceptions/InvalidSettingsException.h"
-#include "parser/MappedFile.h"
+
+
 
 namespace storm {
     namespace utility{
         namespace regions {
             
-            template<typename ParametricType, typename ConstantType>
-            void RegionParser<ParametricType, ConstantType>::parseParameterBounds(
-                    std::map<VariableType, CoefficientType>& lowerBounds,
-                    std::map<VariableType, CoefficientType>& upperBounds,
-                    std::string const& parameterBoundsString,
-                    double const precision){
-                double actualPrecision = (precision==0.0 ? storm::settings::generalSettings().getPrecision() : precision);
-                
-                std::string::size_type positionOfFirstRelation = parameterBoundsString.find("<=");
-                STORM_LOG_THROW(positionOfFirstRelation!=std::string::npos, storm::exceptions::InvalidArgumentException, "When parsing the region" << parameterBoundsString << " I could not find  a '<=' after the first number");
-                std::string::size_type positionOfSecondRelation = parameterBoundsString.find("<=", positionOfFirstRelation+2);
-                STORM_LOG_THROW(positionOfSecondRelation!=std::string::npos, storm::exceptions::InvalidArgumentException, "When parsing the region" << parameterBoundsString << " I could not find  a '<=' after the parameter");
-                
-                std::string parameter=parameterBoundsString.substr(positionOfFirstRelation+2,positionOfSecondRelation-(positionOfFirstRelation+2));
-                //removes all whitespaces from the parameter string:
-                parameter.erase(std::remove_if(parameter.begin(), parameter.end(), isspace), parameter.end());
-                STORM_LOG_THROW(parameter.length()>0, storm::exceptions::InvalidArgumentException, "When parsing the region" << parameterBoundsString << " I could not find a parameter");
-                double lowerBound, upperBound;
-                try{
-                    lowerBound=std::stod(parameterBoundsString.substr(0,positionOfFirstRelation));
-                    upperBound=std::stod(parameterBoundsString.substr(positionOfSecondRelation+2));
-                }
-                catch (std::exception const& exception) {
-                    STORM_LOG_ERROR("Failed to parse the region: " << parameterBoundsString << ". The correct format for regions is lowerBound<=parameter<=upperbound");
-                    throw exception;
-                }
-                
-                VariableType var = getVariableFromString<VariableType>(parameter);
-                CoefficientType lb = convertNumber<double, CoefficientType>(lowerBound, true, actualPrecision);
-                STORM_LOG_WARN_COND((lowerBound==convertNumber<CoefficientType, double>(lb, true, actualPrecision)), "The lower bound of '"<< parameterBoundsString << "' could not be parsed accurately. Increase precision?");
-                CoefficientType ub = convertNumber<double, CoefficientType>(upperBound, false, actualPrecision);
-                STORM_LOG_WARN_COND((upperBound==convertNumber<CoefficientType, double>(ub, true, actualPrecision)), "The upper bound of '"<< parameterBoundsString << "' could not be parsed accurately. Increase precision?");
-                lowerBounds.emplace(std::make_pair(var, lb));  
-                upperBounds.emplace(std::make_pair(var, ub));
-               // std::cout << "parsed bounds " << parameterBoundsString << ": lb=" << lowerBound << " ub=" << upperBound << " param='" << parameter << "' precision=" << actualPrecision << std::endl;
+            template<>
+            double convertNumber<double, double>(double const& number, bool const& roundDown, double const& precision){
+                return number;
             }
             
-            template<typename ParametricType, typename ConstantType>
-            typename RegionParser<ParametricType, ConstantType>::ParameterRegion RegionParser<ParametricType, ConstantType>::parseRegion(std::string const& regionString, double precision){
-                double actualPrecision = (precision==0.0 ? storm::settings::generalSettings().getPrecision() : precision);
-                std::map<VariableType, CoefficientType> lowerBounds;
-                std::map<VariableType, CoefficientType> upperBounds;
-                std::vector<std::string> parameterBounds;
-                boost::split(parameterBounds, regionString, boost::is_any_of(","));
-                for(auto const& parameterBound : parameterBounds){
-                    RegionParser<ParametricType, ConstantType>::parseParameterBounds(lowerBounds, upperBounds, parameterBound, actualPrecision);
-                }
-                return ParameterRegion(lowerBounds, upperBounds);
-            }
-            
-            template<typename ParametricType, typename ConstantType>
-            std::vector<typename RegionParser<ParametricType, ConstantType>::ParameterRegion> RegionParser<ParametricType, ConstantType>::parseMultipleRegions(std::string const& regionsString, double precision){
-                double actualPrecision = (precision==0.0 ? storm::settings::generalSettings().getPrecision() : precision);
-                std::vector<ParameterRegion> result;
-                std::vector<std::string> regionsStrVec;
-                boost::split(regionsStrVec, regionsString, boost::is_any_of(";"));
-                for(auto const& regionStr : regionsStrVec){
-                    if(!std::all_of(regionStr.begin(),regionStr.end(),isspace)){ //skip this string if it only consists of space
-                    result.emplace_back(RegionParser<ParametricType, ConstantType>::parseRegion(regionStr, actualPrecision));
-                    }
-                }
-                return result;
-            }
-            
-            template<typename ParametricType, typename ConstantType>
-            std::vector<typename RegionParser<ParametricType, ConstantType>::ParameterRegion> RegionParser<ParametricType, ConstantType>::getRegionsFromSettings(double precision){
-                STORM_LOG_THROW(storm::settings::regionSettings().isRegionsSet() || storm::settings::regionSettings().isRegionFileSet(), storm::exceptions::InvalidSettingsException, "Tried to obtain regions from the settings but no regions are specified.");
-                STORM_LOG_THROW(!(storm::settings::regionSettings().isRegionsSet() && storm::settings::regionSettings().isRegionFileSet()), storm::exceptions::InvalidSettingsException, "Regions are specified via file AND cmd line. Only one option is allowed.");
-                
-                std::string regionsString;
-                if(storm::settings::regionSettings().isRegionsSet()){
-                    regionsString = storm::settings::regionSettings().getRegionsFromCmdLine();
-                }
-                else{
-                    //if we reach this point we can assume that the region is given as a file.
-                    STORM_LOG_THROW(storm::parser::MappedFile::fileExistsAndIsReadable(storm::settings::regionSettings().getRegionFilePath().c_str()), storm::exceptions::InvalidSettingsException, "The path to the file in which the regions are specified is not valid.");
-                    storm::parser::MappedFile mf(storm::settings::regionSettings().getRegionFilePath().c_str());
-                    regionsString = std::string(mf.getData(),mf.getDataSize());
-                }
-                return RegionParser<ParametricType, ConstantType>::parseMultipleRegions(regionsString,precision);
-            }
-            
-            
+#ifdef STORM_HAVE_CARL
             template<>
             storm::Coefficient convertNumber<double, storm::Coefficient>(double const& number, bool const& roundDown, double const& precision){
                 double actualPrecision = (precision==0.0 ? storm::settings::generalSettings().getPrecision() : precision);
@@ -126,10 +53,6 @@ namespace storm {
                 return cln::double_approx(number);
             }
             
-            template<>
-            double convertNumber<double, double>(double const& number, bool const& roundDown, double const& precision){
-                return number;
-            }
             
             template<>
             cln::cl_RA convertNumber<cln::cl_RA, cln::cl_RA>(cln::cl_RA const& number, bool const& roundDown, double const& precision){
@@ -140,7 +63,7 @@ namespace storm {
             template<>
             storm::Variable getVariableFromString<storm::Variable>(std::string variableString){
                 storm::Variable const& var = carl::VariablePool::getInstance().findVariableWithName(variableString);
-                STORM_LOG_THROW(var!=carl::Variable::NO_VARIABLE, storm::exceptions::InvalidArgumentException, "Variable '" + variableString + "' could not be found.");
+                STORM_LOG_THROW(var!=carl::Variable::NO_VARIABLE, storm::exceptions::IllegalArgumentException, "Variable '" + variableString + "' could not be found.");
                 return var;
             }
             
@@ -162,9 +85,8 @@ namespace storm {
                 }
                 
                 storm::Variable const& var = carl::VariablePool::getInstance().findVariableWithName(variableName);
-                //STORM_LOG_THROW(var==carl::Variable::NO_VARIABLE, storm::exceptions::InvalidArgumentException, "Tried to create a new variable but the name " << variableName << " is already in use.");
                 if(var!=carl::Variable::NO_VARIABLE){
-                    STORM_LOG_THROW(var.getType()==carlVarType, storm::exceptions::InvalidArgumentException, "Tried to create a new variable but the name " << variableName << " is already in use for a variable of a different sort.");
+                    STORM_LOG_THROW(var.getType()==carlVarType, storm::exceptions::IllegalArgumentException, "Tried to create a new variable but the name " << variableName << " is already in use for a variable of a different sort.");
                     return var;
                 }
                 
@@ -177,15 +99,12 @@ namespace storm {
             }
                         
             template<>
-            typename storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction,double>::CoefficientType evaluateFunction<storm::RationalFunction, double>(
-                    storm::RationalFunction const& function, 
-                    std::map<typename storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction,double>::VariableType,
-                             typename storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction,double>::CoefficientType> const& point){
+            CoefficientType<storm::RationalFunction> evaluateFunction<storm::RationalFunction>(storm::RationalFunction const& function, std::map<VariableType<storm::RationalFunction>, CoefficientType<storm::RationalFunction>> const& point){
                 return function.evaluate(point);
             }
             
             template<>
-            typename storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction,double>::CoefficientType getConstantPart<storm::RationalFunction, double>(storm::RationalFunction const& function){
+            CoefficientType<storm::RationalFunction> getConstantPart<storm::RationalFunction>(storm::RationalFunction const& function){
                 return function.constantPart();
             }
             
@@ -201,7 +120,7 @@ namespace storm {
             }
             
             template<>
-            void gatherOccurringVariables<storm::RationalFunction, storm::Variable>(storm::RationalFunction const& function, std::set<storm::Variable>& variableSet){
+            void gatherOccurringVariables<storm::RationalFunction>(storm::RationalFunction const& function, std::set<VariableType<storm::RationalFunction>>& variableSet){
                 function.gatherVariables(variableSet);
             }
             
@@ -211,19 +130,19 @@ namespace storm {
                 storm::CompareRelation compRel;
                 switch (relation){
                     case storm::logic::ComparisonType::Greater:
-                        compRel=storm::CompareRelation::GT;
+                        compRel=storm::CompareRelation::GREATER;
                         break;
                     case storm::logic::ComparisonType::GreaterEqual:
                         compRel=storm::CompareRelation::GEQ;
                         break;
                     case storm::logic::ComparisonType::Less:
-                        compRel=storm::CompareRelation::LT;
+                        compRel=storm::CompareRelation::LESS;
                         break;
                     case storm::logic::ComparisonType::LessEqual:
                         compRel=storm::CompareRelation::LEQ;
                         break;
                     default:
-                        STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "the comparison relation of the formula is not supported");
+                        STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "the comparison relation of the formula is not supported");
                 }        
                //Note: this only works if numerators and denominators are positive...
                 carl::Constraint<storm::Polynomial> constraint((leftHandSide.nominator() * rightHandSide.denominator()) - (rightHandSide.nominator() * leftHandSide.denominator()), compRel);
@@ -235,19 +154,19 @@ namespace storm {
                 storm::CompareRelation compRel;
                 switch (relation){
                     case storm::logic::ComparisonType::Greater:
-                        compRel=storm::CompareRelation::GT;
+                        compRel=storm::CompareRelation::GREATER;
                         break;
                     case storm::logic::ComparisonType::GreaterEqual:
                         compRel=storm::CompareRelation::GEQ;
                         break;
                     case storm::logic::ComparisonType::Less:
-                        compRel=storm::CompareRelation::LT;
+                        compRel=storm::CompareRelation::LESS;
                         break;
                     case storm::logic::ComparisonType::LessEqual:
                         compRel=storm::CompareRelation::LEQ;
                         break;
                     default:
-                        STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "the comparison relation of the formula is not supported");
+                        STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "the comparison relation of the formula is not supported");
                 }
                 storm::RawPolynomial leftHandSide(variable);
                 leftHandSide -= bound;
@@ -271,33 +190,7 @@ namespace storm {
                 std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<storm::RawPolynomial>>> cache(new carl::Cache<carl::PolynomialFactorizationPair<storm::RawPolynomial>>());
                 return storm::RationalFunction(storm::RationalFunction::PolyType(storm::RationalFunction::PolyType::PolyType(initialValue), cache));
             }
-
-            
-            //explicit instantiations
-       template double convertNumber<double, double>(double const& number, bool const& roundDown, double const& precision);
-       
-#ifdef STORM_HAVE_CARL
-       template class RegionParser<storm::RationalFunction, double>;
-       
-       template storm::RationalFunction convertNumber<double, storm::RationalFunction>(double const& number, bool const& roundDown, double const& precision);
-       template storm::Coefficient convertNumber<double, storm::Coefficient>(double const& number, bool const& roundDown, double const& precision);
-       template double convertNumber<cln::cl_RA, double>(storm::Coefficient const& number, bool const& roundDown, double const& precision);
-       template cln::cl_RA convertNumber<cln::cl_RA, cln::cl_RA>(cln::cl_RA const& number, bool const& roundDown, double const& precision);
-       
-       template storm::Variable getVariableFromString<storm::Variable>(std::string variableString);
-       template std::string getVariableName<storm::Variable>(storm::Variable variable);
-       
-       template bool functionIsLinear<storm::RationalFunction>(storm::RationalFunction const& function);
-       
-       template void gatherOccurringVariables<storm::RationalFunction, storm::Variable>(storm::RationalFunction const& function, std::set<storm::Variable>& variableSet);
-       
-       template void addGuardedConstraintToSmtSolver<storm::solver::Smt2SmtSolver, storm::RationalFunction, storm::Variable>(std::shared_ptr<storm::solver::Smt2SmtSolver> solver,storm::Variable const& guard, storm::RationalFunction const& leftHandSide, storm::logic::ComparisonType relation, storm::RationalFunction const& rightHandSide);
-       template void addParameterBoundsToSmtSolver<storm::solver::Smt2SmtSolver, storm::Variable, cln::cl_RA>(std::shared_ptr<storm::solver::Smt2SmtSolver> solver, storm::Variable const& variable, storm::logic::ComparisonType relation, cln::cl_RA const& bound);
-       template void addBoolVariableToSmtSolver<storm::solver::Smt2SmtSolver, storm::Variable>(std::shared_ptr<storm::solver::Smt2SmtSolver> solver, storm::Variable const& variable, bool value);
-       
-       template storm::RationalFunction getNewFunction<storm::RationalFunction, storm::Coefficient>(storm::Coefficient initialValue);
-       template storm::RationalFunction getNewFunction<storm::RationalFunction, storm::Variable>(storm::Variable initialValue);
-#endif 
+#endif
         }
     }
 }

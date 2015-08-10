@@ -91,7 +91,7 @@ namespace storm {
         }
         
         void Smt2SmtSolver::add(carl::Constraint<storm::RationalFunction> const& constraint) {
-            add(constraint.lhs(), constraint.rel());
+            add(constraint.lhs(), constraint.relation());
         }
         
         void Smt2SmtSolver::add(carl::Constraint<storm::RawPolynomial> const& constraint) {
@@ -146,7 +146,7 @@ namespace storm {
             if (processIdOfSolver!=0){
                 auto solverOutput = readSolverOutput();
                 STORM_LOG_THROW(solverOutput.size()==1, storm::exceptions::UnexpectedException, "expected a single line of output after smt2 command ( check-sat ). Got " + std::to_string(solverOutput.size()) + " lines of output instead.");
-                solverOutput[0].erase(std::remove_if(solverOutput[0].begin(), solverOutput[0].end(), isspace), solverOutput[0].end()); //remove spaces
+                solverOutput[0].erase(std::remove_if(solverOutput[0].begin(), solverOutput[0].end(), ::isspace), solverOutput[0].end()); //remove spaces
                 if(solverOutput[0]=="sat") return SmtSolver::CheckResult::Sat;
                 if(solverOutput[0]=="unsat") return SmtSolver::CheckResult::Unsat;
                 if(solverOutput[0]=="unknown") return SmtSolver::CheckResult::Unknown;
@@ -262,7 +262,7 @@ namespace storm {
                 if(expectSuccess){
                     auto output=readSolverOutput();
                     STORM_LOG_THROW(output.size()==1, storm::exceptions::UnexpectedException, "expected a single success response after smt2 command " + smt2Command + ". Got " + std::to_string(output.size()) + " lines of output instead.");
-                    output[0].erase(std::remove_if(output[0].begin(), output[0].end(), isspace), output[0].end());
+                    output[0].erase(std::remove_if(output[0].begin(), output[0].end(), ::isspace), output[0].end());
                     STORM_LOG_THROW(output[0]=="success", storm::exceptions::UnexpectedException, "expected <<success>> response after smt2 command " + smt2Command + ". Got <<" + output[0] + ">> instead");
                 }
             }

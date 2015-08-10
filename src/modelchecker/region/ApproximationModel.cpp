@@ -6,6 +6,7 @@
  */
 
 #include "src/modelchecker/region/ApproximationModel.h"
+#include "src/modelchecker/region/ParameterRegion.h"
 #include "modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "exceptions/UnexpectedException.h"
@@ -61,7 +62,7 @@ namespace storm {
                     ConstantType dummyEntry=storm::utility::one<ConstantType>();
                     for(auto const& entry : parametricModel.getTransitionMatrix().getRow(row)){
                         if(!this->parametricTypeComparator.isConstant(entry.getValue())){
-                            distinctFuncSubs.insert(std::make_pair(entry.getValue(), substitutionIndex));
+                            auto pair=distinctFuncSubs.insert(std::make_pair(entry.getValue(), substitutionIndex));
                             ++numOfNonConstEntries;
                         }
                         matrixBuilder.addNextValue(approxModelRow, entry.getColumn(), dummyEntry);
@@ -92,11 +93,16 @@ namespace storm {
                     auto appEntry = this->model->getTransitionMatrix().getRow(approxModelRow).begin();
                     for(auto const& parEntry : parametricModel.getTransitionMatrix().getRow(row)){
                         if(this->parametricTypeComparator.isConstant(parEntry.getValue())){
-                            appEntry->setValue(storm::utility::regions::convertNumber<CoefficientType, ConstantType>(storm::utility::regions::getConstantPart<ParametricType, ConstantType>(parEntry.getValue())));
+                            appEntry->setValue(storm::utility::regions::convertNumber<CoefficientType, ConstantType>(storm::utility::regions::getConstantPart(parEntry.getValue())));
                         }
                         else {
                             std::tuple<ParametricType, std::size_t, ConstantType> searchedTuple(parEntry.getValue(), rowSubstitutions[approxModelRow], storm::utility::zero<ConstantType>());
-                            auto const tableIt= std::lower_bound(evaluationTable.begin(), evaluationTable.end(), searchedTuple);
+                            auto const tableIt= std::find(evaluationTable.begin(), evaluationTable.end(), searchedTuple);
+                            //auto const tableIt= std::lower_bound(evaluationTable.begin(), evaluationTable.end(), searchedTuple);
+                            //auto const& tableIt= std::lower_bound(evaluationTable.begin(), evaluationTable.end(), searchedTuple);
+                            if(tableIt==evaluationTable.end()){
+                                std::cout << "did not found tuple in the table: " << parEntry.getValue() << " substitution " << rowSubstitutions[approxModelRow] << " in parametric model at row " << row << " column " << parEntry.getColumn() << " approximation Row " << approxModelRow << std::endl;
+                            }
                             STORM_LOG_THROW((*tableIt==searchedTuple),storm::exceptions::UnexpectedException, "Could not find the current tuple in the evaluationTable. Either the table is missing that tuple or it is not sorted properly");
                             mapping.emplace_back(std::make_pair(&(std::get<2>(*tableIt)), appEntry));
                         }
@@ -138,7 +144,7 @@ namespace storm {
             //write entries into evaluation table
             for(auto& tableEntry : this->evaluationTable){
                 std::get<2>(tableEntry)=storm::utility::regions::convertNumber<CoefficientType, ConstantType>(
-                        storm::utility::regions::evaluateFunction<ParametricType, ConstantType>(
+                        storm::utility::regions::evaluateFunction(
                                 std::get<0>(tableEntry),
                                 instantiatedSubs[std::get<1>(tableEntry)]
                             )

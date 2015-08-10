@@ -12,8 +12,13 @@
 #ifndef STORM_UTILITY_REGIONS_H
 #define	STORM_UTILITY_REGIONS_H
 
-#include "src/modelchecker/reachability/SparseDtmcRegionModelChecker.h"
+#include <type_traits>
+#include <map>
+#include <set>
+#include <memory>
+
 #include "src/logic/ComparisonType.h"
+#include <src/adapters/CarlAdapter.h>
 
 // Forward-declare region modelchecker  class.
     namespace storm {
@@ -26,62 +31,22 @@
 namespace storm {
     namespace utility{
         namespace regions {
-            template<typename ParametricType, typename ConstantType>
-            class RegionParser{
-                public:
-                    typedef typename storm::modelchecker::SparseDtmcRegionModelChecker<ParametricType,ConstantType>::ParameterRegion ParameterRegion;
-                    typedef typename storm::modelchecker::SparseDtmcRegionModelChecker<ParametricType,ConstantType>::VariableType VariableType;
-                    typedef typename storm::modelchecker::SparseDtmcRegionModelChecker<ParametricType,ConstantType>::CoefficientType CoefficientType;
-                    
-                /*
-                 * Can be used to parse a single parameter with its bounds from a string of the form "0.3<=p<=0.5".
-                 * The numbers are parsed as doubles and then converted to SparseDtmcRegionModelChecker::CoefficientType.
-                 * According to the given precision, the lower bound may be rounded down and the upper bound may be rounded up.
-                 * If no precision is given, the one from the settings is used.
-                 * The results will be inserted in the given maps
-                 * 
-                 */
-                static void parseParameterBounds( 
-                        std::map<VariableType, CoefficientType>& lowerBounds,
-                        std::map<VariableType, CoefficientType>& upperBounds,
-                        std::string const& parameterBoundsString,
-                        double const precision=0.0
-                );
-
-                /*
-                 * Can be used to parse a single region from a string of the form "0.3<=p<=0.5,0.4<=q<=0.7".
-                 * The numbers are parsed as doubles and then converted to SparseDtmcRegionModelChecker::CoefficientType.
-                 * According to the given precision, the lower bound may be rounded down and the upper bound may be rounded up.
-                 * If no precision is given, the one from the settings is used.
-                 * 
-                 */
-                static ParameterRegion parseRegion(
-                        std::string const& regionString,
-                        double precision=0.0);
-
-                /*
-                 * Can be used to parse a vector of region from a string of the form "0.3<=p<=0.5,0.4<=q<=0.7;0.1<=p<=0.3,0.2<=q<=0.4".
-                 * The numbers are parsed as doubles and then converted to SparseDtmcRegionModelChecker::CoefficientType.
-                 * According to the given precision, the lower bound may be rounded down and the upper bound may be rounded up.
-                 * If no precision is given, the one from the settings is used.
-                 * 
-                 */
-                static std::vector<ParameterRegion> parseMultipleRegions(
-                        std::string const& regionsString,
-                        double precision=0.0);
             
-
-                /*
-                 * Retrieves the regions that are specified in the settings.
-                 * The numbers are parsed as doubles and then converted to SparseDtmcRegionModelChecker::CoefficientType.
-                 * According to the given precision, the lower bound may be rounded down and the upper bound may be rounded up.
-                 * If no precision is given, the one from the settings is used.
-                 * 
-                 */
-                static std::vector<ParameterRegion> getRegionsFromSettings(double precision=0.0);
+#ifdef STORM_HAVE_CARL
+            template<typename FunctionType>
+            using VariableType    = typename std::conditional<(std::is_same<FunctionType, storm::RationalFunction>::value), storm::Variable, std::nullptr_t>::type;
+            template<typename FunctionType>
+            using CoefficientType = typename std::conditional<(std::is_same<FunctionType, storm::RationalFunction>::value), storm::Coefficient, std::nullptr_t>::type;
+#else
+            template<typename Functiontype>
+            using VariableType = std::nullptr_t;
+            template<typename Functiontype>
+            using CoefficientType = std::nullptr_t;
+#endif
+       //     template<typename FunctionType>
+        //    using PointType = std::map<VariableType<FunctionType>, CoefficientType<FunctionType>>;
             
-            };
-            
+            enum class VariableSort {VS_BOOL, VS_REAL, VS_INT};
             
             /*
              * Converts a number from one type to a number from the other.
@@ -94,50 +59,47 @@ namespace storm {
              * retrieves the variable object from the given string
              * Throws an exception if variable not found
              */
-            template<typename VariableType>
-            VariableType getVariableFromString(std::string variableString);
-            
-            
-            enum class VariableSort {VS_BOOL, VS_REAL, VS_INT};
+            template<typename VarType>
+            VarType getVariableFromString(std::string variableString);
             
             /*
              * Creates a new variable with the given name and the given sort
              * If there is already a variable with that name, that variable is returned.
              * An exception is thrown if there already is a variable with the given name, but with a different sort.
              */
-            template<typename VariableType>
-            VariableType getNewVariable(std::string variableName, VariableSort sort);
+            template<typename VarType>
+            VarType getNewVariable(std::string variableName, VariableSort sort);
             
             /*
              * retrieves the variable name  from the given variable
              */
-            template<typename VariableType>
-            std::string getVariableName(VariableType variable);
+            template<typename VarType>
+            std::string getVariableName(VarType variable);
             
             /*
              * evaluates the given function at the given point and returns the result
              */
-            template<typename ParametricType, typename ConstantType>
-            typename storm::modelchecker::SparseDtmcRegionModelChecker<ParametricType,ConstantType>::CoefficientType evaluateFunction(ParametricType const& function, std::map<typename storm::modelchecker::SparseDtmcRegionModelChecker<ParametricType,ConstantType>::VariableType, typename storm::modelchecker::SparseDtmcRegionModelChecker<ParametricType,ConstantType>::CoefficientType> const& point);
+            template<typename FunctionType>
+            CoefficientType<FunctionType> evaluateFunction(FunctionType const& function, std::map<VariableType<FunctionType>, CoefficientType<FunctionType>> const& point);
             
             /*!
              * retrieves the constant part of the given function.
              * If the function is constant, then the result is the same value as the original function
              */
-            template<typename ParametricType, typename ConstantType>
-            typename storm::modelchecker::SparseDtmcRegionModelChecker<ParametricType,ConstantType>::CoefficientType getConstantPart(ParametricType const& function);
+            template<typename FunctionType>
+            CoefficientType<FunctionType> getConstantPart(FunctionType const& function);
             
             /*!
              * Returns true if the function is rational. Note that the function might be simplified.
              */
-            template<typename ParametricType>
-            bool functionIsLinear(ParametricType const& function);
+            template<typename FunctionType>
+            bool functionIsLinear(FunctionType const& function);
             
             /*!
              *  Add all variables that occur in the given function to the the given set
              */
-            template<typename ParametricType, typename VariableType>
-            void gatherOccurringVariables(ParametricType const& function, std::set<VariableType>& variableSet);
+            template<typename FunctionType>
+            void gatherOccurringVariables(FunctionType const& function, std::set<VariableType<FunctionType>>& variableSet);
             
             
             /*!
@@ -150,29 +112,28 @@ namespace storm {
              * @param relation relation of the constraint
              * @param rightHandSide right hand side of the constraint
              */
-            template<typename SolverType, typename ParametricType, typename VariableType>
-            void addGuardedConstraintToSmtSolver(std::shared_ptr<SolverType> solver, VariableType const& guard, ParametricType const& leftHandSide, storm::logic::ComparisonType relation, ParametricType const& rightHandSide);
+            template<typename SolverType, typename FunctionType, typename VarType>
+            void addGuardedConstraintToSmtSolver(std::shared_ptr<SolverType> solver, VarType const& guard, FunctionType const& leftHandSide, storm::logic::ComparisonType relation, FunctionType const& rightHandSide);
             
             /*!
              * Adds the given constraint to the given Smt solver
              * The constraint is of the form 'variable relation bound'
              */
-            template<typename SolverType, typename VariableType, typename BoundType>
-            void addParameterBoundsToSmtSolver(std::shared_ptr<SolverType> solver, VariableType const& variable, storm::logic::ComparisonType relation, BoundType const& bound);
+            template<typename SolverType, typename VarType, typename BoundType>
+            void addParameterBoundsToSmtSolver(std::shared_ptr<SolverType> solver, VarType const& variable, storm::logic::ComparisonType relation, BoundType const& bound);
             
             /*!
              * Adds the given (boolean) variable to the solver. Can be used to assert that guards are true/false
              */
-            template<typename SolverType, typename VariableType>
-            void addBoolVariableToSmtSolver(std::shared_ptr<SolverType> solver, VariableType const& variable, bool value);
+            template<typename SolverType, typename VarType>
+            void addBoolVariableToSmtSolver(std::shared_ptr<SolverType> solver, VarType const& variable, bool value);
             
             
             /*!
              * Returns a new function that initially has the given value (which might be a constant or a variable)
-             * 
              */
-            template<typename ParametricType, typename ValueType>
-            ParametricType getNewFunction(ValueType initialValue);
+            template<typename FunctionType, typename ValueType>
+            FunctionType getNewFunction(ValueType initialValue);
         }
     }
 }
