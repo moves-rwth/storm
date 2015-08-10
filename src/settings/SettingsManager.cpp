@@ -45,7 +45,7 @@ namespace storm {
             // We convert the arguments to a vector of strings and strip off the first element since it refers to the
             // name of the program.
             std::vector<std::string> argumentVector(argc - 1);
-            for (uint_fast64_t i = 1; i < argc; ++i) {
+            for (int i = 1; i < argc; ++i) {
                 argumentVector[i - 1] = std::string(argv[i]);
             }
             
@@ -70,7 +70,6 @@ namespace storm {
             
             // Walk through all arguments.
             for (uint_fast64_t i = 0; i < commandLineArguments.size(); ++i) {
-                bool existsNextArgument = i < commandLineArguments.size() - 1;
                 std::string const& currentArgument = commandLineArguments[i];
                 
                 // Check if the given argument is a new option or belongs to a previously given option.

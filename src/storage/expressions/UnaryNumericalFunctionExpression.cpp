@@ -19,33 +19,37 @@ namespace storm {
         }
         
         storm::expressions::OperatorType UnaryNumericalFunctionExpression::getOperator() const {
+            storm::expressions::OperatorType result = storm::expressions::OperatorType::Minus;
             switch (this->getOperatorType()) {
-                case OperatorType::Minus: return storm::expressions::OperatorType::Minus; break;
-                case OperatorType::Floor: return storm::expressions::OperatorType::Floor; break;
-                case OperatorType::Ceil: return storm::expressions::OperatorType::Ceil; break;
+                case OperatorType::Minus: result = storm::expressions::OperatorType::Minus; break;
+                case OperatorType::Floor: result = storm::expressions::OperatorType::Floor; break;
+                case OperatorType::Ceil: result = storm::expressions::OperatorType::Ceil; break;
             }
+            return result;
         }
         
         int_fast64_t UnaryNumericalFunctionExpression::evaluateAsInt(Valuation const* valuation) const {
             STORM_LOG_THROW(this->hasIntegerType(), storm::exceptions::InvalidTypeException, "Unable to evaluate expression as integer.");
 
-            int_fast64_t operandEvaluated = this->getOperand()->evaluateAsInt(valuation);
+            int_fast64_t result = this->getOperand()->evaluateAsInt(valuation);
             switch (this->getOperatorType()) {
-                case OperatorType::Minus: return -operandEvaluated; break;
-                case OperatorType::Floor: return std::floor(operandEvaluated); break;
-                case OperatorType::Ceil: return std::ceil(operandEvaluated); break;
+                case OperatorType::Minus: result = -result; break;
+                case OperatorType::Floor: result = std::floor(result); break;
+                case OperatorType::Ceil: result = std::ceil(result); break;
             }
+            return result;
         }
         
         double UnaryNumericalFunctionExpression::evaluateAsDouble(Valuation const* valuation) const {
             STORM_LOG_THROW(this->hasNumericalType(), storm::exceptions::InvalidTypeException, "Unable to evaluate expression as double.");
 
-            double operandEvaluated = this->getOperand()->evaluateAsDouble(valuation);
+            double result = this->getOperand()->evaluateAsDouble(valuation);
             switch (this->getOperatorType()) {
-                case OperatorType::Minus: return -operandEvaluated; break;
-                case OperatorType::Floor: return std::floor(operandEvaluated); break;
-                case OperatorType::Ceil: return std::ceil(operandEvaluated); break;
+                case OperatorType::Minus: result = -result; break;
+                case OperatorType::Floor: result = std::floor(result); break;
+                case OperatorType::Ceil: result = std::ceil(result); break;
             }
+            return result;
         }
         
         std::shared_ptr<BaseExpression const> UnaryNumericalFunctionExpression::simplify() const {

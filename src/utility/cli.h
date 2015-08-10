@@ -269,8 +269,7 @@ namespace storm {
             
             template<>
             inline void verifySparseModel(boost::optional<storm::prism::Program> const& program, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model, std::shared_ptr<storm::logic::Formula> formula) {
-                storm::settings::modules::GeneralSettings const& settings = storm::settings::generalSettings();
-                
+
                 STORM_LOG_THROW(model->getType() == storm::models::ModelType::Dtmc, storm::exceptions::InvalidSettingsException, "Currently parametric verification is only available for DTMCs.");
                 std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
                 
@@ -302,7 +301,6 @@ namespace storm {
             
             template<storm::dd::DdType DdType>
             void verifySymbolicModel(boost::optional<storm::prism::Program> const& program, std::shared_ptr<storm::models::symbolic::Model<DdType>> model, std::shared_ptr<storm::logic::Formula> formula) {
-                storm::settings::modules::GeneralSettings const& settings = storm::settings::generalSettings();
                 
                 std::cout << std::endl << "Model checking property: " << *formula << " ...";
                 std::unique_ptr<storm::modelchecker::CheckResult> result;

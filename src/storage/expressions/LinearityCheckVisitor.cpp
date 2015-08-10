@@ -3,6 +3,7 @@
 
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidTypeException.h"
+#include "src/exceptions/InvalidOperationException.h"
 
 namespace storm {
     namespace expressions {
@@ -51,6 +52,7 @@ namespace storm {
                 case BinaryNumericalFunctionExpression::OperatorType::Max: return LinearityStatus::NonLinear; break;
                 case BinaryNumericalFunctionExpression::OperatorType::Power: return LinearityStatus::NonLinear; break;
             }
+            STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Illegal binary numerical expression operator.");
         }
         
         boost::any LinearityCheckVisitor::visit(BinaryRelationExpression const& expression) {
@@ -72,6 +74,7 @@ namespace storm {
                 case UnaryNumericalFunctionExpression::OperatorType::Floor:
                 case UnaryNumericalFunctionExpression::OperatorType::Ceil: return LinearityStatus::NonLinear;
             }
+            STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Illegal unary numerical expression operator.");
         }
         
         boost::any LinearityCheckVisitor::visit(BooleanLiteralExpression const& expression) {

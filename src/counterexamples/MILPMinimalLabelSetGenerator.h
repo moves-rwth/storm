@@ -961,9 +961,6 @@ namespace storm {
                 boost::container::flat_set<uint_fast64_t> usedLabelSet = getUsedLabelsInSolution(*solver, variableInformation);
                 usedLabelSet.insert(choiceInformation.knownLabels.begin(), choiceInformation.knownLabels.end());
                 
-                // Display achieved probability.
-                std::pair<uint_fast64_t, double> initialStateProbabilityPair = getReachabilityProbability(*solver, labeledMdp, variableInformation);
-
                 // (5) Return result.
                 return usedLabelSet;
             }
