@@ -12,6 +12,7 @@
 
 namespace storm {
     namespace prism {
+<<<<<<< HEAD
         Program::Program(std::shared_ptr<storm::expressions::ExpressionManager> manager, ModelType modelType, std::vector<Constant> const& constants, std::vector<BooleanVariable> const& globalBooleanVariables, std::vector<IntegerVariable> const& globalIntegerVariables, std::vector<Formula> const& formulas, std::vector<Module> const& modules, std::map<std::string, uint_fast64_t> const& actionToIndexMap, std::vector<RewardModel> const& rewardModels, bool fixInitialConstruct, storm::prism::InitialConstruct const& initialConstruct, std::vector<Label> const& labels, std::string const& filename, uint_fast64_t lineNumber, bool finalModel) 
         : LocatedInformation(filename, lineNumber), manager(manager),
             modelType(modelType), constants(constants), constantToIndexMap(),
@@ -22,8 +23,10 @@ namespace storm {
             labels(labels), actionToIndexMap(actionToIndexMap), indexToActionMap(), actions(), 
             actionIndices(), actionIndicesToModuleIndexMap(), variableToModuleIndexMap()
         {
+
+            // Start by creating the necessary mappings from the given ones.
             this->createMappings();
-            
+
             // Create a new initial construct if the corresponding flag was set.
             if (fixInitialConstruct) {
                 storm::expressions::Expression newInitialExpression = manager->boolean(true);

@@ -378,7 +378,8 @@ namespace storm {
             if (!actionName.empty()) {
                 auto const& nameIndexPair = globalProgramInformation.actionIndices.find(actionName);
                 if (nameIndexPair == globalProgramInformation.actionIndices.end()) {
-                    globalProgramInformation.actionIndices[actionName] = globalProgramInformation.actionIndices.size();
+                    std::size_t nextIndex = globalProgramInformation.actionIndices.size();
+                    globalProgramInformation.actionIndices[actionName] = nextIndex;
                 }
             }
             
@@ -392,7 +393,8 @@ namespace storm {
                 // Register the action name if it has not appeared earlier.
                 auto const& nameIndexPair = globalProgramInformation.actionIndices.find(actionName);
                 if (nameIndexPair == globalProgramInformation.actionIndices.end()) {
-                    globalProgramInformation.actionIndices[actionName] = globalProgramInformation.actionIndices.size();
+                    std::size_t nextIndex = globalProgramInformation.actionIndices.size();
+                    globalProgramInformation.actionIndices[actionName] = nextIndex;
                 }
             }
             
@@ -518,7 +520,8 @@ namespace storm {
                     if (!newActionName.empty()) {
                         auto const& nameIndexPair = globalProgramInformation.actionIndices.find(newActionName);
                         if (nameIndexPair == globalProgramInformation.actionIndices.end()) {
-                            globalProgramInformation.actionIndices[newActionName] = globalProgramInformation.actionIndices.size();
+                            std::size_t nextIndex = globalProgramInformation.actionIndices.size();
+                            globalProgramInformation.actionIndices[newActionName] = nextIndex;
                         }
                     }
                     

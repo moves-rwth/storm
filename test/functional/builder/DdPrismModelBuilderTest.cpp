@@ -72,7 +72,7 @@ TEST(DdPrismModelBuilderTest, Mdp) {
     
     EXPECT_TRUE(model->getType() == storm::models::ModelType::Mdp);
     std::shared_ptr<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>> mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>();
-    
+
     EXPECT_EQ(169, mdp->getNumberOfStates());
     EXPECT_EQ(436, mdp->getNumberOfTransitions());
     EXPECT_EQ(254, mdp->getNumberOfChoices());
