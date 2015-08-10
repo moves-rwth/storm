@@ -63,6 +63,14 @@ namespace storm {
                  */
                 Mdp<ValueType> restrictChoiceLabels(LabelSet const& enabledChoiceLabels) const;
                 
+                /*!
+                 * Constructs an MDP by copying the current MDP and restricting the choices of each state to the ones given by the bitvector.
+                 * 
+                 * @param enabledActions A BitVector of lenght numberOfChoices(), which is one iff the action should be kept.
+                 * @return A subMDP.
+                 */
+                Mdp<ValueType> restrictActions(storm::storage::BitVector const& enabledActions) const;
+                
             private:
                 /*!
                  * Checks the probability matrix for validity.

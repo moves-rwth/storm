@@ -9,34 +9,9 @@
 #include <memory>
 #include <map>
 
-#include "storm-config.h"
-// Includes for the linked libraries and versions header.
-#ifdef STORM_HAVE_INTELTBB
-#	include "tbb/tbb_stddef.h"
-#endif
-#ifdef STORM_HAVE_GLPK
-#	include "glpk.h"
-#endif
-#ifdef STORM_HAVE_GUROBI
-#include "gurobi_c.h"
-#endif
-#ifdef STORM_HAVE_Z3
-#	include "z3.h"
-#endif
-#ifdef STORM_HAVE_MSAT
-#   include "mathsat.h"
-#endif
-#ifdef STORM_HAVE_CUDA
-#include <cuda.h>
-#include <cuda_runtime.h>
-#endif
+#include "initialize.h"
 
-#include "log4cplus/logger.h"
-#include "log4cplus/loggingmacros.h"
-#include "log4cplus/consoleappender.h"
-#include "log4cplus/fileappender.h"
-log4cplus::Logger logger;
-log4cplus::Logger printer;
+#include "storm-config.h"
 
 // Headers that provide auxiliary functionality.
 #include "src/utility/storm-version.h"
@@ -91,178 +66,13 @@ namespace storm {
     namespace utility {
         namespace cli {
             
-            /*!
-             * Initializes the logging framework and sets up logging to console.
-             */
-            void initializeLogger() {
-                logger = log4cplus::Logger::getInstance(LOG4CPLUS_TEXT("main"));
-                log4cplus::SharedAppenderPtr consoleLogAppender(new log4cplus::ConsoleAppender());
-                consoleLogAppender->setName("mainConsoleAppender");
-                consoleLogAppender->setLayout(std::auto_ptr<log4cplus::Layout>(new log4cplus::PatternLayout("%-5p - %D{%H:%M:%S} (%r ms) - %b:%L: %m%n")));
-                logger.addAppender(consoleLogAppender);
-                auto loglevel = storm::settings::debugSettings().isTraceSet() ? log4cplus::TRACE_LOG_LEVEL : storm::settings::debugSettings().isDebugSet() ? log4cplus::DEBUG_LOG_LEVEL : log4cplus::WARN_LOG_LEVEL;
-                logger.setLogLevel(loglevel);
-                consoleLogAppender->setThreshold(loglevel);
-            }
+          
+         
+             std::string getCurrentWorkingDirectory();
             
-            /*!
-             * Performs some necessary initializations.
-             */
-            void setUp() {
-                initializeLogger();
-                std::cout.precision(10);
-            }
+            void printHeader(const int argc, const char* argv[]);
             
-            /*!
-             * Performs some necessary clean-up.
-             */
-            void cleanUp() {
-                // Intentionally left empty.
-            }
-            
-            /*!
-             * Sets up the logging to file.
-             */
-            void initializeFileLogging() {
-                log4cplus::SharedAppenderPtr fileLogAppender(new log4cplus::FileAppender(storm::settings::debugSettings().getLogfilename()));
-                fileLogAppender->setName("mainFileAppender");
-                fileLogAppender->setLayout(std::auto_ptr<log4cplus::Layout>(new log4cplus::PatternLayout("%-5p - %D{%H:%M:%S} (%r ms) - %F:%L: %m%n")));
-                logger.addAppender(fileLogAppender);
-            }
-            
-            /*!
-             * Gives the current working directory
-             *
-             * @return std::string The path of the current working directory
-             */
-            std::string getCurrentWorkingDirectory() {
-                char temp[512];
-                return (GetCurrentDir(temp, 512 - 1) ? std::string(temp) : std::string(""));
-            }
-            
-            /*!
-             * Prints the header including information about the linked libraries.
-             */
-            void printHeader(const int argc, const char* argv[]) {
-                std::cout << "StoRM" << std::endl;
-                std::cout << "--------" << std::endl << std::endl;
-                
-                
-                //				std::cout << storm::utility::StormVersion::longVersionString() << std::endl;
-#ifdef STORM_HAVE_INTELTBB
-                std::cout << "Linked with Intel Threading Building Blocks v" << TBB_VERSION_MAJOR << "." << TBB_VERSION_MINOR << " (Interface version " << TBB_INTERFACE_VERSION << ")." << std::endl;
-#endif
-#ifdef STORM_HAVE_GLPK
-                std::cout << "Linked with GNU Linear Programming Kit v" << GLP_MAJOR_VERSION << "." << GLP_MINOR_VERSION << "." << std::endl;
-#endif
-#ifdef STORM_HAVE_GUROBI
-                std::cout << "Linked with Gurobi Optimizer v" << GRB_VERSION_MAJOR << "." << GRB_VERSION_MINOR << "." << GRB_VERSION_TECHNICAL << "." << std::endl;
-#endif
-#ifdef STORM_HAVE_Z3
-                unsigned int z3Major, z3Minor, z3BuildNumber, z3RevisionNumber;
-                Z3_get_version(&z3Major, &z3Minor, &z3BuildNumber, &z3RevisionNumber);
-                std::cout << "Linked with Microsoft Z3 Optimizer v" << z3Major << "." << z3Minor << " Build " << z3BuildNumber << " Rev " << z3RevisionNumber << "." << std::endl;
-#endif
-#ifdef STORM_HAVE_MSAT
-                char* msatVersion = msat_get_version();
-                std::cout << "Linked with " << msatVersion << "." << std::endl;
-                msat_free(msatVersion);
-#endif
-#ifdef STORM_HAVE_CUDA
-				int deviceCount = 0;
-				cudaError_t error_id = cudaGetDeviceCount(&deviceCount);
-
-				if (error_id == cudaSuccess)
-				{
-					std::cout << "Compiled with CUDA support, ";
-					// This function call returns 0 if there are no CUDA capable devices.
-					if (deviceCount == 0)
-					{
-						std::cout<< "but there are no available device(s) that support CUDA." << std::endl;
-					} else
-					{
-						std::cout << "detected " << deviceCount << " CUDA Capable device(s):" << std::endl;
-					}
-
-					int dev, driverVersion = 0, runtimeVersion = 0;
-
-					for (dev = 0; dev < deviceCount; ++dev)
-					{
-						cudaSetDevice(dev);
-						cudaDeviceProp deviceProp;
-						cudaGetDeviceProperties(&deviceProp, dev);
-
-						std::cout << "CUDA Device " << dev << ": \"" << deviceProp.name << "\"" << std::endl;
-
-						// Console log
-						cudaDriverGetVersion(&driverVersion);
-						cudaRuntimeGetVersion(&runtimeVersion);
-						std::cout << "  CUDA Driver Version / Runtime Version          " << driverVersion / 1000 << "." << (driverVersion % 100) / 10 << " / " << runtimeVersion / 1000 << "." << (runtimeVersion % 100) / 10 << std::endl;
-						std::cout << "  CUDA Capability Major/Minor version number:    " << deviceProp.major<<"."<<deviceProp.minor <<std::endl;
-					}
-					std::cout << std::endl;
-				}
-				else {
-					std::cout << "Compiled with CUDA support, but an error occured trying to find CUDA devices." << std::endl;
-				}
-#endif
-                
-                // "Compute" the command line argument string with which STORM was invoked.
-                std::stringstream commandStream;
-                for (int i = 1; i < argc; ++i) {
-                    commandStream << argv[i] << " ";
-                }
-                std::cout << "Command line arguments: " << commandStream.str() << std::endl;
-                std::cout << "Current working directory: " << getCurrentWorkingDirectory() << std::endl << std::endl;
-            }
-            
-            
-            void printUsage() {
-#ifndef WINDOWS
-                struct rusage ru;
-                getrusage(RUSAGE_SELF, &ru);
-                
-                std::cout << "===== Statistics ==============================" << std::endl;
-#ifndef LINUX
-                std::cout << "peak memory usage: " << ru.ru_maxrss/1024/1024 << "MB" << std::endl;
-#else                
-                std::cout << "peak memory usage: " << ru.ru_maxrss/1024 << "MB" << std::endl;
-#endif
-                std::cout << "CPU time: " << ru.ru_utime.tv_sec << "." << std::setw(3) << std::setfill('0') << ru.ru_utime.tv_usec/1000 << " seconds" << std::endl;
-                std::cout << "===============================================" << std::endl;
-#else
-                HANDLE hProcess = GetCurrentProcess ();
-                FILETIME ftCreation, ftExit, ftUser, ftKernel;
-                PROCESS_MEMORY_COUNTERS pmc;
-                if (GetProcessMemoryInfo( hProcess, &pmc, sizeof(pmc))) {
-                    std::cout << "Memory Usage: " << std::endl;
-                    std::cout << "\tPageFaultCount: " << pmc.PageFaultCount << std::endl;
-                    std::cout << "\tPeakWorkingSetSize: " << pmc.PeakWorkingSetSize << std::endl;
-                    std::cout << "\tWorkingSetSize: " << pmc.WorkingSetSize << std::endl;
-                    std::cout << "\tQuotaPeakPagedPoolUsage: " << pmc.QuotaPeakPagedPoolUsage << std::endl;
-                    std::cout << "\tQuotaPagedPoolUsage: " << pmc.QuotaPagedPoolUsage << std::endl;
-                    std::cout << "\tQuotaPeakNonPagedPoolUsage: " << pmc.QuotaPeakNonPagedPoolUsage << std::endl;
-                    std::cout << "\tQuotaNonPagedPoolUsage: " << pmc.QuotaNonPagedPoolUsage << std::endl;
-                    std::cout << "\tPagefileUsage:" << pmc.PagefileUsage << std::endl;
-                    std::cout << "\tPeakPagefileUsage: " << pmc.PeakPagefileUsage << std::endl;
-                }
-                
-                GetProcessTimes (hProcess, &ftCreation, &ftExit, &ftKernel, &ftUser);
-                
-                ULARGE_INTEGER uLargeInteger;
-                uLargeInteger.LowPart = ftKernel.dwLowDateTime;
-                uLargeInteger.HighPart = ftKernel.dwHighDateTime;
-                double kernelTime = static_cast<double>(uLargeInteger.QuadPart) / 10000.0; // 100 ns Resolution to milliseconds
-                uLargeInteger.LowPart = ftUser.dwLowDateTime;
-                uLargeInteger.HighPart = ftUser.dwHighDateTime;
-                double userTime = static_cast<double>(uLargeInteger.QuadPart) / 10000.0;
-                
-                std::cout << "CPU Time: " << std::endl;
-                std::cout << "\tKernel Time: " << std::setprecision(5) << kernelTime << "ms" << std::endl;
-                std::cout << "\tUser Time: " << std::setprecision(5) << userTime << "ms" << std::endl;
-#endif
-            }
-            
+            void printUsage();
             
             /*!
              * Parses the given command line arguments.
@@ -271,45 +81,7 @@ namespace storm {
              * @param argv The argv argument of main().
              * @return True iff the program should continue to run after parsing the options.
              */
-            bool parseOptions(const int argc, const char* argv[]) {
-                storm::settings::SettingsManager& manager = storm::settings::mutableManager();
-                try {
-                    manager.setFromCommandLine(argc, argv);
-                } catch (storm::exceptions::OptionParserException& e) {
-                    manager.printHelp();
-                    throw e;
-                    return false;
-                }
-                
-                if (storm::settings::generalSettings().isHelpSet()) {
-                    storm::settings::manager().printHelp(storm::settings::generalSettings().getHelpModuleName());
-                    return false;
-                }
-                
-                if (storm::settings::generalSettings().isVersionSet()) {
-                    storm::settings::manager().printVersion();
-                    return false;
-                }
-                
-                if (storm::settings::generalSettings().isVerboseSet()) {
-                    logger.getAppender("mainConsoleAppender")->setThreshold(log4cplus::INFO_LOG_LEVEL);
-                    LOG4CPLUS_INFO(logger, "Enabled verbose mode, log output gets printed to console.");
-                }
-                if (storm::settings::debugSettings().isDebugSet()) {
-                    logger.setLogLevel(log4cplus::DEBUG_LOG_LEVEL);
-                    logger.getAppender("mainConsoleAppender")->setThreshold(log4cplus::DEBUG_LOG_LEVEL);
-                    LOG4CPLUS_INFO(logger, "Enabled very verbose mode, log output gets printed to console.");
-                }
-                if (storm::settings::debugSettings().isTraceSet()) {
-                    logger.setLogLevel(log4cplus::TRACE_LOG_LEVEL);
-                    logger.getAppender("mainConsoleAppender")->setThreshold(log4cplus::TRACE_LOG_LEVEL);
-                    LOG4CPLUS_INFO(logger, "Enabled trace mode, log output gets printed to console.");
-                }
-                if (storm::settings::debugSettings().isLogfileSet()) {
-                    initializeFileLogging();
-                }
-                return true;
-            }
+            bool parseOptions(const int argc, const char* argv[]);
             
             template<typename ValueType>
             std::shared_ptr<storm::models::sparse::Model<ValueType>> buildExplicitModel(std::string const& transitionsFile, std::string const& labelingFile, boost::optional<std::string> const& stateRewardsFile = boost::optional<std::string>(), boost::optional<std::string> const& transitionRewardsFile = boost::optional<std::string>()) {
@@ -419,7 +191,7 @@ namespace storm {
             
 #ifdef STORM_HAVE_CARL
             template<>
-            void generateCounterexample(storm::prism::Program const& program, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model, std::shared_ptr<storm::logic::Formula> formula) {
+            inline void generateCounterexample(storm::prism::Program const& program, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model, std::shared_ptr<storm::logic::Formula> formula) {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unable to generate counterexample for parametric model.");
             }
 #endif
@@ -480,8 +252,24 @@ namespace storm {
             }
             
 #ifdef STORM_HAVE_CARL
+            inline void exportParametricResultToFile(storm::RationalFunction const& result, storm::models::sparse::Dtmc<storm::RationalFunction>::ConstraintCollector const& constraintCollector, std::string const& path) {
+                std::ofstream filestream;
+                filestream.open(path);
+                // TODO: add checks.
+                filestream << "!Parameters: ";
+                std::set<storm::Variable> vars = result.gatherVariables();
+                std::copy(vars.begin(), vars.end(), std::ostream_iterator<storm::Variable>(filestream, ", "));
+                filestream << std::endl;
+                filestream << "!Result: " << result << std::endl;
+                filestream << "!Well-formed Constraints: " << std::endl;
+                std::copy(constraintCollector.getWellformedConstraints().begin(), constraintCollector.getWellformedConstraints().end(), std::ostream_iterator<storm::ArithConstraint<storm::RationalFunction>>(filestream, "\n"));
+                filestream << "!Graph-preserving Constraints: " << std::endl;
+                std::copy(constraintCollector.getGraphPreservingConstraints().begin(), constraintCollector.getGraphPreservingConstraints().end(), std::ostream_iterator<storm::ArithConstraint<storm::RationalFunction>>(filestream, "\n"));
+                filestream.close();
+            }
+            
             template<>
-            void verifySparseModel(boost::optional<storm::prism::Program> const& program, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model, std::shared_ptr<storm::logic::Formula> formula) {
+            inline void verifySparseModel(boost::optional<storm::prism::Program> const& program, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model, std::shared_ptr<storm::logic::Formula> formula) {
                 storm::settings::modules::GeneralSettings const& settings = storm::settings::generalSettings();
                 
                 STORM_LOG_THROW(model->getType() == storm::models::ModelType::Dtmc, storm::exceptions::InvalidSettingsException, "Currently parametric verification is only available for DTMCs.");
@@ -499,9 +287,9 @@ namespace storm {
                     else {
                         STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "The parametric region check engine currently does not support this property.");
                     }
-                    //for(auto const& reg : regions){
-                    //    std::cout << reg.toString() << "      Result: " << reg.checkResultToString() << std::endl;
-                    //}
+                   // for(auto const& reg : regions){
+                   //     std::cout << reg.toString() << "      Result: " << reg.checkResultToString() << std::endl;
+                   // }
                     modelchecker.printStatisticsToStream(std::cout);
                     
                 }
@@ -525,13 +313,17 @@ namespace storm {
                     } else {
                         std::cout << " skipped, because the modelling formalism is currently unsupported." << std::endl;
                     }
+                
+                    storm::settings::modules::ParametricSettings const& parametricSettings = storm::settings::parametricSettings();
+                    if (parametricSettings.exportResultToFile()) {
+                        exportParametricResultToFile(result->asExplicitQuantitativeCheckResult<storm::RationalFunction>()[*dtmc->getInitialStates().begin()], storm::models::sparse::Dtmc<storm::RationalFunction>::ConstraintCollector(*dtmc), parametricSettings.exportResultPath());
+                    }
                 }
             }
 #endif
             
             template<storm::dd::DdType DdType>
             void verifySymbolicModel(boost::optional<storm::prism::Program> const& program, std::shared_ptr<storm::models::symbolic::Model<DdType>> model, std::shared_ptr<storm::logic::Formula> formula) {
-                storm::settings::modules::GeneralSettings const& settings = storm::settings::generalSettings();
                 
                 std::cout << std::endl << "Model checking property: " << *formula << " ...";
                 std::unique_ptr<storm::modelchecker::CheckResult> result;
@@ -618,7 +410,7 @@ namespace storm {
                 }
             }
             
-            void processOptions() {
+            inline void processOptions() {
                 if (storm::settings::debugSettings().isLogfileSet()) {
                     initializeFileLogging();
                 }
@@ -629,7 +421,9 @@ namespace storm {
                 boost::optional<storm::prism::Program> program;
                 if (settings.isSymbolicSet()) {
                     std::string const& programFile = settings.getSymbolicModelFilename();
-                    program = storm::parser::PrismParser::parse(programFile);
+                    program = storm::parser::PrismParser::parse(programFile).simplify();
+                    
+                    program->checkValidity();
                 }
                 
                 // Then proceed to parsing the property (if given), since the model we are building may depend on the property.
@@ -645,68 +439,68 @@ namespace storm {
                     }
 					formulas.push_back(formula);
                 }
-				else if (settings.isPropertyFileSet()) {
-					std::cout << "Reading properties from " << settings.getPropertiesFilename() << std::endl;
+                else if (settings.isPropertyFileSet()) {
+                        std::cout << "Reading properties from " << settings.getPropertiesFilename() << std::endl;
 
-					std::ifstream inputFileStream(settings.getPropertiesFilename(), std::ios::in);
+                        std::ifstream inputFileStream(settings.getPropertiesFilename(), std::ios::in);
 
-					std::vector<std::string> properties;
+                        std::vector<std::string> properties;
 
-					if (inputFileStream.good()) {
-						try {
-							while (inputFileStream.good()) {
-								std::string prop;
-								std::getline(inputFileStream, prop);
-								if (!prop.empty()) {
-									properties.push_back(prop);
-								}
-							}
-						}
-						catch (std::exception& e) {
-							inputFileStream.close();
-							throw e;
-						}
-						inputFileStream.close();
-					} else {
-						STORM_LOG_ERROR("Unable to read property file.");
-					}
+                        if (inputFileStream.good()) {
+                                try {
+                                        while (inputFileStream.good()) {
+                                                std::string prop;
+                                                std::getline(inputFileStream, prop);
+                                                if (!prop.empty()) {
+                                                        properties.push_back(prop);
+                                                }
+                                        }
+                                }
+                                catch (std::exception& e) {
+                                        inputFileStream.close();
+                                        throw e;
+                                }
+                                inputFileStream.close();
+                        } else {
+                                STORM_LOG_ERROR("Unable to read property file.");
+                        }
 
-					for (std::string prop : properties) {
-						boost::optional<std::shared_ptr<storm::logic::Formula>> formula;
-						try {
-							if (program) {
-								storm::parser::FormulaParser formulaParser(program.get().getManager().getSharedPointer());
-								formula = formulaParser.parseFromString(prop);
-							} else {
-								storm::parser::FormulaParser formulaParser;
-								formula = formulaParser.parseFromString(prop);
-							}
-							formulas.push_back(formula);
-						}
-						catch (storm::exceptions::WrongFormatException &e) {
-							STORM_LOG_WARN("Unable to parse line as formula: " << prop);
-						}
-					}
-					std::cout << "Parsed " << formulas.size() << " properties from file " << settings.getPropertiesFilename() << std::endl;
-				}
-                
-				for (boost::optional<std::shared_ptr<storm::logic::Formula>> formula : formulas) {
-					if (settings.isSymbolicSet()) {
+                        for (std::string prop : properties) {
+                                boost::optional<std::shared_ptr<storm::logic::Formula>> formula;
+                                try {
+                                        if (program) {
+                                                storm::parser::FormulaParser formulaParser(program.get().getManager().getSharedPointer());
+                                                formula = formulaParser.parseFromString(prop);
+                                        } else {
+                                                storm::parser::FormulaParser formulaParser;
+                                                formula = formulaParser.parseFromString(prop);
+                                        }
+                                        formulas.push_back(formula);
+                                }
+                                catch (storm::exceptions::WrongFormatException &e) {
+                                        STORM_LOG_WARN("Unable to parse line as formula: " << prop);
+                                }
+                        }
+                        std::cout << "Parsed " << formulas.size() << " properties from file " << settings.getPropertiesFilename() << std::endl;
+                }
+
+                for (boost::optional<std::shared_ptr<storm::logic::Formula>> formula : formulas) {
+                        if (settings.isSymbolicSet()) {
 #ifdef STORM_HAVE_CARL
-						if (settings.isParametricSet()) {
-							buildAndCheckSymbolicModel<storm::RationalFunction>(program.get(), formula);
-						} else {
+                                if (settings.isParametricSet()) {
+                                        buildAndCheckSymbolicModel<storm::RationalFunction>(program.get(), formula);
+                                } else {
 #endif
-							buildAndCheckSymbolicModel<double>(program.get(), formula);
+                                        buildAndCheckSymbolicModel<double>(program.get(), formula);
 #ifdef STORM_HAVE_CARL
-						}
+                                }
 #endif
-					} else if (settings.isExplicitSet()) {
-						buildAndCheckExplicitModel<double>(formula);
-					} else {
-						STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No input model.");
-					}
-				}
+                        } else if (settings.isExplicitSet()) {
+                                buildAndCheckExplicitModel<double>(formula);
+                        } else {
+                                STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No input model.");
+                        }
+                }
                 printUsage();
             }
         }

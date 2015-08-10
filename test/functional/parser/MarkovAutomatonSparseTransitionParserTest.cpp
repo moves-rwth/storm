@@ -18,8 +18,8 @@
 #include "src/exceptions/WrongFormatException.h"
 #include "src/exceptions/FileIoException.h"
 
-#define STATE_COUNT 6
-#define CHOICE_COUNT 7
+#define STATE_COUNT 6ul
+#define CHOICE_COUNT 7ul
 
 TEST(MarkovAutomatonSparseTransitionParserTest, NonExistingFile) {
 
@@ -41,24 +41,24 @@ TEST(MarkovAutomatonSparseTransitionParserTest, BasicParsing) {
 	// Test all sizes and counts.
 	ASSERT_EQ(STATE_COUNT, transitionMatrix.getColumnCount());
 	ASSERT_EQ(CHOICE_COUNT, transitionMatrix.getRowCount());
-	ASSERT_EQ(12, transitionMatrix.getEntryCount());
-	ASSERT_EQ(6, transitionMatrix.getRowGroupCount());
-	ASSERT_EQ(7, transitionMatrix.getRowGroupIndices().size());
+	ASSERT_EQ(12ul, transitionMatrix.getEntryCount());
+	ASSERT_EQ(6ul, transitionMatrix.getRowGroupCount());
+	ASSERT_EQ(7ul, transitionMatrix.getRowGroupIndices().size());
 	ASSERT_EQ(CHOICE_COUNT, result.markovianChoices.size());
 	ASSERT_EQ(STATE_COUNT, result.markovianStates.size());
-	ASSERT_EQ(2, result.markovianStates.getNumberOfSetBits());
+	ASSERT_EQ(2ul, result.markovianStates.getNumberOfSetBits());
 	ASSERT_EQ(STATE_COUNT, result.exitRates.size());
 
 	// Test the general structure of the transition system (that will be an Markov automaton).
 
 	// Test the mapping between states and transition matrix rows.
-	ASSERT_EQ(0, transitionMatrix.getRowGroupIndices()[0]);
-	ASSERT_EQ(1, transitionMatrix.getRowGroupIndices()[1]);
-	ASSERT_EQ(2, transitionMatrix.getRowGroupIndices()[2]);
-	ASSERT_EQ(3, transitionMatrix.getRowGroupIndices()[3]);
-	ASSERT_EQ(4, transitionMatrix.getRowGroupIndices()[4]);
-	ASSERT_EQ(6, transitionMatrix.getRowGroupIndices()[5]);
-	ASSERT_EQ(7, transitionMatrix.getRowGroupIndices()[6]);
+	ASSERT_EQ(0ul, transitionMatrix.getRowGroupIndices()[0]);
+	ASSERT_EQ(1ul, transitionMatrix.getRowGroupIndices()[1]);
+	ASSERT_EQ(2ul, transitionMatrix.getRowGroupIndices()[2]);
+	ASSERT_EQ(3ul, transitionMatrix.getRowGroupIndices()[3]);
+	ASSERT_EQ(4ul, transitionMatrix.getRowGroupIndices()[4]);
+	ASSERT_EQ(6ul, transitionMatrix.getRowGroupIndices()[5]);
+	ASSERT_EQ(7ul, transitionMatrix.getRowGroupIndices()[6]);
 
 	// Test the Markovian states.
 	ASSERT_TRUE(result.markovianStates.get(0));
@@ -119,24 +119,24 @@ TEST(MarkovAutomatonSparseTransitionParserTest, Whitespaces) {
 	// Test all sizes and counts.
 	ASSERT_EQ(STATE_COUNT, transitionMatrix.getColumnCount());
 	ASSERT_EQ(CHOICE_COUNT, transitionMatrix.getRowCount());
-	ASSERT_EQ(12, transitionMatrix.getEntryCount());
-	ASSERT_EQ(6, transitionMatrix.getRowGroupCount());
-	ASSERT_EQ(7, transitionMatrix.getRowGroupIndices().size());
+	ASSERT_EQ(12ul, transitionMatrix.getEntryCount());
+	ASSERT_EQ(6ul, transitionMatrix.getRowGroupCount());
+	ASSERT_EQ(7ul, transitionMatrix.getRowGroupIndices().size());
 	ASSERT_EQ(CHOICE_COUNT, result.markovianChoices.size());
 	ASSERT_EQ(STATE_COUNT, result.markovianStates.size());
-	ASSERT_EQ(2, result.markovianStates.getNumberOfSetBits());
+	ASSERT_EQ(2ul, result.markovianStates.getNumberOfSetBits());
 	ASSERT_EQ(STATE_COUNT, result.exitRates.size());
 
 	// Test the general structure of the transition system (that will be an Markov automaton).
 
 	// Test the mapping between states and transition matrix rows.
-	ASSERT_EQ(0, transitionMatrix.getRowGroupIndices()[0]);
-	ASSERT_EQ(1, transitionMatrix.getRowGroupIndices()[1]);
-	ASSERT_EQ(2, transitionMatrix.getRowGroupIndices()[2]);
-	ASSERT_EQ(3, transitionMatrix.getRowGroupIndices()[3]);
-	ASSERT_EQ(4, transitionMatrix.getRowGroupIndices()[4]);
-	ASSERT_EQ(6, transitionMatrix.getRowGroupIndices()[5]);
-	ASSERT_EQ(7, transitionMatrix.getRowGroupIndices()[6]);
+	ASSERT_EQ(0ul, transitionMatrix.getRowGroupIndices()[0]);
+	ASSERT_EQ(1ul, transitionMatrix.getRowGroupIndices()[1]);
+	ASSERT_EQ(2ul, transitionMatrix.getRowGroupIndices()[2]);
+	ASSERT_EQ(3ul, transitionMatrix.getRowGroupIndices()[3]);
+	ASSERT_EQ(4ul, transitionMatrix.getRowGroupIndices()[4]);
+	ASSERT_EQ(6ul, transitionMatrix.getRowGroupIndices()[5]);
+	ASSERT_EQ(7ul, transitionMatrix.getRowGroupIndices()[6]);
 
 	// Test the Markovian states.
 	ASSERT_TRUE(result.markovianStates.get(0));
@@ -194,12 +194,12 @@ TEST(MarkovAutomatonSparseTransitionParserTest, FixDeadlocks) {
 	// Test if the result is consistent with the parsed Markov Automaton.
 	storm::storage::SparseMatrix<double> resultMatrix(result.transitionMatrixBuilder.build());
 	ASSERT_EQ(STATE_COUNT + 1, resultMatrix.getColumnCount());
-	ASSERT_EQ(13, resultMatrix.getEntryCount());
-	ASSERT_EQ(7, resultMatrix.getRowGroupCount());
-	ASSERT_EQ(8, resultMatrix.getRowGroupIndices().size());
+	ASSERT_EQ(13ul, resultMatrix.getEntryCount());
+	ASSERT_EQ(7ul, resultMatrix.getRowGroupCount());
+	ASSERT_EQ(8ul, resultMatrix.getRowGroupIndices().size());
 	ASSERT_EQ(CHOICE_COUNT +1, result.markovianChoices.size());
 	ASSERT_EQ(STATE_COUNT +1, result.markovianStates.size());
-	ASSERT_EQ(2, result.markovianStates.getNumberOfSetBits());
+	ASSERT_EQ(2ul, result.markovianStates.getNumberOfSetBits());
 	ASSERT_EQ(STATE_COUNT + 1, result.exitRates.size());
 }
 

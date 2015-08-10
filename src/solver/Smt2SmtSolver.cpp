@@ -90,11 +90,11 @@ namespace storm {
             writeCommand("( assert " + expressionAdapter->translateExpression(leftHandSide, relation, rightHandSide) + " )", true);
         }
         
-        void Smt2SmtSolver::add(carl::Constraint<storm::RationalFunction> const& constraint) {
-            add(constraint.lhs(), constraint.relation());
+        void Smt2SmtSolver::add(storm::ArithConstraint<storm::RationalFunction> const& constraint) {
+            add(constraint.lhs(), constraint.rel());
         }
         
-        void Smt2SmtSolver::add(carl::Constraint<storm::RawPolynomial> const& constraint) {
+        void Smt2SmtSolver::add(storm::ArithConstraint<storm::RawPolynomial> const& constraint) {
             //if some of the occurring variables are not declared yet, we will have to.
             std::set<storm::Variable> variables = constraint.lhs().gatherVariables();
             std::vector<std::string> const varDeclarations = expressionAdapter->checkForUndeclaredVariables(variables);
@@ -104,7 +104,7 @@ namespace storm {
             writeCommand("( assert " + expressionAdapter->translateExpression(constraint) + " )", true);
         }
         
-        void Smt2SmtSolver::add(storm::Variable const& guard, typename carl::Constraint<storm::Polynomial> const& constraint){
+        void Smt2SmtSolver::add(storm::Variable const& guard, typename storm::ArithConstraint<storm::Polynomial> const& constraint){
             STORM_LOG_THROW((guard.getType()==carl::VariableType::VT_BOOL), storm::exceptions::IllegalArgumentException, "Tried to add a guarded constraint, but the guard is not of type bool.");
             //if some of the occurring variables are not declared yet, we will have to (including the guard!).
             std::set<storm::Variable> variables = constraint.lhs().gatherVariables();

@@ -62,7 +62,7 @@ namespace storm {
                     ConstantType dummyEntry=storm::utility::one<ConstantType>();
                     for(auto const& entry : parametricModel.getTransitionMatrix().getRow(row)){
                         if(!this->parametricTypeComparator.isConstant(entry.getValue())){
-                            auto pair=distinctFuncSubs.insert(std::make_pair(entry.getValue(), substitutionIndex));
+                            distinctFuncSubs.insert(std::make_pair(entry.getValue(), substitutionIndex));
                             ++numOfNonConstEntries;
                         }
                         matrixBuilder.addNextValue(approxModelRow, entry.getColumn(), dummyEntry);

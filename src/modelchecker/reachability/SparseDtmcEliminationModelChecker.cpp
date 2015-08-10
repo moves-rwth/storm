@@ -692,22 +692,8 @@ namespace storm {
             return maximalDepth;
         }
         
-        namespace {
-            static int chunkCounter = 0;
-            static int counter = 0;
-        }
-        
         template<typename ValueType>
         void SparseDtmcEliminationModelChecker<ValueType>::eliminateState(FlexibleSparseMatrix& matrix, std::vector<ValueType>& oneStepProbabilities, uint_fast64_t state, FlexibleSparseMatrix& backwardTransitions, boost::optional<std::vector<ValueType>>& stateRewards, bool removeForwardTransitions, bool constrained, storm::storage::BitVector const& predecessorConstraint) {
-            auto eliminationStart = std::chrono::high_resolution_clock::now();
-            
-            ++counter;
-            STORM_LOG_TRACE("Eliminating state " << state << ".");
-            if (counter > matrix.getNumberOfRows() / 10) {
-                ++chunkCounter;
-                STORM_LOG_INFO("Eliminated " << (chunkCounter * 10) << "% of the states." << std::endl);
-                counter = 0;
-            }
             
             bool hasSelfLoop = false;
             ValueType loopProbability = storm::utility::zero<ValueType>();
@@ -752,7 +738,6 @@ namespace storm {
             
             // Now connect the predecessors of the state being eliminated with its successors.
             typename FlexibleSparseMatrix::row_type& currentStatePredecessors = backwardTransitions.getRow(state);
-            std::size_t numberOfPredecessors = currentStatePredecessors.size();
             std::size_t predecessorForwardTransitionCount = 0;
             
             // In case we have a constrained elimination, we need to keep track of the new predecessors.
@@ -931,9 +916,6 @@ namespace storm {
             } else {
                 currentStatePredecessors = std::move(newCurrentStatePredecessors);
             }
-            
-            auto eliminationEnd = std::chrono::high_resolution_clock::now();
-            auto eliminationTime = eliminationEnd - eliminationStart;
         }
         
         template<typename ValueType>

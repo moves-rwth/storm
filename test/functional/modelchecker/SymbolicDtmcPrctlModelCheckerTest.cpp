@@ -23,8 +23,8 @@ TEST(SymbolicDtmcPrctlModelCheckerTest, Die) {
     options.buildRewards = true;
     options.rewardModelName = "coin_flips";
     std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program, options);
-    EXPECT_EQ(13, model->getNumberOfStates());
-    EXPECT_EQ(20, model->getNumberOfTransitions());
+    EXPECT_EQ(13ul, model->getNumberOfStates());
+    EXPECT_EQ(20ul, model->getNumberOfTransitions());
     
     ASSERT_EQ(model->getType(), storm::models::ModelType::Dtmc);
     
@@ -77,8 +77,8 @@ TEST(SymbolicDtmcPrctlModelCheckerTest, Crowds) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/crowds-5-5.pm");
     
     std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program);
-    EXPECT_EQ(8607, model->getNumberOfStates());
-    EXPECT_EQ(15113, model->getNumberOfTransitions());
+    EXPECT_EQ(8607ul, model->getNumberOfStates());
+    EXPECT_EQ(15113ul, model->getNumberOfTransitions());
     
     ASSERT_EQ(model->getType(), storm::models::ModelType::Dtmc);
     
@@ -129,8 +129,8 @@ TEST(SymbolicDtmcPrctlModelCheckerTest, SynchronousLeader) {
     options.buildRewards = true;
     options.rewardModelName = "num_rounds";
     std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program, options);
-    EXPECT_EQ(273, model->getNumberOfStates());
-    EXPECT_EQ(397, model->getNumberOfTransitions());
+    EXPECT_EQ(273ul, model->getNumberOfStates());
+    EXPECT_EQ(397ul, model->getNumberOfTransitions());
     
     ASSERT_EQ(model->getType(), storm::models::ModelType::Dtmc);
     

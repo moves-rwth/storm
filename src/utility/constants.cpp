@@ -25,7 +25,7 @@ namespace storm {
         template<>
         storm::RationalFunction infinity() {
             // FIXME: this does not work.
-            return storm::RationalFunction(carl::rationalize<cln::cl_RA>(std::numeric_limits<double>::infinity()));
+            return storm::RationalFunction(carl::rationalize<storm::RationalNumber>(std::numeric_limits<double>::infinity()));
         }
 #endif
         
@@ -253,14 +253,18 @@ namespace storm {
         
         template RationalFunction pow(RationalFunction const& value, uint_fast64_t exponent);
         
-        template Coefficient one();
-        template Coefficient zero();
         
         template Polynomial one();
         template Polynomial zero();
         template RationalFunction simplify(RationalFunction value);
         template RationalFunction& simplify(RationalFunction& value);
         template RationalFunction&& simplify(RationalFunction&& value);
+        
+        template RationalNumber one();
+        template RationalNumber zero();
+        
+        template Interval one();
+        template Interval zero();
         
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, RationalFunction> simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, RationalFunction> matrixEntry);
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, RationalFunction>& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, RationalFunction>& matrixEntry);

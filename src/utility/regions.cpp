@@ -10,53 +10,59 @@
 #include "src/utility/regions.h"
 #include "src/utility/constants.h"
 #include "src/utility/macros.h"
-
 #include "src/settings/SettingsManager.h"
 #include "src/solver/Smt2SmtSolver.h"
 #include "src/exceptions/IllegalArgumentException.h"
 #include "src/exceptions/NotImplementedException.h"
 
-
+#ifdef STORM_HAVE_CARL
+#include<carl/numbers/numbers.h>
+#endif
 
 namespace storm {
     namespace utility{
         namespace regions {
             
             template<>
-            double convertNumber<double, double>(double const& number, bool const& roundDown, double const& precision){
+            double convertNumber<double, double>(double const& number){
                 return number;
+            }
+            
+            template<>
+            double convertNumber<std::string, double>(std::string const& number){
+                return std::stod(number);
             }
             
 #ifdef STORM_HAVE_CARL
             template<>
-            storm::Coefficient convertNumber<double, storm::Coefficient>(double const& number, bool const& roundDown, double const& precision){
-                double actualPrecision = (precision==0.0 ? storm::settings::generalSettings().getPrecision() : precision);
-                uint_fast64_t denominator = 1.0/actualPrecision;
-                uint_fast64_t numerator;
-                if(roundDown){
-                    numerator= number*denominator; //this will always round down
-                } else{
-                    numerator = std::ceil(number*denominator);
-                }
-                storm::Coefficient result(numerator);
-                result = result/denominator;
-                return result;
+            storm::RationalNumber convertNumber<double, storm::RationalNumber>(double const& number){
+                return carl::rationalize<storm::RationalNumber>(number);
             }
             
             template<>
-            storm::RationalFunction convertNumber<double, storm::RationalFunction>(double const& number, bool const& roundDown, double const& precision){
-                return storm::RationalFunction(convertNumber<double, storm::Coefficient>(number, roundDown, precision));
+            storm::RationalFunction convertNumber<double, storm::RationalFunction>(double const& number){
+                return storm::RationalFunction(convertNumber<double, storm::RationalNumber>(number));
             }
             
             template<>
-            double convertNumber<cln::cl_RA, double>(cln::cl_RA const& number, bool const& roundDown, double const& precision){
-                return cln::double_approx(number);
+            double convertNumber<storm::RationalNumber, double>(storm::RationalNumber const& number){
+                return carl::toDouble(number);
             }
             
-            
             template<>
-            cln::cl_RA convertNumber<cln::cl_RA, cln::cl_RA>(cln::cl_RA const& number, bool const& roundDown, double const& precision){
+            storm::RationalNumber convertNumber<storm::RationalNumber, storm::RationalNumber>(storm::RationalNumber const& number){
                 return number;
+            }
+            
+            template<>
+            storm::RationalNumber convertNumber<std::string, storm::RationalNumber>(std::string const& number){
+                if(number.find('e')!=std::string::npos){
+                    //carl::rationalize does not seem to like the scientific notation like (e-05).
+                    //A quick and easy fix is to parse the number as double and then as a rational number.
+                    STORM_LOG_WARN("Parsing number " + number + " might result in precision issues as we are going to interprete it as double and then convert the double to a rational number")
+                    return convertNumber<double, storm::RationalNumber>(convertNumber<std::string, double>(number));
+                }
+                return carl::rationalize<storm::RationalNumber>(number);
             }
                        
             
@@ -145,12 +151,12 @@ namespace storm {
                         STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "the comparison relation of the formula is not supported");
                 }        
                //Note: this only works if numerators and denominators are positive...
-                carl::Constraint<storm::Polynomial> constraint((leftHandSide.nominator() * rightHandSide.denominator()) - (rightHandSide.nominator() * leftHandSide.denominator()), compRel);
+                storm::ArithConstraint<storm::Polynomial> constraint((leftHandSide.nominator() * rightHandSide.denominator()) - (rightHandSide.nominator() * leftHandSide.denominator()), compRel);
                 solver->add(guard,constraint);
             }
             
             template<>
-            void addParameterBoundsToSmtSolver<storm::solver::Smt2SmtSolver, storm::Variable, cln::cl_RA>(std::shared_ptr<storm::solver::Smt2SmtSolver> solver, storm::Variable const& variable, storm::logic::ComparisonType relation, cln::cl_RA const& bound){
+            void addParameterBoundsToSmtSolver<storm::solver::Smt2SmtSolver, storm::Variable, storm::RationalNumber>(std::shared_ptr<storm::solver::Smt2SmtSolver> solver, storm::Variable const& variable, storm::logic::ComparisonType relation, storm::RationalNumber const& bound){
                 storm::CompareRelation compRel;
                 switch (relation){
                     case storm::logic::ComparisonType::Greater:
@@ -170,7 +176,7 @@ namespace storm {
                 }
                 storm::RawPolynomial leftHandSide(variable);
                 leftHandSide -= bound;
-                solver->add(carl::Constraint<storm::RawPolynomial>(leftHandSide,compRel));
+                solver->add(storm::ArithConstraint<storm::RawPolynomial>(leftHandSide,compRel));
             }
             
             template<>
@@ -180,7 +186,7 @@ namespace storm {
             }
             
             template<>
-            storm::RationalFunction getNewFunction<storm::RationalFunction, storm::Coefficient>(storm::Coefficient initialValue) {
+            storm::RationalFunction getNewFunction<storm::RationalFunction, storm::RationalNumber>(storm::RationalNumber initialValue) {
                 std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<storm::RawPolynomial>>> cache(new carl::Cache<carl::PolynomialFactorizationPair<storm::RawPolynomial>>());
                 return storm::RationalFunction(storm::RationalFunction::PolyType(storm::RationalFunction::PolyType::PolyType(initialValue), cache));
             }

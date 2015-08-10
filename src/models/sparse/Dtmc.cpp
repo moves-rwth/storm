@@ -182,6 +182,48 @@ namespace storm {
                 //		return storm::models::Dtmc<ValueType>(newMatBuilder.build(), newLabeling, newStateRewards, std::move(newTransitionRewards), newChoiceLabels);
             }
             
+#ifdef STORM_HAVE_CARL
+            template<typename ValueType>
+            Dtmc<ValueType>::ConstraintCollector::ConstraintCollector(Dtmc<ValueType> const& dtmc) {
+                process(dtmc);
+            }
+            
+            template<typename ValueType>
+            std::unordered_set<storm::ArithConstraint<ValueType>> const& Dtmc<ValueType>::ConstraintCollector::getWellformedConstraints() const {
+                return this->wellformedConstraintSet;
+            }
+            
+            template<typename ValueType>
+            std::unordered_set<storm::ArithConstraint<ValueType>> const& Dtmc<ValueType>::ConstraintCollector::getGraphPreservingConstraints() const {
+                return this->graphPreservingConstraintSet;
+            }
+            
+            template<typename ValueType>
+            void Dtmc<ValueType>::ConstraintCollector::process(storm::models::sparse::Dtmc<ValueType> const& dtmc) {
+                for(uint_fast64_t state = 0; state < dtmc.getNumberOfStates(); ++state) {
+                    ValueType sum = storm::utility::zero<ValueType>();
+                    for (auto const& transition : dtmc.getRows(state)) {
+                        sum += transition.getValue();
+                        if (!comparator.isConstant(transition.getValue())) {
+                            wellformedConstraintSet.emplace(transition.getValue() - 1, storm::CompareRelation::LEQ);
+                            wellformedConstraintSet.emplace(transition.getValue(), storm::CompareRelation::GEQ);
+                            graphPreservingConstraintSet.emplace(transition.getValue(), storm::CompareRelation::GREATER);
+                        }
+                    }
+                    STORM_LOG_ASSERT(!comparator.isConstant(sum) || comparator.isOne(sum), "If the sum is a constant, it must be equal to 1.");
+                    if(!comparator.isConstant(sum)) {
+                        wellformedConstraintSet.emplace(sum - 1, storm::CompareRelation::EQ);
+                    }
+                    
+                }
+            }
+            
+            template<typename ValueType>
+            void Dtmc<ValueType>::ConstraintCollector::operator()(storm::models::sparse::Dtmc<ValueType> const& dtmc) {
+                process(dtmc);
+            }
+#endif
+            
             template <typename ValueType>
             bool Dtmc<ValueType>::checkValidityOfProbabilityMatrix() const {
                 if (this->getTransitionMatrix().getRowCount() != this->getTransitionMatrix().getColumnCount()) {

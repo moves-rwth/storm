@@ -172,9 +172,7 @@ namespace storm {
             void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::parseParameterBounds(
                     std::map<VariableType, CoefficientType>& lowerBounds,
                     std::map<VariableType, CoefficientType>& upperBounds,
-                    std::string const& parameterBoundsString,
-                    double const precision){
-                double actualPrecision = (precision==0.0 ? storm::settings::generalSettings().getPrecision() : precision);
+                    std::string const& parameterBoundsString){
                 
                 std::string::size_type positionOfFirstRelation = parameterBoundsString.find("<=");
                 STORM_LOG_THROW(positionOfFirstRelation!=std::string::npos, storm::exceptions::InvalidArgumentException, "When parsing the region" << parameterBoundsString << " I could not find  a '<=' after the first number");
@@ -185,55 +183,43 @@ namespace storm {
                 //removes all whitespaces from the parameter string:
                 parameter.erase(std::remove_if(parameter.begin(), parameter.end(), ::isspace), parameter.end());
                 STORM_LOG_THROW(parameter.length()>0, storm::exceptions::InvalidArgumentException, "When parsing the region" << parameterBoundsString << " I could not find a parameter");
-                double lowerBound, upperBound;
-                try{
-                    lowerBound=std::stod(parameterBoundsString.substr(0,positionOfFirstRelation));
-                    upperBound=std::stod(parameterBoundsString.substr(positionOfSecondRelation+2));
-                }
-                catch (std::exception const& exception) {
-                    STORM_LOG_ERROR("Failed to parse the region: " << parameterBoundsString << ". The correct format for regions is lowerBound<=parameter<=upperbound");
-                    throw exception;
-                }
                 
                 VariableType var = storm::utility::regions::getVariableFromString<VariableType>(parameter);
-                CoefficientType lb = storm::utility::regions::convertNumber<double, CoefficientType>(lowerBound, true, actualPrecision);
-                STORM_LOG_WARN_COND((lowerBound==storm::utility::regions::convertNumber<CoefficientType, double>(lb, true, actualPrecision)), "The lower bound of '"<< parameterBoundsString << "' could not be parsed accurately. Increase precision?");
-                CoefficientType ub = storm::utility::regions::convertNumber<double, CoefficientType>(upperBound, false, actualPrecision);
-                STORM_LOG_WARN_COND((upperBound==storm::utility::regions::convertNumber<CoefficientType, double>(ub, true, actualPrecision)), "The upper bound of '"<< parameterBoundsString << "' could not be parsed accurately. Increase precision?");
+                CoefficientType lb = storm::utility::regions::convertNumber<std::string, CoefficientType>(parameterBoundsString.substr(0,positionOfFirstRelation));
+                CoefficientType ub = storm::utility::regions::convertNumber<std::string, CoefficientType>(parameterBoundsString.substr(positionOfSecondRelation+2));
                 lowerBounds.emplace(std::make_pair(var, lb));  
                 upperBounds.emplace(std::make_pair(var, ub));
-               // std::cout << "parsed bounds " << parameterBoundsString << ": lb=" << lowerBound << " ub=" << upperBound << " param='" << parameter << "' precision=" << actualPrecision << std::endl;
             }
             
             template<typename ParametricType, typename ConstantType>
-            typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::parseRegion(std::string const& regionString, double precision){
-                double actualPrecision = (precision==0.0 ? storm::settings::generalSettings().getPrecision() : precision);
+            typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::parseRegion(
+                    std::string const& regionString){
                 std::map<VariableType, CoefficientType> lowerBounds;
                 std::map<VariableType, CoefficientType> upperBounds;
                 std::vector<std::string> parameterBounds;
                 boost::split(parameterBounds, regionString, boost::is_any_of(","));
                 for(auto const& parameterBound : parameterBounds){
-                    parseParameterBounds(lowerBounds, upperBounds, parameterBound, actualPrecision);
+                    parseParameterBounds(lowerBounds, upperBounds, parameterBound);
                 }
                 return ParameterRegion(lowerBounds, upperBounds);
             }
             
             template<typename ParametricType, typename ConstantType>
-            std::vector<typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion> SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::parseMultipleRegions(std::string const& regionsString, double precision){
-                double actualPrecision = (precision==0.0 ? storm::settings::generalSettings().getPrecision() : precision);
+            std::vector<typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion> SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::parseMultipleRegions(
+                    std::string const& regionsString){
                 std::vector<ParameterRegion> result;
                 std::vector<std::string> regionsStrVec;
                 boost::split(regionsStrVec, regionsString, boost::is_any_of(";"));
                 for(auto const& regionStr : regionsStrVec){
                     if(!std::all_of(regionStr.begin(),regionStr.end(), ::isspace)){ //skip this string if it only consists of space
-                    result.emplace_back(parseRegion(regionStr, actualPrecision));
+                    result.emplace_back(parseRegion(regionStr));
                     }
                 }
                 return result;
             }
             
             template<typename ParametricType, typename ConstantType>
-            std::vector<typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion> SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::getRegionsFromSettings(double precision){
+            std::vector<typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion> SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::getRegionsFromSettings(){
                 STORM_LOG_THROW(storm::settings::regionSettings().isRegionsSet() || storm::settings::regionSettings().isRegionFileSet(), storm::exceptions::InvalidSettingsException, "Tried to obtain regions from the settings but no regions are specified.");
                 STORM_LOG_THROW(!(storm::settings::regionSettings().isRegionsSet() && storm::settings::regionSettings().isRegionFileSet()), storm::exceptions::InvalidSettingsException, "Regions are specified via file AND cmd line. Only one option is allowed.");
                 
@@ -247,7 +233,7 @@ namespace storm {
                     storm::parser::MappedFile mf(storm::settings::regionSettings().getRegionFilePath().c_str());
                     regionsString = std::string(mf.getData(),mf.getDataSize());
                 }
-                return parseMultipleRegions(regionsString,precision);
+                return parseMultipleRegions(regionsString);
             }
 #ifdef STORM_HAVE_CARL
         template class SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion;

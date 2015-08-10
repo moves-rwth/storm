@@ -75,6 +75,12 @@ if (WIN32)
   add_definitions (-D_WIN32_WINNT=${_WIN32_WINNT})
 endif (WIN32)
 
+if(CMAKE_COMPILER_IS_GNUCC)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-variable")
+else(CLANG)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-variable")
+endif()
+
 add_library (${log4cplus} ${log4cplus_sources})
 
 set (log4cplus_LIBS ${CMAKE_THREAD_LIBS_INIT})

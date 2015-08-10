@@ -343,7 +343,6 @@ namespace storm {
 			// Get some data members for convenience.
 			typename storm::storage::SparseMatrix<ValueType> const& transitionMatrix = this->getModel().getTransitionMatrix();
 			std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = this->getModel().getNondeterministicChoiceIndices();
-			ValueType one = storm::utility::one<ValueType>();
 			ValueType zero = storm::utility::zero<ValueType>();
 
 			//first calculate LRA for the Maximal End Components.

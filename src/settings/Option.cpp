@@ -27,7 +27,7 @@ namespace storm {
         }
         
         std::ostream& operator<<(std::ostream& out, Option const& option) {
-            std::streamsize width = out.width();
+            uint_fast64_t width = static_cast<uint_fast64_t>(out.width());
             
             uint_fast64_t charactersPrinted = 0;
             out << std::setw(0) << "--";

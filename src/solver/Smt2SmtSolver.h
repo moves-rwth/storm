@@ -61,11 +61,11 @@ namespace storm {
             virtual void add(storm::RationalFunction const& leftHandSide, storm::CompareRelation const& relation, storm::RationalFunction const& rightHandSide=storm::RationalFunction(0));
             
             //adds the given carl constraint
-            void add(typename carl::Constraint<storm::RationalFunction> const& constraint);
-            void add(typename carl::Constraint<storm::RawPolynomial> const& constraint);
+            void add(typename storm::ArithConstraint<storm::RationalFunction> const& constraint);
+            void add(typename storm::ArithConstraint<storm::RawPolynomial> const& constraint);
             
             // adds the given carl constraint that is guarded by the given guard. The guard should have type 'bool'
-            void add(storm::Variable const& guard, typename carl::Constraint<storm::Polynomial> const& constraint);
+            void add(storm::Variable const& guard, typename storm::ArithConstraint<storm::Polynomial> const& constraint);
             
             // asserts that the given variable has the given value. The variable should have type 'bool'
             void add(storm::Variable const& variable, bool value);

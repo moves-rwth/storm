@@ -36,7 +36,7 @@ namespace storm {
             template<typename FunctionType>
             using VariableType    = typename std::conditional<(std::is_same<FunctionType, storm::RationalFunction>::value), storm::Variable, std::nullptr_t>::type;
             template<typename FunctionType>
-            using CoefficientType = typename std::conditional<(std::is_same<FunctionType, storm::RationalFunction>::value), storm::Coefficient, std::nullptr_t>::type;
+            using CoefficientType = typename std::conditional<(std::is_same<FunctionType, storm::RationalFunction>::value), storm::RationalFunction::CoeffType, std::nullptr_t>::type;
 #else
             template<typename Functiontype>
             using VariableType = std::nullptr_t;
@@ -53,7 +53,7 @@ namespace storm {
              * If no exact conversion is possible, the number is rounded up or down, using the given precision or the one from the settings.
              */
             template<typename SourceType, typename TargetType>
-            TargetType convertNumber(SourceType const& number, bool const& roundDown=true, double const& precision=0.0);
+            TargetType convertNumber(SourceType const& number);
             
             /*
              * retrieves the variable object from the given string

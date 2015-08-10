@@ -23,7 +23,6 @@ namespace storm {
             auto first1 = this->distribution.begin();
             auto last1 = this->distribution.end();
             auto first2 = other.distribution.begin();
-            auto last2 = other.distribution.end();
             
             for (; first1 != last1; ++first1, ++first2) {
                 if (first1->first != first2->first) {

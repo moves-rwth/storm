@@ -12,9 +12,20 @@
 
 namespace storm {
     namespace prism {
-        Program::Program(std::shared_ptr<storm::expressions::ExpressionManager> manager, ModelType modelType, std::vector<Constant> const& constants, std::vector<BooleanVariable> const& globalBooleanVariables, std::vector<IntegerVariable> const& globalIntegerVariables, std::vector<Formula> const& formulas, std::vector<Module> const& modules, std::map<std::string, uint_fast64_t> const& actionToIndexMap, std::vector<RewardModel> const& rewardModels, bool fixInitialConstruct, storm::prism::InitialConstruct const& initialConstruct, std::vector<Label> const& labels, std::string const& filename, uint_fast64_t lineNumber, bool checkValidity) : LocatedInformation(filename, lineNumber), manager(manager), modelType(modelType), constants(constants), constantToIndexMap(), globalBooleanVariables(globalBooleanVariables), globalBooleanVariableToIndexMap(), globalIntegerVariables(globalIntegerVariables), globalIntegerVariableToIndexMap(), formulas(formulas), formulaToIndexMap(), modules(modules), moduleToIndexMap(), rewardModels(rewardModels), rewardModelToIndexMap(), initialConstruct(initialConstruct), labels(labels), actionToIndexMap(actionToIndexMap), indexToActionMap(), actions(), actionIndices(), actionIndicesToModuleIndexMap(), variableToModuleIndexMap() {
+        Program::Program(std::shared_ptr<storm::expressions::ExpressionManager> manager, ModelType modelType, std::vector<Constant> const& constants, std::vector<BooleanVariable> const& globalBooleanVariables, std::vector<IntegerVariable> const& globalIntegerVariables, std::vector<Formula> const& formulas, std::vector<Module> const& modules, std::map<std::string, uint_fast64_t> const& actionToIndexMap, std::vector<RewardModel> const& rewardModels, bool fixInitialConstruct, storm::prism::InitialConstruct const& initialConstruct, std::vector<Label> const& labels, std::string const& filename, uint_fast64_t lineNumber, bool finalModel) 
+        : LocatedInformation(filename, lineNumber), manager(manager),
+            modelType(modelType), constants(constants), constantToIndexMap(),
+            globalBooleanVariables(globalBooleanVariables), globalBooleanVariableToIndexMap(),
+            globalIntegerVariables(globalIntegerVariables), globalIntegerVariableToIndexMap(), 
+            formulas(formulas), formulaToIndexMap(), modules(modules), moduleToIndexMap(), 
+            rewardModels(rewardModels), rewardModelToIndexMap(), initialConstruct(initialConstruct), 
+            labels(labels), actionToIndexMap(actionToIndexMap), indexToActionMap(), actions(), 
+            actionIndices(), actionIndicesToModuleIndexMap(), variableToModuleIndexMap()
+        {
+
+            // Start by creating the necessary mappings from the given ones.
             this->createMappings();
-            
+
             // Create a new initial construct if the corresponding flag was set.
             if (fixInitialConstruct) {
                 storm::expressions::Expression newInitialExpression = manager->boolean(true);
@@ -36,7 +47,8 @@ namespace storm {
                 this->initialConstruct = storm::prism::InitialConstruct(newInitialExpression, this->getInitialConstruct().getFilename(), this->getInitialConstruct().getLineNumber());
             }
 
-            if (checkValidity) {
+            if (finalModel) {
+
                 // If the model is supposed to be a CTMC, but contains probabilistic commands, we transform them to Markovian
                 // commands and issue a warning.
                 if (modelType == storm::prism::Program::ModelType::CTMC && storm::settings::generalSettings().isPrismCompatibilityEnabled()) {
@@ -51,9 +63,8 @@ namespace storm {
                     }
                     STORM_LOG_WARN_COND(!hasProbabilisticCommands, "The input model is a CTMC, but uses probabilistic commands like they are used in PRISM. Consider rewriting the commands to use Markovian commands instead.");
                 }
-                
                 // Then check the validity.
-                this->checkValidity();
+                this->checkValidity(Program::ValidityCheckLevel::VALIDINPUT);
             }
         }
     
@@ -179,6 +190,16 @@ namespace storm {
         std::vector<IntegerVariable> const& Program::getGlobalIntegerVariables() const {
             return this->globalIntegerVariables;
         }
+        
+        bool Program::globalBooleanVariableExists(std::string const& variableName) const {
+            return this->globalBooleanVariableToIndexMap.count(variableName) > 0;
+        }
+        
+        bool Program::globalIntegerVariableExists(std::string const& variableName) const {
+            return this->globalIntegerVariableToIndexMap.count(variableName) > 0;
+        }
+        
+        
 
         BooleanVariable const& Program::getGlobalBooleanVariable(std::string const& variableName) const {
             auto const& nameIndexPair = this->globalBooleanVariableToIndexMap.find(variableName);
@@ -499,7 +520,8 @@ namespace storm {
             return Program(this->manager, this->getModelType(), newConstants, newBooleanVariables, newIntegerVariables, newFormulas, newModules, this->getActionNameToIndexMapping(), newRewardModels, false, newInitialConstruct, newLabels);
         }
         
-        void Program::checkValidity() const {
+        void Program::checkValidity(Program::ValidityCheckLevel lvl) const {
+            
             // Start by checking the constant declarations.
             std::set<storm::expressions::Variable> all;
             std::set<storm::expressions::Variable> allGlobals;
@@ -592,6 +614,7 @@ namespace storm {
             std::set<storm::expressions::Variable> variablesAndConstants;
             std::set_union(variables.begin(), variables.end(), constants.begin(), constants.end(), std::inserter(variablesAndConstants, variablesAndConstants.begin()));
             
+            
             // Check the commands of the modules.
             bool hasProbabilisticCommand = false;
             bool hasMarkovianCommand = false;
@@ -609,7 +632,7 @@ namespace storm {
                     // Check the guard.
                     std::set<storm::expressions::Variable> containedVariables = command.getGuardExpression().getVariables();
                     bool isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedVariables.begin(), containedVariables.end());
-                    STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << command.getFilename() << ", line " << command.getLineNumber() << ": guard refers to unknown identifiers.");
+                    STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << command.getFilename() << ", line " << command.getLineNumber() << ": guard " << command.getGuardExpression()  << " refers to unknown identifiers.");
                     STORM_LOG_THROW(command.getGuardExpression().hasBooleanType(), storm::exceptions::WrongFormatException, "Error in " << command.getFilename() << ", line " << command.getLineNumber() << ": expression for guard must evaluate to type 'bool'.");
                     
                     // Record which types of commands were seen.
@@ -635,11 +658,6 @@ namespace storm {
                         std::set<storm::expressions::Variable> alreadyAssignedVariables;
                         for (auto const& assignment : update.getAssignments()) {
                             storm::expressions::Variable assignedVariable = manager->getVariable(assignment.getVariableName());
-
-                            // If the command is labeled, i.e. may synchronize, we need to make sure no global variable is written.
-                            if (command.isLabeled()) {
-                                STORM_LOG_THROW(globalVariables.find(assignedVariable) == globalVariables.end(), storm::exceptions::WrongFormatException, "Error in " << command.getFilename() << ", line " << command.getLineNumber() << ": assignment of (possibly) synchronizing command writes to global variable '" << assignment.getVariableName() << "'.");
-                            }
 
                             if (legalVariables.find(assignedVariable) == legalVariables.end()) {
                                 if (all.find(assignedVariable) != all.end()) {
@@ -722,6 +740,103 @@ namespace storm {
                 bool isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedVariables.begin(), containedVariables.end());
                 STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << formula.getFilename() << ", line " << formula.getLineNumber() << ": formula expression refers to unknown identifiers.");
             }
+            
+            if(lvl >= Program::ValidityCheckLevel::READYFORPROCESSING) {
+                // We check for each global variable and each labeled command, whether there is at most one instance writing to that variable.
+                std::set<std::pair<std::string, std::string>> globalBVarsWrittenToByCommand;
+                std::set<std::pair<std::string, std::string>> globalIVarsWrittenToByCommand;
+                for(auto const& module : this->getModules()) {
+                    std::set<std::pair<std::string, std::string>> globalBVarsWrittenToByCommandInThisModule;
+                    std::set<std::pair<std::string, std::string>> globalIVarsWrittenToByCommandInThisModule;
+                    for (auto const& command : module.getCommands()) {
+                        if(!command.isLabeled()) continue;
+                        for (auto const& update : command.getUpdates()) {
+                             for (auto const& assignment : update.getAssignments()) {
+                                 if(this->globalBooleanVariableExists(assignment.getVariable().getName())) {
+                                     globalBVarsWrittenToByCommandInThisModule.insert({assignment.getVariable().getName(), command.getActionName()});
+                                 }
+                                 else if(this->globalIntegerVariableExists(assignment.getVariable().getName())) {
+                                     globalIVarsWrittenToByCommandInThisModule.insert({assignment.getVariable().getName(), command.getActionName()});
+                                 }
+                             }
+                        }
+                    }
+                    for(auto const& entry : globalIVarsWrittenToByCommandInThisModule) {
+                        if(globalIVarsWrittenToByCommand.find(entry) != globalIVarsWrittenToByCommand.end()) {
+                            STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Error in " << module.getFilename() << ", line " << module.getLineNumber() << ": assignment of (possibly) synchronizing command with label '" << entry.second << "' writes to global variable '" << entry.first << "'.");
+                        }
+                    }
+                    for(auto const& entry : globalBVarsWrittenToByCommandInThisModule) {
+                        if(globalBVarsWrittenToByCommand.find(entry) != globalBVarsWrittenToByCommand.end()) {
+                            STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Error in " << module.getFilename() << ", line " << module.getLineNumber() << ": assignment of (possibly) synchronizing command with label '" << entry.second << "' writes to global variable '" << entry.first << "'.");
+                        }
+                    }
+                }
+            }
+        }
+        
+        
+        Program Program::simplify() {
+            std::vector<Module> newModules;
+            std::vector<Constant> newConstants = this->getConstants();
+            for (auto const& module : this->getModules()) {
+                std::map<storm::expressions::Variable, storm::expressions::Expression> booleanVars;
+                std::map<storm::expressions::Variable, storm::expressions::Expression> integerVars;
+                for (auto const& variable : module.getBooleanVariables()) {
+                    booleanVars.emplace(variable.getExpressionVariable(), variable.getInitialValueExpression());
+                }
+                for (auto const& variable : module.getIntegerVariables()) {
+                    integerVars.emplace(variable.getExpressionVariable(), variable.getInitialValueExpression());
+                }
+                
+                for (auto const& command : module.getCommands()) {
+                    // Check all updates.
+                    for (auto const& update : command.getUpdates()) {
+                        // Check all assignments.
+                        for (auto const& assignment : update.getAssignments()) {
+                            auto bit = booleanVars.find(assignment.getVariable());
+                            if(bit != booleanVars.end()) {
+                                booleanVars.erase(bit);
+                            } else {
+                                auto iit = integerVars.find(assignment.getVariable());
+                                if(iit != integerVars.end()) {
+                                    integerVars.erase(iit);
+                                }
+                            }
+                        }
+                    }
+                }
+            
+                std::vector<storm::prism::BooleanVariable> newBVars;
+                for(auto const& variable : module.getBooleanVariables()) {
+                    if(booleanVars.count(variable.getExpressionVariable()) == 0) {
+                        newBVars.push_back(variable);
+                    }
+                }
+                std::vector<storm::prism::IntegerVariable> newIVars;
+                for(auto const& variable : module.getIntegerVariables()) {
+                    if(integerVars.count(variable.getExpressionVariable()) == 0) {
+                        newIVars.push_back(variable);
+                    }
+                }
+                
+                newModules.emplace_back(module.getName(), newBVars, newIVars, module.getCommands());
+                
+                for(auto const& entry : booleanVars) {
+                    newConstants.emplace_back(entry.first, entry.second);
+                }
+                
+                for(auto const& entry : integerVars) {
+                    newConstants.emplace_back(entry.first, entry.second);
+                }
+            }
+            
+            return replaceModulesAndConstantsInProgram(newModules, newConstants).substituteConstants();
+            
+        }
+        
+        Program Program::replaceModulesAndConstantsInProgram(std::vector<Module> const& newModules, std::vector<Constant> const& newConstants) {
+            return Program(this->manager, modelType, newConstants, getGlobalBooleanVariables(), getGlobalIntegerVariables(), getFormulas(), newModules, getActionNameToIndexMapping(), getRewardModels(), false, getInitialConstruct(), getLabels(), "", 0, false);
         }
         
         storm::expressions::ExpressionManager const& Program::getManager() const {
@@ -775,6 +890,8 @@ namespace storm {
             
             return stream;
         }
+        
+        
         
     } // namespace prism
 } // namepsace storm

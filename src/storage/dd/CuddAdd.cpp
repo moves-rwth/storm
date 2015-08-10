@@ -1,5 +1,6 @@
 #include <cstring>
 #include <algorithm>
+#include <boost/algorithm/string/join.hpp>
 
 #include "src/storage/dd/CuddAdd.h"
 #include "src/storage/dd/CuddBdd.h"
@@ -1055,7 +1056,12 @@ namespace storm {
         }
         
         std::ostream& operator<<(std::ostream& out, const Add<DdType::CUDD>& add) {
-            add.exportToDot();
+            out << "ADD with " << add.getNonZeroCount() << " nnz, " << add.getNodeCount() << " nodes, " << add.getLeafCount() << " leaves" << std::endl;
+            std::vector<std::string> variableNames;
+            for (auto const& variable : add.getContainedMetaVariables()) {
+                variableNames.push_back(variable.getName());
+            }
+            out << "contained variables: " << boost::algorithm::join(variableNames, ", ") << std::endl;
             return out;
         }
         

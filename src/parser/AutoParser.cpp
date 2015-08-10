@@ -69,7 +69,7 @@ namespace storm {
 		#ifdef WINDOWS
 			sscanf_s(filehintBuffer, formatString.c_str(), hint, STORM_PARSER_AUTOPARSER_HINT_LENGTH + 1);
 		#else
-			int ret = sscanf(filehintBuffer, formatString.c_str(), hint);
+			sscanf(filehintBuffer, formatString.c_str(), hint);
 		#endif
 			for (char* c = hint; *c != '\0'; c++) *c = toupper(*c);
             

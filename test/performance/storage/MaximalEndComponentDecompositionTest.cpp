@@ -11,7 +11,7 @@ TEST(MaximalEndComponentDecomposition, AsynchronousLeader) {
     storm::storage::MaximalEndComponentDecomposition<double> mecDecomposition;
     ASSERT_NO_THROW(mecDecomposition = storm::storage::MaximalEndComponentDecomposition<double>(*mdp));
     
-    ASSERT_EQ(7, mecDecomposition.size());
+    ASSERT_EQ(7ul, mecDecomposition.size());
     mdp = nullptr;
 }
 
@@ -22,6 +22,6 @@ TEST(MaximalEndComponentDecomposition, Consensus) {
     storm::storage::MaximalEndComponentDecomposition<double> mecDecomposition;
     ASSERT_NO_THROW(mecDecomposition = storm::storage::MaximalEndComponentDecomposition<double>(*mdp));
     
-    ASSERT_EQ(384, mecDecomposition.size());
+    ASSERT_EQ(384ul, mecDecomposition.size());
     mdp = nullptr;
 }

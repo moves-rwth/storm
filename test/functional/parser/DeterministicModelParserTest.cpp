@@ -18,14 +18,14 @@ TEST(DeterministicModelParserTest, BasicDtmcParsing) {
 	// Parse a Dtmc and check the result.
     storm::models::sparse::Dtmc<double> dtmc(storm::parser::DeterministicModelParser::parseDtmc(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_general.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/dtmc_general.lab", STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/dtmc_general.state.rew", STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/dtmc_general.trans.rew"));
 
-	ASSERT_EQ(8, dtmc.getNumberOfStates());
-	ASSERT_EQ(16, dtmc.getNumberOfTransitions());
+	ASSERT_EQ(8ul, dtmc.getNumberOfStates());
+	ASSERT_EQ(16ul, dtmc.getNumberOfTransitions());
 
-	ASSERT_EQ(2, dtmc.getInitialStates().getNumberOfSetBits());
+	ASSERT_EQ(2ul, dtmc.getInitialStates().getNumberOfSetBits());
 	ASSERT_TRUE(dtmc.getInitialStates().get(0));
 	ASSERT_TRUE(dtmc.getInitialStates().get(7));
-	ASSERT_EQ(5, dtmc.getStateLabeling().getNumberOfLabels());
-	ASSERT_EQ(2, dtmc.getLabelsOfState(6).size());
+	ASSERT_EQ(5ul, dtmc.getStateLabeling().getNumberOfLabels());
+	ASSERT_EQ(2ul, dtmc.getLabelsOfState(6).size());
 
 	ASSERT_TRUE(dtmc.hasStateRewards());
 	ASSERT_EQ(42, dtmc.getStateRewardVector()[7]);
@@ -36,7 +36,7 @@ TEST(DeterministicModelParserTest, BasicDtmcParsing) {
 	ASSERT_EQ(263.32, rewardSum);
 
 	ASSERT_TRUE(dtmc.hasTransitionRewards());
-	ASSERT_EQ(17, dtmc.getTransitionRewardMatrix().getEntryCount());
+	ASSERT_EQ(17ul, dtmc.getTransitionRewardMatrix().getEntryCount());
 	rewardSum = 0;
 	for(uint_fast64_t i = 0; i < dtmc.getTransitionRewardMatrix().getRowCount(); i++) {
 			rewardSum += dtmc.getTransitionRewardMatrix().getRowSum(i);
@@ -50,14 +50,14 @@ TEST(DeterministicModelParserTest, BasicCtmcParsing) {
 	// Parse a Ctmc and check the result.
 	storm::models::sparse::Ctmc<double> ctmc(storm::parser::DeterministicModelParser::parseCtmc(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_general.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/dtmc_general.lab", STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/dtmc_general.state.rew", STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/dtmc_general.trans.rew"));
 
-	ASSERT_EQ(8, ctmc.getNumberOfStates());
-	ASSERT_EQ(16, ctmc.getNumberOfTransitions());
+	ASSERT_EQ(8ul, ctmc.getNumberOfStates());
+	ASSERT_EQ(16ul, ctmc.getNumberOfTransitions());
 
-	ASSERT_EQ(2, ctmc.getInitialStates().getNumberOfSetBits());
+	ASSERT_EQ(2ul, ctmc.getInitialStates().getNumberOfSetBits());
 	ASSERT_TRUE(ctmc.getInitialStates().get(0));
 	ASSERT_TRUE(ctmc.getInitialStates().get(7));
-	ASSERT_EQ(5, ctmc.getStateLabeling().getNumberOfLabels());
-	ASSERT_EQ(2, ctmc.getLabelsOfState(6).size());
+	ASSERT_EQ(5ul, ctmc.getStateLabeling().getNumberOfLabels());
+	ASSERT_EQ(2ul, ctmc.getLabelsOfState(6).size());
 
 	ASSERT_TRUE(ctmc.hasStateRewards());
 	ASSERT_EQ(42, ctmc.getStateRewardVector()[7]);
@@ -68,7 +68,7 @@ TEST(DeterministicModelParserTest, BasicCtmcParsing) {
 	ASSERT_EQ(263.32, rewardSum);
 
 	ASSERT_TRUE(ctmc.hasTransitionRewards());
-	ASSERT_EQ(17, ctmc.getTransitionRewardMatrix().getEntryCount());
+	ASSERT_EQ(17ul, ctmc.getTransitionRewardMatrix().getEntryCount());
 	rewardSum = 0;
 	for(uint_fast64_t i = 0; i < ctmc.getTransitionRewardMatrix().getRowCount(); i++) {
 			rewardSum += ctmc.getTransitionRewardMatrix().getRowSum(i);

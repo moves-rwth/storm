@@ -76,49 +76,38 @@ namespace storm {
             /*
              * Can be used to parse a single parameter with its bounds from a string of the form "0.3<=p<=0.5".
              * The numbers are parsed as doubles and then converted to SparseDtmcRegionModelChecker::CoefficientType.
-             * According to the given precision, the lower bound may be rounded down and the upper bound may be rounded up.
-             * If no precision is given, the one from the settings is used.
              * The results will be inserted in the given maps
              * 
              */
             static void parseParameterBounds( 
                     std::map<VariableType, CoefficientType>& lowerBounds,
                     std::map<VariableType, CoefficientType>& upperBounds,
-                    std::string const& parameterBoundsString,
-                    double const precision=0.0
+                    std::string const& parameterBoundsString
             );
 
             /*
              * Can be used to parse a single region from a string of the form "0.3<=p<=0.5,0.4<=q<=0.7".
              * The numbers are parsed as doubles and then converted to SparseDtmcRegionModelChecker::CoefficientType.
-             * According to the given precision, the lower bound may be rounded down and the upper bound may be rounded up.
-             * If no precision is given, the one from the settings is used.
              * 
              */
             static ParameterRegion parseRegion(
-                    std::string const& regionString,
-                    double precision=0.0);
+                    std::string const& regionString
+            );
 
             /*
              * Can be used to parse a vector of region from a string of the form "0.3<=p<=0.5,0.4<=q<=0.7;0.1<=p<=0.3,0.2<=q<=0.4".
              * The numbers are parsed as doubles and then converted to SparseDtmcRegionModelChecker::CoefficientType.
-             * According to the given precision, the lower bound may be rounded down and the upper bound may be rounded up.
-             * If no precision is given, the one from the settings is used.
              * 
              */
             static std::vector<ParameterRegion> parseMultipleRegions(
-                    std::string const& regionsString,
-                    double precision=0.0);
+                    std::string const& regionsString
+            );
 
 
             /*
              * Retrieves the regions that are specified in the settings.
-             * The numbers are parsed as doubles and then converted to SparseDtmcRegionModelChecker::CoefficientType.
-             * According to the given precision, the lower bound may be rounded down and the upper bound may be rounded up.
-             * If no precision is given, the one from the settings is used.
-             * 
              */
-            static std::vector<ParameterRegion> getRegionsFromSettings(double precision=0.0);
+            static std::vector<ParameterRegion> getRegionsFromSettings();
 
             private:
 

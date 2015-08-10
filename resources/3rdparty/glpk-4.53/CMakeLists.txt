@@ -53,7 +53,7 @@ message(STATUS "GLPK - CMAKE_BUILD_TYPE (ENV): $ENV{CMAKE_BUILD_TYPE}")
 if(CMAKE_COMPILER_IS_GNUCC)
 	message(STATUS "GLPK - Using Compiler Configuration: GCC")
 	# Set standard flags for GCC
-	set(CMAKE_C_FLAGS "${CMAKE_CXX_FLAGS} -Wno-return-type")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-return-type -Wno-parentheses -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-value -Wno-unused-function -Wno-address -Wno-unused-label")
 	add_definitions(-DHAVE_CONFIG_H=1)
 elseif(MSVC)
 	message(STATUS "GLPK - Using Compiler Configuration: MSVC")
@@ -68,7 +68,7 @@ else(CLANG)
 	# Set standard flags for clang
 	set (CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -funroll-loops -O3")
 
-	set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-return-type -Wno-return-type-c-linkage -Wno-unused-variable")
+	set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-return-type -Wno-return-type-c-linkage -Wno-unused-label -Wno-unused-value -Wno-unused-function -Wno-unused-variable -Wno-logical-op-parentheses -Wno-macro-redefined -Wno-uninitialized -Wno-sometimes-uninitialized -Wno-self-assign")
 
 	set (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -g")
 	add_definitions(-DHAVE_CONFIG_H=1)

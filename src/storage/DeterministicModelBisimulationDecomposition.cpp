@@ -913,7 +913,6 @@ namespace storm {
             
             // Finally, we need to scan the ranges of states that agree on the probability.
             typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::const_iterator begin = partition.getBegin(block);
-            typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::const_iterator current = begin;
             typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::const_iterator end = partition.getEnd(block) - 1;
             storm::storage::sparse::state_type currentIndex = block.getBegin();
             
@@ -999,7 +998,6 @@ namespace storm {
             
             // Now we have everything in place to actually split the block by just scanning for ranges of equal label.
             typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::const_iterator begin = partition.getBegin(block);
-            typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::const_iterator current = begin;
             typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::const_iterator end = partition.getEnd(block) - 1;
             storm::storage::sparse::state_type currentIndex = block.getBegin();
             
@@ -1093,7 +1091,6 @@ namespace storm {
             
             // Then, we scan for the ranges of states that agree on the probability.
             typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::const_iterator begin = partition.getStatesAndValues().begin() + block.getOriginalBegin();
-            typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::const_iterator current = begin;
             typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::const_iterator end = partition.getStatesAndValues().begin() + block.getBegin() - 1;
             storm::storage::sparse::state_type currentIndex = block.getOriginalBegin();
             result.push_back(currentIndex);
@@ -1376,7 +1373,7 @@ namespace storm {
                     }
                     
                     // Finally, split the block.
-                    Block& nondivergentBlock = partition.splitBlock(block, block.getBegin() + nondivergentStates.getNumberOfSetBits());
+                    partition.splitBlock(block, block.getBegin() + nondivergentStates.getNumberOfSetBits());
                     
                     // Since the remaining states in the block are divergent, we can mark the block as absorbing.
                     // This also guarantees that the self-loop will be added to the state of the quotient
@@ -1462,7 +1459,6 @@ namespace storm {
                 
                 // Finally, we need to scan the ranges of states that agree on the probability.
                 typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::const_iterator begin = partition.getBegin(block);
-                typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::const_iterator current = begin;
                 typename std::vector<std::pair<storm::storage::sparse::state_type, ValueType>>::const_iterator end = partition.getEnd(block) - 1;
                 storm::storage::sparse::state_type currentIndex = block.getBegin();
                 

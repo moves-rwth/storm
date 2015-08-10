@@ -66,25 +66,29 @@ namespace storm {
              * @param constraint
              * @return An equivalent expression for Smt2.
              */
-            std::string translateExpression(carl::Constraint<storm::RawPolynomial> const& constraint) {
-                                
-                return  "(" + carl::relationToString(constraint.relation()) + " " +
-                            constraint.lhs().toString(false, useReadableVarNames) + " " +
-                            "0 " +
+            std::string translateExpression(storm::ArithConstraint<storm::RawPolynomial> const& constraint) {
+                std::stringstream ss;
+                ss << "(" << constraint.rel() << " " << 
+                        constraint.lhs().toString(false, useReadableVarNames) << " " << 
+                            "0 " <<
                         ")";
+                return ss.str();
             }
+            
             /*!
              * Translates the given constraint "leftHandSide relation 0" to an equivalent expression for Smt2.
 			 
              * @param constraint
              * @return An equivalent expression for Smt2.
              */
-            std::string translateExpression(carl::Constraint<storm::Polynomial> const& constraint) {
+            std::string translateExpression(storm::ArithConstraint<storm::Polynomial> const& constraint) {
                                 
-                return  "(" + carl::relationToString(constraint.relation()) + " " +
-                            constraint.lhs().toString(false, useReadableVarNames) + " " +
-                            "0 " +
+                std::stringstream ss;
+                ss << "(" << constraint.rel() << " " << 
+                        constraint.lhs().toString(false, useReadableVarNames) << " " << 
+                            "0 " <<
                         ")";
+                return ss.str();
             }
 #endif
             /*!

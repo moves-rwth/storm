@@ -72,7 +72,19 @@ namespace storm {
                                              this->hasStateRewards() ? boost::optional<std::vector<ValueType>>(this->getStateRewardVector()) : boost::optional<std::vector<ValueType>>(),
                                              this->hasTransitionRewards() ? boost::optional<storm::storage::SparseMatrix<ValueType>>(this->getTransitionRewardMatrix()) : boost::optional<storm::storage::SparseMatrix<ValueType>>(),
                                              boost::optional<std::vector<LabelSet>>(newChoiceLabeling));
+                
                 return restrictedMdp;
+            }
+            
+            template <typename ValueType>
+            Mdp<ValueType> Mdp<ValueType>::restrictActions(storm::storage::BitVector const& enabledActions) const {
+                storm::storage::SparseMatrix<ValueType> restrictedTransitions = this->getTransitionMatrix().restrictRows(enabledActions);
+                if(this->hasTransitionRewards()) {
+                    return Mdp<ValueType>(restrictedTransitions, this->getStateLabeling(), this->getOptionalStateRewardVector(), boost::optional<storm::storage::SparseMatrix<ValueType>>(this->getTransitionRewardMatrix().restrictRows(enabledActions)), this->getOptionalChoiceLabeling());
+                } else {
+                    return Mdp<ValueType>( restrictedTransitions, this->getStateLabeling(), this->getOptionalStateRewardVector(), boost::optional<storm::storage::SparseMatrix<ValueType>>(), this->getOptionalChoiceLabeling());
+                }
+                
             }
             
             template <typename ValueType>

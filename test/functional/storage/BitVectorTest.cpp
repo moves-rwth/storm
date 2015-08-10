@@ -28,7 +28,7 @@ TEST(BitVectorTest, InitFromIterator) {
     std::vector<uint_fast64_t> valueVector = {0, 4, 10};
 	storm::storage::BitVector vector(32, valueVector.begin(), valueVector.end());
     
-    ASSERT_EQ(32, vector.size());
+    ASSERT_EQ(32ul, vector.size());
     
 	for (uint_fast64_t i = 0; i < 32; ++i) {
         if (i == 0 || i == 4 || i == 10) {
@@ -296,8 +296,8 @@ TEST(BitVectorTest, OperatorModulo) {
     
     storm::storage::BitVector moduloResult = vector1 % vector2;
     
-    ASSERT_EQ(moduloResult.size(), 8);
-    ASSERT_EQ(moduloResult.getNumberOfSetBits(), 2);
+    ASSERT_EQ(8ul, moduloResult.size());
+    ASSERT_EQ(2ul, moduloResult.getNumberOfSetBits());
     
     for (uint_fast64_t i = 0; i < 8; ++i) {
         if (i == 1 || i == 3) {
@@ -455,7 +455,7 @@ TEST(BitVectorTest, NumberOfSetBitsBeforeIndex) {
 		vector.set(i, i % 2 == 0);
 	}
     
-    ASSERT_EQ(7, vector.getNumberOfSetBitsBeforeIndex(14));
+    ASSERT_EQ(7ul, vector.getNumberOfSetBitsBeforeIndex(14));
 }
 
 TEST(BitVectorTest, BeginEnd) {
@@ -478,10 +478,10 @@ TEST(BitVectorTest, NextSetIndex) {
     vector.set(14);
     vector.set(17);
     
-    ASSERT_EQ(14, vector.getNextSetIndex(14));
-    ASSERT_EQ(17, vector.getNextSetIndex(15));
-    ASSERT_EQ(17, vector.getNextSetIndex(16));
-    ASSERT_EQ(17, vector.getNextSetIndex(17));
+    ASSERT_EQ(14ul, vector.getNextSetIndex(14));
+    ASSERT_EQ(17ul, vector.getNextSetIndex(15));
+    ASSERT_EQ(17ul, vector.getNextSetIndex(16));
+    ASSERT_EQ(17ul, vector.getNextSetIndex(17));
     ASSERT_EQ(vector.size(), vector.getNextSetIndex(18));
 }
 
