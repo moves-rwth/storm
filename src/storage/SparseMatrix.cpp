@@ -988,12 +988,30 @@ namespace storm {
         }
         
         template<typename ValueType>
+        typename SparseMatrix<ValueType>::const_rows SparseMatrix<ValueType>::getRow(index_type rowGroup, index_type offset) const {
+            assert(rowGroup < this->getRowGroupCount());
+            assert(offset < this->getRowGroupEntryCount(rowGroup));
+            return getRow(rowGroupIndices[rowGroup] + offset);
+        }
+        
+        
+        template<typename ValueType>
+        typename SparseMatrix<ValueType>::rows SparseMatrix<ValueType>::getRow(index_type rowGroup, index_type offset) {
+            assert(rowGroup < this->getRowGroupCount());
+            assert(offset < this->getRowGroupEntryCount(rowGroup));
+            return getRow(rowGroupIndices[rowGroup] + offset);
+        }
+        
+        
+        template<typename ValueType>
         typename SparseMatrix<ValueType>::const_rows SparseMatrix<ValueType>::getRowGroup(index_type rowGroup) const {
+            assert(rowGroup < this->getRowGroupCount());
             return getRows(rowGroupIndices[rowGroup], rowGroupIndices[rowGroup + 1] - 1);
         }
         
         template<typename ValueType>
         typename SparseMatrix<ValueType>::rows SparseMatrix<ValueType>::getRowGroup(index_type rowGroup) {
+            assert(rowGroup < this->getRowGroupCount());
             return getRows(rowGroupIndices[rowGroup], rowGroupIndices[rowGroup + 1] - 1);
         }
         

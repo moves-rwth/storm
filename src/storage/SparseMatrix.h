@@ -800,6 +800,22 @@ namespace storm {
             rows getRow(index_type row);
             
             /*!
+             * Returns an object representing the offset'th row in the rowgroup
+             * @param rowGroup the row group
+             * @param offset which row in the group
+             * @return An object representing the given row.
+             */
+            const_rows getRow(index_type rowGroup, index_type offset) const;
+            
+            /*!
+             * Returns an object representing the offset'th row in the rowgroup
+             * @param rowGroup the row group
+             * @param offset which row in the group
+             * @return An object representing the given row.
+             */
+            rows getRow(index_type rowGroup, index_type entryInGroup);
+            
+            /*!
              * Returns an object representing the given row group.
              *
              * @param rowGroup The row group to get.
