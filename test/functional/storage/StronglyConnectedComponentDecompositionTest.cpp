@@ -62,7 +62,7 @@ TEST(StronglyConnectedComponentDecomposition, FullSystem2) {
     storm::storage::StronglyConnectedComponentDecomposition<double> sccDecomposition;
     ASSERT_NO_THROW(sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(*markovAutomaton, true, false));
     
-    ASSERT_EQ(sccDecomposition.size(), 2);
+    ASSERT_EQ(2ul, sccDecomposition.size());
     
     // Now, because there is no ordering we have to check the contents of the MECs in a symmetrical way.
     storm::storage::StateBlock const& scc1 = sccDecomposition[0];

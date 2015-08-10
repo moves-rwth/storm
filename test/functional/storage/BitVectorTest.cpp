@@ -455,7 +455,7 @@ TEST(BitVectorTest, NumberOfSetBitsBeforeIndex) {
 		vector.set(i, i % 2 == 0);
 	}
     
-    ASSERT_EQ(7, vector.getNumberOfSetBitsBeforeIndex(14));
+    ASSERT_EQ(7ul, vector.getNumberOfSetBitsBeforeIndex(14));
 }
 
 TEST(BitVectorTest, BeginEnd) {
@@ -478,10 +478,10 @@ TEST(BitVectorTest, NextSetIndex) {
     vector.set(14);
     vector.set(17);
     
-    ASSERT_EQ(14, vector.getNextSetIndex(14));
-    ASSERT_EQ(17, vector.getNextSetIndex(15));
-    ASSERT_EQ(17, vector.getNextSetIndex(16));
-    ASSERT_EQ(17, vector.getNextSetIndex(17));
+    ASSERT_EQ(14ul, vector.getNextSetIndex(14));
+    ASSERT_EQ(17ul, vector.getNextSetIndex(15));
+    ASSERT_EQ(17ul, vector.getNextSetIndex(16));
+    ASSERT_EQ(17ul, vector.getNextSetIndex(17));
     ASSERT_EQ(vector.size(), vector.getNextSetIndex(18));
 }
 

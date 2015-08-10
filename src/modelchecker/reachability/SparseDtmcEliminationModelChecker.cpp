@@ -694,7 +694,6 @@ namespace storm {
         
         template<typename ValueType>
         void SparseDtmcEliminationModelChecker<ValueType>::eliminateState(FlexibleSparseMatrix& matrix, std::vector<ValueType>& oneStepProbabilities, uint_fast64_t state, FlexibleSparseMatrix& backwardTransitions, boost::optional<std::vector<ValueType>>& stateRewards, bool removeForwardTransitions, bool constrained, storm::storage::BitVector const& predecessorConstraint) {
-            auto eliminationStart = std::chrono::high_resolution_clock::now();
             
             bool hasSelfLoop = false;
             ValueType loopProbability = storm::utility::zero<ValueType>();
@@ -917,9 +916,6 @@ namespace storm {
             } else {
                 currentStatePredecessors = std::move(newCurrentStatePredecessors);
             }
-            
-            auto eliminationEnd = std::chrono::high_resolution_clock::now();
-            auto eliminationTime = eliminationEnd - eliminationStart;
         }
         
         template<typename ValueType>

@@ -27,7 +27,7 @@ TEST(PrismParser, SimpleTest) {
     
     storm::prism::Program result;
     EXPECT_NO_THROW(result = storm::parser::PrismParser::parseFromString(testInput, "testfile"));
-    EXPECT_EQ(1, result.getNumberOfModules());
+    EXPECT_EQ(1ul, result.getNumberOfModules());
     EXPECT_EQ(storm::prism::Program::ModelType::DTMC, result.getModelType());
     
     testInput =

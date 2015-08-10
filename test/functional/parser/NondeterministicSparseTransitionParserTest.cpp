@@ -30,88 +30,88 @@ TEST(NondeterministicSparseTransitionParserTest, BasicTransitionsParsing) {
 	storm::storage::SparseMatrix<double> result(storm::parser::NondeterministicSparseTransitionParser::parseNondeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/mdp_general.tra"));
 
 	// Test the row mapping, i.e. at which row which state starts.
-	ASSERT_EQ(6, result.getRowGroupCount());
-	ASSERT_EQ(7, result.getRowGroupIndices().size());
-	ASSERT_EQ(0, result.getRowGroupIndices()[0]);
-	ASSERT_EQ(4, result.getRowGroupIndices()[1]);
-	ASSERT_EQ(5, result.getRowGroupIndices()[2]);
-	ASSERT_EQ(7, result.getRowGroupIndices()[3]);
-	ASSERT_EQ(8, result.getRowGroupIndices()[4]);
-	ASSERT_EQ(9, result.getRowGroupIndices()[5]);
-	ASSERT_EQ(11, result.getRowGroupIndices()[6]);
+	ASSERT_EQ(6ul, result.getRowGroupCount());
+	ASSERT_EQ(7ul, result.getRowGroupIndices().size());
+	ASSERT_EQ(0ul, result.getRowGroupIndices()[0]);
+	ASSERT_EQ(4ul, result.getRowGroupIndices()[1]);
+	ASSERT_EQ(5ul, result.getRowGroupIndices()[2]);
+	ASSERT_EQ(7ul, result.getRowGroupIndices()[3]);
+	ASSERT_EQ(8ul, result.getRowGroupIndices()[4]);
+	ASSERT_EQ(9ul, result.getRowGroupIndices()[5]);
+	ASSERT_EQ(11ul, result.getRowGroupIndices()[6]);
 
 	// Test the transition matrix.
-	ASSERT_EQ(6, result.getColumnCount());
-	ASSERT_EQ(11, result.getRowCount());
-	ASSERT_EQ(22, result.getEntryCount());
+	ASSERT_EQ(6ul, result.getColumnCount());
+	ASSERT_EQ(11ul, result.getRowCount());
+	ASSERT_EQ(22ul, result.getEntryCount());
 
 	// Test every entry of the matrix.
 	storm::storage::SparseMatrix<double>::const_iterator cIter = result.begin(0);
 
-	ASSERT_EQ(0, cIter->getColumn());
+	ASSERT_EQ(0ul, cIter->getColumn());
 	ASSERT_EQ(0.9, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(1, cIter->getColumn());
+	ASSERT_EQ(1ul, cIter->getColumn());
 	ASSERT_EQ(0.1, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(1, cIter->getColumn());
+	ASSERT_EQ(1ul, cIter->getColumn());
 	ASSERT_EQ(0.2, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(2, cIter->getColumn());
+	ASSERT_EQ(2ul, cIter->getColumn());
 	ASSERT_EQ(0.2, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(3, cIter->getColumn());
+	ASSERT_EQ(3ul, cIter->getColumn());
 	ASSERT_EQ(0.2, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(4, cIter->getColumn());
+	ASSERT_EQ(4ul, cIter->getColumn());
 	ASSERT_EQ(0.2, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(5, cIter->getColumn());
+	ASSERT_EQ(5ul, cIter->getColumn());
 	ASSERT_EQ(0.2, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(5, cIter->getColumn());
+	ASSERT_EQ(5ul, cIter->getColumn());
 	ASSERT_EQ(1, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(0, cIter->getColumn());
+	ASSERT_EQ(0ul, cIter->getColumn());
 	ASSERT_EQ(0.1, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(4, cIter->getColumn());
+	ASSERT_EQ(4ul, cIter->getColumn());
 	ASSERT_EQ(0.9, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(2, cIter->getColumn());
+	ASSERT_EQ(2ul, cIter->getColumn());
 	ASSERT_EQ(1, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(2, cIter->getColumn());
+	ASSERT_EQ(2ul, cIter->getColumn());
 	ASSERT_EQ(0.5, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(3, cIter->getColumn());
+	ASSERT_EQ(3ul, cIter->getColumn());
 	ASSERT_EQ(0.5, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(2, cIter->getColumn());
+	ASSERT_EQ(2ul, cIter->getColumn());
 	ASSERT_EQ(1, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(2, cIter->getColumn());
+	ASSERT_EQ(2ul, cIter->getColumn());
 	ASSERT_EQ(0.001, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(3, cIter->getColumn());
+	ASSERT_EQ(3ul, cIter->getColumn());
 	ASSERT_EQ(0.999, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(1, cIter->getColumn());
+	ASSERT_EQ(1ul, cIter->getColumn());
 	ASSERT_EQ(0.7, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(4, cIter->getColumn());
+	ASSERT_EQ(4ul, cIter->getColumn());
 	ASSERT_EQ(0.3, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(1, cIter->getColumn());
+	ASSERT_EQ(1ul, cIter->getColumn());
 	ASSERT_EQ(0.2, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(4, cIter->getColumn());
+	ASSERT_EQ(4ul, cIter->getColumn());
 	ASSERT_EQ(0.2, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(5, cIter->getColumn());
+	ASSERT_EQ(5ul, cIter->getColumn());
 	ASSERT_EQ(0.6, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(5, cIter->getColumn());
+	ASSERT_EQ(5ul, cIter->getColumn());
 	ASSERT_EQ(1, cIter->getValue());
 }
 
@@ -121,62 +121,62 @@ TEST(NondeterministicSparseTransitionParserTest, BasicTransitionsRewardsParsing)
 	storm::storage::SparseMatrix<double> result(storm::parser::NondeterministicSparseTransitionParser::parseNondeterministicTransitionRewards(STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/mdp_general.trans.rew", modelInformation));
 
 	// Test the transition matrix.
-	ASSERT_EQ(6, result.getColumnCount());
-	ASSERT_EQ(11, result.getRowCount());
-	ASSERT_EQ(17, result.getEntryCount());
+	ASSERT_EQ(6ul, result.getColumnCount());
+	ASSERT_EQ(11ul, result.getRowCount());
+	ASSERT_EQ(17ul, result.getEntryCount());
 
 	// Test every entry of the matrix.
 	storm::storage::SparseMatrix<double>::const_iterator cIter = result.begin(0);
 
-	ASSERT_EQ(0, cIter->getColumn());
+	ASSERT_EQ(0ul, cIter->getColumn());
 	ASSERT_EQ(1, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(1, cIter->getColumn());
+	ASSERT_EQ(1ul, cIter->getColumn());
 	ASSERT_EQ(30, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(1, cIter->getColumn());
+	ASSERT_EQ(1ul, cIter->getColumn());
 	ASSERT_EQ(15.2, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(2, cIter->getColumn());
+	ASSERT_EQ(2ul, cIter->getColumn());
 	ASSERT_EQ(75, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(5, cIter->getColumn());
+	ASSERT_EQ(5ul, cIter->getColumn());
 	ASSERT_EQ(2.45, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(5, cIter->getColumn());
+	ASSERT_EQ(5ul, cIter->getColumn());
 	ASSERT_EQ(1, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(0, cIter->getColumn());
+	ASSERT_EQ(0ul, cIter->getColumn());
 	ASSERT_EQ(0.114, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(4, cIter->getColumn());
+	ASSERT_EQ(4ul, cIter->getColumn());
 	ASSERT_EQ(90, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(2, cIter->getColumn());
+	ASSERT_EQ(2ul, cIter->getColumn());
 	ASSERT_EQ(1, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(2, cIter->getColumn());
+	ASSERT_EQ(2ul, cIter->getColumn());
 	ASSERT_EQ(55, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(3, cIter->getColumn());
+	ASSERT_EQ(3ul, cIter->getColumn());
 	ASSERT_EQ(87, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(2, cIter->getColumn());
+	ASSERT_EQ(2ul, cIter->getColumn());
 	ASSERT_EQ(13, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(3, cIter->getColumn());
+	ASSERT_EQ(3ul, cIter->getColumn());
 	ASSERT_EQ(999, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(1, cIter->getColumn());
+	ASSERT_EQ(1ul, cIter->getColumn());
 	ASSERT_EQ(0.7, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(4, cIter->getColumn());
+	ASSERT_EQ(4ul, cIter->getColumn());
 	ASSERT_EQ(0.3, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(1, cIter->getColumn());
+	ASSERT_EQ(1ul, cIter->getColumn());
 	ASSERT_EQ(0.1, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(5, cIter->getColumn());
+	ASSERT_EQ(5ul, cIter->getColumn());
 	ASSERT_EQ(6, cIter->getValue());
 }
 
@@ -213,36 +213,36 @@ TEST(NondeterministicSparseTransitionParserTest, FixDeadlocks) {
 	// Parse a transitions file with the fixDeadlocks Flag set and test if it works.
 	storm::storage::SparseMatrix<double> result(storm::parser::NondeterministicSparseTransitionParser::parseNondeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/mdp_deadlock.tra"));
 
-	ASSERT_EQ(8, result.getRowGroupIndices().size());
-	ASSERT_EQ(9, result.getRowGroupIndices()[5]);
-	ASSERT_EQ(10, result.getRowGroupIndices()[6]);
-	ASSERT_EQ(12, result.getRowGroupIndices()[7]);
+	ASSERT_EQ(8ul, result.getRowGroupIndices().size());
+	ASSERT_EQ(9ul, result.getRowGroupIndices()[5]);
+	ASSERT_EQ(10ul, result.getRowGroupIndices()[6]);
+	ASSERT_EQ(12ul, result.getRowGroupIndices()[7]);
 
-	ASSERT_EQ(7, result.getColumnCount());
-	ASSERT_EQ(12, result.getRowCount());
-	ASSERT_EQ(23, result.getEntryCount());
+	ASSERT_EQ(7ul, result.getColumnCount());
+	ASSERT_EQ(12ul, result.getRowCount());
+	ASSERT_EQ(23ul, result.getEntryCount());
 
 	storm::storage::SparseMatrix<double>::const_iterator cIter = result.begin(8);
 
-	ASSERT_EQ(1, cIter->getColumn());
+	ASSERT_EQ(1ul, cIter->getColumn());
 	ASSERT_EQ(0.7, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(4, cIter->getColumn());
+	ASSERT_EQ(4ul, cIter->getColumn());
 	ASSERT_EQ(0.3, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(5, cIter->getColumn());
+	ASSERT_EQ(5ul, cIter->getColumn());
 	ASSERT_EQ(1, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(1, cIter->getColumn());
+	ASSERT_EQ(1ul, cIter->getColumn());
 	ASSERT_EQ(0.2, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(4, cIter->getColumn());
+	ASSERT_EQ(4ul, cIter->getColumn());
 	ASSERT_EQ(0.2, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(5, cIter->getColumn());
+	ASSERT_EQ(5ul, cIter->getColumn());
 	ASSERT_EQ(0.6, cIter->getValue());
 	cIter++;
-	ASSERT_EQ(5, cIter->getColumn());
+	ASSERT_EQ(5ul, cIter->getColumn());
 	ASSERT_EQ(1, cIter->getValue());
 
 }

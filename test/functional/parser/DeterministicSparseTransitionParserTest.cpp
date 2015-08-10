@@ -106,8 +106,8 @@ TEST(DeterministicSparseTransitionParserTest, BasicTransitionsRewardsParsing) {
 
 	storm::storage::SparseMatrix<double> rewardMatrix = storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitionRewards(STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/dtmc_general.trans.rew", transitionMatrix);
 
-	ASSERT_EQ(8, rewardMatrix.getColumnCount());
-	ASSERT_EQ(17, rewardMatrix.getEntryCount());
+	ASSERT_EQ(8ul, rewardMatrix.getColumnCount());
+	ASSERT_EQ(17ul, rewardMatrix.getEntryCount());
 
 	// Test every entry of the matrix.
 	storm::storage::SparseMatrix<double>::const_iterator cIter = rewardMatrix.begin(0);
@@ -197,7 +197,7 @@ TEST(DeterministicSparseTransitionParserTest, FixDeadlocks) {
 	storm::storage::SparseMatrix<double> transitionMatrix = storm::parser::DeterministicSparseTransitionParser::parseDeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_deadlock.tra");
 
 	ASSERT_EQ(9ul, transitionMatrix.getColumnCount());
-	ASSERT_EQ(23, transitionMatrix.getEntryCount());
+	ASSERT_EQ(23ul, transitionMatrix.getEntryCount());
 
 	storm::storage::SparseMatrix<double>::const_iterator cIter = transitionMatrix.begin(7);
 	ASSERT_EQ(7ul, cIter->getColumn());

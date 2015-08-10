@@ -15,15 +15,15 @@ TEST(NondeterministicModelParserTest, BasicMdpParsing) {
 	// Parse a Mdp and check the result.
 	storm::models::sparse::Mdp<double> mdp(storm::parser::NondeterministicModelParser::parseMdp(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/mdp_general.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/mdp_general.lab", STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/mdp_general.state.rew", STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/mdp_general.trans.rew"));
 
-	ASSERT_EQ(6, mdp.getNumberOfStates());
-	ASSERT_EQ(22, mdp.getNumberOfTransitions());
-	ASSERT_EQ(11, mdp.getNumberOfChoices());
+	ASSERT_EQ(6ul, mdp.getNumberOfStates());
+	ASSERT_EQ(22ul, mdp.getNumberOfTransitions());
+	ASSERT_EQ(11ul, mdp.getNumberOfChoices());
 
-	ASSERT_EQ(2, mdp.getInitialStates().getNumberOfSetBits());
+	ASSERT_EQ(2ul, mdp.getInitialStates().getNumberOfSetBits());
 	ASSERT_TRUE(mdp.getInitialStates().get(0));
 	ASSERT_TRUE(mdp.getInitialStates().get(4));
-	ASSERT_EQ(4, mdp.getStateLabeling().getNumberOfLabels());
-	ASSERT_EQ(3, mdp.getLabelsOfState(0).size());
+	ASSERT_EQ(4ul, mdp.getStateLabeling().getNumberOfLabels());
+	ASSERT_EQ(3ul, mdp.getLabelsOfState(0).size());
 
 	ASSERT_TRUE(mdp.hasStateRewards());
 	ASSERT_EQ(0, mdp.getStateRewardVector()[0]);
@@ -35,7 +35,7 @@ TEST(NondeterministicModelParserTest, BasicMdpParsing) {
 	ASSERT_EQ(158.32, rewardSum);
 
 	ASSERT_TRUE(mdp.hasTransitionRewards());
-	ASSERT_EQ(17, mdp.getTransitionRewardMatrix().getEntryCount());
+	ASSERT_EQ(17ul, mdp.getTransitionRewardMatrix().getEntryCount());
 	rewardSum = 0;
 	for(uint_fast64_t i = 0; i < mdp.getTransitionRewardMatrix().getRowCount(); i++) {
 			rewardSum += mdp.getTransitionRewardMatrix().getRowSum(i);

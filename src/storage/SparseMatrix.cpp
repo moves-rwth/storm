@@ -677,11 +677,12 @@ namespace storm {
         SparseMatrix<ValueType> SparseMatrix<ValueType>::transpose(bool joinGroups, bool keepZeros) const {
             index_type rowCount = this->getColumnCount();
             index_type columnCount = joinGroups ? this->getRowGroupCount() : this->getRowCount();
+            index_type entryCount;
             if (keepZeros) {
-                index_type entryCount = this->getEntryCount();
+                entryCount = this->getEntryCount();
             } else {
                 this->updateNonzeroEntryCount();
-                index_type entryCount = this->getNonzeroEntryCount();
+                entryCount = this->getNonzeroEntryCount();
             }
             
             std::vector<index_type> rowIndications(rowCount + 1);
@@ -914,7 +915,6 @@ namespace storm {
             const_iterator ite;
             std::vector<index_type>::const_iterator rowIterator = rowIndications.begin();
             typename std::vector<ValueType>::const_iterator bIt = b.begin();
-            typename std::vector<ValueType>::const_iterator bIte = b.end();
             typename std::vector<ValueType>::iterator resultIterator = x.begin();
             typename std::vector<ValueType>::iterator resultIteratorEnd = x.end();
             
