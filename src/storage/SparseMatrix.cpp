@@ -615,6 +615,14 @@ namespace storm {
         }
         
         template<typename ValueType>
+        SparseMatrix<ValueType> SparseMatrix<ValueType>::restrictRows(storm::storage::BitVector const& rowsToKeep) const {
+            // For now, we use the expensive call to submatrix.
+            SparseMatrix<ValueType> res(getSubmatrix(false, rowsToKeep, storm::storage::BitVector(getColumnCount(), true), false));
+            assert(getRowGroupCount() == res.getRowGroupCount());
+            return res;
+        }
+        
+        template<typename ValueType>
         SparseMatrix<ValueType> SparseMatrix<ValueType>::selectRowsFromRowGroups(std::vector<index_type> const& rowGroupToRowIndexMapping, bool insertDiagonalEntries) const {
             // First, we need to count how many non-zero entries the resulting matrix will have and reserve space for
             // diagonal entries if requested.

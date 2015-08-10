@@ -173,12 +173,19 @@ namespace storm {
                 boost::optional<std::vector<ValueType>> const& getOptionalStateRewardVector() const;
                 
                 /*!
-                 * Retrieves the labels for the choices of the model. Note that calling this method is only valud if the
-                 * model has a choice labling.
+                 * Retrieves the labels for the choices of the model. Note that calling this method is only valid if the
+                 * model has a choice labeling.
                  *
                  * @return The labels for the choices of the model.
                  */
                 std::vector<LabelSet> const& getChoiceLabeling() const;
+                
+                /*!
+                 * Retrieves an optional value that contains the choice labeling if there is one.
+                 * 
+                 * @return The labels for the choices, if they're saved.
+                 */
+                boost::optional<std::vector<LabelSet>> const&  getOptionalChoiceLabeling() const;
                 
                 /*!
                  * Returns the state labeling associated with this model.
@@ -193,6 +200,7 @@ namespace storm {
                  * @return The state labeling associated with this model.
                  */
                 storm::models::sparse::StateLabeling& getStateLabeling();
+                
                 
                 /*!
                  * Retrieves whether this model has state rewards.
