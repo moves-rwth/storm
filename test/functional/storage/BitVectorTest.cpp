@@ -28,7 +28,7 @@ TEST(BitVectorTest, InitFromIterator) {
     std::vector<uint_fast64_t> valueVector = {0, 4, 10};
 	storm::storage::BitVector vector(32, valueVector.begin(), valueVector.end());
     
-    ASSERT_EQ(32, vector.size());
+    ASSERT_EQ(32ul, vector.size());
     
 	for (uint_fast64_t i = 0; i < 32; ++i) {
         if (i == 0 || i == 4 || i == 10) {
@@ -296,8 +296,8 @@ TEST(BitVectorTest, OperatorModulo) {
     
     storm::storage::BitVector moduloResult = vector1 % vector2;
     
-    ASSERT_EQ(moduloResult.size(), 8);
-    ASSERT_EQ(moduloResult.getNumberOfSetBits(), 2);
+    ASSERT_EQ(8ul, moduloResult.size());
+    ASSERT_EQ(2ul, moduloResult.getNumberOfSetBits());
     
     for (uint_fast64_t i = 0; i < 8; ++i) {
         if (i == 1 || i == 3) {

@@ -152,8 +152,6 @@ namespace storm {
 
 				// Iterate over all SCCs of the MDP as specified by the topological sort. This guarantees that an SCC is only
 				// solved after all SCCs it depends on have been solved.
-				int counter = 0;
-
 				for (auto sccIndexIt = optimalSccs.cbegin(); sccIndexIt != optimalSccs.cend() && converged; ++sccIndexIt) {
 					bool const useGpu = sccIndexIt->first;
 					storm::storage::StateBlock const& scc = sccIndexIt->second;

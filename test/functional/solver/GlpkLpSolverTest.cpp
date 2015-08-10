@@ -159,14 +159,10 @@ TEST(GlpkLpSolver, LPInfeasible) {
     ASSERT_FALSE(solver.isOptimal());
     ASSERT_FALSE(solver.isUnbounded());
     ASSERT_TRUE(solver.isInfeasible());
-    double xValue = 0;
-    ASSERT_THROW(xValue = solver.getContinuousValue(x), storm::exceptions::InvalidAccessException);
-    double yValue = 0;
-    ASSERT_THROW(yValue = solver.getContinuousValue(y), storm::exceptions::InvalidAccessException);
-    double zValue = 0;
-    ASSERT_THROW(zValue = solver.getContinuousValue(z), storm::exceptions::InvalidAccessException);
-    double objectiveValue = 0;
-    ASSERT_THROW(objectiveValue = solver.getObjectiveValue(), storm::exceptions::InvalidAccessException);
+    ASSERT_THROW(solver.getContinuousValue(x), storm::exceptions::InvalidAccessException);
+    ASSERT_THROW(solver.getContinuousValue(y), storm::exceptions::InvalidAccessException);
+    ASSERT_THROW(solver.getContinuousValue(z), storm::exceptions::InvalidAccessException);
+    ASSERT_THROW(solver.getObjectiveValue(), storm::exceptions::InvalidAccessException);
 }
 
 TEST(GlpkLpSolver, MILPInfeasible) {
@@ -189,14 +185,10 @@ TEST(GlpkLpSolver, MILPInfeasible) {
     ASSERT_FALSE(solver.isOptimal());
     ASSERT_FALSE(solver.isUnbounded());
     ASSERT_TRUE(solver.isInfeasible());
-    bool xValue = false;
-    ASSERT_THROW(xValue = solver.getBinaryValue(x), storm::exceptions::InvalidAccessException);
-    int_fast64_t yValue = 0;
-    ASSERT_THROW(yValue = solver.getIntegerValue(y), storm::exceptions::InvalidAccessException);
-    double zValue = 0;
-    ASSERT_THROW(zValue = solver.getContinuousValue(z), storm::exceptions::InvalidAccessException);
-    double objectiveValue = 0;
-    ASSERT_THROW(objectiveValue = solver.getObjectiveValue(), storm::exceptions::InvalidAccessException);
+    ASSERT_THROW(solver.getBinaryValue(x), storm::exceptions::InvalidAccessException);
+    ASSERT_THROW(solver.getIntegerValue(y), storm::exceptions::InvalidAccessException);
+    ASSERT_THROW(solver.getContinuousValue(z), storm::exceptions::InvalidAccessException);
+    ASSERT_THROW(solver.getObjectiveValue(), storm::exceptions::InvalidAccessException);
 }
 
 TEST(GlpkLpSolver, LPUnbounded) {
@@ -217,14 +209,10 @@ TEST(GlpkLpSolver, LPUnbounded) {
     ASSERT_FALSE(solver.isOptimal());
     ASSERT_TRUE(solver.isUnbounded());
     ASSERT_FALSE(solver.isInfeasible());
-    double xValue = 0;
-    ASSERT_THROW(xValue = solver.getContinuousValue(x), storm::exceptions::InvalidAccessException);
-    double yValue = 0;
-    ASSERT_THROW(yValue = solver.getContinuousValue(y), storm::exceptions::InvalidAccessException);
-    double zValue = 0;
-    ASSERT_THROW(zValue = solver.getContinuousValue(z), storm::exceptions::InvalidAccessException);
-    double objectiveValue = 0;
-    ASSERT_THROW(objectiveValue = solver.getObjectiveValue(), storm::exceptions::InvalidAccessException);
+    ASSERT_THROW(solver.getContinuousValue(x), storm::exceptions::InvalidAccessException);
+    ASSERT_THROW(solver.getContinuousValue(y), storm::exceptions::InvalidAccessException);
+    ASSERT_THROW(solver.getContinuousValue(z), storm::exceptions::InvalidAccessException);
+    ASSERT_THROW(solver.getObjectiveValue(), storm::exceptions::InvalidAccessException);
 }
 
 TEST(GlpkLpSolver, MILPUnbounded) {
@@ -245,13 +233,9 @@ TEST(GlpkLpSolver, MILPUnbounded) {
     ASSERT_FALSE(solver.isOptimal());
     ASSERT_TRUE(solver.isUnbounded());
     ASSERT_FALSE(solver.isInfeasible());
-    bool xValue = false;
-    ASSERT_THROW(xValue = solver.getBinaryValue(x), storm::exceptions::InvalidAccessException);
-    int_fast64_t yValue = 0;
-    ASSERT_THROW(yValue = solver.getIntegerValue(y), storm::exceptions::InvalidAccessException);
-    double zValue = 0;
-    ASSERT_THROW(zValue = solver.getContinuousValue(z), storm::exceptions::InvalidAccessException);
-    double objectiveValue = 0;
-    ASSERT_THROW(objectiveValue = solver.getObjectiveValue(), storm::exceptions::InvalidAccessException);
+    ASSERT_THROW(solver.getBinaryValue(x), storm::exceptions::InvalidAccessException);
+    ASSERT_THROW(solver.getIntegerValue(y), storm::exceptions::InvalidAccessException);
+    ASSERT_THROW(solver.getContinuousValue(z), storm::exceptions::InvalidAccessException);
+    ASSERT_THROW(solver.getObjectiveValue(), storm::exceptions::InvalidAccessException);
 }
 #endif

@@ -16,9 +16,9 @@ TEST(AutoParserTest, BasicParsing) {
 
 	// Test if parsed correctly.
     ASSERT_EQ(storm::models::ModelType::Dtmc, modelPtr->getType());
-	ASSERT_EQ(12, modelPtr->getNumberOfStates());
-	ASSERT_EQ(26, modelPtr->getNumberOfTransitions());
-	ASSERT_EQ(1, modelPtr->getInitialStates().getNumberOfSetBits());
+	ASSERT_EQ(12ul, modelPtr->getNumberOfStates());
+	ASSERT_EQ(26ul, modelPtr->getNumberOfTransitions());
+	ASSERT_EQ(1ul, modelPtr->getInitialStates().getNumberOfSetBits());
 	ASSERT_TRUE(modelPtr->hasLabel("three"));
 	ASSERT_FALSE(modelPtr->hasStateRewards());
 	ASSERT_FALSE(modelPtr->hasTransitionRewards());
@@ -40,27 +40,27 @@ TEST(AutoParserTest, Decision) {
 	// Dtmc
 	std::shared_ptr<storm::models::sparse::Model<double>> modelPtr = storm::parser::AutoParser::parseModel(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/autoParser/dtmc.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/autoParser.lab");
 	ASSERT_EQ(storm::models::ModelType::Dtmc, modelPtr->getType());
-	ASSERT_EQ(12, modelPtr->getNumberOfStates());
-	ASSERT_EQ(26, modelPtr->getNumberOfTransitions());
+	ASSERT_EQ(12ul, modelPtr->getNumberOfStates());
+	ASSERT_EQ(26ul, modelPtr->getNumberOfTransitions());
 
 	// Ctmc
 	modelPtr.reset();
 	modelPtr = storm::parser::AutoParser::parseModel(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/autoParser/ctmc.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/autoParser.lab");
 	ASSERT_EQ(storm::models::ModelType::Ctmc, modelPtr->getType());
-	ASSERT_EQ(12, modelPtr->getNumberOfStates());
-	ASSERT_EQ(26, modelPtr->getNumberOfTransitions());
+	ASSERT_EQ(12ul, modelPtr->getNumberOfStates());
+	ASSERT_EQ(26ul, modelPtr->getNumberOfTransitions());
 
 	// Mdp
 	modelPtr.reset();
 	modelPtr = storm::parser::AutoParser::parseModel(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/autoParser/mdp.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/autoParser.lab");
 	ASSERT_EQ(storm::models::ModelType::Mdp, modelPtr->getType());
-	ASSERT_EQ(12, modelPtr->getNumberOfStates());
-	ASSERT_EQ(28, modelPtr->getNumberOfTransitions());
+	ASSERT_EQ(12ul, modelPtr->getNumberOfStates());
+	ASSERT_EQ(28ul, modelPtr->getNumberOfTransitions());
 
 	// MA
 	modelPtr.reset();
 	modelPtr = storm::parser::AutoParser::parseModel(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/autoParser/ma.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/autoParser.lab");
 	ASSERT_EQ(storm::models::ModelType::MarkovAutomaton, modelPtr->getType());
-	ASSERT_EQ(12, modelPtr->getNumberOfStates());
-	ASSERT_EQ(27, modelPtr->getNumberOfTransitions());
+	ASSERT_EQ(12ul, modelPtr->getNumberOfStates());
+	ASSERT_EQ(27ul, modelPtr->getNumberOfTransitions());
 }
