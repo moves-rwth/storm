@@ -7,11 +7,13 @@
 #ifdef STORM_HAVE_CARL
 
 #include <cln/cln.h>
+#include <gmpxx.h>
 #include <carl/core/MultivariatePolynomial.h>
 #include <carl/core/RationalFunction.h>
 #include <carl/core/VariablePool.h>
-#include <carl/core/Constraint.h>
 #include <carl/core/FactorizedPolynomial.h>
+#include <carl/core/Relation.h>
+#include <carl/core/SimpleConstraint.h>
 
 namespace carl {
     // Define hash values for all polynomials and rational function.
@@ -32,14 +34,24 @@ namespace carl {
         std::hash<Pol> h;
         return h(f.nominator()) ^ h(f.denominator());
     }
+    
+    template<typename Number>
+    inline size_t hash_value(carl::Interval<Number> const& i) {
+        std::hash<Interval<Number>> h;
+        return h(i);
+    }
 }
 
 namespace storm {
-	typedef carl::Variable Variable;
-    typedef carl::MultivariatePolynomial<cln::cl_RA> RawPolynomial;
+    typedef mpq_class RationalNumber;
+    typedef carl::Variable Variable;
+    typedef carl::MultivariatePolynomial<RationalNumber> RawPolynomial;
     typedef carl::FactorizedPolynomial<RawPolynomial> Polynomial;
-	typedef carl::CompareRelation CompareRelation;
-	typedef carl::RationalFunction<Polynomial> RationalFunction;
+    typedef carl::Relation CompareRelation;
+    
+    typedef carl::RationalFunction<Polynomial> RationalFunction;
+    typedef carl::Interval<double> Interval;
+    template<typename T> using ArithConstraint = carl::SimpleConstraint<T>;
 }
 
 #endif

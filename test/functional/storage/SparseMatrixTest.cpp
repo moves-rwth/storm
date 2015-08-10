@@ -14,9 +14,9 @@ TEST(SparseMatrixBuilder, CreationWithDimensions) {
     storm::storage::SparseMatrix<double> matrix;
     ASSERT_NO_THROW(matrix = matrixBuilder.build());
     
-    ASSERT_EQ(3, matrix.getRowCount());
-    ASSERT_EQ(4, matrix.getColumnCount());
-    ASSERT_EQ(5, matrix.getEntryCount());
+    ASSERT_EQ(3ul, matrix.getRowCount());
+    ASSERT_EQ(4ul, matrix.getColumnCount());
+    ASSERT_EQ(5ul, matrix.getEntryCount());
 }
 
 TEST(SparseMatrixBuilder, CreationWithoutNumberOfEntries) {
@@ -30,9 +30,9 @@ TEST(SparseMatrixBuilder, CreationWithoutNumberOfEntries) {
     storm::storage::SparseMatrix<double> matrix;
     ASSERT_NO_THROW(matrix = matrixBuilder.build());
 
-    ASSERT_EQ(3, matrix.getRowCount());
-    ASSERT_EQ(4, matrix.getColumnCount());
-    ASSERT_EQ(5, matrix.getEntryCount());
+    ASSERT_EQ(3ul, matrix.getRowCount());
+    ASSERT_EQ(4ul, matrix.getColumnCount());
+    ASSERT_EQ(5ul, matrix.getEntryCount());
 }
 
 TEST(SparseMatrixBuilder, CreationWithNumberOfRows) {
@@ -46,9 +46,9 @@ TEST(SparseMatrixBuilder, CreationWithNumberOfRows) {
     storm::storage::SparseMatrix<double> matrix;
     ASSERT_NO_THROW(matrix = matrixBuilder.build());
 
-    ASSERT_EQ(3, matrix.getRowCount());
-    ASSERT_EQ(4, matrix.getColumnCount());
-    ASSERT_EQ(5, matrix.getEntryCount());
+    ASSERT_EQ(3ul, matrix.getRowCount());
+    ASSERT_EQ(4ul, matrix.getColumnCount());
+    ASSERT_EQ(5ul, matrix.getEntryCount());
 }
 
 TEST(SparseMatrixBuilder, CreationWithoutDimensions) {
@@ -62,9 +62,9 @@ TEST(SparseMatrixBuilder, CreationWithoutDimensions) {
     storm::storage::SparseMatrix<double> matrix;
     ASSERT_NO_THROW(matrix = matrixBuilder.build());
 
-    ASSERT_EQ(2, matrix.getRowCount());
-    ASSERT_EQ(4, matrix.getColumnCount());
-    ASSERT_EQ(5, matrix.getEntryCount());
+    ASSERT_EQ(2ul, matrix.getRowCount());
+    ASSERT_EQ(4ul, matrix.getColumnCount());
+    ASSERT_EQ(5ul, matrix.getEntryCount());
 }
 
 TEST(SparseMatrixBuilder, AddNextValue) {
@@ -117,9 +117,9 @@ TEST(SparseMatrix, Build) {
     ASSERT_NO_THROW(matrixBuilder3.addNextValue(1, 3, 0.2));
     storm::storage::SparseMatrix<double> matrix3;
     ASSERT_NO_THROW(matrix3 = matrixBuilder3.build());
-    ASSERT_EQ(2, matrix3.getRowCount());
-    ASSERT_EQ(4, matrix3.getColumnCount());
-    ASSERT_EQ(5, matrix3.getEntryCount());
+    ASSERT_EQ(2ul, matrix3.getRowCount());
+    ASSERT_EQ(4ul, matrix3.getColumnCount());
+    ASSERT_EQ(5ul, matrix3.getEntryCount());
     
     storm::storage::SparseMatrixBuilder<double> matrixBuilder4;
     ASSERT_NO_THROW(matrixBuilder4.addNextValue(0, 1, 1.0));
@@ -129,9 +129,9 @@ TEST(SparseMatrix, Build) {
     ASSERT_NO_THROW(matrixBuilder4.addNextValue(1, 3, 0.2));
     storm::storage::SparseMatrix<double> matrix4;
     ASSERT_NO_THROW(matrix4 = matrixBuilder4.build(4));
-    ASSERT_EQ(4, matrix4.getRowCount());
-    ASSERT_EQ(4, matrix4.getColumnCount());
-    ASSERT_EQ(5, matrix4.getEntryCount());
+    ASSERT_EQ(4ul, matrix4.getRowCount());
+    ASSERT_EQ(4ul, matrix4.getColumnCount());
+    ASSERT_EQ(5ul, matrix4.getEntryCount());
     
     storm::storage::SparseMatrixBuilder<double> matrixBuilder5;
     ASSERT_NO_THROW(matrixBuilder5.addNextValue(0, 1, 1.0));
@@ -141,9 +141,9 @@ TEST(SparseMatrix, Build) {
     ASSERT_NO_THROW(matrixBuilder5.addNextValue(1, 3, 0.2));
     storm::storage::SparseMatrix<double> matrix5;
     ASSERT_NO_THROW(matrix5 = matrixBuilder5.build(0, 6));
-    ASSERT_EQ(2, matrix5.getRowCount());
-    ASSERT_EQ(6, matrix5.getColumnCount());
-    ASSERT_EQ(5, matrix5.getEntryCount());
+    ASSERT_EQ(2ul, matrix5.getRowCount());
+    ASSERT_EQ(6ul, matrix5.getColumnCount());
+    ASSERT_EQ(5ul, matrix5.getEntryCount());
 }
 
 TEST(SparseMatrix, CreationWithMovingContents) {
@@ -156,10 +156,10 @@ TEST(SparseMatrix, CreationWithMovingContents) {
     
     ASSERT_NO_THROW(storm::storage::SparseMatrix<double> matrix(4, {0, 2, 5, 5}, columnsAndValues, {0, 1, 2, 3}, false));
     storm::storage::SparseMatrix<double> matrix(4, {0, 2, 5, 5}, columnsAndValues, {0, 1, 2, 3}, false);
-    ASSERT_EQ(3, matrix.getRowCount());
-    ASSERT_EQ(4, matrix.getColumnCount());
-    ASSERT_EQ(5, matrix.getEntryCount());
-    ASSERT_EQ(3, matrix.getRowGroupCount());
+    ASSERT_EQ(3ul, matrix.getRowCount());
+    ASSERT_EQ(4ul, matrix.getColumnCount());
+    ASSERT_EQ(5ul, matrix.getEntryCount());
+    ASSERT_EQ(3ul, matrix.getRowGroupCount());
 }
 
 TEST(SparseMatrix, CopyConstruct) {

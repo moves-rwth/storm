@@ -615,6 +615,14 @@ namespace storm {
         }
         
         template<typename ValueType>
+        SparseMatrix<ValueType> SparseMatrix<ValueType>::restrictRows(storm::storage::BitVector const& rowsToKeep) const {
+            // For now, we use the expensive call to submatrix.
+            SparseMatrix<ValueType> res(getSubmatrix(false, rowsToKeep, storm::storage::BitVector(getColumnCount(), true), false));
+            assert(getRowGroupCount() == res.getRowGroupCount());
+            return res;
+        }
+        
+        template<typename ValueType>
         SparseMatrix<ValueType> SparseMatrix<ValueType>::selectRowsFromRowGroups(std::vector<index_type> const& rowGroupToRowIndexMapping, bool insertDiagonalEntries) const {
             // First, we need to count how many non-zero entries the resulting matrix will have and reserve space for
             // diagonal entries if requested.
@@ -669,11 +677,12 @@ namespace storm {
         SparseMatrix<ValueType> SparseMatrix<ValueType>::transpose(bool joinGroups, bool keepZeros) const {
             index_type rowCount = this->getColumnCount();
             index_type columnCount = joinGroups ? this->getRowGroupCount() : this->getRowCount();
+            index_type entryCount;
             if (keepZeros) {
-                index_type entryCount = this->getEntryCount();
+                entryCount = this->getEntryCount();
             } else {
                 this->updateNonzeroEntryCount();
-                index_type entryCount = this->getNonzeroEntryCount();
+                entryCount = this->getNonzeroEntryCount();
             }
             
             std::vector<index_type> rowIndications(rowCount + 1);
@@ -906,7 +915,6 @@ namespace storm {
             const_iterator ite;
             std::vector<index_type>::const_iterator rowIterator = rowIndications.begin();
             typename std::vector<ValueType>::const_iterator bIt = b.begin();
-            typename std::vector<ValueType>::const_iterator bIte = b.end();
             typename std::vector<ValueType>::iterator resultIterator = x.begin();
             typename std::vector<ValueType>::iterator resultIteratorEnd = x.end();
             
@@ -980,12 +988,30 @@ namespace storm {
         }
         
         template<typename ValueType>
+        typename SparseMatrix<ValueType>::const_rows SparseMatrix<ValueType>::getRow(index_type rowGroup, index_type offset) const {
+            assert(rowGroup < this->getRowGroupCount());
+            assert(offset < this->getRowGroupEntryCount(rowGroup));
+            return getRow(rowGroupIndices[rowGroup] + offset);
+        }
+        
+        
+        template<typename ValueType>
+        typename SparseMatrix<ValueType>::rows SparseMatrix<ValueType>::getRow(index_type rowGroup, index_type offset) {
+            assert(rowGroup < this->getRowGroupCount());
+            assert(offset < this->getRowGroupEntryCount(rowGroup));
+            return getRow(rowGroupIndices[rowGroup] + offset);
+        }
+        
+        
+        template<typename ValueType>
         typename SparseMatrix<ValueType>::const_rows SparseMatrix<ValueType>::getRowGroup(index_type rowGroup) const {
+            assert(rowGroup < this->getRowGroupCount());
             return getRows(rowGroupIndices[rowGroup], rowGroupIndices[rowGroup + 1] - 1);
         }
         
         template<typename ValueType>
         typename SparseMatrix<ValueType>::rows SparseMatrix<ValueType>::getRowGroup(index_type rowGroup) {
+            assert(rowGroup < this->getRowGroupCount());
             return getRows(rowGroupIndices[rowGroup], rowGroupIndices[rowGroup + 1] - 1);
         }
         
@@ -1130,11 +1156,18 @@ namespace storm {
         template class SparseMatrix<int>;
         template std::ostream& operator<<(std::ostream& out, SparseMatrix<int> const& matrix);
 #ifdef STORM_HAVE_CARL
+        // Rat Function
         template class MatrixEntry<typename SparseMatrix<RationalFunction>::index_type, RationalFunction>;
         template std::ostream& operator<<(std::ostream& out, MatrixEntry<uint_fast64_t, RationalFunction> const& entry);
         template class SparseMatrixBuilder<RationalFunction>;
         template class SparseMatrix<RationalFunction>;
         template std::ostream& operator<<(std::ostream& out, SparseMatrix<RationalFunction> const& matrix);
+        // Intervals
+        template class MatrixEntry<typename SparseMatrix<Interval>::index_type, Interval>;
+        template std::ostream& operator<<(std::ostream& out, MatrixEntry<uint_fast64_t, Interval> const& entry);
+        template class SparseMatrixBuilder<Interval>;
+        template class SparseMatrix<Interval>;
+        template std::ostream& operator<<(std::ostream& out, SparseMatrix<Interval> const& matrix);
 #endif
         
         

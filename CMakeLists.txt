@@ -28,7 +28,6 @@ option(STORM_USE_COTIRE "Sets whether Cotire should be used (for building precom
 option(LINK_LIBCXXABI "Sets whether libc++abi should be linked." OFF)
 option(USE_LIBCXX "Sets whether the standard library is libc++." OFF)
 set(GUROBI_ROOT "" CACHE STRING "The root directory of Gurobi (if available).")
-set(Z3_ROOT "" CACHE STRING "The root directory of Z3 (if available).")
 set(CUDA_ROOT "" CACHE STRING "The root directory of CUDA.")
 set(MSAT_ROOT "" CACHE STRING "The root directory of MathSAT (if available).")
 set(ADDITIONAL_INCLUDE_DIRS "" CACHE STRING "Additional directories added to the include directories.")
@@ -61,6 +60,7 @@ find_package(Gurobi)
 find_package(TBB)
 find_package(Threads REQUIRED)
 find_package(GMP)
+find_package(Z3)
 
 # If the DEBUG option was turned on, we will target a debug version and a release version otherwise.
 if (STORM_DEBUG)
@@ -82,12 +82,6 @@ else()
     set(ENABLE_CUDA ON)
 endif()
 
-if ("${Z3_ROOT}" STREQUAL "")
-    set(ENABLE_Z3 OFF)
-else()
-    set(ENABLE_Z3 ON)
-	set(Z3_LIB_NAME "z3")
-endif()
 
 if ("${MSAT_ROOT}" STREQUAL "")
     set(ENABLE_MSAT OFF)
@@ -97,8 +91,12 @@ endif()
 
 find_package(carl QUIET)
 if(carl_FOUND)
-    message(STATUS "StoRM - Activating CArL.")
     set(STORM_HAVE_CARL ON)
+endif()
+
+find_package(smtrat QUIET)
+if(smtrat_FOUND)
+    set(STORM_HAVE_SMTRAT ON)
 endif()
 
 message(STATUS "StoRM - CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
@@ -116,8 +114,10 @@ if(CMAKE_COMPILER_IS_GNUCC)
     set(STORM_COMPILED_BY "GCC")
     # Set standard flags for GCC
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -funroll-loops")
+    set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -funroll-loops")
     add_definitions(-DBOOST_RESULT_OF_USE_DECLTYPE)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -pedantic")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -pedantic -Wno-deprecated-declarations -Wno-unused-local-typedefs")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -pedantic -Wno-deprecated-declarations")
 
     # Turn on popcnt instruction if desired (yes by default)
     if (STORM_USE_POPCNT)
@@ -125,7 +125,7 @@ if(CMAKE_COMPILER_IS_GNUCC)
     endif(STORM_USE_POPCNT)
 	
 	# Set the no-strict-aliasing target for GCC
-	set_source_files_properties(${CONVERSIONHELPER_TARGET} PROPERTIES COMPILE_FLAGS " -fno-strict-aliasing ")
+	set_source_files_properties(${CONVERSIONHELPER_TARGET} PROPERTIES COMPILE_FLAGS " -fno-strict-aliasing")
 elseif(MSVC)
     set(STORM_COMPILED_BY "MSVC")
 	# required for GMM to compile, ugly error directive in their code
@@ -142,17 +142,13 @@ elseif(MSVC)
 	# since nobody cares at the moment
 	add_definitions(/wd4250)
 	
-	if(ENABLE_Z3)
-		set(Z3_LIB_NAME "libz3")
-	endif()
-	
 	# MSVC does not do strict-aliasing, so no option needed
 else(CLANG)
     set(STORM_COMPILED_BY "Clang (LLVM)")
 	# As CLANG is not set as a variable, we need to set it in case we have not matched another compiler.
 	set (CLANG ON)
     # Set standard flags for clang
-    set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -funroll-loops -O3")
+    set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -funroll-loops -O4")
     if(UNIX AND NOT APPLE AND NOT USE_LIBCXX)
 		set(CLANG_STDLIB libstdc++)
 		message(STATUS "StoRM - Linking against libstdc++")
@@ -167,7 +163,8 @@ else(CLANG)
     endif()
     
     add_definitions(-DBOOST_RESULT_OF_USE_DECLTYPE)
-    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -stdlib=${CLANG_STDLIB} -Wall -pedantic -Wno-unused-variable -ftemplate-depth=1024")
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -stdlib=${CLANG_STDLIB} -Wall -pedantic -Wno-newline-eof -Wno-mismatched-tags -ftemplate-depth=1024")
+    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -pedantic")
 
     # Turn on popcnt instruction if desired (yes by default)
     if (STORM_USE_POPCNT)
@@ -209,11 +206,7 @@ message(STATUS "StoRM - Version information: ${STORM_CPP_VERSION_MAJOR}.${STORM_
 # Base path for test files
 set(STORM_CPP_TESTS_BASE_PATH "${PROJECT_SOURCE_DIR}/test")
 # Gurobi Defines
-if (ENABLE_GUROBI)
-	set(STORM_CPP_GUROBI_DEF "define")
-else()
-	set(STORM_CPP_GUROBI_DEF "undef")
-endif()
+set(STORM_HAVE_GUROBI ${ENABLE_GUROBI})
 
 # CUDA Defines
 if (ENABLE_CUDA)
@@ -223,24 +216,16 @@ else()
 endif()
 
 # glpk defines
-set(STORM_CPP_GLPK_DEF "define")
+set(STORM_HAVE_GLPK 1)
 
 # CUDA Defines
 set(STORM_CPP_CUDAFORSTORM_DEF "undef")
 
 # Z3 Defines
-if (ENABLE_Z3)
-	set(STORM_CPP_Z3_DEF "define")
-else()
-	set(STORM_CPP_Z3_DEF "undef")
-endif()
+set(STORM_HAVE_Z3 ${FOUND_Z3})
 
 # MathSAT Defines
-if (ENABLE_MSAT)
-	set(STORM_CPP_MSAT_DEF "define")
-else()
-	set(STORM_CPP_MSAT_DEF "undef")
-endif()
+set(STORM_HAVE_MSAT ${ENABLE_MSAT})
 
 # Intel TBB Defines
 if (TBB_FOUND AND STORM_USE_INTELTBB)
@@ -474,9 +459,6 @@ if (ENABLE_GUROBI)
 	endif()
 	#link_directories("${GUROBI_ROOT}/lib")
 endif()
-if (ENABLE_Z3)
-    link_directories("${Z3_ROOT}/bin")
-endif()
 if (ENABLE_MSAT)
     link_directories("${MSAT_ROOT}/lib")
 endif()
@@ -548,8 +530,6 @@ if (ENABLE_GUROBI)
     message (STATUS "StoRM - Linking with Gurobi (include: ${GUROBI_INCLUDE_DIRS})")
 	include_directories(${GUROBI_INCLUDE_DIRS})
     target_link_libraries(storm ${GUROBI_LIBRARY})
-    target_link_libraries(storm-functional-tests ${GUROBI_LIBRARY})
-    target_link_libraries(storm-performance-tests ${GUROBI_LIBRARY})
 endif(ENABLE_GUROBI)
 
 #############################################################
@@ -559,11 +539,8 @@ endif(ENABLE_GUROBI)
 #############################################################
 if (ENABLE_CUDA)
     message (STATUS "StoRM - Linking with CUDA")
-	target_link_libraries(storm ${STORM_CUDA_LIB_NAME})
-    target_link_libraries(storm-functional-tests ${STORM_CUDA_LIB_NAME})
-    target_link_libraries(storm-performance-tests ${STORM_CUDA_LIB_NAME})
-	
-	include_directories("${PROJECT_SOURCE_DIR}/cuda/kernels/")
+    target_link_libraries(storm ${STORM_CUDA_LIB_NAME})
+    include_directories("${PROJECT_SOURCE_DIR}/cuda/kernels/")
 endif(ENABLE_CUDA)
 
 #############################################################
@@ -589,11 +566,12 @@ include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/exprtk")
 ##	Z3 (optional)
 ##
 #############################################################
-if (ENABLE_Z3)
+if(STORM_HAVE_Z3)
     message (STATUS "StoRM - Linking with Z3")
-    include_directories("${Z3_ROOT}/include")
-    target_link_libraries(storm ${Z3_LIB_NAME})
-endif(ENABLE_Z3)
+    include_directories(${Z3_INCLUDE_DIRS})
+    target_link_libraries(storm ${Z3_LIBRARIES})
+endif(STORM_HAVE_Z3)
+
 
 #############################################################
 ##
@@ -604,9 +582,19 @@ endif(ENABLE_Z3)
 if(STORM_HAVE_CARL)
     message(STATUS "StoRM - Linking with carl.")
     include_directories("${carl_INCLUDE_DIR}")
-    target_link_libraries(storm lib_carl)
-    target_link_libraries(storm-functional-tests lib_carl)
-    target_link_libraries(storm-performance-tests lib_carl)
+    target_link_libraries(storm ${carl_LIBRARIES})
+endif()
+
+#############################################################
+##
+##      SMT-RAT
+##
+#############################################################
+
+if(STORM_HAVE_SMTRAT)
+message(STATUS "StoRM - Linking with smtrat.")
+    include_directories("${smtrat_INCLUDE_DIR}")
+    target_link_libraries(storm ${smtrat_LIBRARIES})
 endif()
 
 #############################################################
@@ -618,18 +606,12 @@ if (ENABLE_MSAT)
     message (STATUS "StoRM - Linking with MathSAT")
     include_directories("${MSAT_ROOT}/include")
     target_link_libraries(storm "mathsat")
-    target_link_libraries(storm-functional-tests "mathsat")
-    target_link_libraries(storm-performance-tests "mathsat")
     if(GMP_FOUND)
         include_directories("${GMP_INCLUDE_DIR}")
         target_link_libraries(storm "gmp")
-        target_link_libraries(storm-functional-tests "gmp")
-        target_link_libraries(storm-performance-tests "gmp")
     elseif(MPIR_FOUND)
         include_directories("${GMP_INCLUDE_DIR}")
         target_link_libraries(storm "mpir" "mpirxx")
-        target_link_libraries(storm-functional-tests "mpir" "mpirxx")
-        target_link_libraries(storm-performance-tests "mpir" "mpirxx")
     else(GMP_FOUND)
         message(FATAL_ERROR "GMP is required for MathSAT, but was not found!")
     endif(GMP_FOUND)
@@ -703,7 +685,12 @@ if (MSVC)
 	target_link_libraries(storm "Dbghelp.lib")   
 endif(MSVC)
 
-# Print Cotire Usage Status
+
+#############################################################
+##
+##	Cotire
+##
+#############################################################
 message (STATUS "StoRM - Using Cotire: ${STORM_USE_COTIRE}")
 
 if (STORM_USE_COTIRE)
@@ -717,12 +704,23 @@ if (STORM_USE_COTIRE)
 	#cotire(storm-performance-tests)
 endif()
 
+#############################################################
+##
+##	libc++abi
+##
+#############################################################
 # Link against libc++abi if requested. May be needed to build on Linux systems using clang.
 if (LINK_LIBCXXABI)
 	message (STATUS "StoRM - Linking against libc++abi.")
 	target_link_libraries(storm "c++abi")
 endif(LINK_LIBCXXABI)
 
+
+#############################################################
+##
+##	Doxygen
+##
+#############################################################
 # Add a target to generate API documentation with Doxygen
 if(DOXYGEN_FOUND)
     set(CMAKE_DOXYGEN_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/doc")
@@ -733,6 +731,11 @@ if(DOXYGEN_FOUND)
     add_custom_target(doc ${DOXYGEN_EXECUTABLE} "${CMAKE_CURRENT_BINARY_DIR}/Doxyfile" DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/Doxyfile" COMMENT "Generating API documentation with Doxygen" VERBATIM)
 endif(DOXYGEN_FOUND)
 
+#############################################################
+##
+##	memcheck targets
+##
+#############################################################
 add_custom_target(memcheck valgrind --leak-check=full --show-reachable=yes ${PROJECT_BINARY_DIR}/storm -v --fix-deadlocks ${PROJECT_SOURCE_DIR}/examples/dtmc/crowds/crowds5_5.tra examples/dtmc/crowds/crowds5_5.lab DEPENDS storm)
 add_custom_target(memcheck-functional-tests valgrind --leak-check=full --show-reachable=yes ${PROJECT_BINARY_DIR}/storm-functional-tests -v --fix-deadlocks	DEPENDS storm-functional-tests)
 add_custom_target(memcheck-performance-tests valgrind --leak-check=full --show-reachable=yes ${PROJECT_BINARY_DIR}/storm-performance-tests -v --fix-deadlocks DEPENDS storm-performance-tests)

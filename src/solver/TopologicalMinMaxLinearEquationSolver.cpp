@@ -1,7 +1,6 @@
 #include "src/solver/TopologicalMinMaxLinearEquationSolver.h"
 
 #include <utility>
-#include <chrono>
 
 #include "src/settings/SettingsManager.h"
 #include "src/utility/vector.h"
@@ -103,7 +102,6 @@ namespace storm {
 #ifdef STORM_HAVE_CUDA
                 STORM_LOG_THROW(resetCudaDevice(), storm::exceptions::InvalidStateException, "Could not reset CUDA Device, can not use CUDA Equation Solver.");
 
-				std::chrono::high_resolution_clock::time_point calcStartTime = std::chrono::high_resolution_clock::now();
 				bool result = false;
 				size_t globalIterations = 0;
 				if (minimize) {
@@ -122,11 +120,6 @@ namespace storm {
 					converged = true;
 				}
 
-				std::chrono::high_resolution_clock::time_point calcEndTime = std::chrono::high_resolution_clock::now();
-				//std::cout << "Obtaining the fixpoint solution took " << std::chrono::duration_cast<std::chrono::milliseconds>(calcEndTime - calcStartTime).count() << "ms." << std::endl;
-
-				//std::cout << "Used a total of " << globalIterations << " iterations with a maximum of " << globalIterations << " iterations in a single block." << std::endl;
-
 				// Check if the solver converged and issue a warning otherwise.
 				if (converged) {
 					LOG4CPLUS_INFO(logger, "Iterative solver converged after " << globalIterations << " iterations.");
@@ -138,7 +131,6 @@ namespace storm {
 				throw storm::exceptions::InvalidStateException() << "The useGpu Flag of a SCC was set, but this version of StoRM does not support CUDA acceleration. Internal Error!";
 #endif
 			} else {
-				std::chrono::high_resolution_clock::time_point sccStartTime = std::chrono::high_resolution_clock::now();
 				storm::storage::BitVector fullSystem(this->A.getRowGroupCount(), true);
 				storm::storage::StronglyConnectedComponentDecomposition<ValueType> sccDecomposition(this->A, fullSystem, false, false);
 
@@ -151,11 +143,6 @@ namespace storm {
 				std::vector<std::pair<bool, storm::storage::StateBlock>> optimalSccs = this->getOptimalGroupingFromTopologicalSccDecomposition(sccDecomposition, topologicalSort, this->A);
 				LOG4CPLUS_INFO(logger, "Optimized SCC Decomposition, originally " << topologicalSort.size() << " SCCs, optimized to " << optimalSccs.size() << " SCCs.");
 
-				std::chrono::high_resolution_clock::time_point sccEndTime = std::chrono::high_resolution_clock::now();
-				//std::cout << "Computing the SCC Decomposition took " << std::chrono::duration_cast<std::chrono::milliseconds>(sccEndTime - sccStartTime).count() << "ms." << std::endl;
-
-				std::chrono::high_resolution_clock::time_point calcStartTime = std::chrono::high_resolution_clock::now();
-
 				std::vector<ValueType>* currentX = nullptr;
 				std::vector<ValueType>* swap = nullptr;
 				size_t currentMaxLocalIterations = 0;
@@ -165,8 +152,6 @@ namespace storm {
 
 				// Iterate over all SCCs of the MDP as specified by the topological sort. This guarantees that an SCC is only
 				// solved after all SCCs it depends on have been solved.
-				int counter = 0;
-
 				for (auto sccIndexIt = optimalSccs.cbegin(); sccIndexIt != optimalSccs.cend() && converged; ++sccIndexIt) {
 					bool const useGpu = sccIndexIt->first;
 					storm::storage::StateBlock const& scc = sccIndexIt->second;
@@ -314,9 +299,6 @@ namespace storm {
 				} else {
 					LOG4CPLUS_WARN(logger, "Iterative solver did not converged after " << currentMaxLocalIterations << " iterations.");
 				}
-
-				std::chrono::high_resolution_clock::time_point calcEndTime = std::chrono::high_resolution_clock::now();
-				//std::cout << "Obtaining the fixpoint solution took " << std::chrono::duration_cast<std::chrono::milliseconds>(calcEndTime - calcStartTime).count() << "ms." << std::endl;
 			}
         }
 

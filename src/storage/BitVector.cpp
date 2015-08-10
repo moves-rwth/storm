@@ -109,7 +109,6 @@ namespace storm {
             std::vector<uint64_t>::const_iterator first1 = this->bucketVector.begin();
             std::vector<uint64_t>::const_iterator last1 = this->bucketVector.end();
             std::vector<uint64_t>::const_iterator first2 = other.bucketVector.begin();
-            std::vector<uint64_t>::const_iterator last2 = other.bucketVector.end();
             
             for (; first1 != last1; ++first1, ++first2) {
                 if (*first1 < *first2) {

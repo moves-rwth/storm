@@ -36,6 +36,7 @@ namespace storm {
                 switch (equationSolver) {
                     case storm::settings::modules::GeneralSettings::EquationSolver::Gmmxx: return std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>>(new storm::solver::GmmxxLinearEquationSolver<ValueType>(matrix));
                     case storm::settings::modules::GeneralSettings::EquationSolver::Native: return std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>>(new storm::solver::NativeLinearEquationSolver<ValueType>(matrix));
+                    default: return std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>>(new storm::solver::GmmxxLinearEquationSolver<ValueType>(matrix));
                 }
             }
             
@@ -74,6 +75,7 @@ namespace storm {
                 switch (equationSolver) {
                     case storm::settings::modules::GeneralSettings::EquationSolver::Gmmxx: return std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>>(new storm::solver::GmmxxMinMaxLinearEquationSolver<ValueType>(matrix));
                     case storm::settings::modules::GeneralSettings::EquationSolver::Native: return std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>>(new storm::solver::NativeMinMaxLinearEquationSolver<ValueType>(matrix));
+                    default: return std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>>(new storm::solver::GmmxxMinMaxLinearEquationSolver<ValueType>(matrix));
                 }
             }
 
@@ -97,6 +99,7 @@ namespace storm {
                 switch (lpSolver) {
                     case storm::settings::modules::GeneralSettings::LpSolver::Gurobi: return std::unique_ptr<storm::solver::LpSolver>(new storm::solver::GurobiLpSolver(name));
                     case storm::settings::modules::GeneralSettings::LpSolver::glpk: return std::unique_ptr<storm::solver::LpSolver>(new storm::solver::GlpkLpSolver(name));
+                    default: return std::unique_ptr<storm::solver::LpSolver>(new storm::solver::GurobiLpSolver(name));
                 }
             }
             

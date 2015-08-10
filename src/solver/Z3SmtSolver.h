@@ -75,7 +75,7 @@ namespace storm {
              * @param model The Z3 model to convert.
              * @return The valuation of variables corresponding to the given model.
              */
-			storm::expressions::SimpleValuation convertZ3ModelToValuation(z3::model const& model);
+            storm::expressions::SimpleValuation convertZ3ModelToValuation(z3::model const& model);
 
             // The context used by the solver.
             std::unique_ptr<z3::context> context;
@@ -87,10 +87,10 @@ namespace storm {
             std::unique_ptr<storm::adapters::Z3ExpressionAdapter> expressionAdapter;
 
             // A flag storing whether the last call to a check method provided aussumptions.
-			bool lastCheckAssumptions;
+            bool lastCheckAssumptions;
             
             // The last result that was returned by any of the check methods.
-			CheckResult lastResult;
+            CheckResult lastResult;
 #endif
 		};
 	}

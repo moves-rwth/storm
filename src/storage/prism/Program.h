@@ -25,6 +25,8 @@ namespace storm {
              */
             enum class ModelType {UNDEFINED, DTMC, CTMC, MDP, CTMDP, MA};
             
+            enum class ValidityCheckLevel  : unsigned {VALIDINPUT = 0, READYFORPROCESSING = 1};
+            
             /*!
              * Creates a program with the given model type, undefined constants, global variables, modules, reward
              * models, labels and initial states.
@@ -46,9 +48,9 @@ namespace storm {
              * @param labels The labels defined for this program.
              * @param filename The filename in which the program is defined.
              * @param lineNumber The line number in which the program is defined.
-             * @param checkValidity If set to true, the program is checked for validity.
+             * @param finalModel If set to true, the program is checked for input-validity, as well as some post-processing.
              */
-            Program(std::shared_ptr<storm::expressions::ExpressionManager> manager, ModelType modelType, std::vector<Constant> const& constants, std::vector<BooleanVariable> const& globalBooleanVariables, std::vector<IntegerVariable> const& globalIntegerVariables, std::vector<Formula> const& formulas, std::vector<Module> const& modules, std::map<std::string, uint_fast64_t> const& actionToIndexMap, std::vector<RewardModel> const& rewardModels, bool fixInitialConstruct, storm::prism::InitialConstruct const& initialConstruct, std::vector<Label> const& labels, std::string const& filename = "", uint_fast64_t lineNumber = 0, bool checkValidity = true);
+            Program(std::shared_ptr<storm::expressions::ExpressionManager> manager, ModelType modelType, std::vector<Constant> const& constants, std::vector<BooleanVariable> const& globalBooleanVariables, std::vector<IntegerVariable> const& globalIntegerVariables, std::vector<Formula> const& formulas, std::vector<Module> const& modules, std::map<std::string, uint_fast64_t> const& actionToIndexMap, std::vector<RewardModel> const& rewardModels, bool fixInitialConstruct, storm::prism::InitialConstruct const& initialConstruct, std::vector<Label> const& labels, std::string const& filename = "", uint_fast64_t lineNumber = 0, bool finalModel = true);
             
             // Provide default implementations for constructors and assignments.
             Program() = default;
@@ -118,6 +120,22 @@ namespace storm {
              * @return The number of constants defined in the program.
              */
             std::size_t getNumberOfConstants() const;
+            
+            /*!
+             * Retrieves whether a global Boolean variable with the given name exists
+             * 
+             * @param variableName The name of the variable
+             * @return true iff a global variable of type Boolean with the given name exists.
+             */
+            bool globalBooleanVariableExists(std::string const& variableName) const;
+            
+            /**
+             * Retrieves whether a global Integer variable with the given name exists
+             * 
+             * @param variableName The name of the variable
+             * @return true iff a global variable of type Integer with the given name exists.
+             */
+            bool globalIntegerVariableExists(std::string const& variableName) const;
             
             /*!
              * Retrieves the global boolean variables of the program.
@@ -384,11 +402,17 @@ namespace storm {
              */
             Program substituteConstants() const;
             
+            /**
+             * Entry point for static analysis for simplify. As we use the same expression manager, we recommend to not use the original program any further. 
+             * @return A simplified, equivalent program.
+             */
+            Program simplify();
+            
             /*!
              * Checks the validity of the program. If the program is not valid, an exception is thrown with a message
              * that indicates the source of the problem.
              */
-            void checkValidity() const;
+            void checkValidity(Program::ValidityCheckLevel lvl = Program::ValidityCheckLevel::READYFORPROCESSING) const;
             
             /*!
              * Creates an equivalent program that contains exactly one module.
@@ -436,7 +460,7 @@ namespace storm {
             // The type of the model.
             ModelType modelType;
             
-            // The undefined constants of the program.
+            // The constants of the program.
             std::vector<Constant> constants;
             
             // A mapping from constant names to their corresponding indices.
@@ -495,6 +519,14 @@ namespace storm {
             
             // A mapping from variable names to the modules in which they were declared.
             std::map<std::string, uint_fast64_t> variableToModuleIndexMap;
+            
+            /**
+             * Takes the current program and replaces all modules. As we reuse the expression manager, we recommend to not use the original program any further.
+             * @param newModules the modules which replace the old modules.
+             * @param newConstants the constants which replace the old constants.
+             * @return A program with the new modules and constants.
+             */
+            Program replaceModulesAndConstantsInProgram(std::vector<Module> const& newModules, std::vector<Constant> const& newConstants);
         };
         
         std::ostream& operator<<(std::ostream& out, Program::ModelType const& type);

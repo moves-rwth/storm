@@ -8,7 +8,7 @@
  */
 int main(const int argc, const char** argv) {
     try {
-        storm::utility::cli::setUp();
+        storm::utility::setUp();
         storm::utility::cli::printHeader(argc, argv);
         bool optionsCorrect = storm::utility::cli::parseOptions(argc, argv);
         if (!optionsCorrect) {
@@ -19,7 +19,7 @@ int main(const int argc, const char** argv) {
         storm::utility::cli::processOptions();
         
         // All operations have now been performed, so we clean up everything and terminate.
-        storm::utility::cli::cleanUp();
+        storm::utility::cleanUp();
         return 0;
     } catch (storm::exceptions::BaseException const& exception) {
         STORM_LOG_ERROR("An exception caused StoRM to terminate. The message of the exception is: " << exception.what());

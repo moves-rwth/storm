@@ -32,6 +32,6 @@ namespace storm {
         storm::expressions::Expression Variable::getExpression() const {
             return variable.getExpression();
         }
-
+        
     } // namespace prism
 } // namespace storm

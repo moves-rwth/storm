@@ -26,13 +26,13 @@ TEST(StronglyConnectedComponentDecomposition, SmallSystemFromMatrix) {
 	storm::storage::StronglyConnectedComponentDecomposition<double> sccDecomposition;
 
 	ASSERT_NO_THROW(sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(matrix, allBits, false, false));
-	ASSERT_EQ(4, sccDecomposition.size());
+	ASSERT_EQ(4ul, sccDecomposition.size());
 
 	ASSERT_NO_THROW(sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(matrix, allBits, true, false));
-	ASSERT_EQ(3, sccDecomposition.size());
+	ASSERT_EQ(3ul, sccDecomposition.size());
 
 	ASSERT_NO_THROW(sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(matrix, allBits, true, true));
-	ASSERT_EQ(1, sccDecomposition.size());
+	ASSERT_EQ(1ul, sccDecomposition.size());
 }
 
 TEST(StronglyConnectedComponentDecomposition, FullSystem1) {
@@ -43,13 +43,13 @@ TEST(StronglyConnectedComponentDecomposition, FullSystem1) {
     storm::storage::StronglyConnectedComponentDecomposition<double> sccDecomposition;
 
     ASSERT_NO_THROW(sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(*markovAutomaton));
-    ASSERT_EQ(5, sccDecomposition.size());
+    ASSERT_EQ(5ul, sccDecomposition.size());
     
     ASSERT_NO_THROW(sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(*markovAutomaton, true));
-    ASSERT_EQ(2, sccDecomposition.size());
+    ASSERT_EQ(2ul, sccDecomposition.size());
 
     ASSERT_NO_THROW(sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(*markovAutomaton, true, true));
-    ASSERT_EQ(2, sccDecomposition.size());
+    ASSERT_EQ(2ul, sccDecomposition.size());
     
     markovAutomaton = nullptr;
 }
@@ -62,7 +62,7 @@ TEST(StronglyConnectedComponentDecomposition, FullSystem2) {
     storm::storage::StronglyConnectedComponentDecomposition<double> sccDecomposition;
     ASSERT_NO_THROW(sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(*markovAutomaton, true, false));
     
-    ASSERT_EQ(sccDecomposition.size(), 2);
+    ASSERT_EQ(2ul, sccDecomposition.size());
     
     // Now, because there is no ordering we have to check the contents of the MECs in a symmetrical way.
     storm::storage::StateBlock const& scc1 = sccDecomposition[0];
@@ -74,7 +74,7 @@ TEST(StronglyConnectedComponentDecomposition, FullSystem2) {
     ASSERT_TRUE(scc2 == storm::storage::StateBlock(correctScc1.begin(), correctScc1.end()) || scc2 == storm::storage::StateBlock(correctScc2.begin(), correctScc2.end()));
     
     ASSERT_NO_THROW(sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(*markovAutomaton, true, true));
-    ASSERT_EQ(1, sccDecomposition.size());
+    ASSERT_EQ(1ul, sccDecomposition.size());
 
     markovAutomaton = nullptr;
 }

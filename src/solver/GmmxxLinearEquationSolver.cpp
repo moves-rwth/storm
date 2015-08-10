@@ -207,6 +207,7 @@ namespace storm {
                 case SolutionMethod::Qmr: return "qmr";
                 case SolutionMethod::Gmres: return "gmres";
                 case SolutionMethod::Jacobi: return "jacobi";
+                default: return "invalid";
             }
         }
         
@@ -216,6 +217,7 @@ namespace storm {
                 case Preconditioner::Ilu: return "ilu";
                 case Preconditioner::Diagonal: return "diagonal";
                 case Preconditioner::None: return "none";
+                default: return "invalid";
             }
         }
         

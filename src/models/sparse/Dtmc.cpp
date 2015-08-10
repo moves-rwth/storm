@@ -182,18 +182,19 @@ namespace storm {
                 //		return storm::models::Dtmc<ValueType>(newMatBuilder.build(), newLabeling, newStateRewards, std::move(newTransitionRewards), newChoiceLabels);
             }
             
+#ifdef STORM_HAVE_CARL
             template<typename ValueType>
             Dtmc<ValueType>::ConstraintCollector::ConstraintCollector(Dtmc<ValueType> const& dtmc) {
                 process(dtmc);
             }
             
             template<typename ValueType>
-            std::unordered_set<carl::Constraint<ValueType>> const& Dtmc<ValueType>::ConstraintCollector::getWellformedConstraints() const {
+            std::unordered_set<storm::ArithConstraint<ValueType>> const& Dtmc<ValueType>::ConstraintCollector::getWellformedConstraints() const {
                 return this->wellformedConstraintSet;
             }
             
             template<typename ValueType>
-            std::unordered_set<carl::Constraint<ValueType>> const& Dtmc<ValueType>::ConstraintCollector::getGraphPreservingConstraints() const {
+            std::unordered_set<storm::ArithConstraint<ValueType>> const& Dtmc<ValueType>::ConstraintCollector::getGraphPreservingConstraints() const {
                 return this->graphPreservingConstraintSet;
             }
             
@@ -206,7 +207,7 @@ namespace storm {
                         if (!comparator.isConstant(transition.getValue())) {
                             wellformedConstraintSet.emplace(transition.getValue() - 1, storm::CompareRelation::LEQ);
                             wellformedConstraintSet.emplace(transition.getValue(), storm::CompareRelation::GEQ);
-                            graphPreservingConstraintSet.emplace(transition.getValue(), storm::CompareRelation::GT);
+                            graphPreservingConstraintSet.emplace(transition.getValue(), storm::CompareRelation::GREATER);
                         }
                     }
                     STORM_LOG_ASSERT(!comparator.isConstant(sum) || comparator.isOne(sum), "If the sum is a constant, it must be equal to 1.");
@@ -221,6 +222,7 @@ namespace storm {
             void Dtmc<ValueType>::ConstraintCollector::operator()(storm::models::sparse::Dtmc<ValueType> const& dtmc) {
                 process(dtmc);
             }
+#endif
             
             template <typename ValueType>
             bool Dtmc<ValueType>::checkValidityOfProbabilityMatrix() const {
