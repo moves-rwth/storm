@@ -76,7 +76,7 @@ if (WIN32)
 endif (WIN32)
 
 if(CMAKE_COMPILER_IS_GNUCC)
-    # nothing to do in this case
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-variable")
 else(CLANG)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-variable")
 endif()
