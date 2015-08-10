@@ -24,8 +24,8 @@ TEST(GmmxxHybridMdpPrctlModelCheckerTest, Dice) {
     options.buildRewards = true;
     options.rewardModelName = "coinflips";
     std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program, options);
-    EXPECT_EQ(169, model->getNumberOfStates());
-    EXPECT_EQ(436, model->getNumberOfTransitions());
+    EXPECT_EQ(169ul, model->getNumberOfStates());
+    EXPECT_EQ(436ul, model->getNumberOfTransitions());
     
     ASSERT_EQ(model->getType(), storm::models::ModelType::Mdp);
     
@@ -126,8 +126,8 @@ TEST(GmmxxHybridMdpPrctlModelCheckerTest, AsynchronousLeader) {
     options.buildRewards = true;
     options.rewardModelName = "rounds";
     std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program, options);
-    EXPECT_EQ(3172, model->getNumberOfStates());
-    EXPECT_EQ(7144, model->getNumberOfTransitions());
+    EXPECT_EQ(3172ul, model->getNumberOfStates());
+    EXPECT_EQ(7144ul, model->getNumberOfTransitions());
     
     ASSERT_EQ(model->getType(), storm::models::ModelType::Mdp);
     

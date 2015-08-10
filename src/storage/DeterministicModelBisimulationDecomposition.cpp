@@ -1376,7 +1376,7 @@ namespace storm {
                     }
                     
                     // Finally, split the block.
-                    Block& nondivergentBlock = partition.splitBlock(block, block.getBegin() + nondivergentStates.getNumberOfSetBits());
+                    partition.splitBlock(block, block.getBegin() + nondivergentStates.getNumberOfSetBits());
                     
                     // Since the remaining states in the block are divergent, we can mark the block as absorbing.
                     // This also guarantees that the self-loop will be added to the state of the quotient

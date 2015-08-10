@@ -176,6 +176,7 @@ return *this; \
 						}
 						break;
 				}
+                STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentTypeException, "Argument has illegal type.");
 			}
             
 		private:

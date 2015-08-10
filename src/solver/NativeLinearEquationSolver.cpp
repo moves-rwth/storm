@@ -156,6 +156,8 @@ namespace storm {
         std::string NativeLinearEquationSolver<ValueType>::methodToString() const {
             switch (method) {
                 case SolutionMethod::Jacobi: return "jacobi";
+                case SolutionMethod::GaussSeidel: return "gauss-seidel";
+                case SolutionMethod::SOR: return "sor";
             }
         }
         
