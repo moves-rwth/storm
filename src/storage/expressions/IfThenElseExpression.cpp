@@ -70,7 +70,7 @@ namespace storm {
 		}
         
         std::shared_ptr<BaseExpression const> IfThenElseExpression::simplify() const {
-            std::shared_ptr<BaseExpression const> conditionSimplified;
+            std::shared_ptr<BaseExpression const> conditionSimplified = this->condition->simplify();
             if (conditionSimplified->isTrue()) {
                 return this->thenExpression->simplify();
             } else if (conditionSimplified->isFalse()) {

@@ -400,7 +400,10 @@ namespace storm {
                 boost::optional<storm::prism::Program> program;
                 if (settings.isSymbolicSet()) {
                     std::string const& programFile = settings.getSymbolicModelFilename();
-                    program = storm::parser::PrismParser::parse(programFile);
+                    program = storm::parser::PrismParser::parse(programFile).simplify();
+                    
+                    program->checkValidity();
+                    std::cout << program.get() << std::endl;
                 }
                 
                 // Then proceed to parsing the property (if given), since the model we are building may depend on the property.
@@ -416,68 +419,68 @@ namespace storm {
                     }
 					formulas.push_back(formula);
                 }
-				else if (settings.isPropertyFileSet()) {
-					std::cout << "Reading properties from " << settings.getPropertiesFilename() << std::endl;
+                else if (settings.isPropertyFileSet()) {
+                        std::cout << "Reading properties from " << settings.getPropertiesFilename() << std::endl;
 
-					std::ifstream inputFileStream(settings.getPropertiesFilename(), std::ios::in);
+                        std::ifstream inputFileStream(settings.getPropertiesFilename(), std::ios::in);
 
-					std::vector<std::string> properties;
+                        std::vector<std::string> properties;
 
-					if (inputFileStream.good()) {
-						try {
-							while (inputFileStream.good()) {
-								std::string prop;
-								std::getline(inputFileStream, prop);
-								if (!prop.empty()) {
-									properties.push_back(prop);
-								}
-							}
-						}
-						catch (std::exception& e) {
-							inputFileStream.close();
-							throw e;
-						}
-						inputFileStream.close();
-					} else {
-						STORM_LOG_ERROR("Unable to read property file.");
-					}
+                        if (inputFileStream.good()) {
+                                try {
+                                        while (inputFileStream.good()) {
+                                                std::string prop;
+                                                std::getline(inputFileStream, prop);
+                                                if (!prop.empty()) {
+                                                        properties.push_back(prop);
+                                                }
+                                        }
+                                }
+                                catch (std::exception& e) {
+                                        inputFileStream.close();
+                                        throw e;
+                                }
+                                inputFileStream.close();
+                        } else {
+                                STORM_LOG_ERROR("Unable to read property file.");
+                        }
 
-					for (std::string prop : properties) {
-						boost::optional<std::shared_ptr<storm::logic::Formula>> formula;
-						try {
-							if (program) {
-								storm::parser::FormulaParser formulaParser(program.get().getManager().getSharedPointer());
-								formula = formulaParser.parseFromString(prop);
-							} else {
-								storm::parser::FormulaParser formulaParser;
-								formula = formulaParser.parseFromString(prop);
-							}
-							formulas.push_back(formula);
-						}
-						catch (storm::exceptions::WrongFormatException &e) {
-							STORM_LOG_WARN("Unable to parse line as formula: " << prop);
-						}
-					}
-					std::cout << "Parsed " << formulas.size() << " properties from file " << settings.getPropertiesFilename() << std::endl;
-				}
-                
-				for (boost::optional<std::shared_ptr<storm::logic::Formula>> formula : formulas) {
-					if (settings.isSymbolicSet()) {
+                        for (std::string prop : properties) {
+                                boost::optional<std::shared_ptr<storm::logic::Formula>> formula;
+                                try {
+                                        if (program) {
+                                                storm::parser::FormulaParser formulaParser(program.get().getManager().getSharedPointer());
+                                                formula = formulaParser.parseFromString(prop);
+                                        } else {
+                                                storm::parser::FormulaParser formulaParser;
+                                                formula = formulaParser.parseFromString(prop);
+                                        }
+                                        formulas.push_back(formula);
+                                }
+                                catch (storm::exceptions::WrongFormatException &e) {
+                                        STORM_LOG_WARN("Unable to parse line as formula: " << prop);
+                                }
+                        }
+                        std::cout << "Parsed " << formulas.size() << " properties from file " << settings.getPropertiesFilename() << std::endl;
+                }
+
+                for (boost::optional<std::shared_ptr<storm::logic::Formula>> formula : formulas) {
+                        if (settings.isSymbolicSet()) {
 #ifdef STORM_HAVE_CARL
-						if (settings.isParametricSet()) {
-							buildAndCheckSymbolicModel<storm::RationalFunction>(program.get(), formula);
-						} else {
+                                if (settings.isParametricSet()) {
+                                        buildAndCheckSymbolicModel<storm::RationalFunction>(program.get(), formula);
+                                } else {
 #endif
-							buildAndCheckSymbolicModel<double>(program.get(), formula);
+                                        buildAndCheckSymbolicModel<double>(program.get(), formula);
 #ifdef STORM_HAVE_CARL
-						}
+                                }
 #endif
-					} else if (settings.isExplicitSet()) {
-						buildAndCheckExplicitModel<double>(formula);
-					} else {
-						STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No input model.");
-					}
-				}
+                        } else if (settings.isExplicitSet()) {
+                                buildAndCheckExplicitModel<double>(formula);
+                        } else {
+                                STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No input model.");
+                        }
+                }
             }
         }
     }

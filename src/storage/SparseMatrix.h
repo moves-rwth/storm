@@ -611,6 +611,14 @@ namespace storm {
             SparseMatrix getSubmatrix(bool useGroups, storm::storage::BitVector const& rowConstraint, storm::storage::BitVector const& columnConstraint, bool insertDiagonalEntries = false) const;
             
             /*!
+             * Restrict rows in grouped rows matrix. Ensures that the number of groups stays the same. 
+             * 
+             * @param rowsToKeep A bit vector indicating which rows to keep.
+             * 
+             */
+            SparseMatrix restrictRows(storm::storage::BitVector const& rowsToKeep) const;
+            
+            /*!
              * Selects exactly one row from each row group of this matrix and returns the resulting matrix.
              *
              * @param rowGroupToRowIndexMapping A mapping from each row group index to a selected row in this group.
