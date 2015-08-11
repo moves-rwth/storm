@@ -1,6 +1,7 @@
 #include "Update.h"
 
 #include <algorithm>
+#include <boost/algorithm/string/join.hpp>
 
 #include "src/utility/macros.h"
 #include "src/exceptions/OutOfRangeException.h"
@@ -54,13 +55,10 @@ namespace storm {
         
         std::ostream& operator<<(std::ostream& stream, Update const& update) {
             stream << update.getLikelihoodExpression() << " : ";
-            uint_fast64_t i = 0;
-            for (auto const& assignment : update.getAssignments()) {
-                stream << assignment;
-                if (i < update.getAssignments().size() - 1) {
-                    stream << " & ";
-                }
-                ++i;
+            if (update.getAssignments().empty()) {
+                stream << " true ";
+            } else {
+                stream << boost::algorithm::join(update.getAssignments(), " & ");
             }
             return stream;
         }

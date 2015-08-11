@@ -131,7 +131,23 @@ namespace storm {
             
             /*!
              * Applies the given operation pointwise on the two given vectors and writes the result to the third vector.
-             * To botain an in-place operation, the third vector may be equal to any of the other two vectors.
+             * It does so by selecting the elements of the first operand given by the bit vector and uses this element
+             * for the next
+             * To obtain an in-place operation, the third vector may be equal to any of the other two vectors.
+             *
+             * @param firstOperand The first operand.
+             * @param positions The
+             * @param secondOperand The second operand.
+             * @param target The target vector.
+             */
+            template<class T>
+            void applyPointwiseRepeatedly(std::vector<T> const& firstOperand, storm::storage::BitVector const& positions, std::vector<uint_fast64_t> const& rowGrouping, std::vector<T> const& secondOperand, std::vector<T>& target, std::function<T (T const&, T const&)> function) {
+
+            }
+            
+            /*!
+             * Applies the given operation pointwise on the two given vectors and writes the result to the third vector.
+             * To obtain an in-place operation, the third vector may be equal to any of the other two vectors.
              *
              * @param firstOperand The first operand.
              * @param secondOperand The second operand.

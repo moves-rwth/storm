@@ -11,22 +11,20 @@ namespace storm {
             /*!
              * This class represents a (discrete-time) Markov decision process.
              */
-            template <typename ValueType>
-            class Mdp : public NondeterministicModel<ValueType> {
+            template<class ValueType, typename RewardModelType = StandardRewardModel<ValueType>>
+            class Mdp : public NondeterministicModel<ValueType, RewardModelType> {
             public:
                 /*!
                  * Constructs a model from the given data.
                  *
                  * @param transitionMatrix The matrix representing the transitions in the model.
                  * @param stateLabeling The labeling of the states.
-                 * @param optionalStateRewardVector The reward values associated with the states.
-                 * @param optionalTransitionRewardMatrix The reward values associated with the transitions of the model.
+                 * @param rewardModels A mapping of reward model names to reward models.
                  * @param optionalChoiceLabeling A vector that represents the labels associated with the choices of each state.
                  */
                 Mdp(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                     storm::models::sparse::StateLabeling const& stateLabeling,
-                    boost::optional<std::vector<ValueType>> const& optionalStateRewardVector = boost::optional<std::vector<ValueType>>(),
-                    boost::optional<storm::storage::SparseMatrix<ValueType>> const& optionalTransitionRewardMatrix = boost::optional<storm::storage::SparseMatrix<ValueType>>(),
+                    std::map<std::string, RewardModelType> const& rewardModels = std::map<std::string, RewardModelType>(),
                     boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling = boost::optional<std::vector<LabelSet>>());
                 
                 /*!
@@ -34,14 +32,12 @@ namespace storm {
                  *
                  * @param transitionMatrix The matrix representing the transitions in the model.
                  * @param stateLabeling The labeling of the states.
-                 * @param optionalStateRewardVector The reward values associated with the states.
-                 * @param optionalTransitionRewardMatrix The reward values associated with the transitions of the model.
+                 * @param rewardModels A mapping of reward model names to reward models.
                  * @param optionalChoiceLabeling A vector that represents the labels associated with the choices of each state.
                  */
                 Mdp(storm::storage::SparseMatrix<ValueType>&& transitionMatrix,
                     storm::models::sparse::StateLabeling&& stateLabeling,
-                    boost::optional<std::vector<ValueType>>&& optionalStateRewardVector = boost::optional<std::vector<ValueType>>(),
-                    boost::optional<storm::storage::SparseMatrix<ValueType>>&& optionalTransitionRewardMatrix = boost::optional<storm::storage::SparseMatrix<ValueType>>(),
+                    std::map<std::string, RewardModelType>&& rewardModels = std::map<std::string, RewardModelType>(),
                     boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling = boost::optional<std::vector<LabelSet>>());
                 
                 Mdp(Mdp const& other) = default;

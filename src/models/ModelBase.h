@@ -10,7 +10,7 @@
 namespace storm {
     namespace models {
         
-        class ModelBase: public std::enable_shared_from_this<ModelBase> {
+        class ModelBase : public std::enable_shared_from_this<ModelBase> {
         public:
             /*!
              * Constructs a model of the given type.

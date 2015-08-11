@@ -134,6 +134,7 @@ namespace storm {
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> atomicStateFormula;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> operatorFormula;
             qi::rule<Iterator, std::string(), Skipper> label;
+            qi::rule<Iterator, std::string(), Skipper> rewardModelName;
             
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> andStateFormula;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> orStateFormula;
@@ -170,7 +171,7 @@ namespace storm {
             std::shared_ptr<storm::logic::Formula> createUntilFormula(std::shared_ptr<storm::logic::Formula> const& leftSubformula, boost::optional<boost::variant<std::pair<double, double>, uint_fast64_t>> const& timeBound, std::shared_ptr<storm::logic::Formula> const& rightSubformula);
             std::shared_ptr<storm::logic::Formula> createConditionalFormula(std::shared_ptr<storm::logic::Formula> const& leftSubformula, std::shared_ptr<storm::logic::Formula> const& rightSubformula) const;
             std::shared_ptr<storm::logic::Formula> createLongRunAverageOperatorFormula(std::tuple<boost::optional<storm::logic::OptimalityType>, boost::optional<storm::logic::ComparisonType>, boost::optional<double>> const& operatorInformation, std::shared_ptr<storm::logic::Formula> const& subformula) const;
-            std::shared_ptr<storm::logic::Formula> createRewardOperatorFormula(std::tuple<boost::optional<storm::logic::OptimalityType>, boost::optional<storm::logic::ComparisonType>, boost::optional<double>> const& operatorInformation, std::shared_ptr<storm::logic::Formula> const& subformula) const;
+            std::shared_ptr<storm::logic::Formula> createRewardOperatorFormula(boost::optional<std::string> const& rewardModelName, std::tuple<boost::optional<storm::logic::OptimalityType>, boost::optional<storm::logic::ComparisonType>, boost::optional<double>> const& operatorInformation, std::shared_ptr<storm::logic::Formula> const& subformula) const;
             std::shared_ptr<storm::logic::Formula> createExpectedTimeOperatorFormula(std::tuple<boost::optional<storm::logic::OptimalityType>, boost::optional<storm::logic::ComparisonType>, boost::optional<double>> const& operatorInformation, std::shared_ptr<storm::logic::Formula> const& subformula) const;
             std::shared_ptr<storm::logic::Formula> createProbabilityOperatorFormula(std::tuple<boost::optional<storm::logic::OptimalityType>, boost::optional<storm::logic::ComparisonType>, boost::optional<double>> const& operatorInformation, std::shared_ptr<storm::logic::Formula> const& subformula);
             std::shared_ptr<storm::logic::Formula> createBinaryBooleanStateFormula(std::shared_ptr<storm::logic::Formula> const& leftSubformula, std::shared_ptr<storm::logic::Formula> const& rightSubformula, storm::logic::BinaryBooleanStateFormula::OperatorType operatorType);
