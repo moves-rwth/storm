@@ -236,7 +236,7 @@ namespace storm {
             
             STORM_LOG_THROW(this->probabilityOperatorFormula!=nullptr, storm::exceptions::InvalidStateException, "Tried to analyze a region although no property has been specified" );
             STORM_LOG_DEBUG("Analyzing the region " << region.toString());
-            
+            //std::cout << "Analyzing the region " << region.toString() << std::endl;
             
             //switches for the different steps.
             bool done=false;
@@ -395,7 +395,7 @@ namespace storm {
                     }
                     break;
                 default:
-                    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "The checkresult of the current region should not be conclusive, i.e. it should be either EXISTSSAT or EXISTSVIOLATED or UNKNOWN");
+                     STORM_LOG_WARN("The checkresult of the current region should not be conclusive, i.e. it should be either EXISTSSAT or EXISTSVIOLATED or UNKNOWN in order to apply approximative probabilities");
             }
             
             if(region.getCheckResult()==RegionCheckResult::UNKNOWN){

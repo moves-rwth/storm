@@ -31,9 +31,7 @@ namespace storm {
             };
             
             class ParameterRegion;
-            class ApproximationModel;
-            class SamplingModel;
-            
+
             explicit SparseDtmcRegionModelChecker(storm::models::sparse::Dtmc<ParametricType> const& model);
 
             /*!
@@ -80,6 +78,10 @@ namespace storm {
             
             
         private:
+            
+            class ApproximationModel;
+            class SamplingModel;
+            
             
             /*!
              * Computes a model with a single target and a single sink state.

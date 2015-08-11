@@ -56,13 +56,8 @@ namespace storm {
             
             template<>
             storm::RationalNumber convertNumber<std::string, storm::RationalNumber>(std::string const& number){
-                if(number.find('e')!=std::string::npos){
-                    //carl::rationalize does not seem to like the scientific notation like (e-05).
-                    //A quick and easy fix is to parse the number as double and then as a rational number.
-                    STORM_LOG_WARN("Parsing number " + number + " might result in precision issues as we are going to interprete it as double and then convert the double to a rational number")
-                    return convertNumber<double, storm::RationalNumber>(convertNumber<std::string, double>(number));
-                }
-                return carl::rationalize<storm::RationalNumber>(number);
+                //We parse the number as double and then convert it to a a rational number.
+                return convertNumber<double, storm::RationalNumber>(convertNumber<std::string, double>(number));
             }
                        
             
