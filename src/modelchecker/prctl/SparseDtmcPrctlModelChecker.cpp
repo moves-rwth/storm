@@ -164,36 +164,10 @@ namespace storm {
         template<typename SparseDtmcModelType>
         std::vector<typename SparseDtmcPrctlModelChecker<SparseDtmcModelType>::ValueType> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::computeCumulativeRewardsHelper(RewardModelType const& rewardModel, uint_fast64_t stepBound) const {
             // Compute the reward vector to add in each step based on the available reward models.
-            std::vector<ValueType> totalRewardVector;
-            if (rewardModel.hasTransitionRewards()) {
-                totalRewardVector = this->getModel().getTransitionMatrix().getPointwiseProductRowSumVector(rewardModel.getTransitionRewardMatrix());
-                if (rewardModel.hasStateRewards()) {
-                    storm::utility::vector::addVectors(totalRewardVector, rewardModel.getStateRewardVector(), totalRewardVector);
-                }
-                if (rewardModel.hasStateActionRewards()) {
-                    storm::utility::vector::addVectors(totalRewardVector, rewardModel.getStateActionRewardVector(), totalRewardVector);
-                }
-            } else if (rewardModel.hasStateRewards()) {
-                totalRewardVector = std::vector<ValueType>(rewardModel.getStateRewardVector());
-                if (rewardModel.hasStateActionRewards()) {
-                    storm::utility::vector::addVectors(totalRewardVector, rewardModel.getStateActionRewardVector(), totalRewardVector);
-                }
-            } else {
-                totalRewardVector = std::vector<ValueType>(rewardModel.getStateActionRewardVector());
-            }
+            std::vector<ValueType> totalRewardVector = rewardModel.getTotalRewardVector(this->getModel().getTransitionMatrix());
             
             // Initialize result to either the state rewards of the model or the null vector.
-            std::vector<ValueType> result;
-            if (rewardModel.hasStateRewards()) {
-                result = std::vector<ValueType>(rewardModel.getStateRewardVector());
-                if (rewardModel.hasStateActionRewards()) {
-                    storm::utility::vector::addVectors(result, rewardModel.getStateActionRewardVector(), result);
-                }
-            } else if (rewardModel.hasStateActionRewards()) {
-                result = std::vector<ValueType>(rewardModel.getStateRewardVector());
-            } else {
-                result.resize(this->getModel().getNumberOfStates());
-            }
+            std::vector<ValueType> result = rewardModel.getTotalStateActionRewardVector(this->getModel().getNumberOfStates(), this->getModel().getTransitionMatrix().getRowGroupIndices());
             
             // Perform the matrix vector multiplication as often as required by the formula bound.
             STORM_LOG_THROW(linearEquationSolverFactory != nullptr, storm::exceptions::InvalidStateException, "No valid linear equation solver available.");
@@ -215,15 +189,7 @@ namespace storm {
             STORM_LOG_THROW(rewardModel.hasStateRewards() || rewardModel.hasStateActionRewards(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
             
             // Initialize result to state rewards of the model.
-            std::vector<ValueType> result(this->getModel().getNumberOfStates());
-            if (rewardModel.hasStateRewards()) {
-                if (rewardModel.hasStateRewards()) {
-                    storm::utility::vector::addVectors(result, rewardModel.getStateRewardVector(), result);
-                }
-                if (rewardModel.hasStateActionRewards()) {
-                    storm::utility::vector::addVectors(result, rewardModel.getStateActionRewardVector(), result);
-                }
-            }
+            std::vector<ValueType> result = rewardModel.getTotalStateActionRewardVector(this->getModel().getNumberOfStates(), this->getModel().getTransitionMatrix().getRowGroupIndices());
             
             // Perform the matrix vector multiplication as often as required by the formula bound.
             STORM_LOG_THROW(linearEquationSolverFactory != nullptr, storm::exceptions::InvalidStateException, "No valid linear equation solver available.");
@@ -273,44 +239,7 @@ namespace storm {
                 std::vector<ValueType> x(submatrix.getColumnCount(), storm::utility::one<ValueType>());
                 
                 // Prepare the right-hand side of the equation system.
-                std::vector<ValueType> b(submatrix.getRowCount());
-                if (rewardModel.hasTransitionRewards()) {
-                    // If a transition-based reward model is available, we initialize the right-hand
-                    // side to the vector resulting from summing the rows of the pointwise product
-                    // of the transition probability matrix and the transition reward matrix.
-                    std::vector<ValueType> pointwiseProductRowSumVector = transitionMatrix.getPointwiseProductRowSumVector(rewardModel.getTransitionRewardMatrix());
-                    storm::utility::vector::selectVectorValues(b, maybeStates, pointwiseProductRowSumVector);
-                    
-                    if (rewardModel.hasStateRewards() || rewardModel.hasStateActionRewards()) {
-                        // If a state-based reward model is also available, we need to add this vector
-                        // as well. As the state reward vector contains entries not just for the states
-                        // that we still consider (i.e. maybeStates), we need to extract these values
-                        // first.
-                        std::vector<ValueType> subStateRewards(b.size());
-                        if (rewardModel.hasStateRewards()) {
-                            storm::utility::vector::selectVectorValues(subStateRewards, maybeStates, rewardModel.getStateRewardVector());
-                            storm::utility::vector::addVectors(b, subStateRewards, b);
-                        }
-                        if (rewardModel.hasStateActionRewards()) {
-                            storm::utility::vector::selectVectorValues(subStateRewards, maybeStates, rewardModel.getStateActionRewardVector());
-                            storm::utility::vector::addVectors(b, subStateRewards, b);
-                        }
-                    }
-                } else {
-                    // If only a state-based reward model is  available, we take this vector as the
-                    // right-hand side. As the state reward vector contains entries not just for the
-                    // states that we still consider (i.e. maybeStates), we need to extract these values
-                    // first.
-                    std::vector<ValueType> subStateRewards(b.size());
-                    if (rewardModel.hasStateRewards()) {
-                        storm::utility::vector::selectVectorValues(subStateRewards, maybeStates, rewardModel.getStateRewardVector());
-                        storm::utility::vector::addVectors(b, subStateRewards, b);
-                    }
-                    if (rewardModel.hasStateActionRewards()) {
-                        storm::utility::vector::selectVectorValues(subStateRewards, maybeStates, rewardModel.getStateActionRewardVector());
-                        storm::utility::vector::addVectors(b, subStateRewards, b);
-                    }
-                }
+                std::vector<ValueType> b = rewardModel.getTotalRewardVector(submatrix.getRowCount(), transitionMatrix, maybeStates);
                 
                 // Now solve the resulting equation system.
                 std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(submatrix);

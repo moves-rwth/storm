@@ -96,6 +96,58 @@ namespace storm {
             }
             
             template<typename ValueType>
+            template<typename MatrixValueType>
+            std::vector<ValueType> StandardRewardModel<ValueType>::getTotalRewardVector(storm::storage::SparseMatrix<MatrixValueType> const& transitionMatrix) const {
+                std::vector<ValueType> result = this->hasTransitionRewards() ? transitionMatrix.getPointwiseProductRowSumVector(this->getTransitionRewardMatrix()) : (this->hasStateActionRewards() ? this->getStateActionRewardVector() : std::vector<ValueType>(transitionMatrix.getRowCount()));
+                if (this->hasStateActionRewards() && this->hasStateActionRewards()) {
+                    storm::utility::vector::addVectors(result, this->getStateActionRewardVector(), result);
+                }
+                if (this->hasStateRewards()) {
+                    storm::utility::vector::addVectorToGroupedVector(result, this->getStateRewardVector(), transitionMatrix.getRowGroupIndices());
+                }
+            }
+            
+            template<typename ValueType>
+            template<typename MatrixValueType>
+            std::vector<ValueType> StandardRewardModel<ValueType>::getTotalRewardVector(uint_fast64_t numberOfRows, storm::storage::SparseMatrix<MatrixValueType> const& transitionMatrix, storm::storage::BitVector const& filter) const {
+                std::vector<ValueType> pointwiseProductRowSumVector;
+                
+                std::vector<ValueType> result(numberOfRows);
+                if (this->hasTransitionRewards()) {
+                    pointwiseProductRowSumVector = transitionMatrix.getPointwiseProductRowSumVector(this->getTransitionRewardMatrix());
+                    storm::utility::vector::selectVectorValues(result, filter, transitionMatrix.getRowGroupIndices(), pointwiseProductRowSumVector);
+                }
+
+                if (this->hasStateActionRewards()) {
+                    storm::utility::vector::addFilteredVectorGroupsToGroupedVector(result, this->getStateActionRewardVector(), filter, transitionMatrix.getRowGroupIndices());
+                }
+                if (this->hasStateRewards()) {
+                    storm::utility::vector::addFilteredVectorToGroupedVector(result, this->getStateRewardVector(), filter, transitionMatrix.getRowGroupIndices());
+                }
+            }
+            
+            template<typename ValueType>
+            std::vector<ValueType> StandardRewardModel<ValueType>::getTotalStateActionRewardVector(uint_fast64_t numberOfRows, std::vector<uint_fast64_t> const& rowGroupIndices) const {
+                std::vector<ValueType> result = this->hasStateActionRewards() ? this->getStateActionRewardVector() : std::vector<ValueType>(numberOfRows);
+                if (this->hasStateRewards()) {
+                    storm::utility::vector::addVectorToGroupedVector(result, this->getStateRewardVector(), rowGroupIndices);
+                }
+                return result;
+            }
+            
+            template<typename ValueType>
+            std::vector<ValueType> StandardRewardModel<ValueType>::getTotalStateActionRewardVector(uint_fast64_t numberOfRows, std::vector<uint_fast64_t> const& rowGroupIndices, storm::storage::BitVector const& filter) const {
+                std::vector<ValueType> result(numberOfRows);
+                if (this->hasStateRewards()) {
+                    storm::utility::vector::selectVectorValuesRepeatedly(result, filter, rowGroupIndices, this->getStateRewardVector());
+                }
+                if (this->hasStateActionRewards()) {
+                    storm::utility::vector::addFilteredVectorGroupsToGroupedVector(result, this->getStateActionRewardVector(), filter, rowGroupIndices);
+                }
+                return result;
+            }
+            
+            template<typename ValueType>
             bool StandardRewardModel<ValueType>::empty() const {
                 return !(static_cast<bool>(this->optionalStateRewardVector) || static_cast<bool>(this->optionalStateActionRewardVector) || static_cast<bool>(this->optionalTransitionRewardMatrix));
             }

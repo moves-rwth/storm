@@ -129,20 +129,65 @@ namespace storm {
                 }
             }
             
+            template<class T>
+            void addFilteredVectorGroupsToGroupedVector(std::vector<T>& target, std::vector<T> const& source, storm::storage::BitVector const& filter, std::vector<uint_fast64_t> const& rowGroupIndices) {
+                uint_fast64_t currentPosition = 0;
+                for (auto group : filter) {
+                    auto it = source.cbegin() + rowGroupIndices[group];
+                    auto ite = source.cbegin() + rowGroupIndices[group + 1];
+                    while (it != ite) {
+                        target[currentPosition] = *it;
+                        ++it;
+                    }
+                }
+            }
+            
             /*!
-             * Applies the given operation pointwise on the two given vectors and writes the result to the third vector.
-             * It does so by selecting the elements of the first operand given by the bit vector and uses this element
-             * for the next
-             * To obtain an in-place operation, the third vector may be equal to any of the other two vectors.
+             * Adds the source vector to the target vector in a way such that the i-th entry is added to all elements of
+             * the i-th row group in the target vector.
              *
-             * @param firstOperand The first operand.
-             * @param positions The
-             * @param secondOperand The second operand.
-             * @param target The target vector.
+             * @param target The target ("row grouped") vector.
+             * @param source The source vector.
+             * @param rowGroupIndices A vector representing the row groups in the target vector.
              */
             template<class T>
-            void applyPointwiseRepeatedly(std::vector<T> const& firstOperand, storm::storage::BitVector const& positions, std::vector<uint_fast64_t> const& rowGrouping, std::vector<T> const& secondOperand, std::vector<T>& target, std::function<T (T const&, T const&)> function) {
-
+            void addVectorToGroupedVector(std::vector<T>& target, std::vector<T> const& source, std::vector<uint_fast64_t> const& rowGroupIndices) {
+                auto targetIt = target.begin();
+                auto targetIte = target.end();
+                auto sourceIt = source.cbegin();
+                auto sourceIte = source.cend();
+                auto rowGroupIt = rowGroupIndices.cbegin();
+                
+                for (; sourceIt != sourceIte; ++sourceIt) {
+                    uint_fast64_t current = *rowGroupIt;
+                    ++rowGroupIt;
+                    uint_fast64_t next = *rowGroupIt;
+                    while (current < next) {
+                        *targetIt = *source;
+                        ++targetIt;
+                    }
+                }
+            }
+            
+            /*!
+             * Adds the source vector to the target vector in a way such that the i-th selected entry is added to all
+             * elements of the i-th row group in the target vector.
+             *
+             * @param target The target ("row grouped") vector.
+             * @param source The source vector.
+             * @param rowGroupIndices A vector representing the row groups in the target vector.
+             */
+            template<class T>
+            void addFilteredVectorToGroupedVector(std::vector<T>& target, std::vector<T> const& source, storm::storage::BitVector const& filter, std::vector<uint_fast64_t> const& rowGroupIndices) {
+                uint_fast64_t currentPosition = 0;
+                for (auto group : filter) {
+                    uint_fast64_t current = rowGroupIndices[group];
+                    uint_fast64_t next = rowGroupIndices[group + 1];
+                    while (current < next) {
+                        target[currentPosition] = source[group];
+                        ++currentPosition;
+                    }
+                }
             }
             
             /*!

@@ -11,23 +11,24 @@ namespace storm {
             /*!
              * This class represents a (discrete-time) stochastic two-player game.
              */
-            template <typename ValueType>
-            class StochasticTwoPlayerGame : public NondeterministicModel<ValueType> {
+            template<class ValueType, typename RewardModelType = StandardRewardModel<ValueType>>
+            class StochasticTwoPlayerGame : public NondeterministicModel<ValueType, RewardModelType> {
             public:
+                
                 /*!
                  * Constructs a model from the given data.
                  *
                  * @param player1Matrix The matrix representing the choices of player 1.
                  * @param player2Matrix The matrix representing the choices of player 2.
                  * @param stateLabeling The labeling of the states.
-                 * @param optionalStateRewardVector The reward values associated with the states.
+                 * @param rewardModels A mapping of reward model names to reward models.
                  * @param optionalPlayer1ChoiceLabeling A vector that represents the labels associated with the choices of each player 1 state.
                  * @param optionalPlayer2ChoiceLabeling A vector that represents the labels associated with the choices of each player 2 state.
                  */
                 StochasticTwoPlayerGame(storm::storage::SparseMatrix<storm::storage::sparse::state_type> const& player1Matrix,
                                         storm::storage::SparseMatrix<ValueType> const& player2Matrix,
                                         storm::models::sparse::StateLabeling const& stateLabeling,
-                                        boost::optional<std::vector<ValueType>> const& optionalStateRewardVector = boost::optional<std::vector<ValueType>>(),
+                                        std::map<std::string, RewardModelType> const& rewardModels = std::map<std::string, RewardModelType>(),
                                         boost::optional<std::vector<LabelSet>> const& optionalPlayer1ChoiceLabeling = boost::optional<std::vector<LabelSet>>(),
                                         boost::optional<std::vector<LabelSet>> const& optionalPlayer2ChoiceLabeling = boost::optional<std::vector<LabelSet>>());
                 
@@ -37,14 +38,14 @@ namespace storm {
                  * @param player1Matrix The matrix representing the choices of player 1.
                  * @param player2Matrix The matrix representing the choices of player 2.
                  * @param stateLabeling The labeling of the states.
-                 * @param optionalStateRewardVector The reward values associated with the states.
+                 * @param rewardModels A mapping of reward model names to reward models.
                  * @param optionalPlayer1ChoiceLabeling A vector that represents the labels associated with the choices of each player 1 state.
                  * @param optionalPlayer2ChoiceLabeling A vector that represents the labels associated with the choices of each player 2 state.
                  */
                 StochasticTwoPlayerGame(storm::storage::SparseMatrix<storm::storage::sparse::state_type>&& player1Matrix,
                                         storm::storage::SparseMatrix<ValueType>&& player2Matrix,
                                         storm::models::sparse::StateLabeling&& stateLabeling,
-                                        boost::optional<std::vector<ValueType>>&& optionalStateRewardVector = boost::optional<std::vector<ValueType>>(),
+                                        std::map<std::string, RewardModelType>&& rewardModels = std::map<std::string, RewardModelType>(),
                                         boost::optional<std::vector<LabelSet>>&& optionalPlayer1ChoiceLabeling = boost::optional<std::vector<LabelSet>>(),
                                         boost::optional<std::vector<LabelSet>>&& optionalPlayer2ChoiceLabeling = boost::optional<std::vector<LabelSet>>());
                 

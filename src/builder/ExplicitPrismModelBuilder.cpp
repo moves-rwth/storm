@@ -165,15 +165,28 @@ namespace storm {
             ModelComponents modelComponents = buildModelComponents(preparedProgram, rewardModel, options);
             
             std::shared_ptr<storm::models::sparse::Model<ValueType>> result;
+            std::map<std::string, storm::models::sparse::StandardRewardModel<ValueType>> rewardModels;
+            if (options.buildRewards) {
+                std::string rewardModelName;
+                if (options.rewardModelName) {
+                    rewardModelName = options.rewardModelName.get();
+                } else {
+                    rewardModelName = "";
+                }
+                rewardModels.emplace(rewardModelName, rewardModel.hasStateRewards() ? std::move(modelComponents.stateRewards) : boost::optional<std::vector<ValueType>>(),
+                                     boost::optional<std::vector<ValueType>>(),
+                                     rewardModel.hasTransitionRewards() ? std::move(modelComponents.transitionRewardMatrix) : boost::optional<storm::storage::SparseMatrix<ValueType>>());
+            }
+                
             switch (program.getModelType()) {
                 case storm::prism::Program::ModelType::DTMC:
-                    result = std::shared_ptr<storm::models::sparse::Model<ValueType>>(new storm::models::sparse::Dtmc<ValueType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), rewardModel.hasStateRewards() ? std::move(modelComponents.stateRewards) : boost::optional<std::vector<ValueType>>(), rewardModel.hasTransitionRewards() ? std::move(modelComponents.transitionRewardMatrix) : boost::optional<storm::storage::SparseMatrix<ValueType>>(), std::move(modelComponents.choiceLabeling)));
+                    result = std::shared_ptr<storm::models::sparse::Model<ValueType>>(new storm::models::sparse::Dtmc<ValueType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), std::move(rewardModels), std::move(modelComponents.choiceLabeling)));
                     break;
                 case storm::prism::Program::ModelType::CTMC:
-                    result = std::shared_ptr<storm::models::sparse::Model<ValueType>>(new storm::models::sparse::Ctmc<ValueType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), rewardModel.hasStateRewards() ? std::move(modelComponents.stateRewards) : boost::optional<std::vector<ValueType>>(), rewardModel.hasTransitionRewards() ? std::move(modelComponents.transitionRewardMatrix) : boost::optional<storm::storage::SparseMatrix<ValueType>>(), std::move(modelComponents.choiceLabeling)));
+                    result = std::shared_ptr<storm::models::sparse::Model<ValueType>>(new storm::models::sparse::Ctmc<ValueType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), std::move(rewardModels), std::move(modelComponents.choiceLabeling)));
                     break;
                 case storm::prism::Program::ModelType::MDP:
-                    result = std::shared_ptr<storm::models::sparse::Model<ValueType>>(new storm::models::sparse::Mdp<ValueType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), rewardModel.hasStateRewards() ? std::move(modelComponents.stateRewards) : boost::optional<std::vector<ValueType>>(), rewardModel.hasTransitionRewards() ? std::move(modelComponents.transitionRewardMatrix) : boost::optional<storm::storage::SparseMatrix<ValueType>>(), std::move(modelComponents.choiceLabeling)));
+                    result = std::shared_ptr<storm::models::sparse::Model<ValueType>>(new storm::models::sparse::Mdp<ValueType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), std::move(rewardModels), std::move(modelComponents.choiceLabeling)));
                     break;
                 default:
                     STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Error while creating model from probabilistic program: cannot handle this model type.");
