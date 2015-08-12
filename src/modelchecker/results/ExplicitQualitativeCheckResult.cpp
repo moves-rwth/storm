@@ -40,7 +40,9 @@ namespace storm {
                     boost::get<vector_type>(first.truthValues) |= boost::get<vector_type>(secondCheckResult.truthValues);
                 }
             } else {
-                std::function<bool (bool, bool)> function = logicalAnd ? [] (bool a, bool b) { return a && b; } : [] (bool a, bool b) { return a || b; };
+                std::function<bool (bool, bool)> function = logicalAnd ?
+					std::function<bool(bool, bool)>([] (bool a, bool b) { return a && b; }) :
+					std::function<bool(bool, bool)>([] (bool a, bool b) { return a || b; });
                 
                 map_type& map1 = boost::get<map_type>(first.truthValues);
                 map_type const& map2 = boost::get<map_type>(secondCheckResult.truthValues);
