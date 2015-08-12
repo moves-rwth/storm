@@ -13,17 +13,19 @@ namespace storm {
         template<storm::dd::DdType DdType, typename ValueType>
         class HybridCtmcCslModelChecker;
         
-        template<typename ValueType>
+        template<typename SparseDtmcModelType>
         class SparseDtmcPrctlModelChecker;
         
-        template<class ValueType>
-        class SparseCtmcCslModelChecker : public SparsePropositionalModelChecker<ValueType> {
+        template<class SparseCtmcModelType>
+        class SparseCtmcCslModelChecker : public SparsePropositionalModelChecker<SparseCtmcModelType> {
         public:
-            friend class HybridCtmcCslModelChecker<storm::dd::DdType::CUDD, ValueType>;
-            friend class SparseDtmcPrctlModelChecker<ValueType>;
+            typedef typename SparseCtmcModelType::ValueType ValueType;
             
-            explicit SparseCtmcCslModelChecker(storm::models::sparse::Ctmc<ValueType> const& model);
-            explicit SparseCtmcCslModelChecker(storm::models::sparse::Ctmc<ValueType> const& model, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory);
+            friend class HybridCtmcCslModelChecker<storm::dd::DdType::CUDD, ValueType>;
+            friend class SparseDtmcPrctlModelChecker<SparseCtmcModelType>;
+            
+            explicit SparseCtmcCslModelChecker(SparseCtmcModelType const& model);
+            explicit SparseCtmcCslModelChecker(SparseCtmcModelType const& model, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory);
             
             // The implemented methods of the AbstractModelChecker interface.
             virtual bool canHandle(storm::logic::Formula const& formula) const override;
@@ -35,9 +37,6 @@ namespace storm {
             virtual std::unique_ptr<CheckResult> computeReachabilityRewards(storm::logic::ReachabilityRewardFormula const& rewardPathFormula, bool qualitative = false, boost::optional<storm::logic::OptimalityType> const& optimalityType = boost::optional<storm::logic::OptimalityType>()) override;
             virtual std::unique_ptr<CheckResult> computeLongRunAverage(storm::logic::StateFormula const& stateFormula, bool qualitative = false, boost::optional<storm::logic::OptimalityType> const& optimalityType = boost::optional<storm::logic::OptimalityType>()) override;
 
-        protected:
-            storm::models::sparse::Ctmc<ValueType> const& getModel() const override;
-            
         private:
             // The methods that perform the actual checking.
             std::vector<ValueType> computeBoundedUntilProbabilitiesHelper(storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, std::vector<ValueType> const& exitRates, bool qualitative, double lowerBound, double upperBound) const;
