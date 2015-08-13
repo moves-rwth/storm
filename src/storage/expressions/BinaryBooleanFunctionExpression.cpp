@@ -1,6 +1,7 @@
 #include "src/storage/expressions/BinaryBooleanFunctionExpression.h"
 #include "src/storage/expressions/BooleanLiteralExpression.h"
 #include "src/storage/expressions/ExpressionManager.h"
+#include "src/storage/expressions/ExpressionVisitor.h"
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidTypeException.h"
 

@@ -46,7 +46,7 @@ namespace storm {
 			virtual void reset() override;
 
 			virtual void add(storm::expressions::Expression const& assertion) override;
-
+              
 			virtual CheckResult check() override;
 
 			virtual CheckResult checkWithAssumptions(std::set<storm::expressions::Expression> const& assumptions) override;
@@ -57,7 +57,7 @@ namespace storm {
 
 			virtual storm::expressions::SimpleValuation getModelAsValuation() override;
             
-            virtual std::shared_ptr<SmtSolver::ModelReference> getModel() override;
+                        virtual std::shared_ptr<SmtSolver::ModelReference> getModel() override;
 
 			virtual std::vector<storm::expressions::SimpleValuation> allSat(std::vector<storm::expressions::Variable> const& important) override;
 

@@ -1,6 +1,7 @@
 #ifndef STORM_SOLVER_GLPKLPSOLVER_H_
 #define STORM_SOLVER_GLPKLPSOLVER_H_
 
+#include <map>
 #include "src/solver/LpSolver.h"
 #include "src/exceptions/NotImplementedException.h"
 

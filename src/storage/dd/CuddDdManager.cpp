@@ -6,6 +6,7 @@
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/settings/SettingsManager.h"
+#include "src/storage/expressions/ExpressionManager.h"
 
 namespace storm {
     namespace dd {

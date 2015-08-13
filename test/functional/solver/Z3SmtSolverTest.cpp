@@ -162,7 +162,6 @@ TEST(Z3SmtSolver, AllSat) {
     std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
     
     storm::solver::Z3SmtSolver s(*manager);
-    storm::solver::SmtSolver::CheckResult result = storm::solver::SmtSolver::CheckResult::Unknown;
     
     storm::expressions::Variable a = manager->declareIntegerVariable("a");
     storm::expressions::Variable b = manager->declareIntegerVariable("b");

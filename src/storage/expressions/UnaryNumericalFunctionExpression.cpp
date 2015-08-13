@@ -5,6 +5,7 @@
 #include "src/storage/expressions/UnaryNumericalFunctionExpression.h"
 #include "src/storage/expressions/IntegerLiteralExpression.h"
 #include "src/storage/expressions/DoubleLiteralExpression.h"
+#include "ExpressionVisitor.h"
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidTypeException.h"
 

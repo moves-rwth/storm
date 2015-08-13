@@ -2,11 +2,20 @@
 #define STORM_STORAGE_PRISM_INITIALCONSTRUCT_H_
 
 #include <string>
+#include <map>
 
 #include "src/storage/prism/LocatedInformation.h"
 #include "src/storage/expressions/Expression.h"
-#include "src/storage/expressions/Variable.h"
 #include "src/utility/OsDetection.h"
+
+
+namespace storm {
+        namespace expressions {
+            class Variable;
+        }
+}
+
+
 
 namespace storm {
     namespace prism {

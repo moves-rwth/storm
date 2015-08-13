@@ -8,6 +8,7 @@
 #include "log4cplus/consoleappender.h"
 #include "log4cplus/fileappender.h"
 
+#include "storm-config.h"
 #include "src/settings/SettingsManager.h"
 
 log4cplus::Logger logger;

@@ -8,6 +8,9 @@
 
 #include "src/settings/SettingsManager.h"
 #include "src/utility/macros.h"
+#include "src/storage/expressions/Expression.h"
+#include "src/storage/expressions/ExpressionManager.h"
+
 #include "src/exceptions/InvalidAccessException.h"
 #include "src/exceptions/InvalidStateException.h"
 

@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <set>
+#include <vector>
 #include <boost/variant.hpp>
 
 #include "src/storage/expressions/Variable.h"

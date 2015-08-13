@@ -1,6 +1,7 @@
 #ifndef STORM_SOLVER_GUROBILPSOLVER
 #define STORM_SOLVER_GUROBILPSOLVER
 
+#include <map>
 #include "src/solver/LpSolver.h"
 #include "src/exceptions/NotImplementedException.h"
 
