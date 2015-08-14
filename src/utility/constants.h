@@ -12,7 +12,6 @@
 #include <limits>
 #include <cstdint>
 
-#include "src/adapters/CarlAdapter.h"
 
 namespace storm {
     

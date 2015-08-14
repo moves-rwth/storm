@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 #include "src/storage/SparseMatrix.h"
+#include "src/storage/BitVector.h"
 #include "src/exceptions/InvalidStateException.h"
 #include "src/exceptions/OutOfRangeException.h"
 

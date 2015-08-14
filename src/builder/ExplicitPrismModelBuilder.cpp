@@ -14,6 +14,8 @@
 #include "src/utility/macros.h"
 #include "src/exceptions/WrongFormatException.h"
 
+#include "src/exceptions/InvalidArgumentException.h"
+
 namespace storm {
     namespace builder {
         template <typename ValueType, typename IndexType>

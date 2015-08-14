@@ -7,8 +7,6 @@
 #include <boost/container/flat_set.hpp>
 
 #include "src/utility/OsDetection.h"
-#include "src/utility/macros.h"
-#include "src/exceptions/InvalidArgumentException.h"
 
 
 namespace storm {

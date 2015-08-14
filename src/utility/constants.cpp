@@ -5,6 +5,8 @@
 #include "src/settings/SettingsManager.h"
 #include "src/settings/modules/GeneralSettings.h"
 
+#include "src/adapters/CarlAdapter.h"
+
 namespace storm {
     namespace utility {
         

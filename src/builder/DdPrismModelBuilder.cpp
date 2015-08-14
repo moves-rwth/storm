@@ -10,6 +10,8 @@
 
 #include "src/exceptions/InvalidStateException.h"
 
+#include "src/exceptions/InvalidArgumentException.h"
+
 #include "src/utility/prism.h"
 #include "src/utility/math.h"
 #include "src/storage/prism/Program.h"

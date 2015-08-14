@@ -16,6 +16,8 @@
 #include "src/exceptions/FileIoException.h"
 #include "src/exceptions/WrongFormatException.h"
 
+#include "src/exceptions/InvalidArgumentException.h"
+
 TEST(DeterministicSparseTransitionParserTest, NonExistingFile) {
 
 	// No matter what happens, please do NOT create a file with the name "nonExistingFile.not"!
