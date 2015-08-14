@@ -142,6 +142,22 @@ namespace storm {
 
             template<typename ValueType, typename RewardModelType>
             std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeReachabilityRewards(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, RewardModelType const& rewardModel, storm::storage::BitVector const& targetStates, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+                return computeReachabilityRewards(transitionMatrix, backwardTransitions, [&] (uint_fast64_t numberOfRows, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates) { return rewardModel.getTotalRewardVector(numberOfRows, transitionMatrix, maybeStates); }, targetStates, qualitative, linearEquationSolverFactory);
+            }
+            
+            template<typename ValueType, typename RewardModelType>
+            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeReachabilityRewards(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& totalStateRewardVector, storm::storage::BitVector const& targetStates, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+                return computeReachabilityRewards(transitionMatrix, backwardTransitions,
+                                                  [&] (uint_fast64_t numberOfRows, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates) {
+                                                      std::vector<ValueType> result(numberOfRows);
+                                                      storm::utility::vector::selectVectorValues(result, maybeStates, totalStateRewardVector);
+                                                      return result;
+                                                  },
+                                                  targetStates, qualitative, linearEquationSolverFactory);
+            }
+          
+            template<typename ValueType, typename RewardModelType>
+            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeReachabilityRewards(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::function<std::vector<ValueType> const&(uint_fast64_t, storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const&)> const& totalStateRewardVectorGetter, storm::storage::BitVector const& targetStates, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 
                 // Determine which states have a reward of infinity by definition.
                 storm::storage::BitVector trueStates(transitionMatrix.getRowCount(), true);
@@ -174,7 +190,7 @@ namespace storm {
                     std::vector<ValueType> x(submatrix.getColumnCount(), storm::utility::one<ValueType>());
                     
                     // Prepare the right-hand side of the equation system.
-                    std::vector<ValueType> b = rewardModel.getTotalRewardVector(submatrix.getRowCount(), transitionMatrix, maybeStates);
+                    std::vector<ValueType> b = totalStateRewardVectorGetter(submatrix.getRowCount(), transitionMatrix, maybeStates);
                     
                     // Now solve the resulting equation system.
                     std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(submatrix);
@@ -189,7 +205,7 @@ namespace storm {
                 
                 return result;
             }
-         
+
             template class SparseDtmcPrctlHelper<double>;
         }
     }

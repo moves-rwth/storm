@@ -9,6 +9,7 @@
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
 #include "src/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
+#include "src/modelchecker/csl/helper/SparseCtmcCslHelper.h"
 
 namespace storm {
     namespace modelchecker {
@@ -83,7 +84,7 @@ namespace storm {
         std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::computeLongRunAverage(storm::logic::StateFormula const& stateFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
             std::unique_ptr<CheckResult> subResultPointer = this->check(stateFormula);
             ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();
-            std::vector<ValueType> numericResult = storm::modelchecker::helper::SparseCtmcCslHelper<ValueType>::computeLongRunAverage(this->getModel().getTransitionMatrix(), this->getModel().getTransitionMatrix(), subResult.getTruthValuesVector(), qualitative, *linearEquationSolverFactory);
+            std::vector<ValueType> numericResult = storm::modelchecker::helper::SparseCtmcCslHelper<ValueType>::computeLongRunAverage(this->getModel().getTransitionMatrix(), subResult.getTruthValuesVector(), nullptr, qualitative, *linearEquationSolverFactory);
             return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
         }
                 

@@ -1,7 +1,7 @@
-#ifndef STORM_MODELCHECKER_SPARSE_MDP_PRCTL_MODELCHECKER_HELPER_H_
-#define STORM_MODELCHECKER_SPARSE_MDP_PRCTL_MODELCHECKER_HELPER_H_
+#ifndef STORM_MODELCHECKER_HYBRID_MDP_PRCTL_MODELCHECKER_HELPER_H_
+#define STORM_MODELCHECKER_HYBRID_MDP_PRCTL_MODELCHECKER_HELPER_H_
 
-#include "src/models/symbolic/Model.h"
+#include "src/models/symbolic/NondeterministicModel.h"
 
 #include "src/storage/dd/Add.h"
 #include "src/storage/dd/Bdd.h"
@@ -10,6 +10,9 @@
 
 namespace storm {
     namespace modelchecker {
+        // Forward-declare result class.
+        class CheckResult;
+        
         namespace helper {
             
             template<storm::dd::DdType DdType, typename ValueType>
@@ -17,7 +20,7 @@ namespace storm {
             public:
                 static std::unique_ptr<CheckResult> computeBoundedUntilProbabilities(bool minimize, storm::models::symbolic::NondeterministicModel<DdType> const& model, storm::dd::Add<DdType> const& transitionMatrix, storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates, uint_fast64_t stepBound, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory);
                 
-                static storm::dd::Add<DdType> computeNextProbabilities(bool minimize, storm::models::symbolic::NondeterministicModel<DdType> const& model, storm::dd::Add<DdType> const& transitionMatrix, storm::dd::Bdd<DdType> const& nextStates);
+                static std::unique_ptr<CheckResult> computeNextProbabilities(bool minimize, storm::models::symbolic::NondeterministicModel<DdType> const& model, storm::dd::Add<DdType> const& transitionMatrix, storm::dd::Bdd<DdType> const& nextStates);
                 
                 static std::unique_ptr<CheckResult> computeUntilProbabilities(bool minimize, storm::models::symbolic::NondeterministicModel<DdType> const& model, storm::dd::Add<DdType> const& transitionMatrix, storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates, bool qualitative, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory);
                 
@@ -26,9 +29,10 @@ namespace storm {
                 static std::unique_ptr<CheckResult> computeInstantaneousRewards(bool minimize, storm::models::symbolic::NondeterministicModel<DdType> const& model, storm::dd::Add<DdType> const& transitionMatrix, uint_fast64_t stepBound, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory);
                 
                 static std::unique_ptr<CheckResult> computeReachabilityRewards(bool minimize, storm::models::symbolic::NondeterministicModel<DdType> const& model, storm::dd::Add<DdType> const& transitionMatrix, boost::optional<storm::dd::Add<DdType>> const& stateRewardVector, boost::optional<storm::dd::Add<DdType>> const& transitionRewardMatrix, storm::dd::Bdd<DdType> const& targetStates, bool qualitative, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory);
-            }
+            };
+            
         }
     }
 }
 
-#endif /* STORM_MODELCHECKER_SPARSE_MDP_PRCTL_MODELCHECKER_HELPER_H_ */
+#endif /* STORM_MODELCHECKER_HYBRID_MDP_PRCTL_MODELCHECKER_HELPER_H_ */

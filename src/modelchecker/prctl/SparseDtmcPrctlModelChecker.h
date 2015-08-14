@@ -9,17 +9,12 @@
 
 namespace storm {
     namespace modelchecker {
-        template<storm::dd::DdType DdType, typename ValueType>
-        class HybridDtmcPrctlModelChecker;
-        
         template<class SparseDtmcModelType>
         class SparseDtmcPrctlModelChecker : public SparsePropositionalModelChecker<SparseDtmcModelType> {
         public:
             typedef typename SparseDtmcModelType::ValueType ValueType;
             typedef typename SparseDtmcModelType::RewardModelType RewardModelType;
-            
-            friend class HybridDtmcPrctlModelChecker<storm::dd::DdType::CUDD, ValueType>;
-            
+                        
             explicit SparseDtmcPrctlModelChecker(SparseDtmcModelType const& model);
             explicit SparseDtmcPrctlModelChecker(SparseDtmcModelType const& model, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory);
             

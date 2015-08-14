@@ -115,7 +115,7 @@ namespace storm {
             }
             
             template<typename ValueType, typename RewardModelType>
-            std::vector<ValueType> SparseMdpPrctlHelper<ValueType, RewardModelType>::computeInstantaneousRewards(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, RewardModelType const& rewardModel, bool minimize, uint_fast64_t stepCount, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
+            std::vector<ValueType> SparseMdpPrctlHelper<ValueType, RewardModelType>::computeInstantaneousRewards(bool minimize, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, RewardModelType const& rewardModel, uint_fast64_t stepCount, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
                 // Only compute the result if the model has a state-based reward this->getModel().
                 STORM_LOG_THROW(rewardModel.hasStateRewards(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
                 
@@ -129,7 +129,7 @@ namespace storm {
             }
             
             template<typename ValueType, typename RewardModelType>
-            std::vector<ValueType> SparseMdpPrctlHelper<ValueType, RewardModelType>::computeCumulativeRewards(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, RewardModelType const& rewardModel, bool minimize, uint_fast64_t stepBound, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
+            std::vector<ValueType> SparseMdpPrctlHelper<ValueType, RewardModelType>::computeCumulativeRewards(bool minimize, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, RewardModelType const& rewardModel, uint_fast64_t stepBound, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
                 // Only compute the result if the model has at least one reward this->getModel().
                 STORM_LOG_THROW(!rewardModel.empty(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
                 

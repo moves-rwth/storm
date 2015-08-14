@@ -1,13 +1,14 @@
 #include "src/modelchecker/prctl/HybridMdpPrctlModelChecker.h"
 
-#include "src/storage/dd/CuddOdd.h"
+#include "src/modelchecker/prctl/helper/HybridMdpPrctlHelper.h"
 
-#include "src/utility/macros.h"
-#include "src/utility/graph.h"
+#include "src/storage/dd/CuddOdd.h"
 
 #include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"
 #include "src/modelchecker/results/SymbolicQuantitativeCheckResult.h"
-#include "src/modelchecker/results/HybridQuantitativeCheckResult.h"
+
+#include "src/utility/macros.h"
+#include "src/utility/graph.h"
 
 #include "src/exceptions/InvalidStateException.h"
 #include "src/exceptions/InvalidPropertyException.h"
@@ -36,7 +37,7 @@ namespace storm {
             std::unique_ptr<CheckResult> rightResultPointer = this->check(pathFormula.getRightSubformula());
             SymbolicQualitativeCheckResult<DdType> const& leftResult = leftResultPointer->asSymbolicQualitativeCheckResult<DdType>();
             SymbolicQualitativeCheckResult<DdType> const& rightResult = rightResultPointer->asSymbolicQualitativeCheckResult<DdType>();
-            return this->computeUntilProbabilitiesHelper(optimalityType.get() == storm::logic::OptimalityType::Minimize, this->getModel(), this->getModel().getTransitionMatrix(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(), qualitative, *this->linearEquationSolverFactory);
+            return storm::modelchecker::helper::HybridMdpPrctlHelper<DdType, ValueType>::computeUntilProbabilities(optimalityType.get() == storm::logic::OptimalityType::Minimize, this->getModel(), this->getModel().getTransitionMatrix(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(), qualitative, *this->linearEquationSolverFactory);
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
@@ -44,7 +45,7 @@ namespace storm {
             STORM_LOG_THROW(optimalityType, storm::exceptions::InvalidArgumentException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
             std::unique_ptr<CheckResult> subResultPointer = this->check(pathFormula.getSubformula());
             SymbolicQualitativeCheckResult<DdType> const& subResult = subResultPointer->asSymbolicQualitativeCheckResult<DdType>();
-            return std::unique_ptr<CheckResult>(new SymbolicQuantitativeCheckResult<DdType>(this->getModel().getReachableStates(), this->computeNextProbabilitiesHelper(optimalityType.get() == storm::logic::OptimalityType::Minimize, this->getModel(), this->getModel().getTransitionMatrix(), subResult.getTruthValuesVector())));
+            return storm::modelchecker::helper::HybridMdpPrctlHelper<DdType, ValueType>::computeNextProbabilities(optimalityType.get() == storm::logic::OptimalityType::Minimize, this->getModel(), this->getModel().getTransitionMatrix(), subResult.getTruthValuesVector());
         }
                 
         template<storm::dd::DdType DdType, typename ValueType>
@@ -55,21 +56,21 @@ namespace storm {
             std::unique_ptr<CheckResult> rightResultPointer = this->check(pathFormula.getRightSubformula());
             SymbolicQualitativeCheckResult<DdType> const& leftResult = leftResultPointer->asSymbolicQualitativeCheckResult<DdType>();
             SymbolicQualitativeCheckResult<DdType> const& rightResult = rightResultPointer->asSymbolicQualitativeCheckResult<DdType>();
-            return this->computeBoundedUntilProbabilitiesHelper(optimalityType.get() == storm::logic::OptimalityType::Minimize, this->getModel(), this->getModel().getTransitionMatrix(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(), pathFormula.getDiscreteTimeBound(), *this->linearEquationSolverFactory);
+            return storm::modelchecker::helper::HybridMdpPrctlHelper<DdType, ValueType>::computeBoundedUntilProbabilities(optimalityType.get() == storm::logic::OptimalityType::Minimize, this->getModel(), this->getModel().getTransitionMatrix(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(), pathFormula.getDiscreteTimeBound(), *this->linearEquationSolverFactory);
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
         std::unique_ptr<CheckResult> HybridMdpPrctlModelChecker<DdType, ValueType>::computeCumulativeRewards(storm::logic::CumulativeRewardFormula const& rewardPathFormula, boost::optional<std::string> const& rewardModelName, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
             STORM_LOG_THROW(optimalityType, storm::exceptions::InvalidArgumentException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
             STORM_LOG_THROW(rewardPathFormula.hasDiscreteTimeBound(), storm::exceptions::InvalidArgumentException, "Formula needs to have a discrete time bound.");
-            return this->computeCumulativeRewardsHelper(optimalityType.get() == storm::logic::OptimalityType::Minimize, this->getModel(), this->getModel().getTransitionMatrix(), rewardPathFormula.getDiscreteTimeBound(), *this->linearEquationSolverFactory);
+            return storm::modelchecker::helper::HybridMdpPrctlHelper<DdType, ValueType>::computeCumulativeRewards(optimalityType.get() == storm::logic::OptimalityType::Minimize, this->getModel(), this->getModel().getTransitionMatrix(), rewardPathFormula.getDiscreteTimeBound(), *this->linearEquationSolverFactory);
         }
                 
         template<storm::dd::DdType DdType, typename ValueType>
         std::unique_ptr<CheckResult> HybridMdpPrctlModelChecker<DdType, ValueType>::computeInstantaneousRewards(storm::logic::InstantaneousRewardFormula const& rewardPathFormula, boost::optional<std::string> const& rewardModelName, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
             STORM_LOG_THROW(optimalityType, storm::exceptions::InvalidArgumentException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
             STORM_LOG_THROW(rewardPathFormula.hasDiscreteTimeBound(), storm::exceptions::InvalidArgumentException, "Formula needs to have a discrete time bound.");
-            return this->computeInstantaneousRewardsHelper(optimalityType.get() == storm::logic::OptimalityType::Minimize, this->getModel(), this->getModel().getTransitionMatrix(), rewardPathFormula.getDiscreteTimeBound(), *this->linearEquationSolverFactory);
+            return storm::modelchecker::helper::HybridMdpPrctlHelper<DdType, ValueType>::computeInstantaneousRewards(optimalityType.get() == storm::logic::OptimalityType::Minimize, this->getModel(), this->getModel().getTransitionMatrix(), rewardPathFormula.getDiscreteTimeBound(), *this->linearEquationSolverFactory);
         }
                 
         template<storm::dd::DdType DdType, typename ValueType>
@@ -77,7 +78,7 @@ namespace storm {
             STORM_LOG_THROW(optimalityType, storm::exceptions::InvalidArgumentException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
             std::unique_ptr<CheckResult> subResultPointer = this->check(rewardPathFormula.getSubformula());
             SymbolicQualitativeCheckResult<DdType> const& subResult = subResultPointer->asSymbolicQualitativeCheckResult<DdType>();
-            return this->computeReachabilityRewardsHelper(optimalityType.get() == storm::logic::OptimalityType::Minimize, this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getOptionalStateRewardVector(), this->getModel().getOptionalTransitionRewardMatrix(), subResult.getTruthValuesVector(), *this->linearEquationSolverFactory, qualitative);
+            return storm::modelchecker::helper::HybridMdpPrctlHelper<DdType, ValueType>::computeReachabilityRewards(optimalityType.get() == storm::logic::OptimalityType::Minimize, this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getOptionalStateRewardVector(), this->getModel().getOptionalTransitionRewardMatrix(), subResult.getTruthValuesVector(), qualitative, *this->linearEquationSolverFactory);
         }
         
         template<storm::dd::DdType DdType, typename ValueType>

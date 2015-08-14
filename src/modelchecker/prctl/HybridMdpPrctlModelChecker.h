@@ -2,7 +2,9 @@
 #define STORM_MODELCHECKER_HYBRIDMDPPRCTLMODELCHECKER_H_
 
 #include "src/modelchecker/propositional/SymbolicPropositionalModelChecker.h"
+
 #include "src/models/symbolic/Mdp.h"
+
 #include "src/utility/solver.h"
 
 namespace storm {

@@ -570,6 +570,6 @@ namespace storm {
             return result;
         }
         
-        template class SparseMarkovAutomatonCslModelChecker<double>;
+        template class SparseMarkovAutomatonCslModelChecker<storm::models::sparse::MarkovAutomaton<double>>;
     }
 }

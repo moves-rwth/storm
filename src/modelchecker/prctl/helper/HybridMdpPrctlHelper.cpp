@@ -1,11 +1,19 @@
 #include "src/modelchecker/prctl/helper/HybridMdpPrctlHelper.h"
 
+#include "src/utility/graph.h"
+
+#include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"
+#include "src/modelchecker/results/SymbolicQuantitativeCheckResult.h"
+#include "src/modelchecker/results/HybridQuantitativeCheckResult.h"
+
+#include "src/exceptions/InvalidPropertyException.h"
+
 namespace storm {
     namespace modelchecker {
         namespace helper {
             
             template<storm::dd::DdType DdType, typename ValueType>
-            std::unique_ptr<CheckResult> HybridMdpPrctlModelChecker<DdType, ValueType>::computeUntilProbabilities(bool minimize, storm::models::symbolic::NondeterministicModel<DdType> const& model, storm::dd::Add<DdType> const& transitionMatrix, storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates, bool qualitative, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+            std::unique_ptr<CheckResult> HybridMdpPrctlHelper<DdType, ValueType>::computeUntilProbabilities(bool minimize, storm::models::symbolic::NondeterministicModel<DdType> const& model, storm::dd::Add<DdType> const& transitionMatrix, storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates, bool qualitative, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 // We need to identify the states which have to be taken out of the matrix, i.e. all states that have
                 // probability 0 and 1 of satisfying the until-formula.
                 std::pair<storm::dd::Bdd<DdType>, storm::dd::Bdd<DdType>> statesWithProbability01;
@@ -69,13 +77,13 @@ namespace storm {
             }
 
             template<storm::dd::DdType DdType, typename ValueType>
-            storm::dd::Add<DdType> HybridMdpPrctlModelChecker<DdType, ValueType>::computeNextProbabilitiesHelper(bool minimize, storm::models::symbolic::NondeterministicModel<DdType> const& model, storm::dd::Add<DdType> const& transitionMatrix, storm::dd::Bdd<DdType> const& nextStates) {
+            std::unique_ptr<CheckResult> HybridMdpPrctlHelper<DdType, ValueType>::computeNextProbabilities(bool minimize, storm::models::symbolic::NondeterministicModel<DdType> const& model, storm::dd::Add<DdType> const& transitionMatrix, storm::dd::Bdd<DdType> const& nextStates) {
                 storm::dd::Add<DdType> result = transitionMatrix * nextStates.swapVariables(model.getRowColumnMetaVariablePairs()).toAdd();
-                return result.sumAbstract(model.getColumnVariables());
+                return std::unique_ptr<CheckResult>(new storm::modelchecker::SymbolicQuantitativeCheckResult<DdType>(model.getReachableStates(), result.sumAbstract(model.getColumnVariables())));
             }
 
             template<storm::dd::DdType DdType, typename ValueType>
-            std::unique_ptr<CheckResult> HybridMdpPrctlModelChecker<DdType, ValueType>::computeBoundedUntilProbabilitiesHelper(bool minimize, storm::models::symbolic::NondeterministicModel<DdType> const& model, storm::dd::Add<DdType> const& transitionMatrix, storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates, uint_fast64_t stepBound, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+            std::unique_ptr<CheckResult> HybridMdpPrctlHelper<DdType, ValueType>::computeBoundedUntilProbabilities(bool minimize, storm::models::symbolic::NondeterministicModel<DdType> const& model, storm::dd::Add<DdType> const& transitionMatrix, storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates, uint_fast64_t stepBound, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 // We need to identify the states which have to be taken out of the matrix, i.e. all states that have
                 // probability 0 or 1 of satisfying the until-formula.
                 storm::dd::Bdd<DdType> statesWithProbabilityGreater0;
@@ -126,7 +134,7 @@ namespace storm {
             }
             
             template<storm::dd::DdType DdType, typename ValueType>
-            std::unique_ptr<CheckResult> HybridMdpPrctlModelChecker<DdType, ValueType>::computeInstantaneousRewardsHelper(bool minimize, storm::models::symbolic::NondeterministicModel<DdType> const& model, storm::dd::Add<DdType> const& transitionMatrix, uint_fast64_t stepBound, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+            std::unique_ptr<CheckResult> HybridMdpPrctlHelper<DdType, ValueType>::computeInstantaneousRewards(bool minimize, storm::models::symbolic::NondeterministicModel<DdType> const& model, storm::dd::Add<DdType> const& transitionMatrix, uint_fast64_t stepBound, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 // Only compute the result if the model has at least one reward this->getModel().
                 STORM_LOG_THROW(model.hasStateRewards(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
                 
@@ -148,7 +156,7 @@ namespace storm {
             }
 
             template<storm::dd::DdType DdType, typename ValueType>
-            std::unique_ptr<CheckResult> HybridMdpPrctlModelChecker<DdType, ValueType>::computeCumulativeRewardsHelper(bool minimize, storm::models::symbolic::NondeterministicModel<DdType> const& model, storm::dd::Add<DdType> const& transitionMatrix, uint_fast64_t stepBound, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+            std::unique_ptr<CheckResult> HybridMdpPrctlHelper<DdType, ValueType>::computeCumulativeRewards(bool minimize, storm::models::symbolic::NondeterministicModel<DdType> const& model, storm::dd::Add<DdType> const& transitionMatrix, uint_fast64_t stepBound, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 // Only compute the result if the model has at least one reward this->getModel().
                 STORM_LOG_THROW(model.hasStateRewards() || model.hasTransitionRewards(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
                 
@@ -177,7 +185,7 @@ namespace storm {
             }
 
             template<storm::dd::DdType DdType, typename ValueType>
-            std::unique_ptr<CheckResult> HybridMdpPrctlModelChecker<DdType, ValueType>::computeReachabilityRewardsHelper(bool minimize, storm::models::symbolic::NondeterministicModel<DdType> const& model, storm::dd::Add<DdType> const& transitionMatrix, boost::optional<storm::dd::Add<DdType>> const& stateRewardVector, boost::optional<storm::dd::Add<DdType>> const& transitionRewardMatrix, storm::dd::Bdd<DdType> const& targetStates, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory, bool qualitative) {
+            std::unique_ptr<CheckResult> HybridMdpPrctlHelper<DdType, ValueType>::computeReachabilityRewards(bool minimize, storm::models::symbolic::NondeterministicModel<DdType> const& model, storm::dd::Add<DdType> const& transitionMatrix, boost::optional<storm::dd::Add<DdType>> const& stateRewardVector, boost::optional<storm::dd::Add<DdType>> const& transitionRewardMatrix, storm::dd::Bdd<DdType> const& targetStates, bool qualitative, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 
                 // Only compute the result if there is at least one reward model.
                 STORM_LOG_THROW(stateRewardVector || transitionRewardMatrix, storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
@@ -243,6 +251,8 @@ namespace storm {
                     }
                 }
             }
+            
+            template class HybridMdpPrctlHelper<storm::dd::DdType::CUDD, double>;
         }
     }
 }

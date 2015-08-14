@@ -173,9 +173,9 @@ namespace storm {
                 } else {
                     rewardModelName = "";
                 }
-                rewardModels.emplace(rewardModelName, rewardModel.hasStateRewards() ? std::move(modelComponents.stateRewards) : boost::optional<std::vector<ValueType>>(),
-                                     boost::optional<std::vector<ValueType>>(),
-                                     rewardModel.hasTransitionRewards() ? std::move(modelComponents.transitionRewardMatrix) : boost::optional<storm::storage::SparseMatrix<ValueType>>());
+                rewardModels.emplace(rewardModelName, storm::models::sparse::StandardRewardModel<ValueType>(rewardModel.hasStateRewards() ? std::move(modelComponents.stateRewards) : boost::optional<std::vector<ValueType>>(),
+                                                                                                            boost::optional<std::vector<ValueType>>(),
+                                                                                                            rewardModel.hasTransitionRewards() ? std::move(modelComponents.transitionRewardMatrix) : boost::optional<storm::storage::SparseMatrix<ValueType>>()));
             }
                 
             switch (program.getModelType()) {
