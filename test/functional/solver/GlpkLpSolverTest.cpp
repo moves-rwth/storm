@@ -8,6 +8,8 @@
 #include "src/exceptions/InvalidAccessException.h"
 #include "src/settings/SettingsManager.h"
 
+#include "src/settings/modules/GeneralSettings.h"
+
 #include "src/storage/expressions/Expressions.h"
 
 TEST(GlpkLpSolver, LPOptimizeMax) {

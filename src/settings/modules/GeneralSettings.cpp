@@ -2,6 +2,12 @@
 
 #include "src/settings/SettingsManager.h"
 #include "src/settings/SettingMemento.h"
+#include "src/settings/Option.h"
+#include "src/settings/OptionBuilder.h"
+#include "src/settings/ArgumentBuilder.h"
+#include "src/settings/Argument.h"
+
+
 #include "src/exceptions/InvalidSettingsException.h"
 
 namespace storm {

@@ -7,11 +7,16 @@
 #include <boost/variant.hpp>
 
 #include "src/storage/expressions/Variable.h"
-#include "src/storage/dd/Bdd.h"
-#include "src/storage/dd/Add.h"
-#include "src/storage/dd/Odd.h"
+#include "src/storage/dd/DdType.h"
+
 
 namespace storm {
+    namespace dd {
+        template<storm::dd::DdType T> class Add;
+        template<storm::dd::DdType T> class Bdd;
+        
+    }
+    
     namespace solver {
         /*!
          * An interface that represents an abstract symbolic linear equation solver. In addition to solving a system of

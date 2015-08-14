@@ -6,7 +6,6 @@
 
 #include "src/storage/dd/DdManager.h"
 #include "src/storage/dd/CuddDdMetaVariable.h"
-#include "src/storage/expressions/Variable.h"
 #include "src/utility/OsDetection.h"
 
 // Include the C++-interface of CUDD.

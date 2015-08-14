@@ -5,7 +5,6 @@
 #include <vector>
 #include <iostream>
 
-#include "src/modelchecker/results/CheckResult.h"
 
 namespace storm {
     namespace logic {

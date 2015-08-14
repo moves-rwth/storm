@@ -3,14 +3,15 @@
 
 #include <string>
 #include <unordered_map>
+#include <vector>
 
-#include "src/settings/Option.h"
 
 namespace storm {
     namespace settings {
         // Forward-declare some classes.
         class SettingsManager;
         class SettingMemento;
+        class Option;
         
         namespace modules {
             

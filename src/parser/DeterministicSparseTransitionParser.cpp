@@ -20,6 +20,7 @@
 #include "src/exceptions/FileIoException.h"
 #include "src/exceptions/WrongFormatException.h"
 #include "src/settings/SettingsManager.h"
+#include "src/settings/modules/GeneralSettings.h"
 
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"

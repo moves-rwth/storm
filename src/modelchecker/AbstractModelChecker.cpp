@@ -6,6 +6,8 @@
 #include "src/utility/macros.h"
 #include "src/exceptions/NotImplementedException.h"
 #include "src/exceptions/InvalidOperationException.h"
+#include "src/exceptions/InvalidArgumentException.h"
+#include "src/exceptions/InternalTypeErrorException.h"
 
 namespace storm {
     namespace modelchecker {

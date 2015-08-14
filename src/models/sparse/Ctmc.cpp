@@ -1,6 +1,7 @@
 #include "src/models/sparse/Ctmc.h"
 
 #include "src/adapters/CarlAdapter.h"
+#include "src/utility/macros.h"
 
 namespace storm {
     namespace models {

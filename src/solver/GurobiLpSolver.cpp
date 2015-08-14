@@ -6,12 +6,16 @@
 #include "src/storage/expressions/LinearCoefficientVisitor.h"
 
 #include "src/settings/SettingsManager.h"
+#include "src/settings/modules/DebugSettings.h"
+#include "src/settings/modules/GurobiSettings.h"
+
 #include "src/utility/macros.h"
 #include "src/storage/expressions/Expression.h"
 #include "src/storage/expressions/ExpressionManager.h"
 
 #include "src/exceptions/InvalidStateException.h"
 #include "src/exceptions/InvalidAccessException.h"
+#include "src/exceptions/InvalidArgumentException.h"
 
 namespace storm {
     namespace solver {

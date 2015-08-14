@@ -4,7 +4,7 @@
 #include <memory>
 
 #include "src/logic/RewardPathFormula.h"
-#include "src/logic/StateFormula.h"
+
 
 namespace storm {
     namespace logic {

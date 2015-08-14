@@ -1,6 +1,11 @@
 #include "src/settings/modules/GlpkSettings.h"
+#include "src/settings/Option.h"
+#include "src/settings/OptionBuilder.h"
+#include "src/settings/ArgumentBuilder.h"
+#include "src/settings/Argument.h"
 
 #include "src/settings/SettingsManager.h"
+#include "src/settings/modules/GeneralSettings.h"
 
 namespace storm {
     namespace settings {

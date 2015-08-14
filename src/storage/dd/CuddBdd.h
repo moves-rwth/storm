@@ -1,22 +1,34 @@
 #ifndef STORM_STORAGE_DD_CUDDBDD_H_
 #define STORM_STORAGE_DD_CUDDBDD_H_
 
-#include "src/logic/ComparisonType.h"
 #include "src/storage/dd/Bdd.h"
 #include "src/storage/dd/CuddDd.h"
-#include "src/storage/dd/CuddAdd.h"
-#include "src/storage/expressions/Variable.h"
 #include "src/utility/OsDetection.h"
 
 // Include the C++-interface of CUDD.
 #include "cuddObj.hh"
 
 namespace storm {
+    namespace logic {
+        enum class ComparisonType;
+    }
+    
+    namespace expressions {
+        class Variable;
+    }
+    
+    namespace storage {
+        class BitVector;
+    }
+    
+    
+    
     namespace dd {
         // Forward-declare some classes.
         template<DdType Type> class DdManager;
         template<DdType Type> class Odd;
         template<DdType Type> class Add;
+        template<DdType Type> class DdForwardIterator;
         
         template<>
         class Bdd<DdType::CUDD> : public Dd<DdType::CUDD> {

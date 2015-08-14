@@ -14,6 +14,11 @@
 #include "src/utility/constants.h"
 #include "src/exceptions/IllegalFunctionCallException.h"
 #include "src/exceptions/InvalidOptionException.h"
+#include "src/exceptions/InvalidArgumentException.h"
+
+#include "src/settings/SettingsManager.h"
+#include "src/settings/modules/GeneralSettings.h"
+
 
 namespace storm {
     namespace storage {

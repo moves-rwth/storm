@@ -18,6 +18,10 @@
 #include "src/utility/counterexamples.h"
 #include "src/utility/solver.h"
 
+#include "src/settings/SettingsManager.h"
+#include "src/settings/modules/GeneralSettings.h"
+#include "src/settings/modules/CounterexampleGeneratorSettings.h"
+
 namespace storm {
     namespace counterexamples {
         
