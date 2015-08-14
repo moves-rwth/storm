@@ -190,7 +190,7 @@ return *this; \
 			ArgumentBuilder(ArgumentType type, std::string const& name, std::string const& description) : hasBeenBuilt(false), type(type), name(name), description(description), isOptional(false), hasDefaultValue(false), defaultValue_String(), defaultValue_Integer(), defaultValue_UnsignedInteger(), defaultValue_Double(), defaultValue_Boolean(), userValidationFunctions_String(), userValidationFunctions_Integer(), userValidationFunctions_UnsignedInteger(), userValidationFunctions_Double(), userValidationFunctions_Boolean() {
 				// Intentionally left empty.
 			}
-            
+
             // A flag that stores whether an argument has been built using this builder.
 			bool hasBeenBuilt;
             

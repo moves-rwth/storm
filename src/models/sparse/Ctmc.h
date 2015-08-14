@@ -1,9 +1,6 @@
 #ifndef STORM_MODELS_SPARSE_CTMC_H_
 #define STORM_MODELS_SPARSE_CTMC_H_
 
-#include <memory>
-#include <vector>
-
 #include "src/models/sparse/DeterministicModel.h"
 #include "src/utility/OsDetection.h"
 

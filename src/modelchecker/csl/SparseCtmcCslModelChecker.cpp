@@ -21,12 +21,12 @@
 namespace storm {
     namespace modelchecker {
         template <typename SparseCtmcModelType>
-        SparseCtmcCslModelChecker<SparseCtmcModelType>::SparseCtmcCslModelChecker(SparseCtmcModelType const& model) : SparsePropositionalModelChecker<ValueType>(model), linearEquationSolverFactory(new storm::utility::solver::LinearEquationSolverFactory<ValueType>()) {
+        SparseCtmcCslModelChecker<SparseCtmcModelType>::SparseCtmcCslModelChecker(SparseCtmcModelType const& model) : SparsePropositionalModelChecker<SparseCtmcModelType>(model), linearEquationSolverFactory(new storm::utility::solver::LinearEquationSolverFactory<ValueType>()) {
             // Intentionally left empty.
         }
         
         template <typename SparseCtmcModelType>
-        SparseCtmcCslModelChecker<SparseCtmcModelType>::SparseCtmcCslModelChecker(SparseCtmcModelType const& model, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory) : SparsePropositionalModelChecker<ValueType>(model), linearEquationSolverFactory(std::move(linearEquationSolverFactory)) {
+        SparseCtmcCslModelChecker<SparseCtmcModelType>::SparseCtmcCslModelChecker(SparseCtmcModelType const& model, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory) : SparsePropositionalModelChecker<SparseCtmcModelType>(model), linearEquationSolverFactory(std::move(linearEquationSolverFactory)) {
             // Intentionally left empty.
         }
         
@@ -58,7 +58,7 @@ namespace storm {
         std::unique_ptr<CheckResult> SparseCtmcCslModelChecker<SparseCtmcModelType>::computeNextProbabilities(storm::logic::NextFormula const& pathFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
             std::unique_ptr<CheckResult> subResultPointer = this->check(pathFormula.getSubformula());
             ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();
-            std::vector<ValueType> result = SparseDtmcPrctlModelChecker<ValueType>::computeNextProbabilitiesHelper(this->computeProbabilityMatrix(this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector()), subResult.getTruthValuesVector(), *this->linearEquationSolverFactory);
+            std::vector<ValueType> result = SparseDtmcPrctlModelChecker<SparseCtmcModelType>::computeNextProbabilitiesHelper(this->computeProbabilityMatrix(this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector()), subResult.getTruthValuesVector(), *this->linearEquationSolverFactory);
             return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(result)));
         }
         
@@ -72,12 +72,7 @@ namespace storm {
         }
         
         template <typename SparseCtmcModelType>
-        storm::models::sparse::Ctmc<ValueType> const& SparseCtmcCslModelChecker<SparseCtmcModelType>::getModel() const {
-            return this->template getModelAs<storm::models::sparse::Ctmc<ValueType>>();
-        }
-        
-        template <typename SparseCtmcModelType>
-        std::vector<ValueType> SparseCtmcCslModelChecker<SparseCtmcModelType>::computeBoundedUntilProbabilitiesHelper(storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, std::vector<ValueType> const& exitRates, bool qualitative, double lowerBound, double upperBound) const {
+        std::vector<typename SparseCtmcModelType::ValueType> SparseCtmcCslModelChecker<SparseCtmcModelType>::computeBoundedUntilProbabilitiesHelper(storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, std::vector<ValueType> const& exitRates, bool qualitative, double lowerBound, double upperBound) const {
             // If the time bounds are [0, inf], we rather call untimed reachability.
             storm::utility::ConstantsComparator<ValueType> comparator;
             if (comparator.isZero(lowerBound) && comparator.isInfinity(upperBound)) {
@@ -241,7 +236,7 @@ namespace storm {
         }
         
         template <typename SparseCtmcModelType>
-        storm::storage::SparseMatrix<ValueType> SparseCtmcCslModelChecker<SparseCtmcModelType>::computeUniformizedMatrix(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates, ValueType uniformizationRate, std::vector<ValueType> const& exitRates) {
+        storm::storage::SparseMatrix<typename SparseCtmcModelType::ValueType> SparseCtmcCslModelChecker<SparseCtmcModelType>::computeUniformizedMatrix(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates, ValueType uniformizationRate, std::vector<ValueType> const& exitRates) {
             STORM_LOG_DEBUG("Computing uniformized matrix using uniformization rate " << uniformizationRate << ".");
             STORM_LOG_DEBUG("Keeping " << maybeStates.getNumberOfSetBits() << " rows.");
             
@@ -269,7 +264,7 @@ namespace storm {
         
         template <typename SparseCtmcModelType>
         template<bool computeCumulativeReward>
-        std::vector<ValueType> SparseCtmcCslModelChecker<SparseCtmcModelType>::computeTransientProbabilities(storm::storage::SparseMatrix<ValueType> const& uniformizedMatrix, std::vector<ValueType> const* addVector, ValueType timeBound, ValueType uniformizationRate, std::vector<ValueType> values, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+        std::vector<typename SparseCtmcModelType::ValueType> SparseCtmcCslModelChecker<SparseCtmcModelType>::computeTransientProbabilities(storm::storage::SparseMatrix<ValueType> const& uniformizedMatrix, std::vector<ValueType> const* addVector, ValueType timeBound, ValueType uniformizationRate, std::vector<ValueType> values, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
             
             ValueType lambda = timeBound * uniformizationRate;
             
@@ -351,17 +346,17 @@ namespace storm {
         }
         
         template <typename SparseCtmcModelType>
-        std::vector<ValueType> SparseCtmcCslModelChecker<SparseCtmcModelType>::computeUntilProbabilitiesHelper(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
-            return SparseDtmcPrctlModelChecker<ValueType>::computeUntilProbabilitiesHelper(transitionMatrix, backwardTransitions, phiStates, psiStates, qualitative, linearEquationSolverFactory);
+        std::vector<typename SparseCtmcModelType::ValueType> SparseCtmcCslModelChecker<SparseCtmcModelType>::computeUntilProbabilitiesHelper(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+            return SparseDtmcPrctlModelChecker<SparseCtmcModelType>::computeUntilProbabilitiesHelper(transitionMatrix, backwardTransitions, phiStates, psiStates, qualitative, linearEquationSolverFactory);
         }
         
         template <typename SparseCtmcModelType>
-        std::unique_ptr<CheckResult> SparseCtmcCslModelChecker<SparseCtmcModelType>::computeInstantaneousRewards(storm::logic::InstantaneousRewardFormula const& rewardPathFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
+        std::unique_ptr<CheckResult> SparseCtmcCslModelChecker<SparseCtmcModelType>::computeInstantaneousRewards(storm::logic::InstantaneousRewardFormula const& rewardPathFormula, boost::optional<std::string> const& rewardModelName, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
             return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(this->computeInstantaneousRewardsHelper(rewardPathFormula.getContinuousTimeBound())));
         }
         
         template <typename SparseCtmcModelType>
-        std::vector<ValueType> SparseCtmcCslModelChecker<SparseCtmcModelType>::computeInstantaneousRewardsHelper(double timeBound) const {
+        std::vector<typename SparseCtmcModelType::ValueType> SparseCtmcCslModelChecker<SparseCtmcModelType>::computeInstantaneousRewardsHelper(double timeBound) const {
             // Only compute the result if the model has a state-based reward this->getModel().
             STORM_LOG_THROW(this->getModel().hasStateRewards(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
             
@@ -385,12 +380,12 @@ namespace storm {
         }
         
         template <typename SparseCtmcModelType>
-        std::unique_ptr<CheckResult> SparseCtmcCslModelChecker<SparseCtmcModelType>::computeCumulativeRewards(storm::logic::CumulativeRewardFormula const& rewardPathFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
+        std::unique_ptr<CheckResult> SparseCtmcCslModelChecker<SparseCtmcModelType>::computeCumulativeRewards(storm::logic::CumulativeRewardFormula const& rewardPathFormula, boost::optional<std::string> const& rewardModelName, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
             return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(this->computeCumulativeRewardsHelper(rewardPathFormula.getContinuousTimeBound())));
         }
         
         template <typename SparseCtmcModelType>
-        std::vector<ValueType> SparseCtmcCslModelChecker<SparseCtmcModelType>::computeCumulativeRewardsHelper(double timeBound) const {
+        std::vector<typename SparseCtmcModelType::ValueType> SparseCtmcCslModelChecker<SparseCtmcModelType>::computeCumulativeRewardsHelper(double timeBound) const {
             // Only compute the result if the model has a state-based reward this->getModel().
             STORM_LOG_THROW(this->getModel().hasStateRewards() || this->getModel().hasTransitionRewards(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
             
@@ -427,7 +422,7 @@ namespace storm {
         }
         
         template <typename SparseCtmcModelType>
-        storm::storage::SparseMatrix<ValueType> SparseCtmcCslModelChecker<SparseCtmcModelType>::computeProbabilityMatrix(storm::storage::SparseMatrix<ValueType> const& rateMatrix, std::vector<ValueType> const& exitRates) {
+        storm::storage::SparseMatrix<typename SparseCtmcModelType::ValueType> SparseCtmcCslModelChecker<SparseCtmcModelType>::computeProbabilityMatrix(storm::storage::SparseMatrix<ValueType> const& rateMatrix, std::vector<ValueType> const& exitRates) {
             // Turn the rates into probabilities by scaling each row with the exit rate of the state.
             storm::storage::SparseMatrix<ValueType> result(rateMatrix);
             for (uint_fast64_t row = 0; row < result.getRowCount(); ++row) {
@@ -439,7 +434,7 @@ namespace storm {
         }
         
         template <typename SparseCtmcModelType>
-        storm::storage::SparseMatrix<ValueType> SparseCtmcCslModelChecker<SparseCtmcModelType>::computeGeneratorMatrix(storm::storage::SparseMatrix<ValueType> const& rateMatrix, std::vector<ValueType> const& exitRates) {
+        storm::storage::SparseMatrix<typename SparseCtmcModelType::ValueType> SparseCtmcCslModelChecker<SparseCtmcModelType>::computeGeneratorMatrix(storm::storage::SparseMatrix<ValueType> const& rateMatrix, std::vector<ValueType> const& exitRates) {
             storm::storage::SparseMatrix<ValueType> generatorMatrix(rateMatrix, true);
             
             // Place the negative exit rate on the diagonal.
@@ -455,7 +450,7 @@ namespace storm {
         }
         
         template <typename SparseCtmcModelType>
-        std::unique_ptr<CheckResult> SparseCtmcCslModelChecker<SparseCtmcModelType>::computeReachabilityRewards(storm::logic::ReachabilityRewardFormula const& rewardPathFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
+        std::unique_ptr<CheckResult> SparseCtmcCslModelChecker<SparseCtmcModelType>::computeReachabilityRewards(storm::logic::ReachabilityRewardFormula const& rewardPathFormula, boost::optional<std::string> const& rewardModelName, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
             std::unique_ptr<CheckResult> subResultPointer = this->check(rewardPathFormula.getSubformula());
             ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();
             storm::storage::SparseMatrix<ValueType> probabilityMatrix = computeProbabilityMatrix(this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector());
@@ -482,8 +477,8 @@ namespace storm {
             return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(computeLongRunAverageHelper(probabilityMatrix, subResult.getTruthValuesVector(), &this->getModel().getExitRateVector(), qualitative, *linearEquationSolverFactory)));
         }
         
-        template<typename ValueType>
-        std::vector<ValueType> SparseCtmcCslModelChecker<SparseCtmcModelType>::computeLongRunAverageHelper(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& psiStates, std::vector<ValueType> const* exitRateVector, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+        template <typename SparseCtmcModelType>
+        std::vector<typename SparseCtmcModelType::ValueType> SparseCtmcCslModelChecker<SparseCtmcModelType>::computeLongRunAverageHelper(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& psiStates, std::vector<ValueType> const* exitRateVector, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
             // If there are no goal states, we avoid the computation and directly return zero.
             uint_fast64_t numOfStates = transitionMatrix.getRowCount();
             if (psiStates.empty()) {

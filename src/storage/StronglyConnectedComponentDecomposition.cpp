@@ -26,6 +26,18 @@ namespace storm {
         }
         
         template <typename ValueType, typename RewardModelType>
+        StronglyConnectedComponentDecomposition<ValueType, RewardModelType>::StronglyConnectedComponentDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, StateBlock const& block, bool dropNaiveSccs, bool onlyBottomSccs) {
+            storm::storage::BitVector subsystem(transitionMatrix.getRowGroupCount(), block.begin(), block.end());
+            performSccDecomposition(transitionMatrix, subsystem, dropNaiveSccs, onlyBottomSccs);
+        }
+        
+        
+        template <typename ValueType, typename RewardModelType>
+        StronglyConnectedComponentDecomposition<ValueType, RewardModelType>::StronglyConnectedComponentDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, bool dropNaiveSccs, bool onlyBottomSccs) {
+            performSccDecomposition(transitionMatrix, storm::storage::BitVector(transitionMatrix.getRowGroupCount(), true), dropNaiveSccs, onlyBottomSccs);
+        }
+
+        template <typename ValueType, typename RewardModelType>
         StronglyConnectedComponentDecomposition<ValueType, RewardModelType>::StronglyConnectedComponentDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& subsystem, bool dropNaiveSccs, bool onlyBottomSccs) {
             performSccDecomposition(transitionMatrix, subsystem, dropNaiveSccs, onlyBottomSccs);
         }

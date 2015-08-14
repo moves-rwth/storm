@@ -14,12 +14,17 @@ namespace storm {
         
         template<typename ValueType>
         MaximalEndComponentDecomposition<ValueType>::MaximalEndComponentDecomposition(storm::models::sparse::NondeterministicModel<ValueType> const& model) {
-            performMaximalEndComponentDecomposition(model, storm::storage::BitVector(model.getNumberOfStates(), true));
+            performMaximalEndComponentDecomposition(model.getTransitionMatrix(), model.getBackwardTransitions(), storm::storage::BitVector(model.getNumberOfStates(), true));
+        }
+
+        template<typename ValueType>
+        MaximalEndComponentDecomposition<ValueType>::MaximalEndComponentDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions) {
+            performMaximalEndComponentDecomposition(transitionMatrix, backwardTransitions, storm::storage::BitVector(transitionMatrix.getRowGroupCount(), true));
         }
         
         template<typename ValueType>
         MaximalEndComponentDecomposition<ValueType>::MaximalEndComponentDecomposition(storm::models::sparse::NondeterministicModel<ValueType> const& model, storm::storage::BitVector const& subsystem) {
-            performMaximalEndComponentDecomposition(model, subsystem);
+            performMaximalEndComponentDecomposition(model.getTransitionMatrix(), model.getBackwardTransitions(), subsystem);
         }
         
         template<typename ValueType>
@@ -45,30 +50,28 @@ namespace storm {
         }
         
         template <typename ValueType>
-        void MaximalEndComponentDecomposition<ValueType>::performMaximalEndComponentDecomposition(storm::models::sparse::NondeterministicModel<ValueType> const& model, storm::storage::BitVector const& subsystem) {
-            // Get some references for convenient access.
-            storm::storage::SparseMatrix<ValueType> backwardTransitions = model.getBackwardTransitions();
-            std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = model.getNondeterministicChoiceIndices();
-            storm::storage::SparseMatrix<ValueType> const& transitionMatrix = model.getTransitionMatrix();
+        void MaximalEndComponentDecomposition<ValueType>::performMaximalEndComponentDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> backwardTransitions, storm::storage::BitVector const& subsystem) {
+            // Get some data for convenient access.
+            uint_fast64_t numberOfStates = transitionMatrix.getRowGroupCount();
+            std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = transitionMatrix.getRowGroupIndices();
             
             // Initialize the maximal end component list to be the full state space.
             std::list<StateBlock> endComponentStateSets;
             endComponentStateSets.emplace_back(subsystem.begin(), subsystem.end());
-            storm::storage::BitVector statesToCheck(model.getNumberOfStates());
+            storm::storage::BitVector statesToCheck(numberOfStates);
             
             // The iterator used here should really be a const_iterator.
             // However, gcc 4.8 (and assorted libraries) does not provide an erase(const_iterator) method for std::list
             // but only an erase(iterator). This is in compliance with the c++11 draft N3337, which specifies the change
             // from iterator to const_iterator only for "set, multiset, map [and] multimap".
-            // FIXME: As soon as gcc provides an erase(const_iterator) method, change this iterator back to a const_iterator.
-            for (std::list<StateBlock>::iterator mecIterator = endComponentStateSets.begin(); mecIterator != endComponentStateSets.end();) {
+            for (std::list<StateBlock>::const_iterator mecIterator = endComponentStateSets.begin(); mecIterator != endComponentStateSets.end();) {
                 StateBlock const& mec = *mecIterator;
 
                 // Keep track of whether the MEC changed during this iteration.
                 bool mecChanged = false;
                 
                 // Get an SCC decomposition of the current MEC candidate.
-                StronglyConnectedComponentDecomposition<ValueType> sccs(model, mec, true);
+                StronglyConnectedComponentDecomposition<ValueType> sccs(transitionMatrix, mec, true);
                 
                 // We need to do another iteration in case we have either more than once SCC or the SCC is smaller than
                 // the MEC canditate itself.
@@ -79,7 +82,7 @@ namespace storm {
                     statesToCheck.set(scc.begin(), scc.end());
                     
                     while (!statesToCheck.empty()) {
-                        storm::storage::BitVector statesToRemove(model.getNumberOfStates());
+                        storm::storage::BitVector statesToRemove(numberOfStates);
                         
                         for (auto state : statesToCheck) {
                             bool keepStateInMEC = false;
@@ -132,7 +135,7 @@ namespace storm {
                         }
                     }
                     
-                    std::list<StateBlock>::iterator eraseIterator(mecIterator);
+                    std::list<StateBlock>::const_iterator eraseIterator(mecIterator);
                     ++mecIterator;
                     endComponentStateSets.erase(eraseIterator);
                 } else {

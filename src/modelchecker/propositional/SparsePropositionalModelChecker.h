@@ -11,6 +11,9 @@ namespace storm {
         template<typename SparseModelType>
         class SparsePropositionalModelChecker : public AbstractModelChecker {
         public:
+            typedef typename SparseModelType::ValueType ValueType;
+            typedef typename SparseModelType::RewardModelType RewardModelType;
+            
             explicit SparsePropositionalModelChecker(SparseModelType const& model);
             
             // The implemented methods of the AbstractModelChecker interface.
