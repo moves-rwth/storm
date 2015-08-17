@@ -29,6 +29,11 @@ namespace storm {
             }
             
             template<typename ValueType>
+            bool StandardRewardModel<ValueType>::hasOnlyStateRewards() const {
+                return static_cast<bool>(this->optionalStateRewardVector) && !static_cast<bool>(this->optionalStateActionRewardVector) && !static_cast<bool>(this->optionalTransitionRewardMatrix);
+            }
+            
+            template<typename ValueType>
             std::vector<ValueType> const& StandardRewardModel<ValueType>::getStateRewardVector() const {
                 return this->optionalStateRewardVector.get();
             }
@@ -85,14 +90,23 @@ namespace storm {
             
             template<typename ValueType>
             template<typename MatrixValueType>
-            void StandardRewardModel<ValueType>::convertTransitionRewardsToStateActionRewards(storm::storage::SparseMatrix<MatrixValueType> const& transitionMatrix) {
-                STORM_LOG_THROW(this->hasTransitionRewards(), storm::exceptions::InvalidOperationException, "Cannot reduce non-existant transition rewards to state rewards.");
-                if (this->hasStateActionRewards()) {
-                    storm::utility::vector::addVectors(this->getStateActionRewardVector(), transitionMatrix.getPointwiseProductRowSumVector(this->getTransitionRewardMatrix()), this->getStateActionRewardVector);
-                } else {
-                    this->optionalStateActionRewardVector = transitionMatrix.getPointwiseProductRowSumVector(this->getTransitionRewardMatrix());
+            void StandardRewardModel<ValueType>::reduceToStateBasedRewards(storm::storage::SparseMatrix<MatrixValueType> const& transitionMatrix, bool reduceToStateRewards) {
+                if (this->hasTransitionRewards()) {
+                    if (this->hasStateActionRewards()) {
+                        storm::utility::vector::addVectors(this->getStateActionRewardVector(), transitionMatrix.getPointwiseProductRowSumVector(this->getTransitionRewardMatrix()), this->getStateActionRewardVector);
+                    } else {
+                        this->optionalStateActionRewardVector = transitionMatrix.getPointwiseProductRowSumVector(this->getTransitionRewardMatrix());
+                    }
                 }
-                this->optionalTransitionRewardMatrix = boost::optional<storm::storage::SparseMatrix<ValueType>>();
+                
+                if (reduceToStateRewards && this->hasStateActionRewards()) {
+                    if (this->hasStateRewards()) {
+                        STORM_LOG_THROW(this->getStateRewardVector.size() == this->getStateActionRewardVector().size(), storm::exceptions::InvalidOperationException, "The reduction to state rewards is only possible of both the state and the state-action rewards have the same dimension.");
+                        storm::utility::vector::addVectors(this->getStateActionRewardVector(), this->getStateRewardVector(), this->getStateRewardVector());
+                    } else {
+                        this->optionalStateRewardVector = std::move(this->optionalStateRewardVector);
+                    }
+                }
             }
             
             template<typename ValueType>

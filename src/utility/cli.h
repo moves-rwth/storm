@@ -145,9 +145,7 @@ namespace storm {
                     STORM_LOG_THROW(model->getType() == storm::models::ModelType::Dtmc || model->getType() == storm::models::ModelType::Ctmc, storm::exceptions::InvalidSettingsException, "Bisimulation minimization is currently only available for DTMCs.");
                     std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> dtmc = sparseModel->template as<storm::models::sparse::Dtmc<ValueType>>();
                     
-                    if (dtmc->hasTransitionRewards()) {
-                        dtmc->convertTransitionRewardsToStateRewards();
-                    }
+                    dtmc->reduceToStateBasedRewards();
                     
                     std::cout << "Performing bisimulation minimization... ";
                     typename storm::storage::DeterministicModelBisimulationDecomposition<ValueType>::Options options;

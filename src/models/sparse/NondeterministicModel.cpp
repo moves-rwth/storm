@@ -44,6 +44,13 @@ namespace storm {
             }
             
             template<typename ValueType, typename RewardModelType>
+            void NondeterministicModel<ValueType, RewardModelType>::reduceToStateBasedRewards() {
+                for (auto& rewardModel : this->getRewardModels()) {
+                    rewardModel.second.reduceToStateBasedRewards(this->getTransitionMatrix(), false);
+                }
+            }
+            
+            template<typename ValueType, typename RewardModelType>
             void NondeterministicModel<ValueType, RewardModelType>::printModelInformationToStream(std::ostream& out) const {
                 this->printModelInformationHeaderToStream(out);
                 out << "Choices: \t\t" << this->getNumberOfChoices() << std::endl;

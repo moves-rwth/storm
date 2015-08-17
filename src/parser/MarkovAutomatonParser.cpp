@@ -22,10 +22,12 @@ namespace storm {
 			storm::models::sparse::StateLabeling resultLabeling(storm::parser::AtomicPropositionLabelingParser::parseAtomicPropositionLabeling(transitionMatrix.getColumnCount(), labelingFilename));
 
 			// If given, parse the state rewards file.
-			boost::optional<std::vector<double>> stateRewards;
+            boost::optional<std::vector<double>> stateRewards;
 			if (stateRewardFilename != "") {
 				stateRewards.reset(storm::parser::SparseStateRewardParser::parseSparseStateReward(transitionMatrix.getColumnCount(), stateRewardFilename));
 			}
+            std::map<std::string, storm::models::sparse::StandardRewardModel<double>> rewardModels;
+            rewardModels.insert(std::make_pair("", storm::models::sparse::StandardRewardModel<double>(stateRewards, boost::optional<std::vector<double>>(), boost::optional<storm::storage::SparseMatrix<double>>())));
 
 			// Since Markov Automata do not support transition rewards no path should be given here.
 			if (transitionRewardFilename != "") {
@@ -34,7 +36,7 @@ namespace storm {
 			}
 
 			// Put the pieces together to generate the Markov Automaton.
-			storm::models::sparse::MarkovAutomaton<double> resultingAutomaton(std::move(transitionMatrix), std::move(resultLabeling), std::move(transitionResult.markovianStates), std::move(transitionResult.exitRates), std::move(stateRewards), boost::optional<storm::storage::SparseMatrix<double>>(), boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>());
+			storm::models::sparse::MarkovAutomaton<double> resultingAutomaton(std::move(transitionMatrix), std::move(resultLabeling), std::move(transitionResult.markovianStates), std::move(transitionResult.exitRates), rewardModels, boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>());
 
 			return resultingAutomaton;
 		}

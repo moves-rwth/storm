@@ -149,6 +149,34 @@ namespace storm {
                 RewardModelType const& getRewardModel(std::string const& rewardModelName) const;
 
                 /*!
+                 * Retrieves the unique reward model, if there exists exactly one. Otherwise, an exception is thrown.
+                 *
+                 * @return An iterator to the name and the reward model.
+                 */
+                typename std::map<std::string, RewardModelType>::const_iterator getUniqueRewardModel() const;
+                
+                /*!
+                 * Retrieves whether the model has a unique reward model.
+                 *
+                 * @return True iff the model has a unique reward model.
+                 */
+                bool hasUniqueRewardModel() const;
+                
+                /*!
+                 * Retrieves whether the model has at least one reward model.
+                 *
+                 * @return True iff the model has a reward model.
+                 */
+                bool hasRewardModel() const;
+                
+                /*!
+                 * Retrieves the number of reward models associated with this model.
+                 *
+                 * @return The number of reward models associated with this model.
+                 */
+                uint_fast64_t getNumberOfRewardModels() const;
+                
+                /*!
                  * Retrieves the labels for the choices of the model. Note that calling this method is only valid if the
                  * model has a choice labeling.
                  *
@@ -185,11 +213,12 @@ namespace storm {
                 bool hasChoiceLabeling() const;
                 
                 /*!
-                 * Converts the transition rewards of all reward models to state rewards. Note that calling this method
-                 * is only valid if the model has transition rewards. Also note that this does not preserve all
+                 * Converts the transition rewards of all reward models to state-based rewards. For deterministic models,
+                 * this reduces the rewards to state rewards only. For nondeterminstic models, the reward models will
+                 * contain state rewards and state-action rewards. Note that this transformation does not preserve all
                  * properties, but it preserves expected rewards.
                  */
-                void convertTransitionRewardsToStateActionRewards();
+                virtual void reduceToStateBasedRewards() = 0;
                 
                 /*!
                  * Retrieves (an approximation of) the size of the model in bytes.
@@ -273,6 +302,13 @@ namespace storm {
                  * @return A mapping from reward model names to the reward models.
                  */
                 std::map<std::string, RewardModelType> const& getRewardModels() const;
+                
+                /*!
+                 * Retrieves the reward models.
+                 *
+                 * @return A mapping from reward model names to the reward models.
+                 */
+                std::map<std::string, RewardModelType>& getRewardModels();
                 
             private:
                 //  A matrix representing transition relation.

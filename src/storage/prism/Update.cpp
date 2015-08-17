@@ -58,7 +58,9 @@ namespace storm {
             if (update.getAssignments().empty()) {
                 stream << " true ";
             } else {
-                stream << boost::algorithm::join(update.getAssignments(), " & ");
+                std::vector<std::string> assignmentsAsStrings;
+                std::for_each(update.getAssignments().cbegin(), update.getAssignments().cend(), [&assignmentsAsStrings] (Assignment const& assignment) { std::stringstream stream; stream << assignment; assignmentsAsStrings.push_back(stream.str()); });
+                stream << boost::algorithm::join(assignmentsAsStrings, " & ");
             }
             return stream;
         }

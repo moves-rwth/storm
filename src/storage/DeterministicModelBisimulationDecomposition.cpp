@@ -651,7 +651,7 @@ namespace storm {
             }
             
             if (measureDrivenInitialPartition) {
-                storm::modelchecker::SparsePropositionalModelChecker<ValueType> checker(model);
+                storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Model<ValueType>> checker(model);
                 std::unique_ptr<storm::modelchecker::CheckResult> phiStatesCheckResult = checker.check(*leftSubformula);
                 std::unique_ptr<storm::modelchecker::CheckResult> psiStatesCheckResult = checker.check(*rightSubformula);
                 phiStates = phiStatesCheckResult->asExplicitQualitativeCheckResult().getTruthValuesVector();
@@ -666,7 +666,8 @@ namespace storm {
         
         template<typename ValueType>
         DeterministicModelBisimulationDecomposition<ValueType>::DeterministicModelBisimulationDecomposition(storm::models::sparse::Dtmc<ValueType> const& model, Options const& options) {
-            STORM_LOG_THROW(!model.hasTransitionRewards(), storm::exceptions::IllegalFunctionCallException, "Bisimulation is currently only supported for models without transition rewards. Consider converting the transition rewards to state rewards (via suitable function calls).");
+            STORM_LOG_THROW(!model.hasRewardModel() || model.hasUniqueRewardModel(), storm::exceptions::IllegalFunctionCallException, "Bisimulation currently only supports models with at most one reward model.");
+            STORM_LOG_THROW(!model.hasRewardModel() || model.getUniqueRewardModel()->second.hasOnlyStateRewards(), storm::exceptions::IllegalFunctionCallException, "Bisimulation is currently supported for models with state rewards only. Consider converting the transition rewards to state rewards (via suitable function calls).");
             STORM_LOG_THROW(!options.weak || !options.bounded, storm::exceptions::IllegalFunctionCallException, "Weak bisimulation cannot preserve bounded properties.");
             storm::storage::SparseMatrix<ValueType> backwardTransitions = model.getBackwardTransitions();
             BisimulationType bisimulationType = options.weak ? BisimulationType::WeakDtmc : BisimulationType::Strong;
@@ -680,8 +681,8 @@ namespace storm {
             
             Partition initialPartition;
             if (options.measureDrivenInitialPartition) {
-                STORM_LOG_THROW(options.phiStates, storm::exceptions::InvalidOptionException, "Unable to compute measure-driven initial partition without phi and psi states.");
-                STORM_LOG_THROW(options.psiStates, storm::exceptions::InvalidOptionException, "Unable to compute measure-driven initial partition without phi and psi states.");
+                STORM_LOG_THROW(options.phiStates, storm::exceptions::InvalidOptionException, "Unable to compute measure-driven initial partition without phi states.");
+                STORM_LOG_THROW(options.psiStates, storm::exceptions::InvalidOptionException, "Unable to compute measure-driven initial partition without psi states.");
                 initialPartition = getMeasureDrivenInitialPartition(model, backwardTransitions, options.phiStates.get(), options.psiStates.get(), bisimulationType, options.keepRewards, options.bounded);
             } else {
                 initialPartition = getLabelBasedInitialPartition(model, backwardTransitions, bisimulationType, atomicPropositions, options.keepRewards);
@@ -692,7 +693,8 @@ namespace storm {
         
         template<typename ValueType>
         DeterministicModelBisimulationDecomposition<ValueType>::DeterministicModelBisimulationDecomposition(storm::models::sparse::Ctmc<ValueType> const& model, Options const& options) {
-            STORM_LOG_THROW(!model.hasTransitionRewards(), storm::exceptions::IllegalFunctionCallException, "Bisimulation is currently only supported for models without transition rewards. Consider converting the transition rewards to state rewards (via suitable function calls).");
+            STORM_LOG_THROW(!model.hasRewardModel() || model.hasUniqueRewardModel(), storm::exceptions::IllegalFunctionCallException, "Bisimulation currently only supports models with at most one reward model.");
+            STORM_LOG_THROW(!model.hasRewardModel() || model.getUniqueRewardModel()->second.hasOnlyStateRewards(), storm::exceptions::IllegalFunctionCallException, "Bisimulation is currently supported for models with state rewards only. Consider converting the transition rewards to state rewards (via suitable function calls).");
             STORM_LOG_THROW(!options.weak || !options.bounded, storm::exceptions::IllegalFunctionCallException, "Weak bisimulation cannot preserve bounded properties.");
             storm::storage::SparseMatrix<ValueType> backwardTransitions = model.getBackwardTransitions();
             BisimulationType bisimulationType = options.weak ? BisimulationType::WeakCtmc : BisimulationType::Strong;
@@ -744,7 +746,7 @@ namespace storm {
             
             // If the model had state rewards, we need to build the state rewards for the quotient as well.
             boost::optional<std::vector<ValueType>> stateRewards;
-            if (keepRewards && model.hasStateRewards()) {
+            if (keepRewards && model.hasRewardModel()) {
                 stateRewards = std::vector<ValueType>(this->blocks.size());
             }
             
@@ -824,8 +826,9 @@ namespace storm {
                 
                 // If the model has state rewards, we simply copy the state reward of the representative state, because
                 // all states in a block are guaranteed to have the same state reward.
-                if (keepRewards && model.hasStateRewards()) {
-                    stateRewards.get()[blockIndex] = model.getStateRewardVector()[representativeState];
+                if (keepRewards && model.hasRewardModel()) {
+                    typename std::map<std::string, typename ModelType::RewardModelType>::const_iterator nameRewardModelPair = model.getUniqueRewardModel();
+                    stateRewards.get()[blockIndex] = nameRewardModelPair->second.getStateRewardVector()[representativeState];
                 }
             }
             
@@ -835,8 +838,15 @@ namespace storm {
                 newLabeling.addLabelToState("init", initialBlock.getId());
             }
             
+            // Construct the reward model mapping.
+            std::map<std::string, typename ModelType::RewardModelType> rewardModels;
+            if (keepRewards && model.hasRewardModel()) {
+                typename std::map<std::string, typename ModelType::RewardModelType>::const_iterator nameRewardModelPair = model.getUniqueRewardModel();
+                rewardModels.insert(std::make_pair(nameRewardModelPair->first, typename ModelType::RewardModelType(stateRewards)));
+            }
+            
             // Finally construct the quotient model.
-            this->quotient = std::shared_ptr<storm::models::sparse::DeterministicModel<ValueType>>(new ModelType(builder.build(), std::move(newLabeling), std::move(stateRewards)));
+            this->quotient = std::shared_ptr<storm::models::sparse::DeterministicModel<ValueType, typename ModelType::RewardModelType>>(new ModelType(builder.build(), std::move(newLabeling), std::move(rewardModels)));
         }
         
         template<typename ValueType>
@@ -1304,8 +1314,8 @@ namespace storm {
             
             // If the model has state rewards, we need to consider them, because otherwise reward properties are not
             // preserved.
-            if (keepRewards && model.hasStateRewards()) {
-                this->splitRewards(model, partition);
+            if (keepRewards && model.hasRewardModel()) {
+                this->splitRewards(model.getUniqueRewardModel()->second.getStateRewardVector(), partition);
             }
             
             // If we are creating the initial partition for weak bisimulation, we need to (a) split off all divergent
@@ -1409,8 +1419,8 @@ namespace storm {
             
             // If the model has state rewards, we need to consider them, because otherwise reward properties are not
             // preserved.
-            if (keepRewards && model.hasStateRewards()) {
-                this->splitRewards(model, partition);
+            if (keepRewards && model.hasRewardModel()) {
+                this->splitRewards(model.getUniqueRewardModel()->second.getStateRewardVector(), partition);
             }
             
             // If we are creating the initial partition for weak bisimulation, we need to (a) split off all divergent
@@ -1441,20 +1451,15 @@ namespace storm {
         }
         
         template<typename ValueType>
-        template<typename ModelType>
-        void DeterministicModelBisimulationDecomposition<ValueType>::splitRewards(ModelType const& model, Partition& partition) {
-            if (!model.hasStateRewards()) {
-                return;
-            }
-            
+        void DeterministicModelBisimulationDecomposition<ValueType>::splitRewards(std::vector<ValueType> const& stateRewardVector, Partition& partition) {
             for (auto& block : partition.getBlocks()) {
-                std::sort(partition.getBegin(block), partition.getEnd(block), [&model] (std::pair<storm::storage::sparse::state_type, ValueType> const& a, std::pair<storm::storage::sparse::state_type, ValueType> const& b) { return model.getStateRewardVector()[a.first] < model.getStateRewardVector()[b.first]; } );
+                std::sort(partition.getBegin(block), partition.getEnd(block), [&stateRewardVector] (std::pair<storm::storage::sparse::state_type, ValueType> const& a, std::pair<storm::storage::sparse::state_type, ValueType> const& b) { return stateRewardVector[a.first] < stateRewardVector[b.first]; } );
                 
                 // Update the positions vector and put the (state) reward values next to the states so we can easily compare them later.
                 storm::storage::sparse::state_type position = block.getBegin();
                 for (auto stateIt = partition.getBegin(block), stateIte = partition.getEnd(block); stateIt != stateIte; ++stateIt, ++position) {
                     partition.setPosition(stateIt->first, position);
-                    stateIt->second = model.getStateRewardVector()[stateIt->first];
+                    stateIt->second = stateRewardVector[stateIt->first];
                 }
                 
                 // Finally, we need to scan the ranges of states that agree on the probability.

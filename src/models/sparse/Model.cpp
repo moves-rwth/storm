@@ -92,6 +92,27 @@ namespace storm {
             }
             
             template<typename ValueType, typename RewardModelType>
+            bool Model<ValueType, RewardModelType>::hasUniqueRewardModel() const {
+                return this->getNumberOfRewardModels() == 1;
+            }
+            
+            template<typename ValueType, typename RewardModelType>
+            bool Model<ValueType, RewardModelType>::hasRewardModel() const {
+                return !this->rewardModels.empty();
+            }
+            
+            template<typename ValueType, typename RewardModelType>
+            typename std::map<std::string, RewardModelType>::const_iterator Model<ValueType, RewardModelType>::getUniqueRewardModel() const {
+                STORM_LOG_THROW(this->getNumberOfRewardModels() == 1, storm::exceptions::IllegalFunctionCallException, "The reward model is not unique.");
+                return this->rewardModels.cbegin();
+            }
+            
+            template<typename ValueType, typename RewardModelType>
+            uint_fast64_t Model<ValueType, RewardModelType>::getNumberOfRewardModels() const {
+                return this->rewardModels.size();
+            }
+            
+            template<typename ValueType, typename RewardModelType>
             std::vector<LabelSet> const& Model<ValueType, RewardModelType>::getChoiceLabeling() const {
                 return choiceLabeling.get();
             }
@@ -114,13 +135,6 @@ namespace storm {
             template<typename ValueType, typename RewardModelType>
             bool Model<ValueType, RewardModelType>::hasChoiceLabeling() const {
                 return static_cast<bool>(choiceLabeling);
-            }
-            
-            template<typename ValueType, typename RewardModelType>
-            void Model<ValueType, RewardModelType>::convertTransitionRewardsToStateActionRewards() {
-                for (auto& rewardModel : this->rewardModels) {
-                    rewardModel.second.convertTransitionRewardsToStateActionRewards(this->getTransitionMatrix());
-                }
             }
             
             template<typename ValueType, typename RewardModelType>
@@ -161,7 +175,7 @@ namespace storm {
             void Model<ValueType, RewardModelType>::printRewardModelsInformationToStream(std::ostream& out) const {
                 if (this->rewardModels.size()) {
                     std::vector<std::string> rewardModelNames;
-                    std::for_each(this->rewardModels.begin(), this->rewardModels.end(), [&rewardModelNames] (typename std::map<std::string, RewardModelType>::const_iterator const& it) { rewardModelNames.push_back(it->first); });
+                    std::for_each(this->rewardModels.cbegin(), this->rewardModels.cend(), [&rewardModelNames] (typename std::pair<std::string, RewardModelType> const& nameRewardModelPair) { rewardModelNames.push_back(nameRewardModelPair.first); });
                     out << "Reward Models: " << boost::join(rewardModelNames, ", ") << std::endl;
                 } else {
                     out << "Reward Models: none" << std::endl;
@@ -251,6 +265,17 @@ namespace storm {
             bool Model<ValueType, RewardModelType>::isSparseModel() const {
                 return true;
             }
+            
+            template<typename ValueType, typename RewardModelType>
+            std::map<std::string, RewardModelType>& Model<ValueType, RewardModelType>::getRewardModels() {
+                return this->rewardModels;
+            }
+
+            template<typename ValueType, typename RewardModelType>
+            std::map<std::string, RewardModelType> const& Model<ValueType, RewardModelType>::getRewardModels() const {
+                return this->rewardModels;
+            }
+
             
             template class Model<double>;
             template class Model<float>;

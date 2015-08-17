@@ -49,6 +49,13 @@ namespace storm {
                  * @return True iff the reward model has state rewards.
                  */
                 bool hasStateRewards() const;
+                
+                /*!
+                 * Retrieves whether the reward model only has state rewards (and hence no other rewards).
+                 *
+                 * @return True iff the reward model only has state rewards.
+                 */
+                bool hasOnlyStateRewards() const;
 
                 /*!
                  * Retrieves the state rewards of the reward model. Note that it is illegal to call this function if the
@@ -118,15 +125,16 @@ namespace storm {
                 StandardRewardModel<ValueType> restrictActions(storm::storage::BitVector const& enabledActions) const;
                 
                 /*!
-                 * Converts the transition-based rewards to state-action rewards by taking the average of each row. Note
-                 * that this preserves expected rewards, but not all reward-based properties. Also note that it is only
-                 * legal to do this transformation if the reward model has transition rewards.
+                 * Reduces the transition-based rewards to state-action rewards by taking the average of each row. If
+                 * the corresponding flag is set, the state-action rewards and the state rewards are summed so the model
+                 * only has a state reward vector left. Note that this transformation only  preserves expected rewards,
+                 * but not all reward-based properties.
                  *
                  * @param transitionMatrix The transition matrix that is used to weight the rewards in the reward matrix.
                  */
                 template<typename MatrixValueType>
-                void convertTransitionRewardsToStateActionRewards(storm::storage::SparseMatrix<MatrixValueType> const& transitionMatrix);
-
+                void reduceToStateBasedRewards(storm::storage::SparseMatrix<MatrixValueType> const& transitionMatrix, bool reduceToStateRewards = false);
+                
                 /*!
                  * Creates a vector representing the complete reward vector based on the state-, state-action- and
                  * transition-based rewards in the reward model.

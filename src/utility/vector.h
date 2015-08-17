@@ -153,7 +153,6 @@ namespace storm {
             template<class T>
             void addVectorToGroupedVector(std::vector<T>& target, std::vector<T> const& source, std::vector<uint_fast64_t> const& rowGroupIndices) {
                 auto targetIt = target.begin();
-                auto targetIte = target.end();
                 auto sourceIt = source.cbegin();
                 auto sourceIte = source.cend();
                 auto rowGroupIt = rowGroupIndices.cbegin();
@@ -163,7 +162,7 @@ namespace storm {
                     ++rowGroupIt;
                     uint_fast64_t next = *rowGroupIt;
                     while (current < next) {
-                        *targetIt = *source;
+                        *targetIt = *sourceIt;
                         ++targetIt;
                     }
                 }
