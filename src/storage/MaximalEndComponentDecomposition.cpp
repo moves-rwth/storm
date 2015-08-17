@@ -23,6 +23,11 @@ namespace storm {
         }
         
         template<typename ValueType>
+        MaximalEndComponentDecomposition<ValueType>::MaximalEndComponentDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& subsystem) {
+            performMaximalEndComponentDecomposition(transitionMatrix, backwardTransitions, subsystem);
+        }
+        
+        template<typename ValueType>
         MaximalEndComponentDecomposition<ValueType>::MaximalEndComponentDecomposition(storm::models::sparse::NondeterministicModel<ValueType> const& model, storm::storage::BitVector const& subsystem) {
             performMaximalEndComponentDecomposition(model.getTransitionMatrix(), model.getBackwardTransitions(), subsystem);
         }

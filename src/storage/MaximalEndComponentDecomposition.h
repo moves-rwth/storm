@@ -33,6 +33,15 @@ namespace storm  {
              * @param backwardTransition The reversed transition relation.
              */
             MaximalEndComponentDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions);
+
+            /*
+             * Creates an MEC decomposition of the given subsystem of given model (represented by a row-grouped matrix).
+             *
+             * @param transitionMatrix The transition relation of model to decompose into MECs.
+             * @param backwardTransition The reversed transition relation.
+             * @param subsystem The subsystem to decompose.
+             */
+            MaximalEndComponentDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& subsystem);
             
             /*!
              * Creates an MEC decomposition of the given subsystem in the given model.
