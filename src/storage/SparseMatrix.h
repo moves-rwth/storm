@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <iostream>
 #include <cstdint>
+#include <vector>
 #include <iterator>
 
 #include "src/utility/OsDetection.h"
