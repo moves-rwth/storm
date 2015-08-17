@@ -5,6 +5,9 @@
 #include "src/storage/StronglyConnectedComponentDecomposition.h"
 #include "src/storage/MaximalEndComponentDecomposition.h"
 
+#include "src/settings/SettingsManager.h"
+#include "src/settings/modules/GeneralSettings.h"
+
 #include "src/utility/macros.h"
 #include "src/utility/vector.h"
 #include "src/utility/graph.h"

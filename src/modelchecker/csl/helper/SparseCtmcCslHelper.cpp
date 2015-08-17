@@ -2,6 +2,9 @@
 
 #include "src/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
 
+#include "src/settings/SettingsManager.h"
+#include "src/settings/modules/GeneralSettings.h"
+
 #include "src/storage/StronglyConnectedComponentDecomposition.h"
 
 #include "src/utility/macros.h"

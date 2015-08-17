@@ -3,6 +3,7 @@
 #include "src/modelchecker/csl/helper/SparseCtmcCslHelper.h"
 #include "src/modelchecker/prctl/helper/HybridDtmcPrctlHelper.h"
 
+#include "src/storage/dd/CuddDdManager.h"
 #include "src/storage/dd/CuddAdd.h"
 #include "src/storage/dd/CuddBdd.h"
 #include "src/storage/dd/CuddOdd.h"

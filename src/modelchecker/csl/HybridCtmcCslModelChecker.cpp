@@ -5,6 +5,9 @@
 
 #include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"
 
+#include "src/storage/dd/CuddAdd.h"
+#include "src/storage/dd/CuddBdd.h"
+
 namespace storm {
     namespace modelchecker {
         template<storm::dd::DdType DdType, class ValueType>
