@@ -5,8 +5,11 @@
 
 #include "src/logic/Formulas.h"
 
+
 namespace storm {
     namespace modelchecker {
+        class CheckResult;
+        
         class AbstractModelChecker {
         public:
             virtual ~AbstractModelChecker() {

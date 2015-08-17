@@ -5,6 +5,7 @@
 #include "src/storage/Decomposition.h"
 #include "src/storage/StronglyConnectedComponent.h"
 #include "src/storage/BitVector.h"
+#include "src/utility/constants.h"
 
 namespace storm {
     namespace models {

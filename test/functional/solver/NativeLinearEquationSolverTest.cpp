@@ -4,6 +4,8 @@
 #include "src/solver/NativeLinearEquationSolver.h"
 #include "src/settings/SettingsManager.h"
 
+#include "src/settings/modules/NativeEquationSolverSettings.h"
+
 TEST(NativeLinearEquationSolver, SolveWithStandardOptions) {
     ASSERT_NO_THROW(storm::storage::SparseMatrixBuilder<double> builder);
     storm::storage::SparseMatrixBuilder<double> builder;

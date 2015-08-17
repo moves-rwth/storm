@@ -5,6 +5,8 @@
 #include "src/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "src/settings/SettingsManager.h"
+
+#include "src/settings/modules/GeneralSettings.h"
 #include "src/settings/SettingMemento.h"
 #include "src/parser/AutoParser.h"
 

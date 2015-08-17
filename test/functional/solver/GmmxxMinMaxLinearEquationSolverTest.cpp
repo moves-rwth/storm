@@ -3,6 +3,8 @@
 
 #include "src/solver/GmmxxMinMaxLinearEquationSolver.h"
 #include "src/settings/SettingsManager.h"
+#include "src/settings/modules/GmmxxEquationSolverSettings.h"
+#include "src/storage/SparseMatrix.h"
 
 TEST(GmmxxMinMaxLinearEquationSolver, SolveWithStandardOptions) {
     storm::storage::SparseMatrixBuilder<double> builder(0, 0, 0, false, true);

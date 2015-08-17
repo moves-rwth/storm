@@ -60,7 +60,7 @@ find_package(Gurobi)
 find_package(TBB)
 find_package(Threads REQUIRED)
 find_package(GMP)
-find_package(Z3)
+find_package(Z3 QUIET)
 
 # If the DEBUG option was turned on, we will target a debug version and a release version otherwise.
 if (STORM_DEBUG)
@@ -222,7 +222,7 @@ set(STORM_HAVE_GLPK 1)
 set(STORM_CPP_CUDAFORSTORM_DEF "undef")
 
 # Z3 Defines
-set(STORM_HAVE_Z3 ${FOUND_Z3})
+set(STORM_HAVE_Z3 ${Z3_FOUND})
 
 # MathSAT Defines
 set(STORM_HAVE_MSAT ${ENABLE_MSAT})

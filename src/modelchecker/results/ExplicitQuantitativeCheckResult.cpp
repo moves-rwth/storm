@@ -7,6 +7,7 @@
 #include "src/exceptions/InvalidOperationException.h"
 #include "src/adapters/CarlAdapter.h"
 
+
 namespace storm {
     namespace modelchecker {
         template<typename ValueType>
@@ -114,28 +115,28 @@ namespace storm {
                 vector_type const& valuesAsVector = boost::get<vector_type>(values);
                 storm::storage::BitVector result(valuesAsVector.size());
                 switch (comparisonType) {
-                    case logic::Less:
+                    case logic::ComparisonType::Less:
                         for (uint_fast64_t index = 0; index < valuesAsVector.size(); ++index) {
                             if (valuesAsVector[index] < bound) {
                                 result.set(index);
                             }
                         }
                         break;
-                    case logic::LessEqual:
+                    case logic::ComparisonType::LessEqual:
                         for (uint_fast64_t index = 0; index < valuesAsVector.size(); ++index) {
                             if (valuesAsVector[index] <= bound) {
                                 result.set(index);
                             }
                         }
                         break;
-                    case logic::Greater:
+                    case logic::ComparisonType::Greater:
                         for (uint_fast64_t index = 0; index < valuesAsVector.size(); ++index) {
                             if (valuesAsVector[index] > bound) {
                                 result.set(index);
                             }
                         }
                         break;
-                    case logic::GreaterEqual:
+                    case logic::ComparisonType::GreaterEqual:
                         for (uint_fast64_t index = 0; index < valuesAsVector.size(); ++index) {
                             if (valuesAsVector[index] >= bound) {
                                 result.set(index);
@@ -148,22 +149,22 @@ namespace storm {
                 map_type const& valuesAsMap = boost::get<map_type>(values);
                 std::map<storm::storage::sparse::state_type, bool> result;
                 switch (comparisonType) {
-                    case logic::Less:
+                    case logic::ComparisonType::Less:
                         for (auto const& element : valuesAsMap) {
                             result[element.first] = element.second < bound;
                         }
                         break;
-                    case logic::LessEqual:
+                    case logic::ComparisonType::LessEqual:
                         for (auto const& element : valuesAsMap) {
                             result[element.first] = element.second <= bound;
                         }
                         break;
-                    case logic::Greater:
+                    case logic::ComparisonType::Greater:
                         for (auto const& element : valuesAsMap) {
                             result[element.first] = element.second > bound;
                         }
                         break;
-                    case logic::GreaterEqual:
+                    case logic::ComparisonType::GreaterEqual:
                         for (auto const& element : valuesAsMap) {
                             result[element.first] = element.second >= bound;
                         }

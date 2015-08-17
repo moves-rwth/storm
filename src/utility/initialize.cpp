@@ -1,5 +1,9 @@
 #include "initialize.h"
 
+#include "src/settings/SettingsManager.h"
+#include "src/settings/modules/DebugSettings.h"
+
+
 log4cplus::Logger logger;
 log4cplus::Logger printer;
 

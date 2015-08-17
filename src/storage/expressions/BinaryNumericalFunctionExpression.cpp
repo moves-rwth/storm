@@ -4,9 +4,11 @@
 #include "src/storage/expressions/BinaryNumericalFunctionExpression.h"
 #include "src/storage/expressions/IntegerLiteralExpression.h"
 #include "src/storage/expressions/DoubleLiteralExpression.h"
+#include "src/storage/expressions/ExpressionVisitor.h"
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidTypeException.h"
 #include "src/exceptions/InvalidStateException.h"
+
 
 namespace storm {
     namespace expressions {

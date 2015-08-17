@@ -11,6 +11,8 @@
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
 #include "src/settings/SettingsManager.h"
+#include "src/settings/modules/GeneralSettings.h"
+#include "src/settings/modules/GmmxxEquationSolverSettings.h"
 
 TEST(GmmxxCtmcCslModelCheckerTest, Cluster) {
     // Set the PRISM compatibility mode temporarily. It is set to its old value once the returned object is destructed.

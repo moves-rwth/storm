@@ -1,6 +1,7 @@
 #include "src/storage/expressions/LinearCoefficientVisitor.h"
 
 #include "src/storage/expressions/Expressions.h"
+
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidArgumentException.h"
 

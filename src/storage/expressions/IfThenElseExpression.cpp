@@ -1,6 +1,7 @@
 #include "src/storage/expressions/IfThenElseExpression.h"
 
 #include "src/utility/macros.h"
+#include "ExpressionVisitor.h"
 #include "src/exceptions/InvalidAccessException.h"
 
 namespace storm {

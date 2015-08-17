@@ -4,6 +4,7 @@
 
 #include "src/storage/expressions/ExpressionManager.h"
 #include "src/settings/SettingsManager.h"
+#include "src/settings/modules/GeneralSettings.h"
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/exceptions/OutOfRangeException.h"

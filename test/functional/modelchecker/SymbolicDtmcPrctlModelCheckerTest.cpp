@@ -11,6 +11,8 @@
 #include "src/models/symbolic/Dtmc.h"
 #include "src/settings/SettingsManager.h"
 
+#include "src/settings/modules/GeneralSettings.h"
+
 TEST(SymbolicDtmcPrctlModelCheckerTest, Die) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/die.pm");
     

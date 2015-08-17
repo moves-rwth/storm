@@ -4,6 +4,7 @@
 #include "src/storage/expressions/Variable.h"
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidStateException.h"
+#include "src/exceptions/InvalidArgumentException.h"
 
 namespace storm {
     namespace expressions {

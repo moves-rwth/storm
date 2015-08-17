@@ -6,9 +6,15 @@
 #include "src/models/sparse/Ctmc.h"
 #include "src/models/sparse/Mdp.h"
 
+
+
+#include "src/settings/modules/GeneralSettings.h"
+
 #include "src/utility/prism.h"
 #include "src/utility/macros.h"
 #include "src/exceptions/WrongFormatException.h"
+
+#include "src/exceptions/InvalidArgumentException.h"
 
 namespace storm {
     namespace builder {

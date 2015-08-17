@@ -4,6 +4,9 @@
 
 #include "src/utility/macros.h"
 
+#include "src/settings/SettingsManager.h"
+#include "src/settings/modules/GeneralSettings.h"
+
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 

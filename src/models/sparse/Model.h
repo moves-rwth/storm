@@ -12,6 +12,8 @@
 #include "src/storage/BitVector.h"
 #include "src/storage/SparseMatrix.h"
 #include "src/utility/OsDetection.h"
+// Forward declarations
+ 
 
 namespace storm {
     namespace models {
@@ -20,6 +22,7 @@ namespace storm {
             // The type used for storing a set of labels.
             typedef boost::container::flat_set<uint_fast64_t> LabelSet;
             
+           
             /*!
              * Base class for all sparse models.
              */

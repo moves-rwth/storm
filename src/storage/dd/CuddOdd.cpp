@@ -1,6 +1,10 @@
 #include "src/storage/dd/CuddOdd.h"
 
 #include <algorithm>
+#include <boost/functional/hash.hpp>
+
+#include "src/exceptions/InvalidArgumentException.h"
+#include "src/utility/macros.h"
 
 #include "src/storage/dd/CuddDdManager.h"
 #include "src/storage/dd/CuddDdMetaVariable.h"

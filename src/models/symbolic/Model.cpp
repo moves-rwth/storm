@@ -1,5 +1,13 @@
 #include "src/models/symbolic/Model.h"
 
+#include "src/exceptions/InvalidArgumentException.h"
+
+#include "src/adapters/AddExpressionAdapter.h"
+
+#include "src/storage/dd/CuddDdManager.h"
+#include "src/storage/dd/CuddAdd.h"
+#include "src/storage/dd/CuddBdd.h"
+
 namespace storm {
     namespace models {
         namespace symbolic {

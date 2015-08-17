@@ -2,6 +2,8 @@
 
 #include "src/adapters/CarlAdapter.h"
 #include "src/exceptions/NotImplementedException.h"
+#include "src/exceptions/InvalidArgumentException.h"
+#include "src/utility/constants.h"
 
 namespace storm {
     namespace models {

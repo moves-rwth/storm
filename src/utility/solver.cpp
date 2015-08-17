@@ -14,6 +14,9 @@
 #include "src/solver/GurobiLpSolver.h"
 #include "src/solver/GlpkLpSolver.h"
 
+#include "src/settings/SettingsManager.h"
+#include "src/settings/modules/GeneralSettings.h"
+
 namespace storm {
     namespace utility {
         namespace solver {

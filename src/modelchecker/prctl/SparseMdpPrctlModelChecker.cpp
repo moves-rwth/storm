@@ -12,6 +12,9 @@
 
 #include "src/solver/LpSolver.h"
 
+
+#include "src/settings/modules/GeneralSettings.h"
+
 #include "src/exceptions/InvalidStateException.h"
 #include "src/exceptions/InvalidPropertyException.h"
 #include "src/storage/expressions/Expressions.h"

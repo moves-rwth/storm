@@ -3,7 +3,7 @@
 
 #include <iostream>
 #include <string>
-#include <boost/algorithm/string.hpp>
+#include <cstdint>
 
 #include "src/settings/ArgumentType.h"
 

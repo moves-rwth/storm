@@ -10,9 +10,13 @@
 
 #include "src/parser/DeterministicSparseTransitionParser.h"
 #include "src/storage/SparseMatrix.h"
+#include "src/settings/SettingsManager.h"
+#include "src/settings/modules/GeneralSettings.h"
 #include "src/settings/SettingMemento.h"
 #include "src/exceptions/FileIoException.h"
 #include "src/exceptions/WrongFormatException.h"
+
+#include "src/exceptions/InvalidArgumentException.h"
 
 TEST(DeterministicSparseTransitionParserTest, NonExistingFile) {
 

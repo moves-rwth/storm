@@ -8,18 +8,17 @@
 #include <iostream>
 
 #include "src/storage/expressions/Type.h"
-#include "src/storage/expressions/Valuation.h"
-#include "src/storage/expressions/ExpressionVisitor.h"
-#include "src/storage/expressions/OperatorType.h"
-#include "src/exceptions/InvalidArgumentException.h"
 #include "src/utility/OsDetection.h"
+#include <boost/any.hpp>
 
 namespace storm {
     namespace expressions {
         // Forward-declare expression manager.
         class ExpressionManager;
         class Variable;
-        
+        class Valuation;
+        class ExpressionVisitor;
+        enum struct OperatorType;
         /*!
          * The base class of all expression classes.
          */

@@ -4,9 +4,13 @@
 #include "src/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
 
 #include "src/storage/dd/CuddOdd.h"
+#include "src/storage/dd/CuddDdManager.h"
 
 #include "src/utility/macros.h"
 #include "src/utility/graph.h"
+
+
+#include "src/settings/modules/GeneralSettings.h"
 
 #include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"
 #include "src/modelchecker/results/SymbolicQuantitativeCheckResult.h"

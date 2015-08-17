@@ -9,6 +9,9 @@
 #include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"
 #include "src/modelchecker/results/SymbolicQuantitativeCheckResult.h"
 
+
+#include "src/settings/modules/GeneralSettings.h"
+
 #include "src/exceptions/InvalidStateException.h"
 #include "src/exceptions/InvalidPropertyException.h"
 
@@ -49,7 +52,7 @@ namespace storm {
                 
         template<storm::dd::DdType DdType, typename ValueType>
         std::unique_ptr<CheckResult> SymbolicDtmcPrctlModelChecker<DdType, ValueType>::computeBoundedUntilProbabilities(storm::logic::BoundedUntilFormula const& pathFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
-            STORM_LOG_THROW(pathFormula.hasDiscreteTimeBound(), storm::exceptions::InvalidArgumentException, "Formula needs to have a discrete time bound.");
+            STORM_LOG_THROW(pathFormula.hasDiscreteTimeBound(), storm::exceptions::InvalidPropertyException, "Formula needs to have a discrete time bound.");
             std::unique_ptr<CheckResult> leftResultPointer = this->check(pathFormula.getLeftSubformula());
             std::unique_ptr<CheckResult> rightResultPointer = this->check(pathFormula.getRightSubformula());
             SymbolicQualitativeCheckResult<DdType> const& leftResult = leftResultPointer->asSymbolicQualitativeCheckResult<DdType>();
@@ -60,14 +63,14 @@ namespace storm {
         
         template<storm::dd::DdType DdType, typename ValueType>
         std::unique_ptr<CheckResult> SymbolicDtmcPrctlModelChecker<DdType, ValueType>::computeCumulativeRewards(storm::logic::CumulativeRewardFormula const& rewardPathFormula, boost::optional<std::string> const& rewardModelName, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
-            STORM_LOG_THROW(rewardPathFormula.hasDiscreteTimeBound(), storm::exceptions::InvalidArgumentException, "Formula needs to have a discrete time bound.");
+            STORM_LOG_THROW(rewardPathFormula.hasDiscreteTimeBound(), storm::exceptions::InvalidPropertyException, "Formula needs to have a discrete time bound.");
             storm::dd::Add<DdType> numericResult = storm::modelchecker::helper::SymbolicDtmcPrctlHelper<DdType, ValueType>::computeCumulativeRewards(this->getModel(), this->getModel().getTransitionMatrix(), rewardPathFormula.getDiscreteTimeBound(), *this->linearEquationSolverFactory);
             return std::unique_ptr<SymbolicQuantitativeCheckResult<DdType>>(new SymbolicQuantitativeCheckResult<DdType>(this->getModel().getReachableStates(), numericResult));
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
         std::unique_ptr<CheckResult> SymbolicDtmcPrctlModelChecker<DdType, ValueType>::computeInstantaneousRewards(storm::logic::InstantaneousRewardFormula const& rewardPathFormula, boost::optional<std::string> const& rewardModelName, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
-            STORM_LOG_THROW(rewardPathFormula.hasDiscreteTimeBound(), storm::exceptions::InvalidArgumentException, "Formula needs to have a discrete time bound.");
+            STORM_LOG_THROW(rewardPathFormula.hasDiscreteTimeBound(), storm::exceptions::InvalidPropertyException, "Formula needs to have a discrete time bound.");
             storm::dd::Add<DdType> numericResult = storm::modelchecker::helper::SymbolicDtmcPrctlHelper<DdType, ValueType>::computeInstantaneousRewards(this->getModel(), this->getModel().getTransitionMatrix(), rewardPathFormula.getDiscreteTimeBound(), *this->linearEquationSolverFactory);
             return std::unique_ptr<SymbolicQuantitativeCheckResult<DdType>>(new SymbolicQuantitativeCheckResult<DdType>(this->getModel().getReachableStates(), numericResult));
         }

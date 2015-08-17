@@ -148,7 +148,6 @@ TEST(Z3ExpressionAdapter, StormToZ3FloorCeil) {
 
 TEST(Z3ExpressionAdapter, Z3ToStormBasic) {
 	z3::context ctx;
-	unsigned args = 2;
 
     std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
     manager->declareBooleanVariable("x");

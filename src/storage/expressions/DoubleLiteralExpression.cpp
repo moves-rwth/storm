@@ -1,5 +1,6 @@
 #include "src/storage/expressions/DoubleLiteralExpression.h"
 #include "src/storage/expressions/ExpressionManager.h"
+#include "src/storage/expressions/ExpressionVisitor.h"
 
 namespace storm {
     namespace expressions {

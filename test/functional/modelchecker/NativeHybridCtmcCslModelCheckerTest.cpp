@@ -14,6 +14,7 @@
 #include "src/modelchecker/results/SymbolicQuantitativeCheckResult.h"
 
 #include "src/settings/SettingsManager.h"
+#include "src/settings/modules/GeneralSettings.h"
 
 TEST(NativeHybridCtmcCslModelCheckerTest, Cluster) {
     // Set the PRISM compatibility mode temporarily. It is set to its old value once the returned object is destructed.
