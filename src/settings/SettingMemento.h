@@ -2,6 +2,7 @@
 #define STORM_SETTINGS_SETTINGMEMENTO_H_
 
 #include <string>
+#include <memory>
 
 
 namespace storm {

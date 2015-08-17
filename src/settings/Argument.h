@@ -11,6 +11,7 @@
 #include <vector>
 #include <memory>
 
+#include "src/utility/macros.h"
 #include "src/settings/ArgumentBase.h"
 
 #include "src/settings/ArgumentType.h"

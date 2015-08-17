@@ -1,5 +1,5 @@
 #include "src/models/sparse/StateLabeling.h"
-#include "src/storage/BitVector.h"
+
 #include "src/exceptions/OutOfRangeException.h"
 #include "src/exceptions/InvalidArgumentException.h"
 

@@ -2,7 +2,7 @@
 #define STORM_SOLVER_GMMXXMINMAXLINEAREQUATIONSOLVER_H_
 
 #include "gmm/gmm_matrix.h"
-
+#include <memory>
 #include "src/solver/MinMaxLinearEquationSolver.h"
 
 namespace storm {
