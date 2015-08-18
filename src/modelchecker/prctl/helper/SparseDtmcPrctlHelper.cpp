@@ -1,5 +1,7 @@
 #include "src/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
 
+#include "src/modelchecker/csl/helper/SparseCtmcCslHelper.h"
+
 #include "src/utility/macros.h"
 #include "src/utility/vector.h"
 #include "src/utility/graph.h"
@@ -204,6 +206,11 @@ namespace storm {
                 storm::utility::vector::setVectorValues(result, infinityStates, storm::utility::infinity<ValueType>());
                 
                 return result;
+            }
+
+            template<typename ValueType, typename RewardModelType>
+            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeLongRunAverage(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& psiStates, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+                return SparseCtmcCslHelper<ValueType, RewardModelType>::computeLongRunAverage(transitionMatrix, psiStates, nullptr, qualitative, linearEquationSolverFactory);
             }
 
             template class SparseDtmcPrctlHelper<double>;

@@ -26,7 +26,7 @@ namespace storm {
                 DeterministicModel(storm::models::ModelType const& modelType,
                                    storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                    storm::models::sparse::StateLabeling const& stateLabeling,
-                                   std::map<std::string, RewardModelType> const& rewardModels = std::map<std::string, RewardModelType>(),
+                                   std::unordered_map<std::string, RewardModelType> const& rewardModels = std::map<std::string, RewardModelType>(),
                                    boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling = boost::optional<std::vector<LabelSet>>());
                 
                 /*!
@@ -41,7 +41,7 @@ namespace storm {
                 DeterministicModel(storm::models::ModelType const& modelType,
                                    storm::storage::SparseMatrix<ValueType>&& transitionMatrix,
                                    storm::models::sparse::StateLabeling&& stateLabeling,
-                                   std::map<std::string, RewardModelType>&& rewardModels = std::map<std::string, RewardModelType>(),
+                                   std::unordered_map<std::string, RewardModelType>&& rewardModels = std::map<std::string, RewardModelType>(),
                                    boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling = boost::optional<std::vector<LabelSet>>());
                 
                 DeterministicModel(DeterministicModel const& other) = default;

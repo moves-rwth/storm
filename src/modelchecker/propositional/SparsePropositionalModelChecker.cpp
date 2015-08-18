@@ -45,12 +45,14 @@ namespace storm {
         }
         
         // Explicitly instantiate the template class.
+        template class SparsePropositionalModelChecker<storm::models::sparse::Model<double>>;
         template class SparsePropositionalModelChecker<storm::models::sparse::Dtmc<double>>;
         template class SparsePropositionalModelChecker<storm::models::sparse::Ctmc<double>>;
         template class SparsePropositionalModelChecker<storm::models::sparse::Mdp<double>>;
         template class SparsePropositionalModelChecker<storm::models::sparse::MarkovAutomaton<double>>;
         
 #ifdef STORM_HAVE_CARL
+        template class SparsePropositionalModelChecker<storm::models::sparse::Model<storm::RationalFunction>>;
         template class SparsePropositionalModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>>;
         template class SparsePropositionalModelChecker<storm::models::sparse::Ctmc<storm::RationalFunction>>;
         template class SparsePropositionalModelChecker<storm::models::sparse::Mdp<storm::RationalFunction>>;

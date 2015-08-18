@@ -15,7 +15,7 @@ namespace storm {
             Model<ValueType, RewardModelType>::Model(storm::models::ModelType const& modelType,
                                     storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                     storm::models::sparse::StateLabeling const& stateLabeling,
-                                    std::map<std::string, RewardModelType> const& rewardModels,
+                                    std::unordered_map<std::string, RewardModelType> const& rewardModels,
                                     boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling)
             : ModelBase(modelType), transitionMatrix(transitionMatrix), stateLabeling(stateLabeling),
             rewardModels(rewardModels), choiceLabeling(optionalChoiceLabeling) {
@@ -28,7 +28,7 @@ namespace storm {
             Model<ValueType, RewardModelType>::Model(storm::models::ModelType const& modelType,
                                     storm::storage::SparseMatrix<ValueType>&& transitionMatrix,
                                     storm::models::sparse::StateLabeling&& stateLabeling,
-                                    std::map<std::string, RewardModelType>&& rewardModels,
+                                    std::unordered_map<std::string, RewardModelType>&& rewardModels,
                                     boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling)
             : ModelBase(modelType), transitionMatrix(std::move(transitionMatrix)), stateLabeling(std::move(stateLabeling)),
             rewardModels(std::move(rewardModels)), choiceLabeling(std::move(optionalChoiceLabeling)) {
@@ -105,7 +105,7 @@ namespace storm {
             }
             
             template<typename ValueType, typename RewardModelType>
-            typename std::map<std::string, RewardModelType>::const_iterator Model<ValueType, RewardModelType>::getUniqueRewardModel() const {
+            typename std::unordered_map<std::string, RewardModelType>::const_iterator Model<ValueType, RewardModelType>::getUniqueRewardModel() const {
                 STORM_LOG_THROW(this->getNumberOfRewardModels() == 1, storm::exceptions::IllegalFunctionCallException, "The reward model is not unique.");
                 return this->rewardModels.cbegin();
             }
@@ -270,12 +270,12 @@ namespace storm {
             }
             
             template<typename ValueType, typename RewardModelType>
-            std::map<std::string, RewardModelType>& Model<ValueType, RewardModelType>::getRewardModels() {
+            std::unordered_map<std::string, RewardModelType>& Model<ValueType, RewardModelType>::getRewardModels() {
                 return this->rewardModels;
             }
 
             template<typename ValueType, typename RewardModelType>
-            std::map<std::string, RewardModelType> const& Model<ValueType, RewardModelType>::getRewardModels() const {
+            std::unordered_map<std::string, RewardModelType> const& Model<ValueType, RewardModelType>::getRewardModels() const {
                 return this->rewardModels;
             }
 

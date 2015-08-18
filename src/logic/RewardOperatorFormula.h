@@ -23,6 +23,8 @@ namespace storm {
             virtual bool containsRewardOperator() const override;
             virtual bool containsNestedRewardOperators() const override;
             
+            virtual void gatherReferencedRewardModels(std::set<std::string>& referencedRewardModels) const override;
+            
             virtual std::ostream& writeToStream(std::ostream& out) const override;
             
             /*!

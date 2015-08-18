@@ -6,8 +6,6 @@
 #include "src/models/sparse/Ctmc.h"
 #include "src/models/sparse/Mdp.h"
 
-
-
 #include "src/settings/modules/GeneralSettings.h"
 
 #include "src/utility/prism.h"
@@ -18,6 +16,40 @@
 
 namespace storm {
     namespace builder {
+        /*!
+         * A structure that is used to keep track of a reward model currently being built.
+         */
+        template <typename ValueType>
+        struct RewardModelBuilder {
+        public:
+            RewardModelBuilder(bool deterministicModel, bool hasStateRewards, bool hasStateActionRewards, bool hasTransitionRewards) : hasStateRewards(hasStateRewards), hasStateActionRewards(hasStateActionRewards), hasTransitionRewards(hasTransitionRewards), stateRewardVector(), stateActionRewardVector(), transitionRewardMatrixBuilder(0, 0, 0, false, !deterministicModel, 0) {
+                // Intentionally left empty.
+            }
+            
+            storm::models::sparse::StandardRewardModel<ValueType> build(uint_fast64_t rowCount, uint_fast64_t columnCount, uint_fast64_t rowGroupCount) {
+                if (hasStateRewards) {
+                    stateRewardVector.resize(rowGroupCount);
+                }
+                if (hasStateActionRewards) {
+                    stateActionRewardVector.resize(rowCount);
+                }
+                return storm::models::sparse::StandardRewardModel<ValueType>(hasStateRewards ? std::move(stateRewardVector) : boost::none, hasStateActionRewards ? std::move(stateActionRewardVector) : boost::none, hasTransitionRewards ? transitionRewardMatrixBuilder.build(rowCount, columnCount, rowGroupCount) : boost::none);
+            }
+            
+            bool hasStateRewards;
+            bool hasStateActionRewards;
+            bool hasTransitionRewards;
+            
+            // The state reward vector.
+            std::vector<ValueType> stateRewardVector;
+            
+            // The state-action reward vector.
+            std::vector<ValueType> stateActionRewardVector;
+            
+            // A builder that is used for constructing the transition reward matrix.
+            storm::storage::SparseMatrixBuilder<ValueType> transitionRewardMatrixBuilder;
+        };
+        
         template <typename ValueType, typename IndexType>
         ExplicitPrismModelBuilder<ValueType, IndexType>::StateInformation::StateInformation(uint64_t bitsPerState) : stateStorage(bitsPerState, 10000000), bitsPerState(bitsPerState), reachableStates() {
             // Intentionally left empty.
@@ -56,17 +88,29 @@ namespace storm {
         }
         
         template <typename ValueType, typename IndexType>
-        ExplicitPrismModelBuilder<ValueType, IndexType>::ModelComponents::ModelComponents() : transitionMatrix(), stateLabeling(),  stateRewards(), transitionRewardMatrix(), choiceLabeling() {
+        ExplicitPrismModelBuilder<ValueType, IndexType>::ModelComponents::ModelComponents() : transitionMatrix(), stateLabeling(), rewardModels(), choiceLabeling() {
             // Intentionally left empty.
         }
 
         template <typename ValueType, typename IndexType>
-        ExplicitPrismModelBuilder<ValueType, IndexType>::Options::Options() : buildCommandLabels(false), buildRewards(false), rewardModelName(), constantDefinitions() {
+        ExplicitPrismModelBuilder<ValueType, IndexType>::Options::Options() : buildCommandLabels(false), buildAllRewardModels(false), rewardModelsToBuild(), constantDefinitions() {
             // Intentionally left empty.
         }
         
         template <typename ValueType, typename IndexType>
-        ExplicitPrismModelBuilder<ValueType, IndexType>::Options::Options(storm::logic::Formula const& formula) : buildCommandLabels(false), buildRewards(formula.containsRewardOperator()), rewardModelName(), constantDefinitions(), labelsToBuild(std::set<std::string>()), expressionLabels(std::vector<storm::expressions::Expression>()) {
+        ExplicitPrismModelBuilder<ValueType, IndexType>::Options::Options(storm::logic::Formula const& formula) : buildCommandLabels(false), buildAllRewardModels(false), rewardModelsToBuild(), constantDefinitions(), labelsToBuild(std::set<std::string>()), expressionLabels(std::vector<storm::expressions::Expression>()) {
+            this->preserveFormula(formula);
+        }
+
+        template <typename ValueType, typename IndexType>
+        void ExplicitPrismModelBuilder<ValueType, IndexType>::Options::preserveFormula(storm::logic::Formula const& formula) {
+            if (!buildAllRewardModels) {
+                if (formula.containsRewardOperator()) {
+                    std::set<std::string> referencedRewardModels = formula.getReferencedRewardModels();
+                    rewardModelsToBuild.insert(referencedRewardModels.begin(), referencedRewardModels.end());
+                }
+            }
+            
             // Extract all the labels used in the formula.
             std::vector<std::shared_ptr<storm::logic::AtomicLabelFormula const>> atomicLabelFormulas = formula.getAtomicLabelFormulas();
             for (auto const& formula : atomicLabelFormulas) {
@@ -79,7 +123,7 @@ namespace storm {
                 expressionLabels.get().push_back(formula.get()->getExpression());
             }
         }
-
+        
         template <typename ValueType, typename IndexType>
         void ExplicitPrismModelBuilder<ValueType, IndexType>::Options::addConstantDefinitionsFromString(storm::prism::Program const& program, std::string const& constantDefinitionString) {
             std::map<storm::expressions::Variable, storm::expressions::Expression> newConstantDefinitions = storm::utility::prism::parseConstantDefinitionString(program, constantDefinitionString);
@@ -154,45 +198,26 @@ namespace storm {
             // Now that the program is fixed, we we need to substitute all constants with their concrete value.
             preparedProgram = preparedProgram.substituteConstants();
             
-            // Select the appropriate reward model (after the constants have been substituted).
-            storm::prism::RewardModel rewardModel = storm::prism::RewardModel();
-            if (options.buildRewards) {
-                // If a specific reward model was selected or one with the empty name exists, select it.
-                if (options.rewardModelName) {
-                    rewardModel = preparedProgram.getRewardModel(options.rewardModelName.get());
-                } else if (preparedProgram.hasRewardModel("")) {
-                    rewardModel = preparedProgram.getRewardModel("");
-                } else if (preparedProgram.hasRewardModel()) {
-                    // Otherwise, we select the first one.
-                    rewardModel = preparedProgram.getRewardModel(0);
+            // Select the appropriate reward models (after the constants have been substituted).
+            std::vector<std::reference_wrapper<storm::prism::RewardModel const>> selectedRewardModels;
+            for (auto const& rewardModel : preparedProgram.getRewardModels()) {
+                if (options.buildAllRewardModels || options.rewardModelsToBuild.find(rewardModel.getName()) != options.rewardModelsToBuild.end()) {
+                    selectedRewardModels.push_back(rewardModel);
                 }
             }
                 
-            ModelComponents modelComponents = buildModelComponents(preparedProgram, rewardModel, options);
+            ModelComponents modelComponents = buildModelComponents(preparedProgram, selectedRewardModels, options);
             
             std::shared_ptr<storm::models::sparse::Model<ValueType>> result;
-            std::map<std::string, storm::models::sparse::StandardRewardModel<ValueType>> rewardModels;
-            if (options.buildRewards) {
-                std::string rewardModelName;
-                if (options.rewardModelName) {
-                    rewardModelName = options.rewardModelName.get();
-                } else {
-                    rewardModelName = "";
-                }
-                rewardModels.emplace(rewardModelName, storm::models::sparse::StandardRewardModel<ValueType>(rewardModel.hasStateRewards() ? std::move(modelComponents.stateRewards) : boost::optional<std::vector<ValueType>>(),
-                                                                                                            boost::optional<std::vector<ValueType>>(),
-                                                                                                            rewardModel.hasTransitionRewards() ? std::move(modelComponents.transitionRewardMatrix) : boost::optional<storm::storage::SparseMatrix<ValueType>>()));
-            }
-                
             switch (program.getModelType()) {
                 case storm::prism::Program::ModelType::DTMC:
-                    result = std::shared_ptr<storm::models::sparse::Model<ValueType>>(new storm::models::sparse::Dtmc<ValueType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), std::move(rewardModels), std::move(modelComponents.choiceLabeling)));
+                    result = std::shared_ptr<storm::models::sparse::Model<ValueType>>(new storm::models::sparse::Dtmc<ValueType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), std::move(modelComponents.rewardModels), std::move(modelComponents.choiceLabeling)));
                     break;
                 case storm::prism::Program::ModelType::CTMC:
-                    result = std::shared_ptr<storm::models::sparse::Model<ValueType>>(new storm::models::sparse::Ctmc<ValueType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), std::move(rewardModels), std::move(modelComponents.choiceLabeling)));
+                    result = std::shared_ptr<storm::models::sparse::Model<ValueType>>(new storm::models::sparse::Ctmc<ValueType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), std::move(modelComponents.rewardModels), std::move(modelComponents.choiceLabeling)));
                     break;
                 case storm::prism::Program::ModelType::MDP:
-                    result = std::shared_ptr<storm::models::sparse::Model<ValueType>>(new storm::models::sparse::Mdp<ValueType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), std::move(rewardModels), std::move(modelComponents.choiceLabeling)));
+                    result = std::shared_ptr<storm::models::sparse::Model<ValueType>>(new storm::models::sparse::Mdp<ValueType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), std::move(modelComponents.rewardModels), std::move(modelComponents.choiceLabeling)));
                     break;
                 default:
                     STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Error while creating model from probabilistic program: cannot handle this model type.");
@@ -458,7 +483,7 @@ namespace storm {
         }
 
         template <typename ValueType, typename IndexType>
-        boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> ExplicitPrismModelBuilder<ValueType, IndexType>::buildMatrices(storm::prism::Program const& program, VariableInformation const& variableInformation, std::vector<storm::prism::TransitionReward> const& transitionRewards, StateInformation& stateInformation, bool commandLabels, bool deterministicModel, bool discreteTimeModel, storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, storm::storage::SparseMatrixBuilder<ValueType>& transitionRewardMatrixBuilder) {
+        boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> ExplicitPrismModelBuilder<ValueType, IndexType>::buildMatrices(storm::prism::Program const& program, VariableInformation const& variableInformation, std::vector<std::reference_wrapper<storm::prism::RewardModel const>> const& selectedRewardModels, StateInformation& stateInformation, bool commandLabels, bool deterministicModel, bool discreteTimeModel, storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, std::vector<RewardModelBuilder<ValueType>>& rewardModelBuilders) {
             // Create choice labels, if requested,
             boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> choiceLabels;
             if (commandLabels) {
@@ -486,7 +511,11 @@ namespace storm {
             
             // Now explore the current state until there is no more reachable state.
             uint_fast64_t currentRow = 0;
+            
+            // The evaluator used to determine the truth value of guards and predicates in the *current* state.
             storm::expressions::ExpressionEvaluator<ValueType> evaluator(program.getManager());
+            
+            // Perform a BFS through the model.
             while (!stateQueue.empty()) {
                 // Get the current state and unpack it.
                 storm::storage::BitVector currentState = stateQueue.front();
@@ -510,7 +539,6 @@ namespace storm {
                         }
                         if (!deterministicModel) {
                             transitionMatrixBuilder.newRowGroup(currentRow);
-                            transitionRewardMatrixBuilder.newRowGroup(currentRow);
                         }
                         
                         transitionMatrixBuilder.addNextValue(currentRow, stateIndex, storm::utility::one<ValueType>());
@@ -519,32 +547,31 @@ namespace storm {
                         STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Error while creating sparse matrix from probabilistic program: found deadlock state. For fixing these, please provide the appropriate option.");
                     }
                 } else if (totalNumberOfChoices == 1) {
-                    Choice<ValueType> globalChoice;
-
                     if (!deterministicModel) {
                         transitionMatrixBuilder.newRowGroup(currentRow);
-                        transitionRewardMatrixBuilder.newRowGroup(currentRow);
                     }
                     
-                    std::map<IndexType, ValueType> stateToRewardMap;
-                    if (!allUnlabeledChoices.empty()) {
-                        globalChoice = allUnlabeledChoices.front();
-                        for (auto const& stateProbabilityPair : globalChoice) {
-                            // Now add all rewards that match this choice.
-                            for (auto const& transitionReward : transitionRewards) {
-                                if (!transitionReward.isLabeled() && evaluator.asBool(transitionReward.getStatePredicateExpression())) {
-                                    stateToRewardMap[stateProbabilityPair.first] += ValueType(evaluator.asRational(transitionReward.getRewardValueExpression()));
+                    bool labeledChoice = allUnlabeledChoices.empty() ? false : true;
+                    Choice<ValueType> const& globalChoice = labeledChoice ? allLabeledChoices.front() : allUnlabeledChoices.front();
+                    
+                    auto builderIt = rewardModelBuilders.begin();
+                    for (auto rewardModelIt = selectedRewardModels.begin(), rewardModelIte = selectedRewardModels.end(); rewardModelIt != rewardModelIte; ++rewardModelIt, ++builderIt) {
+                        if (rewardModelIt->get().hasStateRewards()) {
+                            builderIt->stateRewardVector.push_back(storm::utility::zero<ValueType>());
+                            for (auto const& stateReward : rewardModelIt->get().getStateRewards()) {
+                                if (evaluator.asBool(stateReward.getStatePredicateExpression())) {
+                                    builderIt->stateRewardVector.back() += ValueType(evaluator.asRational(stateReward.getRewardValueExpression()));
                                 }
                             }
                         }
-                    } else {
-                        globalChoice = allLabeledChoices.front();
                         
-                        for (auto const& stateProbabilityPair : globalChoice) {
-                            // Now add all rewards that match this choice.
-                            for (auto const& transitionReward : transitionRewards) {
-                                if (transitionReward.isLabeled() && transitionReward.getActionIndex() == globalChoice.getActionIndex() && evaluator.asBool(transitionReward.getStatePredicateExpression())) {
-                                    stateToRewardMap[stateProbabilityPair.first] += ValueType(evaluator.asRational(transitionReward.getRewardValueExpression()));
+                        if (rewardModelIt->get().hasStateActionRewards()) {
+                            builderIt->stateActionRewardVector.push_back(storm::utility::zero<ValueType>());
+                            for (auto const& stateActionReward : rewardModelIt->get().getStateActionRewards()) {
+                                if ((labeledChoice && stateActionReward.isLabeled() && stateActionReward.getActionIndex() == globalChoice.getActionIndex()) || (!labeledChoice && !stateActionReward.isLabeled())) {
+                                    if (evaluator.asBool(stateActionReward.getStatePredicateExpression())) {
+                                        builderIt->stateActionRewardVector.back() += ValueType(evaluator.asRational(stateActionReward.getRewardValueExpression()));
+                                    }
                                 }
                             }
                         }
@@ -555,17 +582,6 @@ namespace storm {
                         choiceLabels.get().push_back(globalChoice.getChoiceLabels());
                     }
                     
-                    for (auto const& stateProbabilityPair : globalChoice) {
-                        transitionMatrixBuilder.addNextValue(currentRow, stateProbabilityPair.first, stateProbabilityPair.second);
-                    }
-                    
-                    // Add all transition rewards to the matrix and add dummy entry if there is none.
-                    if (!stateToRewardMap.empty()) {
-                        for (auto const& stateRewardPair : stateToRewardMap) {
-                            transitionRewardMatrixBuilder.addNextValue(currentRow, stateRewardPair.first, stateRewardPair.second);
-                        }
-                    }
-                    
                     ++currentRow;
                 } else {
                     // Then, based on whether the model is deterministic or not, either add the choices individually
@@ -573,7 +589,7 @@ namespace storm {
                     if (deterministicModel) {
                         Choice<ValueType> globalChoice;
 
-                        std::map<IndexType, ValueType> stateToRewardMap;
+                        std::unordered_map<IndexType, ValueType> stateToRewardMap;
                         
                         // Combine all the choices and scale them with the total number of choices of the current state.
                         for (auto const& choice : allUnlabeledChoices) {
@@ -581,18 +597,34 @@ namespace storm {
                                 globalChoice.addChoiceLabels(choice.getChoiceLabels());
                             }
                             
+                            auto builderIt = rewardModelBuilders.begin();
+                            for (auto rewardModelIt = selectedRewardModels.begin(), rewardModelIte = selectedRewardModels.end(); rewardModelIt != rewardModelIte; ++rewardModelIt, ++builderIt) {
+                                if (rewardModelIt->get().hasStateRewards()) {
+                                    builderIt->stateRewardVector.resize(currentRow + 1);
+                                    for (auto const& stateReward : rewardModelIt->get().getStateRewards()) {
+                                        if (evaluator.asBool(stateReward.getStatePredicateExpression())) {
+                                            builderIt->stateRewardVector[currentRow] += ValueType(evaluator.asRational(stateReward.getRewardValueExpression()));
+                                        }
+                                    }
+                                }
+                                
+                                if (rewardModelIt->get().hasStateActionRewards()) {
+                                    builderIt->stateActionRewardVector.resize(currentRow + 1);
+                                    for (auto const& stateActionReward : rewardModelIt->get().getStateActionRewards()) {
+                                        if (!stateActionReward.isLabeled()) {
+                                            if (evaluator.asBool(stateActionReward.getStatePredicateExpression())) {
+                                                builderIt->stateActionRewardVector[currentRow] += ValueType(evaluator.asRational(stateActionReward.getRewardValueExpression())) / totalNumberOfChoices;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            
                             for (auto const& stateProbabilityPair : choice) {
                                 if (discreteTimeModel) {
                                     globalChoice.getOrAddEntry(stateProbabilityPair.first) += stateProbabilityPair.second / totalNumberOfChoices;
                                 } else {
                                     globalChoice.getOrAddEntry(stateProbabilityPair.first) += stateProbabilityPair.second;
-                                }
-                                
-                                // Now add all rewards that match this choice.
-                                for (auto const& transitionReward : transitionRewards) {
-                                    if (!transitionReward.isLabeled() && evaluator.asBool(transitionReward.getStatePredicateExpression())) {
-                                        stateToRewardMap[stateProbabilityPair.first] += ValueType(evaluator.asRational(transitionReward.getRewardValueExpression()));
-                                    }
                                 }
                             }
                         }
@@ -601,18 +633,34 @@ namespace storm {
                                 globalChoice.addChoiceLabels(choice.getChoiceLabels());
                             }
                             
+                            auto builderIt = rewardModelBuilders.begin();
+                            for (auto rewardModelIt = selectedRewardModels.begin(), rewardModelIte = selectedRewardModels.end(); rewardModelIt != rewardModelIte; ++rewardModelIt, ++builderIt) {
+                                if (rewardModelIt->get().hasStateRewards()) {
+                                    builderIt->stateRewardVector.resize(currentRow + 1);
+                                    for (auto const& stateReward : rewardModelIt->get().getStateRewards()) {
+                                        if (evaluator.asBool(stateReward.getStatePredicateExpression())) {
+                                            builderIt->stateRewardVector[currentRow] += ValueType(evaluator.asRational(stateReward.getRewardValueExpression()));
+                                        }
+                                    }
+                                }
+                                
+                                if (rewardModelIt->get().hasStateActionRewards()) {
+                                    builderIt->stateActionRewardVector.resize(currentRow + 1);
+                                    for (auto const& stateActionReward : rewardModelIt->get().getStateActionRewards()) {
+                                        if (stateActionReward.isLabeled() && stateActionReward.getActionIndex() == choice.getActionIndex()) {
+                                            if (evaluator.asBool(stateActionReward.getStatePredicateExpression())) {
+                                                builderIt->stateActionRewardVector[currentRow] += ValueType(evaluator.asRational(stateActionReward.getRewardValueExpression())) / totalNumberOfChoices;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            
                             for (auto const& stateProbabilityPair : choice) {
                                 if (discreteTimeModel) {
                                     globalChoice.getOrAddEntry(stateProbabilityPair.first) += stateProbabilityPair.second / totalNumberOfChoices;
                                 } else {
                                     globalChoice.getOrAddEntry(stateProbabilityPair.first) += stateProbabilityPair.second;
-                                }
-                                
-                                // Now add all rewards that match this choice.
-                                for (auto const& transitionReward : transitionRewards) {
-                                    if (transitionReward.isLabeled() && transitionReward.getActionIndex() == choice.getActionIndex() && evaluator.asBool(transitionReward.getStatePredicateExpression())) {
-                                        stateToRewardMap[stateProbabilityPair.first] += ValueType(evaluator.asRational(transitionReward.getRewardValueExpression()));
-                                    }
                                 }
                             }
                         }
@@ -627,18 +675,23 @@ namespace storm {
                             transitionMatrixBuilder.addNextValue(currentRow, stateProbabilityPair.first, stateProbabilityPair.second);
                         }
                         
-                        // Add all transition rewards to the matrix and add dummy entry if there is none.
-                        if (!stateToRewardMap.empty()) {
-                            for (auto const& stateRewardPair : stateToRewardMap) {
-                                transitionRewardMatrixBuilder.addNextValue(currentRow, stateRewardPair.first, stateRewardPair.second);
-                            }
-                        }
-                        
                         ++currentRow;
                     } else {
                         // If the model is nondeterministic, we add all choices individually.
                         transitionMatrixBuilder.newRowGroup(currentRow);
-                        transitionRewardMatrixBuilder.newRowGroup(currentRow);
+                        
+                        // For all reward models that
+                        for (auto rewardModelIt = selectedRewardModels.begin(), rewardModelIte = selectedRewardModels.end(), builderIt = rewardModelBuilders.begin(); rewardModelIt != rewardModelIte; ++rewardModelIt, ++builderIt) {
+                            if (rewardModelIt->get().hasStateRewards()) {
+                                builderIt->stateRewardVector.push_back();
+                                
+                                for (auto const& stateReward : rewardModelIt->get().getStateRewards()) {
+                                    if (evaluator.asBool(stateReward.getStatePredicateExpression())) {
+                                        builderIt->stateRewardVector.back() += ValueType(evaluator.asRational(stateReward.getRewardValueExpression()));
+                                    }
+                                }
+                            }
+                        }
                         
                         // First, process all unlabeled choices.
                         for (auto const& choice : allUnlabeledChoices) {
@@ -647,23 +700,21 @@ namespace storm {
                                 choiceLabels.get().emplace_back(std::move(choice.getChoiceLabels()));
                             }
                             
-                            for (auto const& stateProbabilityPair : choice) {
-                                transitionMatrixBuilder.addNextValue(currentRow, stateProbabilityPair.first, stateProbabilityPair.second);
-                                
-                                // Now add all rewards that match this choice.
-                                for (auto const& transitionReward : transitionRewards) {
-                                    if (!transitionReward.isLabeled() && evaluator.asBool(transitionReward.getStatePredicateExpression())) {
-                                        stateToRewardMap[stateProbabilityPair.first] += ValueType(evaluator.asRational(transitionReward.getRewardValueExpression()));
+                            for (auto rewardModelIt = selectedRewardModels.begin(), rewardModelIte = selectedRewardModels.end(), builderIt = rewardModelBuilders.begin(); rewardModelIt != rewardModelIte; ++rewardModelIt, ++builderIt) {
+                                if (rewardModelIt->get().hasStateActionRewards()) {
+                                    builderIt->stateActionRewardVector.resize(currentRow + 1);
+                                    for (auto const& stateActionReward : rewardModelIt->get().getStateActionRewards()) {
+                                        if (!stateActionReward.isLabeled()) {
+                                            if (evaluator.asBool(stateActionReward.getStatePredicateExpression())) {
+                                                builderIt->stateActionRewardVector[currentRow] += ValueType(evaluator.asRational(stateActionReward.getRewardValueExpression()));
+                                            }
+                                        }
                                     }
                                 }
-                                
                             }
                             
-                            // Add all transition rewards to the matrix and add dummy entry if there is none.
-                            if (stateToRewardMap.size() > 0) {
-                                for (auto const& stateRewardPair : stateToRewardMap) {
-                                    transitionRewardMatrixBuilder.addNextValue(currentRow, stateRewardPair.first, stateRewardPair.second);
-                                }
+                            for (auto const& stateProbabilityPair : choice) {
+                                transitionMatrixBuilder.addNextValue(currentRow, stateProbabilityPair.first, stateProbabilityPair.second);
                             }
                             
                             ++currentRow;
@@ -676,23 +727,21 @@ namespace storm {
                                 choiceLabels.get().emplace_back(std::move(choice.getChoiceLabels()));
                             }
                             
-                            for (auto const& stateProbabilityPair : choice) {
-                                transitionMatrixBuilder.addNextValue(currentRow, stateProbabilityPair.first, stateProbabilityPair.second);
-                                
-                                // Now add all rewards that match this choice.
-                                for (auto const& transitionReward : transitionRewards) {
-                                    if (transitionReward.getActionIndex() == choice.getActionIndex() && evaluator.asBool(transitionReward.getStatePredicateExpression())) {
-                                        stateToRewardMap[stateProbabilityPair.first] += ValueType(evaluator.asRational(transitionReward.getRewardValueExpression()));
+                            for (auto rewardModelIt = selectedRewardModels.begin(), rewardModelIte = selectedRewardModels.end(), builderIt = rewardModelBuilders.begin(); rewardModelIt != rewardModelIte; ++rewardModelIt, ++builderIt) {
+                                if (rewardModelIt->get().hasStateActionRewards()) {
+                                    builderIt->stateActionRewardVector.resize(currentRow + 1);
+                                    for (auto const& stateActionReward : rewardModelIt->get().getStateActionRewards()) {
+                                        if (stateActionReward.isLabeled() && stateActionReward.getActionIndex() == choice.getActionIndex()) {
+                                            if (evaluator.asBool(stateActionReward.getStatePredicateExpression())) {
+                                                builderIt->stateActionRewardVector[currentRow] += ValueType(evaluator.asRational(stateActionReward.getRewardValueExpression()));
+                                            }
+                                        }
                                     }
                                 }
-                                
                             }
                             
-                            // Add all transition rewards to the matrix and add dummy entry if there is none.
-                            if (!stateToRewardMap.empty()) {
-                                for (auto const& stateRewardPair : stateToRewardMap) {
-                                    transitionRewardMatrixBuilder.addNextValue(currentRow, stateRewardPair.first, stateRewardPair.second);
-                                }
+                            for (auto const& stateProbabilityPair : choice) {
+                                transitionMatrixBuilder.addNextValue(currentRow, stateProbabilityPair.first, stateProbabilityPair.second);
                             }
                             
                             ++currentRow;
@@ -705,7 +754,7 @@ namespace storm {
         }
         
         template <typename ValueType, typename IndexType>
-        typename ExplicitPrismModelBuilder<ValueType, IndexType>::ModelComponents ExplicitPrismModelBuilder<ValueType, IndexType>::buildModelComponents(storm::prism::Program const& program, storm::prism::RewardModel const& rewardModel, Options const& options) {
+        typename ExplicitPrismModelBuilder<ValueType, IndexType>::ModelComponents ExplicitPrismModelBuilder<ValueType, IndexType>::buildModelComponents(storm::prism::Program const& program, std::vector<std::reference_wrapper<storm::prism::RewardModel const>> const& selectedRewardModels, Options const& options) {
             ModelComponents modelComponents;
             
             uint_fast64_t bitOffset = 0;
@@ -748,20 +797,23 @@ namespace storm {
             bool deterministicModel = program.getModelType() == storm::prism::Program::ModelType::DTMC || program.getModelType() == storm::prism::Program::ModelType::CTMC;
             bool discreteTimeModel = program.getModelType() == storm::prism::Program::ModelType::DTMC || program.getModelType() == storm::prism::Program::ModelType::MDP;
             
-            // Build the transition and reward matrices.
+            // Prepare the transition matrix builder and the reward model builders.
             storm::storage::SparseMatrixBuilder<ValueType> transitionMatrixBuilder(0, 0, 0, false, !deterministicModel, 0);
-            storm::storage::SparseMatrixBuilder<ValueType> transitionRewardMatrixBuilder(0, 0, 0, false, !deterministicModel, 0);
-            modelComponents.choiceLabeling = buildMatrices(program, variableInformation, rewardModel.getTransitionRewards(), stateInformation, options.buildCommandLabels, deterministicModel, discreteTimeModel, transitionMatrixBuilder, transitionRewardMatrixBuilder);
+            std::vector<RewardModelBuilder<ValueType>> rewardModelBuilders;
+            for (auto const& rewardModel : selectedRewardModels) {
+                rewardModelBuilders.emplace_back(deterministicModel, rewardModel.get().hasStateRewards(), rewardModel.get().hasStateActionRewards(), rewardModel.get().hasTransitionRewards());
+            }
             
-            // Finalize the resulting matrices.
-            modelComponents.transitionMatrix = transitionMatrixBuilder.build();
-            modelComponents.transitionRewardMatrix = transitionRewardMatrixBuilder.build(modelComponents.transitionMatrix.getRowCount(), modelComponents.transitionMatrix.getColumnCount(), modelComponents.transitionMatrix.getRowGroupCount());
+            modelComponents.choiceLabeling = buildMatrices(program, variableInformation, selectedRewardModels, stateInformation, options.buildCommandLabels, deterministicModel, discreteTimeModel, transitionMatrixBuilder, rewardModelBuilders);
             
-            // Now build the state labeling.
+            // Now finalize all reward models.
+            auto builderIt = rewardModelBuilders.begin();
+            for (auto rewardModelIt = selectedRewardModels.begin(), rewardModelIte = selectedRewardModels.end(); rewardModelIt != rewardModelIte; ++rewardModelIt, ++builderIt) {
+                modelComponents.rewardModels.emplace(rewardModelIt->get().getName(), builderIt->build(modelComponents.transitionMatrix.getRowCount(), modelComponents.transitionMatrix.getColumnCount(), modelComponents.transitionMatrix.getRowGroupCount()));
+            }
+            
+            // Finally, build the state labeling.
             modelComponents.stateLabeling = buildStateLabeling(program, variableInformation, stateInformation);
-            
-            // Finally, construct the state rewards.
-            modelComponents.stateRewards = buildStateRewards(program, variableInformation, rewardModel.getStateRewards(), stateInformation);
             
             return modelComponents;
         }

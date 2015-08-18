@@ -27,7 +27,7 @@ namespace storm {
                  */
                 Dtmc(storm::storage::SparseMatrix<ValueType> const& probabilityMatrix,
                      storm::models::sparse::StateLabeling const& stateLabeling,
-                     std::map<std::string, RewardModelType> const& rewardModels = std::map<std::string, RewardModelType>(),
+                     std::unordered_map<std::string, RewardModelType> const& rewardModels = std::map<std::string, RewardModelType>(),
                      boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling = boost::optional<std::vector<LabelSet>>());
                 
                 /*!
@@ -39,7 +39,7 @@ namespace storm {
                  * @param optionalChoiceLabeling A vector that represents the labels associated with the choices of each state.
                  */
                 Dtmc(storm::storage::SparseMatrix<ValueType>&& probabilityMatrix, storm::models::sparse::StateLabeling&& stateLabeling,
-                     std::map<std::string, RewardModelType>&& rewardModels = std::map<std::string, RewardModelType>(),
+                     std::unordered_map<std::string, RewardModelType>&& rewardModels = std::map<std::string, RewardModelType>(),
                      boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling = boost::optional<std::vector<LabelSet>>());
                 
                 Dtmc(Dtmc<ValueType> const& dtmc) = default;

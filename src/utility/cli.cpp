@@ -215,7 +215,6 @@ namespace storm {
                     program = storm::parser::PrismParser::parse(programFile).simplify();
                     
                     program->checkValidity();
-                    std::cout << program.get() << std::endl;
                 }
                 
                 // Then proceed to parsing the property (if given), since the model we are building may depend on the property.

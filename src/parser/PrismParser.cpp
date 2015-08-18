@@ -114,14 +114,18 @@ namespace storm {
             stateRewardDefinition = (expressionParser > qi::lit(":") > expressionParser >> qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createStateReward, phoenix::ref(*this), qi::_1, qi::_2)];
             stateRewardDefinition.name("state reward definition");
             
-            transitionRewardDefinition = (qi::lit("[") > -(identifier[qi::_a = qi::_1]) > qi::lit("]") > expressionParser > qi::lit(":") > expressionParser > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createTransitionReward, phoenix::ref(*this), qi::_a, qi::_2, qi::_3, qi::_r1)];
+            stateActionRewardDefinition = ((qi::lit("[") >> -(identifier[qi::_a = qi::_1]) >> qi::lit("]") >> expressionParser >> qi::lit(":")) > expressionParser > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createTransitionReward, phoenix::ref(*this), qi::_a, qi::_2, qi::_3, qi::_r1)];
+            stateActionRewardDefinition.name("state action reward definition");
+
+            transitionRewardDefinition = (qi::lit("[") > -(identifier[qi::_a = qi::_1]) > qi::lit("]") > expressionParser > qi::lit("->") > expressionParser > qi::lit(":") > expressionParser > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createTransitionReward, phoenix::ref(*this), qi::_a, qi::_2, qi::_3, qi::_4, qi::_r1)];
             transitionRewardDefinition.name("transition reward definition");
             
             rewardModelDefinition = (qi::lit("rewards") > -(qi::lit("\"") > identifier[qi::_a = qi::_1] > qi::lit("\""))
                                      > +(   stateRewardDefinition[phoenix::push_back(qi::_b, qi::_1)]
-                                         |  transitionRewardDefinition(qi::_r1)[phoenix::push_back(qi::_c, qi::_1)]
+                                         |  stateActionRewardDefinition[phoenix::push_back(qi::_c, qi::_1)]
+                                         |  transitionRewardDefinition(qi::_r1)[phoenix::push_back(qi::_d, qi::_1)]
                                          )
-                                     >> qi::lit("endrewards"))[qi::_val = phoenix::bind(&PrismParser::createRewardModel, phoenix::ref(*this), qi::_a, qi::_b, qi::_c)];
+                                     >> qi::lit("endrewards"))[qi::_val = phoenix::bind(&PrismParser::createRewardModel, phoenix::ref(*this), qi::_a, qi::_b, qi::_c, qi::_d)];
             rewardModelDefinition.name("reward model definition");
             
             initialStatesConstruct = (qi::lit("init") > expressionParser > qi::lit("endinit"))[qi::_pass = phoenix::bind(&PrismParser::addInitialStatesConstruct, phoenix::ref(*this), qi::_1, qi::_r1)];
@@ -346,22 +350,32 @@ namespace storm {
             return storm::prism::Label(labelName, expression, this->getFilename());
         }
         
-        storm::prism::RewardModel PrismParser::createRewardModel(std::string const& rewardModelName, std::vector<storm::prism::StateReward> const& stateRewards, std::vector<storm::prism::TransitionReward> const& transitionRewards) const {
-            return storm::prism::RewardModel(rewardModelName, stateRewards, transitionRewards, this->getFilename());
+        storm::prism::RewardModel PrismParser::createRewardModel(std::string const& rewardModelName, std::vector<storm::prism::StateReward> const& stateRewards, std::vector<storm::prism::StateActionReward> const& stateActionRewards, std::vector<storm::prism::TransitionReward> const& transitionRewards) const {
+            return storm::prism::RewardModel(rewardModelName, stateRewards, stateActionRewards, transitionRewards, this->getFilename());
         }
         
         storm::prism::StateReward PrismParser::createStateReward(storm::expressions::Expression statePredicateExpression, storm::expressions::Expression rewardValueExpression) const {
             return storm::prism::StateReward(statePredicateExpression, rewardValueExpression, this->getFilename());
         }
         
-        storm::prism::TransitionReward PrismParser::createTransitionReward(std::string const& actionName, storm::expressions::Expression statePredicateExpression, storm::expressions::Expression rewardValueExpression, GlobalProgramInformation& globalProgramInformation) const {
+        storm::prism::StateActionReward PrismParser::createStateActionReward(std::string const& actionName, storm::expressions::Expression statePredicateExpression, storm::expressions::Expression rewardValueExpression, GlobalProgramInformation& globalProgramInformation) const {
             auto const& nameIndexPair = globalProgramInformation.actionIndices.find(actionName);
             STORM_LOG_THROW(actionName.empty() || nameIndexPair != globalProgramInformation.actionIndices.end(), storm::exceptions::WrongFormatException, "Transition reward refers to illegal action '" << actionName << "'.");
 			if (nameIndexPair == globalProgramInformation.actionIndices.end() && actionName.empty()) {
-				return storm::prism::TransitionReward(0, actionName, statePredicateExpression, rewardValueExpression, this->getFilename());
+				return storm::prism::StateActionReward(0, actionName, statePredicateExpression, rewardValueExpression, this->getFilename());
 			} else {
-				return storm::prism::TransitionReward(nameIndexPair->second, actionName, statePredicateExpression, rewardValueExpression, this->getFilename());
+				return storm::prism::StateActionReward(nameIndexPair->second, actionName, statePredicateExpression, rewardValueExpression, this->getFilename());
 			}
+        }
+        
+        storm::prism::TransitionReward PrismParser::createTransitionReward(std::string const& actionName, storm::expressions::Expression sourceStatePredicateExpression, storm::expressions::Expression targetStatePredicateExpression, storm::expressions::Expression rewardValueExpression, GlobalProgramInformation& globalProgramInformation) const {
+            auto const& nameIndexPair = globalProgramInformation.actionIndices.find(actionName);
+            STORM_LOG_THROW(actionName.empty() || nameIndexPair != globalProgramInformation.actionIndices.end(), storm::exceptions::WrongFormatException, "Transition reward refers to illegal action '" << actionName << "'.");
+            if (nameIndexPair == globalProgramInformation.actionIndices.end() && actionName.empty()) {
+                return storm::prism::TransitionReward(0, actionName, sourceStatePredicateExpression, targetStatePredicateExpression, rewardValueExpression, this->getFilename());
+            } else {
+                return storm::prism::TransitionReward(nameIndexPair->second, actionName, sourceStatePredicateExpression, targetStatePredicateExpression, rewardValueExpression, this->getFilename());
+            }
         }
         
         storm::prism::Assignment PrismParser::createAssignment(std::string const& variableName, storm::expressions::Expression assignedExpression) const {

@@ -2,6 +2,7 @@
 #define STORM_MODELS_SPARSE_MODEL_H_
 
 #include <vector>
+#include <unordered_map>
 #include <boost/container/flat_set.hpp>
 #include <boost/optional.hpp>
 
@@ -12,8 +13,6 @@
 #include "src/storage/BitVector.h"
 #include "src/storage/SparseMatrix.h"
 #include "src/utility/OsDetection.h"
-// Forward declarations
- 
 
 namespace storm {
     namespace models {
@@ -52,7 +51,7 @@ namespace storm {
                 Model(storm::models::ModelType const& modelType,
                       storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                       storm::models::sparse::StateLabeling const& stateLabeling,
-                      std::map<std::string, RewardModelType> const& rewardModels = std::map<std::string, RewardModelType>(),
+                      std::unordered_map<std::string, RewardModelType> const& rewardModels = std::unordered_map<std::string, RewardModelType>(),
                       boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling = boost::optional<std::vector<LabelSet>>());
                 
                 /*!
@@ -67,7 +66,7 @@ namespace storm {
                 Model(storm::models::ModelType const& modelType,
                       storm::storage::SparseMatrix<ValueType>&& transitionMatrix,
                       storm::models::sparse::StateLabeling&& stateLabeling,
-                      std::map<std::string, RewardModelType>&& rewardModels = std::map<std::string, RewardModelType>(),
+                      std::unordered_map<std::string, RewardModelType>&& rewardModels = std::unordered_map<std::string, RewardModelType>(),
                       boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling = boost::optional<std::vector<LabelSet>>());
                                 
                 /*!
@@ -156,7 +155,7 @@ namespace storm {
                  *
                  * @return An iterator to the name and the reward model.
                  */
-                typename std::map<std::string, RewardModelType>::const_iterator getUniqueRewardModel() const;
+                typename std::unordered_map<std::string, RewardModelType>::const_iterator getUniqueRewardModel() const;
                 
                 /*!
                  * Retrieves whether the model has a unique reward model.
@@ -304,14 +303,14 @@ namespace storm {
                  *
                  * @return A mapping from reward model names to the reward models.
                  */
-                std::map<std::string, RewardModelType> const& getRewardModels() const;
+                std::unordered_map<std::string, RewardModelType> const& getRewardModels() const;
                 
                 /*!
                  * Retrieves the reward models.
                  *
                  * @return A mapping from reward model names to the reward models.
                  */
-                std::map<std::string, RewardModelType>& getRewardModels();
+                std::unordered_map<std::string, RewardModelType>& getRewardModels();
                 
             private:
                 //  A matrix representing transition relation.
@@ -321,7 +320,7 @@ namespace storm {
                 storm::models::sparse::StateLabeling stateLabeling;
                 
                 // The reward models of the model.
-                std::map<std::string, RewardModelType> rewardModels;
+                std::unordered_map<std::string, RewardModelType> rewardModels;
                 
                 // If set, a vector representing the labels of choices.
                 boost::optional<std::vector<LabelSet>> choiceLabeling;

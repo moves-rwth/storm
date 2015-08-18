@@ -199,8 +199,9 @@ namespace storm {
             qi::rule<Iterator, storm::prism::Assignment(), Skipper> assignmentDefinition;
             
             // Rules for reward definitions.
-            qi::rule<Iterator, storm::prism::RewardModel(GlobalProgramInformation&), qi::locals<std::string, std::vector<storm::prism::StateReward>, std::vector<storm::prism::TransitionReward>>, Skipper> rewardModelDefinition;
+            qi::rule<Iterator, storm::prism::RewardModel(GlobalProgramInformation&), qi::locals<std::string, std::vector<storm::prism::StateReward>, std::vector<storm::prism::StateActionReward>, std::vector<storm::prism::TransitionReward>>, Skipper> rewardModelDefinition;
             qi::rule<Iterator, storm::prism::StateReward(), Skipper> stateRewardDefinition;
+            qi::rule<Iterator, storm::prism::StateActionReward(GlobalProgramInformation&), qi::locals<std::string>, Skipper> stateActionRewardDefinition;
             qi::rule<Iterator, storm::prism::TransitionReward(GlobalProgramInformation&), qi::locals<std::string>, Skipper> transitionRewardDefinition;
             
             // Rules for initial states expression.
@@ -236,9 +237,10 @@ namespace storm {
             storm::prism::Constant createDefinedDoubleConstant(std::string const& newConstant, storm::expressions::Expression expression) const;
             storm::prism::Formula createFormula(std::string const& formulaName, storm::expressions::Expression expression);
             storm::prism::Label createLabel(std::string const& labelName, storm::expressions::Expression expression) const;
-            storm::prism::RewardModel createRewardModel(std::string const& rewardModelName, std::vector<storm::prism::StateReward> const& stateRewards, std::vector<storm::prism::TransitionReward> const& transitionRewards) const;
+            storm::prism::RewardModel createRewardModel(std::string const& rewardModelName, std::vector<storm::prism::StateReward> const& stateRewards, std::vector<storm::prism::StateActionReward> const& stateActionRewards, std::vector<storm::prism::TransitionReward> const& transitionRewards) const;
             storm::prism::StateReward createStateReward(storm::expressions::Expression statePredicateExpression, storm::expressions::Expression rewardValueExpression) const;
-            storm::prism::TransitionReward createTransitionReward(std::string const& actionName, storm::expressions::Expression statePredicateExpression, storm::expressions::Expression rewardValueExpression, GlobalProgramInformation& globalProgramInformation) const;
+            storm::prism::StateActionReward createStateActionReward(std::string const& actionName, storm::expressions::Expression statePredicateExpression, storm::expressions::Expression rewardValueExpression, GlobalProgramInformation& globalProgramInformation) const;
+            storm::prism::TransitionReward createTransitionReward(std::string const& actionName, storm::expressions::Expression sourceStatePredicateExpression, storm::expressions::Expression targetStatePredicateExpression, storm::expressions::Expression rewardValueExpression, GlobalProgramInformation& globalProgramInformation) const;
             storm::prism::Assignment createAssignment(std::string const& variableName, storm::expressions::Expression assignedExpression) const;
             storm::prism::Update createUpdate(storm::expressions::Expression likelihoodExpression, std::vector<storm::prism::Assignment> const& assignments, GlobalProgramInformation& globalProgramInformation) const;
             storm::prism::Command createCommand(bool markovianCommand, std::string const& actionName, storm::expressions::Expression guardExpression, std::vector<storm::prism::Update> const& updates, GlobalProgramInformation& globalProgramInformation) const;

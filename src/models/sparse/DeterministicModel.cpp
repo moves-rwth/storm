@@ -9,7 +9,7 @@ namespace storm {
             DeterministicModel<ValueType, RewardModelType>::DeterministicModel(storm::models::ModelType const& modelType,
                                                               storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                               storm::models::sparse::StateLabeling const& stateLabeling,
-                                                              std::map<std::string, RewardModelType> const& rewardModels,
+                                                              std::unordered_map<std::string, RewardModelType> const& rewardModels,
                                                               boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling)
             : Model<ValueType>(modelType, transitionMatrix, stateLabeling, rewardModels, optionalChoiceLabeling) {
                 // Intentionally left empty.
@@ -19,7 +19,7 @@ namespace storm {
             DeterministicModel<ValueType, RewardModelType>::DeterministicModel(storm::models::ModelType const& modelType,
                                                               storm::storage::SparseMatrix<ValueType>&& transitionMatrix,
                                                               storm::models::sparse::StateLabeling&& stateLabeling,
-                                                              std::map<std::string, RewardModelType>&& rewardModels,
+                                                              std::unordered_map<std::string, RewardModelType>&& rewardModels,
                                                               boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling)
             : Model<ValueType>(modelType, std::move(transitionMatrix), std::move(stateLabeling), std::move(rewardModels), std::move(optionalChoiceLabeling)) {
                 // Intentionally left empty.

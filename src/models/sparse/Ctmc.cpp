@@ -9,7 +9,7 @@ namespace storm {
             
             template <typename ValueType, typename RewardModelType>
             Ctmc<ValueType, RewardModelType>::Ctmc(storm::storage::SparseMatrix<ValueType> const& rateMatrix, storm::models::sparse::StateLabeling const& stateLabeling,
-                                  std::map<std::string, RewardModelType> const& rewardModels,
+                                  std::unordered_map<std::string, RewardModelType> const& rewardModels,
                                   boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling)
             : DeterministicModel<ValueType>(storm::models::ModelType::Ctmc, rateMatrix, stateLabeling, rewardModels, optionalChoiceLabeling) {
                 exitRates = createExitRateVector(this->getTransitionMatrix());
@@ -17,7 +17,7 @@ namespace storm {
             
             template <typename ValueType, typename RewardModelType>
             Ctmc<ValueType, RewardModelType>::Ctmc(storm::storage::SparseMatrix<ValueType>&& rateMatrix, storm::models::sparse::StateLabeling&& stateLabeling,
-                                  std::map<std::string, RewardModelType>&& rewardModels,
+                                  std::unordered_map<std::string, RewardModelType>&& rewardModels,
                                   boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling)
             : DeterministicModel<ValueType>(storm::models::ModelType::Ctmc, std::move(rateMatrix), std::move(stateLabeling), std::move(rewardModels), std::move(optionalChoiceLabeling)) {
                 // It is important to refer to the transition matrix here, because the given rate matrix has been move elsewhere.

@@ -28,7 +28,7 @@ namespace storm {
                 StochasticTwoPlayerGame(storm::storage::SparseMatrix<storm::storage::sparse::state_type> const& player1Matrix,
                                         storm::storage::SparseMatrix<ValueType> const& player2Matrix,
                                         storm::models::sparse::StateLabeling const& stateLabeling,
-                                        std::map<std::string, RewardModelType> const& rewardModels = std::map<std::string, RewardModelType>(),
+                                        std::unordered_map<std::string, RewardModelType> const& rewardModels = std::map<std::string, RewardModelType>(),
                                         boost::optional<std::vector<LabelSet>> const& optionalPlayer1ChoiceLabeling = boost::optional<std::vector<LabelSet>>(),
                                         boost::optional<std::vector<LabelSet>> const& optionalPlayer2ChoiceLabeling = boost::optional<std::vector<LabelSet>>());
                 
@@ -45,7 +45,7 @@ namespace storm {
                 StochasticTwoPlayerGame(storm::storage::SparseMatrix<storm::storage::sparse::state_type>&& player1Matrix,
                                         storm::storage::SparseMatrix<ValueType>&& player2Matrix,
                                         storm::models::sparse::StateLabeling&& stateLabeling,
-                                        std::map<std::string, RewardModelType>&& rewardModels = std::map<std::string, RewardModelType>(),
+                                        std::unordered_map<std::string, RewardModelType>&& rewardModels = std::map<std::string, RewardModelType>(),
                                         boost::optional<std::vector<LabelSet>>&& optionalPlayer1ChoiceLabeling = boost::optional<std::vector<LabelSet>>(),
                                         boost::optional<std::vector<LabelSet>>&& optionalPlayer2ChoiceLabeling = boost::optional<std::vector<LabelSet>>());
                 

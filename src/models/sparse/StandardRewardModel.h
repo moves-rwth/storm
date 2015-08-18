@@ -64,6 +64,14 @@ namespace storm {
                  * @return The state reward vector.
                  */
                 std::vector<ValueType> const& getStateRewardVector() const;
+
+                /*!
+                 * Retrieves the state rewards of the reward model. Note that it is illegal to call this function if the
+                 * reward model does not have state rewards.
+                 *
+                 * @return The state reward vector.
+                 */
+                std::vector<ValueType>& getStateRewardVector();
                 
                 /*!
                  * Retrieves an optional value that contains the state reward vector if there is one.
@@ -86,6 +94,14 @@ namespace storm {
                  * @return The state-action reward vector.
                  */
                 std::vector<ValueType> const& getStateActionRewardVector() const;
+
+                /*!
+                 * Retrieves the state-action rewards of the reward model. Note that it is illegal to call this function
+                 * if the reward model does not have state-action rewards.
+                 *
+                 * @return The state-action reward vector.
+                 */
+                std::vector<ValueType>& getStateActionRewardVector();
                 
                 /*!
                  * Retrieves an optional value that contains the state-action reward vector if there is one.
@@ -108,7 +124,15 @@ namespace storm {
                  * @return The transition reward matrix.
                  */
                 storm::storage::SparseMatrix<ValueType> const& getTransitionRewardMatrix() const;
-                
+
+                /*!
+                 * Retrieves the transition rewards of the reward model. Note that it is illegal to call this function
+                 * if the reward model does not have transition rewards.
+                 *
+                 * @return The transition reward matrix.
+                 */
+                storm::storage::SparseMatrix<ValueType>& getTransitionRewardMatrix();
+
                 /*!
                  * Retrieves an optional value that contains the transition reward matrix if there is one.
                  *

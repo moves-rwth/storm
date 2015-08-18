@@ -46,6 +46,15 @@ namespace storm {
             return this->rewardModelName;
         }
         
+        void RewardOperatorFormula::gatherReferencedRewardModels(std::set<std::string>& referencedRewardModels) const {
+            if (this->hasRewardModelName()) {
+                referencedRewardModels.insert(this->getRewardModelName());
+            } else {
+                referencedRewardModels.insert("");
+            }
+            this->getSubformula().gatherReferencedRewardModels(referencedRewardModels);
+        }
+        
         RewardOperatorFormula::RewardOperatorFormula(boost::optional<std::string> const& rewardModelName, boost::optional<OptimalityType> optimalityType, boost::optional<ComparisonType> comparisonType, boost::optional<double> bound, std::shared_ptr<Formula const> const& subformula) : OperatorFormula(optimalityType, comparisonType, bound, subformula), rewardModelName(rewardModelName) {
             // Intentionally left empty.
         }

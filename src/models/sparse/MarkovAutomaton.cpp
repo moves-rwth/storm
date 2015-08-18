@@ -13,7 +13,7 @@ namespace storm {
                                                         storm::models::sparse::StateLabeling const& stateLabeling,
                                                         storm::storage::BitVector const& markovianStates,
                                                         std::vector<ValueType> const& exitRates,
-                                                        std::map<std::string, RewardModelType> const& rewardModels,
+                                                        std::unordered_map<std::string, RewardModelType> const& rewardModels,
                                                         boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling)
             : NondeterministicModel<ValueType>(storm::models::ModelType::MarkovAutomaton, transitionMatrix, stateLabeling, rewardModels, optionalChoiceLabeling), markovianStates(markovianStates), exitRates(exitRates), closed(false) {
                 this->turnRatesToProbabilities();
@@ -24,7 +24,7 @@ namespace storm {
                                                         storm::models::sparse::StateLabeling&& stateLabeling,
                                                         storm::storage::BitVector const& markovianStates,
                                                         std::vector<ValueType> const& exitRates,
-                                                        std::map<std::string, RewardModelType>&& rewardModels,
+                                                        std::unordered_map<std::string, RewardModelType>&& rewardModels,
                                                         boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling)
             : NondeterministicModel<ValueType>(storm::models::ModelType::MarkovAutomaton, std::move(transitionMatrix), std::move(stateLabeling), std::move(rewardModels), std::move(optionalChoiceLabeling)), markovianStates(markovianStates), exitRates(std::move(exitRates)), closed(false) {
                 this->turnRatesToProbabilities();

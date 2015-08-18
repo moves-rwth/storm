@@ -1,5 +1,5 @@
-#ifndef STORM_STORAGE_PRISM_TRANSITIONREWARD_H_
-#define STORM_STORAGE_PRISM_TRANSITIONREWARD_H_
+#ifndef STORM_STORAGE_PRISM_STATEACTIONREWARD_H_
+#define STORM_STORAGE_PRISM_STATEACTIONREWARD_H_
 
 #include <map>
 
@@ -16,10 +16,9 @@ namespace storm {
     }
 }
 
-
 namespace storm {
     namespace prism {
-        class TransitionReward : public LocatedInformation {
+        class StateActionReward : public LocatedInformation {
         public:
             /*!
              * Creates a transition reward for the transitions with the given name emanating from states satisfying the
@@ -27,23 +26,21 @@ namespace storm {
              *
              * @param actionIndex The index of the action.
              * @param actionName The name of the command that obtains this reward.
-             * @param sourceStatePredicateExpression The predicate that needs to hold before taking a transition with
-             * the previously specified name in order to obtain the reward.
-             * @param targetStatePredicateExpression The predicate that needs to hold after taking a transition with
-             * the previously specified name in order to obtain the reward.
+             * @param statePredicateExpression The predicate that needs to hold before taking a transition with the previously
+             * specified name in order to obtain the reward.
              * @param rewardValueExpression An expression specifying the values of the rewards to attach to the transitions.
              * @param filename The filename in which the transition reward is defined.
              * @param lineNumber The line number in which the transition reward is defined.
              */
-            TransitionReward(uint_fast64_t actionIndex, std::string const& actionName, storm::expressions::Expression const& sourceStatePredicateExpression, storm::expressions::Expression const& targetStatePredicateExpression, storm::expressions::Expression const& rewardValueExpression, std::string const& filename = "", uint_fast64_t lineNumber = 0);
+            StateActionReward(uint_fast64_t actionIndex, std::string const& actionName, storm::expressions::Expression const& statePredicateExpression, storm::expressions::Expression const& rewardValueExpression, std::string const& filename = "", uint_fast64_t lineNumber = 0);
             
             // Create default implementations of constructors/assignment.
-            TransitionReward() = default;
-            TransitionReward(TransitionReward const& other) = default;
-            TransitionReward& operator=(TransitionReward const& other)= default;
+            StateActionReward() = default;
+            StateActionReward(StateActionReward const& other) = default;
+            StateActionReward& operator=(StateActionReward const& other)= default;
 #ifndef WINDOWS
-            TransitionReward(TransitionReward&& other) = default;
-            TransitionReward& operator=(TransitionReward&& other) = default;
+            StateActionReward(StateActionReward&& other) = default;
+            StateActionReward& operator=(StateActionReward&& other) = default;
 #endif
             
             /*!
@@ -61,18 +58,11 @@ namespace storm {
             uint_fast64_t getActionIndex() const;
             
             /*!
-             * Retrieves the source state predicate expression that is associated with this state reward.
+             * Retrieves the state predicate expression that is associated with this state reward.
              *
-             * @return The source state predicate expression that is associated with this state reward.
+             * @return The state predicate expression that is associated with this state reward.
              */
-            storm::expressions::Expression const& getSourceStatePredicateExpression() const;
-
-            /*!
-             * Retrieves the target state predicate expression that is associated with this state reward.
-             *
-             * @return The target state predicate expression that is associated with this state reward.
-             */
-            storm::expressions::Expression const& getTargetStatePredicateExpression() const;
+            storm::expressions::Expression const& getStatePredicateExpression() const;
             
             /*!
              * Retrieves the reward value expression associated with this state reward.
@@ -80,7 +70,7 @@ namespace storm {
              * @return The reward value expression associated with this state reward.
              */
             storm::expressions::Expression const& getRewardValueExpression() const;
-
+            
             /*!
              * Retrieves whether the transition reward has an action label.
              *
@@ -94,10 +84,10 @@ namespace storm {
              * @param substitution The substitution to perform.
              * @return The resulting transition reward.
              */
-            TransitionReward substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const;
+            StateActionReward substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const;
             
-            friend std::ostream& operator<<(std::ostream& stream, TransitionReward const& transitionReward);
-
+            friend std::ostream& operator<<(std::ostream& stream, StateActionReward const& stateActionReward);
+            
         private:
             // The index of the action name.
             uint_fast64_t actionIndex;
@@ -108,11 +98,9 @@ namespace storm {
             // A flag that stores whether the transition reward has an action label.
             bool labeled;
             
-            // A predicate that needs to be satisfied in the source state of transitions that can earn the reward.
-            storm::expressions::Expression sourceStatePredicateExpression;
-
-            // A predicate that needs to be satisfied in the target state of transitions that can earn the reward.
-            storm::expressions::Expression targetStatePredicateExpression;
+            // A predicate that needs to be satisfied by states for the reward to be obtained (by taking
+            // a corresponding command transition).
+            storm::expressions::Expression statePredicateExpression;
             
             // The expression specifying the value of the reward obtained along the transitions.
             storm::expressions::Expression rewardValueExpression;
@@ -121,4 +109,4 @@ namespace storm {
     } // namespace prism
 } // namespace storm
 
-#endif /* STORM_STORAGE_PRISM_TRANSITIONREWARD_H_ */
+#endif /* STORM_STORAGE_PRISM_STATEACTIONREWARD_H_ */
