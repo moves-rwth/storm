@@ -15,6 +15,8 @@
 
 #include "src/settings/modules/GmmxxEquationSolverSettings.h"
 
+#include "src/settings/modules/NativeEquationSolverSettings.h"
+
 TEST(NativeHybridDtmcPrctlModelCheckerTest, Die) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/die.pm");
     

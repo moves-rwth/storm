@@ -1,9 +1,9 @@
 #include "src/utility/solver.h"
 
-#include "src/settings/SettingsManager.h"
-
 #include "src/solver/SymbolicGameSolver.h"
 
+
+#include "src/solver/SymbolicLinearEquationSolver.h"
 #include "src/solver/NativeLinearEquationSolver.h"
 #include "src/solver/GmmxxLinearEquationSolver.h"
 
@@ -16,6 +16,10 @@
 
 #include "src/settings/SettingsManager.h"
 #include "src/settings/modules/GeneralSettings.h"
+#include "src/settings/modules/NativeEquationSolverSettings.h"
+
+#include "src/exceptions/InvalidSettingsException.h"
+
 
 namespace storm {
     namespace utility {

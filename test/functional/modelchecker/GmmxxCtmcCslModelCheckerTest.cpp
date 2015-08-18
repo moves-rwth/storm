@@ -12,6 +12,8 @@
 
 #include "src/settings/SettingsManager.h"
 #include "src/settings/modules/GeneralSettings.h"
+
+#include "src/settings/modules/NativeEquationSolverSettings.h"
 #include "src/settings/modules/GmmxxEquationSolverSettings.h"
 
 TEST(GmmxxCtmcCslModelCheckerTest, Cluster) {
