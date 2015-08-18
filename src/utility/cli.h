@@ -72,9 +72,7 @@ namespace storm {
     namespace utility {
         namespace cli {
             
-          
-         
-             std::string getCurrentWorkingDirectory();
+            std::string getCurrentWorkingDirectory();
             
             void printHeader(const int argc, const char* argv[]);
             
@@ -213,11 +211,11 @@ namespace storm {
                     std::unique_ptr<storm::modelchecker::CheckResult> result;
                     if (model->getType() == storm::models::ModelType::Dtmc) {
                         std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> dtmc = model->template as<storm::models::sparse::Dtmc<ValueType>>();
-                        storm::modelchecker::SparseDtmcPrctlModelChecker<ValueType> modelchecker(*dtmc);
+                        storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ValueType>> modelchecker(*dtmc);
                         if (modelchecker.canHandle(*formula.get())) {
                             result = modelchecker.check(*formula.get());
                         } else {
-                            storm::modelchecker::SparseDtmcEliminationModelChecker<ValueType> modelchecker2(*dtmc);
+                            storm::modelchecker::SparseDtmcEliminationModelChecker<storm::models::sparse::Dtmc<ValueType>> modelchecker2(*dtmc);
                             if (modelchecker2.canHandle(*formula.get())) {
                                 result = modelchecker2.check(*formula.get());
                             }
@@ -229,17 +227,17 @@ namespace storm {
                             storm::modelchecker::TopologicalValueIterationMdpPrctlModelChecker<ValueType> modelchecker(*mdp);
                             result = modelchecker.check(*formula.get());
                         } else {
-                            storm::modelchecker::SparseMdpPrctlModelChecker<ValueType> modelchecker(*mdp);
+                            storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ValueType>> modelchecker(*mdp);
                             result = modelchecker.check(*formula.get());
                         }
 #else
-                        storm::modelchecker::SparseMdpPrctlModelChecker<ValueType> modelchecker(*mdp);
+                        storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ValueType>> modelchecker(*mdp);
                         result = modelchecker.check(*formula.get());
 #endif
                     } else if (model->getType() == storm::models::ModelType::Ctmc) {
                         std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> ctmc = model->template as<storm::models::sparse::Ctmc<ValueType>>();
 
-                        storm::modelchecker::SparseCtmcCslModelChecker<ValueType> modelchecker(*ctmc);
+                        storm::modelchecker::SparseCtmcCslModelChecker<storm::models::sparse::Ctmc<ValueType>> modelchecker(*ctmc);
                         result = modelchecker.check(*formula.get());
                     }
                     
@@ -281,7 +279,7 @@ namespace storm {
                 std::cout << std::endl << "Model checking property: " << *formula << " ...";
                 std::unique_ptr<storm::modelchecker::CheckResult> result;
                 
-                storm::modelchecker::SparseDtmcEliminationModelChecker<storm::RationalFunction> modelchecker(*dtmc);
+                storm::modelchecker::SparseDtmcEliminationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>> modelchecker(*dtmc);
                 if (modelchecker.canHandle(*formula.get())) {
                     result = modelchecker.check(*formula.get());
                 } else {

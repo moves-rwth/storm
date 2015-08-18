@@ -20,7 +20,7 @@ TEST(SparseDtmcEliminationModelCheckerTest, Die) {
     ASSERT_EQ(dtmc->getNumberOfStates(), 13ull);
     ASSERT_EQ(dtmc->getNumberOfTransitions(), 20ull);
     
-    storm::modelchecker::SparseDtmcEliminationModelChecker<double> checker(*dtmc);
+    storm::modelchecker::SparseDtmcEliminationModelChecker<storm::models::sparse::Dtmc<double>> checker(*dtmc);
     
     auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("one");
     auto eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(labelFormula);
@@ -65,7 +65,7 @@ TEST(SparseDtmcEliminationModelCheckerTest, Crowds) {
     ASSERT_EQ(8607ull, dtmc->getNumberOfStates());
     ASSERT_EQ(15113ull, dtmc->getNumberOfTransitions());
     
-    storm::modelchecker::SparseDtmcEliminationModelChecker<double> checker(*dtmc);
+    storm::modelchecker::SparseDtmcEliminationModelChecker<storm::models::sparse::Dtmc<double>> checker(*dtmc);
     
     auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("observe0Greater1");
     auto eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(labelFormula);
@@ -125,7 +125,7 @@ TEST(SparseDtmcEliminationModelCheckerTest, SynchronousLeader) {
     ASSERT_EQ(12400ull, dtmc->getNumberOfStates());
     ASSERT_EQ(16495ull, dtmc->getNumberOfTransitions());
     
-    storm::modelchecker::SparseDtmcEliminationModelChecker<double> checker(*dtmc);
+    storm::modelchecker::SparseDtmcEliminationModelChecker<storm::models::sparse::Dtmc<double>> checker(*dtmc);
     
     auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("elected");
     auto eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(labelFormula);

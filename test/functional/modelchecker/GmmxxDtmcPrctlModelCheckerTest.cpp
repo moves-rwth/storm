@@ -21,7 +21,7 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, Die) {
 	ASSERT_EQ(dtmc->getNumberOfStates(), 13ull);
 	ASSERT_EQ(dtmc->getNumberOfTransitions(), 20ull);
 
-    storm::modelchecker::SparseDtmcPrctlModelChecker<double> checker(*dtmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::GmmxxLinearEquationSolverFactory<double>()));
+    storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>> checker(*dtmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::GmmxxLinearEquationSolverFactory<double>()));
     
     auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("one");
     auto eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(labelFormula);
@@ -66,7 +66,7 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, Crowds) {
 	ASSERT_EQ(8607ull, dtmc->getNumberOfStates());
 	ASSERT_EQ(15113ull, dtmc->getNumberOfTransitions());
 
-    storm::modelchecker::SparseDtmcPrctlModelChecker<double> checker(*dtmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::GmmxxLinearEquationSolverFactory<double>()));
+    storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>> checker(*dtmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::GmmxxLinearEquationSolverFactory<double>()));
 
     auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("observe0Greater1");
     auto eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(labelFormula);
@@ -102,7 +102,7 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, SynchronousLeader) {
 	ASSERT_EQ(12400ull, dtmc->getNumberOfStates());
 	ASSERT_EQ(16495ull, dtmc->getNumberOfTransitions());
 
-    storm::modelchecker::SparseDtmcPrctlModelChecker<double> checker(*dtmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::GmmxxLinearEquationSolverFactory<double>()));
+    storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>> checker(*dtmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::GmmxxLinearEquationSolverFactory<double>()));
 
     auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("elected");
     auto eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(labelFormula);
@@ -144,9 +144,9 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, LRASingleBscc) {
         ap.addLabel("a");
         ap.addLabelToState("a", 1);
         
-        dtmc.reset(new storm::models::sparse::Dtmc<double>(transitionMatrix, ap, boost::none, boost::none, boost::none));
+        dtmc.reset(new storm::models::sparse::Dtmc<double>(transitionMatrix, ap));
         
-        storm::modelchecker::SparseDtmcPrctlModelChecker<double> checker(*dtmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::NativeLinearEquationSolverFactory<double>()));
+        storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>> checker(*dtmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::NativeLinearEquationSolverFactory<double>()));
         
         auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("a");
         auto lraFormula = std::make_shared<storm::logic::LongRunAverageOperatorFormula>(labelFormula);
@@ -169,9 +169,9 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, LRASingleBscc) {
         ap.addLabel("a");
         ap.addLabelToState("a", 1);
         
-        dtmc.reset(new storm::models::sparse::Dtmc<double>(transitionMatrix, ap, boost::none, boost::none, boost::none));
+        dtmc.reset(new storm::models::sparse::Dtmc<double>(transitionMatrix, ap));
         
-        storm::modelchecker::SparseDtmcPrctlModelChecker<double> checker(*dtmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::NativeLinearEquationSolverFactory<double>()));
+        storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>> checker(*dtmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::NativeLinearEquationSolverFactory<double>()));
         
         auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("a");
         auto lraFormula = std::make_shared<storm::logic::LongRunAverageOperatorFormula>(labelFormula);
@@ -194,9 +194,9 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, LRASingleBscc) {
         ap.addLabel("a");
         ap.addLabelToState("a", 2);
         
-        dtmc.reset(new storm::models::sparse::Dtmc<double>(transitionMatrix, ap, boost::none, boost::none, boost::none));
+        dtmc.reset(new storm::models::sparse::Dtmc<double>(transitionMatrix, ap));
         
-        storm::modelchecker::SparseDtmcPrctlModelChecker<double> checker(*dtmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::GmmxxLinearEquationSolverFactory<double>()));
+        storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>> checker(*dtmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::GmmxxLinearEquationSolverFactory<double>()));
         
         auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("a");
         auto lraFormula = std::make_shared<storm::logic::LongRunAverageOperatorFormula>(labelFormula);
@@ -255,9 +255,9 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, LRA) {
         ap.addLabelToState("a", 13);
         ap.addLabelToState("a", 14);
         
-        mdp.reset(new storm::models::sparse::Dtmc<double>(transitionMatrix, ap, boost::none, boost::none, boost::none));
+        mdp.reset(new storm::models::sparse::Dtmc<double>(transitionMatrix, ap));
         
-        storm::modelchecker::SparseDtmcPrctlModelChecker<double> checker(*mdp, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::GmmxxLinearEquationSolverFactory<double>()));
+        storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>> checker(*mdp, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::GmmxxLinearEquationSolverFactory<double>()));
         
         auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("a");
         auto lraFormula = std::make_shared<storm::logic::LongRunAverageOperatorFormula>(labelFormula);

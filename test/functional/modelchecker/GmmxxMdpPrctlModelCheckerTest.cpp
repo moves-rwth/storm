@@ -21,7 +21,7 @@ TEST(GmmxxMdpPrctlModelCheckerTest, Dice) {
     ASSERT_EQ(mdp->getNumberOfStates(), 169ull);
     ASSERT_EQ(mdp->getNumberOfTransitions(), 436ull);
     
-    storm::modelchecker::SparseMdpPrctlModelChecker<double> checker(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::GmmxxMinMaxLinearEquationSolverFactory<double>()));
+    storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> checker(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::GmmxxMinMaxLinearEquationSolverFactory<double>()));
     
     auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("two");
     auto eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(labelFormula);
@@ -93,7 +93,7 @@ TEST(GmmxxMdpPrctlModelCheckerTest, Dice) {
     
     std::shared_ptr<storm::models::sparse::Mdp<double>> stateRewardMdp = abstractModel->as<storm::models::sparse::Mdp<double>>();
     
-    storm::modelchecker::SparseMdpPrctlModelChecker<double> stateRewardModelChecker(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::GmmxxMinMaxLinearEquationSolverFactory<double>()));
+    storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> stateRewardModelChecker(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::GmmxxMinMaxLinearEquationSolverFactory<double>()));
     
     labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("done");
     reachabilityRewardFormula = std::make_shared<storm::logic::ReachabilityRewardFormula>(labelFormula);
@@ -117,7 +117,7 @@ TEST(GmmxxMdpPrctlModelCheckerTest, Dice) {
     
     std::shared_ptr<storm::models::sparse::Mdp<double>> stateAndTransitionRewardMdp = abstractModel->as<storm::models::sparse::Mdp<double>>();
     
-    storm::modelchecker::SparseMdpPrctlModelChecker<double> stateAndTransitionRewardModelChecker(*stateAndTransitionRewardMdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::GmmxxMinMaxLinearEquationSolverFactory<double>()));
+    storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> stateAndTransitionRewardModelChecker(*stateAndTransitionRewardMdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::GmmxxMinMaxLinearEquationSolverFactory<double>()));
     
     labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("done");
     reachabilityRewardFormula = std::make_shared<storm::logic::ReachabilityRewardFormula>(labelFormula);
@@ -146,7 +146,7 @@ TEST(GmmxxMdpPrctlModelCheckerTest, AsynchronousLeader) {
     ASSERT_EQ(3172ull, mdp->getNumberOfStates());
     ASSERT_EQ(7144ull, mdp->getNumberOfTransitions());
     
-    storm::modelchecker::SparseMdpPrctlModelChecker<double> checker(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::GmmxxMinMaxLinearEquationSolverFactory<double>()));
+    storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> checker(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::GmmxxMinMaxLinearEquationSolverFactory<double>()));
     
     auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("elected");
     auto eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(labelFormula);
