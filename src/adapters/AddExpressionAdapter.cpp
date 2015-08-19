@@ -2,8 +2,12 @@
 
 #include "src/utility/macros.h"
 #include "src/exceptions/ExpressionEvaluationException.h"
+#include "src/exceptions/InvalidArgumentException.h"
 
 #include "src/storage/dd/CuddDdManager.h"
+#include "src/storage/dd/CuddAdd.h"
+#include "src/storage/dd/CuddBdd.h"
+
 
 namespace storm {
     namespace adapters {

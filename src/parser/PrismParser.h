@@ -9,11 +9,16 @@
 #include "src/parser/SpiritParserDefinitions.h"
 #include "src/parser/ExpressionParser.h"
 #include "src/storage/prism/Program.h"
-#include "src/storage/expressions/ExpressionManager.h"
 #include "src/storage/expressions/Expression.h"
 #include "src/storage/expressions/Expressions.h"
 #include "src/utility/macros.h"
 #include "src/exceptions/WrongFormatException.h"
+
+namespace storm {
+    namespace expressions {
+        class ExpressionManager;
+    }
+}
 
 namespace storm {
     namespace parser {

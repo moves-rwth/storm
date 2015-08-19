@@ -5,6 +5,7 @@
 #include "src/utility/macros.h"
 #include "src/utility/constants.h"
 #include "src/exceptions/InvalidArgumentException.h"
+#include "src/exceptions/OutOfRangeException.h"
 
 namespace storm {
     namespace utility {

@@ -1,5 +1,7 @@
 #include "src/models/sparse/MarkovAutomaton.h"
 
+#include "src/exceptions/InvalidArgumentException.h"
+#include "src/utility/constants.h"
 #include "src/adapters/CarlAdapter.h"
 
 namespace storm {

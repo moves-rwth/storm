@@ -7,6 +7,9 @@
 #include "src/solver/GmmxxLinearEquationSolver.h"
 #include "src/utility/vector.h"
 
+#include "src/settings/modules/GeneralSettings.h"
+#include "src/settings/modules/GmmxxEquationSolverSettings.h"
+
 namespace storm {
     namespace solver {
         

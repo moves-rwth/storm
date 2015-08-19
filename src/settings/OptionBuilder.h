@@ -21,7 +21,7 @@ namespace storm {
 	namespace settings {
 
         /*!
-         * This class provides the interface to create an option.
+         * This class provides the interface to create an option...
          */
 		class OptionBuilder {
 		public:

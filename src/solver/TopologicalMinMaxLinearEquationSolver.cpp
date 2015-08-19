@@ -1,13 +1,18 @@
 #include "src/solver/TopologicalMinMaxLinearEquationSolver.h"
 
 #include <utility>
-
-#include "src/settings/SettingsManager.h"
 #include "src/utility/vector.h"
 #include "src/utility/graph.h"
 #include "src/storage/StronglyConnectedComponentDecomposition.h"
 #include "src/exceptions/IllegalArgumentException.h"
 #include "src/exceptions/InvalidStateException.h"
+
+
+#include "src/settings/SettingsManager.h"
+#include "src/settings/modules/GeneralSettings.h"
+#include "src/settings/modules/NativeEquationSolverSettings.h"
+#include "src/settings/modules/TopologicalValueIterationEquationSolverSettings.h"
+
 
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"

@@ -4,6 +4,8 @@
 #include "src/settings/SettingsManager.h"
 #include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+
+#include "src/settings/modules/NativeEquationSolverSettings.h"
 #include "src/utility/solver.h"
 #include "src/parser/AutoParser.h"
 

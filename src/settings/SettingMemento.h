@@ -1,7 +1,9 @@
 #ifndef STORM_SETTINGS_SETTINGMEMENTO_H_
 #define STORM_SETTINGS_SETTINGMEMENTO_H_
 
-#include "src/settings/SettingsManager.h"
+#include <string>
+#include <memory>
+
 
 namespace storm {
     namespace settings {

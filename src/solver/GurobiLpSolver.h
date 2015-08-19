@@ -1,11 +1,11 @@
 #ifndef STORM_SOLVER_GUROBILPSOLVER
 #define STORM_SOLVER_GUROBILPSOLVER
 
+#include <map>
 #include "src/solver/LpSolver.h"
-#include "src/exceptions/NotImplementedException.h"
-
 // To detect whether the usage of Gurobi is possible, this include is neccessary.
 #include "storm-config.h"
+
 
 #ifdef STORM_HAVE_GUROBI
 extern "C" {
@@ -15,10 +15,10 @@ extern "C" {
 }
 #endif
 
+
 namespace storm {
     namespace solver {
 
-#ifdef STORM_HAVE_GUROBI
         /*!
          * A class that implements the LpSolver interface using Gurobi.
          */
@@ -112,12 +112,13 @@ namespace storm {
              * @param objectiveFunctionCoefficient The coefficient of the variable in the objective function.
              */
             void addVariable(storm::expressions::Variable const& variable, char variableType, double lowerBound, double upperBound, double objectiveFunctionCoefficient);
-            
+#ifdef STORM_HAVE_GUROBI 
             // The Gurobi environment.
             GRBenv* env;
             
             // The Gurobi model.
             GRBmodel* model;
+#endif
             
             // The index of the next variable.
             int nextVariableIndex;
@@ -125,106 +126,6 @@ namespace storm {
             // A mapping from variables to their indices.
             std::map<storm::expressions::Variable, int> variableToIndexMap;
         };
-#else
-        // If Gurobi is not available, we provide a stub implementation that emits an error if any of its methods is called.
-        class GurobiLpSolver : public LpSolver {
-        public:
-            GurobiLpSolver(std::string const& name, ModelSense const& modelSense) {
-                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
-            }
-            
-            GurobiLpSolver(std::string const& name) {
-                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
-            }
-            
-            GurobiLpSolver(ModelSense const& modelSense) {
-                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
-            }
-            
-            GurobiLpSolver() {
-                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
-            }
-            
-            virtual storm::expressions::Variable addBoundedContinuousVariable(std::string const& name, double lowerBound, double upperBound, double objectiveFunctionCoefficient = 0) override {
-                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
-            }
-            
-            virtual storm::expressions::Variable addLowerBoundedContinuousVariable(std::string const& name, double lowerBound, double objectiveFunctionCoefficient = 0) override {
-                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";            }
-            
-            virtual storm::expressions::Variable addUpperBoundedContinuousVariable(std::string const& name, double upperBound, double objectiveFunctionCoefficient = 0) override {
-                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
-            }
-            
-            virtual storm::expressions::Variable addUnboundedContinuousVariable(std::string const& name, double objectiveFunctionCoefficient = 0) override {
-                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
-            }
-            
-            virtual storm::expressions::Variable addBoundedIntegerVariable(std::string const& name, double lowerBound, double upperBound, double objectiveFunctionCoefficient = 0) override {
-                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
-            }
-            
-            virtual storm::expressions::Variable addLowerBoundedIntegerVariable(std::string const& name, double lowerBound, double objectiveFunctionCoefficient = 0) override {
-                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
-            }
-            
-            virtual storm::expressions::Variable addUpperBoundedIntegerVariable(std::string const& name, double upperBound, double objectiveFunctionCoefficient = 0) override {
-                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
-            }
-            
-            virtual storm::expressions::Variable addUnboundedIntegerVariable(std::string const& name, double objectiveFunctionCoefficient = 0) override {
-                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
-            }
-            
-            virtual storm::expressions::Variable addBinaryVariable(std::string const& name, double objectiveFunctionCoefficient = 0) override {
-                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
-            }
-            
-            virtual void update() const override {
-                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
-            }
-            
-            virtual void addConstraint(std::string const& name, storm::expressions::Expression const& constraint) override {
-                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
-            }
-            
-            virtual void optimize() const override {
-                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
-            }
-            
-            virtual bool isInfeasible() const override {
-                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
-            }
-            
-            virtual bool isUnbounded() const override {
-                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
-            }
-            
-            virtual bool isOptimal() const override {
-                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
-            }
-            
-            virtual double getContinuousValue(storm::expressions::Variable const& variable) const override {
-                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
-            }
-            
-            virtual int_fast64_t getIntegerValue(storm::expressions::Variable const& variable) const override {
-                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
-            }
-            
-            virtual bool getBinaryValue(storm::expressions::Variable const& variable) const override {
-                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
-            }
-            
-            virtual double getObjectiveValue() const override {
-                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
-            }
-            
-            virtual void writeModelToFile(std::string const& filename) const override {
-                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
-            }
-        };
-#endif
 
     }
 }

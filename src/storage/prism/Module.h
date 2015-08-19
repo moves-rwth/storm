@@ -11,7 +11,6 @@
 #include "src/storage/prism/BooleanVariable.h"
 #include "src/storage/prism/IntegerVariable.h"
 #include "src/storage/prism/Command.h"
-#include "src/storage/expressions/VariableExpression.h"
 #include "src/utility/OsDetection.h"
 
 namespace storm {

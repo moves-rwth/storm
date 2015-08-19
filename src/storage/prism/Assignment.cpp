@@ -1,4 +1,5 @@
 #include "Assignment.h"
+#include <cassert>
 
 namespace storm {
     namespace prism {
@@ -20,6 +21,20 @@ namespace storm {
         
         Assignment Assignment::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
             return Assignment(this->getVariable(), this->getExpression().substitute(substitution).simplify(), this->getFilename(), this->getLineNumber());
+        }
+        
+        bool Assignment::isIdentity() const {
+            if(this->expression.isVariable()) {
+                assert(this->expression.getVariables().size() == 1);
+                //if( variable == *(this->expression.getVariables().begin())) {
+                //    std::cout << variable.getName() << " == " << (this->expression.getVariables().begin())->getName() << std::endl;
+                //}
+                //else {
+                //    std::cout << "********" << variable.getName() << " != " << (this->expression.getVariables().begin())->getName() << std::endl;
+                //}
+                return variable == *(this->expression.getVariables().begin());
+            }
+            return false;
         }
         
         std::ostream& operator<<(std::ostream& stream, Assignment const& assignment) {

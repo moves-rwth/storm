@@ -5,6 +5,9 @@
 #include "src/models/sparse/Mdp.h"
 #include "src/exceptions/FileIoException.h"
 
+#include "src/exceptions/OutOfRangeException.h"
+#include "src/exceptions/InvalidArgumentException.h"
+
 TEST(NondeterministicModelParserTest, NonExistingFile) {
 	// No matter what happens, please do NOT create a file with the name "nonExistingFile.not"!
 	ASSERT_THROW(storm::parser::NondeterministicModelParser::parseMdp(STORM_CPP_TESTS_BASE_PATH "/nonExistingFile.not", STORM_CPP_TESTS_BASE_PATH "/nonExistingFile.not"), storm::exceptions::FileIoException);

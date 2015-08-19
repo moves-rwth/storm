@@ -3,6 +3,12 @@
 #include "src/storage/dd/CuddDdManager.h"
 #include "src/storage/dd/CuddAdd.h"
 
+#include "src/storage/dd/Add.h"
+
+
+#include "src/settings/SettingsManager.h"
+#include "src/settings/modules/NativeEquationSolverSettings.h"
+
 namespace storm {
     namespace solver {
         

@@ -4,6 +4,9 @@
 #include "src/solver/NativeMinMaxLinearEquationSolver.h"
 #include "src/settings/SettingsManager.h"
 
+#include "src/settings/modules/NativeEquationSolverSettings.h"
+#include "src/storage/SparseMatrix.h"
+
 TEST(NativeMinMaxLinearEquationSolver, SolveWithStandardOptions) {
     storm::storage::SparseMatrixBuilder<double> builder(0, 0, 0, false, true);
     ASSERT_NO_THROW(builder.newRowGroup(0));

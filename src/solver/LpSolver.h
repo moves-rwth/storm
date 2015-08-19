@@ -4,11 +4,14 @@
 #include <string>
 #include <vector>
 #include <cstdint>
-
-#include "src/storage/expressions/Expression.h"
-#include "src/storage/expressions/ExpressionManager.h"
-
+#include <memory>
 namespace storm {
+    namespace expressions {
+        class ExpressionManager;
+        class Variable;
+        class Expression;
+    }
+    
     namespace solver {
         /*!
          * An interface that captures the functionality of an LP solver.
@@ -24,19 +27,14 @@ namespace storm {
             /*!
              * Creates an empty LP solver. By default the objective function is assumed to be minimized.
              */
-            LpSolver() : manager(new storm::expressions::ExpressionManager()), currentModelHasBeenOptimized(false), modelSense(ModelSense::Minimize) {
-                // Intentionally left empty.
-            }
-            
+            LpSolver();
             /*!
              * Creates an empty LP solver with the given model sense.
              *
              * @param modelSense A value indicating whether the objective function of this model is to be minimized or
              * maximized.
              */
-            LpSolver(ModelSense const& modelSense) : manager(new storm::expressions::ExpressionManager()), currentModelHasBeenOptimized(false), modelSense(modelSense) {
-                // Intentionally left empty.
-            }
+            LpSolver(ModelSense const& modelSense);
 
             /*!
              * Registers an upper- and lower-bounded continuous variable, i.e. a variable that may take all real values
@@ -139,9 +137,7 @@ namespace storm {
              * @param value The value of the constant.
              * @return The resulting expression.
              */
-            storm::expressions::Expression getConstant(double value) const {
-                return manager->rational(value);
-            }
+            storm::expressions::Expression getConstant(double value) const;
             
             /*!
              * Updates the model to make the variables that have been declared since the last call to <code>update</code>

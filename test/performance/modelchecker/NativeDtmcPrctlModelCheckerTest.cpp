@@ -1,6 +1,9 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 #include "src/settings/SettingsManager.h"
+#include "src/settings/modules/GmmxxEquationSolverSettings.h"
+
+#include "src/settings/modules/NativeEquationSolverSettings.h"
 #include "src/settings/SettingMemento.h"
 #include "src/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"

@@ -3,8 +3,6 @@
 
 #include <iostream>
 
-#include "src/utility/macros.h"
-
 namespace storm {
 	namespace settings {
         

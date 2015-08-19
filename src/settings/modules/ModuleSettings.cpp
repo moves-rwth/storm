@@ -1,7 +1,10 @@
 #include "src/settings/modules/ModuleSettings.h"
 
+#include "src/utility/macros.h"
 #include "src/settings/SettingMemento.h"
+#include "src/settings/Option.h"
 #include "src/exceptions/InvalidStateException.h"
+#include "src/exceptions/IllegalFunctionCallException.h"
 
 namespace storm {
     namespace settings {

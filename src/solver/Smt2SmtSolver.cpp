@@ -1,6 +1,7 @@
 #include "src/solver/Smt2SmtSolver.h"
 
 #include "src/settings/SettingsManager.h"
+#include "src/settings/modules/Smt2SmtSolverSettings.h"
 #include "src/exceptions/NotSupportedException.h"
 #include "src/exceptions/NotImplementedException.h"
 #include "src/exceptions/InvalidStateException.h"

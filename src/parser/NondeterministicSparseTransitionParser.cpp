@@ -11,8 +11,11 @@
 
 #include "src/parser/MappedFile.h"
 #include "src/settings/SettingsManager.h"
+#include "src/settings/modules/GeneralSettings.h"
 #include "src/exceptions/FileIoException.h"
 #include "src/exceptions/OutOfRangeException.h"
+
+#include "src/exceptions/InvalidArgumentException.h"
 #include "src/exceptions/WrongFormatException.h"
 
 #include "src/utility/cstring.h"

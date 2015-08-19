@@ -60,6 +60,13 @@ namespace storm {
              */
             Assignment substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const;
             
+            /*!
+             * Checks whether the assignment is an identity  (lhs equals rhs)
+             * 
+             * @return true iff the assignment is of the form a' = a.
+             */
+            bool isIdentity() const;
+            
             friend std::ostream& operator<<(std::ostream& stream, Assignment const& assignment);
             
         private:

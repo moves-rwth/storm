@@ -5,8 +5,17 @@
 
 #include "src/storage/prism/LocatedInformation.h"
 #include "src/storage/expressions/Expression.h"
-#include "src/storage/expressions/Variable.h"
 #include "src/utility/OsDetection.h"
+
+
+namespace storm {
+    namespace storage {
+        namespace expressions {
+            class Variable;
+        }
+    }
+}
+
 
 namespace storm {
     namespace prism {

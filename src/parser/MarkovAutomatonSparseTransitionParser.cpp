@@ -1,10 +1,12 @@
 #include "MarkovAutomatonSparseTransitionParser.h"
 
 #include "src/settings/SettingsManager.h"
+#include "src/settings/modules/GeneralSettings.h"
 #include "src/exceptions/WrongFormatException.h"
 #include "src/exceptions/FileIoException.h"
 #include "src/parser/MappedFile.h"
 #include "src/utility/cstring.h"
+#include "src/utility/macros.h"
 
 
 namespace storm {

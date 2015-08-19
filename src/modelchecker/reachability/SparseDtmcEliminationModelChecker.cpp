@@ -5,6 +5,10 @@
 
 #include "src/adapters/CarlAdapter.h"
 
+#include "src/settings/modules/SparseDtmcEliminationModelCheckerSettings.h"
+#include "src/settings/modules/GeneralSettings.h"
+#include "src/settings/SettingsManager.h"
+
 #include "src/storage/StronglyConnectedComponentDecomposition.h"
 
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
@@ -16,6 +20,8 @@
 
 #include "src/exceptions/InvalidPropertyException.h"
 #include "src/exceptions/InvalidStateException.h"
+
+#include "src/exceptions/IllegalArgumentException.h"
 
 namespace storm {
     namespace modelchecker {

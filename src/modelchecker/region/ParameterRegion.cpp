@@ -8,9 +8,12 @@
 #include "src/modelchecker/region/ParameterRegion.h"
 
 #include "src/utility/regions.h"
+#include "src/settings/SettingsManager.h"
+#include "src/settings/modules/RegionSettings.h"
 
 #include "src/exceptions/UnexpectedException.h"
 #include "exceptions/InvalidSettingsException.h"
+#include "exceptions/InvalidArgumentException.h"
 #include "parser/MappedFile.h"
 
 namespace storm {
@@ -41,14 +44,14 @@ namespace storm {
         template<typename ParametricType, typename ConstantType>
         typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::CoefficientType const& SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::getLowerBound(VariableType const& variable) const {
             auto const& result = lowerBounds.find(variable);
-            STORM_LOG_THROW(result != lowerBounds.end(), storm::exceptions::IllegalArgumentException, "tried to find a lower bound of a variable that is not specified by this region");
+            STORM_LOG_THROW(result != lowerBounds.end(), storm::exceptions::InvalidArgumentException, "tried to find a lower bound of a variable that is not specified by this region");
             return (*result).second;
         }
 
         template<typename ParametricType, typename ConstantType>
         typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::CoefficientType const& SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::getUpperBound(VariableType const& variable) const {
             auto const& result = upperBounds.find(variable);
-            STORM_LOG_THROW(result != upperBounds.end(), storm::exceptions::IllegalArgumentException, "tried to find an upper bound of a variable that is not specified by this region");
+            STORM_LOG_THROW(result != upperBounds.end(), storm::exceptions::InvalidArgumentException, "tried to find an upper bound of a variable that is not specified by this region");
             return (*result).second;
         }
 

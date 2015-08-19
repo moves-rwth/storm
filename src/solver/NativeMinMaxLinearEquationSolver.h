@@ -1,6 +1,7 @@
 #ifndef STORM_SOLVER_NATIVEMINMAXLINEAREQUATIONSOLVER_H_
 #define STORM_SOLVER_NATIVEMINMAXLINEAREQUATIONSOLVER_H_
 
+#include <cstdint>
 #include "src/solver/MinMaxLinearEquationSolver.h"
 
 namespace storm {

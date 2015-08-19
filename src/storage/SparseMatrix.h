@@ -4,14 +4,10 @@
 #include <algorithm>
 #include <iostream>
 #include <cstdint>
+#include <vector>
 #include <iterator>
 
-#include "src/storage/BitVector.h"
-#include "src/utility/constants.h"
 #include "src/utility/OsDetection.h"
-
-#include "src/exceptions/InvalidArgumentException.h"
-#include "src/exceptions/OutOfRangeException.h"
 
 #include <boost/functional/hash.hpp>
 
@@ -26,11 +22,14 @@ namespace storm {
 		template<typename T>
 		class TopologicalValueIterationMinMaxLinearEquationSolver;
 	}
+        
+        
 }
 
 namespace storm {
     namespace storage {
         
+        class BitVector;
         // Forward declare matrix class.
         template<typename T> class SparseMatrix;
         

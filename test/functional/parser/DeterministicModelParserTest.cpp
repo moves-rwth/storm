@@ -6,6 +6,10 @@
 #include "src/models/sparse/Ctmc.h"
 #include "src/exceptions/FileIoException.h"
 
+#include "src/exceptions/InvalidArgumentException.h"
+
+#include "src/exceptions/OutOfRangeException.h"
+
 TEST(DeterministicModelParserTest, NonExistingFile) {
 	// No matter what happens, please do NOT create a file with the name "nonExistingFile.not"!
 	ASSERT_THROW(storm::parser::DeterministicModelParser::parseDtmc(STORM_CPP_TESTS_BASE_PATH "/nonExistingFile.not", STORM_CPP_TESTS_BASE_PATH "/nonExistingFile.not"), storm::exceptions::FileIoException);

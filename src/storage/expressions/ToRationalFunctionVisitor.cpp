@@ -3,6 +3,7 @@
 #include <sstream>
 
 #include "src/utility/macros.h"
+#include "src/exceptions/InvalidArgumentException.h"
 
 #ifdef STORM_HAVE_CARL
 

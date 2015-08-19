@@ -12,12 +12,15 @@
 #include "src/utility/graph.h"
 #include "src/utility/vector.h"
 #include "src/utility/macros.h"
+#include "src/settings/SettingsManager.h"
+#include "src/settings/modules/RegionSettings.h"
 
+#include "src/exceptions/InvalidArgumentException.h"
 #include "src/exceptions/InvalidPropertyException.h"
 #include "src/exceptions/InvalidStateException.h"
-#include "src/exceptions/UnexpectedException.h"
 #include "src/exceptions/InvalidSettingsException.h"
 #include "src/exceptions/NotImplementedException.h"
+#include "src/exceptions/UnexpectedException.h"
 
 
 namespace storm {
@@ -66,7 +69,7 @@ namespace storm {
         template<typename ParametricType, typename ConstantType>
         void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::specifyFormula(storm::logic::Formula const& formula) {
             std::chrono::high_resolution_clock::time_point timePreprocessingStart = std::chrono::high_resolution_clock::now();
-            STORM_LOG_THROW(this->canHandle(formula), storm::exceptions::IllegalArgumentException, "Tried to specify a formula that can not be handled.");
+            STORM_LOG_THROW(this->canHandle(formula), storm::exceptions::InvalidArgumentException, "Tried to specify a formula that can not be handled.");
             
             this->hasOnlyLinearFunctions=false;
             this->isReachProbFunctionComputed=false;
@@ -395,6 +398,7 @@ namespace storm {
                     break;
                 default:
                      STORM_LOG_WARN("The checkresult of the current region should not be conclusive, i.e. it should be either EXISTSSAT or EXISTSVIOLATED or UNKNOWN in order to apply approximative probabilities");
+                     proveAllSat=true;
             }
             
             bool formulaSatisfied;

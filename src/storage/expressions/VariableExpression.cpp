@@ -1,4 +1,6 @@
 #include "src/storage/expressions/VariableExpression.h"
+#include "Valuation.h"
+#include "ExpressionVisitor.h"
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidTypeException.h"
 

@@ -4,6 +4,8 @@
 #include "src/solver/GmmxxLinearEquationSolver.h"
 #include "src/settings/SettingsManager.h"
 
+#include "src/settings/modules/GmmxxEquationSolverSettings.h"
+
 TEST(GmmxxLinearEquationSolver, SolveWithStandardOptions) {
     ASSERT_NO_THROW(storm::storage::SparseMatrixBuilder<double> builder);
     storm::storage::SparseMatrixBuilder<double> builder;

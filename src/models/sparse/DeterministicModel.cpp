@@ -1,5 +1,5 @@
 #include "src/models/sparse/DeterministicModel.h"
-
+#include "src/utility/constants.h"
 #include "src/adapters/CarlAdapter.h"
 
 namespace storm {

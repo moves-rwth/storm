@@ -10,8 +10,14 @@
 #include "src/storage/SparseMatrix.h"
 #include "src/adapters/CarlAdapter.h"
 
+#include "src/storage/BitVector.h"
+#include "src/utility/constants.h"
+
 #include "src/exceptions/InvalidStateException.h"
 #include "src/exceptions/NotImplementedException.h"
+#include "src/exceptions/InvalidArgumentException.h"
+#include "src/exceptions/OutOfRangeException.h"
+
 #include "src/utility/macros.h"
 
 #include "log4cplus/logger.h"
