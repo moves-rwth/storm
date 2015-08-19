@@ -24,9 +24,9 @@ namespace storm {
     namespace models {
         namespace symbolic {
             template<storm::dd::DdType T> class Model;
+            template<storm::dd::DdType T, typename ValueType> class StandardRewardModel;
         }
     }
-    
     
     namespace builder {
         
@@ -40,7 +40,7 @@ namespace storm {
                 Options();
                 
                 /*! Creates an object representing the suggested building options assuming that the given formula is the
-                 * only one to check.
+                 * only one to check. Additional formulas may be preserved by calling <code>preserveFormula</code>.
                  *
                  * @param formula The formula based on which to choose the building options.
                  */
@@ -56,11 +56,19 @@ namespace storm {
                  */
                 void addConstantDefinitionsFromString(storm::prism::Program const& program, std::string const& constantDefinitionString);
                 
-                // A flag that indicates whether or not a reward model is to be built.
-                bool buildRewards;
+                /*!
+                 * Changes the options in a way that ensures that the given formula can be checked on the model once it
+                 * has been built.
+                 *
+                 * @param formula The formula that is to be ''preserved''.
+                 */
+                void preserveFormula(storm::logic::Formula const& formula);
                 
-                // An optional string, that, if given, indicates which of the reward models is to be built.
-                boost::optional<std::string> rewardModelName;
+                // A flag that indicates whether or not all reward models are to be build.
+                bool buildAllRewardModels;
+                
+                // A list of reward models to be build in case not all reward models are to be build.
+                std::set<std::string> rewardModelsToBuild;
                 
                 // An optional mapping that, if given, contains defining expressions for undefined constants.
                 boost::optional<std::map<storm::expressions::Variable, storm::expressions::Expression>> constantDefinitions;
@@ -171,7 +179,7 @@ namespace storm {
             
             static storm::dd::Add<Type> createSystemFromModule(GenerationInformation& generationInfo, ModuleDecisionDiagram const& module);
             
-            static std::pair<storm::dd::Add<Type>, storm::dd::Add<Type>> createRewardDecisionDiagrams(GenerationInformation& generationInfo, storm::prism::RewardModel const& rewardModel, ModuleDecisionDiagram const& globalModule, storm::dd::Add<Type> const& fullTransitionMatrix);
+            static storm::models::symbolic::StandardRewardModel<Type, double> createRewardModelDecisionDiagrams(GenerationInformation& generationInfo, storm::prism::RewardModel const& rewardModel, ModuleDecisionDiagram const& globalModule, storm::dd::Add<Type> const& fullTransitionMatrix);
             
             static std::pair<storm::dd::Add<Type>, ModuleDecisionDiagram> createSystemDecisionDiagram(GenerationInformation& generationInfo);
             

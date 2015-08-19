@@ -100,16 +100,7 @@ namespace storm {
                 
                 // Get the string that assigns values to the unknown currently undefined constants in the model.
                 std::string constants = settings.getConstantDefinitionString();
-                
-                bool buildRewards = false;
-                boost::optional<std::string> rewardModelName;
-                if (formula || settings.isSymbolicRewardModelNameSet()) {
-                    buildRewards = formula.get()->isRewardOperatorFormula() || formula.get()->isRewardPathFormula();
-                    if (settings.isSymbolicRewardModelNameSet()) {
-                        rewardModelName = settings.getSymbolicRewardModelName();
-                    }
-                }
-                
+                                
                 // Customize and perform model-building.
                 if (settings.getEngine() == storm::settings::modules::GeneralSettings::Engine::Sparse) {
                     typename storm::builder::ExplicitPrismModelBuilder<ValueType>::Options options;
@@ -117,9 +108,7 @@ namespace storm {
                         options = typename storm::builder::ExplicitPrismModelBuilder<ValueType>::Options(*formula.get());
                     }
                     options.addConstantDefinitionsFromString(program, settings.getConstantDefinitionString());
-                    options.buildRewards = buildRewards;
-                    options.rewardModelName = rewardModelName;
-                    
+
                     // Generate command labels if we are going to build a counterexample later.
                     if (storm::settings::counterexampleGeneratorSettings().isMinimalCommandSetGenerationSet()) {
                         options.buildCommandLabels = true;
@@ -132,8 +121,6 @@ namespace storm {
                         options = typename storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::Options(*formula.get());
                     }
                     options.addConstantDefinitionsFromString(program, settings.getConstantDefinitionString());
-                    options.buildRewards = buildRewards;
-                    options.rewardModelName = rewardModelName;
 
                     result = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program, options);
                 }

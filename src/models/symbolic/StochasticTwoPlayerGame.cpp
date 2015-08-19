@@ -23,9 +23,8 @@ namespace storm {
                                                                    std::set<storm::expressions::Variable> const& player2Variables,
                                                                    std::set<storm::expressions::Variable> const& nondeterminismVariables,
                                                                    std::map<std::string, storm::expressions::Expression> labelToExpressionMap,
-                                                                   boost::optional<storm::dd::Add<Type>> const& optionalStateRewardVector,
-                                                                   boost::optional<storm::dd::Add<Type>> const& optionalTransitionRewardMatrix)
-                : NondeterministicModel<Type>(storm::models::ModelType::S2pg, manager, reachableStates, initialStates, transitionMatrix, rowVariables, rowExpressionAdapter, columnVariables, columnExpressionAdapter, rowColumnMetaVariablePairs, nondeterminismVariables, labelToExpressionMap, optionalStateRewardVector, optionalTransitionRewardMatrix), player1Variables(player1Variables), player2Variables(player2Variables) {
+                                                                   std::unordered_map<std::string, RewardModelType> const& rewardModels)
+                : NondeterministicModel<Type>(storm::models::ModelType::S2pg, manager, reachableStates, initialStates, transitionMatrix, rowVariables, rowExpressionAdapter, columnVariables, columnExpressionAdapter, rowColumnMetaVariablePairs, nondeterminismVariables, labelToExpressionMap, rewardModels), player1Variables(player1Variables), player2Variables(player2Variables) {
                 // Intentionally left empty.
             }
             

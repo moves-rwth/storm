@@ -32,7 +32,7 @@ namespace storm {
         }
         
         std::ostream& operator<<(std::ostream& stream, StateActionReward const& stateActionReward) {
-            stream << "\t[" << StateActionReward.getActionName() << "] " << stateActionReward.getStatePredicateExpression() << ": " << stateActionReward.getRewardValueExpression() << ";";
+            stream << "\t[" << stateActionReward.getActionName() << "] " << stateActionReward.getStatePredicateExpression() << ": " << stateActionReward.getRewardValueExpression() << ";";
             return stream;
         }
         

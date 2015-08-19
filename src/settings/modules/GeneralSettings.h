@@ -135,20 +135,6 @@ namespace storm {
                 std::string getSymbolicModelFilename() const;
                 
                 /*!
-                 * Retrieves whether the name of a reward model was passed to the symbolic option.
-                 *
-                 * @return True iff the name of a reward model was passed to the symbolic option.
-                 */
-                bool isSymbolicRewardModelNameSet() const;
-                
-                /*!
-                 * Retrieves the name of the reward model if one was set using the symbolic option.
-                 *
-                 * @return The name of the selected reward model.
-                 */
-                std::string getSymbolicRewardModelName() const;
-
-                /*!
                  * Retrieves whether the property option was set.
                  *
                  * @return True if the property option was set.

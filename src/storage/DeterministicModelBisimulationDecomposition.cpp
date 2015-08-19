@@ -832,7 +832,7 @@ namespace storm {
                 // If the model has state rewards, we simply copy the state reward of the representative state, because
                 // all states in a block are guaranteed to have the same state reward.
                 if (keepRewards && model.hasRewardModel()) {
-                    typename std::map<std::string, typename ModelType::RewardModelType>::const_iterator nameRewardModelPair = model.getUniqueRewardModel();
+                    typename std::unordered_map<std::string, typename ModelType::RewardModelType>::const_iterator nameRewardModelPair = model.getUniqueRewardModel();
                     stateRewards.get()[blockIndex] = nameRewardModelPair->second.getStateRewardVector()[representativeState];
                 }
             }
@@ -844,9 +844,9 @@ namespace storm {
             }
             
             // Construct the reward model mapping.
-            std::map<std::string, typename ModelType::RewardModelType> rewardModels;
+            std::unordered_map<std::string, typename ModelType::RewardModelType> rewardModels;
             if (keepRewards && model.hasRewardModel()) {
-                typename std::map<std::string, typename ModelType::RewardModelType>::const_iterator nameRewardModelPair = model.getUniqueRewardModel();
+                typename std::unordered_map<std::string, typename ModelType::RewardModelType>::const_iterator nameRewardModelPair = model.getUniqueRewardModel();
                 rewardModels.insert(std::make_pair(nameRewardModelPair->first, typename ModelType::RewardModelType(stateRewards)));
             }
             

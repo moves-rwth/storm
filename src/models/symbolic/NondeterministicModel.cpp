@@ -22,9 +22,8 @@ namespace storm {
                                                                std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs,
                                                                std::set<storm::expressions::Variable> const& nondeterminismVariables,
                                                                std::map<std::string, storm::expressions::Expression> labelToExpressionMap,
-                                                               boost::optional<storm::dd::Add<Type>> const& optionalStateRewardVector,
-                                                               boost::optional<storm::dd::Add<Type>> const& optionalTransitionRewardMatrix)
-            : Model<Type>(modelType, manager, reachableStates, initialStates, transitionMatrix, rowVariables, rowExpressionAdapter, columnVariables, columnExpressionAdapter, rowColumnMetaVariablePairs, labelToExpressionMap, optionalStateRewardVector, optionalTransitionRewardMatrix), nondeterminismVariables(nondeterminismVariables) {
+                                                               std::unordered_map<std::string, RewardModelType> const& rewardModels)
+            : Model<Type>(modelType, manager, reachableStates, initialStates, transitionMatrix, rowVariables, rowExpressionAdapter, columnVariables, columnExpressionAdapter, rowColumnMetaVariablePairs, labelToExpressionMap, rewardModels), nondeterminismVariables(nondeterminismVariables) {
                 
                 // Prepare the mask of illegal nondeterministic choices.
                 illegalMask = transitionMatrix.notZero().existsAbstract(this->getColumnVariables());

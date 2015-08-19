@@ -27,13 +27,24 @@ namespace storm {
             }
             
             storm::models::sparse::StandardRewardModel<ValueType> build(uint_fast64_t rowCount, uint_fast64_t columnCount, uint_fast64_t rowGroupCount) {
+                boost::optional<std::vector<ValueType>> optionalStateRewardVector;
                 if (hasStateRewards) {
                     stateRewardVector.resize(rowGroupCount);
+                    optionalStateRewardVector = std::move(stateRewardVector);
                 }
+
+                boost::optional<std::vector<ValueType>> optionalStateActionRewardVector;
                 if (hasStateActionRewards) {
                     stateActionRewardVector.resize(rowCount);
+                    optionalStateActionRewardVector = std::move(stateActionRewardVector);
                 }
-                return storm::models::sparse::StandardRewardModel<ValueType>(hasStateRewards ? std::move(stateRewardVector) : boost::none, hasStateActionRewards ? std::move(stateActionRewardVector) : boost::none, hasTransitionRewards ? transitionRewardMatrixBuilder.build(rowCount, columnCount, rowGroupCount) : boost::none);
+                
+                boost::optional<storm::storage::SparseMatrix<ValueType>> optionalTransitionRewardMatrix;
+                if (hasTransitionRewards) {
+                    optionalTransitionRewardMatrix = transitionRewardMatrixBuilder.build(rowCount, columnCount, rowGroupCount);
+                }
+
+                return storm::models::sparse::StandardRewardModel<ValueType>(std::move(optionalStateRewardVector), std::move(optionalStateActionRewardVector), std::move(optionalTransitionRewardMatrix));
             }
             
             bool hasStateRewards;
@@ -104,6 +115,7 @@ namespace storm {
 
         template <typename ValueType, typename IndexType>
         void ExplicitPrismModelBuilder<ValueType, IndexType>::Options::preserveFormula(storm::logic::Formula const& formula) {
+            // If we are not required to build all reward models, we determine the reward models we need to build.
             if (!buildAllRewardModels) {
                 if (formula.containsRewardOperator()) {
                     std::set<std::string> referencedRewardModels = formula.getReferencedRewardModels();
@@ -679,11 +691,11 @@ namespace storm {
                     } else {
                         // If the model is nondeterministic, we add all choices individually.
                         transitionMatrixBuilder.newRowGroup(currentRow);
-                        
-                        // For all reward models that
-                        for (auto rewardModelIt = selectedRewardModels.begin(), rewardModelIte = selectedRewardModels.end(), builderIt = rewardModelBuilders.begin(); rewardModelIt != rewardModelIte; ++rewardModelIt, ++builderIt) {
+
+                        auto builderIt = rewardModelBuilders.begin();
+                        for (auto rewardModelIt = selectedRewardModels.begin(), rewardModelIte = selectedRewardModels.end(); rewardModelIt != rewardModelIte; ++rewardModelIt, ++builderIt) {
                             if (rewardModelIt->get().hasStateRewards()) {
-                                builderIt->stateRewardVector.push_back();
+                                builderIt->stateRewardVector.push_back(storm::utility::zero<ValueType>());
                                 
                                 for (auto const& stateReward : rewardModelIt->get().getStateRewards()) {
                                     if (evaluator.asBool(stateReward.getStatePredicateExpression())) {
@@ -700,7 +712,8 @@ namespace storm {
                                 choiceLabels.get().emplace_back(std::move(choice.getChoiceLabels()));
                             }
                             
-                            for (auto rewardModelIt = selectedRewardModels.begin(), rewardModelIte = selectedRewardModels.end(), builderIt = rewardModelBuilders.begin(); rewardModelIt != rewardModelIte; ++rewardModelIt, ++builderIt) {
+                            auto builderIt = rewardModelBuilders.begin();
+                            for (auto rewardModelIt = selectedRewardModels.begin(), rewardModelIte = selectedRewardModels.end(); rewardModelIt != rewardModelIte; ++rewardModelIt, ++builderIt) {
                                 if (rewardModelIt->get().hasStateActionRewards()) {
                                     builderIt->stateActionRewardVector.resize(currentRow + 1);
                                     for (auto const& stateActionReward : rewardModelIt->get().getStateActionRewards()) {
@@ -727,7 +740,8 @@ namespace storm {
                                 choiceLabels.get().emplace_back(std::move(choice.getChoiceLabels()));
                             }
                             
-                            for (auto rewardModelIt = selectedRewardModels.begin(), rewardModelIte = selectedRewardModels.end(), builderIt = rewardModelBuilders.begin(); rewardModelIt != rewardModelIte; ++rewardModelIt, ++builderIt) {
+                            auto builderIt = rewardModelBuilders.begin();
+                            for (auto rewardModelIt = selectedRewardModels.begin(), rewardModelIte = selectedRewardModels.end(); rewardModelIt != rewardModelIte; ++rewardModelIt, ++builderIt) {
                                 if (rewardModelIt->get().hasStateActionRewards()) {
                                     builderIt->stateActionRewardVector.resize(currentRow + 1);
                                     for (auto const& stateActionReward : rewardModelIt->get().getStateActionRewards()) {

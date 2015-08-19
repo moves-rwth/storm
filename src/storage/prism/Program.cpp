@@ -709,11 +709,29 @@ namespace storm {
                     STORM_LOG_THROW(stateReward.getRewardValueExpression().hasNumericalType(), storm::exceptions::WrongFormatException, "Error in " << stateReward.getFilename() << ", line " << stateReward.getLineNumber() << ": reward value expression must evaluate to numerical type.");
                 }
                 
+                for (auto const& stateActionReward : rewardModel.getStateActionRewards()) {
+                    std::set<storm::expressions::Variable> containedVariables = stateActionReward.getStatePredicateExpression().getVariables();
+                    bool isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedVariables.begin(), containedVariables.end());
+                    STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << stateActionReward.getFilename() << ", line " << stateActionReward.getLineNumber() << ": state reward expression refers to unknown identifiers.");
+                    STORM_LOG_THROW(stateActionReward.getStatePredicateExpression().hasBooleanType(), storm::exceptions::WrongFormatException, "Error in " << stateActionReward.getFilename() << ", line " << stateActionReward.getLineNumber() << ": state predicate must evaluate to type 'bool'.");
+                    
+                    containedVariables = stateActionReward.getRewardValueExpression().getVariables();
+                    isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedVariables.begin(), containedVariables.end());
+                    STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << stateActionReward.getFilename() << ", line " << stateActionReward.getLineNumber() << ": state reward value expression refers to unknown identifiers.");
+                    STORM_LOG_THROW(stateActionReward.getRewardValueExpression().hasNumericalType(), storm::exceptions::WrongFormatException, "Error in " << stateActionReward.getFilename() << ", line " << stateActionReward.getLineNumber() << ": reward value expression must evaluate to numerical type.");
+                }
+                
                 for (auto const& transitionReward : rewardModel.getTransitionRewards()) {
-                    std::set<storm::expressions::Variable> containedVariables = transitionReward.getStatePredicateExpression().getVariables();
+                    std::set<storm::expressions::Variable> containedVariables = transitionReward.getSourceStatePredicateExpression().getVariables();
                     bool isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedVariables.begin(), containedVariables.end());
                     STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << transitionReward.getFilename() << ", line " << transitionReward.getLineNumber() << ": state reward expression refers to unknown identifiers.");
-                    STORM_LOG_THROW(transitionReward.getStatePredicateExpression().hasBooleanType(), storm::exceptions::WrongFormatException, "Error in " << transitionReward.getFilename() << ", line " << transitionReward.getLineNumber() << ": state predicate must evaluate to type 'bool'.");
+                    STORM_LOG_THROW(transitionReward.getSourceStatePredicateExpression().hasBooleanType(), storm::exceptions::WrongFormatException, "Error in " << transitionReward.getFilename() << ", line " << transitionReward.getLineNumber() << ": state predicate must evaluate to type 'bool'.");
+
+                    containedVariables = transitionReward.getTargetStatePredicateExpression().getVariables();
+                    isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedVariables.begin(), containedVariables.end());
+                    STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << transitionReward.getFilename() << ", line " << transitionReward.getLineNumber() << ": state reward expression refers to unknown identifiers.");
+                    STORM_LOG_THROW(transitionReward.getTargetStatePredicateExpression().hasBooleanType(), storm::exceptions::WrongFormatException, "Error in " << transitionReward.getFilename() << ", line " << transitionReward.getLineNumber() << ": state predicate must evaluate to type 'bool'.");
+
                     
                     containedVariables = transitionReward.getRewardValueExpression().getVariables();
                     isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedVariables.begin(), containedVariables.end());

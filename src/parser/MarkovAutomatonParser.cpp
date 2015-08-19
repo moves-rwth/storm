@@ -26,7 +26,7 @@ namespace storm {
 			if (stateRewardFilename != "") {
 				stateRewards.reset(storm::parser::SparseStateRewardParser::parseSparseStateReward(transitionMatrix.getColumnCount(), stateRewardFilename));
 			}
-            std::map<std::string, storm::models::sparse::StandardRewardModel<double>> rewardModels;
+            std::unordered_map<std::string, storm::models::sparse::StandardRewardModel<double>> rewardModels;
             rewardModels.insert(std::make_pair("", storm::models::sparse::StandardRewardModel<double>(stateRewards, boost::optional<std::vector<double>>(), boost::optional<storm::storage::SparseMatrix<double>>())));
 
 			// Since Markov Automata do not support transition rewards no path should be given here.

@@ -67,7 +67,7 @@ namespace storm {
                 }
                 
                 Mdp<ValueType> restrictedMdp(transitionMatrixBuilder.build(), storm::models::sparse::StateLabeling(this->getStateLabeling()),
-                                             std::map<std::string, RewardModelType>(this->getRewardModels()), boost::optional<std::vector<LabelSet>>(newChoiceLabeling));
+                                             std::unordered_map<std::string, RewardModelType>(this->getRewardModels()), boost::optional<std::vector<LabelSet>>(newChoiceLabeling));
                 
                 return restrictedMdp;
             }
@@ -75,7 +75,7 @@ namespace storm {
             template <typename ValueType, typename RewardModelType>
             Mdp<ValueType> Mdp<ValueType, RewardModelType>::restrictActions(storm::storage::BitVector const& enabledActions) const {
                 storm::storage::SparseMatrix<ValueType> restrictedTransitions = this->getTransitionMatrix().restrictRows(enabledActions);
-                std::map<std::string, RewardModelType> newRewardModels;
+                std::unordered_map<std::string, RewardModelType> newRewardModels;
                 for (auto const& rewardModel : this->getRewardModels()) {
                     newRewardModels.emplace(rewardModel.first, rewardModel.second.restrictActions(enabledActions));
                 }

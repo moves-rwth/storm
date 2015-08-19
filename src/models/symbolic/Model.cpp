@@ -23,9 +23,8 @@ namespace storm {
                                std::shared_ptr<storm::adapters::AddExpressionAdapter<Type>> columnExpressionAdapter,
                                std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs,
                                std::map<std::string, storm::expressions::Expression> labelToExpressionMap,
-                               boost::optional<storm::dd::Add<Type>> const& optionalStateRewardVector,
-                               boost::optional<storm::dd::Add<Type>> const& optionalTransitionRewardMatrix)
-            : ModelBase(modelType), manager(manager), reachableStates(reachableStates), initialStates(initialStates), transitionMatrix(transitionMatrix), rowVariables(rowVariables), rowExpressionAdapter(rowExpressionAdapter), columnVariables(columnVariables), columnExpressionAdapter(columnExpressionAdapter), rowColumnMetaVariablePairs(rowColumnMetaVariablePairs), labelToExpressionMap(labelToExpressionMap), stateRewardVector(optionalStateRewardVector), transitionRewardMatrix(optionalTransitionRewardMatrix) {
+                               std::unordered_map<std::string, RewardModelType> const& rewardModels)
+            : ModelBase(modelType), manager(manager), reachableStates(reachableStates), initialStates(initialStates), transitionMatrix(transitionMatrix), rowVariables(rowVariables), rowExpressionAdapter(rowExpressionAdapter), columnVariables(columnVariables), columnExpressionAdapter(columnExpressionAdapter), rowColumnMetaVariablePairs(rowColumnMetaVariablePairs), labelToExpressionMap(labelToExpressionMap), rewardModels(rewardModels) {
                 // Intentionally left empty.
             }
             
@@ -86,41 +85,6 @@ namespace storm {
             }
             
             template<storm::dd::DdType Type>
-            storm::dd::Add<Type> const& Model<Type>::getTransitionRewardMatrix() const {
-                return transitionRewardMatrix.get();
-            }
-            
-            template<storm::dd::DdType Type>
-            storm::dd::Add<Type>& Model<Type>::getTransitionRewardMatrix() {
-                return transitionRewardMatrix.get();
-            }
-            
-            template<storm::dd::DdType Type>
-            boost::optional<storm::dd::Add<Type>> const& Model<Type>::getOptionalTransitionRewardMatrix() const {
-                return transitionRewardMatrix;
-            }
-            
-            template<storm::dd::DdType Type>
-            storm::dd::Add<Type> const& Model<Type>::getStateRewardVector() const {
-                return stateRewardVector.get();
-            }
-            
-            template<storm::dd::DdType Type>
-            boost::optional<storm::dd::Add<Type>> const& Model<Type>::getOptionalStateRewardVector() const {
-                return stateRewardVector;
-            }
-            
-            template<storm::dd::DdType Type>
-            bool Model<Type>::hasStateRewards() const {
-                return static_cast<bool>(stateRewardVector);
-            }
-            
-            template<storm::dd::DdType Type>
-            bool Model<Type>::hasTransitionRewards() const {
-                return static_cast<bool>(transitionRewardMatrix);
-            }
-            
-            template<storm::dd::DdType Type>
             std::size_t Model<Type>::getSizeInBytes() const {
                 return sizeof(*this) + sizeof(DdNode) * (reachableStates.getNodeCount() + initialStates.getNodeCount() + transitionMatrix.getNodeCount());
             }
@@ -158,6 +122,34 @@ namespace storm {
                     result *= this->getManager().getRange(pair.first).toAdd() * this->getManager().getRange(pair.second).toAdd();
                 }
                 return result;
+            }
+            
+            template<storm::dd::DdType Type>
+            bool Model<Type>::hasRewardModel(std::string const& rewardModelName) const {
+                return this->rewardModels.find(rewardModelName) != this->rewardModels.end();
+            }
+            
+            template<storm::dd::DdType Type>
+            typename Model<Type>::RewardModelType const& Model<Type>::getRewardModel(std::string const& rewardModelName) const {
+                auto it = this->rewardModels.find(rewardModelName);
+                STORM_LOG_THROW(it != this->rewardModels.end(), storm::exceptions::InvalidArgumentException, "Unknown reward model '" << rewardModelName << "'.");
+                return it->second;
+            }
+            
+            template<storm::dd::DdType Type>
+            typename std::unordered_map<std::string, typename Model<Type>::RewardModelType>::const_iterator Model<Type>::getUniqueRewardModel() const {
+                STORM_LOG_THROW(this->hasUniqueRewardModel(), storm::exceptions::InvalidOperationException, "Cannot retrieve unique reward model, because there is no unique one.");
+                return this->rewardModels.begin();
+            }
+            
+            template<storm::dd::DdType Type>
+            bool Model<Type>::hasUniqueRewardModel() const {
+                return this->rewardModels.size() == 1;
+            }
+            
+            template<storm::dd::DdType Type>
+            bool Model<Type>::hasRewardModel() const {
+                return !this->rewardModels.empty();
             }
             
             template<storm::dd::DdType Type>
