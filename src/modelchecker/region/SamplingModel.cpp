@@ -91,7 +91,7 @@ namespace storm {
             storm::logic::EventuallyFormula eventuallyFormula(targetFormulaPtr);
             storm::modelchecker::SparseDtmcPrctlModelChecker<ConstantType> modelChecker(*this->model);
             
-            //perform model checking on the mdp
+            //perform model checking on the dtmc
             std::unique_ptr<storm::modelchecker::CheckResult> resultPtr = modelChecker.computeEventuallyProbabilities(eventuallyFormula);
             return resultPtr->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
         }

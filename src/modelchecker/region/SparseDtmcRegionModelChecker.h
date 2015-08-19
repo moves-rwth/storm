@@ -33,6 +33,8 @@ namespace storm {
             class ParameterRegion;
 
             explicit SparseDtmcRegionModelChecker(storm::models::sparse::Dtmc<ParametricType> const& model);
+            
+            virtual ~SparseDtmcRegionModelChecker();
 
             /*!
              * Checks if the given formula can be handled by This region model checker
@@ -117,12 +119,14 @@ namespace storm {
              * May set the satPoint and violatedPoint of the regions if thy are not yet specified and such point is given.
              * Also changes the regioncheckresult of the region to EXISTSSAT, EXISTSVIOLATED, or EXISTSBOTH
              * 
-             * @param viaReachProbFunction if set, the sampling will be done via the reachProbFunction.
-             *                             Otherwise, the model will be instantiated and checked
+             * @param favorViaFunction if not stated otherwise (e.g. in the settings), the sampling will be done via the
+             *                          reachProbFunction if this flag is true. If the flag is false, sampling will be 
+             *                          done via instantiation of the samplingmodel. Note that this argument is ignored,
+             *                          unless sampling has been turned of in the settings
              * 
              * @return true if an violated point as well as a sat point has been found, i.e., the check result is changed to EXISTSOTH
              */
-            bool checkPoint(ParameterRegion& region, std::map<VariableType, CoefficientType>const& point, bool viaReachProbFunction=false);
+            bool checkPoint(ParameterRegion& region, std::map<VariableType, CoefficientType>const& point, bool favorViaFunction=false);
             
             /*!
              * Returns the reachability probability function. 
@@ -165,10 +169,10 @@ namespace storm {
             std::unique_ptr<storm::logic::ProbabilityOperatorFormula> probabilityOperatorFormula;
             // the original model after states with constant transitions have been eliminated
             std::shared_ptr<storm::models::sparse::Dtmc<ParametricType>> simplifiedModel;
-            // the model that can be instantiated to check the value at a certain point
-            std::shared_ptr<SamplingModel> samplingModel;
             // the model that  is used to approximate the probability values
             std::shared_ptr<ApproximationModel> approximationModel;
+            // the model that can be instantiated to check the value at a certain point
+            std::shared_ptr<SamplingModel> samplingModel;
             // The  function for the reachability probability in the initial state 
             ParametricType reachProbFunction;
             // a flag that is true if there are only linear functions at transitions of the model
@@ -182,22 +186,22 @@ namespace storm {
             
             // runtimes and other information for statistics. 
             uint_fast64_t numOfCheckedRegions;
-            uint_fast64_t numOfRegionsSolvedThroughSampling;
             uint_fast64_t numOfRegionsSolvedThroughApproximation;
-            uint_fast64_t numOfRegionsSolvedThroughSubsystemSmt;
+            uint_fast64_t numOfRegionsSolvedThroughSampling;
             uint_fast64_t numOfRegionsSolvedThroughFullSmt;
             uint_fast64_t numOfRegionsExistsBoth;
             uint_fast64_t numOfRegionsAllSat;
             uint_fast64_t numOfRegionsAllViolated;
             
             std::chrono::high_resolution_clock::duration timePreprocessing;
-            std::chrono::high_resolution_clock::duration timeInitialStateElimination;
+            std::chrono::high_resolution_clock::duration timeComputeSimplifiedModel;
+            std::chrono::high_resolution_clock::duration timeInitApproxModel;
+            std::chrono::high_resolution_clock::duration timeInitSamplingModel;
             std::chrono::high_resolution_clock::duration timeComputeReachProbFunction;
             std::chrono::high_resolution_clock::duration timeCheckRegion;
             std::chrono::high_resolution_clock::duration timeSampling;
             std::chrono::high_resolution_clock::duration timeApproximation;
             std::chrono::high_resolution_clock::duration timeMDPBuild;
-            std::chrono::high_resolution_clock::duration timeSubsystemSmt;
             std::chrono::high_resolution_clock::duration timeFullSmt;
         };
         

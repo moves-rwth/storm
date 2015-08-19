@@ -16,6 +16,8 @@
 #include "src/exceptions/InvalidPropertyException.h"
 #include "src/exceptions/InvalidStateException.h"
 #include "src/exceptions/UnexpectedException.h"
+#include "src/exceptions/InvalidSettingsException.h"
+#include "src/exceptions/NotImplementedException.h"
 
 
 namespace storm {
@@ -26,6 +28,11 @@ namespace storm {
         SparseDtmcRegionModelChecker<ParametricType, ConstantType>::SparseDtmcRegionModelChecker(storm::models::sparse::Dtmc<ParametricType> const& model) : 
                 model(model),
                 eliminationModelChecker(model){
+            //intentionally left empty
+        }
+        
+        template<typename ParametricType, typename ConstantType>
+        SparseDtmcRegionModelChecker<ParametricType, ConstantType>::~SparseDtmcRegionModelChecker(){
             //intentionally left empty
         }
         
@@ -65,6 +72,8 @@ namespace storm {
             this->isReachProbFunctionComputed=false;
             this->isResultConstant=false;
             this->smtSolver=nullptr;
+            this->approximationModel=nullptr;
+            this->samplingModel=nullptr;
             
             //Get subformula, target states
             //Note: canHandle already ensures that the formula has the right shape and that the model has a single initial state.
@@ -75,18 +84,31 @@ namespace storm {
             
             // get a more simple model with a single target state, a single sink state and where states with constant outgoing transitions have been removed
             // Note: also checks for linear functions and a constant result
+            std::chrono::high_resolution_clock::time_point timeComputeSimplifiedModelStart = std::chrono::high_resolution_clock::now();
             computeSimplifiedModel(targetStates);
-            //now create the models used for sampling and approximation
-            this->samplingModel=std::make_shared<SamplingModel>(*this->simplifiedModel);
-            this->approximationModel=std::make_shared<ApproximationModel>(*this->simplifiedModel);
+            std::chrono::high_resolution_clock::time_point timeComputeSimplifiedModelEnd = std::chrono::high_resolution_clock::now();
+            //now create the model used for Approximation
+            std::chrono::high_resolution_clock::time_point timeInitApproxModelStart = std::chrono::high_resolution_clock::now();
+            if(storm::settings::regionSettings().doApprox()){
+                this->approximationModel=std::make_shared<ApproximationModel>(*this->simplifiedModel);
+            }
+            std::chrono::high_resolution_clock::time_point timeInitApproxModelEnd = std::chrono::high_resolution_clock::now();
+            //now create the model used for Sampling
+            std::chrono::high_resolution_clock::time_point timeInitSamplingModelStart = std::chrono::high_resolution_clock::now();
+            if(storm::settings::regionSettings().doSample() || (storm::settings::regionSettings().getApproxMode()==storm::settings::modules::RegionSettings::ApproxMode::TESTFIRST)){
+                this->samplingModel=std::make_shared<SamplingModel>(*this->simplifiedModel);
+            }
+            std::chrono::high_resolution_clock::time_point timeInitSamplingModelEnd = std::chrono::high_resolution_clock::now();
            
             //some information for statistics...
             std::chrono::high_resolution_clock::time_point timePreprocessingEnd = std::chrono::high_resolution_clock::now();
             this->timePreprocessing= timePreprocessingEnd - timePreprocessingStart;
+            this->timeComputeSimplifiedModel = timeComputeSimplifiedModelEnd - timeComputeSimplifiedModelStart;
+            this->timeInitSamplingModel = timeInitSamplingModelEnd - timeInitSamplingModelStart;
+            this->timeInitApproxModel=timeInitApproxModelEnd - timeInitApproxModelStart;
             this->numOfCheckedRegions=0;
             this->numOfRegionsSolvedThroughSampling=0;
             this->numOfRegionsSolvedThroughApproximation=0;
-            this->numOfRegionsSolvedThroughSubsystemSmt=0;
             this->numOfRegionsSolvedThroughFullSmt=0;
             this->numOfRegionsExistsBoth=0;
             this->numOfRegionsAllSat=0;
@@ -95,7 +117,6 @@ namespace storm {
             this->timeSampling=std::chrono::high_resolution_clock::duration::zero();
             this->timeApproximation=std::chrono::high_resolution_clock::duration::zero();
             this->timeMDPBuild=std::chrono::high_resolution_clock::duration::zero();
-            this->timeSubsystemSmt=std::chrono::high_resolution_clock::duration::zero();
             this->timeFullSmt=std::chrono::high_resolution_clock::duration::zero();
         }
         
@@ -128,7 +149,6 @@ namespace storm {
             
             // eliminate all states with only constant outgoing transitions
             //TODO: maybe also states with constant incoming tranistions. THEN the ordering of the eliminated states does matter.
-            std::chrono::high_resolution_clock::time_point timeInitialStateEliminationStart = std::chrono::high_resolution_clock::now();
             // Convert the reduced matrix to a more flexible format to be able to perform state elimination more easily.
             auto flexibleTransitions = this->eliminationModelChecker.getFlexibleSparseMatrix(submatrix);
             auto flexibleBackwardTransitions= this->eliminationModelChecker.getFlexibleSparseMatrix(submatrix.transpose(), true);
@@ -159,8 +179,6 @@ namespace storm {
                 }
             }
             subsystem.set(initialState, true);
-            std::chrono::high_resolution_clock::time_point timeInitialStateEliminationEnd = std::chrono::high_resolution_clock::now();
-            this->timeInitialStateElimination = timeInitialStateEliminationEnd-timeInitialStateEliminationStart;
             STORM_LOG_DEBUG("Eliminated " << subsystem.size() - subsystem.getNumberOfSetBits() << " of " << subsystem.size() << " states that had constant outgoing transitions." << std::endl);
             std::cout << "Eliminated " << subsystem.size() - subsystem.getNumberOfSetBits() << " of " << subsystem.size() << " states that had constant outgoing transitions." << std::endl;
             
@@ -240,10 +258,10 @@ namespace storm {
             
             //switches for the different steps.
             bool done=false;
-            bool doApproximation=this->hasOnlyLinearFunctions; // this approach is only correct if the model has only linear functions
-            bool doSampling=true;
-            bool doSubsystemSmt=false; //this->hasOnlyLinearFunctions;  // this approach is only correct if the model has only linear functions
-            bool doFullSmt=true;
+            STORM_LOG_WARN_COND( (!storm::settings::regionSettings().doApprox() || this->hasOnlyLinearFunctions), "the approximation is only correct if the model has only linear functions. As this is not the case, approximation is deactivated");
+            bool doApproximation=storm::settings::regionSettings().doApprox() && this->hasOnlyLinearFunctions;
+            bool doSampling=storm::settings::regionSettings().doSample();
+            bool doFullSmt=storm::settings::regionSettings().doSmt();
             
             if(!done && this->isResultConstant){
                 STORM_LOG_DEBUG("Checking a region although the result is constant, i.e., independent of the region. This makes sense none.");
@@ -262,10 +280,6 @@ namespace storm {
             std::vector<ConstantType> upperBounds;
             if(!done && doApproximation){
                 STORM_LOG_DEBUG("Checking approximative probabilities...");
-                if (region.getCheckResult()==RegionCheckResult::UNKNOWN){
-                    //Sample a single point to know whether we should try to prove ALLSAT or ALLVIOLATED
-                    checkPoint(region,region.getLowerBounds(), false);
-                }
                 if(checkApproximativeProbabilities(region, lowerBounds, upperBounds)){
                     ++this->numOfRegionsSolvedThroughApproximation;
                     STORM_LOG_DEBUG("Result '" << region.checkResultToString() <<"' obtained through approximation.");
@@ -285,12 +299,6 @@ namespace storm {
             }
             std::chrono::high_resolution_clock::time_point timeSamplingEnd = std::chrono::high_resolution_clock::now();
             
-            std::chrono::high_resolution_clock::time_point timeSubsystemSmtStart = std::chrono::high_resolution_clock::now();
-            if(!done && doSubsystemSmt){
-                STORM_LOG_WARN("SubsystemSmt approach not yet implemented");
-            }
-            std::chrono::high_resolution_clock::time_point timeSubsystemSmtEnd = std::chrono::high_resolution_clock::now();
-            
             std::chrono::high_resolution_clock::time_point timeFullSmtStart = std::chrono::high_resolution_clock::now();
             if(!done && doFullSmt){
                 STORM_LOG_DEBUG("Checking with Smt Solving...");
@@ -307,7 +315,6 @@ namespace storm {
             this->timeCheckRegion += timeCheckRegionEnd-timeCheckRegionStart;
             this->timeSampling += timeSamplingEnd - timeSamplingStart;
             this->timeApproximation += timeApproximationEnd - timeApproximationStart;
-            this->timeSubsystemSmt += timeSubsystemSmtEnd - timeSubsystemSmtStart;
             this->timeFullSmt += timeFullSmtEnd - timeFullSmtStart;
             switch(region.getCheckResult()){
                 case RegionCheckResult::EXISTSBOTH:
@@ -346,81 +353,95 @@ namespace storm {
         bool SparseDtmcRegionModelChecker<ParametricType, ConstantType>::checkApproximativeProbabilities(ParameterRegion& region, std::vector<ConstantType>& lowerBounds, std::vector<ConstantType>& upperBounds) {
             STORM_LOG_THROW(this->hasOnlyLinearFunctions, storm::exceptions::UnexpectedException, "Tried to perform approximative method (only applicable if all functions are linear), but there are nonlinear functions.");
             std::chrono::high_resolution_clock::time_point timeMDPBuildStart = std::chrono::high_resolution_clock::now();
+            STORM_LOG_THROW(this->approximationModel!=nullptr, storm::exceptions::UnexpectedException, "Approximation model not initialized");
             this->approximationModel->instantiate(region);
             std::chrono::high_resolution_clock::time_point timeMDPBuildEnd = std::chrono::high_resolution_clock::now();
             this->timeMDPBuild += timeMDPBuildEnd-timeMDPBuildStart;
             
-            // Decide whether we should minimize or maximize and whether to prove allsat or allviolated. (Hence, there are 4 cases)
+            // Decide whether the formula has an upper or a lower bond ({<, <=} or {>, >=}) and whether to prove allsat or allviolated. (Hence, there are 4 cases)
             bool formulaHasUpperBound = this->probabilityOperatorFormula->getComparisonType()==storm::logic::ComparisonType::Less || this->probabilityOperatorFormula->getComparisonType()==storm::logic::ComparisonType::LessEqual;
             STORM_LOG_THROW((formulaHasUpperBound != (this->probabilityOperatorFormula->getComparisonType()==storm::logic::ComparisonType::Greater || this->probabilityOperatorFormula->getComparisonType()==storm::logic::ComparisonType::GreaterEqual)),
                     storm::exceptions::UnexpectedException, "Unexpected comparison Type of formula");
+            bool proveAllSat;
             switch (region.getCheckResult()){
-                case RegionCheckResult::EXISTSSAT:
                 case RegionCheckResult::UNKNOWN: 
-                    //Try to prove ALLSAT
-                    if(formulaHasUpperBound){ 
-                        upperBounds = this->approximationModel->computeReachabilityProbabilities(storm::logic::OptimalityType::Maximize);
-                        lowerBounds=std::vector<ConstantType>();
-                        if(valueIsInBoundOfFormula(upperBounds[*this->approximationModel->getModel()->getInitialStates().begin()])){
-                            region.setCheckResult(RegionCheckResult::ALLSAT);
-                            return true;
-                        }
-                    }
-                    else{
-                        lowerBounds = this->approximationModel->computeReachabilityProbabilities(storm::logic::OptimalityType::Minimize);
-                        upperBounds=std::vector<ConstantType>();
-                        if(valueIsInBoundOfFormula(lowerBounds[*this->approximationModel->getModel()->getInitialStates().begin()])){
-                            region.setCheckResult(RegionCheckResult::ALLSAT);
-                            return true;
-                        }
+                    switch(storm::settings::regionSettings().getApproxMode()){
+                        case storm::settings::modules::RegionSettings::ApproxMode::TESTFIRST:
+                            //Sample a single point to know whether we should try to prove ALLSAT or ALLVIOLATED
+                            checkPoint(region,region.getLowerBounds(), false);
+                            proveAllSat= (region.getCheckResult()==RegionCheckResult::EXISTSSAT);
+                            break;
+                        case storm::settings::modules::RegionSettings::ApproxMode::GUESSALLSAT:
+                            proveAllSat=true;
+                            break;
+                        case storm::settings::modules::RegionSettings::ApproxMode::GUESSALLVIOLATED:
+                            proveAllSat=false;
+                            break;
+                        default:
+                            STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "The specified approxmode is not supported");
                     }
                     break;
+                case RegionCheckResult::ALLSAT:
+                     STORM_LOG_WARN("The checkresult of the current region should not be conclusive (ALLSAT)");
+                     //Intentionally no break;
+                case RegionCheckResult::EXISTSSAT:
+                    proveAllSat=true;
+                    break;
+                case RegionCheckResult::ALLVIOLATED:
+                     STORM_LOG_WARN("The checkresult of the current region should not be conclusive (ALLViolated)");
+                     //Intentionally no break;
                 case RegionCheckResult::EXISTSVIOLATED:
-                    //Try to prove ALLVIOLATED
-                    if(formulaHasUpperBound){ 
-                        lowerBounds = this->approximationModel->computeReachabilityProbabilities(storm::logic::OptimalityType::Minimize);
-                        upperBounds=std::vector<ConstantType>();
-                        if(!valueIsInBoundOfFormula(lowerBounds[*this->approximationModel->getModel()->getInitialStates().begin()])){
-                            region.setCheckResult(RegionCheckResult::ALLVIOLATED);
-                            return true;
-                        }
-                    }
-                    else{
-                        upperBounds = this->approximationModel->computeReachabilityProbabilities(storm::logic::OptimalityType::Maximize);
-                        lowerBounds=std::vector<ConstantType>();
-                        if(!valueIsInBoundOfFormula(upperBounds[*this->approximationModel->getModel()->getInitialStates().begin()])){
-                            region.setCheckResult(RegionCheckResult::ALLVIOLATED);
-                            return true;
-                        }
-                    }
+                    proveAllSat=false;
                     break;
                 default:
                      STORM_LOG_WARN("The checkresult of the current region should not be conclusive, i.e. it should be either EXISTSSAT or EXISTSVIOLATED or UNKNOWN in order to apply approximative probabilities");
             }
             
+            bool formulaSatisfied;
+            if((formulaHasUpperBound && proveAllSat) || (!formulaHasUpperBound && !proveAllSat)){
+                //these are the cases in which we need to compute upper bounds
+                upperBounds = this->approximationModel->computeReachabilityProbabilities(storm::logic::OptimalityType::Maximize);
+                lowerBounds = std::vector<ConstantType>();
+                formulaSatisfied = valueIsInBoundOfFormula(upperBounds[*this->approximationModel->getModel()->getInitialStates().begin()]);
+            }
+            else{
+                //for the remaining cases we compute lower bounds
+                lowerBounds = this->approximationModel->computeReachabilityProbabilities(storm::logic::OptimalityType::Minimize);
+                upperBounds = std::vector<ConstantType>();
+                formulaSatisfied = valueIsInBoundOfFormula(lowerBounds[*this->approximationModel->getModel()->getInitialStates().begin()]);
+            }
+            
+            //check if approximation was conclusive
+            if(proveAllSat && formulaSatisfied){
+                region.setCheckResult(RegionCheckResult::ALLSAT);
+                return true;
+            }
+            if(!proveAllSat && !formulaSatisfied){
+                region.setCheckResult(RegionCheckResult::ALLVIOLATED);
+                return true;
+            }
+            
             if(region.getCheckResult()==RegionCheckResult::UNKNOWN){
-                //In this case, it makes sense to try the other optimality Type. Again, 4 cases (Although the ALLSAT cases should not be reachable, since we already tried to prove this above).
+                //In this case, it makes sense to try to prove the contrary statement
+                proveAllSat=!proveAllSat;
+                
                 if(lowerBounds.empty()){
                     lowerBounds = this->approximationModel->computeReachabilityProbabilities(storm::logic::OptimalityType::Minimize);
-                    if(!formulaHasUpperBound && valueIsInBoundOfFormula(lowerBounds[*this->approximationModel->getModel()->getInitialStates().begin()])){
-                        region.setCheckResult(RegionCheckResult::ALLSAT);
-                        return true;
-                    }
-                    if(formulaHasUpperBound && !valueIsInBoundOfFormula(lowerBounds[*this->approximationModel->getModel()->getInitialStates().begin()])){
-                        region.setCheckResult(RegionCheckResult::ALLVIOLATED);
-                        return true;
-                    }
+                    formulaSatisfied=valueIsInBoundOfFormula(lowerBounds[*this->approximationModel->getModel()->getInitialStates().begin()]);
                 }
-                if(upperBounds.empty()){
+                else{
                     upperBounds = this->approximationModel->computeReachabilityProbabilities(storm::logic::OptimalityType::Maximize);
-                    if(formulaHasUpperBound && valueIsInBoundOfFormula(lowerBounds[*this->approximationModel->getModel()->getInitialStates().begin()])){
-                        region.setCheckResult(RegionCheckResult::ALLSAT);
-                        return true;
-                    }
-                    if(!formulaHasUpperBound && !valueIsInBoundOfFormula(lowerBounds[*this->approximationModel->getModel()->getInitialStates().begin()])){
-                        region.setCheckResult(RegionCheckResult::ALLVIOLATED);
-                        return true;
-                    }
+                    formulaSatisfied=valueIsInBoundOfFormula(upperBounds[*this->approximationModel->getModel()->getInitialStates().begin()]);
+                }
+                    
+                //check if approximation was conclusive
+                if(proveAllSat && formulaSatisfied){
+                    region.setCheckResult(RegionCheckResult::ALLSAT);
+                    return true;
+                }
+                if(!proveAllSat && !formulaSatisfied){
+                    region.setCheckResult(RegionCheckResult::ALLVIOLATED);
+                    return true;
                 }
             }
             //if we reach this point than the result is still inconclusive.
@@ -431,7 +452,7 @@ namespace storm {
         bool SparseDtmcRegionModelChecker<ParametricType, ConstantType>::checkSamplePoints(ParameterRegion& region) {
             auto samplingPoints = region.getVerticesOfRegion(region.getVariables()); //test the 4 corner points
             for (auto const& point : samplingPoints){
-                if(checkPoint(region, point, false)){
+                if(checkPoint(region, point)){
                     return true;
                 }            
             }
@@ -441,10 +462,12 @@ namespace storm {
         template<typename ParametricType, typename ConstantType>
         bool SparseDtmcRegionModelChecker<ParametricType, ConstantType>::checkPoint(ParameterRegion& region, std::map<VariableType, CoefficientType>const& point, bool viaReachProbFunction) {
             bool valueInBoundOfFormula;
-            if(viaReachProbFunction){
+            if((storm::settings::regionSettings().getSampleMode()==storm::settings::modules::RegionSettings::SampleMode::EVALUATE) ||
+                    (!storm::settings::regionSettings().doSample() && viaReachProbFunction)){
                 valueInBoundOfFormula = this->valueIsInBoundOfFormula(storm::utility::regions::evaluateFunction(getReachProbFunction(), point));
             }
             else{
+                STORM_LOG_THROW(this->samplingModel!=nullptr, storm::exceptions::UnexpectedException, "Sampling model not initialized");
                 this->samplingModel->instantiate(point);
                 valueInBoundOfFormula=this->valueIsInBoundOfFormula(this->samplingModel->computeReachabilityProbabilities()[*this->samplingModel->getModel()->getInitialStates().begin()]);
             }
@@ -509,6 +532,7 @@ namespace storm {
 
         template<typename ParametricType, typename ConstantType>
         bool SparseDtmcRegionModelChecker<ParametricType, ConstantType>::checkFullSmt(ParameterRegion& region) {
+            STORM_LOG_THROW((storm::settings::regionSettings().getSmtMode()==storm::settings::modules::RegionSettings::SmtMode::FUNCTION), storm::exceptions::NotImplementedException, "Selected SMT mode has not been implemented.");
             if (region.getCheckResult()==RegionCheckResult::UNKNOWN){
                 //Sampling needs to be done (on a single point)
                 checkPoint(region,region.getLowerBounds(), true);
@@ -680,7 +704,9 @@ namespace storm {
             }
             
             std::chrono::milliseconds timePreprocessingInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timePreprocessing);
-            std::chrono::milliseconds timeInitialStateEliminationInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timeInitialStateElimination);
+            std::chrono::milliseconds timeComputeSimplifiedModelInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timeComputeSimplifiedModel);
+            std::chrono::milliseconds timeInitSamplingModelInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timeInitSamplingModel);
+            std::chrono::milliseconds timeInitApproxModelInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timeInitApproxModel);
             std::chrono::milliseconds timeComputeReachProbFunctionInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timeComputeReachProbFunction);
             std::chrono::milliseconds timeCheckRegionInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timeCheckRegion);
             std::chrono::milliseconds timeSammplingInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timeSampling);
@@ -706,21 +732,22 @@ namespace storm {
             outstream << "    ExistsBoth:  " <<  this->numOfRegionsExistsBoth << "(" << this->numOfRegionsExistsBoth*100/this->numOfCheckedRegions << "%)" <<  std::endl;
             outstream << "    Unsolved:    " <<  this->numOfCheckedRegions - numOfSolvedRegions << "(" << (this->numOfCheckedRegions - numOfSolvedRegions)*100/this->numOfCheckedRegions << "%)" <<  std::endl;
             outstream << "  --  Note: %-numbers are relative to the NUMBER of regions, not the size of their area --" <<  std::endl;
-            outstream << "  " << this->numOfRegionsSolvedThroughSampling << " regions solved through Sampling" << std::endl;
             outstream << "  " << this->numOfRegionsSolvedThroughApproximation << " regions solved through Approximation" << std::endl;
-            outstream << "  " << this->numOfRegionsSolvedThroughSubsystemSmt << " regions solved through SubsystemSmt" << std::endl;
+            outstream << "  " << this->numOfRegionsSolvedThroughSampling << " regions solved through Sampling" << std::endl;
             outstream << "  " << this->numOfRegionsSolvedThroughFullSmt << " regions solved through FullSmt" << std::endl;
             outstream << std::endl;
             outstream << "Running times:" << std::endl;
             outstream << "  " << timeOverallInMilliseconds.count() << "ms overall (excluding model parsing)" << std::endl;
             outstream << "  " << timePreprocessingInMilliseconds.count() << "ms Preprocessing including... " << std::endl;
-            outstream << "    " << timeInitialStateEliminationInMilliseconds.count() << "ms Initial state elimination of const transitions" << std::endl;
-            outstream << "  " << timeComputeReachProbFunctionInMilliseconds.count() << "ms to compute the reachability probability function" << std::endl;
+            outstream << "    " << timeComputeSimplifiedModelInMilliseconds.count() << "ms to obtain a simplified model (state elimination of const transitions)" << std::endl;
+            outstream << "    " << timeInitApproxModelInMilliseconds.count() << "ms to initialize the Approximation Model" << std::endl;
+            outstream << "    " << timeInitSamplingModelInMilliseconds.count() << "ms to initialize the Sampling Model" << std::endl;
             outstream << "  " << timeCheckRegionInMilliseconds.count() << "ms Region Check including... " << std::endl;
-            outstream << "    " << timeSammplingInMilliseconds.count() << "ms Sampling " << std::endl;
             outstream << "    " << timeApproximationInMilliseconds.count() << "ms Approximation including... " << std::endl;
+            outstream << "    " << timeSammplingInMilliseconds.count() << "ms Sampling " << std::endl;
             outstream << "      " << timeMDPBuildInMilliseconds.count() << "ms to build the MDP" << std::endl;
-            outstream << "    " << timeFullSmtInMilliseconds.count() << "ms Full Smt solving" << std::endl;
+            outstream << "    " << timeFullSmtInMilliseconds.count() << "ms Smt solving" << std::endl;
+            outstream << "  " << timeComputeReachProbFunctionInMilliseconds.count() << "ms to compute the reachability probability function (already included in one of the above)" << std::endl;
             outstream << "-----------------------------------------------" << std::endl;
             
         }

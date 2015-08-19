@@ -12,11 +12,10 @@ namespace storm {
              */
             class RegionSettings : public ModuleSettings {
             public:
-                /**
-                 * A type for saving the Solving Strategy.
-                 * 
-                 */
-                //enum class SolvingStrategy { ... };
+
+                enum class ApproxMode {OFF, GUESSALLSAT, GUESSALLVIOLATED, TESTFIRST };
+                enum class SampleMode {OFF, INSTANTIATE, EVALUATE };
+                enum class SmtMode {OFF, FUNCTION, MODEL };
 
                 /*!
                  * Creates a new set of parametric region model checking settings that is managed by the given manager.
@@ -46,7 +45,36 @@ namespace storm {
                  * Returns the regions that are specified as cmd line parameter
                  */
                 std::string getRegionsFromCmdLine() const;
+                
+                /*!
+                 * Returns the mode in which approximation should be used
+                 */
+                ApproxMode getApproxMode() const;
+                
+                /*!
+                 * Returns whether to use approximation
+                 */
+                bool doApprox() const;
+                
+                /*!
+                 * Returns the mode in which Sampling should be used
+                 */
+                SampleMode getSampleMode() const;
+                
+                /*!
+                 * Returns whether to use Sampling
+                 */
+                bool doSample() const;
+                
+                /*!
+                 * Returns the mode in which SMT solving should be used
+                 */
+                SmtMode getSmtMode() const;
 
+                /*!
+                 * Returns whether to use SMT Solving
+                 */
+                bool doSmt() const;
                 
                 bool check() const override;
 
@@ -55,6 +83,9 @@ namespace storm {
             private:
                 const static std::string regionfileOptionName;
                 const static std::string regionsOptionName;
+                const static std::string approxmodeOptionName;
+                const static std::string samplemodeOptionName;
+                const static std::string smtmodeOptionName;
             };
 
         } // namespace modules
