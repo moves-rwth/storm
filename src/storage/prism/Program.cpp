@@ -21,7 +21,7 @@ namespace storm {
             formulas(formulas), formulaToIndexMap(), modules(modules), moduleToIndexMap(), 
             rewardModels(rewardModels), rewardModelToIndexMap(), initialConstruct(initialConstruct), 
             labels(labels), actionToIndexMap(actionToIndexMap), indexToActionMap(), actions(), 
-            actionIndices(), actionIndicesToModuleIndexMap(), variableToModuleIndexMap()
+            synchronizingActionIndices(), actionIndicesToModuleIndexMap(), variableToModuleIndexMap()
         {
 
             // Start by creating the necessary mappings from the given ones.
@@ -260,8 +260,8 @@ namespace storm {
             return this->actions;
         }
         
-        std::set<uint_fast64_t> const& Program::getActionIndices() const {
-            return this->actionIndices;
+        std::set<uint_fast64_t> const& Program::getSynchronizingActionIndices() const {
+            return this->synchronizingActionIndices;
         }
         
         std::string const& Program::getActionName(uint_fast64_t actionIndex) const {
@@ -391,8 +391,12 @@ namespace storm {
             
             for (auto const& actionIndexPair : this->getActionNameToIndexMapping()) {
                 this->actions.insert(actionIndexPair.first);
-                this->actionIndices.insert(actionIndexPair.second);
                 this->indexToActionMap.emplace(actionIndexPair.second, actionIndexPair.first);
+                
+                // Only let all non-zero indices be synchronizing.
+                if (actionIndexPair.second != 0) {
+                    this->synchronizingActionIndices.insert(actionIndexPair.second);
+                }
             }
             
             // Build the mapping from action names to module indices so that the lookup can later be performed quickly.
@@ -793,7 +797,6 @@ namespace storm {
                 }
             }
         }
-        
         
         Program Program::simplify() {
             std::vector<Module> newModules;

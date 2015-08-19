@@ -173,6 +173,10 @@ namespace storm {
                     distribution[state] += value;
                 }
                 
+                std::size_t size() const {
+                    return distribution.size();
+                }
+                
             private:
                 // The distribution that is associated with the choice.
                 std::map<KeyType, ValueType, Compare> distribution;

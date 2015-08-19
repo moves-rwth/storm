@@ -245,11 +245,11 @@ namespace storm {
             std::set<std::string> const& getActions() const;
             
             /*!
-             * Retrieves the set of action indices present in the program.
+             * Retrieves the set of synchronizing action indices present in the program.
              *
-             * @return The set of action indices present in the program.
+             * @return The set of synchronizing action indices present in the program.
              */
-            std::set<uint_fast64_t> const& getActionIndices() const;
+            std::set<uint_fast64_t> const& getSynchronizingActionIndices() const;
             
             /*!
              * Retrieves the action name of the given action index.
@@ -489,8 +489,8 @@ namespace storm {
             // The set of actions present in this program.
             std::set<std::string> actions;
 
-            // The set of actions present in this program.
-            std::set<uint_fast64_t> actionIndices;
+            // The set of synchronizing actions present in this program.
+            std::set<uint_fast64_t> synchronizingActionIndices;
             
             // A map of actions to the set of modules containing commands labelled with this action.
             std::map<uint_fast64_t, std::set<uint_fast64_t>> actionIndicesToModuleIndexMap;

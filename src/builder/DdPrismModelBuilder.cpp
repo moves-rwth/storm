@@ -79,7 +79,7 @@ namespace storm {
                  */
                 void createMetaVariablesAndIdentities() {
                     // Add synchronization variables.
-                    for (auto const& actionIndex : program.getActionIndices()) {
+                    for (auto const& actionIndex : program.getSynchronizingActionIndices()) {
                         std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair = manager->addMetaVariable(program.getActionName(actionIndex));
                         synchronizationMetaVariables.push_back(variablePair.first);
                         allNondeterminismVariables.insert(variablePair.first);
@@ -625,7 +625,7 @@ namespace storm {
         std::pair<storm::dd::Add<Type>, typename DdPrismModelBuilder<Type>::ModuleDecisionDiagram> DdPrismModelBuilder<Type>::createSystemDecisionDiagram(GenerationInformation& generationInfo) {
             // Create the initial offset mapping.
             std::map<uint_fast64_t, uint_fast64_t> synchronizingActionToOffsetMap;
-            for (auto const& actionIndex : generationInfo.program.getActionIndices()) {
+            for (auto const& actionIndex : generationInfo.program.getSynchronizingActionIndices()) {
                 synchronizingActionToOffsetMap[actionIndex] = 0;
             }
 
@@ -639,7 +639,7 @@ namespace storm {
                 STORM_LOG_TRACE("Translating module '" << currentModule.getName() << "'.");
                 
                 // Update the offset index.
-                for (auto const& actionIndex : generationInfo.program.getActionIndices()) {
+                for (auto const& actionIndex : generationInfo.program.getSynchronizingActionIndices()) {
                     if (system.hasSynchronizingAction(actionIndex)) {
                         synchronizingActionToOffsetMap[actionIndex] = system.synchronizingActionToDecisionDiagramMap[actionIndex].numberOfUsedNondeterminismVariables;
                     }

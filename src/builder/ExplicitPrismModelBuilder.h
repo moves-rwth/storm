@@ -277,15 +277,6 @@ namespace storm {
              * @return The state labeling of the given program.
              */
             static storm::models::sparse::StateLabeling buildStateLabeling(storm::prism::Program const& program, VariableInformation const& variableInformation, StateInformation const& stateInformation);
-
-            /*!
-             * Builds the state rewards for the given state space.
-             *
-             * @param rewards A vector of state rewards to consider.
-             * @param stateInformation Information about the state space.
-             * @return A vector containing the state rewards for the state space.
-             */
-            static std::vector<ValueType> buildStateRewards(storm::prism::Program const& program, VariableInformation const& variableInformation, std::vector<storm::prism::StateReward> const& rewards, StateInformation const& stateInformation);
         };
         
     } // namespace adapters

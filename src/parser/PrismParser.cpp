@@ -34,6 +34,7 @@ namespace storm {
             PositionIteratorType first(input.begin());
             PositionIteratorType iter = first;
             PositionIteratorType last(input.end());
+            assert(first != last);
             
             // Create empty result;
             storm::prism::Program result;
@@ -147,11 +148,11 @@ namespace storm {
             updateListDefinition.name("update list");
             
             // This is a dummy command-definition (it ignores the actual contents of the command) that is overwritten when the parser is moved to the second run.
-            commandDefinition = (((qi::lit("[") > (-identifier)[qi::_a = qi::_1] > qi::lit("]"))
+            commandDefinition = (((qi::lit("[") > -identifier > qi::lit("]"))
                                   |
-                                 (qi::lit("<") > (-identifier)[qi::_a = qi::_1] > qi::lit(">")[qi::_b = true]))
+                                 (qi::lit("<") > -identifier > qi::lit(">")[qi::_a = true]))
                                  > +(qi::char_ - qi::lit(";"))
-                                 > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createCommand, phoenix::ref(*this), qi::_a, qi::_r1)];
+                                 > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createCommand, phoenix::ref(*this), qi::_1, qi::_r1)];
             commandDefinition.name("command definition");
             
             moduleDefinition = ((qi::lit("module") >> identifier >> *(variableDefinition(qi::_a, qi::_b))) > *commandDefinition(qi::_r1) > qi::lit("endmodule"))[qi::_val = phoenix::bind(&PrismParser::createModule, phoenix::ref(*this), qi::_1, qi::_a, qi::_b, qi::_2, qi::_r1)];
@@ -203,13 +204,13 @@ namespace storm {
         void PrismParser::moveToSecondRun() {
             // In the second run, we actually need to parse the commands instead of just skipping them,
             // so we adapt the rule for parsing commands.
-            commandDefinition = (((qi::lit("[") > (-identifier)[qi::_a = qi::_1] > qi::lit("]"))
+            commandDefinition = (((qi::lit("[") > -identifier > qi::lit("]"))
                                  |
-                                  (qi::lit("<") > (-identifier)[qi::_a = qi::_1] > qi::lit(">")[qi::_b = true]))
+                                  (qi::lit("<") > -identifier > qi::lit(">")[qi::_a = true]))
                                  > expressionParser
                                  > qi::lit("->")
                                  > updateListDefinition(qi::_r1)
-                                 > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createCommand, phoenix::ref(*this), qi::_b, qi::_a, qi::_2, qi::_3, qi::_r1)];
+                                 > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createCommand, phoenix::ref(*this), qi::_a, qi::_1, qi::_2, qi::_3, qi::_r1)];
             
             this->secondRun = true;
             this->expressionParser.setIdentifierMapping(&this->identifiers_);
@@ -371,7 +372,7 @@ namespace storm {
 
             auto const& nameIndexPair = globalProgramInformation.actionIndices.find(realActionName);
             STORM_LOG_THROW(nameIndexPair != globalProgramInformation.actionIndices.end(), storm::exceptions::WrongFormatException, "Transition reward refers to illegal action '" << realActionName << "'.");
-            return storm::prism::TransitionReward(nameIndexPair->second, actionName.get(), sourceStatePredicateExpression, targetStatePredicateExpression, rewardValueExpression, this->getFilename());
+            return storm::prism::TransitionReward(nameIndexPair->second, realActionName, sourceStatePredicateExpression, targetStatePredicateExpression, rewardValueExpression, this->getFilename());
         }
         
         storm::prism::Assignment PrismParser::createAssignment(std::string const& variableName, storm::expressions::Expression assignedExpression) const {

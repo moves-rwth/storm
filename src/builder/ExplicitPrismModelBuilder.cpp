@@ -210,6 +210,8 @@ namespace storm {
             // Now that the program is fixed, we we need to substitute all constants with their concrete value.
             preparedProgram = preparedProgram.substituteConstants();
             
+            std::cout << preparedProgram << std::endl;
+                
             // Select the appropriate reward models (after the constants have been substituted).
             std::vector<std::reference_wrapper<storm::prism::RewardModel const>> selectedRewardModels;
             for (auto const& rewardModel : preparedProgram.getRewardModels()) {
@@ -401,7 +403,7 @@ namespace storm {
         std::vector<Choice<ValueType>> ExplicitPrismModelBuilder<ValueType, IndexType>::getLabeledTransitions(storm::prism::Program const& program, bool discreteTimeModel, StateInformation& stateInformation, VariableInformation const& variableInformation, storm::storage::BitVector const& currentState, bool choiceLabeling, storm::expressions::ExpressionEvaluator<ValueType> const& evaluator, std::queue<storm::storage::BitVector>& stateQueue, storm::utility::ConstantsComparator<ValueType> const& comparator) {
             std::vector<Choice<ValueType>> result;
             
-            for (uint_fast64_t actionIndex : program.getActionIndices()) {
+            for (uint_fast64_t actionIndex : program.getSynchronizingActionIndices()) {
                 boost::optional<std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>>> optionalActiveCommandLists = getActiveCommandsByActionIndex(program, evaluator, actionIndex);
                 
                 // Only process this action label, if there is at least one feasible solution.
@@ -421,8 +423,6 @@ namespace storm {
                         std::unordered_map<CompressedState, ValueType>* newTargetStates = new std::unordered_map<CompressedState, ValueType>();
                         currentTargetStates->emplace(currentState, storm::utility::one<ValueType>());
                         
-                        // FIXME: This does not check whether a global variable is written multiple times. While the
-                        // behaviour for this is undefined anyway, a warning should be issued in that case.
                         for (uint_fast64_t i = 0; i < iteratorList.size(); ++i) {
                             storm::prism::Command const& command = *iteratorList[i];
                             
@@ -563,7 +563,7 @@ namespace storm {
                         transitionMatrixBuilder.newRowGroup(currentRow);
                     }
                     
-                    bool labeledChoice = allUnlabeledChoices.empty() ? false : true;
+                    bool labeledChoice = allUnlabeledChoices.empty() ? true : false;
                     Choice<ValueType> const& globalChoice = labeledChoice ? allLabeledChoices.front() : allUnlabeledChoices.front();
                     
                     auto builderIt = rewardModelBuilders.begin();
@@ -587,6 +587,10 @@ namespace storm {
                                 }
                             }
                         }
+                    }
+                    
+                    for (auto const& stateProbabilityPair : globalChoice) {
+                        transitionMatrixBuilder.addNextValue(currentRow, stateProbabilityPair.first, stateProbabilityPair.second);
                     }
                     
                     if (commandLabels) {
@@ -820,6 +824,8 @@ namespace storm {
             
             modelComponents.choiceLabeling = buildMatrices(program, variableInformation, selectedRewardModels, stateInformation, options.buildCommandLabels, deterministicModel, discreteTimeModel, transitionMatrixBuilder, rewardModelBuilders);
             
+            modelComponents.transitionMatrix = transitionMatrixBuilder.build();
+            
             // Now finalize all reward models.
             auto builderIt = rewardModelBuilders.begin();
             for (auto rewardModelIt = selectedRewardModels.begin(), rewardModelIte = selectedRewardModels.end(); rewardModelIt != rewardModelIte; ++rewardModelIt, ++builderIt) {
@@ -860,25 +866,6 @@ namespace storm {
                 result.addLabelToState("init", index);
             }
             
-            return result;
-        }
-        
-        template <typename ValueType, typename IndexType>
-        std::vector<ValueType> ExplicitPrismModelBuilder<ValueType, IndexType>::buildStateRewards(storm::prism::Program const& program, VariableInformation const& variableInformation, std::vector<storm::prism::StateReward> const& rewards, StateInformation const& stateInformation) {
-            storm::expressions::ExpressionEvaluator<ValueType> evaluator(program.getManager());
-            
-            std::vector<ValueType> result(stateInformation.reachableStates.size());
-            for (uint_fast64_t index = 0; index < stateInformation.reachableStates.size(); index++) {
-                result[index] = storm::utility::zero<ValueType>();
-                unpackStateIntoEvaluator(stateInformation.reachableStates[index], variableInformation, evaluator);
-                for (auto const& reward : rewards) {
-                    
-                    // Add this reward to the state if the state is included in the state reward.
-                    if (evaluator.asBool(reward.getStatePredicateExpression())) {
-                        result[index] += ValueType(evaluator.asRational(reward.getRewardValueExpression()));
-                    }
-                }
-            }
             return result;
         }
         
