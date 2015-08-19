@@ -128,6 +128,12 @@ namespace storm {
             
             friend std::ostream& operator<<(std::ostream& stream, Command const& command);
             
+            /**
+             * Removes identity assignments from the updates
+             * @return The resulting command
+             */
+            Command removeIdentityAssignmentsFromUpdates() const;
+            
         private:
             //  The index of the action associated with this command.
             uint_fast64_t actionIndex;
@@ -150,6 +156,8 @@ namespace storm {
             
             // A flag indicating whether the command is labeled.
             bool labeled;
+            
+            Command copyWithNewUpdates(std::vector<Update>&& newUpdates) const;
         };
         
     } // namespace prism
