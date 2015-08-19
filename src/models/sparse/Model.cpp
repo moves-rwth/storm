@@ -90,7 +90,7 @@ namespace storm {
             template<typename ValueType, typename RewardModelType>
             RewardModelType const& Model<ValueType, RewardModelType>::getRewardModel(std::string const& rewardModelName) const {
                 auto it = this->rewardModels.find(rewardModelName);
-                STORM_LOG_THROW(it != this->rewardModels.end(), storm::exceptions::IllegalArgumentException, "The requested reward model does not exist.");
+                STORM_LOG_THROW(it != this->rewardModels.end(), storm::exceptions::IllegalArgumentException, "The requested reward model '" << rewardModelName << "' does not exist.");
                 return it->second;
             }
             

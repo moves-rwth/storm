@@ -132,7 +132,7 @@ namespace storm {
             template<storm::dd::DdType Type>
             typename Model<Type>::RewardModelType const& Model<Type>::getRewardModel(std::string const& rewardModelName) const {
                 auto it = this->rewardModels.find(rewardModelName);
-                STORM_LOG_THROW(it != this->rewardModels.end(), storm::exceptions::InvalidArgumentException, "Unknown reward model '" << rewardModelName << "'.");
+                STORM_LOG_THROW(it != this->rewardModels.end(), storm::exceptions::InvalidArgumentException, "The requested reward model '" << rewardModelName << "' does not exist.");
                 return it->second;
             }
             
