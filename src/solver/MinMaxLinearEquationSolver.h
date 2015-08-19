@@ -19,6 +19,11 @@ namespace storm {
         template<class ValueType>
         class MinMaxLinearEquationSolver {
         public:
+            
+            virtual ~MinMaxLinearEquationSolver() {
+                // Intentionally left empty.
+            }
+            
             /*!
              * Solves the equation system x = min/max(A*x + b) given by the parameters. Note that the matrix A has
              * to be given upon construction time of the solver object.
