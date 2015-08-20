@@ -29,8 +29,7 @@ TEST(SparseCtmcCslModelCheckerTest, Cluster) {
 #else
 	typename storm::builder::ExplicitPrismModelBuilder<double>::Options options;
 #endif
-    options.buildRewards = true;
-    options.rewardModelName = "num_repairs";
+    options.rewardModelsToBuild.insert("num_repairs");
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitPrismModelBuilder<double>::translateProgram(program, options);
     ASSERT_EQ(storm::models::ModelType::Ctmc, model->getType());
     std::shared_ptr<storm::models::sparse::Ctmc<double>> ctmc = model->as<storm::models::sparse::Ctmc<double>>();
@@ -105,8 +104,7 @@ TEST(SparseCtmcCslModelCheckerTest, Embedded) {
 #else
 	typename storm::builder::ExplicitPrismModelBuilder<double>::Options options;
 #endif
-    options.buildRewards = true;
-    options.rewardModelName = "up";
+    options.rewardModelsToBuild.insert("up");
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitPrismModelBuilder<double>::translateProgram(program, options);
     ASSERT_EQ(storm::models::ModelType::Ctmc, model->getType());
     std::shared_ptr<storm::models::sparse::Ctmc<double>> ctmc = model->as<storm::models::sparse::Ctmc<double>>();
@@ -201,8 +199,7 @@ TEST(SparseCtmcCslModelCheckerTest, Tandem) {
 #else
 	typename storm::builder::ExplicitPrismModelBuilder<double>::Options options;
 #endif
-    options.buildRewards = true;
-    options.rewardModelName = "customers";
+    options.rewardModelsToBuild.insert("customers");
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitPrismModelBuilder<double>::translateProgram(program, options);
     ASSERT_EQ(storm::models::ModelType::Ctmc, model->getType());
     std::shared_ptr<storm::models::sparse::Ctmc<double>> ctmc = model->as<storm::models::sparse::Ctmc<double>>();

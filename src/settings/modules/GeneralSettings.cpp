@@ -132,8 +132,7 @@ namespace storm {
             }
             
             double GeneralSettings::getPrecision() const {
-                double value = this->getOption(precisionOptionName).getArgumentByName("value").getValueAsDouble();
-                return value;
+                return this->getOption(precisionOptionName).getArgumentByName("value").getValueAsDouble();
             }
             
             bool GeneralSettings::isExportDotSet() const {

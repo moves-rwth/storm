@@ -28,20 +28,20 @@ TEST(NondeterministicModelParserTest, BasicMdpParsing) {
 	ASSERT_EQ(4ul, mdp.getStateLabeling().getNumberOfLabels());
 	ASSERT_EQ(3ul, mdp.getLabelsOfState(0).size());
 
-	ASSERT_TRUE(mdp.hasStateRewards());
-	ASSERT_EQ(0, mdp.getStateRewardVector()[0]);
-	ASSERT_EQ(42, mdp.getStateRewardVector()[4]);
+	ASSERT_TRUE(mdp.hasRewardModel());
+	ASSERT_EQ(0, mdp.getRewardModel("").getStateRewardVector()[0]);
+	ASSERT_EQ(42, mdp.getRewardModel("").getStateRewardVector()[4]);
 	double rewardSum = 0;
-	for(uint_fast64_t i = 0; i < mdp.getStateRewardVector().size(); i++) {
-		rewardSum += mdp.getStateRewardVector()[i];
+	for(uint_fast64_t i = 0; i < mdp.getRewardModel("").getStateRewardVector().size(); i++) {
+		rewardSum += mdp.getRewardModel("").getStateRewardVector()[i];
 	}
 	ASSERT_EQ(158.32, rewardSum);
 
-	ASSERT_TRUE(mdp.hasTransitionRewards());
-	ASSERT_EQ(17ul, mdp.getTransitionRewardMatrix().getEntryCount());
+	ASSERT_TRUE(mdp.getRewardModel("").hasTransitionRewards());
+	ASSERT_EQ(17ul, mdp.getRewardModel("").getTransitionRewardMatrix().getEntryCount());
 	rewardSum = 0;
-	for(uint_fast64_t i = 0; i < mdp.getTransitionRewardMatrix().getRowCount(); i++) {
-			rewardSum += mdp.getTransitionRewardMatrix().getRowSum(i);
+	for(uint_fast64_t i = 0; i < mdp.getRewardModel("").getTransitionRewardMatrix().getRowCount(); i++) {
+			rewardSum += mdp.getRewardModel("").getTransitionRewardMatrix().getRowSum(i);
 	}
 	ASSERT_EQ(1376.864, rewardSum);
 }

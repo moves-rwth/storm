@@ -32,8 +32,7 @@ TEST(GmmxxHybridCtmcCslModelCheckerTest, Cluster) {
 #else
 	typename storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::Options options;
 #endif
-    options.buildRewards = true;
-    options.rewardModelName = "num_repairs";
+    options.rewardModelsToBuild.insert("num_repairs");
     std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program, options);
     ASSERT_EQ(storm::models::ModelType::Ctmc, model->getType());
     std::shared_ptr<storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD>> ctmc = model->as<storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD>>();
@@ -129,8 +128,7 @@ TEST(GmmxxHybridCtmcCslModelCheckerTest, Embedded) {
 #else
 	typename storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::Options options;
 #endif
-    options.buildRewards = true;
-    options.rewardModelName = "up";
+    options.rewardModelsToBuild.insert("up");
     std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program, options);
     ASSERT_EQ(storm::models::ModelType::Ctmc, model->getType());
     std::shared_ptr<storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD>> ctmc = model->as<storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD>>();
@@ -252,8 +250,7 @@ TEST(GmmxxHybridCtmcCslModelCheckerTest, Tandem) {
 #else
 	typename storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::Options options;
 #endif
-    options.buildRewards = true;
-    options.rewardModelName = "customers";
+    options.rewardModelsToBuild.insert("customers");
     std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program, options);
     ASSERT_EQ(storm::models::ModelType::Ctmc, model->getType());
     std::shared_ptr<storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD>> ctmc = model->as<storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD>>();

@@ -184,6 +184,7 @@ namespace storm {
         }
         
         bool ConstantsComparator<double>::isOne(double const& value) const {
+            std::cout << std::setprecision(10) << std::abs(value - one<double>()) << " prec: " << precision << std::endl;
             return std::abs(value - one<double>()) <= precision;
         }
         

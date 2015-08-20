@@ -499,6 +499,7 @@ namespace storm {
                         }
                         
                         // Check that the resulting distribution is in fact a distribution.
+                        std::cout << probabilitySum << " vs " << comparator.isOne(probabilitySum) << " // " << (probabilitySum - 1) << std::endl;
                         STORM_LOG_THROW(!discreteTimeModel || comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException, "Sum of update probabilities do not some to one for some command (actually sum to " << probabilitySum << ").");
                         
                         // Dispose of the temporary maps.
@@ -534,6 +535,7 @@ namespace storm {
             }
             
             // A comparator that can be used to check whether we actually have distributions.
+            std::cout << "creating comparator.. " << std::endl;
             storm::utility::ConstantsComparator<ValueType> comparator;
             
             // Initialize a queue and insert the initial state.
