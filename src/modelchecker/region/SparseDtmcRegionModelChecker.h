@@ -1,6 +1,8 @@
 #ifndef STORM_MODELCHECKER_REACHABILITY_SPARSEDTMCREGIONMODELCHECKER_H_
 #define STORM_MODELCHECKER_REACHABILITY_SPARSEDTMCREGIONMODELCHECKER_H_
 
+#include<memory>
+
 #include "src/storage/sparse/StateType.h"
 #include "src/models/sparse/Dtmc.h"
 #include "src/utility/constants.h"
@@ -95,6 +97,21 @@ namespace storm {
             void computeSimplifiedModel(storm::storage::BitVector const& targetStates);
             
             /*!
+             * initializes the Approximation Model
+             */
+            void initializeApproximationModel(storm::models::sparse::Dtmc<ParametricType> const& simpleModel);
+            
+            /*!
+             * initializes the Sampling Model
+             */
+            void initializeSamplingModel(storm::models::sparse::Dtmc<ParametricType> const& simpleModel);
+            
+            /*!
+             * Computes the reachability probability function via state elimination
+             */
+            void computeReachProbFunction(storm::models::sparse::Dtmc<ParametricType> const& simpleModel);
+            
+            /*!
              * Instantiates the approximation model to compute bounds on the maximal/minimal reachability probability.
              * If the current region result is EXISTSSAT (or EXISTSVIOLATED), then this function tries to prove ALLSAT (or ALLVIOLATED).
              * If this succeeded, then the region check result is changed accordingly.
@@ -104,6 +121,12 @@ namespace storm {
              * True is returned iff either ALLSAT or ALLVIOLATED could be proved.
              */
             bool checkApproximativeProbabilities(ParameterRegion& region, std::vector<ConstantType>& lowerBounds, std::vector<ConstantType>& upperBounds); 
+            
+            /*!
+             * Returns the approximation model.
+             * If it is not yet available, it is computed.
+             */
+            std::shared_ptr<ApproximationModel> const& getApproximationModel();
             
             /*!
              * Checks the value of the function at some sampling points within the given region.
@@ -129,11 +152,16 @@ namespace storm {
             bool checkPoint(ParameterRegion& region, std::map<VariableType, CoefficientType>const& point, bool favorViaFunction=false);
             
             /*!
-             * Returns the reachability probability function. 
-             * If it is not yet available, it is computed via state elimination.
-             * After that, the function is available and for the next call of this method it will not be computed again.
+             * Returns the sampling model.
+             * If it is not yet available, it is computed.
              */
-            ParametricType getReachProbFunction();
+            std::shared_ptr<SamplingModel> const& getSamplingModel();
+            
+            /*!
+             * Returns the reachability probability function. 
+             * If it is not yet available, it is computed.
+             */
+            std::shared_ptr<ParametricType> const& getReachProbFunction();
             
             /*!
              * Starts the SMTSolver to get the result.
@@ -174,11 +202,9 @@ namespace storm {
             // the model that can be instantiated to check the value at a certain point
             std::shared_ptr<SamplingModel> samplingModel;
             // The  function for the reachability probability in the initial state 
-            ParametricType reachProbFunction;
+            std::shared_ptr<ParametricType> reachProbFunction;
             // a flag that is true if there are only linear functions at transitions of the model
             bool hasOnlyLinearFunctions;
-            // a flag that is true iff the reachability probability function has been computed
-            bool isReachProbFunctionComputed;
             // a flag that is true iff the resulting reachability probability is constant
             bool isResultConstant;
             // the smt solver that is used to prove properties with the help of the reachProbFunction

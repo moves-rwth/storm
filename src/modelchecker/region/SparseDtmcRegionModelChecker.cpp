@@ -72,11 +72,11 @@ namespace storm {
             STORM_LOG_THROW(this->canHandle(formula), storm::exceptions::InvalidArgumentException, "Tried to specify a formula that can not be handled.");
             
             this->hasOnlyLinearFunctions=false;
-            this->isReachProbFunctionComputed=false;
             this->isResultConstant=false;
             this->smtSolver=nullptr;
             this->approximationModel=nullptr;
             this->samplingModel=nullptr;
+            this->reachProbFunction=nullptr;
             
             //Get subformula, target states
             //Note: canHandle already ensures that the formula has the right shape and that the model has a single initial state.
@@ -87,28 +87,24 @@ namespace storm {
             
             // get a more simple model with a single target state, a single sink state and where states with constant outgoing transitions have been removed
             // Note: also checks for linear functions and a constant result
-            std::chrono::high_resolution_clock::time_point timeComputeSimplifiedModelStart = std::chrono::high_resolution_clock::now();
             computeSimplifiedModel(targetStates);
-            std::chrono::high_resolution_clock::time_point timeComputeSimplifiedModelEnd = std::chrono::high_resolution_clock::now();
             //now create the model used for Approximation
-            std::chrono::high_resolution_clock::time_point timeInitApproxModelStart = std::chrono::high_resolution_clock::now();
             if(storm::settings::regionSettings().doApprox()){
-                this->approximationModel=std::make_shared<ApproximationModel>(*this->simplifiedModel);
+                initializeApproximationModel(*this->simplifiedModel);
             }
-            std::chrono::high_resolution_clock::time_point timeInitApproxModelEnd = std::chrono::high_resolution_clock::now();
             //now create the model used for Sampling
-            std::chrono::high_resolution_clock::time_point timeInitSamplingModelStart = std::chrono::high_resolution_clock::now();
             if(storm::settings::regionSettings().doSample() || (storm::settings::regionSettings().getApproxMode()==storm::settings::modules::RegionSettings::ApproxMode::TESTFIRST)){
-                this->samplingModel=std::make_shared<SamplingModel>(*this->simplifiedModel);
+                initializeSamplingModel(*this->simplifiedModel);
             }
-            std::chrono::high_resolution_clock::time_point timeInitSamplingModelEnd = std::chrono::high_resolution_clock::now();
-           
+            //Check if the reachability probability function needs to be computed
+            if((storm::settings::regionSettings().getSmtMode()==storm::settings::modules::RegionSettings::SmtMode::FUNCTION) || 
+                    (storm::settings::regionSettings().getSampleMode()==storm::settings::modules::RegionSettings::SampleMode::EVALUATE)){
+                computeReachProbFunction(*this->simplifiedModel);
+            }
+            
             //some information for statistics...
             std::chrono::high_resolution_clock::time_point timePreprocessingEnd = std::chrono::high_resolution_clock::now();
             this->timePreprocessing= timePreprocessingEnd - timePreprocessingStart;
-            this->timeComputeSimplifiedModel = timeComputeSimplifiedModelEnd - timeComputeSimplifiedModelStart;
-            this->timeInitSamplingModel = timeInitSamplingModelEnd - timeInitSamplingModelStart;
-            this->timeInitApproxModel=timeInitApproxModelEnd - timeInitApproxModelStart;
             this->numOfCheckedRegions=0;
             this->numOfRegionsSolvedThroughSampling=0;
             this->numOfRegionsSolvedThroughApproximation=0;
@@ -125,7 +121,7 @@ namespace storm {
         
         template<typename ParametricType, typename ConstantType>
         void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::computeSimplifiedModel(storm::storage::BitVector const& targetStates){
-                        
+            std::chrono::high_resolution_clock::time_point timeComputeSimplifiedModelStart = std::chrono::high_resolution_clock::now();
             //Compute the subset of states that have a probability of 0 or 1, respectively and reduce the considered states accordingly.
             std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(this->model, storm::storage::BitVector(this->model.getNumberOfStates(),true), targetStates);
             storm::storage::BitVector statesWithProbability0 = statesWithProbability01.first;
@@ -134,8 +130,7 @@ namespace storm {
             // If the initial state is known to have either probability 0 or 1, we can directly set the reachProbFunction.
             if (this->model.getInitialStates().isDisjointFrom(maybeStates)) {
                 STORM_LOG_WARN("The probability of the initial state is constant (0 or 1)");
-                this->reachProbFunction = statesWithProbability0.get(*(this->model.getInitialStates().begin())) ? storm::utility::zero<ParametricType>() : storm::utility::one<ParametricType>();
-                this->isReachProbFunctionComputed=true;
+                this->reachProbFunction = std::make_shared<ParametricType>(statesWithProbability0.get(*(this->model.getInitialStates().begin())) ? storm::utility::zero<ParametricType>() : storm::utility::one<ParametricType>());
                 this->isResultConstant=true;
                 this->hasOnlyLinearFunctions=true;
             }
@@ -183,7 +178,6 @@ namespace storm {
             }
             subsystem.set(initialState, true);
             STORM_LOG_DEBUG("Eliminated " << subsystem.size() - subsystem.getNumberOfSetBits() << " of " << subsystem.size() << " states that had constant outgoing transitions." << std::endl);
-            std::cout << "Eliminated " << subsystem.size() - subsystem.getNumberOfSetBits() << " of " << subsystem.size() << " states that had constant outgoing transitions." << std::endl;
             
             if(allReachableFunctionsAreConstant){
                 //Check if this is also the case for the initial state
@@ -248,6 +242,58 @@ namespace storm {
             boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> noChoiceLabeling;            
             // the final model
             this->simplifiedModel = std::make_shared<storm::models::sparse::Dtmc<ParametricType>>(matrixBuilder.build(), std::move(labeling), std::move(noStateRewards), std::move(noTransitionRewards), std::move(noChoiceLabeling));
+            std::chrono::high_resolution_clock::time_point timeComputeSimplifiedModelEnd = std::chrono::high_resolution_clock::now();
+            this->timeComputeSimplifiedModel = timeComputeSimplifiedModelEnd - timeComputeSimplifiedModelStart;            
+        }
+
+        template<typename ParametricType, typename ConstantType>
+        void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::initializeApproximationModel(storm::models::sparse::Dtmc<ParametricType> const& simpleModel) {
+            std::chrono::high_resolution_clock::time_point timeInitApproxModelStart = std::chrono::high_resolution_clock::now();
+            this->approximationModel=std::make_shared<ApproximationModel>(simpleModel);
+            std::chrono::high_resolution_clock::time_point timeInitApproxModelEnd = std::chrono::high_resolution_clock::now();
+            this->timeInitApproxModel=timeInitApproxModelEnd - timeInitApproxModelStart;
+            STORM_LOG_DEBUG("Initialized Approximation Model");
+        }
+        
+        template<typename ParametricType, typename ConstantType>
+        void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::initializeSamplingModel(storm::models::sparse::Dtmc<ParametricType> const& simpleModel) {
+            std::chrono::high_resolution_clock::time_point timeInitSamplingModelStart = std::chrono::high_resolution_clock::now();
+            this->samplingModel=std::make_shared<SamplingModel>(simpleModel);
+            std::chrono::high_resolution_clock::time_point timeInitSamplingModelEnd = std::chrono::high_resolution_clock::now();
+            this->timeInitSamplingModel = timeInitSamplingModelEnd - timeInitSamplingModelStart;
+            STORM_LOG_DEBUG("Initialized Sampling Model");
+        }
+
+        template<typename ParametricType, typename ConstantType>
+        void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::computeReachProbFunction(storm::models::sparse::Dtmc<ParametricType> const& simpleModel){
+            std::chrono::high_resolution_clock::time_point timeComputeReachProbFunctionStart = std::chrono::high_resolution_clock::now();
+            //get the one step probabilities and the transition matrix of the simplified model without target/sink state
+            //TODO check if this takes long... we could also store the oneSteps while creating the simplified model. Or(?) we keep the matrix the way it is and give the target state one step probability 1.
+            storm::storage::SparseMatrix<ParametricType> backwardTransitions(simpleModel.getBackwardTransitions());
+            std::vector<ParametricType> oneStepProbabilities(simpleModel.getNumberOfStates()-2, storm::utility::zero<ParametricType>());
+            for(auto const& entry : backwardTransitions.getRow(*(simpleModel.getStates("target").begin()))){
+                if(entry.getColumn()<oneStepProbabilities.size()){
+                    oneStepProbabilities[entry.getColumn()]=entry.getValue();
+                } //else case: only holds for the entry that corresponds to the selfloop on the target state..
+            }
+            storm::storage::BitVector maybeStates=~(simpleModel.getStates("target") | simpleModel.getStates("sink"));
+            backwardTransitions=backwardTransitions.getSubmatrix(false,maybeStates,maybeStates);
+            storm::storage::SparseMatrix<ParametricType> forwardTransitions=simpleModel.getTransitionMatrix().getSubmatrix(false,maybeStates,maybeStates);
+            //now compute the functions using methods from elimination model checker
+            storm::storage::BitVector newInitialStates = simpleModel.getInitialStates() % maybeStates;
+            storm::storage::BitVector phiStates(simpleModel.getNumberOfStates(), true);
+            boost::optional<std::vector<ParametricType>> noStateRewards;
+            
+            std::vector<std::size_t> statePriorities = this->eliminationModelChecker.getStatePriorities(forwardTransitions,backwardTransitions,newInitialStates,oneStepProbabilities);
+            this->reachProbFunction=std::make_shared<ParametricType>(this->eliminationModelChecker.computeReachabilityValue(forwardTransitions, oneStepProbabilities, backwardTransitions, newInitialStates , phiStates, simpleModel.getStates("target"), noStateRewards, statePriorities));
+            /*    std::string funcStr = " (/ " +
+                                this->reachProbFunction->nominator().toString(false, true) + " " +
+                                this->reachProbFunction->denominator().toString(false, true) +
+                            " )";
+                std::cout << std::endl <<"the resulting reach prob function is " << std::endl << funcStr << std::endl << std::endl;*/
+            STORM_LOG_DEBUG("Computed reachProbFunction");
+            std::chrono::high_resolution_clock::time_point timeComputeReachProbFunctionEnd = std::chrono::high_resolution_clock::now();
+            this->timeComputeReachProbFunction = timeComputeReachProbFunctionEnd-timeComputeReachProbFunctionStart;
         }
                     
         template<typename ParametricType, typename ConstantType>
@@ -268,8 +314,8 @@ namespace storm {
             
             if(!done && this->isResultConstant){
                 STORM_LOG_DEBUG("Checking a region although the result is constant, i.e., independent of the region. This makes sense none.");
-                STORM_LOG_THROW(this->parametricTypeComparator.isConstant(getReachProbFunction()), storm::exceptions::UnexpectedException, "The result was assumed to be constant but it isn't.");
-                if(valueIsInBoundOfFormula(storm::utility::regions::getConstantPart(getReachProbFunction()))){
+                STORM_LOG_THROW(this->parametricTypeComparator.isConstant(*getReachProbFunction()), storm::exceptions::UnexpectedException, "The result was assumed to be constant but it isn't.");
+                if(valueIsInBoundOfFormula(storm::utility::regions::getConstantPart(*getReachProbFunction()))){
                     region.setCheckResult(RegionCheckResult::ALLSAT);
                 }
                 else{
@@ -356,8 +402,7 @@ namespace storm {
         bool SparseDtmcRegionModelChecker<ParametricType, ConstantType>::checkApproximativeProbabilities(ParameterRegion& region, std::vector<ConstantType>& lowerBounds, std::vector<ConstantType>& upperBounds) {
             STORM_LOG_THROW(this->hasOnlyLinearFunctions, storm::exceptions::UnexpectedException, "Tried to perform approximative method (only applicable if all functions are linear), but there are nonlinear functions.");
             std::chrono::high_resolution_clock::time_point timeMDPBuildStart = std::chrono::high_resolution_clock::now();
-            STORM_LOG_THROW(this->approximationModel!=nullptr, storm::exceptions::UnexpectedException, "Approximation model not initialized");
-            this->approximationModel->instantiate(region);
+            getApproximationModel()->instantiate(region);
             std::chrono::high_resolution_clock::time_point timeMDPBuildEnd = std::chrono::high_resolution_clock::now();
             this->timeMDPBuild += timeMDPBuildEnd-timeMDPBuildStart;
             
@@ -404,15 +449,15 @@ namespace storm {
             bool formulaSatisfied;
             if((formulaHasUpperBound && proveAllSat) || (!formulaHasUpperBound && !proveAllSat)){
                 //these are the cases in which we need to compute upper bounds
-                upperBounds = this->approximationModel->computeReachabilityProbabilities(storm::logic::OptimalityType::Maximize);
+                upperBounds = getApproximationModel()->computeReachabilityProbabilities(storm::logic::OptimalityType::Maximize);
                 lowerBounds = std::vector<ConstantType>();
-                formulaSatisfied = valueIsInBoundOfFormula(upperBounds[*this->approximationModel->getModel()->getInitialStates().begin()]);
+                formulaSatisfied = valueIsInBoundOfFormula(upperBounds[*getApproximationModel()->getModel()->getInitialStates().begin()]);
             }
             else{
                 //for the remaining cases we compute lower bounds
-                lowerBounds = this->approximationModel->computeReachabilityProbabilities(storm::logic::OptimalityType::Minimize);
+                lowerBounds = getApproximationModel()->computeReachabilityProbabilities(storm::logic::OptimalityType::Minimize);
                 upperBounds = std::vector<ConstantType>();
-                formulaSatisfied = valueIsInBoundOfFormula(lowerBounds[*this->approximationModel->getModel()->getInitialStates().begin()]);
+                formulaSatisfied = valueIsInBoundOfFormula(lowerBounds[*getApproximationModel()->getModel()->getInitialStates().begin()]);
             }
             
             //check if approximation was conclusive
@@ -430,12 +475,12 @@ namespace storm {
                 proveAllSat=!proveAllSat;
                 
                 if(lowerBounds.empty()){
-                    lowerBounds = this->approximationModel->computeReachabilityProbabilities(storm::logic::OptimalityType::Minimize);
-                    formulaSatisfied=valueIsInBoundOfFormula(lowerBounds[*this->approximationModel->getModel()->getInitialStates().begin()]);
+                    lowerBounds = getApproximationModel()->computeReachabilityProbabilities(storm::logic::OptimalityType::Minimize);
+                    formulaSatisfied=valueIsInBoundOfFormula(lowerBounds[*getApproximationModel()->getModel()->getInitialStates().begin()]);
                 }
                 else{
-                    upperBounds = this->approximationModel->computeReachabilityProbabilities(storm::logic::OptimalityType::Maximize);
-                    formulaSatisfied=valueIsInBoundOfFormula(upperBounds[*this->approximationModel->getModel()->getInitialStates().begin()]);
+                    upperBounds = getApproximationModel()->computeReachabilityProbabilities(storm::logic::OptimalityType::Maximize);
+                    formulaSatisfied=valueIsInBoundOfFormula(upperBounds[*getApproximationModel()->getModel()->getInitialStates().begin()]);
                 }
                     
                 //check if approximation was conclusive
@@ -450,6 +495,15 @@ namespace storm {
             }
             //if we reach this point than the result is still inconclusive.
             return false;            
+        }
+        
+        template<typename ParametricType, typename ConstantType>
+        std::shared_ptr<typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ApproximationModel> const& SparseDtmcRegionModelChecker<ParametricType, ConstantType>::getApproximationModel() {
+            if(this->approximationModel==nullptr){
+                STORM_LOG_WARN("Approximation model requested but it has not been initialized when specifying the formula. Will initialize it now.");
+                initializeApproximationModel(*this->simplifiedModel);
+            }
+            return this->approximationModel;
         }
         
               template<typename ParametricType, typename ConstantType>
@@ -468,12 +522,11 @@ namespace storm {
             bool valueInBoundOfFormula;
             if((storm::settings::regionSettings().getSampleMode()==storm::settings::modules::RegionSettings::SampleMode::EVALUATE) ||
                     (!storm::settings::regionSettings().doSample() && viaReachProbFunction)){
-                valueInBoundOfFormula = this->valueIsInBoundOfFormula(storm::utility::regions::evaluateFunction(getReachProbFunction(), point));
+                valueInBoundOfFormula = this->valueIsInBoundOfFormula(storm::utility::regions::evaluateFunction(*getReachProbFunction(), point));
             }
             else{
-                STORM_LOG_THROW(this->samplingModel!=nullptr, storm::exceptions::UnexpectedException, "Sampling model not initialized");
-                this->samplingModel->instantiate(point);
-                valueInBoundOfFormula=this->valueIsInBoundOfFormula(this->samplingModel->computeReachabilityProbabilities()[*this->samplingModel->getModel()->getInitialStates().begin()]);
+                getSamplingModel()->instantiate(point);
+                valueInBoundOfFormula=this->valueIsInBoundOfFormula(getSamplingModel()->computeReachabilityProbabilities()[*getSamplingModel()->getModel()->getInitialStates().begin()]);
             }
                 
             if(valueInBoundOfFormula){
@@ -500,36 +553,19 @@ namespace storm {
         }
          
         template<typename ParametricType, typename ConstantType>
-        ParametricType SparseDtmcRegionModelChecker<ParametricType, ConstantType>::getReachProbFunction() {
-            if(!this->isReachProbFunctionComputed){
-                std::chrono::high_resolution_clock::time_point timeComputeReachProbFunctionStart = std::chrono::high_resolution_clock::now();
-                //get the one step probabilities and the transition matrix of the simplified model without target/sink state
-                //TODO check if this takes long... we could also store the oneSteps while creating the simplified model. Or(?) we keep the matrix the way it is and give the target state one step probability 1.
-                storm::storage::SparseMatrix<ParametricType> backwardTransitions(this->simplifiedModel->getBackwardTransitions());
-                std::vector<ParametricType> oneStepProbabilities(this->simplifiedModel->getNumberOfStates()-2, storm::utility::zero<ParametricType>());
-                for(auto const& entry : backwardTransitions.getRow(*(this->simplifiedModel->getStates("target").begin()))){
-                    if(entry.getColumn()<oneStepProbabilities.size()){
-                        oneStepProbabilities[entry.getColumn()]=entry.getValue();
-                    } //else case: only holds for the entry that corresponds to the selfloop on the target state..
-                }
-                storm::storage::BitVector maybeStates=~(this->simplifiedModel->getStates("target") | this->simplifiedModel->getStates("sink"));
-                backwardTransitions=backwardTransitions.getSubmatrix(false,maybeStates,maybeStates);
-                storm::storage::SparseMatrix<ParametricType> forwardTransitions=this->simplifiedModel->getTransitionMatrix().getSubmatrix(false,maybeStates,maybeStates);
-                //now compute the functions using methods from elimination model checker
-                storm::storage::BitVector newInitialStates = this->simplifiedModel->getInitialStates() % maybeStates;
-                storm::storage::BitVector phiStates(this->simplifiedModel->getNumberOfStates(), true);
-                boost::optional<std::vector<ParametricType>> noStateRewards;
-                std::vector<std::size_t> statePriorities = this->eliminationModelChecker.getStatePriorities(forwardTransitions,backwardTransitions,newInitialStates,oneStepProbabilities);
-                this->reachProbFunction=this->eliminationModelChecker.computeReachabilityValue(forwardTransitions, oneStepProbabilities, backwardTransitions, newInitialStates , phiStates, this->simplifiedModel->getStates("target"), noStateRewards, statePriorities);
-                std::chrono::high_resolution_clock::time_point timeComputeReachProbFunctionEnd = std::chrono::high_resolution_clock::now();
-            /*    std::string funcStr = " (/ " +
-                                    this->reachProbFunction.nominator().toString(false, true) + " " +
-                                    this->reachProbFunction.denominator().toString(false, true) +
-                                " )";
-                std::cout << std::endl <<"the resulting reach prob function is " << std::endl << funcStr << std::endl << std::endl;*/
-                STORM_LOG_DEBUG("Computed reachProbFunction");
-                this->isReachProbFunctionComputed=true;
-                this->timeComputeReachProbFunction = timeComputeReachProbFunctionEnd-timeComputeReachProbFunctionStart;
+        std::shared_ptr<typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::SamplingModel> const& SparseDtmcRegionModelChecker<ParametricType, ConstantType>::getSamplingModel() {
+            if(this->samplingModel==nullptr){
+                STORM_LOG_WARN("Sampling model requested but it has not been initialized when specifying the formula. Will initialize it now.");
+                initializeSamplingModel(*this->simplifiedModel);
+            }
+            return this->samplingModel;
+        }
+        
+        template<typename ParametricType, typename ConstantType>
+        std::shared_ptr<ParametricType> const& SparseDtmcRegionModelChecker<ParametricType, ConstantType>::getReachProbFunction() {
+            if(this->reachProbFunction==nullptr){
+                STORM_LOG_WARN("Reachability Probability Function requested but it has not been computed when specifying the formula. Will compute it now.");
+                computeReachProbFunction(*this->simplifiedModel);
             }
             return this->reachProbFunction;
         }
@@ -543,7 +579,7 @@ namespace storm {
             }
             
             if(this->smtSolver==nullptr){
-                initializeSMTSolver(this->smtSolver, getReachProbFunction(),*this->probabilityOperatorFormula);
+                initializeSMTSolver(this->smtSolver, *getReachProbFunction(),*this->probabilityOperatorFormula);
             }
             
             this->smtSolver->push();
@@ -624,7 +660,7 @@ namespace storm {
                 default:
                     STORM_LOG_WARN("The SMT solver was not able to compute a result for this region. (Timeout? Memout?)");
                     if(this->smtSolver->isNeedsRestart()){
-                        initializeSMTSolver(this->smtSolver,getReachProbFunction(), *this->probabilityOperatorFormula);
+                        initializeSMTSolver(this->smtSolver,*getReachProbFunction(), *this->probabilityOperatorFormula);
                     }
                     return false;
             }
@@ -741,17 +777,17 @@ namespace storm {
             outstream << "  " << this->numOfRegionsSolvedThroughFullSmt << " regions solved through FullSmt" << std::endl;
             outstream << std::endl;
             outstream << "Running times:" << std::endl;
-            outstream << "  " << timeOverallInMilliseconds.count() << "ms overall (excluding model parsing)" << std::endl;
+            outstream << "  " << timeOverallInMilliseconds.count() << "ms overall (excluding model parsing, bisimulation (if applied))" << std::endl;
             outstream << "  " << timePreprocessingInMilliseconds.count() << "ms Preprocessing including... " << std::endl;
             outstream << "    " << timeComputeSimplifiedModelInMilliseconds.count() << "ms to obtain a simplified model (state elimination of const transitions)" << std::endl;
             outstream << "    " << timeInitApproxModelInMilliseconds.count() << "ms to initialize the Approximation Model" << std::endl;
             outstream << "    " << timeInitSamplingModelInMilliseconds.count() << "ms to initialize the Sampling Model" << std::endl;
+            outstream << "    " << timeComputeReachProbFunctionInMilliseconds.count() << "ms to compute the reachability probability function" << std::endl;
             outstream << "  " << timeCheckRegionInMilliseconds.count() << "ms Region Check including... " << std::endl;
             outstream << "    " << timeApproximationInMilliseconds.count() << "ms Approximation including... " << std::endl;
-            outstream << "    " << timeSammplingInMilliseconds.count() << "ms Sampling " << std::endl;
             outstream << "      " << timeMDPBuildInMilliseconds.count() << "ms to build the MDP" << std::endl;
+            outstream << "    " << timeSammplingInMilliseconds.count() << "ms Sampling " << std::endl;
             outstream << "    " << timeFullSmtInMilliseconds.count() << "ms Smt solving" << std::endl;
-            outstream << "  " << timeComputeReachProbFunctionInMilliseconds.count() << "ms to compute the reachability probability function (already included in one of the above)" << std::endl;
             outstream << "-----------------------------------------------" << std::endl;
             
         }
