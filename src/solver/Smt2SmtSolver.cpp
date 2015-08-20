@@ -313,34 +313,35 @@ namespace storm {
         
         void Smt2SmtSolver::checkForErrorMessage(const std::string message){
             size_t errorOccurrance = message.find("error");
-            if (errorOccurrance!=std::string::npos){
+            //do not throw an exception for timeout or memout errors
+            if(message.find("timeout")!=std::string::npos){
+                STORM_LOG_INFO("SMT solver answered: '" << message << "' and I am interpreting this as timeout ");
                 this->needsRestart=true;
-                //do not throw an exception for timeout or memout errors
-                if(message.find("timeout")!=std::string::npos){
-                    STORM_LOG_INFO("SMT solver answered: '" << message << "' and I am interpreting this as timeout ");
-                }
-                else if(message.find("memory")!=std::string::npos){
-                    STORM_LOG_INFO("SMT solver answered: '" << message << "' and I am interpreting this as out of memory ");
-                    this->processIdOfSolver=0;
-                }
-                else{
-                    std::string errorMsg = "An error was detected while checking the solver output. ";
-                    STORM_LOG_DEBUG("Detected an error message in the solver response:\n" + message);
-                    size_t firstQuoteSign = message.find('\"',errorOccurrance);
-                    if(firstQuoteSign!=std::string::npos && message.find("\\\"", firstQuoteSign-1)!=firstQuoteSign-1){
-                        size_t secondQuoteSign = message.find('\"', firstQuoteSign+1);
-                        while(secondQuoteSign!=std::string::npos && message.find("\\\"", secondQuoteSign-1)==secondQuoteSign-1){
-                            secondQuoteSign = message.find('\"',secondQuoteSign+1);
-                        }
-                        if(secondQuoteSign!=std::string::npos){
-                            errorMsg += "The error message was: <<" + message.substr(errorOccurrance,secondQuoteSign-errorOccurrance+1) + ">>.";
-                            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, errorMsg);
-                            return;
-                        }
+                this->processIdOfSolver=0;
+            }
+            else if(message.find("memory")!=std::string::npos){
+                STORM_LOG_INFO("SMT solver answered: '" << message << "' and I am interpreting this as out of memory ");
+                this->needsRestart=true;
+                this->processIdOfSolver=0;
+            }
+            else if(errorOccurrance!=std::string::npos){
+                this->needsRestart=true;
+                std::string errorMsg = "An error was detected while checking the solver output. ";
+                STORM_LOG_DEBUG("Detected an error message in the solver response:\n" + message);
+                size_t firstQuoteSign = message.find('\"',errorOccurrance);
+                if(firstQuoteSign!=std::string::npos && message.find("\\\"", firstQuoteSign-1)!=firstQuoteSign-1){
+                    size_t secondQuoteSign = message.find('\"', firstQuoteSign+1);
+                    while(secondQuoteSign!=std::string::npos && message.find("\\\"", secondQuoteSign-1)==secondQuoteSign-1){
+                        secondQuoteSign = message.find('\"',secondQuoteSign+1);
                     }
-                    errorMsg += "The error message could not be parsed correctly. Snippet:\n" + message.substr(errorOccurrance,200);
-                    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, errorMsg);
+                    if(secondQuoteSign!=std::string::npos){
+                        errorMsg += "The error message was: <<" + message.substr(errorOccurrance,secondQuoteSign-errorOccurrance+1) + ">>.";
+                        STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, errorMsg);
+                        return;
+                    }
                 }
+                errorMsg += "The error message could not be parsed correctly. Snippet:\n" + message.substr(errorOccurrance,200);
+                STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, errorMsg);
             }
         }
     }
