@@ -602,6 +602,43 @@ namespace storm {
         
         template<typename ValueType>
         DeterministicModelBisimulationDecomposition<ValueType>::Options::Options(storm::models::sparse::Model<ValueType> const& model, storm::logic::Formula const& formula) : Options() {
+            this->preserveSingleFormula(model, formula);
+        }
+        
+        template<typename ValueType>
+        DeterministicModelBisimulationDecomposition<ValueType>::Options::Options(storm::models::sparse::Model<ValueType> const& model, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) : Options() {
+            if (formulas.size() == 1) {
+                this->preserveSingleFormula(model, *formulas.front());
+            } else {
+                for (auto const& formula : formulas) {
+                    std::vector<std::shared_ptr<storm::logic::AtomicExpressionFormula const>> atomicExpressionFormulas = formula->getAtomicExpressionFormulas();
+                    std::vector<std::shared_ptr<storm::logic::AtomicLabelFormula const>> atomicLabelFormulas = formula->getAtomicLabelFormulas();
+                    
+                    std::set<std::string> labelsToRespect;
+                    for (auto const& labelFormula : atomicLabelFormulas) {
+                        labelsToRespect.insert(labelFormula->getLabel());
+                    }
+                    for (auto const& expressionFormula : atomicExpressionFormulas) {
+                        std::stringstream stream;
+                        stream << *expressionFormula;
+                        labelsToRespect.insert(stream.str());
+                    }
+                    if (!respectedAtomicPropositions) {
+                        respectedAtomicPropositions = labelsToRespect;
+                    } else {
+                        respectedAtomicPropositions.get().insert(labelsToRespect.begin(), labelsToRespect.end());
+                    }
+                }
+            }
+        }
+        
+        template<typename ValueType>
+        DeterministicModelBisimulationDecomposition<ValueType>::Options::Options() : measureDrivenInitialPartition(false), phiStates(), psiStates(), respectedAtomicPropositions(), keepRewards(true), weak(false), bounded(true), buildQuotient(true) {
+            // Intentionally left empty.
+        }
+        
+        template<typename ValueType>
+        void DeterministicModelBisimulationDecomposition<ValueType>::Options::preserveSingleFormula(storm::models::sparse::Model<ValueType> const& model, storm::logic::Formula const& formula) {
             if (!formula.containsRewardOperator()) {
                 this->keepRewards = false;
             }
@@ -662,11 +699,6 @@ namespace storm {
                 phiStates = phiStatesCheckResult->asExplicitQualitativeCheckResult().getTruthValuesVector();
                 psiStates = psiStatesCheckResult->asExplicitQualitativeCheckResult().getTruthValuesVector();
             }
-        }
-        
-        template<typename ValueType>
-        DeterministicModelBisimulationDecomposition<ValueType>::Options::Options() : measureDrivenInitialPartition(false), phiStates(), psiStates(), respectedAtomicPropositions(), keepRewards(true), weak(false), bounded(true), buildQuotient(true) {
-            // Intentionally left empty.
         }
         
         template<typename ValueType>

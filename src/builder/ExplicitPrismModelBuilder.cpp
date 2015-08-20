@@ -43,7 +43,7 @@ namespace storm {
                 if (hasTransitionRewards) {
                     optionalTransitionRewardMatrix = transitionRewardMatrixBuilder.build(rowCount, columnCount, rowGroupCount);
                 }
-
+                
                 return storm::models::sparse::StandardRewardModel<ValueType>(std::move(optionalStateRewardVector), std::move(optionalStateActionRewardVector), std::move(optionalTransitionRewardMatrix));
             }
             
@@ -104,13 +104,25 @@ namespace storm {
         }
 
         template <typename ValueType, typename IndexType>
-        ExplicitPrismModelBuilder<ValueType, IndexType>::Options::Options() : buildCommandLabels(false), buildAllRewardModels(false), rewardModelsToBuild(), constantDefinitions() {
+        ExplicitPrismModelBuilder<ValueType, IndexType>::Options::Options() : buildCommandLabels(false), buildAllRewardModels(true), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(true), labelsToBuild(), expressionLabels() {
             // Intentionally left empty.
         }
         
         template <typename ValueType, typename IndexType>
-        ExplicitPrismModelBuilder<ValueType, IndexType>::Options::Options(storm::logic::Formula const& formula) : buildCommandLabels(false), buildAllRewardModels(false), rewardModelsToBuild(), constantDefinitions(), labelsToBuild(std::set<std::string>()), expressionLabels(std::vector<storm::expressions::Expression>()) {
+        ExplicitPrismModelBuilder<ValueType, IndexType>::Options::Options(storm::logic::Formula const& formula) : buildCommandLabels(false), buildAllRewardModels(false), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(false), labelsToBuild(std::set<std::string>()), expressionLabels(std::vector<storm::expressions::Expression>()) {
             this->preserveFormula(formula);
+        }
+        
+        template <typename ValueType, typename IndexType>
+        ExplicitPrismModelBuilder<ValueType, IndexType>::Options::Options(std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) : buildCommandLabels(false), buildAllRewardModels(false), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(false), labelsToBuild(), expressionLabels() {
+            if (formulas.empty()) {
+                this->buildAllRewardModels = true;
+                this->buildAllLabels = true;
+            } else {
+                for (auto const& formula : formulas) {
+                    this->preserveFormula(*formula);
+                }
+            }
         }
 
         template <typename ValueType, typename IndexType>
@@ -124,9 +136,15 @@ namespace storm {
             }
             
             // Extract all the labels used in the formula.
-            std::vector<std::shared_ptr<storm::logic::AtomicLabelFormula const>> atomicLabelFormulas = formula.getAtomicLabelFormulas();
-            for (auto const& formula : atomicLabelFormulas) {
-                labelsToBuild.get().insert(formula.get()->getLabel());
+            if (!buildAllLabels) {
+                if (!labelsToBuild) {
+                    labelsToBuild = std::set<std::string>();
+                }
+                
+                std::vector<std::shared_ptr<storm::logic::AtomicLabelFormula const>> atomicLabelFormulas = formula.getAtomicLabelFormulas();
+                for (auto const& formula : atomicLabelFormulas) {
+                    labelsToBuild.get().insert(formula.get()->getLabel());
+                }
             }
             
             // Extract all the expressions used in the formula.
@@ -191,7 +209,9 @@ namespace storm {
             
             // If the set of labels we are supposed to built is restricted, we need to remove the other labels from the program.
             if (options.labelsToBuild) {
-                preparedProgram.filterLabels(options.labelsToBuild.get());
+                if (!options.buildAllLabels) {
+                    preparedProgram.filterLabels(options.labelsToBuild.get());
+                }
             }
             
             // If we need to build labels for expressions that may appear in some formula, we need to add appropriate
@@ -210,14 +230,25 @@ namespace storm {
             // Now that the program is fixed, we we need to substitute all constants with their concrete value.
             preparedProgram = preparedProgram.substituteConstants();
             
-            std::cout << preparedProgram << std::endl;
+            STORM_LOG_DEBUG("Building representation of program :" << std::endl << preparedProgram << std::endl);
                 
             // Select the appropriate reward models (after the constants have been substituted).
             std::vector<std::reference_wrapper<storm::prism::RewardModel const>> selectedRewardModels;
+                
+            // First, we make sure that all selected reward models actually exist.
+            for (auto const& rewardModelName : options.rewardModelsToBuild) {
+                STORM_LOG_THROW(rewardModelName.empty() || preparedProgram.hasRewardModel(rewardModelName), storm::exceptions::InvalidArgumentException, "Model does not possess a reward model with the name '" << rewardModelName << "'.");
+            }
+                
             for (auto const& rewardModel : preparedProgram.getRewardModels()) {
                 if (options.buildAllRewardModels || options.rewardModelsToBuild.find(rewardModel.getName()) != options.rewardModelsToBuild.end()) {
                     selectedRewardModels.push_back(rewardModel);
                 }
+            }
+            // If no reward model was selected until now and a referenced reward model appears to be unique, we build
+            // the only existing reward model (given that no explicit name was given for the referenced reward model).
+            if (selectedRewardModels.empty() && preparedProgram.getNumberOfRewardModels() == 1 && options.rewardModelsToBuild.size() == 1 && *options.rewardModelsToBuild.begin() == "") {
+                selectedRewardModels.push_back(preparedProgram.getRewardModel(0));
             }
                 
             ModelComponents modelComponents = buildModelComponents(preparedProgram, selectedRewardModels, options);
@@ -554,6 +585,18 @@ namespace storm {
                         }
                         
                         transitionMatrixBuilder.addNextValue(currentRow, stateIndex, storm::utility::one<ValueType>());
+                        
+                        auto builderIt = rewardModelBuilders.begin();
+                        for (auto rewardModelIt = selectedRewardModels.begin(), rewardModelIte = selectedRewardModels.end(); rewardModelIt != rewardModelIte; ++rewardModelIt, ++builderIt) {
+                            if (rewardModelIt->get().hasStateRewards()) {
+                                builderIt->stateRewardVector.push_back(storm::utility::zero<ValueType>());
+                            }
+                            
+                            if (rewardModelIt->get().hasStateActionRewards()) {
+                                builderIt->stateActionRewardVector.push_back(storm::utility::zero<ValueType>());
+                            }
+                        }
+                        
                         ++currentRow;
                     } else {
                         STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Error while creating sparse matrix from probabilistic program: found deadlock state. For fixing these, please provide the appropriate option.");
@@ -616,20 +659,20 @@ namespace storm {
                             auto builderIt = rewardModelBuilders.begin();
                             for (auto rewardModelIt = selectedRewardModels.begin(), rewardModelIte = selectedRewardModels.end(); rewardModelIt != rewardModelIte; ++rewardModelIt, ++builderIt) {
                                 if (rewardModelIt->get().hasStateRewards()) {
-                                    builderIt->stateRewardVector.resize(currentRow + 1);
+                                    builderIt->stateRewardVector.push_back(storm::utility::zero<ValueType>());
                                     for (auto const& stateReward : rewardModelIt->get().getStateRewards()) {
                                         if (evaluator.asBool(stateReward.getStatePredicateExpression())) {
-                                            builderIt->stateRewardVector[currentRow] += ValueType(evaluator.asRational(stateReward.getRewardValueExpression()));
+                                            builderIt->stateRewardVector.back() += ValueType(evaluator.asRational(stateReward.getRewardValueExpression()));
                                         }
                                     }
                                 }
                                 
                                 if (rewardModelIt->get().hasStateActionRewards()) {
-                                    builderIt->stateActionRewardVector.resize(currentRow + 1);
+                                    builderIt->stateActionRewardVector.push_back(storm::utility::zero<ValueType>());
                                     for (auto const& stateActionReward : rewardModelIt->get().getStateActionRewards()) {
                                         if (!stateActionReward.isLabeled()) {
                                             if (evaluator.asBool(stateActionReward.getStatePredicateExpression())) {
-                                                builderIt->stateActionRewardVector[currentRow] += ValueType(evaluator.asRational(stateActionReward.getRewardValueExpression())) / totalNumberOfChoices;
+                                                builderIt->stateActionRewardVector.back() += ValueType(evaluator.asRational(stateActionReward.getRewardValueExpression())) / totalNumberOfChoices;
                                             }
                                         }
                                     }
@@ -652,20 +695,18 @@ namespace storm {
                             auto builderIt = rewardModelBuilders.begin();
                             for (auto rewardModelIt = selectedRewardModels.begin(), rewardModelIte = selectedRewardModels.end(); rewardModelIt != rewardModelIte; ++rewardModelIt, ++builderIt) {
                                 if (rewardModelIt->get().hasStateRewards()) {
-                                    builderIt->stateRewardVector.resize(currentRow + 1);
                                     for (auto const& stateReward : rewardModelIt->get().getStateRewards()) {
                                         if (evaluator.asBool(stateReward.getStatePredicateExpression())) {
-                                            builderIt->stateRewardVector[currentRow] += ValueType(evaluator.asRational(stateReward.getRewardValueExpression()));
+                                            builderIt->stateRewardVector.back() += ValueType(evaluator.asRational(stateReward.getRewardValueExpression()));
                                         }
                                     }
                                 }
                                 
                                 if (rewardModelIt->get().hasStateActionRewards()) {
-                                    builderIt->stateActionRewardVector.resize(currentRow + 1);
                                     for (auto const& stateActionReward : rewardModelIt->get().getStateActionRewards()) {
                                         if (stateActionReward.isLabeled() && stateActionReward.getActionIndex() == choice.getActionIndex()) {
                                             if (evaluator.asBool(stateActionReward.getStatePredicateExpression())) {
-                                                builderIt->stateActionRewardVector[currentRow] += ValueType(evaluator.asRational(stateActionReward.getRewardValueExpression())) / totalNumberOfChoices;
+                                                builderIt->stateActionRewardVector.back() += ValueType(evaluator.asRational(stateActionReward.getRewardValueExpression())) / totalNumberOfChoices;
                                             }
                                         }
                                     }
@@ -719,11 +760,11 @@ namespace storm {
                             auto builderIt = rewardModelBuilders.begin();
                             for (auto rewardModelIt = selectedRewardModels.begin(), rewardModelIte = selectedRewardModels.end(); rewardModelIt != rewardModelIte; ++rewardModelIt, ++builderIt) {
                                 if (rewardModelIt->get().hasStateActionRewards()) {
-                                    builderIt->stateActionRewardVector.resize(currentRow + 1);
+                                    builderIt->stateActionRewardVector.push_back(storm::utility::zero<ValueType>());
                                     for (auto const& stateActionReward : rewardModelIt->get().getStateActionRewards()) {
                                         if (!stateActionReward.isLabeled()) {
                                             if (evaluator.asBool(stateActionReward.getStatePredicateExpression())) {
-                                                builderIt->stateActionRewardVector[currentRow] += ValueType(evaluator.asRational(stateActionReward.getRewardValueExpression()));
+                                                builderIt->stateActionRewardVector.back() += ValueType(evaluator.asRational(stateActionReward.getRewardValueExpression()));
                                             }
                                         }
                                     }
@@ -747,11 +788,11 @@ namespace storm {
                             auto builderIt = rewardModelBuilders.begin();
                             for (auto rewardModelIt = selectedRewardModels.begin(), rewardModelIte = selectedRewardModels.end(); rewardModelIt != rewardModelIte; ++rewardModelIt, ++builderIt) {
                                 if (rewardModelIt->get().hasStateActionRewards()) {
-                                    builderIt->stateActionRewardVector.resize(currentRow + 1);
+                                    builderIt->stateActionRewardVector.push_back(storm::utility::zero<ValueType>());
                                     for (auto const& stateActionReward : rewardModelIt->get().getStateActionRewards()) {
                                         if (stateActionReward.isLabeled() && stateActionReward.getActionIndex() == choice.getActionIndex()) {
                                             if (evaluator.asBool(stateActionReward.getStatePredicateExpression())) {
-                                                builderIt->stateActionRewardVector[currentRow] += ValueType(evaluator.asRational(stateActionReward.getRewardValueExpression()));
+                                                builderIt->stateActionRewardVector.back() += ValueType(evaluator.asRational(stateActionReward.getRewardValueExpression()));
                                             }
                                         }
                                     }

@@ -29,14 +29,24 @@ namespace storm {
                 Options();
 
                 /*!
-                 * Creates an object representing the options necessary to obtain the smallest quotient while still
-                 * preserving the given formula.
+                 * Creates an object representing the options necessary to obtain the quotient while still preserving
+                 * the given formula.
                  *
                  * @param The model for which the quotient model shall be computed. This needs to be given in order to
                  * derive a suitable initial partition.
                  * @param formula The formula that is to be preserved.
                  */
                 Options(storm::models::sparse::Model<ValueType> const& model, storm::logic::Formula const& formula);
+
+                /*!
+                 * Creates an object representing the options necessary to obtain the smallest quotient while still
+                 * preserving the given formula.
+                 *
+                 * @param The model for which the quotient model shall be computed. This needs to be given in order to
+                 * derive a suitable initial partition.
+                 * @param formulas The formula that is to be preserved.
+                 */
+                Options(storm::models::sparse::Model<ValueType> const& model, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas);
                 
                 // A flag that indicates whether a measure driven initial partition is to be used. If this flag is set
                 // to true, the two optional pairs phiStatesAndLabel and psiStatesAndLabel must be set. Then, the
@@ -62,6 +72,15 @@ namespace storm {
                 
                 // A flag that governs whether the quotient model is actually built or only the decomposition is computed.
                 bool buildQuotient;
+                
+            private:
+                /*!
+                 * Sets the options under the assumption that the given formula is the only one that is to be checked.
+                 *
+                 * @param model The model for which to preserve the formula.
+                 * @param formula The only formula to check.
+                 */
+                void preserveSingleFormula(storm::models::sparse::Model<ValueType> const& model, storm::logic::Formula const& formula);
             };
             
             /*!

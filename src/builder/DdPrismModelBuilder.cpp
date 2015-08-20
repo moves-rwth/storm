@@ -174,16 +174,26 @@ namespace storm {
                 }
             };
             
-        
-        
         template <storm::dd::DdType Type>
-        DdPrismModelBuilder<Type>::Options::Options() : buildAllRewardModels(false), rewardModelsToBuild(), constantDefinitions() {
+        DdPrismModelBuilder<Type>::Options::Options() : buildAllRewardModels(true), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(true), labelsToBuild(), expressionLabels() {
             // Intentionally left empty.
         }
         
         template <storm::dd::DdType Type>
-        DdPrismModelBuilder<Type>::Options::Options(storm::logic::Formula const& formula) : buildAllRewardModels(false), rewardModelsToBuild(), constantDefinitions(), labelsToBuild(std::set<std::string>()), expressionLabels(std::vector<storm::expressions::Expression>()) {
+        DdPrismModelBuilder<Type>::Options::Options(storm::logic::Formula const& formula) : buildAllRewardModels(false), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(false), labelsToBuild(std::set<std::string>()), expressionLabels(std::vector<storm::expressions::Expression>()) {
             this->preserveFormula(formula);
+        }
+        
+        template <storm::dd::DdType Type>
+        DdPrismModelBuilder<Type>::Options::Options(std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) : buildAllRewardModels(false), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(false), labelsToBuild(), expressionLabels() {
+            if (formulas.empty()) {
+                this->buildAllRewardModels = true;
+                this->buildAllLabels = true;
+            } else {
+                for (auto const& formula : formulas) {
+                    this->preserveFormula(*formula);
+                }
+            }
         }
         
         template <storm::dd::DdType Type>
@@ -844,6 +854,8 @@ namespace storm {
             
             preparedProgram = preparedProgram.substituteConstants();
             
+            STORM_LOG_DEBUG("Building representation of program :" << std::endl << preparedProgram << std::endl);
+            
             // Start by initializing the structure used for storing all information needed during the model generation.
             // In particular, this creates the meta variables used to encode the model.
             GenerationInformation generationInfo(preparedProgram);
@@ -857,12 +869,22 @@ namespace storm {
             // the reward computation might divide by the transition probabilities, which must therefore never be 0.
             // However, cutting it to the reachable fragment, there might be zero probability transitions.
             std::vector<std::reference_wrapper<storm::prism::RewardModel const>> selectedRewardModels;
+
+            // First, we make sure that all selected reward models actually exist.
+            for (auto const& rewardModelName : options.rewardModelsToBuild) {
+                STORM_LOG_THROW(rewardModelName.empty() || preparedProgram.hasRewardModel(rewardModelName), storm::exceptions::InvalidArgumentException, "Model does not possess a reward model with the name '" << rewardModelName << "'.");
+            }
+            
             for (auto const& rewardModel : preparedProgram.getRewardModels()) {
                 if (options.buildAllRewardModels || options.rewardModelsToBuild.find(rewardModel.getName()) != options.rewardModelsToBuild.end()) {
                     selectedRewardModels.push_back(rewardModel);
                 }
             }
-            
+            // If no reward model was selected until now and a referenced reward model appears to be unique, we build
+            // the only existing reward model (given that no explicit name was given for the referenced reward model).
+            if (selectedRewardModels.empty() && preparedProgram.getNumberOfRewardModels() == 1 && options.rewardModelsToBuild.size() == 1 && *options.rewardModelsToBuild.begin() == "") {
+                selectedRewardModels.push_back(preparedProgram.getRewardModel(0));
+            }
             std::unordered_map<std::string, storm::models::symbolic::StandardRewardModel<Type, double>> rewardModels;
             if (options.buildAllRewardModels || !options.rewardModelsToBuild.empty()) {
                 for (auto const& rewardModel : preparedProgram.getRewardModels()) {

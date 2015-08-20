@@ -132,6 +132,13 @@ namespace storm {
                  * @param formula The formula based on which to choose the building options.
                  */
                 Options(storm::logic::Formula const& formula);
+
+                /*! Creates an object representing the suggested building options assuming that the given formulas are
+                 * the only ones to check. Additional formulas may be preserved by calling <code>preserveFormula</code>.
+                 *
+                 * @param formula Thes formula based on which to choose the building options.
+                 */
+                Options(std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas);
                 
                 /*!
                  * Sets the constants definitions from the given string. The string must be of the form 'X=a,Y=b,Z=c',
@@ -162,6 +169,9 @@ namespace storm {
                 
                 // An optional mapping that, if given, contains defining expressions for undefined constants.
                 boost::optional<std::map<storm::expressions::Variable, storm::expressions::Expression>> constantDefinitions;
+                
+                // A flag that indicates whether all labels are to be build.
+                bool buildAllLabels;
                 
                 // An optional set of labels that, if given, restricts the labels that are built.
                 boost::optional<std::set<std::string>> labelsToBuild;

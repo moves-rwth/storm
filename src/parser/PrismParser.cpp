@@ -406,13 +406,11 @@ namespace storm {
             STORM_LOG_ASSERT(!this->secondRun, "Dummy procedure must not be called in second run.");
             std::string realActionName = actionName ? actionName.get() : "";
 
-            if (!actionName) {
-                // Register the action name if it has not appeared earlier.
-                auto nameIndexPair = globalProgramInformation.actionIndices.find(realActionName);
-                if (nameIndexPair == globalProgramInformation.actionIndices.end()) {
-                    std::size_t nextIndex = globalProgramInformation.actionIndices.size();
-                    globalProgramInformation.actionIndices.emplace(realActionName, nextIndex);
-                }
+            // Register the action name if it has not appeared earlier.
+            auto nameIndexPair = globalProgramInformation.actionIndices.find(realActionName);
+            if (nameIndexPair == globalProgramInformation.actionIndices.end()) {
+                std::size_t nextIndex = globalProgramInformation.actionIndices.size();
+                globalProgramInformation.actionIndices.emplace(realActionName, nextIndex);
             }
             
             return storm::prism::Command();
@@ -474,6 +472,21 @@ namespace storm {
                     STORM_LOG_THROW(renamingPair != renaming.end(), storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": Integer variable '" << variable.getName() << " was not renamed.");
                     storm::expressions::Variable renamedVariable = manager->declareIntegerVariable(renamingPair->second);
                     this->identifiers_.add(renamingPair->second, renamedVariable.getExpression());
+                }
+                
+                for (auto const& command : moduleToRename.getCommands()) {
+                    std::string newActionName = command.getActionName();
+                    auto const& renamingPair = renaming.find(command.getActionName());
+                    if (renamingPair != renaming.end()) {
+                        newActionName = renamingPair->second;
+                    }
+
+                    // Record any newly occurring action names/indices.
+                    auto nameIndexPair = globalProgramInformation.actionIndices.find(newActionName);
+                    if (nameIndexPair == globalProgramInformation.actionIndices.end()) {
+                        std::size_t nextIndex = globalProgramInformation.actionIndices.size();
+                        globalProgramInformation.actionIndices.emplace(newActionName, nextIndex);
+                    }
                 }
                 
                 // Return a dummy module in the first pass.

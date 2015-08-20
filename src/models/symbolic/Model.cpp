@@ -1,6 +1,6 @@
 #include "src/models/symbolic/Model.h"
 
-#include "src/exceptions/InvalidArgumentException.h"
+#include "src/exceptions/IllegalArgumentException.h"
 
 #include "src/adapters/AddExpressionAdapter.h"
 
@@ -60,7 +60,7 @@ namespace storm {
             
             template<storm::dd::DdType Type>
             storm::dd::Bdd<Type> Model<Type>::getStates(std::string const& label) const {
-                STORM_LOG_THROW(labelToExpressionMap.find(label) != labelToExpressionMap.end(), storm::exceptions::InvalidArgumentException, "The label " << label << " is invalid for the labeling of the model.");
+                STORM_LOG_THROW(labelToExpressionMap.find(label) != labelToExpressionMap.end(), storm::exceptions::IllegalArgumentException, "The label " << label << " is invalid for the labeling of the model.");
                 return rowExpressionAdapter->translateExpression(labelToExpressionMap.at(label)).toBdd() && this->reachableStates;
             }
             
@@ -132,7 +132,17 @@ namespace storm {
             template<storm::dd::DdType Type>
             typename Model<Type>::RewardModelType const& Model<Type>::getRewardModel(std::string const& rewardModelName) const {
                 auto it = this->rewardModels.find(rewardModelName);
-                STORM_LOG_THROW(it != this->rewardModels.end(), storm::exceptions::InvalidArgumentException, "The requested reward model '" << rewardModelName << "' does not exist.");
+                if (it == this->rewardModels.end()) {
+                    if (rewardModelName.empty()) {
+                        if (this->hasUniqueRewardModel()) {
+                            return this->getUniqueRewardModel()->second;
+                        } else {
+                            STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unable to refer to default reward model, because there is no default model or it is not unique.");
+                        }
+                    } else {
+                        STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "The requested reward model '" << rewardModelName << "' does not exist.");
+                    }
+                }
                 return it->second;
             }
             

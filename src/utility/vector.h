@@ -136,7 +136,8 @@ namespace storm {
                     auto it = source.cbegin() + rowGroupIndices[group];
                     auto ite = source.cbegin() + rowGroupIndices[group + 1];
                     while (it != ite) {
-                        target[currentPosition] = *it;
+                        target[currentPosition] += *it;
+                        ++currentPosition;
                         ++it;
                     }
                 }
@@ -162,7 +163,7 @@ namespace storm {
                     ++rowGroupIt;
                     uint_fast64_t next = *rowGroupIt;
                     while (current < next) {
-                        *targetIt = *sourceIt;
+                        *targetIt += *sourceIt;
                         ++targetIt;
                     }
                 }
@@ -183,8 +184,9 @@ namespace storm {
                     uint_fast64_t current = rowGroupIndices[group];
                     uint_fast64_t next = rowGroupIndices[group + 1];
                     while (current < next) {
-                        target[currentPosition] = source[group];
+                        target[currentPosition] += source[group];
                         ++currentPosition;
+                        ++current;
                     }
                 }
             }

@@ -90,7 +90,17 @@ namespace storm {
             template<typename ValueType, typename RewardModelType>
             RewardModelType const& Model<ValueType, RewardModelType>::getRewardModel(std::string const& rewardModelName) const {
                 auto it = this->rewardModels.find(rewardModelName);
-                STORM_LOG_THROW(it != this->rewardModels.end(), storm::exceptions::IllegalArgumentException, "The requested reward model '" << rewardModelName << "' does not exist.");
+                if (it == this->rewardModels.end()) {
+                    if (rewardModelName.empty()) {
+                        if (this->hasUniqueRewardModel()) {
+                            return this->getUniqueRewardModel()->second;
+                        } else {
+                            STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unable to refer to default reward model, because there is no default model or it is not unique.");
+                        }
+                    } else {
+                        STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "The requested reward model '" << rewardModelName << "' does not exist.");
+                    }
+                }
                 return it->second;
             }
             
@@ -178,10 +188,13 @@ namespace storm {
             void Model<ValueType, RewardModelType>::printRewardModelsInformationToStream(std::ostream& out) const {
                 if (this->rewardModels.size()) {
                     std::vector<std::string> rewardModelNames;
-                    std::for_each(this->rewardModels.cbegin(), this->rewardModels.cend(), [&rewardModelNames] (typename std::pair<std::string, RewardModelType> const& nameRewardModelPair) { rewardModelNames.push_back(nameRewardModelPair.first); });
-                    out << "Reward Models: " << boost::join(rewardModelNames, ", ") << std::endl;
+                    std::for_each(this->rewardModels.cbegin(), this->rewardModels.cend(),
+                                  [&rewardModelNames] (typename std::pair<std::string, RewardModelType> const& nameRewardModelPair) {
+                                      if (nameRewardModelPair.first.empty()) { rewardModelNames.push_back("(default)"); } else { rewardModelNames.push_back(nameRewardModelPair.first); }
+                                  });
+                    out << "Reward Models:  " << boost::join(rewardModelNames, ", ") << std::endl;
                 } else {
-                    out << "Reward Models: none" << std::endl;
+                    out << "Reward Models:  none" << std::endl;
                 }
             }
             
