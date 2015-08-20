@@ -403,7 +403,7 @@ namespace storm {
             for (unsigned int moduleIndex = 0; moduleIndex < this->getNumberOfModules(); moduleIndex++) {
                 Module const& module = this->getModule(moduleIndex);
                 
-                for (auto const& actionIndex : module.getActionIndices()) {
+                for (auto const& actionIndex : module.getSynchronizingActionIndices()) {
                     auto const& actionModuleIndicesPair = this->actionIndicesToModuleIndexMap.find(actionIndex);
                     if (actionModuleIndicesPair == this->actionIndicesToModuleIndexMap.end()) {
                         this->actionIndicesToModuleIndexMap[actionIndex] = std::set<uint_fast64_t>();

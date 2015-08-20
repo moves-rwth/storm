@@ -499,7 +499,6 @@ namespace storm {
                         }
                         
                         // Check that the resulting distribution is in fact a distribution.
-                        std::cout << probabilitySum << " vs " << comparator.isOne(probabilitySum) << " // " << (probabilitySum - 1) << std::endl;
                         STORM_LOG_THROW(!discreteTimeModel || comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException, "Sum of update probabilities do not some to one for some command (actually sum to " << probabilitySum << ").");
                         
                         // Dispose of the temporary maps.
@@ -535,7 +534,6 @@ namespace storm {
             }
             
             // A comparator that can be used to check whether we actually have distributions.
-            std::cout << "creating comparator.. " << std::endl;
             storm::utility::ConstantsComparator<ValueType> comparator;
             
             // Initialize a queue and insert the initial state.
@@ -650,7 +648,17 @@ namespace storm {
                     if (deterministicModel) {
                         Choice<ValueType> globalChoice;
 
-                        std::unordered_map<IndexType, ValueType> stateToRewardMap;
+                        // We need to prepare the entries of those vectors that are going to be used.
+                        auto builderIt = rewardModelBuilders.begin();
+                        for (auto rewardModelIt = selectedRewardModels.begin(), rewardModelIte = selectedRewardModels.end(); rewardModelIt != rewardModelIte; ++rewardModelIt, ++builderIt) {
+                            if (rewardModelIt->get().hasStateRewards()) {
+                                builderIt->stateRewardVector.push_back(storm::utility::zero<ValueType>());
+                            }
+                            
+                            if (rewardModelIt->get().hasStateActionRewards()) {
+                                builderIt->stateActionRewardVector.push_back(storm::utility::zero<ValueType>());
+                            }
+                        }
                         
                         // Combine all the choices and scale them with the total number of choices of the current state.
                         for (auto const& choice : allUnlabeledChoices) {
@@ -661,7 +669,6 @@ namespace storm {
                             auto builderIt = rewardModelBuilders.begin();
                             for (auto rewardModelIt = selectedRewardModels.begin(), rewardModelIte = selectedRewardModels.end(); rewardModelIt != rewardModelIte; ++rewardModelIt, ++builderIt) {
                                 if (rewardModelIt->get().hasStateRewards()) {
-                                    builderIt->stateRewardVector.push_back(storm::utility::zero<ValueType>());
                                     for (auto const& stateReward : rewardModelIt->get().getStateRewards()) {
                                         if (evaluator.asBool(stateReward.getStatePredicateExpression())) {
                                             builderIt->stateRewardVector.back() += ValueType(evaluator.asRational(stateReward.getRewardValueExpression()));
@@ -670,7 +677,6 @@ namespace storm {
                                 }
                                 
                                 if (rewardModelIt->get().hasStateActionRewards()) {
-                                    builderIt->stateActionRewardVector.push_back(storm::utility::zero<ValueType>());
                                     for (auto const& stateActionReward : rewardModelIt->get().getStateActionRewards()) {
                                         if (!stateActionReward.isLabeled()) {
                                             if (evaluator.asBool(stateActionReward.getStatePredicateExpression())) {

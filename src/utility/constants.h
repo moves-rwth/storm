@@ -30,7 +30,6 @@ namespace storm {
         
         template<typename ValueType>
         ValueType infinity();
-     
         
         template<typename ValueType>
         ValueType pow(ValueType const& value, uint_fast64_t exponent);
@@ -51,6 +50,50 @@ namespace storm {
             bool isConstant(ValueType const& value) const;
             
             bool isInfinity(ValueType const& value) const;
+        };
+        
+        // For floats we specialize this class and consider the comparison modulo some predefined precision.
+        template<>
+        class ConstantsComparator<float> {
+            public:
+            ConstantsComparator();
+            
+            ConstantsComparator(float precision);
+            
+            bool isOne(float const& value) const;
+            
+            bool isZero(float const& value) const;
+            
+            bool isEqual(float const& value1, float const& value2) const;
+            
+            bool isConstant(float const& value) const;
+            
+            private:
+            // The precision used for comparisons.
+            float precision;
+        };
+        
+        // For doubles we specialize this class and consider the comparison modulo some predefined precision.
+        template<>
+        class ConstantsComparator<double> {
+            public:
+            ConstantsComparator();
+            
+            ConstantsComparator(double precision);
+            
+            bool isOne(double const& value) const;
+            
+            bool isZero(double const& value) const;
+            
+            bool isInfinity(double const& value) const;
+            
+            bool isEqual(double const& value1, double const& value2) const;
+            
+            bool isConstant(double const& value) const;
+            
+            private:
+            // The precision used for comparisons.
+            double precision;
         };
         
         template<typename IndexType, typename ValueType>

@@ -239,6 +239,35 @@ namespace storm {
                  */
                 std::map<std::string, storm::expressions::Expression> const& getLabelToExpressionMap() const;
                 
+                /*!
+                 * Prints the information header (number of states and transitions) of the model to the specified stream.
+                 *
+                 * @param out The stream the information is to be printed to.
+                 */
+                void printModelInformationHeaderToStream(std::ostream& out) const;
+                
+                /*!
+                 * Prints the information footer (reward models, labels) of the model to the
+                 * specified stream.
+                 *
+                 * @param out The stream the information is to be printed to.
+                 */
+                void printModelInformationFooterToStream(std::ostream& out) const;
+                
+                /*!
+                 * Prints information about the reward models to the specified stream.
+                 *
+                 * @param out The stream the information is to be printed to.
+                 */
+                void printRewardModelsInformationToStream(std::ostream& out) const;
+                
+                /*!
+                 * Prints information about the DD variables to the specified stream.
+                 *
+                 * @param out The stream the information is to be printed to.
+                 */
+                virtual void printDdVariableInformationToStream(std::ostream& out) const;
+                
             private:
                 // The manager responsible for the decision diagrams.
                 std::shared_ptr<storm::dd::DdManager<Type>> manager;

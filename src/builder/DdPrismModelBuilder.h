@@ -173,7 +173,7 @@ namespace storm {
 
             static ActionDecisionDiagram createCommandDecisionDiagram(GenerationInformation& generationInfo, storm::prism::Module const& module, storm::prism::Command const& command);
 
-            static ActionDecisionDiagram createActionDecisionDiagram(GenerationInformation& generationInfo, storm::prism::Module const& module, boost::optional<uint_fast64_t> synchronizationActionIndex, uint_fast64_t nondeterminismVariableOffset);
+            static ActionDecisionDiagram createActionDecisionDiagram(GenerationInformation& generationInfo, storm::prism::Module const& module, uint_fast64_t synchronizationActionIndex, uint_fast64_t nondeterminismVariableOffset);
 
             static ActionDecisionDiagram combineCommandsToActionDTMC(GenerationInformation& generationInfo, std::vector<ActionDecisionDiagram> const& commandDds);
 
@@ -185,7 +185,7 @@ namespace storm {
 
             static ModuleDecisionDiagram createModuleDecisionDiagram(GenerationInformation& generationInfo, storm::prism::Module const& module, std::map<uint_fast64_t, uint_fast64_t> const& synchronizingActionToOffsetMap);
 
-            static storm::dd::Add<Type> getSynchronizationDecisionDiagram(GenerationInformation& generationInfo, boost::optional<uint_fast64_t> const& synchronizationAction = boost::optional<uint_fast64_t>());
+            static storm::dd::Add<Type> getSynchronizationDecisionDiagram(GenerationInformation& generationInfo, uint_fast64_t actionIndex = 0);
             
             static storm::dd::Add<Type> createSystemFromModule(GenerationInformation& generationInfo, ModuleDecisionDiagram const& module);
             

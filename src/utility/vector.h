@@ -165,6 +165,7 @@ namespace storm {
                     while (current < next) {
                         *targetIt += *sourceIt;
                         ++targetIt;
+                        ++current;
                     }
                 }
             }

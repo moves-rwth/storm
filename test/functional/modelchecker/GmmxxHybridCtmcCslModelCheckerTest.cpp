@@ -32,6 +32,7 @@ TEST(GmmxxHybridCtmcCslModelCheckerTest, Cluster) {
 #else
 	typename storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::Options options;
 #endif
+    options.buildAllRewardModels = false;
     options.rewardModelsToBuild.insert("num_repairs");
     std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program, options);
     ASSERT_EQ(storm::models::ModelType::Ctmc, model->getType());
@@ -128,6 +129,7 @@ TEST(GmmxxHybridCtmcCslModelCheckerTest, Embedded) {
 #else
 	typename storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::Options options;
 #endif
+    options.buildAllRewardModels = false;
     options.rewardModelsToBuild.insert("up");
     std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program, options);
     ASSERT_EQ(storm::models::ModelType::Ctmc, model->getType());
@@ -250,6 +252,7 @@ TEST(GmmxxHybridCtmcCslModelCheckerTest, Tandem) {
 #else
 	typename storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::Options options;
 #endif
+    options.buildAllRewardModels = false;
     options.rewardModelsToBuild.insert("customers");
     std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program, options);
     ASSERT_EQ(storm::models::ModelType::Ctmc, model->getType());

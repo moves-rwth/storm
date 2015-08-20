@@ -29,6 +29,7 @@ TEST(GmmxxCtmcCslModelCheckerTest, Cluster) {
 #else
 	typename storm::builder::ExplicitPrismModelBuilder<double>::Options options;
 #endif
+    options.buildAllRewardModels = false;
     options.rewardModelsToBuild.insert("num_repairs");
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitPrismModelBuilder<double>::translateProgram(program, options);
     ASSERT_EQ(storm::models::ModelType::Ctmc, model->getType());
@@ -111,7 +112,7 @@ TEST(GmmxxCtmcCslModelCheckerTest, Embedded) {
 #else
 	typename storm::builder::ExplicitPrismModelBuilder<double>::Options options;
 #endif
-
+    options.buildAllRewardModels = false;
     options.rewardModelsToBuild.insert("up");
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitPrismModelBuilder<double>::translateProgram(program, options);
     ASSERT_EQ(storm::models::ModelType::Ctmc, model->getType());

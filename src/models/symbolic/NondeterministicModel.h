@@ -80,6 +80,10 @@ namespace storm {
                 
                 virtual void printModelInformationToStream(std::ostream& out) const override;
                 
+            protected:
+            
+                virtual void printDdVariableInformationToStream(std::ostream& out) const override;
+                
             private:
                 
                 // The meta variables encoding the nondeterminism in the model.

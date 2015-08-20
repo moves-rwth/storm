@@ -10,7 +10,7 @@ namespace storm {
             // Intentionally left empty.
         }
         
-        Module::Module(std::string const& moduleName, std::vector<storm::prism::BooleanVariable> const& booleanVariables, std::vector<storm::prism::IntegerVariable> const& integerVariables, std::vector<storm::prism::Command> const& commands, std::string const& renamedFromModule, std::map<std::string, std::string> const& renaming, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), moduleName(moduleName), booleanVariables(booleanVariables), booleanVariableToIndexMap(), integerVariables(integerVariables), integerVariableToIndexMap(), commands(commands), actionIndices(), actionIndicesToCommandIndexMap(), renamedFromModule(renamedFromModule), renaming(renaming) {
+        Module::Module(std::string const& moduleName, std::vector<storm::prism::BooleanVariable> const& booleanVariables, std::vector<storm::prism::IntegerVariable> const& integerVariables, std::vector<storm::prism::Command> const& commands, std::string const& renamedFromModule, std::map<std::string, std::string> const& renaming, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), moduleName(moduleName), booleanVariables(booleanVariables), booleanVariableToIndexMap(), integerVariables(integerVariables), integerVariableToIndexMap(), commands(commands), synchronizingActionIndices(), actionIndicesToCommandIndexMap(), renamedFromModule(renamedFromModule), renaming(renaming) {
             // Initialize the internal mappings for fast information retrieval.
             this->createMappings();
         }
@@ -71,12 +71,12 @@ namespace storm {
             return this->moduleName;
         }
         
-        std::set<uint_fast64_t> const& Module::getActionIndices() const {
-            return this->actionIndices;
+        std::set<uint_fast64_t> const& Module::getSynchronizingActionIndices() const {
+            return this->synchronizingActionIndices;
         }
         
         bool Module::hasActionIndex(uint_fast64_t actionIndex) const {
-            return this->actionIndices.find(actionIndex) != this->actionIndices.end();
+            return this->actionIndicesToCommandIndexMap.find(actionIndex) != this->actionIndicesToCommandIndexMap.end();
         }
         
         bool Module::isRenamedFromModule() const {
@@ -124,13 +124,17 @@ namespace storm {
                         this->actionIndicesToCommandIndexMap.emplace(actionIndex, std::set<uint_fast64_t>());
                     }
                     this->actionIndicesToCommandIndexMap[actionIndex].insert(i);
-                    this->actionIndices.insert(actionIndex);
+                    
+                    // Only take the command into the set if it's non-synchronizing.
+                    if (actionIndex != 0) {
+                        this->synchronizingActionIndices.insert(actionIndex);
+                    }
                 }
             }
             
             // For all actions that are "in the module", but for which no command exists, we add the mapping to an empty
             // set of commands.
-            for (auto const& actionIndex : this->actionIndices) {
+            for (auto const& actionIndex : this->synchronizingActionIndices) {
                 if (this->actionIndicesToCommandIndexMap.find(actionIndex) == this->actionIndicesToCommandIndexMap.end()) {
                     this->actionIndicesToCommandIndexMap[actionIndex] = std::set<uint_fast64_t>();
                 }

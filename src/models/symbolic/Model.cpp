@@ -1,5 +1,7 @@
 #include "src/models/symbolic/Model.h"
 
+#include <boost/algorithm/string/join.hpp>
+
 #include "src/exceptions/IllegalArgumentException.h"
 
 #include "src/adapters/AddExpressionAdapter.h"
@@ -164,11 +166,47 @@ namespace storm {
             
             template<storm::dd::DdType Type>
             void Model<Type>::printModelInformationToStream(std::ostream& out) const {
+                this->printModelInformationHeaderToStream(out);
+                this->printModelInformationFooterToStream(out);
+            }
+            
+            template<storm::dd::DdType Type>
+            void Model<Type>::printModelInformationHeaderToStream(std::ostream& out) const {
                 out << "-------------------------------------------------------------- " << std::endl;
                 out << "Model type: \t" << this->getType() << " (symbolic)" << std::endl;
                 out << "States: \t" << this->getNumberOfStates() << " (" << reachableStates.getNodeCount() << " nodes)" << std::endl;
                 out << "Transitions: \t" << this->getNumberOfTransitions() << " (" << transitionMatrix.getNodeCount() << " nodes)" << std::endl;
-                
+            }
+            
+            template<storm::dd::DdType Type>
+            void Model<Type>::printModelInformationFooterToStream(std::ostream& out) const {
+                this->printRewardModelsInformationToStream(out);
+                this->printDdVariableInformationToStream(out);
+                out << std::endl;
+                out << "Labels: \t" << this->labelToExpressionMap.size() << std::endl;
+                for (auto const& label : labelToExpressionMap) {
+                    out << "   * " << label.first << std::endl;
+                }
+                out << "Size in memory: \t" << (this->getSizeInBytes())/1024 << " kbytes" << std::endl;
+                out << "-------------------------------------------------------------- " << std::endl;
+            }
+            
+            template<storm::dd::DdType Type>
+            void Model<Type>::printRewardModelsInformationToStream(std::ostream& out) const {
+                if (this->rewardModels.size()) {
+                    std::vector<std::string> rewardModelNames;
+                    std::for_each(this->rewardModels.cbegin(), this->rewardModels.cend(),
+                                  [&rewardModelNames] (typename std::pair<std::string, RewardModelType> const& nameRewardModelPair) {
+                                      if (nameRewardModelPair.first.empty()) { rewardModelNames.push_back("(default)"); } else { rewardModelNames.push_back(nameRewardModelPair.first); }
+                                  });
+                    out << "Reward Models:  " << boost::join(rewardModelNames, ", ") << std::endl;
+                } else {
+                    out << "Reward Models:  none" << std::endl;
+                }
+            }
+
+            template<storm::dd::DdType Type>
+            void Model<Type>::printDdVariableInformationToStream(std::ostream& out) const {
                 uint_fast64_t rowVariableCount = 0;
                 for (auto const& metaVariable : this->rowVariables) {
                     rowVariableCount += this->getManager().getMetaVariable(metaVariable).getNumberOfDdVariables();
@@ -178,13 +216,7 @@ namespace storm {
                     columnVariableCount += this->getManager().getMetaVariable(metaVariable).getNumberOfDdVariables();
                 }
                 
-                out << "Variables: \t" << "rows: " << this->rowVariables.size() << " meta variables (" << rowVariableCount << " DD variables)" << ", columns: " << this->columnVariables.size() << " meta variables (" << columnVariableCount << " DD variables)" << std::endl;
-                out << "Labels: \t" << this->labelToExpressionMap.size() << std::endl;
-                for (auto const& label : labelToExpressionMap) {
-                    out << "   * " << label.first << std::endl;
-                }
-                out << "Size in memory: \t" << (this->getSizeInBytes())/1024 << " kbytes" << std::endl;
-                out << "-------------------------------------------------------------- " << std::endl;
+                out << "Variables: \t" << "rows: " << this->rowVariables.size() << " meta variables (" << rowVariableCount << " DD variables)" << ", columns: " << this->columnVariables.size() << " meta variables (" << columnVariableCount << " DD variables)";
             }
             
             template<storm::dd::DdType Type>

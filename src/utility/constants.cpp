@@ -59,50 +59,6 @@ namespace storm {
             return value;
         }
         
-          // For floats we specialize this class and consider the comparison modulo some predefined precision.
-        template<>
-        class ConstantsComparator<float> {
-        public:
-            ConstantsComparator();
-            
-            ConstantsComparator(float precision);
-            
-            bool isOne(float const& value) const;
-            
-            bool isZero(float const& value) const;
-            
-            bool isEqual(float const& value1, float const& value2) const;
-            
-            bool isConstant(float const& value) const;
-            
-        private:
-            // The precision used for comparisons.
-            float precision;
-        };
-        
-        // For doubles we specialize this class and consider the comparison modulo some predefined precision.
-        template<>
-        class ConstantsComparator<double> {
-        public:
-            ConstantsComparator();
-            
-            ConstantsComparator(double precision);
-            
-            bool isOne(double const& value) const;
-            
-            bool isZero(double const& value) const;
-            
-            bool isInfinity(double const& value) const;
-            
-            bool isEqual(double const& value1, double const& value2) const;
-            
-            bool isConstant(double const& value) const;
-            
-        private:
-            // The precision used for comparisons.
-            double precision;
-        };
-        
 #ifdef STORM_HAVE_CARL
         template<>
         RationalFunction& simplify(RationalFunction& value);
@@ -184,7 +140,6 @@ namespace storm {
         }
         
         bool ConstantsComparator<double>::isOne(double const& value) const {
-            std::cout << std::setprecision(10) << std::abs(value - one<double>()) << " prec: " << precision << std::endl;
             return std::abs(value - one<double>()) <= precision;
         }
         
@@ -279,8 +234,8 @@ namespace storm {
             return std::move(matrixEntry);
         }
         
-		//explicit instantiations
-		//double
+		// explicit instantiations
+		// double
 		template class ConstantsComparator<double>;
 
 		template double one();
@@ -295,7 +250,7 @@ namespace storm {
 		template storm::storage::MatrixEntry<storm::storage::sparse::state_type, double>& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, double>& matrixEntry);
 		template storm::storage::MatrixEntry<storm::storage::sparse::state_type, double>&& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, double>&& matrixEntry);
 
-		//float
+		// float
 		template class ConstantsComparator<float>;
 
 		template float one();
@@ -310,7 +265,7 @@ namespace storm {
 		template storm::storage::MatrixEntry<storm::storage::sparse::state_type, float>& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, float>& matrixEntry);
 		template storm::storage::MatrixEntry<storm::storage::sparse::state_type, float>&& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, float>&& matrixEntry);
 
-		//int
+		// int
         template class ConstantsComparator<int>;
         
         template int one();

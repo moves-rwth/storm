@@ -336,16 +336,18 @@ namespace storm {
         }
         
         template <storm::dd::DdType Type>
-        typename DdPrismModelBuilder<Type>::ActionDecisionDiagram DdPrismModelBuilder<Type>::createActionDecisionDiagram(GenerationInformation& generationInfo, storm::prism::Module const& module, boost::optional<uint_fast64_t> synchronizationActionIndex, uint_fast64_t nondeterminismVariableOffset) {
+        typename DdPrismModelBuilder<Type>::ActionDecisionDiagram DdPrismModelBuilder<Type>::createActionDecisionDiagram(GenerationInformation& generationInfo, storm::prism::Module const& module, uint_fast64_t synchronizationActionIndex, uint_fast64_t nondeterminismVariableOffset) {
             std::vector<ActionDecisionDiagram> commandDds;
             for (storm::prism::Command const& command : module.getCommands()) {
                 
                 // Determine whether the command is relevant for the selected action.
-                bool relevant = (!synchronizationActionIndex && !command.isLabeled()) || (synchronizationActionIndex && command.isLabeled() && command.getActionIndex() == synchronizationActionIndex.get());
+                bool relevant = (synchronizationActionIndex == 0 && !command.isLabeled()) || (synchronizationActionIndex && command.isLabeled() && command.getActionIndex() == synchronizationActionIndex);
                 
                 if (!relevant) {
                     continue;
                 }
+                
+                STORM_LOG_TRACE("Translating command " << command);
                 
                 // At this point, the command is known to be relevant for the action.
                 commandDds.push_back(createCommandDecisionDiagram(generationInfo, module, command));
@@ -551,12 +553,12 @@ namespace storm {
         template <storm::dd::DdType Type>
         typename DdPrismModelBuilder<Type>::ModuleDecisionDiagram DdPrismModelBuilder<Type>::createModuleDecisionDiagram(GenerationInformation& generationInfo, storm::prism::Module const& module, std::map<uint_fast64_t, uint_fast64_t> const& synchronizingActionToOffsetMap) {
             // Start by creating the action DD for the independent action.
-            ActionDecisionDiagram independentActionDd = createActionDecisionDiagram(generationInfo, module, boost::optional<uint_fast64_t>(), 0);
+            ActionDecisionDiagram independentActionDd = createActionDecisionDiagram(generationInfo, module, 0, 0);
             uint_fast64_t numberOfUsedNondeterminismVariables = independentActionDd.numberOfUsedNondeterminismVariables;
             
             // Create module DD for all synchronizing actions of the module.
             std::map<uint_fast64_t, ActionDecisionDiagram> actionIndexToDdMap;
-            for (auto const& actionIndex : module.getActionIndices()) {
+            for (auto const& actionIndex : module.getSynchronizingActionIndices()) {
                 STORM_LOG_TRACE("Creating DD for action '" << actionIndex << "'.");
                 ActionDecisionDiagram tmp = createActionDecisionDiagram(generationInfo, module, actionIndex, synchronizingActionToOffsetMap.at(actionIndex));
                 numberOfUsedNondeterminismVariables = std::max(numberOfUsedNondeterminismVariables, tmp.numberOfUsedNondeterminismVariables);
@@ -567,12 +569,18 @@ namespace storm {
         }
         
         template <storm::dd::DdType Type>
-        storm::dd::Add<Type> DdPrismModelBuilder<Type>::getSynchronizationDecisionDiagram(GenerationInformation& generationInfo, boost::optional<uint_fast64_t> const& synchronizationAction) {
+        storm::dd::Add<Type> DdPrismModelBuilder<Type>::getSynchronizationDecisionDiagram(GenerationInformation& generationInfo, uint_fast64_t actionIndex) {
             storm::dd::Add<Type> synchronization = generationInfo.manager->getAddOne();
-            for (uint_fast64_t i = 0; i < generationInfo.synchronizationMetaVariables.size(); ++i) {
-                if (synchronizationAction && synchronizationAction.get() == i) {
-                    synchronization *= generationInfo.manager->getEncoding(generationInfo.synchronizationMetaVariables[i], 1).toAdd();
-                } else {
+            if (actionIndex != 0) {
+                for (uint_fast64_t i = 0; i < generationInfo.synchronizationMetaVariables.size(); ++i) {
+                    if ((actionIndex - 1) == i) {
+                        synchronization *= generationInfo.manager->getEncoding(generationInfo.synchronizationMetaVariables[i], 1).toAdd();
+                    } else {
+                        synchronization *= generationInfo.manager->getEncoding(generationInfo.synchronizationMetaVariables[i], 0).toAdd();
+                    }
+                }
+            } else {
+                for (uint_fast64_t i = 0; i < generationInfo.synchronizationMetaVariables.size(); ++i) {
                     synchronization *= generationInfo.manager->getEncoding(generationInfo.synchronizationMetaVariables[i], 0).toAdd();
                 }
             }
@@ -670,7 +678,7 @@ namespace storm {
                 }
                 
                 // Combine synchronizing actions.
-                for (auto const& actionIndex : currentModule.getActionIndices()) {
+                for (auto const& actionIndex : currentModule.getSynchronizingActionIndices()) {
                     if (system.hasSynchronizingAction(actionIndex)) {
                         system.synchronizingActionToDecisionDiagramMap[actionIndex] = combineSynchronizingActions(generationInfo, system.synchronizingActionToDecisionDiagramMap[actionIndex], nextModule.synchronizingActionToDecisionDiagramMap[actionIndex]);
                         numberOfUsedNondeterminismVariables = std::max(numberOfUsedNondeterminismVariables, system.synchronizingActionToDecisionDiagramMap[actionIndex].numberOfUsedNondeterminismVariables);
