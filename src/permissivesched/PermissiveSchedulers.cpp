@@ -27,5 +27,9 @@ namespace storm {
                 return boost::optional<MemorylessDeterministicPermissiveScheduler>(comp.getScheduler());
             }
         }
+         
+         boost::optional<MemorylessDeterministicPermissiveScheduler> computePermissiveSchedulerViaMC(std::shared_ptr<storm::models::sparse::Mdp<double>> mdp, storm::logic::ProbabilityOperatorFormula const& safeProp) {
+             
+         }
     }
 }

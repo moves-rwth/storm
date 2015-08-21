@@ -163,7 +163,9 @@ class MilpPermissiveSchedulerComputation : public PermissiveSchedulerComputation
                                 assert(mGammaVariables.count(entry.getColumn()) > 0);
                                 assert(mGammaVariables.count(s) > 0);
                                 assert(mBetaVariables.count(sat) > 0);
-                                solver.addConstraint("c8-" + satstring, mGammaVariables[entry.getColumn()] < mGammaVariables[s] + (solver.getConstant(1) - mBetaVariables[sat]) + mProbVariables[s]); // With rewards, we have to change this.
+                                if(relevantStates[entry.getColumn()]) {
+                                    solver.addConstraint("c8-" + satstring, mGammaVariables[entry.getColumn()] < mGammaVariables[s] + (solver.getConstant(1) - mBetaVariables[sat]) + mProbVariables[s]); // With rewards, we have to change this.
+                               }
                             }
                         }
                                 
