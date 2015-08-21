@@ -4,6 +4,8 @@
 #include "src/utility/constants.h"
 #include "src/adapters/CarlAdapter.h"
 
+#include "src/models/sparse/StandardRewardModel.h"
+
 namespace storm {
     namespace models {
         namespace sparse {

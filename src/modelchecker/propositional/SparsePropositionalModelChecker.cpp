@@ -6,6 +6,7 @@
 #include "src/models/sparse/Ctmc.h"
 #include "src/models/sparse/Mdp.h"
 #include "src/models/sparse/MarkovAutomaton.h"
+#include "src/models/sparse/StandardRewardModel.h"
 
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
 

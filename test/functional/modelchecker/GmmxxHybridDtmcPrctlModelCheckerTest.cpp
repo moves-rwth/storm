@@ -10,6 +10,7 @@
 #include "src/parser/PrismParser.h"
 #include "src/builder/DdPrismModelBuilder.h"
 #include "src/models/symbolic/Dtmc.h"
+#include "src/models/symbolic/StandardRewardModel.h"
 #include "src/settings/SettingsManager.h"
 #include "src/settings/modules/GeneralSettings.h"
 #include "src/settings/modules/GmmxxEquationSolverSettings.h"

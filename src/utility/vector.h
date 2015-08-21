@@ -201,6 +201,44 @@ namespace storm {
              * @param target The target vector.
              */
             template<class T>
+            void applyPointwise(std::vector<T> const& firstOperand, std::vector<T> const& secondOperand, std::vector<T>& target, std::function<T (T const&, T const&, T const&)> const& function) {
+#ifdef STORM_HAVE_INTELTBB
+                tbb::parallel_for(tbb::blocked_range<uint_fast64_t>(0, target.size()),
+                                  [&](tbb::blocked_range<uint_fast64_t> const& range) {
+                                      auto firstIt = firstOperand.begin() + range.begin();
+                                      auto firstIte = firstOperand.begin() + range.end();
+                                      auto secondIt = secondOperand.begin() + range.begin();
+                                      auto targetIt = target.begin() + range.begin();
+                                      while (firstIt != firstIte) {
+                                          *targetIt = function(*firstIt, *secondIt, *targetIt);
+                                          ++targetIt;
+                                          ++firstIt;
+                                          ++secondIt;
+                                      }
+                                  });
+#else
+                auto firstIt = firstOperand.begin();
+                auto firstIte = firstOperand.end();
+                auto secondIt = secondOperand.begin();
+                auto targetIt = target.begin();
+                while (firstIt != firstIte) {
+                    *targetIt = function(*firstIt, *secondIt, *targetIt);
+                    ++targetIt;
+                    ++firstIt;
+                    ++secondIt;
+                }
+#endif
+            }
+            
+            /*!
+             * Applies the given operation pointwise on the two given vectors and writes the result to the third vector.
+             * To obtain an in-place operation, the third vector may be equal to any of the other two vectors.
+             *
+             * @param firstOperand The first operand.
+             * @param secondOperand The second operand.
+             * @param target The target vector.
+             */
+            template<class T>
             void applyPointwise(std::vector<T> const& firstOperand, std::vector<T> const& secondOperand, std::vector<T>& target, std::function<T (T const&, T const&)> function) {
 #ifdef STORM_HAVE_INTELTBB
                 tbb::parallel_for(tbb::blocked_range<uint_fast64_t>(0, target.size()),

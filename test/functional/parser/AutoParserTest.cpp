@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
+#include "src/models/sparse/StandardRewardModel.h"
 #include "src/parser/AutoParser.h"
 #include "src/exceptions/FileIoException.h"
 #include "src/exceptions/WrongFormatException.h"

@@ -7,7 +7,6 @@
 #include <boost/optional.hpp>
 
 #include "src/models/ModelBase.h"
-#include "src/models/sparse/StandardRewardModel.h"
 #include "src/models/sparse/StateLabeling.h"
 #include "src/storage/sparse/StateType.h"
 #include "src/storage/BitVector.h"
@@ -21,6 +20,8 @@ namespace storm {
             // The type used for storing a set of labels.
             typedef boost::container::flat_set<uint_fast64_t> LabelSet;
             
+            template<typename ValueType>
+            class StandardRewardModel;
            
             /*!
              * Base class for all sparse models.

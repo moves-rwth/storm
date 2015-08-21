@@ -10,7 +10,6 @@
 #include "src/storage/expressions/Variable.h"
 #include "src/storage/dd/DdType.h"
 #include "src/models/ModelBase.h"
-#include "src/models/symbolic/StandardRewardModel.h"
 #include "src/utility/OsDetection.h"
 
 namespace storm {
@@ -29,6 +28,9 @@ namespace storm {
     
     namespace models {
         namespace symbolic {
+            
+            template<storm::dd::DdType Type, typename ValueType>
+            class StandardRewardModel;
             
             /*!
              * Base class for all symbolic models.

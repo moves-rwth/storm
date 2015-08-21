@@ -1,5 +1,6 @@
 #include "src/storage/StronglyConnectedComponentDecomposition.h"
 #include "src/models/sparse/Model.h"
+#include "src/models/sparse/StandardRewardModel.h"
 #include "src/adapters/CarlAdapter.h"
 
 namespace storm {

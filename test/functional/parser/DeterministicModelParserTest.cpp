@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
+#include "src/models/sparse/StandardRewardModel.h"
 #include "src/parser/DeterministicModelParser.h"
 #include "src/models/sparse/Dtmc.h"
 #include "src/models/sparse/Ctmc.h"

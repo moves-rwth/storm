@@ -168,6 +168,17 @@ namespace storm {
                  */
                 template<typename MatrixValueType>
                 std::vector<ValueType> getTotalRewardVector(storm::storage::SparseMatrix<MatrixValueType> const& transitionMatrix) const;
+
+                /*!
+                 * Creates a vector representing the complete reward vector based on the state-, state-action- and
+                 * transition-based rewards in the reward model.
+                 *
+                 * @param transitionMatrix The matrix that is used to weight the values of the transition reward matrix.
+                 * @param weights A vector used for scaling the entries of the state-action rewards (if present).
+                 * @return The full state-action reward vector.
+                 */
+                template<typename MatrixValueType>
+                std::vector<ValueType> getTotalRewardVector(storm::storage::SparseMatrix<MatrixValueType> const& transitionMatrix, std::vector<ValueType> const& weights) const;
                 
                 /*!
                  * Creates a vector representing the complete reward vector based on the state-, state-action- and
@@ -217,6 +228,9 @@ namespace storm {
                  */
                 std::size_t getSizeInBytes() const;
                 
+                template <typename ValueTypePrime>
+                friend std::ostream& operator<<(std::ostream& out, StandardRewardModel<ValueTypePrime> const& rewardModel);
+                
             private:
                 // An (optional) vector representing the state rewards.
                 boost::optional<std::vector<ValueType>> optionalStateRewardVector;
@@ -227,6 +241,9 @@ namespace storm {
                 // An (optional) matrix representing the transition rewards.
                 boost::optional<storm::storage::SparseMatrix<ValueType>> optionalTransitionRewardMatrix;
             };
+            
+            template <typename ValueType>
+            std::ostream& operator<<(std::ostream& out, StandardRewardModel<ValueType> const& rewardModel);
         }
     }
 }

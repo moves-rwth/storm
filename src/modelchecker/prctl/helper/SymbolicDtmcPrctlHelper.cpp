@@ -6,6 +6,8 @@
 #include "src/storage/dd/CuddBdd.h"
 #include "src/storage/dd/CuddOdd.h"
 
+#include "src/models/symbolic/StandardRewardModel.h"
+
 #include "src/utility/graph.h"
 
 #include "src/exceptions/InvalidPropertyException.h"

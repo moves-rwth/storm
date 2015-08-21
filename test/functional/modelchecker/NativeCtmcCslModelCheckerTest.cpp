@@ -14,7 +14,7 @@
 
 #include "src/settings/modules/GeneralSettings.h"
 
-TEST(SparseCtmcCslModelCheckerTest, Cluster) {
+TEST(NativeCtmcCslModelCheckerTest, Cluster) {
     // Set the PRISM compatibility mode temporarily. It is set to its old value once the returned object is destructed.
     std::unique_ptr<storm::settings::SettingMemento> enablePrismCompatibility = storm::settings::mutableGeneralSettings().overridePrismCompatibilityMode(true);
     
@@ -90,7 +90,7 @@ TEST(SparseCtmcCslModelCheckerTest, Cluster) {
     EXPECT_NEAR(0.8602815057967503, quantitativeCheckResult7[initialState], storm::settings::generalSettings().getPrecision());
 }
 
-TEST(SparseCtmcCslModelCheckerTest, Embedded) {
+TEST(NativeCtmcCslModelCheckerTest, Embedded) {
     // Set the PRISM compatibility mode temporarily. It is set to its old value once the returned object is destructed.
     std::unique_ptr<storm::settings::SettingMemento> enablePrismCompatibility = storm::settings::mutableGeneralSettings().overridePrismCompatibilityMode(true);
     
@@ -152,7 +152,7 @@ TEST(SparseCtmcCslModelCheckerTest, Embedded) {
     EXPECT_NEAR(2.7745274082080154, quantitativeCheckResult5[initialState], storm::settings::generalSettings().getPrecision());
 }
 
-TEST(SparseCtmcCslModelCheckerTest, Polling) {
+TEST(NativeCtmcCslModelCheckerTest, Polling) {
     // Set the PRISM compatibility mode temporarily. It is set to its old value once the returned object is destructed.
     std::unique_ptr<storm::settings::SettingMemento> enablePrismCompatibility = storm::settings::mutableGeneralSettings().overridePrismCompatibilityMode(true);
     
@@ -179,14 +179,14 @@ TEST(SparseCtmcCslModelCheckerTest, Polling) {
     EXPECT_NEAR(1, quantitativeCheckResult1[initialState], storm::settings::generalSettings().getPrecision());
 }
 
-TEST(SparseCtmcCslModelCheckerTest, Fms) {
+TEST(NativeCtmcCslModelCheckerTest, Fms) {
     // Set the PRISM compatibility mode temporarily. It is set to its old value once the returned object is destructed.
     std::unique_ptr<storm::settings::SettingMemento> enablePrismCompatibility = storm::settings::mutableGeneralSettings().overridePrismCompatibilityMode(true);
     
     // No properties to check at this point.
 }
 
-TEST(SparseCtmcCslModelCheckerTest, Tandem) {
+TEST(NativeCtmcCslModelCheckerTest, Tandem) {
     // Set the PRISM compatibility mode temporarily. It is set to its old value once the returned object is destructed.
     std::unique_ptr<storm::settings::SettingMemento> enablePrismCompatibility = storm::settings::mutableGeneralSettings().overridePrismCompatibilityMode(true);
     

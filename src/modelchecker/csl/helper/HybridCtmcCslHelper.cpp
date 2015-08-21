@@ -11,6 +11,8 @@
 #include "src/utility/macros.h"
 #include "src/utility/graph.h"
 
+#include "src/models/symbolic/StandardRewardModel.h"
+
 #include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"
 #include "src/modelchecker/results/SymbolicQuantitativeCheckResult.h"
 #include "src/modelchecker/results/HybridQuantitativeCheckResult.h"
@@ -266,7 +268,8 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> explicitUniformizedMatrix = uniformizedMatrix.toMatrix(odd, odd);
                 
                 // Then compute the state reward vector to use in the computation.
-                storm::dd::Add<DdType> totalRewardVector = rewardModel.getTotalRewardVector(rateMatrix, model.getColumnVariables());
+                storm::dd::Add<DdType> totalRewardVector = rewardModel.getTotalRewardVector(rateMatrix, model.getColumnVariables(), exitRateVector);
+                totalRewardVector.exportToDot("rewards.dot");
                 std::vector<ValueType> explicitTotalRewardVector = totalRewardVector.template toVector<ValueType>(odd);
                 
                 // Finally, compute the transient probabilities.

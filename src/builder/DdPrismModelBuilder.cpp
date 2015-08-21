@@ -3,6 +3,7 @@
 #include "src/models/symbolic/Dtmc.h"
 #include "src/models/symbolic/Ctmc.h"
 #include "src/models/symbolic/Mdp.h"
+#include "src/models/symbolic/StandardRewardModel.h"
 
 #include "src/storage/dd/CuddDd.h"
 #include "src/storage/dd/CuddDdManager.h"
@@ -63,7 +64,10 @@ namespace storm {
                 // A set of all variables used for encoding the nondeterminism (i.e. nondetermism + synchronization
                 // variables). This is handy to abstract from this variable set.
                 std::set<storm::expressions::Variable> allNondeterminismVariables;
-                
+            
+                // As set of all variables used for encoding the synchronization.
+                std::set<storm::expressions::Variable> allSynchronizationMetaVariables;
+            
                 // DDs representing the identity for each variable.
                 std::map<storm::expressions::Variable, storm::dd::Add<Type>> variableToIdentityMap;
                 
@@ -82,6 +86,7 @@ namespace storm {
                     for (auto const& actionIndex : program.getSynchronizingActionIndices()) {
                         std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair = manager->addMetaVariable(program.getActionName(actionIndex));
                         synchronizationMetaVariables.push_back(variablePair.first);
+                        allSynchronizationMetaVariables.insert(variablePair.first);
                         allNondeterminismVariables.insert(variablePair.first);
                     }
                     
@@ -640,7 +645,7 @@ namespace storm {
         }
         
         template <storm::dd::DdType Type>
-        std::pair<storm::dd::Add<Type>, typename DdPrismModelBuilder<Type>::ModuleDecisionDiagram> DdPrismModelBuilder<Type>::createSystemDecisionDiagram(GenerationInformation& generationInfo) {
+        std::tuple<storm::dd::Add<Type>, typename DdPrismModelBuilder<Type>::ModuleDecisionDiagram, boost::optional<storm::dd::Add<Type>>> DdPrismModelBuilder<Type>::createSystemDecisionDiagram(GenerationInformation& generationInfo) {
             // Create the initial offset mapping.
             std::map<uint_fast64_t, uint_fast64_t> synchronizingActionToOffsetMap;
             for (auto const& actionIndex : generationInfo.program.getSynchronizingActionIndices()) {
@@ -698,8 +703,10 @@ namespace storm {
             storm::dd::Add<Type> result = createSystemFromModule(generationInfo, system);
             
             // For DTMCs, we normalize each row to 1 (to account for non-determinism).
+            boost::optional<storm::dd::Add<Type>> stateToChoiceCountMap;
             if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::DTMC) {
-                result = result / result.sumAbstract(generationInfo.columnMetaVariables);
+                stateToChoiceCountMap = result.sumAbstract(generationInfo.columnMetaVariables);
+                result = result / stateToChoiceCountMap.get();
             } else if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::MDP) {
                 // For MDPs, we need to throw away the nondeterminism variables from the generation information that
                 // were never used.
@@ -709,11 +716,11 @@ namespace storm {
                 generationInfo.nondeterminismMetaVariables.resize(system.numberOfUsedNondeterminismVariables);
             }
             
-            return std::make_pair(result, system);
+            return std::make_tuple(result, system, stateToChoiceCountMap);
         }
         
         template <storm::dd::DdType Type>
-        storm::models::symbolic::StandardRewardModel<Type, double> DdPrismModelBuilder<Type>::createRewardModelDecisionDiagrams(GenerationInformation& generationInfo, storm::prism::RewardModel const& rewardModel, ModuleDecisionDiagram const& globalModule, storm::dd::Add<Type> const& fullTransitionMatrix) {
+        storm::models::symbolic::StandardRewardModel<Type, double> DdPrismModelBuilder<Type>::createRewardModelDecisionDiagrams(GenerationInformation& generationInfo, storm::prism::RewardModel const& rewardModel, ModuleDecisionDiagram const& globalModule, storm::dd::Add<Type> const& transitionMatrix, storm::dd::Add<Type> const& reachableStatesAdd, boost::optional<storm::dd::Add<Type>> const& stateToChoiceCountMap) {
             
             // Start by creating the state reward vector.
             boost::optional<storm::dd::Add<Type>> stateRewards;
@@ -725,7 +732,7 @@ namespace storm {
                     storm::dd::Add<Type> rewards = generationInfo.rowExpressionAdapter->translateExpression(stateReward.getRewardValueExpression());
                     
                     // Restrict the rewards to those states that satisfy the condition.
-                    rewards = states * rewards;
+                    rewards = reachableStatesAdd * states * rewards;
                     
                     // Perform some sanity checks.
                     STORM_LOG_WARN_COND(rewards.getMin() >= 0, "The reward model assigns negative rewards to some states.");
@@ -744,43 +751,36 @@ namespace storm {
                 for (auto const& stateActionReward : rewardModel.getStateActionRewards()) {
                     storm::dd::Add<Type> states = generationInfo.rowExpressionAdapter->translateExpression(stateActionReward.getStatePredicateExpression());
                     storm::dd::Add<Type> rewards = generationInfo.rowExpressionAdapter->translateExpression(stateActionReward.getRewardValueExpression());
-                    
                     storm::dd::Add<Type> synchronization = generationInfo.manager->getAddOne();
                     
-                    storm::dd::Add<Type> transitions;
                     if (stateActionReward.isLabeled()) {
                         if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::MDP) {
                             synchronization = getSynchronizationDecisionDiagram(generationInfo, stateActionReward.getActionIndex());
                         }
-                        transitions = globalModule.synchronizingActionToDecisionDiagramMap.at(stateActionReward.getActionIndex()).transitionsDd;
+                        states *= globalModule.synchronizingActionToDecisionDiagramMap.at(stateActionReward.getActionIndex()).guardDd * reachableStatesAdd;
                     } else {
                         if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::MDP) {
                             synchronization = getSynchronizationDecisionDiagram(generationInfo);
                         }
-                        transitions = globalModule.independentAction.transitionsDd;
+                        states *= globalModule.independentAction.guardDd * reachableStatesAdd;
                     }
                     
-                    storm::dd::Add<Type> transitionRewardDd = synchronization * states * rewards;
-                    if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::DTMC) {
-                        // For DTMCs we need to keep the weighting for the scaling that follows.
-                        transitionRewardDd = transitions * transitionRewardDd;
-                    } else {
-                        // For all other model types, we do not scale the rewards.
-                        transitionRewardDd = transitions.notZero().toAdd() * transitionRewardDd;
-                    }
+                    storm::dd::Add<Type> stateActionRewardDd = synchronization * states * rewards;
                     
                     // Perform some sanity checks.
-                    STORM_LOG_WARN_COND(transitionRewardDd.getMin() >= 0, "The reward model assigns negative rewards to some states.");
-                    STORM_LOG_WARN_COND(!transitionRewardDd.isZero(), "The reward model does not assign any non-zero rewards.");
+                    STORM_LOG_WARN_COND(stateActionRewardDd.getMin() >= 0, "The reward model assigns negative rewards to some states.");
+                    STORM_LOG_WARN_COND(!stateActionRewardDd.isZero(), "The reward model does not assign any non-zero rewards.");
                     
                     // Add the rewards to the global transition reward matrix.
-                    stateActionRewards.get() += transitionRewardDd;
+                    stateActionRewards.get() += stateActionRewardDd;
                 }
                 
-                // Scale transition rewards for DTMCs.
+                // Scale state-action rewards for DTMCs.
                 if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::DTMC) {
-                    stateActionRewards.get() /= fullTransitionMatrix;
+                    STORM_LOG_THROW(static_cast<bool>(stateToChoiceCountMap), storm::exceptions::InvalidStateException, "A DD that reflects the number of choices per state was not build, but was expected to exist.");
+                    stateActionRewards.get() /= stateToChoiceCountMap.get();
                 }
+                stateActionRewards.get().exportToDot("rewards.dot");
             }
             
             // Then build the transition reward matrix.
@@ -827,7 +827,8 @@ namespace storm {
                 
                 // Scale transition rewards for DTMCs.
                 if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::DTMC) {
-                    transitionRewards.get() /= fullTransitionMatrix;
+                    STORM_LOG_THROW(static_cast<bool>(stateToChoiceCountMap), storm::exceptions::InvalidStateException, "A DD that reflects the number of choices per state was not build, but was expected to exist.");
+                    stateActionRewards.get() /= stateToChoiceCountMap.get();
                 }
             }
             
@@ -868,40 +869,10 @@ namespace storm {
             // In particular, this creates the meta variables used to encode the model.
             GenerationInformation generationInfo(preparedProgram);
 
-            std::pair<storm::dd::Add<Type>, ModuleDecisionDiagram> transitionMatrixModulePair = createSystemDecisionDiagram(generationInfo);
-            storm::dd::Add<Type> transitionMatrix = transitionMatrixModulePair.first;
-            ModuleDecisionDiagram const& globalModule = transitionMatrixModulePair.second;
-            
-            // Finally, we build the DDs for the selected reward structures. It is important to do this now, because
-            // we still have the uncut transition matrix, which is needed for the reward computation. This is because
-            // the reward computation might divide by the transition probabilities, which must therefore never be 0.
-            // However, cutting it to the reachable fragment, there might be zero probability transitions.
-            std::vector<std::reference_wrapper<storm::prism::RewardModel const>> selectedRewardModels;
-
-            // First, we make sure that all selected reward models actually exist.
-            for (auto const& rewardModelName : options.rewardModelsToBuild) {
-                STORM_LOG_THROW(rewardModelName.empty() || preparedProgram.hasRewardModel(rewardModelName), storm::exceptions::InvalidArgumentException, "Model does not possess a reward model with the name '" << rewardModelName << "'.");
-            }
-            
-            for (auto const& rewardModel : preparedProgram.getRewardModels()) {
-                if (options.buildAllRewardModels || options.rewardModelsToBuild.find(rewardModel.getName()) != options.rewardModelsToBuild.end()) {
-                    selectedRewardModels.push_back(rewardModel);
-                }
-            }
-            // If no reward model was selected until now and a referenced reward model appears to be unique, we build
-            // the only existing reward model (given that no explicit name was given for the referenced reward model).
-            if (selectedRewardModels.empty() && preparedProgram.getNumberOfRewardModels() == 1 && options.rewardModelsToBuild.size() == 1 && *options.rewardModelsToBuild.begin() == "") {
-                selectedRewardModels.push_back(preparedProgram.getRewardModel(0));
-            }
-            std::unordered_map<std::string, storm::models::symbolic::StandardRewardModel<Type, double>> rewardModels;
-            if (options.buildAllRewardModels || !options.rewardModelsToBuild.empty()) {
-                for (auto const& rewardModel : preparedProgram.getRewardModels()) {
-                    if (options.buildAllRewardModels || options.rewardModelsToBuild.find(rewardModel.getName()) != options.rewardModelsToBuild.end()) {
-                        STORM_LOG_TRACE("Building reward structure.");
-                        rewardModels.emplace(rewardModel.getName(), createRewardModelDecisionDiagrams(generationInfo, rewardModel, globalModule, transitionMatrix));
-                    }
-                }
-            }
+            std::tuple<storm::dd::Add<Type>, ModuleDecisionDiagram, boost::optional<storm::dd::Add<Type>>> system = createSystemDecisionDiagram(generationInfo);
+            storm::dd::Add<Type> transitionMatrix = std::get<0>(system);
+            ModuleDecisionDiagram const& globalModule = std::get<1>(system);
+            boost::optional<storm::dd::Add<Type>> stateToChoiceCountMap = std::get<2>(system);
             
             // Cut the transitions and rewards to the reachable fragment of the state space.
             storm::dd::Bdd<Type> initialStates = createInitialStatesDecisionDiagram(generationInfo);
@@ -912,9 +883,6 @@ namespace storm {
             storm::dd::Bdd<Type> reachableStates = computeReachableStates(generationInfo, initialStates, transitionMatrixBdd);
             storm::dd::Add<Type> reachableStatesAdd = reachableStates.toAdd();
             transitionMatrix *= reachableStatesAdd;
-            for (auto& rewardModel : rewardModels) {
-                rewardModel.second *= reachableStatesAdd;
-            }
 
             // Detect deadlocks and 1) fix them if requested 2) throw an error otherwise.
             storm::dd::Bdd<Type> statesWithTransition = transitionMatrixBdd.existsAbstract(generationInfo.columnMetaVariables);
@@ -937,6 +905,35 @@ namespace storm {
                     }
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The model contains " << deadlockStates.getNonZeroCount() << " deadlock states. Please unset the option to not fix deadlocks, if you want to fix them automatically.");
+                }
+            }
+            
+            // Now build the reward models.
+            std::vector<std::reference_wrapper<storm::prism::RewardModel const>> selectedRewardModels;
+            
+            // First, we make sure that all selected reward models actually exist.
+            for (auto const& rewardModelName : options.rewardModelsToBuild) {
+                STORM_LOG_THROW(rewardModelName.empty() || preparedProgram.hasRewardModel(rewardModelName), storm::exceptions::InvalidArgumentException, "Model does not possess a reward model with the name '" << rewardModelName << "'.");
+            }
+            
+            for (auto const& rewardModel : preparedProgram.getRewardModels()) {
+                if (options.buildAllRewardModels || options.rewardModelsToBuild.find(rewardModel.getName()) != options.rewardModelsToBuild.end()) {
+                    selectedRewardModels.push_back(rewardModel);
+                }
+            }
+            // If no reward model was selected until now and a referenced reward model appears to be unique, we build
+            // the only existing reward model (given that no explicit name was given for the referenced reward model).
+            if (selectedRewardModels.empty() && preparedProgram.getNumberOfRewardModels() == 1 && options.rewardModelsToBuild.size() == 1 && *options.rewardModelsToBuild.begin() == "") {
+                selectedRewardModels.push_back(preparedProgram.getRewardModel(0));
+            }
+            
+            std::unordered_map<std::string, storm::models::symbolic::StandardRewardModel<Type, double>> rewardModels;
+            if (options.buildAllRewardModels || !options.rewardModelsToBuild.empty()) {
+                for (auto const& rewardModel : preparedProgram.getRewardModels()) {
+                    if (options.buildAllRewardModels || options.rewardModelsToBuild.find(rewardModel.getName()) != options.rewardModelsToBuild.end()) {
+                        STORM_LOG_TRACE("Building reward structure.");
+                        rewardModels.emplace(rewardModel.getName(), createRewardModelDecisionDiagrams(generationInfo, rewardModel, globalModule, transitionMatrix, reachableStatesAdd, stateToChoiceCountMap));
+                    }
                 }
             }
             

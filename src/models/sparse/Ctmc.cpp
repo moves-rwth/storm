@@ -1,5 +1,5 @@
 #include "src/models/sparse/Ctmc.h"
-
+#include "src/models/sparse/StandardRewardModel.h"
 #include "src/adapters/CarlAdapter.h"
 #include "src/utility/macros.h"
 

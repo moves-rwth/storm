@@ -1,6 +1,9 @@
 #include "MarkovAutomatonParser.h"
 #include "AtomicPropositionLabelingParser.h"
 #include "SparseStateRewardParser.h"
+
+#include "src/models/sparse/StandardRewardModel.h"
+
 #include "src/exceptions/WrongFormatException.h"
 
 #include "log4cplus/logger.h"

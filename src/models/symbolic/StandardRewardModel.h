@@ -144,10 +144,21 @@ namespace storm {
                  * transition-based rewards in the reward model.
                  *
                  * @param transitionMatrix The matrix that is used to weight the values of the transition reward matrix.
-                 * @param columnVariables .
+                 * @param columnVariables The column variables of the model.
                  * @return The full state-action reward vector.
                  */
                 storm::dd::Add<Type> getTotalRewardVector(storm::dd::Add<Type> const& transitionMatrix, std::set<storm::expressions::Variable> const& columnVariables) const;
+                
+                /*!
+                 * Creates a vector representing the complete reward vector based on the state-, state-action- and
+                 * transition-based rewards in the reward model.
+                 *
+                 * @param transitionMatrix The matrix that is used to weight the values of the transition reward matrix.
+                 * @param columnVariables The column variables of the model.
+                 * @param weights The weights used to scale the state-action reward vector.
+                 * @return The full state-action reward vector.
+                 */
+                storm::dd::Add<Type> getTotalRewardVector(storm::dd::Add<Type> const& transitionMatrix, std::set<storm::expressions::Variable> const& columnVariables, storm::dd::Add<Type> const& weights) const;
                 
                 /*!
                  * Multiplies all components of the reward model with the given DD.

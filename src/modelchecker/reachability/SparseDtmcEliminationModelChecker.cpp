@@ -11,6 +11,7 @@
 
 #include "src/storage/StronglyConnectedComponentDecomposition.h"
 
+#include "src/models/sparse/StandardRewardModel.h"
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 

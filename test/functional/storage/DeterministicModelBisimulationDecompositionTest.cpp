@@ -1,7 +1,8 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 #include "src/parser/AutoParser.h"
-#include "storage/DeterministicModelBisimulationDecomposition.h"
+#include "src/storage/DeterministicModelBisimulationDecomposition.h"
+#include "src/models/sparse/StandardRewardModel.h"
 
 TEST(DeterministicModelBisimulationDecomposition, Die) {
 	std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/dtmc/die/die.tra", STORM_CPP_BASE_PATH "/examples/dtmc/die/die.lab", "", "");

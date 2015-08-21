@@ -98,6 +98,21 @@ namespace storm {
             }
             
             template <storm::dd::DdType Type, typename ValueType>
+            storm::dd::Add<Type> StandardRewardModel<Type, ValueType>::getTotalRewardVector(storm::dd::Add<Type> const& transitionMatrix, std::set<storm::expressions::Variable> const& columnVariables, storm::dd::Add<Type> const& weights) const {
+                storm::dd::Add<Type> result = transitionMatrix.getDdManager()->getAddZero();
+                if (this->hasStateRewards()) {
+                    result += optionalStateRewardVector.get();
+                }
+                if (this->hasStateActionRewards()) {
+                    result += optionalStateActionRewardVector.get() * weights;
+                }
+                if (this->hasTransitionRewards()) {
+                    result += (transitionMatrix * this->getTransitionRewardMatrix()).sumAbstract(columnVariables);
+                }
+                return result;
+            }
+            
+            template <storm::dd::DdType Type, typename ValueType>
             StandardRewardModel<Type, ValueType>& StandardRewardModel<Type, ValueType>::operator*=(storm::dd::Add<Type> const& filter) {
                 if (this->hasStateRewards()) {
                     this->optionalStateRewardVector.get() *= filter;
@@ -116,7 +131,7 @@ namespace storm {
             StandardRewardModel<Type, ValueType> StandardRewardModel<Type, ValueType>::divideStateRewardVector(storm::dd::Add<Type> const& divisor) const {
                 boost::optional<storm::dd::Add<Type>> modifiedStateRewardVector;
                 if (this->hasStateRewards()) {
-                    modifiedStateRewardVector.get() = modifiedStateRewardVector.get() / divisor;
+                    modifiedStateRewardVector = this->optionalStateRewardVector.get() / divisor;
                 }
                 return StandardRewardModel<Type, ValueType>(modifiedStateRewardVector, this->optionalStateActionRewardVector, this->optionalTransitionRewardMatrix);
             }

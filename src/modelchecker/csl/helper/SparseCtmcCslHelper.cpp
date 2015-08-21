@@ -314,7 +314,7 @@ namespace storm {
                 
                 // Initialize result to state rewards of the this->getModel().
                 std::vector<ValueType> result(rewardModel.getStateRewardVector());
-                
+
                 // If the time-bound is not zero, we need to perform a transient analysis.
                 if (timeBound > 0) {
                     ValueType uniformizationRate = 0;
@@ -335,7 +335,7 @@ namespace storm {
             std::vector<ValueType> SparseCtmcCslHelper<ValueType, RewardModelType>::computeCumulativeRewards(storm::storage::SparseMatrix<ValueType> const& rateMatrix, std::vector<ValueType> const& exitRateVector, RewardModelType const& rewardModel, double timeBound, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 // Only compute the result if the model has a state-based reward this->getModel().
                 STORM_LOG_THROW(!rewardModel.empty(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
-                
+                                
                 uint_fast64_t numberOfStates = rateMatrix.getRowCount();
                 
                 // If the time bound is zero, the result is the constant zero vector.
@@ -356,7 +356,7 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> uniformizedMatrix = computeUniformizedMatrix(rateMatrix, storm::storage::BitVector(numberOfStates, true), uniformizationRate, exitRateVector);
                 
                 // Compute the total state reward vector.
-                std::vector<ValueType> totalRewardVector = rewardModel.getTotalRewardVector(uniformizedMatrix);
+                std::vector<ValueType> totalRewardVector = rewardModel.getTotalRewardVector(rateMatrix, exitRateVector);
                 
                 // Finally, compute the transient probabilities.
                 return computeTransientProbabilities<true>(uniformizedMatrix, nullptr, timeBound, uniformizationRate, totalRewardVector, linearEquationSolverFactory);

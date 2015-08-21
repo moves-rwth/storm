@@ -3,6 +3,7 @@
 
 #include "src/parser/NondeterministicModelParser.h"
 #include "src/models/sparse/Mdp.h"
+#include "src/models/sparse/StandardRewardModel.h"
 #include "src/exceptions/FileIoException.h"
 
 #include "src/exceptions/OutOfRangeException.h"

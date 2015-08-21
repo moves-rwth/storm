@@ -1,6 +1,8 @@
 #include <list>
 #include <queue>
 
+#include "src/models/sparse/StandardRewardModel.h"
+
 #include "src/storage/MaximalEndComponentDecomposition.h"
 #include "src/storage/StronglyConnectedComponentDecomposition.h"
 

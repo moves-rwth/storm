@@ -1,5 +1,5 @@
 #include "src/models/sparse/MarkovAutomaton.h"
-
+#include "src/models/sparse/StandardRewardModel.h"
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/utility/constants.h"
 #include "src/adapters/CarlAdapter.h"

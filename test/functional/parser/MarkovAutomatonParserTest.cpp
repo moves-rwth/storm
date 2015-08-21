@@ -2,6 +2,7 @@
 #include "storm-config.h"
 
 #include "src/parser/MarkovAutomatonParser.h"
+#include "src/models/sparse/StandardRewardModel.h"
 #include "src/exceptions/FileIoException.h"
 #include "src/exceptions/OutOfRangeException.h"
 

@@ -2,6 +2,7 @@
 #include "storm-config.h"
 
 #include "src/logic/Formulas.h"
+#include "src/models/sparse/StandardRewardModel.h"
 #include "src/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "src/settings/SettingsManager.h"

@@ -4,6 +4,7 @@
 #include "src/settings/SettingMemento.h"
 #include "src/logic/Formulas.h"
 #include "src/utility/solver.h"
+#include "src/models/sparse/StandardRewardModel.h"
 #include "src/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "src/settings/SettingsManager.h"

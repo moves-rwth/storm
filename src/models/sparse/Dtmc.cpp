@@ -1,5 +1,5 @@
 #include "src/models/sparse/Dtmc.h"
-
+#include "src/models/sparse/StandardRewardModel.h"
 #include "src/adapters/CarlAdapter.h"
 #include "src/exceptions/NotImplementedException.h"
 #include "src/exceptions/InvalidArgumentException.h"

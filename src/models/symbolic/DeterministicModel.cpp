@@ -4,6 +4,8 @@
 #include "src/storage/dd/CuddAdd.h"
 #include "src/storage/dd/CuddBdd.h"
 
+#include "src/models/symbolic/StandardRewardModel.h"
+
 namespace storm {
     namespace models {
         namespace symbolic {

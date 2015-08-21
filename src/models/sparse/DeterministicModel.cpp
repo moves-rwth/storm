@@ -1,4 +1,5 @@
 #include "src/models/sparse/DeterministicModel.h"
+#include "src/models/sparse/StandardRewardModel.h"
 #include "src/utility/constants.h"
 #include "src/adapters/CarlAdapter.h"
 

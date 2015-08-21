@@ -1,5 +1,7 @@
 #include "src/models/sparse/NondeterministicModel.h"
 
+#include "src/models/sparse/StandardRewardModel.h"
+
 #include "src/adapters/CarlAdapter.h"
 
 namespace storm {

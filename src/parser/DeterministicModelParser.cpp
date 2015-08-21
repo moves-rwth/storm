@@ -3,6 +3,8 @@
 #include <string>
 #include <vector>
 
+#include "src/models/sparse/StandardRewardModel.h"
+
 #include "src/parser/DeterministicSparseTransitionParser.h"
 #include "src/parser/AtomicPropositionLabelingParser.h"
 #include "src/parser/SparseStateRewardParser.h"

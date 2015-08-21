@@ -59,16 +59,62 @@ namespace storm {
             return value;
         }
         
+        // For floats we specialize this class and consider the comparison modulo some predefined precision.
+        template<>
+        class ConstantsComparator<float> {
+        public:
+            ConstantsComparator();
+            
+            ConstantsComparator(float precision);
+            
+            bool isOne(float const& value) const;
+            
+            bool isZero(float const& value) const;
+            
+            bool isEqual(float const& value1, float const& value2) const;
+            
+            bool isConstant(float const& value) const;
+            
+        private:
+            // The precision used for comparisons.
+            float precision;
+        };
+        
+        // For doubles we specialize this class and consider the comparison modulo some predefined precision.
+        template<>
+        class ConstantsComparator<double> {
+        public:
+            ConstantsComparator();
+            
+            ConstantsComparator(double precision);
+            
+            bool isOne(double const& value) const;
+            
+            bool isZero(double const& value) const;
+            
+            bool isInfinity(double const& value) const;
+            
+            bool isEqual(double const& value1, double const& value2) const;
+            
+            bool isConstant(double const& value) const;
+            
+        private:
+            // The precision used for comparisons.
+            double precision;
+        };
+        
 #ifdef STORM_HAVE_CARL
         template<>
         RationalFunction& simplify(RationalFunction& value);
         
         template<>
         RationalFunction&& simplify(RationalFunction&& value);
-
+        
         template<>
         class ConstantsComparator<storm::RationalFunction> {
         public:
+            ConstantsComparator();
+            
             bool isOne(storm::RationalFunction const& value) const;
             
             bool isZero(storm::RationalFunction const& value) const;
@@ -81,6 +127,8 @@ namespace storm {
         template<>
         class ConstantsComparator<storm::Polynomial> {
         public:
+            ConstantsComparator();
+            
             bool isOne(storm::Polynomial const& value) const;
             
             bool isZero(storm::Polynomial const& value) const;
@@ -90,7 +138,6 @@ namespace storm {
             bool isConstant(storm::Polynomial const& value) const;
         };
 #endif
-        
         
         template<typename ValueType>
         bool ConstantsComparator<ValueType>::isOne(ValueType const& value) const {
@@ -183,6 +230,10 @@ namespace storm {
             return std::move(value);
         }
         
+        ConstantsComparator<storm::RationalFunction>::ConstantsComparator() {
+            // Intentionally left empty.
+        }
+        
         bool ConstantsComparator<storm::RationalFunction>::isOne(storm::RationalFunction const& value) const {
             return value.isOne();
         }
@@ -197,6 +248,10 @@ namespace storm {
         
         bool ConstantsComparator<storm::RationalFunction>::isConstant(storm::RationalFunction const& value) const {
             return value.isConstant();
+        }
+        
+        ConstantsComparator<storm::Polynomial>::ConstantsComparator() {
+            // Intentionally left empty.
         }
         
         bool ConstantsComparator<storm::Polynomial>::isOne(storm::Polynomial const& value) const {

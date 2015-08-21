@@ -2,6 +2,8 @@
 
 #include <boost/algorithm/string/join.hpp>
 
+#include "src/models/sparse/StandardRewardModel.h"
+
 #include "src/utility/vector.h"
 #include "src/adapters/CarlAdapter.h"
 

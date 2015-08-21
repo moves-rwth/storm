@@ -10,6 +10,8 @@
 #include "src/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
 
+#include "src/models/sparse/StandardRewardModel.h"
+
 #include "src/utility/graph.h"
 #include "src/utility/constants.h"
 #include "src/exceptions/IllegalFunctionCallException.h"
@@ -18,7 +20,6 @@
 
 #include "src/settings/SettingsManager.h"
 #include "src/settings/modules/GeneralSettings.h"
-
 
 namespace storm {
     namespace storage {

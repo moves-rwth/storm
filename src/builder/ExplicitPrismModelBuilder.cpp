@@ -5,6 +5,7 @@
 #include "src/models/sparse/Dtmc.h"
 #include "src/models/sparse/Ctmc.h"
 #include "src/models/sparse/Mdp.h"
+#include "src/models/sparse/StandardRewardModel.h"
 
 #include "src/settings/modules/GeneralSettings.h"
 
@@ -653,6 +654,11 @@ namespace storm {
                         for (auto rewardModelIt = selectedRewardModels.begin(), rewardModelIte = selectedRewardModels.end(); rewardModelIt != rewardModelIte; ++rewardModelIt, ++builderIt) {
                             if (rewardModelIt->get().hasStateRewards()) {
                                 builderIt->stateRewardVector.push_back(storm::utility::zero<ValueType>());
+                                for (auto const& stateReward : rewardModelIt->get().getStateRewards()) {
+                                    if (evaluator.asBool(stateReward.getStatePredicateExpression())) {
+                                        builderIt->stateRewardVector.back() += ValueType(evaluator.asRational(stateReward.getRewardValueExpression()));
+                                    }
+                                }
                             }
                             
                             if (rewardModelIt->get().hasStateActionRewards()) {
@@ -668,14 +674,6 @@ namespace storm {
                             
                             auto builderIt = rewardModelBuilders.begin();
                             for (auto rewardModelIt = selectedRewardModels.begin(), rewardModelIte = selectedRewardModels.end(); rewardModelIt != rewardModelIte; ++rewardModelIt, ++builderIt) {
-                                if (rewardModelIt->get().hasStateRewards()) {
-                                    for (auto const& stateReward : rewardModelIt->get().getStateRewards()) {
-                                        if (evaluator.asBool(stateReward.getStatePredicateExpression())) {
-                                            builderIt->stateRewardVector.back() += ValueType(evaluator.asRational(stateReward.getRewardValueExpression()));
-                                        }
-                                    }
-                                }
-                                
                                 if (rewardModelIt->get().hasStateActionRewards()) {
                                     for (auto const& stateActionReward : rewardModelIt->get().getStateActionRewards()) {
                                         if (!stateActionReward.isLabeled()) {
@@ -702,19 +700,11 @@ namespace storm {
                             
                             auto builderIt = rewardModelBuilders.begin();
                             for (auto rewardModelIt = selectedRewardModels.begin(), rewardModelIte = selectedRewardModels.end(); rewardModelIt != rewardModelIte; ++rewardModelIt, ++builderIt) {
-                                if (rewardModelIt->get().hasStateRewards()) {
-                                    for (auto const& stateReward : rewardModelIt->get().getStateRewards()) {
-                                        if (evaluator.asBool(stateReward.getStatePredicateExpression())) {
-                                            builderIt->stateRewardVector.back() += ValueType(evaluator.asRational(stateReward.getRewardValueExpression()));
-                                        }
-                                    }
-                                }
-                                
                                 if (rewardModelIt->get().hasStateActionRewards()) {
                                     for (auto const& stateActionReward : rewardModelIt->get().getStateActionRewards()) {
                                         if (stateActionReward.isLabeled() && stateActionReward.getActionIndex() == choice.getActionIndex()) {
                                             if (evaluator.asBool(stateActionReward.getStatePredicateExpression())) {
-                                                builderIt->stateActionRewardVector.back() += ValueType(evaluator.asRational(stateActionReward.getRewardValueExpression())) / totalNumberOfChoices;
+                                                builderIt->stateActionRewardVector.back() += ValueType(evaluator.asRational(stateActionReward.getRewardValueExpression()));
                                             }
                                         }
                                     }
