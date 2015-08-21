@@ -1,11 +1,14 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 #include "src/settings/SettingsManager.h"
+#include "src/settings/modules/GmmxxEquationSolverSettings.h"
+#include "src/settings/modules/NativeEquationSolverSettings.h"
 #include "src/settings/SettingMemento.h"
 #include "src/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "src/utility/solver.h"
 #include "src/parser/AutoParser.h"
+
 
 TEST(GmmxxDtmcPrctlModelCheckerTest, Crowds) {
 	std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/dtmc/crowds/crowds20_5.tra", STORM_CPP_BASE_PATH "/examples/dtmc/crowds/crowds20_5.lab", "", "");

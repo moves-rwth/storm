@@ -2,11 +2,11 @@
 #define STORM_STORAGE_DD_CUDDADD_H_
 
 #include <boost/optional.hpp>
+#include <map>
 
 #include "src/storage/dd/Add.h"
 #include "src/storage/dd/CuddDd.h"
 #include "src/storage/dd/CuddDdForwardIterator.h"
-#include "src/storage/SparseMatrix.h"
 #include "src/storage/expressions/Variable.h"
 #include "src/utility/OsDetection.h"
 
@@ -14,6 +14,12 @@
 #include "cuddObj.hh"
 
 namespace storm {
+    namespace storage {
+        template<typename T> class SparseMatrix;
+        class BitVector;
+        template<typename E, typename V> class MatrixEntry;
+    }
+    
     namespace dd {
         // Forward-declare some classes.
         template<DdType Type> class DdManager;

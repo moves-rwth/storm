@@ -8,6 +8,10 @@
 #include "src/utility/solver.h"
 #include "src/utility/numerical.h"
 
+
+#include "src/settings/modules/GeneralSettings.h"
+#include "src/settings/SettingsManager.h"
+
 #include "src/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"

@@ -4,6 +4,7 @@
 #include <cctype>
 #include <mutex>
 #include <iomanip>
+#include <fstream>
 #include <regex>
 #include <set>
 #include <boost/algorithm/string.hpp>
@@ -12,6 +13,21 @@
 #include "src/exceptions/IllegalFunctionCallException.h"
 #include "src/exceptions/OptionParserException.h"
 #include "src/utility/storm-version.h"
+#include "src/settings/modules/GeneralSettings.h"
+#include "src/settings/modules/DebugSettings.h"
+#include "src/settings/modules/CounterexampleGeneratorSettings.h"
+#include "src/settings/modules/CuddSettings.h"
+#include "src/settings/modules/GmmxxEquationSolverSettings.h"
+#include "src/settings/modules/NativeEquationSolverSettings.h"
+#include "src/settings/modules/BisimulationSettings.h"
+#include "src/settings/modules/GlpkSettings.h"
+#include "src/settings/modules/GurobiSettings.h"
+#include "src/settings/modules/ParametricSettings.h"
+#include "src/settings/modules/SparseDtmcEliminationModelCheckerSettings.h"
+#include "src/settings/modules/TopologicalValueIterationEquationSolverSettings.h"
+#include "src/utility/macros.h"
+#include "src/settings/Option.h"
+
 
 namespace storm {
     namespace settings {

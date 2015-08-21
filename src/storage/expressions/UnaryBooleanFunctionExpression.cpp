@@ -1,5 +1,6 @@
 #include "src/storage/expressions/UnaryBooleanFunctionExpression.h"
 #include "src/storage/expressions/BooleanLiteralExpression.h"
+#include "ExpressionVisitor.h"
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidTypeException.h"
 

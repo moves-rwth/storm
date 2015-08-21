@@ -52,12 +52,27 @@ namespace storm {
             return Update(this->getGlobalIndex(), this->getLikelihoodExpression().substitute(substitution), newAssignments, this->getFilename(), this->getLineNumber());
         }
         
+        Update Update::removeIdentityAssignments() const {
+            std::vector<Assignment> newAssignments;
+            newAssignments.reserve(getNumberOfAssignments());
+            for(auto const& ass : this->assignments) {
+                if(!ass.isIdentity()) {
+                    newAssignments.push_back(ass);
+                }
+            }
+            return Update(this->globalIndex, this->likelihoodExpression, newAssignments, getFilename(), getLineNumber());
+        }
+        
         std::ostream& operator<<(std::ostream& stream, Update const& update) {
             stream << update.getLikelihoodExpression() << " : ";
+            if(update.getNumberOfAssignments() == 0) {
+                stream << "True";
+            }
+            
             uint_fast64_t i = 0;
             for (auto const& assignment : update.getAssignments()) {
                 stream << assignment;
-                if (i < update.getAssignments().size() - 1) {
+                if (i < update.getNumberOfAssignments() - 1) {
                     stream << " & ";
                 }
                 ++i;

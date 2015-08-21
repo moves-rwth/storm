@@ -14,6 +14,10 @@
 #include "src/settings/Argument.h"
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidArgumentException.h"
+#include "src/exceptions/IllegalArgumentException.h"
+#include "src/exceptions/IllegalArgumentValueException.h"
+#include "src/exceptions/IllegalFunctionCallException.h"
+
 
 namespace storm {
 	namespace settings {

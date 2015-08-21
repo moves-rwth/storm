@@ -6,6 +6,9 @@
 #include "src/exceptions/InvalidStateException.h"
 #include "src/exceptions/InvalidAccessException.h"
 #include "src/settings/SettingsManager.h"
+#include "src/settings/modules/GeneralSettings.h"
+#include "src/storage/expressions/Variable.h"
+#include "src/storage/expressions/Expressions.h"
 
 TEST(GurobiLpSolver, LPOptimizeMax) {
     storm::solver::GurobiLpSolver solver(storm::solver::LpSolver::ModelSense::Maximize);

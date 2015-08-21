@@ -7,13 +7,24 @@
 
 #include "src/storage/expressions/Expression.h"
 #include "src/storage/expressions/Variable.h"
-#include "src/adapters/AddExpressionAdapter.h"
-#include "src/storage/dd/CuddDd.h"
-#include "src/storage/dd/CuddDdManager.h"
+#include "src/storage/dd/DdType.h"
 #include "src/models/ModelBase.h"
 #include "src/utility/OsDetection.h"
 
 namespace storm {
+    namespace dd {
+        
+        template<storm::dd::DdType Type> class Dd;
+        template<storm::dd::DdType Type> class Add;
+        template<storm::dd::DdType Type> class Bdd;
+        template<storm::dd::DdType Type> class DdManager;
+        
+    }
+    
+    namespace adapters {
+        template<storm::dd::DdType Type> class AddExpressionAdapter;
+    }
+    
     namespace models {
         namespace symbolic {
             

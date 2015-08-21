@@ -5,6 +5,9 @@
 #include "src/storage/dd/CuddAdd.h"
 #include "src/storage/dd/CuddOdd.h"
 #include "src/storage/dd/DdMetaVariable.h"
+#include "src/settings/SettingsManager.h"
+
+#include "src/storage/SparseMatrix.h"
 
 TEST(CuddDdManager, Constants) {
     std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::CUDD>> manager(new storm::dd::DdManager<storm::dd::DdType::CUDD>());

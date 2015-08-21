@@ -6,6 +6,10 @@
 #include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "src/settings/SettingsManager.h"
+
+#include "src/settings/modules/GeneralSettings.h"
+
+#include "src/settings/modules/NativeEquationSolverSettings.h"
 #include "src/parser/AutoParser.h"
 
 TEST(SparseMdpPrctlModelCheckerTest, Dice) {

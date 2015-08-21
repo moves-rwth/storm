@@ -12,13 +12,13 @@ TEST(StronglyConnectedComponentDecomposition, Crowds) {
     storm::storage::StronglyConnectedComponentDecomposition<double> sccDecomposition;
 
     ASSERT_NO_THROW(sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(*dtmc));
-    ASSERT_EQ(1290297ull, sccDecomposition.size());
+    ASSERT_EQ(1290297ul, sccDecomposition.size());
 
     ASSERT_NO_THROW(sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(*dtmc, true));
-    ASSERT_EQ(437690, sccDecomposition.size());
+    ASSERT_EQ(437690ul, sccDecomposition.size());
 
     ASSERT_NO_THROW(sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(*dtmc, true, true));
-    ASSERT_EQ(425040, sccDecomposition.size());
+    ASSERT_EQ(425040ul, sccDecomposition.size());
 
     dtmc = nullptr;
 }
@@ -30,13 +30,13 @@ TEST(StronglyConnectedComponentDecomposition, SynchronousLeader) {
     storm::storage::StronglyConnectedComponentDecomposition<double> sccDecomposition;
 
     ASSERT_NO_THROW(sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(*dtmc));
-    ASSERT_EQ(2611835, sccDecomposition.size());
+    ASSERT_EQ(2611835ul, sccDecomposition.size());
 
     ASSERT_NO_THROW(sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(*dtmc, true));
-    ASSERT_EQ(2, sccDecomposition.size());
+    ASSERT_EQ(2ul, sccDecomposition.size());
 
     ASSERT_NO_THROW(sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(*dtmc, true, true));
-    ASSERT_EQ(1, sccDecomposition.size());
+    ASSERT_EQ(1ul, sccDecomposition.size());
 
     dtmc = nullptr;
 }
@@ -48,13 +48,13 @@ TEST(StronglyConnectedComponentDecomposition, AsynchronousLeader) {
     storm::storage::StronglyConnectedComponentDecomposition<double> sccDecomposition;
     
     ASSERT_NO_THROW(sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(*mdp));
-    ASSERT_EQ(1461930, sccDecomposition.size());
+    ASSERT_EQ(1461930ul, sccDecomposition.size());
 
     ASSERT_NO_THROW(sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(*mdp, true));
-    ASSERT_EQ(127, sccDecomposition.size());
+    ASSERT_EQ(127ul, sccDecomposition.size());
 
     ASSERT_NO_THROW(sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(*mdp, true, true));
-    ASSERT_EQ(7, sccDecomposition.size());
+    ASSERT_EQ(7ul, sccDecomposition.size());
 
     mdp = nullptr;
 }
@@ -66,13 +66,13 @@ TEST(StronglyConnectedComponentDecomposition, Consensus) {
     storm::storage::StronglyConnectedComponentDecomposition<double> sccDecomposition;
     
     ASSERT_NO_THROW(sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(*mdp));
-    ASSERT_EQ(121251, sccDecomposition.size());
+    ASSERT_EQ(121251ul, sccDecomposition.size());
 
     ASSERT_NO_THROW(sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(*mdp, true));
-    ASSERT_EQ(1049, sccDecomposition.size());
+    ASSERT_EQ(1049ul, sccDecomposition.size());
 
     ASSERT_NO_THROW(sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<double>(*mdp, true, true));
-    ASSERT_EQ(384, sccDecomposition.size());
+    ASSERT_EQ(384ul, sccDecomposition.size());
 
     mdp = nullptr;
 }

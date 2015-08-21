@@ -3,9 +3,12 @@
 
 #include <vector>
 
-#include "src/storage/SparseMatrix.h"
 
 namespace storm {
+    namespace storage {
+        template<typename T> class SparseMatrix;
+    }
+    
     namespace solver {
         
         /*!

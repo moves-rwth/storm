@@ -1,20 +1,25 @@
 #ifndef STORM_UTILITY_SOLVER_H_
 #define STORM_UTILITY_SOLVER_H_
 
-#include "src/solver/SymbolicGameSolver.h"
-
-#include "src/solver/SymbolicLinearEquationSolver.h"
-#include "src/solver/LinearEquationSolver.h"
 #include "src/solver/NativeLinearEquationSolver.h"
-#include "src/solver/MinMaxLinearEquationSolver.h"
-#include "src/solver/LpSolver.h"
-
 #include "src/storage/dd/DdType.h"
-#include "src/settings/modules/NativeEquationSolverSettings.h"
-
-#include "src/exceptions/InvalidSettingsException.h"
 
 namespace storm {
+    namespace solver {
+        template<storm::dd::DdType T>  class SymbolicGameSolver;
+        template<storm::dd::DdType T, typename V> class SymbolicLinearEquationSolver;
+        template<typename V> class LinearEquationSolver;
+        template<typename V> class MinMaxLinearEquationSolver;
+        class LpSolver;
+    }
+    namespace dd {
+        template<storm::dd::DdType T> class Add;
+        template<storm::dd::DdType T> class Bdd;
+    }
+    namespace expressions {
+        class Variable;
+    }
+    
     namespace utility {
         namespace solver {
             template<storm::dd::DdType Type, typename ValueType>

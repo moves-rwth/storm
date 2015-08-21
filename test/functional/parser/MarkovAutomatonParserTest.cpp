@@ -3,6 +3,7 @@
 
 #include "src/parser/MarkovAutomatonParser.h"
 #include "src/exceptions/FileIoException.h"
+#include "src/exceptions/OutOfRangeException.h"
 
 TEST(MarkovAutomatonParserTest, NonExistingFile) {
 

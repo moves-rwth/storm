@@ -6,7 +6,6 @@
 #include <set>
 #include <boost/container/flat_set.hpp>
 
-#include "src/storage/expressions/Expression.h"
 #include "src/storage/prism/Constant.h"
 #include "src/storage/prism/Formula.h"
 #include "src/storage/prism/Label.h"

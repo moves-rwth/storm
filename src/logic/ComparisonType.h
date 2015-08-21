@@ -5,7 +5,7 @@
 
 namespace storm {
 	namespace logic {
-		enum ComparisonType { Less, LessEqual, Greater, GreaterEqual };
+		enum class ComparisonType { Less, LessEqual, Greater, GreaterEqual };
         
         std::ostream& operator<<(std::ostream& out, ComparisonType const& comparisonType);
 	}

@@ -7,6 +7,10 @@
 #include "src/storage/dd/CuddOdd.h"
 #include "src/storage/dd/CuddDdManager.h"
 
+#include "src/storage/BitVector.h"
+
+#include "src/logic/ComparisonType.h"
+
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidArgumentException.h"
 

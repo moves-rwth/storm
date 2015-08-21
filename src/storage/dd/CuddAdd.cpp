@@ -9,6 +9,10 @@
 #include "src/utility/vector.h"
 #include "src/utility/macros.h"
 
+
+#include "src/storage/SparseMatrix.h"
+
+
 #include "src/exceptions/IllegalFunctionCallException.h"
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/exceptions/NotImplementedException.h"

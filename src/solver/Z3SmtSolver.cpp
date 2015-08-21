@@ -2,6 +2,7 @@
 #include "src/utility/macros.h"
 #include "src/exceptions/NotSupportedException.h"
 #include "src/exceptions/InvalidStateException.h"
+#include "src/exceptions/InvalidArgumentException.h"
 
 namespace storm {
 	namespace solver {

@@ -2,7 +2,11 @@
 
 #include <utility>
 
+
+
 #include "src/settings/SettingsManager.h"
+#include "src/settings/modules/NativeEquationSolverSettings.h"
+#include "src/settings/modules/GeneralSettings.h"
 #include "src/utility/vector.h"
 #include "src/solver/NativeLinearEquationSolver.h"
 

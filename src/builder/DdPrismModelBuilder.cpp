@@ -10,11 +10,171 @@
 
 #include "src/exceptions/InvalidStateException.h"
 
+#include "src/exceptions/InvalidArgumentException.h"
+
 #include "src/utility/prism.h"
 #include "src/utility/math.h"
+#include "src/storage/prism/Program.h"
+
+#include "src/storage/dd/CuddAdd.h"
+#include "src/storage/dd/CuddBdd.h"
+
+#include "src/settings/modules/GeneralSettings.h"
 
 namespace storm {
     namespace builder {
+        
+        template <storm::dd::DdType Type>
+        class DdPrismModelBuilder<Type>::GenerationInformation {
+            public:
+                GenerationInformation(storm::prism::Program const& program) : program(program), manager(std::make_shared<storm::dd::DdManager<Type>>()), rowMetaVariables(), variableToRowMetaVariableMap(), rowExpressionAdapter(nullptr), columnMetaVariables(), variableToColumnMetaVariableMap(), columnExpressionAdapter(nullptr), rowColumnMetaVariablePairs(), nondeterminismMetaVariables(), variableToIdentityMap(), moduleToIdentityMap() {
+                    // Initializes variables and identity DDs.
+                    createMetaVariablesAndIdentities();
+                    
+                    rowExpressionAdapter = std::shared_ptr<storm::adapters::AddExpressionAdapter<Type>>(new storm::adapters::AddExpressionAdapter<Type>(manager, variableToRowMetaVariableMap));
+                    columnExpressionAdapter = std::shared_ptr<storm::adapters::AddExpressionAdapter<Type>>(new storm::adapters::AddExpressionAdapter<Type>(manager, variableToColumnMetaVariableMap));
+                }
+                
+                // The program that is currently translated.
+                storm::prism::Program const& program;
+                
+                // The manager used to build the decision diagrams.
+                std::shared_ptr<storm::dd::DdManager<Type>> manager;
+
+                // The meta variables for the row encoding.
+                std::set<storm::expressions::Variable> rowMetaVariables;
+                std::map<storm::expressions::Variable, storm::expressions::Variable> variableToRowMetaVariableMap;
+                std::shared_ptr<storm::adapters::AddExpressionAdapter<Type>> rowExpressionAdapter;
+                
+                // The meta variables for the column encoding.
+                std::set<storm::expressions::Variable> columnMetaVariables;
+                std::map<storm::expressions::Variable, storm::expressions::Variable> variableToColumnMetaVariableMap;
+                std::shared_ptr<storm::adapters::AddExpressionAdapter<Type>> columnExpressionAdapter;
+                
+                // All pairs of row/column meta variables.
+                std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> rowColumnMetaVariablePairs;
+                
+                // The meta variables used to encode the nondeterminism.
+                std::vector<storm::expressions::Variable> nondeterminismMetaVariables;
+                
+                // The meta variables used to encode the synchronization.
+                std::vector<storm::expressions::Variable> synchronizationMetaVariables;
+                
+                // A set of all variables used for encoding the nondeterminism (i.e. nondetermism + synchronization
+                // variables). This is handy to abstract from this variable set.
+                std::set<storm::expressions::Variable> allNondeterminismVariables;
+                
+                // DDs representing the identity for each variable.
+                std::map<storm::expressions::Variable, storm::dd::Add<Type>> variableToIdentityMap;
+                
+                // DDs representing the identity for each module.
+                std::map<std::string, storm::dd::Add<Type>> moduleToIdentityMap;
+                
+                // DDs representing the valid ranges of the variables of each module.
+                std::map<std::string, storm::dd::Add<Type>> moduleToRangeMap;
+                
+            private:
+                /*!
+                 * Creates the required meta variables and variable/module identities.
+                 */
+                void createMetaVariablesAndIdentities() {
+                    // Add synchronization variables.
+                    for (auto const& actionIndex : program.getActionIndices()) {
+                        std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair = manager->addMetaVariable(program.getActionName(actionIndex));
+                        synchronizationMetaVariables.push_back(variablePair.first);
+                        allNondeterminismVariables.insert(variablePair.first);
+                    }
+                    
+                    // Add nondeterminism variables (number of modules + number of commands).
+                    uint_fast64_t numberOfNondeterminismVariables = program.getModules().size();
+                    for (auto const& module : program.getModules()) {
+                        numberOfNondeterminismVariables += module.getNumberOfCommands();
+                    }
+                    for (uint_fast64_t i = 0; i < numberOfNondeterminismVariables; ++i) {
+                        std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair = manager->addMetaVariable("nondet" + std::to_string(i));
+                        nondeterminismMetaVariables.push_back(variablePair.first);
+                        allNondeterminismVariables.insert(variablePair.first);
+                    }
+                    
+                    // Create meta variables for global program variables.
+                    for (storm::prism::IntegerVariable const& integerVariable : program.getGlobalIntegerVariables()) {
+                        int_fast64_t low = integerVariable.getLowerBoundExpression().evaluateAsInt();
+                        int_fast64_t high = integerVariable.getUpperBoundExpression().evaluateAsInt();
+                        std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair = manager->addMetaVariable(integerVariable.getName(), low, high);
+                        
+                        rowMetaVariables.insert(variablePair.first);
+                        variableToRowMetaVariableMap.emplace(integerVariable.getExpressionVariable(), variablePair.first);
+                        
+                        columnMetaVariables.insert(variablePair.second);
+                        variableToColumnMetaVariableMap.emplace(integerVariable.getExpressionVariable(), variablePair.second);
+                        
+                        storm::dd::Add<Type> variableIdentity = manager->getIdentity(variablePair.first).equals(manager->getIdentity(variablePair.second)) * manager->getRange(variablePair.first).toAdd();
+                        variableToIdentityMap.emplace(integerVariable.getExpressionVariable(), variableIdentity);
+                        rowColumnMetaVariablePairs.push_back(variablePair);
+                    }
+                    for (storm::prism::BooleanVariable const& booleanVariable : program.getGlobalBooleanVariables()) {
+                        std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair = manager->addMetaVariable(booleanVariable.getName());
+                        
+                        rowMetaVariables.insert(variablePair.first);
+                        variableToRowMetaVariableMap.emplace(booleanVariable.getExpressionVariable(), variablePair.first);
+                        
+                        columnMetaVariables.insert(variablePair.second);
+                        variableToColumnMetaVariableMap.emplace(booleanVariable.getExpressionVariable(), variablePair.second);
+                        
+                        storm::dd::Add<Type> variableIdentity = manager->getIdentity(variablePair.first).equals(manager->getIdentity(variablePair.second));
+                        variableToIdentityMap.emplace(booleanVariable.getExpressionVariable(), variableIdentity);
+                        
+                        rowColumnMetaVariablePairs.push_back(variablePair);
+                    }
+
+                    // Create meta variables for each of the modules' variables.
+                    for (storm::prism::Module const& module : program.getModules()) {
+                        storm::dd::Add<Type> moduleIdentity = manager->getAddOne();
+                        storm::dd::Add<Type> moduleRange = manager->getAddOne();
+                        
+                        for (storm::prism::IntegerVariable const& integerVariable : module.getIntegerVariables()) {
+                            int_fast64_t low = integerVariable.getLowerBoundExpression().evaluateAsInt();
+                            int_fast64_t high = integerVariable.getUpperBoundExpression().evaluateAsInt();
+                            std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair = manager->addMetaVariable(integerVariable.getName(), low, high);
+                            STORM_LOG_TRACE("Created meta variables for integer variable: " << variablePair.first.getName() << "[" << variablePair.first.getIndex() << "] and " << variablePair.second.getName() << "[" << variablePair.second.getIndex() << "]");
+                            
+                            rowMetaVariables.insert(variablePair.first);
+                            variableToRowMetaVariableMap.emplace(integerVariable.getExpressionVariable(), variablePair.first);
+                            
+                            columnMetaVariables.insert(variablePair.second);
+                            variableToColumnMetaVariableMap.emplace(integerVariable.getExpressionVariable(), variablePair.second);
+                            
+                            storm::dd::Add<Type> variableIdentity = manager->getIdentity(variablePair.first).equals(manager->getIdentity(variablePair.second)) * manager->getRange(variablePair.first).toAdd() * manager->getRange(variablePair.second).toAdd();
+                            variableToIdentityMap.emplace(integerVariable.getExpressionVariable(), variableIdentity);
+                            moduleIdentity *= variableIdentity;
+                            moduleRange *= manager->getRange(variablePair.first).toAdd();
+                            
+                            rowColumnMetaVariablePairs.push_back(variablePair);
+                        }
+                        for (storm::prism::BooleanVariable const& booleanVariable : module.getBooleanVariables()) {
+                            std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair = manager->addMetaVariable(booleanVariable.getName());
+                            STORM_LOG_TRACE("Created meta variables for boolean variable: " << variablePair.first.getName() << "[" << variablePair.first.getIndex() << "] and " << variablePair.second.getName() << "[" << variablePair.second.getIndex() << "]");
+
+                            rowMetaVariables.insert(variablePair.first);
+                            variableToRowMetaVariableMap.emplace(booleanVariable.getExpressionVariable(), variablePair.first);
+                            
+                            columnMetaVariables.insert(variablePair.second);
+                            variableToColumnMetaVariableMap.emplace(booleanVariable.getExpressionVariable(), variablePair.second);
+                            
+                            storm::dd::Add<Type> variableIdentity = manager->getIdentity(variablePair.first).equals(manager->getIdentity(variablePair.second)) * manager->getRange(variablePair.first).toAdd() * manager->getRange(variablePair.second).toAdd();
+                            variableToIdentityMap.emplace(booleanVariable.getExpressionVariable(), variableIdentity);
+                            moduleIdentity *= variableIdentity;
+                            moduleRange *= manager->getRange(variablePair.first).toAdd();
+
+                            rowColumnMetaVariablePairs.push_back(variablePair);
+                        }
+                        moduleToIdentityMap[module.getName()] = moduleIdentity;
+                        moduleToRangeMap[module.getName()] = moduleRange;
+                    }
+                }
+            };
+            
+        
         
         template <storm::dd::DdType Type>
         DdPrismModelBuilder<Type>::Options::Options() : buildRewards(false), rewardModelName(), constantDefinitions() {

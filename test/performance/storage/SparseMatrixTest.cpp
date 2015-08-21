@@ -1,4 +1,5 @@
 #include "gtest/gtest.h"
+#include "src/utility/constants.h"
 #include "src/storage/SparseMatrix.h"
 
 TEST(SparseMatrix, Iteration) {

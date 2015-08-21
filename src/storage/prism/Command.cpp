@@ -1,4 +1,5 @@
 #include "Command.h"
+#include <cassert>
 
 namespace storm {
     namespace prism {
@@ -31,6 +32,7 @@ namespace storm {
         }
         
         storm::prism::Update const& Command::getUpdate(uint_fast64_t index) const {
+            assert(index < getNumberOfUpdates());
             return this->updates[index];
         }
         
@@ -69,6 +71,20 @@ namespace storm {
             }
             
             return true;
+        }
+        
+        Command Command::removeIdentityAssignmentsFromUpdates() const {
+            std::vector<Update> newUpdates;
+            newUpdates.reserve(this->getNumberOfUpdates());
+            for (auto const& update : this->getUpdates()) {
+                newUpdates.emplace_back(update.removeIdentityAssignments());
+            }
+            return copyWithNewUpdates(std::move(newUpdates));
+            
+        }
+        
+        Command Command::copyWithNewUpdates(std::vector<Update> && newUpdates) const {
+            return Command(this->globalIndex, this->markovian, this->getActionIndex(), this->getActionName(), guardExpression, newUpdates, this->getFilename(), this->getLineNumber());
         }
         
         std::ostream& operator<<(std::ostream& stream, Command const& command) {

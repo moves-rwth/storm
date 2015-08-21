@@ -9,7 +9,7 @@
 
 # find include dir by searching for a concrete file, which definetely must be in it
 find_path(Z3_INCLUDE_DIR 
-            NAMES src/util/z3_exception.h #exemplary file, should only be available in z3
+            NAMES z3.h 
             PATHS ENV PATH INCLUDE
             PATH_SUFFIXES z3
          )

@@ -5,9 +5,7 @@
 #include <map>
 #include <unordered_map>
 
-#include "src/storage/expressions/SimpleValuation.h"
 #include "src/storage/expressions/BaseExpression.h"
-#include "src/storage/expressions/ExpressionVisitor.h"
 #include "src/utility/OsDetection.h"
 
 namespace storm {
@@ -15,6 +13,7 @@ namespace storm {
         // Foward-declare expression manager class.
         class ExpressionManager;
         class Variable;
+        class ExpressionVisitor;
         
         class Expression {
         public:
@@ -71,18 +70,18 @@ namespace storm {
              * @return An expression in which all identifiers in the key set of the mapping are replaced by the
              * expression they are mapped to.
              */
-			Expression substitute(std::map<Variable, Expression> const& variableToExpressionMap) const;
+            Expression substitute(std::map<Variable, Expression> const& variableToExpressionMap) const;
 
-			/*!
-			* Substitutes all occurrences of the variables according to the given map. Note that this substitution is
-			* done simultaneously, i.e., variables appearing in the expressions that were "plugged in" are not
-			* substituted.
-			*
-			* @param variableToExpressionMap A mapping from variables to the expression they are substituted with.
-			* @return An expression in which all identifiers in the key set of the mapping are replaced by the
-			* expression they are mapped to.
-			*/
-			Expression substitute(std::unordered_map<Variable, Expression> const& variableToExpressionMap) const;
+            /*!
+            * Substitutes all occurrences of the variables according to the given map. Note that this substitution is
+            * done simultaneously, i.e., variables appearing in the expressions that were "plugged in" are not
+            * substituted.
+            *
+            * @param variableToExpressionMap A mapping from variables to the expression they are substituted with.
+            * @return An expression in which all identifiers in the key set of the mapping are replaced by the
+            * expression they are mapped to.
+            */
+            Expression substitute(std::unordered_map<Variable, Expression> const& variableToExpressionMap) const;
             
             /*!
              * Evaluates the expression under the valuation of variables given by the valuation and returns the

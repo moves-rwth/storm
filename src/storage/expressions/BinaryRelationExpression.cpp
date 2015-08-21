@@ -5,6 +5,7 @@
 #include "src/storage/expressions/BooleanLiteralExpression.h"
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidTypeException.h"
+#include "src/storage/expressions/ExpressionVisitor.h"
 
 namespace storm {
     namespace expressions {

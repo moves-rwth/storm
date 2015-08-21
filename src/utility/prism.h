@@ -2,15 +2,23 @@
 #define STORM_UTILITY_PRISM_H_
 
 #include <memory>
+#include <map>
 #include <boost/algorithm/string.hpp>
+#include <boost/container/flat_set.hpp>
 
-#include "src/storage/expressions/ExpressionManager.h"
-#include "src/storage/prism/Program.h"
 #include "src/utility/OsDetection.h"
-#include "src/utility/macros.h"
-#include "src/exceptions/InvalidArgumentException.h"
+
 
 namespace storm {
+    namespace expressions {
+        class Variable;
+        class Expression;
+    }
+    
+    namespace prism {
+        class Program;
+    }
+    
     namespace utility {
         namespace prism {
             // A structure holding information about a particular choice.

@@ -8,6 +8,7 @@
 #include "src/utility/vector.h"
 #include "src/utility/constants.h"
 #include "src/exceptions/InvalidStateException.h"
+#include "src/settings/modules/GmmxxEquationSolverSettings.h"
 
 #include "gmm/gmm_iter_solvers.h"
 
