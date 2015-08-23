@@ -678,7 +678,7 @@ namespace storm {
                                     for (auto const& stateActionReward : rewardModelIt->get().getStateActionRewards()) {
                                         if (!stateActionReward.isLabeled()) {
                                             if (evaluator.asBool(stateActionReward.getStatePredicateExpression())) {
-                                                builderIt->stateActionRewardVector.back() += ValueType(evaluator.asRational(stateActionReward.getRewardValueExpression())) / totalNumberOfChoices;
+                                                builderIt->stateActionRewardVector.back() += ValueType(evaluator.asRational(stateActionReward.getRewardValueExpression()));
                                             }
                                         }
                                     }
