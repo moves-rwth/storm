@@ -83,6 +83,22 @@ namespace storm {
             }
             
             template <storm::dd::DdType Type, typename ValueType>
+            storm::dd::Add<Type> StandardRewardModel<Type, ValueType>::getTotalRewardVector(storm::dd::Add<Type> const& filterAdd, storm::dd::Add<Type> const& transitionMatrix, std::set<storm::expressions::Variable> const& columnVariables) const {
+                storm::dd::Add<Type> result = transitionMatrix.getDdManager()->getAddZero();
+                if (this->hasStateRewards()) {
+                    result += filterAdd * optionalStateRewardVector.get();
+                }
+                if (this->hasStateActionRewards()) {
+                    optionalStateActionRewardVector.get().exportToDot("statActRew.dot");
+                    result += filterAdd * optionalStateActionRewardVector.get();
+                }
+                if (this->hasTransitionRewards()) {
+                    result += (transitionMatrix * this->getTransitionRewardMatrix()).sumAbstract(columnVariables);
+                }
+                return result;
+            }
+            
+            template <storm::dd::DdType Type, typename ValueType>
             storm::dd::Add<Type> StandardRewardModel<Type, ValueType>::getTotalRewardVector(storm::dd::Add<Type> const& transitionMatrix, std::set<storm::expressions::Variable> const& columnVariables) const {
                 storm::dd::Add<Type> result = transitionMatrix.getDdManager()->getAddZero();
                 if (this->hasStateRewards()) {

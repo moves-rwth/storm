@@ -151,6 +151,18 @@ namespace storm {
                 
                 /*!
                  * Creates a vector representing the complete reward vector based on the state-, state-action- and
+                 * transition-based rewards in the reward model. The state- and state-action rewards are filtered with
+                 * the given filter DD.
+                 *
+                 * @param filterAdd The DD used for filtering the rewards.
+                 * @param transitionMatrix The matrix that is used to weight the values of the transition reward matrix.
+                 * @param columnVariables The column variables of the model.
+                 * @return The full state-action reward vector.
+                 */
+                storm::dd::Add<Type> getTotalRewardVector(storm::dd::Add<Type> const& filterAdd, storm::dd::Add<Type> const& transitionMatrix, std::set<storm::expressions::Variable> const& columnVariables) const;
+                
+                /*!
+                 * Creates a vector representing the complete reward vector based on the state-, state-action- and
                  * transition-based rewards in the reward model.
                  *
                  * @param transitionMatrix The matrix that is used to weight the values of the transition reward matrix.

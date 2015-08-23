@@ -198,9 +198,9 @@ namespace storm {
                 storm::dd::Bdd<DdType> infinityStates;
                 storm::dd::Bdd<DdType> transitionMatrixBdd = transitionMatrix.notZero();
                 if (minimize) {
-                    infinityStates = storm::utility::graph::performProb1A(model, transitionMatrixBdd, model.getReachableStates(), targetStates, storm::utility::graph::performProbGreater0A(model, transitionMatrixBdd, model.getReachableStates(), targetStates));
-                } else {
                     infinityStates = storm::utility::graph::performProb1E(model, transitionMatrixBdd, model.getReachableStates(), targetStates, storm::utility::graph::performProbGreater0E(model, transitionMatrixBdd, model.getReachableStates(), targetStates));
+                } else {
+                    infinityStates = storm::utility::graph::performProb1A(model, transitionMatrixBdd, model.getReachableStates(), targetStates, storm::utility::graph::performProbGreater0A(model, transitionMatrixBdd, model.getReachableStates(), targetStates));
                 }
                 infinityStates = !infinityStates && model.getReachableStates();
                 storm::dd::Bdd<DdType> maybeStates = (!targetStates && !infinityStates) && model.getReachableStates();
@@ -227,16 +227,17 @@ namespace storm {
                         storm::dd::Add<DdType> submatrix = transitionMatrix * maybeStatesAdd;
                         
                         // Then compute the state reward vector to use in the computation.
-                        storm::dd::Add<DdType> subvector = rewardModel.getTotalRewardVector(submatrix, model.getColumnVariables());
+                        storm::dd::Add<DdType> subvector = rewardModel.getTotalRewardVector(maybeStatesAdd, submatrix, model.getColumnVariables());
                         
                         // Before cutting the non-maybe columns, we need to compute the sizes of the row groups.
-                        std::vector<uint_fast64_t> rowGroupSizes = submatrix.notZero().existsAbstract(model.getColumnVariables()).toAdd().sumAbstract(model.getNondeterminismVariables()).template toVector<uint_fast64_t>(odd);
+                        storm::dd::Add<DdType> stateActionAdd = (submatrix.notZero().existsAbstract(model.getColumnVariables()) || subvector.notZero()).toAdd();
+                        std::vector<uint_fast64_t> rowGroupSizes = stateActionAdd.sumAbstract(model.getNondeterminismVariables()).template toVector<uint_fast64_t>(odd);
                         
                         // Finally cut away all columns targeting non-maybe states.
                         submatrix *= maybeStatesAdd.swapVariables(model.getRowColumnMetaVariablePairs());
                         
                         // Create the solution vector.
-                        std::vector<ValueType> x(maybeStates.getNonZeroCount(), ValueType(0.5));
+                        std::vector<ValueType> x(maybeStates.getNonZeroCount(), storm::utility::zero<ValueType>());
                         
                         // Translate the symbolic matrix/vector to their explicit representations.
                         std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> explicitRepresentation = submatrix.toMatrixVector(subvector, std::move(rowGroupSizes), model.getNondeterminismVariables(), odd, odd);

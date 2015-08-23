@@ -210,8 +210,8 @@ namespace storm {
                         storm::dd::Add<DdType> submatrix = transitionMatrix * maybeStatesAdd;
                         
                         // Then compute the state reward vector to use in the computation.
-                        storm::dd::Add<DdType> subvector = rewardModel.getTotalRewardVector(submatrix, model.getColumnVariables());
-                        
+                        storm::dd::Add<DdType> subvector = rewardModel.getTotalRewardVector(maybeStatesAdd, submatrix, model.getColumnVariables());
+
                         // Finally cut away all columns targeting non-maybe states and convert the matrix into the matrix needed
                         // for solving the equation system (i.e. compute (I-A)).
                         submatrix *= maybeStatesAdd.swapVariables(model.getRowColumnMetaVariablePairs());

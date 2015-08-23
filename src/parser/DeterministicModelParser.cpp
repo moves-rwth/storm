@@ -38,11 +38,13 @@ namespace storm {
 			return result;
 		}
 
-        storm::models::sparse::Dtmc<double> DeterministicModelParser::parseDtmc(std::string const & transitionsFilename, std::string const & labelingFilename, std::string const & stateRewardFilename, std::string const & transitionRewardFilename) {
+        storm::models::sparse::Dtmc<double> DeterministicModelParser::parseDtmc(std::string const & transitionsFilename, std::string const & labelingFilename, std::string const& stateRewardFilename, std::string const& transitionRewardFilename) {
             DeterministicModelParser::Result parserResult(std::move(parseDeterministicModel(transitionsFilename, labelingFilename, stateRewardFilename, transitionRewardFilename)));
 
             std::unordered_map<std::string, storm::models::sparse::StandardRewardModel<double>> rewardModels;
-            rewardModels.insert(std::make_pair("", storm::models::sparse::StandardRewardModel<double>(parserResult.stateRewards, boost::optional<std::vector<double>>(), parserResult.transitionRewards)));
+            if (!stateRewardFilename.empty() || !transitionRewardFilename.empty()) {
+                rewardModels.insert(std::make_pair("", storm::models::sparse::StandardRewardModel<double>(parserResult.stateRewards, boost::optional<std::vector<double>>(), parserResult.transitionRewards)));
+            }
             return storm::models::sparse::Dtmc<double>(std::move(parserResult.transitionSystem), std::move(parserResult.labeling), std::move(rewardModels), boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>());
 		}
 
@@ -50,7 +52,9 @@ namespace storm {
             DeterministicModelParser::Result parserResult(std::move(parseDeterministicModel(transitionsFilename, labelingFilename, stateRewardFilename, transitionRewardFilename)));
 
             std::unordered_map<std::string, storm::models::sparse::StandardRewardModel<double>> rewardModels;
-            rewardModels.insert(std::make_pair("", storm::models::sparse::StandardRewardModel<double>(parserResult.stateRewards, boost::optional<std::vector<double>>(), parserResult.transitionRewards)));
+            if (!stateRewardFilename.empty() || !transitionRewardFilename.empty()) {
+                rewardModels.insert(std::make_pair("", storm::models::sparse::StandardRewardModel<double>(parserResult.stateRewards, boost::optional<std::vector<double>>(), parserResult.transitionRewards)));
+            }
             return storm::models::sparse::Ctmc<double>(std::move(parserResult.transitionSystem), std::move(parserResult.labeling), std::move(rewardModels), boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>());
 		}
 

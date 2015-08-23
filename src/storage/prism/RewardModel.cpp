@@ -86,7 +86,7 @@ namespace storm {
             if (rewardModel.getName() != "") {
                 std::cout << " \"" << rewardModel.getName() << "\"";
             }
-            std::cout << std::endl;
+            stream << std::endl;
             for (auto const& reward : rewardModel.getStateRewards()) {
                 stream << reward << std::endl;
             }

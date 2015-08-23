@@ -105,7 +105,8 @@ namespace storm {
             }
             
             bool GmmxxEquationSolverSettings::check() const {
-                bool optionsSet = isLinearEquationSystemMethodSet() || isPreconditioningMethodSet() || isRestartIterationCountSet() | isMaximalIterationCountSet() || isPrecisionSet() || isConvergenceCriterionSet();
+                // This list does not include the precision, because this option is shared with other modules.
+                bool optionsSet = isLinearEquationSystemMethodSet() || isPreconditioningMethodSet() || isRestartIterationCountSet() | isMaximalIterationCountSet() || isConvergenceCriterionSet();
                 
                 STORM_LOG_WARN_COND(storm::settings::generalSettings().getEquationSolver() == storm::settings::modules::GeneralSettings::EquationSolver::Gmmxx || !optionsSet, "gmm++ is not selected as the equation solver, so setting options for gmm++ has no effect.");
                 

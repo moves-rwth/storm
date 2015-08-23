@@ -26,6 +26,7 @@ namespace storm {
                 maybeStates &= ~psiStates;
                 STORM_LOG_INFO("Found " << maybeStates.getNumberOfSetBits() << " 'maybe' states.");
                 
+                
                 if (!maybeStates.empty()) {
                     // We can eliminate the rows and columns from the original transition probability matrix that have probability 0.
                     storm::storage::SparseMatrix<ValueType> submatrix = transitionMatrix.getSubmatrix(true, maybeStates, maybeStates, false);
@@ -159,9 +160,9 @@ namespace storm {
                 storm::storage::BitVector infinityStates;
                 storm::storage::BitVector trueStates(transitionMatrix.getRowCount(), true);
                 if (minimize) {
-                    infinityStates = std::move(storm::utility::graph::performProb1A(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, trueStates, targetStates));
+                    infinityStates = storm::utility::graph::performProb1E(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, trueStates, targetStates);
                 } else {
-                    infinityStates = std::move(storm::utility::graph::performProb1E(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, trueStates, targetStates));
+                    infinityStates = storm::utility::graph::performProb1A(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, trueStates, targetStates);
                 }
                 infinityStates.complement();
                 storm::storage::BitVector maybeStates = ~targetStates & ~infinityStates;
@@ -170,7 +171,7 @@ namespace storm {
                 LOG4CPLUS_INFO(logger, "Found " << maybeStates.getNumberOfSetBits() << " 'maybe' states.");
                 
                 // Create resulting vector.
-                std::vector<ValueType> result(transitionMatrix.getRowCount());
+                std::vector<ValueType> result(transitionMatrix.getRowCount(), storm::utility::zero<ValueType>());
                 
                 // Check whether we need to compute exact rewards for some states.
                 if (qualitative) {
@@ -179,29 +180,29 @@ namespace storm {
                     // are neither 0 nor infinity.
                     storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, storm::utility::one<ValueType>());
                 } else {
-                    // In this case we have to compute the reward values for the remaining states.
-                    
-                    // We can eliminate the rows and columns from the original transition probability matrix for states
-                    // whose reward values are already known.
-                    storm::storage::SparseMatrix<ValueType> submatrix = transitionMatrix.getSubmatrix(true, maybeStates, maybeStates, false);
-                    
-                    // Prepare the right-hand side of the equation system.
-                    std::vector<ValueType> b = rewardModel.getTotalRewardVector(submatrix.getRowCount(), transitionMatrix, maybeStates);
-                    
-                    // Create vector for results for maybe states.
-                    std::vector<ValueType> x(maybeStates.getNumberOfSetBits());
-                    
-                    // Solve the corresponding system of equations.
-                    std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(submatrix);
-                    solver->solveEquationSystem(minimize, x, b);
-                    
-                    
-                    // Set values of resulting vector according to result.
-                    storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, x);
+                    if (!maybeStates.empty()) {
+                        // In this case we have to compute the reward values for the remaining states.
+                        
+                        // We can eliminate the rows and columns from the original transition probability matrix for states
+                        // whose reward values are already known.
+                        storm::storage::SparseMatrix<ValueType> submatrix = transitionMatrix.getSubmatrix(true, maybeStates, maybeStates, false);
+                        
+                        // Prepare the right-hand side of the equation system.
+                        std::vector<ValueType> b = rewardModel.getTotalRewardVector(submatrix.getRowCount(), transitionMatrix, maybeStates);
+                        
+                        // Create vector for results for maybe states.
+                        std::vector<ValueType> x(maybeStates.getNumberOfSetBits());
+                                                
+                        // Solve the corresponding system of equations.
+                        std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(submatrix);
+                        solver->solveEquationSystem(minimize, x, b);
+                        
+                        // Set values of resulting vector according to result.
+                        storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, x);
+                    }
                 }
                 
                 // Set values of resulting vector that are known exactly.
-                storm::utility::vector::setVectorValues(result, targetStates, storm::utility::zero<ValueType>());
                 storm::utility::vector::setVectorValues(result, infinityStates, storm::utility::infinity<ValueType>());
                 
                 return result;
@@ -210,7 +211,7 @@ namespace storm {
             template<typename ValueType, typename RewardModelType>
             std::vector<ValueType> SparseMdpPrctlHelper<ValueType, RewardModelType>::computeLongRunAverage(bool minimize, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& psiStates, bool qualitative, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
                 // If there are no goal states, we avoid the computation and directly return zero.
-                uint_fast64_t numberOfStates = transitionMatrix.getRowCount();
+                uint_fast64_t numberOfStates = transitionMatrix.getRowGroupCount();
                 if (psiStates.empty()) {
                     return std::vector<ValueType>(numberOfStates, storm::utility::zero<ValueType>());
                 }

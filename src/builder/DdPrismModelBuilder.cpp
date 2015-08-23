@@ -214,12 +214,18 @@ namespace storm {
             // Extract all the labels used in the formula.
             std::vector<std::shared_ptr<storm::logic::AtomicLabelFormula const>> atomicLabelFormulas = formula.getAtomicLabelFormulas();
             for (auto const& formula : atomicLabelFormulas) {
+                if (!labelsToBuild) {
+                    labelsToBuild = std::set<std::string>();
+                }
                 labelsToBuild.get().insert(formula.get()->getLabel());
             }
             
             // Extract all the expressions used in the formula.
             std::vector<std::shared_ptr<storm::logic::AtomicExpressionFormula const>> atomicExpressionFormulas = formula.getAtomicExpressionFormulas();
             for (auto const& formula : atomicExpressionFormulas) {
+                if (!expressionLabels) {
+                    expressionLabels = std::vector<storm::expressions::Expression>();
+                }
                 expressionLabels.get().push_back(formula.get()->getExpression());
             }
         }
@@ -239,6 +245,17 @@ namespace storm {
                 constantDefinitions.get().insert(entry);
             }
         }
+        
+        template <storm::dd::DdType Type>
+        struct DdPrismModelBuilder<Type>::SystemResult {
+            SystemResult(storm::dd::Add<Type> const& allTransitionsDd, DdPrismModelBuilder<Type>::ModuleDecisionDiagram const& globalModule, boost::optional<storm::dd::Add<Type>> const& stateActionDd) : allTransitionsDd(allTransitionsDd), globalModule(globalModule), stateActionDd(stateActionDd) {
+                // Intentionally left empty.
+            }
+            
+            storm::dd::Add<Type> allTransitionsDd;
+            typename DdPrismModelBuilder<Type>::ModuleDecisionDiagram globalModule;
+            boost::optional<storm::dd::Add<Type>> stateActionDd;
+        };
         
         template <storm::dd::DdType Type>
         storm::dd::Add<Type> DdPrismModelBuilder<Type>::createUpdateDecisionDiagram(GenerationInformation& generationInfo, storm::prism::Module const& module, storm::dd::Add<Type> const& guard, storm::prism::Update const& update) {
@@ -645,7 +662,7 @@ namespace storm {
         }
         
         template <storm::dd::DdType Type>
-        std::tuple<storm::dd::Add<Type>, typename DdPrismModelBuilder<Type>::ModuleDecisionDiagram, boost::optional<storm::dd::Add<Type>>> DdPrismModelBuilder<Type>::createSystemDecisionDiagram(GenerationInformation& generationInfo) {
+        typename DdPrismModelBuilder<Type>::SystemResult DdPrismModelBuilder<Type>::createSystemDecisionDiagram(GenerationInformation& generationInfo) {
             // Create the initial offset mapping.
             std::map<uint_fast64_t, uint_fast64_t> synchronizingActionToOffsetMap;
             for (auto const& actionIndex : generationInfo.program.getSynchronizingActionIndices()) {
@@ -701,12 +718,17 @@ namespace storm {
             }
             
             storm::dd::Add<Type> result = createSystemFromModule(generationInfo, system);
-            
+
+            // For MDPs and DTMCs, we need a DD that maps states to the legal choices and states to the number of
+            // available choices, respectively. As it happens, the construction is the same in both cases.
+            boost::optional<storm::dd::Add<Type>> stateActionDd;
+            if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::DTMC || generationInfo.program.getModelType() == storm::prism::Program::ModelType::MDP) {
+                stateActionDd = result.sumAbstract(generationInfo.columnMetaVariables);
+            }
+
             // For DTMCs, we normalize each row to 1 (to account for non-determinism).
-            boost::optional<storm::dd::Add<Type>> stateToChoiceCountMap;
             if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::DTMC) {
-                stateToChoiceCountMap = result.sumAbstract(generationInfo.columnMetaVariables);
-                result = result / stateToChoiceCountMap.get();
+                result = result / stateActionDd.get();
             } else if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::MDP) {
                 // For MDPs, we need to throw away the nondeterminism variables from the generation information that
                 // were never used.
@@ -716,11 +738,11 @@ namespace storm {
                 generationInfo.nondeterminismMetaVariables.resize(system.numberOfUsedNondeterminismVariables);
             }
             
-            return std::make_tuple(result, system, stateToChoiceCountMap);
+            return SystemResult(result, system, stateActionDd);
         }
         
         template <storm::dd::DdType Type>
-        storm::models::symbolic::StandardRewardModel<Type, double> DdPrismModelBuilder<Type>::createRewardModelDecisionDiagrams(GenerationInformation& generationInfo, storm::prism::RewardModel const& rewardModel, ModuleDecisionDiagram const& globalModule, storm::dd::Add<Type> const& transitionMatrix, storm::dd::Add<Type> const& reachableStatesAdd, boost::optional<storm::dd::Add<Type>> const& stateToChoiceCountMap) {
+        storm::models::symbolic::StandardRewardModel<Type, double> DdPrismModelBuilder<Type>::createRewardModelDecisionDiagrams(GenerationInformation& generationInfo, storm::prism::RewardModel const& rewardModel, ModuleDecisionDiagram const& globalModule, storm::dd::Add<Type> const& transitionMatrix, storm::dd::Add<Type> const& reachableStatesAdd, boost::optional<storm::dd::Add<Type>> const& stateActionDd) {
             
             // Start by creating the state reward vector.
             boost::optional<storm::dd::Add<Type>> stateRewards;
@@ -766,6 +788,14 @@ namespace storm {
                     }
                     
                     storm::dd::Add<Type> stateActionRewardDd = synchronization * states * rewards;
+
+                    // If we are building the state-action rewards for an MDP, we need to make sure that the encoding
+                    // of the nondeterminism is present in the reward vector, so we ne need to multiply it with the
+                    // legal state-actions.
+                    if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::MDP) {
+                        STORM_LOG_THROW(static_cast<bool>(stateActionDd), storm::exceptions::InvalidStateException, "A DD that reflects the legal choices of each state was not build, but was expected to exist.");
+                        stateActionRewardDd *= stateActionDd.get();
+                    }
                     
                     // Perform some sanity checks.
                     STORM_LOG_WARN_COND(stateActionRewardDd.getMin() >= 0, "The reward model assigns negative rewards to some states.");
@@ -777,10 +807,9 @@ namespace storm {
                 
                 // Scale state-action rewards for DTMCs.
                 if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::DTMC) {
-                    STORM_LOG_THROW(static_cast<bool>(stateToChoiceCountMap), storm::exceptions::InvalidStateException, "A DD that reflects the number of choices per state was not build, but was expected to exist.");
-                    stateActionRewards.get() /= stateToChoiceCountMap.get();
+                    STORM_LOG_THROW(static_cast<bool>(stateActionDd), storm::exceptions::InvalidStateException, "A DD that reflects the number of choices per state was not build, but was expected to exist.");
+                    stateActionRewards.get() /= stateActionDd.get();
                 }
-                stateActionRewards.get().exportToDot("rewards.dot");
             }
             
             // Then build the transition reward matrix.
@@ -827,8 +856,8 @@ namespace storm {
                 
                 // Scale transition rewards for DTMCs.
                 if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::DTMC) {
-                    STORM_LOG_THROW(static_cast<bool>(stateToChoiceCountMap), storm::exceptions::InvalidStateException, "A DD that reflects the number of choices per state was not build, but was expected to exist.");
-                    stateActionRewards.get() /= stateToChoiceCountMap.get();
+                    STORM_LOG_THROW(static_cast<bool>(stateActionDd), storm::exceptions::InvalidStateException, "A DD that reflects the number of choices per state was not build, but was expected to exist.");
+                    transitionRewards.get() /= stateActionDd.get();
                 }
             }
             
@@ -869,10 +898,10 @@ namespace storm {
             // In particular, this creates the meta variables used to encode the model.
             GenerationInformation generationInfo(preparedProgram);
 
-            std::tuple<storm::dd::Add<Type>, ModuleDecisionDiagram, boost::optional<storm::dd::Add<Type>>> system = createSystemDecisionDiagram(generationInfo);
-            storm::dd::Add<Type> transitionMatrix = std::get<0>(system);
-            ModuleDecisionDiagram const& globalModule = std::get<1>(system);
-            boost::optional<storm::dd::Add<Type>> stateToChoiceCountMap = std::get<2>(system);
+            SystemResult system = createSystemDecisionDiagram(generationInfo);
+            storm::dd::Add<Type> transitionMatrix = system.allTransitionsDd;
+            ModuleDecisionDiagram const& globalModule = system.globalModule;
+            boost::optional<storm::dd::Add<Type>> stateActionDd = system.stateActionDd;
             
             // Cut the transitions and rewards to the reachable fragment of the state space.
             storm::dd::Bdd<Type> initialStates = createInitialStatesDecisionDiagram(generationInfo);
@@ -883,6 +912,9 @@ namespace storm {
             storm::dd::Bdd<Type> reachableStates = computeReachableStates(generationInfo, initialStates, transitionMatrixBdd);
             storm::dd::Add<Type> reachableStatesAdd = reachableStates.toAdd();
             transitionMatrix *= reachableStatesAdd;
+            if (stateActionDd) {
+                stateActionDd.get() *= reachableStatesAdd;
+            }
 
             // Detect deadlocks and 1) fix them if requested 2) throw an error otherwise.
             storm::dd::Bdd<Type> statesWithTransition = transitionMatrixBdd.existsAbstract(generationInfo.columnMetaVariables);
@@ -928,13 +960,8 @@ namespace storm {
             }
             
             std::unordered_map<std::string, storm::models::symbolic::StandardRewardModel<Type, double>> rewardModels;
-            if (options.buildAllRewardModels || !options.rewardModelsToBuild.empty()) {
-                for (auto const& rewardModel : preparedProgram.getRewardModels()) {
-                    if (options.buildAllRewardModels || options.rewardModelsToBuild.find(rewardModel.getName()) != options.rewardModelsToBuild.end()) {
-                        STORM_LOG_TRACE("Building reward structure.");
-                        rewardModels.emplace(rewardModel.getName(), createRewardModelDecisionDiagrams(generationInfo, rewardModel, globalModule, transitionMatrix, reachableStatesAdd, stateToChoiceCountMap));
-                    }
-                }
+            for (auto const& rewardModel : selectedRewardModels) {
+                rewardModels.emplace(rewardModel.get().getName(), createRewardModelDecisionDiagrams(generationInfo, rewardModel.get(), globalModule, transitionMatrix, reachableStatesAdd, stateActionDd));
             }
             
             // Build the labels that can be accessed as a shortcut.
