@@ -1039,10 +1039,10 @@ namespace storm {
                 
                 // Finally, delete the names.
                 for (char* element : ddNames) {
-                    delete element;
+                    delete[] element;
                 }
                 for (char* element : ddVariableNames) {
-                    delete element;
+                    delete[] element;
                 }
             }
         }

@@ -35,6 +35,7 @@
 #include "src/models/ModelBase.h"
 #include "src/models/sparse/Model.h"
 #include "src/models/symbolic/Model.h"
+#include "src/models/symbolic/StandardRewardModel.h"
 
 #include "src/storage/dd/CuddAdd.h"
 #include "src/storage/dd/CuddBdd.h"

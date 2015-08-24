@@ -59,21 +59,21 @@ TEST(BitVectorTest, GetAsInt) {
     vector.set(64);
     vector.set(65);
 
-    EXPECT_EQ(1, vector.getAsInt(62, 1));
-    EXPECT_EQ(3, vector.getAsInt(62, 2));
-    EXPECT_EQ(7, vector.getAsInt(62, 3));
-    EXPECT_EQ(15, vector.getAsInt(62, 4));
+    EXPECT_EQ(1ul, vector.getAsInt(62, 1));
+    EXPECT_EQ(3ul, vector.getAsInt(62, 2));
+    EXPECT_EQ(7ul, vector.getAsInt(62, 3));
+    EXPECT_EQ(15ul, vector.getAsInt(62, 4));
     
     vector.set(64, false);
 
-    EXPECT_EQ(1, vector.getAsInt(62, 1));
-    EXPECT_EQ(3, vector.getAsInt(62, 2));
-    EXPECT_EQ(6, vector.getAsInt(62, 3));
-    EXPECT_EQ(13, vector.getAsInt(62, 4));
+    EXPECT_EQ(1ul, vector.getAsInt(62, 1));
+    EXPECT_EQ(3ul, vector.getAsInt(62, 2));
+    EXPECT_EQ(6ul, vector.getAsInt(62, 3));
+    EXPECT_EQ(13ul, vector.getAsInt(62, 4));
     
     vector.set(61);
     vector.set(62, false);
-    EXPECT_EQ(2, vector.getAsInt(61, 2));
+    EXPECT_EQ(2ul, vector.getAsInt(61, 2));
 }
 
 TEST(BitVectorTest, SetFromInt) {
