@@ -9,6 +9,7 @@
 #include "src/utility/macros.h"
 #include "src/utility/graph.h"
 
+#include "src/models/symbolic/StandardRewardModel.h"
 
 #include "src/settings/modules/GeneralSettings.h"
 
