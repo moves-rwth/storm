@@ -25,8 +25,7 @@ namespace storm {
                 uint_fast64_t numberOfStates = rateMatrix.getRowCount();
                 
                 // If the time bounds are [0, inf], we rather call untimed reachability.
-                storm::utility::ConstantsComparator<ValueType> comparator;
-                if (comparator.isZero(lowerBound) && comparator.isInfinity(upperBound)) {
+                if (lowerBound == storm::utility::zero<ValueType>() && upperBound == storm::utility::infinity<ValueType>()) {
                     return computeUntilProbabilities(rateMatrix, backwardTransitions, exitRates, phiStates, psiStates, qualitative, linearEquationSolverFactory);
                 }
                 
@@ -44,12 +43,12 @@ namespace storm {
                 STORM_LOG_INFO("Found " << statesWithProbabilityGreater0NonPsi.getNumberOfSetBits() << " 'maybe' states.");
                 
                 if (!statesWithProbabilityGreater0NonPsi.empty()) {
-                    if (comparator.isZero(upperBound)) {
+                    if (upperBound == storm::utility::zero<ValueType>()) {
                         // In this case, the interval is of the form [0, 0].
                         result = std::vector<ValueType>(numberOfStates, storm::utility::zero<ValueType>());
                         storm::utility::vector::setVectorValues<ValueType>(result, psiStates, storm::utility::one<ValueType>());
                     } else {
-                        if (comparator.isZero(lowerBound)) {
+                        if (lowerBound == storm::utility::zero<ValueType>()) {
                             // In this case, the interval is of the form [0, t].
                             // Note that this excludes [0, inf] since this is untimed reachability and we considered this case earlier.
                             
@@ -77,7 +76,7 @@ namespace storm {
                             
                             storm::utility::vector::setVectorValues(result, statesWithProbabilityGreater0NonPsi, subresult);
                             storm::utility::vector::setVectorValues(result, psiStates, storm::utility::one<ValueType>());
-                        } else if (comparator.isInfinity(upperBound)) {
+                        } else if (upperBound == storm::utility::infinity<ValueType>()) {
                             // In this case, the interval is of the form [t, inf] with t != 0.
                             
                             // Start by computing the (unbounded) reachability probabilities of reaching psi states while

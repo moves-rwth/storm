@@ -11,6 +11,7 @@
 
 #include "src/utility/prism.h"
 #include "src/utility/macros.h"
+#include "src/utility/ConstantsComparator.h"
 #include "src/exceptions/WrongFormatException.h"
 
 #include "src/exceptions/InvalidArgumentException.h"

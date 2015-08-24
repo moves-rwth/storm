@@ -535,7 +535,7 @@ namespace storm {
                     // treating all states that have some non-zero probability to go to a target state in one step.
                     storm::storage::BitVector pseudoTargetStates(transitionMatrix.getRowCount());
                     for (std::size_t index = 0; index < oneStepProbabilities.size(); ++index) {
-                        if (!comparator.isZero(oneStepProbabilities[index])) {
+                        if (oneStepProbabilities[index] != storm::utility::zero<ValueType>()) {
                             pseudoTargetStates.set(index);
                         }
                     }
@@ -687,7 +687,7 @@ namespace storm {
             // Scale all entries in this row with (1 / (1 - loopProbability)) only in case there was a self-loop.
             std::size_t scaledSuccessors = 0;
             if (hasSelfLoop) {
-                STORM_LOG_ASSERT(!comparator.isOne(loopProbability), "Must not eliminate state with probability 1 self-loop.");
+                STORM_LOG_ASSERT(loopProbability != storm::utility::one<ValueType>(), "Must not eliminate state with probability 1 self-loop.");
                 loopProbability = storm::utility::one<ValueType>() / (storm::utility::one<ValueType>() - loopProbability);
                 storm::utility::simplify(loopProbability);
                 for (auto& entry : matrix.getRow(state)) {
@@ -940,16 +940,13 @@ namespace storm {
         typename SparseDtmcEliminationModelChecker<SparseDtmcModelType>::FlexibleSparseMatrix SparseDtmcEliminationModelChecker<SparseDtmcModelType>::getFlexibleSparseMatrix(storm::storage::SparseMatrix<ValueType> const& matrix, bool setAllValuesToOne) {
             FlexibleSparseMatrix flexibleMatrix(matrix.getRowCount());
             
-            // A comparator used for comparing probabilities.
-            storm::utility::ConstantsComparator<ValueType> comparator;
-            
             for (typename FlexibleSparseMatrix::index_type rowIndex = 0; rowIndex < matrix.getRowCount(); ++rowIndex) {
                 typename storm::storage::SparseMatrix<ValueType>::const_rows row = matrix.getRow(rowIndex);
                 flexibleMatrix.reserveInRow(rowIndex, row.getNumberOfEntries());
                 
                 for (auto const& element : row) {
                     // If the probability is zero, we skip this entry.
-                    if (comparator.isZero(element.getValue())) {
+                    if (element.getValue() == storm::utility::zero<ValueType>()) {
                         continue;
                     }
                     

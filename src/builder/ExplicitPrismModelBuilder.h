@@ -24,6 +24,10 @@
 #include "src/utility/prism.h"
 
 namespace storm {
+    namespace utility {
+        template<typename ValueType> class ConstantsComparator;
+    }
+    
     namespace builder {
         
         using namespace storm::utility::prism;

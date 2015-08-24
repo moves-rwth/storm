@@ -45,8 +45,7 @@ namespace storm {
             std::unique_ptr<CheckResult> HybridCtmcCslHelper<DdType, ValueType>::computeBoundedUntilProbabilities(storm::models::symbolic::Model<DdType> const& model, storm::dd::Add<DdType> const& rateMatrix, storm::dd::Add<DdType> const& exitRateVector, storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates, bool qualitative, double lowerBound, double upperBound, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 
                 // If the time bounds are [0, inf], we rather call untimed reachability.
-                storm::utility::ConstantsComparator<ValueType> comparator;
-                if (comparator.isZero(lowerBound) && comparator.isInfinity(upperBound)) {
+                if (lowerBound == storm::utility::zero<ValueType>() && upperBound == storm::utility::infinity<ValueType>()) {
                     return computeUntilProbabilities(model, rateMatrix, exitRateVector, phiStates, psiStates, qualitative, linearEquationSolverFactory);
                 }
                 
@@ -61,11 +60,11 @@ namespace storm {
                 STORM_LOG_INFO("Found " << statesWithProbabilityGreater0NonPsi.getNonZeroCount() << " 'maybe' states.");
                 
                 if (!statesWithProbabilityGreater0NonPsi.isZero()) {
-                    if (comparator.isZero(upperBound)) {
+                    if (upperBound == storm::utility::zero<ValueType>()) {
                         // In this case, the interval is of the form [0, 0].
                         return std::unique_ptr<CheckResult>(new SymbolicQuantitativeCheckResult<DdType>(model.getReachableStates(), psiStates.toAdd()));
                     } else {
-                        if (comparator.isZero(lowerBound)) {
+                        if (lowerBound == storm::utility::zero<ValueType>()) {
                             // In this case, the interval is of the form [0, t].
                             // Note that this excludes [0, inf] since this is untimed reachability and we considered this case earlier.
                             
@@ -93,7 +92,7 @@ namespace storm {
                             return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType>(model.getReachableStates(),
                                                                                                           (psiStates || !statesWithProbabilityGreater0) && model.getReachableStates(),
                                                                                                           psiStates.toAdd(), statesWithProbabilityGreater0NonPsi, odd, subresult));
-                        } else if (comparator.isInfinity(upperBound)) {
+                        } else if (upperBound == storm::utility::infinity<ValueType>()) {
                             // In this case, the interval is of the form [t, inf] with t != 0.
                             
                             // Start by computing the (unbounded) reachability probabilities of reaching psi states while

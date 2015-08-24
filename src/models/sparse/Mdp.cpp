@@ -5,6 +5,7 @@
 #include "src/adapters/CarlAdapter.h"
 
 #include "src/models/sparse/StandardRewardModel.h"
+#include "src/utility/ConstantsComparator.h"
 
 namespace storm {
     namespace models {

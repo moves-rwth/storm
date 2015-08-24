@@ -15,6 +15,10 @@
 #include "src/utility/OsDetection.h"
 
 namespace storm {
+    namespace utility {
+        template <typename ValueType> class ConstantsComparator;
+    }
+    
     namespace storage {
         
         /*!
@@ -455,9 +459,10 @@ namespace storm {
              * @param bisimulationType The kind of bisimulation that is to be computed.
              * @param buildQuotient If set, the quotient model is built and may be retrieved using the getQuotient()
              * method.
+             * @param comparator A comparator used for comparing constants.
              */
             template<typename ModelType>
-            void partitionRefinement(ModelType const& model, std::set<std::string> const& atomicPropositions, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, Partition& partition, BisimulationType bisimulationType, bool keepRewards, bool buildQuotient);
+            void partitionRefinement(ModelType const& model, std::set<std::string> const& atomicPropositions, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, Partition& partition, BisimulationType bisimulationType, bool keepRewards, bool buildQuotient, storm::utility::ConstantsComparator<ValueType> const& comparator);
             
             /*!
              * Refines the partition based on the provided splitter. After calling this method all blocks are stable
@@ -471,8 +476,9 @@ namespace storm {
              * @param bisimulationType The kind of bisimulation that is to be computed.
              * @param splitterQueue A queue into which all blocks that were split are inserted so they can be treated
              * as splitters in the future.
+             * @param comparator A comparator used for comparing constants.
              */
-            void refinePartition(storm::storage::SparseMatrix<ValueType> const& forwardTransitions, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, Block& splitter, Partition& partition, BisimulationType bisimulationType, std::deque<Block*>& splitterQueue);
+            void refinePartition(storm::storage::SparseMatrix<ValueType> const& forwardTransitions, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, Block& splitter, Partition& partition, BisimulationType bisimulationType, std::deque<Block*>& splitterQueue, storm::utility::ConstantsComparator<ValueType> const& comparator);
             
             /*!
              * Refines the block based on their probability values (leading into the splitter).
@@ -482,18 +488,20 @@ namespace storm {
              * @param bisimulationType The kind of bisimulation that is to be computed.
              * @param splitterQueue A queue into which all blocks that were split are inserted so they can be treated
              * as splitters in the future.
+             * @param comparator A comparator used for comparing constants.
              */
-            void refineBlockProbabilities(Block& block, Partition& partition, BisimulationType bisimulationType, std::deque<Block*>& splitterQueue);
+            void refineBlockProbabilities(Block& block, Partition& partition, BisimulationType bisimulationType, std::deque<Block*>& splitterQueue, storm::utility::ConstantsComparator<ValueType> const& comparator);
             
-            void refineBlockWeak(Block& block, Partition& partition, storm::storage::SparseMatrix<ValueType> const& forwardTransitions, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::deque<Block*>& splitterQueue);
+            void refineBlockWeak(Block& block, Partition& partition, storm::storage::SparseMatrix<ValueType> const& forwardTransitions, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::deque<Block*>& splitterQueue, storm::utility::ConstantsComparator<ValueType> const& comparator);
             
             /*!
              * Determines the split offsets in the given block.
              *
              * @param block The block that is to be analyzed for splits.
              * @param partition The partition that contains the block.
+             * @param comparator A comparator used for comparing constants.
              */
-            std::vector<uint_fast64_t> getSplitPointsWeak(Block& block, Partition& partition);
+            std::vector<uint_fast64_t> getSplitPointsWeak(Block& block, Partition& partition, storm::utility::ConstantsComparator<ValueType> const& comparator);
             
             /*!
              * Builds the quotient model based on the previously computed equivalence classes (stored in the blocks
@@ -506,9 +514,10 @@ namespace storm {
              * @param partition The previously computed partition. This is used for quickly retrieving the block of a
              * state.
              * @param bisimulationType The kind of bisimulation that is to be computed.
+             * @param comparator A comparator used for comparing constants.
              */
             template<typename ModelType>
-            void buildQuotient(ModelType const& model, std::set<std::string> const& selectedAtomicPropositions, Partition const& partition, BisimulationType bisimulationType, bool keepRewards);
+            void buildQuotient(ModelType const& model, std::set<std::string> const& selectedAtomicPropositions, Partition const& partition, BisimulationType bisimulationType, bool keepRewards, storm::utility::ConstantsComparator<ValueType> const& comparator);
 
             /*!
              * Creates the measure-driven initial partition for reaching psi states from phi states.
@@ -521,10 +530,11 @@ namespace storm {
              * @param bisimulationType The kind of bisimulation that is to be computed.
              * @param bounded If set to true, the initial partition will be chosen in such a way that preserves bounded
              * reachability queries.
+             * @param comparator A comparator used for comparing constants.
              * @return The resulting partition.
              */
             template<typename ModelType>
-            Partition getMeasureDrivenInitialPartition(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, BisimulationType bisimulationType, bool keepRewards = true, bool bounded = false);
+            Partition getMeasureDrivenInitialPartition(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, BisimulationType bisimulationType, bool keepRewards = true, bool bounded = false, storm::utility::ConstantsComparator<ValueType> const& comparator = storm::utility::ConstantsComparator<ValueType>());
             
             /*!
              * Creates the initial partition based on all the labels in the given model.
@@ -534,10 +544,11 @@ namespace storm {
              * @param bisimulationType The kind of bisimulation that is to be computed.
              * @param atomicPropositions The set of atomic propositions to respect. If not given, then all atomic
              * propositions of the model are respected.
+             * @param comparator A comparator used for comparing constants.
              * @return The resulting partition.
              */
             template<typename ModelType>
-            Partition getLabelBasedInitialPartition(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, BisimulationType bisimulationType, boost::optional<std::set<std::string>> const& atomicPropositions = boost::optional<std::set<std::string>>(), bool keepRewards = true);
+            Partition getLabelBasedInitialPartition(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, BisimulationType bisimulationType, boost::optional<std::set<std::string>> const& atomicPropositions = boost::optional<std::set<std::string>>(), bool keepRewards = true, storm::utility::ConstantsComparator<ValueType> const& comparator = storm::utility::ConstantsComparator<ValueType>());
             
             /*!
              * Splits all blocks of the given partition into a block that contains all divergent states and another block
@@ -565,14 +576,12 @@ namespace storm {
              *
              * @param stateRewardVector The state reward vector of the model.
              * @param partition The partition that is to be split.
+             * @param comparator A comparator used for comparing constants.
              */
-            void splitRewards(std::vector<ValueType> const& stateRewardVector, Partition& partition);
+            void splitRewards(std::vector<ValueType> const& stateRewardVector, Partition& partition, storm::utility::ConstantsComparator<ValueType> const& comparator);
             
             // If required, a quotient model is built and stored in this member.
             std::shared_ptr<storm::models::sparse::DeterministicModel<ValueType>> quotient;
-            
-            // A comparator that is used for determining whether two probabilities are considered to be equal.
-            storm::utility::ConstantsComparator<ValueType> comparator;
         };
     }
 }

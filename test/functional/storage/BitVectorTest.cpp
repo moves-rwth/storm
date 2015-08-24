@@ -113,7 +113,7 @@ TEST(BitVectorTest, GetSetInt) {
     storm::storage::BitVector vector(77);
 
     vector.setFromInt(63, 3, 2);
-    EXPECT_EQ(2, vector.getAsInt(63, 3));
+    EXPECT_EQ(2ul, vector.getAsInt(63, 3));
 }
 
 
@@ -143,8 +143,8 @@ TEST(BitVectorTest, Resize) {
 
 	vector.resize(70);
     
-    ASSERT_EQ(70, vector.size());
-    ASSERT_EQ(32, vector.getNumberOfSetBits());
+    ASSERT_EQ(70ul, vector.size());
+    ASSERT_EQ(32ul, vector.getNumberOfSetBits());
 
 	for (uint_fast64_t i = 0; i < 32; ++i) {
 		ASSERT_TRUE(vector.get(i));
@@ -158,8 +158,8 @@ TEST(BitVectorTest, Resize) {
     
     vector.resize(72, true);
     
-    ASSERT_EQ(72, vector.size());
-    ASSERT_EQ(34, vector.getNumberOfSetBits());
+    ASSERT_EQ(72ul, vector.size());
+    ASSERT_EQ(34ul, vector.getNumberOfSetBits());
     
     for (uint_fast64_t i = 0; i < 32; ++i) {
 		ASSERT_TRUE(vector.get(i));
@@ -174,15 +174,15 @@ TEST(BitVectorTest, Resize) {
     }
 
     vector.resize(16, 0);
-    ASSERT_EQ(16, vector.size());
-    ASSERT_EQ(16, vector.getNumberOfSetBits());
+    ASSERT_EQ(16ul, vector.size());
+    ASSERT_EQ(16ul, vector.getNumberOfSetBits());
     
     for (uint_fast64_t i = 0; i < 16; ++i) {
 		ASSERT_TRUE(vector.get(i));
 	}
     
     vector.resize(65, 1);
-    ASSERT_EQ(65, vector.size());
+    ASSERT_EQ(65ul, vector.size());
     ASSERT_TRUE(vector.full());
 }
 
@@ -445,7 +445,7 @@ TEST(BitVectorTest, NumberOfSetBits) {
 		vector.set(i, i % 2 == 0);
 	}
 
-    ASSERT_EQ(16, vector.getNumberOfSetBits());
+    ASSERT_EQ(16ul, vector.getNumberOfSetBits());
 }
 
 TEST(BitVectorTest, NumberOfSetBitsBeforeIndex) {

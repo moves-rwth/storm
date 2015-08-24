@@ -8,6 +8,7 @@
 #include "src/storage/dd/DdType.h"
 
 #include "src/utility/solver.h"
+#include "src/models/symbolic/StandardRewardModel.h"
 #include "src/modelchecker/csl/HybridCtmcCslModelChecker.h"
 #include "src/modelchecker/results/HybridQuantitativeCheckResult.h"
 #include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"

@@ -68,9 +68,6 @@ namespace storm {
                     // on the parameter values.
                     std::unordered_set<storm::ArithConstraint<ValueType>> graphPreservingConstraintSet;
                     
-                    // A comparator that is used for
-                    storm::utility::ConstantsComparator<ValueType> comparator;
-                    
                 public:
                     /*!
                      * Constructs the a constraint collector for the given DTMC. The constraints are built and ready for

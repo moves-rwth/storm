@@ -4,6 +4,7 @@
 #include "src/exceptions/NotImplementedException.h"
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/utility/constants.h"
+#include "src/utility/ConstantsComparator.h"
 
 namespace storm {
     namespace models {
@@ -197,6 +198,7 @@ namespace storm {
             
             template <typename ValueType, typename RewardModelType>
             void Dtmc<ValueType, RewardModelType>::ConstraintCollector::process(storm::models::sparse::Dtmc<ValueType> const& dtmc) {
+                storm::utility::ConstantsComparator<ValueType> comparator;
                 for(uint_fast64_t state = 0; state < dtmc.getNumberOfStates(); ++state) {
                     ValueType sum = storm::utility::zero<ValueType>();
                     for (auto const& transition : dtmc.getRows(state)) {

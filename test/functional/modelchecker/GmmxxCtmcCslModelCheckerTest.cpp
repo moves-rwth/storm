@@ -7,6 +7,7 @@
 #include "src/builder/ExplicitPrismModelBuilder.h"
 
 #include "src/solver/GmmxxLinearEquationSolver.h"
+#include "src/models/sparse/StandardRewardModel.h"
 #include "src/modelchecker/csl/SparseCtmcCslModelChecker.h"
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
