@@ -2,7 +2,9 @@
 #define STORM_SOLVER_MINMAXLINEAREQUATIONSOLVER_H_
 
 #include <vector>
-
+#include <cstdint>
+#include "SolverSelectionOptions.h"
+#include "src/storage/sparse/StateType.h"
 
 namespace storm {
     namespace storage {
@@ -10,6 +12,38 @@ namespace storm {
     }
     
     namespace solver {
+        /**
+         * Abstract base class which provides value-type independent helpers.
+         */
+        class AbstractMinMaxLinearEquationSolver {
+        
+        public:
+            void setPolicyTracking(bool setToTrue=true);
+            
+            std::vector<storm::storage::sparse::state_type> getPolicy() const;
+            
+        protected:
+            AbstractMinMaxLinearEquationSolver(double precision, bool relativeError, uint_fast64_t maximalIterations, bool trackPolicy, MinMaxTechniqueSelection prefTech);
+             
+            
+            /// The required precision for the iterative methods.
+            double precision;
+            
+            /// Sets whether the relative or absolute error is to be considered for convergence detection.
+            bool relative;
+            
+            /// The maximal number of iterations to do before iteration is aborted.
+            uint_fast64_t maximalNumberOfIterations;
+
+            /// Whether value iteration or policy iteration is to be used.
+            bool useValueIteration;
+            
+            /// Whether we track the policy we generate.
+            bool trackPolicy;
+            
+            /// 
+            mutable std::vector<storm::storage::sparse::state_type> policy;
+        };
         
         /*!
          * A interface that represents an abstract nondeterministic linear equation solver. In addition to solving
@@ -17,7 +51,14 @@ namespace storm {
          * provided.
          */
         template<class ValueType>
-        class MinMaxLinearEquationSolver {
+        class MinMaxLinearEquationSolver : public AbstractMinMaxLinearEquationSolver {
+        protected:
+            MinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& matrix, double precision, bool relativeError, uint_fast64_t maxNrIterations, bool trackPolicy, MinMaxTechniqueSelection prefTech) :
+                AbstractMinMaxLinearEquationSolver(precision, relativeError, maxNrIterations, trackPolicy, prefTech),
+                A(matrix) {
+                // Intentionally left empty.
+            }
+        
         public:
             
             virtual ~MinMaxLinearEquationSolver() {
@@ -59,6 +100,9 @@ namespace storm {
              * @return The result of the repeated matrix-vector multiplication as the content of the vector x.
              */
             virtual void performMatrixVectorMultiplication(bool minimize, std::vector<ValueType>& x, std::vector<ValueType>* b = nullptr, uint_fast64_t n = 1, std::vector<ValueType>* multiplyResult = nullptr) const = 0;
+            
+        protected:
+            storm::storage::SparseMatrix<ValueType> const& A;
         };
         
     } // namespace solver

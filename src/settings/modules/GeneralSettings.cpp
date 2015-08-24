@@ -6,7 +6,7 @@
 #include "src/settings/OptionBuilder.h"
 #include "src/settings/ArgumentBuilder.h"
 #include "src/settings/Argument.h"
-
+#include "src/solver/SolverSelectionOptions.h"
 
 #include "src/exceptions/InvalidSettingsException.h"
 
@@ -241,12 +241,12 @@ namespace storm {
                 return this->getOption(timeoutOptionName).getArgumentByName("time").getValueAsUnsignedInteger();
             }
             
-            GeneralSettings::EquationSolver GeneralSettings::getEquationSolver() const {
+            storm::solver::EquationSolverType  GeneralSettings::getEquationSolver() const {
                 std::string equationSolverName = this->getOption(eqSolverOptionName).getArgumentByName("name").getValueAsString();
                 if (equationSolverName == "gmm++") {
-                    return GeneralSettings::EquationSolver::Gmmxx;
+                    return storm::solver::EquationSolverType::Gmmxx;
                 } else if (equationSolverName == "native") {
-                    return GeneralSettings::EquationSolver::Native;
+                    return storm::solver::EquationSolverType::Native;
                 }
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown equation solver '" << equationSolverName << "'.");
             }
@@ -255,12 +255,12 @@ namespace storm {
                 return this->getOption(eqSolverOptionName).getHasOptionBeenSet();
             }
             
-            GeneralSettings::LpSolver GeneralSettings::getLpSolver() const {
+            storm::solver::LpSolverType GeneralSettings::getLpSolver() const {
                 std::string lpSolverName = this->getOption(lpSolverOptionName).getArgumentByName("name").getValueAsString();
                 if (lpSolverName == "gurobi") {
-                    return GeneralSettings::LpSolver::Gurobi;
+                    return storm::solver::LpSolverType::Gurobi;
                 } else if (lpSolverName == "glpk") {
-                    return GeneralSettings::LpSolver::glpk;
+                    return storm::solver::LpSolverType::Glpk;
                 }
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown LP solver '" << lpSolverName << "'.");
             }
@@ -297,12 +297,12 @@ namespace storm {
                 return this->getOption(prismCompatibilityOptionName).getHasOptionBeenSet();
             }
 
-			GeneralSettings::MinMaxTechnique GeneralSettings::getMinMaxEquationSolvingTechnique() const {
+			storm::solver::MinMaxTechnique GeneralSettings::getMinMaxEquationSolvingTechnique() const {
 				std::string minMaxEquationSolvingTechnique = this->getOption(minMaxEquationSolvingTechniqueOptionName).getArgumentByName("name").getValueAsString();
 				if (minMaxEquationSolvingTechnique == "valueIteration") {
-					return GeneralSettings::MinMaxTechnique::ValueIteration;
+					return storm::solver::MinMaxTechnique::ValueIteration;
 				} else if (minMaxEquationSolvingTechnique == "policyIteration") {
-					return GeneralSettings::MinMaxTechnique::PolicyIteration;
+					return storm::solver::MinMaxTechnique::PolicyIteration;
 				}
 				STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown min/max equation solving technique '" << minMaxEquationSolvingTechnique << "'.");
 			}

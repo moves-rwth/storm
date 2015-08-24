@@ -1,6 +1,9 @@
 #include "MinMaxLinearEquationSolver.h"
 #include "src/settings/SettingsManager.h"
 #include "src/settings/modules/GeneralSettings.h"
+
+#include "src/utility/macros.h"
+#include "src/exceptions/NotImplementedException.h"
 #include <cstdint>
 
 namespace storm {
@@ -14,6 +17,11 @@ namespace storm {
             } else {
                 useValueIteration = (prefTech == MinMaxTechniqueSelection::ValueIteration);
             }
+        }
+        
+        std::vector<storm::storage::sparse::state_type> AbstractMinMaxLinearEquationSolver::getPolicy() const {
+            STORM_LOG_THROW(!useValueIteration, storm::exceptions::NotImplementedException, "Getting policies after value iteration is not yet supported!");
+            return policy;
         }
     }
 }

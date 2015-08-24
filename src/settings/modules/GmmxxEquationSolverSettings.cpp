@@ -7,6 +7,7 @@
 
 #include "src/settings/SettingsManager.h"
 #include "src/settings/modules/GeneralSettings.h"
+#include "src/solver/SolverSelectionOptions.h"
 
 namespace storm {
     namespace settings {
@@ -107,7 +108,7 @@ namespace storm {
             bool GmmxxEquationSolverSettings::check() const {
                 bool optionsSet = isLinearEquationSystemMethodSet() || isPreconditioningMethodSet() || isRestartIterationCountSet() | isMaximalIterationCountSet() || isPrecisionSet() || isConvergenceCriterionSet();
                 
-                STORM_LOG_WARN_COND(storm::settings::generalSettings().getEquationSolver() == storm::settings::modules::GeneralSettings::EquationSolver::Gmmxx || !optionsSet, "gmm++ is not selected as the equation solver, so setting options for gmm++ has no effect.");
+                STORM_LOG_WARN_COND(storm::settings::generalSettings().getEquationSolver() == storm::solver::EquationSolverType::Gmmxx || !optionsSet, "gmm++ is not selected as the preferred equation solver, so setting options for gmm++ might have no effect.");
                 
                 return true;
             }

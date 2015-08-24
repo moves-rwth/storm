@@ -3,6 +3,7 @@
 
 #include "src/solver/NativeLinearEquationSolver.h"
 #include "src/storage/dd/DdType.h"
+#include "src/utility/ExtendSettingEnumWithSelectionField.h"
 
 namespace storm {
     namespace solver {
@@ -22,6 +23,7 @@ namespace storm {
     
     namespace utility {
         namespace solver {
+            
             template<storm::dd::DdType Type, typename ValueType>
             class SymbolicLinearEquationSolverFactory {
             public:

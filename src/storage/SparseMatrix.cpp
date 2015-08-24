@@ -1066,6 +1066,17 @@ namespace storm {
         }
         
         template<typename ValueType>
+        bool SparseMatrix<ValueType>::isProbabilistic() const {
+            storm::utility::ConstantsComparator<ValueType> comp;
+            for(index_type row = 0; row < this->rowCount; ++row) {
+                if(!comp.isOne(getRowSum(row))) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        
+        template<typename ValueType>
         bool SparseMatrix<ValueType>::isSubmatrixOf(SparseMatrix<ValueType> const& matrix) const {
             // Check for matching sizes.
             if (this->getRowCount() != matrix.getRowCount()) return false;

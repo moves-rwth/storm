@@ -78,7 +78,7 @@ TEST(GmmxxMinMaxLinearEquationSolver, SolveWithPolicyIteration) {
 	std::vector<double> b = { 0.099, 0.5 };
 
 	storm::settings::modules::GmmxxEquationSolverSettings const& settings = storm::settings::gmmxxEquationSolverSettings();
-	storm::solver::GmmxxMinMaxLinearEquationSolver<double> solver(A, settings.getPrecision(), settings.getMaximalIterationCount(), false, settings.getConvergenceCriterion() == storm::settings::modules::GmmxxEquationSolverSettings::ConvergenceCriterion::Relative);
+	storm::solver::GmmxxMinMaxLinearEquationSolver<double> solver(A, settings.getPrecision(), settings.getMaximalIterationCount(), storm::solver::MinMaxTechniqueSelection::PolicyIteration, settings.getConvergenceCriterion() == storm::settings::modules::GmmxxEquationSolverSettings::ConvergenceCriterion::Relative);
 	ASSERT_NO_THROW(solver.solveEquationSystem(true, x, b));
 	ASSERT_LT(std::abs(x[0] - 0.5), storm::settings::gmmxxEquationSolverSettings().getPrecision());
 
