@@ -1,5 +1,7 @@
 #include "src/modelchecker/csl/HybridCtmcCslModelChecker.h"
 
+#include "src/models/symbolic/StandardRewardModel.h"
+
 #include "src/modelchecker/csl/helper/SparseCtmcCslHelper.h"
 #include "src/modelchecker/csl/helper/HybridCtmcCslHelper.h"
 
