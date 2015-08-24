@@ -194,7 +194,7 @@ namespace storm {
             
             static storm::dd::Add<Type> createSystemFromModule(GenerationInformation& generationInfo, ModuleDecisionDiagram const& module);
             
-            static storm::models::symbolic::StandardRewardModel<Type, double> createRewardModelDecisionDiagrams(GenerationInformation& generationInfo, storm::prism::RewardModel const& rewardModel, ModuleDecisionDiagram const& globalModule, storm::dd::Add<Type> const& transitionMatrix, storm::dd::Add<Type> const& reachableStatesAdd, boost::optional<storm::dd::Add<Type>> const& stateActionDd);
+            static storm::models::symbolic::StandardRewardModel<Type, double> createRewardModelDecisionDiagrams(GenerationInformation& generationInfo, storm::prism::RewardModel const& rewardModel, ModuleDecisionDiagram const& globalModule, storm::dd::Add<Type> const& transitionMatrix, storm::dd::Add<Type> const& reachableStatesAdd, storm::dd::Add<Type> const& stateActionDd);
             
             static SystemResult createSystemDecisionDiagram(GenerationInformation& generationInfo);
             

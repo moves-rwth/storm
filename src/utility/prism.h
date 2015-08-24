@@ -138,6 +138,15 @@ namespace storm {
                 }
                 
                 /*!
+                 * Retrieves the total mass of this choice.
+                 *
+                 * @return The total mass.
+                 */
+                ValueType getTotalMass() const {
+                    return totalMass;
+                }
+                
+                /*!
                  * Retrieves the entry in the choice that is associated with the given state and creates one if none exists,
                  * yet.
                  *
@@ -170,6 +179,7 @@ namespace storm {
                 }
                 
                 void addProbability(KeyType state, ValueType value) {
+                    totalMass += value;
                     distribution[state] += value;
                 }
                 
@@ -180,7 +190,10 @@ namespace storm {
             private:
                 // The distribution that is associated with the choice.
                 std::map<KeyType, ValueType, Compare> distribution;
-                
+        
+                // The total probability mass (or rates) of this choice.
+                ValueType totalMass;
+        
                 // The index of the action name.
                 uint_fast64_t actionIndex;
                 

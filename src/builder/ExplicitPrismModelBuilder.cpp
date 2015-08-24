@@ -549,6 +549,16 @@ namespace storm {
                 initialState.setFromInt(integerVariable.bitOffset, integerVariable.bitWidth, static_cast<uint_fast64_t>(integerVariable.initialValue - integerVariable.lowerBound));
             }
             
+            // At this point, we determine whether there are reward models with state-action rewards, because we might
+            // want to know that quickly later on.
+            bool hasStateActionRewards = false;
+            for (auto rewardModelIt = selectedRewardModels.begin(), rewardModelIte = selectedRewardModels.end(); rewardModelIt != rewardModelIte; ++rewardModelIt) {
+                if (rewardModelIt->get().hasStateActionRewards()) {
+                    hasStateActionRewards = true;
+                    break;
+                }
+            }
+            
             // Insert the initial state in the global state to index mapping and state queue.
             uint32_t stateIndex = getOrAddStateIndex(initialState, stateInformation, stateQueue);
             stateInformation.initialStateIndices.push_back(stateIndex);
@@ -666,6 +676,23 @@ namespace storm {
                             }
                         }
                         
+                        // If there is one state-action reward model, we need to scale the rewards according to the
+                        // multiple choices.
+                        ValueType totalExitMass = storm::utility::zero<ValueType>();
+                        if (hasStateActionRewards) {
+                            if (discreteTimeModel) {
+                                totalExitMass = static_cast<ValueType>(totalNumberOfChoices);
+                            } else {
+                                // In the CTMC, we need to compute the exit rate of the state here, sin
+                                for (auto const& choice : allUnlabeledChoices) {
+                                    totalExitMass += choice.getTotalMass();
+                                }
+                                for (auto const& choice : allLabeledChoices) {
+                                    totalExitMass += choice.getTotalMass();
+                                }
+                            }
+                        }
+                        
                         // Combine all the choices and scale them with the total number of choices of the current state.
                         for (auto const& choice : allUnlabeledChoices) {
                             if (commandLabels) {
@@ -678,7 +705,7 @@ namespace storm {
                                     for (auto const& stateActionReward : rewardModelIt->get().getStateActionRewards()) {
                                         if (!stateActionReward.isLabeled()) {
                                             if (evaluator.asBool(stateActionReward.getStatePredicateExpression())) {
-                                                builderIt->stateActionRewardVector.back() += ValueType(evaluator.asRational(stateActionReward.getRewardValueExpression()));
+                                                builderIt->stateActionRewardVector.back() += ValueType(evaluator.asRational(stateActionReward.getRewardValueExpression())) * choice.getTotalMass() / totalExitMass;
                                             }
                                         }
                                     }
@@ -704,7 +731,7 @@ namespace storm {
                                     for (auto const& stateActionReward : rewardModelIt->get().getStateActionRewards()) {
                                         if (stateActionReward.isLabeled() && stateActionReward.getActionIndex() == choice.getActionIndex()) {
                                             if (evaluator.asBool(stateActionReward.getStatePredicateExpression())) {
-                                                builderIt->stateActionRewardVector.back() += ValueType(evaluator.asRational(stateActionReward.getRewardValueExpression()));
+                                                builderIt->stateActionRewardVector.back() += ValueType(evaluator.asRational(stateActionReward.getRewardValueExpression())) * choice.getTotalMass() / totalExitMass;
                                             }
                                         }
                                     }

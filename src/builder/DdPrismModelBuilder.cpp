@@ -248,13 +248,13 @@ namespace storm {
         
         template <storm::dd::DdType Type>
         struct DdPrismModelBuilder<Type>::SystemResult {
-            SystemResult(storm::dd::Add<Type> const& allTransitionsDd, DdPrismModelBuilder<Type>::ModuleDecisionDiagram const& globalModule, boost::optional<storm::dd::Add<Type>> const& stateActionDd) : allTransitionsDd(allTransitionsDd), globalModule(globalModule), stateActionDd(stateActionDd) {
+            SystemResult(storm::dd::Add<Type> const& allTransitionsDd, DdPrismModelBuilder<Type>::ModuleDecisionDiagram const& globalModule, storm::dd::Add<Type> const& stateActionDd) : allTransitionsDd(allTransitionsDd), globalModule(globalModule), stateActionDd(stateActionDd) {
                 // Intentionally left empty.
             }
             
             storm::dd::Add<Type> allTransitionsDd;
             typename DdPrismModelBuilder<Type>::ModuleDecisionDiagram globalModule;
-            boost::optional<storm::dd::Add<Type>> stateActionDd;
+            storm::dd::Add<Type> stateActionDd;
         };
         
         template <storm::dd::DdType Type>
@@ -719,16 +719,12 @@ namespace storm {
             
             storm::dd::Add<Type> result = createSystemFromModule(generationInfo, system);
 
-            // For MDPs and DTMCs, we need a DD that maps states to the legal choices and states to the number of
-            // available choices, respectively. As it happens, the construction is the same in both cases.
-            boost::optional<storm::dd::Add<Type>> stateActionDd;
-            if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::DTMC || generationInfo.program.getModelType() == storm::prism::Program::ModelType::MDP) {
-                stateActionDd = result.sumAbstract(generationInfo.columnMetaVariables);
-            }
+            // Create an auxiliary DD that is used later during the construction of reward models.
+            storm::dd::Add<Type> stateActionDd = result.sumAbstract(generationInfo.columnMetaVariables);
 
             // For DTMCs, we normalize each row to 1 (to account for non-determinism).
             if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::DTMC) {
-                result = result / stateActionDd.get();
+                result = result / stateActionDd;
             } else if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::MDP) {
                 // For MDPs, we need to throw away the nondeterminism variables from the generation information that
                 // were never used.
@@ -742,7 +738,7 @@ namespace storm {
         }
         
         template <storm::dd::DdType Type>
-        storm::models::symbolic::StandardRewardModel<Type, double> DdPrismModelBuilder<Type>::createRewardModelDecisionDiagrams(GenerationInformation& generationInfo, storm::prism::RewardModel const& rewardModel, ModuleDecisionDiagram const& globalModule, storm::dd::Add<Type> const& transitionMatrix, storm::dd::Add<Type> const& reachableStatesAdd, boost::optional<storm::dd::Add<Type>> const& stateActionDd) {
+        storm::models::symbolic::StandardRewardModel<Type, double> DdPrismModelBuilder<Type>::createRewardModelDecisionDiagrams(GenerationInformation& generationInfo, storm::prism::RewardModel const& rewardModel, ModuleDecisionDiagram const& globalModule, storm::dd::Add<Type> const& transitionMatrix, storm::dd::Add<Type> const& reachableStatesAdd, storm::dd::Add<Type> const& stateActionDd) {
             
             // Start by creating the state reward vector.
             boost::optional<storm::dd::Add<Type>> stateRewards;
@@ -775,26 +771,21 @@ namespace storm {
                     storm::dd::Add<Type> rewards = generationInfo.rowExpressionAdapter->translateExpression(stateActionReward.getRewardValueExpression());
                     storm::dd::Add<Type> synchronization = generationInfo.manager->getAddOne();
                     
-                    if (stateActionReward.isLabeled()) {
-                        if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::MDP) {
-                            synchronization = getSynchronizationDecisionDiagram(generationInfo, stateActionReward.getActionIndex());
-                        }
-                        states *= globalModule.synchronizingActionToDecisionDiagramMap.at(stateActionReward.getActionIndex()).guardDd * reachableStatesAdd;
-                    } else {
-                        if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::MDP) {
-                            synchronization = getSynchronizationDecisionDiagram(generationInfo);
-                        }
-                        states *= globalModule.independentAction.guardDd * reachableStatesAdd;
+                    if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::MDP) {
+                        synchronization = getSynchronizationDecisionDiagram(generationInfo, stateActionReward.getActionIndex());
                     }
-                    
+                    ActionDecisionDiagram const& actionDd = stateActionReward.isLabeled() ? globalModule.synchronizingActionToDecisionDiagramMap.at(stateActionReward.getActionIndex()) : globalModule.independentAction;
+                    states *= actionDd.guardDd * reachableStatesAdd;
                     storm::dd::Add<Type> stateActionRewardDd = synchronization * states * rewards;
 
                     // If we are building the state-action rewards for an MDP, we need to make sure that the encoding
                     // of the nondeterminism is present in the reward vector, so we ne need to multiply it with the
                     // legal state-actions.
                     if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::MDP) {
-                        STORM_LOG_THROW(static_cast<bool>(stateActionDd), storm::exceptions::InvalidStateException, "A DD that reflects the legal choices of each state was not build, but was expected to exist.");
-                        stateActionRewardDd *= stateActionDd.get();
+                        stateActionRewardDd *= stateActionDd;
+                    } else if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::CTMC) {
+                        // For CTMCs, we need to multiply the entries with the exit rate of the corresponding action.
+                        stateActionRewardDd *= actionDd.transitionsDd.sumAbstract(generationInfo.columnMetaVariables);
                     }
                     
                     // Perform some sanity checks.
@@ -805,10 +796,9 @@ namespace storm {
                     stateActionRewards.get() += stateActionRewardDd;
                 }
                 
-                // Scale state-action rewards for DTMCs.
-                if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::DTMC) {
-                    STORM_LOG_THROW(static_cast<bool>(stateActionDd), storm::exceptions::InvalidStateException, "A DD that reflects the number of choices per state was not build, but was expected to exist.");
-                    stateActionRewards.get() /= stateActionDd.get();
+                // Scale state-action rewards for DTMCs and CTMCs.
+                if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::DTMC || generationInfo.program.getModelType() == storm::prism::Program::ModelType::CTMC) {
+                    stateActionRewards.get() /= stateActionDd;
                 }
             }
             
@@ -856,8 +846,7 @@ namespace storm {
                 
                 // Scale transition rewards for DTMCs.
                 if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::DTMC) {
-                    STORM_LOG_THROW(static_cast<bool>(stateActionDd), storm::exceptions::InvalidStateException, "A DD that reflects the number of choices per state was not build, but was expected to exist.");
-                    transitionRewards.get() /= stateActionDd.get();
+                    transitionRewards.get() /= stateActionDd;
                 }
             }
             
@@ -901,7 +890,7 @@ namespace storm {
             SystemResult system = createSystemDecisionDiagram(generationInfo);
             storm::dd::Add<Type> transitionMatrix = system.allTransitionsDd;
             ModuleDecisionDiagram const& globalModule = system.globalModule;
-            boost::optional<storm::dd::Add<Type>> stateActionDd = system.stateActionDd;
+            storm::dd::Add<Type> stateActionDd = system.stateActionDd;
             
             // Cut the transitions and rewards to the reachable fragment of the state space.
             storm::dd::Bdd<Type> initialStates = createInitialStatesDecisionDiagram(generationInfo);
@@ -912,9 +901,7 @@ namespace storm {
             storm::dd::Bdd<Type> reachableStates = computeReachableStates(generationInfo, initialStates, transitionMatrixBdd);
             storm::dd::Add<Type> reachableStatesAdd = reachableStates.toAdd();
             transitionMatrix *= reachableStatesAdd;
-            if (stateActionDd) {
-                stateActionDd.get() *= reachableStatesAdd;
-            }
+            stateActionDd *= reachableStatesAdd;
 
             // Detect deadlocks and 1) fix them if requested 2) throw an error otherwise.
             storm::dd::Bdd<Type> statesWithTransition = transitionMatrixBdd.existsAbstract(generationInfo.columnMetaVariables);
