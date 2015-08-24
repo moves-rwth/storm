@@ -40,12 +40,12 @@ namespace storm {
                     std::unordered_map<std::string, RewardModelType>&& rewardModels = std::unordered_map<std::string, RewardModelType>(),
                     boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling = boost::optional<std::vector<LabelSet>>());
                 
-                Mdp(Mdp const& other) = default;
-                Mdp& operator=(Mdp const& other) = default;
+                Mdp(Mdp<ValueType, RewardModelType> const& other) = default;
+                Mdp& operator=(Mdp<ValueType, RewardModelType> const& other) = default;
                 
 #ifndef WINDOWS
-                Mdp(Mdp&& other) = default;
-                Mdp& operator=(Mdp&& other) = default;
+                Mdp(Mdp<ValueType, RewardModelType>&& other) = default;
+                Mdp& operator=(Mdp<ValueType, RewardModelType>&& other) = default;
 #endif
                 
                 /*!

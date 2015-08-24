@@ -42,12 +42,12 @@ namespace storm {
                      std::unordered_map<std::string, RewardModelType>&& rewardModels = std::unordered_map<std::string, RewardModelType>(),
                      boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling = boost::optional<std::vector<LabelSet>>());
                 
-                Dtmc(Dtmc<ValueType> const& dtmc) = default;
-                Dtmc& operator=(Dtmc<ValueType> const& dtmc) = default;
+                Dtmc(Dtmc<ValueType, RewardModelType> const& dtmc) = default;
+                Dtmc& operator=(Dtmc<ValueType, RewardModelType> const& dtmc) = default;
                 
 #ifndef WINDOWS
-                Dtmc(Dtmc<ValueType>&& dtmc) = default;
-                Dtmc& operator=(Dtmc<ValueType>&& dtmc) = default;
+                Dtmc(Dtmc<ValueType, RewardModelType>&& dtmc) = default;
+                Dtmc& operator=(Dtmc<ValueType, RewardModelType>&& dtmc) = default;
 #endif
                 
                 /*!

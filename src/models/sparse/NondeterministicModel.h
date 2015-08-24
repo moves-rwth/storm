@@ -44,12 +44,12 @@ namespace storm {
                                       std::unordered_map<std::string, RewardModelType>&& rewardModels = std::unordered_map<std::string, RewardModelType>(),
                                       boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling = boost::optional<std::vector<LabelSet>>());
                 
-                NondeterministicModel(NondeterministicModel const& other) = default;
-                NondeterministicModel& operator=(NondeterministicModel const& other) = default;
+                NondeterministicModel(NondeterministicModel<ValueType, RewardModelType> const& other) = default;
+                NondeterministicModel& operator=(NondeterministicModel<ValueType, RewardModelType> const& other) = default;
                 
 #ifndef WINDOWS
-                NondeterministicModel(NondeterministicModel&& other) = default;
-                NondeterministicModel& operator=(NondeterministicModel&& other) = default;
+                NondeterministicModel(NondeterministicModel<ValueType, RewardModelType>&& other) = default;
+                NondeterministicModel& operator=(NondeterministicModel<ValueType, RewardModelType>&& other) = default;
 #endif
                 
                 /*!

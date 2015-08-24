@@ -44,12 +44,12 @@ namespace storm {
                                    std::unordered_map<std::string, RewardModelType>&& rewardModels = std::unordered_map<std::string, RewardModelType>(),
                                    boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling = boost::optional<std::vector<LabelSet>>());
                 
-                DeterministicModel(DeterministicModel const& other) = default;
-                DeterministicModel& operator=(DeterministicModel const& other) = default;
+                DeterministicModel(DeterministicModel<ValueType, RewardModelType> const& other) = default;
+                DeterministicModel& operator=(DeterministicModel<ValueType, RewardModelType> const& other) = default;
                 
 #ifndef WINDOWS
-                DeterministicModel(DeterministicModel&& other) = default;
-                DeterministicModel<ValueType>& operator=(DeterministicModel<ValueType>&& model) = default;
+                DeterministicModel(DeterministicModel<ValueType, RewardModelType>&& other) = default;
+                DeterministicModel<ValueType>& operator=(DeterministicModel<ValueType, RewardModelType>&& model) = default;
 #endif
                 
                 virtual void reduceToStateBasedRewards() override;

@@ -38,12 +38,12 @@ namespace storm {
                      std::unordered_map<std::string, RewardModelType>&& rewardModels = std::unordered_map<std::string, RewardModelType>(),
                      boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling = boost::optional<std::vector<LabelSet>>());
                 
-                Ctmc(Ctmc<ValueType> const& ctmc) = default;
-                Ctmc& operator=(Ctmc<ValueType> const& ctmc) = default;
+                Ctmc(Ctmc<ValueType, RewardModelType> const& ctmc) = default;
+                Ctmc& operator=(Ctmc<ValueType, RewardModelType> const& ctmc) = default;
                 
 #ifndef WINDOWS
-                Ctmc(Ctmc<ValueType>&& ctmc) = default;
-                Ctmc& operator=(Ctmc<ValueType>&& ctmc) = default;
+                Ctmc(Ctmc<ValueType, RewardModelType>&& ctmc) = default;
+                Ctmc& operator=(Ctmc<ValueType, RewardModelType>&& ctmc) = default;
 #endif
                 /*!
                  * Retrieves the vector of exit rates of the model.

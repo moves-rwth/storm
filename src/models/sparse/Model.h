@@ -32,12 +32,12 @@ namespace storm {
                 typedef CValueType ValueType;
                 typedef CRewardModelType RewardModelType;
                 
-                Model(Model<ValueType> const& other) = default;
-                Model& operator=(Model<ValueType> const& other) = default;
+                Model(Model<ValueType, RewardModelType> const& other) = default;
+                Model& operator=(Model<ValueType, RewardModelType> const& other) = default;
                 
 #ifndef WINDOWS
-                Model(Model<ValueType>&& other) = default;
-                Model& operator=(Model<ValueType>&& other) = default;
+                Model(Model<ValueType, RewardModelType>&& other) = default;
+                Model& operator=(Model<ValueType, RewardModelType>&& other) = default;
 #endif
                 
                 /*!

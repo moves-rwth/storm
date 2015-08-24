@@ -48,12 +48,12 @@ namespace storm {
                                 std::unordered_map<std::string, RewardModelType>&& rewardModels = std::unordered_map<std::string, RewardModelType>(),
                                 boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling = boost::optional<std::vector<LabelSet>>());
                 
-                MarkovAutomaton(MarkovAutomaton const& other) = default;
-                MarkovAutomaton& operator=(MarkovAutomaton const& other) = default;
+                MarkovAutomaton(MarkovAutomaton<ValueType, RewardModelType> const& other) = default;
+                MarkovAutomaton& operator=(MarkovAutomaton<ValueType, RewardModelType> const& other) = default;
                 
 #ifndef WINDOWS
-                MarkovAutomaton(MarkovAutomaton&& other) = default;
-                MarkovAutomaton& operator=(MarkovAutomaton&& other) = default;
+                MarkovAutomaton(MarkovAutomaton<ValueType, RewardModelType>&& other) = default;
+                MarkovAutomaton& operator=(MarkovAutomaton<ValueType, RewardModelType>&& other) = default;
 #endif
                 
                 /*!
