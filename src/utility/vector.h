@@ -249,6 +249,22 @@ namespace storm {
                 return filter(values,  fnc);
             }
             
+            /**
+             * Sum the entries from values that are set to one in the filter vector.
+             * @param values
+             * @param filter
+             * @return The sum of the values with a corresponding one in the filter.
+             */
+            template<typename VT>
+            VT sum_if(std::vector<VT> const& values, storm::storage::BitVector const& filter) {
+                assert(values.size() >= filter.size());
+                VT sum = storm::utility::zero<VT>();
+                for(uint_fast64_t i : filter) {
+                    sum += values[i];
+                }    
+                return sum;
+            }
+            
             /*!
              * Reduces the given source vector by selecting an element according to the given filter out of each row group.
              *
