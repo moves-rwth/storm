@@ -269,7 +269,6 @@ namespace storm {
                 
                 // Then compute the state reward vector to use in the computation.
                 storm::dd::Add<DdType> totalRewardVector = rewardModel.getTotalRewardVector(rateMatrix, model.getColumnVariables(), exitRateVector);
-                totalRewardVector.exportToDot("rewards.dot");
                 std::vector<ValueType> explicitTotalRewardVector = totalRewardVector.template toVector<ValueType>(odd);
                 
                 // Finally, compute the transient probabilities.
