@@ -1,5 +1,8 @@
 #include "src/utility/ConstantsComparator.h"
 
+#include <cstdlib>
+#include <cmath>
+
 #include "src/utility/constants.h"
 #include "src/settings/SettingsManager.h"
 #include "src/settings/modules/GeneralSettings.h"
