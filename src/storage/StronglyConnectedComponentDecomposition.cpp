@@ -5,68 +5,71 @@
 
 namespace storm {
     namespace storage {
-        template <typename ValueType, typename RewardModelType>
-        StronglyConnectedComponentDecomposition<ValueType, RewardModelType>::StronglyConnectedComponentDecomposition() : Decomposition() {
+        template <typename ValueType>
+        StronglyConnectedComponentDecomposition<ValueType>::StronglyConnectedComponentDecomposition() : Decomposition() {
             // Intentionally left empty.
         }
 
-        template <typename ValueType, typename RewardModelType>
-        StronglyConnectedComponentDecomposition<ValueType, RewardModelType>::StronglyConnectedComponentDecomposition(storm::models::sparse::Model<ValueType, RewardModelType> const& model, bool dropNaiveSccs, bool onlyBottomSccs) : Decomposition() {
+        template <typename ValueType>
+        template <typename RewardModelType>
+        StronglyConnectedComponentDecomposition<ValueType>::StronglyConnectedComponentDecomposition(storm::models::sparse::Model<ValueType, RewardModelType> const& model, bool dropNaiveSccs, bool onlyBottomSccs) : Decomposition() {
             performSccDecomposition(model, dropNaiveSccs, onlyBottomSccs);
         }
         
-        template <typename ValueType, typename RewardModelType>
-        StronglyConnectedComponentDecomposition<ValueType, RewardModelType>::StronglyConnectedComponentDecomposition(storm::models::sparse::Model<ValueType, RewardModelType> const& model, StateBlock const& block, bool dropNaiveSccs, bool onlyBottomSccs) {
+        template <typename ValueType>
+        template <typename RewardModelType>
+        StronglyConnectedComponentDecomposition<ValueType>::StronglyConnectedComponentDecomposition(storm::models::sparse::Model<ValueType, RewardModelType> const& model, StateBlock const& block, bool dropNaiveSccs, bool onlyBottomSccs) {
             storm::storage::BitVector subsystem(model.getNumberOfStates(), block.begin(), block.end());
             performSccDecomposition(model.getTransitionMatrix(), subsystem, dropNaiveSccs, onlyBottomSccs);
         }
         
-        template <typename ValueType, typename RewardModelType>
-        StronglyConnectedComponentDecomposition<ValueType, RewardModelType>::StronglyConnectedComponentDecomposition(storm::models::sparse::Model<ValueType, RewardModelType> const& model, storm::storage::BitVector const& subsystem, bool dropNaiveSccs, bool onlyBottomSccs) {
+        template <typename ValueType>
+        template <typename RewardModelType>
+        StronglyConnectedComponentDecomposition<ValueType>::StronglyConnectedComponentDecomposition(storm::models::sparse::Model<ValueType, RewardModelType> const& model, storm::storage::BitVector const& subsystem, bool dropNaiveSccs, bool onlyBottomSccs) {
             performSccDecomposition(model.getTransitionMatrix(), subsystem, dropNaiveSccs, onlyBottomSccs);
         }
         
-        template <typename ValueType, typename RewardModelType>
-        StronglyConnectedComponentDecomposition<ValueType, RewardModelType>::StronglyConnectedComponentDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, StateBlock const& block, bool dropNaiveSccs, bool onlyBottomSccs) {
+        template <typename ValueType>
+        StronglyConnectedComponentDecomposition<ValueType>::StronglyConnectedComponentDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, StateBlock const& block, bool dropNaiveSccs, bool onlyBottomSccs) {
             storm::storage::BitVector subsystem(transitionMatrix.getRowGroupCount(), block.begin(), block.end());
             performSccDecomposition(transitionMatrix, subsystem, dropNaiveSccs, onlyBottomSccs);
         }
         
         
-        template <typename ValueType, typename RewardModelType>
-        StronglyConnectedComponentDecomposition<ValueType, RewardModelType>::StronglyConnectedComponentDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, bool dropNaiveSccs, bool onlyBottomSccs) {
+        template <typename ValueType>
+        StronglyConnectedComponentDecomposition<ValueType>::StronglyConnectedComponentDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, bool dropNaiveSccs, bool onlyBottomSccs) {
             performSccDecomposition(transitionMatrix, storm::storage::BitVector(transitionMatrix.getRowGroupCount(), true), dropNaiveSccs, onlyBottomSccs);
         }
 
-        template <typename ValueType, typename RewardModelType>
-        StronglyConnectedComponentDecomposition<ValueType, RewardModelType>::StronglyConnectedComponentDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& subsystem, bool dropNaiveSccs, bool onlyBottomSccs) {
+        template <typename ValueType>
+        StronglyConnectedComponentDecomposition<ValueType>::StronglyConnectedComponentDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& subsystem, bool dropNaiveSccs, bool onlyBottomSccs) {
             performSccDecomposition(transitionMatrix, subsystem, dropNaiveSccs, onlyBottomSccs);
         }
         
-        template <typename ValueType, typename RewardModelType>
-        StronglyConnectedComponentDecomposition<ValueType, RewardModelType>::StronglyConnectedComponentDecomposition(StronglyConnectedComponentDecomposition const& other) : Decomposition(other) {
+        template <typename ValueType>
+        StronglyConnectedComponentDecomposition<ValueType>::StronglyConnectedComponentDecomposition(StronglyConnectedComponentDecomposition const& other) : Decomposition(other) {
             // Intentionally left empty.
         }
         
-        template <typename ValueType, typename RewardModelType>
-        StronglyConnectedComponentDecomposition<ValueType, RewardModelType>& StronglyConnectedComponentDecomposition<ValueType, RewardModelType>::operator=(StronglyConnectedComponentDecomposition const& other) {
+        template <typename ValueType>
+        StronglyConnectedComponentDecomposition<ValueType>& StronglyConnectedComponentDecomposition<ValueType>::operator=(StronglyConnectedComponentDecomposition const& other) {
             this->blocks = other.blocks;
             return *this;
         }
         
-        template <typename ValueType, typename RewardModelType>
-        StronglyConnectedComponentDecomposition<ValueType, RewardModelType>::StronglyConnectedComponentDecomposition(StronglyConnectedComponentDecomposition&& other) : Decomposition(std::move(other)) {
+        template <typename ValueType>
+        StronglyConnectedComponentDecomposition<ValueType>::StronglyConnectedComponentDecomposition(StronglyConnectedComponentDecomposition&& other) : Decomposition(std::move(other)) {
             // Intentionally left empty.
         }
         
-        template <typename ValueType, typename RewardModelType>
-        StronglyConnectedComponentDecomposition<ValueType, RewardModelType>& StronglyConnectedComponentDecomposition<ValueType, RewardModelType>::operator=(StronglyConnectedComponentDecomposition&& other) {
+        template <typename ValueType>
+        StronglyConnectedComponentDecomposition<ValueType>& StronglyConnectedComponentDecomposition<ValueType>::operator=(StronglyConnectedComponentDecomposition&& other) {
             this->blocks = std::move(other.blocks);
             return *this;
         }
 
-        template <typename ValueType, typename RewardModelType>
-        void StronglyConnectedComponentDecomposition<ValueType, RewardModelType>::performSccDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& subsystem, bool dropNaiveSccs, bool onlyBottomSccs) {
+        template <typename ValueType>
+        void StronglyConnectedComponentDecomposition<ValueType>::performSccDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& subsystem, bool dropNaiveSccs, bool onlyBottomSccs) {
             uint_fast64_t numberOfStates = transitionMatrix.getRowGroupCount();
 
             // Set up the environment of the algorithm.
@@ -154,8 +157,9 @@ namespace storm {
             }
         }
         
-        template <typename ValueType, typename RewardModelType>
-        void StronglyConnectedComponentDecomposition<ValueType, RewardModelType>::performSccDecomposition(storm::models::sparse::Model<ValueType, RewardModelType> const& model, bool dropNaiveSccs, bool onlyBottomSccs) {
+        template <typename ValueType>
+        template <typename RewardModelType>
+        void StronglyConnectedComponentDecomposition<ValueType>::performSccDecomposition(storm::models::sparse::Model<ValueType, RewardModelType> const& model, bool dropNaiveSccs, bool onlyBottomSccs) {
             // Prepare a block that contains all states for a call to the other overload of this function.
             storm::storage::BitVector fullSystem(model.getNumberOfStates(), true);
             
@@ -163,8 +167,8 @@ namespace storm {
             performSccDecomposition(model.getTransitionMatrix(), fullSystem, dropNaiveSccs, onlyBottomSccs);
         }
         
-        template <typename ValueType, typename RewardModelType>
-        void StronglyConnectedComponentDecomposition<ValueType, RewardModelType>::performSccDecompositionGCM(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, uint_fast64_t startState, storm::storage::BitVector& statesWithSelfLoop, storm::storage::BitVector const& subsystem, uint_fast64_t& currentIndex, storm::storage::BitVector& hasPreorderNumber, std::vector<uint_fast64_t>& preorderNumbers, std::vector<uint_fast64_t>& s, std::vector<uint_fast64_t>& p, storm::storage::BitVector& stateHasScc, std::vector<uint_fast64_t>& stateToSccMapping, uint_fast64_t& sccCount) {
+        template <typename ValueType>
+        void StronglyConnectedComponentDecomposition<ValueType>::performSccDecompositionGCM(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, uint_fast64_t startState, storm::storage::BitVector& statesWithSelfLoop, storm::storage::BitVector const& subsystem, uint_fast64_t& currentIndex, storm::storage::BitVector& hasPreorderNumber, std::vector<uint_fast64_t>& preorderNumbers, std::vector<uint_fast64_t>& s, std::vector<uint_fast64_t>& p, storm::storage::BitVector& stateHasScc, std::vector<uint_fast64_t>& stateToSccMapping, uint_fast64_t& sccCount) {
             
             // Prepare the stack used for turning the recursive procedure into an iterative one.
             std::vector<uint_fast64_t> recursionStateStack;
@@ -224,9 +228,20 @@ namespace storm {
         
         // Explicitly instantiate the SCC decomposition.
 		template class StronglyConnectedComponentDecomposition<double>;
+        template StronglyConnectedComponentDecomposition<double>::StronglyConnectedComponentDecomposition(storm::models::sparse::Model<double> const& model, bool dropNaiveSccs, bool onlyBottomSccs);
+        template StronglyConnectedComponentDecomposition<double>::StronglyConnectedComponentDecomposition(storm::models::sparse::Model<double> const& model, StateBlock const& block, bool dropNaiveSccs, bool onlyBottomSccs);
+        template StronglyConnectedComponentDecomposition<double>::StronglyConnectedComponentDecomposition(storm::models::sparse::Model<double> const& model, storm::storage::BitVector const& subsystem, bool dropNaiveSccs, bool onlyBottomSccs);
+        
 		template class StronglyConnectedComponentDecomposition<float>;
+        template StronglyConnectedComponentDecomposition<float>::StronglyConnectedComponentDecomposition(storm::models::sparse::Model<float> const& model, bool dropNaiveSccs, bool onlyBottomSccs);
+        template StronglyConnectedComponentDecomposition<float>::StronglyConnectedComponentDecomposition(storm::models::sparse::Model<float> const& model, StateBlock const& block, bool dropNaiveSccs, bool onlyBottomSccs);
+        template StronglyConnectedComponentDecomposition<float>::StronglyConnectedComponentDecomposition(storm::models::sparse::Model<float> const& model, storm::storage::BitVector const& subsystem, bool dropNaiveSccs, bool onlyBottomSccs);
+
 #ifdef STORM_HAVE_CARL
         template class StronglyConnectedComponentDecomposition<storm::RationalFunction>;
+        template StronglyConnectedComponentDecomposition<storm::RationalFunction>::StronglyConnectedComponentDecomposition(storm::models::sparse::Model<storm::RationalFunction> const& model, bool dropNaiveSccs, bool onlyBottomSccs);
+        template StronglyConnectedComponentDecomposition<storm::RationalFunction>::StronglyConnectedComponentDecomposition(storm::models::sparse::Model<storm::RationalFunction> const& model, StateBlock const& block, bool dropNaiveSccs, bool onlyBottomSccs);
+        template StronglyConnectedComponentDecomposition<storm::RationalFunction>::StronglyConnectedComponentDecomposition(storm::models::sparse::Model<storm::RationalFunction> const& model, storm::storage::BitVector const& subsystem, bool dropNaiveSccs, bool onlyBottomSccs);
 #endif
     } // namespace storage
 } // namespace storm

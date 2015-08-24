@@ -15,7 +15,8 @@ namespace storm {
         }
         
         template<typename ValueType>
-        MaximalEndComponentDecomposition<ValueType>::MaximalEndComponentDecomposition(storm::models::sparse::NondeterministicModel<ValueType> const& model) {
+        template<typename RewardModelType>
+        MaximalEndComponentDecomposition<ValueType>::MaximalEndComponentDecomposition(storm::models::sparse::NondeterministicModel<ValueType, RewardModelType> const& model) {
             performMaximalEndComponentDecomposition(model.getTransitionMatrix(), model.getBackwardTransitions(), storm::storage::BitVector(model.getNumberOfStates(), true));
         }
 
@@ -183,5 +184,7 @@ namespace storm {
         
         // Explicitly instantiate the MEC decomposition.
         template class MaximalEndComponentDecomposition<double>;
+        template MaximalEndComponentDecomposition<double>::MaximalEndComponentDecomposition(storm::models::sparse::NondeterministicModel<double> const& model);
+
     }
 }

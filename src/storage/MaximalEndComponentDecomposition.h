@@ -24,7 +24,8 @@ namespace storm  {
              *
              * @param model The model to decompose into MECs.
              */
-            MaximalEndComponentDecomposition(storm::models::sparse::NondeterministicModel<ValueType> const& model);
+            template <typename RewardModelType = storm::models::sparse::StandardRewardModel<ValueType>>
+            MaximalEndComponentDecomposition(storm::models::sparse::NondeterministicModel<ValueType, RewardModelType> const& model);
             
             /*
              * Creates an MEC decomposition of the given model (represented by a row-grouped matrix).

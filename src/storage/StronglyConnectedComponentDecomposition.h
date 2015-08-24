@@ -20,7 +20,7 @@ namespace storm {
         /*!
          * This class represents the decomposition of a graph-like structure into its strongly connected components.
          */
-        template <typename ValueType, typename RewardModelType = storm::models::sparse::StandardRewardModel<ValueType>>
+        template <typename ValueType>
         class StronglyConnectedComponentDecomposition : public Decomposition<StronglyConnectedComponent> {
         public:            
             /*
@@ -37,6 +37,7 @@ namespace storm {
              * @param onlyBottomSccs If set to true, only bottom SCCs, i.e. SCCs in which all states have no way of
              * leaving the SCC), are kept.
              */
+            template <typename RewardModelType = storm::models::sparse::StandardRewardModel<ValueType>>
             StronglyConnectedComponentDecomposition(storm::models::sparse::Model<ValueType, RewardModelType> const& model, bool dropNaiveSccs = false, bool onlyBottomSccs = false);
             
             /*
@@ -49,6 +50,7 @@ namespace storm {
              * @param onlyBottomSccs If set to true, only bottom SCCs, i.e. SCCs in which all states have no way of
              * leaving the SCC), are kept.
              */
+            template <typename RewardModelType = storm::models::sparse::StandardRewardModel<ValueType>>
             StronglyConnectedComponentDecomposition(storm::models::sparse::Model<ValueType, RewardModelType> const& model, StateBlock const& block, bool dropNaiveSccs = false, bool onlyBottomSccs = false);
             
             /*
@@ -61,6 +63,7 @@ namespace storm {
              * @param onlyBottomSccs If set to true, only bottom SCCs, i.e. SCCs in which all states have no way of
              * leaving the SCC), are kept.
              */
+            template <typename RewardModelType = storm::models::sparse::StandardRewardModel<ValueType>>
             StronglyConnectedComponentDecomposition(storm::models::sparse::Model<ValueType, RewardModelType> const& model, storm::storage::BitVector const& subsystem, bool dropNaiveSccs = false, bool onlyBottomSccs = false);
 
             /*
@@ -139,6 +142,7 @@ namespace storm {
              * @param onlyBottomSccs If set to true, only bottom SCCs, i.e. SCCs in which all states have no way of
              * leaving the SCC), are kept.
              */
+            template <typename RewardModelType = storm::models::sparse::StandardRewardModel<ValueType>>
             void performSccDecomposition(storm::models::sparse::Model<ValueType, RewardModelType> const& model, bool dropNaiveSccs, bool onlyBottomSccs);
             
             /*
