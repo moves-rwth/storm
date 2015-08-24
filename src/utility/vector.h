@@ -350,6 +350,22 @@ namespace storm {
                 return filter(values,  fnc);
             }
             
+            /**
+             * Sum the entries from values that are set to one in the filter vector.
+             * @param values
+             * @param filter
+             * @return The sum of the values with a corresponding one in the filter.
+             */
+            template<typename VT>
+            VT sum_if(std::vector<VT> const& values, storm::storage::BitVector const& filter) {
+                assert(values.size() >= filter.size());
+                VT sum = storm::utility::zero<VT>();
+                for(uint_fast64_t i : filter) {
+                    sum += values[i];
+                }    
+                return sum;
+            }
+            
             /*!
              * Reduces the given source vector by selecting an element according to the given filter out of each row group.
              *
@@ -434,7 +450,7 @@ namespace storm {
                 }
 #endif
             }
-            
+                        
             /*!
              * Reduces the given source vector by selecting the smallest element out of each row group.
              *
@@ -459,6 +475,24 @@ namespace storm {
             template<class T>
             void reduceVectorMax(std::vector<T> const& source, std::vector<T>& target, std::vector<uint_fast64_t> const& rowGrouping, std::vector<uint_fast64_t>* choices = nullptr) {
                 reduceVector<T>(source, target, rowGrouping, std::greater<T>(), choices);
+            }
+            
+            /*!
+             * Reduces the given source vector by selecting either the smallest or the largest out of each row group.
+             *
+             * @param minimize If true, select the smallest, else select the largest.
+             * @param source The source vector which is to be reduced.
+             * @param target The target vector into which a single element from each row group is written.
+             * @param rowGrouping A vector that specifies the begin and end of each group of elements in the source vector.
+             * @param choices If non-null, this vector is used to store the choices made during the selection.
+             */
+            template<class T>
+            void reduceVectorMinOrMax(bool minimize, std::vector<T> const& source, std::vector<T>& target, std::vector<uint_fast64_t> const& rowGrouping, std::vector<uint_fast64_t>* choices = nullptr) {
+                if(minimize) {
+                    reduceVectorMin(source, target, rowGrouping, choices);
+                } else {
+                    reduceVectorMax(source, target, rowGrouping, choices);    
+                }
             }
             
             /*!

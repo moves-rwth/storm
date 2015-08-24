@@ -11,6 +11,8 @@
 #include "src/settings/modules/GeneralSettings.h"
 
 #include "src/settings/modules/GmmxxEquationSolverSettings.h"
+
+#include "src/settings/modules/NativeEquationSolverSettings.h"
 #include "src/parser/AutoParser.h"
 
 TEST(GmmxxMdpPrctlModelCheckerTest, Dice) {

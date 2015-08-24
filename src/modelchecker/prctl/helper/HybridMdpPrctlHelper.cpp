@@ -13,6 +13,8 @@
 #include "src/modelchecker/results/SymbolicQuantitativeCheckResult.h"
 #include "src/modelchecker/results/HybridQuantitativeCheckResult.h"
 
+#include "src/solver/MinMaxLinearEquationSolver.h"
+
 #include "src/exceptions/InvalidPropertyException.h"
 
 namespace storm {

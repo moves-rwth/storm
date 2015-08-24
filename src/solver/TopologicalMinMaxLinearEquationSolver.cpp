@@ -27,19 +27,12 @@ namespace storm {
     namespace solver {
         
         template<typename ValueType>
-        TopologicalMinMaxLinearEquationSolver<ValueType>::TopologicalMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A) : NativeMinMaxLinearEquationSolver<ValueType>(A) {
+        TopologicalMinMaxLinearEquationSolver<ValueType>::TopologicalMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A) : 
+        NativeMinMaxLinearEquationSolver<ValueType>(A, storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision(), \
+                storm::settings::topologicalValueIterationEquationSolverSettings().getMaximalIterationCount(), MinMaxTechniqueSelection::ValueIteration, \
+                storm::settings::topologicalValueIterationEquationSolverSettings().getConvergenceCriterion() == storm::settings::modules::TopologicalValueIterationEquationSolverSettings::ConvergenceCriterion::Relative)
+        {
 			// Get the settings object to customize solving.
-			
-			//storm::settings::Settings* settings = storm::settings::Settings::getInstance();
-			auto settings = storm::settings::topologicalValueIterationEquationSolverSettings();
-			// Get appropriate settings.
-			//this->maximalNumberOfIterations = settings->getOptionByLongName("maxiter").getArgument(0).getValueAsUnsignedInteger();
-			//this->precision = settings->getOptionByLongName("precision").getArgument(0).getValueAsDouble();
-			//this->relative = !settings->isSet("absolute");
-			this->maximalNumberOfIterations = settings.getMaximalIterationCount();
-			this->precision = settings.getPrecision();
-			this->relative = (settings.getConvergenceCriterion() == storm::settings::modules::TopologicalValueIterationEquationSolverSettings::ConvergenceCriterion::Relative);
-
 			auto generalSettings = storm::settings::generalSettings();
 			this->enableCuda = generalSettings.isCudaSet();
 #ifdef STORM_HAVE_CUDA
@@ -48,7 +41,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-		TopologicalMinMaxLinearEquationSolver<ValueType>::TopologicalMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, double precision, uint_fast64_t maximalNumberOfIterations, bool relative) : NativeMinMaxLinearEquationSolver<ValueType>(A, precision, maximalNumberOfIterations, relative) {
+		TopologicalMinMaxLinearEquationSolver<ValueType>::TopologicalMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, double precision, uint_fast64_t maximalNumberOfIterations, bool relative) : NativeMinMaxLinearEquationSolver<ValueType>(A, precision, maximalNumberOfIterations, MinMaxTechniqueSelection::ValueIteration ,relative) {
             // Intentionally left empty.
         }
         

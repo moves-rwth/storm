@@ -6,6 +6,9 @@
 #include "src/utility/vector.h"
 #include "src/utility/graph.h"
 
+#include "src/solver/MinMaxLinearEquationSolver.h"
+#include "src/solver/LpSolver.h"
+
 #include "src/exceptions/InvalidStateException.h"
 #include "src/exceptions/InvalidPropertyException.h"
 
@@ -363,7 +366,7 @@ namespace storm {
                 std::shared_ptr<storm::solver::LpSolver> solver = storm::utility::solver::getLpSolver("LRA for MEC");
                 solver->setModelSense(minimize ? storm::solver::LpSolver::ModelSense::Maximize : storm::solver::LpSolver::ModelSense::Minimize);
                 
-                //// First, we need to create the variables for the problem.
+                // First, we need to create the variables for the problem.
                 std::map<uint_fast64_t, storm::expressions::Variable> stateToVariableMap;
                 for (auto const& stateChoicesPair : mec) {
                     std::string variableName = "h" + std::to_string(stateChoicesPair.first);

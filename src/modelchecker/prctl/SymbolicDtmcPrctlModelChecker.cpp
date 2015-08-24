@@ -10,6 +10,7 @@
 
 #include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"
 #include "src/modelchecker/results/SymbolicQuantitativeCheckResult.h"
+#include "src/solver/SymbolicLinearEquationSolver.h"
 
 #include "src/settings/modules/GeneralSettings.h"
 

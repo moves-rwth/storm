@@ -5,6 +5,12 @@
 #include "src/settings/modules/ModuleSettings.h"
 
 namespace storm {
+    namespace solver {
+        enum class EquationSolverType;
+        enum class LpSolverType;
+        enum class MinMaxTechnique;
+    }
+    
     namespace settings {
         namespace modules {
             
@@ -16,14 +22,6 @@ namespace storm {
                 // An enumeration of all engines.
                 enum class Engine { Sparse, Hybrid, Dd };
                 
-                // An enumeration of all available LP solvers.
-                enum class LpSolver { Gurobi, glpk };
-                
-                // An enumeration of all available equation solvers.
-                enum class EquationSolver { Gmmxx, Native };
-
-				// An enumeration of all available Min/Max equation solver techniques.
-				enum class MinMaxTechnique { ValueIteration, PolicyIteration };
                 
                 /*!
                  * Creates a new set of general settings that is managed by the given manager.
@@ -251,7 +249,7 @@ namespace storm {
                  *
                  * @return The selected convergence criterion.
                  */
-                EquationSolver getEquationSolver() const;
+                storm::solver::EquationSolverType getEquationSolver() const;
                 
                 /*!
                  * Retrieves whether a equation solver has been set.
@@ -265,7 +263,7 @@ namespace storm {
                  *
                  * @return The selected LP solver.
                  */
-                LpSolver getLpSolver() const;
+                storm::solver::LpSolverType getLpSolver() const;
                 
                 /*!
                  * Retrieves whether the export-to-dot option was set.
@@ -336,7 +334,7 @@ namespace storm {
 				*
 				* @return The selected min/max equation solving technique.
 				*/
-				MinMaxTechnique getMinMaxEquationSolvingTechnique() const;
+				storm::solver::MinMaxTechnique getMinMaxEquationSolvingTechnique() const;
 
                 
                 bool check() const override;

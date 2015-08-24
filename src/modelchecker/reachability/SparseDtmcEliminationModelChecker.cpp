@@ -946,7 +946,7 @@ namespace storm {
                 
                 for (auto const& element : row) {
                     // If the probability is zero, we skip this entry.
-                    if (element.getValue() == storm::utility::zero<ValueType>()) {
+                    if (storm::utility::isZero(element.getValue())) {
                         continue;
                     }
                     

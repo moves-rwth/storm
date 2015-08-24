@@ -212,7 +212,7 @@ namespace storm {
                 boost::optional<storm::prism::Program> program;
                 if (settings.isSymbolicSet()) {
                     std::string const& programFile = settings.getSymbolicModelFilename();
-                    program = storm::parser::PrismParser::parse(programFile).simplify();
+                    program = storm::parser::PrismParser::parse(programFile).simplify().simplify();
                     
                     program->checkValidity();
                 }

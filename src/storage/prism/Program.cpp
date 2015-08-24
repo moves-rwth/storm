@@ -802,6 +802,14 @@ namespace storm {
             std::vector<Module> newModules;
             std::vector<Constant> newConstants = this->getConstants();
             for (auto const& module : this->getModules()) {
+                // Remove identity assignments from the updates
+                std::vector<Command> newCommands;
+                for (auto const& command : module.getCommands()) {
+                    newCommands.emplace_back(command.removeIdentityAssignmentsFromUpdates());
+                }
+                
+                // Substitute Variables by Global constants if possible.
+                
                 std::map<storm::expressions::Variable, storm::expressions::Expression> booleanVars;
                 std::map<storm::expressions::Variable, storm::expressions::Expression> integerVars;
                 for (auto const& variable : module.getBooleanVariables()) {
@@ -811,7 +819,7 @@ namespace storm {
                     integerVars.emplace(variable.getExpressionVariable(), variable.getInitialValueExpression());
                 }
                 
-                for (auto const& command : module.getCommands()) {
+                for (auto const& command : newCommands) {
                     // Check all updates.
                     for (auto const& update : command.getUpdates()) {
                         // Check all assignments.
@@ -842,7 +850,7 @@ namespace storm {
                     }
                 }
                 
-                newModules.emplace_back(module.getName(), newBVars, newIVars, module.getCommands());
+                newModules.emplace_back(module.getName(), newBVars, newIVars, newCommands);
                 
                 for(auto const& entry : booleanVars) {
                     newConstants.emplace_back(entry.first, entry.second);

@@ -45,7 +45,7 @@ namespace storm {
             std::unique_ptr<CheckResult> HybridCtmcCslHelper<DdType, ValueType>::computeBoundedUntilProbabilities(storm::models::symbolic::Model<DdType> const& model, storm::dd::Add<DdType> const& rateMatrix, storm::dd::Add<DdType> const& exitRateVector, storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates, bool qualitative, double lowerBound, double upperBound, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 
                 // If the time bounds are [0, inf], we rather call untimed reachability.
-                if (lowerBound == storm::utility::zero<ValueType>() && upperBound == storm::utility::infinity<ValueType>()) {
+                if (storm::utility::isZero(lowerBound) && upperBound == storm::utility::infinity<ValueType>()) {
                     return computeUntilProbabilities(model, rateMatrix, exitRateVector, phiStates, psiStates, qualitative, linearEquationSolverFactory);
                 }
                 
@@ -60,11 +60,11 @@ namespace storm {
                 STORM_LOG_INFO("Found " << statesWithProbabilityGreater0NonPsi.getNonZeroCount() << " 'maybe' states.");
                 
                 if (!statesWithProbabilityGreater0NonPsi.isZero()) {
-                    if (upperBound == storm::utility::zero<ValueType>()) {
+                    if (storm::utility::isZero(upperBound)) {
                         // In this case, the interval is of the form [0, 0].
                         return std::unique_ptr<CheckResult>(new SymbolicQuantitativeCheckResult<DdType>(model.getReachableStates(), psiStates.toAdd()));
                     } else {
-                        if (lowerBound == storm::utility::zero<ValueType>()) {
+                        if (storm::utility::isZero(lowerBound)) {
                             // In this case, the interval is of the form [0, t].
                             // Note that this excludes [0, inf] since this is untimed reachability and we considered this case earlier.
                             

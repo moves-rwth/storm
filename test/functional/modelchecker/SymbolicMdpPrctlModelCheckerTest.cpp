@@ -13,6 +13,8 @@
 #include "src/models/symbolic/StandardRewardModel.h"
 #include "src/settings/SettingsManager.h"
 
+#include "src/settings/modules/NativeEquationSolverSettings.h"
+
 #include "src/settings/modules/GeneralSettings.h"
 
 TEST(SymbolicMdpPrctlModelCheckerTest, Dice) {

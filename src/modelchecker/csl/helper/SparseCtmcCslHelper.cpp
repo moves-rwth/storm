@@ -25,7 +25,7 @@ namespace storm {
                 uint_fast64_t numberOfStates = rateMatrix.getRowCount();
                 
                 // If the time bounds are [0, inf], we rather call untimed reachability.
-                if (lowerBound == storm::utility::zero<ValueType>() && upperBound == storm::utility::infinity<ValueType>()) {
+                if (storm::utility::isZero(lowerBound) && upperBound == storm::utility::infinity<ValueType>()) {
                     return computeUntilProbabilities(rateMatrix, backwardTransitions, exitRates, phiStates, psiStates, qualitative, linearEquationSolverFactory);
                 }
                 
@@ -43,12 +43,12 @@ namespace storm {
                 STORM_LOG_INFO("Found " << statesWithProbabilityGreater0NonPsi.getNumberOfSetBits() << " 'maybe' states.");
                 
                 if (!statesWithProbabilityGreater0NonPsi.empty()) {
-                    if (upperBound == storm::utility::zero<ValueType>()) {
+                    if (storm::utility::isZero(upperBound)) {
                         // In this case, the interval is of the form [0, 0].
                         result = std::vector<ValueType>(numberOfStates, storm::utility::zero<ValueType>());
                         storm::utility::vector::setVectorValues<ValueType>(result, psiStates, storm::utility::one<ValueType>());
                     } else {
-                        if (lowerBound == storm::utility::zero<ValueType>()) {
+                        if (storm::utility::isZero(lowerBound)) {
                             // In this case, the interval is of the form [0, t].
                             // Note that this excludes [0, inf] since this is untimed reachability and we considered this case earlier.
                             
@@ -228,7 +228,7 @@ namespace storm {
                 ValueType lambda = timeBound * uniformizationRate;
                 
                 // If no time can pass, the current values are the result.
-                if (lambda == storm::utility::zero<ValueType>()) {
+                if (storm::utility::isZero(lambda)) {
                     return values;
                 }
                 

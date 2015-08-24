@@ -14,6 +14,7 @@
 
 #include "src/utility/numerical.h"
 
+#include "src/solver/MinMaxLinearEquationSolver.h"
 #include "src/solver/LpSolver.h"
 
 #include "src/exceptions/InvalidStateException.h"

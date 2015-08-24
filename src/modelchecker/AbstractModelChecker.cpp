@@ -160,7 +160,7 @@ namespace storm {
             // If the probability bound is 0 or 1, is suffices to do qualitative model checking.
             bool qualitative = false;
             if (stateFormula.hasBound()) {
-                if (stateFormula.getBound() == storm::utility::zero<double>() || stateFormula.getBound() == storm::utility::one<double>()) {
+                if (storm::utility::isZero(stateFormula.getBound()) || storm::utility::isOne(stateFormula.getBound())) {
                     qualitative = true;
                 }
             }
@@ -192,7 +192,7 @@ namespace storm {
             // If the reward bound is 0, is suffices to do qualitative model checking.
             bool qualitative = false;
             if (stateFormula.hasBound()) {
-                if (stateFormula.getBound() == storm::utility::zero<double>()) {
+                if (storm::utility::isZero(stateFormula.getBound())) {
                     qualitative = true;
                 }
             }
@@ -224,7 +224,7 @@ namespace storm {
             // If the reward bound is 0, is suffices to do qualitative model checking.
             bool qualitative = false;
             if (stateFormula.hasBound()) {
-                if (stateFormula.getBound() == storm::utility::zero<double>()) {
+                if (storm::utility::isZero(stateFormula.getBound())) {
                     qualitative = true;
                 }
             }

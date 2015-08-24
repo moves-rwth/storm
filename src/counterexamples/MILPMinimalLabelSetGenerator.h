@@ -17,6 +17,7 @@
 #include "src/utility/graph.h"
 #include "src/utility/counterexamples.h"
 #include "src/utility/solver.h"
+#include "src/solver/LpSolver.h"
 
 #include "src/settings/SettingsManager.h"
 #include "src/settings/modules/GeneralSettings.h"

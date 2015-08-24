@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
+#include "src/parser/FormulaParser.h"
 #include "src/settings/SettingMemento.h"
 #include "src/logic/Formulas.h"
 #include "src/utility/solver.h"
@@ -10,11 +11,16 @@
 #include "src/settings/SettingsManager.h"
 
 #include "src/settings/modules/GeneralSettings.h"
+
+#include "src/settings/modules/NativeEquationSolverSettings.h"
 #include "src/settings/SettingMemento.h"
 #include "src/parser/AutoParser.h"
 
 TEST(SparseDtmcPrctlModelCheckerTest, Die) {
     std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/dtmc/die/die.tra", STORM_CPP_BASE_PATH "/examples/dtmc/die/die.lab", "", STORM_CPP_BASE_PATH "/examples/dtmc/die/die.coin_flips.trans.rew");
+    
+    // A parser that we use for conveniently constructing the formulas.
+    storm::parser::FormulaParser parser;
     
     ASSERT_EQ(abstractModel->getType(), storm::models::ModelType::Dtmc);
     
@@ -25,34 +31,30 @@ TEST(SparseDtmcPrctlModelCheckerTest, Die) {
     
     storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>> checker(*dtmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::NativeLinearEquationSolverFactory<double>()));
     
-    auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("one");
-    auto eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(labelFormula);
+    std::shared_ptr<storm::logic::Formula> formula = parser.parseFromString("P=? [F \"one\"]");
     
-    std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*eventuallyFormula);
+    std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
     
     EXPECT_NEAR(1.0/6.0, quantitativeResult1[0], storm::settings::nativeEquationSolverSettings().getPrecision());
     
-    labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("two");
-    eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(labelFormula);
+    formula = parser.parseFromString("P=? [F \"two\"]");
     
-    result = checker.check(*eventuallyFormula);
+    result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult2 = result->asExplicitQuantitativeCheckResult<double>();
     
     EXPECT_NEAR(1.0/6.0, quantitativeResult2[0], storm::settings::nativeEquationSolverSettings().getPrecision());
     
-    labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("three");
-    eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(labelFormula);
+    formula = parser.parseFromString("P=? [F \"three\"]");
     
-    result = checker.check(*eventuallyFormula);
+    result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult3 = result->asExplicitQuantitativeCheckResult<double>();
     
     EXPECT_NEAR(1.0/6.0, quantitativeResult3[0], storm::settings::nativeEquationSolverSettings().getPrecision());
     
-    auto done = std::make_shared<storm::logic::AtomicLabelFormula>("done");
-    auto reachabilityRewardFormula = std::make_shared<storm::logic::ReachabilityRewardFormula>(done);
+    formula = parser.parseFromString("R=? [F \"done\"]");
     
-    result = checker.check(*reachabilityRewardFormula);
+    result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult4 = result->asExplicitQuantitativeCheckResult<double>();
     
     EXPECT_NEAR(3.6666650772094727, quantitativeResult4[0], storm::settings::nativeEquationSolverSettings().getPrecision());
@@ -63,6 +65,9 @@ TEST(SparseDtmcPrctlModelCheckerTest, Crowds) {
     
     ASSERT_EQ(abstractModel->getType(), storm::models::ModelType::Dtmc);
     
+    // A parser that we use for conveniently constructing the formulas.
+    storm::parser::FormulaParser parser;
+    
     std::shared_ptr<storm::models::sparse::Dtmc<double>> dtmc = abstractModel->as<storm::models::sparse::Dtmc<double>>();
     
     ASSERT_EQ(8607ull, dtmc->getNumberOfStates());
@@ -70,26 +75,23 @@ TEST(SparseDtmcPrctlModelCheckerTest, Crowds) {
     
     storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>> checker(*dtmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::NativeLinearEquationSolverFactory<double>()));
     
-    auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("observe0Greater1");
-    auto eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(labelFormula);
+    std::shared_ptr<storm::logic::Formula> formula = parser.parseFromString("P=? [F \"observe0Greater1\"]");
     
-    std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*eventuallyFormula);
+    std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
     
     EXPECT_NEAR(0.33288205191646525, quantitativeResult1[0], storm::settings::nativeEquationSolverSettings().getPrecision());
     
-    labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("observeIGreater1");
-    eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(labelFormula);
+    formula = parser.parseFromString("P=? [F \"observeIGreater1\"]");
     
-    result = checker.check(*eventuallyFormula);
+    result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult2 = result->asExplicitQuantitativeCheckResult<double>();
     
     EXPECT_NEAR(0.15222066094730619, quantitativeResult2[0], storm::settings::nativeEquationSolverSettings().getPrecision());
     
-    labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("observeOnlyTrueSender");
-    eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(labelFormula);
+    formula = parser.parseFromString("P=? [F \"observeOnlyTrueSender\"]");
     
-    result = checker.check(*eventuallyFormula);
+    result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult3 = result->asExplicitQuantitativeCheckResult<double>();
     
     EXPECT_NEAR(0.32153900158185761, quantitativeResult3[0], storm::settings::nativeEquationSolverSettings().getPrecision());
@@ -99,6 +101,10 @@ TEST(SparseDtmcPrctlModelCheckerTest, SynchronousLeader) {
     std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/dtmc/synchronous_leader/leader4_8.tra", STORM_CPP_BASE_PATH "/examples/dtmc/synchronous_leader/leader4_8.lab", "", STORM_CPP_BASE_PATH "/examples/dtmc/synchronous_leader/leader4_8.pick.trans.rew");
     
     ASSERT_EQ(abstractModel->getType(), storm::models::ModelType::Dtmc);
+    
+    // A parser that we use for conveniently constructing the formulas.
+    storm::parser::FormulaParser parser;
+    
     std::shared_ptr<storm::models::sparse::Dtmc<double>> dtmc = abstractModel->as<storm::models::sparse::Dtmc<double>>();
     
     ASSERT_EQ(12400ull, dtmc->getNumberOfStates());
@@ -106,27 +112,23 @@ TEST(SparseDtmcPrctlModelCheckerTest, SynchronousLeader) {
     
     storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>> checker(*dtmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::NativeLinearEquationSolverFactory<double>()));
     
-    auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("elected");
-    auto eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(labelFormula);
+    std::shared_ptr<storm::logic::Formula> formula = parser.parseFromString("P=? [F \"elected\"]");
     
-    std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*eventuallyFormula);
+    std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
     
     EXPECT_NEAR(1.0, quantitativeResult1[0], storm::settings::nativeEquationSolverSettings().getPrecision());
     
-    labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("elected");
-    auto trueFormula = std::make_shared<storm::logic::BooleanLiteralFormula>(true);
-    auto boundedUntilFormula = std::make_shared<storm::logic::BoundedUntilFormula>(trueFormula, labelFormula, 20);
+    formula = parser.parseFromString("P=? [F<=20 \"elected\"]");
     
-    result = checker.check(*boundedUntilFormula);
+    result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult2 = result->asExplicitQuantitativeCheckResult<double>();
     
     EXPECT_NEAR(0.9999965911265462636, quantitativeResult2[0], storm::settings::nativeEquationSolverSettings().getPrecision());
     
-    labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("elected");
-    auto reachabilityRewardFormula = std::make_shared<storm::logic::ReachabilityRewardFormula>(labelFormula);
+    formula = parser.parseFromString("R=? [F \"elected\"]");
     
-    result = checker.check(*reachabilityRewardFormula);
+    result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult3 = result->asExplicitQuantitativeCheckResult<double>();
     
     EXPECT_NEAR(1.0448979589010925, quantitativeResult3[0], storm::settings::nativeEquationSolverSettings().getPrecision());
@@ -136,6 +138,9 @@ TEST(SparseDtmcPrctlModelCheckerTest, LRASingleBscc) {
 	storm::storage::SparseMatrixBuilder<double> matrixBuilder;
 	std::shared_ptr<storm::models::sparse::Dtmc<double>> dtmc;
 
+    // A parser that we use for conveniently constructing the formulas.
+    storm::parser::FormulaParser parser;
+    
 	{
 		matrixBuilder = storm::storage::SparseMatrixBuilder<double>(2, 2, 2);
 		matrixBuilder.addNextValue(0, 1, 1.);
@@ -150,10 +155,9 @@ TEST(SparseDtmcPrctlModelCheckerTest, LRASingleBscc) {
 
         storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>> checker(*dtmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::NativeLinearEquationSolverFactory<double>(storm::solver::NativeLinearEquationSolver<double>::SolutionMethod::SOR, 0.9)));
 
-		auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("a");
-		auto lraFormula = std::make_shared<storm::logic::LongRunAverageOperatorFormula>(labelFormula);
-
-		std::unique_ptr<storm::modelchecker::CheckResult> result = std::move(checker.check(*lraFormula));
+        std::shared_ptr<storm::logic::Formula> formula = parser.parseFromString("LRA=? [\"a\"]");
+        
+        std::unique_ptr<storm::modelchecker::CheckResult> result = std::move(checker.check(*formula));
 		storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
 
 		EXPECT_NEAR(.5, quantitativeResult1[0], storm::settings::nativeEquationSolverSettings().getPrecision());
@@ -175,10 +179,9 @@ TEST(SparseDtmcPrctlModelCheckerTest, LRASingleBscc) {
 
         storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>> checker(*dtmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::NativeLinearEquationSolverFactory<double>(storm::solver::NativeLinearEquationSolver<double>::SolutionMethod::SOR, 0.9)));
 
-		auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("a");
-		auto lraFormula = std::make_shared<storm::logic::LongRunAverageOperatorFormula>(labelFormula);
-
-		std::unique_ptr<storm::modelchecker::CheckResult> result = std::move(checker.check(*lraFormula));
+        std::shared_ptr<storm::logic::Formula> formula = parser.parseFromString("LRA=? [\"a\"]");
+        
+        std::unique_ptr<storm::modelchecker::CheckResult> result = std::move(checker.check(*formula));
 		storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
 
 		EXPECT_NEAR(.5, quantitativeResult1[0], storm::settings::nativeEquationSolverSettings().getPrecision());
@@ -200,10 +203,9 @@ TEST(SparseDtmcPrctlModelCheckerTest, LRASingleBscc) {
 
         storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>> checker(*dtmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::NativeLinearEquationSolverFactory<double>(storm::solver::NativeLinearEquationSolver<double>::SolutionMethod::SOR, 0.9)));
 
-		auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("a");
-		auto lraFormula = std::make_shared<storm::logic::LongRunAverageOperatorFormula>(labelFormula);
-
-		std::unique_ptr<storm::modelchecker::CheckResult> result = std::move(checker.check(*lraFormula));
+        std::shared_ptr<storm::logic::Formula> formula = parser.parseFromString("LRA=? [\"a\"]");
+        
+        std::unique_ptr<storm::modelchecker::CheckResult> result = std::move(checker.check(*formula));
 		storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
 
 		EXPECT_NEAR(1. / 3., quantitativeResult1[0], storm::settings::nativeEquationSolverSettings().getPrecision());
@@ -216,6 +218,9 @@ TEST(SparseDtmcPrctlModelCheckerTest, LRA) {
 	storm::storage::SparseMatrixBuilder<double> matrixBuilder;
 	std::shared_ptr<storm::models::sparse::Dtmc<double>> mdp;
 
+    // A parser that we use for conveniently constructing the formulas.
+    storm::parser::FormulaParser parser;
+    
 	{
 		matrixBuilder = storm::storage::SparseMatrixBuilder<double>(15, 15, 20, true);
 		matrixBuilder.addNextValue(0, 1, 1);
@@ -261,10 +266,9 @@ TEST(SparseDtmcPrctlModelCheckerTest, LRA) {
 
         storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>> checker(*mdp, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::NativeLinearEquationSolverFactory<double>(storm::solver::NativeLinearEquationSolver<double>::SolutionMethod::SOR, 0.9)));
 
-		auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("a");
-		auto lraFormula = std::make_shared<storm::logic::LongRunAverageOperatorFormula>(labelFormula);
-
-		std::unique_ptr<storm::modelchecker::CheckResult> result = std::move(checker.check(*lraFormula));
+        std::shared_ptr<storm::logic::Formula> formula = parser.parseFromString("LRA=? [\"a\"]");
+        
+        std::unique_ptr<storm::modelchecker::CheckResult> result = std::move(checker.check(*formula));
 		storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
 
 		EXPECT_NEAR(0.3 / 3., quantitativeResult1[0], storm::settings::nativeEquationSolverSettings().getPrecision());

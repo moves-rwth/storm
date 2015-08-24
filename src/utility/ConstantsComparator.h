@@ -10,7 +10,7 @@ namespace storm {
         class ConstantsComparator {
         public:
             // This needs to be in here, otherwise the template specializations are not used properly.
-            ConstantsComparator();
+            ConstantsComparator() = default;
             
             bool isOne(ValueType const& value) const;
             
@@ -21,9 +21,6 @@ namespace storm {
             bool isConstant(ValueType const& value) const;
             
             bool isInfinity(ValueType const& value) const;
-            
-        private:
-            ValueType precision;
         };
         
         // For floats we specialize this class and consider the comparison modulo some predefined precision.

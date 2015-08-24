@@ -18,6 +18,8 @@
 #include "src/settings/modules/GeneralSettings.h"
 #include "src/settings/modules/GmmxxEquationSolverSettings.h"
 
+#include "src/settings/modules/NativeEquationSolverSettings.h"
+
 TEST(GmmxxHybridCtmcCslModelCheckerTest, Cluster) {
     // Set the PRISM compatibility mode temporarily. It is set to its old value once the returned object is destructed.
     std::unique_ptr<storm::settings::SettingMemento> enablePrismCompatibility = storm::settings::mutableGeneralSettings().overridePrismCompatibilityMode(true);
