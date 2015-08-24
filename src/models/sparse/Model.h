@@ -91,14 +91,14 @@ namespace storm {
                  *
                  * @return The number of states of the model.
                  */
-                virtual uint_fast64_t getNumberOfStates() const;
+                virtual uint_fast64_t getNumberOfStates() const override;
                 
                 /*!
                  * Returns the number of (non-zero) transitions of the model.
                  *
                  * @return The number of (non-zero) transitions of the model.
                  */
-                virtual uint_fast64_t getNumberOfTransitions() const;
+                virtual uint_fast64_t getNumberOfTransitions() const override;
                 
                 /*!
                  * Retrieves the initial states of the model.
@@ -228,14 +228,14 @@ namespace storm {
                  *
                  * @return The size of the internal representation of the model measured in bytes.
                  */
-                virtual std::size_t getSizeInBytes() const;
+                virtual std::size_t getSizeInBytes() const override;
                 
                 /*!
                  * Prints information about the model to the specified stream.
                  *
                  * @param out The stream the information is to be printed to.
                  */
-                virtual void printModelInformationToStream(std::ostream& out) const;
+                virtual void printModelInformationToStream(std::ostream& out) const override;
                 
                 /*!
                  * Exports the model to the dot-format and prints the result to the given stream.

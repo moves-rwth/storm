@@ -8,64 +8,63 @@
 #include "src/settings/modules/NativeEquationSolverSettings.h"
 #include "src/utility/solver.h"
 #include "src/parser/AutoParser.h"
+#include "src/models/sparse/StandardRewardModel.h"
+
+#include "src/parser/FormulaParser.h"
 
 TEST(SparseMdpPrctlModelCheckerTest, AsynchronousLeader) {
 	std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader7.tra", STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader7.lab", "", STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader7.trans.rew");
 
     ASSERT_EQ(abstractModel->getType(), storm::models::ModelType::Mdp);
 
+    // A parser that we use for conveniently constructing the formulas.
+    storm::parser::FormulaParser parser;
+
 	std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = abstractModel->as<storm::models::sparse::Mdp<double>>();
 
 	ASSERT_EQ(2095783ull, mdp->getNumberOfStates());
 	ASSERT_EQ(7714385ull, mdp->getNumberOfTransitions());
 
-    storm::modelchecker::SparseMdpPrctlModelChecker<double> checker(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::NativeMinMaxLinearEquationSolverFactory<double>()));
+    storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> checker(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::NativeMinMaxLinearEquationSolverFactory<double>()));
 
-    auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("elected");
-    auto eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(labelFormula);
-    auto minProbabilityOperatorFormula = std::make_shared<storm::logic::ProbabilityOperatorFormula>(storm::logic::OptimalityType::Minimize, eventuallyFormula);
+    std::shared_ptr<storm::logic::Formula> formula = parser.parseFromString("Pmin=? [F \"elected\"]");
     
-    std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*minProbabilityOperatorFormula);
+    std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
     
     EXPECT_NEAR(1.0, quantitativeResult1[0], storm::settings::nativeEquationSolverSettings().getPrecision());
 
-    auto maxProbabilityOperatorFormula = std::make_shared<storm::logic::ProbabilityOperatorFormula>(storm::logic::OptimalityType::Maximize, eventuallyFormula);
+    formula = parser.parseFromString("Pmax=? [F \"elected\"]");
     
-	result = checker.check(*maxProbabilityOperatorFormula);
+    result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeResult2 = result->asExplicitQuantitativeCheckResult<double>();
 
 	EXPECT_NEAR(1.0, quantitativeResult2[0], storm::settings::nativeEquationSolverSettings().getPrecision());
 
-    labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("elected");
-    auto trueFormula = std::make_shared<storm::logic::BooleanLiteralFormula>(true);
-    auto boundedUntilFormula = std::make_shared<storm::logic::BoundedUntilFormula>(trueFormula, labelFormula, 25);
-    minProbabilityOperatorFormula = std::make_shared<storm::logic::ProbabilityOperatorFormula>(storm::logic::OptimalityType::Minimize, boundedUntilFormula);
-
-    result = checker.check(*minProbabilityOperatorFormula);
+    formula = parser.parseFromString("Pmin=? [F<=25 \"elected\"]");
+    
+    result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeResult3 = result->asExplicitQuantitativeCheckResult<double>();
     
 	EXPECT_NEAR(0.0, quantitativeResult3[0], storm::settings::nativeEquationSolverSettings().getPrecision());
 
-    maxProbabilityOperatorFormula = std::make_shared<storm::logic::ProbabilityOperatorFormula>(storm::logic::OptimalityType::Maximize, boundedUntilFormula);
+    formula = parser.parseFromString("Pmax=? [F<=25 \"elected\"]");
     
-    result = checker.check(*maxProbabilityOperatorFormula);
+    result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeResult4 = result->asExplicitQuantitativeCheckResult<double>();
     
 	EXPECT_NEAR(0.0, quantitativeResult4[0], storm::settings::nativeEquationSolverSettings().getPrecision());
 
-    labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("elected");
-    auto reachabilityRewardFormula = std::make_shared<storm::logic::ReachabilityRewardFormula>(labelFormula);
-    auto minRewardOperatorFormula = std::make_shared<storm::logic::RewardOperatorFormula>(storm::logic::OptimalityType::Minimize, reachabilityRewardFormula);
-
-	result = checker.check(*minRewardOperatorFormula);
+    formula = parser.parseFromString("Rmin=? [F \"elected\"]");
+    
+    result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeResult5 = result->asExplicitQuantitativeCheckResult<double>();
 
 	EXPECT_NEAR(6.172433512, quantitativeResult5[0], storm::settings::nativeEquationSolverSettings().getPrecision());
 
-    auto maxRewardOperatorFormula = std::make_shared<storm::logic::RewardOperatorFormula>(storm::logic::OptimalityType::Maximize, reachabilityRewardFormula);
+    formula = parser.parseFromString("Rmax=? [F \"elected\"]");
     
-	result = checker.check(*maxRewardOperatorFormula);
+    result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeResult6 = result->asExplicitQuantitativeCheckResult<double>();
 
 	EXPECT_NEAR(6.1724344, quantitativeResult6[0], storm::settings::nativeEquationSolverSettings().getPrecision());
@@ -76,85 +75,68 @@ TEST(SparseMdpPrctlModelCheckerTest, Consensus) {
     
     ASSERT_EQ(abstractModel->getType(), storm::models::ModelType::Mdp);
     
+    // A parser that we use for conveniently constructing the formulas.
+    storm::parser::FormulaParser parser;
+    
 	std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = abstractModel->as<storm::models::sparse::Mdp<double>>();
     
 	ASSERT_EQ(63616ull, mdp->getNumberOfStates());
 	ASSERT_EQ(213472ull, mdp->getNumberOfTransitions());
     
-	storm::modelchecker::SparseMdpPrctlModelChecker<double> checker(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::NativeMinMaxLinearEquationSolverFactory<double>()));
+	storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> checker(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::NativeMinMaxLinearEquationSolverFactory<double>()));
     
-    auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("finished");
-    auto eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(labelFormula);
-    auto minProbabilityOperatorFormula = std::make_shared<storm::logic::ProbabilityOperatorFormula>(storm::logic::OptimalityType::Minimize, eventuallyFormula);
-
-    std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*minProbabilityOperatorFormula);
+    std::shared_ptr<storm::logic::Formula> formula = parser.parseFromString("Pmin=? [F \"finished\"]");
+    
+    std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
     
 	EXPECT_NEAR(1.0, quantitativeResult1[31168], storm::settings::nativeEquationSolverSettings().getPrecision());
 
-    labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("finished");
-    auto labelFormula2 = std::make_shared<storm::logic::AtomicLabelFormula>("all_coins_equal_0");
-    auto andFormula = std::make_shared<storm::logic::BinaryBooleanStateFormula>(storm::logic::BinaryBooleanStateFormula::OperatorType::And, labelFormula, labelFormula2);
-    eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(andFormula);
-    minProbabilityOperatorFormula = std::make_shared<storm::logic::ProbabilityOperatorFormula>(storm::logic::OptimalityType::Minimize, eventuallyFormula);
+    formula = parser.parseFromString("Pmin=? [F \"finished\" & \"all_coins_equal_0\"]");
     
-    result = checker.check(*minProbabilityOperatorFormula);
+    result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeResult2 = result->asExplicitQuantitativeCheckResult<double>();
     
 	EXPECT_NEAR(0.4374282832, quantitativeResult2[31168], storm::settings::nativeEquationSolverSettings().getPrecision());
     
-    labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("finished");
-    labelFormula2 = std::make_shared<storm::logic::AtomicLabelFormula>("all_coins_equal_1");
-    andFormula = std::make_shared<storm::logic::BinaryBooleanStateFormula>(storm::logic::BinaryBooleanStateFormula::OperatorType::And, labelFormula, labelFormula2);
-    eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(andFormula);
-    auto maxProbabilityOperatorFormula = std::make_shared<storm::logic::ProbabilityOperatorFormula>(storm::logic::OptimalityType::Maximize, eventuallyFormula);
+    formula = parser.parseFromString("Pmax=? [F \"finished\" & \"all_coins_equal_1\"]");
     
-    result = checker.check(*maxProbabilityOperatorFormula);
+    result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeResult3 = result->asExplicitQuantitativeCheckResult<double>();
     
 	EXPECT_NEAR(0.5293286369, quantitativeResult3[31168], storm::settings::nativeEquationSolverSettings().getPrecision());
 
-    labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("finished");
-    labelFormula2 = std::make_shared<storm::logic::AtomicLabelFormula>("agree");
-    auto notFormula = std::make_shared<storm::logic::UnaryBooleanStateFormula>(storm::logic::UnaryBooleanStateFormula::OperatorType::Not, labelFormula2);
-    andFormula = std::make_shared<storm::logic::BinaryBooleanStateFormula>(storm::logic::BinaryBooleanStateFormula::OperatorType::And, labelFormula, notFormula);
-    eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(andFormula);
-    maxProbabilityOperatorFormula = std::make_shared<storm::logic::ProbabilityOperatorFormula>(storm::logic::OptimalityType::Maximize, eventuallyFormula);
-
-    result = checker.check(*maxProbabilityOperatorFormula);
+    formula = parser.parseFromString("Pmax=? [F \"finished\" & !\"agree\"]");
+    
+    result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeResult4 = result->asExplicitQuantitativeCheckResult<double>();
     
 	EXPECT_NEAR(0.10414097, quantitativeResult4[31168], storm::settings::nativeEquationSolverSettings().getPrecision());
 
-    labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("finished");
-    auto trueFormula = std::make_shared<storm::logic::BooleanLiteralFormula>(true);
-    auto boundedUntilFormula = std::make_shared<storm::logic::BoundedUntilFormula>(trueFormula, labelFormula, 50);
-    minProbabilityOperatorFormula = std::make_shared<storm::logic::ProbabilityOperatorFormula>(storm::logic::OptimalityType::Minimize, boundedUntilFormula);
-
-    result = checker.check(*minProbabilityOperatorFormula);
+    formula = parser.parseFromString("Pmin=? [F<=50 \"finished\"]");
+    
+    result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeResult5 = result->asExplicitQuantitativeCheckResult<double>();
     
 	EXPECT_NEAR(0.0, quantitativeResult5[31168], storm::settings::nativeEquationSolverSettings().getPrecision());
     
-    maxProbabilityOperatorFormula = std::make_shared<storm::logic::ProbabilityOperatorFormula>(storm::logic::OptimalityType::Maximize, boundedUntilFormula);
+    formula = parser.parseFromString("Pmax=? [F<=50 \"finished\"]");
     
-    result = checker.check(*maxProbabilityOperatorFormula);
+    result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeResult6 = result->asExplicitQuantitativeCheckResult<double>();
     
 	EXPECT_NEAR(0.0, quantitativeResult6[31168], storm::settings::nativeEquationSolverSettings().getPrecision());
 
-    labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("finished");
-    auto reachabilityRewardFormula = std::make_shared<storm::logic::ReachabilityRewardFormula>(labelFormula);
-    auto minRewardOperatorFormula = std::make_shared<storm::logic::RewardOperatorFormula>(storm::logic::OptimalityType::Minimize, reachabilityRewardFormula);
-
-    result = checker.check(*minRewardOperatorFormula);
+    formula = parser.parseFromString("Rmin=? [F \"finished\"]");
+    
+    result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeResult7 = result->asExplicitQuantitativeCheckResult<double>();
     
 	EXPECT_NEAR(1725.593313, quantitativeResult7[31168], storm::settings::nativeEquationSolverSettings().getPrecision());
 
-    auto maxRewardOperatorFormula = std::make_shared<storm::logic::RewardOperatorFormula>(storm::logic::OptimalityType::Maximize, reachabilityRewardFormula);
+    formula = parser.parseFromString("Rmax=? [F \"finished\"]");
     
-    result = checker.check(*maxRewardOperatorFormula);
+    result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeResult8 = result->asExplicitQuantitativeCheckResult<double>();
 
 	EXPECT_NEAR(2183.142422, quantitativeResult8[31168], storm::settings::nativeEquationSolverSettings().getPrecision());
