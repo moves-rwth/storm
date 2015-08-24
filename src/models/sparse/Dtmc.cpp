@@ -3,8 +3,6 @@
 #include "src/adapters/CarlAdapter.h"
 #include "src/exceptions/NotImplementedException.h"
 #include "src/exceptions/InvalidArgumentException.h"
-#include "src/utility/constants.h"
-#include "src/utility/ConstantsComparator.h"
 
 namespace storm {
     namespace models {
@@ -16,14 +14,14 @@ namespace storm {
                  std::unordered_map<std::string, RewardModelType> const& rewardModels,
                  boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling)
             : DeterministicModel<ValueType>(storm::models::ModelType::Dtmc, probabilityMatrix, stateLabeling, rewardModels, optionalChoiceLabeling) {
-                STORM_LOG_THROW(this->checkValidityOfProbabilityMatrix(), storm::exceptions::InvalidArgumentException, "The probability matrix is invalid.");
+                STORM_LOG_THROW(probabilityMatrix.isProbabilistic(), storm::exceptions::InvalidArgumentException, "The probability matrix is invalid.");
             }
             
             template <typename ValueType, typename RewardModelType>
             Dtmc<ValueType, RewardModelType>::Dtmc(storm::storage::SparseMatrix<ValueType>&& probabilityMatrix, storm::models::sparse::StateLabeling&& stateLabeling,
                 std::unordered_map<std::string, RewardModelType>&& rewardModels, boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling)
             : DeterministicModel<ValueType>(storm::models::ModelType::Dtmc, std::move(probabilityMatrix), std::move(stateLabeling), std::move(rewardModels), std::move(optionalChoiceLabeling)) {
-                STORM_LOG_THROW(this->checkValidityOfProbabilityMatrix(), storm::exceptions::InvalidArgumentException, "The probability matrix is invalid.");
+                STORM_LOG_THROW(probabilityMatrix.isProbabilistic(), storm::exceptions::InvalidArgumentException, "The probability matrix is invalid.");
             }
             
             template <typename ValueType, typename RewardModelType>
@@ -222,28 +220,6 @@ namespace storm {
                 process(dtmc);
             }
 #endif
-            
-            template <typename ValueType, typename RewardModelType>
-            bool Dtmc<ValueType, RewardModelType>::checkValidityOfProbabilityMatrix() const {
-                if (this->getTransitionMatrix().getRowCount() != this->getTransitionMatrix().getColumnCount()) {
-                    return false;
-                }
-                
-                storm::utility::ConstantsComparator<ValueType> comparator;
-                for (uint_fast64_t row = 0; row < this->getTransitionMatrix().getRowCount(); ++row) {
-                    ValueType sum = this->getTransitionMatrix().getRowSum(row);
-                    
-                    // If the sum is not a constant, for example for parametric models, we cannot check whether the sum is one or not.
-                    if (!comparator.isConstant(sum)) {
-                        continue;
-                    }
-                    
-                    if (!comparator.isOne(sum)) {
-                        return false;
-                    }
-                }
-                return true;
-            }
             
             template class Dtmc<double>;
             template class Dtmc<float>;

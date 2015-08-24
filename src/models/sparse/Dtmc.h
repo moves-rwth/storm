@@ -107,14 +107,6 @@ namespace storm {
                     
                 };
 #endif
-
-            private:
-                /*!
-                 * Checks the probability matrix for validity.
-                 *
-                 * @return True iff the probability matrix is valid.
-                 */
-                bool checkValidityOfProbabilityMatrix() const;
             };
             
         } // namespace sparse

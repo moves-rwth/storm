@@ -66,14 +66,6 @@ namespace storm {
                  * @return A subMDP.
                  */
                 Mdp<ValueType> restrictActions(storm::storage::BitVector const& enabledActions) const;
-                
-            private:
-                /*!
-                 * Checks the probability matrix for validity.
-                 *
-                 * @return True iff the probability matrix is valid.
-                 */
-                bool checkValidityOfProbabilityMatrix() const;
             };
             
         } // namespace sparse

@@ -5,7 +5,6 @@
 #include "src/adapters/CarlAdapter.h"
 
 #include "src/models/sparse/StandardRewardModel.h"
-#include "src/utility/ConstantsComparator.h"
 
 namespace storm {
     namespace models {
@@ -17,7 +16,7 @@ namespace storm {
                                 std::unordered_map<std::string, RewardModelType> const& rewardModels,
                                 boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling)
             : NondeterministicModel<ValueType>(storm::models::ModelType::Mdp, transitionMatrix, stateLabeling, rewardModels, optionalChoiceLabeling) {
-                STORM_LOG_THROW(this->checkValidityOfProbabilityMatrix(), storm::exceptions::InvalidArgumentException, "The probability matrix is invalid.");
+                STORM_LOG_THROW(transitionMatrix.isProbabilistic(), storm::exceptions::InvalidArgumentException, "The probability matrix is invalid.");
             }
             
             
@@ -27,7 +26,7 @@ namespace storm {
                                 std::unordered_map<std::string, RewardModelType>&& rewardModels,
                                 boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling)
             : NondeterministicModel<ValueType>(storm::models::ModelType::Mdp, std::move(transitionMatrix), std::move(stateLabeling), std::move(rewardModels), std::move(optionalChoiceLabeling)) {
-                STORM_LOG_THROW(this->checkValidityOfProbabilityMatrix(), storm::exceptions::InvalidArgumentException, "The probability matrix is invalid.");
+                STORM_LOG_THROW(transitionMatrix.isProbabilistic(), storm::exceptions::InvalidArgumentException, "The probability matrix is invalid.");
             }
             
             template <typename ValueType, typename RewardModelType>
@@ -83,25 +82,6 @@ namespace storm {
                     newRewardModels.emplace(rewardModel.first, rewardModel.second.restrictActions(enabledActions));
                 }
                 return Mdp<ValueType>(restrictedTransitions, this->getStateLabeling(), newRewardModels, this->getOptionalChoiceLabeling());
-            }
-            
-            template <typename ValueType, typename RewardModelType>
-            bool Mdp<ValueType, RewardModelType>::checkValidityOfProbabilityMatrix() const {
-                storm::utility::ConstantsComparator<ValueType> comparator;
-                // Get the settings object to customize linear solving.
-                for (uint_fast64_t row = 0; row < this->getTransitionMatrix().getRowCount(); row++) {
-                    ValueType sum = this->getTransitionMatrix().getRowSum(row);
-                    
-                    // If the sum is not a constant, for example for parametric models, we cannot check whether the sum is one or not.
-                    if (!comparator.isConstant(sum)) {
-                        continue;
-                    }
-                    
-                    if (!comparator.isOne(sum))  {
-                        return false;
-                    }
-                }
-                return true;
             }
             
             template class Mdp<double>;
