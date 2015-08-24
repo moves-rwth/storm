@@ -39,6 +39,21 @@ TEST(BitVectorTest, InitFromIterator) {
 	}
 }
 
+TEST(BitVectorTest, InitFromIntVector) {
+    std::vector<uint_fast64_t> valueVector = {0, 4, 10};
+    storm::storage::BitVector vector(32, valueVector);
+    
+    ASSERT_EQ(32ul, vector.size());
+    
+	for (uint_fast64_t i = 0; i < 32; ++i) {
+        if (i == 0 || i == 4 || i == 10) {
+            ASSERT_TRUE(vector.get(i));
+        } else {
+            ASSERT_FALSE(vector.get(i));
+        }
+	}
+}
+
 TEST(BitVectorTest, GetSet) {
 	storm::storage::BitVector vector(32);
 
