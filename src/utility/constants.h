@@ -30,6 +30,16 @@ namespace storm {
         
         template<typename ValueType>
         ValueType infinity();
+        
+        template<typename ValueType>
+        bool isOne(ValueType const& a);
+        
+        template<typename ValueType>
+        bool isZero(ValueType const& a);
+        
+        template<typename ValueType>
+        bool isConstant(ValueType const& a);
+        
      
         
         template<typename ValueType>

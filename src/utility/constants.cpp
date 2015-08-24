@@ -25,7 +25,52 @@ namespace storm {
             return std::numeric_limits<ValueType>::infinity();
         }
         
+        template<typename ValueType>
+        bool isOne(ValueType const& a) {
+            return a == one<ValueType>();
+        }
+        
+        template<typename ValueType>
+        bool isZero(ValueType const& a) {
+            return a == zero<ValueType>();
+        }
+        
+        template<typename ValueType>
+        bool isConstant(ValueType const& a) {
+            return true;
+        }
+        
 #ifdef STORM_HAVE_CARL
+        template<>
+        bool isOne(storm::RationalFunction const& a) {
+            return a.isOne();
+        }
+        
+        template<>
+        bool isZero(storm::RationalFunction const& a) {
+            return a.isZero();
+        }
+        
+        template<>
+        bool isConstant(storm::RationalFunction const& a) {
+            return a.isConstant();
+        }
+        
+        template<>
+        bool isOne(storm::Polynomial const& a) {
+            return a.isOne();
+        }
+        
+        template<>
+        bool isZero(storm::Polynomial const& a) {
+            return a.isZero();
+        }
+        
+        template<>
+        bool isConstant(storm::Polynomial const& a) {
+            return a.isConstant();
+        }
+        
         template<>
         storm::RationalFunction infinity() {
             // FIXME: this does not work.
@@ -110,46 +155,29 @@ namespace storm {
         template<>
         RationalFunction&& simplify(RationalFunction&& value);
 
-        template<>
-        class ConstantsComparator<storm::RationalFunction> {
-        public:
-            bool isOne(storm::RationalFunction const& value) const;
-            
-            bool isZero(storm::RationalFunction const& value) const;
-            
-            bool isEqual(storm::RationalFunction const& value1, storm::RationalFunction const& value2) const;
-            
-            bool isConstant(storm::RationalFunction const& value) const;
-        };
-        
-        template<>
-        class ConstantsComparator<storm::Polynomial> {
-        public:
-            bool isOne(storm::Polynomial const& value) const;
-            
-            bool isZero(storm::Polynomial const& value) const;
-            
-            bool isEqual(storm::Polynomial const& value1, storm::Polynomial const& value2) const;
-            
-            bool isConstant(storm::Polynomial const& value) const;
-        };
 #endif
         
         
         template<typename ValueType>
         bool ConstantsComparator<ValueType>::isOne(ValueType const& value) const {
-            return value == one<ValueType>();
+            return isOne(value);
         }
         
         template<typename ValueType>
         bool ConstantsComparator<ValueType>::isZero(ValueType const& value) const {
-            return value == zero<ValueType>();
+            return isZero(value);
         }
         
         template<typename ValueType>
         bool ConstantsComparator<ValueType>::isEqual(ValueType const& value1, ValueType const& value2) const {
             return value1 == value2;
         }
+        
+        template<typename T>
+        bool ConstantsComparator<T>::isConstant(T const& value) const {
+            return isConstant(value);
+        }
+        
         
         ConstantsComparator<float>::ConstantsComparator() : precision(static_cast<float>(storm::settings::generalSettings().getPrecision())) {
             // Intentionally left empty.
@@ -226,40 +254,9 @@ namespace storm {
             value.simplify();
             return std::move(value);
         }
+#endif 
         
-        bool ConstantsComparator<storm::RationalFunction>::isOne(storm::RationalFunction const& value) const {
-            return value.isOne();
-        }
         
-        bool ConstantsComparator<storm::RationalFunction>::isZero(storm::RationalFunction const& value) const {
-            return value.isZero();
-        }
-        
-        bool ConstantsComparator<storm::RationalFunction>::isEqual(storm::RationalFunction const& value1, storm::RationalFunction const& value2) const {
-            return value1 == value2;
-        }
-        
-        bool ConstantsComparator<storm::RationalFunction>::isConstant(storm::RationalFunction const& value) const {
-            return value.isConstant();
-        }
-        
-        bool ConstantsComparator<storm::Polynomial>::isOne(storm::Polynomial const& value) const {
-            return value.isOne();
-        }
-        
-        bool ConstantsComparator<storm::Polynomial>::isZero(storm::Polynomial const& value) const {
-            return value.isZero();
-        }
-        
-        bool ConstantsComparator<storm::Polynomial>::isEqual(storm::Polynomial const& value1, storm::Polynomial const& value2) const {
-            return value1 == value2;
-        }
-        
-        bool ConstantsComparator<storm::Polynomial>::isConstant(storm::Polynomial const& value) const {
-            return value.isConstant();
-        }
-#endif
-
         template<typename IndexType, typename ValueType>
         storm::storage::MatrixEntry<IndexType, ValueType> simplify(storm::storage::MatrixEntry<IndexType, ValueType> matrixEntry) {
             simplify(matrixEntry.getValue());
@@ -327,6 +324,7 @@ namespace storm {
 #ifdef STORM_HAVE_CARL
         template class ConstantsComparator<RationalFunction>;
         template class ConstantsComparator<Polynomial>;
+        template class ConstantsComparator<Interval>;
 
         template RationalFunction one();
         template RationalFunction zero();
