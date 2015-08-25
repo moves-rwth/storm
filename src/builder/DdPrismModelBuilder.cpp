@@ -107,6 +107,8 @@ namespace storm {
                         int_fast64_t high = integerVariable.getUpperBoundExpression().evaluateAsInt();
                         std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair = manager->addMetaVariable(integerVariable.getName(), low, high);
                         
+                        STORM_LOG_TRACE("Created meta variables for global integer variable: " << variablePair.first.getName() << "[" << variablePair.first.getIndex() << "] and " << variablePair.second.getName() << "[" << variablePair.second.getIndex() << "]");
+
                         rowMetaVariables.insert(variablePair.first);
                         variableToRowMetaVariableMap.emplace(integerVariable.getExpressionVariable(), variablePair.first);
                         
@@ -119,6 +121,8 @@ namespace storm {
                     }
                     for (storm::prism::BooleanVariable const& booleanVariable : program.getGlobalBooleanVariables()) {
                         std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair = manager->addMetaVariable(booleanVariable.getName());
+                        
+                        STORM_LOG_TRACE("Created meta variables for global boolean variable: " << variablePair.first.getName() << "[" << variablePair.first.getIndex() << "] and " << variablePair.second.getName() << "[" << variablePair.second.getIndex() << "]");
                         
                         rowMetaVariables.insert(variablePair.first);
                         variableToRowMetaVariableMap.emplace(booleanVariable.getExpressionVariable(), variablePair.first);

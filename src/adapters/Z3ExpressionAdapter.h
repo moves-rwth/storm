@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "storm-config.h"
+
 // Include the headers of Z3 only if it is available.
 #ifdef STORM_HAVE_Z3
 #include "z3++.h"
@@ -28,13 +29,15 @@ namespace storm {
              * context needs to be guaranteed as long as the instance of this adapter is used.
              */
             Z3ExpressionAdapter(storm::expressions::ExpressionManager& manager, z3::context& context);
+            
             /*!
              * Translates the given expression to an equivalent expression for Z3.
 			 *
              * @param expression The expression to translate.
              * @return An equivalent expression for Z3.
              */
-            z3::expr translateExpression(storm::expressions::Expression const& expression);            
+            z3::expr translateExpression(storm::expressions::Expression const& expression);
+            
             /*!
              * Translates the given variable to an equivalent expression for Z3.
              *
@@ -42,7 +45,6 @@ namespace storm {
              * @return An equivalent expression for Z3.
              */
             z3::expr translateExpression(storm::expressions::Variable const& variable);
-            
             
             storm::expressions::Expression translateExpression(z3::expr const& expr);
             /*!

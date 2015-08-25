@@ -89,7 +89,6 @@ namespace storm {
                     result += filterAdd * optionalStateRewardVector.get();
                 }
                 if (this->hasStateActionRewards()) {
-                    optionalStateActionRewardVector.get().exportToDot("statActRew.dot");
                     result += filterAdd * optionalStateActionRewardVector.get();
                 }
                 if (this->hasTransitionRewards()) {

@@ -18,7 +18,7 @@ TEST(SparseMdpPrctlModelCheckerTest, AsynchronousLeader) {
     ASSERT_EQ(abstractModel->getType(), storm::models::ModelType::Mdp);
 
     // A parser that we use for conveniently constructing the formulas.
-    storm::parser::FormulaParser parser;
+    storm::parser::FormulaParser formulaParser;
 
 	std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = abstractModel->as<storm::models::sparse::Mdp<double>>();
 
@@ -27,42 +27,42 @@ TEST(SparseMdpPrctlModelCheckerTest, AsynchronousLeader) {
 
     storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> checker(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::NativeMinMaxLinearEquationSolverFactory<double>()));
 
-    std::shared_ptr<storm::logic::Formula> formula = parser.parseFromString("Pmin=? [F \"elected\"]");
+    std::shared_ptr<storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"elected\"]");
     
     std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
     
     EXPECT_NEAR(1.0, quantitativeResult1[0], storm::settings::nativeEquationSolverSettings().getPrecision());
 
-    formula = parser.parseFromString("Pmax=? [F \"elected\"]");
+    formula = formulaParser.parseSingleFormulaFromString("Pmax=? [F \"elected\"]");
     
     result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeResult2 = result->asExplicitQuantitativeCheckResult<double>();
 
 	EXPECT_NEAR(1.0, quantitativeResult2[0], storm::settings::nativeEquationSolverSettings().getPrecision());
 
-    formula = parser.parseFromString("Pmin=? [F<=25 \"elected\"]");
+    formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F<=25 \"elected\"]");
     
     result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeResult3 = result->asExplicitQuantitativeCheckResult<double>();
     
 	EXPECT_NEAR(0.0, quantitativeResult3[0], storm::settings::nativeEquationSolverSettings().getPrecision());
 
-    formula = parser.parseFromString("Pmax=? [F<=25 \"elected\"]");
+    formula = formulaParser.parseSingleFormulaFromString("Pmax=? [F<=25 \"elected\"]");
     
     result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeResult4 = result->asExplicitQuantitativeCheckResult<double>();
     
 	EXPECT_NEAR(0.0, quantitativeResult4[0], storm::settings::nativeEquationSolverSettings().getPrecision());
 
-    formula = parser.parseFromString("Rmin=? [F \"elected\"]");
+    formula = formulaParser.parseSingleFormulaFromString("Rmin=? [F \"elected\"]");
     
     result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeResult5 = result->asExplicitQuantitativeCheckResult<double>();
 
 	EXPECT_NEAR(6.172433512, quantitativeResult5[0], storm::settings::nativeEquationSolverSettings().getPrecision());
 
-    formula = parser.parseFromString("Rmax=? [F \"elected\"]");
+    formula = formulaParser.parseSingleFormulaFromString("Rmax=? [F \"elected\"]");
     
     result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeResult6 = result->asExplicitQuantitativeCheckResult<double>();
@@ -76,7 +76,7 @@ TEST(SparseMdpPrctlModelCheckerTest, Consensus) {
     ASSERT_EQ(abstractModel->getType(), storm::models::ModelType::Mdp);
     
     // A parser that we use for conveniently constructing the formulas.
-    storm::parser::FormulaParser parser;
+    storm::parser::FormulaParser formulaParser;
     
 	std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = abstractModel->as<storm::models::sparse::Mdp<double>>();
     
@@ -85,56 +85,56 @@ TEST(SparseMdpPrctlModelCheckerTest, Consensus) {
     
 	storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> checker(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::NativeMinMaxLinearEquationSolverFactory<double>()));
     
-    std::shared_ptr<storm::logic::Formula> formula = parser.parseFromString("Pmin=? [F \"finished\"]");
+    std::shared_ptr<storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"finished\"]");
     
     std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
     
 	EXPECT_NEAR(1.0, quantitativeResult1[31168], storm::settings::nativeEquationSolverSettings().getPrecision());
 
-    formula = parser.parseFromString("Pmin=? [F \"finished\" & \"all_coins_equal_0\"]");
+    formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"finished\" & \"all_coins_equal_0\"]");
     
     result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeResult2 = result->asExplicitQuantitativeCheckResult<double>();
     
 	EXPECT_NEAR(0.4374282832, quantitativeResult2[31168], storm::settings::nativeEquationSolverSettings().getPrecision());
     
-    formula = parser.parseFromString("Pmax=? [F \"finished\" & \"all_coins_equal_1\"]");
+    formula = formulaParser.parseSingleFormulaFromString("Pmax=? [F \"finished\" & \"all_coins_equal_1\"]");
     
     result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeResult3 = result->asExplicitQuantitativeCheckResult<double>();
     
 	EXPECT_NEAR(0.5293286369, quantitativeResult3[31168], storm::settings::nativeEquationSolverSettings().getPrecision());
 
-    formula = parser.parseFromString("Pmax=? [F \"finished\" & !\"agree\"]");
+    formula = formulaParser.parseSingleFormulaFromString("Pmax=? [F \"finished\" & !\"agree\"]");
     
     result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeResult4 = result->asExplicitQuantitativeCheckResult<double>();
     
 	EXPECT_NEAR(0.10414097, quantitativeResult4[31168], storm::settings::nativeEquationSolverSettings().getPrecision());
 
-    formula = parser.parseFromString("Pmin=? [F<=50 \"finished\"]");
+    formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F<=50 \"finished\"]");
     
     result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeResult5 = result->asExplicitQuantitativeCheckResult<double>();
     
 	EXPECT_NEAR(0.0, quantitativeResult5[31168], storm::settings::nativeEquationSolverSettings().getPrecision());
     
-    formula = parser.parseFromString("Pmax=? [F<=50 \"finished\"]");
+    formula = formulaParser.parseSingleFormulaFromString("Pmax=? [F<=50 \"finished\"]");
     
     result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeResult6 = result->asExplicitQuantitativeCheckResult<double>();
     
 	EXPECT_NEAR(0.0, quantitativeResult6[31168], storm::settings::nativeEquationSolverSettings().getPrecision());
 
-    formula = parser.parseFromString("Rmin=? [F \"finished\"]");
+    formula = formulaParser.parseSingleFormulaFromString("Rmin=? [F \"finished\"]");
     
     result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeResult7 = result->asExplicitQuantitativeCheckResult<double>();
     
 	EXPECT_NEAR(1725.593313, quantitativeResult7[31168], storm::settings::nativeEquationSolverSettings().getPrecision());
 
-    formula = parser.parseFromString("Rmax=? [F \"finished\"]");
+    formula = formulaParser.parseSingleFormulaFromString("Rmax=? [F \"finished\"]");
     
     result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeResult8 = result->asExplicitQuantitativeCheckResult<double>();

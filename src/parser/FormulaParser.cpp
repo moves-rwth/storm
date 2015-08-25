@@ -202,8 +202,6 @@ namespace storm {
                 STORM_LOG_DEBUG("Parsed formula successfully.");
             } catch (qi::expectation_failure<PositionIteratorType> const& e) {
                 STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, e.what_);
-//            } catch (std::exception const& e) {
-//                STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Could not parse formula: " << e.what());
             }
             
             return result;
