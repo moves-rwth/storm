@@ -44,7 +44,7 @@ TEST(NativeHybridCtmcCslModelCheckerTest, Cluster) {
     storm::modelchecker::HybridCtmcCslModelChecker<storm::dd::DdType::CUDD, double> modelchecker(*ctmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::NativeLinearEquationSolverFactory<double>()));
     
     // Start checking properties.
-    formula = formulaParser.parseFromString("P=? [ F<=100 !\"minimum\"]");
+    formula = formulaParser.parseSingleFormulaFromString("P=? [ F<=100 !\"minimum\"]");
     std::unique_ptr<storm::modelchecker::CheckResult> checkResult = modelchecker.check(*formula);
     
     ASSERT_TRUE(checkResult->isHybridQuantitativeCheckResult());
@@ -53,7 +53,7 @@ TEST(NativeHybridCtmcCslModelCheckerTest, Cluster) {
     EXPECT_NEAR(5.5461254704419085E-5, quantitativeCheckResult1.getMin(), storm::settings::generalSettings().getPrecision());
     EXPECT_NEAR(5.5461254704419085E-5, quantitativeCheckResult1.getMax(), storm::settings::generalSettings().getPrecision());
     
-    formula = formulaParser.parseFromString("P=? [ F[100,100] !\"minimum\"]");
+    formula = formulaParser.parseSingleFormulaFromString("P=? [ F[100,100] !\"minimum\"]");
     checkResult = modelchecker.check(*formula);
     
     ASSERT_TRUE(checkResult->isHybridQuantitativeCheckResult());
@@ -62,7 +62,7 @@ TEST(NativeHybridCtmcCslModelCheckerTest, Cluster) {
     EXPECT_NEAR(2.3397873548343415E-6, quantitativeCheckResult2.getMin(), storm::settings::generalSettings().getPrecision());
     EXPECT_NEAR(2.3397873548343415E-6, quantitativeCheckResult2.getMax(), storm::settings::generalSettings().getPrecision());
     
-    formula = formulaParser.parseFromString("P=? [ F[100,2000] !\"minimum\"]");
+    formula = formulaParser.parseSingleFormulaFromString("P=? [ F[100,2000] !\"minimum\"]");
     checkResult = modelchecker.check(*formula);
     
     ASSERT_TRUE(checkResult->isHybridQuantitativeCheckResult());
@@ -71,7 +71,7 @@ TEST(NativeHybridCtmcCslModelCheckerTest, Cluster) {
     EXPECT_NEAR(0.001105335651670241, quantitativeCheckResult3.getMin(), storm::settings::generalSettings().getPrecision());
     EXPECT_NEAR(0.001105335651670241, quantitativeCheckResult3.getMax(), storm::settings::generalSettings().getPrecision());
     
-    formula = formulaParser.parseFromString("P=? [ \"minimum\" U<=10 \"premium\"]");
+    formula = formulaParser.parseSingleFormulaFromString("P=? [ \"minimum\" U<=10 \"premium\"]");
     checkResult = modelchecker.check(*formula);
     
     ASSERT_TRUE(checkResult->isHybridQuantitativeCheckResult());
@@ -80,7 +80,7 @@ TEST(NativeHybridCtmcCslModelCheckerTest, Cluster) {
     EXPECT_NEAR(1, quantitativeCheckResult4.getMin(), storm::settings::generalSettings().getPrecision());
     EXPECT_NEAR(1, quantitativeCheckResult4.getMax(), storm::settings::generalSettings().getPrecision());
     
-    formula = formulaParser.parseFromString("P=? [ !\"minimum\" U[1,inf] \"minimum\"]");
+    formula = formulaParser.parseSingleFormulaFromString("P=? [ !\"minimum\" U[1,inf] \"minimum\"]");
     checkResult = modelchecker.check(*formula);
     
     ASSERT_TRUE(checkResult->isHybridQuantitativeCheckResult());
@@ -89,7 +89,7 @@ TEST(NativeHybridCtmcCslModelCheckerTest, Cluster) {
     EXPECT_NEAR(0, quantitativeCheckResult5.getMin(), storm::settings::generalSettings().getPrecision());
     EXPECT_NEAR(0, quantitativeCheckResult5.getMax(), storm::settings::generalSettings().getPrecision());
     
-    formula = formulaParser.parseFromString("P=? [ \"minimum\" U[1,inf] !\"minimum\"]");
+    formula = formulaParser.parseSingleFormulaFromString("P=? [ \"minimum\" U[1,inf] !\"minimum\"]");
     checkResult = modelchecker.check(*formula);
     
     ASSERT_TRUE(checkResult->isHybridQuantitativeCheckResult());
@@ -98,7 +98,7 @@ TEST(NativeHybridCtmcCslModelCheckerTest, Cluster) {
     EXPECT_NEAR(0.9999999033633374, quantitativeCheckResult6.getMin(), storm::settings::generalSettings().getPrecision());
     EXPECT_NEAR(0.9999999033633374, quantitativeCheckResult6.getMax(), storm::settings::generalSettings().getPrecision());
     
-    formula = formulaParser.parseFromString("R=? [C<=100]");
+    formula = formulaParser.parseSingleFormulaFromString("R=? [C<=100]");
     checkResult = modelchecker.check(*formula);
     
     ASSERT_TRUE(checkResult->isHybridQuantitativeCheckResult());
@@ -133,7 +133,7 @@ TEST(NativeHybridCtmcCslModelCheckerTest, Embedded) {
     storm::modelchecker::HybridCtmcCslModelChecker<storm::dd::DdType::CUDD, double> modelchecker(*ctmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::NativeLinearEquationSolverFactory<double>()));
     
     // Start checking properties.
-    formula = formulaParser.parseFromString("P=? [ F<=10000 \"down\"]");
+    formula = formulaParser.parseSingleFormulaFromString("P=? [ F<=10000 \"down\"]");
     std::unique_ptr<storm::modelchecker::CheckResult> checkResult = modelchecker.check(*formula);
     
     ASSERT_TRUE(checkResult->isHybridQuantitativeCheckResult());
@@ -142,7 +142,7 @@ TEST(NativeHybridCtmcCslModelCheckerTest, Embedded) {
     EXPECT_NEAR(0.0019216435246119591, quantitativeCheckResult1.getMin(), storm::settings::generalSettings().getPrecision());
     EXPECT_NEAR(0.0019216435246119591, quantitativeCheckResult1.getMax(), storm::settings::generalSettings().getPrecision());
     
-    formula = formulaParser.parseFromString("P=? [ !\"down\" U<=10000 \"fail_actuators\"]");
+    formula = formulaParser.parseSingleFormulaFromString("P=? [ !\"down\" U<=10000 \"fail_actuators\"]");
     checkResult = modelchecker.check(*formula);
     
     ASSERT_TRUE(checkResult->isHybridQuantitativeCheckResult());
@@ -151,7 +151,7 @@ TEST(NativeHybridCtmcCslModelCheckerTest, Embedded) {
     EXPECT_NEAR(3.7079151806696567E-6, quantitativeCheckResult2.getMin(), storm::settings::generalSettings().getPrecision());
     EXPECT_NEAR(3.7079151806696567E-6, quantitativeCheckResult2.getMax(), storm::settings::generalSettings().getPrecision());
     
-    formula = formulaParser.parseFromString("P=? [ !\"down\" U<=10000 \"fail_io\"]");
+    formula = formulaParser.parseSingleFormulaFromString("P=? [ !\"down\" U<=10000 \"fail_io\"]");
     checkResult = modelchecker.check(*formula);
     
     ASSERT_TRUE(checkResult->isHybridQuantitativeCheckResult());
@@ -160,7 +160,7 @@ TEST(NativeHybridCtmcCslModelCheckerTest, Embedded) {
     EXPECT_NEAR(0.001556839327673734, quantitativeCheckResult3.getMin(), storm::settings::generalSettings().getPrecision());
     EXPECT_NEAR(0.001556839327673734, quantitativeCheckResult3.getMax(), storm::settings::generalSettings().getPrecision());
     
-    formula = formulaParser.parseFromString("P=? [ !\"down\" U<=10000 \"fail_sensors\"]");
+    formula = formulaParser.parseSingleFormulaFromString("P=? [ !\"down\" U<=10000 \"fail_sensors\"]");
     checkResult = modelchecker.check(*formula);
     
     ASSERT_TRUE(checkResult->isHybridQuantitativeCheckResult());
@@ -169,7 +169,7 @@ TEST(NativeHybridCtmcCslModelCheckerTest, Embedded) {
     EXPECT_NEAR(4.429620626755424E-5, quantitativeCheckResult4.getMin(), storm::settings::generalSettings().getPrecision());
     EXPECT_NEAR(4.429620626755424E-5, quantitativeCheckResult4.getMax(), storm::settings::generalSettings().getPrecision());
     
-    formula = formulaParser.parseFromString("R=? [C<=10000]");
+    formula = formulaParser.parseSingleFormulaFromString("R=? [C<=10000]");
     checkResult = modelchecker.check(*formula);
     
     ASSERT_TRUE(checkResult->isHybridQuantitativeCheckResult());
@@ -197,7 +197,7 @@ TEST(NativeHybridCtmcCslModelCheckerTest, Polling) {
     storm::modelchecker::HybridCtmcCslModelChecker<storm::dd::DdType::CUDD, double> modelchecker(*ctmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::NativeLinearEquationSolverFactory<double>()));
     
     // Start checking properties.
-    formula = formulaParser.parseFromString("P=?[ F<=10 \"target\"]");
+    formula = formulaParser.parseSingleFormulaFromString("P=?[ F<=10 \"target\"]");
     std::unique_ptr<storm::modelchecker::CheckResult> checkResult = modelchecker.check(*formula);
     
     ASSERT_TRUE(checkResult->isHybridQuantitativeCheckResult());
@@ -239,7 +239,7 @@ TEST(NativeHybridCtmcCslModelCheckerTest, Tandem) {
     storm::modelchecker::HybridCtmcCslModelChecker<storm::dd::DdType::CUDD, double> modelchecker(*ctmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::NativeLinearEquationSolverFactory<double>()));
     
     // Start checking properties.
-    formula = formulaParser.parseFromString("P=? [ F<=10 \"network_full\" ]");
+    formula = formulaParser.parseSingleFormulaFromString("P=? [ F<=10 \"network_full\" ]");
     std::unique_ptr<storm::modelchecker::CheckResult> checkResult = modelchecker.check(*formula);
     
     ASSERT_TRUE(checkResult->isHybridQuantitativeCheckResult());
@@ -248,7 +248,7 @@ TEST(NativeHybridCtmcCslModelCheckerTest, Tandem) {
     EXPECT_NEAR(0.015446370562428037, quantitativeCheckResult1.getMin(), storm::settings::generalSettings().getPrecision());
     EXPECT_NEAR(0.015446370562428037, quantitativeCheckResult1.getMax(), storm::settings::generalSettings().getPrecision());
     
-    formula = formulaParser.parseFromString("P=? [ F<=10 \"first_queue_full\" ]");
+    formula = formulaParser.parseSingleFormulaFromString("P=? [ F<=10 \"first_queue_full\" ]");
     checkResult = modelchecker.check(*formula);
     
     ASSERT_TRUE(checkResult->isHybridQuantitativeCheckResult());
@@ -257,7 +257,7 @@ TEST(NativeHybridCtmcCslModelCheckerTest, Tandem) {
     EXPECT_NEAR(0.999999837225515, quantitativeCheckResult2.getMin(), storm::settings::generalSettings().getPrecision());
     EXPECT_NEAR(0.999999837225515, quantitativeCheckResult2.getMax(), storm::settings::generalSettings().getPrecision());
     
-    formula = formulaParser.parseFromString("P=? [\"second_queue_full\" U<=1 !\"second_queue_full\"]");
+    formula = formulaParser.parseSingleFormulaFromString("P=? [\"second_queue_full\" U<=1 !\"second_queue_full\"]");
     checkResult = modelchecker.check(*formula);
     
     ASSERT_TRUE(checkResult->isHybridQuantitativeCheckResult());
@@ -266,7 +266,7 @@ TEST(NativeHybridCtmcCslModelCheckerTest, Tandem) {
     EXPECT_NEAR(1, quantitativeCheckResult3.getMin(), storm::settings::generalSettings().getPrecision());
     EXPECT_NEAR(1, quantitativeCheckResult3.getMax(), storm::settings::generalSettings().getPrecision());
     
-    formula = formulaParser.parseFromString("R=? [I=10]");
+    formula = formulaParser.parseSingleFormulaFromString("R=? [I=10]");
     checkResult = modelchecker.check(*formula);
     
     ASSERT_TRUE(checkResult->isHybridQuantitativeCheckResult());
@@ -275,7 +275,7 @@ TEST(NativeHybridCtmcCslModelCheckerTest, Tandem) {
     EXPECT_NEAR(5.679243850315877, quantitativeCheckResult4.getMin(), storm::settings::generalSettings().getPrecision());
     EXPECT_NEAR(5.679243850315877, quantitativeCheckResult4.getMax(), storm::settings::generalSettings().getPrecision());
     
-    formula = formulaParser.parseFromString("R=? [C<=10]");
+    formula = formulaParser.parseSingleFormulaFromString("R=? [C<=10]");
     checkResult = modelchecker.check(*formula);
     
     ASSERT_TRUE(checkResult->isHybridQuantitativeCheckResult());
@@ -284,7 +284,7 @@ TEST(NativeHybridCtmcCslModelCheckerTest, Tandem) {
     EXPECT_NEAR(55.44792186036232, quantitativeCheckResult5.getMin(), storm::settings::generalSettings().getPrecision());
     EXPECT_NEAR(55.44792186036232, quantitativeCheckResult5.getMax(), storm::settings::generalSettings().getPrecision());
     
-    formula = formulaParser.parseFromString("R=? [F \"first_queue_full\"&\"second_queue_full\"]");
+    formula = formulaParser.parseSingleFormulaFromString("R=? [F \"first_queue_full\"&\"second_queue_full\"]");
     checkResult = modelchecker.check(*formula);
     
     ASSERT_TRUE(checkResult->isHybridQuantitativeCheckResult());

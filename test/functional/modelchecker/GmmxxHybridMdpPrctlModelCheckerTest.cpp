@@ -23,7 +23,7 @@ TEST(GmmxxHybridMdpPrctlModelCheckerTest, Dice) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/two_dice.nm");
     
     // A parser that we use for conveniently constructing the formulas.
-    storm::parser::FormulaParser parser;
+    storm::parser::FormulaParser formulaParser;
     
     // Build the die model with its reward model.
 #ifdef WINDOWS
@@ -43,7 +43,7 @@ TEST(GmmxxHybridMdpPrctlModelCheckerTest, Dice) {
     
     storm::modelchecker::HybridMdpPrctlModelChecker<storm::dd::DdType::CUDD, double> checker(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::GmmxxMinMaxLinearEquationSolverFactory<double>()));
     
-    std::shared_ptr<storm::logic::Formula> formula = parser.parseFromString("Pmin=? [F \"two\"]");
+    std::shared_ptr<storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"two\"]");
     
     std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*formula);
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(model->getReachableStates(), model->getInitialStates()));
@@ -52,7 +52,7 @@ TEST(GmmxxHybridMdpPrctlModelCheckerTest, Dice) {
     EXPECT_NEAR(0.0277777612209320068, quantitativeResult1.getMin(), storm::settings::nativeEquationSolverSettings().getPrecision());
     EXPECT_NEAR(0.0277777612209320068, quantitativeResult1.getMax(), storm::settings::nativeEquationSolverSettings().getPrecision());
     
-    formula = parser.parseFromString("Pmax=? [F \"two\"]");
+    formula = formulaParser.parseSingleFormulaFromString("Pmax=? [F \"two\"]");
     
     result = checker.check(*formula);
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(model->getReachableStates(), model->getInitialStates()));
@@ -61,7 +61,7 @@ TEST(GmmxxHybridMdpPrctlModelCheckerTest, Dice) {
     EXPECT_NEAR(0.0277777612209320068, quantitativeResult2.getMin(), storm::settings::nativeEquationSolverSettings().getPrecision());
     EXPECT_NEAR(0.0277777612209320068, quantitativeResult2.getMax(), storm::settings::nativeEquationSolverSettings().getPrecision());
     
-    formula = parser.parseFromString("Pmin=? [F \"three\"]");
+    formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"three\"]");
     
     result = checker.check(*formula);
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(model->getReachableStates(), model->getInitialStates()));
@@ -70,7 +70,7 @@ TEST(GmmxxHybridMdpPrctlModelCheckerTest, Dice) {
     EXPECT_NEAR(0.0555555224418640136, quantitativeResult3.getMin(), storm::settings::nativeEquationSolverSettings().getPrecision());
     EXPECT_NEAR(0.0555555224418640136, quantitativeResult3.getMax(), storm::settings::nativeEquationSolverSettings().getPrecision());
     
-    formula = parser.parseFromString("Pmax=? [F \"three\"]");
+    formula = formulaParser.parseSingleFormulaFromString("Pmax=? [F \"three\"]");
     
     result = checker.check(*formula);
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(model->getReachableStates(), model->getInitialStates()));
@@ -79,7 +79,7 @@ TEST(GmmxxHybridMdpPrctlModelCheckerTest, Dice) {
     EXPECT_NEAR(0.0555555224418640136, quantitativeResult4.getMin(), storm::settings::nativeEquationSolverSettings().getPrecision());
     EXPECT_NEAR(0.0555555224418640136, quantitativeResult4.getMax(), storm::settings::nativeEquationSolverSettings().getPrecision());
     
-    formula = parser.parseFromString("Pmin=? [F \"four\"]");
+    formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"four\"]");
     
     result = checker.check(*formula);
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(model->getReachableStates(), model->getInitialStates()));
@@ -88,7 +88,7 @@ TEST(GmmxxHybridMdpPrctlModelCheckerTest, Dice) {
     EXPECT_NEAR(0.083333283662796020508, quantitativeResult5.getMin(), storm::settings::nativeEquationSolverSettings().getPrecision());
     EXPECT_NEAR(0.083333283662796020508, quantitativeResult5.getMax(), storm::settings::nativeEquationSolverSettings().getPrecision());
     
-    formula = parser.parseFromString("Pmax=? [F \"four\"]");
+    formula = formulaParser.parseSingleFormulaFromString("Pmax=? [F \"four\"]");
     
     result = checker.check(*formula);
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(model->getReachableStates(), model->getInitialStates()));
@@ -97,7 +97,7 @@ TEST(GmmxxHybridMdpPrctlModelCheckerTest, Dice) {
     EXPECT_NEAR(0.083333283662796020508, quantitativeResult6.getMin(), storm::settings::nativeEquationSolverSettings().getPrecision());
     EXPECT_NEAR(0.083333283662796020508, quantitativeResult6.getMax(), storm::settings::nativeEquationSolverSettings().getPrecision());
     
-    formula = parser.parseFromString("Rmin=? [F \"done\"]");
+    formula = formulaParser.parseSingleFormulaFromString("Rmin=? [F \"done\"]");
     
     result = checker.check(*formula);
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(model->getReachableStates(), model->getInitialStates()));
@@ -106,7 +106,7 @@ TEST(GmmxxHybridMdpPrctlModelCheckerTest, Dice) {
     EXPECT_NEAR(7.3333294987678528, quantitativeResult7.getMin(), storm::settings::nativeEquationSolverSettings().getPrecision());
     EXPECT_NEAR(7.3333294987678528, quantitativeResult7.getMax(), storm::settings::nativeEquationSolverSettings().getPrecision());
     
-    formula = parser.parseFromString("Rmax=? [F \"done\"]");
+    formula = formulaParser.parseSingleFormulaFromString("Rmax=? [F \"done\"]");
     
     result = checker.check(*formula);
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(model->getReachableStates(), model->getInitialStates()));
@@ -120,7 +120,7 @@ TEST(GmmxxHybridMdpPrctlModelCheckerTest, AsynchronousLeader) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/leader4.nm");
     
     // A parser that we use for conveniently constructing the formulas.
-    storm::parser::FormulaParser parser;
+    storm::parser::FormulaParser formulaParser;
     
 	// Build the die model with its reward model.
 #ifdef WINDOWS
@@ -140,7 +140,7 @@ TEST(GmmxxHybridMdpPrctlModelCheckerTest, AsynchronousLeader) {
     
     storm::modelchecker::HybridMdpPrctlModelChecker<storm::dd::DdType::CUDD, double> checker(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::GmmxxMinMaxLinearEquationSolverFactory<double>()));
     
-    std::shared_ptr<storm::logic::Formula> formula = parser.parseFromString("Pmin=? [F \"elected\"]");
+    std::shared_ptr<storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"elected\"]");
     
     std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*formula);
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(model->getReachableStates(), model->getInitialStates()));
@@ -149,7 +149,7 @@ TEST(GmmxxHybridMdpPrctlModelCheckerTest, AsynchronousLeader) {
     EXPECT_NEAR(1, quantitativeResult1.getMin(), storm::settings::nativeEquationSolverSettings().getPrecision());
     EXPECT_NEAR(1, quantitativeResult1.getMax(), storm::settings::nativeEquationSolverSettings().getPrecision());
     
-    formula = parser.parseFromString("Pmax=? [F \"elected\"]");
+    formula = formulaParser.parseSingleFormulaFromString("Pmax=? [F \"elected\"]");
     
     result = checker.check(*formula);
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(model->getReachableStates(), model->getInitialStates()));
@@ -158,7 +158,7 @@ TEST(GmmxxHybridMdpPrctlModelCheckerTest, AsynchronousLeader) {
     EXPECT_NEAR(1, quantitativeResult2.getMin(), storm::settings::nativeEquationSolverSettings().getPrecision());
     EXPECT_NEAR(1, quantitativeResult2.getMax(), storm::settings::nativeEquationSolverSettings().getPrecision());
     
-    formula = parser.parseFromString("Pmin=? [F<=25 \"elected\"]");
+    formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F<=25 \"elected\"]");
     
     result = checker.check(*formula);
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(model->getReachableStates(), model->getInitialStates()));
@@ -167,7 +167,7 @@ TEST(GmmxxHybridMdpPrctlModelCheckerTest, AsynchronousLeader) {
     EXPECT_NEAR(0.0625, quantitativeResult3.getMin(), storm::settings::nativeEquationSolverSettings().getPrecision());
     EXPECT_NEAR(0.0625, quantitativeResult3.getMax(), storm::settings::nativeEquationSolverSettings().getPrecision());
     
-    formula = parser.parseFromString("Pmax=? [F<=25 \"elected\"]");
+    formula = formulaParser.parseSingleFormulaFromString("Pmax=? [F<=25 \"elected\"]");
     
     result = checker.check(*formula);
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(model->getReachableStates(), model->getInitialStates()));
@@ -176,7 +176,7 @@ TEST(GmmxxHybridMdpPrctlModelCheckerTest, AsynchronousLeader) {
     EXPECT_NEAR(0.0625, quantitativeResult4.getMin(), storm::settings::nativeEquationSolverSettings().getPrecision());
     EXPECT_NEAR(0.0625, quantitativeResult4.getMax(), storm::settings::nativeEquationSolverSettings().getPrecision());
     
-    formula = parser.parseFromString("Rmin=? [F \"elected\"]");
+    formula = formulaParser.parseSingleFormulaFromString("Rmin=? [F \"elected\"]");
     
     result = checker.check(*formula);
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(model->getReachableStates(), model->getInitialStates()));
@@ -185,7 +185,7 @@ TEST(GmmxxHybridMdpPrctlModelCheckerTest, AsynchronousLeader) {
     EXPECT_NEAR(4.2856896106114934, quantitativeResult5.getMin(), storm::settings::nativeEquationSolverSettings().getPrecision());
     EXPECT_NEAR(4.2856896106114934, quantitativeResult5.getMax(), storm::settings::nativeEquationSolverSettings().getPrecision());
     
-    formula = parser.parseFromString("Rmax=? [F \"elected\"]");
+    formula = formulaParser.parseSingleFormulaFromString("Rmax=? [F \"elected\"]");
     
     result = checker.check(*formula);
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(model->getReachableStates(), model->getInitialStates()));

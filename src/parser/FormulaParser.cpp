@@ -1,5 +1,7 @@
 #include "src/parser/FormulaParser.h"
 
+#include <fstream>
+
 // If the parser fails due to ill-formed data, this exception is thrown.
 #include "src/exceptions/WrongFormatException.h"
 
@@ -98,7 +100,7 @@ namespace storm {
             stateFormula = (orStateFormula);
             stateFormula.name("state formula");
             
-            start = qi::eps > stateFormula >> qi::skip(boost::spirit::ascii::space | qi::lit("//") >> *(qi::char_ - (qi::eol | qi::eoi)))[qi::eps] >> qi::eoi;
+            start = qi::eps > (stateFormula % +(qi::char_("\n;"))) >> qi::skip(boost::spirit::ascii::space | qi::lit("//") >> *(qi::char_ - (qi::eol | qi::eoi)))[qi::eps] >> qi::eoi;
             start.name("start");
             
             /*!
@@ -156,13 +158,41 @@ namespace storm {
             this->identifiers_.add(identifier, expression);
         }
         
-        std::shared_ptr<storm::logic::Formula> FormulaParser::parseFromString(std::string const& formulaString) {
+        std::shared_ptr<storm::logic::Formula> FormulaParser::parseSingleFormulaFromString(std::string const& formulaString) {
+            std::vector<std::shared_ptr<storm::logic::Formula>> formulas = parseFromString(formulaString);
+            STORM_LOG_THROW(formulas.size() == 1, storm::exceptions::WrongFormatException, "Expected exactly one formula, but found " << formulas.size() << " instead.");
+            return formulas.front();
+        }
+        
+        std::vector<std::shared_ptr<storm::logic::Formula>> FormulaParser::parseFromFile(std::string const& filename) {
+            // Open file and initialize result.
+            std::ifstream inputFileStream(filename, std::ios::in);
+            STORM_LOG_THROW(inputFileStream.good(), storm::exceptions::WrongFormatException, "Unable to read from file '" << filename << "'.");
+            
+            std::vector<std::shared_ptr<storm::logic::Formula>> formulas;
+            
+            // Now try to parse the contents of the file.
+            try {
+                std::string fileContent((std::istreambuf_iterator<char>(inputFileStream)), (std::istreambuf_iterator<char>()));
+                formulas = parseFromString(fileContent);
+            } catch(std::exception& e) {
+                // In case of an exception properly close the file before passing exception.
+                inputFileStream.close();
+                throw e;
+            }
+            
+            // Close the stream in case everything went smoothly and return result.
+            inputFileStream.close();
+            return formulas;
+        }
+        
+        std::vector<std::shared_ptr<storm::logic::Formula>> FormulaParser::parseFromString(std::string const& formulaString) {
             PositionIteratorType first(formulaString.begin());
             PositionIteratorType iter = first;
             PositionIteratorType last(formulaString.end());
             
             // Create empty result;
-            std::shared_ptr<storm::logic::Formula> result;
+            std::vector<std::shared_ptr<storm::logic::Formula>> result;
             
             // Create grammar.
             try {

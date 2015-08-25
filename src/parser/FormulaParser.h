@@ -12,7 +12,7 @@
 namespace storm {
     namespace parser {
         
-        class FormulaParser : public qi::grammar<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> {
+        class FormulaParser : public qi::grammar<Iterator, std::vector<std::shared_ptr<storm::logic::Formula>>(), Skipper> {
         public:
             FormulaParser(std::shared_ptr<storm::expressions::ExpressionManager const> const& manager = std::shared_ptr<storm::expressions::ExpressionManager>(new storm::expressions::ExpressionManager()));
 
@@ -20,9 +20,25 @@ namespace storm {
              * Parses the formula given by the provided string.
              *
              * @param formulaString The formula as a string.
-             * @return The resulting formula representation.
+             * @return The resulting formula.
              */
-            std::shared_ptr<storm::logic::Formula> parseFromString(std::string const& formulaString);
+            std::shared_ptr<storm::logic::Formula> parseSingleFormulaFromString(std::string const& formulaString);
+
+            /*!
+             * Parses the formula given by the provided string.
+             *
+             * @param formulaString The formula as a string.
+             * @return The contained formulas.
+             */
+            std::vector<std::shared_ptr<storm::logic::Formula>> parseFromString(std::string const& formulaString);
+
+            /*!
+             * Parses the formulas in the given file.
+             *
+             * @param filename The name of the file to parse.
+             * @return The contained formulas.
+             */
+            std::vector<std::shared_ptr<storm::logic::Formula>> parseFromFile(std::string const& filename);
             
             /*!
              * Adds an identifier and the expression it is supposed to be replaced with. This can, for example be used
@@ -118,7 +134,7 @@ namespace storm {
             // they are to be replaced with.
             qi::symbols<char, storm::expressions::Expression> identifiers_;
             
-            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> start;
+            qi::rule<Iterator, std::vector<std::shared_ptr<storm::logic::Formula>>(), Skipper> start;
             
             qi::rule<Iterator, std::tuple<boost::optional<storm::logic::OptimalityType>, boost::optional<storm::logic::ComparisonType>, boost::optional<double>>(), qi::locals<boost::optional<storm::logic::OptimalityType>, boost::optional<storm::logic::ComparisonType>, boost::optional<double>>, Skipper> operatorInformation;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> probabilityOperator;

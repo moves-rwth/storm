@@ -223,10 +223,10 @@ namespace storm {
 					std::shared_ptr<storm::logic::Formula> formula;
                     if (program) {
                         storm::parser::FormulaParser formulaParser(program.get().getManager().getSharedPointer());
-                        formula = formulaParser.parseFromString(settings.getProperty());
+                        formula = formulaParser.parseSingleFormulaFromString(settings.getProperty());
                     } else {
                         storm::parser::FormulaParser formulaParser;
-                        formula = formulaParser.parseFromString(settings.getProperty());
+                        formula = formulaParser.parseSingleFormulaFromString(settings.getProperty());
                     }
 					formulas.push_back(formula);
                 } else if (settings.isPropertyFileSet()) {

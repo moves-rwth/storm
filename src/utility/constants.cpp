@@ -203,6 +203,10 @@ namespace storm {
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, int>&& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, int>&& matrixEntry);
         
 #ifdef STORM_HAVE_CARL
+        template bool isOne(RationalFunction const& value);
+        template bool isZero(RationalFunction const& value);
+        template bool isConstant(RationalFunction const& value);
+        
         template RationalFunction one();
         template RationalFunction zero();
         template storm::RationalFunction infinity();
@@ -214,6 +218,10 @@ namespace storm {
         template RationalFunction simplify(RationalFunction value);
         template RationalFunction& simplify(RationalFunction& value);
         template RationalFunction&& simplify(RationalFunction&& value);
+        
+        template bool isOne(Interval const& value);
+        template bool isZero(Interval const& value);
+        template bool isConstant(Interval const& value);
         
         template Interval one();
         template Interval zero();

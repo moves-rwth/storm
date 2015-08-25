@@ -68,38 +68,6 @@ namespace storm {
             // The precision used for comparisons.
             double precision;
         };
-        
-#ifdef STORM_HAVE_CARL       
-        template<>
-        class ConstantsComparator<storm::RationalFunction> {
-        public:
-            ConstantsComparator();
-            
-            bool isOne(storm::RationalFunction const& value) const;
-            
-            bool isZero(storm::RationalFunction const& value) const;
-            
-            bool isEqual(storm::RationalFunction const& value1, storm::RationalFunction const& value2) const;
-            
-            bool isConstant(storm::RationalFunction const& value) const;
-        };
-        
-        template<>
-        class ConstantsComparator<storm::Polynomial> {
-        public:
-            ConstantsComparator();
-            
-            bool isOne(storm::Polynomial const& value) const;
-            
-            bool isZero(storm::Polynomial const& value) const;
-            
-            bool isEqual(storm::Polynomial const& value1, storm::Polynomial const& value2) const;
-            
-            bool isConstant(storm::Polynomial const& value) const;
-        };
-        
-#endif 
-        
     }
 }
 
