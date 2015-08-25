@@ -220,17 +220,19 @@ namespace storm {
                 // Then proceed to parsing the property (if given), since the model we are building may depend on the property.
                 std::vector<std::shared_ptr<storm::logic::Formula>> formulas;
                 if (settings.isPropertySet()) {
-					std::shared_ptr<storm::logic::Formula> formula;
+                    storm::parser::FormulaParser formulaParser;
                     if (program) {
                         storm::parser::FormulaParser formulaParser(program.get().getManager().getSharedPointer());
-                        formula = formulaParser.parseSingleFormulaFromString(settings.getProperty());
-                    } else {
-                        storm::parser::FormulaParser formulaParser;
-                        formula = formulaParser.parseSingleFormulaFromString(settings.getProperty());
                     }
-					formulas.push_back(formula);
-                } else if (settings.isPropertyFileSet()) {
-                        // FIXME: asap.
+                    
+                    // If the given property looks like a file (containing a dot and there exists a file with that name),
+                    // we try to parse it as a file, otherwise we assume it's a property.
+                    std::string property = settings.getProperty();
+                    if (property.find(".") != std::string::npos && std::ifstream(property).good()) {
+                        formulas = formulaParser.parseFromFile(settings.getProperty());
+                    } else {
+                        formulas = formulaParser.parseFromString(settings.getProperty());
+                    }
                 }
 
                 if (settings.isSymbolicSet()) {

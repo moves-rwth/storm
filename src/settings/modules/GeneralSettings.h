@@ -145,20 +145,6 @@ namespace storm {
                  * @return The property specified with the property option.
                  */
                 std::string getProperty() const;
-                
-                /*!
-                 * Retrieves whether a property file was set.
-                 *
-                 * @return True iff a property was set.
-                 */
-                bool isPropertyFileSet() const;
-                
-                /*!
-                 * Retrieves the name of the file that contains the properties to be checked on the model.
-                 *
-                 * @return The name of the file that contains the properties to be checked on the model.
-                 */
-                std::string getPropertiesFilename() const;
 
                 /*!
                  * Retrieves whether the transition reward option was set.
@@ -359,7 +345,7 @@ namespace storm {
                 static const std::string symbolicOptionName;
                 static const std::string symbolicOptionShortName;
                 static const std::string propertyOptionName;
-                static const std::string propertyFileOptionName;
+                static const std::string propertyOptionShortName;
                 static const std::string transitionRewardsOptionName;
                 static const std::string stateRewardsOptionName;
                 static const std::string counterexampleOptionName;

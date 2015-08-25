@@ -21,7 +21,7 @@ namespace storm {
             const std::string GeneralSettings::verboseOptionName = "verbose";
             const std::string GeneralSettings::verboseOptionShortName = "v";
             const std::string GeneralSettings::precisionOptionName = "precision";
-            const std::string GeneralSettings::precisionOptionShortName = "p";
+            const std::string GeneralSettings::precisionOptionShortName = "eps";
             const std::string GeneralSettings::exportDotOptionName = "exportdot";
             const std::string GeneralSettings::configOptionName = "config";
             const std::string GeneralSettings::configOptionShortName = "c";
@@ -30,7 +30,7 @@ namespace storm {
             const std::string GeneralSettings::symbolicOptionName = "symbolic";
             const std::string GeneralSettings::symbolicOptionShortName = "s";
             const std::string GeneralSettings::propertyOptionName = "prop";
-            const std::string GeneralSettings::propertyFileOptionName = "propfile";
+            const std::string GeneralSettings::propertyOptionShortName = "prop";
             const std::string GeneralSettings::transitionRewardsOptionName = "transrew";
             const std::string GeneralSettings::stateRewardsOptionName = "staterew";
             const std::string GeneralSettings::counterexampleOptionName = "counterexample";
@@ -75,10 +75,8 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("labeling filename", "The name of the file from which to read the state labeling.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, symbolicOptionName, false, "Parses the model given in a symbolic representation.").setShortName(symbolicOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file from which to read the symbolic model.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, propertyOptionName, false, "Specifies a PCTL formula that is to be checked on the model.")
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("formula", "The formula to check.").build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, propertyFileOptionName, false, "Specifies the PCTL formulas that are to be checked on the model.")
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The file from which to read the PCTL formulas.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, propertyOptionName, false, "Specifies the formulas to be checked on the model.").setShortName(propertyOptionShortName)
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("formula or filename", "The formula or the file containing the formulas.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, counterexampleOptionName, false, "Generates a counterexample for the given PRCTL formulas if not satisfied by the model")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file to which the counterexample is to be written.").setDefaultValueString("-").setIsOptional(true).build()).setShortName(counterexampleOptionShortName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, bisimulationOptionName, false, "Sets whether to perform bisimulation minimization.").setShortName(bisimulationOptionShortName).build());
@@ -176,15 +174,7 @@ namespace storm {
             }
             
             std::string GeneralSettings::getProperty() const {
-                return this->getOption(propertyOptionName).getArgumentByName("formula").getValueAsString();
-            }
-            
-            bool GeneralSettings::isPropertyFileSet() const {
-                return this->getOption(propertyFileOptionName).getHasOptionBeenSet();
-            }
-            
-            std::string GeneralSettings::getPropertiesFilename() const {
-                return this->getOption(propertyFileOptionName).getArgumentByName("filename").getValueAsString();
+                return this->getOption(propertyOptionName).getArgumentByName("formula or filename").getValueAsString();
             }
             
             bool GeneralSettings::isTransitionRewardsSet() const {
@@ -310,10 +300,6 @@ namespace storm {
             bool GeneralSettings::check() const {
                 // Ensure that the model was given either symbolically or explicitly.
                 STORM_LOG_THROW(!isSymbolicSet() || !isExplicitSet(), storm::exceptions::InvalidSettingsException, "The model may be either given in an explicit or a symbolic format, but not both.");
-                
-                // Make sure that one "source" for properties is given.
-                uint_fast64_t propertySources = 0 + (isPropertySet() ? 1 : 0) + (isPropertyFileSet() ? 1 : 0);
-                STORM_LOG_THROW(propertySources <= 1, storm::exceptions::InvalidSettingsException, "Please specify either a file that contains the properties or a property on the command line, but not both.");
                 
                 STORM_LOG_THROW(this->getEngine() == Engine::Sparse || !isExplicitSet(), storm::exceptions::InvalidSettingsException, "Cannot use explicit input models with this engine.");
                 
