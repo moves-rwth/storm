@@ -366,6 +366,47 @@ namespace storm {
                 return sum;
             }
             
+            /**
+             * Computes the maximum of the entries from the values that are set to one in the filter vector
+             * @param values
+             * @param filter
+             * @param smallestPossibleValue A value which is not larger than any value in values. If the filter is empty, this value is returned.
+             * @return  The maximum over the subset of the values and the smallestPossibleValue.
+             */
+            template<typename VT>
+            VT max_if(std::vector<VT> const& values, storm::storage::BitVector const& filter, VT const& smallestPossibleValue) {
+                assert(values.size() >= filter.size());
+                
+                VT max = smallestPossibleValue;
+                for(uint_fast64_t i : filter) {
+                    if(values[i] > max) { 
+                        max = values[i];
+                    }
+                }    
+                return max;
+            }
+            
+            /**
+             * Computes the minimum of the entries from the values that are set to one in the filter vector
+             * @param values
+             * @param filter
+             * @param largestPossibleValue A value which is not smaller than any value in values. If the filter is empty, this value is returned.
+             * @return  The minimum over the subset of the values and the largestPossibleValue.
+             */
+            template<typename VT>
+            VT min_if(std::vector<VT> const& values, storm::storage::BitVector const& filter, VT const& largestPossibleValue) {
+                assert(values.size() >= filter.size());
+                VT min = largestPossibleValue;
+                for(uint_fast64_t i : filter) {
+                    if(values[i] < min) { 
+                        min = values[i];
+                    }
+                }    
+                return min;
+            }
+            
+            
+            
             /*!
              * Reduces the given source vector by selecting an element according to the given filter out of each row group.
              *
