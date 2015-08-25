@@ -576,6 +576,7 @@ namespace storm {
                 storm::storage::BitVector currentState = stateQueue.front();
                 stateQueue.pop();
                 IndexType stateIndex = stateInformation.stateStorage.getValue(currentState);
+                STORM_LOG_TRACE("Exploring state with id " << stateIndex << ".");
                 unpackStateIntoEvaluator(currentState, variableInformation, evaluator);
                 
                 // Retrieve all choices for the current state.
