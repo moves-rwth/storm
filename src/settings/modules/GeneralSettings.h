@@ -22,7 +22,6 @@ namespace storm {
                 // An enumeration of all engines.
                 enum class Engine { Sparse, Hybrid, Dd };
                 
-                
                 /*!
                  * Creates a new set of general settings that is managed by the given manager.
                  *

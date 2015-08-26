@@ -55,7 +55,7 @@ namespace storm {
             template<typename ValueType, typename RewardModelType>
             void NondeterministicModel<ValueType, RewardModelType>::printModelInformationToStream(std::ostream& out) const {
                 this->printModelInformationHeaderToStream(out);
-                out << "Choices: \t\t" << this->getNumberOfChoices() << std::endl;
+                out << "Choices: \t" << this->getNumberOfChoices() << std::endl;
                 this->printModelInformationFooterToStream(out);
             }
             
