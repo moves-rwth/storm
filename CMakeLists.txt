@@ -371,10 +371,11 @@ endif()
 #############################################################
 file(GLOB_RECURSE STORM_HEADERS ${PROJECT_SOURCE_DIR}/src/*.h)
 file(GLOB_RECURSE STORM_SOURCES_WITHOUT_MAIN ${PROJECT_SOURCE_DIR}/src/*/*.cpp)
+file(GLOB_RECURSE STORM_SOURCES_CLI ${PROJECT_SOURCE_DIR}/src/cli/*.cpp)
 file(GLOB_RECURSE STORM_MAIN_FILE ${PROJECT_SOURCE_DIR}/src/storm.cpp)
-set(STORM_SOURCES "${STORM_SOURCES_WITHOUT_MAIN};${STORM_MAIN_FILE};")
 file(GLOB_RECURSE STORM_ADAPTERS_FILES ${PROJECT_SOURCE_DIR}/src/adapters/*.h ${PROJECT_SOURCE_DIR}/src/adapters/*.cpp)
 file(GLOB_RECURSE STORM_BUILDER_FILES ${PROJECT_SOURCE_DIR}/src/builder/*.h ${PROJECT_SOURCE_DIR}/src/builder/*.cpp)
+file(GLOB_RECURSE STORM_CLI_FILES ${PROJECT_SOURCE_DIR}/src/cli/*.h ${PROJECT_SOURCE_DIR}/src/cli/*.cpp)
 file(GLOB_RECURSE STORM_EXCEPTIONS_FILES ${PROJECT_SOURCE_DIR}/src/exceptions/*.h ${PROJECT_SOURCE_DIR}/src/exceptions/*.cpp)
 file(GLOB_RECURSE STORM_LOGIC_FILES ${PROJECT_SOURCE_DIR}/src/logic/*.h ${PROJECT_SOURCE_DIR}/src/logic/*.cpp)
 file(GLOB STORM_MODELCHECKER_FILES ${PROJECT_SOURCE_DIR}/src/modelchecker/*.h ${PROJECT_SOURCE_DIR}/src/modelchecker/*.cpp)
@@ -410,10 +411,15 @@ file(GLOB_RECURSE STORM_PERFORMANCE_TEST_FILES ${STORM_CPP_TESTS_BASE_PATH}/perf
 # Additional include files like the storm-config.h
 file(GLOB_RECURSE STORM_BUILD_HEADERS ${PROJECT_BINARY_DIR}/include/*.h)
 
+set(STORM_LIB_SOURCES ${STORM_SOURCES_WITHOUT_MAIN})
+list(REMOVE_ITEM STORM_LIB_SOURCES ${STORM_SOURCES_CLI})
+set(STORM_MAIN_SOURCES ${STORM_SOURCES_CLI} ${STORM_MAIN_FILE})
+
 # Group the headers and sources
 source_group(main FILES ${STORM_MAIN_FILE})
 source_group(adapters FILES ${STORM_ADAPTERS_FILES})
 source_group(builder FILES ${STORM_BUILDER_FILES})
+source_group(cli FILES ${STORM_CLI_FILES})
 source_group(exceptions FILES ${STORM_EXCEPTIONS_FILES})
 source_group(logic FILES ${STORM_LOGIC_FILES})
 source_group(generated FILES ${STORM_BUILD_HEADERS} ${STORM_BUILD_SOURCES})
@@ -492,8 +498,8 @@ endif()
 ##  All link_directories() calls MUST be made before this point               #
 ##                                                                            #
 ###############################################################################
-add_library(storm ${STORM_SOURCES_WITHOUT_MAIN} ${STORM_HEADERS})
-add_executable(storm-main ${STORM_MAIN_FILE})
+add_library(storm ${STORM_LIB_SOURCES}) 
+add_executable(storm-main ${STORM_MAIN_SOURCES})
 target_link_libraries(storm-main storm)
 set_target_properties(storm-main PROPERTIES OUTPUT_NAME "storm")
 add_executable(storm-functional-tests ${STORM_FUNCTIONAL_TEST_MAIN_FILE} ${STORM_FUNCTIONAL_TEST_FILES})

@@ -4,6 +4,7 @@
 
 #include "src/storage/dd/CuddOdd.h"
 
+#include "src/models/symbolic/Mdp.h"
 #include "src/models/symbolic/StandardRewardModel.h"
 
 #include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"

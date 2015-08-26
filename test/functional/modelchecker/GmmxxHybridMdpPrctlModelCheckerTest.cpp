@@ -11,6 +11,7 @@
 #include "src/parser/FormulaParser.h"
 #include "src/builder/DdPrismModelBuilder.h"
 #include "src/models/symbolic/Dtmc.h"
+#include "src/models/symbolic/Mdp.h"
 #include "src/models/symbolic/StandardRewardModel.h"
 #include "src/settings/SettingsManager.h"
 

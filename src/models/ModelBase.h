@@ -5,7 +5,6 @@
 
 #include "src/models/ModelType.h"
 #include "src/utility/macros.h"
-#include "src/exceptions/InvalidOperationException.h"
 
 namespace storm {
     namespace models {
