@@ -5,6 +5,7 @@
 #include <cstdint>
 #include "SolverSelectionOptions.h"
 #include "src/storage/sparse/StateType.h"
+#include "AllowEarlyTerminationCondition.h"
 
 namespace storm {
     namespace storage {
@@ -55,7 +56,7 @@ namespace storm {
         protected:
             MinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& matrix, double precision, bool relativeError, uint_fast64_t maxNrIterations, bool trackPolicy, MinMaxTechniqueSelection prefTech) :
                 AbstractMinMaxLinearEquationSolver(precision, relativeError, maxNrIterations, trackPolicy, prefTech),
-                A(matrix) {
+                A(matrix), earlyTermination(new NoEarlyTerminationCondition<ValueType>()) {
                 // Intentionally left empty.
             }
         
@@ -101,7 +102,13 @@ namespace storm {
              */
             virtual void performMatrixVectorMultiplication(bool minimize, std::vector<ValueType>& x, std::vector<ValueType>* b = nullptr, uint_fast64_t n = 1, std::vector<ValueType>* multiplyResult = nullptr) const = 0;
             
+            
+            void setEarlyTerminationCondition(std::unique_ptr<AllowEarlyTerminationCondition<ValueType>> v) {
+                earlyTermination = std::move(v);
+            }
+            
         protected:
+            std::unique_ptr<AllowEarlyTerminationCondition<ValueType>> earlyTermination;
             storm::storage::SparseMatrix<ValueType> const& A;
         };
         

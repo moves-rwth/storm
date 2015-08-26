@@ -3,7 +3,6 @@
 
 #include "src/modelchecker/AbstractModelChecker.h"
 
-#include "src/models/sparse/Model.h"
 
 namespace storm {
     namespace modelchecker {

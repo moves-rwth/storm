@@ -3,6 +3,7 @@
 #include <boost/algorithm/string/join.hpp>
 
 #include "src/exceptions/IllegalArgumentException.h"
+#include "src/exceptions/InvalidOperationException.h"
 
 #include "src/adapters/AddExpressionAdapter.h"
 

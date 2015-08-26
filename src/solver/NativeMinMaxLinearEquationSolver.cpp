@@ -53,7 +53,7 @@ namespace storm {
 
 				// Proceed with the iterations as long as the method did not converge or reach the
 				// user-specified maximum number of iterations.
-				while (!converged && iterations < this->maximalNumberOfIterations) {
+				while (!converged && iterations < this->maximalNumberOfIterations && !this->earlyTermination->terminateNow(*currentX)) {
 					// Compute x' = A*x + b.
 					this->A.multiplyWithVector(*currentX, *multiplyResult);
 					storm::utility::vector::addVectors(*multiplyResult, b, *multiplyResult);
@@ -121,7 +121,7 @@ namespace storm {
 
 				// Proceed with the iterations as long as the method did not converge or reach the user-specified maximum number
 				// of iterations.
-				while (!converged && iterations < this->maximalNumberOfIterations) {
+				while (!converged && iterations < this->maximalNumberOfIterations && !this->earlyTermination->terminateNow(*currentX)) {
 					// Take the sub-matrix according to the current choices
 					storm::storage::SparseMatrix<ValueType> submatrix = this->A.selectRowsFromRowGroups(this->policy, true);
 					submatrix.convertToEquationSystem();
