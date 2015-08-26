@@ -1017,13 +1017,6 @@ namespace storm {
             ModuleDecisionDiagram const& globalModule = system.globalModule;
             storm::dd::Add<Type> stateActionDd = system.stateActionDd;
             
-            // Cut the transitions and rewards to the reachable fragment of the state space.
-            storm::dd::Bdd<Type> initialStates = createInitialStatesDecisionDiagram(generationInfo);
-            storm::dd::Bdd<Type> transitionMatrixBdd = transitionMatrix.notZero();
-            if (program.getModelType() == storm::prism::Program::ModelType::MDP) {
-                transitionMatrixBdd = transitionMatrixBdd.existsAbstract(generationInfo.allNondeterminismVariables);
-            }
-            
             // If we were asked to treat some states as terminal states, we cut away their transitions now.
             if (options.terminalStates) {
                 storm::expressions::Expression terminalExpression;
@@ -1033,7 +1026,16 @@ namespace storm {
                     std::string const& labelName = boost::get<std::string>(options.terminalStates.get());
                     terminalExpression = preparedProgram.getLabelExpression(labelName);
                 }
-                // TODO
+                STORM_LOG_TRACE("Making the states satisfying " << terminalExpression << " terminal.");
+                storm::dd::Add<Type> terminalStatesAdd = generationInfo.rowExpressionAdapter->translateExpression(terminalExpression);
+                transitionMatrix *= !terminalStatesAdd;
+            }
+            
+            // Cut the transitions and rewards to the reachable fragment of the state space.
+            storm::dd::Bdd<Type> initialStates = createInitialStatesDecisionDiagram(generationInfo);
+            storm::dd::Bdd<Type> transitionMatrixBdd = transitionMatrix.notZero();
+            if (program.getModelType() == storm::prism::Program::ModelType::MDP) {
+                transitionMatrixBdd = transitionMatrixBdd.existsAbstract(generationInfo.allNondeterminismVariables);
             }
             
             storm::dd::Bdd<Type> reachableStates = computeReachableStates(generationInfo, initialStates, transitionMatrixBdd);
