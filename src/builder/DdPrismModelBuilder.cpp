@@ -1055,7 +1055,12 @@ namespace storm {
             if (!deadlockStates.isZero()) {
                 // If we need to fix deadlocks, we do so now.
                 if (!storm::settings::generalSettings().isDontFixDeadlocksSet()) {
-                    STORM_LOG_WARN("Fixing deadlocks in " << deadlockStates.getNonZeroCount() << " states.");
+                    STORM_LOG_WARN("Fixing deadlocks in " << deadlockStates.getNonZeroCount() << " states. For example in");
+                    
+                    uint_fast64_t count = 0;
+                    for (auto it = deadlockStates.begin(), ite = deadlockStates.end(); it != ite && count < 3; ++it, ++count) {
+                        STORM_LOG_WARN((*it).first.toPrettyString() << std::endl);
+                    }
 
                     if (program.getModelType() == storm::prism::Program::ModelType::DTMC) {
                         // For DTMCs, we can simply add the identity of the global module for all deadlock states.

@@ -54,6 +54,8 @@ namespace storm {
             virtual double getRationalValue(Variable const& rationalVariable) const override;
             virtual void setRationalValue(Variable const& rationalVariable, double value) override;
             
+            virtual std::string toPrettyString() const;
+            
             friend std::ostream& operator<<(std::ostream& out, SimpleValuation const& valuation);
             
         private:
