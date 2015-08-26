@@ -2,8 +2,10 @@
 
 #include "src/solver/SymbolicGameSolver.h"
 
+#include <vector>
 
 #include "src/solver/SymbolicLinearEquationSolver.h"
+#include "src/solver/SymbolicMinMaxLinearEquationSolver.h"
 #include "src/solver/NativeLinearEquationSolver.h"
 #include "src/solver/GmmxxLinearEquationSolver.h"
 
@@ -60,18 +62,18 @@ namespace storm {
             NativeLinearEquationSolverFactory<ValueType>::NativeLinearEquationSolverFactory() {
                 switch (storm::settings::nativeEquationSolverSettings().getLinearEquationSystemMethod()) {
                     case settings::modules::NativeEquationSolverSettings::LinearEquationMethod::Jacobi:
-                    this->method = storm::solver::NativeLinearEquationSolver<ValueType>::SolutionMethod::Jacobi;
+                    this->method = storm::solver::NativeLinearEquationSolverSolutionMethod::Jacobi;
                     break;
                     case settings::modules::NativeEquationSolverSettings::LinearEquationMethod::GaussSeidel:
-                    this->method = storm::solver::NativeLinearEquationSolver<ValueType>::SolutionMethod::GaussSeidel;
+                    this->method = storm::solver::NativeLinearEquationSolverSolutionMethod::GaussSeidel;
                     case settings::modules::NativeEquationSolverSettings::LinearEquationMethod::SOR:
-                    this->method = storm::solver::NativeLinearEquationSolver<ValueType>::SolutionMethod::SOR;
+                    this->method = storm::solver::NativeLinearEquationSolverSolutionMethod::SOR;
                 }
                 omega = storm::settings::nativeEquationSolverSettings().getOmega();
             }
             
             template<typename ValueType>
-            NativeLinearEquationSolverFactory<ValueType>::NativeLinearEquationSolverFactory(typename storm::solver::NativeLinearEquationSolver<ValueType>::SolutionMethod method, ValueType omega) : method(method), omega(omega) {
+            NativeLinearEquationSolverFactory<ValueType>::NativeLinearEquationSolverFactory(typename storm::solver::NativeLinearEquationSolverSolutionMethod method, ValueType omega) : method(method), omega(omega) {
                 // Intentionally left empty.
             }
             
@@ -83,8 +85,8 @@ namespace storm {
             template<typename ValueType>
             MinMaxLinearEquationSolverFactory<ValueType>::MinMaxLinearEquationSolverFactory(storm::solver::EquationSolverTypeSelection solver)
             {
-                setSolverType(solver);
                 prefTech = storm::solver::MinMaxTechniqueSelection::FROMSETTINGS;
+                setSolverType(solver);
             }
             
             template<typename ValueType>

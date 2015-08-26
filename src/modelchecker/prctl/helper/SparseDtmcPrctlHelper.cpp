@@ -6,6 +6,9 @@
 #include "src/utility/vector.h"
 #include "src/utility/graph.h"
 
+
+#include "src/solver/LinearEquationSolver.h"
+
 #include "src/exceptions/InvalidStateException.h"
 #include "src/exceptions/InvalidPropertyException.h"
 

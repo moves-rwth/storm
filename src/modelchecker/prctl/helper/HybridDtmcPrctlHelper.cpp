@@ -1,5 +1,8 @@
 #include "src/modelchecker/prctl/helper/HybridDtmcPrctlHelper.h"
 
+
+#include "src/solver/LinearEquationSolver.h"
+
 #include "src/storage/dd/CuddDdManager.h"
 #include "src/storage/dd/CuddAdd.h"
 #include "src/storage/dd/CuddBdd.h"

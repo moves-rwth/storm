@@ -1,11 +1,9 @@
 #ifndef STORM_UTILITY_SOLVER_H_
 #define STORM_UTILITY_SOLVER_H_
 
-#include "src/solver/SymbolicGameSolver.h"
-#include "src/solver/SymbolicMinMaxLinearEquationSolver.h"
-#include "src/solver/SymbolicLinearEquationSolver.h"
-#include "src/solver/LinearEquationSolver.h"
-#include "src/solver/NativeLinearEquationSolver.h"
+#include <set>
+#include <vector>
+
 #include "src/storage/dd/DdType.h"
 #include "src/solver/SolverSelectionOptions.h"
 
@@ -13,10 +11,18 @@ namespace storm {
     namespace solver {
         template<storm::dd::DdType T>  class SymbolicGameSolver;
         template<storm::dd::DdType T, typename V> class SymbolicLinearEquationSolver;
+        template<storm::dd::DdType T, typename V> class SymbolicMinMaxLinearEquationSolver;
         template<typename V> class LinearEquationSolver;
         template<typename V> class MinMaxLinearEquationSolver;
         class LpSolver;
+        
+        template<typename ValueType> class NativeLinearEquationSolver;
+        enum class NativeLinearEquationSolverSolutionMethod;
     }
+    namespace storage {
+        template<typename V> class SparseMatrix;
+    }
+    
     namespace dd {
         template<storm::dd::DdType T> class Add;
         template<storm::dd::DdType T> class Bdd;
@@ -62,12 +68,12 @@ namespace storm {
             class NativeLinearEquationSolverFactory : public LinearEquationSolverFactory<ValueType> {
             public:
                 NativeLinearEquationSolverFactory();
-                NativeLinearEquationSolverFactory(typename storm::solver::NativeLinearEquationSolver<ValueType>::SolutionMethod method, ValueType omega);
+                NativeLinearEquationSolverFactory(typename storm::solver::NativeLinearEquationSolverSolutionMethod method, ValueType omega);
                 
                 virtual std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType> const& matrix) const override;
                 
             private:
-                typename storm::solver::NativeLinearEquationSolver<ValueType>::SolutionMethod method;
+                typename storm::solver::NativeLinearEquationSolverSolutionMethod method;
                 ValueType omega;
             };
             
