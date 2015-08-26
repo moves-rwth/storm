@@ -1,13 +1,18 @@
 #include "src/solver/TopologicalMinMaxLinearEquationSolver.h"
 
 #include <utility>
-
-#include "src/settings/SettingsManager.h"
 #include "src/utility/vector.h"
 #include "src/utility/graph.h"
 #include "src/storage/StronglyConnectedComponentDecomposition.h"
 #include "src/exceptions/IllegalArgumentException.h"
 #include "src/exceptions/InvalidStateException.h"
+
+
+#include "src/settings/SettingsManager.h"
+#include "src/settings/modules/GeneralSettings.h"
+#include "src/settings/modules/NativeEquationSolverSettings.h"
+#include "src/settings/modules/TopologicalValueIterationEquationSolverSettings.h"
+
 
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
@@ -22,19 +27,12 @@ namespace storm {
     namespace solver {
         
         template<typename ValueType>
-        TopologicalMinMaxLinearEquationSolver<ValueType>::TopologicalMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A) : NativeMinMaxLinearEquationSolver<ValueType>(A) {
+        TopologicalMinMaxLinearEquationSolver<ValueType>::TopologicalMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A) : 
+        NativeMinMaxLinearEquationSolver<ValueType>(A, storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision(), \
+                storm::settings::topologicalValueIterationEquationSolverSettings().getMaximalIterationCount(), MinMaxTechniqueSelection::ValueIteration, \
+                storm::settings::topologicalValueIterationEquationSolverSettings().getConvergenceCriterion() == storm::settings::modules::TopologicalValueIterationEquationSolverSettings::ConvergenceCriterion::Relative)
+        {
 			// Get the settings object to customize solving.
-			
-			//storm::settings::Settings* settings = storm::settings::Settings::getInstance();
-			auto settings = storm::settings::topologicalValueIterationEquationSolverSettings();
-			// Get appropriate settings.
-			//this->maximalNumberOfIterations = settings->getOptionByLongName("maxiter").getArgument(0).getValueAsUnsignedInteger();
-			//this->precision = settings->getOptionByLongName("precision").getArgument(0).getValueAsDouble();
-			//this->relative = !settings->isSet("absolute");
-			this->maximalNumberOfIterations = settings.getMaximalIterationCount();
-			this->precision = settings.getPrecision();
-			this->relative = (settings.getConvergenceCriterion() == storm::settings::modules::TopologicalValueIterationEquationSolverSettings::ConvergenceCriterion::Relative);
-
 			auto generalSettings = storm::settings::generalSettings();
 			this->enableCuda = generalSettings.isCudaSet();
 #ifdef STORM_HAVE_CUDA
@@ -43,7 +41,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-		TopologicalMinMaxLinearEquationSolver<ValueType>::TopologicalMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, double precision, uint_fast64_t maximalNumberOfIterations, bool relative) : NativeMinMaxLinearEquationSolver<ValueType>(A, precision, maximalNumberOfIterations, relative) {
+		TopologicalMinMaxLinearEquationSolver<ValueType>::TopologicalMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, double precision, uint_fast64_t maximalNumberOfIterations, bool relative) : NativeMinMaxLinearEquationSolver<ValueType>(A, precision, maximalNumberOfIterations, MinMaxTechniqueSelection::ValueIteration ,relative) {
             // Intentionally left empty.
         }
         

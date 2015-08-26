@@ -1,4 +1,9 @@
 #include "src/utility/prism.h"
+#include "src/storage/expressions/ExpressionManager.h"
+#include "src/storage/prism/Program.h"
+
+#include "src/exceptions/InvalidArgumentException.h"
+#include "macros.h"
 
 namespace storm {
     namespace utility {

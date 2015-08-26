@@ -1,36 +1,36 @@
 #include "src/models/sparse/Mdp.h"
 
+#include "src/exceptions/InvalidArgumentException.h"
+#include "src/utility/constants.h"
 #include "src/adapters/CarlAdapter.h"
+
+#include "src/models/sparse/StandardRewardModel.h"
 
 namespace storm {
     namespace models {
         namespace sparse {
             
-            template <typename ValueType>
-            Mdp<ValueType>::Mdp(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+            template <typename ValueType, typename RewardModelType>
+            Mdp<ValueType, RewardModelType>::Mdp(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                 storm::models::sparse::StateLabeling const& stateLabeling,
-                                boost::optional<std::vector<ValueType>> const& optionalStateRewardVector,
-                                boost::optional<storm::storage::SparseMatrix<ValueType>> const& optionalTransitionRewardMatrix,
+                                std::unordered_map<std::string, RewardModelType> const& rewardModels,
                                 boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling)
-            : NondeterministicModel<ValueType>(storm::models::ModelType::Mdp, transitionMatrix, stateLabeling, optionalStateRewardVector, optionalTransitionRewardMatrix, optionalChoiceLabeling) {
-                STORM_LOG_THROW(this->checkValidityOfProbabilityMatrix(), storm::exceptions::InvalidArgumentException, "The probability matrix is invalid.");
-                STORM_LOG_THROW(!this->hasTransitionRewards() || this->getTransitionRewardMatrix().isSubmatrixOf(this->getTransitionMatrix()), storm::exceptions::InvalidArgumentException, "The transition reward matrix is not a submatrix of the transition matrix, i.e. there are rewards for transitions that do not exist.");
+            : NondeterministicModel<ValueType>(storm::models::ModelType::Mdp, transitionMatrix, stateLabeling, rewardModels, optionalChoiceLabeling) {
+                STORM_LOG_THROW(transitionMatrix.isProbabilistic(), storm::exceptions::InvalidArgumentException, "The probability matrix is invalid.");
             }
             
             
-            template <typename ValueType>
-            Mdp<ValueType>::Mdp(storm::storage::SparseMatrix<ValueType>&& transitionMatrix,
+            template <typename ValueType, typename RewardModelType>
+            Mdp<ValueType, RewardModelType>::Mdp(storm::storage::SparseMatrix<ValueType>&& transitionMatrix,
                                 storm::models::sparse::StateLabeling&& stateLabeling,
-                                boost::optional<std::vector<ValueType>>&& optionalStateRewardVector,
-                                boost::optional<storm::storage::SparseMatrix<ValueType>>&& optionalTransitionRewardMatrix,
+                                std::unordered_map<std::string, RewardModelType>&& rewardModels,
                                 boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling)
-            : NondeterministicModel<ValueType>(storm::models::ModelType::Mdp, std::move(transitionMatrix), std::move(stateLabeling), std::move(optionalStateRewardVector), std::move(optionalTransitionRewardMatrix), std::move(optionalChoiceLabeling)) {
-                STORM_LOG_THROW(this->checkValidityOfProbabilityMatrix(), storm::exceptions::InvalidArgumentException, "The probability matrix is invalid.");
-                STORM_LOG_THROW(!this->hasTransitionRewards() || this->getTransitionRewardMatrix().isSubmatrixOf(this->getTransitionMatrix()), storm::exceptions::InvalidArgumentException, "The transition reward matrix is not a submatrix of the transition matrix, i.e. there are rewards for transitions that do not exist.");
+            : NondeterministicModel<ValueType>(storm::models::ModelType::Mdp, std::move(transitionMatrix), std::move(stateLabeling), std::move(rewardModels), std::move(optionalChoiceLabeling)) {
+                STORM_LOG_THROW(transitionMatrix.isProbabilistic(), storm::exceptions::InvalidArgumentException, "The probability matrix is invalid.");
             }
             
-            template <typename ValueType>
-            Mdp<ValueType> Mdp<ValueType>::restrictChoiceLabels(LabelSet const& enabledChoiceLabels) const {
+            template <typename ValueType, typename RewardModelType>
+            Mdp<ValueType> Mdp<ValueType, RewardModelType>::restrictChoiceLabels(LabelSet const& enabledChoiceLabels) const {
                 STORM_LOG_THROW(this->hasChoiceLabeling(), storm::exceptions::InvalidArgumentException, "Restriction to label set is impossible for unlabeled model.");
                 
                 std::vector<LabelSet> const& choiceLabeling = this->getChoiceLabeling();
@@ -69,41 +69,19 @@ namespace storm {
                 }
                 
                 Mdp<ValueType> restrictedMdp(transitionMatrixBuilder.build(), storm::models::sparse::StateLabeling(this->getStateLabeling()),
-                                             this->hasStateRewards() ? boost::optional<std::vector<ValueType>>(this->getStateRewardVector()) : boost::optional<std::vector<ValueType>>(),
-                                             this->hasTransitionRewards() ? boost::optional<storm::storage::SparseMatrix<ValueType>>(this->getTransitionRewardMatrix()) : boost::optional<storm::storage::SparseMatrix<ValueType>>(),
-                                             boost::optional<std::vector<LabelSet>>(newChoiceLabeling));
+                                             std::unordered_map<std::string, RewardModelType>(this->getRewardModels()), boost::optional<std::vector<LabelSet>>(newChoiceLabeling));
                 
                 return restrictedMdp;
             }
             
-            template <typename ValueType>
-            Mdp<ValueType> Mdp<ValueType>::restrictActions(storm::storage::BitVector const& enabledActions) const {
+            template <typename ValueType, typename RewardModelType>
+            Mdp<ValueType> Mdp<ValueType, RewardModelType>::restrictActions(storm::storage::BitVector const& enabledActions) const {
                 storm::storage::SparseMatrix<ValueType> restrictedTransitions = this->getTransitionMatrix().restrictRows(enabledActions);
-                if(this->hasTransitionRewards()) {
-                    return Mdp<ValueType>(restrictedTransitions, this->getStateLabeling(), this->getOptionalStateRewardVector(), boost::optional<storm::storage::SparseMatrix<ValueType>>(this->getTransitionRewardMatrix().restrictRows(enabledActions)), this->getOptionalChoiceLabeling());
-                } else {
-                    return Mdp<ValueType>( restrictedTransitions, this->getStateLabeling(), this->getOptionalStateRewardVector(), boost::optional<storm::storage::SparseMatrix<ValueType>>(), this->getOptionalChoiceLabeling());
+                std::unordered_map<std::string, RewardModelType> newRewardModels;
+                for (auto const& rewardModel : this->getRewardModels()) {
+                    newRewardModels.emplace(rewardModel.first, rewardModel.second.restrictActions(enabledActions));
                 }
-                
-            }
-            
-            template <typename ValueType>
-            bool Mdp<ValueType>::checkValidityOfProbabilityMatrix() const {
-                storm::utility::ConstantsComparator<ValueType> comparator;
-                // Get the settings object to customize linear solving.
-                for (uint_fast64_t row = 0; row < this->getTransitionMatrix().getRowCount(); row++) {
-                    ValueType sum = this->getTransitionMatrix().getRowSum(row);
-                    
-                    // If the sum is not a constant, for example for parametric models, we cannot check whether the sum is one or not.
-                    if (!comparator.isConstant(sum)) {
-                        continue;
-                    }
-                    
-                    if (!comparator.isOne(sum))  {
-                        return false;
-                    }
-                }
-                return true;
+                return Mdp<ValueType>(restrictedTransitions, this->getStateLabeling(), newRewardModels, this->getOptionalChoiceLabeling());
             }
             
             template class Mdp<double>;

@@ -1,6 +1,8 @@
 #include "src/settings/ArgumentBase.h"
 
+#include <boost/algorithm/string.hpp>
 #include <iomanip>
+#include <sstream>
 
 namespace storm {
     namespace settings {

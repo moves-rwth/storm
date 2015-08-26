@@ -5,12 +5,14 @@
 
 #include "src/storage/expressions/ExpressionManager.h"
 #include "src/settings/SettingsManager.h"
+#include "src/settings/modules/GeneralSettings.h"
 #include "src/utility/macros.h"
 #include "src/utility/solver.h"
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/exceptions/OutOfRangeException.h"
 #include "src/exceptions/WrongFormatException.h"
 #include "src/exceptions/InvalidTypeException.h"
+#include "src/solver/SmtSolver.h"
 
 namespace storm {
     namespace prism {
@@ -22,7 +24,7 @@ namespace storm {
             formulas(formulas), formulaToIndexMap(), modules(modules), moduleToIndexMap(), 
             rewardModels(rewardModels), rewardModelToIndexMap(), initialConstruct(initialConstruct), 
             labels(labels), actionToIndexMap(actionToIndexMap), indexToActionMap(), actions(), 
-            actionIndices(), actionIndicesToModuleIndexMap(), variableToModuleIndexMap()
+            synchronizingActionIndices(), actionIndicesToModuleIndexMap(), variableToModuleIndexMap()
         {
 
             // Start by creating the necessary mappings from the given ones.
@@ -261,8 +263,8 @@ namespace storm {
             return this->actions;
         }
         
-        std::set<uint_fast64_t> const& Program::getActionIndices() const {
-            return this->actionIndices;
+        std::set<uint_fast64_t> const& Program::getSynchronizingActionIndices() const {
+            return this->synchronizingActionIndices;
         }
         
         std::string const& Program::getActionName(uint_fast64_t actionIndex) const {
@@ -392,15 +394,19 @@ namespace storm {
             
             for (auto const& actionIndexPair : this->getActionNameToIndexMapping()) {
                 this->actions.insert(actionIndexPair.first);
-                this->actionIndices.insert(actionIndexPair.second);
                 this->indexToActionMap.emplace(actionIndexPair.second, actionIndexPair.first);
+                
+                // Only let all non-zero indices be synchronizing.
+                if (actionIndexPair.second != 0) {
+                    this->synchronizingActionIndices.insert(actionIndexPair.second);
+                }
             }
             
             // Build the mapping from action names to module indices so that the lookup can later be performed quickly.
             for (unsigned int moduleIndex = 0; moduleIndex < this->getNumberOfModules(); moduleIndex++) {
                 Module const& module = this->getModule(moduleIndex);
                 
-                for (auto const& actionIndex : module.getActionIndices()) {
+                for (auto const& actionIndex : module.getSynchronizingActionIndices()) {
                     auto const& actionModuleIndicesPair = this->actionIndicesToModuleIndexMap.find(actionIndex);
                     if (actionModuleIndicesPair == this->actionIndicesToModuleIndexMap.end()) {
                         this->actionIndicesToModuleIndexMap[actionIndex] = std::set<uint_fast64_t>();
@@ -710,11 +716,29 @@ namespace storm {
                     STORM_LOG_THROW(stateReward.getRewardValueExpression().hasNumericalType(), storm::exceptions::WrongFormatException, "Error in " << stateReward.getFilename() << ", line " << stateReward.getLineNumber() << ": reward value expression must evaluate to numerical type.");
                 }
                 
+                for (auto const& stateActionReward : rewardModel.getStateActionRewards()) {
+                    std::set<storm::expressions::Variable> containedVariables = stateActionReward.getStatePredicateExpression().getVariables();
+                    bool isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedVariables.begin(), containedVariables.end());
+                    STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << stateActionReward.getFilename() << ", line " << stateActionReward.getLineNumber() << ": state reward expression refers to unknown identifiers.");
+                    STORM_LOG_THROW(stateActionReward.getStatePredicateExpression().hasBooleanType(), storm::exceptions::WrongFormatException, "Error in " << stateActionReward.getFilename() << ", line " << stateActionReward.getLineNumber() << ": state predicate must evaluate to type 'bool'.");
+                    
+                    containedVariables = stateActionReward.getRewardValueExpression().getVariables();
+                    isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedVariables.begin(), containedVariables.end());
+                    STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << stateActionReward.getFilename() << ", line " << stateActionReward.getLineNumber() << ": state reward value expression refers to unknown identifiers.");
+                    STORM_LOG_THROW(stateActionReward.getRewardValueExpression().hasNumericalType(), storm::exceptions::WrongFormatException, "Error in " << stateActionReward.getFilename() << ", line " << stateActionReward.getLineNumber() << ": reward value expression must evaluate to numerical type.");
+                }
+                
                 for (auto const& transitionReward : rewardModel.getTransitionRewards()) {
-                    std::set<storm::expressions::Variable> containedVariables = transitionReward.getStatePredicateExpression().getVariables();
+                    std::set<storm::expressions::Variable> containedVariables = transitionReward.getSourceStatePredicateExpression().getVariables();
                     bool isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedVariables.begin(), containedVariables.end());
                     STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << transitionReward.getFilename() << ", line " << transitionReward.getLineNumber() << ": state reward expression refers to unknown identifiers.");
-                    STORM_LOG_THROW(transitionReward.getStatePredicateExpression().hasBooleanType(), storm::exceptions::WrongFormatException, "Error in " << transitionReward.getFilename() << ", line " << transitionReward.getLineNumber() << ": state predicate must evaluate to type 'bool'.");
+                    STORM_LOG_THROW(transitionReward.getSourceStatePredicateExpression().hasBooleanType(), storm::exceptions::WrongFormatException, "Error in " << transitionReward.getFilename() << ", line " << transitionReward.getLineNumber() << ": state predicate must evaluate to type 'bool'.");
+
+                    containedVariables = transitionReward.getTargetStatePredicateExpression().getVariables();
+                    isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedVariables.begin(), containedVariables.end());
+                    STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << transitionReward.getFilename() << ", line " << transitionReward.getLineNumber() << ": state reward expression refers to unknown identifiers.");
+                    STORM_LOG_THROW(transitionReward.getTargetStatePredicateExpression().hasBooleanType(), storm::exceptions::WrongFormatException, "Error in " << transitionReward.getFilename() << ", line " << transitionReward.getLineNumber() << ": state predicate must evaluate to type 'bool'.");
+
                     
                     containedVariables = transitionReward.getRewardValueExpression().getVariables();
                     isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedVariables.begin(), containedVariables.end());
@@ -777,11 +801,18 @@ namespace storm {
             }
         }
         
-        
         Program Program::simplify() {
             std::vector<Module> newModules;
             std::vector<Constant> newConstants = this->getConstants();
             for (auto const& module : this->getModules()) {
+                // Remove identity assignments from the updates
+                std::vector<Command> newCommands;
+                for (auto const& command : module.getCommands()) {
+                    newCommands.emplace_back(command.removeIdentityAssignmentsFromUpdates());
+                }
+                
+                // Substitute Variables by Global constants if possible.
+                
                 std::map<storm::expressions::Variable, storm::expressions::Expression> booleanVars;
                 std::map<storm::expressions::Variable, storm::expressions::Expression> integerVars;
                 for (auto const& variable : module.getBooleanVariables()) {
@@ -791,7 +822,7 @@ namespace storm {
                     integerVars.emplace(variable.getExpressionVariable(), variable.getInitialValueExpression());
                 }
                 
-                for (auto const& command : module.getCommands()) {
+                for (auto const& command : newCommands) {
                     // Check all updates.
                     for (auto const& update : command.getUpdates()) {
                         // Check all assignments.
@@ -822,7 +853,7 @@ namespace storm {
                     }
                 }
                 
-                newModules.emplace_back(module.getName(), newBVars, newIVars, module.getCommands());
+                newModules.emplace_back(module.getName(), newBVars, newIVars, newCommands);
                 
                 for(auto const& entry : booleanVars) {
                     newConstants.emplace_back(entry.first, entry.second);
@@ -916,7 +947,7 @@ namespace storm {
             
             // Now we need to enumerate all possible combinations of synchronizing commands. For this, we iterate over
             // all actions and let the solver enumerate the possible combinations of commands that can be enabled together.
-            for (auto const& actionIndex : this->getActionIndices()) {
+            for (auto const& actionIndex : this->getSynchronizingActionIndices()) {
                 bool noCombinationsForAction = false;
                 
                 // Prepare the list that stores for each module the list of commands with the given action.

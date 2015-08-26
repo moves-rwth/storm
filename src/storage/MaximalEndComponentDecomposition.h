@@ -24,7 +24,25 @@ namespace storm  {
              *
              * @param model The model to decompose into MECs.
              */
-            MaximalEndComponentDecomposition(storm::models::sparse::NondeterministicModel<ValueType> const& model);
+            template <typename RewardModelType = storm::models::sparse::StandardRewardModel<ValueType>>
+            MaximalEndComponentDecomposition(storm::models::sparse::NondeterministicModel<ValueType, RewardModelType> const& model);
+            
+            /*
+             * Creates an MEC decomposition of the given model (represented by a row-grouped matrix).
+             *
+             * @param transitionMatrix The transition relation of model to decompose into MECs.
+             * @param backwardTransition The reversed transition relation.
+             */
+            MaximalEndComponentDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions);
+
+            /*
+             * Creates an MEC decomposition of the given subsystem of given model (represented by a row-grouped matrix).
+             *
+             * @param transitionMatrix The transition relation of model to decompose into MECs.
+             * @param backwardTransition The reversed transition relation.
+             * @param subsystem The subsystem to decompose.
+             */
+            MaximalEndComponentDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& subsystem);
             
             /*!
              * Creates an MEC decomposition of the given subsystem in the given model.
@@ -67,10 +85,11 @@ namespace storm  {
              * Performs the actual decomposition of the given subsystem in the given model into MECs. As a side-effect
              * this stores the MECs found in the current decomposition.
              *
-             * @param model The model whose subsystem to decompose into MECs.
+             * @param transitionMatrix The transition matrix representing the system whose subsystem to decompose into MECs.
+             * @param backwardTransitions The reversed transition relation.
              * @param subsystem The subsystem to decompose.
              */
-            void performMaximalEndComponentDecomposition(storm::models::sparse::NondeterministicModel<ValueType> const& model, storm::storage::BitVector const& subsystem);
+            void performMaximalEndComponentDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> backwardTransitions, storm::storage::BitVector const& subsystem);
         };
     }
 }

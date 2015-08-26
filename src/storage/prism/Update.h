@@ -73,6 +73,12 @@ namespace storm {
              * @return The resulting update.
              */
             Update substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const;
+            /*!
+             * Removes all assignments which do not change the variable. 
+             * 
+             * @return The resulting update.
+             */
+            Update removeIdentityAssignments() const;
             
             friend std::ostream& operator<<(std::ostream& stream, Update const& assignment);
             

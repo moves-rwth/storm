@@ -2,6 +2,7 @@
 #define STORM_MODELS_SPARSE_MODEL_H_
 
 #include <vector>
+#include <unordered_map>
 #include <boost/container/flat_set.hpp>
 #include <boost/optional.hpp>
 
@@ -19,18 +20,24 @@ namespace storm {
             // The type used for storing a set of labels.
             typedef boost::container::flat_set<uint_fast64_t> LabelSet;
             
+            template<typename ValueType>
+            class StandardRewardModel;
+           
             /*!
              * Base class for all sparse models.
              */
-            template<class ValueType>
+            template<class CValueType, class CRewardModelType = StandardRewardModel<CValueType>>
             class Model : public storm::models::ModelBase {
             public:
-                Model(Model<ValueType> const& other) = default;
-                Model& operator=(Model<ValueType> const& other) = default;
+                typedef CValueType ValueType;
+                typedef CRewardModelType RewardModelType;
+                
+                Model(Model<ValueType, RewardModelType> const& other) = default;
+                Model& operator=(Model<ValueType, RewardModelType> const& other) = default;
                 
 #ifndef WINDOWS
-                Model(Model<ValueType>&& other) = default;
-                Model& operator=(Model<ValueType>&& other) = default;
+                Model(Model<ValueType, RewardModelType>&& other) = default;
+                Model& operator=(Model<ValueType, RewardModelType>&& other) = default;
 #endif
                 
                 /*!
@@ -39,15 +46,13 @@ namespace storm {
                  * @param modelType The type of the model.
                  * @param transitionMatrix The matrix representing the transitions in the model.
                  * @param stateLabeling The labeling of the states.
-                 * @param optionalStateRewardVector The reward values associated with the states.
-                 * @param optionalTransitionRewardMatrix The reward values associated with the transitions of the model.
+                 * @param rewardModels A mapping of reward model names to reward models.
                  * @param optionalChoiceLabeling A vector that represents the labels associated with the choices of each state.
                  */
                 Model(storm::models::ModelType const& modelType,
                       storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                       storm::models::sparse::StateLabeling const& stateLabeling,
-                      boost::optional<std::vector<ValueType>> const& optionalStateRewardVector = boost::optional<std::vector<ValueType>>(),
-                      boost::optional<storm::storage::SparseMatrix<ValueType>> const& optionalTransitionRewardMatrix = boost::optional<storm::storage::SparseMatrix<ValueType>>(),
+                      std::unordered_map<std::string, RewardModelType> const& rewardModels = std::unordered_map<std::string, RewardModelType>(),
                       boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling = boost::optional<std::vector<LabelSet>>());
                 
                 /*!
@@ -56,15 +61,13 @@ namespace storm {
                  * @param modelType The type of the model.
                  * @param transitionMatrix The matrix representing the transitions in the model.
                  * @param stateLabeling The labeling of the states.
-                 * @param optionalStateRewardVector The reward values associated with the states.
-                 * @param optionalTransitionRewardMatrix The reward values associated with the transitions of the model.
+                 * @param rewardModels A mapping of reward model names to reward models.
                  * @param optionalChoiceLabeling A vector that represents the labels associated with the choices of each state.
                  */
                 Model(storm::models::ModelType const& modelType,
                       storm::storage::SparseMatrix<ValueType>&& transitionMatrix,
                       storm::models::sparse::StateLabeling&& stateLabeling,
-                      boost::optional<std::vector<ValueType>>&& optionalStateRewardVector = boost::optional<std::vector<ValueType>>(),
-                      boost::optional<storm::storage::SparseMatrix<ValueType>>&& optionalTransitionRewardMatrix = boost::optional<storm::storage::SparseMatrix<ValueType>>(),
+                      std::unordered_map<std::string, RewardModelType>&& rewardModels = std::unordered_map<std::string, RewardModelType>(),
                       boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling = boost::optional<std::vector<LabelSet>>());
                                 
                 /*!
@@ -88,14 +91,14 @@ namespace storm {
                  *
                  * @return The number of states of the model.
                  */
-                virtual uint_fast64_t getNumberOfStates() const;
+                virtual uint_fast64_t getNumberOfStates() const override;
                 
                 /*!
                  * Returns the number of (non-zero) transitions of the model.
                  *
                  * @return The number of (non-zero) transitions of the model.
                  */
-                virtual uint_fast64_t getNumberOfTransitions() const;
+                virtual uint_fast64_t getNumberOfTransitions() const override;
                 
                 /*!
                  * Retrieves the initial states of the model.
@@ -133,44 +136,48 @@ namespace storm {
                  * @return A matrix representing the transitions of the model.
                  */
                 storm::storage::SparseMatrix<ValueType>& getTransitionMatrix();
+
+                /*!
+                 * Retrieves whether the model has a reward model with the given name.
+                 *
+                 * @return True iff the model has a reward model with the given name.
+                 */
+                bool hasRewardModel(std::string const& rewardModelName) const;
                 
                 /*!
-                 * Retrieves the matrix representing the transition rewards of the model. Note that calling this method
-                 * is only valid if the model has transition rewards.
+                 * Retrieves the reward model with the given name, if one exists. Otherwise, an exception is thrown.
                  *
-                 * @return The matrix representing the transition rewards of the model.
+                 * @return The reward model with the given name, if it exists.
                  */
-                storm::storage::SparseMatrix<ValueType> const& getTransitionRewardMatrix() const;
+                RewardModelType const& getRewardModel(std::string const& rewardModelName) const;
+
+                /*!
+                 * Retrieves the unique reward model, if there exists exactly one. Otherwise, an exception is thrown.
+                 *
+                 * @return An iterator to the name and the reward model.
+                 */
+                typename std::unordered_map<std::string, RewardModelType>::const_iterator getUniqueRewardModel() const;
                 
                 /*!
-                 * Retrieves an optional value that contains the transition reward matrix if there is one.
+                 * Retrieves whether the model has a unique reward model.
                  *
-                 * @return The transition reward matrix if there is one.
+                 * @return True iff the model has a unique reward model.
                  */
-                boost::optional<storm::storage::SparseMatrix<ValueType>> const& getOptionalTransitionRewardMatrix() const;
+                bool hasUniqueRewardModel() const;
                 
                 /*!
-                 * Retrieves the matrix representing the transition rewards of the model. Note that calling this method
-                 * is only valid if the model has transition rewards.
+                 * Retrieves whether the model has at least one reward model.
                  *
-                 * @return The matrix representing the transition rewards of the model.
+                 * @return True iff the model has a reward model.
                  */
-                storm::storage::SparseMatrix<ValueType>& getTransitionRewardMatrix();
+                bool hasRewardModel() const;
                 
                 /*!
-                 * Retrieves a vector representing the state rewards of the model. Note that calling this method is only
-                 * valid if the model has state rewards.
+                 * Retrieves the number of reward models associated with this model.
                  *
-                 * @return A vector representing the state rewards of the model.
+                 * @return The number of reward models associated with this model.
                  */
-                std::vector<ValueType> const& getStateRewardVector() const;
-                
-                /*!
-                 * Retrieves an optional value that contains the state reward vector if there is one.
-                 *
-                 * @return The state reward vector if there is one.
-                 */
-                boost::optional<std::vector<ValueType>> const& getOptionalStateRewardVector() const;
+                uint_fast64_t getNumberOfRewardModels() const;
                 
                 /*!
                  * Retrieves the labels for the choices of the model. Note that calling this method is only valid if the
@@ -201,21 +208,6 @@ namespace storm {
                  */
                 storm::models::sparse::StateLabeling& getStateLabeling();
                 
-                
-                /*!
-                 * Retrieves whether this model has state rewards.
-                 *
-                 * @return True iff this model has state rewards.
-                 */
-                bool hasStateRewards() const;
-                
-                /*!
-                 * Retrieves whether this model has transition rewards.
-                 *
-                 * @return True iff this model has transition rewards.
-                 */
-                bool hasTransitionRewards() const;
-                
                 /*!
                  * Retrieves whether this model has a labeling of the choices.
                  *
@@ -224,25 +216,26 @@ namespace storm {
                 bool hasChoiceLabeling() const;
                 
                 /*!
-                 * Converts the transition rewards to state rewards. Note that calling this method is only valid if the
-                 * model has transition rewards. Also note that this does not preserve all properties, but it preserves
-                 * expected rewards.
+                 * Converts the transition rewards of all reward models to state-based rewards. For deterministic models,
+                 * this reduces the rewards to state rewards only. For nondeterminstic models, the reward models will
+                 * contain state rewards and state-action rewards. Note that this transformation does not preserve all
+                 * properties, but it preserves expected rewards.
                  */
-                void convertTransitionRewardsToStateRewards();
+                virtual void reduceToStateBasedRewards() = 0;
                 
                 /*!
                  * Retrieves (an approximation of) the size of the model in bytes.
                  *
                  * @return The size of the internal representation of the model measured in bytes.
                  */
-                virtual std::size_t getSizeInBytes() const;
+                virtual std::size_t getSizeInBytes() const override;
                 
                 /*!
                  * Prints information about the model to the specified stream.
                  *
                  * @param out The stream the information is to be printed to.
                  */
-                virtual void printModelInformationToStream(std::ostream& out) const;
+                virtual void printModelInformationToStream(std::ostream& out) const override;
                 
                 /*!
                  * Exports the model to the dot-format and prints the result to the given stream.
@@ -283,6 +276,42 @@ namespace storm {
                  * @param transitionMatrix The new transition matrix of the model.
                  */
                 void setTransitionMatrix(storm::storage::SparseMatrix<ValueType>&& transitionMatrix);
+
+                /*!
+                 * Prints the information header (number of states and transitions) of the model to the specified stream.
+                 *
+                 * @param out The stream the information is to be printed to.
+                 */
+                void printModelInformationHeaderToStream(std::ostream& out) const;
+                
+                /*!
+                 * Prints the information footer (reward models, labels and size in memory) of the model to the
+                 * specified stream.
+                 *
+                 * @param out The stream the information is to be printed to.
+                 */
+                void printModelInformationFooterToStream(std::ostream& out) const;
+                
+                /*!
+                 * Prints information about the reward models to the specified stream.
+                 *
+                 * @param out The stream the information is to be printed to.
+                 */
+                void printRewardModelsInformationToStream(std::ostream& out) const;
+                
+                /*!
+                 * Retrieves the reward models.
+                 *
+                 * @return A mapping from reward model names to the reward models.
+                 */
+                std::unordered_map<std::string, RewardModelType> const& getRewardModels() const;
+                
+                /*!
+                 * Retrieves the reward models.
+                 *
+                 * @return A mapping from reward model names to the reward models.
+                 */
+                std::unordered_map<std::string, RewardModelType>& getRewardModels();
                 
             private:
                 //  A matrix representing transition relation.
@@ -291,11 +320,8 @@ namespace storm {
                 // The labeling of the states.
                 storm::models::sparse::StateLabeling stateLabeling;
                 
-                // If set, a vector representing the rewards of the states.
-                boost::optional<std::vector<ValueType>> stateRewardVector;
-                
-                // If set, a matrix representing the rewards of transitions.
-                boost::optional<storm::storage::SparseMatrix<ValueType>> transitionRewardMatrix;
+                // The reward models of the model.
+                std::unordered_map<std::string, RewardModelType> rewardModels;
                 
                 // If set, a vector representing the labels of choices.
                 boost::optional<std::vector<LabelSet>> choiceLabeling;

@@ -14,6 +14,8 @@ namespace storm {
             template<storm::dd::DdType Type>
             class Mdp : public NondeterministicModel<Type> {
             public:
+                typedef typename NondeterministicModel<Type>::RewardModelType RewardModelType;
+
                 Mdp(Mdp<Type> const& other) = default;
                 Mdp& operator=(Mdp<Type> const& other) = default;
                 
@@ -39,8 +41,7 @@ namespace storm {
                  * @param rowColumnMetaVariablePairs All pairs of row/column meta variables.
                  * @param nondeterminismVariables The meta variables used to encode the nondeterminism in the model.
                  * @param labelToExpressionMap A mapping from label names to their defining expressions.
-                 * @param optionalStateRewardVector The reward values associated with the states.
-                 * @param optionalTransitionRewardMatrix The reward values associated with the transitions of the model.
+                 * @param rewardModels The reward models associated with the model.
                  */
                 Mdp(std::shared_ptr<storm::dd::DdManager<Type>> manager,
                     storm::dd::Bdd<Type> reachableStates,
@@ -53,8 +54,7 @@ namespace storm {
                     std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs,
                     std::set<storm::expressions::Variable> const& nondeterminismVariables,
                     std::map<std::string, storm::expressions::Expression> labelToExpressionMap = std::map<std::string, storm::expressions::Expression>(),
-                    boost::optional<storm::dd::Add<Type>> const& optionalStateRewardVector = boost::optional<storm::dd::Dd<Type>>(),
-                    boost::optional<storm::dd::Add<Type>> const& optionalTransitionRewardMatrix = boost::optional<storm::dd::Dd<Type>>());
+                    std::unordered_map<std::string, RewardModelType> const& rewardModels = std::unordered_map<std::string, RewardModelType>());
                 
             };
             

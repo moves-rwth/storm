@@ -1,10 +1,15 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
+#include "src/models/sparse/StandardRewardModel.h"
 #include "src/parser/DeterministicModelParser.h"
 #include "src/models/sparse/Dtmc.h"
 #include "src/models/sparse/Ctmc.h"
 #include "src/exceptions/FileIoException.h"
+
+#include "src/exceptions/InvalidArgumentException.h"
+
+#include "src/exceptions/OutOfRangeException.h"
 
 TEST(DeterministicModelParserTest, NonExistingFile) {
 	// No matter what happens, please do NOT create a file with the name "nonExistingFile.not"!
@@ -27,19 +32,19 @@ TEST(DeterministicModelParserTest, BasicDtmcParsing) {
 	ASSERT_EQ(5ul, dtmc.getStateLabeling().getNumberOfLabels());
 	ASSERT_EQ(2ul, dtmc.getLabelsOfState(6).size());
 
-	ASSERT_TRUE(dtmc.hasStateRewards());
-	ASSERT_EQ(42, dtmc.getStateRewardVector()[7]);
+    ASSERT_TRUE(dtmc.hasRewardModel());
+	ASSERT_EQ(42, dtmc.getRewardModel("").getStateRewardVector()[7]);
 	double rewardSum = 0;
-	for(uint_fast64_t i = 0; i < dtmc.getStateRewardVector().size(); i++) {
-		rewardSum += dtmc.getStateRewardVector()[i];
+	for(uint_fast64_t i = 0; i < dtmc.getRewardModel("").getStateRewardVector().size(); i++) {
+		rewardSum += dtmc.getRewardModel("").getStateRewardVector()[i];
 	}
 	ASSERT_EQ(263.32, rewardSum);
 
-	ASSERT_TRUE(dtmc.hasTransitionRewards());
-	ASSERT_EQ(17ul, dtmc.getTransitionRewardMatrix().getEntryCount());
+	ASSERT_TRUE(dtmc.getRewardModel("").hasTransitionRewards());
+	ASSERT_EQ(17ul, dtmc.getRewardModel("").getTransitionRewardMatrix().getEntryCount());
 	rewardSum = 0;
-	for(uint_fast64_t i = 0; i < dtmc.getTransitionRewardMatrix().getRowCount(); i++) {
-			rewardSum += dtmc.getTransitionRewardMatrix().getRowSum(i);
+	for(uint_fast64_t i = 0; i < dtmc.getRewardModel("").getTransitionRewardMatrix().getRowCount(); i++) {
+			rewardSum += dtmc.getRewardModel("").getTransitionRewardMatrix().getRowSum(i);
 	}
 	ASSERT_EQ(125.4, rewardSum);
 }
@@ -59,19 +64,19 @@ TEST(DeterministicModelParserTest, BasicCtmcParsing) {
 	ASSERT_EQ(5ul, ctmc.getStateLabeling().getNumberOfLabels());
 	ASSERT_EQ(2ul, ctmc.getLabelsOfState(6).size());
 
-	ASSERT_TRUE(ctmc.hasStateRewards());
-	ASSERT_EQ(42, ctmc.getStateRewardVector()[7]);
+    ASSERT_TRUE(ctmc.hasRewardModel());
+	ASSERT_EQ(42, ctmc.getRewardModel("").getStateRewardVector()[7]);
 	double rewardSum = 0;
-	for(uint_fast64_t i = 0; i < ctmc.getStateRewardVector().size(); i++) {
-		rewardSum += ctmc.getStateRewardVector()[i];
+	for(uint_fast64_t i = 0; i < ctmc.getRewardModel("").getStateRewardVector().size(); i++) {
+		rewardSum += ctmc.getRewardModel("").getStateRewardVector()[i];
 	}
 	ASSERT_EQ(263.32, rewardSum);
 
-	ASSERT_TRUE(ctmc.hasTransitionRewards());
-	ASSERT_EQ(17ul, ctmc.getTransitionRewardMatrix().getEntryCount());
+	ASSERT_TRUE(ctmc.getRewardModel("").hasTransitionRewards());
+	ASSERT_EQ(17ul, ctmc.getRewardModel("").getTransitionRewardMatrix().getEntryCount());
 	rewardSum = 0;
-	for(uint_fast64_t i = 0; i < ctmc.getTransitionRewardMatrix().getRowCount(); i++) {
-			rewardSum += ctmc.getTransitionRewardMatrix().getRowSum(i);
+	for(uint_fast64_t i = 0; i < ctmc.getRewardModel("").getTransitionRewardMatrix().getRowCount(); i++) {
+			rewardSum += ctmc.getRewardModel("").getTransitionRewardMatrix().getRowSum(i);
 	}
 	ASSERT_EQ(125.4, rewardSum);
 }

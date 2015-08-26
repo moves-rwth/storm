@@ -5,6 +5,9 @@
 #include "src/storage/dd/CuddAdd.h"
 #include "src/storage/dd/CuddOdd.h"
 #include "src/storage/dd/DdMetaVariable.h"
+#include "src/settings/SettingsManager.h"
+
+#include "src/storage/SparseMatrix.h"
 
 TEST(CuddDdManager, Constants) {
     std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::CUDD>> manager(new storm::dd::DdManager<storm::dd::DdType::CUDD>());
@@ -366,12 +369,12 @@ TEST(CuddDd, BddOddTest) {
     storm::dd::Add<storm::dd::DdType::CUDD> dd = manager->getIdentity(x.first);
     storm::dd::Odd<storm::dd::DdType::CUDD> odd;
     ASSERT_NO_THROW(odd = storm::dd::Odd<storm::dd::DdType::CUDD>(dd));
-    EXPECT_EQ(9, odd.getTotalOffset());
-    EXPECT_EQ(12, odd.getNodeCount());
+    EXPECT_EQ(9ul, odd.getTotalOffset());
+    EXPECT_EQ(12ul, odd.getNodeCount());
     
     std::vector<double> ddAsVector;
     ASSERT_NO_THROW(ddAsVector = dd.toVector<double>());
-    EXPECT_EQ(9, ddAsVector.size());
+    EXPECT_EQ(9ul, ddAsVector.size());
     for (uint_fast64_t i = 0; i < ddAsVector.size(); ++i) {
         EXPECT_TRUE(i+1 == ddAsVector[i]);
     }

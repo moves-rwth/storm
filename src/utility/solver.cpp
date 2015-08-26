@@ -1,9 +1,9 @@
 #include "src/utility/solver.h"
 
-#include "src/settings/SettingsManager.h"
-
 #include "src/solver/SymbolicGameSolver.h"
 
+
+#include "src/solver/SymbolicLinearEquationSolver.h"
 #include "src/solver/NativeLinearEquationSolver.h"
 #include "src/solver/GmmxxLinearEquationSolver.h"
 
@@ -16,13 +16,25 @@
 
 #include "src/solver/Z3SmtSolver.h"
 #include "src/solver/MathsatSmtSolver.h"
+#include "src/settings/SettingsManager.h"
+#include "src/settings/modules/GeneralSettings.h"
+#include "src/settings/modules/NativeEquationSolverSettings.h"
+
+#include "src/exceptions/InvalidSettingsException.h"
 
 namespace storm {
     namespace utility {
         namespace solver {
+            
+            
             template<storm::dd::DdType Type, typename ValueType>
             std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<Type, ValueType>> SymbolicLinearEquationSolverFactory<Type, ValueType>::create(storm::dd::Add<Type> const& A, storm::dd::Bdd<Type> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) const {
                 return std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<Type, ValueType>>(new storm::solver::SymbolicLinearEquationSolver<Type, ValueType>(A, allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs));
+            }
+            
+            template<storm::dd::DdType Type, typename ValueType>
+            std::unique_ptr<storm::solver::SymbolicMinMaxLinearEquationSolver<Type, ValueType>> SymbolicMinMaxLinearEquationSolverFactory<Type, ValueType>::create(storm::dd::Add<Type> const& A, storm::dd::Bdd<Type> const& allRows, storm::dd::Bdd<Type> const& illegalMask, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::set<storm::expressions::Variable> const& choiceVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) const {
+                return std::unique_ptr<storm::solver::SymbolicMinMaxLinearEquationSolver<Type, ValueType>>(new storm::solver::SymbolicMinMaxLinearEquationSolver<Type, ValueType>(A, allRows, illegalMask, rowMetaVariables, columnMetaVariables, choiceVariables, rowColumnMetaVariablePairs));
             }
             
             template<storm::dd::DdType Type>
@@ -32,10 +44,10 @@ namespace storm {
             
             template<typename ValueType>
             std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> LinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType> const& matrix) const {
-                storm::settings::modules::GeneralSettings::EquationSolver equationSolver = storm::settings::generalSettings().getEquationSolver();
+                storm::solver::EquationSolverType equationSolver = storm::settings::generalSettings().getEquationSolver();
                 switch (equationSolver) {
-                    case storm::settings::modules::GeneralSettings::EquationSolver::Gmmxx: return std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>>(new storm::solver::GmmxxLinearEquationSolver<ValueType>(matrix));
-                    case storm::settings::modules::GeneralSettings::EquationSolver::Native: return std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>>(new storm::solver::NativeLinearEquationSolver<ValueType>(matrix));
+                    case storm::solver::EquationSolverType::Gmmxx: return std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>>(new storm::solver::GmmxxLinearEquationSolver<ValueType>(matrix));
+                    case storm::solver::EquationSolverType::Native: return std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>>(new storm::solver::NativeLinearEquationSolver<ValueType>(matrix));
                     default: return std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>>(new storm::solver::GmmxxLinearEquationSolver<ValueType>(matrix));
                 }
             }
@@ -71,10 +83,10 @@ namespace storm {
             
             template<typename ValueType>
             std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> MinMaxLinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType> const& matrix) const {
-                storm::settings::modules::GeneralSettings::EquationSolver equationSolver = storm::settings::generalSettings().getEquationSolver();
+                storm::solver::EquationSolverType equationSolver = storm::settings::generalSettings().getEquationSolver();
                 switch (equationSolver) {
-                    case storm::settings::modules::GeneralSettings::EquationSolver::Gmmxx: return std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>>(new storm::solver::GmmxxMinMaxLinearEquationSolver<ValueType>(matrix));
-                    case storm::settings::modules::GeneralSettings::EquationSolver::Native: return std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>>(new storm::solver::NativeMinMaxLinearEquationSolver<ValueType>(matrix));
+                    case storm::solver::EquationSolverType::Gmmxx: return std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>>(new storm::solver::GmmxxMinMaxLinearEquationSolver<ValueType>(matrix));
+                    case storm::solver::EquationSolverType::Native: return std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>>(new storm::solver::NativeMinMaxLinearEquationSolver<ValueType>(matrix));
                     default: return std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>>(new storm::solver::GmmxxMinMaxLinearEquationSolver<ValueType>(matrix));
                 }
             }
@@ -95,10 +107,10 @@ namespace storm {
             }
 
             std::unique_ptr<storm::solver::LpSolver> LpSolverFactory::create(std::string const& name) const {
-                storm::settings::modules::GeneralSettings::LpSolver lpSolver = storm::settings::generalSettings().getLpSolver();
+                storm::solver::LpSolverType lpSolver = storm::settings::generalSettings().getLpSolver();
                 switch (lpSolver) {
-                    case storm::settings::modules::GeneralSettings::LpSolver::Gurobi: return std::unique_ptr<storm::solver::LpSolver>(new storm::solver::GurobiLpSolver(name));
-                    case storm::settings::modules::GeneralSettings::LpSolver::glpk: return std::unique_ptr<storm::solver::LpSolver>(new storm::solver::GlpkLpSolver(name));
+                    case storm::solver::LpSolverType::Gurobi: return std::unique_ptr<storm::solver::LpSolver>(new storm::solver::GurobiLpSolver(name));
+                    case storm::solver::LpSolverType::Glpk: return std::unique_ptr<storm::solver::LpSolver>(new storm::solver::GlpkLpSolver(name));
                     default: return std::unique_ptr<storm::solver::LpSolver>(new storm::solver::GurobiLpSolver(name));
                 }
             }
@@ -117,12 +129,11 @@ namespace storm {
             }
             
             std::unique_ptr<storm::solver::SmtSolver> SmtSolverFactory::create(storm::expressions::ExpressionManager& manager) const {
-                storm::settings::modules::GeneralSettings::SmtSolver smtSolver = storm::settings::generalSettings().getSmtSolver();
-                switch (smtSolver) {
-                    case storm::settings::modules::GeneralSettings::SmtSolver::Z3: return std::unique_ptr<storm::solver::SmtSolver>(new storm::solver::Z3SmtSolver(manager));
-                    case storm::settings::modules::GeneralSettings::SmtSolver::Mathsat: return std::unique_ptr<storm::solver::SmtSolver>(new storm::solver::MathsatSmtSolver(manager));
+                storm::solver::SmtSolverType smtSolverType = storm::settings::generalSettings().getSmtSolver();
+                switch (smtSolverType) {
+                    case storm::solver::SmtSolverType::Z3: return std::unique_ptr<storm::solver::SmtSolver>(new storm::solver::Z3SmtSolver(manager));
+                    case storm::solver::SmtSolverType::Mathsat: return std::unique_ptr<storm::solver::SmtSolver>(new storm::solver::MathsatSmtSolver(manager));
                 }
-
             }
             
             std::unique_ptr<storm::solver::SmtSolver> Z3SmtSolverFactory::create(storm::expressions::ExpressionManager& manager) const {
@@ -139,6 +150,7 @@ namespace storm {
             }
             
             template class SymbolicLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>;
+            template class SymbolicMinMaxLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>;
             template class SymbolicGameSolverFactory<storm::dd::DdType::CUDD>;
             template class LinearEquationSolverFactory<double>;
             template class GmmxxLinearEquationSolverFactory<double>;

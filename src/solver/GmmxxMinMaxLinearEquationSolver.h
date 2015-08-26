@@ -2,7 +2,7 @@
 #define STORM_SOLVER_GMMXXMINMAXLINEAREQUATIONSOLVER_H_
 
 #include "gmm/gmm_matrix.h"
-
+#include <memory>
 #include "src/solver/MinMaxLinearEquationSolver.h"
 
 namespace storm {
@@ -20,7 +20,7 @@ namespace storm {
              *
              * @param A The matrix defining the coefficients of the linear equation system.             
              */
-            GmmxxMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A);
+            GmmxxMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, MinMaxTechniqueSelection preferredTechnique = MinMaxTechniqueSelection::FROMSETTINGS, bool trackPolicy = false);
             
             /*!
              * Constructs a min/max linear equation solver with the given parameters.
@@ -31,7 +31,7 @@ namespace storm {
              * @param relative If set, the relative error rather than the absolute error is considered for convergence
              * detection.
              */
-            GmmxxMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, double precision, uint_fast64_t maximalNumberOfIterations, bool useValueIteration, bool relative = true);
+            GmmxxMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, double precision, uint_fast64_t maximalNumberOfIterations, MinMaxTechniqueSelection tech, bool relative, bool trackPolicy = false);
 
             virtual void performMatrixVectorMultiplication(bool minimize, std::vector<ValueType>& x, std::vector<ValueType>* b = nullptr, uint_fast64_t n = 1, std::vector<ValueType>* multiplyResult = nullptr) const override;
             
@@ -41,23 +41,9 @@ namespace storm {
             // The (gmm++) matrix associated with this equation solver.
             std::unique_ptr<gmm::csr_matrix<ValueType>> gmmxxMatrix;
 
-			// A reference to the original sparse matrix.
-			storm::storage::SparseMatrix<ValueType> const& stormMatrix;
-            
             // A reference to the row group indices of the original matrix.
             std::vector<uint_fast64_t> const& rowGroupIndices;
             
-            // The required precision for the iterative methods.
-            double precision;
-            
-            // Sets whether the relative or absolute error is to be considered for convergence detection.
-            bool relative;
-            
-            // The maximal number of iterations to do before iteration is aborted.
-            uint_fast64_t maximalNumberOfIterations;
-
-			// Whether value iteration or policy iteration is to be used.
-			bool useValueIteration;
         };
     } // namespace solver
 } // namespace storm

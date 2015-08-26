@@ -1,5 +1,6 @@
 #include "src/storage/expressions/Variable.h"
 #include "src/storage/expressions/ExpressionManager.h"
+#include <cassert>
 
 namespace storm {
     namespace expressions {
@@ -40,6 +41,7 @@ namespace storm {
         }
         
         ExpressionManager const& Variable::getManager() const {
+            assert(manager != nullptr);
             return *manager;
         }
 

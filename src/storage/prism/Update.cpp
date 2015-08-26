@@ -1,6 +1,7 @@
 #include "Update.h"
 
 #include <algorithm>
+#include <boost/algorithm/string/join.hpp>
 
 #include "src/utility/macros.h"
 #include "src/exceptions/OutOfRangeException.h"
@@ -52,15 +53,25 @@ namespace storm {
             return Update(this->getGlobalIndex(), this->getLikelihoodExpression().substitute(substitution), newAssignments, this->getFilename(), this->getLineNumber());
         }
         
+        Update Update::removeIdentityAssignments() const {
+            std::vector<Assignment> newAssignments;
+            newAssignments.reserve(getNumberOfAssignments());
+            for(auto const& ass : this->assignments) {
+                if(!ass.isIdentity()) {
+                    newAssignments.push_back(ass);
+                }
+            }
+            return Update(this->globalIndex, this->likelihoodExpression, newAssignments, getFilename(), getLineNumber());
+        }
+        
         std::ostream& operator<<(std::ostream& stream, Update const& update) {
             stream << update.getLikelihoodExpression() << " : ";
-            uint_fast64_t i = 0;
-            for (auto const& assignment : update.getAssignments()) {
-                stream << assignment;
-                if (i < update.getAssignments().size() - 1) {
-                    stream << " & ";
-                }
-                ++i;
+            if (update.getAssignments().empty()) {
+                stream << "true";
+            } else {
+                std::vector<std::string> assignmentsAsStrings;
+                std::for_each(update.getAssignments().cbegin(), update.getAssignments().cend(), [&assignmentsAsStrings] (Assignment const& assignment) { std::stringstream stream; stream << assignment; assignmentsAsStrings.push_back(stream.str()); });
+                stream << boost::algorithm::join(assignmentsAsStrings, " & ");
             }
             return stream;
         }

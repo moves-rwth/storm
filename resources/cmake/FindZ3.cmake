@@ -7,26 +7,26 @@
 # dependencies
 # -- TODO -- needed?
 
-# find include dir by searching for a concrete file, which definetely must be in it
+# find include dir by searching for a concrete file, which definitely must be in it
 find_path(Z3_INCLUDE_DIR 
-            NAMES src/util/z3_exception.h #exemplary file, should only be available in z3
-            PATHS ENV PATH INCLUDE
-            PATH_SUFFIXES z3
+            NAMES z3++.h 
+            PATHS ENV PATH INCLUDE "/usr/local/include/z3/" "${Z3_ROOT}/include"
          )
 
 # find library
 find_library(Z3_LIBRARY 
 		NAMES z3
-                PATHS /usr/local/include/z3/build ENV PATH INCLUDE
+                PATHS ENV PATH INCLUDE "${Z3_ROOT}/bin"
             )
 
 find_program(Z3_EXEC
                 NAMES z3
-                PATHS ENV PATH INCLUDE)
+                PATHS ENV PATH INCLUDE "${Z3_ROOT}/bin"
+)
 
 # set up the final variables
 set(Z3_LIBRARIES ${Z3_LIBRARY})
-set(Z3_INCLUDE_DIRS ${Z3_INCLUDE_DIR}/src/util)
+set(Z3_INCLUDE_DIRS ${Z3_INCLUDE_DIR})
 set(Z3_SOLVER ${Z3_EXEC})
 
 # set the LIBZ3_FOUND variable by utilizing the following macro

@@ -6,7 +6,7 @@
 #include "src/models/sparse/Mdp.h"
 #include "src/logic/Formulas.h"
 #include "src/storage/prism/Program.h"
-#include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
+#include "src/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "src/exceptions/NotImplementedException.h"
@@ -17,6 +17,11 @@
 #include "src/utility/graph.h"
 #include "src/utility/counterexamples.h"
 #include "src/utility/solver.h"
+#include "src/solver/LpSolver.h"
+
+#include "src/settings/SettingsManager.h"
+#include "src/settings/modules/GeneralSettings.h"
+#include "src/settings/modules/CounterexampleGeneratorSettings.h"
 
 namespace storm {
     namespace counterexamples {
@@ -928,8 +933,8 @@ namespace storm {
                 // (1) Check whether its possible to exceed the threshold if checkThresholdFeasible is set.
                 double maximalReachabilityProbability = 0;
                 if (checkThresholdFeasible) {
-                    storm::modelchecker::SparseMdpPrctlModelChecker<T> modelchecker(labeledMdp);
-                    std::vector<T> result = modelchecker.computeUntilProbabilitiesHelper(false, phiStates, psiStates, false);
+                    storm::modelchecker::helper::SparseMdpPrctlHelper<T> modelcheckerHelper;
+                    std::vector<T> result = modelcheckerHelper.computeUntilProbabilities(false, labeledMdp.getTransitionMatrix(), labeledMdp.getBackwardTransitions(), phiStates, psiStates, false, storm::utility::solver::MinMaxLinearEquationSolverFactory<T>());
                     for (auto state : labeledMdp.getInitialStates()) {
                         maximalReachabilityProbability = std::max(maximalReachabilityProbability, result[state]);
                     }
@@ -987,7 +992,7 @@ namespace storm {
 
                 storm::storage::BitVector phiStates;
                 storm::storage::BitVector psiStates;
-                storm::modelchecker::SparseMdpPrctlModelChecker<T> modelchecker(labeledMdp);
+                storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Mdp<T>> modelchecker(labeledMdp);
                 
                 if (probabilityOperator.getSubformula().isUntilFormula()) {
                     storm::logic::UntilFormula const& untilFormula = probabilityOperator.getSubformula().asUntilFormula();

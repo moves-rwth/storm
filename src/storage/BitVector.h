@@ -119,6 +119,11 @@ namespace storm {
             BitVector(uint_fast64_t length, InputIterator first, InputIterator last);
             
             /*!
+             * Creates a bit vector that has exactly the bits set that are given by the vector
+             */
+            BitVector(uint_fast64_t length, std::vector<uint_fast64_t> setEntries);
+            
+            /*!
              * Performs a deep copy of the given bit vector.
              *
              * @param other A reference to the bit vector to be copied.

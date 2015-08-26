@@ -3,14 +3,20 @@
 
 #include <memory>
 #include <set>
+#include <vector>
 #include <boost/variant.hpp>
 
 #include "src/storage/expressions/Variable.h"
-#include "src/storage/dd/Bdd.h"
-#include "src/storage/dd/Add.h"
-#include "src/storage/dd/Odd.h"
+#include "src/storage/dd/DdType.h"
+
 
 namespace storm {
+    namespace dd {
+        template<storm::dd::DdType T> class Add;
+        template<storm::dd::DdType T> class Bdd;
+        
+    }
+    
     namespace solver {
         /*!
          * An interface that represents an abstract symbolic linear equation solver. In addition to solving a system of
@@ -53,7 +59,7 @@ namespace storm {
              * The solution of the set of linear equations will be written to the vector x. Note that the matrix A has
              * to be given upon construction time of the solver object.
              *
-             * @param x The solution vector that has to be computed. Its length must be equal to the number of rows of A.
+             * @param x The initial guess for the solution vector. Its length must be equal to the number of rows of A.
              * @param b The right-hand side of the equation system. Its length must be equal to the number of rows of A.
              * @return The solution of the equation system.
              */

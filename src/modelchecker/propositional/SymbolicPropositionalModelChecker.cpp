@@ -1,8 +1,12 @@
 #include "src/modelchecker/propositional/SymbolicPropositionalModelChecker.h"
 
+#include "src/storage/dd/CuddAdd.h"
+#include "src/storage/dd/CuddDdManager.h"
+
 #include "src/models/symbolic/Dtmc.h"
 #include "src/models/symbolic/Ctmc.h"
 #include "src/models/symbolic/Mdp.h"
+#include "src/models/symbolic/StandardRewardModel.h"
 
 #include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"
 

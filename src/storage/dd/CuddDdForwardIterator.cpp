@@ -2,6 +2,7 @@
 #include "src/storage/dd/CuddDdManager.h"
 #include "src/storage/dd/DdMetaVariable.h"
 #include "src/utility/macros.h"
+#include "src/storage/expressions/ExpressionManager.h"
 
 namespace storm {
     namespace dd {

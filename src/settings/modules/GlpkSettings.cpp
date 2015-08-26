@@ -1,6 +1,12 @@
 #include "src/settings/modules/GlpkSettings.h"
+#include "src/settings/Option.h"
+#include "src/settings/OptionBuilder.h"
+#include "src/settings/ArgumentBuilder.h"
+#include "src/settings/Argument.h"
 
 #include "src/settings/SettingsManager.h"
+#include "src/settings/modules/GeneralSettings.h"
+#include "src/solver/SolverSelectionOptions.h"
 
 namespace storm {
     namespace settings {
@@ -29,7 +35,7 @@ namespace storm {
             
             bool GlpkSettings::check() const {
                 if (isOutputSet() || isIntegerToleranceSet()) {
-                    STORM_LOG_WARN_COND(storm::settings::generalSettings().getLpSolver() == storm::settings::modules::GeneralSettings::LpSolver::glpk, "glpk is not selected as the used LP solver, so setting options for glpk has no effect.");
+                    STORM_LOG_WARN_COND(storm::settings::generalSettings().getLpSolver() == storm::solver::LpSolverType::Glpk, "glpk is not selected as the preferred LP solver, so setting options for glpk might have no effect.");
                 }
                 
                 return true;

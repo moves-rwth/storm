@@ -1,6 +1,10 @@
 #include "src/modelchecker/reachability/MenuGameMdpModelChecker.h"
 
+#include "src/utility/macros.h"
+
 #include "src/exceptions/NotSupportedException.h"
+
+#include "src/modelchecker/results/CheckResult.h"
 
 namespace storm {
     namespace modelchecker {

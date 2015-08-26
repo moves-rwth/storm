@@ -2,28 +2,45 @@
 #define STORM_UTILITY_SOLVER_H_
 
 #include "src/solver/SymbolicGameSolver.h"
-
+#include "src/solver/SymbolicMinMaxLinearEquationSolver.h"
 #include "src/solver/SymbolicLinearEquationSolver.h"
 #include "src/solver/LinearEquationSolver.h"
 #include "src/solver/NativeLinearEquationSolver.h"
-#include "src/solver/MinMaxLinearEquationSolver.h"
-
-#include "src/solver/LpSolver.h"
-
-#include "src/solver/SmtSolver.h"
-
 #include "src/storage/dd/DdType.h"
-#include "src/settings/modules/NativeEquationSolverSettings.h"
-
-#include "src/exceptions/InvalidSettingsException.h"
+#include "src/utility/ExtendSettingEnumWithSelectionField.h"
 
 namespace storm {
+    namespace solver {
+        template<storm::dd::DdType T>  class SymbolicGameSolver;
+        template<storm::dd::DdType T, typename V> class SymbolicLinearEquationSolver;
+        template<typename V> class LinearEquationSolver;
+        template<typename V> class MinMaxLinearEquationSolver;
+        class LpSolver;
+        class SmtSolver;
+    }
+    
+    namespace dd {
+        template<storm::dd::DdType T> class Add;
+        template<storm::dd::DdType T> class Bdd;
+    }
+    
+    namespace expressions {
+        class Variable;
+    }
+    
     namespace utility {
         namespace solver {
+            
             template<storm::dd::DdType Type, typename ValueType>
             class SymbolicLinearEquationSolverFactory {
             public:
                 virtual std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<Type, ValueType>> create(storm::dd::Add<Type> const& A, storm::dd::Bdd<Type> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) const;
+            };
+            
+            template<storm::dd::DdType Type, typename ValueType>
+            class SymbolicMinMaxLinearEquationSolverFactory {
+                public:
+                virtual std::unique_ptr<storm::solver::SymbolicMinMaxLinearEquationSolver<Type, ValueType>> create(storm::dd::Add<Type> const& A, storm::dd::Bdd<Type> const& allRows, storm::dd::Bdd<Type> const& illegalMask, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::set<storm::expressions::Variable> const& choiceVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) const;
             };
             
             template<storm::dd::DdType Type>

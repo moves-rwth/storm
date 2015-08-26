@@ -2,7 +2,9 @@
 #include "storm-config.h"
 
 #include "src/parser/MarkovAutomatonParser.h"
+#include "src/models/sparse/StandardRewardModel.h"
 #include "src/exceptions/FileIoException.h"
+#include "src/exceptions/OutOfRangeException.h"
 
 TEST(MarkovAutomatonParserTest, NonExistingFile) {
 
@@ -40,16 +42,16 @@ TEST(MarkovAutomatonParserTest, BasicParsing) {
 	ASSERT_EQ(1ul, result.getStateLabeling().getStates("goal").getNumberOfSetBits());
 
 	// Test the state rewards.
-	ASSERT_TRUE(result.hasStateRewards());
+	ASSERT_TRUE(result.hasRewardModel());
 	double rewardSum = 0;
-	for (uint_fast64_t i = 0; i < result.getStateRewardVector().size(); i++) {
-		rewardSum += result.getStateRewardVector()[i];
+	for (uint_fast64_t i = 0; i < result.getRewardModel("").getStateRewardVector().size(); i++) {
+		rewardSum += result.getRewardModel("").getStateRewardVector()[i];
 	}
 	ASSERT_EQ(1015.765099984, rewardSum);
-	ASSERT_EQ(0, result.getStateRewardVector()[0]);
+	ASSERT_EQ(0, result.getRewardModel("").getStateRewardVector()[0]);
 
 	// Test the transition rewards.
-	ASSERT_FALSE(result.hasTransitionRewards());
+	ASSERT_FALSE(result.getRewardModel("").hasTransitionRewards());
 }
 
 TEST(MarkovAutomatonParserTest, MismatchedFiles) {

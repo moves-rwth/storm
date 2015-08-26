@@ -5,6 +5,13 @@
 #include "src/settings/modules/ModuleSettings.h"
 
 namespace storm {
+    namespace solver {
+        enum class EquationSolverType;
+        enum class LpSolverType;
+        enum class MinMaxTechnique;
+        enum class SmtSolverType;
+    }
+    
     namespace settings {
         namespace modules {
             
@@ -15,18 +22,6 @@ namespace storm {
             public:                
                 // An enumeration of all engines.
                 enum class Engine { Sparse, Hybrid, Dd };
-
-                // An enumeration of all available SMT solvers.
-                enum class SmtSolver { Z3, Mathsat };
-
-                // An enumeration of all available LP solvers.
-                enum class LpSolver { Gurobi, glpk };
-                
-                // An enumeration of all available equation solvers.
-                enum class EquationSolver { Gmmxx, Native };
-
-				// An enumeration of all available Min/Max equation solver techniques.
-				enum class MinMaxTechnique { ValueIteration, PolicyIteration };
                 
                 /*!
                  * Creates a new set of general settings that is managed by the given manager.
@@ -138,20 +133,6 @@ namespace storm {
                 std::string getSymbolicModelFilename() const;
                 
                 /*!
-                 * Retrieves whether the name of a reward model was passed to the symbolic option.
-                 *
-                 * @return True iff the name of a reward model was passed to the symbolic option.
-                 */
-                bool isSymbolicRewardModelNameSet() const;
-                
-                /*!
-                 * Retrieves the name of the reward model if one was set using the symbolic option.
-                 *
-                 * @return The name of the selected reward model.
-                 */
-                std::string getSymbolicRewardModelName() const;
-
-                /*!
                  * Retrieves whether the property option was set.
                  *
                  * @return True if the property option was set.
@@ -164,20 +145,6 @@ namespace storm {
                  * @return The property specified with the property option.
                  */
                 std::string getProperty() const;
-                
-                /*!
-                 * Retrieves whether a property file was set.
-                 *
-                 * @return True iff a property was set.
-                 */
-                bool isPropertyFileSet() const;
-                
-                /*!
-                 * Retrieves the name of the file that contains the properties to be checked on the model.
-                 *
-                 * @return The name of the file that contains the properties to be checked on the model.
-                 */
-                std::string getPropertiesFilename() const;
 
                 /*!
                  * Retrieves whether the transition reward option was set.
@@ -268,7 +235,7 @@ namespace storm {
                  *
                  * @return The selected convergence criterion.
                  */
-                EquationSolver getEquationSolver() const;
+                storm::solver::EquationSolverType getEquationSolver() const;
                 
                 /*!
                  * Retrieves whether a equation solver has been set.
@@ -282,14 +249,14 @@ namespace storm {
                  *
                  * @return The selected LP solver.
                  */
-                LpSolver getLpSolver() const;
+                storm::solver::LpSolverType getLpSolver() const;
 
                 /*!
                  * Retrieves the selected SMT solver.
                  *
                  * @return The selected SMT solver.
                  */
-                SmtSolver getSmtSolver() const;
+                storm::solver::SmtSolverType getSmtSolver() const;
                 
                 /*!
                  * Retrieves whether the export-to-dot option was set.
@@ -360,7 +327,7 @@ namespace storm {
 				*
 				* @return The selected min/max equation solving technique.
 				*/
-				MinMaxTechnique getMinMaxEquationSolvingTechnique() const;
+				storm::solver::MinMaxTechnique getMinMaxEquationSolvingTechnique() const;
 
                 
                 bool check() const override;
@@ -385,7 +352,7 @@ namespace storm {
                 static const std::string symbolicOptionName;
                 static const std::string symbolicOptionShortName;
                 static const std::string propertyOptionName;
-                static const std::string propertyFileOptionName;
+                static const std::string propertyOptionShortName;
                 static const std::string transitionRewardsOptionName;
                 static const std::string stateRewardsOptionName;
                 static const std::string counterexampleOptionName;

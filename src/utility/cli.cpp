@@ -1,5 +1,9 @@
 #include "cli.h"
 
+
+#include "src/settings/modules/DebugSettings.h"
+#include "src/exceptions/OptionParserException.h"
+
 // Includes for the linked libraries and versions header.
 #ifdef STORM_HAVE_INTELTBB
 #	include "tbb/tbb_stddef.h"
@@ -195,6 +199,57 @@ namespace storm {
                     initializeFileLogging();
                 }
                 return true;
+            }
+            
+            void processOptions() {
+                if (storm::settings::debugSettings().isLogfileSet()) {
+                    initializeFileLogging();
+                }
+                
+                storm::settings::modules::GeneralSettings const& settings = storm::settings::generalSettings();
+                
+                // If we have to build the model from a symbolic representation, we need to parse the representation first.
+                boost::optional<storm::prism::Program> program;
+                if (settings.isSymbolicSet()) {
+                    std::string const& programFile = settings.getSymbolicModelFilename();
+                    program = storm::parser::PrismParser::parse(programFile).simplify().simplify();
+                    
+                    program->checkValidity();
+                }
+                
+                // Then proceed to parsing the property (if given), since the model we are building may depend on the property.
+                std::vector<std::shared_ptr<storm::logic::Formula>> formulas;
+                if (settings.isPropertySet()) {
+                    storm::parser::FormulaParser formulaParser;
+                    if (program) {
+                        storm::parser::FormulaParser formulaParser(program.get().getManager().getSharedPointer());
+                    }
+                    
+                    // If the given property looks like a file (containing a dot and there exists a file with that name),
+                    // we try to parse it as a file, otherwise we assume it's a property.
+                    std::string property = settings.getProperty();
+                    if (property.find(".") != std::string::npos && std::ifstream(property).good()) {
+                        formulas = formulaParser.parseFromFile(settings.getProperty());
+                    } else {
+                        formulas = formulaParser.parseFromString(settings.getProperty());
+                    }
+                }
+
+                if (settings.isSymbolicSet()) {
+#ifdef STORM_HAVE_CARL
+                    if (settings.isParametricSet()) {
+                        buildAndCheckSymbolicModel<storm::RationalFunction>(program.get(), formulas);
+                    } else {
+#endif
+                        buildAndCheckSymbolicModel<double>(program.get(), formulas);
+#ifdef STORM_HAVE_CARL
+                    }
+#endif
+                } else if (settings.isExplicitSet()) {
+                    buildAndCheckExplicitModel<double>(formulas);
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No input model.");
+                }
             }
 
         }

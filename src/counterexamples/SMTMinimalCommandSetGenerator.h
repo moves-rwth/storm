@@ -8,9 +8,11 @@
 
 #include "src/storage/prism/Program.h"
 #include "src/storage/expressions/Expression.h"
-#include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
+#include "src/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "src/solver/GmmxxMinMaxLinearEquationSolver.h"
+#include "src/settings/SettingsManager.h"
+#include "src/settings/modules/GeneralSettings.h"
 
 #include "src/utility/counterexamples.h"
 #include "src/utility/prism.h"
@@ -188,7 +190,6 @@ namespace storm {
                     variableInformation.hasReachabilityVariables = true;
                     
                     storm::storage::SparseMatrix<T> const& transitionMatrix = labeledMdp.getTransitionMatrix();
-                    std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = labeledMdp.getNondeterministicChoiceIndices();
                     
                     for (auto state : relevancyInformation.relevantStates) {
                         variableInformation.relevantStatesToOrderVariableIndexMap[state] = variableInformation.stateOrderVariables.size();
@@ -284,7 +285,6 @@ namespace storm {
                 
                 // Get some data from the MDP for convenient access.
                 storm::storage::SparseMatrix<T> const& transitionMatrix = labeledMdp.getTransitionMatrix();
-                std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = labeledMdp.getNondeterministicChoiceIndices();
                 storm::storage::BitVector const& initialStates = labeledMdp.getInitialStates();
                 std::vector<boost::container::flat_set<uint_fast64_t>> const& choiceLabeling = labeledMdp.getChoiceLabeling();
                 storm::storage::SparseMatrix<T> backwardTransitions = labeledMdp.getBackwardTransitions();
@@ -310,7 +310,7 @@ namespace storm {
                         for (auto const& entry : transitionMatrix.getRow(currentChoice)) {
                             if (relevancyInformation.relevantStates.get(entry.getColumn())) {
                                 for (auto relevantChoice : relevancyInformation.relevantChoicesForRelevantStates.at(entry.getColumn())) {
-                                    followingLabels[choiceLabeling[currentChoice]].insert(choiceLabeling[currentChoice]);
+                                    followingLabels[choiceLabeling[currentChoice]].insert(choiceLabeling[relevantChoice]);
                                 }
                             } else if (psiStates.get(entry.getColumn())) {
                                 canReachTargetState = true;
@@ -1626,8 +1626,9 @@ namespace storm {
                 // (1) Check whether its possible to exceed the threshold if checkThresholdFeasible is set.
                 double maximalReachabilityProbability = 0;
                 if (checkThresholdFeasible) {
-                    storm::modelchecker::SparseMdpPrctlModelChecker<T> modelchecker(labeledMdp);
-                    std::vector<T> result = modelchecker.computeUntilProbabilitiesHelper(false, phiStates, psiStates, false);
+                    storm::modelchecker::helper::SparseMdpPrctlHelper<T> modelCheckerHelper;
+                    LOG4CPLUS_DEBUG(logger, "Invoking model checker.");
+                    std::vector<T> result = modelCheckerHelper.computeUntilProbabilities(false, labeledMdp.getTransitionMatrix(), labeledMdp.getBackwardTransitions(), phiStates, psiStates, false, storm::utility::solver::MinMaxLinearEquationSolverFactory<T>());
                     for (auto state : labeledMdp.getInitialStates()) {
                         maximalReachabilityProbability = std::max(maximalReachabilityProbability, result[state]);
                     }
@@ -1677,7 +1678,6 @@ namespace storm {
                 uint_fast64_t iterations = 0;
                 uint_fast64_t currentBound = 0;
                 maximalReachabilityProbability = 0;
-                auto iterationTimer = std::chrono::high_resolution_clock::now();
                 uint_fast64_t zeroProbabilityCount = 0;
                 do {
                     LOG4CPLUS_DEBUG(logger, "Computing minimal command set.");
@@ -1690,9 +1690,9 @@ namespace storm {
                     modelCheckingClock = std::chrono::high_resolution_clock::now();
                     commandSet.insert(relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end());
                     storm::models::sparse::Mdp<T> subMdp = labeledMdp.restrictChoiceLabels(commandSet);
-                    storm::modelchecker::SparseMdpPrctlModelChecker<T> modelchecker(subMdp);
+                    storm::modelchecker::helper::SparseMdpPrctlHelper<T> modelCheckerHelper;
                     LOG4CPLUS_DEBUG(logger, "Invoking model checker.");
-                    std::vector<T> result = modelchecker.computeUntilProbabilitiesHelper(false, phiStates, psiStates, false);
+                    std::vector<T> result = modelCheckerHelper.computeUntilProbabilities(false, subMdp.getTransitionMatrix(), subMdp.getBackwardTransitions(), phiStates, psiStates, false, storm::utility::solver::MinMaxLinearEquationSolverFactory<T>());
                     LOG4CPLUS_DEBUG(logger, "Computed model checking results.");
                     totalModelCheckingTime += std::chrono::high_resolution_clock::now() - modelCheckingClock;
 
@@ -1767,7 +1767,7 @@ namespace storm {
                 
                 storm::storage::BitVector phiStates;
                 storm::storage::BitVector psiStates;
-                storm::modelchecker::SparseMdpPrctlModelChecker<T> modelchecker(labeledMdp);
+                storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<T>> modelchecker(labeledMdp);
                 
                 if (probabilityOperator.getSubformula().isUntilFormula()) {
                     storm::logic::UntilFormula const& untilFormula = probabilityOperator.getSubformula().asUntilFormula();

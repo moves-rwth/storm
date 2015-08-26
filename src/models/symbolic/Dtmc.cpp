@@ -1,5 +1,11 @@
 #include "src/models/symbolic/Dtmc.h"
 
+#include "src/storage/dd/CuddDdManager.h"
+#include "src/storage/dd/CuddAdd.h"
+#include "src/storage/dd/CuddBdd.h"
+
+#include "src/models/symbolic/StandardRewardModel.h"
+
 namespace storm {
     namespace models {
         namespace symbolic {
@@ -15,9 +21,8 @@ namespace storm {
                              std::shared_ptr<storm::adapters::AddExpressionAdapter<Type>> columnExpressionAdapter,
                              std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs,
                              std::map<std::string, storm::expressions::Expression> labelToExpressionMap,
-                             boost::optional<storm::dd::Add<Type>> const& optionalStateRewardVector,
-                             boost::optional<storm::dd::Add<Type>> const& optionalTransitionRewardMatrix)
-            : DeterministicModel<Type>(storm::models::ModelType::Dtmc, manager, reachableStates, initialStates, transitionMatrix, rowVariables, rowExpressionAdapter, columnVariables, columnExpressionAdapter, rowColumnMetaVariablePairs, labelToExpressionMap, optionalStateRewardVector, optionalTransitionRewardMatrix) {
+                             std::unordered_map<std::string, RewardModelType> const& rewardModels)
+            : DeterministicModel<Type>(storm::models::ModelType::Dtmc, manager, reachableStates, initialStates, transitionMatrix, rowVariables, rowExpressionAdapter, columnVariables, columnExpressionAdapter, rowColumnMetaVariablePairs, labelToExpressionMap, rewardModels) {
                 // Intentionally left empty.
             }
             

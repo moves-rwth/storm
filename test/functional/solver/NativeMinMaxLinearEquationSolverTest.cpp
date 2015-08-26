@@ -4,6 +4,9 @@
 #include "src/solver/NativeMinMaxLinearEquationSolver.h"
 #include "src/settings/SettingsManager.h"
 
+#include "src/settings/modules/NativeEquationSolverSettings.h"
+#include "src/storage/SparseMatrix.h"
+
 TEST(NativeMinMaxLinearEquationSolver, SolveWithStandardOptions) {
     storm::storage::SparseMatrixBuilder<double> builder(0, 0, 0, false, true);
     ASSERT_NO_THROW(builder.newRowGroup(0));
@@ -76,7 +79,7 @@ TEST(NativeMinMaxLinearEquationSolver, SolveWithPolicyIteration) {
 	std::vector<double> b = { 0.099, 0.5 };
 
 	storm::settings::modules::NativeEquationSolverSettings const& settings = storm::settings::nativeEquationSolverSettings();
-	storm::solver::NativeMinMaxLinearEquationSolver<double> solver(A, settings.getPrecision(), settings.getMaximalIterationCount(), false, settings.getConvergenceCriterion() == storm::settings::modules::NativeEquationSolverSettings::ConvergenceCriterion::Relative);
+	storm::solver::NativeMinMaxLinearEquationSolver<double> solver(A, settings.getPrecision(), settings.getMaximalIterationCount(), storm::solver::MinMaxTechniqueSelection::PolicyIteration, settings.getConvergenceCriterion() == storm::settings::modules::NativeEquationSolverSettings::ConvergenceCriterion::Relative);
 
 	ASSERT_NO_THROW(solver.solveEquationSystem(true, x, b));
 	ASSERT_LT(std::abs(x[0] - 0.5), storm::settings::nativeEquationSolverSettings().getPrecision());

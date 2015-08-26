@@ -1,8 +1,11 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
+#include "src/models/sparse/StandardRewardModel.h"
 #include "src/settings/SettingMemento.h"
 #include "src/parser/PrismParser.h"
 #include "src/builder/ExplicitPrismModelBuilder.h"
+
+#include "src/settings/modules/GeneralSettings.h"
 
 TEST(ExplicitPrismModelBuilderTest, Dtmc) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/die.pm");

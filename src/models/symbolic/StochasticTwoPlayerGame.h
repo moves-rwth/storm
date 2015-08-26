@@ -14,6 +14,8 @@ namespace storm {
             template<storm::dd::DdType Type>
             class StochasticTwoPlayerGame : public NondeterministicModel<Type> {
             public:
+                typedef typename NondeterministicModel<Type>::RewardModelType RewardModelType;
+
                 StochasticTwoPlayerGame(StochasticTwoPlayerGame<Type> const& other) = default;
                 StochasticTwoPlayerGame& operator=(StochasticTwoPlayerGame<Type> const& other) = default;
                 
@@ -40,8 +42,7 @@ namespace storm {
                  * @param player2Variables The meta variables used to encode the nondeterministic choices of player 2.
                  * @param allNondeterminismVariables The meta variables used to encode the nondeterminism in the model.
                  * @param labelToExpressionMap A mapping from label names to their defining expressions.
-                 * @param optionalStateRewardVector The reward values associated with the states.
-                 * @param optionalTransitionRewardMatrix The reward values associated with the transitions of the model.
+                 * @param rewardModels The reward models associated with the model.
                  */
                 StochasticTwoPlayerGame(std::shared_ptr<storm::dd::DdManager<Type>> manager,
                                         storm::dd::Bdd<Type> reachableStates,
@@ -56,8 +57,7 @@ namespace storm {
                                         std::set<storm::expressions::Variable> const& player2Variables,
                                         std::set<storm::expressions::Variable> const& allNondeterminismVariables,
                                         std::map<std::string, storm::expressions::Expression> labelToExpressionMap = std::map<std::string, storm::expressions::Expression>(),
-                                        boost::optional<storm::dd::Add<Type>> const& optionalStateRewardVector = boost::optional<storm::dd::Dd<Type>>(),
-                                        boost::optional<storm::dd::Add<Type>> const& optionalTransitionRewardMatrix = boost::optional<storm::dd::Dd<Type>>());
+                                        std::unordered_map<std::string, RewardModelType> const& rewardModels = std::unordered_map<std::string, RewardModelType>());
 
                 /*!
                  * Retrieeves the set of meta variables used to encode the nondeterministic choices of player 1.

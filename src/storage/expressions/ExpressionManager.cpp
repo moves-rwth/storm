@@ -4,6 +4,7 @@
 #include "src/storage/expressions/Variable.h"
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidStateException.h"
+#include "src/exceptions/InvalidArgumentException.h"
 
 namespace storm {
     namespace expressions {
@@ -205,10 +206,6 @@ namespace storm {
             return declareOrGetVariable(newName, variableType, auxiliary, false);
         }
         
-        Variable ExpressionManager::declareFreshBooleanVariable(bool auxiliary) {
-            return declareFreshVariable(this->getBooleanType());
-        }
-
         Variable ExpressionManager::declareFreshBooleanVariable(bool auxiliary, const std::string& prefix) {
             return declareFreshVariable(this->getBooleanType(), auxiliary, prefix);
         }

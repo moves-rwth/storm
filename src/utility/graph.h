@@ -723,12 +723,24 @@ namespace storm {
                         for(typename storm::storage::SparseMatrix<T>::const_iterator predecessorEntryIt = backwardTransitions.begin(currentState), predecessorEntryIte = backwardTransitions.end(currentState); predecessorEntryIt != predecessorEntryIte; ++predecessorEntryIt) {
                             if (phiStates.get(predecessorEntryIt->getColumn()) && !nextStates.get(predecessorEntryIt->getColumn())) {
                                 // Check whether the predecessor has only successors in the current state set for all of the
-                                // nondeterminstic choices.
-                                bool allSuccessorsInCurrentStatesForAllChoices = true;
-                                for (typename storm::storage::SparseMatrix<T>::const_iterator successorEntryIt = transitionMatrix.begin(nondeterministicChoiceIndices[predecessorEntryIt->getColumn()]), successorEntryIte = transitionMatrix.begin(nondeterministicChoiceIndices[predecessorEntryIt->getColumn() + 1]); successorEntryIt != successorEntryIte; ++successorEntryIt) {
-                                    if (!currentStates.get(successorEntryIt->getColumn())) {
-                                        allSuccessorsInCurrentStatesForAllChoices = false;
-                                        goto afterCheckLoop;
+                                // nondeterminstic choices and that for each choice there exists a successor that is already
+                                // in the next states.
+                                bool addToStatesWithProbability1 = true;
+                                for (uint_fast64_t row = nondeterministicChoiceIndices[predecessorEntryIt->getColumn()]; row < nondeterministicChoiceIndices[predecessorEntryIt->getColumn() + 1]; ++row) {
+                                    bool hasAtLeastOneSuccessorWithProbability1 = false;
+                                    for (typename storm::storage::SparseMatrix<T>::const_iterator successorEntryIt = transitionMatrix.begin(row), successorEntryIte = transitionMatrix.end(row); successorEntryIt != successorEntryIte; ++successorEntryIt) {
+                                        if (!currentStates.get(successorEntryIt->getColumn())) {
+                                            addToStatesWithProbability1 = false;
+                                            goto afterCheckLoop;
+                                        }
+                                        if (nextStates.get(successorEntryIt->getColumn())) {
+                                            hasAtLeastOneSuccessorWithProbability1 = true;
+                                        }
+                                    }
+                                    
+                                    if (!hasAtLeastOneSuccessorWithProbability1) {
+                                        addToStatesWithProbability1 = false;
+                                        break;
                                     }
                                 }
                                 
@@ -736,7 +748,7 @@ namespace storm {
                                 // If all successors for all nondeterministic choices are in the current state set, we
                                 // add it to the set of states for the next iteration and perform a backward search from
                                 // that state.
-                                if (allSuccessorsInCurrentStatesForAllChoices) {
+                                if (addToStatesWithProbability1) {
                                     nextStates.set(predecessorEntryIt->getColumn(), true);
                                     stack.push_back(predecessorEntryIt->getColumn());
                                 }

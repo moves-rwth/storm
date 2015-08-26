@@ -1,5 +1,7 @@
 #include "src/parser/FormulaParser.h"
 
+#include <fstream>
+
 // If the parser fails due to ill-formed data, this exception is thrown.
 #include "src/exceptions/WrongFormatException.h"
 
@@ -77,7 +79,10 @@ namespace storm {
             steadyStateOperator = (qi::lit("LRA") > operatorInformation > qi::lit("[") > stateFormula > qi::lit("]"))[qi::_val = phoenix::bind(&FormulaParser::createLongRunAverageOperatorFormula, phoenix::ref(*this), qi::_1, qi::_2)];
             steadyStateOperator.name("long-run average operator");
             
-            rewardOperator = (qi::lit("R") > operatorInformation > qi::lit("[") > rewardPathFormula > qi::lit("]"))[qi::_val = phoenix::bind(&FormulaParser::createRewardOperatorFormula, phoenix::ref(*this), qi::_1, qi::_2)];
+            rewardModelName = qi::lit("{\"") > label > qi::lit("\"}");
+            rewardModelName.name("reward model name");
+            
+            rewardOperator = (qi::lit("R") > -rewardModelName > operatorInformation > qi::lit("[") > rewardPathFormula > qi::lit("]"))[qi::_val = phoenix::bind(&FormulaParser::createRewardOperatorFormula, phoenix::ref(*this), qi::_1, qi::_2, qi::_3)];
             rewardOperator.name("reward operator");
             
             expectedTimeOperator = (qi::lit("ET") > operatorInformation > qi::lit("[") > eventuallyFormula > qi::lit("]"))[qi::_val = phoenix::bind(&FormulaParser::createExpectedTimeOperatorFormula, phoenix::ref(*this), qi::_1, qi::_2)];
@@ -95,7 +100,7 @@ namespace storm {
             stateFormula = (orStateFormula);
             stateFormula.name("state formula");
             
-            start = qi::eps > stateFormula >> qi::skip(boost::spirit::ascii::space | qi::lit("//") >> *(qi::char_ - (qi::eol | qi::eoi)))[qi::eps] >> qi::eoi;
+            start = qi::eps > (stateFormula % +(qi::char_("\n;"))) >> qi::skip(boost::spirit::ascii::space | qi::lit("//") >> *(qi::char_ - (qi::eol | qi::eoi)))[qi::eps] >> qi::eoi;
             start.name("start");
             
             /*!
@@ -153,13 +158,41 @@ namespace storm {
             this->identifiers_.add(identifier, expression);
         }
         
-        std::shared_ptr<storm::logic::Formula> FormulaParser::parseFromString(std::string const& formulaString) {
+        std::shared_ptr<storm::logic::Formula> FormulaParser::parseSingleFormulaFromString(std::string const& formulaString) {
+            std::vector<std::shared_ptr<storm::logic::Formula>> formulas = parseFromString(formulaString);
+            STORM_LOG_THROW(formulas.size() == 1, storm::exceptions::WrongFormatException, "Expected exactly one formula, but found " << formulas.size() << " instead.");
+            return formulas.front();
+        }
+        
+        std::vector<std::shared_ptr<storm::logic::Formula>> FormulaParser::parseFromFile(std::string const& filename) {
+            // Open file and initialize result.
+            std::ifstream inputFileStream(filename, std::ios::in);
+            STORM_LOG_THROW(inputFileStream.good(), storm::exceptions::WrongFormatException, "Unable to read from file '" << filename << "'.");
+            
+            std::vector<std::shared_ptr<storm::logic::Formula>> formulas;
+            
+            // Now try to parse the contents of the file.
+            try {
+                std::string fileContent((std::istreambuf_iterator<char>(inputFileStream)), (std::istreambuf_iterator<char>()));
+                formulas = parseFromString(fileContent);
+            } catch(std::exception& e) {
+                // In case of an exception properly close the file before passing exception.
+                inputFileStream.close();
+                throw e;
+            }
+            
+            // Close the stream in case everything went smoothly and return result.
+            inputFileStream.close();
+            return formulas;
+        }
+        
+        std::vector<std::shared_ptr<storm::logic::Formula>> FormulaParser::parseFromString(std::string const& formulaString) {
             PositionIteratorType first(formulaString.begin());
             PositionIteratorType iter = first;
             PositionIteratorType last(formulaString.end());
             
             // Create empty result;
-            std::shared_ptr<storm::logic::Formula> result;
+            std::vector<std::shared_ptr<storm::logic::Formula>> result;
             
             // Create grammar.
             try {
@@ -253,8 +286,8 @@ namespace storm {
             return std::shared_ptr<storm::logic::Formula>(new storm::logic::LongRunAverageOperatorFormula(std::get<0>(operatorInformation), std::get<1>(operatorInformation), std::get<2>(operatorInformation), subformula));
         }
         
-        std::shared_ptr<storm::logic::Formula> FormulaParser::createRewardOperatorFormula(std::tuple<boost::optional<storm::logic::OptimalityType>, boost::optional<storm::logic::ComparisonType>, boost::optional<double>> const& operatorInformation, std::shared_ptr<storm::logic::Formula> const& subformula) const {
-            return std::shared_ptr<storm::logic::Formula>(new storm::logic::RewardOperatorFormula(std::get<0>(operatorInformation), std::get<1>(operatorInformation), std::get<2>(operatorInformation), subformula));
+        std::shared_ptr<storm::logic::Formula> FormulaParser::createRewardOperatorFormula(boost::optional<std::string> const& rewardModelName, std::tuple<boost::optional<storm::logic::OptimalityType>, boost::optional<storm::logic::ComparisonType>, boost::optional<double>> const& operatorInformation, std::shared_ptr<storm::logic::Formula> const& subformula) const {
+            return std::shared_ptr<storm::logic::Formula>(new storm::logic::RewardOperatorFormula(rewardModelName, std::get<0>(operatorInformation), std::get<1>(operatorInformation), std::get<2>(operatorInformation), subformula));
         }
         
         std::shared_ptr<storm::logic::Formula> FormulaParser::createExpectedTimeOperatorFormula(std::tuple<boost::optional<storm::logic::OptimalityType>, boost::optional<storm::logic::ComparisonType>, boost::optional<double>> const& operatorInformation, std::shared_ptr<storm::logic::Formula> const& subformula) const {

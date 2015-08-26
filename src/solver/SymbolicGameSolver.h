@@ -1,6 +1,8 @@
 #ifndef STORM_SOLVER_SYMBOLICGAMESOLVER_H_
 #define STORM_SOLVER_SYMBOLICGAMESOLVER_H_
 
+#include <set>
+#include <vector>
 #include "src/storage/expressions/Variable.h"
 
 #include "src/storage/dd/Bdd.h"

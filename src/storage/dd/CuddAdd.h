@@ -2,11 +2,11 @@
 #define STORM_STORAGE_DD_CUDDADD_H_
 
 #include <boost/optional.hpp>
+#include <map>
 
 #include "src/storage/dd/Add.h"
 #include "src/storage/dd/CuddDd.h"
 #include "src/storage/dd/CuddDdForwardIterator.h"
-#include "src/storage/SparseMatrix.h"
 #include "src/storage/expressions/Variable.h"
 #include "src/utility/OsDetection.h"
 
@@ -14,6 +14,12 @@
 #include "cuddObj.hh"
 
 namespace storm {
+    namespace storage {
+        template<typename T> class SparseMatrix;
+        class BitVector;
+        template<typename E, typename V> class MatrixEntry;
+    }
+    
     namespace dd {
         // Forward-declare some classes.
         template<DdType Type> class DdManager;
@@ -400,7 +406,7 @@ namespace storm {
              *
              * @return The support represented as a BDD.
              */
-            Bdd<DdType::CUDD> getSupport() const;
+            Bdd<DdType::CUDD> getSupport() const override;
             
             /*!
              * Retrieves the number of encodings that are mapped to a non-zero value.
@@ -604,7 +610,7 @@ namespace storm {
              *
              * @param filename The name of the file to which the DD is to be exported.
              */
-            void exportToDot(std::string const& filename = "") const;
+            void exportToDot(std::string const& filename = "") const override;
             
             /*!
              * Retrieves an iterator that points to the first meta variable assignment with a non-zero function value.

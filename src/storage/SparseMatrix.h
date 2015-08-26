@@ -4,14 +4,10 @@
 #include <algorithm>
 #include <iostream>
 #include <cstdint>
+#include <vector>
 #include <iterator>
 
-#include "src/storage/BitVector.h"
-#include "src/utility/constants.h"
 #include "src/utility/OsDetection.h"
-
-#include "src/exceptions/InvalidArgumentException.h"
-#include "src/exceptions/OutOfRangeException.h"
 
 #include <boost/functional/hash.hpp>
 
@@ -26,13 +22,19 @@ namespace storm {
 		template<typename T>
 		class TopologicalValueIterationMinMaxLinearEquationSolver;
 	}
+        
+        
 }
 
 namespace storm {
     namespace storage {
         
+        class BitVector;
         // Forward declare matrix class.
         template<typename T> class SparseMatrix;
+        
+        typedef uint_fast64_t SparseMatrixIndexType;
+        
         
         template<typename IndexType, typename ValueType>
         class MatrixEntry {
@@ -129,7 +131,7 @@ namespace storm {
         template<typename ValueType>
         class SparseMatrixBuilder {
         public:
-            typedef uint_fast64_t index_type;
+            typedef SparseMatrixIndexType index_type;
             typedef ValueType value_type;
             
             /*!
@@ -301,7 +303,7 @@ namespace storm {
 			friend class storm::solver::TopologicalValueIterationMinMaxLinearEquationSolver<ValueType>;
             friend class SparseMatrixBuilder<ValueType>;
             
-            typedef uint_fast64_t index_type;
+            typedef SparseMatrixIndexType index_type;
             typedef ValueType value_type;
             typedef typename std::vector<MatrixEntry<index_type, value_type>>::iterator iterator;
             typedef typename std::vector<MatrixEntry<index_type, value_type>>::const_iterator const_iterator;
@@ -740,6 +742,10 @@ namespace storm {
             value_type getRowSum(index_type row) const;
             
             /*!
+             * Checks for each row whether it sums to one.
+             */
+            bool isProbabilistic() const;            
+            /*!
              * Checks if the current matrix is a submatrix of the given matrix, where a matrix A is called a submatrix
              * of B if B has no entries in position where A has none. Additionally, the matrices must be of equal size.
              *
@@ -943,6 +949,7 @@ namespace storm {
             
             // A vector indicating the row groups of the matrix.
             std::vector<index_type> rowGroupIndices;
+            
         };
 
     } // namespace storage

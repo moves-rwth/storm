@@ -1,5 +1,7 @@
 #include "src/parser/AutoParser.h"
 
+#include "src/models/sparse/StandardRewardModel.h"
+
 #include "src/parser/MappedFile.h"
 
 #include "src/parser/DeterministicModelParser.h"

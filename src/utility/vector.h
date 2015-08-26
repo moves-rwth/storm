@@ -129,9 +129,110 @@ namespace storm {
                 }
             }
             
+            template<class T>
+            void addFilteredVectorGroupsToGroupedVector(std::vector<T>& target, std::vector<T> const& source, storm::storage::BitVector const& filter, std::vector<uint_fast64_t> const& rowGroupIndices) {
+                uint_fast64_t currentPosition = 0;
+                for (auto group : filter) {
+                    auto it = source.cbegin() + rowGroupIndices[group];
+                    auto ite = source.cbegin() + rowGroupIndices[group + 1];
+                    while (it != ite) {
+                        target[currentPosition] += *it;
+                        ++currentPosition;
+                        ++it;
+                    }
+                }
+            }
+            
+            /*!
+             * Adds the source vector to the target vector in a way such that the i-th entry is added to all elements of
+             * the i-th row group in the target vector.
+             *
+             * @param target The target ("row grouped") vector.
+             * @param source The source vector.
+             * @param rowGroupIndices A vector representing the row groups in the target vector.
+             */
+            template<class T>
+            void addVectorToGroupedVector(std::vector<T>& target, std::vector<T> const& source, std::vector<uint_fast64_t> const& rowGroupIndices) {
+                auto targetIt = target.begin();
+                auto sourceIt = source.cbegin();
+                auto sourceIte = source.cend();
+                auto rowGroupIt = rowGroupIndices.cbegin();
+                
+                for (; sourceIt != sourceIte; ++sourceIt) {
+                    uint_fast64_t current = *rowGroupIt;
+                    ++rowGroupIt;
+                    uint_fast64_t next = *rowGroupIt;
+                    while (current < next) {
+                        *targetIt += *sourceIt;
+                        ++targetIt;
+                        ++current;
+                    }
+                }
+            }
+            
+            /*!
+             * Adds the source vector to the target vector in a way such that the i-th selected entry is added to all
+             * elements of the i-th row group in the target vector.
+             *
+             * @param target The target ("row grouped") vector.
+             * @param source The source vector.
+             * @param rowGroupIndices A vector representing the row groups in the target vector.
+             */
+            template<class T>
+            void addFilteredVectorToGroupedVector(std::vector<T>& target, std::vector<T> const& source, storm::storage::BitVector const& filter, std::vector<uint_fast64_t> const& rowGroupIndices) {
+                uint_fast64_t currentPosition = 0;
+                for (auto group : filter) {
+                    uint_fast64_t current = rowGroupIndices[group];
+                    uint_fast64_t next = rowGroupIndices[group + 1];
+                    while (current < next) {
+                        target[currentPosition] += source[group];
+                        ++currentPosition;
+                        ++current;
+                    }
+                }
+            }
+            
             /*!
              * Applies the given operation pointwise on the two given vectors and writes the result to the third vector.
-             * To botain an in-place operation, the third vector may be equal to any of the other two vectors.
+             * To obtain an in-place operation, the third vector may be equal to any of the other two vectors.
+             *
+             * @param firstOperand The first operand.
+             * @param secondOperand The second operand.
+             * @param target The target vector.
+             */
+            template<class T>
+            void applyPointwise(std::vector<T> const& firstOperand, std::vector<T> const& secondOperand, std::vector<T>& target, std::function<T (T const&, T const&, T const&)> const& function) {
+#ifdef STORM_HAVE_INTELTBB
+                tbb::parallel_for(tbb::blocked_range<uint_fast64_t>(0, target.size()),
+                                  [&](tbb::blocked_range<uint_fast64_t> const& range) {
+                                      auto firstIt = firstOperand.begin() + range.begin();
+                                      auto firstIte = firstOperand.begin() + range.end();
+                                      auto secondIt = secondOperand.begin() + range.begin();
+                                      auto targetIt = target.begin() + range.begin();
+                                      while (firstIt != firstIte) {
+                                          *targetIt = function(*firstIt, *secondIt, *targetIt);
+                                          ++targetIt;
+                                          ++firstIt;
+                                          ++secondIt;
+                                      }
+                                  });
+#else
+                auto firstIt = firstOperand.begin();
+                auto firstIte = firstOperand.end();
+                auto secondIt = secondOperand.begin();
+                auto targetIt = target.begin();
+                while (firstIt != firstIte) {
+                    *targetIt = function(*firstIt, *secondIt, *targetIt);
+                    ++targetIt;
+                    ++firstIt;
+                    ++secondIt;
+                }
+#endif
+            }
+            
+            /*!
+             * Applies the given operation pointwise on the two given vectors and writes the result to the third vector.
+             * To obtain an in-place operation, the third vector may be equal to any of the other two vectors.
              *
              * @param firstOperand The first operand.
              * @param secondOperand The second operand.
@@ -249,6 +350,63 @@ namespace storm {
                 return filter(values,  fnc);
             }
             
+            /**
+             * Sum the entries from values that are set to one in the filter vector.
+             * @param values
+             * @param filter
+             * @return The sum of the values with a corresponding one in the filter.
+             */
+            template<typename VT>
+            VT sum_if(std::vector<VT> const& values, storm::storage::BitVector const& filter) {
+                assert(values.size() >= filter.size());
+                VT sum = storm::utility::zero<VT>();
+                for(uint_fast64_t i : filter) {
+                    sum += values[i];
+                }    
+                return sum;
+            }
+            
+            /**
+             * Computes the maximum of the entries from the values that are set to one in the filter vector
+             * @param values
+             * @param filter
+             * @param smallestPossibleValue A value which is not larger than any value in values. If the filter is empty, this value is returned.
+             * @return  The maximum over the subset of the values and the smallestPossibleValue.
+             */
+            template<typename VT>
+            VT max_if(std::vector<VT> const& values, storm::storage::BitVector const& filter, VT const& smallestPossibleValue) {
+                assert(values.size() >= filter.size());
+                
+                VT max = smallestPossibleValue;
+                for(uint_fast64_t i : filter) {
+                    if(values[i] > max) { 
+                        max = values[i];
+                    }
+                }    
+                return max;
+            }
+            
+            /**
+             * Computes the minimum of the entries from the values that are set to one in the filter vector
+             * @param values
+             * @param filter
+             * @param largestPossibleValue A value which is not smaller than any value in values. If the filter is empty, this value is returned.
+             * @return  The minimum over the subset of the values and the largestPossibleValue.
+             */
+            template<typename VT>
+            VT min_if(std::vector<VT> const& values, storm::storage::BitVector const& filter, VT const& largestPossibleValue) {
+                assert(values.size() >= filter.size());
+                VT min = largestPossibleValue;
+                for(uint_fast64_t i : filter) {
+                    if(values[i] < min) { 
+                        min = values[i];
+                    }
+                }    
+                return min;
+            }
+            
+            
+            
             /*!
              * Reduces the given source vector by selecting an element according to the given filter out of each row group.
              *
@@ -333,7 +491,7 @@ namespace storm {
                 }
 #endif
             }
-            
+                        
             /*!
              * Reduces the given source vector by selecting the smallest element out of each row group.
              *
@@ -358,6 +516,24 @@ namespace storm {
             template<class T>
             void reduceVectorMax(std::vector<T> const& source, std::vector<T>& target, std::vector<uint_fast64_t> const& rowGrouping, std::vector<uint_fast64_t>* choices = nullptr) {
                 reduceVector<T>(source, target, rowGrouping, std::greater<T>(), choices);
+            }
+            
+            /*!
+             * Reduces the given source vector by selecting either the smallest or the largest out of each row group.
+             *
+             * @param minimize If true, select the smallest, else select the largest.
+             * @param source The source vector which is to be reduced.
+             * @param target The target vector into which a single element from each row group is written.
+             * @param rowGrouping A vector that specifies the begin and end of each group of elements in the source vector.
+             * @param choices If non-null, this vector is used to store the choices made during the selection.
+             */
+            template<class T>
+            void reduceVectorMinOrMax(bool minimize, std::vector<T> const& source, std::vector<T>& target, std::vector<uint_fast64_t> const& rowGrouping, std::vector<uint_fast64_t>* choices = nullptr) {
+                if(minimize) {
+                    reduceVectorMin(source, target, rowGrouping, choices);
+                } else {
+                    reduceVectorMax(source, target, rowGrouping, choices);    
+                }
             }
             
             /*!

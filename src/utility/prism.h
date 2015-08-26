@@ -2,15 +2,23 @@
 #define STORM_UTILITY_PRISM_H_
 
 #include <memory>
+#include <map>
 #include <boost/algorithm/string.hpp>
+#include <boost/container/flat_set.hpp>
 
-#include "src/storage/expressions/ExpressionManager.h"
-#include "src/storage/prism/Program.h"
 #include "src/utility/OsDetection.h"
-#include "src/utility/macros.h"
-#include "src/exceptions/InvalidArgumentException.h"
+
 
 namespace storm {
+    namespace expressions {
+        class Variable;
+        class Expression;
+    }
+    
+    namespace prism {
+        class Program;
+    }
+    
     namespace utility {
         namespace prism {
             // A structure holding information about a particular choice.
@@ -130,6 +138,15 @@ namespace storm {
                 }
                 
                 /*!
+                 * Retrieves the total mass of this choice.
+                 *
+                 * @return The total mass.
+                 */
+                ValueType getTotalMass() const {
+                    return totalMass;
+                }
+                
+                /*!
                  * Retrieves the entry in the choice that is associated with the given state and creates one if none exists,
                  * yet.
                  *
@@ -162,13 +179,21 @@ namespace storm {
                 }
                 
                 void addProbability(KeyType state, ValueType value) {
+                    totalMass += value;
                     distribution[state] += value;
+                }
+                
+                std::size_t size() const {
+                    return distribution.size();
                 }
                 
             private:
                 // The distribution that is associated with the choice.
                 std::map<KeyType, ValueType, Compare> distribution;
-                
+        
+                // The total probability mass (or rates) of this choice.
+                ValueType totalMass;
+        
                 // The index of the action name.
                 uint_fast64_t actionIndex;
                 

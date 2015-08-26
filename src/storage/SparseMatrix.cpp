@@ -10,8 +10,15 @@
 #include "src/storage/SparseMatrix.h"
 #include "src/adapters/CarlAdapter.h"
 
+#include "src/storage/BitVector.h"
+#include "src/utility/constants.h"
+#include "src/utility/ConstantsComparator.h"
+
 #include "src/exceptions/InvalidStateException.h"
 #include "src/exceptions/NotImplementedException.h"
+#include "src/exceptions/InvalidArgumentException.h"
+#include "src/exceptions/OutOfRangeException.h"
+
 #include "src/utility/macros.h"
 
 #include "log4cplus/logger.h"
@@ -340,10 +347,10 @@ namespace storm {
             for (index_type row = 0; row < this->getRowCount(); ++row) {
                 for (const_iterator it1 = this->begin(row), ite1 = this->end(row), it2 = other.begin(row), ite2 = other.end(row); it1 != ite1 && it2 != ite2; ++it1, ++it2) {
                     // Skip over all zero entries in both matrices.
-                    while (it1 != ite1 && it1->getValue() == storm::utility::zero<ValueType>()) {
+                    while (it1 != ite1 && storm::utility::isZero(it1->getValue())) {
                         ++it1;
                     }
-                    while (it2 != ite2 && it2->getValue() == storm::utility::zero<ValueType>()) {
+                    while (it2 != ite2 && storm::utility::isZero(it2->getValue())) {
                         ++it2;
                     }
                     if ((it1 == ite1) || (it2 == ite2)) {
@@ -1057,6 +1064,17 @@ namespace storm {
                 sum += it->getValue();
             }
             return sum;
+        }
+        
+        template<typename ValueType>
+        bool SparseMatrix<ValueType>::isProbabilistic() const {
+            storm::utility::ConstantsComparator<ValueType> comparator;
+            for(index_type row = 0; row < this->rowCount; ++row) {
+                if(!comparator.isOne(getRowSum(row))) {
+                    return false;
+                }
+            }
+            return true;
         }
         
         template<typename ValueType>

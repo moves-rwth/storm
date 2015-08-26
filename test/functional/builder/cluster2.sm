@@ -97,14 +97,14 @@ label "premium" = (left_n>=left_mx & toleft_n) | (right_n>=right_mx & toright_n)
 // Reward structures
 
 // Percentage of operational workstations stations
-rewards "percent_op"
-	true : 100*(left_n+right_n)/(2*N);
-endrewards
+//rewards "percent_op"
+//	true : 100*(left_n+right_n)/(2*N);
+//endrewards
 
 // Time that the system is not delivering at least minimum QoS
-rewards "time_not_min"
-	!minimum : 1; 
-endrewards
+//rewards "time_not_min"
+//	!minimum : 1; 
+//endrewards
 
 // Number of repairs
 rewards "num_repairs"

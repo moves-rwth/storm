@@ -6,6 +6,7 @@
 #include "src/storage/StronglyConnectedComponentDecomposition.h"
 #include "src/models/sparse/Mdp.h"
 #include "src/models/sparse/Dtmc.h"
+#include "src/models/sparse/StandardRewardModel.h"
 
 TEST(GraphTest, ExplicitProb01) {
 	std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/dtmc/crowds/crowds20_5.tra", STORM_CPP_BASE_PATH "/examples/dtmc/crowds/crowds20_5.lab", "", "");
