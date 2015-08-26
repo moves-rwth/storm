@@ -162,6 +162,16 @@ namespace storm {
                  */
                 void preserveFormula(storm::logic::Formula const& formula);
                 
+                /*!
+                 * Analyzes the given formula and sets an expression for the states states of the model that can be
+                 * treated as terminal states. Note that this may interfere with checking properties different than the
+                 * one provided.
+                 *
+                 * @param formula The formula used to (possibly) derive an expression for the terminal states of the
+                 * model.
+                 */
+                void setTerminalStatesFromFormula(storm::logic::Formula const& formula);
+                
                 // A flag that indicates whether or not command labels are to be built.
                 bool buildCommandLabels;
                 
@@ -182,6 +192,10 @@ namespace storm {
                 
                 // An optional set of expressions for which labels need to be built.
                 boost::optional<std::vector<storm::expressions::Expression>> expressionLabels;
+                
+                // An optional expression or label that characterizes the terminal states of the model. If this is set,
+                // the outgoing transitions of these states are replaced with a self-loop.
+                boost::optional<boost::variant<storm::expressions::Expression, std::string>> terminalStates;
             };
             
             /*!
@@ -267,10 +281,11 @@ namespace storm {
              * function.
              * @param rewardModelBuilders A vector of reward model builders that is used to build the vector of selected
              * reward models.
+             * @param terminalExpression If given, terminal states are not explored further.
              * @return A tuple containing a vector with all rows at which the nondeterministic choices of each state begin
              * and a vector containing the labels associated with each choice.
              */
-            static boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> buildMatrices(storm::prism::Program const& program, VariableInformation const& variableInformation, std::vector<std::reference_wrapper<storm::prism::RewardModel const>> const& selectedRewardModels, StateInformation& stateInformation, bool commandLabels, bool deterministicModel, bool discreteTimeModel, storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, std::vector<RewardModelBuilder<ValueType>>& rewardModelBuilders);
+            static boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> buildMatrices(storm::prism::Program const& program, VariableInformation const& variableInformation, std::vector<std::reference_wrapper<storm::prism::RewardModel const>> const& selectedRewardModels, StateInformation& stateInformation, bool commandLabels, bool deterministicModel, bool discreteTimeModel, storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, std::vector<RewardModelBuilder<ValueType>>& rewardModelBuilders, boost::optional<storm::expressions::Expression> const& terminalExpression);
             
             /*!
              * Explores the state space of the given program and returns the components of the model as a result.

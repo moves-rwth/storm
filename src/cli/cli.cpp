@@ -224,7 +224,7 @@ namespace storm {
                 if (settings.isPropertySet()) {
                     storm::parser::FormulaParser formulaParser;
                     if (program) {
-                        storm::parser::FormulaParser formulaParser(program.get().getManager().getSharedPointer());
+                        formulaParser = storm::parser::FormulaParser(program.get().getManager().getSharedPointer());
                     }
                     
                     // If the given property looks like a file (containing a dot and there exists a file with that name),
