@@ -370,6 +370,7 @@ endif()
 ##
 #############################################################
 file(GLOB_RECURSE STORM_HEADERS ${PROJECT_SOURCE_DIR}/src/*.h)
+file(GLOB_RECURSE STORM_HEADERS_CLI ${PROJECT_SOURCE_DIR}/src/cli/*.h)
 file(GLOB_RECURSE STORM_SOURCES_WITHOUT_MAIN ${PROJECT_SOURCE_DIR}/src/*/*.cpp)
 file(GLOB_RECURSE STORM_SOURCES_CLI ${PROJECT_SOURCE_DIR}/src/cli/*.cpp)
 file(GLOB_RECURSE STORM_MAIN_FILE ${PROJECT_SOURCE_DIR}/src/storm.cpp)
@@ -413,7 +414,10 @@ file(GLOB_RECURSE STORM_BUILD_HEADERS ${PROJECT_BINARY_DIR}/include/*.h)
 
 set(STORM_LIB_SOURCES ${STORM_SOURCES_WITHOUT_MAIN})
 list(REMOVE_ITEM STORM_LIB_SOURCES ${STORM_SOURCES_CLI})
+set(STORM_LIB_HEADERS ${STORM_HEADERS})
+list(REMOVE_ITEM STORM_LIB_HEADERS ${STORM_HEADERS_CLI})
 set(STORM_MAIN_SOURCES ${STORM_SOURCES_CLI} ${STORM_MAIN_FILE})
+set(STORM_MAIN_HEADERS ${STORM_HEADERS_CLI})
 
 # Group the headers and sources
 source_group(main FILES ${STORM_MAIN_FILE})
@@ -498,9 +502,9 @@ endif()
 ##  All link_directories() calls MUST be made before this point               #
 ##                                                                            #
 ###############################################################################
-add_library(storm ${STORM_LIB_SOURCES}) 
-add_executable(storm-main ${STORM_MAIN_SOURCES})
-target_link_libraries(storm-main storm)
+add_library(storm ${STORM_LIB_SOURCES} ${STORM_LIB_HEADERS}) # Adding headers for xcode
+add_executable(storm-main ${STORM_MAIN_SOURCES} ${STORM_MAIN_HEADERS})
+target_link_libraries(storm-main storm) # Adding headers for xcode
 set_target_properties(storm-main PROPERTIES OUTPUT_NAME "storm")
 add_executable(storm-functional-tests ${STORM_FUNCTIONAL_TEST_MAIN_FILE} ${STORM_FUNCTIONAL_TEST_FILES})
 target_link_libraries(storm-functional-tests storm)
