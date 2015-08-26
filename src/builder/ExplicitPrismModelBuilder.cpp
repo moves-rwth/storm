@@ -156,6 +156,11 @@ namespace storm {
 
         template <typename ValueType, typename IndexType>
         void ExplicitPrismModelBuilder<ValueType, IndexType>::Options::preserveFormula(storm::logic::Formula const& formula) {
+            // If we already had terminal states, we need to erase them.
+            if (terminalStates) {
+                terminalStates.reset();
+            }
+            
             // If we are not required to build all reward models, we determine the reward models we need to build.
             if (!buildAllRewardModels) {
                 if (formula.containsRewardOperator()) {
