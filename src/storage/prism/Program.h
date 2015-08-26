@@ -346,6 +346,13 @@ namespace storm {
             std::vector<Label> const& getLabels() const;
             
             /*!
+             * Retrieves the expression associated with the given label, if it exists.
+             *
+             * @param labelName The name of the label to retrieve.
+             */
+            storm::expressions::Expression const& getLabelExpression(std::string const& label) const;
+            
+            /*!
              * Retrieves the number of labels in the program.
              *
              * @return The number of labels in the program.
@@ -479,6 +486,9 @@ namespace storm {
             
             // The labels that are defined for this model.
             std::vector<Label> labels;
+            
+            // A mapping from labels to their indices.
+            std::map<std::string, uint_fast64_t> labelToIndexMap;
             
             // A mapping from action names to their indices.
             std::map<std::string, uint_fast64_t> actionToIndexMap;

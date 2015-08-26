@@ -181,7 +181,7 @@ namespace storm {
             } else {
                 preparedProgram = program;
             }
-            
+                        
             // If the program still contains undefined constants and we are not in a parametric setting, assemble an appropriate error message.
 #ifdef STORM_HAVE_CARL
             // If the program either has undefined constants or we are building a parametric model, but the parameters
