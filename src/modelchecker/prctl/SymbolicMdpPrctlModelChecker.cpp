@@ -15,6 +15,8 @@
 #include "src/exceptions/InvalidStateException.h"
 #include "src/exceptions/InvalidPropertyException.h"
 
+#include "src/exceptions/InvalidArgumentException.h"
+
 namespace storm {
     namespace modelchecker {
         template<storm::dd::DdType DdType, typename ValueType>

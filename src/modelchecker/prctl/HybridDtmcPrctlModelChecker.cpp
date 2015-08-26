@@ -19,6 +19,7 @@
 
 #include "src/exceptions/InvalidStateException.h"
 #include "src/exceptions/InvalidPropertyException.h"
+#include "src/exceptions/InvalidArgumentException.h"
 
 namespace storm {
     namespace modelchecker {

@@ -12,6 +12,9 @@
 #include "src/utility/vector.h"
 #include "src/utility/graph.h"
 
+#include "src/storage/expressions/Variable.h"
+#include "src/storage/expressions/Expression.h"
+
 #include "src/utility/numerical.h"
 
 #include "src/solver/MinMaxLinearEquationSolver.h"
