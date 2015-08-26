@@ -19,6 +19,10 @@ namespace storm {
             }
         }
         
+        void AbstractMinMaxLinearEquationSolver::setPolicyTracking(bool setToTrue) {
+            trackPolicy = setToTrue;
+        }
+        
         std::vector<storm::storage::sparse::state_type> AbstractMinMaxLinearEquationSolver::getPolicy() const {
             STORM_LOG_THROW(!useValueIteration, storm::exceptions::NotImplementedException, "Getting policies after value iteration is not yet supported!");
             return policy;

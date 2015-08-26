@@ -11,7 +11,8 @@ namespace storm {
         
                  
         ExtendEnumsWithSelectionField(LpSolverType, Gurobi, Glpk)
-        ExtendEnumsWithSelectionField(EquationSolverType, Native, Gmmxx)
+        ExtendEnumsWithSelectionField(EquationSolverType, Native, Gmmxx, Topological)
+                 
         
     }
 } 

@@ -7,7 +7,7 @@
 #include "src/solver/LinearEquationSolver.h"
 #include "src/solver/NativeLinearEquationSolver.h"
 #include "src/storage/dd/DdType.h"
-#include "src/utility/ExtendSettingEnumWithSelectionField.h"
+#include "src/solver/SolverSelectionOptions.h"
 
 namespace storm {
     namespace solver {
@@ -80,30 +80,22 @@ namespace storm {
             template<typename ValueType>
             class MinMaxLinearEquationSolverFactory {
             public:
+                MinMaxLinearEquationSolverFactory(storm::solver::EquationSolverTypeSelection solverType = storm::solver::EquationSolverTypeSelection::FROMSETTINGS);
                 /*!
                  * Creates a new nondeterministic linear equation solver instance with the given matrix.
                  */
-                virtual std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType> const& matrix) const;
+                virtual std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType> const& matrix, bool trackPolicy = false) const;
+                void setSolverType(storm::solver::EquationSolverTypeSelection solverType);
+                void setPreferredTechnique(storm::solver::MinMaxTechniqueSelection);
+                
+            protected:
+                /// The type of solver which should be created.
+                storm::solver::EquationSolverType solverType;
+                /// The preferred technique to be used by the solver.
+                /// Notice that we save the selection enum here, which allows different solvers to use different techniques.
+                storm::solver::MinMaxTechniqueSelection prefTech;
             };
-            
-            template<typename ValueType>
-            class NativeMinMaxLinearEquationSolverFactory : public MinMaxLinearEquationSolverFactory<ValueType> {
-            public:
-                virtual std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType> const& matrix) const override;
-            };
-            
-            template<typename ValueType>
-            class GmmxxMinMaxLinearEquationSolverFactory : public MinMaxLinearEquationSolverFactory<ValueType> {
-            public:
-                virtual std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType> const& matrix) const override;
-            };
-            
-            template<typename ValueType>
-            class TopologicalMinMaxLinearEquationSolverFactory : public MinMaxLinearEquationSolverFactory<ValueType> {
-            public:
-                virtual std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType> const& matrix) const override;
-            };
-
+           
             class LpSolverFactory {
             public:
                 /*!

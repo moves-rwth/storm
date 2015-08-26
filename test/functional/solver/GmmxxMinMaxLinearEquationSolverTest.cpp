@@ -25,6 +25,35 @@ TEST(GmmxxMinMaxLinearEquationSolver, SolveWithStandardOptions) {
     ASSERT_LT(std::abs(x[0] - 0.989991), storm::settings::gmmxxEquationSolverSettings().getPrecision());
 }
 
+// TODO add better tests here.
+TEST(GmmxxMinMaxLinearEquationSolver, SolveWithStandardOptionsAndEarlyTermination) {
+    storm::storage::SparseMatrixBuilder<double> builder(0, 0, 0, false, true);
+    ASSERT_NO_THROW(builder.newRowGroup(0));
+    ASSERT_NO_THROW(builder.addNextValue(0, 0, 0.9));
+
+    storm::storage::SparseMatrix<double> A;
+    ASSERT_NO_THROW(A = builder.build(2));
+    
+    std::vector<double> x(1);
+    std::vector<double> b = {0.099, 0.5};
+        
+    double bound = 0.8;
+    storm::solver::GmmxxMinMaxLinearEquationSolver<double> solver(A);
+    solver.setEarlyTerminationCondition(std::unique_ptr<storm::solver::AllowEarlyTerminationCondition<double>>(new storm::solver::TerminateAfterFilteredExtremumPassesThresholdValue<double>(storm::storage::BitVector(1, true), bound, true, true)));
+    ASSERT_NO_THROW(solver.solveEquationSystem(true, x, b));
+    ASSERT_LT(std::abs(x[0] - 0.5), storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    
+    ASSERT_NO_THROW(solver.solveEquationSystem(false, x, b));
+    ASSERT_LT(std::abs(x[0] - 0.989991), 0.989991 - bound - storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    
+    bound = 0.6;
+    solver.setEarlyTerminationCondition(std::unique_ptr<storm::solver::AllowEarlyTerminationCondition<double>>(new storm::solver::TerminateAfterFilteredExtremumPassesThresholdValue<double>(storm::storage::BitVector(1, true), bound, true, true)));
+    
+    ASSERT_NO_THROW(solver.solveEquationSystem(false, x, b));
+    ASSERT_LT(std::abs(x[0] - 0.989991), 0.989991 - bound - storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    
+}
+
 TEST(GmmxxMinMaxLinearEquationSolver, MatrixVectorMultiplication) {
     storm::storage::SparseMatrixBuilder<double> builder(0, 0, 0, false, true);
     ASSERT_NO_THROW(builder.newRowGroup(0));
