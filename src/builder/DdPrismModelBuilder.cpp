@@ -1055,11 +1055,11 @@ namespace storm {
             if (!deadlockStates.isZero()) {
                 // If we need to fix deadlocks, we do so now.
                 if (!storm::settings::generalSettings().isDontFixDeadlocksSet()) {
-                    STORM_LOG_WARN("Fixing deadlocks in " << deadlockStates.getNonZeroCount() << " states. For example in");
+                    STORM_LOG_INFO("Fixing deadlocks in " << deadlockStates.getNonZeroCount() << " states. The first three of these states are: ");
                     
                     uint_fast64_t count = 0;
                     for (auto it = deadlockStates.begin(), ite = deadlockStates.end(); it != ite && count < 3; ++it, ++count) {
-                        STORM_LOG_WARN((*it).first.toPrettyString() << std::endl);
+                        STORM_LOG_INFO((*it).first.toPrettyString(generationInfo.rowMetaVariables) << std::endl);
                     }
 
                     if (program.getModelType() == storm::prism::Program::ModelType::DTMC) {

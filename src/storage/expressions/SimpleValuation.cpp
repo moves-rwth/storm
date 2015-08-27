@@ -91,17 +91,17 @@ namespace storm {
             rationalValues[rationalVariable.getOffset()] = value;
         }
         
-        std::string SimpleValuation::toPrettyString() const {
+        std::string SimpleValuation::toPrettyString(std::set<storm::expressions::Variable> const& selectedVariables) const {
             std::vector<std::string> assignments;
-            for (auto const& variable : this->getManager()) {
+            for (auto const& variable : selectedVariables) {
                 std::stringstream stream;
-                stream << variable.first.getName() << "=";
-                if (variable.second.isBooleanType()) {
-                    stream << std::boolalpha << this->getBooleanValue(variable.first) << std::noboolalpha;
-                } else if (variable.second.isIntegerType()) {
-                    stream << this->getIntegerValue(variable.first);
-                } else if (variable.second.isRationalType()) {
-                    stream << this->getRationalValue(variable.first);
+                stream << variable.getName() << "=";
+                if (variable.hasBooleanType()) {
+                    stream << std::boolalpha << this->getBooleanValue(variable) << std::noboolalpha;
+                } else if (variable.hasIntegerType()) {
+                    stream << this->getIntegerValue(variable);
+                } else if (variable.hasRationalType()) {
+                    stream << this->getRationalValue(variable);
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Unexpected variable type.");
                 }
