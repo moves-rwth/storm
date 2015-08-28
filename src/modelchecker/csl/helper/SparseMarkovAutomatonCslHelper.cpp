@@ -178,7 +178,7 @@ namespace storm {
             
             template<typename ValueType, typename RewardModelType>
             std::vector<ValueType> SparseMarkovAutomatonCslHelper<ValueType, RewardModelType>::computeUntilProbabilities(bool minimize, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
-                return storm::modelchecker::helper::SparseMdpPrctlHelper<ValueType, RewardModelType>::computeUntilProbabilities(minimize, transitionMatrix, backwardTransitions, phiStates, psiStates, qualitative, minMaxLinearEquationSolverFactory);
+                return storm::modelchecker::helper::SparseMdpPrctlHelper<ValueType>::computeUntilProbabilities(minimize, transitionMatrix, backwardTransitions, phiStates, psiStates, qualitative, minMaxLinearEquationSolverFactory);
             }
             
             template<typename ValueType, typename RewardModelType>

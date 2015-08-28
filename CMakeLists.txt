@@ -164,7 +164,7 @@ else(CLANG)
     endif()
     
     add_definitions(-DBOOST_RESULT_OF_USE_DECLTYPE)
-    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -stdlib=${CLANG_STDLIB} -Wall -pedantic -Wno-newline-eof -Wno-mismatched-tags -ftemplate-depth=1024")
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -stdlib=${CLANG_STDLIB} -Wall -pedantic -Wno-newline-eof -Wno-mismatched-tags -ftemplate-depth=1024")
     set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -pedantic")
 
     # Turn on popcnt instruction if desired (yes by default)
