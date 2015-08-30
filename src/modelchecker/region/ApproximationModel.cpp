@@ -16,7 +16,7 @@ namespace storm {
         
         
         template<typename ParametricType, typename ConstantType>
-        SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ApproximationModel::ApproximationModel(storm::models::sparse::Dtmc<ParametricType> const& parametricModel) : mapping(), evaluationTable(), substitutions() {
+        SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ApproximationModel::ApproximationModel(storm::models::sparse::Dtmc<ParametricType> const& parametricModel, bool computeRewards) : mapping(), evaluationTable(), substitutions(), computeRewards(computeRewards){
             // Run through the rows of the original model and obtain
             // (1) the different substitutions (this->substitutions) and the substitution used for every row
             std::vector<std::size_t> rowSubstitutions;
@@ -157,16 +157,23 @@ namespace storm {
         }
 
         template<typename ParametricType, typename ConstantType>
-        std::vector<ConstantType> const& SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ApproximationModel::computeReachabilityProbabilities(storm::logic::OptimalityType const& optimalityType) {
-            std::shared_ptr<storm::logic::Formula> targetFormulaPtr(new storm::logic::AtomicLabelFormula("target"));
-            storm::logic::EventuallyFormula eventuallyFormula(targetFormulaPtr);
-            storm::modelchecker::SparseMdpPrctlModelChecker<ConstantType> modelChecker(*this->model);
+        std::vector<ConstantType> const& SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ApproximationModel::computeValues(storm::logic::OptimalityType const& optimalityType) {
             
-            //perform model checking on the mdp
-            std::unique_ptr<storm::modelchecker::CheckResult> resultPtr = modelChecker.computeEventuallyProbabilities(eventuallyFormula, false, optimalityType);
+            storm::modelchecker::SparseMdpPrctlModelChecker<ConstantType> modelChecker(*this->model);
+            std::shared_ptr<storm::logic::Formula> targetFormulaPtr(new storm::logic::AtomicLabelFormula("target"));
+            std::unique_ptr<storm::modelchecker::CheckResult> resultPtr;
+            if(this->computeRewards){
+                storm::logic::ReachabilityRewardFormula reachRewFormula(targetFormulaPtr);
+                //perform model checking on the mdp
+                resultPtr = modelChecker.computeReachabilityRewards(reachRewFormula, false, optimalityType);
+            }
+            else {
+                storm::logic::EventuallyFormula eventuallyFormula(targetFormulaPtr);
+                //perform model checking on the mdp
+                resultPtr = modelChecker.computeEventuallyProbabilities(eventuallyFormula, false, optimalityType);
+            }
             return resultPtr->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
         }
-
 
 
 #ifdef STORM_HAVE_CARL

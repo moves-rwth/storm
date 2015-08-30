@@ -26,7 +26,7 @@ namespace storm {
             typedef typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::CoefficientType CoefficientType;
             
             
-            ApproximationModel(storm::models::sparse::Dtmc<ParametricType> const& parametricModel);
+            ApproximationModel(storm::models::sparse::Dtmc<ParametricType> const& parametricModel, bool computeRewards);
             virtual ~ApproximationModel();
 
             /*!
@@ -44,7 +44,7 @@ namespace storm {
              * Undefined behavior if model has not been instantiated first!
              * @param optimalityType Use MAXIMIZE to get upper bounds or MINIMIZE to get lower bounds
              */
-            std::vector<ConstantType> const& computeReachabilityProbabilities(storm::logic::OptimalityType const& optimalityType);
+            std::vector<ConstantType> const& computeValues(storm::logic::OptimalityType const& optimalityType);
 
                 
         private:
@@ -69,6 +69,8 @@ namespace storm {
             
             //The Model with which we work
             std::shared_ptr<storm::models::sparse::Mdp<ConstantType>> model;
+            
+            bool computeRewards;
             
             // comparators that can be used to compare constants.
             storm::utility::ConstantsComparator<ParametricType> parametricTypeComparator;

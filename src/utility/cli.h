@@ -288,7 +288,7 @@ namespace storm {
                     auto regions=storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction,double>::ParameterRegion::getRegionsFromSettings();                    
                     storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double> modelchecker(*dtmc);
                     if (modelchecker.canHandle(*formula.get())) {
-                        modelchecker.specifyFormula(*formula.get());
+                        modelchecker.specifyFormula(formula);
                         modelchecker.checkRegions(regions);
                     }
                     else {

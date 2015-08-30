@@ -30,8 +30,9 @@ namespace storm {
         template<typename ParametricType, typename ConstantType>
         SparseDtmcRegionModelChecker<ParametricType, ConstantType>::SparseDtmcRegionModelChecker(storm::models::sparse::Dtmc<ParametricType> const& model) : 
                 model(model),
-                eliminationModelChecker(model){
-            //intentionally left empty
+                eliminationModelChecker(model),
+                specifiedFormula(nullptr){
+            STORM_LOG_THROW(model.getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::InvalidArgumentException, "Model is required to have exactly one initial state.");
         }
         
         template<typename ParametricType, typename ConstantType>
@@ -41,67 +42,86 @@ namespace storm {
         
         template<typename ParametricType, typename ConstantType>
         bool SparseDtmcRegionModelChecker<ParametricType, ConstantType>::canHandle(storm::logic::Formula const& formula) const {
-             //for simplicity we only support state formulas with eventually (e.g. P<0.5 [ F "target" ])
-            if(!formula.isStateFormula()){
-                STORM_LOG_DEBUG("Region Model Checker could not handle formula " << formula << " Reason: expected a stateFormula");
-                return false;
+             //for simplicity we only support state formulas with eventually (e.g. P<0.5 [ F "target" ]) and reachability reward formulas
+            if (formula.isProbabilityOperatorFormula()) {
+                storm::logic::ProbabilityOperatorFormula const& probabilityOperatorFormula = formula.asProbabilityOperatorFormula();
+                return probabilityOperatorFormula.hasBound() &&  this->canHandle(probabilityOperatorFormula.getSubformula());
+            } else if (formula.isRewardOperatorFormula()) {
+                storm::logic::RewardOperatorFormula const& rewardOperatorFormula = formula.asRewardOperatorFormula();
+                return rewardOperatorFormula.hasBound() && this->canHandle(rewardOperatorFormula.getSubformula());
+            } else if (formula.isEventuallyFormula()) {
+                storm::logic::EventuallyFormula const& eventuallyFormula = formula.asEventuallyFormula();
+                if (eventuallyFormula.getSubformula().isPropositionalFormula()) {
+                    return true;
+                }
+            } else if (formula.isReachabilityRewardFormula()) {
+                storm::logic::ReachabilityRewardFormula reachabilityRewardFormula = formula.asReachabilityRewardFormula();
+                if (reachabilityRewardFormula.getSubformula().isPropositionalFormula()) {
+                    return true;
+                }
+            } else if (formula.isConditionalPathFormula()) {
+                storm::logic::ConditionalPathFormula conditionalPathFormula = formula.asConditionalPathFormula();
+                if (conditionalPathFormula.getLeftSubformula().isEventuallyFormula() && conditionalPathFormula.getRightSubformula().isEventuallyFormula()) {
+                    return this->canHandle(conditionalPathFormula.getLeftSubformula()) && this->canHandle(conditionalPathFormula.getRightSubformula());
+                }
             }
-            if(!formula.asStateFormula().isProbabilityOperatorFormula()){
-                STORM_LOG_DEBUG("Region Model Checker could not handle formula " << formula << " Reason: expected a probabilityOperatorFormula");
-                return false;
-            }
-            storm::logic::ProbabilityOperatorFormula const& probOpForm=formula.asStateFormula().asProbabilityOperatorFormula();
-            if(!probOpForm.hasBound()){
-                STORM_LOG_DEBUG("Region Model Checker could not handle formula " << formula << " Reason: The formula has no bound");
-                return false;
-            }
-            if(!probOpForm.getSubformula().asPathFormula().isEventuallyFormula()){
-                STORM_LOG_DEBUG("Region Model Checker could not handle formula " << formula << " Reason: expected an eventually subformula");
-                return false;
-            }
-            if(model.getInitialStates().getNumberOfSetBits() != 1){
-                STORM_LOG_DEBUG("Input model is required to have exactly one initial state.");
-                return false;
-            }
-            return true;
+             STORM_LOG_DEBUG("Region Model Checker could not handle (sub)formula " << formula);
+            return false;
         }
             
         template<typename ParametricType, typename ConstantType>
-        void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::specifyFormula(storm::logic::Formula const& formula) {
+        void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::specifyFormula(std::shared_ptr<storm::logic::Formula> formula) {
             std::chrono::high_resolution_clock::time_point timePreprocessingStart = std::chrono::high_resolution_clock::now();
-            STORM_LOG_THROW(this->canHandle(formula), storm::exceptions::InvalidArgumentException, "Tried to specify a formula that can not be handled.");
+            STORM_LOG_THROW(this->canHandle(*formula), storm::exceptions::InvalidArgumentException, "Tried to specify a formula that can not be handled.");
             
             this->hasOnlyLinearFunctions=false;
             this->isResultConstant=false;
             this->smtSolver=nullptr;
             this->approximationModel=nullptr;
             this->samplingModel=nullptr;
-            this->reachProbFunction=nullptr;
+            this->reachabilityFunction=nullptr;
             
-            //Get subformula, target states
-            //Note: canHandle already ensures that the formula has the right shape and that the model has a single initial state.
-            this->probabilityOperatorFormula = std::unique_ptr<storm::logic::ProbabilityOperatorFormula>(new storm::logic::ProbabilityOperatorFormula(formula.asStateFormula().asProbabilityOperatorFormula()));
-            storm::logic::EventuallyFormula const& eventuallyFormula = this->probabilityOperatorFormula->getSubformula().asPathFormula().asEventuallyFormula();
-            std::unique_ptr<CheckResult> targetStatesResultPtr = this->eliminationModelChecker.check(eventuallyFormula.getSubformula());
+            //Get bounds, comparison type, target states, ..
+            //Note: canHandle already ensures that the formula has the right shape.
+            this->specifiedFormula = formula;
+            std::unique_ptr<CheckResult> targetStatesResultPtr;
+            if (this->specifiedFormula->isProbabilityOperatorFormula()) {
+                this->computeRewards=false;
+                storm::logic::ProbabilityOperatorFormula const& probabilityOperatorFormula = this->specifiedFormula->asProbabilityOperatorFormula();
+                this->specifiedFormulaCompType=probabilityOperatorFormula.getComparisonType();
+                this->specifiedFormulaBound=probabilityOperatorFormula.getBound();
+                targetStatesResultPtr=this->eliminationModelChecker.check(probabilityOperatorFormula.getSubformula().asEventuallyFormula().getSubformula());
+            }
+            else if (this->specifiedFormula->isRewardOperatorFormula()) {
+                this->computeRewards=true;
+                storm::logic::RewardOperatorFormula const& rewardOperatorFormula = this->specifiedFormula->asRewardOperatorFormula();
+                this->specifiedFormulaCompType=rewardOperatorFormula.getComparisonType();
+                this->specifiedFormulaBound=rewardOperatorFormula.getBound();
+                targetStatesResultPtr=this->eliminationModelChecker.check(rewardOperatorFormula.getSubformula().asReachabilityRewardFormula().getSubformula());
+            }
+            else {
+                STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "The specified property " << formula << "is not supported");
+            }
             storm::storage::BitVector const& targetStates = targetStatesResultPtr->asExplicitQualitativeCheckResult().getTruthValuesVector();
             
             // get a more simple model with a single target state, a single sink state and where states with constant outgoing transitions have been removed
             // Note: also checks for linear functions and a constant result
             computeSimplifiedModel(targetStates);
-            //now create the model used for Approximation
-            if(storm::settings::regionSettings().doApprox()){
-                initializeApproximationModel(*this->simplifiedModel);
+            if(!this->isResultConstant){
+                //now create the model used for Approximation
+                if(storm::settings::regionSettings().doApprox()){
+                    initializeApproximationModel(*this->simplifiedModel);
+                }
+                //now create the model used for Sampling
+                if(storm::settings::regionSettings().doSample() || (storm::settings::regionSettings().getApproxMode()==storm::settings::modules::RegionSettings::ApproxMode::TESTFIRST)){
+                    initializeSamplingModel(*this->simplifiedModel);
+                }
+                //Check if the reachability function needs to be computed
+                if((storm::settings::regionSettings().getSmtMode()==storm::settings::modules::RegionSettings::SmtMode::FUNCTION) || 
+                        (storm::settings::regionSettings().getSampleMode()==storm::settings::modules::RegionSettings::SampleMode::EVALUATE)){
+                    computeReachabilityFunction(*this->simplifiedModel);
+                }
             }
-            //now create the model used for Sampling
-            if(storm::settings::regionSettings().doSample() || (storm::settings::regionSettings().getApproxMode()==storm::settings::modules::RegionSettings::ApproxMode::TESTFIRST)){
-                initializeSamplingModel(*this->simplifiedModel);
-            }
-            //Check if the reachability probability function needs to be computed
-            if((storm::settings::regionSettings().getSmtMode()==storm::settings::modules::RegionSettings::SmtMode::FUNCTION) || 
-                    (storm::settings::regionSettings().getSampleMode()==storm::settings::modules::RegionSettings::SampleMode::EVALUATE)){
-                computeReachProbFunction(*this->simplifiedModel);
-            }
-            
             //some information for statistics...
             std::chrono::high_resolution_clock::time_point timePreprocessingEnd = std::chrono::high_resolution_clock::now();
             this->timePreprocessing= timePreprocessingEnd - timePreprocessingStart;
@@ -126,13 +146,22 @@ namespace storm {
             std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(this->model, storm::storage::BitVector(this->model.getNumberOfStates(),true), targetStates);
             storm::storage::BitVector statesWithProbability0 = statesWithProbability01.first;
             storm::storage::BitVector statesWithProbability1 = statesWithProbability01.second;
-            storm::storage::BitVector maybeStates = ~(statesWithProbability0 | statesWithProbability1);
-            // If the initial state is known to have either probability 0 or 1, we can directly set the reachProbFunction.
-            if (this->model.getInitialStates().isDisjointFrom(maybeStates)) {
-                STORM_LOG_WARN("The probability of the initial state is constant (0 or 1)");
-                this->reachProbFunction = std::make_shared<ParametricType>(statesWithProbability0.get(*(this->model.getInitialStates().begin())) ? storm::utility::zero<ParametricType>() : storm::utility::one<ParametricType>());
+            //if the target states are not reached with probability 1, then the expected reward is defined as infinity
+            if (this->computeRewards && !this->model.getInitialStates().isSubsetOf(statesWithProbability1)){
+                STORM_LOG_WARN("The expected reward of the initial state is constant (infinity)");
+                this->reachabilityFunction = std::make_shared<ParametricType>(storm::utility::infinity<ParametricType>());
                 this->isResultConstant=true;
                 this->hasOnlyLinearFunctions=true;
+                return; //nothing else to do...
+            }
+            storm::storage::BitVector maybeStates = ~(statesWithProbability0 | statesWithProbability1);
+            // If the initial state is known to have either probability 0 or 1, we can directly set the reachProbFunction.
+            if (!this->computeRewards && this->model.getInitialStates().isDisjointFrom(maybeStates)) {
+                STORM_LOG_WARN("The probability of the initial state is constant (0 or 1)");
+                this->reachabilityFunction = std::make_shared<ParametricType>(statesWithProbability0.get(*(this->model.getInitialStates().begin())) ? storm::utility::zero<ParametricType>() : storm::utility::one<ParametricType>());
+                this->isResultConstant=true;
+                this->hasOnlyLinearFunctions=true;
+                return; //nothing else to do...
             }
             // Determine the set of states that is reachable from the initial state without jumping over a target state.
             storm::storage::BitVector reachableStates = storm::utility::graph::getReachableStates(this->model.getTransitionMatrix(), this->model.getInitialStates(), maybeStates, statesWithProbability1);
@@ -249,7 +278,7 @@ namespace storm {
         template<typename ParametricType, typename ConstantType>
         void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::initializeApproximationModel(storm::models::sparse::Dtmc<ParametricType> const& simpleModel) {
             std::chrono::high_resolution_clock::time_point timeInitApproxModelStart = std::chrono::high_resolution_clock::now();
-            this->approximationModel=std::make_shared<ApproximationModel>(simpleModel);
+            this->approximationModel=std::make_shared<ApproximationModel>(simpleModel, this->computeRewards);
             std::chrono::high_resolution_clock::time_point timeInitApproxModelEnd = std::chrono::high_resolution_clock::now();
             this->timeInitApproxModel=timeInitApproxModelEnd - timeInitApproxModelStart;
             STORM_LOG_DEBUG("Initialized Approximation Model");
@@ -258,15 +287,15 @@ namespace storm {
         template<typename ParametricType, typename ConstantType>
         void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::initializeSamplingModel(storm::models::sparse::Dtmc<ParametricType> const& simpleModel) {
             std::chrono::high_resolution_clock::time_point timeInitSamplingModelStart = std::chrono::high_resolution_clock::now();
-            this->samplingModel=std::make_shared<SamplingModel>(simpleModel);
+            this->samplingModel=std::make_shared<SamplingModel>(simpleModel, this->computeRewards);
             std::chrono::high_resolution_clock::time_point timeInitSamplingModelEnd = std::chrono::high_resolution_clock::now();
             this->timeInitSamplingModel = timeInitSamplingModelEnd - timeInitSamplingModelStart;
             STORM_LOG_DEBUG("Initialized Sampling Model");
         }
 
         template<typename ParametricType, typename ConstantType>
-        void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::computeReachProbFunction(storm::models::sparse::Dtmc<ParametricType> const& simpleModel){
-            std::chrono::high_resolution_clock::time_point timeComputeReachProbFunctionStart = std::chrono::high_resolution_clock::now();
+        void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::computeReachabilityFunction(storm::models::sparse::Dtmc<ParametricType> const& simpleModel){
+            std::chrono::high_resolution_clock::time_point timeComputeReachabilityFunctionStart = std::chrono::high_resolution_clock::now();
             //get the one step probabilities and the transition matrix of the simplified model without target/sink state
             //TODO check if this takes long... we could also store the oneSteps while creating the simplified model. Or(?) we keep the matrix the way it is and give the target state one step probability 1.
             storm::storage::SparseMatrix<ParametricType> backwardTransitions(simpleModel.getBackwardTransitions());
@@ -285,15 +314,15 @@ namespace storm {
             boost::optional<std::vector<ParametricType>> noStateRewards;
             
             std::vector<std::size_t> statePriorities = this->eliminationModelChecker.getStatePriorities(forwardTransitions,backwardTransitions,newInitialStates,oneStepProbabilities);
-            this->reachProbFunction=std::make_shared<ParametricType>(this->eliminationModelChecker.computeReachabilityValue(forwardTransitions, oneStepProbabilities, backwardTransitions, newInitialStates , phiStates, simpleModel.getStates("target"), noStateRewards, statePriorities));
+            this->reachabilityFunction=std::make_shared<ParametricType>(this->eliminationModelChecker.computeReachabilityValue(forwardTransitions, oneStepProbabilities, backwardTransitions, newInitialStates , phiStates, simpleModel.getStates("target"), noStateRewards, statePriorities));
             /*    std::string funcStr = " (/ " +
                                 this->reachProbFunction->nominator().toString(false, true) + " " +
                                 this->reachProbFunction->denominator().toString(false, true) +
                             " )";
                 std::cout << std::endl <<"the resulting reach prob function is " << std::endl << funcStr << std::endl << std::endl;*/
             STORM_LOG_DEBUG("Computed reachProbFunction");
-            std::chrono::high_resolution_clock::time_point timeComputeReachProbFunctionEnd = std::chrono::high_resolution_clock::now();
-            this->timeComputeReachProbFunction = timeComputeReachProbFunctionEnd-timeComputeReachProbFunctionStart;
+            std::chrono::high_resolution_clock::time_point timeComputeReachabilityFunctionEnd = std::chrono::high_resolution_clock::now();
+            this->timeComputeReachabilityFunction = timeComputeReachabilityFunctionEnd-timeComputeReachabilityFunctionStart;
         }
                     
         template<typename ParametricType, typename ConstantType>
@@ -301,7 +330,7 @@ namespace storm {
             std::chrono::high_resolution_clock::time_point timeCheckRegionStart = std::chrono::high_resolution_clock::now();
             ++this->numOfCheckedRegions;
             
-            STORM_LOG_THROW(this->probabilityOperatorFormula!=nullptr, storm::exceptions::InvalidStateException, "Tried to analyze a region although no property has been specified" );
+            STORM_LOG_THROW(this->specifiedFormula!=nullptr, storm::exceptions::InvalidStateException, "Tried to analyze a region although no property has been specified" );
             STORM_LOG_DEBUG("Analyzing the region " << region.toString());
             //std::cout << "Analyzing the region " << region.toString() << std::endl;
             
@@ -314,8 +343,8 @@ namespace storm {
             
             if(!done && this->isResultConstant){
                 STORM_LOG_DEBUG("Checking a region although the result is constant, i.e., independent of the region. This makes sense none.");
-                STORM_LOG_THROW(this->parametricTypeComparator.isConstant(*getReachProbFunction()), storm::exceptions::UnexpectedException, "The result was assumed to be constant but it isn't.");
-                if(valueIsInBoundOfFormula(storm::utility::regions::getConstantPart(*getReachProbFunction()))){
+                STORM_LOG_THROW(this->parametricTypeComparator.isConstant(*getReachabilityFunction()), storm::exceptions::UnexpectedException, "The result was assumed to be constant but it isn't.");
+                if(valueIsInBoundOfFormula(storm::utility::regions::getConstantPart(*getReachabilityFunction()))){
                     region.setCheckResult(RegionCheckResult::ALLSAT);
                 }
                 else{
@@ -328,8 +357,8 @@ namespace storm {
             std::vector<ConstantType> lowerBounds;
             std::vector<ConstantType> upperBounds;
             if(!done && doApproximation){
-                STORM_LOG_DEBUG("Checking approximative probabilities...");
-                if(checkApproximativeProbabilities(region, lowerBounds, upperBounds)){
+                STORM_LOG_DEBUG("Checking approximative values...");
+                if(checkApproximativeValues(region, lowerBounds, upperBounds)){
                     ++this->numOfRegionsSolvedThroughApproximation;
                     STORM_LOG_DEBUG("Result '" << region.checkResultToString() <<"' obtained through approximation.");
                     done=true;
@@ -399,7 +428,7 @@ namespace storm {
         }
         
         template<typename ParametricType, typename ConstantType>
-        bool SparseDtmcRegionModelChecker<ParametricType, ConstantType>::checkApproximativeProbabilities(ParameterRegion& region, std::vector<ConstantType>& lowerBounds, std::vector<ConstantType>& upperBounds) {
+        bool SparseDtmcRegionModelChecker<ParametricType, ConstantType>::checkApproximativeValues(ParameterRegion& region, std::vector<ConstantType>& lowerBounds, std::vector<ConstantType>& upperBounds) {
             STORM_LOG_THROW(this->hasOnlyLinearFunctions, storm::exceptions::UnexpectedException, "Tried to perform approximative method (only applicable if all functions are linear), but there are nonlinear functions.");
             std::chrono::high_resolution_clock::time_point timeMDPBuildStart = std::chrono::high_resolution_clock::now();
             getApproximationModel()->instantiate(region);
@@ -407,8 +436,8 @@ namespace storm {
             this->timeMDPBuild += timeMDPBuildEnd-timeMDPBuildStart;
             
             // Decide whether the formula has an upper or a lower bond ({<, <=} or {>, >=}) and whether to prove allsat or allviolated. (Hence, there are 4 cases)
-            bool formulaHasUpperBound = this->probabilityOperatorFormula->getComparisonType()==storm::logic::ComparisonType::Less || this->probabilityOperatorFormula->getComparisonType()==storm::logic::ComparisonType::LessEqual;
-            STORM_LOG_THROW((formulaHasUpperBound != (this->probabilityOperatorFormula->getComparisonType()==storm::logic::ComparisonType::Greater || this->probabilityOperatorFormula->getComparisonType()==storm::logic::ComparisonType::GreaterEqual)),
+            bool formulaHasUpperBound = this->specifiedFormulaCompType==storm::logic::ComparisonType::Less || this->specifiedFormulaCompType==storm::logic::ComparisonType::LessEqual;
+            STORM_LOG_THROW((formulaHasUpperBound != (this->specifiedFormulaCompType==storm::logic::ComparisonType::Greater || this->specifiedFormulaCompType==storm::logic::ComparisonType::GreaterEqual)),
                     storm::exceptions::UnexpectedException, "Unexpected comparison Type of formula");
             bool proveAllSat;
             switch (region.getCheckResult()){
@@ -442,20 +471,20 @@ namespace storm {
                     proveAllSat=false;
                     break;
                 default:
-                     STORM_LOG_WARN("The checkresult of the current region should not be conclusive, i.e. it should be either EXISTSSAT or EXISTSVIOLATED or UNKNOWN in order to apply approximative probabilities");
+                     STORM_LOG_WARN("The checkresult of the current region should not be conclusive, i.e. it should be either EXISTSSAT or EXISTSVIOLATED or UNKNOWN in order to apply approximative values");
                      proveAllSat=true;
             }
             
             bool formulaSatisfied;
             if((formulaHasUpperBound && proveAllSat) || (!formulaHasUpperBound && !proveAllSat)){
                 //these are the cases in which we need to compute upper bounds
-                upperBounds = getApproximationModel()->computeReachabilityProbabilities(storm::logic::OptimalityType::Maximize);
+                upperBounds = getApproximationModel()->computeValues(storm::logic::OptimalityType::Maximize);
                 lowerBounds = std::vector<ConstantType>();
                 formulaSatisfied = valueIsInBoundOfFormula(upperBounds[*getApproximationModel()->getModel()->getInitialStates().begin()]);
             }
             else{
                 //for the remaining cases we compute lower bounds
-                lowerBounds = getApproximationModel()->computeReachabilityProbabilities(storm::logic::OptimalityType::Minimize);
+                lowerBounds = getApproximationModel()->computeValues(storm::logic::OptimalityType::Minimize);
                 upperBounds = std::vector<ConstantType>();
                 formulaSatisfied = valueIsInBoundOfFormula(lowerBounds[*getApproximationModel()->getModel()->getInitialStates().begin()]);
             }
@@ -475,11 +504,11 @@ namespace storm {
                 proveAllSat=!proveAllSat;
                 
                 if(lowerBounds.empty()){
-                    lowerBounds = getApproximationModel()->computeReachabilityProbabilities(storm::logic::OptimalityType::Minimize);
+                    lowerBounds = getApproximationModel()->computeValues(storm::logic::OptimalityType::Minimize);
                     formulaSatisfied=valueIsInBoundOfFormula(lowerBounds[*getApproximationModel()->getModel()->getInitialStates().begin()]);
                 }
                 else{
-                    upperBounds = getApproximationModel()->computeReachabilityProbabilities(storm::logic::OptimalityType::Maximize);
+                    upperBounds = getApproximationModel()->computeValues(storm::logic::OptimalityType::Maximize);
                     formulaSatisfied=valueIsInBoundOfFormula(upperBounds[*getApproximationModel()->getModel()->getInitialStates().begin()]);
                 }
                     
@@ -518,15 +547,15 @@ namespace storm {
         }
         
         template<typename ParametricType, typename ConstantType>
-        bool SparseDtmcRegionModelChecker<ParametricType, ConstantType>::checkPoint(ParameterRegion& region, std::map<VariableType, CoefficientType>const& point, bool viaReachProbFunction) {
+        bool SparseDtmcRegionModelChecker<ParametricType, ConstantType>::checkPoint(ParameterRegion& region, std::map<VariableType, CoefficientType>const& point, bool favorViaFunction) {
             bool valueInBoundOfFormula;
             if((storm::settings::regionSettings().getSampleMode()==storm::settings::modules::RegionSettings::SampleMode::EVALUATE) ||
-                    (!storm::settings::regionSettings().doSample() && viaReachProbFunction)){
-                valueInBoundOfFormula = this->valueIsInBoundOfFormula(storm::utility::regions::evaluateFunction(*getReachProbFunction(), point));
+                    (!storm::settings::regionSettings().doSample() && favorViaFunction)){
+                valueInBoundOfFormula = this->valueIsInBoundOfFormula(storm::utility::regions::evaluateFunction(*getReachabilityFunction(), point));
             }
             else{
                 getSamplingModel()->instantiate(point);
-                valueInBoundOfFormula=this->valueIsInBoundOfFormula(getSamplingModel()->computeReachabilityProbabilities()[*getSamplingModel()->getModel()->getInitialStates().begin()]);
+                valueInBoundOfFormula=this->valueIsInBoundOfFormula(getSamplingModel()->computeValues()[*getSamplingModel()->getModel()->getInitialStates().begin()]);
             }
                 
             if(valueInBoundOfFormula){
@@ -562,12 +591,12 @@ namespace storm {
         }
         
         template<typename ParametricType, typename ConstantType>
-        std::shared_ptr<ParametricType> const& SparseDtmcRegionModelChecker<ParametricType, ConstantType>::getReachProbFunction() {
-            if(this->reachProbFunction==nullptr){
-                STORM_LOG_WARN("Reachability Probability Function requested but it has not been computed when specifying the formula. Will compute it now.");
-                computeReachProbFunction(*this->simplifiedModel);
+        std::shared_ptr<ParametricType> const& SparseDtmcRegionModelChecker<ParametricType, ConstantType>::getReachabilityFunction() {
+            if(this->reachabilityFunction==nullptr){
+                STORM_LOG_WARN("Reachability Function requested but it has not been computed when specifying the formula. Will compute it now.");
+                computeReachabilityFunction(*this->simplifiedModel);
             }
-            return this->reachProbFunction;
+            return this->reachabilityFunction;
         }
 
         template<typename ParametricType, typename ConstantType>
@@ -579,7 +608,7 @@ namespace storm {
             }
             
             if(this->smtSolver==nullptr){
-                initializeSMTSolver(this->smtSolver, *getReachProbFunction(),*this->probabilityOperatorFormula);
+                initializeSMTSolver();
             }
             
             this->smtSolver->push();
@@ -660,19 +689,19 @@ namespace storm {
                 default:
                     STORM_LOG_WARN("The SMT solver was not able to compute a result for this region. (Timeout? Memout?)");
                     if(this->smtSolver->isNeedsRestart()){
-                        initializeSMTSolver(this->smtSolver,*getReachProbFunction(), *this->probabilityOperatorFormula);
+                        initializeSMTSolver();
                     }
                     return false;
             }
         }
         
         template<typename ParametricType, typename ConstantType>
-        void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::initializeSMTSolver(std::shared_ptr<storm::solver::Smt2SmtSolver>& solver, const ParametricType& reachProbFunc, const storm::logic::ProbabilityOperatorFormula& formula) {
+        void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::initializeSMTSolver() {
                     
             storm::expressions::ExpressionManager manager; //this manager will do nothing as we will use carl expressions..
-            solver = std::shared_ptr<storm::solver::Smt2SmtSolver>(new storm::solver::Smt2SmtSolver(manager, true));
+            this->smtSolver = std::shared_ptr<storm::solver::Smt2SmtSolver>(new storm::solver::Smt2SmtSolver(manager, true));
             
-            ParametricType bound= storm::utility::regions::convertNumber<double, ParametricType>(this->probabilityOperatorFormula->getBound());
+            ParametricType bound= storm::utility::regions::convertNumber<double, ParametricType>(this->specifiedFormulaBound);
             
             // To prove that the property is satisfied in the initial state for all parameters,
             // we ask the solver whether the negation of the property is satisfiable and invert the answer.
@@ -685,7 +714,7 @@ namespace storm {
             // Hence: If  f(x) > p is unsat, the property is satisfied for all parameters.
             
             storm::logic::ComparisonType proveAllSatRel; //the relation from the property needs to be inverted
-            switch (this->probabilityOperatorFormula->getComparisonType()) {
+            switch (this->specifiedFormulaCompType) {
                 case storm::logic::ComparisonType::Greater:
                     proveAllSatRel=storm::logic::ComparisonType::LessEqual;
                     break;
@@ -701,7 +730,7 @@ namespace storm {
                 default:
                     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "the comparison relation of the formula is not supported");
             }
-            storm::utility::regions::addGuardedConstraintToSmtSolver(solver, proveAllSatVar, reachProbFunc, proveAllSatRel, bound);
+            storm::utility::regions::addGuardedConstraintToSmtSolver(this->smtSolver, proveAllSatVar, *getReachabilityFunction(), proveAllSatRel, bound);
             
             // To prove that the property is violated in the initial state for all parameters,
             // we ask the solver whether the the property is satisfiable and invert the answer.
@@ -712,24 +741,24 @@ namespace storm {
             //Property:    P<=p [ F 'target' ] holds iff...
             // f(x)         <= p
             // Hence: If f(x)  <= p is unsat, the property is violated for all parameters. 
-            storm::logic::ComparisonType proveAllViolatedRel = this->probabilityOperatorFormula->getComparisonType();
-            storm::utility::regions::addGuardedConstraintToSmtSolver(solver, proveAllViolatedVar, reachProbFunc, proveAllViolatedRel, bound);          
+            storm::logic::ComparisonType proveAllViolatedRel = this->specifiedFormulaCompType;
+            storm::utility::regions::addGuardedConstraintToSmtSolver(this->smtSolver, proveAllViolatedVar, *getReachabilityFunction(), proveAllViolatedRel, bound);          
         }
 
         template<typename ParametricType, typename ConstantType>
         template<typename ValueType>
         bool SparseDtmcRegionModelChecker<ParametricType, ConstantType>::valueIsInBoundOfFormula(ValueType value){
-            STORM_LOG_THROW(this->probabilityOperatorFormula!=nullptr, storm::exceptions::InvalidStateException, "Tried to compare a value to the bound of a formula, but no formula specified.");
+            STORM_LOG_THROW(this->specifiedFormula!=nullptr, storm::exceptions::InvalidStateException, "Tried to compare a value to the bound of a formula, but no formula specified.");
             double valueAsDouble = storm::utility::regions::convertNumber<ValueType, double>(value);
-            switch (this->probabilityOperatorFormula->getComparisonType()) {
+            switch (this->specifiedFormulaCompType) {
                 case storm::logic::ComparisonType::Greater:
-                    return (valueAsDouble > this->probabilityOperatorFormula->getBound());
+                    return (valueAsDouble > this->specifiedFormulaBound);
                 case storm::logic::ComparisonType::GreaterEqual:
-                    return (valueAsDouble >= this->probabilityOperatorFormula->getBound());
+                    return (valueAsDouble >= this->specifiedFormulaBound);
                 case storm::logic::ComparisonType::Less:
-                    return (valueAsDouble < this->probabilityOperatorFormula->getBound());
+                    return (valueAsDouble < this->specifiedFormulaBound);
                 case storm::logic::ComparisonType::LessEqual:
-                    return (valueAsDouble <= this->probabilityOperatorFormula->getBound());
+                    return (valueAsDouble <= this->specifiedFormulaBound);
                 default:
                     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "the comparison relation of the formula is not supported");
             }
@@ -738,7 +767,7 @@ namespace storm {
         template<typename ParametricType, typename ConstantType>
         void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::printStatisticsToStream(std::ostream& outstream) {
             
-            if(this->probabilityOperatorFormula==nullptr){
+            if(this->specifiedFormula==nullptr){
                 outstream << "Region Model Checker Statistics Error: No formula specified." << std::endl; 
                 return;
             }
@@ -747,7 +776,7 @@ namespace storm {
             std::chrono::milliseconds timeComputeSimplifiedModelInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timeComputeSimplifiedModel);
             std::chrono::milliseconds timeInitSamplingModelInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timeInitSamplingModel);
             std::chrono::milliseconds timeInitApproxModelInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timeInitApproxModel);
-            std::chrono::milliseconds timeComputeReachProbFunctionInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timeComputeReachProbFunction);
+            std::chrono::milliseconds timeComputeReachabilityFunctionInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timeComputeReachabilityFunction);
             std::chrono::milliseconds timeCheckRegionInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timeCheckRegion);
             std::chrono::milliseconds timeSammplingInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timeSampling);
             std::chrono::milliseconds timeApproximationInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timeApproximation);
@@ -762,8 +791,13 @@ namespace storm {
             outstream << std::endl << "Region Model Checker Statistics:" << std::endl;
             outstream << "-----------------------------------------------" << std::endl;
             outstream << "Model: " << this->model.getNumberOfStates() << " states, " << this->model.getNumberOfTransitions() << " transitions." << std::endl;
-            outstream << "Simplified model: " << this->simplifiedModel->getNumberOfStates() << " states, " << this->simplifiedModel->getNumberOfTransitions() << " transitions" << std::endl;
-            outstream << "Formula: " << *this->probabilityOperatorFormula << std::endl;
+            if(this->isResultConstant){
+                outstream << "The requested value is constant (i.e. independent of any parameters)" << std::endl;
+            }
+            else{
+                outstream << "Simplified model: " << this->simplifiedModel->getNumberOfStates() << " states, " << this->simplifiedModel->getNumberOfTransitions() << " transitions" << std::endl;
+            }
+            outstream << "Formula: " << *this->specifiedFormula << std::endl;
             outstream << (this->hasOnlyLinearFunctions ? "A" : "Not a") << "ll occuring functions in the model are linear" << std::endl;
             outstream << "Number of checked regions: " << this->numOfCheckedRegions << std::endl;
             outstream << "  Number of solved regions:  " <<  numOfSolvedRegions << "(" << numOfSolvedRegions*100/this->numOfCheckedRegions << "%)" <<  std::endl;
@@ -782,7 +816,7 @@ namespace storm {
             outstream << "    " << timeComputeSimplifiedModelInMilliseconds.count() << "ms to obtain a simplified model (state elimination of const transitions)" << std::endl;
             outstream << "    " << timeInitApproxModelInMilliseconds.count() << "ms to initialize the Approximation Model" << std::endl;
             outstream << "    " << timeInitSamplingModelInMilliseconds.count() << "ms to initialize the Sampling Model" << std::endl;
-            outstream << "    " << timeComputeReachProbFunctionInMilliseconds.count() << "ms to compute the reachability probability function" << std::endl;
+            outstream << "    " << timeComputeReachabilityFunctionInMilliseconds.count() << "ms to compute the reachability function" << std::endl;
             outstream << "  " << timeCheckRegionInMilliseconds.count() << "ms Region Check including... " << std::endl;
             outstream << "    " << timeApproximationInMilliseconds.count() << "ms Approximation including... " << std::endl;
             outstream << "      " << timeMDPBuildInMilliseconds.count() << "ms to build the MDP" << std::endl;

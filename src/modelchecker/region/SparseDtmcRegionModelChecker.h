@@ -51,7 +51,7 @@ namespace storm {
              * 
              * @param formula the formula to be considered.
              */
-            void specifyFormula(storm::logic::Formula const& formula);
+            void specifyFormula(std::shared_ptr<storm::logic::Formula> formula);
 
             /*!
              * Checks whether the given formula holds for all parameters that lie in the given region.
@@ -107,12 +107,12 @@ namespace storm {
             void initializeSamplingModel(storm::models::sparse::Dtmc<ParametricType> const& simpleModel);
             
             /*!
-             * Computes the reachability probability function via state elimination
+             * Computes the reachability function via state elimination
              */
-            void computeReachProbFunction(storm::models::sparse::Dtmc<ParametricType> const& simpleModel);
+            void computeReachabilityFunction(storm::models::sparse::Dtmc<ParametricType> const& simpleModel);
             
             /*!
-             * Instantiates the approximation model to compute bounds on the maximal/minimal reachability probability.
+             * Instantiates the approximation model to compute bounds on the maximal/minimal reachability probability (or reachability reward).
              * If the current region result is EXISTSSAT (or EXISTSVIOLATED), then this function tries to prove ALLSAT (or ALLVIOLATED).
              * If this succeeded, then the region check result is changed accordingly.
              * If the current region result is UNKNOWN, then this function first tries to prove ALLSAT and if that failed, it tries to prove ALLVIOLATED.
@@ -120,7 +120,7 @@ namespace storm {
              * However, if only the lowerBounds (or upperBounds) have been computed, the other vector is set to a vector of size 0.
              * True is returned iff either ALLSAT or ALLVIOLATED could be proved.
              */
-            bool checkApproximativeProbabilities(ParameterRegion& region, std::vector<ConstantType>& lowerBounds, std::vector<ConstantType>& upperBounds); 
+            bool checkApproximativeValues(ParameterRegion& region, std::vector<ConstantType>& lowerBounds, std::vector<ConstantType>& upperBounds); 
             
             /*!
              * Returns the approximation model.
@@ -143,7 +143,7 @@ namespace storm {
              * Also changes the regioncheckresult of the region to EXISTSSAT, EXISTSVIOLATED, or EXISTSBOTH
              * 
              * @param favorViaFunction if not stated otherwise (e.g. in the settings), the sampling will be done via the
-             *                          reachProbFunction if this flag is true. If the flag is false, sampling will be 
+             *                          reachabilityFunction if this flag is true. If the flag is false, sampling will be 
              *                          done via instantiation of the samplingmodel. Note that this argument is ignored,
              *                          unless sampling has been turned of in the settings
              * 
@@ -158,10 +158,10 @@ namespace storm {
             std::shared_ptr<SamplingModel> const& getSamplingModel();
             
             /*!
-             * Returns the reachability probability function. 
+             * Returns the reachability  function. 
              * If it is not yet available, it is computed.
              */
-            std::shared_ptr<ParametricType> const& getReachProbFunction();
+            std::shared_ptr<ParametricType> const& getReachabilityFunction();
             
             /*!
              * Starts the SMTSolver to get the result.
@@ -173,8 +173,8 @@ namespace storm {
              */
             bool checkFullSmt(ParameterRegion& region); 
             
-            //initializes the given solver which can later be used to give an exact result regarding the whole model.
-            void initializeSMTSolver(std::shared_ptr<storm::solver::Smt2SmtSolver>& solver, ParametricType const& reachProbFunction, storm::logic::ProbabilityOperatorFormula const& formula);
+            //initializes this->smtSolver which can later be used to give an exact result regarding the whole model.
+            void initializeSMTSolver();
             
             /*!
              * Returns true iff the given value satisfies the bound given by the specified property
@@ -193,21 +193,25 @@ namespace storm {
             storm::utility::ConstantsComparator<ConstantType> constantTypeComparator;
             
             //the following members depend on the currently specified formula:
-            //the currently specified formula
-            std::unique_ptr<storm::logic::ProbabilityOperatorFormula> probabilityOperatorFormula;
+            //the currently specified formula, the bound and the comparison type
+            std::shared_ptr<storm::logic::Formula> specifiedFormula;
+            bool computeRewards;
+            storm::logic::ComparisonType specifiedFormulaCompType;
+            double specifiedFormulaBound;
+            
             // the original model after states with constant transitions have been eliminated
             std::shared_ptr<storm::models::sparse::Dtmc<ParametricType>> simplifiedModel;
-            // the model that  is used to approximate the probability values
+            // the model that  is used to approximate the reachability values
             std::shared_ptr<ApproximationModel> approximationModel;
             // the model that can be instantiated to check the value at a certain point
             std::shared_ptr<SamplingModel> samplingModel;
-            // The  function for the reachability probability in the initial state 
-            std::shared_ptr<ParametricType> reachProbFunction;
+            // The  function for the reachability probability (or: reachability reward) in the initial state 
+            std::shared_ptr<ParametricType> reachabilityFunction;
             // a flag that is true if there are only linear functions at transitions of the model
             bool hasOnlyLinearFunctions;
-            // a flag that is true iff the resulting reachability probability is constant
+            // a flag that is true iff the resulting reachability function is constant
             bool isResultConstant;
-            // the smt solver that is used to prove properties with the help of the reachProbFunction
+            // the smt solver that is used to prove properties with the help of the reachabilityFunction
             std::shared_ptr<storm::solver::Smt2SmtSolver> smtSolver;
             
             // runtimes and other information for statistics. 
@@ -223,7 +227,7 @@ namespace storm {
             std::chrono::high_resolution_clock::duration timeComputeSimplifiedModel;
             std::chrono::high_resolution_clock::duration timeInitApproxModel;
             std::chrono::high_resolution_clock::duration timeInitSamplingModel;
-            std::chrono::high_resolution_clock::duration timeComputeReachProbFunction;
+            std::chrono::high_resolution_clock::duration timeComputeReachabilityFunction;
             std::chrono::high_resolution_clock::duration timeCheckRegion;
             std::chrono::high_resolution_clock::duration timeSampling;
             std::chrono::high_resolution_clock::duration timeApproximation;

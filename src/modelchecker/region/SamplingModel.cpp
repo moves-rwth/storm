@@ -15,7 +15,7 @@ namespace storm {
         
         
         template<typename ParametricType, typename ConstantType>
-        SparseDtmcRegionModelChecker<ParametricType, ConstantType>::SamplingModel::SamplingModel(storm::models::sparse::Dtmc<ParametricType> const& parametricModel) : mapping(), evaluationTable(){
+        SparseDtmcRegionModelChecker<ParametricType, ConstantType>::SamplingModel::SamplingModel(storm::models::sparse::Dtmc<ParametricType> const& parametricModel, bool computeRewards) : mapping(), evaluationTable(), computeRewards(computeRewards){
             // Run through the rows of the original model and obtain the set of distinct functions as well as a matrix with dummy entries
             std::set<ParametricType> functionSet;
             storm::storage::SparseMatrixBuilder<ConstantType> matrixBuilder(parametricModel.getNumberOfStates(), parametricModel.getNumberOfStates(), parametricModel.getTransitionMatrix().getEntryCount());
@@ -86,13 +86,20 @@ namespace storm {
         }
 
         template<typename ParametricType, typename ConstantType>
-        std::vector<ConstantType> const& SparseDtmcRegionModelChecker<ParametricType, ConstantType>::SamplingModel::computeReachabilityProbabilities() {
-            std::shared_ptr<storm::logic::Formula> targetFormulaPtr(new storm::logic::AtomicLabelFormula("target"));
-            storm::logic::EventuallyFormula eventuallyFormula(targetFormulaPtr);
+        std::vector<ConstantType> const& SparseDtmcRegionModelChecker<ParametricType, ConstantType>::SamplingModel::computeValues() {
             storm::modelchecker::SparseDtmcPrctlModelChecker<ConstantType> modelChecker(*this->model);
-            
-            //perform model checking on the dtmc
-            std::unique_ptr<storm::modelchecker::CheckResult> resultPtr = modelChecker.computeEventuallyProbabilities(eventuallyFormula);
+            std::shared_ptr<storm::logic::Formula> targetFormulaPtr(new storm::logic::AtomicLabelFormula("target"));
+            std::unique_ptr<storm::modelchecker::CheckResult> resultPtr;
+            if(this->computeRewards){
+                storm::logic::ReachabilityRewardFormula reachRewFormula(targetFormulaPtr);
+                //perform model checking on the dtmc
+                resultPtr = modelChecker.computeReachabilityRewards(reachRewFormula);
+            }
+            else {
+                storm::logic::EventuallyFormula eventuallyFormula(targetFormulaPtr);
+                //perform model checking on the dtmc
+                resultPtr = modelChecker.computeEventuallyProbabilities(eventuallyFormula);
+            }
             return resultPtr->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
         }
         
