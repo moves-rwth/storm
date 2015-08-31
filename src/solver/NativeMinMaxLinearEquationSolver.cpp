@@ -31,7 +31,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void NativeMinMaxLinearEquationSolver<ValueType>::solveEquationSystem(bool minimize, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const {
+        void NativeMinMaxLinearEquationSolver<ValueType>::solveEquationSystem(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const {
 			if (this->useValueIteration) {
 				// Set up the environment for the power method. If scratch memory was not provided, we need to create it.
 				bool multiplyResultMemoryProvided = true;
@@ -60,7 +60,7 @@ namespace storm {
 
 					// Reduce the vector x' by applying min/max for all non-deterministic choices as given by the topmost
 					// element of the min/max operator stack.
-					storm::utility::vector::reduceVectorMinOrMax(minimize, *multiplyResult, *newX, this->A.getRowGroupIndices());
+					storm::utility::vector::reduceVectorMinOrMax(dir, *multiplyResult, *newX, this->A.getRowGroupIndices());
 					
 					// Determine whether the method converged.
 					converged = storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *newX, static_cast<ValueType>(this->precision), this->relative);
@@ -141,7 +141,7 @@ namespace storm {
 
 					// Reduce the vector x by applying min/max over all nondeterministic choices.
 					// Here, we capture which choice was taken in each state, thereby refining our initial guess.
-					storm::utility::vector::reduceVectorMinOrMax(minimize, *multiplyResult, *newX, this->A.getRowGroupIndices(), &(this->policy));
+					storm::utility::vector::reduceVectorMinOrMax(dir, *multiplyResult, *newX, this->A.getRowGroupIndices(), &(this->policy));
 					
 
 					// Determine whether the method converged.
@@ -177,7 +177,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void NativeMinMaxLinearEquationSolver<ValueType>::performMatrixVectorMultiplication(bool minimize, std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n, std::vector<ValueType>* multiplyResult) const {
+        void NativeMinMaxLinearEquationSolver<ValueType>::performMatrixVectorMultiplication(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n, std::vector<ValueType>* multiplyResult) const {
             
             // If scratch memory was not provided, we need to create it.
             bool multiplyResultMemoryProvided = true;
@@ -197,7 +197,7 @@ namespace storm {
                 
                 // Reduce the vector x' by applying min/max for all non-deterministic choices as given by the topmost
                 // element of the min/max operator stack.
-                storm::utility::vector::reduceVectorMinOrMax(minimize, *multiplyResult, x, this->A.getRowGroupIndices());
+                storm::utility::vector::reduceVectorMinOrMax(dir, *multiplyResult, x, this->A.getRowGroupIndices());
                 
             }
             

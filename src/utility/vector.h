@@ -13,6 +13,7 @@
 
 #include "src/storage/BitVector.h"
 #include "src/utility/macros.h"
+#include "src/solver/OptimizationDirection.h"
 
 template<typename ValueType>
 std::ostream& operator<<(std::ostream& out, std::vector<ValueType> const& vector);
@@ -521,20 +522,21 @@ namespace storm {
             /*!
              * Reduces the given source vector by selecting either the smallest or the largest out of each row group.
              *
-             * @param minimize If true, select the smallest, else select the largest.
+             * @param dir If true, select the smallest, else select the largest.
              * @param source The source vector which is to be reduced.
              * @param target The target vector into which a single element from each row group is written.
              * @param rowGrouping A vector that specifies the begin and end of each group of elements in the source vector.
              * @param choices If non-null, this vector is used to store the choices made during the selection.
              */
             template<class T>
-            void reduceVectorMinOrMax(bool minimize, std::vector<T> const& source, std::vector<T>& target, std::vector<uint_fast64_t> const& rowGrouping, std::vector<uint_fast64_t>* choices = nullptr) {
-                if(minimize) {
+            void reduceVectorMinOrMax(storm::solver::OptimizationDirection dir, std::vector<T> const& source, std::vector<T>& target, std::vector<uint_fast64_t> const& rowGrouping, std::vector<uint_fast64_t>* choices = nullptr) {
+                if(dir == storm::solver::OptimizationDirection::Minimize) {
                     reduceVectorMin(source, target, rowGrouping, choices);
                 } else {
                     reduceVectorMax(source, target, rowGrouping, choices);    
                 }
             }
+            
             
             /*!
              * Compares the given elements and determines whether they are equal modulo the given precision. The provided flag

@@ -1,6 +1,7 @@
 #ifndef STORM_LOGIC_REWARDOPERATORFORMULA_H_
 #define STORM_LOGIC_REWARDOPERATORFORMULA_H_
 
+#include <set>
 #include "src/logic/OperatorFormula.h"
 
 namespace storm {
@@ -9,9 +10,9 @@ namespace storm {
         public:
             RewardOperatorFormula(boost::optional<std::string> const& rewardModelName, std::shared_ptr<Formula const> const& subformula);
             RewardOperatorFormula(boost::optional<std::string> const& rewardModelName, ComparisonType comparisonType, double bound, std::shared_ptr<Formula const> const& subformula);
-            RewardOperatorFormula(boost::optional<std::string> const& rewardModelName, OptimalityType optimalityType, ComparisonType comparisonType, double bound, std::shared_ptr<Formula const> const& subformula);
-            RewardOperatorFormula(boost::optional<std::string> const& rewardModelName, OptimalityType optimalityType, std::shared_ptr<Formula const> const& subformula);
-            RewardOperatorFormula(boost::optional<std::string> const& rewardModelName, boost::optional<OptimalityType> optimalityType, boost::optional<ComparisonType> comparisonType, boost::optional<double> bound, std::shared_ptr<Formula const> const& subformula);
+            RewardOperatorFormula(boost::optional<std::string> const& rewardModelName, OptimizationDirection optimalityType, ComparisonType comparisonType, double bound, std::shared_ptr<Formula const> const& subformula);
+            RewardOperatorFormula(boost::optional<std::string> const& rewardModelName, OptimizationDirection optimalityType, std::shared_ptr<Formula const> const& subformula);
+            RewardOperatorFormula(boost::optional<std::string> const& rewardModelName, boost::optional<OptimizationDirection> optimalityType, boost::optional<ComparisonType> comparisonType, boost::optional<double> bound, std::shared_ptr<Formula const> const& subformula);
 
             virtual ~RewardOperatorFormula() {
                 // Intentionally left empty.

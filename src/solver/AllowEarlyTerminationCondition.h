@@ -22,25 +22,23 @@ namespace storm {
         template<typename ValueType>
         class TerminateAfterFilteredSumPassesThresholdValue :  public AllowEarlyTerminationCondition<ValueType> {
             public:
-                TerminateAfterFilteredSumPassesThresholdValue(storm::storage::BitVector const& filter, ValueType threshold, bool terminateAbove);
+                TerminateAfterFilteredSumPassesThresholdValue(storm::storage::BitVector const& filter, ValueType threshold);
                 bool terminateNow(std::vector<ValueType> const& currentValues) const;
             
             protected:
                 ValueType terminationThreshold;
                 storm::storage::BitVector filter;
-                bool terminateIfAboveThreshold;
         };
         
         template<typename ValueType>
         class TerminateAfterFilteredExtremumPassesThresholdValue :  public AllowEarlyTerminationCondition<ValueType>{
         public:
-            TerminateAfterFilteredExtremumPassesThresholdValue(storm::storage::BitVector const& filter, ValueType threshold, bool terminateAbove, bool useMinimum);
+            TerminateAfterFilteredExtremumPassesThresholdValue(storm::storage::BitVector const& filter, ValueType threshold, bool useMinimum);
             bool terminateNow(std::vector<ValueType> const& currentValue) const;
             
         protected:
             ValueType terminationThreshold;
             storm::storage::BitVector filter;
-            bool terminateIfAboveThreshold;
             bool useMinimumAsExtremum;
         };
     }

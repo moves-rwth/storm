@@ -2,19 +2,19 @@
 
 namespace storm {
     namespace logic {
-        RewardOperatorFormula::RewardOperatorFormula(boost::optional<std::string> const& rewardModelName, std::shared_ptr<Formula const> const& subformula) : RewardOperatorFormula(rewardModelName, boost::optional<OptimalityType>(), boost::optional<ComparisonType>(), boost::optional<double>(), subformula) {
+        RewardOperatorFormula::RewardOperatorFormula(boost::optional<std::string> const& rewardModelName, std::shared_ptr<Formula const> const& subformula) : RewardOperatorFormula(rewardModelName, boost::optional<OptimizationDirection>(), boost::optional<ComparisonType>(), boost::optional<double>(), subformula) {
             // Intentionally left empty.
         }
         
-        RewardOperatorFormula::RewardOperatorFormula(boost::optional<std::string> const& rewardModelName, ComparisonType comparisonType, double bound, std::shared_ptr<Formula const> const& subformula) : RewardOperatorFormula(rewardModelName, boost::optional<OptimalityType>(), boost::optional<ComparisonType>(comparisonType), boost::optional<double>(bound), subformula) {
+        RewardOperatorFormula::RewardOperatorFormula(boost::optional<std::string> const& rewardModelName, ComparisonType comparisonType, double bound, std::shared_ptr<Formula const> const& subformula) : RewardOperatorFormula(rewardModelName, boost::optional<OptimizationDirection>(), boost::optional<ComparisonType>(comparisonType), boost::optional<double>(bound), subformula) {
             // Intentionally left empty.
         }
         
-        RewardOperatorFormula::RewardOperatorFormula(boost::optional<std::string> const& rewardModelName, OptimalityType optimalityType, ComparisonType comparisonType, double bound, std::shared_ptr<Formula const> const& subformula) : RewardOperatorFormula(rewardModelName, boost::optional<OptimalityType>(optimalityType), boost::optional<ComparisonType>(comparisonType), boost::optional<double>(bound), subformula) {
+        RewardOperatorFormula::RewardOperatorFormula(boost::optional<std::string> const& rewardModelName, OptimizationDirection optimalityType, ComparisonType comparisonType, double bound, std::shared_ptr<Formula const> const& subformula) : RewardOperatorFormula(rewardModelName, boost::optional<OptimizationDirection>(optimalityType), boost::optional<ComparisonType>(comparisonType), boost::optional<double>(bound), subformula) {
             // Intentionally left empty.
         }
         
-        RewardOperatorFormula::RewardOperatorFormula(boost::optional<std::string> const& rewardModelName, OptimalityType optimalityType, std::shared_ptr<Formula const> const& subformula) : RewardOperatorFormula(rewardModelName, boost::optional<OptimalityType>(optimalityType), boost::optional<ComparisonType>(), boost::optional<double>(), subformula) {
+        RewardOperatorFormula::RewardOperatorFormula(boost::optional<std::string> const& rewardModelName, OptimizationDirection optimalityType, std::shared_ptr<Formula const> const& subformula) : RewardOperatorFormula(rewardModelName, boost::optional<OptimizationDirection>(optimalityType), boost::optional<ComparisonType>(), boost::optional<double>(), subformula) {
             // Intentionally left empty.
         }
         
@@ -55,7 +55,7 @@ namespace storm {
             this->getSubformula().gatherReferencedRewardModels(referencedRewardModels);
         }
         
-        RewardOperatorFormula::RewardOperatorFormula(boost::optional<std::string> const& rewardModelName, boost::optional<OptimalityType> optimalityType, boost::optional<ComparisonType> comparisonType, boost::optional<double> bound, std::shared_ptr<Formula const> const& subformula) : OperatorFormula(optimalityType, comparisonType, bound, subformula), rewardModelName(rewardModelName) {
+        RewardOperatorFormula::RewardOperatorFormula(boost::optional<std::string> const& rewardModelName, boost::optional<OptimizationDirection> optimalityType, boost::optional<ComparisonType> comparisonType, boost::optional<double> bound, std::shared_ptr<Formula const> const& subformula) : OperatorFormula(optimalityType, comparisonType, bound, subformula), rewardModelName(rewardModelName) {
             // Intentionally left empty.
         }
         

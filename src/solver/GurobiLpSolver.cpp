@@ -22,7 +22,7 @@ namespace storm {
     namespace solver {
         
 #ifdef STORM_HAVE_GUROBI
-        GurobiLpSolver::GurobiLpSolver(std::string const& name, ModelSense const& modelSense) : LpSolver(modelSense), env(nullptr), model(nullptr), nextVariableIndex(0) {
+        GurobiLpSolver::GurobiLpSolver(std::string const& name, OptimizationDirection const& optDir) : LpSolver(optDir), env(nullptr), model(nullptr), nextVariableIndex(0) {
             // Create the environment.
             int error = GRBloadenv(&env, "");
             if (error || env == nullptr) {
@@ -41,15 +41,15 @@ namespace storm {
             }
         }
         
-        GurobiLpSolver::GurobiLpSolver(std::string const& name) : GurobiLpSolver(name, ModelSense::Minimize) {
+        GurobiLpSolver::GurobiLpSolver(std::string const& name) : GurobiLpSolver(name, OptimizationDirection::Minimize) {
             // Intentionally left empty.
         }
         
-        GurobiLpSolver::GurobiLpSolver(ModelSense const& modelSense) : GurobiLpSolver("", modelSense) {
+        GurobiLpSolver::GurobiLpSolver(OptimizationDirection const& optDir) : GurobiLpSolver("", optDir) {
             // Intentionally left empty.
         }
         
-        GurobiLpSolver::GurobiLpSolver() : GurobiLpSolver("", ModelSense::Minimize) {
+        GurobiLpSolver::GurobiLpSolver() : GurobiLpSolver("", OptimizationDirection::Minimize) {
             // Intentionally left empty.
         }
         
@@ -195,7 +195,7 @@ namespace storm {
             this->update();
          
             // Set the most recently set model sense.
-            int error = GRBsetintattr(model, "ModelSense", this->getModelSense() == ModelSense::Minimize ? 1 : -1);
+            int error = GRBsetintattr(model, "ModelSense", this->getOptimizationDirection() == OptimizationDirection::Minimize ? 1 : -1);
             STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException, "Unable to set Gurobi model sense (" << GRBgeterrormsg(env) << ", error code " << error << ").");
             
             // Then we actually optimize the model.
@@ -353,7 +353,7 @@ namespace storm {
             }
         }
 #else 
-            GurobiLpSolver::GurobiLpSolver(std::string const& name, ModelSense const& modelSense) {
+            GurobiLpSolver::GurobiLpSolver(std::string const& name, OptimizationDirection const& ) {
                 throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
             }
             
@@ -361,7 +361,7 @@ namespace storm {
                 throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
             }
             
-            GurobiLpSolver::GurobiLpSolver(ModelSense const& modelSense) {
+            GurobiLpSolver::GurobiLpSolver(OptimizationDirection const& modelSense) {
                 throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
             }
             

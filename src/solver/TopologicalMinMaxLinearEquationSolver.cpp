@@ -46,7 +46,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-		void TopologicalMinMaxLinearEquationSolver<ValueType>::solveEquationSystem(bool minimize, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const {
+		void TopologicalMinMaxLinearEquationSolver<ValueType>::solveEquationSystem(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const {
 			
 #ifdef GPU_USE_FLOAT
 #define __FORCE_FLOAT_CALCULATION true
@@ -62,7 +62,7 @@ namespace storm {
 				std::vector<float> new_x = storm::utility::vector::toValueType<float>(x);
 				std::vector<float> const new_b = storm::utility::vector::toValueType<float>(b);
 
-				newSolver.solveEquationSystem(minimize, new_x, new_b, nullptr, nullptr);
+				newSolver.solveEquationSystem(dir, new_x, new_b, nullptr, nullptr);
 
 				for (size_t i = 0, size = new_x.size(); i < size; ++i) {
 					x.at(i) = new_x.at(i);
@@ -102,7 +102,7 @@ namespace storm {
 
 				bool result = false;
 				size_t globalIterations = 0;
-				if (minimize) {
+				if (dir == OptimizationDirection::Minimize) {
 					result = __basicValueIteration_mvReduce_minimize<uint_fast64_t, ValueType>(this->maximalNumberOfIterations, this->precision, this->relative, A.rowIndications, A.columnsAndValues, x, b, nondeterministicChoiceIndices, globalIterations);
 				} else {
 					result = __basicValueIteration_mvReduce_maximize<uint_fast64_t, ValueType>(this->maximalNumberOfIterations, this->precision, this->relative, A.rowIndications, A.columnsAndValues, x, b, nondeterministicChoiceIndices, globalIterations);
@@ -204,7 +204,7 @@ namespace storm {
 
 						bool result = false;
 						localIterations = 0;
-						if (minimize) {
+						if (dir == OptimizationDirection::Minimum) {
 							result = __basicValueIteration_mvReduce_minimize<uint_fast64_t, ValueType>(this->maximalNumberOfIterations, this->precision, this->relative, sccSubmatrix.rowIndications, sccSubmatrix.columnsAndValues, *currentX, sccSubB, sccSubNondeterministicChoiceIndices, localIterations);
 						} else {
 							result = __basicValueIteration_mvReduce_maximize<uint_fast64_t, ValueType>(this->maximalNumberOfIterations, this->precision, this->relative, sccSubmatrix.rowIndications, sccSubmatrix.columnsAndValues, *currentX, sccSubB, sccSubNondeterministicChoiceIndices, localIterations);
@@ -249,12 +249,8 @@ namespace storm {
 							*/
 
 							// Reduce the vector x' by applying min/max for all non-deterministic choices.
-							if (minimize) {
-								storm::utility::vector::reduceVectorMin<ValueType>(sccMultiplyResult, *swap, sccSubNondeterministicChoiceIndices);
-							} else {
-								storm::utility::vector::reduceVectorMax<ValueType>(sccMultiplyResult, *swap, sccSubNondeterministicChoiceIndices);
-							}
-
+							storm::utility::vector::reduceVectorMinOrMax<ValueType>(dir,sccMultiplyResult, *swap, sccSubNondeterministicChoiceIndices);
+							
 							// Determine whether the method converged.
 							// TODO: It seems that the equalModuloPrecision call that compares all values should have a higher
 							// running time. In fact, it is faster. This has to be investigated.

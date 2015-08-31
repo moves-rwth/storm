@@ -27,4 +27,3 @@
 #include "src/logic/ProbabilityOperatorFormula.h"
 #include "src/logic/RewardOperatorFormula.h"
 #include "src/logic/ComparisonType.h"
-#include "src/logic/OptimalityType.h"
