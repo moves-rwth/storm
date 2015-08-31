@@ -11,6 +11,8 @@
 #include "src/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
 #include "src/modelchecker/csl/helper/SparseCtmcCslHelper.h"
 
+#include "src/models/sparse/StandardRewardModel.h"
+
 #include "src/settings/modules/GeneralSettings.h"
 
 #include "src/exceptions/InvalidStateException.h"

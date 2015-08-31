@@ -3,6 +3,8 @@
 #include "src/modelchecker/csl/helper/SparseCtmcCslHelper.h"
 #include "src/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
 
+#include "src/models/sparse/StandardRewardModel.h"
+
 #include "src/utility/macros.h"
 #include "src/utility/vector.h"
 #include "src/utility/graph.h"
@@ -14,7 +16,6 @@
 #include "src/exceptions/InvalidStateException.h"
 #include "src/exceptions/InvalidPropertyException.h"
 #include "src/exceptions/NotImplementedException.h"
-
 
 namespace storm {
     namespace modelchecker {
