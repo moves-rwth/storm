@@ -8,10 +8,11 @@
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
+#include "src/models/sparse/StandardRewardModel.h"
+
 #include "src/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
 
 #include "src/solver/LpSolver.h"
-
 
 #include "src/settings/modules/GeneralSettings.h"
 
@@ -20,7 +21,6 @@
 #include "src/storage/expressions/Expressions.h"
 
 #include "src/storage/MaximalEndComponentDecomposition.h"
-
 
 #include "src/exceptions/InvalidArgumentException.h"
 

@@ -57,6 +57,7 @@ namespace storm {
             VT threshold;
             storm::storage::BitVector relevantColumnVector;
         };
+        
         template<typename VT>
         std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<VT>> configureMinMaxLinearEquationSolver(BoundedGoal<VT> const& goal, storm::utility::solver::MinMaxLinearEquationSolverFactory<VT> const& factory, storm::storage::SparseMatrix<VT> const&  matrix);
         template<typename VT> 

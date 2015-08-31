@@ -2,6 +2,8 @@
 
 #include "src/modelchecker/csl/helper/SparseMarkovAutomatonCslHelper.h"
 
+#include "src/models/sparse/StandardRewardModel.h"
+
 #include "src/utility/macros.h"
 
 #include "src/settings/SettingsManager.h"

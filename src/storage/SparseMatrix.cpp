@@ -1158,32 +1158,28 @@ namespace storm {
         }
         
         // Explicitly instantiate the entry, builder and the matrix.
-        //double
+        // double
         template class MatrixEntry<typename SparseMatrix<double>::index_type, double>;
         template std::ostream& operator<<(std::ostream& out, MatrixEntry<uint_fast64_t, double> const& entry);
         template class SparseMatrixBuilder<double>;
         template class SparseMatrix<double>;
         template std::ostream& operator<<(std::ostream& out, SparseMatrix<double> const& matrix);
         template std::vector<double> SparseMatrix<double>::getPointwiseProductRowSumVector(storm::storage::SparseMatrix<double> const& otherMatrix) const;
-        template std::vector<storm::RationalFunction> SparseMatrix<double>::getPointwiseProductRowSumVector(storm::storage::SparseMatrix<storm::RationalFunction> const& otherMatrix) const;
-        template std::vector<storm::Interval> SparseMatrix<double>::getPointwiseProductRowSumVector(storm::storage::SparseMatrix<storm::Interval> const& otherMatrix) const;
         
-        //float
+        // float
         template class MatrixEntry<typename SparseMatrix<float>::index_type, float>;
         template std::ostream& operator<<(std::ostream& out, MatrixEntry<uint_fast64_t, float> const& entry);
         template class SparseMatrixBuilder<float>;
         template class SparseMatrix<float>;
         template std::ostream& operator<<(std::ostream& out, SparseMatrix<float> const& matrix);
         template std::vector<float> SparseMatrix<float>::getPointwiseProductRowSumVector(storm::storage::SparseMatrix<float> const& otherMatrix) const;
-        template std::vector<storm::RationalFunction> SparseMatrix<float>::getPointwiseProductRowSumVector(storm::storage::SparseMatrix<storm::RationalFunction> const& otherMatrix) const;
 
-        //int
+        // int
         template class MatrixEntry<typename SparseMatrix<int>::index_type, int>;
         template std::ostream& operator<<(std::ostream& out, MatrixEntry<uint_fast64_t, int> const& entry);
         template class SparseMatrixBuilder<int>;
         template class SparseMatrix<int>;
         template std::ostream& operator<<(std::ostream& out, SparseMatrix<int> const& matrix);
-        template std::vector<storm::RationalFunction> SparseMatrix<int>::getPointwiseProductRowSumVector(storm::storage::SparseMatrix<storm::RationalFunction> const& otherMatrix) const;
 
 #ifdef STORM_HAVE_CARL
         // Rat Function
@@ -1193,8 +1189,12 @@ namespace storm {
         template class SparseMatrix<RationalFunction>;
         template std::ostream& operator<<(std::ostream& out, SparseMatrix<RationalFunction> const& matrix);
         template std::vector<storm::RationalFunction> SparseMatrix<RationalFunction>::getPointwiseProductRowSumVector(storm::storage::SparseMatrix<storm::RationalFunction> const& otherMatrix) const;
+        template std::vector<storm::RationalFunction> SparseMatrix<double>::getPointwiseProductRowSumVector(storm::storage::SparseMatrix<storm::RationalFunction> const& otherMatrix) const;
+        template std::vector<storm::RationalFunction> SparseMatrix<float>::getPointwiseProductRowSumVector(storm::storage::SparseMatrix<storm::RationalFunction> const& otherMatrix) const;
+        template std::vector<storm::RationalFunction> SparseMatrix<int>::getPointwiseProductRowSumVector(storm::storage::SparseMatrix<storm::RationalFunction> const& otherMatrix) const;
 
         // Intervals
+        template std::vector<storm::Interval> SparseMatrix<double>::getPointwiseProductRowSumVector(storm::storage::SparseMatrix<storm::Interval> const& otherMatrix) const;
         template class MatrixEntry<typename SparseMatrix<Interval>::index_type, Interval>;
         template std::ostream& operator<<(std::ostream& out, MatrixEntry<uint_fast64_t, Interval> const& entry);
         template class SparseMatrixBuilder<Interval>;
