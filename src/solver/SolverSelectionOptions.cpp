@@ -26,6 +26,8 @@ namespace storm {
                     return "Native";
                 case EquationSolverType::Gmmxx:
                     return "Gmmxx";
+                case EquationSolverType::Topological:
+                    return "Topological";
             }
         }
     }

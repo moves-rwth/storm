@@ -72,7 +72,7 @@ namespace storm {
         protected:
             MinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& matrix, double precision, bool relativeError, uint_fast64_t maxNrIterations, bool trackPolicy, MinMaxTechniqueSelection prefTech) :
                 AbstractMinMaxLinearEquationSolver(precision, relativeError, maxNrIterations, trackPolicy, prefTech),
-                earlyTermination(new NoEarlyTerminationCondition<ValueType>()), A(matrix) {
+                A(matrix), earlyTermination(new NoEarlyTerminationCondition<ValueType>()) {
                 // Intentionally left empty.
             }
         
