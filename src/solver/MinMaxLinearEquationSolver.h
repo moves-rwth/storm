@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <cstdint>
+#include <memory>
 #include "SolverSelectionOptions.h"
 #include "src/storage/sparse/StateType.h"
 #include "AllowEarlyTerminationCondition.h"
@@ -25,7 +26,6 @@ namespace storm {
             
         protected:
             AbstractMinMaxLinearEquationSolver(double precision, bool relativeError, uint_fast64_t maximalIterations, bool trackPolicy, MinMaxTechniqueSelection prefTech);
-             
             
             /// The required precision for the iterative methods.
             double precision;
@@ -56,7 +56,7 @@ namespace storm {
         protected:
             MinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& matrix, double precision, bool relativeError, uint_fast64_t maxNrIterations, bool trackPolicy, MinMaxTechniqueSelection prefTech) :
                 AbstractMinMaxLinearEquationSolver(precision, relativeError, maxNrIterations, trackPolicy, prefTech),
-                A(matrix), earlyTermination(new NoEarlyTerminationCondition<ValueType>()) {
+                earlyTermination(new NoEarlyTerminationCondition<ValueType>()), A(matrix) {
                 // Intentionally left empty.
             }
         
