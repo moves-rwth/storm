@@ -87,6 +87,7 @@ namespace storm {
             {
                 prefTech = storm::solver::MinMaxTechniqueSelection::FROMSETTINGS;
                 setSolverType(solver);
+                std::cout << toString(prefTech) << std::endl;
             }
             
             template<typename ValueType>
@@ -107,6 +108,7 @@ namespace storm {
             template<typename ValueType>
             std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> MinMaxLinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType> const& matrix, bool trackPolicy) const {
                 
+                std::cout << toString(prefTech) << std::endl;
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> p1;
                 
                 switch (solverType) {
@@ -122,7 +124,7 @@ namespace storm {
                     }
                     case storm::solver::EquationSolverType::Topological:
                     {
-                        STORM_LOG_THROW(prefTech == storm::solver::MinMaxTechniqueSelection::PolicyIteration, storm::exceptions::NotImplementedException, "Policy iteration for topological solver is not supported.");
+                        STORM_LOG_THROW(prefTech != storm::solver::MinMaxTechniqueSelection::PolicyIteration, storm::exceptions::NotImplementedException, "Policy iteration for topological solver is not supported.");
                         p1.reset(new storm::solver::TopologicalMinMaxLinearEquationSolver<ValueType>(matrix));
                         break;
                     }

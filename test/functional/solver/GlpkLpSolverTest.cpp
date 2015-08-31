@@ -14,7 +14,7 @@
 #include "src/solver/OptimizationDirection.h"
 
 TEST(GlpkLpSolver, LPOptimizeMax) {
-    storm::solver::GlpkLpSolver solver(storm::OptimizationDirection::Minimize);
+    storm::solver::GlpkLpSolver solver(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
