@@ -1,5 +1,7 @@
 #include "src/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
 
+#include "src/models/sparse/StandardRewardModel.h"
+
 #include "src/storage/MaximalEndComponentDecomposition.h"
 
 #include "src/utility/macros.h"
@@ -18,8 +20,8 @@
 namespace storm {
     namespace modelchecker {
         namespace helper {
-            template<typename ValueType, typename RewardModelType>
-            std::vector<ValueType> SparseMdpPrctlHelper<ValueType, RewardModelType>::computeBoundedUntilProbabilities(bool minimize, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, uint_fast64_t stepBound, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
+            template<typename ValueType>
+            std::vector<ValueType> SparseMdpPrctlHelper<ValueType>::computeBoundedUntilProbabilities(bool minimize, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, uint_fast64_t stepBound, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
                 std::vector<ValueType> result(transitionMatrix.getRowCount(), storm::utility::zero<ValueType>());
                 
                 // Determine the states that have 0 probability of reaching the target states.
@@ -52,8 +54,8 @@ namespace storm {
                 return result;
             }
             
-            template<typename ValueType, typename RewardModelType>
-            std::vector<ValueType> SparseMdpPrctlHelper<ValueType, RewardModelType>::computeNextProbabilities(bool minimize, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& nextStates, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
+            template<typename ValueType>
+            std::vector<ValueType> SparseMdpPrctlHelper<ValueType>::computeNextProbabilities(bool minimize, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& nextStates, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
                 // Create the vector with which to multiply and initialize it correctly.
                 std::vector<ValueType> result(transitionMatrix.getRowCount());
                 storm::utility::vector::setVectorValues(result, nextStates, storm::utility::one<ValueType>());
@@ -64,8 +66,8 @@ namespace storm {
                 return result;
             }
             
-            template<typename ValueType, typename RewardModelType>
-            std::vector<ValueType> SparseMdpPrctlHelper<ValueType, RewardModelType>::computeUntilProbabilities(bool minimize, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
+            template<typename ValueType>
+            std::vector<ValueType> SparseMdpPrctlHelper<ValueType>::computeUntilProbabilities(bool minimize, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
                 uint_fast64_t numberOfStates = transitionMatrix.getRowCount();
                 
                 // We need to identify the states which have to be taken out of the matrix, i.e.
@@ -121,8 +123,9 @@ namespace storm {
                 return result;
             }
             
-            template<typename ValueType, typename RewardModelType>
-            std::vector<ValueType> SparseMdpPrctlHelper<ValueType, RewardModelType>::computeInstantaneousRewards(bool minimize, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, RewardModelType const& rewardModel, uint_fast64_t stepCount, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
+            template<typename ValueType>
+            template<typename RewardModelType>
+            std::vector<ValueType> SparseMdpPrctlHelper<ValueType>::computeInstantaneousRewards(bool minimize, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, RewardModelType const& rewardModel, uint_fast64_t stepCount, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
                 // Only compute the result if the model has a state-based reward this->getModel().
                 STORM_LOG_THROW(rewardModel.hasStateRewards(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
                 
@@ -135,8 +138,9 @@ namespace storm {
                 return result;
             }
             
-            template<typename ValueType, typename RewardModelType>
-            std::vector<ValueType> SparseMdpPrctlHelper<ValueType, RewardModelType>::computeCumulativeRewards(bool minimize, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, RewardModelType const& rewardModel, uint_fast64_t stepBound, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
+            template<typename ValueType>
+            template<typename RewardModelType>
+            std::vector<ValueType> SparseMdpPrctlHelper<ValueType>::computeCumulativeRewards(bool minimize, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, RewardModelType const& rewardModel, uint_fast64_t stepBound, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
                 // Only compute the result if the model has at least one reward this->getModel().
                 STORM_LOG_THROW(!rewardModel.empty(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
                 
@@ -157,11 +161,39 @@ namespace storm {
                 return result;
             }
             
-            template<typename ValueType, typename RewardModelType>
-            std::vector<ValueType> SparseMdpPrctlHelper<ValueType, RewardModelType>::computeReachabilityRewards(bool minimize, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, RewardModelType const& rewardModel, storm::storage::BitVector const& targetStates, bool qualitative, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
-                // Only compute the result if the model has at least one reward this->getModel().
+            template<typename ValueType>
+            template<typename RewardModelType>
+            std::vector<ValueType> SparseMdpPrctlHelper<ValueType>::computeReachabilityRewards(bool minimize, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, RewardModelType const& rewardModel, storm::storage::BitVector const& targetStates, bool qualitative, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
+                // Only compute the result if the reward model is not empty.
                 STORM_LOG_THROW(!rewardModel.empty(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
-                
+                return computeReachabilityRewardsHelper(minimize, transitionMatrix, backwardTransitions,
+                                                        [&rewardModel] (uint_fast64_t rowCount, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates) {
+                                                            return rewardModel.getTotalRewardVector(rowCount, transitionMatrix, maybeStates);
+                                                        },
+                                                        targetStates, qualitative, minMaxLinearEquationSolverFactory);
+            }
+            
+#ifdef STORM_HAVE_CARL
+            template<typename ValueType>
+            std::vector<ValueType> SparseMdpPrctlHelper<ValueType>::computeReachabilityRewards(bool minimize, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::models::sparse::StandardRewardModel<storm::Interval> const& intervalRewardModel, storm::storage::BitVector const& targetStates, bool qualitative, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
+                // Only compute the result if the reward model is not empty.
+                STORM_LOG_THROW(!intervalRewardModel.empty(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
+                return computeReachabilityRewardsHelper(minimize, transitionMatrix, backwardTransitions,
+                                                        [&] (uint_fast64_t rowCount, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates) {
+                                                            std::vector<ValueType> result;
+                                                            result.reserve(rowCount);
+                                                            std::vector<storm::Interval> subIntervalVector = intervalRewardModel.getTotalRewardVector(rowCount, transitionMatrix, maybeStates);
+                                                            for (auto const& interval : subIntervalVector) {
+                                                                result.push_back(minimize ? interval.lower() : interval.upper());
+                                                            }
+                                                            return result;
+                                                        },
+                                                        targetStates, qualitative, minMaxLinearEquationSolverFactory);
+            }
+#endif
+            
+            template<typename ValueType>
+            std::vector<ValueType> SparseMdpPrctlHelper<ValueType>::computeReachabilityRewardsHelper(bool minimize, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::function<std::vector<ValueType>(uint_fast64_t, storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const&)> const& totalStateRewardVectorGetter, storm::storage::BitVector const& targetStates, bool qualitative, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
                 // Determine which states have a reward of infinity by definition.
                 storm::storage::BitVector infinityStates;
                 storm::storage::BitVector trueStates(transitionMatrix.getRowCount(), true);
@@ -194,11 +226,11 @@ namespace storm {
                         storm::storage::SparseMatrix<ValueType> submatrix = transitionMatrix.getSubmatrix(true, maybeStates, maybeStates, false);
                         
                         // Prepare the right-hand side of the equation system.
-                        std::vector<ValueType> b = rewardModel.getTotalRewardVector(submatrix.getRowCount(), transitionMatrix, maybeStates);
+                        std::vector<ValueType> b = totalStateRewardVectorGetter(submatrix.getRowCount(), transitionMatrix, maybeStates);
                         
                         // Create vector for results for maybe states.
                         std::vector<ValueType> x(maybeStates.getNumberOfSetBits());
-                                                
+                        
                         // Solve the corresponding system of equations.
                         std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(submatrix);
                         solver->solveEquationSystem(minimize, x, b);
@@ -214,8 +246,8 @@ namespace storm {
                 return result;
             }
             
-            template<typename ValueType, typename RewardModelType>
-            std::vector<ValueType> SparseMdpPrctlHelper<ValueType, RewardModelType>::computeLongRunAverage(bool minimize, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& psiStates, bool qualitative, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
+            template<typename ValueType>
+            std::vector<ValueType> SparseMdpPrctlHelper<ValueType>::computeLongRunAverage(bool minimize, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& psiStates, bool qualitative, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
                 // If there are no goal states, we avoid the computation and directly return zero.
                 uint_fast64_t numberOfStates = transitionMatrix.getRowGroupCount();
                 if (psiStates.empty()) {
@@ -364,8 +396,8 @@ namespace storm {
                 return result;
             }
             
-            template<typename ValueType, typename RewardModelType>
-            ValueType SparseMdpPrctlHelper<ValueType, RewardModelType>::computeLraForMaximalEndComponent(bool minimize, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& psiStates, storm::storage::MaximalEndComponent const& mec) {
+            template<typename ValueType>
+            ValueType SparseMdpPrctlHelper<ValueType>::computeLraForMaximalEndComponent(bool minimize, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& psiStates, storm::storage::MaximalEndComponent const& mec) {
                 std::shared_ptr<storm::solver::LpSolver> solver = storm::utility::solver::getLpSolver("LRA for MEC");
                 solver->setModelSense(minimize ? storm::solver::LpSolver::ModelSense::Maximize : storm::solver::LpSolver::ModelSense::Minimize);
                 
@@ -409,6 +441,10 @@ namespace storm {
             }
             
             template class SparseMdpPrctlHelper<double>;
+            template std::vector<double> SparseMdpPrctlHelper<double>::computeInstantaneousRewards(bool minimize, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::models::sparse::StandardRewardModel<double> const& rewardModel, uint_fast64_t stepCount, storm::utility::solver::MinMaxLinearEquationSolverFactory<double> const& minMaxLinearEquationSolverFactory);
+            template std::vector<double> SparseMdpPrctlHelper<double>::computeCumulativeRewards(bool minimize, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::models::sparse::StandardRewardModel<double> const& rewardModel, uint_fast64_t stepBound, storm::utility::solver::MinMaxLinearEquationSolverFactory<double> const& minMaxLinearEquationSolverFactory);
+            template std::vector<double> SparseMdpPrctlHelper<double>::computeReachabilityRewards(bool minimize, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::models::sparse::StandardRewardModel<double> const& rewardModel, storm::storage::BitVector const& targetStates, bool qualitative, storm::utility::solver::MinMaxLinearEquationSolverFactory<double> const& minMaxLinearEquationSolverFactory);
+            
         }
     }
 }

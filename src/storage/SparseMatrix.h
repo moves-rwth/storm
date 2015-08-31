@@ -678,7 +678,8 @@ namespace storm {
              * @return A vector containing the sum of the entries in each row of the matrix resulting from pointwise
              * multiplication of the current matrix with the given matrix.
              */
-            std::vector<value_type> getPointwiseProductRowSumVector(storm::storage::SparseMatrix<value_type> const& otherMatrix) const;
+            template<typename OtherValueType, typename ResultValueType = OtherValueType>
+            std::vector<ResultValueType> getPointwiseProductRowSumVector(storm::storage::SparseMatrix<OtherValueType> const& otherMatrix) const;
             
             /*!
              * Multiplies the matrix with the given vector and writes the result to the given result vector. If a
