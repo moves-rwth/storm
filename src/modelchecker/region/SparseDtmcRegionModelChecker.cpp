@@ -71,49 +71,27 @@ namespace storm {
             
         template<typename ParametricType, typename ConstantType>
         void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::specifyFormula(std::shared_ptr<storm::logic::Formula> formula) {
-            std::chrono::high_resolution_clock::time_point timePreprocessingStart = std::chrono::high_resolution_clock::now();
+            std::chrono::high_resolution_clock::time_point timeSpecifyFormulaStart = std::chrono::high_resolution_clock::now();
             STORM_LOG_THROW(this->canHandle(*formula), storm::exceptions::InvalidArgumentException, "Tried to specify a formula that can not be handled.");
             
-            this->hasOnlyLinearFunctions=false;
             this->isResultConstant=false;
+            this->isApproximationApplicable=false;
             this->smtSolver=nullptr;
             this->approximationModel=nullptr;
             this->samplingModel=nullptr;
             this->reachabilityFunction=nullptr;
             
-            //Get bounds, comparison type, target states, ..
             //Note: canHandle already ensures that the formula has the right shape.
             this->specifiedFormula = formula;
-            std::unique_ptr<CheckResult> targetStatesResultPtr;
-            if (this->specifiedFormula->isProbabilityOperatorFormula()) {
-                this->computeRewards=false;
-                storm::logic::ProbabilityOperatorFormula const& probabilityOperatorFormula = this->specifiedFormula->asProbabilityOperatorFormula();
-                this->specifiedFormulaCompType=probabilityOperatorFormula.getComparisonType();
-                this->specifiedFormulaBound=probabilityOperatorFormula.getBound();
-                targetStatesResultPtr=this->eliminationModelChecker.check(probabilityOperatorFormula.getSubformula().asEventuallyFormula().getSubformula());
-            }
-            else if (this->specifiedFormula->isRewardOperatorFormula()) {
-                this->computeRewards=true;
-                storm::logic::RewardOperatorFormula const& rewardOperatorFormula = this->specifiedFormula->asRewardOperatorFormula();
-                this->specifiedFormulaCompType=rewardOperatorFormula.getComparisonType();
-                this->specifiedFormulaBound=rewardOperatorFormula.getBound();
-                targetStatesResultPtr=this->eliminationModelChecker.check(rewardOperatorFormula.getSubformula().asReachabilityRewardFormula().getSubformula());
-            }
-            else {
-                STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "The specified property " << formula << "is not supported");
-            }
-            storm::storage::BitVector const& targetStates = targetStatesResultPtr->asExplicitQualitativeCheckResult().getTruthValuesVector();
-            
-            // get a more simple model with a single target state, a single sink state and where states with constant outgoing transitions have been removed
-            // Note: also checks for linear functions and a constant result
-            computeSimplifiedModel(targetStates);
+            // set some information regarding the formula and model. Also computes a more simple version of the model
+            preprocess();
             if(!this->isResultConstant){
                 //now create the model used for Approximation
                 if(storm::settings::regionSettings().doApprox()){
                     initializeApproximationModel(*this->simplifiedModel);
                 }
                 //now create the model used for Sampling
-                if(storm::settings::regionSettings().doSample() || (storm::settings::regionSettings().getApproxMode()==storm::settings::modules::RegionSettings::ApproxMode::TESTFIRST)){
+                if(storm::settings::regionSettings().getSampleMode()==storm::settings::modules::RegionSettings::SampleMode::INSTANTIATE || (storm::settings::regionSettings().getApproxMode()==storm::settings::modules::RegionSettings::ApproxMode::TESTFIRST)){
                     initializeSamplingModel(*this->simplifiedModel);
                 }
                 //Check if the reachability function needs to be computed
@@ -123,8 +101,8 @@ namespace storm {
                 }
             }
             //some information for statistics...
-            std::chrono::high_resolution_clock::time_point timePreprocessingEnd = std::chrono::high_resolution_clock::now();
-            this->timePreprocessing= timePreprocessingEnd - timePreprocessingStart;
+            std::chrono::high_resolution_clock::time_point timeSpecifyFormulaEnd = std::chrono::high_resolution_clock::now();
+            this->timeSpecifyFormula= timeSpecifyFormulaEnd - timeSpecifyFormulaStart;
             this->numOfCheckedRegions=0;
             this->numOfRegionsSolvedThroughSampling=0;
             this->numOfRegionsSolvedThroughApproximation=0;
@@ -140,84 +118,127 @@ namespace storm {
         }
         
         template<typename ParametricType, typename ConstantType>
-        void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::computeSimplifiedModel(storm::storage::BitVector const& targetStates){
-            std::chrono::high_resolution_clock::time_point timeComputeSimplifiedModelStart = std::chrono::high_resolution_clock::now();
-            //Compute the subset of states that have a probability of 0 or 1, respectively and reduce the considered states accordingly.
-            std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(this->model, storm::storage::BitVector(this->model.getNumberOfStates(),true), targetStates);
-            storm::storage::BitVector statesWithProbability0 = statesWithProbability01.first;
-            storm::storage::BitVector statesWithProbability1 = statesWithProbability01.second;
-            //if the target states are not reached with probability 1, then the expected reward is defined as infinity
-            if (this->computeRewards && !this->model.getInitialStates().isSubsetOf(statesWithProbability1)){
-                STORM_LOG_WARN("The expected reward of the initial state is constant (infinity)");
-                this->reachabilityFunction = std::make_shared<ParametricType>(storm::utility::infinity<ParametricType>());
-                this->isResultConstant=true;
-                this->hasOnlyLinearFunctions=true;
-                return; //nothing else to do...
+        void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::preprocess(){
+            std::chrono::high_resolution_clock::time_point timePreprocessingStart = std::chrono::high_resolution_clock::now();
+            STORM_LOG_THROW(this->model.getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::InvalidArgumentException, "Input model is required to have exactly one initial state.");
+            
+            //first some preprocessing depending on the type of the considered formula
+            storm::storage::BitVector maybeStates, targetStates;
+            boost::optional<std::vector<ParametricType>> stateRewards;
+            if (this->specifiedFormula->isProbabilityOperatorFormula()) {
+                preprocessForProbabilities(maybeStates, targetStates);
             }
-            storm::storage::BitVector maybeStates = ~(statesWithProbability0 | statesWithProbability1);
-            // If the initial state is known to have either probability 0 or 1, we can directly set the reachProbFunction.
-            if (!this->computeRewards && this->model.getInitialStates().isDisjointFrom(maybeStates)) {
-                STORM_LOG_WARN("The probability of the initial state is constant (0 or 1)");
-                this->reachabilityFunction = std::make_shared<ParametricType>(statesWithProbability0.get(*(this->model.getInitialStates().begin())) ? storm::utility::zero<ParametricType>() : storm::utility::one<ParametricType>());
-                this->isResultConstant=true;
-                this->hasOnlyLinearFunctions=true;
-                return; //nothing else to do...
+            else if (this->specifiedFormula->isRewardOperatorFormula()) {
+                std::vector<ParametricType> stateRewardsAsVector;
+                preprocessForRewards(maybeStates, targetStates, stateRewardsAsVector);
+                stateRewards=std::move(stateRewardsAsVector);
+            }
+            else {
+                STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "The specified property " << this->specifiedFormula << "is not supported");
             }
             // Determine the set of states that is reachable from the initial state without jumping over a target state.
-            storm::storage::BitVector reachableStates = storm::utility::graph::getReachableStates(this->model.getTransitionMatrix(), this->model.getInitialStates(), maybeStates, statesWithProbability1);
+            storm::storage::BitVector reachableStates = storm::utility::graph::getReachableStates(this->model.getTransitionMatrix(), this->model.getInitialStates(), maybeStates, targetStates);
             // Subtract from the maybe states the set of states that is not reachable (on a path from the initial to a target state).
             maybeStates &= reachableStates;
-            // Create a vector for the probabilities to go to a state with probability 1 in one step.
-            std::vector<ParametricType> oneStepProbabilities = this->model.getTransitionMatrix().getConstrainedRowSumVector(maybeStates, statesWithProbability1);
+            // Create a vector for the probabilities to go to a target state in one step.
+            std::vector<ParametricType> oneStepProbabilities = this->model.getTransitionMatrix().getConstrainedRowSumVector(maybeStates, targetStates);
             // Determine the initial state of the sub-model.
             storm::storage::sparse::state_type initialState = *(this->model.getInitialStates() % maybeStates).begin();
             // We then build the submatrix that only has the transitions of the maybe states.
             storm::storage::SparseMatrix<ParametricType> submatrix = this->model.getTransitionMatrix().getSubmatrix(false, maybeStates, maybeStates);
             
-            // eliminate all states with only constant outgoing transitions
-            //TODO: maybe also states with constant incoming tranistions. THEN the ordering of the eliminated states does matter.
+            // eliminate all states with only constant outgoing transitions (and possibly rewards)
             // Convert the reduced matrix to a more flexible format to be able to perform state elimination more easily.
             auto flexibleTransitions = this->eliminationModelChecker.getFlexibleSparseMatrix(submatrix);
             auto flexibleBackwardTransitions= this->eliminationModelChecker.getFlexibleSparseMatrix(submatrix.transpose(), true);
             // Create a bit vector that represents the current subsystem, i.e., states that we have not eliminated.
-            storm::storage::BitVector subsystem = storm::storage::BitVector(submatrix.getRowCount(), true);
-            //temporarily unselect the initial state to skip it.
-            subsystem.set(initialState, false);
-            this->hasOnlyLinearFunctions=true;
-            bool allReachableFunctionsAreConstant=true;
-            boost::optional<std::vector<ParametricType>> missingStateRewards;
-            for (auto const& state : subsystem) {
-                bool stateHasOnlyConstantOutgoingTransitions=true;
-                for(auto const& entry : submatrix.getRow(state)){
+            storm::storage::BitVector subsystem(submatrix.getRowCount(), true);
+            //The states that we consider to eliminate
+            storm::storage::BitVector considerToEliminate(submatrix.getRowCount(), true);
+            considerToEliminate.set(initialState, false);
+            this->isApproximationApplicable=true;
+            this->isResultConstant=true;
+            for (auto const& state : considerToEliminate) {
+                bool eliminateThisState=true;
+                for(auto const& entry : flexibleTransitions.getRow(state)){
                     if(!this->parametricTypeComparator.isConstant(entry.getValue())){
-                        allReachableFunctionsAreConstant=false;
-                        stateHasOnlyConstantOutgoingTransitions=false;
-                        this->hasOnlyLinearFunctions &= storm::utility::regions::functionIsLinear<ParametricType>(entry.getValue());
+                        this->isResultConstant=false;
+                        eliminateThisState=false;
+                        this->isApproximationApplicable &= storm::utility::regions::functionIsLinear<ParametricType>(entry.getValue());
                     }
                 }
                 if(!this->parametricTypeComparator.isConstant(oneStepProbabilities[state])){
-                    allReachableFunctionsAreConstant=false;
-                    stateHasOnlyConstantOutgoingTransitions=false;
-                    this->hasOnlyLinearFunctions &= storm::utility::regions::functionIsLinear<ParametricType>(oneStepProbabilities[state]);
+                    this->isResultConstant=false;
+                    eliminateThisState=false;
+                    this->isApproximationApplicable &= storm::utility::regions::functionIsLinear<ParametricType>(oneStepProbabilities[state]);
                 }
-                if(stateHasOnlyConstantOutgoingTransitions){
-                    this->eliminationModelChecker.eliminateState(flexibleTransitions, oneStepProbabilities, state, flexibleBackwardTransitions, missingStateRewards);
+                if(this->computeRewards && eliminateThisState && !this->parametricTypeComparator.isConstant(stateRewards.get()[state])){
+                    //Note: The state reward does not need to be constant but we need to make sure that
+                    //no parameter of this reward function occurs as a parameter in the probability functions of the predecessors
+                    // (otherwise, more complex functions might occur in our simplified model)
+                    // TODO: test if we should really remove these states (the resulting reward functions are less simple this way)
+                    std::set<VariableType> probVars;
+                    for(auto const& predecessor : flexibleBackwardTransitions.getRow(state)){
+                        for(auto const& predecessorTransition : flexibleTransitions.getRow(predecessor.getColumn())){
+                            storm::utility::regions::gatherOccurringVariables(predecessorTransition.getValue(), probVars);
+                        }
+                    }
+                    std::set<VariableType> rewardVars;
+                    storm::utility::regions::gatherOccurringVariables(stateRewards.get()[state], rewardVars);
+                    for(auto const& rewardVar : rewardVars){
+                        if(probVars.find(rewardVar)!=probVars.end()){
+                            eliminateThisState=false;
+                            break;
+                        }
+                    }
+                }
+                if(eliminateThisState){
+                    this->eliminationModelChecker.eliminateState(flexibleTransitions, oneStepProbabilities, state, flexibleBackwardTransitions, stateRewards);
                     subsystem.set(state,false);
                 }
             }
-            subsystem.set(initialState, true);
-            STORM_LOG_DEBUG("Eliminated " << subsystem.size() - subsystem.getNumberOfSetBits() << " of " << subsystem.size() << " states that had constant outgoing transitions." << std::endl);
-            
-            if(allReachableFunctionsAreConstant){
+            STORM_LOG_DEBUG("Eliminated " << subsystem.size() - subsystem.getNumberOfSetBits() << " of " << subsystem.size() << " states that had constant outgoing transitions.");
+            if(this->isResultConstant){
                 //Check if this is also the case for the initial state
-                for(auto const& entry : submatrix.getRow(initialState)){
-                    allReachableFunctionsAreConstant&=this->parametricTypeComparator.isConstant(entry.getValue());
+                for(auto const& entry : flexibleTransitions.getRow(initialState)){
+                    this->isResultConstant&=this->parametricTypeComparator.isConstant(entry.getValue());
                 }
-                allReachableFunctionsAreConstant&=this->parametricTypeComparator.isConstant(oneStepProbabilities[initialState]);
-                // Set the flag accordingly
-                this->isResultConstant=allReachableFunctionsAreConstant;
-                STORM_LOG_WARN_COND(!this->isResultConstant, "For the given property, the reachability probability is constant, i.e., independent of the region");
+                this->isResultConstant&=this->parametricTypeComparator.isConstant(oneStepProbabilities[initialState]);
             }
+            if(this->computeRewards && (this->isApproximationApplicable || this->isResultConstant)){
+                //We will need to check whether this is also the case for the reward functions.
+                for(auto const& state : maybeStates){
+                    std::set<VariableType> rewardVars;
+                    if(this->model.hasStateRewards() && !this->parametricTypeComparator.isConstant(this->model.getStateRewardVector()[state])){
+                        this->isResultConstant=false;
+                        this->isApproximationApplicable &= storm::utility::regions::functionIsLinear<ParametricType>(this->model.getStateRewardVector()[state]);
+                        storm::utility::regions::gatherOccurringVariables(stateRewards.get()[state], rewardVars);
+                    }
+                    if(this->model.hasTransitionRewards()){
+                        for(auto const& entry : this->model.getTransitionRewardMatrix().getRow(state)) {
+                            if(!this->parametricTypeComparator.isConstant(entry.getValue())){
+                                this->isResultConstant=false;
+                                this->isApproximationApplicable &= storm::utility::regions::functionIsLinear<ParametricType>(entry.getValue());
+                                storm::utility::regions::gatherOccurringVariables(entry.getValue(), rewardVars);
+                            }
+                        }
+                    }
+                    if(!rewardVars.empty()){
+                        std::set<VariableType> probVars;
+                        for(auto const& entry: this->model.getTransitionMatrix().getRow(state)){
+                            storm::utility::regions::gatherOccurringVariables(entry.getValue(), probVars);
+                        }
+                        for(auto const& rewardVar : rewardVars){
+                            if(probVars.find(rewardVar)!=probVars.end()){
+                                this->isApproximationApplicable=false;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            STORM_LOG_WARN_COND(!this->isResultConstant, "For the given property, the reachability Value is constant, i.e., independent of the region");
+            
             //Build the simplified model
             //The matrix. The flexibleTransitions matrix might have empty rows where states have been eliminated.
             //The new matrix should not have such rows. We therefore leave them out, but we have to change the indices of the states accordingly.
@@ -234,21 +255,28 @@ namespace storm {
             //We can now fill in the data.
             storm::storage::SparseMatrixBuilder<ParametricType> matrixBuilder(numStates, numStates);
             for(storm::storage::sparse::state_type oldStateIndex : subsystem){ 
-                ParametricType valueToSinkState=storm::utility::regions::getNewFunction<ParametricType, CoefficientType>(storm::utility::one<CoefficientType>());
+                ParametricType missingProbability=storm::utility::regions::getNewFunction<ParametricType, CoefficientType>(storm::utility::one<CoefficientType>());
                 //go through columns:
                 for(auto const& entry: flexibleTransitions.getRow(oldStateIndex)){ 
                     STORM_LOG_THROW(newStateIndexMap[entry.getColumn()]!=flexibleTransitions.getNumberOfRows(), storm::exceptions::UnexpectedException, "There is a transition to a state that should have been eliminated.");
-                    valueToSinkState-=entry.getValue();
+                    missingProbability-=entry.getValue();
                     matrixBuilder.addNextValue(newStateIndexMap[oldStateIndex],newStateIndexMap[entry.getColumn()],entry.getValue());
                 }
-                //transition to target state
-                if(!this->parametricTypeComparator.isZero(oneStepProbabilities[oldStateIndex])){ 
-                    valueToSinkState-=oneStepProbabilities[oldStateIndex];
-                    matrixBuilder.addNextValue(newStateIndexMap[oldStateIndex], targetState, oneStepProbabilities[oldStateIndex]);
-                }
-                //transition to sink state
-                if(!this->parametricTypeComparator.isZero(valueToSinkState)){ 
-                    matrixBuilder.addNextValue(newStateIndexMap[oldStateIndex], sinkState, valueToSinkState);
+                if(this->computeRewards){
+                    // the missing probability always leads to target
+                    if(!this->parametricTypeComparator.isZero(missingProbability)){
+                        matrixBuilder.addNextValue(newStateIndexMap[oldStateIndex], targetState,missingProbability);
+                    }
+                } else{
+                    //transition to target state
+                    if(!this->parametricTypeComparator.isZero(oneStepProbabilities[oldStateIndex])){
+                        missingProbability-=oneStepProbabilities[oldStateIndex];
+                        matrixBuilder.addNextValue(newStateIndexMap[oldStateIndex], targetState, oneStepProbabilities[oldStateIndex]);
+                    }
+                    //transition to sink state
+                    if(!this->parametricTypeComparator.isZero(missingProbability)){ 
+                        matrixBuilder.addNextValue(newStateIndexMap[oldStateIndex], sinkState, missingProbability);
+                    }
                 }
             }
             //add self loops on the additional states (i.e., target and sink)
@@ -266,14 +294,94 @@ namespace storm {
             sinkLabel.set(sinkState, true);
             labeling.addLabel("sink", std::move(sinkLabel));
             // other ingredients
-            boost::optional<std::vector<ParametricType>> noStateRewards;
+            if(this->computeRewards){
+                storm::utility::vector::selectVectorValues(stateRewards.get(), subsystem, stateRewards.get());
+                stateRewards->push_back(storm::utility::zero<ParametricType>()); //target state
+                stateRewards->push_back(storm::utility::zero<ParametricType>()); //sink state
+            }
             boost::optional<storm::storage::SparseMatrix<ParametricType>> noTransitionRewards;  
             boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> noChoiceLabeling;            
             // the final model
-            this->simplifiedModel = std::make_shared<storm::models::sparse::Dtmc<ParametricType>>(matrixBuilder.build(), std::move(labeling), std::move(noStateRewards), std::move(noTransitionRewards), std::move(noChoiceLabeling));
-            std::chrono::high_resolution_clock::time_point timeComputeSimplifiedModelEnd = std::chrono::high_resolution_clock::now();
-            this->timeComputeSimplifiedModel = timeComputeSimplifiedModelEnd - timeComputeSimplifiedModelStart;            
+            this->simplifiedModel = std::make_shared<storm::models::sparse::Dtmc<ParametricType>>(matrixBuilder.build(), std::move(labeling), std::move(stateRewards), std::move(noTransitionRewards), std::move(noChoiceLabeling));
+            std::chrono::high_resolution_clock::time_point timePreprocessingEnd = std::chrono::high_resolution_clock::now();
+            this->timePreprocessing = timePreprocessingEnd - timePreprocessingStart;  
         }
+
+        template<typename ParametricType, typename ConstantType>
+        void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::preprocessForProbabilities(storm::storage::BitVector& maybeStates, storm::storage::BitVector& targetStates) {
+            this->computeRewards=false;
+            //Get bounds, comparison type, target states
+            storm::logic::ProbabilityOperatorFormula const& probabilityOperatorFormula = this->specifiedFormula->asProbabilityOperatorFormula();
+            this->specifiedFormulaCompType=probabilityOperatorFormula.getComparisonType();
+            this->specifiedFormulaBound=probabilityOperatorFormula.getBound();
+            std::unique_ptr<CheckResult> targetStatesResultPtr=this->eliminationModelChecker.check(probabilityOperatorFormula.getSubformula().asEventuallyFormula().getSubformula());
+            targetStates = std::move(targetStatesResultPtr->asExplicitQualitativeCheckResult().getTruthValuesVector());
+                
+            //maybeStates: Compute the subset of states that have a probability of 0 or 1, respectively and reduce the considered states accordingly.
+            std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(this->model, storm::storage::BitVector(this->model.getNumberOfStates(),true), targetStates);
+            maybeStates = ~(statesWithProbability01.first | statesWithProbability01.second);
+            // If the initial state is known to have either probability 0 or 1, we can directly set the reachProbFunction.
+            storm::storage::sparse::state_type initialState = *this->model.getInitialStates().begin();
+            if (!maybeStates.get(initialState)) {
+                STORM_LOG_WARN("The probability of the initial state is constant (zero or one)");
+                this->reachabilityFunction = std::make_shared<ParametricType>(statesWithProbability01.first.get(initialState) ? storm::utility::zero<ParametricType>() : storm::utility::one<ParametricType>());
+                this->isResultConstant=true;
+                return; //nothing else to do...
+            }
+            //extend target states
+            targetStates=statesWithProbability01.second;
+        }
+        
+        
+        template<typename ParametricType, typename ConstantType>
+        void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::preprocessForRewards(storm::storage::BitVector& maybeStates, storm::storage::BitVector& targetStates, std::vector<ParametricType>& stateRewards) {
+            this->computeRewards=true;
+            STORM_LOG_THROW(this->model.hasStateRewards() || this->model.hasTransitionRewards(), storm::exceptions::InvalidArgumentException, "Input model does not have a reward model.");
+            //Get bounds, comparison type, target states
+            storm::logic::RewardOperatorFormula const& rewardOperatorFormula = this->specifiedFormula->asRewardOperatorFormula();
+            this->specifiedFormulaCompType=rewardOperatorFormula.getComparisonType();
+            this->specifiedFormulaBound=rewardOperatorFormula.getBound();
+            std::unique_ptr<CheckResult> targetStatesResultPtr=this->eliminationModelChecker.check(rewardOperatorFormula.getSubformula().asReachabilityRewardFormula().getSubformula());
+            targetStates = std::move(targetStatesResultPtr->asExplicitQualitativeCheckResult().getTruthValuesVector());
+                
+            //maybeStates: Compute the subset of states that has a reachability reward less than infinity.
+            storm::storage::BitVector statesWithProbability1 = storm::utility::graph::performProb1(this->model.getBackwardTransitions(), storm::storage::BitVector(this->model.getNumberOfStates(), true), targetStates);
+            maybeStates = ~targetStates & statesWithProbability1;
+            // If the initial state is known to have 0 reward or an infinite reward value, we can directly set the reachRewardFunction.
+            storm::storage::sparse::state_type initialState = *this->model.getInitialStates().begin();
+            if (!maybeStates.get(initialState)) {
+                STORM_LOG_WARN("The expected reward of the initial state is constant (infinity or zero)");
+                this->reachabilityFunction = std::make_shared<ParametricType>(statesWithProbability1.get(initialState) ? storm::utility::zero<ParametricType>() : storm::utility::infinity<ParametricType>());
+                this->isResultConstant=true;
+                return; //nothing else to do...
+            }
+            
+            stateRewards=std::vector<ParametricType>(maybeStates.getNumberOfSetBits());
+            if (this->model.hasTransitionRewards()) {
+                // If a transition-based reward model is available, we initialize the state reward vector to the row sums of the matrix
+                // that results from taking the pointwise product of the transition probability matrix and the transition reward matrix.
+                std::vector<ParametricType> pointwiseProductRowSumVector = this->model.getTransitionMatrix().getPointwiseProductRowSumVector(this->model.getTransitionRewardMatrix());
+                storm::utility::vector::selectVectorValues(stateRewards, maybeStates, pointwiseProductRowSumVector);
+                
+                if (this->model.hasStateRewards()) {
+                    // If a state-based reward model is also available, we need to add this vector
+                    // as well. As the state reward vector contains entries not just for the states
+                    // that we still consider (i.e. maybeStates), we need to extract these values
+                    // first.
+                    std::vector<ParametricType> subStateRewards(stateRewards.size());
+                    storm::utility::vector::selectVectorValues(subStateRewards, maybeStates, this->model.getStateRewardVector());
+                    storm::utility::vector::addVectors(stateRewards, subStateRewards, stateRewards);
+                }
+            } else {
+                // If only a state-based reward model is  available, we take this vector as the
+                // right-hand side. As the state reward vector contains entries not just for the
+                // states that we still consider (i.e. maybeStates), we need to extract these values
+                // first.
+                storm::utility::vector::selectVectorValues(stateRewards, maybeStates, this->model.getStateRewardVector());
+            }
+        }
+
+
 
         template<typename ParametricType, typename ConstantType>
         void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::initializeApproximationModel(storm::models::sparse::Dtmc<ParametricType> const& simpleModel) {
@@ -311,16 +419,20 @@ namespace storm {
             //now compute the functions using methods from elimination model checker
             storm::storage::BitVector newInitialStates = simpleModel.getInitialStates() % maybeStates;
             storm::storage::BitVector phiStates(simpleModel.getNumberOfStates(), true);
-            boost::optional<std::vector<ParametricType>> noStateRewards;
-            
+            boost::optional<std::vector<ParametricType>> stateRewards;
+            if(this->computeRewards){
+                std::vector<ParametricType> stateRewardsAsVector(maybeStates.getNumberOfSetBits());
+                storm::utility::vector::selectVectorValues(stateRewardsAsVector, maybeStates, simpleModel.getStateRewardVector());
+                stateRewards=std::move(stateRewardsAsVector);
+            }
             std::vector<std::size_t> statePriorities = this->eliminationModelChecker.getStatePriorities(forwardTransitions,backwardTransitions,newInitialStates,oneStepProbabilities);
-            this->reachabilityFunction=std::make_shared<ParametricType>(this->eliminationModelChecker.computeReachabilityValue(forwardTransitions, oneStepProbabilities, backwardTransitions, newInitialStates , phiStates, simpleModel.getStates("target"), noStateRewards, statePriorities));
-            /*    std::string funcStr = " (/ " +
-                                this->reachProbFunction->nominator().toString(false, true) + " " +
-                                this->reachProbFunction->denominator().toString(false, true) +
+            this->reachabilityFunction=std::make_shared<ParametricType>(this->eliminationModelChecker.computeReachabilityValue(forwardTransitions, oneStepProbabilities, backwardTransitions, newInitialStates , phiStates, simpleModel.getStates("target"), stateRewards, statePriorities));
+               /* std::string funcStr = " (/ " +
+                                this->reachabilityFunction->nominator().toString(false, true) + " " +
+                                this->reachabilityFunction->denominator().toString(false, true) +
                             " )";
                 std::cout << std::endl <<"the resulting reach prob function is " << std::endl << funcStr << std::endl << std::endl;*/
-            STORM_LOG_DEBUG("Computed reachProbFunction");
+            STORM_LOG_DEBUG("Computed reachabilityFunction");
             std::chrono::high_resolution_clock::time_point timeComputeReachabilityFunctionEnd = std::chrono::high_resolution_clock::now();
             this->timeComputeReachabilityFunction = timeComputeReachabilityFunctionEnd-timeComputeReachabilityFunctionStart;
         }
@@ -336,8 +448,8 @@ namespace storm {
             
             //switches for the different steps.
             bool done=false;
-            STORM_LOG_WARN_COND( (!storm::settings::regionSettings().doApprox() || this->hasOnlyLinearFunctions), "the approximation is only correct if the model has only linear functions. As this is not the case, approximation is deactivated");
-            bool doApproximation=storm::settings::regionSettings().doApprox() && this->hasOnlyLinearFunctions;
+            STORM_LOG_WARN_COND( (!storm::settings::regionSettings().doApprox() || this->isApproximationApplicable), "the approximation is only correct if the model has only linear functions. As this is not the case, approximation is deactivated");
+            bool doApproximation=storm::settings::regionSettings().doApprox() && this->isApproximationApplicable;
             bool doSampling=storm::settings::regionSettings().doSample();
             bool doFullSmt=storm::settings::regionSettings().doSmt();
             
@@ -429,7 +541,7 @@ namespace storm {
         
         template<typename ParametricType, typename ConstantType>
         bool SparseDtmcRegionModelChecker<ParametricType, ConstantType>::checkApproximativeValues(ParameterRegion& region, std::vector<ConstantType>& lowerBounds, std::vector<ConstantType>& upperBounds) {
-            STORM_LOG_THROW(this->hasOnlyLinearFunctions, storm::exceptions::UnexpectedException, "Tried to perform approximative method (only applicable if all functions are linear), but there are nonlinear functions.");
+            STORM_LOG_THROW(this->isApproximationApplicable, storm::exceptions::UnexpectedException, "Tried to perform approximative method (only applicable if all functions are linear), but there are nonlinear functions.");
             std::chrono::high_resolution_clock::time_point timeMDPBuildStart = std::chrono::high_resolution_clock::now();
             getApproximationModel()->instantiate(region);
             std::chrono::high_resolution_clock::time_point timeMDPBuildEnd = std::chrono::high_resolution_clock::now();
@@ -772,8 +884,8 @@ namespace storm {
                 return;
             }
             
+            std::chrono::milliseconds timeSpecifyFormulaInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timeSpecifyFormula);
             std::chrono::milliseconds timePreprocessingInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timePreprocessing);
-            std::chrono::milliseconds timeComputeSimplifiedModelInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timeComputeSimplifiedModel);
             std::chrono::milliseconds timeInitSamplingModelInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timeInitSamplingModel);
             std::chrono::milliseconds timeInitApproxModelInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timeInitApproxModel);
             std::chrono::milliseconds timeComputeReachabilityFunctionInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timeComputeReachabilityFunction);
@@ -783,7 +895,7 @@ namespace storm {
             std::chrono::milliseconds timeMDPBuildInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timeMDPBuild);
             std::chrono::milliseconds timeFullSmtInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timeFullSmt);
             
-            std::chrono::high_resolution_clock::duration timeOverall = timePreprocessing + timeCheckRegion; // + ...
+            std::chrono::high_resolution_clock::duration timeOverall = timeSpecifyFormula + timeCheckRegion; // + ...
             std::chrono::milliseconds timeOverallInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(timeOverall);
             
             uint_fast64_t numOfSolvedRegions= this->numOfRegionsExistsBoth + this->numOfRegionsAllSat + this->numOfRegionsAllViolated;
@@ -791,14 +903,14 @@ namespace storm {
             outstream << std::endl << "Region Model Checker Statistics:" << std::endl;
             outstream << "-----------------------------------------------" << std::endl;
             outstream << "Model: " << this->model.getNumberOfStates() << " states, " << this->model.getNumberOfTransitions() << " transitions." << std::endl;
+            outstream << "Formula: " << *this->specifiedFormula << std::endl;
             if(this->isResultConstant){
                 outstream << "The requested value is constant (i.e. independent of any parameters)" << std::endl;
             }
             else{
                 outstream << "Simplified model: " << this->simplifiedModel->getNumberOfStates() << " states, " << this->simplifiedModel->getNumberOfTransitions() << " transitions" << std::endl;
             }
-            outstream << "Formula: " << *this->specifiedFormula << std::endl;
-            outstream << (this->hasOnlyLinearFunctions ? "A" : "Not a") << "ll occuring functions in the model are linear" << std::endl;
+            outstream << "Approximation is " << (this->isApproximationApplicable ? "" : "not ") << "applicable" << std::endl;
             outstream << "Number of checked regions: " << this->numOfCheckedRegions << std::endl;
             outstream << "  Number of solved regions:  " <<  numOfSolvedRegions << "(" << numOfSolvedRegions*100/this->numOfCheckedRegions << "%)" <<  std::endl;
             outstream << "    AllSat:      " <<  this->numOfRegionsAllSat << "(" << this->numOfRegionsAllSat*100/this->numOfCheckedRegions << "%)" <<  std::endl;
@@ -812,8 +924,8 @@ namespace storm {
             outstream << std::endl;
             outstream << "Running times:" << std::endl;
             outstream << "  " << timeOverallInMilliseconds.count() << "ms overall (excluding model parsing, bisimulation (if applied))" << std::endl;
-            outstream << "  " << timePreprocessingInMilliseconds.count() << "ms Preprocessing including... " << std::endl;
-            outstream << "    " << timeComputeSimplifiedModelInMilliseconds.count() << "ms to obtain a simplified model (state elimination of const transitions)" << std::endl;
+            outstream << "  " << timeSpecifyFormulaInMilliseconds.count() << "ms Initialization for the specified formula, including... " << std::endl;
+            outstream << "    " << timePreprocessingInMilliseconds.count() << "ms for Preprocessing (mainly to obtain a simplified model, i.e., state elimination of const transitions)" << std::endl;
             outstream << "    " << timeInitApproxModelInMilliseconds.count() << "ms to initialize the Approximation Model" << std::endl;
             outstream << "    " << timeInitSamplingModelInMilliseconds.count() << "ms to initialize the Sampling Model" << std::endl;
             outstream << "    " << timeComputeReachabilityFunctionInMilliseconds.count() << "ms to compute the reachability function" << std::endl;

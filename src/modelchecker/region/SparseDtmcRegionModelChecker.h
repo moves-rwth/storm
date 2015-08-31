@@ -88,26 +88,54 @@ namespace storm {
             
             
             /*!
-             * Computes a model with a single target and a single sink state.
-             * Eliminates all states for which the outgoing transitions are constant.
+             * 1. Analyzes the formula (sets this->specifiedFormulaBound, this->specifiedFormulaCompType)
              * 
-             * Also checks whether the non constant functions are linear and whether the model checking result is independent of parameters (i.e., constant)
-             * The flags of This model checker  are set accordingly.
+             * 2. Checks whether the approximation technique is applicable and whether the model checking result is independent of parameters (i.e., constant)
+             * The flags of This model checker are set accordingly.
+             * 
+             * 3. Computes a model with a single target and at most one sink state.
+             * Eliminates all states for which the outgoing transitions are constant.
+             * If rewards are relevant, transition rewards are transformed to state rewards
+             * 
+             * @note this->specifiedFormula has to be set accordingly, before calling this function
              */
-            void computeSimplifiedModel(storm::storage::BitVector const& targetStates);
+            void preprocess();
+            
+            
+            /*!
+             * Does some sanity checks and preprocessing steps on the currently specified model and 
+             * reachability probability formula, i.e., Computes maybeStates and targetStates and sets some flags
+             * 
+             * @note The returned set of target states also includes states where an 'actual' target state is reached with probability 1
+             * 
+             */
+            void preprocessForProbabilities(storm::storage::BitVector& maybeStates, storm::storage::BitVector& targetStates);
+            
+            
+            /*!
+             * Does some sanity checks and preprocessing steps on the currently specified model and 
+             * reachability reward formula, i.e., computes some flags, maybeStates, targetStates and
+             * a new stateReward vector that considers state+transition rewards of the original model.
+             * @note stateRewards.size = maybeStates.numberOfSetBits
+             */
+            void preprocessForRewards(storm::storage::BitVector& maybeStates, storm::storage::BitVector& targetStates, std::vector<ParametricType>& stateRewards);
             
             /*!
              * initializes the Approximation Model
+             * 
+             * @note computeFlagsAndSimplifiedModel should be called before calling this
              */
             void initializeApproximationModel(storm::models::sparse::Dtmc<ParametricType> const& simpleModel);
             
             /*!
              * initializes the Sampling Model
+             * @note computeFlagsAndSimplifiedModel should be called before calling this
              */
             void initializeSamplingModel(storm::models::sparse::Dtmc<ParametricType> const& simpleModel);
             
             /*!
              * Computes the reachability function via state elimination
+             * @note computeFlagsAndSimplifiedModel should be called before calling this
              */
             void computeReachabilityFunction(storm::models::sparse::Dtmc<ParametricType> const& simpleModel);
             
@@ -208,7 +236,7 @@ namespace storm {
             // The  function for the reachability probability (or: reachability reward) in the initial state 
             std::shared_ptr<ParametricType> reachabilityFunction;
             // a flag that is true if there are only linear functions at transitions of the model
-            bool hasOnlyLinearFunctions;
+            bool isApproximationApplicable;
             // a flag that is true iff the resulting reachability function is constant
             bool isResultConstant;
             // the smt solver that is used to prove properties with the help of the reachabilityFunction
@@ -223,8 +251,8 @@ namespace storm {
             uint_fast64_t numOfRegionsAllSat;
             uint_fast64_t numOfRegionsAllViolated;
             
+            std::chrono::high_resolution_clock::duration timeSpecifyFormula;
             std::chrono::high_resolution_clock::duration timePreprocessing;
-            std::chrono::high_resolution_clock::duration timeComputeSimplifiedModel;
             std::chrono::high_resolution_clock::duration timeInitApproxModel;
             std::chrono::high_resolution_clock::duration timeInitSamplingModel;
             std::chrono::high_resolution_clock::duration timeComputeReachabilityFunction;

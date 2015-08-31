@@ -169,6 +169,14 @@ namespace storm {
                 std::vector<ValueType> const& getStateRewardVector() const;
                 
                 /*!
+                 * Retrieves a vector representing the state rewards of the model. Note that calling this method is only
+                 * valid if the model has state rewards.
+                 *
+                 * @return A vector representing the state rewards of the model.
+                 */
+                std::vector<ValueType>& getStateRewardVector();
+                
+                /*!
                  * Retrieves an optional value that contains the state reward vector if there is one.
                  *
                  * @return The state reward vector if there is one.

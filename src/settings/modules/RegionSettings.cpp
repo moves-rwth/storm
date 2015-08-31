@@ -27,7 +27,7 @@ namespace storm {
                 std::vector<std::string> approxModes = {"off", "guessallsat", "guessallviolated", "testfirst"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, approxmodeOptionName, true, "Sets whether approximation should be done and whether lower or upper bounds are computed first.")
                             .addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "The mode, (off, guessallsat, guessallviolated, testfirst). E.g. guessallsat will first try to prove ALLSAT")
-                                .addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(approxModes)).setDefaultValueString("guessallsat").build()).build());
+                                .addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(approxModes)).setDefaultValueString("testfirst").build()).build());
                 std::vector<std::string> sampleModes = {"off", "instantiate", "evaluate"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, samplemodeOptionName, true, "Sets whether sampling should be done and whether to instantiate a model or compute+evaluate a function.")
                             .addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "The mode, (off, instantiate, evaluate)")

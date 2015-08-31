@@ -104,6 +104,11 @@ namespace storm {
             }
             
             template <typename ValueType>
+            std::vector<ValueType>& Model<ValueType>::getStateRewardVector() {
+                return stateRewardVector.get();
+            }
+            
+            template <typename ValueType>
             boost::optional<std::vector<ValueType>> const& Model<ValueType>::getOptionalStateRewardVector() const {
                 return stateRewardVector;
             }

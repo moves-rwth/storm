@@ -51,7 +51,8 @@ namespace storm {
             //Vector has one entry for every (non-constant) matrix entry.
             //pair.first points to an entry in the evaluation table,
             //pair.second is an iterator to the corresponding matrix entry
-            std::vector<std::pair<ConstantType*, typename storm::storage::SparseMatrix<ConstantType>::iterator>> mapping;
+            std::vector<std::pair<ConstantType*, typename storm::storage::SparseMatrix<ConstantType>::iterator>> probabilityMapping;
+            std::vector<std::pair<ConstantType*, ConstantType*>> stateRewardMapping;
             
             //Vector has one entry for every distinct, non-constant function that occurs somewhere in the model.
             //The second entry should contain the result when evaluating the function in the first entry.
