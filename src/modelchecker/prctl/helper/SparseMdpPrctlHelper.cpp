@@ -173,6 +173,7 @@ namespace storm {
                                                         targetStates, qualitative, minMaxLinearEquationSolverFactory);
             }
             
+#ifdef STORM_HAVE_CARL
             template<typename ValueType>
             std::vector<ValueType> SparseMdpPrctlHelper<ValueType>::computeReachabilityRewards(bool minimize, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::models::sparse::StandardRewardModel<storm::Interval> const& intervalRewardModel, storm::storage::BitVector const& targetStates, bool qualitative, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
                 // Only compute the result if the reward model is not empty.
@@ -189,6 +190,7 @@ namespace storm {
                                                         },
                                                         targetStates, qualitative, minMaxLinearEquationSolverFactory);
             }
+#endif
             
             template<typename ValueType>
             std::vector<ValueType> SparseMdpPrctlHelper<ValueType>::computeReachabilityRewardsHelper(bool minimize, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::function<std::vector<ValueType>(uint_fast64_t, storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const&)> const& totalStateRewardVectorGetter, storm::storage::BitVector const& targetStates, bool qualitative, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
