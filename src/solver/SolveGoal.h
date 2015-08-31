@@ -49,7 +49,7 @@ namespace storm {
             
             bool boundIsALowerBound() const { 
                 return (boundType == storm::logic::ComparisonType::Greater |
-                        boundType == storm::logic::ComparisonType::GreaterEqual);                              ;
+                        boundType == storm::logic::ComparisonType::GreaterEqual);
             }
             VT thresholdValue() const { return threshold; }
             storm::storage::BitVector relevantColumns() const { return relevantColumnVector; }
