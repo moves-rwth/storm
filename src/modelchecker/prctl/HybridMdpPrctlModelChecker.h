@@ -3,11 +3,17 @@
 
 #include "src/modelchecker/propositional/SymbolicPropositionalModelChecker.h"
 
-#include "src/models/symbolic/Mdp.h"
-
 #include "src/utility/solver.h"
+#include "src/storage/dd/DdType.h"
+
 
 namespace storm {
+    namespace models {
+        namespace symbolic {
+            template<storm::dd::DdType T> class Mdp;
+        }
+    }
+    
     namespace modelchecker {
         template<storm::dd::DdType DdType, typename ValueType>
         class HybridMdpPrctlModelChecker : public SymbolicPropositionalModelChecker<DdType> {

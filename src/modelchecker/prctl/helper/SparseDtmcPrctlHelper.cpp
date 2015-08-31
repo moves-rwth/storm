@@ -6,6 +6,9 @@
 #include "src/utility/vector.h"
 #include "src/utility/graph.h"
 
+
+#include "src/solver/LinearEquationSolver.h"
+
 #include "src/exceptions/InvalidStateException.h"
 #include "src/exceptions/InvalidPropertyException.h"
 
@@ -212,7 +215,7 @@ namespace storm {
 
             template<typename ValueType, typename RewardModelType>
             std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeLongRunAverage(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& psiStates, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
-                return SparseCtmcCslHelper<ValueType, RewardModelType>::computeLongRunAverage(transitionMatrix, psiStates, nullptr, qualitative, linearEquationSolverFactory);
+                return SparseCtmcCslHelper<ValueType>::computeLongRunAverage(transitionMatrix, psiStates, nullptr, qualitative, linearEquationSolverFactory);
             }
 
             template class SparseDtmcPrctlHelper<double>;

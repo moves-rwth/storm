@@ -9,11 +9,14 @@
 #include "src/models/ModelBase.h"
 #include "src/models/sparse/StateLabeling.h"
 #include "src/storage/sparse/StateType.h"
-#include "src/storage/BitVector.h"
 #include "src/storage/SparseMatrix.h"
 #include "src/utility/OsDetection.h"
 
 namespace storm {
+    namespace storage {
+        class BitVector;
+    }
+    
     namespace models {
         namespace sparse {
             

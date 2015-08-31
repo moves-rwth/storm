@@ -23,7 +23,7 @@ namespace storm {
             globalIntegerVariables(globalIntegerVariables), globalIntegerVariableToIndexMap(), 
             formulas(formulas), formulaToIndexMap(), modules(modules), moduleToIndexMap(), 
             rewardModels(rewardModels), rewardModelToIndexMap(), initialConstruct(initialConstruct), 
-            labels(labels), actionToIndexMap(actionToIndexMap), indexToActionMap(), actions(), 
+            labels(labels), labelToIndexMap(), actionToIndexMap(actionToIndexMap), indexToActionMap(), actions(),
             synchronizingActionIndices(), actionIndicesToModuleIndexMap(), variableToModuleIndexMap()
         {
 
@@ -328,6 +328,12 @@ namespace storm {
             return this->labels;
         }
         
+        storm::expressions::Expression const& Program::getLabelExpression(std::string const& label) const {
+            auto const& labelIndexPair = labelToIndexMap.find(label);
+            STORM_LOG_THROW(labelIndexPair != labelToIndexMap.end(), storm::exceptions::InvalidArgumentException, "Cannot retrieve expression for unknown label '" << label << "'.");
+            return this->labels[labelIndexPair->second].getStatePredicateExpression();
+        }
+        
         std::size_t Program::getNumberOfLabels() const {
             return this->getLabels().size();
         }
@@ -384,6 +390,9 @@ namespace storm {
             }
             for (uint_fast64_t formulaIndex = 0; formulaIndex < this->getNumberOfFormulas(); ++formulaIndex) {
                 this->formulaToIndexMap[this->getFormulas()[formulaIndex].getName()] = formulaIndex;
+            }
+            for (uint_fast64_t labelIndex = 0; labelIndex < this->getNumberOfLabels(); ++labelIndex) {
+                this->labelToIndexMap[this->getLabels()[labelIndex].getName()] = labelIndex;
             }
             for (uint_fast64_t moduleIndex = 0; moduleIndex < this->getNumberOfModules(); ++moduleIndex) {
                 this->moduleToIndexMap[this->getModules()[moduleIndex].getName()] = moduleIndex;

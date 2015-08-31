@@ -178,7 +178,7 @@ namespace storm {
                  * @return The full state-action reward vector.
                  */
                 template<typename MatrixValueType>
-                std::vector<ValueType> getTotalRewardVector(storm::storage::SparseMatrix<MatrixValueType> const& transitionMatrix, std::vector<ValueType> const& weights) const;
+                std::vector<ValueType> getTotalRewardVector(storm::storage::SparseMatrix<MatrixValueType> const& transitionMatrix, std::vector<MatrixValueType> const& weights) const;
                 
                 /*!
                  * Creates a vector representing the complete reward vector based on the state-, state-action- and

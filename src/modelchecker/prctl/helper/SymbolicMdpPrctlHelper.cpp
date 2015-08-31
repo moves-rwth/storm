@@ -1,11 +1,15 @@
 #include "src/modelchecker/prctl/helper/SymbolicMdpPrctlHelper.h"
 
+#include "src/solver/SymbolicMinMaxLinearEquationSolver.h"
+
 #include "src/storage/dd/CuddDdManager.h"
 #include "src/storage/dd/CuddAdd.h"
 #include "src/storage/dd/CuddBdd.h"
 #include "src/storage/dd/CuddOdd.h"
 
 #include "src/utility/graph.h"
+#include "src/utility/constants.h"
+
 
 #include "src/models/symbolic/StandardRewardModel.h"
 
@@ -13,6 +17,7 @@
 #include "src/modelchecker/results/SymbolicQuantitativeCheckResult.h"
 
 #include "src/exceptions/InvalidPropertyException.h"
+#include "src/exceptions/InvalidArgumentException.h"
 
 namespace storm {
     namespace modelchecker {

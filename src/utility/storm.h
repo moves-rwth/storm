@@ -1,5 +1,6 @@
-#ifndef STORM_UTILITY_CLI_H_
-#define STORM_UTILITY_CLI_H_
+
+#ifndef STORM_H
+#define	STORM_H
 
 #include <iostream>
 #include <iomanip>
@@ -15,8 +16,6 @@
 
 
 // Headers that provide auxiliary functionality.
-#include "src/utility/storm-version.h"
-#include "src/utility/OsDetection.h"
 #include "src/settings/SettingsManager.h"
 
 
@@ -34,6 +33,7 @@
 // Model headers.
 #include "src/models/ModelBase.h"
 #include "src/models/sparse/Model.h"
+#include "src/models/sparse/StandardRewardModel.h"
 #include "src/models/symbolic/Model.h"
 #include "src/models/symbolic/StandardRewardModel.h"
 
@@ -72,25 +72,9 @@
 #include "src/exceptions/NotImplementedException.h"
 
 namespace storm {
-    namespace utility {
-        namespace cli {
-            
-            std::string getCurrentWorkingDirectory();
-            
-            void printHeader(const int argc, const char* argv[]);
-            
-            void printUsage();
-            
-            /*!
-             * Parses the given command line arguments.
-             *
-             * @param argc The argc argument of main().
-             * @param argv The argv argument of main().
-             * @return True iff the program should continue to run after parsing the options.
-             */
-            bool parseOptions(const int argc, const char* argv[]);
-            
-            template<typename ValueType>
+    
+
+ template<typename ValueType>
             std::shared_ptr<storm::models::sparse::Model<ValueType>> buildExplicitModel(std::string const& transitionsFile, std::string const& labelingFile, boost::optional<std::string> const& stateRewardsFile = boost::optional<std::string>(), boost::optional<std::string> const& transitionRewardsFile = boost::optional<std::string>()) {
                 return storm::parser::AutoParser::parseModel(transitionsFile, labelingFile, stateRewardsFile ? stateRewardsFile.get() : "", transitionRewardsFile ? transitionRewardsFile.get() : "");
             }
@@ -411,9 +395,8 @@ namespace storm {
                 }
             }
             
-            void processOptions();
-        }
-    }
+        
 }
 
-#endif
+#endif	/* STORM_H */
+

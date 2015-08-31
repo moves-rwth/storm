@@ -1,9 +1,13 @@
 #include "src/storage/expressions/SimpleValuation.h"
 
 #include <boost/functional/hash.hpp>
+#include <boost/algorithm/string/join.hpp>
 
 #include "src/storage/expressions/ExpressionManager.h"
 #include "src/storage/expressions/Variable.h"
+
+#include "src/utility/macros.h"
+#include "src/exceptions/InvalidTypeException.h"
 
 namespace storm {
     namespace expressions {
@@ -85,6 +89,25 @@ namespace storm {
         
         void SimpleValuation::setRationalValue(Variable const& rationalVariable, double value) {
             rationalValues[rationalVariable.getOffset()] = value;
+        }
+        
+        std::string SimpleValuation::toPrettyString(std::set<storm::expressions::Variable> const& selectedVariables) const {
+            std::vector<std::string> assignments;
+            for (auto const& variable : selectedVariables) {
+                std::stringstream stream;
+                stream << variable.getName() << "=";
+                if (variable.hasBooleanType()) {
+                    stream << std::boolalpha << this->getBooleanValue(variable) << std::noboolalpha;
+                } else if (variable.hasIntegerType()) {
+                    stream << this->getIntegerValue(variable);
+                } else if (variable.hasRationalType()) {
+                    stream << this->getRationalValue(variable);
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Unexpected variable type.");
+                }
+                assignments.push_back(stream.str());
+            }
+            return "[" + boost::join(assignments, ", ") + "]";
         }
         
         std::ostream& operator<<(std::ostream& out, SimpleValuation const& valuation) {

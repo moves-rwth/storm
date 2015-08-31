@@ -9,7 +9,7 @@
 #include "src/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "src/settings/SettingsManager.h"
-
+#include "src/solver/NativeLinearEquationSolver.h"
 #include "src/settings/modules/GeneralSettings.h"
 
 #include "src/settings/modules/NativeEquationSolverSettings.h"
@@ -153,7 +153,7 @@ TEST(SparseDtmcPrctlModelCheckerTest, LRASingleBscc) {
 
 		dtmc.reset(new storm::models::sparse::Dtmc<double>(transitionMatrix, ap));
 
-        storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>> checker(*dtmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::NativeLinearEquationSolverFactory<double>(storm::solver::NativeLinearEquationSolver<double>::SolutionMethod::SOR, 0.9)));
+        storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>> checker(*dtmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::NativeLinearEquationSolverFactory<double>(storm::solver::NativeLinearEquationSolverSolutionMethod::SOR, 0.9)));
 
         std::shared_ptr<storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("LRA=? [\"a\"]");
         
@@ -177,7 +177,7 @@ TEST(SparseDtmcPrctlModelCheckerTest, LRASingleBscc) {
 
 		dtmc.reset(new storm::models::sparse::Dtmc<double>(transitionMatrix, ap));
 
-        storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>> checker(*dtmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::NativeLinearEquationSolverFactory<double>(storm::solver::NativeLinearEquationSolver<double>::SolutionMethod::SOR, 0.9)));
+        storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>> checker(*dtmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::NativeLinearEquationSolverFactory<double>(storm::solver::NativeLinearEquationSolverSolutionMethod::SOR, 0.9)));
 
         std::shared_ptr<storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("LRA=? [\"a\"]");
         
@@ -201,7 +201,7 @@ TEST(SparseDtmcPrctlModelCheckerTest, LRASingleBscc) {
 
 		dtmc.reset(new storm::models::sparse::Dtmc<double>(transitionMatrix, ap));
 
-        storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>> checker(*dtmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::NativeLinearEquationSolverFactory<double>(storm::solver::NativeLinearEquationSolver<double>::SolutionMethod::SOR, 0.9)));
+        storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>> checker(*dtmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::NativeLinearEquationSolverFactory<double>(storm::solver::NativeLinearEquationSolverSolutionMethod::SOR, 0.9)));
 
         std::shared_ptr<storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("LRA=? [\"a\"]");
         
@@ -264,7 +264,7 @@ TEST(SparseDtmcPrctlModelCheckerTest, LRA) {
 
 		mdp.reset(new storm::models::sparse::Dtmc<double>(transitionMatrix, ap));
 
-        storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>> checker(*mdp, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::NativeLinearEquationSolverFactory<double>(storm::solver::NativeLinearEquationSolver<double>::SolutionMethod::SOR, 0.9)));
+        storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>> checker(*mdp, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::NativeLinearEquationSolverFactory<double>(storm::solver::NativeLinearEquationSolverSolutionMethod::SOR, 0.9)));
 
         std::shared_ptr<storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("LRA=? [\"a\"]");
         

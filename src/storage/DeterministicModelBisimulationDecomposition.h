@@ -13,6 +13,7 @@
 #include "src/storage/Distribution.h"
 #include "src/utility/constants.h"
 #include "src/utility/OsDetection.h"
+#include "src/exceptions/InvalidOperationException.h"
 
 namespace storm {
     namespace utility {

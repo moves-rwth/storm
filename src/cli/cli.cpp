@@ -1,8 +1,11 @@
 #include "cli.h"
 
+#include "../utility/storm.h"
 
 #include "src/settings/modules/DebugSettings.h"
 #include "src/exceptions/OptionParserException.h"
+
+#include "src/utility/storm-version.h"
 
 // Includes for the linked libraries and versions header.
 #ifdef STORM_HAVE_INTELTBB
@@ -30,7 +33,6 @@
 #endif
 
 namespace storm {
-    namespace utility {
         namespace cli {
             std::string getCurrentWorkingDirectory() {
                 char temp[512];
@@ -196,14 +198,14 @@ namespace storm {
                     LOG4CPLUS_INFO(logger, "Enabled trace mode, log output gets printed to console.");
                 }
                 if (storm::settings::debugSettings().isLogfileSet()) {
-                    initializeFileLogging();
+                    storm::utility::initializeFileLogging();
                 }
                 return true;
             }
             
             void processOptions() {
                 if (storm::settings::debugSettings().isLogfileSet()) {
-                    initializeFileLogging();
+                    storm::utility::initializeFileLogging();
                 }
                 
                 storm::settings::modules::GeneralSettings const& settings = storm::settings::generalSettings();
@@ -222,7 +224,7 @@ namespace storm {
                 if (settings.isPropertySet()) {
                     storm::parser::FormulaParser formulaParser;
                     if (program) {
-                        storm::parser::FormulaParser formulaParser(program.get().getManager().getSharedPointer());
+                        formulaParser = storm::parser::FormulaParser(program.get().getManager().getSharedPointer());
                     }
                     
                     // If the given property looks like a file (containing a dot and there exists a file with that name),
@@ -253,5 +255,4 @@ namespace storm {
             }
 
         }
-    }
-}
+ }

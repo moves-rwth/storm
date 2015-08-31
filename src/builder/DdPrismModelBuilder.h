@@ -71,6 +71,16 @@ namespace storm {
                  */
                 void preserveFormula(storm::logic::Formula const& formula);
                 
+                /*!
+                 * Analyzes the given formula and sets an expression for the states states of the model that can be
+                 * treated as terminal states. Note that this may interfere with checking properties different than the
+                 * one provided.
+                 *
+                 * @param formula The formula used to (possibly) derive an expression for the terminal states of the
+                 * model.
+                 */
+                void setTerminalStatesFromFormula(storm::logic::Formula const& formula);
+                
                 // A flag that indicates whether or not all reward models are to be build.
                 bool buildAllRewardModels;
                 
@@ -88,6 +98,10 @@ namespace storm {
                 
                 // An optional set of expressions for which labels need to be built.
                 boost::optional<std::vector<storm::expressions::Expression>> expressionLabels;
+                
+                // An optional expression or label that characterizes the terminal states of the model. If this is set,
+                // the outgoing transitions of these states are replaced with a self-loop.
+                boost::optional<boost::variant<storm::expressions::Expression, std::string>> terminalStates;
             };
             
             /*!

@@ -21,6 +21,9 @@
 
 #include "src/storage/MaximalEndComponentDecomposition.h"
 
+
+#include "src/exceptions/InvalidArgumentException.h"
+
 namespace storm {
     namespace modelchecker {
         template<typename SparseMdpModelType>

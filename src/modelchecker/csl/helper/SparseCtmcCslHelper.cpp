@@ -2,15 +2,18 @@
 
 #include "src/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
 
+#include "src/models/sparse/StandardRewardModel.h"
+
 #include "src/settings/SettingsManager.h"
 #include "src/settings/modules/GeneralSettings.h"
+
+#include "src/solver/LinearEquationSolver.h"
 
 #include "src/storage/StronglyConnectedComponentDecomposition.h"
 
 #include "src/utility/macros.h"
 #include "src/utility/vector.h"
 #include "src/utility/graph.h"
-
 #include "src/utility/numerical.h"
 
 #include "src/exceptions/InvalidStateException.h"
@@ -19,8 +22,8 @@
 namespace storm {
     namespace modelchecker {
         namespace helper {
-            template <typename ValueType, typename RewardModelType>
-            std::vector<ValueType> SparseCtmcCslHelper<ValueType, RewardModelType>::computeBoundedUntilProbabilities(storm::storage::SparseMatrix<ValueType> const& rateMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, std::vector<ValueType> const& exitRates, bool qualitative, double lowerBound, double upperBound, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+            template <typename ValueType>
+            std::vector<ValueType> SparseCtmcCslHelper<ValueType>::computeBoundedUntilProbabilities(storm::storage::SparseMatrix<ValueType> const& rateMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, std::vector<ValueType> const& exitRates, bool qualitative, double lowerBound, double upperBound, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 
                 uint_fast64_t numberOfStates = rateMatrix.getRowCount();
                 
@@ -184,18 +187,18 @@ namespace storm {
                 return result;
             }
 
-            template<typename ValueType, typename RewardModelType>
-            std::vector<ValueType> SparseCtmcCslHelper<ValueType, RewardModelType>::computeUntilProbabilities(storm::storage::SparseMatrix<ValueType> const& rateMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& exitRateVector, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
-                return SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeUntilProbabilities(computeProbabilityMatrix(rateMatrix, exitRateVector), backwardTransitions, phiStates, psiStates, qualitative, linearEquationSolverFactory);
+            template <typename ValueType>
+            std::vector<ValueType> SparseCtmcCslHelper<ValueType>::computeUntilProbabilities(storm::storage::SparseMatrix<ValueType> const& rateMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& exitRateVector, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+                return SparseDtmcPrctlHelper<ValueType>::computeUntilProbabilities(computeProbabilityMatrix(rateMatrix, exitRateVector), backwardTransitions, phiStates, psiStates, qualitative, linearEquationSolverFactory);
             }
             
-            template<typename ValueType, typename RewardModelType>
-            std::vector<ValueType> SparseCtmcCslHelper<ValueType, RewardModelType>::computeNextProbabilities(storm::storage::SparseMatrix<ValueType> const& rateMatrix, std::vector<ValueType> const& exitRateVector, storm::storage::BitVector const& nextStates, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
-                return SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeNextProbabilities(computeProbabilityMatrix(rateMatrix, exitRateVector), nextStates, linearEquationSolverFactory);
+            template <typename ValueType>
+            std::vector<ValueType> SparseCtmcCslHelper<ValueType>::computeNextProbabilities(storm::storage::SparseMatrix<ValueType> const& rateMatrix, std::vector<ValueType> const& exitRateVector, storm::storage::BitVector const& nextStates, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+                return SparseDtmcPrctlHelper<ValueType>::computeNextProbabilities(computeProbabilityMatrix(rateMatrix, exitRateVector), nextStates, linearEquationSolverFactory);
             }
             
-            template <typename ValueType, typename RewardModelType>
-            storm::storage::SparseMatrix<ValueType> SparseCtmcCslHelper<ValueType, RewardModelType>::computeUniformizedMatrix(storm::storage::SparseMatrix<ValueType> const& rateMatrix, storm::storage::BitVector const& maybeStates, ValueType uniformizationRate, std::vector<ValueType> const& exitRates) {
+            template <typename ValueType>
+            storm::storage::SparseMatrix<ValueType> SparseCtmcCslHelper<ValueType>::computeUniformizedMatrix(storm::storage::SparseMatrix<ValueType> const& rateMatrix, storm::storage::BitVector const& maybeStates, ValueType uniformizationRate, std::vector<ValueType> const& exitRates) {
                 STORM_LOG_DEBUG("Computing uniformized matrix using uniformization rate " << uniformizationRate << ".");
                 STORM_LOG_DEBUG("Keeping " << maybeStates.getNumberOfSetBits() << " rows.");
                 
@@ -221,9 +224,9 @@ namespace storm {
                 return uniformizedMatrix;
             }
             
-            template <typename ValueType, typename RewardModelType>
+            template <typename ValueType>
             template<bool computeCumulativeReward>
-            std::vector<ValueType> SparseCtmcCslHelper<ValueType, RewardModelType>::computeTransientProbabilities(storm::storage::SparseMatrix<ValueType> const& uniformizedMatrix, std::vector<ValueType> const* addVector, ValueType timeBound, ValueType uniformizationRate, std::vector<ValueType> values, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+            std::vector<ValueType> SparseCtmcCslHelper<ValueType>::computeTransientProbabilities(storm::storage::SparseMatrix<ValueType> const& uniformizedMatrix, std::vector<ValueType> const* addVector, ValueType timeBound, ValueType uniformizationRate, std::vector<ValueType> values, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 
                 ValueType lambda = timeBound * uniformizationRate;
                 
@@ -304,8 +307,9 @@ namespace storm {
                 return result;
             }
             
-            template <typename ValueType, typename RewardModelType>
-            std::vector<ValueType> SparseCtmcCslHelper<ValueType, RewardModelType>::computeInstantaneousRewards(storm::storage::SparseMatrix<ValueType> const& rateMatrix, std::vector<ValueType> const& exitRateVector, RewardModelType const& rewardModel, double timeBound, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+            template <typename ValueType>
+            template <typename RewardModelType>
+            std::vector<ValueType> SparseCtmcCslHelper<ValueType>::computeInstantaneousRewards(storm::storage::SparseMatrix<ValueType> const& rateMatrix, std::vector<ValueType> const& exitRateVector, RewardModelType const& rewardModel, double timeBound, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 // Only compute the result if the model has a state-based reward this->getModel().
                 STORM_LOG_THROW(!rewardModel.empty(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
                 
@@ -330,8 +334,9 @@ namespace storm {
                 return result;
             }
             
-            template <typename ValueType, typename RewardModelType>
-            std::vector<ValueType> SparseCtmcCslHelper<ValueType, RewardModelType>::computeCumulativeRewards(storm::storage::SparseMatrix<ValueType> const& rateMatrix, std::vector<ValueType> const& exitRateVector, RewardModelType const& rewardModel, double timeBound, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+            template <typename ValueType>
+            template <typename RewardModelType>
+            std::vector<ValueType> SparseCtmcCslHelper<ValueType>::computeCumulativeRewards(storm::storage::SparseMatrix<ValueType> const& rateMatrix, std::vector<ValueType> const& exitRateVector, RewardModelType const& rewardModel, double timeBound, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 // Only compute the result if the model has a state-based reward this->getModel().
                 STORM_LOG_THROW(!rewardModel.empty(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
                                 
@@ -361,8 +366,9 @@ namespace storm {
                 return computeTransientProbabilities<true>(uniformizedMatrix, nullptr, timeBound, uniformizationRate, totalRewardVector, linearEquationSolverFactory);
             }
 
-            template <typename ValueType, typename RewardModelType>
-            std::vector<ValueType> SparseCtmcCslHelper<ValueType, RewardModelType>::computeReachabilityRewards(storm::storage::SparseMatrix<ValueType> const& rateMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& exitRateVector, RewardModelType const& rewardModel, storm::storage::BitVector const& targetStates, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+            template <typename ValueType>
+            template <typename RewardModelType>
+            std::vector<ValueType> SparseCtmcCslHelper<ValueType>::computeReachabilityRewards(storm::storage::SparseMatrix<ValueType> const& rateMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& exitRateVector, RewardModelType const& rewardModel, storm::storage::BitVector const& targetStates, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 STORM_LOG_THROW(!rewardModel.empty(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
 
                 storm::storage::SparseMatrix<ValueType> probabilityMatrix = computeProbabilityMatrix(rateMatrix, exitRateVector);
@@ -392,8 +398,8 @@ namespace storm {
                 return storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeReachabilityRewards(probabilityMatrix, backwardTransitions, totalRewardVector, targetStates, qualitative, linearEquationSolverFactory);
             }
             
-            template <typename ValueType, typename RewardModelType>
-            storm::storage::SparseMatrix<ValueType> SparseCtmcCslHelper<ValueType, RewardModelType>::computeProbabilityMatrix(storm::storage::SparseMatrix<ValueType> const& rateMatrix, std::vector<ValueType> const& exitRates) {
+            template <typename ValueType>
+            storm::storage::SparseMatrix<ValueType> SparseCtmcCslHelper<ValueType>::computeProbabilityMatrix(storm::storage::SparseMatrix<ValueType> const& rateMatrix, std::vector<ValueType> const& exitRates) {
                 // Turn the rates into probabilities by scaling each row with the exit rate of the state.
                 storm::storage::SparseMatrix<ValueType> result(rateMatrix);
                 for (uint_fast64_t row = 0; row < result.getRowCount(); ++row) {
@@ -404,8 +410,8 @@ namespace storm {
                 return result;
             }
             
-            template <typename ValueType, typename RewardModelType>
-            storm::storage::SparseMatrix<ValueType> SparseCtmcCslHelper<ValueType, RewardModelType>::computeGeneratorMatrix(storm::storage::SparseMatrix<ValueType> const& rateMatrix, std::vector<ValueType> const& exitRates) {
+            template <typename ValueType>
+            storm::storage::SparseMatrix<ValueType> SparseCtmcCslHelper<ValueType>::computeGeneratorMatrix(storm::storage::SparseMatrix<ValueType> const& rateMatrix, std::vector<ValueType> const& exitRates) {
                 storm::storage::SparseMatrix<ValueType> generatorMatrix(rateMatrix, true);
                 
                 // Place the negative exit rate on the diagonal.
@@ -420,8 +426,8 @@ namespace storm {
                 return generatorMatrix;
             }
 
-            template <typename ValueType, typename RewardModelType>
-            std::vector<ValueType> SparseCtmcCslHelper<ValueType, RewardModelType>::computeLongRunAverage(storm::storage::SparseMatrix<ValueType> const& probabilityMatrix, storm::storage::BitVector const& psiStates, std::vector<ValueType> const* exitRateVector, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+            template <typename ValueType>
+            std::vector<ValueType> SparseCtmcCslHelper<ValueType>::computeLongRunAverage(storm::storage::SparseMatrix<ValueType> const& probabilityMatrix, storm::storage::BitVector const& psiStates, std::vector<ValueType> const* exitRateVector, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 // If there are no goal states, we avoid the computation and directly return zero.
                 uint_fast64_t numberOfStates = probabilityMatrix.getRowCount();
                 if (psiStates.empty()) {
@@ -645,6 +651,10 @@ namespace storm {
             }
             
             template class SparseCtmcCslHelper<double>;
+            template std::vector<double> SparseCtmcCslHelper<double>::computeInstantaneousRewards(storm::storage::SparseMatrix<double> const& rateMatrix, std::vector<double> const& exitRateVector, storm::models::sparse::StandardRewardModel<double> const& rewardModel, double timeBound, storm::utility::solver::LinearEquationSolverFactory<double> const& linearEquationSolverFactory);
+            template std::vector<double> SparseCtmcCslHelper<double>::computeCumulativeRewards(storm::storage::SparseMatrix<double> const& rateMatrix, std::vector<double> const& exitRateVector, storm::models::sparse::StandardRewardModel<double> const& rewardModel, double timeBound, storm::utility::solver::LinearEquationSolverFactory<double> const& linearEquationSolverFactory);
+            template std::vector<double> SparseCtmcCslHelper<double>::computeReachabilityRewards(storm::storage::SparseMatrix<double> const& rateMatrix, storm::storage::SparseMatrix<double> const& backwardTransitions, std::vector<double> const& exitRateVector, storm::models::sparse::StandardRewardModel<double> const& rewardModel, storm::storage::BitVector const& targetStates, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<double> const& linearEquationSolverFactory);
+
         }
     }
 }

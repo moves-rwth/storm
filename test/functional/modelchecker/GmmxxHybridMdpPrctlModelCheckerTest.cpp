@@ -11,6 +11,7 @@
 #include "src/parser/FormulaParser.h"
 #include "src/builder/DdPrismModelBuilder.h"
 #include "src/models/symbolic/Dtmc.h"
+#include "src/models/symbolic/Mdp.h"
 #include "src/models/symbolic/StandardRewardModel.h"
 #include "src/settings/SettingsManager.h"
 
@@ -41,7 +42,7 @@ TEST(GmmxxHybridMdpPrctlModelCheckerTest, Dice) {
     
     std::shared_ptr<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>> mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>();
     
-    storm::modelchecker::HybridMdpPrctlModelChecker<storm::dd::DdType::CUDD, double> checker(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::GmmxxMinMaxLinearEquationSolverFactory<double>()));
+    storm::modelchecker::HybridMdpPrctlModelChecker<storm::dd::DdType::CUDD, double> checker(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::MinMaxLinearEquationSolverFactory<double>(storm::solver::EquationSolverTypeSelection::Gmmxx)));
     
     std::shared_ptr<storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"two\"]");
     
@@ -138,7 +139,7 @@ TEST(GmmxxHybridMdpPrctlModelCheckerTest, AsynchronousLeader) {
     
     std::shared_ptr<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>> mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>();
     
-    storm::modelchecker::HybridMdpPrctlModelChecker<storm::dd::DdType::CUDD, double> checker(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::GmmxxMinMaxLinearEquationSolverFactory<double>()));
+    storm::modelchecker::HybridMdpPrctlModelChecker<storm::dd::DdType::CUDD, double> checker(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::MinMaxLinearEquationSolverFactory<double>(storm::solver::EquationSolverTypeSelection::Gmmxx)));
     
     std::shared_ptr<storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"elected\"]");
     

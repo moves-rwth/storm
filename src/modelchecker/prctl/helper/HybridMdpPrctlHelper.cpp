@@ -6,6 +6,7 @@
 #include "src/storage/dd/CuddOdd.h"
 
 #include "src/utility/graph.h"
+#include "src/utility/constants.h"
 
 #include "src/models/symbolic/StandardRewardModel.h"
 

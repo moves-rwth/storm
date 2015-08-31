@@ -118,7 +118,7 @@ namespace storm {
                         columnMetaVariables.insert(variablePair.second);
                         variableToColumnMetaVariableMap.emplace(integerVariable.getExpressionVariable(), variablePair.second);
                         
-                        storm::dd::Add<Type> variableIdentity = manager->getIdentity(variablePair.first).equals(manager->getIdentity(variablePair.second)) * manager->getRange(variablePair.first).toAdd();
+                        storm::dd::Add<Type> variableIdentity = manager->getIdentity(variablePair.first).equals(manager->getIdentity(variablePair.second)) * manager->getRange(variablePair.first).toAdd() * manager->getRange(variablePair.second).toAdd();
                         variableToIdentityMap.emplace(integerVariable.getExpressionVariable(), variableIdentity);
                         rowColumnMetaVariablePairs.push_back(variablePair);
                         
@@ -190,17 +190,18 @@ namespace storm {
             };
             
         template <storm::dd::DdType Type>
-        DdPrismModelBuilder<Type>::Options::Options() : buildAllRewardModels(true), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(true), labelsToBuild(), expressionLabels() {
+        DdPrismModelBuilder<Type>::Options::Options() : buildAllRewardModels(true), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(true), labelsToBuild(), expressionLabels(), terminalStates() {
             // Intentionally left empty.
         }
         
         template <storm::dd::DdType Type>
-        DdPrismModelBuilder<Type>::Options::Options(storm::logic::Formula const& formula) : buildAllRewardModels(false), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(false), labelsToBuild(std::set<std::string>()), expressionLabels(std::vector<storm::expressions::Expression>()) {
+        DdPrismModelBuilder<Type>::Options::Options(storm::logic::Formula const& formula) : buildAllRewardModels(false), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(false), labelsToBuild(std::set<std::string>()), expressionLabels(std::vector<storm::expressions::Expression>()), terminalStates() {
             this->preserveFormula(formula);
+            this->setTerminalStatesFromFormula(formula);
         }
         
         template <storm::dd::DdType Type>
-        DdPrismModelBuilder<Type>::Options::Options(std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) : buildAllRewardModels(false), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(false), labelsToBuild(), expressionLabels() {
+        DdPrismModelBuilder<Type>::Options::Options(std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) : buildAllRewardModels(false), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(false), labelsToBuild(), expressionLabels(), terminalStates() {
             if (formulas.empty()) {
                 this->buildAllRewardModels = true;
                 this->buildAllLabels = true;
@@ -208,11 +209,19 @@ namespace storm {
                 for (auto const& formula : formulas) {
                     this->preserveFormula(*formula);
                 }
+                if (formulas.size() == 1) {
+                    this->setTerminalStatesFromFormula(*formulas.front());
+                }
             }
         }
         
         template <storm::dd::DdType Type>
         void DdPrismModelBuilder<Type>::Options::preserveFormula(storm::logic::Formula const& formula) {
+            // If we already had terminal states, we need to erase them.
+            if (terminalStates) {
+                terminalStates.reset();
+            }
+
             // If we are not required to build all reward models, we determine the reward models we need to build.
             if (!buildAllRewardModels) {
                 if (formula.containsRewardOperator()) {
@@ -237,6 +246,30 @@ namespace storm {
                     expressionLabels = std::vector<storm::expressions::Expression>();
                 }
                 expressionLabels.get().push_back(formula.get()->getExpression());
+            }
+        }
+        
+        template <storm::dd::DdType Type>
+        void DdPrismModelBuilder<Type>::Options::setTerminalStatesFromFormula(storm::logic::Formula const& formula) {
+            if (formula.isAtomicExpressionFormula()) {
+                terminalStates = formula.asAtomicExpressionFormula().getExpression();
+            } else if (formula.isAtomicLabelFormula()) {
+                terminalStates = formula.asAtomicLabelFormula().getLabel();
+            } else if (formula.isEventuallyFormula()) {
+                storm::logic::Formula const& sub = formula.asEventuallyFormula().getSubformula();
+                if (sub.isAtomicExpressionFormula() || sub.isAtomicLabelFormula()) {
+                    this->setTerminalStatesFromFormula(sub);
+                }
+            } else if (formula.isUntilFormula()) {
+                storm::logic::Formula const& right = formula.asUntilFormula().getLeftSubformula();
+                if (right.isAtomicExpressionFormula() || right.isAtomicLabelFormula()) {
+                    this->setTerminalStatesFromFormula(right);
+                }
+            } else if (formula.isProbabilityOperatorFormula()) {
+                storm::logic::Formula const& sub = formula.asProbabilityOperatorFormula().getSubformula();
+                if (sub.isEventuallyFormula() || sub.isUntilFormula()) {
+                    this->setTerminalStatesFromFormula(sub);
+                }
             }
         }
         
@@ -989,12 +1022,27 @@ namespace storm {
             ModuleDecisionDiagram const& globalModule = system.globalModule;
             storm::dd::Add<Type> stateActionDd = system.stateActionDd;
             
+            // If we were asked to treat some states as terminal states, we cut away their transitions now.
+            if (options.terminalStates) {
+                storm::expressions::Expression terminalExpression;
+                if (options.terminalStates.get().type() == typeid(storm::expressions::Expression)) {
+                    terminalExpression = boost::get<storm::expressions::Expression>(options.terminalStates.get());
+                } else {
+                    std::string const& labelName = boost::get<std::string>(options.terminalStates.get());
+                    terminalExpression = preparedProgram.getLabelExpression(labelName);
+                }
+                STORM_LOG_TRACE("Making the states satisfying " << terminalExpression << " terminal.");
+                storm::dd::Add<Type> terminalStatesAdd = generationInfo.rowExpressionAdapter->translateExpression(terminalExpression);
+                transitionMatrix *= !terminalStatesAdd;
+            }
+            
             // Cut the transitions and rewards to the reachable fragment of the state space.
             storm::dd::Bdd<Type> initialStates = createInitialStatesDecisionDiagram(generationInfo);
             storm::dd::Bdd<Type> transitionMatrixBdd = transitionMatrix.notZero();
             if (program.getModelType() == storm::prism::Program::ModelType::MDP) {
                 transitionMatrixBdd = transitionMatrixBdd.existsAbstract(generationInfo.allNondeterminismVariables);
             }
+            
             storm::dd::Bdd<Type> reachableStates = computeReachableStates(generationInfo, initialStates, transitionMatrixBdd);
             storm::dd::Add<Type> reachableStatesAdd = reachableStates.toAdd();
             transitionMatrix *= reachableStatesAdd;
@@ -1007,7 +1055,12 @@ namespace storm {
             if (!deadlockStates.isZero()) {
                 // If we need to fix deadlocks, we do so now.
                 if (!storm::settings::generalSettings().isDontFixDeadlocksSet()) {
-                    STORM_LOG_WARN("Fixing deadlocks in " << deadlockStates.getNonZeroCount() << " states.");
+                    STORM_LOG_INFO("Fixing deadlocks in " << deadlockStates.getNonZeroCount() << " states. The first three of these states are: ");
+                    
+                    uint_fast64_t count = 0;
+                    for (auto it = deadlockStates.begin(), ite = deadlockStates.end(); it != ite && count < 3; ++it, ++count) {
+                        STORM_LOG_INFO((*it).first.toPrettyString(generationInfo.rowMetaVariables) << std::endl);
+                    }
 
                     if (program.getModelType() == storm::prism::Program::ModelType::DTMC) {
                         // For DTMCs, we can simply add the identity of the global module for all deadlock states.
@@ -1017,6 +1070,10 @@ namespace storm {
                         // want to attach a lot of self-loops to the deadlock states.
                         storm::dd::Add<Type> action = generationInfo.manager->getAddOne();
                         std::for_each(generationInfo.allNondeterminismVariables.begin(), generationInfo.allNondeterminismVariables.end(), [&action,&generationInfo] (storm::expressions::Variable const& metaVariable) { action *= !generationInfo.manager->getIdentity(metaVariable); } );
+                        // Make sure that global variables do not change along the introduced self-loops.
+                        for (auto const& var : generationInfo.allGlobalVariables) {
+                            action *= generationInfo.variableToIdentityMap.at(var);
+                        }
                         transitionMatrix += deadlockStates * globalModule.identity * action;
                     }
                 } else {

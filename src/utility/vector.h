@@ -200,8 +200,8 @@ namespace storm {
              * @param secondOperand The second operand.
              * @param target The target vector.
              */
-            template<class T>
-            void applyPointwise(std::vector<T> const& firstOperand, std::vector<T> const& secondOperand, std::vector<T>& target, std::function<T (T const&, T const&, T const&)> const& function) {
+            template<class InValueType1, class InValueType2, class OutValueType>
+            void applyPointwise(std::vector<InValueType1> const& firstOperand, std::vector<InValueType2> const& secondOperand, std::vector<OutValueType>& target, std::function<OutValueType (InValueType1 const&, InValueType2 const&, OutValueType const&)> const& function) {
 #ifdef STORM_HAVE_INTELTBB
                 tbb::parallel_for(tbb::blocked_range<uint_fast64_t>(0, target.size()),
                                   [&](tbb::blocked_range<uint_fast64_t> const& range) {
@@ -238,8 +238,8 @@ namespace storm {
              * @param secondOperand The second operand.
              * @param target The target vector.
              */
-            template<class T>
-            void applyPointwise(std::vector<T> const& firstOperand, std::vector<T> const& secondOperand, std::vector<T>& target, std::function<T (T const&, T const&)> function) {
+            template<class InValueType1, class InValueType2, class OutValueType>
+            void applyPointwise(std::vector<InValueType1> const& firstOperand, std::vector<InValueType2> const& secondOperand, std::vector<OutValueType>& target, std::function<OutValueType (InValueType1 const&, InValueType2 const&)> function) {
 #ifdef STORM_HAVE_INTELTBB
                 tbb::parallel_for(tbb::blocked_range<uint_fast64_t>(0, target.size()),
                                   [&](tbb::blocked_range<uint_fast64_t> const& range) {
@@ -257,8 +257,8 @@ namespace storm {
              * @param target The target vector.
              * @param function The function to apply.
              */
-            template<class T>
-            void applyPointwise(std::vector<T> const& operand, std::vector<T>& target, std::function<T (T const&)> const& function) {
+            template<class InValueType, class OutValueType>
+            void applyPointwise(std::vector<InValueType> const& operand, std::vector<OutValueType>& target, std::function<OutValueType (InValueType const&)> const& function) {
 #ifdef STORM_HAVE_INTELTBB
                 tbb::parallel_for(tbb::blocked_range<uint_fast64_t>(0, target.size()),
                                   [&](tbb::blocked_range<uint_fast64_t> const& range) {
@@ -276,9 +276,9 @@ namespace storm {
              * @param secondOperand The second operand
              * @param target The target vector.
              */
-            template<class T>
-            void addVectors(std::vector<T> const& firstOperand, std::vector<T> const& secondOperand, std::vector<T>& target) {
-                applyPointwise<T>(firstOperand, secondOperand, target, std::plus<T>());
+            template<class InValueType1, class InValueType2, class OutValueType>
+            void addVectors(std::vector<InValueType1> const& firstOperand, std::vector<InValueType2> const& secondOperand, std::vector<OutValueType>& target) {
+                applyPointwise<InValueType1, InValueType2, OutValueType>(firstOperand, secondOperand, target, std::plus<>());
             }
             
             /*!
@@ -288,9 +288,9 @@ namespace storm {
              * @param secondOperand The second operand
              * @param target The target vector.
              */
-            template<class T>
-            void subtractVectors(std::vector<T> const& firstOperand, std::vector<T> const& secondOperand, std::vector<T>& target) {
-                applyPointwise<T>(firstOperand, secondOperand, target, std::minus<T>());
+            template<class InValueType1, class InValueType2, class OutValueType>
+            void subtractVectors(std::vector<InValueType1> const& firstOperand, std::vector<InValueType2> const& secondOperand, std::vector<OutValueType>& target) {
+                applyPointwise<InValueType1, InValueType2, OutValueType>(firstOperand, secondOperand, target, std::minus<>());
             }
             
             /*!
@@ -300,9 +300,9 @@ namespace storm {
              * @param secondOperand The second operand
              * @param target The target vector.
              */
-            template<class T>
-            void multiplyVectorsPointwise(std::vector<T> const& firstOperand, std::vector<T> const& secondOperand, std::vector<T>& target) {
-                applyPointwise<T>(firstOperand, secondOperand, target, std::multiplies<T>());
+            template<class InValueType1, class InValueType2, class OutValueType>
+            void multiplyVectorsPointwise(std::vector<InValueType1> const& firstOperand, std::vector<InValueType2> const& secondOperand, std::vector<OutValueType>& target) {
+                applyPointwise<InValueType1, InValueType2, OutValueType>(firstOperand, secondOperand, target, std::multiplies<>());
             }
             
             /*!
@@ -311,9 +311,9 @@ namespace storm {
              * @param target The first summand and target vector.
              * @param summand The second summand.
              */
-            template<class T>
-            void scaleVectorInPlace(std::vector<T>& target, T const& factor) {
-                applyPointwise<T>(target, target, [&] (T const& argument) { return argument * factor; });
+            template<class ValueType1, class ValueType2>
+            void scaleVectorInPlace(std::vector<ValueType1>& target, ValueType2 const& factor) {
+                applyPointwise<ValueType1, ValueType2>(target, target, [&] (ValueType1 const& argument) -> ValueType1 { return argument * factor; });
             }
             
             /*!

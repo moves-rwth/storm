@@ -3,7 +3,7 @@
 
 #include <cstdint>
 #include <vector>
-#include <iostream>
+#include <set>
 
 #include "src/storage/expressions/Valuation.h"
 
@@ -53,6 +53,14 @@ namespace storm {
             virtual void setBitVectorValue(Variable const& bitVectorVariable, int_fast64_t value) override;
             virtual double getRationalValue(Variable const& rationalVariable) const override;
             virtual void setRationalValue(Variable const& rationalVariable, double value) override;
+            
+            /*!
+             * Returns a string representation of the valuation of the selected variables.
+             *
+             * @param selectedVariables The variables to select.
+             * @return The string representation.
+             */
+            virtual std::string toPrettyString(std::set<storm::expressions::Variable> const& selectedVariables) const;
             
             friend std::ostream& operator<<(std::ostream& out, SimpleValuation const& valuation);
             
