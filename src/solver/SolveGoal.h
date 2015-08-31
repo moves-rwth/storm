@@ -1,6 +1,7 @@
+#ifndef STORM_SOLVER_SOLVEGOAL_H_
+#define	STORM_SOLVER_SOLVEGOAL_H_
 
-#ifndef SOLVEGOAL_H
-#define	SOLVEGOAL_H
+#include <memory>
 
 #include "src/solver/OptimizationDirection.h"
 #include "src/logic/ComparisonType.h"
@@ -62,11 +63,9 @@ namespace storm {
         std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<VT>> configureMinMaxLinearEquationSolver(BoundedGoal<VT> const& goal, storm::utility::solver::MinMaxLinearEquationSolverFactory<VT> const& factory, storm::storage::SparseMatrix<VT> const&  matrix);
         template<typename VT> 
         std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<VT>> configureMinMaxLinearEquationSolver(SolveGoal const& goal, storm::utility::solver::MinMaxLinearEquationSolverFactory<VT> const& factory, storm::storage::SparseMatrix<VT> const&  matrix);
-        
-       
     }
 }
 
 
-#endif	/* SOLVEGOAL_H */
+#endif	/* STORM_SOLVER_SOLVEGOAL_H_ */
 
