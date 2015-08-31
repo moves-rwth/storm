@@ -179,11 +179,11 @@ namespace storm {
                 STORM_LOG_THROW(!intervalRewardModel.empty(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
                 return computeReachabilityRewardsHelper(minimize, transitionMatrix, backwardTransitions,
                                                         [&] (uint_fast64_t rowCount, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates) {
-                                                            std::vector<storm::Interval> fullIntervalRewardVector = intervalRewardModel.getTotalRewardVector(rowCount, transitionMatrix, maybeStates);
-                                                            std::vector<ValueType> result(rowCount);
-                                                            uint_fast64_t currentPosition = 0;
-                                                            for (auto position : maybeStates) {
-                                                                result[currentPosition] = minimize ? fullIntervalRewardVector[position].lower() : fullIntervalRewardVector[position].upper();
+                                                            std::vector<ValueType> result;
+                                                            result.reserve(rowCount);
+                                                            std::vector<storm::Interval> subIntervalVector = intervalRewardModel.getTotalRewardVector(rowCount, transitionMatrix, maybeStates);
+                                                            for (auto const& interval : subIntervalVector) {
+                                                                result.push_back(minimize ? interval.lower() : interval.upper());
                                                             }
                                                             return result;
                                                         },
