@@ -3,6 +3,7 @@
 
 #include <set>
 #include <vector>
+#include <memory>
 
 #include "src/storage/dd/DdType.h"
 #include "src/solver/SolverSelectionOptions.h"
