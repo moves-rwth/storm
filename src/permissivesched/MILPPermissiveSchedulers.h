@@ -187,7 +187,7 @@ class MilpPermissiveSchedulerComputation : public PermissiveSchedulerComputation
                 createConstraints(boundary, relevantStates);
                 
                 
-                solver.setModelSense(storm::solver::LpSolver::ModelSense::Minimize);
+                solver.setOptimizationDirection(storm::OptimizationDirection::Minimize);
                 
             }
         };

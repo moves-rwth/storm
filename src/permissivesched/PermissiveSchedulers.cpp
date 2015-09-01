@@ -11,7 +11,7 @@ namespace storm {
     namespace ps {
         
          boost::optional<MemorylessDeterministicPermissiveScheduler> computePermissiveSchedulerViaMILP(std::shared_ptr<storm::models::sparse::Mdp<double>> mdp, storm::logic::ProbabilityOperatorFormula const& safeProp) {
-            storm::modelchecker::SparsePropositionalModelChecker<double> propMC(*mdp);
+            storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Mdp<double>> propMC(*mdp);
             assert(safeProp.getSubformula().isEventuallyFormula());
             auto backwardTransitions = mdp->getBackwardTransitions();
             storm::storage::BitVector goalstates = propMC.check(safeProp.getSubformula().asEventuallyFormula().getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
@@ -29,6 +29,10 @@ namespace storm {
         }
          
          boost::optional<MemorylessDeterministicPermissiveScheduler> computePermissiveSchedulerViaMC(std::shared_ptr<storm::models::sparse::Mdp<double>> mdp, storm::logic::ProbabilityOperatorFormula const& safeProp) {
+             
+         }
+         
+         boost::optional<MemorylessDeterministicPermissiveScheduler> computerPermissiveSchedulerViaSMT(std::shared_ptr<storm::models::sparse::Mdp<double>> mdp, storm::logic::ProbabilityOperatorFormula const& safeProp) {
              
          }
     }

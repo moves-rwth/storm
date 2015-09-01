@@ -3,7 +3,7 @@
 
 #include <vector>
 #include <memory>
-#include "src/storage/partialscheduler.h"
+#include "src/storage/PartialScheduler.h"
 
 namespace storm {
     namespace storage {
