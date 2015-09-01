@@ -75,8 +75,6 @@ namespace storm {
             storm::storage::SparseMatrix<ConstantType> probabilityMatrix(probabilityMatrixBuilder.build());
             this->probabilityMapping.reserve(numOfNonConstProbEntries);
             
-            
-            std::cout << "2" << std::endl;
             // Now obtain transition and staterewards (if required)
             boost::optional<std::vector<ConstantType>> stateRewards;
             boost::optional<storm::storage::SparseMatrix<ConstantType>> transitionRewards;

@@ -3,11 +3,6 @@
 
 #include <iostream>
 #include <fstream>
-#ifndef WINDOWS
-    #include <unistd.h>
-    #include <sys/ioctl.h>
-    #include <signal.h>
-#endif
 
 #include "storm-config.h"
 #include "src/solver/SmtSolver.h"

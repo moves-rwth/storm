@@ -1,3 +1,12 @@
+#ifndef WINDOWS
+    #include <sys/types.h>
+    #include <unistd.h>
+    #include <sys/ioctl.h>
+    #include <signal.h>
+    #include <sys/wait.h>
+    #include <errno.h>
+#endif
+
 #include "src/solver/Smt2SmtSolver.h"
 
 #include "src/settings/SettingsManager.h"
@@ -45,10 +54,11 @@ namespace storm {
             writeCommand("( exit )", false); //do not wait for success because it does not matter at this point and may cause problems if the solver is not running properly
 #ifndef WINDOWS
             if(processIdOfSolver!=0){
-                //Since the process has been open successfully, it means that we have to close our fds   
+                //Since the process has been opened successfully, it means that we have to close our fds   
                 close(fromSolver);
                 close(toSolver);
-                //todo make sure that the process exits  waitpid kill(pid, ..);
+                kill(processIdOfSolver, SIGTERM);
+                waitpid(processIdOfSolver, nullptr, 0); //make sure the process has exited
             }
 #endif
         }
@@ -298,6 +308,17 @@ namespace storm {
                 if(bytesReadable==0 && solverOutput.back()!='\n'){
                     STORM_LOG_DEBUG("Solver Output '" << solverOutput << "' did not end with newline symbol (\\n). Since we assume that this should be the case, we will wait for more output from the solver");
                     bytesReadable=1; //we expect more output!
+                }
+                if(bytesReadable>0){
+                    pid_t w=waitpid(processIdOfSolver, nullptr, WNOHANG);
+                    if(w!=0){
+                        STORM_LOG_WARN_COND(w>0, "Error when checking whether the solver is still running. Will assume that solver has terminated.");
+                        STORM_LOG_WARN("The solver exited unexpectedly when reading output: " << solverOutput);
+                        solverOutput+="terminated";
+                        this->needsRestart=true;
+                        this->processIdOfSolver=0;
+                        bytesReadable=0;
+                    }
                 }
             }
             checkForErrorMessage(solverOutput);
