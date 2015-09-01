@@ -10,9 +10,11 @@
 namespace storm {
     namespace models {
         namespace sparse {
-            template <typename ValueType>
+            template <typename CValueType>
             class StandardRewardModel {
             public:
+                typedef CValueType ValueType;
+                
                 /*!
                  * Constructs a reward model by copying the given data.
                  *
@@ -212,6 +214,15 @@ namespace storm {
                  * @return The full state-action reward vector.
                  */
                 std::vector<ValueType> getTotalStateActionRewardVector(uint_fast64_t numberOfRows, std::vector<uint_fast64_t> const& rowGroupIndices, storm::storage::BitVector const& filter) const;
+                
+                /*!
+                 * Sets the given value in the state-action reward vector at the given row. This assumes that the reward
+                 * model has state-action rewards.
+                 *
+                 * @param row The row at which to set the given value.
+                 * @param value The value to set.
+                 */
+                void setStateActionRewardValue(uint_fast64_t row, ValueType const& value);
                 
                 /*!
                  * Retrieves whether the reward model is empty, i.e. contains no state-, state-action- or transition-based
