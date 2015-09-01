@@ -87,7 +87,6 @@ namespace storm {
             {
                 prefTech = storm::solver::MinMaxTechniqueSelection::FROMSETTINGS;
                 setSolverType(solver);
-                std::cout << toString(prefTech) << std::endl;
             }
             
             template<typename ValueType>
@@ -108,7 +107,6 @@ namespace storm {
             template<typename ValueType>
             std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> MinMaxLinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType> const& matrix, bool trackPolicy) const {
                 
-                std::cout << toString(prefTech) << std::endl;
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> p1;
                 
                 switch (solverType) {

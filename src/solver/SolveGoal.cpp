@@ -1,10 +1,14 @@
 #include "SolveGoal.h"
 
-#include "src/storage/SparseMatrix.h"
 #include "src/utility/solver.h"
 #include "src/solver/MinMaxLinearEquationSolver.h"
+#include  <memory>
 
 namespace storm {
+    namespace storage {
+        template <typename VT> class SparseMatrix;
+    }
+    
     namespace solver {
         
         template<typename VT>
