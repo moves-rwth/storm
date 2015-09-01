@@ -4,6 +4,8 @@
 #include "src/solver/SmtSolver.h"
 
 #ifdef STORM_HAVE_SMTRAT
+#ifdef SMTRATDOESNTWORK // Does not compile with current version of smtrat.
+
 #include "lib/smtrat.h"
 #include "../adapters/carlAdapter.h"
 
@@ -44,6 +46,7 @@ namespace storm {
 		};
 	}
 }
+#endif
 #endif
 
 #endif // STORM_SOLVER_SMTRATSMTSOLVER

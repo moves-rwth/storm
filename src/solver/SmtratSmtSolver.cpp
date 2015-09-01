@@ -4,6 +4,8 @@
 #include "src/exceptions/InvalidStateException.h"
 
 #ifdef STORM_HAVE_SMTRAT
+
+#ifdef SMTRATDOESNTWORK // Does not compile with current version of smtrat.
 #include "lib/smtrat.h"
 
 namespace storm {
@@ -85,4 +87,5 @@ namespace storm {
 
         }
 }
+#endif
 #endif
