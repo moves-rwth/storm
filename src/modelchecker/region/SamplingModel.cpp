@@ -71,7 +71,7 @@ namespace storm {
                     std::pair<ParametricType, ConstantType> searchedPair(parEntry.getValue(), storm::utility::zero<ConstantType>());
                     auto const tableIt= std::lower_bound(evaluationTable.begin(), evaluationTable.end(), searchedPair);
                     STORM_LOG_THROW((*tableIt==searchedPair), storm::exceptions::UnexpectedException, "Could not find the current pair in the evaluationTable. Either the table is missing that pair or it is not sorted properly");
-                    probabilityMapping.emplace_back(std::make_pair(&(tableIt->second), samEntry));
+                    this->probabilityMapping.emplace_back(std::make_pair(&(tableIt->second), samEntry));
                 }
                 ++samEntry;
             }
@@ -81,7 +81,7 @@ namespace storm {
                         std::pair<ParametricType, ConstantType> searchedPair(parametricModel.getStateRewardVector()[state], storm::utility::zero<ConstantType>());
                         auto const tableIt= std::lower_bound(evaluationTable.begin(), evaluationTable.end(), searchedPair);
                         STORM_LOG_THROW((*tableIt==searchedPair), storm::exceptions::UnexpectedException, "Could not find the current pair in the evaluationTable. Either the table is missing that pair or it is not sorted properly");
-                        stateRewardMapping.emplace_back(std::make_pair(&(tableIt->second), &(this->model->getStateRewardVector()[state])));
+                        this->stateRewardMapping.emplace_back(std::make_pair(&(tableIt->second), &(this->model->getStateRewardVector()[state])));
                     }
                 }
             }

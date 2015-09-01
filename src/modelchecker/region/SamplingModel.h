@@ -61,6 +61,7 @@ namespace storm {
             //The model with which we work
             std::shared_ptr<storm::models::sparse::Dtmc<ConstantType>> model;
             
+            //A flag that denotes whether we compute probabilities or rewards
             bool computeRewards;
             
             // comparators that can be used to compare constants.
