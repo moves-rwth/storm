@@ -251,6 +251,8 @@ configure_file (
 	"${PROJECT_BINARY_DIR}/src/utility/storm-version.cpp"
 )
 
+set(STORM_GENERATED_SOURCES "${PROJECT_BINARY_DIR}/src/utility/storm-version.cpp") 
+
 # Add the binary dir include directory for storm-config.h
 include_directories("${PROJECT_BINARY_DIR}/include")
 
@@ -506,7 +508,7 @@ endif()
 ##  All link_directories() calls MUST be made before this point               #
 ##                                                                            #
 ###############################################################################
-add_library(storm ${STORM_LIB_SOURCES} ${STORM_LIB_HEADERS}) # Adding headers for xcode
+add_library(storm ${STORM_LIB_SOURCES} ${STORM_LIB_HEADERS} ${STORM_GENERATED_SOURCES}) # Adding headers for xcode
 add_executable(storm-main ${STORM_MAIN_SOURCES} ${STORM_MAIN_HEADERS})
 target_link_libraries(storm-main storm) # Adding headers for xcode
 set_target_properties(storm-main PROPERTIES OUTPUT_NAME "storm")
