@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
+#include "src/models/sparse/StandardRewardModel.h"
 #include "src/settings/SettingMemento.h"
 #include "src/parser/PrismParser.h"
 #include "src/builder/ExplicitPrismModelBuilder.h"

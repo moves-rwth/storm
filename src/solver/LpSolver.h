@@ -5,6 +5,8 @@
 #include <vector>
 #include <cstdint>
 #include <memory>
+#include "OptimizationDirection.h"
+
 namespace storm {
     namespace expressions {
         class ExpressionManager;
@@ -19,10 +21,7 @@ namespace storm {
         class LpSolver {
         public:
             // An enumeration to represent whether the objective function is to be minimized or maximized.
-            enum class ModelSense {
-                Minimize,
-                Maximize
-            };
+            
             
             /*!
              * Creates an empty LP solver. By default the objective function is assumed to be minimized.
@@ -31,10 +30,10 @@ namespace storm {
             /*!
              * Creates an empty LP solver with the given model sense.
              *
-             * @param modelSense A value indicating whether the objective function of this model is to be minimized or
+             * @param optDir A value indicating whether the objective function of this model is to be minimized or
              * maximized.
              */
-            LpSolver(ModelSense const& modelSense);
+            LpSolver(OptimizationDirection const& optDir);
 
             /*!
              * Registers an upper- and lower-bounded continuous variable, i.e. a variable that may take all real values
@@ -232,11 +231,11 @@ namespace storm {
              *
              * @param modelSense The model sense to use.
              */
-            void setModelSense(ModelSense const& modelSense) {
-                if (modelSense != this->modelSense) {
+            void setOptimizationDirection(OptimizationDirection const& optimizationDirection) {
+                if (optimizationDirection != this->optimizationDirection) {
                     currentModelHasBeenOptimized = false;
                 }
-                this->modelSense = modelSense;
+                this->optimizationDirection = optimizationDirection;
             }
             
             /*!
@@ -244,8 +243,8 @@ namespace storm {
              *
              * @return A value indicating whether the objective function of this model is to be minimized or maximized.
              */
-            ModelSense getModelSense() const {
-                return modelSense;
+            OptimizationDirection getOptimizationDirection() const {
+                return optimizationDirection;
             }
             
             /*!
@@ -266,7 +265,7 @@ namespace storm {
             
         private:
             // A flag that indicates the model sense.
-            ModelSense modelSense;
+            OptimizationDirection optimizationDirection;
         };
     }
 }

@@ -33,6 +33,9 @@ namespace storm {
         // Forward declare matrix class.
         template<typename T> class SparseMatrix;
         
+        typedef uint_fast64_t SparseMatrixIndexType;
+        
+        
         template<typename IndexType, typename ValueType>
         class MatrixEntry {
         public:
@@ -128,7 +131,7 @@ namespace storm {
         template<typename ValueType>
         class SparseMatrixBuilder {
         public:
-            typedef uint_fast64_t index_type;
+            typedef SparseMatrixIndexType index_type;
             typedef ValueType value_type;
             
             /*!
@@ -300,7 +303,7 @@ namespace storm {
 			friend class storm::solver::TopologicalValueIterationMinMaxLinearEquationSolver<ValueType>;
             friend class SparseMatrixBuilder<ValueType>;
             
-            typedef uint_fast64_t index_type;
+            typedef SparseMatrixIndexType index_type;
             typedef ValueType value_type;
             typedef typename std::vector<MatrixEntry<index_type, value_type>>::iterator iterator;
             typedef typename std::vector<MatrixEntry<index_type, value_type>>::const_iterator const_iterator;
@@ -675,7 +678,8 @@ namespace storm {
              * @return A vector containing the sum of the entries in each row of the matrix resulting from pointwise
              * multiplication of the current matrix with the given matrix.
              */
-            std::vector<value_type> getPointwiseProductRowSumVector(storm::storage::SparseMatrix<value_type> const& otherMatrix) const;
+            template<typename OtherValueType, typename ResultValueType = OtherValueType>
+            std::vector<ResultValueType> getPointwiseProductRowSumVector(storm::storage::SparseMatrix<OtherValueType> const& otherMatrix) const;
             
             /*!
              * Multiplies the matrix with the given vector and writes the result to the given result vector. If a
@@ -738,6 +742,10 @@ namespace storm {
              */
             value_type getRowSum(index_type row) const;
             
+            /*!
+             * Checks for each row whether it sums to one.
+             */
+            bool isProbabilistic() const;            
             /*!
              * Checks if the current matrix is a submatrix of the given matrix, where a matrix A is called a submatrix
              * of B if B has no entries in position where A has none. Additionally, the matrices must be of equal size.
@@ -942,6 +950,7 @@ namespace storm {
             
             // A vector indicating the row groups of the matrix.
             std::vector<index_type> rowGroupIndices;
+            
         };
 
     } // namespace storage

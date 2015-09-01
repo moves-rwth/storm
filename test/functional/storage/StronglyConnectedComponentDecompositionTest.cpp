@@ -3,8 +3,8 @@
 #include "src/parser/AutoParser.h"
 #include "src/storage/SparseMatrix.h"
 #include "src/storage/StronglyConnectedComponentDecomposition.h"
+#include "src/models/sparse/StandardRewardModel.h"
 #include "src/models/sparse/MarkovAutomaton.h"
-
 
 TEST(StronglyConnectedComponentDecomposition, SmallSystemFromMatrix) {
 	storm::storage::SparseMatrixBuilder<double> matrixBuilder(6, 6);

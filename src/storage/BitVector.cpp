@@ -78,6 +78,11 @@ namespace storm {
             set(begin, end);
         }
         
+        BitVector::BitVector(uint_fast64_t length, std::vector<uint_fast64_t> setEntries) : BitVector(length, setEntries.begin(), setEntries.end())
+        {
+            // Intentionally left empty.
+        }
+        
         BitVector::BitVector(uint_fast64_t bucketCount, uint_fast64_t bitCount) : bitCount(bitCount), bucketVector(bucketCount) {
             STORM_LOG_ASSERT((bucketCount << 6) == bitCount, "Bit count does not match number of buckets.");
         }

@@ -15,6 +15,11 @@ namespace storm {
         template<class Type>
         class LinearEquationSolver {
         public:
+            
+            virtual ~LinearEquationSolver() {
+                // Intentionally left empty.
+            }
+            
             /*!
              * Solves the equation system A*x = b. The matrix A is required to be square and have a unique solution.
              * The solution of the set of linear equations will be written to the vector x. Note that the matrix A has

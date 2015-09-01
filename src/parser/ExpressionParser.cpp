@@ -5,7 +5,7 @@
 
 namespace storm {
     namespace parser {
-        ExpressionParser::ExpressionParser(storm::expressions::ExpressionManager const& manager, qi::symbols<char, uint_fast64_t> const& invalidIdentifiers_, bool allowBacktracking) : ExpressionParser::base_type(expression), orOperator_(), andOperator_(), equalityOperator_(), relationalOperator_(), plusOperator_(), multiplicationOperator_(), powerOperator_(), unaryOperator_(), floorCeilOperator_(), minMaxOperator_(), trueFalse_(manager), manager(manager), createExpressions(false), acceptDoubleLiterals(true), identifiers_(nullptr), invalidIdentifiers_(invalidIdentifiers_) {
+        ExpressionParser::ExpressionParser(storm::expressions::ExpressionManager const& manager, qi::symbols<char, uint_fast64_t> const& invalidIdentifiers_, bool allowBacktracking) : ExpressionParser::base_type(expression), orOperator_(), andOperator_(), equalityOperator_(), relationalOperator_(), plusOperator_(), multiplicationOperator_(), powerOperator_(), unaryOperator_(), floorCeilOperator_(), minMaxOperator_(), trueFalse_(manager), manager(manager.getSharedPointer()), createExpressions(false), acceptDoubleLiterals(true), identifiers_(nullptr), invalidIdentifiers_(invalidIdentifiers_) {
             identifier %= qi::as_string[qi::raw[qi::lexeme[((qi::alpha | qi::char_('_')) >> *(qi::alnum | qi::char_('_')))]]][qi::_pass = phoenix::bind(&ExpressionParser::isValidIdentifier, phoenix::ref(*this), qi::_1)];
             identifier.name("identifier");
             
@@ -144,7 +144,7 @@ namespace storm {
                     STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
                 }
             }
-            return manager.boolean(false);
+            return manager->boolean(false);
         }
                 
         storm::expressions::Expression ExpressionParser::createOrExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2) const {
@@ -159,7 +159,7 @@ namespace storm {
                     STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
                 }
             }
-            return manager.boolean(false);
+            return manager->boolean(false);
         }
         
         storm::expressions::Expression ExpressionParser::createAndExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2) const {
@@ -173,7 +173,7 @@ namespace storm {
                     STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
                 }
             }
-            return manager.boolean(false);
+            return manager->boolean(false);
         }
         
         storm::expressions::Expression ExpressionParser::createRelationalExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2) const {
@@ -190,7 +190,7 @@ namespace storm {
                     STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
                 }
             }
-            return manager.boolean(false);
+            return manager->boolean(false);
         }
         
         storm::expressions::Expression ExpressionParser::createEqualsExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2) const {
@@ -205,7 +205,7 @@ namespace storm {
                     STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
                 }
             }
-            return manager.boolean(false);
+            return manager->boolean(false);
         }
         
         storm::expressions::Expression ExpressionParser::createPlusExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2) const {
@@ -220,7 +220,7 @@ namespace storm {
                     STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
                 }
             }
-            return manager.boolean(false);
+            return manager->boolean(false);
         }
         
         storm::expressions::Expression ExpressionParser::createMultExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2) const {
@@ -235,7 +235,7 @@ namespace storm {
                     STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
                 }
             }
-            return manager.boolean(false);
+            return manager->boolean(false);
         }
         
         storm::expressions::Expression ExpressionParser::createPowerExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2) const {
@@ -249,7 +249,7 @@ namespace storm {
                     STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
                 }
             }
-            return manager.boolean(false);
+            return manager->boolean(false);
         }
                 
         storm::expressions::Expression ExpressionParser::createUnaryExpression(boost::optional<storm::expressions::OperatorType> const& operatorType, storm::expressions::Expression const& e1) const {
@@ -268,7 +268,7 @@ namespace storm {
                     STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
                 }
             }
-            return manager.boolean(false);
+            return manager->boolean(false);
         }
                 
         storm::expressions::Expression ExpressionParser::createDoubleLiteralExpression(double value, bool& pass) const {
@@ -278,17 +278,17 @@ namespace storm {
             }
             
             if (this->createExpressions) {
-                return manager.rational(value);
+                return manager->rational(value);
             } else {
-                return manager.boolean(false);
+                return manager->boolean(false);
             }
         }
         
         storm::expressions::Expression ExpressionParser::createIntegerLiteralExpression(int value) const {
             if (this->createExpressions) {
-                return manager.integer(value);
+                return manager->integer(value);
             } else {
-                return manager.boolean(false);
+                return manager->boolean(false);
             }
         }
         
@@ -304,7 +304,7 @@ namespace storm {
                     STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
                 }
             }
-            return manager.boolean(false);
+            return manager->boolean(false);
         }
 
         storm::expressions::Expression ExpressionParser::createFloorCeilExpression(storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e1) const {
@@ -319,7 +319,7 @@ namespace storm {
                     STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
                 }
             }
-            return manager.boolean(false);
+            return manager->boolean(false);
         }
         
         storm::expressions::Expression ExpressionParser::getIdentifierExpression(std::string const& identifier, bool allowBacktracking, bool& pass) const {
@@ -329,14 +329,14 @@ namespace storm {
                 if (expression == nullptr) {
                     if (allowBacktracking) {
                         pass = false;
-                        return manager.boolean(false);
+                        return manager->boolean(false);
                     } else {
                         STORM_LOG_THROW(expression != nullptr, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": Undeclared identifier '" << identifier << "'.");
                     }
                 }
                 return *expression;
             } else {
-                return manager.boolean(false);
+                return manager->boolean(false);
             }
         }
         

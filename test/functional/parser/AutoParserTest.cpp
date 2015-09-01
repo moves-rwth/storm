@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
+#include "src/models/sparse/StandardRewardModel.h"
 #include "src/parser/AutoParser.h"
 #include "src/exceptions/FileIoException.h"
 #include "src/exceptions/WrongFormatException.h"
@@ -20,8 +21,7 @@ TEST(AutoParserTest, BasicParsing) {
 	ASSERT_EQ(26ul, modelPtr->getNumberOfTransitions());
 	ASSERT_EQ(1ul, modelPtr->getInitialStates().getNumberOfSetBits());
 	ASSERT_TRUE(modelPtr->hasLabel("three"));
-	ASSERT_FALSE(modelPtr->hasStateRewards());
-	ASSERT_FALSE(modelPtr->hasTransitionRewards());
+	ASSERT_FALSE(modelPtr->hasRewardModel());
 }
 
 TEST(AutoParserTest, WrongHint) {

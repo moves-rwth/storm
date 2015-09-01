@@ -53,5 +53,9 @@ namespace storm {
         void UnaryPathFormula::gatherAtomicLabelFormulas(std::vector<std::shared_ptr<AtomicLabelFormula const>>& atomicLabelFormulas) const {
             this->getSubformula().gatherAtomicLabelFormulas(atomicLabelFormulas);
         }
+        
+        void UnaryPathFormula::gatherReferencedRewardModels(std::set<std::string>& referencedRewardModels) const {
+            this->getSubformula().gatherReferencedRewardModels(referencedRewardModels);
+        }
     }
 }

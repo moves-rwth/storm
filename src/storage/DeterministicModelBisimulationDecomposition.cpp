@@ -10,15 +10,17 @@
 #include "src/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
 
+#include "src/models/sparse/StandardRewardModel.h"
+
 #include "src/utility/graph.h"
 #include "src/utility/constants.h"
+#include "src/utility/ConstantsComparator.h"
 #include "src/exceptions/IllegalFunctionCallException.h"
 #include "src/exceptions/InvalidOptionException.h"
 #include "src/exceptions/InvalidArgumentException.h"
 
 #include "src/settings/SettingsManager.h"
 #include "src/settings/modules/GeneralSettings.h"
-
 
 namespace storm {
     namespace storage {
@@ -602,6 +604,43 @@ namespace storm {
         
         template<typename ValueType>
         DeterministicModelBisimulationDecomposition<ValueType>::Options::Options(storm::models::sparse::Model<ValueType> const& model, storm::logic::Formula const& formula) : Options() {
+            this->preserveSingleFormula(model, formula);
+        }
+        
+        template<typename ValueType>
+        DeterministicModelBisimulationDecomposition<ValueType>::Options::Options(storm::models::sparse::Model<ValueType> const& model, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) : Options() {
+            if (formulas.size() == 1) {
+                this->preserveSingleFormula(model, *formulas.front());
+            } else {
+                for (auto const& formula : formulas) {
+                    std::vector<std::shared_ptr<storm::logic::AtomicExpressionFormula const>> atomicExpressionFormulas = formula->getAtomicExpressionFormulas();
+                    std::vector<std::shared_ptr<storm::logic::AtomicLabelFormula const>> atomicLabelFormulas = formula->getAtomicLabelFormulas();
+                    
+                    std::set<std::string> labelsToRespect;
+                    for (auto const& labelFormula : atomicLabelFormulas) {
+                        labelsToRespect.insert(labelFormula->getLabel());
+                    }
+                    for (auto const& expressionFormula : atomicExpressionFormulas) {
+                        std::stringstream stream;
+                        stream << *expressionFormula;
+                        labelsToRespect.insert(stream.str());
+                    }
+                    if (!respectedAtomicPropositions) {
+                        respectedAtomicPropositions = labelsToRespect;
+                    } else {
+                        respectedAtomicPropositions.get().insert(labelsToRespect.begin(), labelsToRespect.end());
+                    }
+                }
+            }
+        }
+        
+        template<typename ValueType>
+        DeterministicModelBisimulationDecomposition<ValueType>::Options::Options() : measureDrivenInitialPartition(false), phiStates(), psiStates(), respectedAtomicPropositions(), keepRewards(true), weak(false), bounded(true), buildQuotient(true) {
+            // Intentionally left empty.
+        }
+        
+        template<typename ValueType>
+        void DeterministicModelBisimulationDecomposition<ValueType>::Options::preserveSingleFormula(storm::models::sparse::Model<ValueType> const& model, storm::logic::Formula const& formula) {
             if (!formula.containsRewardOperator()) {
                 this->keepRewards = false;
             }
@@ -656,7 +695,7 @@ namespace storm {
             }
             
             if (measureDrivenInitialPartition) {
-                storm::modelchecker::SparsePropositionalModelChecker<ValueType> checker(model);
+                storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Model<ValueType>> checker(model);
                 std::unique_ptr<storm::modelchecker::CheckResult> phiStatesCheckResult = checker.check(*leftSubformula);
                 std::unique_ptr<storm::modelchecker::CheckResult> psiStatesCheckResult = checker.check(*rightSubformula);
                 phiStates = phiStatesCheckResult->asExplicitQualitativeCheckResult().getTruthValuesVector();
@@ -665,13 +704,9 @@ namespace storm {
         }
         
         template<typename ValueType>
-        DeterministicModelBisimulationDecomposition<ValueType>::Options::Options() : measureDrivenInitialPartition(false), phiStates(), psiStates(), respectedAtomicPropositions(), keepRewards(true), weak(false), bounded(true), buildQuotient(true) {
-            // Intentionally left empty.
-        }
-        
-        template<typename ValueType>
         DeterministicModelBisimulationDecomposition<ValueType>::DeterministicModelBisimulationDecomposition(storm::models::sparse::Dtmc<ValueType> const& model, Options const& options) {
-            STORM_LOG_THROW(!model.hasTransitionRewards(), storm::exceptions::IllegalFunctionCallException, "Bisimulation is currently only supported for models without transition rewards. Consider converting the transition rewards to state rewards (via suitable function calls).");
+            STORM_LOG_THROW(!model.hasRewardModel() || model.hasUniqueRewardModel(), storm::exceptions::IllegalFunctionCallException, "Bisimulation currently only supports models with at most one reward model.");
+            STORM_LOG_THROW(!model.hasRewardModel() || model.getUniqueRewardModel()->second.hasOnlyStateRewards(), storm::exceptions::IllegalFunctionCallException, "Bisimulation is currently supported for models with state rewards only. Consider converting the transition rewards to state rewards (via suitable function calls).");
             STORM_LOG_THROW(!options.weak || !options.bounded, storm::exceptions::IllegalFunctionCallException, "Weak bisimulation cannot preserve bounded properties.");
             storm::storage::SparseMatrix<ValueType> backwardTransitions = model.getBackwardTransitions();
             BisimulationType bisimulationType = options.weak ? BisimulationType::WeakDtmc : BisimulationType::Strong;
@@ -684,20 +719,22 @@ namespace storm {
             }
             
             Partition initialPartition;
+            storm::utility::ConstantsComparator<ValueType> comparator;
             if (options.measureDrivenInitialPartition) {
-                STORM_LOG_THROW(options.phiStates, storm::exceptions::InvalidOptionException, "Unable to compute measure-driven initial partition without phi and psi states.");
-                STORM_LOG_THROW(options.psiStates, storm::exceptions::InvalidOptionException, "Unable to compute measure-driven initial partition without phi and psi states.");
-                initialPartition = getMeasureDrivenInitialPartition(model, backwardTransitions, options.phiStates.get(), options.psiStates.get(), bisimulationType, options.keepRewards, options.bounded);
+                STORM_LOG_THROW(options.phiStates, storm::exceptions::InvalidOptionException, "Unable to compute measure-driven initial partition without phi states.");
+                STORM_LOG_THROW(options.psiStates, storm::exceptions::InvalidOptionException, "Unable to compute measure-driven initial partition without psi states.");
+                initialPartition = getMeasureDrivenInitialPartition(model, backwardTransitions, options.phiStates.get(), options.psiStates.get(), bisimulationType, options.keepRewards, options.bounded, comparator);
             } else {
-                initialPartition = getLabelBasedInitialPartition(model, backwardTransitions, bisimulationType, atomicPropositions, options.keepRewards);
+                initialPartition = getLabelBasedInitialPartition(model, backwardTransitions, bisimulationType, atomicPropositions, options.keepRewards, comparator);
             }
             
-            partitionRefinement(model, atomicPropositions, backwardTransitions, initialPartition, bisimulationType, options.keepRewards, options.buildQuotient);
+            partitionRefinement(model, atomicPropositions, backwardTransitions, initialPartition, bisimulationType, options.keepRewards, options.buildQuotient, comparator);
         }
         
         template<typename ValueType>
         DeterministicModelBisimulationDecomposition<ValueType>::DeterministicModelBisimulationDecomposition(storm::models::sparse::Ctmc<ValueType> const& model, Options const& options) {
-            STORM_LOG_THROW(!model.hasTransitionRewards(), storm::exceptions::IllegalFunctionCallException, "Bisimulation is currently only supported for models without transition rewards. Consider converting the transition rewards to state rewards (via suitable function calls).");
+            STORM_LOG_THROW(!model.hasRewardModel() || model.hasUniqueRewardModel(), storm::exceptions::IllegalFunctionCallException, "Bisimulation currently only supports models with at most one reward model.");
+            STORM_LOG_THROW(!model.hasRewardModel() || model.getUniqueRewardModel()->second.hasOnlyStateRewards(), storm::exceptions::IllegalFunctionCallException, "Bisimulation is currently supported for models with state rewards only. Consider converting the transition rewards to state rewards (via suitable function calls).");
             STORM_LOG_THROW(!options.weak || !options.bounded, storm::exceptions::IllegalFunctionCallException, "Weak bisimulation cannot preserve bounded properties.");
             storm::storage::SparseMatrix<ValueType> backwardTransitions = model.getBackwardTransitions();
             BisimulationType bisimulationType = options.weak ? BisimulationType::WeakCtmc : BisimulationType::Strong;
@@ -710,15 +747,16 @@ namespace storm {
             }
             
             Partition initialPartition;
+            storm::utility::ConstantsComparator<ValueType> comparator;
             if (options.measureDrivenInitialPartition) {
                 STORM_LOG_THROW(options.phiStates, storm::exceptions::InvalidOptionException, "Unable to compute measure-driven initial partition without phi and psi states.");
                 STORM_LOG_THROW(options.psiStates, storm::exceptions::InvalidOptionException, "Unable to compute measure-driven initial partition without phi and psi states.");
-                initialPartition = getMeasureDrivenInitialPartition(model, backwardTransitions, options.phiStates.get(), options.psiStates.get(), bisimulationType, options.keepRewards, options.bounded);
+                initialPartition = getMeasureDrivenInitialPartition(model, backwardTransitions, options.phiStates.get(), options.psiStates.get(), bisimulationType, options.keepRewards, options.bounded, comparator);
             } else {
-                initialPartition = getLabelBasedInitialPartition(model, backwardTransitions, bisimulationType, atomicPropositions, options.keepRewards);
+                initialPartition = getLabelBasedInitialPartition(model, backwardTransitions, bisimulationType, atomicPropositions, options.keepRewards, comparator);
             }
             
-            partitionRefinement(model, atomicPropositions, backwardTransitions, initialPartition, bisimulationType, options.keepRewards, options.buildQuotient);
+            partitionRefinement(model, atomicPropositions, backwardTransitions, initialPartition, bisimulationType, options.keepRewards, options.buildQuotient, comparator);
         }
         
         template<typename ValueType>
@@ -729,7 +767,7 @@ namespace storm {
         
         template<typename ValueType>
         template<typename ModelType>
-        void DeterministicModelBisimulationDecomposition<ValueType>::buildQuotient(ModelType const& model, std::set<std::string> const& selectedAtomicPropositions, Partition const& partition, BisimulationType bisimulationType, bool keepRewards) {
+        void DeterministicModelBisimulationDecomposition<ValueType>::buildQuotient(ModelType const& model, std::set<std::string> const& selectedAtomicPropositions, Partition const& partition, BisimulationType bisimulationType, bool keepRewards, storm::utility::ConstantsComparator<ValueType> const& comparator) {
             // In order to create the quotient model, we need to construct
             // (a) the new transition matrix,
             // (b) the new labeling,
@@ -749,7 +787,7 @@ namespace storm {
             
             // If the model had state rewards, we need to build the state rewards for the quotient as well.
             boost::optional<std::vector<ValueType>> stateRewards;
-            if (keepRewards && model.hasStateRewards()) {
+            if (keepRewards && model.hasRewardModel()) {
                 stateRewards = std::vector<ValueType>(this->blocks.size());
             }
             
@@ -829,8 +867,9 @@ namespace storm {
                 
                 // If the model has state rewards, we simply copy the state reward of the representative state, because
                 // all states in a block are guaranteed to have the same state reward.
-                if (keepRewards && model.hasStateRewards()) {
-                    stateRewards.get()[blockIndex] = model.getStateRewardVector()[representativeState];
+                if (keepRewards && model.hasRewardModel()) {
+                    typename std::unordered_map<std::string, typename ModelType::RewardModelType>::const_iterator nameRewardModelPair = model.getUniqueRewardModel();
+                    stateRewards.get()[blockIndex] = nameRewardModelPair->second.getStateRewardVector()[representativeState];
                 }
             }
             
@@ -840,13 +879,20 @@ namespace storm {
                 newLabeling.addLabelToState("init", initialBlock.getId());
             }
             
+            // Construct the reward model mapping.
+            std::unordered_map<std::string, typename ModelType::RewardModelType> rewardModels;
+            if (keepRewards && model.hasRewardModel()) {
+                typename std::unordered_map<std::string, typename ModelType::RewardModelType>::const_iterator nameRewardModelPair = model.getUniqueRewardModel();
+                rewardModels.insert(std::make_pair(nameRewardModelPair->first, typename ModelType::RewardModelType(stateRewards)));
+            }
+            
             // Finally construct the quotient model.
-            this->quotient = std::shared_ptr<storm::models::sparse::DeterministicModel<ValueType>>(new ModelType(builder.build(), std::move(newLabeling), std::move(stateRewards)));
+            this->quotient = std::shared_ptr<storm::models::sparse::DeterministicModel<ValueType, typename ModelType::RewardModelType>>(new ModelType(builder.build(), std::move(newLabeling), std::move(rewardModels)));
         }
         
         template<typename ValueType>
         template<typename ModelType>
-        void DeterministicModelBisimulationDecomposition<ValueType>::partitionRefinement(ModelType const& model, std::set<std::string> const& atomicPropositions, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, Partition& partition, BisimulationType bisimulationType, bool keepRewards, bool buildQuotient) {
+        void DeterministicModelBisimulationDecomposition<ValueType>::partitionRefinement(ModelType const& model, std::set<std::string> const& atomicPropositions, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, Partition& partition, BisimulationType bisimulationType, bool keepRewards, bool buildQuotient, storm::utility::ConstantsComparator<ValueType> const& comparator) {
             std::chrono::high_resolution_clock::time_point totalStart = std::chrono::high_resolution_clock::now();
             
             // Initially, all blocks are potential splitter, so we insert them in the splitterQueue.
@@ -866,7 +912,7 @@ namespace storm {
                 splitter->unmarkAsSplitter();
                 
                 // Now refine the partition using the current splitter.
-                refinePartition(model.getTransitionMatrix(), backwardTransitions, *splitter, partition, bisimulationType, splitterQueue);
+                refinePartition(model.getTransitionMatrix(), backwardTransitions, *splitter, partition, bisimulationType, splitterQueue, comparator);
             }
             std::chrono::high_resolution_clock::duration refinementTime = std::chrono::high_resolution_clock::now() - refinementStart;
             
@@ -885,7 +931,7 @@ namespace storm {
             
             // If we are required to build the quotient model, do so now.
             if (buildQuotient) {
-                this->buildQuotient(model, atomicPropositions, partition, bisimulationType, keepRewards);
+                this->buildQuotient(model, atomicPropositions, partition, bisimulationType, keepRewards, comparator);
             }
             
             std::chrono::high_resolution_clock::duration extractionTime = std::chrono::high_resolution_clock::now() - extractionStart;
@@ -906,7 +952,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void DeterministicModelBisimulationDecomposition<ValueType>::refineBlockProbabilities(Block& block, Partition& partition, BisimulationType bisimulationType, std::deque<Block*>& splitterQueue) {
+        void DeterministicModelBisimulationDecomposition<ValueType>::refineBlockProbabilities(Block& block, Partition& partition, BisimulationType bisimulationType, std::deque<Block*>& splitterQueue, storm::utility::ConstantsComparator<ValueType> const& comparator) {
             // Sort the states in the block based on their probabilities.
             std::sort(partition.getBegin(block), partition.getEnd(block), [&partition] (std::pair<storm::storage::sparse::state_type, ValueType> const& a, std::pair<storm::storage::sparse::state_type, ValueType> const& b) { return a.second < b.second; } );
             
@@ -955,8 +1001,8 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void DeterministicModelBisimulationDecomposition<ValueType>::refineBlockWeak(Block& block, Partition& partition, storm::storage::SparseMatrix<ValueType> const& forwardTransitions, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::deque<Block*>& splitterQueue) {
-            std::vector<uint_fast64_t> splitPoints = getSplitPointsWeak(block, partition);
+        void DeterministicModelBisimulationDecomposition<ValueType>::refineBlockWeak(Block& block, Partition& partition, storm::storage::SparseMatrix<ValueType> const& forwardTransitions, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::deque<Block*>& splitterQueue, storm::utility::ConstantsComparator<ValueType> const& comparator) {
+            std::vector<uint_fast64_t> splitPoints = getSplitPointsWeak(block, partition, comparator);
             
             // Restore the original begin of the block.
             block.setBegin(block.getOriginalBegin());
@@ -1075,7 +1121,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        std::vector<uint_fast64_t> DeterministicModelBisimulationDecomposition<ValueType>::getSplitPointsWeak(Block& block, Partition& partition) {
+        std::vector<uint_fast64_t> DeterministicModelBisimulationDecomposition<ValueType>::getSplitPointsWeak(Block& block, Partition& partition, storm::utility::ConstantsComparator<ValueType> const& comparator) {
             std::vector<uint_fast64_t> result;
             // We first scale all probabilities with (1-p[s]) where p[s] is the silent probability of state s.
             std::for_each(partition.getStatesAndValues().begin() + block.getOriginalBegin(), partition.getStatesAndValues().begin() + block.getBegin(), [&] (std::pair<storm::storage::sparse::state_type, ValueType>& stateValuePair) {
@@ -1125,7 +1171,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void DeterministicModelBisimulationDecomposition<ValueType>::refinePartition(storm::storage::SparseMatrix<ValueType> const& forwardTransitions, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, Block& splitter, Partition& partition, BisimulationType bisimulationType, std::deque<Block*>& splitterQueue) {
+        void DeterministicModelBisimulationDecomposition<ValueType>::refinePartition(storm::storage::SparseMatrix<ValueType> const& forwardTransitions, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, Block& splitter, Partition& partition, BisimulationType bisimulationType, std::deque<Block*>& splitterQueue, storm::utility::ConstantsComparator<ValueType> const& comparator) {
             std::list<Block*> predecessorBlocks;
             
             // Iterate over all states of the splitter and check its predecessors.
@@ -1264,7 +1310,7 @@ namespace storm {
                         continue;
                     }
                     
-                    refineBlockProbabilities(*blockPtr, partition, bisimulationType, splitterQueue);
+                    refineBlockProbabilities(*blockPtr, partition, bisimulationType, splitterQueue, comparator);
                 }
             } else { // In this case, we are computing a weak bisimulation on a DTMC.
                 // If the splitter was a predecessor of itself and we are computing a weak bisimulation, we need to update
@@ -1281,7 +1327,7 @@ namespace storm {
                     
                     // If the splitter is also the predecessor block, we must not refine it at this point.
                     if (&block != &splitter) {
-                        refineBlockWeak(block, partition, forwardTransitions, backwardTransitions, splitterQueue);
+                        refineBlockWeak(block, partition, forwardTransitions, backwardTransitions, splitterQueue, comparator);
                     } else {
                         // Restore the begin of the block.
                         block.setBegin(block.getOriginalBegin());
@@ -1297,7 +1343,7 @@ namespace storm {
         
         template<typename ValueType>
         template<typename ModelType>
-        typename DeterministicModelBisimulationDecomposition<ValueType>::Partition DeterministicModelBisimulationDecomposition<ValueType>::getMeasureDrivenInitialPartition(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, BisimulationType bisimulationType, bool keepRewards, bool bounded) {
+        typename DeterministicModelBisimulationDecomposition<ValueType>::Partition DeterministicModelBisimulationDecomposition<ValueType>::getMeasureDrivenInitialPartition(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, BisimulationType bisimulationType, bool keepRewards, bool bounded, storm::utility::ConstantsComparator<ValueType> const& comparator) {
             std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(backwardTransitions, phiStates, psiStates);
             
             boost::optional<storm::storage::sparse::state_type> representativePsiState;
@@ -1309,8 +1355,8 @@ namespace storm {
             
             // If the model has state rewards, we need to consider them, because otherwise reward properties are not
             // preserved.
-            if (keepRewards && model.hasStateRewards()) {
-                this->splitRewards(model, partition);
+            if (keepRewards && model.hasRewardModel()) {
+                this->splitRewards(model.getUniqueRewardModel()->second.getStateRewardVector(), partition, comparator);
             }
             
             // If we are creating the initial partition for weak bisimulation, we need to (a) split off all divergent
@@ -1393,7 +1439,7 @@ namespace storm {
         
         template<typename ValueType>
         template<typename ModelType>
-        typename DeterministicModelBisimulationDecomposition<ValueType>::Partition DeterministicModelBisimulationDecomposition<ValueType>::getLabelBasedInitialPartition(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, BisimulationType bisimulationType, boost::optional<std::set<std::string>> const& atomicPropositions, bool keepRewards) {
+        typename DeterministicModelBisimulationDecomposition<ValueType>::Partition DeterministicModelBisimulationDecomposition<ValueType>::getLabelBasedInitialPartition(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, BisimulationType bisimulationType, boost::optional<std::set<std::string>> const& atomicPropositions, bool keepRewards, storm::utility::ConstantsComparator<ValueType> const& comparator) {
             Partition partition(model.getNumberOfStates(), bisimulationType == BisimulationType::WeakDtmc);
             
             if (atomicPropositions) {
@@ -1414,8 +1460,8 @@ namespace storm {
             
             // If the model has state rewards, we need to consider them, because otherwise reward properties are not
             // preserved.
-            if (keepRewards && model.hasStateRewards()) {
-                this->splitRewards(model, partition);
+            if (keepRewards && model.hasRewardModel()) {
+                this->splitRewards(model.getUniqueRewardModel()->second.getStateRewardVector(), partition, comparator);
             }
             
             // If we are creating the initial partition for weak bisimulation, we need to (a) split off all divergent
@@ -1446,20 +1492,15 @@ namespace storm {
         }
         
         template<typename ValueType>
-        template<typename ModelType>
-        void DeterministicModelBisimulationDecomposition<ValueType>::splitRewards(ModelType const& model, Partition& partition) {
-            if (!model.hasStateRewards()) {
-                return;
-            }
-            
+        void DeterministicModelBisimulationDecomposition<ValueType>::splitRewards(std::vector<ValueType> const& stateRewardVector, Partition& partition, storm::utility::ConstantsComparator<ValueType> const& comparator) {
             for (auto& block : partition.getBlocks()) {
-                std::sort(partition.getBegin(block), partition.getEnd(block), [&model] (std::pair<storm::storage::sparse::state_type, ValueType> const& a, std::pair<storm::storage::sparse::state_type, ValueType> const& b) { return model.getStateRewardVector()[a.first] < model.getStateRewardVector()[b.first]; } );
+                std::sort(partition.getBegin(block), partition.getEnd(block), [&stateRewardVector] (std::pair<storm::storage::sparse::state_type, ValueType> const& a, std::pair<storm::storage::sparse::state_type, ValueType> const& b) { return stateRewardVector[a.first] < stateRewardVector[b.first]; } );
                 
                 // Update the positions vector and put the (state) reward values next to the states so we can easily compare them later.
                 storm::storage::sparse::state_type position = block.getBegin();
                 for (auto stateIt = partition.getBegin(block), stateIte = partition.getEnd(block); stateIt != stateIte; ++stateIt, ++position) {
                     partition.setPosition(stateIt->first, position);
-                    stateIt->second = model.getStateRewardVector()[stateIt->first];
+                    stateIt->second = stateRewardVector[stateIt->first];
                 }
                 
                 // Finally, we need to scan the ranges of states that agree on the probability.

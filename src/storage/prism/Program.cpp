@@ -20,8 +20,8 @@ namespace storm {
             globalIntegerVariables(globalIntegerVariables), globalIntegerVariableToIndexMap(), 
             formulas(formulas), formulaToIndexMap(), modules(modules), moduleToIndexMap(), 
             rewardModels(rewardModels), rewardModelToIndexMap(), initialConstruct(initialConstruct), 
-            labels(labels), actionToIndexMap(actionToIndexMap), indexToActionMap(), actions(), 
-            actionIndices(), actionIndicesToModuleIndexMap(), variableToModuleIndexMap()
+            labels(labels), labelToIndexMap(), actionToIndexMap(actionToIndexMap), indexToActionMap(), actions(),
+            synchronizingActionIndices(), actionIndicesToModuleIndexMap(), variableToModuleIndexMap()
         {
 
             // Start by creating the necessary mappings from the given ones.
@@ -260,8 +260,8 @@ namespace storm {
             return this->actions;
         }
         
-        std::set<uint_fast64_t> const& Program::getActionIndices() const {
-            return this->actionIndices;
+        std::set<uint_fast64_t> const& Program::getSynchronizingActionIndices() const {
+            return this->synchronizingActionIndices;
         }
         
         std::string const& Program::getActionName(uint_fast64_t actionIndex) const {
@@ -325,6 +325,12 @@ namespace storm {
             return this->labels;
         }
         
+        storm::expressions::Expression const& Program::getLabelExpression(std::string const& label) const {
+            auto const& labelIndexPair = labelToIndexMap.find(label);
+            STORM_LOG_THROW(labelIndexPair != labelToIndexMap.end(), storm::exceptions::InvalidArgumentException, "Cannot retrieve expression for unknown label '" << label << "'.");
+            return this->labels[labelIndexPair->second].getStatePredicateExpression();
+        }
+        
         std::size_t Program::getNumberOfLabels() const {
             return this->getLabels().size();
         }
@@ -382,6 +388,9 @@ namespace storm {
             for (uint_fast64_t formulaIndex = 0; formulaIndex < this->getNumberOfFormulas(); ++formulaIndex) {
                 this->formulaToIndexMap[this->getFormulas()[formulaIndex].getName()] = formulaIndex;
             }
+            for (uint_fast64_t labelIndex = 0; labelIndex < this->getNumberOfLabels(); ++labelIndex) {
+                this->labelToIndexMap[this->getLabels()[labelIndex].getName()] = labelIndex;
+            }
             for (uint_fast64_t moduleIndex = 0; moduleIndex < this->getNumberOfModules(); ++moduleIndex) {
                 this->moduleToIndexMap[this->getModules()[moduleIndex].getName()] = moduleIndex;
             }
@@ -391,15 +400,19 @@ namespace storm {
             
             for (auto const& actionIndexPair : this->getActionNameToIndexMapping()) {
                 this->actions.insert(actionIndexPair.first);
-                this->actionIndices.insert(actionIndexPair.second);
                 this->indexToActionMap.emplace(actionIndexPair.second, actionIndexPair.first);
+                
+                // Only let all non-zero indices be synchronizing.
+                if (actionIndexPair.second != 0) {
+                    this->synchronizingActionIndices.insert(actionIndexPair.second);
+                }
             }
             
             // Build the mapping from action names to module indices so that the lookup can later be performed quickly.
             for (unsigned int moduleIndex = 0; moduleIndex < this->getNumberOfModules(); moduleIndex++) {
                 Module const& module = this->getModule(moduleIndex);
                 
-                for (auto const& actionIndex : module.getActionIndices()) {
+                for (auto const& actionIndex : module.getSynchronizingActionIndices()) {
                     auto const& actionModuleIndicesPair = this->actionIndicesToModuleIndexMap.find(actionIndex);
                     if (actionModuleIndicesPair == this->actionIndicesToModuleIndexMap.end()) {
                         this->actionIndicesToModuleIndexMap[actionIndex] = std::set<uint_fast64_t>();
@@ -709,11 +722,29 @@ namespace storm {
                     STORM_LOG_THROW(stateReward.getRewardValueExpression().hasNumericalType(), storm::exceptions::WrongFormatException, "Error in " << stateReward.getFilename() << ", line " << stateReward.getLineNumber() << ": reward value expression must evaluate to numerical type.");
                 }
                 
+                for (auto const& stateActionReward : rewardModel.getStateActionRewards()) {
+                    std::set<storm::expressions::Variable> containedVariables = stateActionReward.getStatePredicateExpression().getVariables();
+                    bool isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedVariables.begin(), containedVariables.end());
+                    STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << stateActionReward.getFilename() << ", line " << stateActionReward.getLineNumber() << ": state reward expression refers to unknown identifiers.");
+                    STORM_LOG_THROW(stateActionReward.getStatePredicateExpression().hasBooleanType(), storm::exceptions::WrongFormatException, "Error in " << stateActionReward.getFilename() << ", line " << stateActionReward.getLineNumber() << ": state predicate must evaluate to type 'bool'.");
+                    
+                    containedVariables = stateActionReward.getRewardValueExpression().getVariables();
+                    isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedVariables.begin(), containedVariables.end());
+                    STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << stateActionReward.getFilename() << ", line " << stateActionReward.getLineNumber() << ": state reward value expression refers to unknown identifiers.");
+                    STORM_LOG_THROW(stateActionReward.getRewardValueExpression().hasNumericalType(), storm::exceptions::WrongFormatException, "Error in " << stateActionReward.getFilename() << ", line " << stateActionReward.getLineNumber() << ": reward value expression must evaluate to numerical type.");
+                }
+                
                 for (auto const& transitionReward : rewardModel.getTransitionRewards()) {
-                    std::set<storm::expressions::Variable> containedVariables = transitionReward.getStatePredicateExpression().getVariables();
+                    std::set<storm::expressions::Variable> containedVariables = transitionReward.getSourceStatePredicateExpression().getVariables();
                     bool isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedVariables.begin(), containedVariables.end());
                     STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << transitionReward.getFilename() << ", line " << transitionReward.getLineNumber() << ": state reward expression refers to unknown identifiers.");
-                    STORM_LOG_THROW(transitionReward.getStatePredicateExpression().hasBooleanType(), storm::exceptions::WrongFormatException, "Error in " << transitionReward.getFilename() << ", line " << transitionReward.getLineNumber() << ": state predicate must evaluate to type 'bool'.");
+                    STORM_LOG_THROW(transitionReward.getSourceStatePredicateExpression().hasBooleanType(), storm::exceptions::WrongFormatException, "Error in " << transitionReward.getFilename() << ", line " << transitionReward.getLineNumber() << ": state predicate must evaluate to type 'bool'.");
+
+                    containedVariables = transitionReward.getTargetStatePredicateExpression().getVariables();
+                    isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedVariables.begin(), containedVariables.end());
+                    STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << transitionReward.getFilename() << ", line " << transitionReward.getLineNumber() << ": state reward expression refers to unknown identifiers.");
+                    STORM_LOG_THROW(transitionReward.getTargetStatePredicateExpression().hasBooleanType(), storm::exceptions::WrongFormatException, "Error in " << transitionReward.getFilename() << ", line " << transitionReward.getLineNumber() << ": state predicate must evaluate to type 'bool'.");
+
                     
                     containedVariables = transitionReward.getRewardValueExpression().getVariables();
                     isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedVariables.begin(), containedVariables.end());
@@ -775,7 +806,6 @@ namespace storm {
                 }
             }
         }
-        
         
         Program Program::simplify() {
             std::vector<Module> newModules;

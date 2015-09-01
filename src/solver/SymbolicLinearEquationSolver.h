@@ -59,7 +59,7 @@ namespace storm {
              * The solution of the set of linear equations will be written to the vector x. Note that the matrix A has
              * to be given upon construction time of the solver object.
              *
-             * @param x The solution vector that has to be computed. Its length must be equal to the number of rows of A.
+             * @param x The initial guess for the solution vector. Its length must be equal to the number of rows of A.
              * @param b The right-hand side of the equation system. Its length must be equal to the number of rows of A.
              * @return The solution of the equation system.
              */

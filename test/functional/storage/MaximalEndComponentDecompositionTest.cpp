@@ -3,6 +3,7 @@
 #include "src/parser/AutoParser.h"
 #include "src/storage/MaximalEndComponentDecomposition.h"
 #include "src/models/sparse/MarkovAutomaton.h"
+#include "src/models/sparse/StandardRewardModel.h"
 
 TEST(MaximalEndComponentDecomposition, FullSystem1) {
     std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/ma/tiny/tiny1.tra", STORM_CPP_BASE_PATH "/examples/ma/tiny/tiny1.lab", "", "");

@@ -8,11 +8,11 @@
 
 namespace storm {
     namespace solver {
-        LpSolver::LpSolver() : manager(new storm::expressions::ExpressionManager()), currentModelHasBeenOptimized(false), modelSense(ModelSense::Minimize) {
+        LpSolver::LpSolver() : manager(new storm::expressions::ExpressionManager()), currentModelHasBeenOptimized(false), optimizationDirection(OptimizationDirection::Minimize) {
             // Intentionally left empty.
         }
         
-        LpSolver::LpSolver(ModelSense const& modelSense) : manager(new storm::expressions::ExpressionManager()), currentModelHasBeenOptimized(false), modelSense(modelSense) {
+        LpSolver::LpSolver(OptimizationDirection const& optimizationDir) : manager(new storm::expressions::ExpressionManager()), currentModelHasBeenOptimized(false), optimizationDirection(optimizationDir) {
             // Intentionally left empty.
         }
         

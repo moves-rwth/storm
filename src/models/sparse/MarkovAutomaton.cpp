@@ -1,5 +1,5 @@
 #include "src/models/sparse/MarkovAutomaton.h"
-
+#include "src/models/sparse/StandardRewardModel.h"
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/utility/constants.h"
 #include "src/adapters/CarlAdapter.h"
@@ -8,64 +8,60 @@ namespace storm {
     namespace models {
         namespace sparse {
             
-            template <typename ValueType>
-            MarkovAutomaton<ValueType>::MarkovAutomaton(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+            template <typename ValueType, typename RewardModelType>
+            MarkovAutomaton<ValueType, RewardModelType>::MarkovAutomaton(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                         storm::models::sparse::StateLabeling const& stateLabeling,
                                                         storm::storage::BitVector const& markovianStates,
                                                         std::vector<ValueType> const& exitRates,
-                                                        boost::optional<std::vector<ValueType>> const& optionalStateRewardVector,
-                                                        boost::optional<storm::storage::SparseMatrix<ValueType>> const& optionalTransitionRewardMatrix,
+                                                        std::unordered_map<std::string, RewardModelType> const& rewardModels,
                                                         boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling)
-            : NondeterministicModel<ValueType>(storm::models::ModelType::MarkovAutomaton, transitionMatrix, stateLabeling, optionalStateRewardVector, optionalTransitionRewardMatrix, optionalChoiceLabeling), markovianStates(markovianStates), exitRates(exitRates), closed(false) {
+            : NondeterministicModel<ValueType>(storm::models::ModelType::MarkovAutomaton, transitionMatrix, stateLabeling, rewardModels, optionalChoiceLabeling), markovianStates(markovianStates), exitRates(exitRates), closed(false) {
                 this->turnRatesToProbabilities();
-                STORM_LOG_THROW(!this->hasTransitionRewards() || this->getTransitionRewardMatrix().isSubmatrixOf(this->getTransitionMatrix()), storm::exceptions::InvalidArgumentException, "There are transition rewards for nonexistent transitions.");
             }
             
-            template <typename ValueType>
-            MarkovAutomaton<ValueType>::MarkovAutomaton(storm::storage::SparseMatrix<ValueType>&& transitionMatrix,
+            template <typename ValueType, typename RewardModelType>
+            MarkovAutomaton<ValueType, RewardModelType>::MarkovAutomaton(storm::storage::SparseMatrix<ValueType>&& transitionMatrix,
                                                         storm::models::sparse::StateLabeling&& stateLabeling,
                                                         storm::storage::BitVector const& markovianStates,
                                                         std::vector<ValueType> const& exitRates,
-                                                        boost::optional<std::vector<ValueType>>&& optionalStateRewardVector,
-                                                        boost::optional<storm::storage::SparseMatrix<ValueType>>&& optionalTransitionRewardMatrix,
+                                                        std::unordered_map<std::string, RewardModelType>&& rewardModels,
                                                         boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling)
-            : NondeterministicModel<ValueType>(storm::models::ModelType::MarkovAutomaton, std::move(transitionMatrix), std::move(stateLabeling), std::move(optionalStateRewardVector), std::move(optionalTransitionRewardMatrix), std::move(optionalChoiceLabeling)), markovianStates(markovianStates), exitRates(std::move(exitRates)), closed(false) {
+            : NondeterministicModel<ValueType>(storm::models::ModelType::MarkovAutomaton, std::move(transitionMatrix), std::move(stateLabeling), std::move(rewardModels), std::move(optionalChoiceLabeling)), markovianStates(markovianStates), exitRates(std::move(exitRates)), closed(false) {
                 this->turnRatesToProbabilities();
-                STORM_LOG_THROW(!this->hasTransitionRewards() || this->getTransitionRewardMatrix().isSubmatrixOf(this->getTransitionMatrix()), storm::exceptions::InvalidArgumentException, "There are transition rewards for nonexistent transitions.");
             }
             
-            template <typename ValueType>
-            bool MarkovAutomaton<ValueType>::isClosed() const {
+            template <typename ValueType, typename RewardModelType>
+            bool MarkovAutomaton<ValueType, RewardModelType>::isClosed() const {
                 return closed;
             }
             
-            template <typename ValueType>
-            bool MarkovAutomaton<ValueType>::isHybridState(storm::storage::sparse::state_type state) const {
+            template <typename ValueType, typename RewardModelType>
+            bool MarkovAutomaton<ValueType, RewardModelType>::isHybridState(storm::storage::sparse::state_type state) const {
                 return isMarkovianState(state) && (this->getTransitionMatrix().getRowGroupSize(state) > 1);
             }
             
-            template <typename ValueType>
-            bool MarkovAutomaton<ValueType>::isMarkovianState(storm::storage::sparse::state_type state) const {
+            template <typename ValueType, typename RewardModelType>
+            bool MarkovAutomaton<ValueType, RewardModelType>::isMarkovianState(storm::storage::sparse::state_type state) const {
                 return this->markovianStates.get(state);
             }
             
-            template <typename ValueType>
-            bool MarkovAutomaton<ValueType>::isProbabilisticState(storm::storage::sparse::state_type state) const {
+            template <typename ValueType, typename RewardModelType>
+            bool MarkovAutomaton<ValueType, RewardModelType>::isProbabilisticState(storm::storage::sparse::state_type state) const {
                 return !this->markovianStates.get(state);
             }
             
-            template <typename ValueType>
-            std::vector<ValueType> const& MarkovAutomaton<ValueType>::getExitRates() const {
+            template <typename ValueType, typename RewardModelType>
+            std::vector<ValueType> const& MarkovAutomaton<ValueType, RewardModelType>::getExitRates() const {
                 return this->exitRates;
             }
             
-            template <typename ValueType>
-            ValueType const& MarkovAutomaton<ValueType>::getExitRate(storm::storage::sparse::state_type state) const {
+            template <typename ValueType, typename RewardModelType>
+            ValueType const& MarkovAutomaton<ValueType, RewardModelType>::getExitRate(storm::storage::sparse::state_type state) const {
                 return this->exitRates[state];
             }
             
-            template <typename ValueType>
-            ValueType MarkovAutomaton<ValueType>::getMaximalExitRate() const {
+            template <typename ValueType, typename RewardModelType>
+            ValueType MarkovAutomaton<ValueType, RewardModelType>::getMaximalExitRate() const {
                 ValueType result = storm::utility::zero<ValueType>();
                 for (auto markovianState : this->markovianStates) {
                     result = std::max(result, this->exitRates[markovianState]);
@@ -73,13 +69,13 @@ namespace storm {
                 return result;
             }
             
-            template <typename ValueType>
-            storm::storage::BitVector const& MarkovAutomaton<ValueType>::getMarkovianStates() const {
+            template <typename ValueType, typename RewardModelType>
+            storm::storage::BitVector const& MarkovAutomaton<ValueType, RewardModelType>::getMarkovianStates() const {
                 return this->markovianStates;
             }
             
-            template <typename ValueType>
-            void MarkovAutomaton<ValueType>::close() {
+            template <typename ValueType, typename RewardModelType>
+            void MarkovAutomaton<ValueType, RewardModelType>::close() {
                 if (!closed) {
                     // First, count the number of hybrid states to know how many Markovian choices
                     // will be removed.
@@ -126,8 +122,8 @@ namespace storm {
                 }
             }
             
-            template <typename ValueType>
-            void MarkovAutomaton<ValueType>::writeDotToStream(std::ostream& outStream, bool includeLabeling, storm::storage::BitVector const* subsystem, std::vector<ValueType> const* firstValue, std::vector<ValueType> const* secondValue, std::vector<uint_fast64_t> const* stateColoring, std::vector<std::string> const* colors, std::vector<uint_fast64_t>* scheduler, bool finalizeOutput) const {
+            template <typename ValueType, typename RewardModelType>
+            void MarkovAutomaton<ValueType, RewardModelType>::writeDotToStream(std::ostream& outStream, bool includeLabeling, storm::storage::BitVector const* subsystem, std::vector<ValueType> const* firstValue, std::vector<ValueType> const* secondValue, std::vector<uint_fast64_t> const* stateColoring, std::vector<std::string> const* colors, std::vector<uint_fast64_t>* scheduler, bool finalizeOutput) const {
                 NondeterministicModel<ValueType>::writeDotToStream(outStream, includeLabeling, subsystem, firstValue, secondValue, stateColoring, colors, scheduler, false);
                 
                 // Write the probability distributions for all the states.
@@ -207,13 +203,13 @@ namespace storm {
                 }
             }
             
-            template <typename ValueType>
-            std::size_t MarkovAutomaton<ValueType>::getSizeInBytes() const {
+            template <typename ValueType, typename RewardModelType>
+            std::size_t MarkovAutomaton<ValueType, RewardModelType>::getSizeInBytes() const {
                 return NondeterministicModel<ValueType>::getSizeInBytes() + markovianStates.getSizeInBytes() + exitRates.size() * sizeof(ValueType);
             }
             
-            template <typename ValueType>
-            void MarkovAutomaton<ValueType>::turnRatesToProbabilities() {
+            template <typename ValueType, typename RewardModelType>
+            void MarkovAutomaton<ValueType, RewardModelType>::turnRatesToProbabilities() {
                 for (auto state : this->markovianStates) {
                     for (auto& transition : this->getTransitionMatrix().getRowGroup(state)) {
                         transition.setValue(transition.getValue() / this->exitRates[state]);

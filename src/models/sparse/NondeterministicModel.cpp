@@ -1,64 +1,66 @@
 #include "src/models/sparse/NondeterministicModel.h"
 
+#include "src/models/sparse/StandardRewardModel.h"
+
 #include "src/adapters/CarlAdapter.h"
 
 namespace storm {
     namespace models {
         namespace sparse {
             
-            template<typename ValueType>
-            NondeterministicModel<ValueType>::NondeterministicModel(storm::models::ModelType const& modelType,
+            template<typename ValueType, typename RewardModelType>
+            NondeterministicModel<ValueType, RewardModelType>::NondeterministicModel(storm::models::ModelType const& modelType,
                                                                     storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                                     storm::models::sparse::StateLabeling const& stateLabeling,
-                                                                    boost::optional<std::vector<ValueType>> const& optionalStateRewardVector,
-                                                                    boost::optional<storm::storage::SparseMatrix<ValueType>> const& optionalTransitionRewardMatrix,
+                                                                    std::unordered_map<std::string, RewardModelType> const& rewardModels,
                                                                     boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling)
-            : Model<ValueType>(modelType, transitionMatrix, stateLabeling, optionalStateRewardVector, optionalTransitionRewardMatrix, optionalChoiceLabeling) {
+            : Model<ValueType>(modelType, transitionMatrix, stateLabeling, rewardModels, optionalChoiceLabeling) {
                 // Intentionally left empty.
             }
             
-            template<typename ValueType>
-            NondeterministicModel<ValueType>::NondeterministicModel(storm::models::ModelType const& modelType,
+            template<typename ValueType, typename RewardModelType>
+            NondeterministicModel<ValueType, RewardModelType>::NondeterministicModel(storm::models::ModelType const& modelType,
                                                                     storm::storage::SparseMatrix<ValueType>&& transitionMatrix,
                                                                     storm::models::sparse::StateLabeling&& stateLabeling,
-                                                                    boost::optional<std::vector<ValueType>>&& optionalStateRewardVector,
-                                                                    boost::optional<storm::storage::SparseMatrix<ValueType>>&& optionalTransitionRewardMatrix,
+                                                                    std::unordered_map<std::string, RewardModelType>&& rewardModels,
                                                                     boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling)
-            : Model<ValueType>(modelType, std::move(transitionMatrix), std::move(stateLabeling), std::move(optionalStateRewardVector), std::move(optionalTransitionRewardMatrix),
+            : Model<ValueType>(modelType, std::move(transitionMatrix), std::move(stateLabeling), std::move(rewardModels),
                                std::move(optionalChoiceLabeling)) {
                 // Intentionally left empty.
             }
             
-            template<typename ValueType>
-            uint_fast64_t NondeterministicModel<ValueType>::getNumberOfChoices() const {
+            template<typename ValueType, typename RewardModelType>
+            uint_fast64_t NondeterministicModel<ValueType, RewardModelType>::getNumberOfChoices() const {
                 return this->getTransitionMatrix().getRowCount();
             }
             
-            template<typename ValueType>
-            std::vector<uint_fast64_t> const& NondeterministicModel<ValueType>::getNondeterministicChoiceIndices() const {
+            template<typename ValueType, typename RewardModelType>
+            std::vector<uint_fast64_t> const& NondeterministicModel<ValueType, RewardModelType>::getNondeterministicChoiceIndices() const {
                 return this->getTransitionMatrix().getRowGroupIndices();
             }
             
-            template<typename ValueType>
-            uint_fast64_t NondeterministicModel<ValueType>::getNumberOfChoices(uint_fast64_t state) const {
+            template<typename ValueType, typename RewardModelType>
+            uint_fast64_t NondeterministicModel<ValueType, RewardModelType>::getNumberOfChoices(uint_fast64_t state) const {
                 auto indices = this->getNondeterministicChoiceIndices();
                 return indices[state+1] - indices[state];
             }
             
-            template<typename ValueType>
-            void NondeterministicModel<ValueType>::printModelInformationToStream(std::ostream& out) const {
-                out << "-------------------------------------------------------------- " << std::endl;
-                out << "Model type: \t\t" << this->getType() << " (sparse)" << std::endl;
-                out << "States: \t\t" << this->getNumberOfStates() << std::endl;
-                out << "Transitions: \t\t" << this->getNumberOfTransitions() << std::endl;
-                out << "Choices: \t\t" << this->getNumberOfChoices() << std::endl;
-                this->getStateLabeling().printLabelingInformationToStream(out);
-                out << "Size in memory: \t" << (this->getSizeInBytes())/1024 << " kbytes" << std::endl;
-                out << "-------------------------------------------------------------- " << std::endl;
+            template<typename ValueType, typename RewardModelType>
+            void NondeterministicModel<ValueType, RewardModelType>::reduceToStateBasedRewards() {
+                for (auto& rewardModel : this->getRewardModels()) {
+                    rewardModel.second.reduceToStateBasedRewards(this->getTransitionMatrix(), false);
+                }
             }
             
-            template<typename ValueType>
-            void NondeterministicModel<ValueType>::writeDotToStream(std::ostream& outStream, bool includeLabeling, storm::storage::BitVector const* subsystem, std::vector<ValueType> const* firstValue, std::vector<ValueType> const* secondValue, std::vector<uint_fast64_t> const* stateColoring, std::vector<std::string> const* colors, std::vector<uint_fast64_t>* scheduler, bool finalizeOutput) const {
+            template<typename ValueType, typename RewardModelType>
+            void NondeterministicModel<ValueType, RewardModelType>::printModelInformationToStream(std::ostream& out) const {
+                this->printModelInformationHeaderToStream(out);
+                out << "Choices: \t" << this->getNumberOfChoices() << std::endl;
+                this->printModelInformationFooterToStream(out);
+            }
+            
+            template<typename ValueType, typename RewardModelType>
+            void NondeterministicModel<ValueType, RewardModelType>::writeDotToStream(std::ostream& outStream, bool includeLabeling, storm::storage::BitVector const* subsystem, std::vector<ValueType> const* firstValue, std::vector<ValueType> const* secondValue, std::vector<uint_fast64_t> const* stateColoring, std::vector<std::string> const* colors, std::vector<uint_fast64_t>* scheduler, bool finalizeOutput) const {
                 Model<ValueType>::writeDotToStream(outStream, includeLabeling, subsystem, firstValue, secondValue, stateColoring, colors, scheduler, false);
                 
                 // Write the probability distributions for all the states.

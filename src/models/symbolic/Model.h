@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <set>
+#include <unordered_map>
 #include <boost/optional.hpp>
 
 #include "src/storage/expressions/Expression.h"
@@ -28,12 +29,17 @@ namespace storm {
     namespace models {
         namespace symbolic {
             
+            template<storm::dd::DdType Type, typename ValueType>
+            class StandardRewardModel;
+            
             /*!
              * Base class for all symbolic models.
              */
             template<storm::dd::DdType Type>
             class Model : public storm::models::ModelBase {
             public:
+                typedef StandardRewardModel<Type, double> RewardModelType;
+                
                 Model(Model<Type> const& other) = default;
                 Model& operator=(Model<Type> const& other) = default;
                 
@@ -58,8 +64,7 @@ namespace storm {
                  * column meta variables.
                  * @param rowColumnMetaVariablePairs All pairs of row/column meta variables.
                  * @param labelToExpressionMap A mapping from label names to their defining expressions.
-                 * @param optionalStateRewardVector The reward values associated with the states.
-                 * @param optionalTransitionRewardMatrix The reward values associated with the transitions of the model.
+                 * @param rewardModels The reward models associated with the model.
                  */
                 Model(storm::models::ModelType const& modelType,
                       std::shared_ptr<storm::dd::DdManager<Type>> manager,
@@ -72,8 +77,7 @@ namespace storm {
                       std::shared_ptr<storm::adapters::AddExpressionAdapter<Type>> columnExpressionAdapter,
                       std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs,
                       std::map<std::string, storm::expressions::Expression> labelToExpressionMap = std::map<std::string, storm::expressions::Expression>(),
-                      boost::optional<storm::dd::Add<Type>> const& optionalStateRewardVector = boost::optional<storm::dd::Dd<Type>>(),
-                      boost::optional<storm::dd::Add<Type>> const& optionalTransitionRewardMatrix = boost::optional<storm::dd::Dd<Type>>());
+                      std::unordered_map<std::string, RewardModelType> const& rewardModels = std::unordered_map<std::string, RewardModelType>());
                 
                 virtual uint_fast64_t getNumberOfStates() const override;
                 
@@ -146,58 +150,6 @@ namespace storm {
                 storm::dd::Add<Type>& getTransitionMatrix();
                 
                 /*!
-                 * Retrieves the (optional) matrix representing the transition rewards of the model.
-                 *
-                 * @return The matrix representing the transition rewards of the model.
-                 */
-                boost::optional<storm::dd::Add<Type>> const& getOptionalTransitionRewardMatrix() const;
-                
-                /*!
-                 * Retrieves the matrix representing the transition rewards of the model. Note that calling this method
-                 * is only valid if the model has transition rewards.
-                 *
-                 * @return The matrix representing the transition rewards of the model.
-                 */
-                storm::dd::Add<Type> const& getTransitionRewardMatrix() const;
-                
-                /*!
-                 * Retrieves the matrix representing the transition rewards of the model. Note that calling this method
-                 * is only valid if the model has transition rewards.
-                 *
-                 * @return The matrix representing the transition rewards of the model.
-                 */
-                storm::dd::Add<Type>& getTransitionRewardMatrix();
-                
-                /*!
-                 * Retrieves a vector representing the state rewards of the model. Note that calling this method is only
-                 * valid if the model has state rewards.
-                 *
-                 * @return A vector representing the state rewards of the model.
-                 */
-                storm::dd::Add<Type> const& getStateRewardVector() const;
-
-                /*!
-                 * Retrieves an (optional) vector representing the state rewards of the model.
-                 *
-                 * @return A vector representing the state rewards of the model.
-                 */
-                boost::optional<storm::dd::Add<Type>> const& getOptionalStateRewardVector() const;
-                
-                /*!
-                 * Retrieves whether this model has state rewards.
-                 *
-                 * @return True iff this model has state rewards.
-                 */
-                bool hasStateRewards() const;
-                
-                /*!
-                 * Retrieves whether this model has transition rewards.
-                 *
-                 * @return True iff this model has transition rewards.
-                 */
-                bool hasTransitionRewards() const;
-                
-                /*!
                  * Retrieves the meta variables used to encode the rows of the transition matrix and the vector indices.
                  *
                  * @return The meta variables used to encode the rows of the transition matrix and the vector indices.
@@ -225,6 +177,48 @@ namespace storm {
                  */
                 storm::dd::Add<Type> getRowColumnIdentity() const;
                 
+                /*!
+                 * Retrieves whether the model has a reward model with the given name.
+                 *
+                 * @return True iff the model has a reward model with the given name.
+                 */
+                bool hasRewardModel(std::string const& rewardModelName) const;
+                
+                /*!
+                 * Retrieves the reward model with the given name, if one exists. Otherwise, an exception is thrown.
+                 *
+                 * @return The reward model with the given name, if it exists.
+                 */
+                RewardModelType const& getRewardModel(std::string const& rewardModelName) const;
+                
+                /*!
+                 * Retrieves the unique reward model, if there exists exactly one. Otherwise, an exception is thrown.
+                 *
+                 * @return An iterator to the name and the reward model.
+                 */
+                typename std::unordered_map<std::string, RewardModelType>::const_iterator getUniqueRewardModel() const;
+                
+                /*!
+                 * Retrieves whether the model has a unique reward model.
+                 *
+                 * @return True iff the model has a unique reward model.
+                 */
+                bool hasUniqueRewardModel() const;
+                
+                /*!
+                 * Retrieves whether the model has at least one reward model.
+                 *
+                 * @return True iff the model has a reward model.
+                 */
+                bool hasRewardModel() const;
+                
+                /*!
+                 * Retrieves the number of reward models associated with this model.
+                 *
+                 * @return The number of reward models associated with this model.
+                 */
+                uint_fast64_t getNumberOfRewardModels() const;
+                
                 virtual std::size_t getSizeInBytes() const override;
                 
                 virtual void printModelInformationToStream(std::ostream& out) const override;
@@ -246,6 +240,35 @@ namespace storm {
                  * @returns The mapping of labels to their defining expressions.
                  */
                 std::map<std::string, storm::expressions::Expression> const& getLabelToExpressionMap() const;
+                
+                /*!
+                 * Prints the information header (number of states and transitions) of the model to the specified stream.
+                 *
+                 * @param out The stream the information is to be printed to.
+                 */
+                void printModelInformationHeaderToStream(std::ostream& out) const;
+                
+                /*!
+                 * Prints the information footer (reward models, labels) of the model to the
+                 * specified stream.
+                 *
+                 * @param out The stream the information is to be printed to.
+                 */
+                void printModelInformationFooterToStream(std::ostream& out) const;
+                
+                /*!
+                 * Prints information about the reward models to the specified stream.
+                 *
+                 * @param out The stream the information is to be printed to.
+                 */
+                void printRewardModelsInformationToStream(std::ostream& out) const;
+                
+                /*!
+                 * Prints information about the DD variables to the specified stream.
+                 *
+                 * @param out The stream the information is to be printed to.
+                 */
+                virtual void printDdVariableInformationToStream(std::ostream& out) const;
                 
             private:
                 // The manager responsible for the decision diagrams.
@@ -279,11 +302,8 @@ namespace storm {
                 // A mapping from labels to expressions defining them.
                 std::map<std::string, storm::expressions::Expression> labelToExpressionMap;
                 
-                // If set, a vector representing the rewards of the states.
-                boost::optional<storm::dd::Add<Type>> stateRewardVector;
-                
-                // If set, a matrix representing the rewards of transitions.
-                boost::optional<storm::dd::Add<Type>> transitionRewardMatrix;
+                // The reward models associated with the model.
+                std::unordered_map<std::string, RewardModelType> rewardModels;
             };
             
         } // namespace symbolic

@@ -6,6 +6,7 @@
 #include <map>
 
 #include "src/storage/prism/StateReward.h"
+#include "src/storage/prism/StateActionReward.h"
 #include "src/storage/prism/TransitionReward.h"
 #include "src/utility/OsDetection.h"
 
@@ -18,11 +19,12 @@ namespace storm {
              *
              * @param rewardModelName The name of the reward model.
              * @param stateRewards A vector of state-based rewards.
+             * @param stateActionRewards A vector of state-action-based rewards.
              * @param transitionRewards A vector of transition-based rewards.
              * @param filename The filename in which the reward model is defined.
              * @param lineNumber The line number in which the reward model is defined.
              */
-            RewardModel(std::string const& rewardModelName, std::vector<storm::prism::StateReward> const& stateRewards, std::vector<storm::prism::TransitionReward> const& transitionRewards, std::string const& filename = "", uint_fast64_t lineNumber = 0);
+            RewardModel(std::string const& rewardModelName, std::vector<storm::prism::StateReward> const& stateRewards, std::vector<storm::prism::StateActionReward> const& stateActionRewards, std::vector<storm::prism::TransitionReward> const& transitionRewards, std::string const& filename = "", uint_fast64_t lineNumber = 0);
             
             // Create default implementations of constructors/assignment.
             RewardModel() = default;
@@ -60,6 +62,20 @@ namespace storm {
              * @return The state rewards associated with this reward model.
              */
             std::vector<storm::prism::StateReward> const& getStateRewards() const;
+
+            /*!
+             * Retrieves whether there are any state-action rewards.
+             *
+             * @return True iff there are any state-action rewards.
+             */
+            bool hasStateActionRewards() const;
+            
+            /*!
+             * Retrieves all state-action rewards associated with this reward model.
+             *
+             * @return The state-action rewards associated with this reward model.
+             */
+            std::vector<storm::prism::StateActionReward> const& getStateActionRewards() const;
             
             /*!
              * Retrieves whether there are any transition rewards.
@@ -100,6 +116,9 @@ namespace storm {
             
             // The state-based rewards associated with this reward model.
             std::vector<storm::prism::StateReward> stateRewards;
+
+            // The state-action-based rewards associated with this reward model.
+            std::vector<storm::prism::StateActionReward> stateActionRewards;
             
             // The transition-based rewards associated with this reward model.
             std::vector<storm::prism::TransitionReward> transitionRewards;
