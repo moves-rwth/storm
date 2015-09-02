@@ -12,7 +12,7 @@
 #include "../storage/StateActionTargetTuple.h"
 #include "../storage/expressions/Variable.h"
 #include "../solver/LpSolver.h"
-
+#include "../models/sparse/StandardRewardModel.h"
 
 
 namespace storm {
@@ -38,9 +38,10 @@ class MilpPermissiveSchedulerComputation : public PermissiveSchedulerComputation
             }
             
                     
-            void calculatePermissiveScheduler(double boundary) override {
-                createMILP(boundary, mPenalties);
+            void calculatePermissiveScheduler(bool lowerBound, double boundary) override {
+                createMILP(lowerBound, boundary, mPenalties);
                 solver.optimize();
+                
                 mCalledOptimizer = true;
             }
             
@@ -50,14 +51,20 @@ class MilpPermissiveSchedulerComputation : public PermissiveSchedulerComputation
                 return !solver.isInfeasible();
             }
             
-            MemorylessDeterministicPermissiveScheduler && getScheduler() const override {
+            MemorylessDeterministicPermissiveScheduler getScheduler() const override {
+                assert(mCalledOptimizer);
+                assert(foundSolution());
                 storm::storage::BitVector result(mdp->getNumberOfChoices(), true);
                 for(auto const& entry : multistrategyVariables) {
                     if(!solver.getBinaryValue(entry.second)) {
                         result.set(mdp->getNondeterministicChoiceIndices()[entry.first.getState()]+entry.first.getAction(), false);
                     }
                 }
-                return std::move<MemorylessDeterministicPermissiveScheduler>(result);
+                return MemorylessDeterministicPermissiveScheduler(result);
+            }
+            
+            void dumpLpToFile(std::string const& filename) {
+                solver.writeModelToFile(filename);
             }
             
                     
@@ -107,17 +114,21 @@ class MilpPermissiveSchedulerComputation : public PermissiveSchedulerComputation
                                 
                     }
                 }
+                solver.update();
             }
             
-            
-            
-            void createConstraints(double boundary, storm::storage::BitVector const& relevantStates) {
+            void createConstraints(bool lowerBound, double boundary, storm::storage::BitVector const& relevantStates) {
                 // (5) and (7) are omitted on purpose (-- we currenty do not support controllability of actions -- )
                 
                 // (1)
                 assert(mdp->getInitialStates().getNumberOfSetBits() == 1);
                 uint_fast64_t initialStateIndex = mdp->getInitialStates().getNextSetIndex(0);
-                solver.addConstraint("c1", mProbVariables[initialStateIndex] >= solver.getConstant(boundary));
+                assert(relevantStates[initialStateIndex]);
+                if(lowerBound) {
+                    solver.addConstraint("c1", mProbVariables[initialStateIndex] >= solver.getConstant(boundary));
+                } else {
+                    solver.addConstraint("c1", mProbVariables[initialStateIndex] <= solver.getConstant(boundary));
+                }
                 for(uint_fast64_t s : relevantStates) {
                     std::string stateString =  std::to_string(s);
                     storm::expressions::Expression expr = solver.getConstant(0.0);
@@ -139,8 +150,12 @@ class MilpPermissiveSchedulerComputation : public PermissiveSchedulerComputation
                             } else if (entry.getValue() != 0 && mGoals.get(entry.getColumn())) {
                                 expr = expr + solver.getConstant(entry.getValue());
                             }
-                        }        
-                        solver.addConstraint("c3-" + sastring, mProbVariables[s] < (solver.getConstant(1) - multistrategyVariables[storage::StateActionPair(s,a)]) + expr);
+                        }
+                        if(lowerBound) {
+                            solver.addConstraint("c3-" + sastring, mProbVariables[s] <= (solver.getConstant(1) - multistrategyVariables[storage::StateActionPair(s,a)]) + expr);
+                        } else {
+                            solver.addConstraint("c3-" + sastring, mProbVariables[s] >= (solver.getConstant(1) - multistrategyVariables[storage::StateActionPair(s,a)]) + expr);
+                        }
                     }
 
                     for(uint_fast64_t a = 0; a < mdp->getNumberOfChoices(s); ++a) {    
@@ -160,12 +175,12 @@ class MilpPermissiveSchedulerComputation : public PermissiveSchedulerComputation
                                 storage::StateActionTarget sat = {s,a,entry.getColumn()};
                                 std::string satstring = to_string(sat);
                                 // (8)
-                                assert(mGammaVariables.count(entry.getColumn()) > 0);
-                                assert(mGammaVariables.count(s) > 0);
-                                assert(mBetaVariables.count(sat) > 0);
                                 if(relevantStates[entry.getColumn()]) {
+                                    assert(mGammaVariables.count(entry.getColumn()) > 0);
+                                    assert(mGammaVariables.count(s) > 0);
+                                    assert(mBetaVariables.count(sat) > 0);
                                     solver.addConstraint("c8-" + satstring, mGammaVariables[entry.getColumn()] < mGammaVariables[s] + (solver.getConstant(1) - mBetaVariables[sat]) + mProbVariables[s]); // With rewards, we have to change this.
-                               }
+                                }
                             }
                         }
                                 
@@ -177,14 +192,14 @@ class MilpPermissiveSchedulerComputation : public PermissiveSchedulerComputation
             /**
              *
              */
-            void createMILP(double boundary, PermissiveSchedulerPenalties const& penalties) {
+            void createMILP(bool lowerBound, double boundary, PermissiveSchedulerPenalties const& penalties) {
                 storm::storage::BitVector irrelevant = mGoals | mSinks;
                 storm::storage::BitVector relevantStates = ~irrelevant;
                 // Notice that the separated construction of variables and 
                 // constraints slows down the construction of the MILP. 
                 // In the future, we might want to merge this.
                 createVariables(penalties, relevantStates);
-                createConstraints(boundary, relevantStates);
+                createConstraints(lowerBound, boundary, relevantStates);
                 
                 
                 solver.setOptimizationDirection(storm::OptimizationDirection::Minimize);

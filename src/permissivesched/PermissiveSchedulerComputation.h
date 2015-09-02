@@ -26,7 +26,7 @@ namespace storm {
             }
             
                     
-            virtual void calculatePermissiveScheduler(double boundary) = 0;
+            virtual void calculatePermissiveScheduler(bool lowerBound, double boundary) = 0;
             
             void setPenalties(PermissiveSchedulerPenalties penalties) {
                 mPenalties = penalties;
@@ -42,7 +42,7 @@ namespace storm {
             
             virtual bool foundSolution() const = 0;
             
-            virtual MemorylessDeterministicPermissiveScheduler&&  getScheduler() const = 0;
+            virtual MemorylessDeterministicPermissiveScheduler getScheduler() const = 0;
             
        
         };
