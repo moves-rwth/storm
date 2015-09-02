@@ -112,6 +112,7 @@ namespace storm {
                  * @return A pointer to the newly created solver.
                  */
                 virtual std::unique_ptr<storm::solver::LpSolver> create(std::string const& name) const;
+                virtual std::unique_ptr<storm::solver::LpSolver> create(std::string const& name, storm::solver::LpSolverTypeSelection solvType) const;
             };
             
             class GlpkLpSolverFactory : public LpSolverFactory {
@@ -124,7 +125,7 @@ namespace storm {
                 virtual std::unique_ptr<storm::solver::LpSolver> create(std::string const& name) const override;
             };
             
-            std::unique_ptr<storm::solver::LpSolver> getLpSolver(std::string const& name);
+            std::unique_ptr<storm::solver::LpSolver> getLpSolver(std::string const& name, storm::solver::LpSolverTypeSelection solvType = storm::solver::LpSolverTypeSelection::FROMSETTINGS) ;
         }
     }
 }
