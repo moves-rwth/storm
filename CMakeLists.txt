@@ -98,7 +98,7 @@ if(USE_CARL)
      set(STORM_HAVE_CARL ON)
     endif()
 
-    find_package(smtrat QUIET)
+    #find_package(smtrat QUIET)
     if(smtrat_FOUND)
         set(STORM_HAVE_SMTRAT ON)
     endif()
