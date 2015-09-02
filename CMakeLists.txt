@@ -28,6 +28,7 @@ option(STORM_USE_COTIRE "Sets whether Cotire should be used (for building precom
 option(LINK_LIBCXXABI "Sets whether libc++abi should be linked." OFF)
 option(USE_LIBCXX "Sets whether the standard library is libc++." OFF)
 option(USE_CARL "Sets whether carl should be included." ON)
+option(FORCE_COLOR "Force color output" ON)
 set(GUROBI_ROOT "" CACHE STRING "A hint to the root directory of Gurobi (optional).")
 set(Z3_ROOT "" CACHE STRING "A hint to the root directory of Z3 (optional).")
 set(CUDA_ROOT "" CACHE STRING "The root directory of CUDA.")
@@ -170,6 +171,10 @@ else(CLANG)
     add_definitions(-DBOOST_RESULT_OF_USE_DECLTYPE)
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -stdlib=${CLANG_STDLIB} -Wall -pedantic -Wno-newline-eof -Wno-mismatched-tags -ftemplate-depth=1024")
     set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -pedantic")
+
+    if(FORCE_COLOR)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fcolor-diagnostics")
+    endif()
 
     # Turn on popcnt instruction if desired (yes by default)
     if (STORM_USE_POPCNT)
