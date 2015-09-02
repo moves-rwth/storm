@@ -133,27 +133,36 @@ namespace storm {
             }
 
 
-            std::unique_ptr<storm::solver::LpSolver> LpSolverFactory::create(std::string const& name) const {
-                storm::solver::LpSolverType lpSolver = storm::settings::generalSettings().getLpSolver();
-                switch (lpSolver) {
+            std::unique_ptr<storm::solver::LpSolver> LpSolverFactory::create(std::string const& name, storm::solver::LpSolverTypeSelection solvT) const {
+                storm::solver::LpSolverType t;
+                if(solvT == storm::solver::LpSolverTypeSelection::FROMSETTINGS) {
+                    t = storm::settings::generalSettings().getLpSolver();
+                } else {
+                    t = convert(solvT);
+                }
+                switch (t) {
                     case storm::solver::LpSolverType::Gurobi: return std::unique_ptr<storm::solver::LpSolver>(new storm::solver::GurobiLpSolver(name));
                     case storm::solver::LpSolverType::Glpk: return std::unique_ptr<storm::solver::LpSolver>(new storm::solver::GlpkLpSolver(name));
-                    default: return std::unique_ptr<storm::solver::LpSolver>(new storm::solver::GurobiLpSolver(name));
                 }
             }
             
+            std::unique_ptr<storm::solver::LpSolver> LpSolverFactory::create(std::string const& name) const {
+                return LpSolverFactory::create(name, storm::solver::LpSolverTypeSelection::FROMSETTINGS);
+            }
+            
             std::unique_ptr<storm::solver::LpSolver> GlpkLpSolverFactory::create(std::string const& name) const {
-                return std::unique_ptr<storm::solver::LpSolver>(new storm::solver::GlpkLpSolver(name));
+                return LpSolverFactory::create(name, storm::solver::LpSolverTypeSelection::Glpk);
             }
 
             std::unique_ptr<storm::solver::LpSolver> GurobiLpSolverFactory::create(std::string const& name) const {
-                return std::unique_ptr<storm::solver::LpSolver>(new storm::solver::GurobiLpSolver(name));
+                return LpSolverFactory::create(name, storm::solver::LpSolverTypeSelection::Gurobi);
             }
             
-            std::unique_ptr<storm::solver::LpSolver> getLpSolver(std::string const& name) {
+            std::unique_ptr<storm::solver::LpSolver> getLpSolver(std::string const& name, storm::solver::LpSolverTypeSelection solvType) {
                 std::unique_ptr<storm::utility::solver::LpSolverFactory> factory(new LpSolverFactory());
-                return factory->create(name);
+                return factory->create(name, solvType);
             }
+            
             
             template class SymbolicLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>;
             template class SymbolicMinMaxLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>;

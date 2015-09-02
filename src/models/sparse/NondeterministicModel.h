@@ -73,6 +73,15 @@ namespace storm {
                  */
                 uint_fast64_t getNumberOfChoices(uint_fast64_t state) const;
                 
+                /*!
+                 * Modifies the state-action reward vector of the given reward model by setting the value specified in
+                 * the map for the corresponding state-action pairs.
+                 *
+                 * @param rewardModel The reward model whose state-action rewards to modify.
+                 * @param modifications A mapping from state-action pairs to the their new reward values.
+                 */
+                void modifyStateActionRewards(RewardModelType& rewardModel, std::map<std::pair<uint_fast64_t, LabelSet>, typename RewardModelType::ValueType> const& modifications) const;
+                
                 virtual void reduceToStateBasedRewards() override;
                 
                 virtual void printModelInformationToStream(std::ostream& out) const override;

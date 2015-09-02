@@ -4,6 +4,8 @@
 
 #include "src/adapters/CarlAdapter.h"
 
+#include "src/exceptions/InvalidOperationException.h"
+
 namespace storm {
     namespace models {
         namespace sparse {
@@ -43,6 +45,22 @@ namespace storm {
             uint_fast64_t NondeterministicModel<ValueType, RewardModelType>::getNumberOfChoices(uint_fast64_t state) const {
                 auto indices = this->getNondeterministicChoiceIndices();
                 return indices[state+1] - indices[state];
+            }
+            
+            template<typename ValueType, typename RewardModelType>
+            void NondeterministicModel<ValueType, RewardModelType>::modifyStateActionRewards(RewardModelType& rewardModel, std::map<std::pair<uint_fast64_t, LabelSet>, typename RewardModelType::ValueType> const& modifications) const {
+                STORM_LOG_THROW(rewardModel.hasStateActionRewards(), storm::exceptions::InvalidOperationException, "Cannot modify state-action rewards, because the reward model does not have state-action rewards.");
+                STORM_LOG_THROW(this->hasChoiceLabeling(), storm::exceptions::InvalidOperationException, "Cannot modify state-action rewards, because the model does not have an action labeling.");
+                std::vector<LabelSet> const& choiceLabels = this->getChoiceLabeling();
+                for (auto const& modification : modifications) {
+                    uint_fast64_t stateIndex = modification.first.first;
+                    for (uint_fast64_t row = this->getNondeterministicChoiceIndices()[stateIndex]; row < this->getNondeterministicChoiceIndices()[stateIndex + 1]; ++row) {
+                        // If the action label of the row matches the requested one, we set the reward value accordingly.
+                        if (choiceLabels[row] == modification.first.second) {
+                            rewardModel.setStateActionRewardValue(row, modification.second);
+                        }
+                    }
+                }
             }
             
             template<typename ValueType, typename RewardModelType>
