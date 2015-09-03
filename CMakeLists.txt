@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 2.8.6)
-
+cmake_policy(VERSION 3.2)
 # Set project name
 project (storm CXX C)
 
@@ -29,6 +29,7 @@ option(LINK_LIBCXXABI "Sets whether libc++abi should be linked." OFF)
 option(USE_LIBCXX "Sets whether the standard library is libc++." OFF)
 option(USE_CARL "Sets whether carl should be included." ON)
 option(FORCE_COLOR "Force color output" ON)
+option(STORM_PYTHON "Builds the API for Python" OFF)
 set(GUROBI_ROOT "" CACHE STRING "A hint to the root directory of Gurobi (optional).")
 set(Z3_ROOT "" CACHE STRING "A hint to the root directory of Z3 (optional).")
 set(CUDA_ROOT "" CACHE STRING "The root directory of CUDA.")
@@ -56,8 +57,11 @@ if(CUSTOM_BOOST_ROOT)
 endif(CUSTOM_BOOST_ROOT)
 
 set(TBB_INSTALL_DIR "${PROJECT_SOURCE_DIR}/resources/3rdparty/tbb42_20140122_merged-win-lin-mac")
-
-find_package(Boost REQUIRED)
+if(STORM_PYTHON)
+    find_package(Boost REQUIRED COMPONENTS python3)
+else() 
+    find_package(Boost REQUIRED)
+endif()
 find_package(Doxygen REQUIRED)
 find_package(Gurobi)
 find_package(TBB)
@@ -102,6 +106,13 @@ if(USE_CARL)
     if(smtrat_FOUND)
         set(STORM_HAVE_SMTRAT ON)
     endif()
+endif()
+
+if(STORM_PYTHON)
+    set(Python_ADDITIONAL_VERSIONS 3.4)
+    FIND_PACKAGE(PythonInterp REQUIRED)
+    FIND_PACKAGE(PythonLibs 3.4 REQUIRED)
+    include_directories(${PYTHON_INCLUDE_DIR})
 endif()
 
 
@@ -385,6 +396,8 @@ file(GLOB_RECURSE STORM_HEADERS_CLI ${PROJECT_SOURCE_DIR}/src/cli/*.h)
 file(GLOB_RECURSE STORM_SOURCES_WITHOUT_MAIN ${PROJECT_SOURCE_DIR}/src/*/*.cpp)
 file(GLOB_RECURSE STORM_SOURCES_CLI ${PROJECT_SOURCE_DIR}/src/cli/*.cpp)
 file(GLOB_RECURSE STORM_MAIN_FILE ${PROJECT_SOURCE_DIR}/src/storm.cpp)
+file(GLOB_RECURSE STORM_PY_SOURCES ${PROJECT_SOURCE_DIR}/src/python/*.cpp)
+file(GLOB_RECURSE STORM_PY_HEADERS ${PROJECT_SOURCE_DIR}/src/python/*.h)
 file(GLOB_RECURSE STORM_ADAPTERS_FILES ${PROJECT_SOURCE_DIR}/src/adapters/*.h ${PROJECT_SOURCE_DIR}/src/adapters/*.cpp)
 file(GLOB_RECURSE STORM_BUILDER_FILES ${PROJECT_SOURCE_DIR}/src/builder/*.h ${PROJECT_SOURCE_DIR}/src/builder/*.cpp)
 file(GLOB_RECURSE STORM_CLI_FILES ${PROJECT_SOURCE_DIR}/src/cli/*.h ${PROJECT_SOURCE_DIR}/src/cli/*.cpp)
@@ -425,8 +438,10 @@ file(GLOB_RECURSE STORM_BUILD_HEADERS ${PROJECT_BINARY_DIR}/include/*.h)
 
 set(STORM_LIB_SOURCES ${STORM_SOURCES_WITHOUT_MAIN})
 list(REMOVE_ITEM STORM_LIB_SOURCES ${STORM_SOURCES_CLI})
+list(REMOVE_ITEM STORM_LIB_SOURCES ${STORM_PY_SOURCES})
 set(STORM_LIB_HEADERS ${STORM_HEADERS})
 list(REMOVE_ITEM STORM_LIB_HEADERS ${STORM_HEADERS_CLI})
+#list(REMOVE_ITEM STORM_LIB_HEADERS ${STORM_PY_HEADERS})
 set(STORM_MAIN_SOURCES ${STORM_SOURCES_CLI} ${STORM_MAIN_FILE})
 set(STORM_MAIN_HEADERS ${STORM_HEADERS_CLI})
 
@@ -522,6 +537,15 @@ target_link_libraries(storm-functional-tests storm)
 add_executable(storm-performance-tests ${STORM_PERFORMANCE_TEST_MAIN_FILE} ${STORM_PERFORMANCE_TEST_FILES})
 target_link_libraries(storm-performance-tests storm)
 
+#############################################################
+##
+## STORM PYTHON
+##
+#############################################################
+if(STORM_PYTHON)
+    add_library(stormpy_info SHARED ${STORM_PY_SOURCES})
+    target_link_libraries(stormpy storm ${BOOST_PYTHON_LIB} ${PYTHON_LIBRARIES})
+endif()
 #############################################################
 ##
 ##	Boost
