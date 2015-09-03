@@ -22,6 +22,8 @@ option(gtest_build_samples "Build gtest's sample programs." OFF)
 
 option(gtest_disable_pthreads "Disable uses of pthreads in gtest." OFF)
 
+MARK_AS_ADVANCED(gtest_build_tests gtest_build_samples gtest_disable_pthreads gtest_force_shared_crt)
+
 # Defines pre_project_set_up_hermetic_build() and set_up_hermetic_build().
 include(cmake/hermetic_build.cmake OPTIONAL)
 
