@@ -10,6 +10,8 @@
 
 #include "src/modelchecker/region/SparseDtmcRegionModelChecker.h"
 #include "src/models/sparse/Mdp.h"
+#include "src/modelchecker/region/ParameterRegion.h"
+#include "src/storage/SparseMatrix.h"
 
 namespace storm {
     namespace modelchecker {
@@ -54,24 +56,28 @@ namespace storm {
                 CHOSEOPTIMAL
             }; 
            
+            void initializeProbabilities(storm::models::sparse::Dtmc<ParametricType> const& parametricModel, storm::storage::SparseMatrix<ConstantType>& probabilityMatrix, std::vector<std::size_t>& rowSubstitutions, std::vector<std::size_t>& matrixEntryToEvalTableMapping, std::size_t const& constantEntryIndex);
+            void initializeRewards(storm::models::sparse::Dtmc<ParametricType> const& parametricModel, storm::storage::SparseMatrix<ConstantType> const& probabilityMatrix, std::vector<std::size_t> const& rowSubstitutions, boost::optional<std::vector<ConstantType>>& stateRewards, boost::optional<storm::storage::SparseMatrix<ConstantType>>& transitionRewards, std::vector<std::size_t>& stateRewardEntryToEvalTableMapping, std::vector<std::size_t>& transitionRewardEntryToEvalTableMapping, std::size_t const& constantEntryIndex);
+            
             //Vector has one entry for every (non-constant) matrix entry.
             //pair.first points to an entry in the evaluation table,
             //pair.second is an iterator to the corresponding matrix entry
             std::vector<std::pair<ConstantType*, typename storm::storage::SparseMatrix<ConstantType>::iterator>> probabilityMapping;
             //similar for the rewards. But now the first entry points to a minimal and the second one to a maximal value.
             //The third entry points to the state reward vector and the transitionRewardMatrix, respectively.
-            std::vector<std::tuple<ConstantType*, ConstantType*, ConstantType*>> stateRewardMapping;
+            std::vector<std::tuple<ConstantType*, ConstantType*, typename std::vector<ConstantType>::iterator>> stateRewardMapping;
             std::vector<std::tuple<ConstantType*, ConstantType*, typename storm::storage::SparseMatrix<ConstantType>::iterator>> transitionRewardMapping;
             
-            //Vector has one entry for
-            //(every distinct, non-constant function that occurs somewhere in the model) x (the required combinations of lower and upper bounds of the region)
-            //The second entry represents a substitution as an index in the substitutions vector
+            //Vector has one (unique) entry for every occurring pair of a non-constant function and 
+            // a substitution, i.e., a mapping of variables to a TypeOfBound
+            //The second entry represents the substitution as an index in the substitutions vector
             //The third entry should contain the result when evaluating the function in the first entry, regarding the substitution given by the second entry.
-            std::vector<std::tuple<ParametricType, std::size_t, ConstantType>> evaluationTable;
+            std::vector<std::tuple<ParametricType, std::size_t, ConstantType>> probabilityEvaluationTable;
+            //For rewards, we have the third entry for the minimal value and the fourth entry for the maximal value
             std::vector<std::tuple<ParametricType, std::size_t, ConstantType, ConstantType>> rewardEvaluationTable;
             
             //Vector has one entry for every required substitution (=replacement of parameters with lower/upper bounds of region)
-            std::vector<std::map<VariableType, TypeOfBound>> substitutions;
+            std::vector<std::map<VariableType, TypeOfBound>> probabilitySubstitutions;
             //Same for the different substitutions for the reward functions.
             //In addition, we store the parameters for which the correct substitution 
             //depends on the region and whether to minimize/maximize

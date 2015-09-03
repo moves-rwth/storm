@@ -22,6 +22,27 @@ namespace storm {
         namespace vector {
             
             /*!
+             * Finds the given element in the given vector.
+             * If the vector does not contain the element, it is inserted (at the end of vector).
+             * Either way, the returned value will be the position of the element inside the vector,
+             * 
+             * @note old indices to other elements remain valid, as the vector will not be sorted.
+             * 
+             * @param vector The vector in which the element is searched and possibly insert
+             * @param element The element that will be searched for (or inserted)
+             * 
+             * @return The position at which the element is located
+             */
+            template<class T>
+            std::size_t findOrInsert(std::vector<T>& vector, T&& element){
+                std::size_t position=std::find(vector.begin(), vector.end(), element) - vector.begin();
+                if(position==vector.size()){
+                    vector.emplace_back(std::move(element));
+                }
+                return position;
+            }
+            
+            /*!
              * Sets the provided values at the provided positions in the given vector.
              *
              * @param vector The vector in which the values are to be set.
@@ -62,6 +83,25 @@ namespace storm {
                 for (auto position : positions) {
                     vector[oldPosition++] = values[position];
                 }
+            }
+            
+            /*!
+             * Selects the elements from the given vector at the specified positions and writes them consecutively into the same vector.
+             * The size of the vector is reduced accordingly.
+             * @param vector The vector from which to select the elements and into which the selected elements are to be written.
+             * @param positions The positions at which to select the elements from the values vector.
+             */
+            template<class T>
+            void selectVectorValues(std::vector<T>& vector, storm::storage::BitVector const& positions) {
+                uint_fast64_t oldPosition = 0;
+                for (auto position : positions) {
+                    if(oldPosition!=position){
+                        vector[oldPosition++] = std::move(vector[position]);
+                    } else {
+                        ++oldPosition;
+                    }
+                }
+                vector.resize(oldPosition);
             }
             
             /*!

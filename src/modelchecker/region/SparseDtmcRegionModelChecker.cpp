@@ -91,7 +91,8 @@ namespace storm {
                     initializeApproximationModel(*this->simplifiedModel);
                 }
                 //now create the model used for Sampling
-                if(storm::settings::regionSettings().getSampleMode()==storm::settings::modules::RegionSettings::SampleMode::INSTANTIATE || (storm::settings::regionSettings().getApproxMode()==storm::settings::modules::RegionSettings::ApproxMode::TESTFIRST)){
+                if(storm::settings::regionSettings().getSampleMode()==storm::settings::modules::RegionSettings::SampleMode::INSTANTIATE ||
+                        (!storm::settings::regionSettings().doSample() && storm::settings::regionSettings().getApproxMode()==storm::settings::modules::RegionSettings::ApproxMode::TESTFIRST)){
                     initializeSamplingModel(*this->simplifiedModel);
                 }
                 //Check if the reachability function needs to be computed
@@ -295,7 +296,7 @@ namespace storm {
             labeling.addLabel("sink", std::move(sinkLabel));
             // other ingredients
             if(this->computeRewards){
-                storm::utility::vector::selectVectorValues(stateRewards.get(), subsystem, stateRewards.get());
+                storm::utility::vector::selectVectorValues(stateRewards.get(), subsystem);
                 stateRewards->push_back(storm::utility::zero<ParametricType>()); //target state
                 stateRewards->push_back(storm::utility::zero<ParametricType>()); //sink state
             }
@@ -378,6 +379,9 @@ namespace storm {
                 // states that we still consider (i.e. maybeStates), we need to extract these values
                 // first.
                 storm::utility::vector::selectVectorValues(stateRewards, maybeStates, this->model.getStateRewardVector());
+            }
+            for(auto& stateReward: stateRewards){
+                storm::utility::simplify(stateReward);
             }
         }
 

@@ -6,10 +6,11 @@
  */
 
 #include "src/modelchecker/region/ApproximationModel.h"
-#include "src/modelchecker/region/ParameterRegion.h"
-#include "modelchecker/prctl/SparseMdpPrctlModelChecker.h"
+#include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-#include "exceptions/UnexpectedException.h"
+#include "src/utility/vector.h"
+#include "src/utility/regions.h"
+#include "src/exceptions/UnexpectedException.h"
 
 namespace storm {
     namespace modelchecker {
@@ -17,203 +18,58 @@ namespace storm {
         
         template<typename ParametricType, typename ConstantType>
         SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ApproximationModel::ApproximationModel(storm::models::sparse::Dtmc<ParametricType> const& parametricModel, bool computeRewards) : computeRewards(computeRewards){
-            // Run through the rows of the original model and obtain
-            // (1) the different substitutions (this->substitutions) and the substitution used for every row
-            std::vector<std::size_t> rowSubstitutions;
-            this->substitutions.emplace_back(std::map<VariableType, TypeOfBound>()); //we want that the empty substitution is always the first one
-            // (2) the set of distinct pairs <Function, Substitution> 
-            std::set<std::pair<ParametricType, std::size_t>> distinctFuncSubs;
-            // (3) the MDP Probability matrix with some dummy entries
-            storm::storage::SparseMatrixBuilder<ConstantType> probabilityMatrixBuilder(0, parametricModel.getNumberOfStates(), 0, true, true, parametricModel.getNumberOfStates());
-            typename storm::storage::SparseMatrix<ConstantType>::index_type probMatrixRow=0;
-            std::size_t numOfNonConstProbEntries=0;
-            for(typename storm::storage::SparseMatrix<ParametricType>::index_type row=0; row < parametricModel.getTransitionMatrix().getRowCount(); ++row ){
-                probabilityMatrixBuilder.newRowGroup(probMatrixRow);
-                // For (1): Find the different substitutions, i.e., mappings from Variables that occur in this row to {lower, upper}
-                std::set<VariableType> occurringProbVariables;
-                for(auto const& entry : parametricModel.getTransitionMatrix().getRow(row)){
-                    storm::utility::regions::gatherOccurringVariables(entry.getValue(), occurringProbVariables);
-                }
-                std::size_t numOfSubstitutions=1ull<<occurringProbVariables.size(); //=2^(#variables). Note that there is still 1 substitution when #variables==0 (i.e.,the empty substitution)
-                for(uint_fast64_t substitutionId=0; substitutionId<numOfSubstitutions; ++substitutionId){
-                    //compute actual substitution from substitutionId by interpreting the Id as a bit sequence.
-                    //the occurringProbVariables.size() least significant bits of substitutionId will always represent the substitution that we have to consider
-                    //(00...0 = lower bounds for all parameters, 11...1 = upper bounds for all parameters)
-                    std::map<VariableType, TypeOfBound> currSubstitution;
-                    std::size_t parameterIndex=0;
-                    for(auto const& parameter : occurringProbVariables){
-                        if((substitutionId>>parameterIndex)%2==0){
-                            currSubstitution.insert(std::make_pair(parameter, TypeOfBound::LOWER));
-                        }
-                        else{
-                            currSubstitution.insert(std::make_pair(parameter, TypeOfBound::UPPER));
-                        }
-                        ++parameterIndex;
-                    }
-                    //Find the current substitution in this->substitutions (add it if we see this substitution the first time)
-                    std::size_t substitutionIndex = std::find(this->substitutions.begin(),this->substitutions.end(), currSubstitution) - this->substitutions.begin();
-                    if(substitutionIndex==this->substitutions.size()){
-                        this->substitutions.emplace_back(std::move(currSubstitution));
-                    }
-                    rowSubstitutions.push_back(substitutionIndex);
-                    //Run again through the row and...
-                    //For (2): add pair <function, substitution> for the occuring functions and the current substitution
-                    //For (3): add a row with dummy entries for the current substitution
-                    //Note that this is still executed even if no variables occur. However, we will not put any <function, substitution> pair into distninctFuncSubs if substitution is empty.
-                    ConstantType dummyEntry=storm::utility::one<ConstantType>();
-                    for(auto const& entry : parametricModel.getTransitionMatrix().getRow(row)){
-                        if(!this->parametricTypeComparator.isConstant(entry.getValue())){
-                            distinctFuncSubs.insert(std::make_pair(entry.getValue(), substitutionIndex));
-                            ++numOfNonConstProbEntries;
-                        }
-                        probabilityMatrixBuilder.addNextValue(probMatrixRow, entry.getColumn(), dummyEntry);
-                        dummyEntry=storm::utility::zero<ConstantType>(); 
-                    }
-                    ++probMatrixRow;
-                }
-            }
-            storm::storage::SparseMatrix<ConstantType> probabilityMatrix(probabilityMatrixBuilder.build());
-            this->probabilityMapping.reserve(numOfNonConstProbEntries);
+            //Start with the probabilities
+            storm::storage::SparseMatrix<ConstantType> probabilityMatrix;
+            std::vector<std::size_t> rowSubstitutions;// the substitution used in every row (required if rewards are computed)
+            std::vector<std::size_t> matrixEntryToEvalTableMapping;// This vector will get an entry for every probability-matrix entry
+            //for the corresponding matrix entry, it stores the corresponding entry in the probability evaluation table (more precisely: the position in that table).
+            //We can later transform this mapping into the desired mapping with iterators
+            const std::size_t constantEntryIndex=std::numeric_limits<std::size_t>::max(); //this value is stored in the matrixEntrytoEvalTableMapping for every constant matrix entry. (also used for rewards later)
+            initializeProbabilities(parametricModel, probabilityMatrix, rowSubstitutions, matrixEntryToEvalTableMapping, constantEntryIndex);
             
-            // Now obtain transition and staterewards (if required)
+            //Now consider rewards
             boost::optional<std::vector<ConstantType>> stateRewards;
             boost::optional<storm::storage::SparseMatrix<ConstantType>> transitionRewards;
-            std::vector<std::size_t> stateRewardSubstituions;
-            std::vector<std::size_t> transitionRewardRowSubstitutions;
-            std::set<std::pair<ParametricType, std::size_t>> distinctRewardFuncSubs;
+            std::vector<std::size_t> stateRewardEntryToEvalTableMapping; //does a similar thing as matrixEntryToEvalTableMapping
+            std::vector<std::size_t> transitionRewardEntryToEvalTableMapping; //does a similar thing as matrixEntryToEvalTableMapping
             if(this->computeRewards){
-                this->rewardSubstitutions.emplace_back(std::map<VariableType, TypeOfBound>()); //we want that the empty substitution is always the first one
-                //stateRewards
-                std::vector<ConstantType> stateRewardsAsVector(parametricModel.getNumberOfStates());
-                stateRewardSubstituions = std::vector<std::size_t>(parametricModel.getNumberOfStates(),0); //init with empty substitution (=0)
-                std::size_t numOfNonConstStateRewEntries=0;
-                //TransitionRewards
-                storm::storage::SparseMatrixBuilder<ConstantType> rewardMatrixBuilder(probabilityMatrix.getRowCount(), probabilityMatrix.getColumnCount(), 0, true, true, probabilityMatrix.getRowGroupCount());
-                transitionRewardRowSubstitutions = std::vector<std::size_t>(rowSubstitutions.size(),0); //init with empty substitution (=0)
-                std::size_t numOfNonConstTransitonRewEntries=0;
-                for(std::size_t state=0; state<parametricModel.getNumberOfStates(); ++state){
-                    rewardMatrixBuilder.newRowGroup(probabilityMatrix.getRowGroupIndices()[state]);
-                    std::set<VariableType> occurringRewVariables;
-                    std::set<VariableType> occurringProbVariables;
-                    bool makeStateReward=true; //we make state reward whenever no probability parameter occurs in the state reward function
-                    if(this->parametricTypeComparator.isConstant(parametricModel.getStateRewardVector()[state])){
-                        //constant reward for this state
-                        stateRewardsAsVector[state]=storm::utility::regions::convertNumber<CoefficientType, ConstantType>(storm::utility::regions::getConstantPart(parametricModel.getStateRewardVector()[state]));
-                    } else {
-                        //reward depends on parameters. Lets find out if also probability parameters occur here.
-                        //If this is the case, the reward depends on the nondeterministic choices and should be given as transition rewards.
-                        stateRewardsAsVector[state]=storm::utility::zero<ConstantType>();
-                        storm::utility::regions::gatherOccurringVariables(parametricModel.getStateRewardVector()[state], occurringRewVariables);
-                        for(auto const& entry : parametricModel.getTransitionMatrix().getRow(state)){
-                            storm::utility::regions::gatherOccurringVariables(entry.getValue(), occurringProbVariables);
-                        }
-                        for( auto const& rewVar : occurringRewVariables){
-                            if(occurringProbVariables.find(rewVar)!=occurringProbVariables.end()){
-                                makeStateReward=false;
-                                break;
-                            }
-                        }
-                        if(makeStateReward){
-                            std::map<VariableType, TypeOfBound> rewardSubstitution;
-                            for(auto const& rewardVar : occurringRewVariables){
-                                rewardSubstitution.insert(std::make_pair(rewardVar, TypeOfBound::CHOSEOPTIMAL));
-                            }
-                            //Find the substitution in this->rewardSubstitutions (add it if we see this substitution the first time)
-                            std::size_t substitutionIndex = std::find(this->rewardSubstitutions.begin(),this->rewardSubstitutions.end(), rewardSubstitution) - this->rewardSubstitutions.begin();
-                            if(substitutionIndex==this->rewardSubstitutions.size()){
-                                this->rewardSubstitutions.emplace_back(std::move(rewardSubstitution));
-                            }
-                            distinctRewardFuncSubs.insert(std::make_pair(parametricModel.getStateRewardVector()[state], substitutionIndex));
-                            ++numOfNonConstStateRewEntries;
-                            stateRewardSubstituions[state]=substitutionIndex;
-                        } else {
-                            for(auto matrixRow=probabilityMatrix.getRowGroupIndices()[state]; matrixRow<probabilityMatrix.getRowGroupIndices()[state+1]; ++matrixRow){
-                                //Reserve space for transition rewards
-                                for(auto const& matrixEntry : probabilityMatrix.getRow(matrixRow)){
-                                    rewardMatrixBuilder.addNextValue(matrixRow,matrixEntry.getColumn(),storm::utility::zero<ConstantType>());
-                                }
-                                //Get the corresponding substitution
-                                std::map<VariableType, TypeOfBound> rewardSubstitution;
-                                for(auto const& rewardVar : occurringRewVariables){
-                                    typename std::map<VariableType, TypeOfBound>::iterator const substitutionIt=this->substitutions[rowSubstitutions[matrixRow]].find(rewardVar);
-                                    if(substitutionIt==this->substitutions[rowSubstitutions[matrixRow]].end()){
-                                        rewardSubstitution.insert(std::make_pair(rewardVar, TypeOfBound::CHOSEOPTIMAL));
-                                    } else {
-                                        rewardSubstitution.insert(*substitutionIt);
-                                    }
-                                }
-                                //Find the substitution in this->rewardSubstitutions (add it if we see this substitution the first time)
-                                std::size_t substitutionIndex = std::find(this->rewardSubstitutions.begin(),this->rewardSubstitutions.end(), rewardSubstitution) - this->rewardSubstitutions.begin();
-                                if(substitutionIndex==this->rewardSubstitutions.size()){
-                                    this->rewardSubstitutions.emplace_back(std::move(rewardSubstitution));
-                                }
-                                distinctRewardFuncSubs.insert(std::make_pair(parametricModel.getStateRewardVector()[state], substitutionIndex));
-                                ++numOfNonConstTransitonRewEntries;
-                                transitionRewardRowSubstitutions[matrixRow]=substitutionIndex;
-                            }
-                        }
-                    }
-                }
-                stateRewards=std::move(stateRewardsAsVector);
-                this->stateRewardMapping.reserve(numOfNonConstStateRewEntries);
-                transitionRewards=rewardMatrixBuilder.build();
-                this->transitionRewardMapping.reserve(numOfNonConstTransitonRewEntries);
+                initializeRewards(parametricModel, probabilityMatrix, rowSubstitutions, stateRewards, transitionRewards, stateRewardEntryToEvalTableMapping, transitionRewardEntryToEvalTableMapping, constantEntryIndex);
             }
             //Obtain other model ingredients and the approximation model itself
             storm::models::sparse::StateLabeling labeling(parametricModel.getStateLabeling());
             boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> noChoiceLabeling;  
             this->model=std::make_shared<storm::models::sparse::Mdp<ConstantType>>(std::move(probabilityMatrix), std::move(labeling), std::move(stateRewards), std::move(transitionRewards), std::move(noChoiceLabeling));
             
-            //Get the (probability) evaluation table. Note that it remains sorted due to the fact that distinctFuncSubs is sorted
-            this->evaluationTable.reserve(distinctFuncSubs.size());
-            for(auto const& funcSub : distinctFuncSubs){
-                this->evaluationTable.emplace_back(funcSub.first, funcSub.second, storm::utility::zero<ConstantType>());
-            }
-            //Fill in the entries for the probability mapping
-            probMatrixRow=0;
+            //translate the matrixEntryToEvalTableMapping into the actual probability mapping
+            typename storm::storage::SparseMatrix<ConstantType>::index_type matrixRow=0;
+            auto tableIndex=matrixEntryToEvalTableMapping.begin();
             for(typename storm::storage::SparseMatrix<ParametricType>::index_type row=0; row < parametricModel.getTransitionMatrix().getRowCount(); ++row ){
-                for (; probMatrixRow<this->model->getTransitionMatrix().getRowGroupIndices()[row+1]; ++probMatrixRow){
-                    auto appEntry = this->model->getTransitionMatrix().getRow(probMatrixRow).begin();
+                for (; matrixRow<this->model->getTransitionMatrix().getRowGroupIndices()[row+1]; ++matrixRow){
+                    auto approxModelEntry = this->model->getTransitionMatrix().getRow(matrixRow).begin();
                     for(auto const& parEntry : parametricModel.getTransitionMatrix().getRow(row)){
-                        if(this->parametricTypeComparator.isConstant(parEntry.getValue())){
-                            appEntry->setValue(storm::utility::regions::convertNumber<CoefficientType, ConstantType>(storm::utility::regions::getConstantPart(parEntry.getValue())));
+                        if(*tableIndex == constantEntryIndex){
+                            approxModelEntry->setValue(storm::utility::regions::convertNumber<CoefficientType, ConstantType>(storm::utility::regions::getConstantPart(parEntry.getValue())));
                         } else {
-                            std::tuple<ParametricType, std::size_t, ConstantType> searchedTuple(parEntry.getValue(), rowSubstitutions[probMatrixRow], storm::utility::zero<ConstantType>());
-                            auto const tableIt= std::find(this->evaluationTable.begin(), this->evaluationTable.end(), searchedTuple);
-                            STORM_LOG_THROW((*tableIt==searchedTuple),storm::exceptions::UnexpectedException, "Could not find the current tuple in the evaluationTable. Either the table is missing that tuple or it is not sorted properly");
-                            this->probabilityMapping.emplace_back(std::make_pair(&(std::get<2>(*tableIt)), appEntry));
+                            this->probabilityMapping.emplace_back(std::make_pair(&(std::get<2>(this->probabilityEvaluationTable[*tableIndex])), approxModelEntry));
                         }
-                        ++appEntry;
+                        ++approxModelEntry;
+                        ++tableIndex;
                     }
                 }
             }
             if(this->computeRewards){
-                //Get the (reward) evaluation table. Note that it remains sorted due to the fact that distinctRewFuncSubs is sorted
-                this->rewardEvaluationTable.reserve(distinctRewardFuncSubs.size());
-                for(auto const& funcSub : distinctRewardFuncSubs){
-                    this->rewardEvaluationTable.emplace_back(funcSub.first, funcSub.second, storm::utility::zero<ConstantType>(), storm::utility::zero<ConstantType>());
+                //the same for state and transition rewards
+                auto approxModelStateRewardEntry = this->model->getStateRewardVector().begin();
+                for (std::size_t const& tableIndex : stateRewardEntryToEvalTableMapping){
+                    if(tableIndex != constantEntryIndex){
+                        this->stateRewardMapping.emplace_back(std::make_tuple(&(std::get<2>(this->rewardEvaluationTable[tableIndex])), &(std::get<3>(this->rewardEvaluationTable[tableIndex])), approxModelStateRewardEntry));
+                    }
+                    ++approxModelStateRewardEntry;
                 }
-                
-                for (std::size_t state=0; state< parametricModel.getNumberOfStates(); ++state){
-                    //check if the state reward is not constant
-                    if(stateRewardSubstituions[state]!=0){
-                        std::tuple<ParametricType, std::size_t, ConstantType, ConstantType> searchedTuple(parametricModel.getStateRewardVector()[state], stateRewardSubstituions[state], storm::utility::zero<ConstantType>(), storm::utility::zero<ConstantType>());
-                        auto const tableIt= std::find(this->rewardEvaluationTable.begin(), this->rewardEvaluationTable.end(), searchedTuple);
-                        STORM_LOG_THROW((*tableIt==searchedTuple),storm::exceptions::UnexpectedException, "Could not find the current tuple in the rewardEvaluationTable. Either the table is missing that tuple or it is not sorted properly (stateRewards)");
-                        this->stateRewardMapping.emplace_back(std::make_tuple(&(std::get<2>(*tableIt)), &(std::get<3>(*tableIt)), &(this->model->getStateRewardVector()[state])));
-                    }
-                    //check if transitionrewards are not constant
-                    for(auto matrixRow=this->model->getTransitionRewardMatrix().getRowGroupIndices()[state]; matrixRow<this->model->getTransitionRewardMatrix().getRowGroupIndices()[state+1]; ++matrixRow){
-                        if(transitionRewardRowSubstitutions[matrixRow]!=0){
-                            //Note that all transitions of the same row will have the same reward value
-                            std::tuple<ParametricType, std::size_t, ConstantType, ConstantType> searchedTuple(parametricModel.getStateRewardVector()[state], transitionRewardRowSubstitutions[matrixRow], storm::utility::zero<ConstantType>(), storm::utility::zero<ConstantType>());
-                            auto const tableIt= std::find(this->rewardEvaluationTable.begin(), this->rewardEvaluationTable.end(), searchedTuple);
-                            STORM_LOG_THROW((*tableIt==searchedTuple),storm::exceptions::UnexpectedException, "Could not find the current tuple in the rewardEvaluationTable. Either the table is missing that tuple or it is not sorted properly (transitionRewards)");
-                            for(auto transitionMatrixEntry=this->model->getTransitionRewardMatrix().getRow(matrixRow).begin(); transitionMatrixEntry<this->model->getTransitionRewardMatrix().getRow(matrixRow).end(); ++transitionMatrixEntry){
-                                this->transitionRewardMapping.emplace_back(std::make_tuple(&(std::get<2>(*tableIt)), &(std::get<3>(*tableIt)), transitionMatrixEntry));
-                            }
-                        }
-                    }
+                auto approxModelTransitionRewardEntry = this->model->getTransitionRewardMatrix().begin();
+                for (std::size_t const& tableIndex : transitionRewardEntryToEvalTableMapping){
+                    this->transitionRewardMapping.emplace_back(std::make_tuple(&(std::get<2>(this->rewardEvaluationTable[tableIndex])), &(std::get<3>(this->rewardEvaluationTable[tableIndex])), approxModelTransitionRewardEntry));
+                    ++approxModelTransitionRewardEntry;
                 }
                 //Get the sets of reward parameters that map to "CHOSEOPTIMAL".
                 this->choseOptimalRewardPars = std::vector<std::set<VariableType>>(this->rewardSubstitutions.size());
@@ -226,6 +82,153 @@ namespace storm {
                 }
             }
         }
+        
+        template<typename ParametricType, typename ConstantType>
+        void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ApproximationModel::initializeProbabilities(storm::models::sparse::Dtmc<ParametricType>const& parametricModel,
+                                                                                                                     storm::storage::SparseMatrix<ConstantType>& probabilityMatrix,
+                                                                                                                     std::vector<std::size_t>& rowSubstitutions,
+                                                                                                                     std::vector<std::size_t>& matrixEntryToEvalTableMapping,
+                                                                                                                     std::size_t const& constantEntryIndex) {
+            // Run through the rows of the original model and obtain the different substitutions, the probability evaluation table,
+            // an MDP probability matrix with some dummy entries, and the mapping between the two
+            storm::storage::SparseMatrixBuilder<ConstantType> matrixBuilder(0, parametricModel.getNumberOfStates(), 0, true, true, parametricModel.getNumberOfStates());
+            this->probabilitySubstitutions.emplace_back(std::map<VariableType, TypeOfBound>()); //we want that the empty substitution is always the first one
+            std::size_t numOfNonConstEntries=0;
+            typename storm::storage::SparseMatrix<ConstantType>::index_type matrixRow=0;
+            for(typename storm::storage::SparseMatrix<ParametricType>::index_type row=0; row < parametricModel.getTransitionMatrix().getRowCount(); ++row ){
+                matrixBuilder.newRowGroup(matrixRow);
+                // Find the different substitutions, i.e., mappings from Variables that occur in this row to {lower, upper}
+                std::set<VariableType> occurringVariables;
+                for(auto const& entry : parametricModel.getTransitionMatrix().getRow(row)){
+                    storm::utility::regions::gatherOccurringVariables(entry.getValue(), occurringVariables);
+                }
+                std::size_t numOfSubstitutions=1ull<<occurringVariables.size(); //=2^(#variables). Note that there is still 1 substitution when #variables==0 (i.e.,the empty substitution)
+                for(uint_fast64_t substitutionId=0; substitutionId<numOfSubstitutions; ++substitutionId){
+                    //compute actual substitution from substitutionId by interpreting the Id as a bit sequence.
+                    //the occurringVariables.size() least significant bits of substitutionId will always represent the substitution that we have to consider
+                    //(00...0 = lower bounds for all parameters, 11...1 = upper bounds for all parameters)
+                    std::map<VariableType, TypeOfBound> currSubstitution;
+                    std::size_t parameterIndex=0;
+                    for(auto const& parameter : occurringVariables){
+                        if((substitutionId>>parameterIndex)%2==0){
+                            currSubstitution.insert(std::make_pair(parameter, TypeOfBound::LOWER));
+                        }
+                        else{
+                            currSubstitution.insert(std::make_pair(parameter, TypeOfBound::UPPER));
+                        }
+                        ++parameterIndex;
+                    }
+                    std::size_t substitutionIndex=storm::utility::vector::findOrInsert(this->probabilitySubstitutions, std::move(currSubstitution));
+                    rowSubstitutions.push_back(substitutionIndex);
+                    //For every substitution, run again through the row and add an entry in matrixEntryToEvalTableMapping as well as dummy entries in the matrix
+                    //Note that this is still executed once, even if no parameters occur.
+                    ConstantType dummyEntry=storm::utility::one<ConstantType>();
+                    for(auto const& entry : parametricModel.getTransitionMatrix().getRow(row)){
+                        if(this->parametricTypeComparator.isConstant(entry.getValue())){
+                            matrixEntryToEvalTableMapping.emplace_back(constantEntryIndex);
+                        } else {
+                            ++numOfNonConstEntries;
+                            std::size_t tableIndex=storm::utility::vector::findOrInsert(this->probabilityEvaluationTable, std::tuple<ParametricType, std::size_t, ConstantType>(entry.getValue(), substitutionIndex, storm::utility::zero<ConstantType>()));
+                            matrixEntryToEvalTableMapping.emplace_back(tableIndex);
+                        }
+                        matrixBuilder.addNextValue(matrixRow, entry.getColumn(), dummyEntry);
+                        dummyEntry=storm::utility::zero<ConstantType>(); 
+                    }
+                    ++matrixRow;
+                }
+            }
+            this->probabilityMapping.reserve(numOfNonConstEntries);
+            probabilityMatrix=matrixBuilder.build();
+        }
+        
+        template<typename ParametricType, typename ConstantType>
+        void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ApproximationModel::initializeRewards(storm::models::sparse::Dtmc<ParametricType> const& parametricModel,
+                                                                                                               storm::storage::SparseMatrix<ConstantType> const& probabilityMatrix,
+                                                                                                               std::vector<std::size_t> const& rowSubstitutions,
+                                                                                                               boost::optional<std::vector<ConstantType> >& stateRewards,
+                                                                                                               boost::optional<storm::storage::SparseMatrix<ConstantType> >& transitionRewards,
+                                                                                                               std::vector<std::size_t>& stateRewardEntryToEvalTableMapping,
+                                                                                                               std::vector<std::size_t>& transitionRewardEntryToEvalTableMapping,
+                                                                                                               std::size_t const& constantEntryIndex) {
+            // run through the state reward vector of the parametric model.
+            // Constant entries can be set directly.
+            // For Parametric entries we have two cases:
+            // (1) make state rewards if the reward is independent of parameters that occur in probability functions.
+            // (2) make transition rewards otherwise.
+            
+            //stateRewards
+            std::vector<ConstantType> stateRewardsAsVector(parametricModel.getNumberOfStates());
+            std::size_t numOfNonConstStateRewEntries=0;
+            //TransitionRewards
+            storm::storage::SparseMatrixBuilder<ConstantType> matrixBuilder(probabilityMatrix.getRowCount(), probabilityMatrix.getColumnCount(), 0, true, true, probabilityMatrix.getRowGroupCount());
+            std::size_t numOfNonConstTransitonRewEntries=0;
+            this->rewardSubstitutions.emplace_back(std::map<VariableType, TypeOfBound>()); //we want that the empty substitution is always the first one
+            
+            for(std::size_t state=0; state<parametricModel.getNumberOfStates(); ++state){
+                matrixBuilder.newRowGroup(probabilityMatrix.getRowGroupIndices()[state]);
+                std::set<VariableType> occurringRewVariables;
+                std::set<VariableType> occurringProbVariables;
+                bool makeStateReward=true;
+                if(this->parametricTypeComparator.isConstant(parametricModel.getStateRewardVector()[state])){
+                    stateRewardsAsVector[state]=storm::utility::regions::convertNumber<CoefficientType, ConstantType>(storm::utility::regions::getConstantPart(parametricModel.getStateRewardVector()[state]));
+                    stateRewardEntryToEvalTableMapping.emplace_back(constantEntryIndex);
+                } else {
+                    //reward depends on parameters. Lets find out if probability parameters occur here.
+                    //If this is the case, the reward depends on the nondeterministic choices and should be given as transition rewards.
+                    storm::utility::regions::gatherOccurringVariables(parametricModel.getStateRewardVector()[state], occurringRewVariables);
+                    for(auto const& entry : parametricModel.getTransitionMatrix().getRow(state)){
+                        storm::utility::regions::gatherOccurringVariables(entry.getValue(), occurringProbVariables);
+                    }
+                    for( auto const& rewVar : occurringRewVariables){
+                        if(occurringProbVariables.find(rewVar)!=occurringProbVariables.end()){
+                            makeStateReward=false;
+                            break;
+                        }
+                    }
+                    if(makeStateReward){
+                        //Get the corresponding substitution and substitutionIndex
+                        std::map<VariableType, TypeOfBound> rewardSubstitution;
+                        for(auto const& rewardVar : occurringRewVariables){
+                            rewardSubstitution.insert(std::make_pair(rewardVar, TypeOfBound::CHOSEOPTIMAL));
+                        }
+                        std::size_t substitutionIndex=storm::utility::vector::findOrInsert(this->rewardSubstitutions, std::move(rewardSubstitution));
+                        //insert table entry and dummy data in the stateRewardVector
+                        std::size_t tableIndex=storm::utility::vector::findOrInsert(this->rewardEvaluationTable, std::tuple<ParametricType, std::size_t, ConstantType, ConstantType>(parametricModel.getStateRewardVector()[state], substitutionIndex, storm::utility::zero<ConstantType>(), storm::utility::zero<ConstantType>()));
+                        stateRewardEntryToEvalTableMapping.emplace_back(tableIndex);
+                        stateRewardsAsVector[state]=storm::utility::zero<ConstantType>();
+                        ++numOfNonConstStateRewEntries;
+                    } else {
+                        for(auto matrixRow=probabilityMatrix.getRowGroupIndices()[state]; matrixRow<probabilityMatrix.getRowGroupIndices()[state+1]; ++matrixRow){
+                            //Get the corresponding substitution and substitutionIndex
+                            std::map<VariableType, TypeOfBound> rewardSubstitution;
+                            for(auto const& rewardVar : occurringRewVariables){
+                                typename std::map<VariableType, TypeOfBound>::iterator const substitutionIt=this->probabilitySubstitutions[rowSubstitutions[matrixRow]].find(rewardVar);
+                                if(substitutionIt==this->probabilitySubstitutions[rowSubstitutions[matrixRow]].end()){
+                                    rewardSubstitution.insert(std::make_pair(rewardVar, TypeOfBound::CHOSEOPTIMAL));
+                                } else {
+                                    rewardSubstitution.insert(*substitutionIt);
+                                }
+                            }
+                            std::size_t substitutionIndex=storm::utility::vector::findOrInsert(this->rewardSubstitutions, std::move(rewardSubstitution));
+                            //insert table entries and dummy data
+                            std::size_t tableIndex=storm::utility::vector::findOrInsert(this->rewardEvaluationTable, std::tuple<ParametricType, std::size_t, ConstantType, ConstantType>(parametricModel.getStateRewardVector()[state], substitutionIndex, storm::utility::zero<ConstantType>(), storm::utility::zero<ConstantType>()));
+                            for(auto const& matrixEntry : probabilityMatrix.getRow(matrixRow)){
+                                transitionRewardEntryToEvalTableMapping.emplace_back(tableIndex);
+                                matrixBuilder.addNextValue(matrixRow, matrixEntry.getColumn(), storm::utility::zero<ConstantType>());
+                                ++numOfNonConstTransitonRewEntries;
+                            }
+                        }
+                        stateRewardsAsVector[state]=storm::utility::zero<ConstantType>();
+                        stateRewardEntryToEvalTableMapping.emplace_back(constantEntryIndex);
+                    }
+                }
+            }
+            stateRewards=std::move(stateRewardsAsVector);
+            this->stateRewardMapping.reserve(numOfNonConstStateRewEntries);
+            transitionRewards=matrixBuilder.build();
+            this->transitionRewardMapping.reserve(numOfNonConstTransitonRewEntries);
+        }
+
 
 
         template<typename ParametricType, typename ConstantType>
@@ -241,9 +244,9 @@ namespace storm {
         template<typename ParametricType, typename ConstantType>
         void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ApproximationModel::instantiate(const ParameterRegion& region) {
             //Instantiate the substitutions
-            std::vector<std::map<VariableType, CoefficientType>> instantiatedSubs(this->substitutions.size());
-            for(uint_fast64_t substitutionIndex=0; substitutionIndex<this->substitutions.size(); ++substitutionIndex){
-                for(std::pair<VariableType, TypeOfBound> const& sub : this->substitutions[substitutionIndex]){
+            std::vector<std::map<VariableType, CoefficientType>> instantiatedSubs(this->probabilitySubstitutions.size());
+            for(uint_fast64_t substitutionIndex=0; substitutionIndex<this->probabilitySubstitutions.size(); ++substitutionIndex){
+                for(std::pair<VariableType, TypeOfBound> const& sub : this->probabilitySubstitutions[substitutionIndex]){
                     switch(sub.second){
                         case TypeOfBound::LOWER:
                             instantiatedSubs[substitutionIndex].insert(std::make_pair(sub.first, region.getLowerBound(sub.first)));
@@ -257,7 +260,7 @@ namespace storm {
                 }
             }
             //write entries into evaluation table
-            for(auto& tableEntry : this->evaluationTable){
+            for(auto& tableEntry : this->probabilityEvaluationTable){
                 std::get<2>(tableEntry)=storm::utility::regions::convertNumber<CoefficientType, ConstantType>(
                         storm::utility::regions::evaluateFunction(
                                 std::get<0>(tableEntry),
@@ -316,7 +319,6 @@ namespace storm {
                 }
                 //Note: the rewards are written to the model as soon as the optimality type is known (i.e. in computeValues)
             }
-            
         }
 
         template<typename ParametricType, typename ConstantType>
