@@ -40,9 +40,9 @@ namespace storm {
             
             template class Ctmc<double>;
 
-//#ifdef STORM_HAVE_CARL
-//            template class Ctmc<storm::RationalFunction>;
-//#endif
+#ifdef STORM_HAVE_CARL
+            template class Ctmc<storm::RationalFunction>;
+#endif
             
         } // namespace sparse
     } // namespace models
