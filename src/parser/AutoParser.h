@@ -41,12 +41,16 @@ namespace storm {
 			 * @param labelingFilename The path and name of the file containing the labels for the states of the model.
 			 * @param stateRewardFilename The path and name of the file that contains the state reward of the model. This file is optional.
 			 * @param transitionRewardFilename The path and name of the file that contains the transition rewards of the model. This file is optional.
+                         * @param choiceLabelingFilename The path and name of the file that contains the choice labeling of the model. This file is optional.
+                         * Note: this file is only meaningful for certain models (currently only MDPs). If the model is not of a type for which this input
+                         * is meaningful, this file will not be parsed.
 			 * @return A shared_ptr containing the resulting model.
 			 */
-            static std::shared_ptr<storm::models::sparse::Model<double>> parseModel(std::string const & transitionsFilename,
-                                                                                    std::string const & labelingFilename,
-                                                                                    std::string const & stateRewardFilename = "",
-                                                                                    std::string const & transitionRewardFilename = "");
+            static std::shared_ptr<storm::models::sparse::Model<double>> parseModel(std::string const& transitionsFilename,
+                                                                                    std::string const& labelingFilename,
+                                                                                    std::string const& stateRewardFilename = "",
+                                                                                    std::string const& transitionRewardFilename = "",
+                                                                                    std::string const& choiceLabelingFilename = "");
 
 		private:
             // Define the maximal length of a hint in the file.

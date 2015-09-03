@@ -1,9 +1,3 @@
-/*!
- * SparseStateRewardParser.cpp
- *
- *  Created on: 23.12.2012
- *      Author: Christian Dehnert
- */
 #include <iostream>
 #include "src/parser/SparseStateRewardParser.h"
 
@@ -43,7 +37,7 @@ namespace storm {
 			// Iterate over states.
 			while (buf[0] != '\0') {
 
-				// Parse state number and reward value.
+				// Parse state.
 				state = checked_strtol(buf, &buf);
 
 				// If the state has already been read or skipped once there might be a problem with the file (doubled lines, or blocks).
@@ -58,6 +52,7 @@ namespace storm {
 					throw storm::exceptions::OutOfRangeException() << "Error while parsing " << filename << ": Found reward for a state of an invalid index \"" << state << "\"";
 				}
 
+                                // Parse reward value.
 				reward = checked_strtod(buf, &buf);
 
 				if (reward < 0.0) {
