@@ -32,11 +32,11 @@ namespace storm {
             }
             
             template class StochasticTwoPlayerGame<double>;
-            template class StochasticTwoPlayerGame<float>;
+//            template class StochasticTwoPlayerGame<float>;
             
-#ifdef STORM_HAVE_CARL
-            template class StochasticTwoPlayerGame<storm::RationalFunction>;
-#endif
+//#ifdef STORM_HAVE_CARL
+//            template class StochasticTwoPlayerGame<storm::RationalFunction>;
+//#endif
             
         } // namespace sparse
     } // namespace models

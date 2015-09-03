@@ -135,7 +135,7 @@ namespace storm {
              *
              * @param other The bit vector from which to move-construct.
              */
-            BitVector(BitVector&& other);
+            BitVector(BitVector&& other) = default;
             
             /*!
              * Compares the given bit vector with the current one.

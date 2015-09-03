@@ -218,11 +218,11 @@ namespace storm {
             }
             
             template class MarkovAutomaton<double>;
-            template class MarkovAutomaton<float>;
+//            template class MarkovAutomaton<float>;
             
-#ifdef STORM_HAVE_CARL
-            template class MarkovAutomaton<storm::RationalFunction>;
-#endif
+//#ifdef STORM_HAVE_CARL
+//            template class MarkovAutomaton<storm::RationalFunction>;
+//#endif
 
         } // namespace sparse
     } // namespace models

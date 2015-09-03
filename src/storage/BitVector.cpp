@@ -91,9 +91,9 @@ namespace storm {
             // Intentionally left empty.
         }
         
-        BitVector::BitVector(BitVector&& other) : bitCount(other.bitCount), bucketVector(std::move(other.bucketVector)) {
+        //BitVector::BitVector(BitVector&& other) : bitCount(other.bitCount), bucketVector(std::move(other.bucketVector)) {
             // Intentionally left empty.
-        }
+        //}
         
         BitVector& BitVector::operator=(BitVector const& other) {
             // Only perform the assignment if the source and target are not identical.
