@@ -49,7 +49,8 @@ message(STATUS "StoRM - CMAKE_BUILD_TYPE (ENV): $ENV{CMAKE_BUILD_TYPE}")
 # Base path for test files
 set(STORM_CPP_TESTS_BASE_PATH "${PROJECT_SOURCE_DIR}/test")
 
-
+set(STORMPY_OUTPUT_DIR "${PROJECT_BINARY_DIR}/stormpy")
+set(STORMPY_SOURCE_DIR "${PROJECT_SOURCE_DIR}/stormpy")
 
 #############################################################
 ##
