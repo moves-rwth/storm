@@ -13,6 +13,7 @@ namespace storm {
          * Given the file paths of the files holding the transitions, the atomic propositions and optionally the state rewards
          * it loads the files, parses them and returns the desired model.
          */
+        template<typename ValueType = double, typename RewardValueType = double>
         class MarkovAutomatonParser {
         public:
             
@@ -28,7 +29,7 @@ namespace storm {
              * @param transitionRewardFilename The name of the file that contains the transition rewards of the Markov automaton. This should be empty as transition rewards are not supported by Markov Automata.
              * @return The parsed MarkovAutomaton.
              */
-            static storm::models::sparse::MarkovAutomaton<double> parseMarkovAutomaton(std::string const& transitionsFilename, std::string const& labelingFilename, std::string const& stateRewardFilename = "", std::string const& transitionRewardFilename = "");
+            static storm::models::sparse::MarkovAutomaton<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>> parseMarkovAutomaton(std::string const& transitionsFilename, std::string const& labelingFilename, std::string const& stateRewardFilename = "", std::string const& transitionRewardFilename = "");
         };
         
     } // namespace parser
