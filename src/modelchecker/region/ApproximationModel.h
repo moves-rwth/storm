@@ -27,8 +27,10 @@ namespace storm {
             typedef typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::VariableType VariableType;
             typedef typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::CoefficientType CoefficientType;
             
-            
-            ApproximationModel(storm::models::sparse::Dtmc<ParametricType> const& parametricModel, bool computeRewards);
+            /*!
+             * @note this will not check whether approximation is applicable
+             */
+            ApproximationModel(storm::models::sparse::Dtmc<ParametricType> const& parametricModel, std::shared_ptr<storm::logic::Formula> formula);
             virtual ~ApproximationModel();
 
             /*!
@@ -70,11 +72,11 @@ namespace storm {
             
             //Vector has one (unique) entry for every occurring pair of a non-constant function and 
             // a substitution, i.e., a mapping of variables to a TypeOfBound
-            //The second entry represents the substitution as an index in the substitutions vector
-            //The third entry should contain the result when evaluating the function in the first entry, regarding the substitution given by the second entry.
-            std::vector<std::tuple<ParametricType, std::size_t, ConstantType>> probabilityEvaluationTable;
+            //The first entry represents the substitution as an index in the substitutions vector
+            //The third entry should contain the result when evaluating the function in the second entry, regarding the substitution given by the second entry.
+            std::vector<std::tuple<std::size_t, ParametricType, ConstantType>> probabilityEvaluationTable;
             //For rewards, we have the third entry for the minimal value and the fourth entry for the maximal value
-            std::vector<std::tuple<ParametricType, std::size_t, ConstantType, ConstantType>> rewardEvaluationTable;
+            std::vector<std::tuple<std::size_t, ParametricType, ConstantType, ConstantType>> rewardEvaluationTable;
             
             //Vector has one entry for every required substitution (=replacement of parameters with lower/upper bounds of region)
             std::vector<std::map<VariableType, TypeOfBound>> probabilitySubstitutions;
@@ -86,7 +88,8 @@ namespace storm {
             
             //The Model with which we work
             std::shared_ptr<storm::models::sparse::Mdp<ConstantType>> model;
-            
+            //The formula for which we will compute the values
+            std::shared_ptr<storm::logic::Formula> formula;
             //A flag that denotes whether we compute probabilities or rewards
             bool computeRewards;
             

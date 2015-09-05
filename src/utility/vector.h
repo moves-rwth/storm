@@ -86,25 +86,6 @@ namespace storm {
             }
             
             /*!
-             * Selects the elements from the given vector at the specified positions and writes them consecutively into the same vector.
-             * The size of the vector is reduced accordingly.
-             * @param vector The vector from which to select the elements and into which the selected elements are to be written.
-             * @param positions The positions at which to select the elements from the values vector.
-             */
-            template<class T>
-            void selectVectorValues(std::vector<T>& vector, storm::storage::BitVector const& positions) {
-                uint_fast64_t oldPosition = 0;
-                for (auto position : positions) {
-                    if(oldPosition!=position){
-                        vector[oldPosition++] = std::move(vector[position]);
-                    } else {
-                        ++oldPosition;
-                    }
-                }
-                vector.resize(oldPosition);
-            }
-            
-            /*!
              * Selects groups of elements from a vector at the specified positions and writes them consecutively into another vector.
              *
              * @param vector The vector into which the selected elements are to be written.

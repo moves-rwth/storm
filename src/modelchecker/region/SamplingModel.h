@@ -26,7 +26,7 @@ namespace storm {
             typedef typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::VariableType VariableType;
             typedef typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::CoefficientType CoefficientType;
             
-            SamplingModel(storm::models::sparse::Dtmc<ParametricType> const& parametricModel, bool computeRewards);
+            SamplingModel(storm::models::sparse::Dtmc<ParametricType> const& parametricModel, std::shared_ptr<storm::logic::Formula> formula);
             virtual ~SamplingModel();
             
             /*!
@@ -64,7 +64,8 @@ namespace storm {
             
             //The model with which we work
             std::shared_ptr<storm::models::sparse::Dtmc<ConstantType>> model;
-            
+            //The formula for which we will compute the values
+            std::shared_ptr<storm::logic::Formula> formula;
             //A flag that denotes whether we compute probabilities or rewards
             bool computeRewards;
             

@@ -104,7 +104,10 @@ namespace storm {
             
             /*!
              * Does some sanity checks and preprocessing steps on the currently specified model and 
-             * reachability probability formula, i.e., Computes maybeStates and targetStates and sets some flags
+             * reachability probability formula, i.e., 
+             * * Sets some formula data and that we do not compute rewards
+             * * Computes maybeStates and targetStates
+             * * Sets the flags that state whether the result is constant and approximation is applicable
              * 
              * @note The returned set of target states also includes states where an 'actual' target state is reached with probability 1
              * 
@@ -114,24 +117,28 @@ namespace storm {
             
             /*!
              * Does some sanity checks and preprocessing steps on the currently specified model and 
-             * reachability reward formula, i.e., computes some flags, maybeStates, targetStates and
-             * a new stateReward vector that considers state+transition rewards of the original model.
-             * @note stateRewards.size = maybeStates.numberOfSetBits
+             * reachability reward formula, i.e.
+             * * Sets some formula data and that we do compute rewards
+             * * Computes maybeStates, targetStates
+             * * Computes a new stateReward vector that considers state+transition rewards of the original model. (in a sense that we can abstract away from transition rewards)
+             * * Sets the flags that state whether the result is constant and approximation is applicable
+             * 
+             * @note stateRewards.size will equal to maybeStates.numberOfSetBits
+             * 
              */
             void preprocessForRewards(storm::storage::BitVector& maybeStates, storm::storage::BitVector& targetStates, std::vector<ParametricType>& stateRewards);
             
             /*!
              * initializes the Approximation Model
              * 
-             * @note computeFlagsAndSimplifiedModel should be called before calling this
+             * @note does not check whether approximation can be applied
              */
-            void initializeApproximationModel(storm::models::sparse::Dtmc<ParametricType> const& simpleModel);
+            void initializeApproximationModel(storm::models::sparse::Dtmc<ParametricType> const& model, std::shared_ptr<storm::logic::Formula> formula);
             
             /*!
              * initializes the Sampling Model
-             * @note computeFlagsAndSimplifiedModel should be called before calling this
              */
-            void initializeSamplingModel(storm::models::sparse::Dtmc<ParametricType> const& simpleModel);
+            void initializeSamplingModel(storm::models::sparse::Dtmc<ParametricType> const& model, std::shared_ptr<storm::logic::Formula> formula);
             
             /*!
              * Computes the reachability function via state elimination
@@ -228,7 +235,9 @@ namespace storm {
             double specifiedFormulaBound;
             
             // the original model after states with constant transitions have been eliminated
-            std::shared_ptr<storm::models::sparse::Dtmc<ParametricType>> simplifiedModel;
+            std::shared_ptr<storm::models::sparse::Dtmc<ParametricType>> simpleModel;
+            // a formula that can be checked on the simplified model
+            std::shared_ptr<storm::logic::Formula> simpleFormula;
             // the model that  is used to approximate the reachability values
             std::shared_ptr<ApproximationModel> approximationModel;
             // the model that can be instantiated to check the value at a certain point

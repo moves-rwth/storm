@@ -88,17 +88,17 @@ namespace storm {
             if(!this->isResultConstant){
                 //now create the model used for Approximation
                 if(storm::settings::regionSettings().doApprox()){
-                    initializeApproximationModel(*this->simplifiedModel);
+                    initializeApproximationModel(*this->simpleModel, this->simpleFormula);
                 }
                 //now create the model used for Sampling
                 if(storm::settings::regionSettings().getSampleMode()==storm::settings::modules::RegionSettings::SampleMode::INSTANTIATE ||
                         (!storm::settings::regionSettings().doSample() && storm::settings::regionSettings().getApproxMode()==storm::settings::modules::RegionSettings::ApproxMode::TESTFIRST)){
-                    initializeSamplingModel(*this->simplifiedModel);
+                    initializeSamplingModel(*this->simpleModel, this->simpleFormula);
                 }
                 //Check if the reachability function needs to be computed
                 if((storm::settings::regionSettings().getSmtMode()==storm::settings::modules::RegionSettings::SmtMode::FUNCTION) || 
                         (storm::settings::regionSettings().getSampleMode()==storm::settings::modules::RegionSettings::SampleMode::EVALUATE)){
-                    computeReachabilityFunction(*this->simplifiedModel);
+                    computeReachabilityFunction(*this->simpleModel);
                 }
             }
             //some information for statistics...
@@ -148,7 +148,7 @@ namespace storm {
             // We then build the submatrix that only has the transitions of the maybe states.
             storm::storage::SparseMatrix<ParametricType> submatrix = this->model.getTransitionMatrix().getSubmatrix(false, maybeStates, maybeStates);
             
-            // eliminate all states with only constant outgoing transitions (and possibly rewards)
+            // Eliminate all states with only constant outgoing transitions
             // Convert the reduced matrix to a more flexible format to be able to perform state elimination more easily.
             auto flexibleTransitions = this->eliminationModelChecker.getFlexibleSparseMatrix(submatrix);
             auto flexibleBackwardTransitions= this->eliminationModelChecker.getFlexibleSparseMatrix(submatrix.transpose(), true);
@@ -157,27 +157,21 @@ namespace storm {
             //The states that we consider to eliminate
             storm::storage::BitVector considerToEliminate(submatrix.getRowCount(), true);
             considerToEliminate.set(initialState, false);
-            this->isApproximationApplicable=true;
-            this->isResultConstant=true;
             for (auto const& state : considerToEliminate) {
                 bool eliminateThisState=true;
                 for(auto const& entry : flexibleTransitions.getRow(state)){
                     if(!this->parametricTypeComparator.isConstant(entry.getValue())){
-                        this->isResultConstant=false;
                         eliminateThisState=false;
-                        this->isApproximationApplicable &= storm::utility::regions::functionIsLinear<ParametricType>(entry.getValue());
+                        break;
                     }
                 }
                 if(!this->parametricTypeComparator.isConstant(oneStepProbabilities[state])){
-                    this->isResultConstant=false;
                     eliminateThisState=false;
-                    this->isApproximationApplicable &= storm::utility::regions::functionIsLinear<ParametricType>(oneStepProbabilities[state]);
                 }
                 if(this->computeRewards && eliminateThisState && !this->parametricTypeComparator.isConstant(stateRewards.get()[state])){
                     //Note: The state reward does not need to be constant but we need to make sure that
                     //no parameter of this reward function occurs as a parameter in the probability functions of the predecessors
-                    // (otherwise, more complex functions might occur in our simplified model)
-                    // TODO: test if we should really remove these states (the resulting reward functions are less simple this way)
+                    // (otherwise, more complex functions might occur in our simple model)
                     std::set<VariableType> probVars;
                     for(auto const& predecessor : flexibleBackwardTransitions.getRow(state)){
                         for(auto const& predecessorTransition : flexibleTransitions.getRow(predecessor.getColumn())){
@@ -199,48 +193,8 @@ namespace storm {
                 }
             }
             STORM_LOG_DEBUG("Eliminated " << subsystem.size() - subsystem.getNumberOfSetBits() << " of " << subsystem.size() << " states that had constant outgoing transitions.");
-            if(this->isResultConstant){
-                //Check if this is also the case for the initial state
-                for(auto const& entry : flexibleTransitions.getRow(initialState)){
-                    this->isResultConstant&=this->parametricTypeComparator.isConstant(entry.getValue());
-                }
-                this->isResultConstant&=this->parametricTypeComparator.isConstant(oneStepProbabilities[initialState]);
-            }
-            if(this->computeRewards && (this->isApproximationApplicable || this->isResultConstant)){
-                //We will need to check whether this is also the case for the reward functions.
-                for(auto const& state : maybeStates){
-                    std::set<VariableType> rewardVars;
-                    if(this->model.hasStateRewards() && !this->parametricTypeComparator.isConstant(this->model.getStateRewardVector()[state])){
-                        this->isResultConstant=false;
-                        this->isApproximationApplicable &= storm::utility::regions::functionIsLinear<ParametricType>(this->model.getStateRewardVector()[state]);
-                        storm::utility::regions::gatherOccurringVariables(stateRewards.get()[state], rewardVars);
-                    }
-                    if(this->model.hasTransitionRewards()){
-                        for(auto const& entry : this->model.getTransitionRewardMatrix().getRow(state)) {
-                            if(!this->parametricTypeComparator.isConstant(entry.getValue())){
-                                this->isResultConstant=false;
-                                this->isApproximationApplicable &= storm::utility::regions::functionIsLinear<ParametricType>(entry.getValue());
-                                storm::utility::regions::gatherOccurringVariables(entry.getValue(), rewardVars);
-                            }
-                        }
-                    }
-                    if(!rewardVars.empty()){
-                        std::set<VariableType> probVars;
-                        for(auto const& entry: this->model.getTransitionMatrix().getRow(state)){
-                            storm::utility::regions::gatherOccurringVariables(entry.getValue(), probVars);
-                        }
-                        for(auto const& rewardVar : rewardVars){
-                            if(probVars.find(rewardVar)!=probVars.end()){
-                                this->isApproximationApplicable=false;
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-            STORM_LOG_WARN_COND(!this->isResultConstant, "For the given property, the reachability Value is constant, i.e., independent of the region");
             
-            //Build the simplified model
+            //Build the simple model
             //The matrix. The flexibleTransitions matrix might have empty rows where states have been eliminated.
             //The new matrix should not have such rows. We therefore leave them out, but we have to change the indices of the states accordingly.
             std::vector<storm::storage::sparse::state_type> newStateIndexMap(flexibleTransitions.getNumberOfRows(), flexibleTransitions.getNumberOfRows()); //initialize with some illegal index to easily check if a transition leads to an unselected state
@@ -258,25 +212,25 @@ namespace storm {
             for(storm::storage::sparse::state_type oldStateIndex : subsystem){ 
                 ParametricType missingProbability=storm::utility::regions::getNewFunction<ParametricType, CoefficientType>(storm::utility::one<CoefficientType>());
                 //go through columns:
-                for(auto const& entry: flexibleTransitions.getRow(oldStateIndex)){ 
+                for(auto& entry: flexibleTransitions.getRow(oldStateIndex)){ 
                     STORM_LOG_THROW(newStateIndexMap[entry.getColumn()]!=flexibleTransitions.getNumberOfRows(), storm::exceptions::UnexpectedException, "There is a transition to a state that should have been eliminated.");
                     missingProbability-=entry.getValue();
-                    matrixBuilder.addNextValue(newStateIndexMap[oldStateIndex],newStateIndexMap[entry.getColumn()],entry.getValue());
+                    matrixBuilder.addNextValue(newStateIndexMap[oldStateIndex],newStateIndexMap[entry.getColumn()], storm::utility::simplify(entry.getValue()));
                 }
                 if(this->computeRewards){
                     // the missing probability always leads to target
                     if(!this->parametricTypeComparator.isZero(missingProbability)){
-                        matrixBuilder.addNextValue(newStateIndexMap[oldStateIndex], targetState,missingProbability);
+                        matrixBuilder.addNextValue(newStateIndexMap[oldStateIndex], targetState, storm::utility::simplify(missingProbability));
                     }
                 } else{
                     //transition to target state
                     if(!this->parametricTypeComparator.isZero(oneStepProbabilities[oldStateIndex])){
                         missingProbability-=oneStepProbabilities[oldStateIndex];
-                        matrixBuilder.addNextValue(newStateIndexMap[oldStateIndex], targetState, oneStepProbabilities[oldStateIndex]);
+                        matrixBuilder.addNextValue(newStateIndexMap[oldStateIndex], targetState, storm::utility::simplify(oneStepProbabilities[oldStateIndex]));
                     }
                     //transition to sink state
                     if(!this->parametricTypeComparator.isZero(missingProbability)){ 
-                        matrixBuilder.addNextValue(newStateIndexMap[oldStateIndex], sinkState, missingProbability);
+                        matrixBuilder.addNextValue(newStateIndexMap[oldStateIndex], sinkState, storm::utility::simplify(missingProbability));
                     }
                 }
             }
@@ -296,14 +250,29 @@ namespace storm {
             labeling.addLabel("sink", std::move(sinkLabel));
             // other ingredients
             if(this->computeRewards){
-                storm::utility::vector::selectVectorValues(stateRewards.get(), subsystem);
-                stateRewards->push_back(storm::utility::zero<ParametricType>()); //target state
-                stateRewards->push_back(storm::utility::zero<ParametricType>()); //sink state
+                std::size_t newState = 0;
+                for (auto oldstate : subsystem) {
+                    if(oldstate!=newState){
+                        stateRewards.get()[newState++] = std::move(storm::utility::simplify(stateRewards.get()[oldstate]));
+                    } else {
+                        ++newState;
+                    }
+                }
+                stateRewards.get()[newState++] = storm::utility::zero<ParametricType>(); //target state
+                stateRewards.get()[newState++] = storm::utility::zero<ParametricType>(); //sink state
+                stateRewards.get().resize(newState);
             }
             boost::optional<storm::storage::SparseMatrix<ParametricType>> noTransitionRewards;  
             boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> noChoiceLabeling;            
             // the final model
-            this->simplifiedModel = std::make_shared<storm::models::sparse::Dtmc<ParametricType>>(matrixBuilder.build(), std::move(labeling), std::move(stateRewards), std::move(noTransitionRewards), std::move(noChoiceLabeling));
+            this->simpleModel = std::make_shared<storm::models::sparse::Dtmc<ParametricType>>(matrixBuilder.build(), std::move(labeling), std::move(stateRewards), std::move(noTransitionRewards), std::move(noChoiceLabeling));
+            // the corresponding formula
+            std::shared_ptr<storm::logic::Formula> targetFormulaPtr(new storm::logic::AtomicLabelFormula("target"));
+            if(this->computeRewards){
+                this->simpleFormula = std::shared_ptr<storm::logic::Formula>(new storm::logic::ReachabilityRewardFormula(targetFormulaPtr));
+            } else {
+                this->simpleFormula = std::shared_ptr<storm::logic::Formula>(new storm::logic::EventuallyFormula(targetFormulaPtr));
+            }
             std::chrono::high_resolution_clock::time_point timePreprocessingEnd = std::chrono::high_resolution_clock::now();
             this->timePreprocessing = timePreprocessingEnd - timePreprocessingStart;  
         }
@@ -331,6 +300,22 @@ namespace storm {
             }
             //extend target states
             targetStates=statesWithProbability01.second;
+            
+            //check if approximation is applicable and whether the result is constant
+            this->isApproximationApplicable=true;
+            this->isResultConstant=true;
+            for (auto state=maybeStates.begin(); (state!=maybeStates.end()) && this->isApproximationApplicable; ++state) {
+                for(auto const& entry : this->model.getTransitionMatrix().getRow(*state)){
+                    if(!this->parametricTypeComparator.isConstant(entry.getValue())){
+                        this->isResultConstant=false;
+                        if(!storm::utility::regions::functionIsLinear<ParametricType>(entry.getValue())){
+                            this->isApproximationApplicable=false;
+                            break;
+                        }
+                    }
+                }
+            }
+            STORM_LOG_WARN_COND(!this->isResultConstant, "For the given property, the reachability Value is constant, i.e., independent of the region");
         }
         
         
@@ -373,6 +358,9 @@ namespace storm {
                     storm::utility::vector::selectVectorValues(subStateRewards, maybeStates, this->model.getStateRewardVector());
                     storm::utility::vector::addVectors(stateRewards, subStateRewards, stateRewards);
                 }
+                for(auto& stateReward: stateRewards){
+                    storm::utility::simplify(stateReward);
+                }
             } else {
                 // If only a state-based reward model is  available, we take this vector as the
                 // right-hand side. As the state reward vector contains entries not just for the
@@ -380,26 +368,73 @@ namespace storm {
                 // first.
                 storm::utility::vector::selectVectorValues(stateRewards, maybeStates, this->model.getStateRewardVector());
             }
-            for(auto& stateReward: stateRewards){
-                storm::utility::simplify(stateReward);
+             //check if approximation is applicable and whether the result is constant
+            this->isApproximationApplicable=true;
+            this->isResultConstant=true;
+            std::set<VariableType> rewardPars; //the set of parameters that occur on a reward function
+            std::set<VariableType> probPars;   //the set of parameters that occur on a probability function
+            for (auto state=maybeStates.begin(); state!=maybeStates.end() && this->isApproximationApplicable; ++state) {
+                //Constant/Linear probability functions
+                for(auto const& entry : this->model.getTransitionMatrix().getRow(*state)){
+                    if(!this->parametricTypeComparator.isConstant(entry.getValue())){
+                        this->isResultConstant=false;
+                        if(!storm::utility::regions::functionIsLinear<ParametricType>(entry.getValue())){
+                            this->isApproximationApplicable=false;
+                            break;
+                        }
+                        storm::utility::regions::gatherOccurringVariables(entry.getValue(), probPars);
+                    }
+                }
+                //Constant/Linear state rewards
+                if(this->model.hasStateRewards() && !this->parametricTypeComparator.isConstant(this->model.getStateRewardVector()[*state])){
+                    this->isResultConstant=false;
+                    if(!storm::utility::regions::functionIsLinear<ParametricType>(this->model.getStateRewardVector()[*state])){
+                        this->isApproximationApplicable=false;
+                        break;
+                    }
+                    storm::utility::regions::gatherOccurringVariables(this->model.getStateRewardVector()[*state], rewardPars);
+                }
+                //Constant/Linear transition rewards
+                if(this->model.hasTransitionRewards()){
+                    for(auto const& entry : this->model.getTransitionRewardMatrix().getRow(*state)) {
+                        if(!this->parametricTypeComparator.isConstant(entry.getValue())){
+                            this->isResultConstant=false;
+                            if(!storm::utility::regions::functionIsLinear<ParametricType>(entry.getValue())){
+                                this->isApproximationApplicable=false;
+                                break;
+                            }
+                            storm::utility::regions::gatherOccurringVariables(entry.getValue(), rewardPars);
+                        }
+                    }
+                }
             }
+            //Finally, we need to check whether rewardPars and probPars are disjoint
+            //Note: It would also work to simply rename the parameters that occur in both sets.
+            //This is to avoid getting functions with local maxima like p * (1-p)
+            for(auto const& rewardVar : rewardPars){
+                if(probPars.find(rewardVar)!=probPars.end()){
+                    this->isApproximationApplicable=false;
+                    break;
+                }
+            }
+            STORM_LOG_WARN_COND(!this->isResultConstant, "For the given property, the reachability Value is constant, i.e., independent of the region");
         }
 
 
 
         template<typename ParametricType, typename ConstantType>
-        void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::initializeApproximationModel(storm::models::sparse::Dtmc<ParametricType> const& simpleModel) {
+        void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::initializeApproximationModel(storm::models::sparse::Dtmc<ParametricType> const& model, std::shared_ptr<storm::logic::Formula> formula) {
             std::chrono::high_resolution_clock::time_point timeInitApproxModelStart = std::chrono::high_resolution_clock::now();
-            this->approximationModel=std::make_shared<ApproximationModel>(simpleModel, this->computeRewards);
+            this->approximationModel=std::make_shared<ApproximationModel>(model, formula);
             std::chrono::high_resolution_clock::time_point timeInitApproxModelEnd = std::chrono::high_resolution_clock::now();
             this->timeInitApproxModel=timeInitApproxModelEnd - timeInitApproxModelStart;
             STORM_LOG_DEBUG("Initialized Approximation Model");
         }
         
         template<typename ParametricType, typename ConstantType>
-        void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::initializeSamplingModel(storm::models::sparse::Dtmc<ParametricType> const& simpleModel) {
+        void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::initializeSamplingModel(storm::models::sparse::Dtmc<ParametricType> const& model, std::shared_ptr<storm::logic::Formula> formula) {
             std::chrono::high_resolution_clock::time_point timeInitSamplingModelStart = std::chrono::high_resolution_clock::now();
-            this->samplingModel=std::make_shared<SamplingModel>(simpleModel, this->computeRewards);
+            this->samplingModel=std::make_shared<SamplingModel>(model, formula);
             std::chrono::high_resolution_clock::time_point timeInitSamplingModelEnd = std::chrono::high_resolution_clock::now();
             this->timeInitSamplingModel = timeInitSamplingModelEnd - timeInitSamplingModelStart;
             STORM_LOG_DEBUG("Initialized Sampling Model");
@@ -408,8 +443,7 @@ namespace storm {
         template<typename ParametricType, typename ConstantType>
         void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::computeReachabilityFunction(storm::models::sparse::Dtmc<ParametricType> const& simpleModel){
             std::chrono::high_resolution_clock::time_point timeComputeReachabilityFunctionStart = std::chrono::high_resolution_clock::now();
-            //get the one step probabilities and the transition matrix of the simplified model without target/sink state
-            //TODO check if this takes long... we could also store the oneSteps while creating the simplified model. Or(?) we keep the matrix the way it is and give the target state one step probability 1.
+            //get the one step probabilities and the transition matrix of the simple model without target/sink state
             storm::storage::SparseMatrix<ParametricType> backwardTransitions(simpleModel.getBackwardTransitions());
             std::vector<ParametricType> oneStepProbabilities(simpleModel.getNumberOfStates()-2, storm::utility::zero<ParametricType>());
             for(auto const& entry : backwardTransitions.getRow(*(simpleModel.getStates("target").begin()))){
@@ -534,7 +568,7 @@ namespace storm {
             uint_fast64_t progress=0;
             uint_fast64_t checkedRegions=0;
             for(auto& region : regions){
-                this->checkRegion(region);
+                checkRegion(region);
                 if((checkedRegions++)*10/regions.size()==progress){
                     std::cout << progress++;
                     std::cout.flush();
@@ -646,7 +680,7 @@ namespace storm {
         std::shared_ptr<typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ApproximationModel> const& SparseDtmcRegionModelChecker<ParametricType, ConstantType>::getApproximationModel() {
             if(this->approximationModel==nullptr){
                 STORM_LOG_WARN("Approximation model requested but it has not been initialized when specifying the formula. Will initialize it now.");
-                initializeApproximationModel(*this->simplifiedModel);
+                initializeApproximationModel(*this->simpleModel, this->simpleFormula);
             }
             return this->approximationModel;
         }
@@ -701,7 +735,7 @@ namespace storm {
         std::shared_ptr<typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::SamplingModel> const& SparseDtmcRegionModelChecker<ParametricType, ConstantType>::getSamplingModel() {
             if(this->samplingModel==nullptr){
                 STORM_LOG_WARN("Sampling model requested but it has not been initialized when specifying the formula. Will initialize it now.");
-                initializeSamplingModel(*this->simplifiedModel);
+                initializeSamplingModel(*this->simpleModel, this->simpleFormula);
             }
             return this->samplingModel;
         }
@@ -710,7 +744,7 @@ namespace storm {
         std::shared_ptr<ParametricType> const& SparseDtmcRegionModelChecker<ParametricType, ConstantType>::getReachabilityFunction() {
             if(this->reachabilityFunction==nullptr){
                 STORM_LOG_WARN("Reachability Function requested but it has not been computed when specifying the formula. Will compute it now.");
-                computeReachabilityFunction(*this->simplifiedModel);
+                computeReachabilityFunction(*this->simpleModel);
             }
             return this->reachabilityFunction;
         }
@@ -912,24 +946,26 @@ namespace storm {
                 outstream << "The requested value is constant (i.e. independent of any parameters)" << std::endl;
             }
             else{
-                outstream << "Simplified model: " << this->simplifiedModel->getNumberOfStates() << " states, " << this->simplifiedModel->getNumberOfTransitions() << " transitions" << std::endl;
+                outstream << "Simple model: " << this->simpleModel->getNumberOfStates() << " states, " << this->simpleModel->getNumberOfTransitions() << " transitions" << std::endl;
             }
             outstream << "Approximation is " << (this->isApproximationApplicable ? "" : "not ") << "applicable" << std::endl;
             outstream << "Number of checked regions: " << this->numOfCheckedRegions << std::endl;
-            outstream << "  Number of solved regions:  " <<  numOfSolvedRegions << "(" << numOfSolvedRegions*100/this->numOfCheckedRegions << "%)" <<  std::endl;
-            outstream << "    AllSat:      " <<  this->numOfRegionsAllSat << "(" << this->numOfRegionsAllSat*100/this->numOfCheckedRegions << "%)" <<  std::endl;
-            outstream << "    AllViolated: " <<  this->numOfRegionsAllViolated << "(" << this->numOfRegionsAllViolated*100/this->numOfCheckedRegions << "%)" <<  std::endl;
-            outstream << "    ExistsBoth:  " <<  this->numOfRegionsExistsBoth << "(" << this->numOfRegionsExistsBoth*100/this->numOfCheckedRegions << "%)" <<  std::endl;
-            outstream << "    Unsolved:    " <<  this->numOfCheckedRegions - numOfSolvedRegions << "(" << (this->numOfCheckedRegions - numOfSolvedRegions)*100/this->numOfCheckedRegions << "%)" <<  std::endl;
-            outstream << "  --  Note: %-numbers are relative to the NUMBER of regions, not the size of their area --" <<  std::endl;
-            outstream << "  " << this->numOfRegionsSolvedThroughApproximation << " regions solved through Approximation" << std::endl;
-            outstream << "  " << this->numOfRegionsSolvedThroughSampling << " regions solved through Sampling" << std::endl;
-            outstream << "  " << this->numOfRegionsSolvedThroughFullSmt << " regions solved through FullSmt" << std::endl;
-            outstream << std::endl;
+            if(this->numOfCheckedRegions>0){
+                outstream << "  Number of solved regions:  " <<  numOfSolvedRegions << "(" << numOfSolvedRegions*100/this->numOfCheckedRegions << "%)" <<  std::endl;
+                outstream << "    AllSat:      " <<  this->numOfRegionsAllSat << "(" << this->numOfRegionsAllSat*100/this->numOfCheckedRegions << "%)" <<  std::endl;
+                outstream << "    AllViolated: " <<  this->numOfRegionsAllViolated << "(" << this->numOfRegionsAllViolated*100/this->numOfCheckedRegions << "%)" <<  std::endl;
+                outstream << "    ExistsBoth:  " <<  this->numOfRegionsExistsBoth << "(" << this->numOfRegionsExistsBoth*100/this->numOfCheckedRegions << "%)" <<  std::endl;
+                outstream << "    Unsolved:    " <<  this->numOfCheckedRegions - numOfSolvedRegions << "(" << (this->numOfCheckedRegions - numOfSolvedRegions)*100/this->numOfCheckedRegions << "%)" <<  std::endl;
+                outstream << "  --  Note: %-numbers are relative to the NUMBER of regions, not the size of their area --" <<  std::endl;
+                outstream << "  " << this->numOfRegionsSolvedThroughApproximation << " regions solved through Approximation" << std::endl;
+                outstream << "  " << this->numOfRegionsSolvedThroughSampling << " regions solved through Sampling" << std::endl;
+                outstream << "  " << this->numOfRegionsSolvedThroughFullSmt << " regions solved through FullSmt" << std::endl;
+                outstream << std::endl;
+            }
             outstream << "Running times:" << std::endl;
             outstream << "  " << timeOverallInMilliseconds.count() << "ms overall (excluding model parsing, bisimulation (if applied))" << std::endl;
             outstream << "  " << timeSpecifyFormulaInMilliseconds.count() << "ms Initialization for the specified formula, including... " << std::endl;
-            outstream << "    " << timePreprocessingInMilliseconds.count() << "ms for Preprocessing (mainly to obtain a simplified model, i.e., state elimination of const transitions)" << std::endl;
+            outstream << "    " << timePreprocessingInMilliseconds.count() << "ms for Preprocessing (mainly: state elimination of const transitions)" << std::endl;
             outstream << "    " << timeInitApproxModelInMilliseconds.count() << "ms to initialize the Approximation Model" << std::endl;
             outstream << "    " << timeInitSamplingModelInMilliseconds.count() << "ms to initialize the Sampling Model" << std::endl;
             outstream << "    " << timeComputeReachabilityFunctionInMilliseconds.count() << "ms to compute the reachability function" << std::endl;

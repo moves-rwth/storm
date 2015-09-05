@@ -11,13 +11,21 @@
 #include "src/utility/vector.h"
 #include "src/utility/regions.h"
 #include "src/exceptions/UnexpectedException.h"
+#include "src/exceptions/InvalidArgumentException.h"
 
 namespace storm {
     namespace modelchecker {
         
         
         template<typename ParametricType, typename ConstantType>
-        SparseDtmcRegionModelChecker<ParametricType, ConstantType>::SamplingModel::SamplingModel(storm::models::sparse::Dtmc<ParametricType> const& parametricModel, bool computeRewards) : probabilityMapping(), stateRewardMapping(), probabilityEvaluationTable(), computeRewards(computeRewards){
+        SparseDtmcRegionModelChecker<ParametricType, ConstantType>::SamplingModel::SamplingModel(storm::models::sparse::Dtmc<ParametricType> const& parametricModel, std::shared_ptr<storm::logic::Formula> formula) : formula(formula){
+            if(this->formula->isEventuallyFormula()){
+                this->computeRewards=false;
+            } else if(this->formula->isReachabilityRewardFormula()){
+                this->computeRewards=true;
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Invalid formula: " << this->formula << ". Sampling model only supports eventually or reachability reward formulae.");
+            }
             //Start with the probabilities
             storm::storage::SparseMatrix<ConstantType> probabilityMatrix;
             // This vector will get an entry for every probability matrix entry.
@@ -151,17 +159,13 @@ namespace storm {
         template<typename ParametricType, typename ConstantType>
         std::vector<ConstantType> const& SparseDtmcRegionModelChecker<ParametricType, ConstantType>::SamplingModel::computeValues() {
             storm::modelchecker::SparseDtmcPrctlModelChecker<ConstantType> modelChecker(*this->model);
-            std::shared_ptr<storm::logic::Formula> targetFormulaPtr(new storm::logic::AtomicLabelFormula("target"));
             std::unique_ptr<storm::modelchecker::CheckResult> resultPtr;
+            //perform model checking on the dtmc
             if(this->computeRewards){
-                storm::logic::ReachabilityRewardFormula reachRewFormula(targetFormulaPtr);
-                //perform model checking on the dtmc
-                resultPtr = modelChecker.computeReachabilityRewards(reachRewFormula);
+                resultPtr = modelChecker.computeReachabilityRewards(this->formula->asReachabilityRewardFormula());
             }
             else {
-                storm::logic::EventuallyFormula eventuallyFormula(targetFormulaPtr);
-                //perform model checking on the dtmc
-                resultPtr = modelChecker.computeEventuallyProbabilities(eventuallyFormula);
+                resultPtr = modelChecker.computeEventuallyProbabilities(this->formula->asEventuallyFormula());
             }
             return resultPtr->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
         }

@@ -11,13 +11,21 @@
 #include "src/utility/vector.h"
 #include "src/utility/regions.h"
 #include "src/exceptions/UnexpectedException.h"
+#include "src/exceptions/InvalidArgumentException.h"
 
 namespace storm {
     namespace modelchecker {
         
         
         template<typename ParametricType, typename ConstantType>
-        SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ApproximationModel::ApproximationModel(storm::models::sparse::Dtmc<ParametricType> const& parametricModel, bool computeRewards) : computeRewards(computeRewards){
+        SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ApproximationModel::ApproximationModel(storm::models::sparse::Dtmc<ParametricType> const& parametricModel, std::shared_ptr<storm::logic::Formula> formula) : formula(formula){
+            if(this->formula->isEventuallyFormula()){
+                this->computeRewards=false;
+            } else if(this->formula->isReachabilityRewardFormula()){
+                this->computeRewards=true;
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Invalid formula: " << this->formula << ". Sampling model only supports eventually or reachability reward formulae.");
+            }
             //Start with the probabilities
             storm::storage::SparseMatrix<ConstantType> probabilityMatrix;
             std::vector<std::size_t> rowSubstitutions;// the substitution used in every row (required if rewards are computed)
@@ -128,7 +136,7 @@ namespace storm {
                             matrixEntryToEvalTableMapping.emplace_back(constantEntryIndex);
                         } else {
                             ++numOfNonConstEntries;
-                            std::size_t tableIndex=storm::utility::vector::findOrInsert(this->probabilityEvaluationTable, std::tuple<ParametricType, std::size_t, ConstantType>(entry.getValue(), substitutionIndex, storm::utility::zero<ConstantType>()));
+                            std::size_t tableIndex=storm::utility::vector::findOrInsert(this->probabilityEvaluationTable, std::tuple<std::size_t, ParametricType, ConstantType>(substitutionIndex, entry.getValue(), storm::utility::zero<ConstantType>()));
                             matrixEntryToEvalTableMapping.emplace_back(tableIndex);
                         }
                         matrixBuilder.addNextValue(matrixRow, entry.getColumn(), dummyEntry);
@@ -193,7 +201,7 @@ namespace storm {
                         }
                         std::size_t substitutionIndex=storm::utility::vector::findOrInsert(this->rewardSubstitutions, std::move(rewardSubstitution));
                         //insert table entry and dummy data in the stateRewardVector
-                        std::size_t tableIndex=storm::utility::vector::findOrInsert(this->rewardEvaluationTable, std::tuple<ParametricType, std::size_t, ConstantType, ConstantType>(parametricModel.getStateRewardVector()[state], substitutionIndex, storm::utility::zero<ConstantType>(), storm::utility::zero<ConstantType>()));
+                        std::size_t tableIndex=storm::utility::vector::findOrInsert(this->rewardEvaluationTable, std::tuple<std::size_t, ParametricType, ConstantType, ConstantType>(substitutionIndex, parametricModel.getStateRewardVector()[state], storm::utility::zero<ConstantType>(), storm::utility::zero<ConstantType>()));
                         stateRewardEntryToEvalTableMapping.emplace_back(tableIndex);
                         stateRewardsAsVector[state]=storm::utility::zero<ConstantType>();
                         ++numOfNonConstStateRewEntries;
@@ -211,7 +219,7 @@ namespace storm {
                             }
                             std::size_t substitutionIndex=storm::utility::vector::findOrInsert(this->rewardSubstitutions, std::move(rewardSubstitution));
                             //insert table entries and dummy data
-                            std::size_t tableIndex=storm::utility::vector::findOrInsert(this->rewardEvaluationTable, std::tuple<ParametricType, std::size_t, ConstantType, ConstantType>(parametricModel.getStateRewardVector()[state], substitutionIndex, storm::utility::zero<ConstantType>(), storm::utility::zero<ConstantType>()));
+                            std::size_t tableIndex=storm::utility::vector::findOrInsert(this->rewardEvaluationTable, std::tuple<std::size_t, ParametricType, ConstantType, ConstantType>(substitutionIndex, parametricModel.getStateRewardVector()[state], storm::utility::zero<ConstantType>(), storm::utility::zero<ConstantType>()));
                             for(auto const& matrixEntry : probabilityMatrix.getRow(matrixRow)){
                                 transitionRewardEntryToEvalTableMapping.emplace_back(tableIndex);
                                 matrixBuilder.addNextValue(matrixRow, matrixEntry.getColumn(), storm::utility::zero<ConstantType>());
@@ -263,8 +271,8 @@ namespace storm {
             for(auto& tableEntry : this->probabilityEvaluationTable){
                 std::get<2>(tableEntry)=storm::utility::regions::convertNumber<CoefficientType, ConstantType>(
                         storm::utility::regions::evaluateFunction(
-                                std::get<0>(tableEntry),
-                                instantiatedSubs[std::get<1>(tableEntry)]
+                                std::get<1>(tableEntry),
+                                instantiatedSubs[std::get<0>(tableEntry)]
                             )
                         );
             }
@@ -299,16 +307,16 @@ namespace storm {
                     ConstantType minValue=storm::utility::infinity<ConstantType>();
                     ConstantType maxValue=storm::utility::zero<ConstantType>();
                     //Iterate over the different combinations of lower and upper bounds and update the min/max values
-                    auto const& vertices=region.getVerticesOfRegion(this->choseOptimalRewardPars[std::get<1>(tableEntry)]);
+                    auto const& vertices=region.getVerticesOfRegion(this->choseOptimalRewardPars[std::get<0>(tableEntry)]);
                     for(auto const& vertex : vertices){
                         //extend the substitution
                         for(auto const& sub : vertex){
-                            instantiatedRewardSubs[std::get<1>(tableEntry)][sub.first]=sub.second;
+                            instantiatedRewardSubs[std::get<0>(tableEntry)][sub.first]=sub.second;
                         }
                         ConstantType currValue = storm::utility::regions::convertNumber<CoefficientType, ConstantType>(
                                 storm::utility::regions::evaluateFunction(
-                                    std::get<0>(tableEntry),
-                                    instantiatedRewardSubs[std::get<1>(tableEntry)]
+                                    std::get<1>(tableEntry),
+                                    instantiatedRewardSubs[std::get<0>(tableEntry)]
                                 )
                             );
                         minValue=std::min(minValue, currValue);
@@ -323,12 +331,10 @@ namespace storm {
 
         template<typename ParametricType, typename ConstantType>
         std::vector<ConstantType> const& SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ApproximationModel::computeValues(storm::logic::OptimalityType const& optimalityType) {
-            
             storm::modelchecker::SparseMdpPrctlModelChecker<ConstantType> modelChecker(*this->model);
-            std::shared_ptr<storm::logic::Formula> targetFormulaPtr(new storm::logic::AtomicLabelFormula("target"));
             std::unique_ptr<storm::modelchecker::CheckResult> resultPtr;
+            
             if(this->computeRewards){
-                storm::logic::ReachabilityRewardFormula reachRewFormula(targetFormulaPtr);
                 //write the reward values into the model
                 switch(optimalityType){
                     case storm::logic::OptimalityType::Minimize:
@@ -351,12 +357,11 @@ namespace storm {
                         STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The given optimality Type is not supported.");
                 }
                 //perform model checking on the mdp
-                resultPtr = modelChecker.computeReachabilityRewards(reachRewFormula, false, optimalityType);
+                resultPtr = modelChecker.computeReachabilityRewards(this->formula->asReachabilityRewardFormula(), false, optimalityType);
             }
             else {
-                storm::logic::EventuallyFormula eventuallyFormula(targetFormulaPtr);
                 //perform model checking on the mdp
-                resultPtr = modelChecker.computeEventuallyProbabilities(eventuallyFormula, false, optimalityType);
+                resultPtr = modelChecker.computeEventuallyProbabilities(this->formula->asEventuallyFormula(), false, optimalityType);
             }
             return resultPtr->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
         }
