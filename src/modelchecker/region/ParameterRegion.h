@@ -22,7 +22,8 @@ namespace storm {
             typedef typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::VariableType VariableType;
             typedef typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::CoefficientType CoefficientType;
             
-            ParameterRegion(std::map<VariableType, CoefficientType> lowerBounds, std::map<VariableType, CoefficientType> upperBounds);
+            ParameterRegion(std::map<VariableType, CoefficientType> const& lowerBounds, std::map<VariableType, CoefficientType> const& upperBounds);
+            ParameterRegion(std::map<VariableType, CoefficientType>&& lowerBounds, std::map<VariableType, CoefficientType>&& upperBounds);
             virtual ~ParameterRegion();
                 
             std::set<VariableType> getVariables() const;
@@ -31,7 +32,7 @@ namespace storm {
             const std::map<VariableType, CoefficientType> getUpperBounds() const;
             const std::map<VariableType, CoefficientType> getLowerBounds() const;
                 
-            /*
+            /*!
              * Returns a vector of all possible combinations of lower and upper bounds of the given variables.
              * The first entry of the returned vector will map every variable to its lower bound
              * The second entry will map every variable to its lower bound, except the first one (i.e. *getVariables.begin())
@@ -41,6 +42,11 @@ namespace storm {
              * If the given set of variables is empty, the returned vector will contain an empty map
              */
             std::vector<std::map<VariableType, CoefficientType>> getVerticesOfRegion(std::set<VariableType> const& consideredVariables) const;
+            
+            /*!
+             * Returns some point that lies within this region
+             */
+            std::map<VariableType, CoefficientType> getSomePoint() const;
          
             RegionCheckResult getCheckResult() const;
             void setCheckResult(RegionCheckResult checkResult);
@@ -110,7 +116,9 @@ namespace storm {
             static std::vector<ParameterRegion> getRegionsFromSettings();
 
             private:
-
+            
+            void init();
+                
             std::map<VariableType, CoefficientType> const lowerBounds;
             std::map<VariableType, CoefficientType> const upperBounds;
             std::set<VariableType> variables;

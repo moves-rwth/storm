@@ -86,11 +86,11 @@ namespace storm {
             // set some information regarding the formula and model. Also computes a more simple version of the model
             preprocess();
             if(!this->isResultConstant){
-                //now create the model used for Approximation
+                //now create the model used for Approximation (if required)
                 if(storm::settings::regionSettings().doApprox()){
                     initializeApproximationModel(*this->simpleModel, this->simpleFormula);
                 }
-                //now create the model used for Sampling
+                //now create the model used for Sampling (if required)
                 if(storm::settings::regionSettings().getSampleMode()==storm::settings::modules::RegionSettings::SampleMode::INSTANTIATE ||
                         (!storm::settings::regionSettings().doSample() && storm::settings::regionSettings().getApproxMode()==storm::settings::modules::RegionSettings::ApproxMode::TESTFIRST)){
                     initializeSamplingModel(*this->simpleModel, this->simpleFormula);
@@ -98,6 +98,11 @@ namespace storm {
                 //Check if the reachability function needs to be computed
                 if((storm::settings::regionSettings().getSmtMode()==storm::settings::modules::RegionSettings::SmtMode::FUNCTION) || 
                         (storm::settings::regionSettings().getSampleMode()==storm::settings::modules::RegionSettings::SampleMode::EVALUATE)){
+                    computeReachabilityFunction(*this->simpleModel);
+                }
+            } else {
+                //for a constant result we just compute the reachability function
+                if(this->reachabilityFunction==nullptr){
                     computeReachabilityFunction(*this->simpleModel);
                 }
             }
@@ -474,7 +479,25 @@ namespace storm {
             std::chrono::high_resolution_clock::time_point timeComputeReachabilityFunctionEnd = std::chrono::high_resolution_clock::now();
             this->timeComputeReachabilityFunction = timeComputeReachabilityFunctionEnd-timeComputeReachabilityFunctionStart;
         }
+        
+        template<typename ParametricType, typename ConstantType>
+        void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::checkRegions(std::vector<ParameterRegion>& regions) {
+            STORM_LOG_DEBUG("Checking " << regions.size() << "regions.");
+            std::cout << "Checking " << regions.size() << " regions. Progress: ";
+            std::cout.flush();
                     
+            uint_fast64_t progress=0;
+            uint_fast64_t checkedRegions=0;
+            for(auto& region : regions){
+                checkRegion(region);
+                if((checkedRegions++)*10/regions.size()==progress){
+                    std::cout << progress++;
+                    std::cout.flush();
+                }
+            }
+            std::cout << " done!" << std::endl;
+        }
+        
         template<typename ParametricType, typename ConstantType>
         void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::checkRegion(ParameterRegion& region) {
             std::chrono::high_resolution_clock::time_point timeCheckRegionStart = std::chrono::high_resolution_clock::now();
@@ -494,7 +517,7 @@ namespace storm {
             if(!done && this->isResultConstant){
                 STORM_LOG_DEBUG("Checking a region although the result is constant, i.e., independent of the region. This makes sense none.");
                 STORM_LOG_THROW(this->parametricTypeComparator.isConstant(*getReachabilityFunction()), storm::exceptions::UnexpectedException, "The result was assumed to be constant but it isn't.");
-                if(valueIsInBoundOfFormula(storm::utility::regions::getConstantPart(*getReachabilityFunction()))){
+                if(valueIsInBoundOfFormula(this->getReachabilityValue<CoefficientType>(region.getSomePoint(), true))){
                     region.setCheckResult(RegionCheckResult::ALLSAT);
                 }
                 else{
@@ -558,24 +581,6 @@ namespace storm {
                     break;
             }
         }
-
-        template<typename ParametricType, typename ConstantType>
-        void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::checkRegions(std::vector<ParameterRegion>& regions) {
-            STORM_LOG_DEBUG("Checking " << regions.size() << "regions.");
-            std::cout << "Checking " << regions.size() << " regions. Progress: ";
-            std::cout.flush();
-                    
-            uint_fast64_t progress=0;
-            uint_fast64_t checkedRegions=0;
-            for(auto& region : regions){
-                checkRegion(region);
-                if((checkedRegions++)*10/regions.size()==progress){
-                    std::cout << progress++;
-                    std::cout.flush();
-                }
-            }
-            std::cout << " done!" << std::endl;
-        }
         
         template<typename ParametricType, typename ConstantType>
         bool SparseDtmcRegionModelChecker<ParametricType, ConstantType>::checkApproximativeValues(ParameterRegion& region, std::vector<ConstantType>& lowerBounds, std::vector<ConstantType>& upperBounds) {
@@ -595,7 +600,7 @@ namespace storm {
                     switch(storm::settings::regionSettings().getApproxMode()){
                         case storm::settings::modules::RegionSettings::ApproxMode::TESTFIRST:
                             //Sample a single point to know whether we should try to prove ALLSAT or ALLVIOLATED
-                            checkPoint(region,region.getLowerBounds(), false);
+                            checkPoint(region,region.getSomePoint(), false);
                             proveAllSat= (region.getCheckResult()==RegionCheckResult::EXISTSSAT);
                             break;
                         case storm::settings::modules::RegionSettings::ApproxMode::GUESSALLSAT:
@@ -701,11 +706,12 @@ namespace storm {
             bool valueInBoundOfFormula;
             if((storm::settings::regionSettings().getSampleMode()==storm::settings::modules::RegionSettings::SampleMode::EVALUATE) ||
                     (!storm::settings::regionSettings().doSample() && favorViaFunction)){
-                valueInBoundOfFormula = this->valueIsInBoundOfFormula(storm::utility::regions::evaluateFunction(*getReachabilityFunction(), point));
+                //evaluate the reachability function
+                valueInBoundOfFormula = this->valueIsInBoundOfFormula(this->getReachabilityValue<CoefficientType>(point, true));
             }
             else{
-                getSamplingModel()->instantiate(point);
-                valueInBoundOfFormula=this->valueIsInBoundOfFormula(getSamplingModel()->computeValues()[*getSamplingModel()->getModel()->getInitialStates().begin()]);
+                //instantiate the sampling model
+                valueInBoundOfFormula = this->valueIsInBoundOfFormula(this->getReachabilityValue<ConstantType>(point, false));
             }
                 
             if(valueInBoundOfFormula){
@@ -748,13 +754,25 @@ namespace storm {
             }
             return this->reachabilityFunction;
         }
+        
+        template<typename ParametricType, typename ConstantType>
+        template<typename ValueType>
+        ValueType SparseDtmcRegionModelChecker<ParametricType, ConstantType>::getReachabilityValue(std::map<VariableType, CoefficientType> const& point, bool evaluateFunction) {
+            if(evaluateFunction || this->isResultConstant){
+                return storm::utility::regions::convertNumber<ValueType>(storm::utility::regions::evaluateFunction(*getReachabilityFunction(), point));
+            } else {
+                getSamplingModel()->instantiate(point);
+                return storm::utility::regions::convertNumber<ValueType>(getSamplingModel()->computeValues()[*getSamplingModel()->getModel()->getInitialStates().begin()]);
+            }
+        }
+
 
         template<typename ParametricType, typename ConstantType>
         bool SparseDtmcRegionModelChecker<ParametricType, ConstantType>::checkFullSmt(ParameterRegion& region) {
             STORM_LOG_THROW((storm::settings::regionSettings().getSmtMode()==storm::settings::modules::RegionSettings::SmtMode::FUNCTION), storm::exceptions::NotImplementedException, "Selected SMT mode has not been implemented.");
             if (region.getCheckResult()==RegionCheckResult::UNKNOWN){
                 //Sampling needs to be done (on a single point)
-                checkPoint(region,region.getLowerBounds(), true);
+                checkPoint(region,region.getSomePoint(), true);
             }
             
             if(this->smtSolver==nullptr){
@@ -851,7 +869,7 @@ namespace storm {
             storm::expressions::ExpressionManager manager; //this manager will do nothing as we will use carl expressions..
             this->smtSolver = std::shared_ptr<storm::solver::Smt2SmtSolver>(new storm::solver::Smt2SmtSolver(manager, true));
             
-            ParametricType bound= storm::utility::regions::convertNumber<double, ParametricType>(this->specifiedFormulaBound);
+            ParametricType bound= storm::utility::regions::convertNumber<ParametricType>(this->specifiedFormulaBound);
             
             // To prove that the property is satisfied in the initial state for all parameters,
             // we ask the solver whether the negation of the property is satisfiable and invert the answer.
@@ -897,9 +915,9 @@ namespace storm {
 
         template<typename ParametricType, typename ConstantType>
         template<typename ValueType>
-        bool SparseDtmcRegionModelChecker<ParametricType, ConstantType>::valueIsInBoundOfFormula(ValueType value){
+        bool SparseDtmcRegionModelChecker<ParametricType, ConstantType>::valueIsInBoundOfFormula(ValueType const& value){
             STORM_LOG_THROW(this->specifiedFormula!=nullptr, storm::exceptions::InvalidStateException, "Tried to compare a value to the bound of a formula, but no formula specified.");
-            double valueAsDouble = storm::utility::regions::convertNumber<ValueType, double>(value);
+            double valueAsDouble = storm::utility::regions::convertNumber<double>(value);
             switch (this->specifiedFormulaCompType) {
                 case storm::logic::ComparisonType::Greater:
                     return (valueAsDouble > this->specifiedFormulaBound);
@@ -913,7 +931,7 @@ namespace storm {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "the comparison relation of the formula is not supported");
             }
         }
-
+        
         template<typename ParametricType, typename ConstantType>
         void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::printStatisticsToStream(std::ostream& outstream) {
             

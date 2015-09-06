@@ -56,7 +56,7 @@ namespace storm {
                     auto approxModelEntry = this->model->getTransitionMatrix().getRow(matrixRow).begin();
                     for(auto const& parEntry : parametricModel.getTransitionMatrix().getRow(row)){
                         if(*tableIndex == constantEntryIndex){
-                            approxModelEntry->setValue(storm::utility::regions::convertNumber<CoefficientType, ConstantType>(storm::utility::regions::getConstantPart(parEntry.getValue())));
+                            approxModelEntry->setValue(storm::utility::regions::convertNumber<ConstantType>(storm::utility::regions::getConstantPart(parEntry.getValue())));
                         } else {
                             this->probabilityMapping.emplace_back(std::make_pair(&(std::get<2>(this->probabilityEvaluationTable[*tableIndex])), approxModelEntry));
                         }
@@ -178,7 +178,7 @@ namespace storm {
                 std::set<VariableType> occurringProbVariables;
                 bool makeStateReward=true;
                 if(this->parametricTypeComparator.isConstant(parametricModel.getStateRewardVector()[state])){
-                    stateRewardsAsVector[state]=storm::utility::regions::convertNumber<CoefficientType, ConstantType>(storm::utility::regions::getConstantPart(parametricModel.getStateRewardVector()[state]));
+                    stateRewardsAsVector[state]=storm::utility::regions::convertNumber<ConstantType>(storm::utility::regions::getConstantPart(parametricModel.getStateRewardVector()[state]));
                     stateRewardEntryToEvalTableMapping.emplace_back(constantEntryIndex);
                 } else {
                     //reward depends on parameters. Lets find out if probability parameters occur here.
@@ -269,7 +269,7 @@ namespace storm {
             }
             //write entries into evaluation table
             for(auto& tableEntry : this->probabilityEvaluationTable){
-                std::get<2>(tableEntry)=storm::utility::regions::convertNumber<CoefficientType, ConstantType>(
+                std::get<2>(tableEntry)=storm::utility::regions::convertNumber<ConstantType>(
                         storm::utility::regions::evaluateFunction(
                                 std::get<1>(tableEntry),
                                 instantiatedSubs[std::get<0>(tableEntry)]
@@ -313,7 +313,7 @@ namespace storm {
                         for(auto const& sub : vertex){
                             instantiatedRewardSubs[std::get<0>(tableEntry)][sub.first]=sub.second;
                         }
-                        ConstantType currValue = storm::utility::regions::convertNumber<CoefficientType, ConstantType>(
+                        ConstantType currValue = storm::utility::regions::convertNumber<ConstantType>(
                                 storm::utility::regions::evaluateFunction(
                                     std::get<1>(tableEntry),
                                     instantiatedRewardSubs[std::get<0>(tableEntry)]

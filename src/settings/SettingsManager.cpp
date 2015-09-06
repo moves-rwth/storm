@@ -545,6 +545,10 @@ namespace storm {
         storm::settings::modules::RegionSettings const& regionSettings() {
             return dynamic_cast<storm::settings::modules::RegionSettings const&>(manager().getModule(storm::settings::modules::RegionSettings::moduleName));
         }
+        
+        storm::settings::modules::RegionSettings& mutableRegionSettings() {
+            return dynamic_cast<storm::settings::modules::RegionSettings&>(storm::settings::SettingsManager::manager().getModule(storm::settings::modules::RegionSettings::moduleName));
+        }
 
         storm::settings::modules::SparseDtmcEliminationModelCheckerSettings const& sparseDtmcEliminationModelCheckerSettings() {
             return dynamic_cast<storm::settings::modules::SparseDtmcEliminationModelCheckerSettings const&>(manager().getModule(storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::moduleName));

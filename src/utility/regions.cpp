@@ -29,23 +29,28 @@ namespace storm {
             }
             
             template<>
-            double convertNumber<std::string, double>(std::string const& number){
+            double&& convertNumber<double>(double&& number){
+                return std::move(number);
+           }
+            
+            template<>
+            double convertNumber<double, std::string>(std::string const& number){
                 return std::stod(number);
             }
             
 #ifdef STORM_HAVE_CARL
             template<>
-            storm::RationalNumber convertNumber<double, storm::RationalNumber>(double const& number){
+            storm::RationalNumber convertNumber<storm::RationalNumber, double>(double const& number){
                 return carl::rationalize<storm::RationalNumber>(number);
             }
             
             template<>
-            storm::RationalFunction convertNumber<double, storm::RationalFunction>(double const& number){
-                return storm::RationalFunction(convertNumber<double, storm::RationalNumber>(number));
+            storm::RationalFunction convertNumber<storm::RationalFunction, double>(double const& number){
+                return storm::RationalFunction(convertNumber<storm::RationalNumber>(number));
             }
             
             template<>
-            double convertNumber<storm::RationalNumber, double>(storm::RationalNumber const& number){
+            double convertNumber<double, storm::RationalNumber>(storm::RationalNumber const& number){
                 return carl::toDouble(number);
             }
             
@@ -55,11 +60,15 @@ namespace storm {
             }
             
             template<>
-            storm::RationalNumber convertNumber<std::string, storm::RationalNumber>(std::string const& number){
-                //We parse the number as double and then convert it to a a rational number.
-                return convertNumber<double, storm::RationalNumber>(convertNumber<std::string, double>(number));
+            storm::RationalNumber&& convertNumber<storm::RationalNumber>(storm::RationalNumber&& number){
+                return std::move(number);
             }
-                       
+            
+            template<>
+            storm::RationalNumber convertNumber<storm::RationalNumber, std::string>(std::string const& number){
+                //We parse the number as double and then convert it to a a rational number.
+                return convertNumber<storm::RationalNumber>(convertNumber<double>(number));
+            }
             
             template<>
             storm::Variable getVariableFromString<storm::Variable>(std::string variableString){

@@ -331,6 +331,14 @@ namespace storm {
          * @return An object that allows accessing the settings for parametric region model checking.
          */
         storm::settings::modules::RegionSettings const& regionSettings();
+        
+        /*!
+         * Retrieves the settings for parametric region model checking.
+         *
+         * @return An object that allows accessing and writing the settings for parametric region model checking.
+         */
+        storm::settings::modules::RegionSettings& mutableRegionSettings();
+        
 
         /* Retrieves the settings of the elimination-based DTMC model checker.
          *

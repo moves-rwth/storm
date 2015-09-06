@@ -53,7 +53,7 @@ namespace storm {
             for(std::size_t const& tableIndex : matrixEntryToEvalTableMapping){
                 STORM_LOG_THROW(sampleModelEntry->getColumn()==parModelEntry->getColumn(), storm::exceptions::UnexpectedException, "The entries of the given parametric model and the constructed sampling model do not match");
                 if(tableIndex == constantEntryIndex){
-                    sampleModelEntry->setValue(storm::utility::regions::convertNumber<CoefficientType, ConstantType>(storm::utility::regions::getConstantPart(parModelEntry->getValue())));
+                    sampleModelEntry->setValue(storm::utility::regions::convertNumber<ConstantType>(storm::utility::regions::getConstantPart(parModelEntry->getValue())));
                 } else {
                     this->probabilityMapping.emplace_back(std::make_pair(&(this->probabilityEvaluationTable[tableIndex].second), sampleModelEntry));
                 }
@@ -110,7 +110,7 @@ namespace storm {
             std::size_t numOfNonConstEntries=0;
             for(std::size_t state=0; state<parametricModel.getNumberOfStates(); ++state){
                 if(this->parametricTypeComparator.isConstant(parametricModel.getStateRewardVector()[state])){
-                    stateRewardsAsVector[state] = storm::utility::regions::convertNumber<CoefficientType, ConstantType>(storm::utility::regions::getConstantPart(parametricModel.getStateRewardVector()[state]));
+                    stateRewardsAsVector[state] = storm::utility::regions::convertNumber<ConstantType>(storm::utility::regions::getConstantPart(parametricModel.getStateRewardVector()[state]));
                     rewardEntryToEvalTableMapping.emplace_back(constantEntryIndex);
                 } else {
                     ++numOfNonConstEntries;
@@ -137,11 +137,11 @@ namespace storm {
         void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::SamplingModel::instantiate(std::map<VariableType, CoefficientType>const& point) {
             //write entries into evaluation tables
             for(auto& tableEntry : this->probabilityEvaluationTable){
-                tableEntry.second=storm::utility::regions::convertNumber<CoefficientType, ConstantType>(
+                tableEntry.second=storm::utility::regions::convertNumber<ConstantType>(
                         storm::utility::regions::evaluateFunction(tableEntry.first, point));
             }
             for(auto& tableEntry : this->rewardEvaluationTable){
-                tableEntry.second=storm::utility::regions::convertNumber<CoefficientType, ConstantType>(
+                tableEntry.second=storm::utility::regions::convertNumber<ConstantType>(
                         storm::utility::regions::evaluateFunction(tableEntry.first, point));
             }
             

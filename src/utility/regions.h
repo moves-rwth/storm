@@ -52,8 +52,15 @@ namespace storm {
              * Converts a number from one type to a number from the other.
              * If no exact conversion is possible, the number is rounded up or down, using the given precision or the one from the settings.
              */
-            template<typename SourceType, typename TargetType>
+            template<typename TargetType, typename SourceType>
             TargetType convertNumber(SourceType const& number);
+            
+            /*
+             * Converts a number from one type to a number from the other.
+             * If no exact conversion is possible, the number is rounded up or down, using the given precision or the one from the settings.
+             */
+            template<typename ValueType>
+            ValueType&& convertNumber(ValueType&& number);
             
             /*
              * retrieves the variable object from the given string

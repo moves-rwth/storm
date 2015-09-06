@@ -54,6 +54,16 @@ namespace storm {
             void specifyFormula(std::shared_ptr<storm::logic::Formula> formula);
 
             /*!
+             * Checks for every given region whether the specified formula holds for all parameters that lie in that region.
+             * Sets the region checkresult accordingly. Moreover, region.satPoint and/or an region.violatedPoint will be set.
+             * 
+             * @note A formula has to be specified first.
+             * 
+             * @param region The considered region
+             */
+            void checkRegions(std::vector<ParameterRegion>& regions);
+            
+            /*!
              * Checks whether the given formula holds for all parameters that lie in the given region.
              * Sets the region checkresult accordingly. Moreover, region.satPoint and/or an region.violatedPoint will be set.
              * 
@@ -65,14 +75,21 @@ namespace storm {
             void checkRegion(ParameterRegion& region);
             
             /*!
-             * Checks for every given region whether the specified formula holds for all parameters that lie in that region.
-             * Sets the region checkresult accordingly. Moreover, region.satPoint and/or an region.violatedPoint will be set.
-             * 
-             * @note A formula has to be specified first.
-             * 
-             * @param region The considered region
+             * Returns the reachability  function. 
+             * If it is not yet available, it is computed.
              */
-            void checkRegions(std::vector<ParameterRegion>& regions);
+            std::shared_ptr<ParametricType> const& getReachabilityFunction();
+            
+            /*!
+             * Returns the reachability Value at the specified point. 
+             * The given flag decides whether to initialize a sampling model or to evaluate a reachability function.
+             * Might invoke sampling model initialization or the computation of the reachability function (if these are not available yet)
+             * 
+             * @param point The point (i.e. parameter evaluation) at which to compute the reachability value.
+             * @param evaluateFunction If set, the reachability function is evaluated. Otherwise, the sampling model is instantiated.
+             */
+            template <typename ValueType>
+            ValueType getReachabilityValue(std::map<VariableType, CoefficientType>const& point, bool evaluateFunction=false);
             
             /*!
              * Prints statistical information to the given stream.
@@ -193,12 +210,6 @@ namespace storm {
             std::shared_ptr<SamplingModel> const& getSamplingModel();
             
             /*!
-             * Returns the reachability  function. 
-             * If it is not yet available, it is computed.
-             */
-            std::shared_ptr<ParametricType> const& getReachabilityFunction();
-            
-            /*!
              * Starts the SMTSolver to get the result.
              * The current regioncheckresult of the region should be EXISTSSAT or EXISTVIOLATED.
              * Otherwise, a sampingPoint will be computed.
@@ -215,7 +226,7 @@ namespace storm {
              * Returns true iff the given value satisfies the bound given by the specified property
              */
             template <typename ValueType>
-            bool valueIsInBoundOfFormula(ValueType value);
+            bool valueIsInBoundOfFormula(ValueType const& value);
             
             // The model this model checker is supposed to analyze.
             storm::models::sparse::Dtmc<ParametricType> const& model;

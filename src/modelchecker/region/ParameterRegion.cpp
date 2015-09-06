@@ -20,13 +20,25 @@ namespace storm {
     namespace modelchecker {
 
         template<typename ParametricType, typename ConstantType>
-        SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::ParameterRegion(std::map<VariableType, CoefficientType> lowerBounds, std::map<VariableType, CoefficientType> upperBounds) : lowerBounds(lowerBounds), upperBounds(upperBounds), checkResult(RegionCheckResult::UNKNOWN) {
-            //check whether both mappings map the same variables and precompute the set of variables
-            for (auto const& variableWithBound : lowerBounds) {
-                STORM_LOG_THROW((upperBounds.find(variableWithBound.first) != upperBounds.end()), storm::exceptions::InvalidArgumentException, "Couldn't create region. No upper bound specified for Variable " << variableWithBound.first);
-                this->variables.insert(variableWithBound.first);
+        SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::ParameterRegion(std::map<VariableType, CoefficientType> const& lowerBounds, std::map<VariableType, CoefficientType> const& upperBounds) : lowerBounds(lowerBounds), upperBounds(upperBounds), checkResult(RegionCheckResult::UNKNOWN) {
+            init();
+        }
+        
+        template<typename ParametricType, typename ConstantType>
+        SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::ParameterRegion(std::map<VariableType, CoefficientType>&& lowerBounds, std::map<VariableType, CoefficientType>&& upperBounds) : lowerBounds(std::move(lowerBounds)), upperBounds(std::move(upperBounds)), checkResult(RegionCheckResult::UNKNOWN) {
+            init();
+        }
+        
+        template<typename ParametricType, typename ConstantType>
+        void SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::init() {
+            //check whether both mappings map the same variables, check that lowerbound <= upper bound,  and pre-compute the set of variables
+            for (auto const& variableWithLowerBound : this->lowerBounds) {
+                auto variableWithUpperBound = this->upperBounds.find(variableWithLowerBound.first);
+                STORM_LOG_THROW((variableWithUpperBound != upperBounds.end()), storm::exceptions::InvalidArgumentException, "Couldn't create region. No upper bound specified for Variable " << variableWithLowerBound.first);
+                STORM_LOG_THROW((variableWithLowerBound.second<=variableWithUpperBound->second), storm::exceptions::InvalidArgumentException, "Couldn't create region. The lower bound for " << variableWithLowerBound.first << " is larger then the upper bound");
+                this->variables.insert(variableWithLowerBound.first);
             }
-            for (auto const& variableWithBound : upperBounds) {
+            for (auto const& variableWithBound : this->upperBounds) {
                 STORM_LOG_THROW((this->variables.find(variableWithBound.first) != this->variables.end()), storm::exceptions::InvalidArgumentException, "Couldn't create region. No lower bound specified for Variable " << variableWithBound.first);
             }
         }
@@ -93,6 +105,11 @@ namespace storm {
         }
         
         template<typename ParametricType, typename ConstantType>
+        std::map<typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::VariableType, typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::CoefficientType> SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::getSomePoint() const {
+            return this->getLowerBounds();
+        }
+        
+        template<typename ParametricType, typename ConstantType>
         typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::RegionCheckResult SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::getCheckResult() const {
             return checkResult;
         }
@@ -156,11 +173,11 @@ namespace storm {
         std::string SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion::toString() const {
             std::stringstream regionstringstream;
             for (auto var : this->getVariables()) {
-                regionstringstream << storm::utility::regions::convertNumber<SparseDtmcRegionModelChecker<ParametricType, ConstantType>::CoefficientType, double>(this->getLowerBound(var));
+                regionstringstream << storm::utility::regions::convertNumber<double>(this->getLowerBound(var));
                 regionstringstream << "<=";
                 regionstringstream << storm::utility::regions::getVariableName(var);
                 regionstringstream << "<=";
-                regionstringstream << storm::utility::regions::convertNumber<SparseDtmcRegionModelChecker<ParametricType, ConstantType>::CoefficientType, double>(this->getUpperBound(var));
+                regionstringstream << storm::utility::regions::convertNumber<double>(this->getUpperBound(var));
                 regionstringstream << ",";
             }
             std::string regionstring = regionstringstream.str();
@@ -188,8 +205,8 @@ namespace storm {
                 STORM_LOG_THROW(parameter.length()>0, storm::exceptions::InvalidArgumentException, "When parsing the region" << parameterBoundsString << " I could not find a parameter");
                 
                 VariableType var = storm::utility::regions::getVariableFromString<VariableType>(parameter);
-                CoefficientType lb = storm::utility::regions::convertNumber<std::string, CoefficientType>(parameterBoundsString.substr(0,positionOfFirstRelation));
-                CoefficientType ub = storm::utility::regions::convertNumber<std::string, CoefficientType>(parameterBoundsString.substr(positionOfSecondRelation+2));
+                CoefficientType lb = storm::utility::regions::convertNumber<CoefficientType>(parameterBoundsString.substr(0,positionOfFirstRelation));
+                CoefficientType ub = storm::utility::regions::convertNumber<CoefficientType>(parameterBoundsString.substr(positionOfSecondRelation+2));
                 lowerBounds.emplace(std::make_pair(var, lb));  
                 upperBounds.emplace(std::make_pair(var, ub));
             }
@@ -202,9 +219,11 @@ namespace storm {
                 std::vector<std::string> parameterBounds;
                 boost::split(parameterBounds, regionString, boost::is_any_of(","));
                 for(auto const& parameterBound : parameterBounds){
-                    parseParameterBounds(lowerBounds, upperBounds, parameterBound);
+                    if(!std::all_of(parameterBound.begin(),parameterBound.end(), ::isspace)){ //skip this string if it only consists of space
+                        parseParameterBounds(lowerBounds, upperBounds, parameterBound);
+                    }
                 }
-                return ParameterRegion(lowerBounds, upperBounds);
+                return ParameterRegion(std::move(lowerBounds), std::move(upperBounds));
             }
             
             template<typename ParametricType, typename ConstantType>
@@ -215,7 +234,7 @@ namespace storm {
                 boost::split(regionsStrVec, regionsString, boost::is_any_of(";"));
                 for(auto const& regionStr : regionsStrVec){
                     if(!std::all_of(regionStr.begin(),regionStr.end(), ::isspace)){ //skip this string if it only consists of space
-                    result.emplace_back(parseRegion(regionStr));
+                        result.emplace_back(parseRegion(regionStr));
                     }
                 }
                 return result;

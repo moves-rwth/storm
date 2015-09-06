@@ -13,7 +13,7 @@ namespace storm {
             class RegionSettings : public ModuleSettings {
             public:
 
-                enum class ApproxMode {OFF, GUESSALLSAT, GUESSALLVIOLATED, TESTFIRST };
+                enum class ApproxMode {OFF, TESTFIRST, GUESSALLSAT, GUESSALLVIOLATED };
                 enum class SampleMode {OFF, INSTANTIATE, EVALUATE };
                 enum class SmtMode {OFF, FUNCTION, MODEL };
 
@@ -76,6 +76,19 @@ namespace storm {
                  */
                 bool doSmt() const;
                 
+                /*!
+                 * Sets the modes accordingly. Great for debugging purposes.
+                 * Use resetModes() to switch back to the modes specified by the settings
+                 */
+                void modifyModes(ApproxMode const& approxMode, SampleMode const& sampleMode, SmtMode const& smtMode);
+                
+                /*!
+                 * Resets the modes to the ones specified by the settings.
+                 * This is useful if the modes have been altered by setModes(...)
+                 */
+                void resetModes();
+                    
+                
                 bool check() const override;
 
                 const static std::string moduleName;
@@ -86,6 +99,11 @@ namespace storm {
                 const static std::string approxmodeOptionName;
                 const static std::string samplemodeOptionName;
                 const static std::string smtmodeOptionName;
+                
+                bool modesModified;
+                ApproxMode approxMode;
+                SampleMode sampleMode;
+                SmtMode smtMode;
             };
 
         } // namespace modules
