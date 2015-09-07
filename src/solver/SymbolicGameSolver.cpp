@@ -11,22 +11,16 @@ namespace storm {
         
         template<storm::dd::DdType Type>
         SymbolicGameSolver<Type>::SymbolicGameSolver(storm::dd::Add<Type> const& gameMatrix, storm::dd::Bdd<Type> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs, std::set<storm::expressions::Variable> const& player1Variables, std::set<storm::expressions::Variable> const& player2Variables) : gameMatrix(gameMatrix), allRows(allRows), rowMetaVariables(rowMetaVariables), columnMetaVariables(columnMetaVariables), rowColumnMetaVariablePairs(rowColumnMetaVariablePairs), player1Variables(player1Variables), player2Variables(player2Variables) {
-            // Get the settings object to customize solving.
-            storm::settings::modules::NativeEquationSolverSettings const& settings = storm::settings::nativeEquationSolverSettings();
-            
-            // Get appropriate settings.
-            maximalNumberOfIterations = settings.getMaximalIterationCount();
-            precision = settings.getPrecision();
-            relative = settings.getConvergenceCriterion() == storm::settings::modules::NativeEquationSolverSettings::ConvergenceCriterion::Relative;
-        }
-        
-        template<storm::dd::DdType Type>
-        SymbolicGameSolver<Type>::SymbolicGameSolver(storm::dd::Add<Type> const& gameMatrix, storm::dd::Bdd<Type> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs, std::set<storm::expressions::Variable> const& player1Variables, std::set<storm::expressions::Variable> const& player2Variables, double precision, uint_fast64_t maximalNumberOfIterations, bool relative) : gameMatrix(gameMatrix), allRows(allRows), rowMetaVariables(rowMetaVariables), columnMetaVariables(columnMetaVariables), rowColumnMetaVariablePairs(rowColumnMetaVariablePairs), player1Variables(player1Variables), player2Variables(player2Variables), precision(precision), maximalNumberOfIterations(maximalNumberOfIterations), relative(relative) {
             // Intentionally left empty.
         }
         
         template<storm::dd::DdType Type>
-        storm::dd::Add<Type> SymbolicGameSolver<Type>::solveGame(bool player1Min, bool player2Min, storm::dd::Add<Type> const& x, storm::dd::Add<Type> const& b) const {
+        SymbolicGameSolver<Type>::SymbolicGameSolver(storm::dd::Add<Type> const& gameMatrix, storm::dd::Bdd<Type> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs, std::set<storm::expressions::Variable> const& player1Variables, std::set<storm::expressions::Variable> const& player2Variables, double precision, uint_fast64_t maximalNumberOfIterations, bool relative) : AbstractGameSolver(precision, maximalNumberOfIterations, relative), gameMatrix(gameMatrix), allRows(allRows), rowMetaVariables(rowMetaVariables), columnMetaVariables(columnMetaVariables), rowColumnMetaVariablePairs(rowColumnMetaVariablePairs), player1Variables(player1Variables), player2Variables(player2Variables) {
+            // Intentionally left empty.
+        }
+        
+        template<storm::dd::DdType Type>
+        storm::dd::Add<Type> SymbolicGameSolver<Type>::solveGame(OptimizationDirection player1Goal, OptimizationDirection player2Goal, storm::dd::Add<Type> const& x, storm::dd::Add<Type> const& b) const {
             // Set up the environment.
             storm::dd::Add<Type> xCopy = x;
             uint_fast64_t iterations = 0;
@@ -39,16 +33,14 @@ namespace storm {
                 tmp += b;
                 
                 // Now abstract from player 2 and player 1 variables.
-                if (player2Min) {
-                    tmp = tmp.minAbstract(this->player2Variables);
-                } else {
-                    tmp = tmp.maxAbstract(this->player2Variables);
+                switch (player2Goal) {
+                    case OptimizationDirection::Minimize: tmp.minAbstract(this->player2Variables); break;
+                    case OptimizationDirection::Maximize: tmp = tmp.maxAbstract(this->player2Variables); break;
                 }
-                
-                if (player1Min) {
-                    tmp = tmp.minAbstract(this->player1Variables);
-                } else {
-                    tmp = tmp.maxAbstract(this->player1Variables);
+
+                switch (player1Goal) {
+                    case OptimizationDirection::Minimize: tmp.minAbstract(this->player1Variables); break;
+                    case OptimizationDirection::Maximize: tmp = tmp.maxAbstract(this->player1Variables); break;
                 }
                 
                 // Now check if the process already converged within our precision.

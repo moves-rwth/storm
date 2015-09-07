@@ -3,8 +3,11 @@
 
 #include <set>
 #include <vector>
-#include "src/storage/expressions/Variable.h"
 
+#include "src/solver/AbstractGameSolver.h"
+#include "src/solver/OptimizationDirection.h"
+
+#include "src/storage/expressions/Variable.h"
 #include "src/storage/dd/Bdd.h"
 #include "src/storage/dd/Add.h"
 
@@ -15,7 +18,7 @@ namespace storm {
          * An interface that represents an abstract symbolic game solver.
          */
         template<storm::dd::DdType Type>
-        class SymbolicGameSolver {
+        class SymbolicGameSolver : public AbstractGameSolver {
         public:
             /*!
              * Constructs a symbolic game solver with the given meta variable sets and pairs.
@@ -50,16 +53,16 @@ namespace storm {
             SymbolicGameSolver(storm::dd::Add<Type> const& gameMatrix, storm::dd::Bdd<Type> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs, std::set<storm::expressions::Variable> const& player1Variables, std::set<storm::expressions::Variable> const& player2Variables, double precision, uint_fast64_t maximalNumberOfIterations, bool relative);
             
             /*!
-             * Solves the equation system x = min/max(A*x + b) given by the parameters. Note that the matrix A has
-             * to be given upon construction time of the solver object.
+             * Solves the equation system defined by the game matrix. Note that the game matrix has to be given upon
+             * construction time of the solver object.
              *
-             * @param player1Min A flag indicating whether player 1 wants to minimize the result.
-             * @param player2Min A flag indicating whether player 1 wants to minimize the result.
+             * @param player1Goal Sets whether player 1 wants to minimize or maximize.
+             * @param player2Goal Sets whether player 2 wants to minimize or maximize.
              * @param x The initial guess of the solution.
              * @param b The vector to add after matrix-vector multiplication.
              * @return The solution vector.
              */
-            virtual storm::dd::Add<Type> solveGame(bool player1Min, bool player2Min, storm::dd::Add<Type> const& x, storm::dd::Add<Type> const& b) const;
+            virtual storm::dd::Add<Type> solveGame(OptimizationDirection player1Goal, OptimizationDirection player2Goal, storm::dd::Add<Type> const& x, storm::dd::Add<Type> const& b) const;
         
         protected:
             // The matrix defining the coefficients of the linear equation system.
@@ -69,28 +72,19 @@ namespace storm {
             storm::dd::Bdd<Type> const& allRows;
             
             // The row variables.
-            std::set<storm::expressions::Variable> rowMetaVariables;
+            std::set<storm::expressions::Variable> const& rowMetaVariables;
             
             // The column variables.
-            std::set<storm::expressions::Variable> columnMetaVariables;
+            std::set<storm::expressions::Variable> const& columnMetaVariables;
             
             // The pairs of meta variables used for renaming.
             std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs;
             
             // The player 1 variables.
-            std::set<storm::expressions::Variable> player1Variables;
+            std::set<storm::expressions::Variable> const& player1Variables;
             
             // The player 2 variables.
-            std::set<storm::expressions::Variable> player2Variables;
-            
-            // The precision to achive.
-            double precision;
-            
-            // The maximal number of iterations to perform.
-            uint_fast64_t maximalNumberOfIterations;
-            
-            // A flag indicating whether a relative or an absolute stopping criterion is to be used.
-            bool relative;
+            std::set<storm::expressions::Variable> const& player2Variables;
         };
         
     } // namespace solver
