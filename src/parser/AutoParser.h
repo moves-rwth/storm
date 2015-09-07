@@ -47,7 +47,7 @@ namespace storm {
              * is meaningful, this file will not be parsed.
              * @return A shared_ptr containing the resulting model.
              */
-            static std::shared_ptr<storm::models::sparse::Model<double>> parseModel(std::string const& transitionsFilename,
+            static std::shared_ptr<storm::models::sparse::Model<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>>> parseModel(std::string const& transitionsFilename,
                     std::string const& labelingFilename,
                     std::string const& stateRewardFilename = "",
                     std::string const& transitionRewardFilename = "",

@@ -6,6 +6,9 @@
 #include "src/exceptions/FileIoException.h"
 #include "src/utility/cstring.h"
 #include "src/parser/MappedFile.h"
+
+#include "src/adapters/CarlAdapter.h"
+
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
 extern log4cplus::Logger logger;
@@ -27,7 +30,7 @@ namespace storm {
             char const* buf = file.getData();
 
             // Create state reward vector with given state count.
-            std::vector<double> stateRewards(stateCount);
+            std::vector<ValueType> stateRewards(stateCount);
 
             // Now parse state reward assignments.
             uint_fast64_t state = 0;
@@ -70,6 +73,10 @@ namespace storm {
         }
         
         template class SparseStateRewardParser<double>;
+
+#ifdef STORM_HAVE_CARL
+        template class SparseStateRewardParser<storm::Interval>;
+#endif
 
     } // namespace parser
 } // namespace storm

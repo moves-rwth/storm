@@ -753,7 +753,8 @@ namespace storm {
              * @param matrix The matrix that possibly is a supermatrix of the current matrix.
              * @return True iff the current matrix is a submatrix of the given matrix.
              */
-            bool isSubmatrixOf(SparseMatrix<value_type> const& matrix) const;
+            template<typename OtherValueType>
+            bool isSubmatrixOf(SparseMatrix<OtherValueType> const& matrix) const;
             
             template<typename TPrime>
             friend std::ostream& operator<<(std::ostream& out, SparseMatrix<TPrime> const& matrix);

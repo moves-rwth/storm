@@ -300,6 +300,8 @@ namespace storm {
             template class Model<float>;
             
 #ifdef STORM_HAVE_CARL
+            template class Model<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
+
             template class Model<storm::RationalFunction>;
 #endif
             
