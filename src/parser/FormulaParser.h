@@ -28,7 +28,7 @@ namespace storm {
              * @param formulaString The formula as a string.
              * @return The resulting formula.
              */
-            std::shared_ptr<storm::logic::Formula> parseSingleFormulaFromString(std::string const& formulaString);
+            std::shared_ptr<storm::logic::Formula> parseSingleFormulaFromString(std::string const& formulaString) const;
             
             /*!
              * Parses the formula given by the provided string.
@@ -36,7 +36,7 @@ namespace storm {
              * @param formulaString The formula as a string.
              * @return The contained formulas.
              */
-            std::vector<std::shared_ptr<storm::logic::Formula>> parseFromString(std::string const& formulaString);
+            std::vector<std::shared_ptr<storm::logic::Formula>> parseFromString(std::string const& formulaString) const;
             
             /*!
              * Parses the formulas in the given file.
@@ -44,7 +44,7 @@ namespace storm {
              * @param filename The name of the file to parse.
              * @return The contained formulas.
              */
-            std::vector<std::shared_ptr<storm::logic::Formula>> parseFromFile(std::string const& filename);
+            std::vector<std::shared_ptr<storm::logic::Formula>> parseFromFile(std::string const& filename) const;
             
             /*!
              * Adds an identifier and the expression it is supposed to be replaced with. This can, for example be used
