@@ -4,14 +4,14 @@
 #include <boost/optional.hpp>
 
 #include "src/logic/UnaryStateFormula.h"
-#include "src/logic/OptimalityType.h"
+#include "src/solver/OptimizationDirection.h"
 #include "src/logic/ComparisonType.h"
 
 namespace storm {
     namespace logic {
         class OperatorFormula : public UnaryStateFormula {
         public:
-            OperatorFormula(boost::optional<OptimalityType> optimalityType, boost::optional<ComparisonType> comparisonType, boost::optional<double> bound, std::shared_ptr<Formula const> const& subformula);
+            OperatorFormula(boost::optional<OptimizationDirection> optimalityType, boost::optional<ComparisonType> comparisonType, boost::optional<double> bound, std::shared_ptr<Formula const> const& subformula);
             
             virtual ~OperatorFormula() {
                 // Intentionally left empty.
@@ -21,7 +21,7 @@ namespace storm {
             ComparisonType const& getComparisonType() const;
             double getBound() const;
             bool hasOptimalityType() const;
-            OptimalityType const& getOptimalityType() const;
+            OptimizationDirection const& getOptimalityType() const;
             
             virtual std::ostream& writeToStream(std::ostream& out) const override;
             
@@ -29,7 +29,7 @@ namespace storm {
             std::string operatorSymbol;
             boost::optional<ComparisonType> comparisonType;
             boost::optional<double> bound;
-            boost::optional<OptimalityType> optimalityType;
+            boost::optional<OptimizationDirection> optimalityType;
         };
     }
 }

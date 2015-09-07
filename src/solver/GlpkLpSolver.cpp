@@ -19,7 +19,7 @@
 #include "src/settings/modules/GlpkSettings.h"
 namespace storm {
     namespace solver {
-        GlpkLpSolver::GlpkLpSolver(std::string const& name, ModelSense const& modelSense) : LpSolver(modelSense), lp(nullptr), variableToIndexMap(), nextVariableIndex(1), nextConstraintIndex(1), modelContainsIntegerVariables(false), isInfeasibleFlag(false), isUnboundedFlag(false), rowIndices(), columnIndices(), coefficientValues() {
+        GlpkLpSolver::GlpkLpSolver(std::string const& name, OptimizationDirection const& optDir) : LpSolver(optDir), lp(nullptr), variableToIndexMap(), nextVariableIndex(1), nextConstraintIndex(1), modelContainsIntegerVariables(false), isInfeasibleFlag(false), isUnboundedFlag(false), rowIndices(), columnIndices(), coefficientValues() {
             // Create the LP problem for glpk.
             lp = glp_create_prob();
             
@@ -35,15 +35,15 @@ namespace storm {
             coefficientValues.push_back(0);
         }
         
-        GlpkLpSolver::GlpkLpSolver(std::string const& name) : GlpkLpSolver(name, ModelSense::Minimize) {
+        GlpkLpSolver::GlpkLpSolver(std::string const& name) : GlpkLpSolver(name, OptimizationDirection::Minimize) {
             // Intentionally left empty.
         }
         
-        GlpkLpSolver::GlpkLpSolver() : GlpkLpSolver("", ModelSense::Minimize) {
+        GlpkLpSolver::GlpkLpSolver() : GlpkLpSolver("", OptimizationDirection::Minimize) {
             // Intentionally left empty.
         }
         
-        GlpkLpSolver::GlpkLpSolver(ModelSense const& modelSense) : GlpkLpSolver("", modelSense) {
+        GlpkLpSolver::GlpkLpSolver(OptimizationDirection const& optDir) : GlpkLpSolver("", optDir) {
             // Intentionally left empty.
         }
         
@@ -191,7 +191,7 @@ namespace storm {
             this->isUnboundedFlag = false;
             
             // Start by setting the model sense.
-            glp_set_obj_dir(this->lp, this->getModelSense() == LpSolver::ModelSense::Minimize ? GLP_MIN : GLP_MAX);
+            glp_set_obj_dir(this->lp, this->getOptimizationDirection() == OptimizationDirection::Minimize ? GLP_MIN : GLP_MAX);
             
             glp_load_matrix(this->lp, rowIndices.size() - 1, rowIndices.data(), columnIndices.data(), coefficientValues.data());
             

@@ -14,11 +14,12 @@ extern log4cplus::Logger logger;
 #define STORM_LOG_DEBUG(message)                \
 {                                               \
     LOG4CPLUS_DEBUG(logger, message);           \
-} while (false)
+} while (false)                                 \
+
 #define STORM_LOG_TRACE(message)                \
 {                                               \
     LOG4CPLUS_TRACE(logger, message);           \
-} while (false)
+} while (false)                                 \
 
 // Define STORM_LOG_ASSERT which is only checked when NDEBUG is not set.
 #ifndef NDEBUG
@@ -28,7 +29,8 @@ if (!(cond)) {                                  \
 LOG4CPLUS_ERROR(logger, message);               \
 assert(cond);                                   \
 }                                               \
-} while (false)
+} while (false)                                 \
+
 #else
 #define STORM_LOG_ASSERT(cond, message)         
 #endif
@@ -39,44 +41,45 @@ assert(cond);                                   \
         LOG4CPLUS_ERROR(logger, message);       \
         throw exception() << message;           \
     }                                           \
-} while (false)
+} while (false)                                 \
+
 
 // Define STORM_LOG_WARN, STORM_LOG_ERROR and STORM_LOG_INFO to log the given message with the corresponding log levels.
 #define STORM_LOG_WARN(message)                 \
 {                                               \
     LOG4CPLUS_WARN(logger, message);            \
-} while (false)
+} while (false)                                 \
 
 #define STORM_LOG_WARN_COND(cond, message)      \
 {                                               \
     if (!(cond)) {                              \
         LOG4CPLUS_WARN(logger, message);        \
     }                                           \
-} while (false)
+} while (false)                                 \
 
 #define STORM_LOG_INFO(message)                 \
 {                                               \
     LOG4CPLUS_INFO(logger, message);            \
-} while (false)
+} while (false)                                 \
 
 #define STORM_LOG_INFO_COND(cond, message)      \
 {                                               \
     if (!(cond)) {                              \
         LOG4CPLUS_INFO(logger, message);        \
     }                                           \
-} while (false)
+} while (false)                                 \
 
 #define STORM_LOG_ERROR(message)                \
 {                                               \
     LOG4CPLUS_ERROR(logger, message);           \
-} while (false)
+} while (false)                                 \
 
 #define STORM_LOG_ERROR_COND(cond, message)     \
 {                                               \
     if (!(cond)) {                              \
         LOG4CPLUS_ERROR(logger, message);       \
     }                                           \
-} while (false)
+} while (false)                                 \
 
 /*!
  * Define the macros that print information and optionally also log it.

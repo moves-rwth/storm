@@ -57,7 +57,7 @@ namespace storm {
                  * and which ones need to be ignored.
                  * @return A restricted version of the current MDP that only uses choice labels from the given set.
                  */
-                Mdp<ValueType> restrictChoiceLabels(LabelSet const& enabledChoiceLabels) const;
+                Mdp<ValueType, RewardModelType> restrictChoiceLabels(LabelSet const& enabledChoiceLabels) const;
                 
                 /*!
                  * Constructs an MDP by copying the current MDP and restricting the choices of each state to the ones given by the bitvector.
@@ -65,7 +65,7 @@ namespace storm {
                  * @param enabledActions A BitVector of lenght numberOfChoices(), which is one iff the action should be kept.
                  * @return A subMDP.
                  */
-                Mdp<ValueType> restrictActions(storm::storage::BitVector const& enabledActions) const;
+                Mdp<ValueType, RewardModelType> restrictActions(storm::storage::BitVector const& enabledActions) const;
             };
             
         } // namespace sparse

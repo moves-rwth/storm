@@ -2,7 +2,7 @@
 
 namespace storm {
     namespace logic {
-        OperatorFormula::OperatorFormula(boost::optional<OptimalityType> optimalityType, boost::optional<ComparisonType> comparisonType, boost::optional<double> bound, std::shared_ptr<Formula const> const& subformula) : UnaryStateFormula(subformula), comparisonType(comparisonType), bound(bound), optimalityType(optimalityType) {
+        OperatorFormula::OperatorFormula(boost::optional<OptimizationDirection> optimalityType, boost::optional<ComparisonType> comparisonType, boost::optional<double> bound, std::shared_ptr<Formula const> const& subformula) : UnaryStateFormula(subformula), comparisonType(comparisonType), bound(bound), optimalityType(optimalityType) {
             // Intentionally left empty.
         }
         
@@ -22,13 +22,13 @@ namespace storm {
             return static_cast<bool>(optimalityType);
         }
         
-        OptimalityType const& OperatorFormula::getOptimalityType() const {
+        OptimizationDirection const& OperatorFormula::getOptimalityType() const {
             return optimalityType.get();
         }
         
         std::ostream& OperatorFormula::writeToStream(std::ostream& out) const {
             if (hasOptimalityType()) {
-                out << getOptimalityType();
+                out << (getOptimalityType() == OptimizationDirection::Minimize ? "min" : "max");
             }
             if (hasBound()) {
                 out << getComparisonType() << getBound();

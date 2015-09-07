@@ -33,6 +33,7 @@ namespace storm {
             const std::string GeneralSettings::propertyOptionShortName = "prop";
             const std::string GeneralSettings::transitionRewardsOptionName = "transrew";
             const std::string GeneralSettings::stateRewardsOptionName = "staterew";
+            const std::string GeneralSettings::choiceLabelingOptionName = "choicelab";
             const std::string GeneralSettings::counterexampleOptionName = "counterexample";
             const std::string GeneralSettings::counterexampleOptionShortName = "cex";
             const std::string GeneralSettings::dontFixDeadlockOptionName = "nofixdl";
@@ -85,6 +86,8 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The file from which to read the transition rewards.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, stateRewardsOptionName, false, "If given, the state rewards are read from this file and added to the explicit model. Note that this requires the model to be given as an explicit model (i.e., via --" + explicitOptionName + ").")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The file from which to read the state rewards.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, choiceLabelingOptionName, false, "If given, the choice labels are read from this file and added to the explicit model. Note that this requires the model to be given as an explicit model (i.e., via --" + explicitOptionName + ").")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The file from which to read the choice labels.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, dontFixDeadlockOptionName, false, "If the model contains deadlock states, they need to be fixed by setting this option.").setShortName(dontFixDeadlockOptionShortName).build());
                 
                 std::vector<std::string> engines = {"sparse", "hybrid", "dd"};
@@ -195,6 +198,14 @@ namespace storm {
             
             std::string GeneralSettings::getStateRewardsFilename() const {
                 return this->getOption(stateRewardsOptionName).getArgumentByName("filename").getValueAsString();
+            }
+            
+            bool GeneralSettings::isChoiceLabelingSet() const {
+                return this->getOption(choiceLabelingOptionName).getHasOptionBeenSet();
+            }
+                
+            std::string GeneralSettings::getChoiceLabelingFilename() const {
+                return this->getOption(choiceLabelingOptionName).getArgumentByName("filename").getValueAsString();
             }
             
             bool GeneralSettings::isCounterexampleSet() const {

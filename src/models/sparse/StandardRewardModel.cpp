@@ -198,6 +198,11 @@ namespace storm {
             }
             
             template<typename ValueType>
+            void StandardRewardModel<ValueType>::setStateActionRewardValue(uint_fast64_t row, ValueType const& value) {
+                this->optionalStateActionRewardVector.get()[row] = value;
+            }
+            
+            template<typename ValueType>
             bool StandardRewardModel<ValueType>::empty() const {
                 return !(static_cast<bool>(this->optionalStateRewardVector) || static_cast<bool>(this->optionalStateActionRewardVector) || static_cast<bool>(this->optionalTransitionRewardMatrix));
             }

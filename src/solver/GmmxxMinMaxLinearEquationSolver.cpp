@@ -30,7 +30,7 @@ namespace storm {
 
         
         template<typename ValueType>
-        void GmmxxMinMaxLinearEquationSolver<ValueType>::solveEquationSystem(bool minimize, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const {
+        void GmmxxMinMaxLinearEquationSolver<ValueType>::solveEquationSystem(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const {
 			if (this->useValueIteration) {
 				// Set up the environment for the power method. If scratch memory was not provided, we need to create it.
 				bool multiplyResultMemoryProvided = true;
@@ -59,7 +59,7 @@ namespace storm {
 					gmm::add(b, *multiplyResult);
 
 					// Reduce the vector x by applying min/max over all nondeterministic choices.
-					storm::utility::vector::reduceVectorMinOrMax(minimize, *multiplyResult, *newX, rowGroupIndices);
+					storm::utility::vector::reduceVectorMinOrMax(dir, *multiplyResult, *newX, rowGroupIndices);
 					
 					// Determine whether the method converged.
 					converged = storm::utility::vector::equalModuloPrecision(*currentX, *newX, this->precision, this->relative);
@@ -139,7 +139,7 @@ namespace storm {
 
 					// Reduce the vector x by applying min/max over all nondeterministic choices.
 					// Here, we capture which choice was taken in each state, thereby refining our initial guess.
-					storm::utility::vector::reduceVectorMinOrMax(minimize, *multiplyResult, *newX, rowGroupIndices, &(this->policy));
+					storm::utility::vector::reduceVectorMinOrMax(dir, *multiplyResult, *newX, rowGroupIndices, &(this->policy));
 					
 
 					// Determine whether the method converged.
@@ -174,7 +174,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void GmmxxMinMaxLinearEquationSolver<ValueType>::performMatrixVectorMultiplication(bool minimize, std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n, std::vector<ValueType>* multiplyResult) const {
+        void GmmxxMinMaxLinearEquationSolver<ValueType>::performMatrixVectorMultiplication(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n, std::vector<ValueType>* multiplyResult) const {
             bool multiplyResultMemoryProvided = true;
             if (multiplyResult == nullptr) {
                 multiplyResult = new std::vector<ValueType>(gmmxxMatrix->nr);
@@ -189,7 +189,7 @@ namespace storm {
                     gmm::add(*b, *multiplyResult);
                 }
                 
-                storm::utility::vector::reduceVectorMinOrMax(minimize, *multiplyResult, x, rowGroupIndices);
+                storm::utility::vector::reduceVectorMinOrMax(dir, *multiplyResult, x, rowGroupIndices);
                 
             }
             
