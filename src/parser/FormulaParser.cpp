@@ -184,13 +184,13 @@ namespace storm {
             return *this;
         }
         
-        std::shared_ptr<storm::logic::Formula> FormulaParser::parseSingleFormulaFromString(std::string const& formulaString) {
+        std::shared_ptr<storm::logic::Formula> FormulaParser::parseSingleFormulaFromString(std::string const& formulaString) const {
             std::vector<std::shared_ptr<storm::logic::Formula>> formulas = parseFromString(formulaString);
             STORM_LOG_THROW(formulas.size() == 1, storm::exceptions::WrongFormatException, "Expected exactly one formula, but found " << formulas.size() << " instead.");
             return formulas.front();
         }
         
-        std::vector<std::shared_ptr<storm::logic::Formula>> FormulaParser::parseFromFile(std::string const& filename) {
+        std::vector<std::shared_ptr<storm::logic::Formula>> FormulaParser::parseFromFile(std::string const& filename) const {
             // Open file and initialize result.
             std::ifstream inputFileStream(filename, std::ios::in);
             STORM_LOG_THROW(inputFileStream.good(), storm::exceptions::WrongFormatException, "Unable to read from file '" << filename << "'.");
@@ -212,7 +212,7 @@ namespace storm {
             return formulas;
         }
         
-        std::vector<std::shared_ptr<storm::logic::Formula>> FormulaParser::parseFromString(std::string const& formulaString) {
+        std::vector<std::shared_ptr<storm::logic::Formula>> FormulaParser::parseFromString(std::string const& formulaString) const {
             PositionIteratorType first(formulaString.begin());
             PositionIteratorType iter = first;
             PositionIteratorType last(formulaString.end());

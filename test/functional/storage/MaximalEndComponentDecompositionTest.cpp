@@ -6,7 +6,7 @@
 #include "src/models/sparse/StandardRewardModel.h"
 
 TEST(MaximalEndComponentDecomposition, FullSystem1) {
-    std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/ma/tiny/tiny1.tra", STORM_CPP_BASE_PATH "/examples/ma/tiny/tiny1.lab", "", "");
+    std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser<>::parseModel(STORM_CPP_BASE_PATH "/examples/ma/tiny/tiny1.tra", STORM_CPP_BASE_PATH "/examples/ma/tiny/tiny1.lab", "", "");
 
     std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> markovAutomaton = abstractModel->as<storm::models::sparse::MarkovAutomaton<double>>();
 
@@ -74,7 +74,7 @@ TEST(MaximalEndComponentDecomposition, FullSystem1) {
 }
 
 TEST(MaximalEndComponentDecomposition, FullSystem2) {
-	std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/ma/tiny/tiny2.tra", STORM_CPP_BASE_PATH "/examples/ma/tiny/tiny2.lab", "", "");
+	std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser<>::parseModel(STORM_CPP_BASE_PATH "/examples/ma/tiny/tiny2.tra", STORM_CPP_BASE_PATH "/examples/ma/tiny/tiny2.lab", "", "");
     
     std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> markovAutomaton = abstractModel->as<storm::models::sparse::MarkovAutomaton<double>>();
     
@@ -103,7 +103,7 @@ TEST(MaximalEndComponentDecomposition, FullSystem2) {
 }
 
 TEST(MaximalEndComponentDecomposition, Subsystem) {
-	std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/ma/tiny/tiny1.tra", STORM_CPP_BASE_PATH "/examples/ma/tiny/tiny1.lab", "", "");
+	std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser<>::parseModel(STORM_CPP_BASE_PATH "/examples/ma/tiny/tiny1.tra", STORM_CPP_BASE_PATH "/examples/ma/tiny/tiny1.lab", "", "");
     
     std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> markovAutomaton = abstractModel->as<storm::models::sparse::MarkovAutomaton<double>>();
     

@@ -25,7 +25,7 @@ option(STORM_USE_COTIRE "Sets whether Cotire should be used (for building precom
 option(LINK_LIBCXXABI "Sets whether libc++abi should be linked." OFF)
 option(USE_LIBCXX "Sets whether the standard library is libc++." OFF)
 option(USE_CARL "Sets whether carl should be included." ON)
-option(FORCE_COLOR "Force color output" ON)
+option(FORCE_COLOR "Force color output" OFF)
 option(STORM_PYTHON "Builds the API for Python" OFF)
 set(GUROBI_ROOT "" CACHE STRING "A hint to the root directory of Gurobi (optional).")
 set(Z3_ROOT "" CACHE STRING "A hint to the root directory of Z3 (optional).")
