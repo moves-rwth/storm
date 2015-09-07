@@ -1,9 +1,19 @@
 #ifndef STORM_SOLVER_GAMESOLVER_H_
 #define STORM_SOLVER_GAMESOLVER_H_
 
+#include <vector>
+
 #include "src/solver/AbstractGameSolver.h"
+#include "src/solver/OptimizationDirection.h"
+
+#include "src/storage/sparse/StateType.h"
 
 namespace storm {
+    namespace storage {
+        template<typename ValueType>
+        class SparseMatrix;
+    }
+
     namespace solver {
         template<typename ValueType>
         class GameSolver : public AbstractGameSolver {
@@ -37,7 +47,7 @@ namespace storm {
              * @param b The vector to add after matrix-vector multiplication.
              * @return The solution vector in the for of the vector x.
              */
-            virtual void solveGame(OptimizationDirection player1Goal, OptimizationDirection player2Goal, std::vector<ValueType>& x, storm::dd::Add<Type> const& b) const;
+            virtual void solveGame(OptimizationDirection player1Goal, OptimizationDirection player2Goal, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
 
         private:
             // The matrix defining the choices of player 1.
