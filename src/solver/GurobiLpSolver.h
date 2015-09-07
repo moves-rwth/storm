@@ -31,7 +31,7 @@ namespace storm {
              * @param modelSense A value indicating whether the value of the objective function is to be minimized or
              * maximized.
              */
-            GurobiLpSolver(std::string const& name, ModelSense const& modelSense);
+            GurobiLpSolver(std::string const& name, OptimizationDirection const& optDir);
             
             /*!
              * Constructs a solver with the given name. By default the objective function is assumed to be minimized,
@@ -47,7 +47,7 @@ namespace storm {
              * @param modelSense A value indicating whether the value of the objective function is to be minimized or
              * maximized.
              */
-            GurobiLpSolver(ModelSense const& modelSense);
+            GurobiLpSolver(OptimizationDirection const& optDir);
             
             /*!
              * Constructs a solver without a name. By default the objective function is assumed to be minimized,

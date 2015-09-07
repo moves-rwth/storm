@@ -9,9 +9,9 @@ namespace storm {
         public:
             ExpectedTimeOperatorFormula(std::shared_ptr<Formula const> const& subformula);
             ExpectedTimeOperatorFormula(ComparisonType comparisonType, double bound, std::shared_ptr<Formula const> const& subformula);
-            ExpectedTimeOperatorFormula(OptimalityType optimalityType, ComparisonType comparisonType, double bound, std::shared_ptr<Formula const> const& subformula);
-            ExpectedTimeOperatorFormula(OptimalityType optimalityType, std::shared_ptr<Formula const> const& subformula);
-            ExpectedTimeOperatorFormula(boost::optional<OptimalityType> optimalityType, boost::optional<ComparisonType> comparisonType, boost::optional<double> bound, std::shared_ptr<Formula const> const& subformula);
+            ExpectedTimeOperatorFormula(OptimizationDirection optimalityType, ComparisonType comparisonType, double bound, std::shared_ptr<Formula const> const& subformula);
+            ExpectedTimeOperatorFormula(OptimizationDirection optimalityType, std::shared_ptr<Formula const> const& subformula);
+            ExpectedTimeOperatorFormula(boost::optional<OptimizationDirection> optimalityType, boost::optional<ComparisonType> comparisonType, boost::optional<double> bound, std::shared_ptr<Formula const> const& subformula);
             
             virtual ~ExpectedTimeOperatorFormula() {
                 // Intentionally left empty.

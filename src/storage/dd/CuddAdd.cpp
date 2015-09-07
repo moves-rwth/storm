@@ -753,8 +753,7 @@ namespace storm {
             // Create the explicit vector we need to fill later.
             std::vector<double> explicitVector(rowGroupIndices.back());
             
-            // Next, we split the matrix into one for each group. This only works if the group variables are at the very
-            // top.
+            // Next, we split the matrix into one for each group. This only works if the group variables are at the very top.
             std::vector<std::pair<Add<DdType::CUDD>, Add<DdType::CUDD>>> groups;
             splitGroupsRec(this->getCuddDdNode(), vector.getCuddDdNode(), groups, ddGroupVariableIndices, 0, ddGroupVariableIndices.size(), rowAndColumnMetaVariables, rowMetaVariables);
             
@@ -1040,10 +1039,10 @@ namespace storm {
                 
                 // Finally, delete the names.
                 for (char* element : ddNames) {
-                    delete element;
+                    delete[] element;
                 }
                 for (char* element : ddVariableNames) {
-                    delete element;
+                    delete[] element;
                 }
             }
         }

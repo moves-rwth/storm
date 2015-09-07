@@ -25,24 +25,21 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Prob) {
     std::string const& programFile = STORM_CPP_BASE_PATH "/examples/pdtmc/brp/brp_16_2.pm";
     std::string const& formulaAsString = "P<=0.85 [F \"target\" ]";
     std::string const& constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
-    bool const buildRewards = false;
-    std::string const& rewardModelName = "";
     
     //Build model, formula, region model checker
     boost::optional<storm::prism::Program> program=storm::parser::PrismParser::parse(programFile).simplify().simplify();
     program->checkValidity();
     storm::parser::FormulaParser formulaParser(program.get().getManager().getSharedPointer());
-    boost::optional<std::shared_ptr<storm::logic::Formula>> formula = formulaParser.parseFromString(formulaAsString);
-    typename storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options options=storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options(*formula.get());
+    std::vector<std::shared_ptr<storm::logic::Formula>> formulas = formulaParser.parseFromString(formulaAsString);
+    typename storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options options=storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options(*formulas[0]);
     options.addConstantDefinitionsFromString(program.get(), constantsAsString); 
-    options.buildRewards = buildRewards;
-    if (buildRewards) options.rewardModelName = rewardModelName;
+    options.preserveFormula(*formulas[0]);
     std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::translateProgram(program.get(), options)->as<storm::models::sparse::Model<storm::RationalFunction>>();
     ASSERT_EQ(storm::models::ModelType::Dtmc, model->getType());
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double> modelchecker(*dtmc);
-    ASSERT_TRUE(modelchecker.canHandle(*formula.get()));
-    modelchecker.specifyFormula(formula.get());
+    ASSERT_TRUE(modelchecker.canHandle(*formulas[0]));
+    modelchecker.specifyFormula(formulas[0]);
     
     //start testing
     auto allSatRegion=storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion::parseRegion("0.7<=pL<=0.9,0.75<=pK<=0.95");
@@ -97,24 +94,21 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew) {
     std::string const& programFile = STORM_CPP_BASE_PATH "/examples/pdtmc/brp_rewards/brp_16_2.pm";
     std::string const& formulaAsString = "R>2.5 [F \"target\" ]";
     std::string const& constantsAsString = "pL=0.9,TOAck=0.5";
-    bool const buildRewards = true;
-    std::string const& rewardModelName = "";
     
     //Build model, formula, region model checker
     boost::optional<storm::prism::Program> program=storm::parser::PrismParser::parse(programFile).simplify().simplify();
     program->checkValidity();
     storm::parser::FormulaParser formulaParser(program.get().getManager().getSharedPointer());
-    boost::optional<std::shared_ptr<storm::logic::Formula>> formula = formulaParser.parseFromString(formulaAsString);
-    typename storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options options=storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options(*formula.get());
+    std::vector<std::shared_ptr<storm::logic::Formula>> formulas = formulaParser.parseFromString(formulaAsString);
+    typename storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options options=storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options(*formulas[0]);
     options.addConstantDefinitionsFromString(program.get(), constantsAsString); 
-    options.buildRewards = buildRewards;
-    if (buildRewards) options.rewardModelName = rewardModelName;
+    options.preserveFormula(*formulas[0]);
     std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::translateProgram(program.get(), options)->as<storm::models::sparse::Model<storm::RationalFunction>>();
     ASSERT_EQ(storm::models::ModelType::Dtmc, model->getType());
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double> modelchecker(*dtmc);
-    ASSERT_TRUE(modelchecker.canHandle(*formula.get()));
-    modelchecker.specifyFormula(formula.get());
+    ASSERT_TRUE(modelchecker.canHandle(*formulas[0]));
+    modelchecker.specifyFormula(formulas[0]);
     
     //start testing
     auto allSatRegion=storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion::parseRegion("0.7<=pK<=0.875,0.75<=TOMsg<=0.95");
@@ -193,24 +187,21 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew_4Par) {
     std::string const& programFile = STORM_CPP_BASE_PATH "/examples/pdtmc/brp_rewards/brp_16_2.pm";
     std::string const& formulaAsString = "R>2.5 [F \"target\" ]";
     std::string const& constantsAsString = ""; //!! this model will have 4 parameters
-    bool const buildRewards = true;
-    std::string const& rewardModelName = "";
     
     //Build model, formula, region model checker
     boost::optional<storm::prism::Program> program=storm::parser::PrismParser::parse(programFile).simplify().simplify();
     program->checkValidity();
     storm::parser::FormulaParser formulaParser(program.get().getManager().getSharedPointer());
-    boost::optional<std::shared_ptr<storm::logic::Formula>> formula = formulaParser.parseFromString(formulaAsString);
-    typename storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options options=storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options(*formula.get());
+    std::vector<std::shared_ptr<storm::logic::Formula>> formulas = formulaParser.parseFromString(formulaAsString);
+    typename storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options options=storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options(*formulas[0]);
     options.addConstantDefinitionsFromString(program.get(), constantsAsString); 
-    options.buildRewards = buildRewards;
-    if (buildRewards) options.rewardModelName = rewardModelName;
+    options.preserveFormula(*formulas[0]);
     std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::translateProgram(program.get(), options)->as<storm::models::sparse::Model<storm::RationalFunction>>();
     ASSERT_EQ(storm::models::ModelType::Dtmc, model->getType());
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double> modelchecker(*dtmc);
-    ASSERT_TRUE(modelchecker.canHandle(*formula.get()));
-    modelchecker.specifyFormula(formula.get());
+    ASSERT_TRUE(modelchecker.canHandle(*formulas[0]));
+    modelchecker.specifyFormula(formulas[0]);
     
     //start testing
     auto allSatRegion=storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion::parseRegion("0.7<=pK<=0.9,0.6<=pL<=0.85,0.9<=TOMsg<=0.95,0.85<=TOAck<=0.9");
@@ -259,24 +250,21 @@ TEST(SparseDtmcRegionModelCheckerTest, Crowds_Prob) {
     std::string const& programFile = STORM_CPP_BASE_PATH "/examples/pdtmc/crowds/crowds_3-5.pm";
     std::string const& formulaAsString = "P<0.5 [F \"observe0Greater1\" ]";
     std::string const& constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
-    bool const buildRewards = false;
-    std::string const& rewardModelName = "";
     
     //Build model, formula, region model checker
     boost::optional<storm::prism::Program> program=storm::parser::PrismParser::parse(programFile).simplify().simplify();
     program->checkValidity();
     storm::parser::FormulaParser formulaParser(program.get().getManager().getSharedPointer());
-    boost::optional<std::shared_ptr<storm::logic::Formula>> formula = formulaParser.parseFromString(formulaAsString);
-    typename storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options options=storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options(*formula.get());
+    std::vector<std::shared_ptr<storm::logic::Formula>> formulas = formulaParser.parseFromString(formulaAsString);
+    typename storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options options=storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options(*formulas[0]);
     options.addConstantDefinitionsFromString(program.get(), constantsAsString); 
-    options.buildRewards = buildRewards;
-    if (buildRewards) options.rewardModelName = rewardModelName;
+    options.preserveFormula(*formulas[0]);
     std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::translateProgram(program.get(), options)->as<storm::models::sparse::Model<storm::RationalFunction>>();
     ASSERT_EQ(storm::models::ModelType::Dtmc, model->getType());
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double> modelchecker(*dtmc);
-    ASSERT_TRUE(modelchecker.canHandle(*formula.get()));
-    modelchecker.specifyFormula(formula.get());
+    ASSERT_TRUE(modelchecker.canHandle(*formulas[0]));
+    modelchecker.specifyFormula(formulas[0]);
     
     //start testing
     auto allSatRegion=storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion::parseRegion("0.1<=PF<=0.75,0.15<=badC<=0.2");
@@ -350,24 +338,21 @@ TEST(SparseDtmcRegionModelCheckerTest, Crowds_Prob_1Par) {
     std::string const& programFile = STORM_CPP_BASE_PATH "/examples/pdtmc/crowds/crowds_3-5.pm";
     std::string const& formulaAsString = "P>0.75 [F \"observe0Greater1\" ]";
     std::string const& constantsAsString = "badC=0.3"; //e.g. pL=0.9,TOACK=0.5
-    bool const buildRewards = false;
-    std::string const& rewardModelName = "";
     
     //Build model, formula, region model checker
     boost::optional<storm::prism::Program> program=storm::parser::PrismParser::parse(programFile).simplify().simplify();
     program->checkValidity();
     storm::parser::FormulaParser formulaParser(program.get().getManager().getSharedPointer());
-    boost::optional<std::shared_ptr<storm::logic::Formula>> formula = formulaParser.parseFromString(formulaAsString);
-    typename storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options options=storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options(*formula.get());
+    std::vector<std::shared_ptr<storm::logic::Formula>> formulas = formulaParser.parseFromString(formulaAsString);
+    typename storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options options=storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options(*formulas[0]);
     options.addConstantDefinitionsFromString(program.get(), constantsAsString); 
-    options.buildRewards = buildRewards;
-    if (buildRewards) options.rewardModelName = rewardModelName;
+    options.preserveFormula(*formulas[0]);
     std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::translateProgram(program.get(), options)->as<storm::models::sparse::Model<storm::RationalFunction>>();
     ASSERT_EQ(storm::models::ModelType::Dtmc, model->getType());
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double> modelchecker(*dtmc);
-    ASSERT_TRUE(modelchecker.canHandle(*formula.get()));
-    modelchecker.specifyFormula(formula.get());
+    ASSERT_TRUE(modelchecker.canHandle(*formulas[0]));
+    modelchecker.specifyFormula(formulas[0]);
     
     //start testing
     auto allSatRegion=storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion::parseRegion("0.9<=PF<=0.99");
@@ -418,24 +403,21 @@ TEST(SparseDtmcRegionModelCheckerTest, Crowds_Prob_Const) {
     std::string const& programFile = STORM_CPP_BASE_PATH "/examples/pdtmc/crowds/crowds_3-5.pm";
     std::string const& formulaAsString = "P>0.6 [F \"observe0Greater1\" ]";
     std::string const& constantsAsString = "PF=0.9,badC=0.2";
-    bool const buildRewards = false;
-    std::string const& rewardModelName = "";
     
     //Build model, formula, region model checker
     boost::optional<storm::prism::Program> program=storm::parser::PrismParser::parse(programFile).simplify().simplify();
     program->checkValidity();
     storm::parser::FormulaParser formulaParser(program.get().getManager().getSharedPointer());
-    boost::optional<std::shared_ptr<storm::logic::Formula>> formula = formulaParser.parseFromString(formulaAsString);
-    typename storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options options=storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options(*formula.get());
+    std::vector<std::shared_ptr<storm::logic::Formula>> formulas = formulaParser.parseFromString(formulaAsString);
+    typename storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options options=storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options(*formulas[0]);
     options.addConstantDefinitionsFromString(program.get(), constantsAsString); 
-    options.buildRewards = buildRewards;
-    if (buildRewards) options.rewardModelName = rewardModelName;
+    options.preserveFormula(*formulas[0]);
     std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::translateProgram(program.get(), options)->as<storm::models::sparse::Model<storm::RationalFunction>>();
     ASSERT_EQ(storm::models::ModelType::Dtmc, model->getType());
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double> modelchecker(*dtmc);
-    ASSERT_TRUE(modelchecker.canHandle(*formula.get()));
-    modelchecker.specifyFormula(formula.get());
+    ASSERT_TRUE(modelchecker.canHandle(*formulas[0]));
+    modelchecker.specifyFormula(formulas[0]);
     
     //start testing
     auto allSatRegion=storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion::parseRegion("");

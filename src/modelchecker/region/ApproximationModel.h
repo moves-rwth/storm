@@ -48,7 +48,7 @@ namespace storm {
              * Undefined behavior if model has not been instantiated first!
              * @param optimalityType Use MAXIMIZE to get upper bounds or MINIMIZE to get lower bounds
              */
-            std::vector<ConstantType> const& computeValues(storm::logic::OptimalityType const& optimalityType);
+            std::vector<ConstantType> const& computeValues(storm::solver::OptimizationDirection const& optDir);
 
                 
         private:
@@ -92,11 +92,6 @@ namespace storm {
             std::shared_ptr<storm::logic::Formula> formula;
             //A flag that denotes whether we compute probabilities or rewards
             bool computeRewards;
-            
-            // comparators that can be used to compare constants.
-            storm::utility::ConstantsComparator<ParametricType> parametricTypeComparator;
-            storm::utility::ConstantsComparator<ConstantType> constantTypeComparator;
-                    
         };
     }
 }

@@ -27,7 +27,10 @@ option(STORM_USE_INTELTBB "Sets whether the Intel TBB libraries should be used."
 option(STORM_USE_COTIRE "Sets whether Cotire should be used (for building precompiled headers)." OFF)
 option(LINK_LIBCXXABI "Sets whether libc++abi should be linked." OFF)
 option(USE_LIBCXX "Sets whether the standard library is libc++." OFF)
-set(GUROBI_ROOT "" CACHE STRING "The root directory of Gurobi (if available).")
+option(USE_CARL "Sets whether carl should be included." ON)
+option(FORCE_COLOR "Force color output" OFF)
+set(GUROBI_ROOT "" CACHE STRING "A hint to the root directory of Gurobi (optional).")
+set(Z3_ROOT "" CACHE STRING "A hint to the root directory of Z3 (optional).")
 set(CUDA_ROOT "" CACHE STRING "The root directory of CUDA.")
 set(MSAT_ROOT "" CACHE STRING "The root directory of MathSAT (if available).")
 set(ADDITIONAL_INCLUDE_DIRS "" CACHE STRING "Additional directories added to the include directories.")
@@ -89,15 +92,18 @@ else()
     set(ENABLE_MSAT ON)
 endif()
 
-find_package(carl QUIET)
-if(carl_FOUND)
-    set(STORM_HAVE_CARL ON)
+if(USE_CARL)
+    find_package(carl QUIET)
+    if(carl_FOUND)
+     set(STORM_HAVE_CARL ON)
+    endif()
+
+    find_package(smtrat QUIET)
+    if(smtrat_FOUND)
+        set(STORM_HAVE_SMTRAT ON)
+    endif()
 endif()
 
-find_package(smtrat QUIET)
-if(smtrat_FOUND)
-    set(STORM_HAVE_SMTRAT ON)
-endif()
 
 message(STATUS "StoRM - CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 message(STATUS "StoRM - CMAKE_BUILD_TYPE (ENV): $ENV{CMAKE_BUILD_TYPE}")
@@ -116,7 +122,7 @@ if(CMAKE_COMPILER_IS_GNUCC)
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -funroll-loops")
     set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -funroll-loops")
     add_definitions(-DBOOST_RESULT_OF_USE_DECLTYPE)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -pedantic -Wno-deprecated-declarations -Wno-unused-local-typedefs")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wall -pedantic -Wno-deprecated-declarations -Wno-unused-local-typedefs")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -pedantic -Wno-deprecated-declarations")
 
     # Turn on popcnt instruction if desired (yes by default)
@@ -148,7 +154,7 @@ else(CLANG)
 	# As CLANG is not set as a variable, we need to set it in case we have not matched another compiler.
 	set (CLANG ON)
     # Set standard flags for clang
-    set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -funroll-loops -O4")
+    set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -funroll-loops -O3")
     if(UNIX AND NOT APPLE AND NOT USE_LIBCXX)
 		set(CLANG_STDLIB libstdc++)
 		message(STATUS "StoRM - Linking against libstdc++")
@@ -163,8 +169,12 @@ else(CLANG)
     endif()
     
     add_definitions(-DBOOST_RESULT_OF_USE_DECLTYPE)
-    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -stdlib=${CLANG_STDLIB} -Wall -pedantic -Wno-newline-eof -Wno-mismatched-tags -ftemplate-depth=1024")
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -stdlib=${CLANG_STDLIB} -Wall -pedantic -Wno-newline-eof -Wno-mismatched-tags -ftemplate-depth=1024")
     set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -pedantic")
+
+    if(FORCE_COLOR)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fcolor-diagnostics")
+    endif()
 
     # Turn on popcnt instruction if desired (yes by default)
     if (STORM_USE_POPCNT)
@@ -243,8 +253,10 @@ configure_file (
 # Configure a header file to pass the storm version to the source code
 configure_file (
 	"${PROJECT_SOURCE_DIR}/storm-version.cpp.in"
-	"${PROJECT_SOURCE_DIR}/src/utility/storm-version.cpp"
+	"${PROJECT_BINARY_DIR}/src/utility/storm-version.cpp"
 )
+
+set(STORM_GENERATED_SOURCES "${PROJECT_BINARY_DIR}/src/utility/storm-version.cpp") 
 
 # Add the binary dir include directory for storm-config.h
 include_directories("${PROJECT_BINARY_DIR}/include")
@@ -369,16 +381,20 @@ endif()
 ##
 #############################################################
 file(GLOB_RECURSE STORM_HEADERS ${PROJECT_SOURCE_DIR}/src/*.h)
+file(GLOB_RECURSE STORM_HEADERS_CLI ${PROJECT_SOURCE_DIR}/src/cli/*.h)
 file(GLOB_RECURSE STORM_SOURCES_WITHOUT_MAIN ${PROJECT_SOURCE_DIR}/src/*/*.cpp)
+file(GLOB_RECURSE STORM_SOURCES_CLI ${PROJECT_SOURCE_DIR}/src/cli/*.cpp)
 file(GLOB_RECURSE STORM_MAIN_FILE ${PROJECT_SOURCE_DIR}/src/storm.cpp)
-set(STORM_SOURCES "${STORM_SOURCES_WITHOUT_MAIN};${STORM_MAIN_FILE};")
 file(GLOB_RECURSE STORM_ADAPTERS_FILES ${PROJECT_SOURCE_DIR}/src/adapters/*.h ${PROJECT_SOURCE_DIR}/src/adapters/*.cpp)
 file(GLOB_RECURSE STORM_BUILDER_FILES ${PROJECT_SOURCE_DIR}/src/builder/*.h ${PROJECT_SOURCE_DIR}/src/builder/*.cpp)
+file(GLOB_RECURSE STORM_CLI_FILES ${PROJECT_SOURCE_DIR}/src/cli/*.h ${PROJECT_SOURCE_DIR}/src/cli/*.cpp)
 file(GLOB_RECURSE STORM_EXCEPTIONS_FILES ${PROJECT_SOURCE_DIR}/src/exceptions/*.h ${PROJECT_SOURCE_DIR}/src/exceptions/*.cpp)
 file(GLOB_RECURSE STORM_LOGIC_FILES ${PROJECT_SOURCE_DIR}/src/logic/*.h ${PROJECT_SOURCE_DIR}/src/logic/*.cpp)
 file(GLOB STORM_MODELCHECKER_FILES ${PROJECT_SOURCE_DIR}/src/modelchecker/*.h ${PROJECT_SOURCE_DIR}/src/modelchecker/*.cpp)
-file(GLOB_RECURSE STORM_MODELCHECKER_PRCTL_FILES ${PROJECT_SOURCE_DIR}/src/modelchecker/prctl/*.h ${PROJECT_SOURCE_DIR}/src/modelchecker/prctl/*.cpp)
-file(GLOB_RECURSE STORM_MODELCHECKER_CSL_FILES ${PROJECT_SOURCE_DIR}/src/modelchecker/csl/*.h ${PROJECT_SOURCE_DIR}/src/modelchecker/csl/*.cpp)
+file(GLOB STORM_MODELCHECKER_PRCTL_FILES ${PROJECT_SOURCE_DIR}/src/modelchecker/prctl/*.h ${PROJECT_SOURCE_DIR}/src/modelchecker/prctl/*.cpp)
+file(GLOB_RECURSE STORM_MODELCHECKER_PRCTL_HELPER_FILES ${PROJECT_SOURCE_DIR}/src/modelchecker/prctl/helper/*.h ${PROJECT_SOURCE_DIR}/src/modelchecker/prctl/helper/*.cpp)
+file(GLOB STORM_MODELCHECKER_CSL_FILES ${PROJECT_SOURCE_DIR}/src/modelchecker/csl/*.h ${PROJECT_SOURCE_DIR}/src/modelchecker/csl/*.cpp)
+file(GLOB_RECURSE STORM_MODELCHECKER_CSL_HELPER_FILES ${PROJECT_SOURCE_DIR}/src/modelchecker/csl/helper/*.h ${PROJECT_SOURCE_DIR}/src/modelchecker/csl/helper/*.cpp)
 file(GLOB_RECURSE STORM_MODELCHECKER_REACHABILITY_FILES ${PROJECT_SOURCE_DIR}/src/modelchecker/reachability/*.h ${PROJECT_SOURCE_DIR}/src/modelchecker/reachability/*.cpp)
 file(GLOB_RECURSE STORM_MODELCHECKER_PROPOSITIONAL_FILES ${PROJECT_SOURCE_DIR}/src/modelchecker/propositional/*.h ${PROJECT_SOURCE_DIR}/src/modelchecker/propositional/*.cpp)
 file(GLOB_RECURSE STORM_MODELCHECKER_RESULTS_FILES ${PROJECT_SOURCE_DIR}/src/modelchecker/results/*.h ${PROJECT_SOURCE_DIR}/src/modelchecker/results/*.cpp)
@@ -407,16 +423,26 @@ file(GLOB_RECURSE STORM_PERFORMANCE_TEST_FILES ${STORM_CPP_TESTS_BASE_PATH}/perf
 # Additional include files like the storm-config.h
 file(GLOB_RECURSE STORM_BUILD_HEADERS ${PROJECT_BINARY_DIR}/include/*.h)
 
+set(STORM_LIB_SOURCES ${STORM_SOURCES_WITHOUT_MAIN})
+list(REMOVE_ITEM STORM_LIB_SOURCES ${STORM_SOURCES_CLI})
+set(STORM_LIB_HEADERS ${STORM_HEADERS})
+list(REMOVE_ITEM STORM_LIB_HEADERS ${STORM_HEADERS_CLI})
+set(STORM_MAIN_SOURCES ${STORM_SOURCES_CLI} ${STORM_MAIN_FILE})
+set(STORM_MAIN_HEADERS ${STORM_HEADERS_CLI})
+
 # Group the headers and sources
 source_group(main FILES ${STORM_MAIN_FILE})
 source_group(adapters FILES ${STORM_ADAPTERS_FILES})
 source_group(builder FILES ${STORM_BUILDER_FILES})
+source_group(cli FILES ${STORM_CLI_FILES})
 source_group(exceptions FILES ${STORM_EXCEPTIONS_FILES})
 source_group(logic FILES ${STORM_LOGIC_FILES})
 source_group(generated FILES ${STORM_BUILD_HEADERS} ${STORM_BUILD_SOURCES})
 source_group(modelchecker FILES ${STORM_MODELCHECKER_FILES})
 source_group(modelchecker\\prctl FILES ${STORM_MODELCHECKER_PRCTL_FILES})
+source_group(modelchecker\\prctl\\helper FILES ${STORM_MODELCHECKER_PRCTL_HELPER_FILES})
 source_group(modelchecker\\csl FILES ${STORM_MODELCHECKER_CSL_FILES})
+source_group(modelchecker\\csl\\helper FILES ${STORM_MODELCHECKER_CSL_HELPER_FILES})
 source_group(modelchecker\\reachability FILES ${STORM_MODELCHECKER_REACHABILITY_FILES})
 source_group(modelchecker\\propositional FILES ${STORM_MODELCHECKER_PROPOSITIONAL_FILES})
 source_group(modelchecker\\results FILES ${STORM_MODELCHECKER_RESULTS_FILES})
@@ -487,9 +513,9 @@ endif()
 ##  All link_directories() calls MUST be made before this point               #
 ##                                                                            #
 ###############################################################################
-add_library(storm ${STORM_SOURCES_WITHOUT_MAIN} ${STORM_HEADERS})
-add_executable(storm-main ${STORM_MAIN_FILE})
-target_link_libraries(storm-main storm)
+add_library(storm ${STORM_LIB_SOURCES} ${STORM_LIB_HEADERS} ${STORM_GENERATED_SOURCES}) # Adding headers for xcode
+add_executable(storm-main ${STORM_MAIN_SOURCES} ${STORM_MAIN_HEADERS})
+target_link_libraries(storm-main storm) # Adding headers for xcode
 set_target_properties(storm-main PROPERTIES OUTPUT_NAME "storm")
 add_executable(storm-functional-tests ${STORM_FUNCTIONAL_TEST_MAIN_FILE} ${STORM_FUNCTIONAL_TEST_FILES})
 target_link_libraries(storm-functional-tests storm)

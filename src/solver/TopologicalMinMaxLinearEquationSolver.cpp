@@ -27,19 +27,12 @@ namespace storm {
     namespace solver {
         
         template<typename ValueType>
-        TopologicalMinMaxLinearEquationSolver<ValueType>::TopologicalMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A) : NativeMinMaxLinearEquationSolver<ValueType>(A) {
+        TopologicalMinMaxLinearEquationSolver<ValueType>::TopologicalMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A) : 
+        NativeMinMaxLinearEquationSolver<ValueType>(A, storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision(), \
+                storm::settings::topologicalValueIterationEquationSolverSettings().getMaximalIterationCount(), MinMaxTechniqueSelection::ValueIteration, \
+                storm::settings::topologicalValueIterationEquationSolverSettings().getConvergenceCriterion() == storm::settings::modules::TopologicalValueIterationEquationSolverSettings::ConvergenceCriterion::Relative)
+        {
 			// Get the settings object to customize solving.
-			
-			//storm::settings::Settings* settings = storm::settings::Settings::getInstance();
-			auto settings = storm::settings::topologicalValueIterationEquationSolverSettings();
-			// Get appropriate settings.
-			//this->maximalNumberOfIterations = settings->getOptionByLongName("maxiter").getArgument(0).getValueAsUnsignedInteger();
-			//this->precision = settings->getOptionByLongName("precision").getArgument(0).getValueAsDouble();
-			//this->relative = !settings->isSet("absolute");
-			this->maximalNumberOfIterations = settings.getMaximalIterationCount();
-			this->precision = settings.getPrecision();
-			this->relative = (settings.getConvergenceCriterion() == storm::settings::modules::TopologicalValueIterationEquationSolverSettings::ConvergenceCriterion::Relative);
-
 			auto generalSettings = storm::settings::generalSettings();
 			this->enableCuda = generalSettings.isCudaSet();
 #ifdef STORM_HAVE_CUDA
@@ -48,12 +41,12 @@ namespace storm {
         }
         
         template<typename ValueType>
-		TopologicalMinMaxLinearEquationSolver<ValueType>::TopologicalMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, double precision, uint_fast64_t maximalNumberOfIterations, bool relative) : NativeMinMaxLinearEquationSolver<ValueType>(A, precision, maximalNumberOfIterations, relative) {
+		TopologicalMinMaxLinearEquationSolver<ValueType>::TopologicalMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, double precision, uint_fast64_t maximalNumberOfIterations, bool relative) : NativeMinMaxLinearEquationSolver<ValueType>(A, precision, maximalNumberOfIterations, MinMaxTechniqueSelection::ValueIteration ,relative) {
             // Intentionally left empty.
         }
         
         template<typename ValueType>
-		void TopologicalMinMaxLinearEquationSolver<ValueType>::solveEquationSystem(bool minimize, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const {
+		void TopologicalMinMaxLinearEquationSolver<ValueType>::solveEquationSystem(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const {
 			
 #ifdef GPU_USE_FLOAT
 #define __FORCE_FLOAT_CALCULATION true
@@ -69,7 +62,7 @@ namespace storm {
 				std::vector<float> new_x = storm::utility::vector::toValueType<float>(x);
 				std::vector<float> const new_b = storm::utility::vector::toValueType<float>(b);
 
-				newSolver.solveEquationSystem(minimize, new_x, new_b, nullptr, nullptr);
+				newSolver.solveEquationSystem(dir, new_x, new_b, nullptr, nullptr);
 
 				for (size_t i = 0, size = new_x.size(); i < size; ++i) {
 					x.at(i) = new_x.at(i);
@@ -109,7 +102,7 @@ namespace storm {
 
 				bool result = false;
 				size_t globalIterations = 0;
-				if (minimize) {
+				if (dir == OptimizationDirection::Minimize) {
 					result = __basicValueIteration_mvReduce_minimize<uint_fast64_t, ValueType>(this->maximalNumberOfIterations, this->precision, this->relative, A.rowIndications, A.columnsAndValues, x, b, nondeterministicChoiceIndices, globalIterations);
 				} else {
 					result = __basicValueIteration_mvReduce_maximize<uint_fast64_t, ValueType>(this->maximalNumberOfIterations, this->precision, this->relative, A.rowIndications, A.columnsAndValues, x, b, nondeterministicChoiceIndices, globalIterations);
@@ -211,7 +204,7 @@ namespace storm {
 
 						bool result = false;
 						localIterations = 0;
-						if (minimize) {
+						if (dir == OptimizationDirection::Minimum) {
 							result = __basicValueIteration_mvReduce_minimize<uint_fast64_t, ValueType>(this->maximalNumberOfIterations, this->precision, this->relative, sccSubmatrix.rowIndications, sccSubmatrix.columnsAndValues, *currentX, sccSubB, sccSubNondeterministicChoiceIndices, localIterations);
 						} else {
 							result = __basicValueIteration_mvReduce_maximize<uint_fast64_t, ValueType>(this->maximalNumberOfIterations, this->precision, this->relative, sccSubmatrix.rowIndications, sccSubmatrix.columnsAndValues, *currentX, sccSubB, sccSubNondeterministicChoiceIndices, localIterations);
@@ -256,12 +249,8 @@ namespace storm {
 							*/
 
 							// Reduce the vector x' by applying min/max for all non-deterministic choices.
-							if (minimize) {
-								storm::utility::vector::reduceVectorMin<ValueType>(sccMultiplyResult, *swap, sccSubNondeterministicChoiceIndices);
-							} else {
-								storm::utility::vector::reduceVectorMax<ValueType>(sccMultiplyResult, *swap, sccSubNondeterministicChoiceIndices);
-							}
-
+							storm::utility::vector::reduceVectorMinOrMax<ValueType>(dir,sccMultiplyResult, *swap, sccSubNondeterministicChoiceIndices);
+							
 							// Determine whether the method converged.
 							// TODO: It seems that the equalModuloPrecision call that compares all values should have a higher
 							// running time. In fact, it is faster. This has to be investigated.

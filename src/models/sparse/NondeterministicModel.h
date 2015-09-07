@@ -11,8 +11,8 @@ namespace storm {
             /*!
              * The base class of sparse nondeterministic models.
              */
-            template<class ValueType>
-            class NondeterministicModel: public Model<ValueType> {
+            template<class ValueType, typename RewardModelType = StandardRewardModel<ValueType>>
+            class NondeterministicModel: public Model<ValueType, RewardModelType> {
             public:
                 /*!
                  * Constructs a model from the given data.
@@ -20,15 +20,13 @@ namespace storm {
                  * @param modelType The type of the model.
                  * @param transitionMatrix The matrix representing the transitions in the model.
                  * @param stateLabeling The labeling of the states.
-                 * @param optionalStateRewardVector The reward values associated with the states.
-                 * @param optionalTransitionRewardMatrix The reward values associated with the transitions of the model.
+                 * @param rewardModels A mapping of reward model names to reward models.
                  * @param optionalChoiceLabeling A vector that represents the labels associated with the choices of each state.
                  */
                 NondeterministicModel(storm::models::ModelType const& modelType,
                                       storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                       storm::models::sparse::StateLabeling const& stateLabeling,
-                                      boost::optional<std::vector<ValueType>> const& optionalStateRewardVector = boost::optional<std::vector<ValueType>>(),
-                                      boost::optional<storm::storage::SparseMatrix<ValueType>> const& optionalTransitionRewardMatrix = boost::optional<storm::storage::SparseMatrix<ValueType>>(),
+                                      std::unordered_map<std::string, RewardModelType> const& rewardModels = std::unordered_map<std::string, RewardModelType>(),
                                       boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling = boost::optional<std::vector<LabelSet>>());
                 
                 /*!
@@ -37,23 +35,21 @@ namespace storm {
                  * @param modelType The type of the model.
                  * @param transitionMatrix The matrix representing the transitions in the model.
                  * @param stateLabeling The labeling of the states.
-                 * @param optionalStateRewardVector The reward values associated with the states.
-                 * @param optionalTransitionRewardMatrix The reward values associated with the transitions of the model.
+                 * @param rewardModels A mapping of reward model names to reward models.
                  * @param optionalChoiceLabeling A vector that represents the labels associated with the choices of each state.
                  */
                 NondeterministicModel(storm::models::ModelType const& modelType,
                                       storm::storage::SparseMatrix<ValueType>&& transitionMatrix,
                                       storm::models::sparse::StateLabeling&& stateLabeling,
-                                      boost::optional<std::vector<ValueType>>&& optionalStateRewardVector = boost::optional<std::vector<ValueType>>(),
-                                      boost::optional<storm::storage::SparseMatrix<ValueType>>&& optionalTransitionRewardMatrix = boost::optional<storm::storage::SparseMatrix<ValueType>>(),
+                                      std::unordered_map<std::string, RewardModelType>&& rewardModels = std::unordered_map<std::string, RewardModelType>(),
                                       boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling = boost::optional<std::vector<LabelSet>>());
                 
-                NondeterministicModel(NondeterministicModel const& other) = default;
-                NondeterministicModel& operator=(NondeterministicModel const& other) = default;
+                NondeterministicModel(NondeterministicModel<ValueType, RewardModelType> const& other) = default;
+                NondeterministicModel& operator=(NondeterministicModel<ValueType, RewardModelType> const& other) = default;
                 
 #ifndef WINDOWS
-                NondeterministicModel(NondeterministicModel&& other) = default;
-                NondeterministicModel& operator=(NondeterministicModel&& other) = default;
+                NondeterministicModel(NondeterministicModel<ValueType, RewardModelType>&& other) = default;
+                NondeterministicModel& operator=(NondeterministicModel<ValueType, RewardModelType>&& other) = default;
 #endif
                 
                 /*!
@@ -77,9 +73,20 @@ namespace storm {
                  */
                 uint_fast64_t getNumberOfChoices(uint_fast64_t state) const;
                 
-                virtual void printModelInformationToStream(std::ostream& out) const;
+                /*!
+                 * Modifies the state-action reward vector of the given reward model by setting the value specified in
+                 * the map for the corresponding state-action pairs.
+                 *
+                 * @param rewardModel The reward model whose state-action rewards to modify.
+                 * @param modifications A mapping from state-action pairs to the their new reward values.
+                 */
+                void modifyStateActionRewards(RewardModelType& rewardModel, std::map<std::pair<uint_fast64_t, LabelSet>, typename RewardModelType::ValueType> const& modifications) const;
                 
-                virtual void writeDotToStream(std::ostream& outStream, bool includeLabeling = true, storm::storage::BitVector const* subsystem = nullptr, std::vector<ValueType> const* firstValue = nullptr, std::vector<ValueType> const* secondValue = nullptr, std::vector<uint_fast64_t> const* stateColoring = nullptr, std::vector<std::string> const* colors = nullptr, std::vector<uint_fast64_t>* scheduler = nullptr, bool finalizeOutput = true) const;
+                virtual void reduceToStateBasedRewards() override;
+                
+                virtual void printModelInformationToStream(std::ostream& out) const override;
+                
+                virtual void writeDotToStream(std::ostream& outStream, bool includeLabeling = true, storm::storage::BitVector const* subsystem = nullptr, std::vector<ValueType> const* firstValue = nullptr, std::vector<ValueType> const* secondValue = nullptr, std::vector<uint_fast64_t> const* stateColoring = nullptr, std::vector<std::string> const* colors = nullptr, std::vector<uint_fast64_t>* scheduler = nullptr, bool finalizeOutput = true) const override;
             };
             
         } // namespace sparse

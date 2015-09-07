@@ -14,6 +14,8 @@ namespace storm {
             template<storm::dd::DdType Type>
             class DeterministicModel : public Model<Type> {
             public:
+                typedef typename Model<Type>::RewardModelType RewardModelType;
+
                 DeterministicModel(DeterministicModel<Type> const& other) = default;
                 DeterministicModel& operator=(DeterministicModel<Type> const& other) = default;
                 
@@ -38,8 +40,7 @@ namespace storm {
                  * column meta variables.
                  * @param rowColumnMetaVariablePairs All pairs of row/column meta variables.
                  * @param labelToExpressionMap A mapping from label names to their defining expressions.
-                 * @param optionalStateRewardVector The reward values associated with the states.
-                 * @param optionalTransitionRewardMatrix The reward values associated with the transitions of the model.
+                 * @param rewardModels The reward models associated with the model.
                  */
                 DeterministicModel(storm::models::ModelType const& modelType,
                                    std::shared_ptr<storm::dd::DdManager<Type>> manager,
@@ -52,8 +53,7 @@ namespace storm {
                                    std::shared_ptr<storm::adapters::AddExpressionAdapter<Type>> columnExpressionAdapter,
                                    std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs,
                                    std::map<std::string, storm::expressions::Expression> labelToExpressionMap = std::map<std::string, storm::expressions::Expression>(),
-                                   boost::optional<storm::dd::Add<Type>> const& optionalStateRewardVector = boost::optional<storm::dd::Dd<Type>>(),
-                                   boost::optional<storm::dd::Add<Type>> const& optionalTransitionRewardMatrix = boost::optional<storm::dd::Dd<Type>>());
+                                   std::unordered_map<std::string, RewardModelType> const& rewardModels = std::unordered_map<std::string, RewardModelType>());
             };
             
         } // namespace symbolic

@@ -38,6 +38,16 @@
 #ifndef GMM_BLAS_H__
 #define GMM_BLAS_H__
 
+// This Version of GMM was modified for StoRM.
+// To detect whether the usage of TBB is possible, this include is neccessary
+#include "storm-config.h"
+
+#ifdef STORM_HAVE_INTELTBB
+#	include <new> // This fixes a potential dependency ordering problem between GMM and TBB
+#	include "tbb/tbb.h"
+#	include <iterator>
+#endif
+
 #include "gmm_scaled.h"
 #include "gmm_transposed.h"
 #include "gmm_conjugated.h"
@@ -1680,16 +1690,85 @@ namespace gmm {
       if (aux != T(0)) l3[i] = aux;
     }
   }
+    
+#ifdef STORM_HAVE_INTELTBB
+    /* Official Intel Hint on blocked_range vs. linear iterators: http://software.intel.com/en-us/forums/topic/289505
+     
+     */
+    template <typename IT1, typename IT2>
+    class forward_range_mult {
+        IT1 my_begin;
+        IT1 my_end;
+        IT2 my_begin_row;
+        size_t my_size;
+    public:
+        IT1 begin() const {return my_begin;}
+        IT2 begin_row() const {return my_begin_row;}
+        IT1 end() const {return my_end;}
+        bool empty() const {return my_begin==my_end;}
+        bool is_divisible() const {return my_size>1;}
+        forward_range_mult( IT1 first, IT1 last, IT2 row_first, size_t size ) : my_begin(first), my_end(last), my_begin_row(row_first), my_size(size) {
+            assert( size==size_t(std::distance( first,last )));
+        }
+        forward_range_mult( IT1 first, IT1 last, IT2 row_first) : my_begin(first), my_end(last), my_begin_row(row_first) {
+            my_size = std::distance( first,last );
+        }
+        forward_range_mult( forward_range_mult& r, tbb::split ) {
+            size_t h = r.my_size/2;
+            my_end = r.my_end;
+            my_begin = r.my_begin;
+            my_begin_row = r.my_begin_row;
+            std::advance( my_begin, h ); // Might be scaling issue
+            std::advance( my_begin_row, h );
+            my_size = r.my_size-h;
+            r.my_end = my_begin;
+            r.my_size = h;
+        }
+    };
+    
+    
+    template <typename L1, typename L2, typename L3>
+    class tbbHelper_mult_by_row {
+        L2 const* my_l2;
+        
+        // Typedefs for Iterator Types
+        typedef typename linalg_traits<L3>::iterator frm_IT1;
+        typedef typename linalg_traits<L1>::const_row_iterator frm_IT2;
+        
+    public:
+        void operator()( const forward_range_mult<frm_IT1, frm_IT2>& r ) const {
+            L2 const& l2 = *my_l2;
+            
+            frm_IT1 it = r.begin();
+            frm_IT1 ite = r.end();
+            frm_IT2 itr = r.begin_row();
+            
+            for (; it != ite; ++it, ++itr) {
+                *it = vect_sp(linalg_traits<L1>::row(itr), l2,
+                              typename linalg_traits<L1>::storage_type(),
+                              typename linalg_traits<L2>::storage_type());
+            }
+        }
+        
+        tbbHelper_mult_by_row(L2 const* l2) :
+        my_l2(l2)
+        {}
+    };
+#endif
 
   template <typename L1, typename L2, typename L3>
   void mult_by_row(const L1& l1, const L2& l2, L3& l3, abstract_dense) {
     typename linalg_traits<L3>::iterator it=vect_begin(l3), ite=vect_end(l3);
     typename linalg_traits<L1>::const_row_iterator
       itr = mat_row_const_begin(l1); 
-    for (; it != ite; ++it, ++itr)
-      *it = vect_sp(linalg_traits<L1>::row(itr), l2,
-		    typename linalg_traits<L1>::storage_type(),
-		    typename linalg_traits<L2>::storage_type());
+#ifdef STORM_HAVE_INTELTBB
+      tbb::parallel_for(forward_range_mult<typename linalg_traits<L3>::iterator, typename linalg_traits<L1>::const_row_iterator>(it, ite, itr), tbbHelper_mult_by_row<L1, L2, L3>(&l2));
+#else
+      for (; it != ite; ++it, ++itr)
+          *it = vect_sp(linalg_traits<L1>::row(itr), l2,
+                typename linalg_traits<L1>::storage_type(),
+                typename linalg_traits<L2>::storage_type());
+#endif
   }
 
   template <typename L1, typename L2, typename L3>

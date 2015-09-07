@@ -6,7 +6,7 @@
 #include "src/settings/OptionBuilder.h"
 #include "src/settings/ArgumentBuilder.h"
 #include "src/settings/Argument.h"
-
+#include "src/solver/SolverSelectionOptions.h"
 
 namespace storm {
     namespace settings {
@@ -78,9 +78,10 @@ namespace storm {
             }
             
             bool NativeEquationSolverSettings::check() const {
-                bool optionSet = isLinearEquationSystemTechniqueSet() || isMaximalIterationCountSet() || isPrecisionSet() || isConvergenceCriterionSet();
+                // This list does not include the precision, because this option is shared with other modules.
+                bool optionSet = isLinearEquationSystemTechniqueSet() || isMaximalIterationCountSet() || isConvergenceCriterionSet();
                 
-                STORM_LOG_WARN_COND(storm::settings::generalSettings().getEquationSolver() == storm::settings::modules::GeneralSettings::EquationSolver::Native || !optionSet, "Native is not selected as the equation solver, so setting options for native has no effect.");
+                STORM_LOG_WARN_COND(storm::settings::generalSettings().getEquationSolver() == storm::solver::EquationSolverType::Native || !optionSet, "Native is not selected as the preferred equation solver, so setting options for native might have no effect.");
                 
                 return true;
             }

@@ -24,9 +24,9 @@ namespace storm {
     namespace models {
         namespace symbolic {
             template<storm::dd::DdType T> class Model;
+            template<storm::dd::DdType T, typename ValueType> class StandardRewardModel;
         }
     }
-    
     
     namespace builder {
         
@@ -40,11 +40,18 @@ namespace storm {
                 Options();
                 
                 /*! Creates an object representing the suggested building options assuming that the given formula is the
-                 * only one to check.
+                 * only one to check. Additional formulas may be preserved by calling <code>preserveFormula</code>.
                  *
                  * @param formula The formula based on which to choose the building options.
                  */
                 Options(storm::logic::Formula const& formula);
+                
+                /*! Creates an object representing the suggested building options assuming that the given formulas are
+                 * the only ones to check. Additional formulas may be preserved by calling <code>preserveFormula</code>.
+                 *
+                 * @param formula Thes formula based on which to choose the building options.
+                 */
+                Options(std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas);
                 
                 /*!
                  * Sets the constants definitions from the given string. The string must be of the form 'X=a,Y=b,Z=c',
@@ -56,20 +63,45 @@ namespace storm {
                  */
                 void addConstantDefinitionsFromString(storm::prism::Program const& program, std::string const& constantDefinitionString);
                 
-                // A flag that indicates whether or not a reward model is to be built.
-                bool buildRewards;
+                /*!
+                 * Changes the options in a way that ensures that the given formula can be checked on the model once it
+                 * has been built.
+                 *
+                 * @param formula The formula that is to be ''preserved''.
+                 */
+                void preserveFormula(storm::logic::Formula const& formula);
                 
-                // An optional string, that, if given, indicates which of the reward models is to be built.
-                boost::optional<std::string> rewardModelName;
+                /*!
+                 * Analyzes the given formula and sets an expression for the states states of the model that can be
+                 * treated as terminal states. Note that this may interfere with checking properties different than the
+                 * one provided.
+                 *
+                 * @param formula The formula used to (possibly) derive an expression for the terminal states of the
+                 * model.
+                 */
+                void setTerminalStatesFromFormula(storm::logic::Formula const& formula);
+                
+                // A flag that indicates whether or not all reward models are to be build.
+                bool buildAllRewardModels;
+                
+                // A list of reward models to be build in case not all reward models are to be build.
+                std::set<std::string> rewardModelsToBuild;
                 
                 // An optional mapping that, if given, contains defining expressions for undefined constants.
                 boost::optional<std::map<storm::expressions::Variable, storm::expressions::Expression>> constantDefinitions;
+                
+                // A flag indicating whether all labels are to be build.
+                bool buildAllLabels;
                 
                 // An optional set of labels that, if given, restricts the labels that are built.
                 boost::optional<std::set<std::string>> labelsToBuild;
                 
                 // An optional set of expressions for which labels need to be built.
                 boost::optional<std::vector<storm::expressions::Expression>> expressionLabels;
+                
+                // An optional expression or label that characterizes the terminal states of the model. If this is set,
+                // the outgoing transitions of these states are replaced with a self-loop.
+                boost::optional<boost::variant<storm::expressions::Expression, std::string>> terminalStates;
             };
             
             /*!
@@ -83,16 +115,33 @@ namespace storm {
             
         private:
             // This structure can store the decision diagrams representing a particular action.
+            struct UpdateDecisionDiagram {
+                UpdateDecisionDiagram() : updateDd(), assignedGlobalVariables() {
+                    // Intentionally left empty.
+                }
+
+                UpdateDecisionDiagram(storm::dd::Add<Type> const& updateDd, std::set<storm::expressions::Variable> const& assignedGlobalVariables) : updateDd(updateDd), assignedGlobalVariables(assignedGlobalVariables) {
+                    // Intentionally left empty.
+                }
+                
+                // The DD representing the update behaviour.
+                storm::dd::Add<Type> updateDd;
+                
+                // Keep track of the global variables that were written by this update.
+                std::set<storm::expressions::Variable> assignedGlobalVariables;
+            };
+            
+            // This structure can store the decision diagrams representing a particular action.
             struct ActionDecisionDiagram {
                 ActionDecisionDiagram() : guardDd(), transitionsDd(), numberOfUsedNondeterminismVariables(0) {
                     // Intentionally left empty.
                 }
                 
-                ActionDecisionDiagram(storm::dd::DdManager<Type> const& manager, uint_fast64_t numberOfUsedNondeterminismVariables = 0) : guardDd(manager.getAddZero()), transitionsDd(manager.getAddZero()), numberOfUsedNondeterminismVariables(numberOfUsedNondeterminismVariables) {
+                ActionDecisionDiagram(storm::dd::DdManager<Type> const& manager, std::set<storm::expressions::Variable> const& assignedGlobalVariables = std::set<storm::expressions::Variable>(), uint_fast64_t numberOfUsedNondeterminismVariables = 0) : guardDd(manager.getAddZero()), transitionsDd(manager.getAddZero()), numberOfUsedNondeterminismVariables(numberOfUsedNondeterminismVariables), assignedGlobalVariables(assignedGlobalVariables) {
                     // Intentionally left empty.
                 }
                 
-                ActionDecisionDiagram(storm::dd::Add<Type> guardDd, storm::dd::Add<Type> transitionsDd, uint_fast64_t numberOfUsedNondeterminismVariables = 0) : guardDd(guardDd), transitionsDd(transitionsDd), numberOfUsedNondeterminismVariables(numberOfUsedNondeterminismVariables) {
+                ActionDecisionDiagram(storm::dd::Add<Type> guardDd, storm::dd::Add<Type> transitionsDd, std::set<storm::expressions::Variable> const& assignedGlobalVariables = std::set<storm::expressions::Variable>(), uint_fast64_t numberOfUsedNondeterminismVariables = 0) : guardDd(guardDd), transitionsDd(transitionsDd), numberOfUsedNondeterminismVariables(numberOfUsedNondeterminismVariables), assignedGlobalVariables(assignedGlobalVariables) {
                     // Intentionally left empty.
                 }
                 
@@ -107,6 +156,9 @@ namespace storm {
                 
                 // The number of variables that are used to encode the nondeterminism.
                 uint_fast64_t numberOfUsedNondeterminismVariables;
+                
+                // Keep track of the global variables that were written by this action.
+                std::set<storm::expressions::Variable> assignedGlobalVariables;
             };
             
             // This structure holds all decision diagrams related to a module.
@@ -146,34 +198,42 @@ namespace storm {
             /*!
              * Structure to store all information required to generate the model from the program.
              */
-            class GenerationInformation; 
+            class GenerationInformation;
+            
+            /*!
+             * Structure to store the result of the system creation phase.
+             */
+            struct SystemResult;
         private:
+            static std::set<storm::expressions::Variable> equalizeAssignedGlobalVariables(GenerationInformation const& generationInfo, ActionDecisionDiagram& action1, ActionDecisionDiagram& action2);
+            
+            static std::set<storm::expressions::Variable> equalizeAssignedGlobalVariables(GenerationInformation const& generationInfo, std::vector<ActionDecisionDiagram>& actionDds);
             
             static storm::dd::Add<Type> encodeChoice(GenerationInformation& generationInfo, uint_fast64_t nondeterminismVariableOffset, uint_fast64_t numberOfBinaryVariables, int_fast64_t value);
             
-            static storm::dd::Add<Type> createUpdateDecisionDiagram(GenerationInformation& generationInfo, storm::prism::Module const& module, storm::dd::Add<Type> const& guard, storm::prism::Update const& update);
+            static UpdateDecisionDiagram createUpdateDecisionDiagram(GenerationInformation& generationInfo, storm::prism::Module const& module, storm::dd::Add<Type> const& guard, storm::prism::Update const& update);
 
             static ActionDecisionDiagram createCommandDecisionDiagram(GenerationInformation& generationInfo, storm::prism::Module const& module, storm::prism::Command const& command);
 
-            static ActionDecisionDiagram createActionDecisionDiagram(GenerationInformation& generationInfo, storm::prism::Module const& module, boost::optional<uint_fast64_t> synchronizationActionIndex, uint_fast64_t nondeterminismVariableOffset);
+            static ActionDecisionDiagram createActionDecisionDiagram(GenerationInformation& generationInfo, storm::prism::Module const& module, uint_fast64_t synchronizationActionIndex, uint_fast64_t nondeterminismVariableOffset);
 
-            static ActionDecisionDiagram combineCommandsToActionDTMC(GenerationInformation& generationInfo, std::vector<ActionDecisionDiagram> const& commandDds);
+            static ActionDecisionDiagram combineCommandsToActionMarkovChain(GenerationInformation& generationInfo, std::vector<ActionDecisionDiagram>& commandDds);
 
-            static ActionDecisionDiagram combineCommandsToActionMDP(GenerationInformation& generationInfo, std::vector<ActionDecisionDiagram> const& commandDds, uint_fast64_t nondeterminismVariableOffset);
+            static ActionDecisionDiagram combineCommandsToActionMDP(GenerationInformation& generationInfo, std::vector<ActionDecisionDiagram>& commandDds, uint_fast64_t nondeterminismVariableOffset);
 
             static ActionDecisionDiagram combineSynchronizingActions(GenerationInformation const& generationInfo, ActionDecisionDiagram const& action1, ActionDecisionDiagram const& action2);
 
-            static ActionDecisionDiagram combineUnsynchronizedActions(GenerationInformation const& generationInfo, ActionDecisionDiagram const& action1, ActionDecisionDiagram const& action2, storm::dd::Add<Type> const& identityDd1, storm::dd::Add<Type> const& identityDd2);
+            static ActionDecisionDiagram combineUnsynchronizedActions(GenerationInformation const& generationInfo, ActionDecisionDiagram& action1, ActionDecisionDiagram& action2, storm::dd::Add<Type> const& identityDd1, storm::dd::Add<Type> const& identityDd2);
 
             static ModuleDecisionDiagram createModuleDecisionDiagram(GenerationInformation& generationInfo, storm::prism::Module const& module, std::map<uint_fast64_t, uint_fast64_t> const& synchronizingActionToOffsetMap);
 
-            static storm::dd::Add<Type> getSynchronizationDecisionDiagram(GenerationInformation& generationInfo, boost::optional<uint_fast64_t> const& synchronizationAction = boost::optional<uint_fast64_t>());
+            static storm::dd::Add<Type> getSynchronizationDecisionDiagram(GenerationInformation& generationInfo, uint_fast64_t actionIndex = 0);
             
             static storm::dd::Add<Type> createSystemFromModule(GenerationInformation& generationInfo, ModuleDecisionDiagram const& module);
             
-            static std::pair<storm::dd::Add<Type>, storm::dd::Add<Type>> createRewardDecisionDiagrams(GenerationInformation& generationInfo, storm::prism::RewardModel const& rewardModel, ModuleDecisionDiagram const& globalModule, storm::dd::Add<Type> const& fullTransitionMatrix);
+            static storm::models::symbolic::StandardRewardModel<Type, double> createRewardModelDecisionDiagrams(GenerationInformation& generationInfo, storm::prism::RewardModel const& rewardModel, ModuleDecisionDiagram const& globalModule, storm::dd::Add<Type> const& transitionMatrix, storm::dd::Add<Type> const& reachableStatesAdd, storm::dd::Add<Type> const& stateActionDd);
             
-            static std::pair<storm::dd::Add<Type>, ModuleDecisionDiagram> createSystemDecisionDiagram(GenerationInformation& generationInfo);
+            static SystemResult createSystemDecisionDiagram(GenerationInformation& generationInfo);
             
             static storm::dd::Bdd<Type> createInitialStatesDecisionDiagram(GenerationInformation& generationInfo);
 

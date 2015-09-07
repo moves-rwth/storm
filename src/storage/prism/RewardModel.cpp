@@ -2,7 +2,7 @@
 
 namespace storm {
     namespace prism {
-        RewardModel::RewardModel(std::string const& rewardModelName, std::vector<storm::prism::StateReward> const& stateRewards, std::vector<storm::prism::TransitionReward> const& transitionRewards, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), rewardModelName(rewardModelName), stateRewards(stateRewards), transitionRewards(transitionRewards) {
+        RewardModel::RewardModel(std::string const& rewardModelName, std::vector<storm::prism::StateReward> const& stateRewards, std::vector<storm::prism::StateActionReward> const& stateActionRewards, std::vector<storm::prism::TransitionReward> const& transitionRewards, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), rewardModelName(rewardModelName), stateRewards(stateRewards), stateActionRewards(stateActionRewards), transitionRewards(transitionRewards) {
             // Nothing to do here.
         }
         
@@ -15,15 +15,23 @@ namespace storm {
         }
         
         bool RewardModel::hasStateRewards() const {
-            return this->stateRewards.size() > 0;
+            return !this->stateRewards.empty();
         }
         
         std::vector<storm::prism::StateReward> const& RewardModel::getStateRewards() const {
             return this->stateRewards;
         }
         
+        bool RewardModel::hasStateActionRewards() const {
+            return !this->stateActionRewards.empty();
+        }
+        
+        std::vector<storm::prism::StateActionReward> const& RewardModel::getStateActionRewards() const {
+            return this->stateActionRewards;
+        }
+        
         bool RewardModel::hasTransitionRewards() const {
-            return this->transitionRewards.size() > 0;
+            return !this->transitionRewards.empty();
         }
         
         std::vector<storm::prism::TransitionReward> const& RewardModel::getTransitionRewards() const {
@@ -36,13 +44,19 @@ namespace storm {
             for (auto const& stateReward : this->getStateRewards()) {
                 newStateRewards.emplace_back(stateReward.substitute(substitution));
             }
+
+            std::vector<StateActionReward> newStateActionRewards;
+            newStateActionRewards.reserve(this->getStateRewards().size());
+            for (auto const& stateActionReward : this->getStateActionRewards()) {
+                newStateActionRewards.emplace_back(stateActionReward.substitute(substitution));
+            }
             
             std::vector<TransitionReward> newTransitionRewards;
             newTransitionRewards.reserve(this->getTransitionRewards().size());
             for (auto const& transitionReward : this->getTransitionRewards()) {
                 newTransitionRewards.emplace_back(transitionReward.substitute(substitution));
             }
-            return RewardModel(this->getName(), newStateRewards, newTransitionRewards, this->getFilename(), this->getLineNumber());
+            return RewardModel(this->getName(), newStateRewards, newStateActionRewards, newTransitionRewards, this->getFilename(), this->getLineNumber());
         }
         
         bool RewardModel::containsVariablesOnlyInRewardValueExpressions(std::set<storm::expressions::Variable> const& undefinedConstantVariables) const {
@@ -51,8 +65,16 @@ namespace storm {
                     return false;
                 }
             }
+            for (auto const& stateActionReward : this->getStateActionRewards()) {
+                if (stateActionReward.getStatePredicateExpression().containsVariable(undefinedConstantVariables)) {
+                    return false;
+                }
+            }
             for (auto const& transitionReward : this->getTransitionRewards()) {
-                if (transitionReward.getStatePredicateExpression().containsVariable(undefinedConstantVariables)) {
+                if (transitionReward.getSourceStatePredicateExpression().containsVariable(undefinedConstantVariables)) {
+                    return false;
+                }
+                if (transitionReward.getTargetStatePredicateExpression().containsVariable(undefinedConstantVariables)) {
                     return false;
                 }
             }
@@ -64,8 +86,11 @@ namespace storm {
             if (rewardModel.getName() != "") {
                 std::cout << " \"" << rewardModel.getName() << "\"";
             }
-            std::cout << std::endl;
+            stream << std::endl;
             for (auto const& reward : rewardModel.getStateRewards()) {
+                stream << reward << std::endl;
+            }
+            for (auto const& reward : rewardModel.getStateActionRewards()) {
                 stream << reward << std::endl;
             }
             for (auto const& reward : rewardModel.getTransitionRewards()) {

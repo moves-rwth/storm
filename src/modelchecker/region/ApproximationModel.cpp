@@ -5,6 +5,7 @@
  * Created on August 7, 2015, 9:29 AM
  */
 
+#include "src/models/sparse/StandardRewardModel.h"
 #include "src/modelchecker/region/ApproximationModel.h"
 #include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
@@ -23,6 +24,7 @@ namespace storm {
                 this->computeRewards=false;
             } else if(this->formula->isReachabilityRewardFormula()){
                 this->computeRewards=true;
+                STORM_LOG_THROW(parametricModel.hasUniqueRewardModel(), storm::exceptions::InvalidArgumentException, "The rewardmodel of the approximation model should be unique");
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Invalid formula: " << this->formula << ". Sampling model only supports eventually or reachability reward formulae.");
             }
@@ -36,17 +38,20 @@ namespace storm {
             initializeProbabilities(parametricModel, probabilityMatrix, rowSubstitutions, matrixEntryToEvalTableMapping, constantEntryIndex);
             
             //Now consider rewards
-            boost::optional<std::vector<ConstantType>> stateRewards;
-            boost::optional<storm::storage::SparseMatrix<ConstantType>> transitionRewards;
+            std::unordered_map<std::string, storm::models::sparse::StandardRewardModel<ConstantType>> rewardModels;
             std::vector<std::size_t> stateRewardEntryToEvalTableMapping; //does a similar thing as matrixEntryToEvalTableMapping
             std::vector<std::size_t> transitionRewardEntryToEvalTableMapping; //does a similar thing as matrixEntryToEvalTableMapping
             if(this->computeRewards){
+                boost::optional<std::vector<ConstantType>> stateRewards;
+                boost::optional<std::vector<ConstantType>> stateActionRewards;
+                boost::optional<storm::storage::SparseMatrix<ConstantType>> transitionRewards;
                 initializeRewards(parametricModel, probabilityMatrix, rowSubstitutions, stateRewards, transitionRewards, stateRewardEntryToEvalTableMapping, transitionRewardEntryToEvalTableMapping, constantEntryIndex);
+                rewardModels.insert(std::pair<std::string, storm::models::sparse::StandardRewardModel<ConstantType>>("", storm::models::sparse::StandardRewardModel<ConstantType>(std::move(stateRewards), std::move(stateActionRewards), std::move(transitionRewards))));
             }
             //Obtain other model ingredients and the approximation model itself
             storm::models::sparse::StateLabeling labeling(parametricModel.getStateLabeling());
             boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> noChoiceLabeling;  
-            this->model=std::make_shared<storm::models::sparse::Mdp<ConstantType>>(std::move(probabilityMatrix), std::move(labeling), std::move(stateRewards), std::move(transitionRewards), std::move(noChoiceLabeling));
+            this->model=std::make_shared<storm::models::sparse::Mdp<ConstantType>>(std::move(probabilityMatrix), std::move(labeling), std::move(rewardModels), std::move(noChoiceLabeling));
             
             //translate the matrixEntryToEvalTableMapping into the actual probability mapping
             typename storm::storage::SparseMatrix<ConstantType>::index_type matrixRow=0;
@@ -67,14 +72,14 @@ namespace storm {
             }
             if(this->computeRewards){
                 //the same for state and transition rewards
-                auto approxModelStateRewardEntry = this->model->getStateRewardVector().begin();
+                auto approxModelStateRewardEntry = this->model->getUniqueRewardModel()->second.getStateRewardVector().begin();
                 for (std::size_t const& tableIndex : stateRewardEntryToEvalTableMapping){
                     if(tableIndex != constantEntryIndex){
                         this->stateRewardMapping.emplace_back(std::make_tuple(&(std::get<2>(this->rewardEvaluationTable[tableIndex])), &(std::get<3>(this->rewardEvaluationTable[tableIndex])), approxModelStateRewardEntry));
                     }
                     ++approxModelStateRewardEntry;
                 }
-                auto approxModelTransitionRewardEntry = this->model->getTransitionRewardMatrix().begin();
+                auto approxModelTransitionRewardEntry = this->model->getUniqueRewardModel()->second.getTransitionRewardMatrix().begin();
                 for (std::size_t const& tableIndex : transitionRewardEntryToEvalTableMapping){
                     this->transitionRewardMapping.emplace_back(std::make_tuple(&(std::get<2>(this->rewardEvaluationTable[tableIndex])), &(std::get<3>(this->rewardEvaluationTable[tableIndex])), approxModelTransitionRewardEntry));
                     ++approxModelTransitionRewardEntry;
@@ -132,7 +137,7 @@ namespace storm {
                     //Note that this is still executed once, even if no parameters occur.
                     ConstantType dummyEntry=storm::utility::one<ConstantType>();
                     for(auto const& entry : parametricModel.getTransitionMatrix().getRow(row)){
-                        if(this->parametricTypeComparator.isConstant(entry.getValue())){
+                        if(storm::utility::isConstant(entry.getValue())){
                             matrixEntryToEvalTableMapping.emplace_back(constantEntryIndex);
                         } else {
                             ++numOfNonConstEntries;
@@ -177,13 +182,13 @@ namespace storm {
                 std::set<VariableType> occurringRewVariables;
                 std::set<VariableType> occurringProbVariables;
                 bool makeStateReward=true;
-                if(this->parametricTypeComparator.isConstant(parametricModel.getStateRewardVector()[state])){
-                    stateRewardsAsVector[state]=storm::utility::regions::convertNumber<ConstantType>(storm::utility::regions::getConstantPart(parametricModel.getStateRewardVector()[state]));
+                if(storm::utility::isConstant(parametricModel.getUniqueRewardModel()->second.getStateRewardVector()[state])){
+                    stateRewardsAsVector[state]=storm::utility::regions::convertNumber<ConstantType>(storm::utility::regions::getConstantPart(parametricModel.getUniqueRewardModel()->second.getStateRewardVector()[state]));
                     stateRewardEntryToEvalTableMapping.emplace_back(constantEntryIndex);
                 } else {
                     //reward depends on parameters. Lets find out if probability parameters occur here.
                     //If this is the case, the reward depends on the nondeterministic choices and should be given as transition rewards.
-                    storm::utility::regions::gatherOccurringVariables(parametricModel.getStateRewardVector()[state], occurringRewVariables);
+                    storm::utility::regions::gatherOccurringVariables(parametricModel.getUniqueRewardModel()->second.getStateRewardVector()[state], occurringRewVariables);
                     for(auto const& entry : parametricModel.getTransitionMatrix().getRow(state)){
                         storm::utility::regions::gatherOccurringVariables(entry.getValue(), occurringProbVariables);
                     }
@@ -201,7 +206,7 @@ namespace storm {
                         }
                         std::size_t substitutionIndex=storm::utility::vector::findOrInsert(this->rewardSubstitutions, std::move(rewardSubstitution));
                         //insert table entry and dummy data in the stateRewardVector
-                        std::size_t tableIndex=storm::utility::vector::findOrInsert(this->rewardEvaluationTable, std::tuple<std::size_t, ParametricType, ConstantType, ConstantType>(substitutionIndex, parametricModel.getStateRewardVector()[state], storm::utility::zero<ConstantType>(), storm::utility::zero<ConstantType>()));
+                        std::size_t tableIndex=storm::utility::vector::findOrInsert(this->rewardEvaluationTable, std::tuple<std::size_t, ParametricType, ConstantType, ConstantType>(substitutionIndex, parametricModel.getUniqueRewardModel()->second.getStateRewardVector()[state], storm::utility::zero<ConstantType>(), storm::utility::zero<ConstantType>()));
                         stateRewardEntryToEvalTableMapping.emplace_back(tableIndex);
                         stateRewardsAsVector[state]=storm::utility::zero<ConstantType>();
                         ++numOfNonConstStateRewEntries;
@@ -219,7 +224,7 @@ namespace storm {
                             }
                             std::size_t substitutionIndex=storm::utility::vector::findOrInsert(this->rewardSubstitutions, std::move(rewardSubstitution));
                             //insert table entries and dummy data
-                            std::size_t tableIndex=storm::utility::vector::findOrInsert(this->rewardEvaluationTable, std::tuple<std::size_t, ParametricType, ConstantType, ConstantType>(substitutionIndex, parametricModel.getStateRewardVector()[state], storm::utility::zero<ConstantType>(), storm::utility::zero<ConstantType>()));
+                            std::size_t tableIndex=storm::utility::vector::findOrInsert(this->rewardEvaluationTable, std::tuple<std::size_t, ParametricType, ConstantType, ConstantType>(substitutionIndex, parametricModel.getUniqueRewardModel()->second.getStateRewardVector()[state], storm::utility::zero<ConstantType>(), storm::utility::zero<ConstantType>()));
                             for(auto const& matrixEntry : probabilityMatrix.getRow(matrixRow)){
                                 transitionRewardEntryToEvalTableMapping.emplace_back(tableIndex);
                                 matrixBuilder.addNextValue(matrixRow, matrixEntry.getColumn(), storm::utility::zero<ConstantType>());
@@ -330,14 +335,14 @@ namespace storm {
         }
 
         template<typename ParametricType, typename ConstantType>
-        std::vector<ConstantType> const& SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ApproximationModel::computeValues(storm::logic::OptimalityType const& optimalityType) {
-            storm::modelchecker::SparseMdpPrctlModelChecker<ConstantType> modelChecker(*this->model);
+        std::vector<ConstantType> const& SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ApproximationModel::computeValues(storm::solver::OptimizationDirection const& optDir) {
+            storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ConstantType>> modelChecker(*this->model);
             std::unique_ptr<storm::modelchecker::CheckResult> resultPtr;
             
             if(this->computeRewards){
                 //write the reward values into the model
-                switch(optimalityType){
-                    case storm::logic::OptimalityType::Minimize:
+                switch(optDir){
+                    case storm::solver::OptimizationDirection::Minimize:
                         for(auto& mappingTriple : this->stateRewardMapping){
                             *std::get<2>(mappingTriple)=*std::get<0>(mappingTriple);
                         }
@@ -345,7 +350,7 @@ namespace storm {
                             std::get<2>(mappingTriple)->setValue(*(std::get<0>(mappingTriple)));
                         }
                         break;
-                    case storm::logic::OptimalityType::Maximize:
+                    case storm::solver::OptimizationDirection::Maximize:
                         for(auto& mappingTriple : this->stateRewardMapping){
                             *std::get<2>(mappingTriple)=*std::get<1>(mappingTriple);
                         }
@@ -357,11 +362,12 @@ namespace storm {
                         STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The given optimality Type is not supported.");
                 }
                 //perform model checking on the mdp
-                resultPtr = modelChecker.computeReachabilityRewards(this->formula->asReachabilityRewardFormula(), false, optimalityType);
+                boost::optional<std::string> noRewardModelName; //it should be uniquely given
+                resultPtr = modelChecker.computeReachabilityRewards(this->formula->asReachabilityRewardFormula(), noRewardModelName, false, optDir);
             }
             else {
                 //perform model checking on the mdp
-                resultPtr = modelChecker.computeEventuallyProbabilities(this->formula->asEventuallyFormula(), false, optimalityType);
+                resultPtr = modelChecker.computeEventuallyProbabilities(this->formula->asEventuallyFormula(), false, optDir);
             }
             return resultPtr->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
         }

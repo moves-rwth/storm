@@ -1,172 +1,168 @@
 #include "src/models/sparse/Model.h"
 
+#include <boost/algorithm/string/join.hpp>
+
+#include "src/models/sparse/StandardRewardModel.h"
+
 #include "src/utility/vector.h"
 #include "src/adapters/CarlAdapter.h"
+
+#include "src/exceptions/IllegalArgumentException.h"
+#include "src/exceptions/IllegalFunctionCallException.h"
 
 namespace storm {
     namespace models {
         namespace sparse {
-            template<typename ValueType>
-            Model<ValueType>::Model(storm::models::ModelType const& modelType,
+            template<typename ValueType, typename RewardModelType>
+            Model<ValueType, RewardModelType>::Model(storm::models::ModelType const& modelType,
                                     storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                     storm::models::sparse::StateLabeling const& stateLabeling,
-                                    boost::optional<std::vector<ValueType>> const& optionalStateRewardVector,
-                                    boost::optional<storm::storage::SparseMatrix<ValueType>> const& optionalTransitionRewardMatrix,
+                                    std::unordered_map<std::string, RewardModelType> const& rewardModels,
                                     boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling)
-            : ModelBase(modelType),
-            transitionMatrix(transitionMatrix),
-            stateLabeling(stateLabeling),
-            stateRewardVector(optionalStateRewardVector),
-            transitionRewardMatrix(optionalTransitionRewardMatrix),
-            choiceLabeling(optionalChoiceLabeling) {
-                // Intentionally left empty.
+            : ModelBase(modelType), transitionMatrix(transitionMatrix), stateLabeling(stateLabeling),
+            rewardModels(rewardModels), choiceLabeling(optionalChoiceLabeling) {
+                for (auto const& rewardModel : this->getRewardModels()) {
+                    STORM_LOG_THROW(!rewardModel.second.hasTransitionRewards() || rewardModel.second.getTransitionRewardMatrix().isSubmatrixOf(this->getTransitionMatrix()), storm::exceptions::IllegalArgumentException, "The transition reward matrix is not a submatrix of the transition matrix, i.e. there are rewards for transitions that do not exist.");
+                }
             }
             
-            template<typename ValueType>
-            Model<ValueType>::Model(storm::models::ModelType const& modelType,
+            template<typename ValueType, typename RewardModelType>
+            Model<ValueType, RewardModelType>::Model(storm::models::ModelType const& modelType,
                                     storm::storage::SparseMatrix<ValueType>&& transitionMatrix,
                                     storm::models::sparse::StateLabeling&& stateLabeling,
-                                    boost::optional<std::vector<ValueType>>&& optionalStateRewardVector,
-                                    boost::optional<storm::storage::SparseMatrix<ValueType>>&& optionalTransitionRewardMatrix,
+                                    std::unordered_map<std::string, RewardModelType>&& rewardModels,
                                     boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling)
-            : ModelBase(modelType),
-            transitionMatrix(std::move(transitionMatrix)),
-            stateLabeling(std::move(stateLabeling)),
-            stateRewardVector(std::move(optionalStateRewardVector)),
-            transitionRewardMatrix(std::move(optionalTransitionRewardMatrix)),
-            choiceLabeling(std::move(optionalChoiceLabeling)) {
-                // Intentionally left empty.
+            : ModelBase(modelType), transitionMatrix(std::move(transitionMatrix)), stateLabeling(std::move(stateLabeling)),
+            rewardModels(std::move(rewardModels)), choiceLabeling(std::move(optionalChoiceLabeling)) {
+                for (auto const& rewardModel : this->getRewardModels()) {
+                    STORM_LOG_THROW(!rewardModel.second.hasTransitionRewards() || rewardModel.second.getTransitionRewardMatrix().isSubmatrixOf(this->getTransitionMatrix()), storm::exceptions::IllegalArgumentException, "The transition reward matrix is not a submatrix of the transition matrix, i.e. there are rewards for transitions that do not exist.");
+                }
             }
             
-            template <typename ValueType>
-            storm::storage::SparseMatrix<ValueType> Model<ValueType>::getBackwardTransitions() const {
+            template<typename ValueType, typename RewardModelType>
+            storm::storage::SparseMatrix<ValueType> Model<ValueType, RewardModelType>::getBackwardTransitions() const {
                 return this->getTransitionMatrix().transpose(true);
             }
             
-            template <typename ValueType>
-            typename storm::storage::SparseMatrix<ValueType>::const_rows Model<ValueType>::getRows(storm::storage::sparse::state_type state) const {
+            template<typename ValueType, typename RewardModelType>
+            typename storm::storage::SparseMatrix<ValueType>::const_rows Model<ValueType, RewardModelType>::getRows(storm::storage::sparse::state_type state) const {
                 return this->getTransitionMatrix().getRowGroup(state);
             }
             
-            template <typename ValueType>
-            uint_fast64_t Model<ValueType>::getNumberOfStates() const  {
+            template<typename ValueType, typename RewardModelType>
+            uint_fast64_t Model<ValueType, RewardModelType>::getNumberOfStates() const  {
                 return this->getTransitionMatrix().getColumnCount();
             }
             
-            template <typename ValueType>
-            uint_fast64_t Model<ValueType>::getNumberOfTransitions() const {
+            template<typename ValueType, typename RewardModelType>
+            uint_fast64_t Model<ValueType, RewardModelType>::getNumberOfTransitions() const {
                 return this->getTransitionMatrix().getNonzeroEntryCount();
             }
             
-            template <typename ValueType>
-            storm::storage::BitVector const& Model<ValueType>::getInitialStates() const {
+            template<typename ValueType, typename RewardModelType>
+            storm::storage::BitVector const& Model<ValueType, RewardModelType>::getInitialStates() const {
                 return this->getStates("init");
             }
             
-            template <typename ValueType>
-            storm::storage::BitVector const& Model<ValueType>::getStates(std::string const& label) const {
+            template<typename ValueType, typename RewardModelType>
+            storm::storage::BitVector const& Model<ValueType, RewardModelType>::getStates(std::string const& label) const {
                 return stateLabeling.getStates(label);
             }
             
-            template <typename ValueType>
-            bool Model<ValueType>::hasLabel(std::string const& label) const {
+            template<typename ValueType, typename RewardModelType>
+            bool Model<ValueType, RewardModelType>::hasLabel(std::string const& label) const {
                 return stateLabeling.containsLabel(label);
             }
             
-            template <typename ValueType>
-            storm::storage::SparseMatrix<ValueType> const& Model<ValueType>::getTransitionMatrix() const {
+            template<typename ValueType, typename RewardModelType>
+            storm::storage::SparseMatrix<ValueType> const& Model<ValueType, RewardModelType>::getTransitionMatrix() const {
                 return transitionMatrix;
             }
             
-            template <typename ValueType>
-            storm::storage::SparseMatrix<ValueType>& Model<ValueType>::getTransitionMatrix() {
+            template<typename ValueType, typename RewardModelType>
+            storm::storage::SparseMatrix<ValueType>& Model<ValueType, RewardModelType>::getTransitionMatrix() {
                 return transitionMatrix;
             }
             
-            template <typename ValueType>
-            storm::storage::SparseMatrix<ValueType> const& Model<ValueType>::getTransitionRewardMatrix() const {
-                return transitionRewardMatrix.get();
+            template<typename ValueType, typename RewardModelType>
+            bool Model<ValueType, RewardModelType>::hasRewardModel(std::string const& rewardModelName) const {
+                return this->rewardModels.find(rewardModelName) != this->rewardModels.end();
             }
             
-            template <typename ValueType>
-            storm::storage::SparseMatrix<ValueType>& Model<ValueType>::getTransitionRewardMatrix() {
-                return transitionRewardMatrix.get();
+            template<typename ValueType, typename RewardModelType>
+            RewardModelType const& Model<ValueType, RewardModelType>::getRewardModel(std::string const& rewardModelName) const {
+                auto it = this->rewardModels.find(rewardModelName);
+                if (it == this->rewardModels.end()) {
+                    if (rewardModelName.empty()) {
+                        if (this->hasUniqueRewardModel()) {
+                            return this->getUniqueRewardModel()->second;
+                        } else {
+                            STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unable to refer to default reward model, because there is no default model or it is not unique.");
+                        }
+                    } else {
+                        STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "The requested reward model '" << rewardModelName << "' does not exist.");
+                    }
+                }
+                return it->second;
             }
             
-            template <typename ValueType>
-            boost::optional<storm::storage::SparseMatrix<ValueType>> const& Model<ValueType>::getOptionalTransitionRewardMatrix() const {
-                return transitionRewardMatrix;
+            template<typename ValueType, typename RewardModelType>
+            bool Model<ValueType, RewardModelType>::hasUniqueRewardModel() const {
+                return this->getNumberOfRewardModels() == 1;
             }
             
-            template <typename ValueType>
-            std::vector<ValueType> const& Model<ValueType>::getStateRewardVector() const {
-                return stateRewardVector.get();
+            template<typename ValueType, typename RewardModelType>
+            bool Model<ValueType, RewardModelType>::hasRewardModel() const {
+                return !this->rewardModels.empty();
             }
             
-            template <typename ValueType>
-            std::vector<ValueType>& Model<ValueType>::getStateRewardVector() {
-                return stateRewardVector.get();
+            template<typename ValueType, typename RewardModelType>
+            typename std::unordered_map<std::string, RewardModelType>::const_iterator Model<ValueType, RewardModelType>::getUniqueRewardModel() const {
+                STORM_LOG_THROW(this->getNumberOfRewardModels() == 1, storm::exceptions::IllegalFunctionCallException, "The reward model is not unique.");
+                return this->rewardModels.cbegin();
             }
             
-            template <typename ValueType>
-            boost::optional<std::vector<ValueType>> const& Model<ValueType>::getOptionalStateRewardVector() const {
-                return stateRewardVector;
+            template<typename ValueType, typename RewardModelType>
+            typename std::unordered_map<std::string, RewardModelType>::iterator Model<ValueType, RewardModelType>::getUniqueRewardModel() {
+                STORM_LOG_THROW(this->getNumberOfRewardModels() == 1, storm::exceptions::IllegalFunctionCallException, "The reward model is not unique.");
+                return this->rewardModels.begin();
             }
             
-            template <typename ValueType>
-            std::vector<LabelSet> const& Model<ValueType>::getChoiceLabeling() const {
+            template<typename ValueType, typename RewardModelType>
+            uint_fast64_t Model<ValueType, RewardModelType>::getNumberOfRewardModels() const {
+                return this->rewardModels.size();
+            }
+            
+            template<typename ValueType, typename RewardModelType>
+            std::vector<LabelSet> const& Model<ValueType, RewardModelType>::getChoiceLabeling() const {
                 return choiceLabeling.get();
             }
             
-            template <typename ValueType>
-            boost::optional<std::vector<LabelSet>> const& Model<ValueType>::getOptionalChoiceLabeling() const {
+            template<typename ValueType, typename RewardModelType>
+            boost::optional<std::vector<LabelSet>> const& Model<ValueType, RewardModelType>::getOptionalChoiceLabeling() const {
                 return choiceLabeling;
             }
             
-            template <typename ValueType>
-            storm::models::sparse::StateLabeling const& Model<ValueType>::getStateLabeling() const {
+            template<typename ValueType, typename RewardModelType>
+            storm::models::sparse::StateLabeling const& Model<ValueType, RewardModelType>::getStateLabeling() const {
                 return stateLabeling;
             }
             
-            template <typename ValueType>
-            storm::models::sparse::StateLabeling& Model<ValueType>::getStateLabeling() {
+            template<typename ValueType, typename RewardModelType>
+            storm::models::sparse::StateLabeling& Model<ValueType, RewardModelType>::getStateLabeling() {
                 return stateLabeling;
             }
             
-            template <typename ValueType>
-            bool Model<ValueType>::hasStateRewards() const {
-                return static_cast<bool>(stateRewardVector);
-            }
-            
-            template <typename ValueType>
-            bool Model<ValueType>::hasTransitionRewards() const {
-                return static_cast<bool>(transitionRewardMatrix);
-            }
-            
-            template <typename ValueType>
-            bool Model<ValueType>::hasChoiceLabeling() const {
+            template<typename ValueType, typename RewardModelType>
+            bool Model<ValueType, RewardModelType>::hasChoiceLabeling() const {
                 return static_cast<bool>(choiceLabeling);
             }
             
-            template <typename ValueType>
-            void Model<ValueType>::convertTransitionRewardsToStateRewards() {
-                STORM_LOG_THROW(this->hasTransitionRewards(), storm::exceptions::InvalidOperationException, "Cannot reduce non-existant transition rewards to state rewards.");
-                if (this->hasStateRewards()) {
-                    storm::utility::vector::addVectors(stateRewardVector.get(), transitionMatrix.getPointwiseProductRowSumVector(transitionRewardMatrix.get()), stateRewardVector.get());
-                } else {
-                    this->stateRewardVector = transitionMatrix.getPointwiseProductRowSumVector(transitionRewardMatrix.get());
-                }
-                this->transitionRewardMatrix = boost::optional<storm::storage::SparseMatrix<ValueType>>();
-            }
-            
-            template <typename ValueType>
-            std::size_t Model<ValueType>::getSizeInBytes() const {
+            template<typename ValueType, typename RewardModelType>
+            std::size_t Model<ValueType, RewardModelType>::getSizeInBytes() const {
                 std::size_t result = transitionMatrix.getSizeInBytes() + stateLabeling.getSizeInBytes();
-                if (stateRewardVector) {
-                    result += getStateRewardVector().size() * sizeof(ValueType);
-                }
-                if (hasTransitionRewards()) {
-                    result += getTransitionRewardMatrix().getSizeInBytes();
+                for (auto const& rewardModel : this->rewardModels) {
+                    result += rewardModel.second.getSizeInBytes();
                 }
                 if (hasChoiceLabeling()) {
                     result += getChoiceLabeling().size() * sizeof(LabelSet);
@@ -174,19 +170,45 @@ namespace storm {
                 return result;
             }
             
-            template <typename ValueType>
-            void Model<ValueType>::printModelInformationToStream(std::ostream& out) const {
+            template<typename ValueType, typename RewardModelType>
+            void Model<ValueType, RewardModelType>::printModelInformationToStream(std::ostream& out) const {
+                this->printModelInformationHeaderToStream(out);
+                this->printModelInformationFooterToStream(out);
+            }
+            
+            template<typename ValueType, typename RewardModelType>
+            void Model<ValueType, RewardModelType>::printModelInformationHeaderToStream(std::ostream& out) const {
                 out << "-------------------------------------------------------------- " << std::endl;
                 out << "Model type: \t" << this->getType() << " (sparse)" << std::endl;
                 out << "States: \t" << this->getNumberOfStates() << std::endl;
                 out << "Transitions: \t" << this->getNumberOfTransitions() << std::endl;
+            }
+            
+            template<typename ValueType, typename RewardModelType>
+            void Model<ValueType, RewardModelType>::printModelInformationFooterToStream(std::ostream& out) const {
+                this->printRewardModelsInformationToStream(out);
                 this->getStateLabeling().printLabelingInformationToStream(out);
-                out << "Size in memory: \t" << (this->getSizeInBytes())/1024 << " kbytes" << std::endl;
+                out << "choice labels: \t" << (this->hasChoiceLabeling() ? "yes" : "no")  << std::noboolalpha << std::endl;
+                out << "Size in memory: " << (this->getSizeInBytes())/1024 << " kbytes" << std::endl;
                 out << "-------------------------------------------------------------- " << std::endl;
             }
             
-            template <typename ValueType>
-            void Model<ValueType>::writeDotToStream(std::ostream& outStream, bool includeLabeling, storm::storage::BitVector const* subsystem, std::vector<ValueType> const* firstValue, std::vector<ValueType> const* secondValue, std::vector<uint_fast64_t> const* stateColoring, std::vector<std::string> const* colors, std::vector<uint_fast64_t>* scheduler, bool finalizeOutput) const {
+            template<typename ValueType, typename RewardModelType>
+            void Model<ValueType, RewardModelType>::printRewardModelsInformationToStream(std::ostream& out) const {
+                if (this->rewardModels.size()) {
+                    std::vector<std::string> rewardModelNames;
+                    std::for_each(this->rewardModels.cbegin(), this->rewardModels.cend(),
+                                  [&rewardModelNames] (typename std::pair<std::string, RewardModelType> const& nameRewardModelPair) {
+                                      if (nameRewardModelPair.first.empty()) { rewardModelNames.push_back("(default)"); } else { rewardModelNames.push_back(nameRewardModelPair.first); }
+                                  });
+                    out << "Reward Models:  " << boost::join(rewardModelNames, ", ") << std::endl;
+                } else {
+                    out << "Reward Models:  none" << std::endl;
+                }
+            }
+            
+            template<typename ValueType, typename RewardModelType>
+            void Model<ValueType, RewardModelType>::writeDotToStream(std::ostream& outStream, bool includeLabeling, storm::storage::BitVector const* subsystem, std::vector<ValueType> const* firstValue, std::vector<ValueType> const* secondValue, std::vector<uint_fast64_t> const* stateColoring, std::vector<std::string> const* colors, std::vector<uint_fast64_t>* scheduler, bool finalizeOutput) const {
                 outStream << "digraph model {" << std::endl;
                 
                 // Write all states to the stream.
@@ -249,25 +271,36 @@ namespace storm {
                 }
             }
             
-            template <typename ValueType>
-            std::set<std::string> Model<ValueType>::getLabelsOfState(storm::storage::sparse::state_type state) const {
+            template<typename ValueType, typename RewardModelType>
+            std::set<std::string> Model<ValueType, RewardModelType>::getLabelsOfState(storm::storage::sparse::state_type state) const {
                 return this->stateLabeling.getLabelsOfState(state);
             }
             
-            template <typename ValueType>
-            void Model<ValueType>::setTransitionMatrix(storm::storage::SparseMatrix<ValueType> const& transitionMatrix) {
+            template<typename ValueType, typename RewardModelType>
+            void Model<ValueType, RewardModelType>::setTransitionMatrix(storm::storage::SparseMatrix<ValueType> const& transitionMatrix) {
                 this->transitionMatrix = transitionMatrix;
             }
             
-            template <typename ValueType>
-            void Model<ValueType>::setTransitionMatrix(storm::storage::SparseMatrix<ValueType>&& transitionMatrix) {
+            template<typename ValueType, typename RewardModelType>
+            void Model<ValueType, RewardModelType>::setTransitionMatrix(storm::storage::SparseMatrix<ValueType>&& transitionMatrix) {
                 this->transitionMatrix = std::move(transitionMatrix);
             }
             
-            template <typename ValueType>
-            bool Model<ValueType>::isSparseModel() const {
+            template<typename ValueType, typename RewardModelType>
+            bool Model<ValueType, RewardModelType>::isSparseModel() const {
                 return true;
             }
+            
+            template<typename ValueType, typename RewardModelType>
+            std::unordered_map<std::string, RewardModelType>& Model<ValueType, RewardModelType>::getRewardModels() {
+                return this->rewardModels;
+            }
+
+            template<typename ValueType, typename RewardModelType>
+            std::unordered_map<std::string, RewardModelType> const& Model<ValueType, RewardModelType>::getRewardModels() const {
+                return this->rewardModels;
+            }
+
             
             template class Model<double>;
             template class Model<float>;

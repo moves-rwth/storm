@@ -27,13 +27,15 @@ namespace storm {
              *
              * @param actionIndex The index of the action.
              * @param actionName The name of the command that obtains this reward.
-             * @param statePredicateExpression The predicate that needs to hold before taking a transition with the previously
-             * specified name in order to obtain the reward.
+             * @param sourceStatePredicateExpression The predicate that needs to hold before taking a transition with
+             * the previously specified name in order to obtain the reward.
+             * @param targetStatePredicateExpression The predicate that needs to hold after taking a transition with
+             * the previously specified name in order to obtain the reward.
              * @param rewardValueExpression An expression specifying the values of the rewards to attach to the transitions.
              * @param filename The filename in which the transition reward is defined.
              * @param lineNumber The line number in which the transition reward is defined.
              */
-            TransitionReward(uint_fast64_t actionIndex, std::string const& actionName, storm::expressions::Expression const& statePredicateExpression, storm::expressions::Expression const& rewardValueExpression, std::string const& filename = "", uint_fast64_t lineNumber = 0);
+            TransitionReward(uint_fast64_t actionIndex, std::string const& actionName, storm::expressions::Expression const& sourceStatePredicateExpression, storm::expressions::Expression const& targetStatePredicateExpression, storm::expressions::Expression const& rewardValueExpression, std::string const& filename = "", uint_fast64_t lineNumber = 0);
             
             // Create default implementations of constructors/assignment.
             TransitionReward() = default;
@@ -59,11 +61,18 @@ namespace storm {
             uint_fast64_t getActionIndex() const;
             
             /*!
-             * Retrieves the state predicate expression that is associated with this state reward.
+             * Retrieves the source state predicate expression that is associated with this state reward.
              *
-             * @return The state predicate expression that is associated with this state reward.
+             * @return The source state predicate expression that is associated with this state reward.
              */
-            storm::expressions::Expression const& getStatePredicateExpression() const;
+            storm::expressions::Expression const& getSourceStatePredicateExpression() const;
+
+            /*!
+             * Retrieves the target state predicate expression that is associated with this state reward.
+             *
+             * @return The target state predicate expression that is associated with this state reward.
+             */
+            storm::expressions::Expression const& getTargetStatePredicateExpression() const;
             
             /*!
              * Retrieves the reward value expression associated with this state reward.
@@ -99,9 +108,11 @@ namespace storm {
             // A flag that stores whether the transition reward has an action label.
             bool labeled;
             
-            // A predicate that needs to be satisfied by states for the reward to be obtained (by taking
-            // a corresponding command transition).
-            storm::expressions::Expression statePredicateExpression;
+            // A predicate that needs to be satisfied in the source state of transitions that can earn the reward.
+            storm::expressions::Expression sourceStatePredicateExpression;
+
+            // A predicate that needs to be satisfied in the target state of transitions that can earn the reward.
+            storm::expressions::Expression targetStatePredicateExpression;
             
             // The expression specifying the value of the reward obtained along the transitions.
             storm::expressions::Expression rewardValueExpression;

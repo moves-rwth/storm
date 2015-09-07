@@ -105,6 +105,13 @@ namespace storm {
              */
             std::shared_ptr<DdManager<DdType::CUDD> const> getDdManager() const;
             
+            /*!
+             * Retrieves the set of all meta variables contained in the DD.
+             *
+             * @return The set of all meta variables contained in the DD.
+             */
+            std::set<storm::expressions::Variable>& getContainedMetaVariables();
+            
         protected:
             
             /*!
@@ -122,13 +129,6 @@ namespace storm {
              * @return The sorted list of variable indices.
              */
             static std::vector<uint_fast64_t> getSortedVariableIndices(DdManager<DdType::CUDD> const& manager, std::set<storm::expressions::Variable> const& metaVariables);
-            
-            /*!
-             * Retrieves the set of all meta variables contained in the DD.
-             *
-             * @return The set of all meta variables contained in the DD.
-             */
-            std::set<storm::expressions::Variable>& getContainedMetaVariables();
             
             /*!
              * Adds the given set of meta variables to the DD.

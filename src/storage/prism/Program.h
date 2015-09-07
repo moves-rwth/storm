@@ -245,11 +245,11 @@ namespace storm {
             std::set<std::string> const& getActions() const;
             
             /*!
-             * Retrieves the set of action indices present in the program.
+             * Retrieves the set of synchronizing action indices present in the program.
              *
-             * @return The set of action indices present in the program.
+             * @return The set of synchronizing action indices present in the program.
              */
-            std::set<uint_fast64_t> const& getActionIndices() const;
+            std::set<uint_fast64_t> const& getSynchronizingActionIndices() const;
             
             /*!
              * Retrieves the action name of the given action index.
@@ -344,6 +344,13 @@ namespace storm {
              * @return A set of labels that are defined in the program.
              */
             std::vector<Label> const& getLabels() const;
+            
+            /*!
+             * Retrieves the expression associated with the given label, if it exists.
+             *
+             * @param labelName The name of the label to retrieve.
+             */
+            storm::expressions::Expression const& getLabelExpression(std::string const& label) const;
             
             /*!
              * Retrieves the number of labels in the program.
@@ -480,6 +487,9 @@ namespace storm {
             // The labels that are defined for this model.
             std::vector<Label> labels;
             
+            // A mapping from labels to their indices.
+            std::map<std::string, uint_fast64_t> labelToIndexMap;
+            
             // A mapping from action names to their indices.
             std::map<std::string, uint_fast64_t> actionToIndexMap;
 
@@ -489,8 +499,8 @@ namespace storm {
             // The set of actions present in this program.
             std::set<std::string> actions;
 
-            // The set of actions present in this program.
-            std::set<uint_fast64_t> actionIndices;
+            // The set of synchronizing actions present in this program.
+            std::set<uint_fast64_t> synchronizingActionIndices;
             
             // A map of actions to the set of modules containing commands labelled with this action.
             std::map<uint_fast64_t, std::set<uint_fast64_t>> actionIndicesToModuleIndexMap;

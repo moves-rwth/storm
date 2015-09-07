@@ -6,8 +6,7 @@
 
 #ifdef STORM_HAVE_CARL
 
-#include <cln/cln.h>
-#include <gmpxx.h>
+#include <carl/numbers/numbers.h>
 #include <carl/core/MultivariatePolynomial.h>
 #include <carl/core/RationalFunction.h>
 #include <carl/core/VariablePool.h>

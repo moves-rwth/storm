@@ -5,6 +5,7 @@
 
 #include "src/storage/sparse/StateType.h"
 #include "src/models/sparse/Dtmc.h"
+#include "src/models/sparse/StandardRewardModel.h"
 #include "src/utility/constants.h"
 #include "src/utility/regions.h"
 #include "src/solver/Smt2SmtSolver.h"
@@ -233,10 +234,7 @@ namespace storm {
             
             //classes that provide auxilliary functions
             // Instance of an elimination model checker to access its functions
-            storm::modelchecker::SparseDtmcEliminationModelChecker<ParametricType> eliminationModelChecker;
-            // comparators that can be used to compare constants.
-            storm::utility::ConstantsComparator<ParametricType> parametricTypeComparator;
-            storm::utility::ConstantsComparator<ConstantType> constantTypeComparator;
+            storm::modelchecker::SparseDtmcEliminationModelChecker<storm::models::sparse::Dtmc<ParametricType>> eliminationModelChecker;
             
             //the following members depend on the currently specified formula:
             //the currently specified formula, the bound and the comparison type

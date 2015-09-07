@@ -13,6 +13,7 @@
 
 #include "src/storage/BitVector.h"
 #include "src/utility/macros.h"
+#include "src/solver/OptimizationDirection.h"
 
 template<typename ValueType>
 std::ostream& operator<<(std::ostream& out, std::vector<ValueType> const& vector);
@@ -150,16 +151,117 @@ namespace storm {
                 }
             }
             
+            template<class T>
+            void addFilteredVectorGroupsToGroupedVector(std::vector<T>& target, std::vector<T> const& source, storm::storage::BitVector const& filter, std::vector<uint_fast64_t> const& rowGroupIndices) {
+                uint_fast64_t currentPosition = 0;
+                for (auto group : filter) {
+                    auto it = source.cbegin() + rowGroupIndices[group];
+                    auto ite = source.cbegin() + rowGroupIndices[group + 1];
+                    while (it != ite) {
+                        target[currentPosition] += *it;
+                        ++currentPosition;
+                        ++it;
+                    }
+                }
+            }
+            
+            /*!
+             * Adds the source vector to the target vector in a way such that the i-th entry is added to all elements of
+             * the i-th row group in the target vector.
+             *
+             * @param target The target ("row grouped") vector.
+             * @param source The source vector.
+             * @param rowGroupIndices A vector representing the row groups in the target vector.
+             */
+            template<class T>
+            void addVectorToGroupedVector(std::vector<T>& target, std::vector<T> const& source, std::vector<uint_fast64_t> const& rowGroupIndices) {
+                auto targetIt = target.begin();
+                auto sourceIt = source.cbegin();
+                auto sourceIte = source.cend();
+                auto rowGroupIt = rowGroupIndices.cbegin();
+                
+                for (; sourceIt != sourceIte; ++sourceIt) {
+                    uint_fast64_t current = *rowGroupIt;
+                    ++rowGroupIt;
+                    uint_fast64_t next = *rowGroupIt;
+                    while (current < next) {
+                        *targetIt += *sourceIt;
+                        ++targetIt;
+                        ++current;
+                    }
+                }
+            }
+            
+            /*!
+             * Adds the source vector to the target vector in a way such that the i-th selected entry is added to all
+             * elements of the i-th row group in the target vector.
+             *
+             * @param target The target ("row grouped") vector.
+             * @param source The source vector.
+             * @param rowGroupIndices A vector representing the row groups in the target vector.
+             */
+            template<class T>
+            void addFilteredVectorToGroupedVector(std::vector<T>& target, std::vector<T> const& source, storm::storage::BitVector const& filter, std::vector<uint_fast64_t> const& rowGroupIndices) {
+                uint_fast64_t currentPosition = 0;
+                for (auto group : filter) {
+                    uint_fast64_t current = rowGroupIndices[group];
+                    uint_fast64_t next = rowGroupIndices[group + 1];
+                    while (current < next) {
+                        target[currentPosition] += source[group];
+                        ++currentPosition;
+                        ++current;
+                    }
+                }
+            }
+            
             /*!
              * Applies the given operation pointwise on the two given vectors and writes the result to the third vector.
-             * To botain an in-place operation, the third vector may be equal to any of the other two vectors.
+             * To obtain an in-place operation, the third vector may be equal to any of the other two vectors.
              *
              * @param firstOperand The first operand.
              * @param secondOperand The second operand.
              * @param target The target vector.
              */
-            template<class T>
-            void applyPointwise(std::vector<T> const& firstOperand, std::vector<T> const& secondOperand, std::vector<T>& target, std::function<T (T const&, T const&)> function) {
+            template<class InValueType1, class InValueType2, class OutValueType>
+            void applyPointwise(std::vector<InValueType1> const& firstOperand, std::vector<InValueType2> const& secondOperand, std::vector<OutValueType>& target, std::function<OutValueType (InValueType1 const&, InValueType2 const&, OutValueType const&)> const& function) {
+#ifdef STORM_HAVE_INTELTBB
+                tbb::parallel_for(tbb::blocked_range<uint_fast64_t>(0, target.size()),
+                                  [&](tbb::blocked_range<uint_fast64_t> const& range) {
+                                      auto firstIt = firstOperand.begin() + range.begin();
+                                      auto firstIte = firstOperand.begin() + range.end();
+                                      auto secondIt = secondOperand.begin() + range.begin();
+                                      auto targetIt = target.begin() + range.begin();
+                                      while (firstIt != firstIte) {
+                                          *targetIt = function(*firstIt, *secondIt, *targetIt);
+                                          ++targetIt;
+                                          ++firstIt;
+                                          ++secondIt;
+                                      }
+                                  });
+#else
+                auto firstIt = firstOperand.begin();
+                auto firstIte = firstOperand.end();
+                auto secondIt = secondOperand.begin();
+                auto targetIt = target.begin();
+                while (firstIt != firstIte) {
+                    *targetIt = function(*firstIt, *secondIt, *targetIt);
+                    ++targetIt;
+                    ++firstIt;
+                    ++secondIt;
+                }
+#endif
+            }
+            
+            /*!
+             * Applies the given operation pointwise on the two given vectors and writes the result to the third vector.
+             * To obtain an in-place operation, the third vector may be equal to any of the other two vectors.
+             *
+             * @param firstOperand The first operand.
+             * @param secondOperand The second operand.
+             * @param target The target vector.
+             */
+            template<class InValueType1, class InValueType2, class OutValueType>
+            void applyPointwise(std::vector<InValueType1> const& firstOperand, std::vector<InValueType2> const& secondOperand, std::vector<OutValueType>& target, std::function<OutValueType (InValueType1 const&, InValueType2 const&)> function) {
 #ifdef STORM_HAVE_INTELTBB
                 tbb::parallel_for(tbb::blocked_range<uint_fast64_t>(0, target.size()),
                                   [&](tbb::blocked_range<uint_fast64_t> const& range) {
@@ -177,8 +279,8 @@ namespace storm {
              * @param target The target vector.
              * @param function The function to apply.
              */
-            template<class T>
-            void applyPointwise(std::vector<T> const& operand, std::vector<T>& target, std::function<T (T const&)> const& function) {
+            template<class InValueType, class OutValueType>
+            void applyPointwise(std::vector<InValueType> const& operand, std::vector<OutValueType>& target, std::function<OutValueType (InValueType const&)> const& function) {
 #ifdef STORM_HAVE_INTELTBB
                 tbb::parallel_for(tbb::blocked_range<uint_fast64_t>(0, target.size()),
                                   [&](tbb::blocked_range<uint_fast64_t> const& range) {
@@ -196,9 +298,9 @@ namespace storm {
              * @param secondOperand The second operand
              * @param target The target vector.
              */
-            template<class T>
-            void addVectors(std::vector<T> const& firstOperand, std::vector<T> const& secondOperand, std::vector<T>& target) {
-                applyPointwise<T>(firstOperand, secondOperand, target, std::plus<T>());
+            template<class InValueType1, class InValueType2, class OutValueType>
+            void addVectors(std::vector<InValueType1> const& firstOperand, std::vector<InValueType2> const& secondOperand, std::vector<OutValueType>& target) {
+                applyPointwise<InValueType1, InValueType2, OutValueType>(firstOperand, secondOperand, target, std::plus<>());
             }
             
             /*!
@@ -208,9 +310,9 @@ namespace storm {
              * @param secondOperand The second operand
              * @param target The target vector.
              */
-            template<class T>
-            void subtractVectors(std::vector<T> const& firstOperand, std::vector<T> const& secondOperand, std::vector<T>& target) {
-                applyPointwise<T>(firstOperand, secondOperand, target, std::minus<T>());
+            template<class InValueType1, class InValueType2, class OutValueType>
+            void subtractVectors(std::vector<InValueType1> const& firstOperand, std::vector<InValueType2> const& secondOperand, std::vector<OutValueType>& target) {
+                applyPointwise<InValueType1, InValueType2, OutValueType>(firstOperand, secondOperand, target, std::minus<>());
             }
             
             /*!
@@ -220,9 +322,9 @@ namespace storm {
              * @param secondOperand The second operand
              * @param target The target vector.
              */
-            template<class T>
-            void multiplyVectorsPointwise(std::vector<T> const& firstOperand, std::vector<T> const& secondOperand, std::vector<T>& target) {
-                applyPointwise<T>(firstOperand, secondOperand, target, std::multiplies<T>());
+            template<class InValueType1, class InValueType2, class OutValueType>
+            void multiplyVectorsPointwise(std::vector<InValueType1> const& firstOperand, std::vector<InValueType2> const& secondOperand, std::vector<OutValueType>& target) {
+                applyPointwise<InValueType1, InValueType2, OutValueType>(firstOperand, secondOperand, target, std::multiplies<>());
             }
             
             /*!
@@ -231,9 +333,9 @@ namespace storm {
              * @param target The first summand and target vector.
              * @param summand The second summand.
              */
-            template<class T>
-            void scaleVectorInPlace(std::vector<T>& target, T const& factor) {
-                applyPointwise<T>(target, target, [&] (T const& argument) { return argument * factor; });
+            template<class ValueType1, class ValueType2>
+            void scaleVectorInPlace(std::vector<ValueType1>& target, ValueType2 const& factor) {
+                applyPointwise<ValueType1, ValueType2>(target, target, [&] (ValueType1 const& argument) -> ValueType1 { return argument * factor; });
             }
             
             /*!
@@ -269,6 +371,63 @@ namespace storm {
                 std::function<bool (T const&)> fnc = [] (T const& value) -> bool { return value > storm::utility::zero<T>(); };
                 return filter(values,  fnc);
             }
+            
+            /**
+             * Sum the entries from values that are set to one in the filter vector.
+             * @param values
+             * @param filter
+             * @return The sum of the values with a corresponding one in the filter.
+             */
+            template<typename VT>
+            VT sum_if(std::vector<VT> const& values, storm::storage::BitVector const& filter) {
+                assert(values.size() >= filter.size());
+                VT sum = storm::utility::zero<VT>();
+                for(uint_fast64_t i : filter) {
+                    sum += values[i];
+                }    
+                return sum;
+            }
+            
+            /**
+             * Computes the maximum of the entries from the values that are set to one in the filter vector
+             * @param values
+             * @param filter
+             * @param smallestPossibleValue A value which is not larger than any value in values. If the filter is empty, this value is returned.
+             * @return  The maximum over the subset of the values and the smallestPossibleValue.
+             */
+            template<typename VT>
+            VT max_if(std::vector<VT> const& values, storm::storage::BitVector const& filter, VT const& smallestPossibleValue) {
+                assert(values.size() >= filter.size());
+                
+                VT max = smallestPossibleValue;
+                for(uint_fast64_t i : filter) {
+                    if(values[i] > max) { 
+                        max = values[i];
+                    }
+                }    
+                return max;
+            }
+            
+            /**
+             * Computes the minimum of the entries from the values that are set to one in the filter vector
+             * @param values
+             * @param filter
+             * @param largestPossibleValue A value which is not smaller than any value in values. If the filter is empty, this value is returned.
+             * @return  The minimum over the subset of the values and the largestPossibleValue.
+             */
+            template<typename VT>
+            VT min_if(std::vector<VT> const& values, storm::storage::BitVector const& filter, VT const& largestPossibleValue) {
+                assert(values.size() >= filter.size());
+                VT min = largestPossibleValue;
+                for(uint_fast64_t i : filter) {
+                    if(values[i] < min) { 
+                        min = values[i];
+                    }
+                }    
+                return min;
+            }
+            
+            
             
             /*!
              * Reduces the given source vector by selecting an element according to the given filter out of each row group.
@@ -354,7 +513,7 @@ namespace storm {
                 }
 #endif
             }
-            
+                        
             /*!
              * Reduces the given source vector by selecting the smallest element out of each row group.
              *
@@ -380,6 +539,25 @@ namespace storm {
             void reduceVectorMax(std::vector<T> const& source, std::vector<T>& target, std::vector<uint_fast64_t> const& rowGrouping, std::vector<uint_fast64_t>* choices = nullptr) {
                 reduceVector<T>(source, target, rowGrouping, std::greater<T>(), choices);
             }
+            
+            /*!
+             * Reduces the given source vector by selecting either the smallest or the largest out of each row group.
+             *
+             * @param dir If true, select the smallest, else select the largest.
+             * @param source The source vector which is to be reduced.
+             * @param target The target vector into which a single element from each row group is written.
+             * @param rowGrouping A vector that specifies the begin and end of each group of elements in the source vector.
+             * @param choices If non-null, this vector is used to store the choices made during the selection.
+             */
+            template<class T>
+            void reduceVectorMinOrMax(storm::solver::OptimizationDirection dir, std::vector<T> const& source, std::vector<T>& target, std::vector<uint_fast64_t> const& rowGrouping, std::vector<uint_fast64_t>* choices = nullptr) {
+                if(dir == storm::solver::OptimizationDirection::Minimize) {
+                    reduceVectorMin(source, target, rowGrouping, choices);
+                } else {
+                    reduceVectorMax(source, target, rowGrouping, choices);    
+                }
+            }
+            
             
             /*!
              * Compares the given elements and determines whether they are equal modulo the given precision. The provided flag

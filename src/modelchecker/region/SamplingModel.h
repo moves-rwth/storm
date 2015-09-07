@@ -69,9 +69,6 @@ namespace storm {
             //A flag that denotes whether we compute probabilities or rewards
             bool computeRewards;
             
-            // comparators that can be used to compare constants.
-            storm::utility::ConstantsComparator<ParametricType> parametricTypeComparator;
-            storm::utility::ConstantsComparator<ConstantType> constantTypeComparator;
         };
         
     }

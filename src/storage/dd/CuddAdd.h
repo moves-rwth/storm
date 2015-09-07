@@ -406,7 +406,7 @@ namespace storm {
              *
              * @return The support represented as a BDD.
              */
-            Bdd<DdType::CUDD> getSupport() const;
+            Bdd<DdType::CUDD> getSupport() const override;
             
             /*!
              * Retrieves the number of encodings that are mapped to a non-zero value.
@@ -610,7 +610,7 @@ namespace storm {
              *
              * @param filename The name of the file to which the DD is to be exported.
              */
-            void exportToDot(std::string const& filename = "") const;
+            void exportToDot(std::string const& filename = "") const override;
             
             /*!
              * Retrieves an iterator that points to the first meta variable assignment with a non-zero function value.

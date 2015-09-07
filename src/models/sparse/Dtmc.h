@@ -4,7 +4,6 @@
 
 #include "src/models/sparse/DeterministicModel.h"
 #include "src/utility/OsDetection.h"
-#include "src/utility/constants.h"
 #include "src/adapters/CarlAdapter.h"
 
 namespace storm {
@@ -14,22 +13,20 @@ namespace storm {
             /*!
              * This class represents a discrete-time Markov chain.
              */
-            template <class ValueType>
-            class Dtmc : public DeterministicModel<ValueType> {
+            template<class ValueType, typename RewardModelType = StandardRewardModel<ValueType>>
+            class Dtmc : public DeterministicModel<ValueType, RewardModelType> {
             public:
                 /*!
                  * Constructs a model from the given data.
                  *
                  * @param transitionMatrix The matrix representing the transitions in the model.
                  * @param stateLabeling The labeling of the states.
-                 * @param optionalStateRewardVector The reward values associated with the states.
-                 * @param optionalTransitionRewardMatrix The reward values associated with the transitions of the model.
+                 * @param rewardModels A mapping of reward model names to reward models.
                  * @param optionalChoiceLabeling A vector that represents the labels associated with the choices of each state.
                  */
                 Dtmc(storm::storage::SparseMatrix<ValueType> const& probabilityMatrix,
                      storm::models::sparse::StateLabeling const& stateLabeling,
-                     boost::optional<std::vector<ValueType>> const& optionalStateRewardVector = boost::optional<std::vector<ValueType>>(),
-                     boost::optional<storm::storage::SparseMatrix<ValueType>> const& optionalTransitionRewardMatrix = boost::optional<storm::storage::SparseMatrix<ValueType>>(),
+                     std::unordered_map<std::string, RewardModelType> const& rewardModels = std::unordered_map<std::string, RewardModelType>(),
                      boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling = boost::optional<std::vector<LabelSet>>());
                 
                 /*!
@@ -37,21 +34,19 @@ namespace storm {
                  *
                  * @param transitionMatrix The matrix representing the transitions in the model.
                  * @param stateLabeling The labeling of the states.
-                 * @param optionalStateRewardVector The reward values associated with the states.
-                 * @param optionalTransitionRewardMatrix The reward values associated with the transitions of the model.
+                 * @param rewardModels A mapping of reward model names to reward models.
                  * @param optionalChoiceLabeling A vector that represents the labels associated with the choices of each state.
                  */
                 Dtmc(storm::storage::SparseMatrix<ValueType>&& probabilityMatrix, storm::models::sparse::StateLabeling&& stateLabeling,
-                     boost::optional<std::vector<ValueType>>&& optionalStateRewardVector = boost::optional<std::vector<ValueType>>(),
-                     boost::optional<storm::storage::SparseMatrix<ValueType>>&& optionalTransitionRewardMatrix = boost::optional<storm::storage::SparseMatrix<ValueType>>(),
+                     std::unordered_map<std::string, RewardModelType>&& rewardModels = std::unordered_map<std::string, RewardModelType>(),
                      boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling = boost::optional<std::vector<LabelSet>>());
                 
-                Dtmc(Dtmc<ValueType> const& dtmc) = default;
-                Dtmc& operator=(Dtmc<ValueType> const& dtmc) = default;
+                Dtmc(Dtmc<ValueType, RewardModelType> const& dtmc) = default;
+                Dtmc& operator=(Dtmc<ValueType, RewardModelType> const& dtmc) = default;
                 
 #ifndef WINDOWS
-                Dtmc(Dtmc<ValueType>&& dtmc) = default;
-                Dtmc& operator=(Dtmc<ValueType>&& dtmc) = default;
+                Dtmc(Dtmc<ValueType, RewardModelType>&& dtmc) = default;
+                Dtmc& operator=(Dtmc<ValueType, RewardModelType>&& dtmc) = default;
 #endif
                 
                 /*!
@@ -71,9 +66,6 @@ namespace storm {
                     // A set of constraints that makes sure that the underlying graph of the model does not change depending
                     // on the parameter values.
                     std::unordered_set<storm::ArithConstraint<ValueType>> graphPreservingConstraintSet;
-                    
-                    // A comparator that is used for
-                    storm::utility::ConstantsComparator<ValueType> comparator;
                     
                 public:
                     /*!
@@ -114,14 +106,6 @@ namespace storm {
                     
                 };
 #endif
-
-            private:
-                /*!
-                 * Checks the probability matrix for validity.
-                 *
-                 * @return True iff the probability matrix is valid.
-                 */
-                bool checkValidityOfProbabilityMatrix() const;
             };
             
         } // namespace sparse

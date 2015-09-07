@@ -1,9 +1,10 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
-
+#include "src/parser/FormulaParser.h"
 #include "src/logic/Formulas.h"
 #include "src/utility/solver.h"
+#include "src/models/sparse/StandardRewardModel.h"
 #include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "src/settings/SettingsManager.h"
@@ -16,280 +17,176 @@
 #include "storm-config.h"
 
 TEST(TopologicalValueIterationMdpPrctlModelCheckerTest, Dice) {
-	//storm::settings::Settings* s = storm::settings::Settings::getInstance();    
-    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.tra", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.lab", "", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.flip.trans.rew")->as<storm::models::sparse::Mdp<double>>();
-    
-	ASSERT_EQ(mdp->getNumberOfStates(), 169ull);
-	ASSERT_EQ(mdp->getNumberOfTransitions(), 436ull);
-    
-    storm::modelchecker::SparseMdpPrctlModelChecker<double> mc(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::TopologicalMinMaxLinearEquationSolverFactory<double>()));
-    
-	//storm::property::prctl::Ap<double>* apFormula = new storm::property::prctl::Ap<double>("two");
-	auto apFormula = std::make_shared<storm::logic::AtomicLabelFormula>("two");
-	//storm::property::prctl::Eventually<double>* eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
-	auto eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(apFormula);
-	//storm::property::prctl::ProbabilisticNoBoundOperator<double>* probFormula = new storm::property::prctl::ProbabilisticNoBoundOperator<double>(eventuallyFormula, true);
-	auto probabilityOperatorFormula = std::make_shared<storm::logic::ProbabilityOperatorFormula>(storm::logic::OptimalityType::Minimize, eventuallyFormula);
-    
-	//std::vector<double> result = mc.checkNoBoundOperator(*probFormula);
-	std::unique_ptr<storm::modelchecker::CheckResult> result = mc.check(*probabilityOperatorFormula);
-	
-	//ASSERT_LT(std::abs(result[0] - 0.0277777612209320068), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
-	ASSERT_LT(std::abs(result->asExplicitQuantitativeCheckResult<double>()[0] - 0.0277777612209320068),
-		storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
+    //storm::settings::Settings* s = storm::settings::Settings::getInstance();    
+    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::parser::AutoParser<>::parseModel(STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.tra", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.lab", "", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.flip.trans.rew")->as<storm::models::sparse::Mdp<double>>();
 
-	//delete probFormula;
-	probabilityOperatorFormula.reset();
+    // A parser that we use for conveniently constructing the formulas.
+    storm::parser::FormulaParser formulaParser;
 
-	//apFormula = new storm::property::prctl::Ap<double>("two");
-	apFormula = std::make_shared<storm::logic::AtomicLabelFormula>("two");
-	//eventuallyFormula = new storm::property::prctl::Eventually<double>(apFormula);
-	eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(apFormula);
-	//probFormula = new storm::property::prctl::ProbabilisticNoBoundOperator<double>(eventuallyFormula, false);
-	probabilityOperatorFormula = std::make_shared<storm::logic::ProbabilityOperatorFormula>(storm::logic::OptimalityType::Maximize, eventuallyFormula);
-    
-	//result = mc.checkNoBoundOperator(*probFormula);
-	result = mc.check(*probabilityOperatorFormula);
-    
-	//ASSERT_LT(std::abs(result[0] - 0.0277777612209320068), s->getOptionByLongName("precision").getArgument(0).getValueAsDouble());
-	ASSERT_LT(std::abs(result->asExplicitQuantitativeCheckResult<double>()[0] - 0.0277777612209320068),
-		storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
+    ASSERT_EQ(mdp->getNumberOfStates(), 169ull);
+    ASSERT_EQ(mdp->getNumberOfTransitions(), 436ull);
 
-	//delete probFormula;
-	probabilityOperatorFormula.reset();
-   
-	// ---------------- test ap "three" ----------------
-	apFormula = std::make_shared<storm::logic::AtomicLabelFormula>("three");
-	eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(apFormula);
-	probabilityOperatorFormula = std::make_shared<storm::logic::ProbabilityOperatorFormula>(storm::logic::OptimalityType::Minimize, eventuallyFormula);
-    
-	result = mc.check(*probabilityOperatorFormula);
-    
-	ASSERT_LT(std::abs(result->asExplicitQuantitativeCheckResult<double>()[0] - 0.0555555224418640136),
-		storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
-    
-	probabilityOperatorFormula.reset();
-    
-	apFormula = std::make_shared<storm::logic::AtomicLabelFormula>("three");
-	eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(apFormula);
-	probabilityOperatorFormula = std::make_shared<storm::logic::ProbabilityOperatorFormula>(storm::logic::OptimalityType::Maximize, eventuallyFormula);
-    
-	result = mc.check(*probabilityOperatorFormula);
-    
-	ASSERT_LT(std::abs(result->asExplicitQuantitativeCheckResult<double>()[0] - 0.0555555224418640136),
-		storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
-    
-	probabilityOperatorFormula.reset();
-    
-	// ---------------- test ap "four" ----------------
-	apFormula = std::make_shared<storm::logic::AtomicLabelFormula>("four");
-	eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(apFormula);
-	probabilityOperatorFormula = std::make_shared<storm::logic::ProbabilityOperatorFormula>(storm::logic::OptimalityType::Minimize, eventuallyFormula);
+    storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> mc(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::MinMaxLinearEquationSolverFactory<double>(storm::solver::EquationSolverTypeSelection::Topological)));
 
-	result = mc.check(*probabilityOperatorFormula);
+    std::shared_ptr<storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"two\"]");
 
-	ASSERT_LT(std::abs(result->asExplicitQuantitativeCheckResult<double>()[0] - 0.083333283662796020508),
-		storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
+    std::unique_ptr<storm::modelchecker::CheckResult> result = mc.check(*formula);
 
-	probabilityOperatorFormula.reset();
+    ASSERT_NEAR(0.0277777612209320068, result->asExplicitQuantitativeCheckResult<double>()[0], storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
 
-	apFormula = std::make_shared<storm::logic::AtomicLabelFormula>("four");
-	eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(apFormula);
-	probabilityOperatorFormula = std::make_shared<storm::logic::ProbabilityOperatorFormula>(storm::logic::OptimalityType::Maximize, eventuallyFormula);
+    formula = formulaParser.parseSingleFormulaFromString("Pmax=? [F \"two\"]");
 
-	result = mc.check(*probabilityOperatorFormula);
+    result = mc.check(*formula);
 
-	ASSERT_LT(std::abs(result->asExplicitQuantitativeCheckResult<double>()[0] - 0.083333283662796020508),
-		storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
+    ASSERT_NEAR(0.0277777612209320068, result->asExplicitQuantitativeCheckResult<double>()[0], storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
 
-	probabilityOperatorFormula.reset();
+    formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"three\"]");
 
+    result = mc.check(*formula);
 
-	// ---------------- test ap "done" ----------------
-	apFormula = std::make_shared<storm::logic::AtomicLabelFormula>("done");
-	auto reachabilityRewardFormula = std::make_shared<storm::logic::ReachabilityRewardFormula>(apFormula);
-	auto rewardFormula = std::make_shared<storm::logic::RewardOperatorFormula>(storm::logic::OptimalityType::Minimize, reachabilityRewardFormula);
-    
-	result = mc.check(*rewardFormula);
+    ASSERT_NEAR(0.0555555224418640136, result->asExplicitQuantitativeCheckResult<double>()[0], storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
+
+    formula = formulaParser.parseSingleFormulaFromString("Pmax=? [F \"three\"]");
+
+    result = mc.check(*formula);
+
+    ASSERT_NEAR(0.0555555224418640136, result->asExplicitQuantitativeCheckResult<double>()[0], storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
+
+    formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"four\"]");
+
+    result = mc.check(*formula);
+
+    ASSERT_NEAR(0.083333283662796020508, result->asExplicitQuantitativeCheckResult<double>()[0], storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
+
+    formula = formulaParser.parseSingleFormulaFromString("Pmax=? [F \"four\"]");
+
+    result = mc.check(*formula);
+
+    ASSERT_NEAR(0.083333283662796020508, result->asExplicitQuantitativeCheckResult<double>()[0], storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
+
+    formula = formulaParser.parseSingleFormulaFromString("Rmin=? [F \"done\"]");
+
+    result = mc.check(*formula);
 
 #ifdef STORM_HAVE_CUDA
-	ASSERT_LT(std::abs(result->asExplicitQuantitativeCheckResult<double>()[0] - 7.333329499),
-		storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
+    ASSERT_NEAR(7.333329499, result->asExplicitQuantitativeCheckResult<double>()[0], storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
 #else
-	ASSERT_LT(std::abs(result->asExplicitQuantitativeCheckResult<double>()[0] - 7.33332904),
-		storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
+    ASSERT_NEAR(7.33332904, result->asExplicitQuantitativeCheckResult<double>()[0], storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
 #endif
-	rewardFormula.reset();
-    
 
-	apFormula = std::make_shared<storm::logic::AtomicLabelFormula>("done");
-	reachabilityRewardFormula = std::make_shared<storm::logic::ReachabilityRewardFormula>(apFormula);
-	rewardFormula = std::make_shared<storm::logic::RewardOperatorFormula>(storm::logic::OptimalityType::Maximize, reachabilityRewardFormula);
+    formula = formulaParser.parseSingleFormulaFromString("Rmax=? [F \"done\"]");
 
-	result = mc.check(*rewardFormula);
+    result = mc.check(*formula);
 
 #ifdef STORM_HAVE_CUDA
-	ASSERT_LT(std::abs(result->asExplicitQuantitativeCheckResult<double>()[0] - 7.333329499),
-		storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
+    ASSERT_NEAR(7.333329499, result->asExplicitQuantitativeCheckResult<double>()[0], storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
 #else
-	ASSERT_LT(std::abs(result->asExplicitQuantitativeCheckResult<double>()[0] - 7.33333151),
-		storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
+    ASSERT_NEAR(7.33333151, result->asExplicitQuantitativeCheckResult<double>()[0], storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
 #endif
-	rewardFormula.reset();
 
-	// ------------- state rewards --------------
-	std::shared_ptr<storm::models::sparse::Mdp<double>> stateRewardMdp = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.tra", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.lab", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.flip.state.rew", "")->as<storm::models::sparse::Mdp<double>>();
-    
-	storm::modelchecker::SparseMdpPrctlModelChecker<double> stateRewardModelChecker(*stateRewardMdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::TopologicalMinMaxLinearEquationSolverFactory<double>()));
+    // ------------- state rewards --------------
+    std::shared_ptr<storm::models::sparse::Mdp<double>> stateRewardMdp = storm::parser::AutoParser<>::parseModel(STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.tra", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.lab", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.flip.state.rew", "")->as<storm::models::sparse::Mdp<double>>();
 
-	apFormula = std::make_shared<storm::logic::AtomicLabelFormula>("done");
-	reachabilityRewardFormula = std::make_shared<storm::logic::ReachabilityRewardFormula>(apFormula);
-	rewardFormula = std::make_shared<storm::logic::RewardOperatorFormula>(storm::logic::OptimalityType::Minimize, reachabilityRewardFormula);
+    storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> stateRewardModelChecker(*stateRewardMdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::MinMaxLinearEquationSolverFactory<double>(storm::solver::EquationSolverTypeSelection::Topological)));
 
-	result = stateRewardModelChecker.check(*rewardFormula);
+    formula = formulaParser.parseSingleFormulaFromString("Rmin=? [F \"done\"]");
+
+    result = stateRewardModelChecker.check(*formula);
 
 #ifdef STORM_HAVE_CUDA
-	ASSERT_LT(std::abs(result->asExplicitQuantitativeCheckResult<double>()[0] - 7.333329499),
-		storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
+    ASSERT_NEAR(7.333329499, result->asExplicitQuantitativeCheckResult<double>()[0], storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
 #else
-	ASSERT_LT(std::abs(result->asExplicitQuantitativeCheckResult<double>()[0] - 7.33332904),
-		storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
+    ASSERT_NEAR(7.33332904, result->asExplicitQuantitativeCheckResult<double>()[0], storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
 #endif
-	rewardFormula.reset();
-   
-	apFormula = std::make_shared<storm::logic::AtomicLabelFormula>("done");
-	reachabilityRewardFormula = std::make_shared<storm::logic::ReachabilityRewardFormula>(apFormula);
-	rewardFormula = std::make_shared<storm::logic::RewardOperatorFormula>(storm::logic::OptimalityType::Maximize, reachabilityRewardFormula);
 
-	result = stateRewardModelChecker.check(*rewardFormula);
+    formula = formulaParser.parseSingleFormulaFromString("Rmax=? [F \"done\"]");
+
+    result = stateRewardModelChecker.check(*formula);
 
 #ifdef STORM_HAVE_CUDA
-	ASSERT_LT(std::abs(result->asExplicitQuantitativeCheckResult<double>()[0] - 7.333329499),
-		storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
+    ASSERT_NEAR(7.333329499, result->asExplicitQuantitativeCheckResult<double>()[0], storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
 #else
-	ASSERT_LT(std::abs(result->asExplicitQuantitativeCheckResult<double>()[0] - 7.33333151),
-		storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
+    ASSERT_NEAR(7.33333151, result->asExplicitQuantitativeCheckResult<double>()[0], storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
 #endif
-	rewardFormula.reset();
-	
-	// -------------------------------- state and transition reward ------------------------
-	std::shared_ptr<storm::models::sparse::Mdp<double>> stateAndTransitionRewardMdp = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.tra", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.lab", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.flip.state.rew", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.flip.trans.rew")->as<storm::models::sparse::Mdp<double>>();
-    
-	storm::modelchecker::SparseMdpPrctlModelChecker<double> stateAndTransitionRewardModelChecker(*stateAndTransitionRewardMdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::TopologicalMinMaxLinearEquationSolverFactory<double>()));
-    
 
-	apFormula = std::make_shared<storm::logic::AtomicLabelFormula>("done");
-	reachabilityRewardFormula = std::make_shared<storm::logic::ReachabilityRewardFormula>(apFormula);
-	rewardFormula = std::make_shared<storm::logic::RewardOperatorFormula>(storm::logic::OptimalityType::Minimize, reachabilityRewardFormula);
+    // -------------------------------- state and transition reward ------------------------
+    std::shared_ptr<storm::models::sparse::Mdp<double>> stateAndTransitionRewardMdp = storm::parser::AutoParser<>::parseModel(STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.tra", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.lab", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.flip.state.rew", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.flip.trans.rew")->as<storm::models::sparse::Mdp<double>>();
 
-	result = stateAndTransitionRewardModelChecker.check(*rewardFormula);
+    storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> stateAndTransitionRewardModelChecker(*stateAndTransitionRewardMdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::MinMaxLinearEquationSolverFactory<double>(storm::solver::EquationSolverTypeSelection::Topological)));
+
+    formula = formulaParser.parseSingleFormulaFromString("Rmin=? [F \"done\"]");
+
+    result = stateAndTransitionRewardModelChecker.check(*formula);
 
 #ifdef STORM_HAVE_CUDA
-	ASSERT_LT(std::abs(result->asExplicitQuantitativeCheckResult<double>()[0] - 14.666658998),
-		storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
+    ASSERT_NEAR(14.666658998, result->asExplicitQuantitativeCheckResult<double>()[0], storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
 #else
-	ASSERT_LT(std::abs(result->asExplicitQuantitativeCheckResult<double>()[0] - 14.6666581),
-		storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
+    ASSERT_NEAR(14.6666581, result->asExplicitQuantitativeCheckResult<double>()[0], storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
 #endif
-	rewardFormula.reset();
+    formula = formulaParser.parseSingleFormulaFromString("Rmax=? [F \"done\"]");
 
-	apFormula = std::make_shared<storm::logic::AtomicLabelFormula>("done");
-	reachabilityRewardFormula = std::make_shared<storm::logic::ReachabilityRewardFormula>(apFormula);
-	rewardFormula = std::make_shared<storm::logic::RewardOperatorFormula>(storm::logic::OptimalityType::Maximize, reachabilityRewardFormula);
-
-	result = stateAndTransitionRewardModelChecker.check(*rewardFormula);
+    result = stateAndTransitionRewardModelChecker.check(*formula);
 
 #ifdef STORM_HAVE_CUDA
-	ASSERT_LT(std::abs(result->asExplicitQuantitativeCheckResult<double>()[0] - 14.666658998),
-		storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
+    ASSERT_NEAR(14.666658998, result->asExplicitQuantitativeCheckResult<double>()[0], storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
 #else
-	ASSERT_LT(std::abs(result->asExplicitQuantitativeCheckResult<double>()[0] - 14.666663),
-		storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
+    ASSERT_NEAR(14.666663, result->asExplicitQuantitativeCheckResult<double>()[0], storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
 #endif
-	rewardFormula.reset();
 }
 
 TEST(TopologicalValueIterationMdpPrctlModelCheckerTest, AsynchronousLeader) {
-	std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader4.tra", STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader4.lab", "", STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader4.trans.rew")->as<storm::models::sparse::Mdp<double>>();
+    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::parser::AutoParser<>::parseModel(STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader4.tra", STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader4.lab", "", STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader4.trans.rew")->as<storm::models::sparse::Mdp<double>>();
 
-	ASSERT_EQ(mdp->getNumberOfStates(), 3172ull);
-	ASSERT_EQ(mdp->getNumberOfTransitions(), 7144ull);
+    // A parser that we use for conveniently constructing the formulas.
+    storm::parser::FormulaParser formulaParser;
 
-	storm::modelchecker::SparseMdpPrctlModelChecker<double> mc(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::TopologicalMinMaxLinearEquationSolverFactory<double>()));
+    ASSERT_EQ(mdp->getNumberOfStates(), 3172ull);
+    ASSERT_EQ(mdp->getNumberOfTransitions(), 7144ull);
 
-	auto apFormula = std::make_shared<storm::logic::AtomicLabelFormula>("elected");
-	auto eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(apFormula);
-	auto probabilityOperatorFormula = std::make_shared<storm::logic::ProbabilityOperatorFormula>(storm::logic::OptimalityType::Minimize, eventuallyFormula);
-	
-	std::unique_ptr<storm::modelchecker::CheckResult> result = mc.check(*probabilityOperatorFormula);
+    storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> mc(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::MinMaxLinearEquationSolverFactory<double>(storm::solver::EquationSolverTypeSelection::Topological)));
 
-	ASSERT_LT(std::abs(result->asExplicitQuantitativeCheckResult<double>()[0] - 1),
-		storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
+    std::shared_ptr<storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"elected\"]");
 
-	probabilityOperatorFormula.reset();
+    std::unique_ptr<storm::modelchecker::CheckResult> result = mc.check(*formula);
 
-	apFormula = std::make_shared<storm::logic::AtomicLabelFormula>("elected");
-	eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(apFormula);
-	probabilityOperatorFormula = std::make_shared<storm::logic::ProbabilityOperatorFormula>(storm::logic::OptimalityType::Maximize, eventuallyFormula);
+    ASSERT_LT(std::abs(result->asExplicitQuantitativeCheckResult<double>()[0] - 1),
+            storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
 
-	result = mc.check(*probabilityOperatorFormula);
+    formula = formulaParser.parseSingleFormulaFromString("Pmax=? [F \"elected\"]");
 
-	ASSERT_LT(std::abs(result->asExplicitQuantitativeCheckResult<double>()[0] - 1),
-		storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
+    result = mc.check(*formula);
 
-	probabilityOperatorFormula.reset();
+    ASSERT_NEAR(1, result->asExplicitQuantitativeCheckResult<double>()[0], storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
 
-	apFormula = std::make_shared<storm::logic::AtomicLabelFormula>("elected");
-	auto boundedEventuallyFormula = std::make_shared<storm::logic::BoundedUntilFormula>(std::make_shared<storm::logic::BooleanLiteralFormula>(true), apFormula, 25);
-	probabilityOperatorFormula = std::make_shared<storm::logic::ProbabilityOperatorFormula>(storm::logic::OptimalityType::Maximize, boundedEventuallyFormula);
+    formula = formulaParser.parseSingleFormulaFromString("Pmax=? [F<=25 \"elected\"]");
 
-	result = mc.check(*probabilityOperatorFormula);
+    result = mc.check(*formula);
 
-	ASSERT_LT(std::abs(result->asExplicitQuantitativeCheckResult<double>()[0] - 0.0625),
-		storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
+    ASSERT_NEAR(0.0625, result->asExplicitQuantitativeCheckResult<double>()[0], storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
 
-	probabilityOperatorFormula.reset();
+    formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F<=25 \"elected\"]");
 
-	apFormula = std::make_shared<storm::logic::AtomicLabelFormula>("elected");
-	boundedEventuallyFormula = std::make_shared<storm::logic::BoundedUntilFormula>(std::make_shared<storm::logic::BooleanLiteralFormula>(true), apFormula, 25);
-	probabilityOperatorFormula = std::make_shared<storm::logic::ProbabilityOperatorFormula>(storm::logic::OptimalityType::Minimize, boundedEventuallyFormula);
+    result = mc.check(*formula);
 
-	result = mc.check(*probabilityOperatorFormula);
+    ASSERT_NEAR(0.0625, result->asExplicitQuantitativeCheckResult<double>()[0], storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
 
-	ASSERT_LT(std::abs(result->asExplicitQuantitativeCheckResult<double>()[0] - 0.0625),
-		storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
+    formula = formulaParser.parseSingleFormulaFromString("Rmin=? [F \"elected\"]");
 
-	probabilityOperatorFormula.reset();
-
-	apFormula = std::make_shared<storm::logic::AtomicLabelFormula>("elected");
-	auto reachabilityRewardFormula = std::make_shared<storm::logic::ReachabilityRewardFormula>(apFormula);
-	auto rewardFormula = std::make_shared<storm::logic::RewardOperatorFormula>(storm::logic::OptimalityType::Minimize, reachabilityRewardFormula);
-
-	result = mc.check(*rewardFormula);
+    result = mc.check(*formula);
 
 #ifdef STORM_HAVE_CUDA
-	ASSERT_LT(std::abs(result->asExplicitQuantitativeCheckResult<double>()[0] - 4.285689611),
-		storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
+    ASSERT_NEAR(4.285689611, result->asExplicitQuantitativeCheckResult<double>()[0], storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
 #else
-	ASSERT_LT(std::abs(result->asExplicitQuantitativeCheckResult<double>()[0] - 4.285701547),
-		storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
+    ASSERT_NEAR(4.285701547, result->asExplicitQuantitativeCheckResult<double>()[0], storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
 #endif
 
-	probabilityOperatorFormula.reset();
+    formula = formulaParser.parseSingleFormulaFromString("Rmax=? [F \"elected\"]");
 
-	apFormula = std::make_shared<storm::logic::AtomicLabelFormula>("elected");
-	reachabilityRewardFormula = std::make_shared<storm::logic::ReachabilityRewardFormula>(apFormula);
-	rewardFormula = std::make_shared<storm::logic::RewardOperatorFormula>(storm::logic::OptimalityType::Maximize, reachabilityRewardFormula);
-
-	result = mc.check(*rewardFormula);
+    result = mc.check(*formula);
 
 #ifdef STORM_HAVE_CUDA
-	ASSERT_LT(std::abs(result->asExplicitQuantitativeCheckResult<double>()[0] - 4.285689611),
-		storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
+    ASSERT_NEAR(4.285689611, result->asExplicitQuantitativeCheckResult<double>()[0], storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
 #else
-	ASSERT_LT(std::abs(result->asExplicitQuantitativeCheckResult<double>()[0] - 4.285703591),
-		storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
+    ASSERT_NEAR(4.285703591, result->asExplicitQuantitativeCheckResult<double>()[0], storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
 #endif
-
-	probabilityOperatorFormula.reset();
 }

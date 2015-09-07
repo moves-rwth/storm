@@ -4,7 +4,7 @@
 #include <memory>
 #include <vector>
 #include <iostream>
-
+#include <set>
 
 namespace storm {
     namespace logic {
@@ -169,6 +169,7 @@ namespace storm {
             
             std::vector<std::shared_ptr<AtomicExpressionFormula const>> getAtomicExpressionFormulas() const;
             std::vector<std::shared_ptr<AtomicLabelFormula const>> getAtomicLabelFormulas() const;
+            std::set<std::string> getReferencedRewardModels() const;
             
             std::shared_ptr<Formula const> asSharedPointer();
             std::shared_ptr<Formula const> asSharedPointer() const;
@@ -177,6 +178,7 @@ namespace storm {
             
             virtual void gatherAtomicExpressionFormulas(std::vector<std::shared_ptr<AtomicExpressionFormula const>>& atomicExpressionFormulas) const;
             virtual void gatherAtomicLabelFormulas(std::vector<std::shared_ptr<AtomicLabelFormula const>>& atomicExpressionFormulas) const;
+            virtual void gatherReferencedRewardModels(std::set<std::string>& referencedRewardModels) const;
             
         private:
             // Currently empty.

@@ -93,7 +93,7 @@ namespace storm {
                 std::string const& currentArgument = commandLineArguments[i];
                 
                 // Check if the given argument is a new option or belongs to a previously given option.
-                if (currentArgument.at(0) == '-') {
+                if (!currentArgument.empty() && currentArgument.at(0) == '-') {
                     if (optionActive) {
                         // At this point we know that a new option is about to come. Hence, we need to assign the current
                         // cache content to the option that was active until now.

@@ -97,6 +97,13 @@ namespace storm {
             uint_fast64_t getNodeCount() const;
             
             /*!
+             * Retrieves the height of the ODD.
+             *
+             * @return The height of the ODD.
+             */
+            uint_fast64_t getHeight() const;
+            
+            /*!
              * Checks whether the given ODD node is a terminal node, i.e. has no successors.
              *
              * @return True iff the node is terminal.
@@ -122,12 +129,27 @@ namespace storm {
              */
             void expandExplicitVector(storm::dd::Odd<DdType::CUDD> const& newOdd, std::vector<double> const& oldValues, std::vector<double>& newValues) const;
             
+            /*!
+             * Exports the ODD in the dot format to the given file.
+             *
+             * @param filename The name of the file to which to write the dot output.
+             */
+            void exportToDot(std::string const& filename) const;
+            
         private:
             // Declare a hash functor that is used for the unique tables in the construction process.
             class HashFunctor {
             public:
                 std::size_t operator()(std::pair<DdNode*, bool> const& key) const;
             };
+            
+            /*!
+             * Adds all nodes below the current one to the given mapping.
+             *
+             * @param levelToOddNodesMap A mapping of the level to the ODD node.
+             * @param The level of the current node.
+             */
+            void addToLevelToOddNodesMap(std::map<uint_fast64_t, std::vector<std::reference_wrapper<storm::dd::Odd<DdType::CUDD> const>>>& levelToOddNodesMap, uint_fast64_t level = 0) const;
             
             /*!
              * Constructs an offset-labeled DD with the given topmost DD node, else- and then-successor.

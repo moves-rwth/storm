@@ -22,15 +22,15 @@ namespace storm {
          * A class that uses SCC Decompositions to solve a min/max linear equation system.
          */
         template<class ValueType>
-		class TopologicalMinMaxLinearEquationSolver : public NativeMinMaxLinearEquationSolver<ValueType> {
-        public:
+        class TopologicalMinMaxLinearEquationSolver : public NativeMinMaxLinearEquationSolver<ValueType> {
+            public:
             /*!
              * Constructs a min-max linear equation solver with parameters being set according to the settings
              * object.
              *
              * @param A The matrix defining the coefficients of the linear equation system.
              */
-			TopologicalMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A);
+            TopologicalMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A);
             
             /*!
              * Constructs a min/max linear equation solver with the given parameters.
@@ -41,9 +41,9 @@ namespace storm {
              * @param relative If set, the relative error rather than the absolute error is considered for convergence
              * detection.
              */
-			TopologicalMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, double precision, uint_fast64_t maximalNumberOfIterations, bool relative = true);
+            TopologicalMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, double precision, uint_fast64_t maximalNumberOfIterations, bool relative = true);
             
-            virtual void solveEquationSystem(bool minimize, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult = nullptr, std::vector<ValueType>* newX = nullptr) const override;
+           virtual void solveEquationSystem(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult = nullptr, std::vector<ValueType>* newX = nullptr) const override;
 		private:
 
 			bool enableCuda;

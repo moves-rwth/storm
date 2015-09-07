@@ -33,6 +33,8 @@ option(DEBUG "Sets whether the DEBUG mode is used" OFF)
 set(ADDITIONAL_INCLUDE_DIRS "" CACHE STRING "Additional directories added to the include directories.")
 set(ADDITIONAL_LINK_DIRS "" CACHE STRING "Additional directories added to the link directories.")
 
+MARK_AS_ADVANCED(WITH_GLPK_EXAMPLES WITH_GMP ENABLE_DL ENABLE_ODBC ENABLE_MYSQL)
+
 # If the DEBUG option was turned on, we will target a debug version and a release version otherwise
 if (DEBUG)
     set (CMAKE_BUILD_TYPE "DEBUG")

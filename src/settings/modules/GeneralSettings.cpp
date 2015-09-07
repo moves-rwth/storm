@@ -6,7 +6,7 @@
 #include "src/settings/OptionBuilder.h"
 #include "src/settings/ArgumentBuilder.h"
 #include "src/settings/Argument.h"
-
+#include "src/solver/SolverSelectionOptions.h"
 
 #include "src/exceptions/InvalidSettingsException.h"
 
@@ -21,7 +21,7 @@ namespace storm {
             const std::string GeneralSettings::verboseOptionName = "verbose";
             const std::string GeneralSettings::verboseOptionShortName = "v";
             const std::string GeneralSettings::precisionOptionName = "precision";
-            const std::string GeneralSettings::precisionOptionShortName = "p";
+            const std::string GeneralSettings::precisionOptionShortName = "eps";
             const std::string GeneralSettings::exportDotOptionName = "exportdot";
             const std::string GeneralSettings::configOptionName = "config";
             const std::string GeneralSettings::configOptionShortName = "c";
@@ -30,9 +30,10 @@ namespace storm {
             const std::string GeneralSettings::symbolicOptionName = "symbolic";
             const std::string GeneralSettings::symbolicOptionShortName = "s";
             const std::string GeneralSettings::propertyOptionName = "prop";
-            const std::string GeneralSettings::propertyFileOptionName = "propfile";
+            const std::string GeneralSettings::propertyOptionShortName = "prop";
             const std::string GeneralSettings::transitionRewardsOptionName = "transrew";
             const std::string GeneralSettings::stateRewardsOptionName = "staterew";
+            const std::string GeneralSettings::choiceLabelingOptionName = "choicelab";
             const std::string GeneralSettings::counterexampleOptionName = "counterexample";
             const std::string GeneralSettings::counterexampleOptionShortName = "cex";
             const std::string GeneralSettings::dontFixDeadlockOptionName = "nofixdl";
@@ -75,12 +76,9 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("transition filename", "The name of the file from which to read the transitions.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build())
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("labeling filename", "The name of the file from which to read the state labeling.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, symbolicOptionName, false, "Parses the model given in a symbolic representation.").setShortName(symbolicOptionShortName)
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file from which to read the symbolic model.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build())
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("rewardmodel", "The name of the reward model to use.").setDefaultValueString("").setIsOptional(true).build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, propertyOptionName, false, "Specifies a PCTL formula that is to be checked on the model.")
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("formula", "The formula to check.").build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, propertyFileOptionName, false, "Specifies the PCTL formulas that are to be checked on the model.")
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The file from which to read the PCTL formulas.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file from which to read the symbolic model.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, propertyOptionName, false, "Specifies the formulas to be checked on the model.").setShortName(propertyOptionShortName)
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("formula or filename", "The formula or the file containing the formulas.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, counterexampleOptionName, false, "Generates a counterexample for the given PRCTL formulas if not satisfied by the model")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file to which the counterexample is to be written.").setDefaultValueString("-").setIsOptional(true).build()).setShortName(counterexampleOptionShortName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, bisimulationOptionName, false, "Sets whether to perform bisimulation minimization.").setShortName(bisimulationOptionShortName).build());
@@ -88,6 +86,8 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The file from which to read the transition rewards.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, stateRewardsOptionName, false, "If given, the state rewards are read from this file and added to the explicit model. Note that this requires the model to be given as an explicit model (i.e., via --" + explicitOptionName + ").")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The file from which to read the state rewards.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, choiceLabelingOptionName, false, "If given, the choice labels are read from this file and added to the explicit model. Note that this requires the model to be given as an explicit model (i.e., via --" + explicitOptionName + ").")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The file from which to read the choice labels.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, dontFixDeadlockOptionName, false, "If the model contains deadlock states, they need to be fixed by setting this option.").setShortName(dontFixDeadlockOptionShortName).build());
                 
                 std::vector<std::string> engines = {"sparse", "hybrid", "dd"};
@@ -135,8 +135,7 @@ namespace storm {
             }
             
             double GeneralSettings::getPrecision() const {
-                double value = this->getOption(precisionOptionName).getArgumentByName("value").getValueAsDouble();
-                return value;
+                return this->getOption(precisionOptionName).getArgumentByName("value").getValueAsDouble();
             }
             
             bool GeneralSettings::isExportDotSet() const {
@@ -175,28 +174,12 @@ namespace storm {
                 return this->getOption(symbolicOptionName).getArgumentByName("filename").getValueAsString();
             }
             
-            bool GeneralSettings::isSymbolicRewardModelNameSet() const {
-                return this->getOption(symbolicOptionName).getArgumentByName("rewardmodel").getHasBeenSet();
-            }
-            
-            std::string GeneralSettings::getSymbolicRewardModelName() const {
-                return this->getOption(symbolicOptionName).getArgumentByName("rewardmodel").getValueAsString();
-            }
-            
             bool GeneralSettings::isPropertySet() const {
                 return this->getOption(propertyOptionName).getHasOptionBeenSet();
             }
             
             std::string GeneralSettings::getProperty() const {
-                return this->getOption(propertyOptionName).getArgumentByName("formula").getValueAsString();
-            }
-            
-            bool GeneralSettings::isPropertyFileSet() const {
-                return this->getOption(propertyFileOptionName).getHasOptionBeenSet();
-            }
-            
-            std::string GeneralSettings::getPropertiesFilename() const {
-                return this->getOption(propertyFileOptionName).getArgumentByName("filename").getValueAsString();
+                return this->getOption(propertyOptionName).getArgumentByName("formula or filename").getValueAsString();
             }
             
             bool GeneralSettings::isTransitionRewardsSet() const {
@@ -213,6 +196,14 @@ namespace storm {
             
             std::string GeneralSettings::getStateRewardsFilename() const {
                 return this->getOption(stateRewardsOptionName).getArgumentByName("filename").getValueAsString();
+            }
+            
+            bool GeneralSettings::isChoiceLabelingSet() const {
+                return this->getOption(choiceLabelingOptionName).getHasOptionBeenSet();
+            }
+                
+            std::string GeneralSettings::getChoiceLabelingFilename() const {
+                return this->getOption(choiceLabelingOptionName).getArgumentByName("filename").getValueAsString();
             }
             
             bool GeneralSettings::isCounterexampleSet() const {
@@ -243,12 +234,12 @@ namespace storm {
                 return this->getOption(timeoutOptionName).getArgumentByName("time").getValueAsUnsignedInteger();
             }
             
-            GeneralSettings::EquationSolver GeneralSettings::getEquationSolver() const {
+            storm::solver::EquationSolverType  GeneralSettings::getEquationSolver() const {
                 std::string equationSolverName = this->getOption(eqSolverOptionName).getArgumentByName("name").getValueAsString();
                 if (equationSolverName == "gmm++") {
-                    return GeneralSettings::EquationSolver::Gmmxx;
+                    return storm::solver::EquationSolverType::Gmmxx;
                 } else if (equationSolverName == "native") {
-                    return GeneralSettings::EquationSolver::Native;
+                    return storm::solver::EquationSolverType::Native;
                 }
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown equation solver '" << equationSolverName << "'.");
             }
@@ -257,12 +248,12 @@ namespace storm {
                 return this->getOption(eqSolverOptionName).getHasOptionBeenSet();
             }
             
-            GeneralSettings::LpSolver GeneralSettings::getLpSolver() const {
+            storm::solver::LpSolverType GeneralSettings::getLpSolver() const {
                 std::string lpSolverName = this->getOption(lpSolverOptionName).getArgumentByName("name").getValueAsString();
                 if (lpSolverName == "gurobi") {
-                    return GeneralSettings::LpSolver::Gurobi;
+                    return storm::solver::LpSolverType::Gurobi;
                 } else if (lpSolverName == "glpk") {
-                    return GeneralSettings::LpSolver::glpk;
+                    return storm::solver::LpSolverType::Glpk;
                 }
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown LP solver '" << lpSolverName << "'.");
             }
@@ -299,12 +290,12 @@ namespace storm {
                 return this->getOption(prismCompatibilityOptionName).getHasOptionBeenSet();
             }
 
-			GeneralSettings::MinMaxTechnique GeneralSettings::getMinMaxEquationSolvingTechnique() const {
+			storm::solver::MinMaxTechnique GeneralSettings::getMinMaxEquationSolvingTechnique() const {
 				std::string minMaxEquationSolvingTechnique = this->getOption(minMaxEquationSolvingTechniqueOptionName).getArgumentByName("name").getValueAsString();
 				if (minMaxEquationSolvingTechnique == "valueIteration") {
-					return GeneralSettings::MinMaxTechnique::ValueIteration;
+					return storm::solver::MinMaxTechnique::ValueIteration;
 				} else if (minMaxEquationSolvingTechnique == "policyIteration") {
-					return GeneralSettings::MinMaxTechnique::PolicyIteration;
+					return storm::solver::MinMaxTechnique::PolicyIteration;
 				}
 				STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown min/max equation solving technique '" << minMaxEquationSolvingTechnique << "'.");
 			}
@@ -325,10 +316,6 @@ namespace storm {
             bool GeneralSettings::check() const {
                 // Ensure that the model was given either symbolically or explicitly.
                 STORM_LOG_THROW(!isSymbolicSet() || !isExplicitSet(), storm::exceptions::InvalidSettingsException, "The model may be either given in an explicit or a symbolic format, but not both.");
-                
-                // Make sure that one "source" for properties is given.
-                uint_fast64_t propertySources = 0 + (isPropertySet() ? 1 : 0) + (isPropertyFileSet() ? 1 : 0);
-                STORM_LOG_THROW(propertySources <= 1, storm::exceptions::InvalidSettingsException, "Please specify either a file that contains the properties or a property on the command line, but not both.");
                 
                 STORM_LOG_THROW(this->getEngine() == Engine::Sparse || !isExplicitSet(), storm::exceptions::InvalidSettingsException, "Cannot use explicit input models with this engine.");
                 

@@ -27,6 +27,9 @@ namespace storm {
              */
             ExpressionParser(storm::expressions::ExpressionManager const& manager, qi::symbols<char, uint_fast64_t> const& invalidIdentifiers_, bool allowBacktracking = false);
             
+            ExpressionParser(ExpressionParser const& other) = default;
+            ExpressionParser& operator=(ExpressionParser const& other) = default;
+            
             /*!
              * Sets an identifier mapping that is used to determine valid variables in the expression. The mapped-to
              * expressions will be substituted wherever the key value appears in the parsed expression. After setting
@@ -172,7 +175,7 @@ namespace storm {
             trueFalseOperatorStruct trueFalse_;
             
             // The manager responsible for the expressions.
-            storm::expressions::ExpressionManager const& manager;
+            std::shared_ptr<storm::expressions::ExpressionManager const> manager;
             
             // A flag that indicates whether expressions should actually be generated or just a syntax check shall be
             // performed.
